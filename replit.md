@@ -1,5 +1,20 @@
 # Workspace
 
+## CI/CD Status
+- **Deploy pipeline:** ✅ Working (GitHub Actions deploy.yml runs on push to main, deploys to VPS at 89.167.85.156)
+- **CI pipeline:** ✅ PASSING as of CI #70 (all 4 jobs: Backend Tests, Frontend Tests, Lint & Type Check, Build Check)
+
+### CI Fixes Applied (history)
+- Removed project `references` from `artifacts/api-server/tsconfig.json` (not needed with moduleResolution: bundler)
+- Fixed `artifacts/erp-system/tsconfig.json`: kept reference to `lib/api-client-react` (has composite tsconfig)
+- Added `lib/api-client-react` build script (`tsc -p tsconfig.json`) and CI step to build before type-check
+- Fixed `artifacts/api-server/src/routes/auth.ts`: renamed `getLockout→getLoginLockout`, `recordFailure→recordLoginFailure`, `clearLockout→clearLoginLockout`, added missing `await`
+- Fixed `artifacts/api-server/src/routes/alerts.ts`: `parseInt(String(req.params['id']), 10)` for Express 5 param type
+- Fixed `artifacts/api-server/src/routes/settings.ts`: `userId ?? undefined` (null→undefined for writeAuditLog)
+- Fixed `lib/db/src/schema/{accounts,returns,vouchers}.ts`: removed unused `z` import
+- Fixed `artifacts/erp-system/src/components/ui/spinner.tsx`: `React.ComponentProps<typeof Loader2Icon>` instead of `<"svg">`
+- Added `pnpm.overrides` in root `package.json` to deduplicate `@types/react` and fix `calendar.tsx` dual-types TS error
+
 ## Overview
 This project is a full-stack Arabic ERP System (نظام ERP) designed for Halal Tech, an Egyptian mobile repair shop. Its primary purpose is to provide a comprehensive management solution with an Arabic RTL interface and a dark glass-morphism UI. Key capabilities include dynamic currency, font, accent color, and company branding, all configurable from the Settings without requiring code changes. The system covers essential business functions such as sales (POS), purchases, inventory management, financial transactions, and reporting.
 
