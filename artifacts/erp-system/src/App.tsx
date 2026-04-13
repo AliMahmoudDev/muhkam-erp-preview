@@ -33,6 +33,7 @@ const Vouchers             = lazy(() => import("@/pages/vouchers"));
 const POS                  = lazy(() => import("@/pages/pos"));
 const SuperAdmin           = lazy(() => import("@/pages/super-admin"));
 const Branches             = lazy(() => import("@/pages/branches"));
+const Employees            = lazy(() => import("@/pages/employees"));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -126,6 +127,7 @@ function Router() {
         <Route path="/accounts">{() => <Guard path="/accounts" component={Accounts} />}</Route>
         <Route path="/journal-entries">{() => <Guard path="/journal-entries" component={JournalEntries} />}</Route>
         <Route path="/branches">{() => <Guard path="/branches" component={Branches} />}</Route>
+        <Route path="/employees">{() => <Guard path="/employees" component={Employees} />}</Route>
         <Route path="/vouchers">{() => <Guard path="/vouchers" component={Vouchers} />}</Route>
         <Route path="/receipt-vouchers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/deposit-vouchers">{() => <Redirect to="/vouchers" />}</Route>
