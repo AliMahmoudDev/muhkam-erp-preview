@@ -285,7 +285,7 @@ export default function Payroll() {
       {/* فورم فترة المرتبات */}
       {showPeriodForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-lg" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><DollarSign size={16} className="text-amber-400" /> إنشاء فترة مرتبات جديدة</h2>
               <button onClick={() => setShowPeriodForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -315,7 +315,7 @@ export default function Payroll() {
       {/* فورم الهيكل الوظيفي */}
       {showStructForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Layers size={16} className="text-amber-400" /> هيكل وظيفي جديد</h2>
               <button onClick={() => setShowStructForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -339,7 +339,7 @@ export default function Payroll() {
       {/* فورم الشريحة الضريبية */}
       {showTaxForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Percent size={16} className="text-amber-400" /> شريحة ضريبية جديدة</h2>
               <button onClick={() => setShowTaxForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -365,7 +365,7 @@ export default function Payroll() {
       {/* فورم الاشتراك الإلزامي */}
       {showContribForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Shield size={16} className="text-amber-400" /> اشتراك إلزامي جديد</h2>
               <button onClick={() => setShowContribForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>

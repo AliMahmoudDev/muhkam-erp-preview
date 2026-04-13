@@ -263,7 +263,7 @@ export default function SalaryAdvances() {
       {/* طلب سلفة */}
       {showRequestForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Banknote size={16} className="text-amber-400" /> طلب سلفة على الراتب</h2>
               <button onClick={() => setShowRequestForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -292,7 +292,7 @@ export default function SalaryAdvances() {
       {/* إعدادات */}
       {showSettingsForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Settings size={16} className="text-amber-400" /> إعدادات السلف</h2>
               <button onClick={() => setShowSettingsForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -316,7 +316,7 @@ export default function SalaryAdvances() {
       {/* رفض السلفة */}
       {rejectId != null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h2 className="font-bold text-white">رفض طلب السلفة</h2>
               <button onClick={() => { setRejectId(null); setRejectReason(""); }} className="text-white/40 hover:text-white"><X size={16} /></button>
@@ -337,7 +337,7 @@ export default function SalaryAdvances() {
       {/* دفعة يدوية */}
       {showPaymentModal != null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Banknote size={16} className="text-amber-400" /> تسجيل دفعة يدوية</h2>
               <button onClick={() => { setShowPaymentModal(null); setPaymentAmount(""); }} className="text-white/40 hover:text-white"><X size={16} /></button>

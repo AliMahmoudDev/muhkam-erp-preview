@@ -611,7 +611,7 @@ export default function Employees() {
       {/* Employee Create/Edit Form */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="text-lg font-bold text-white">{editId ? "تعديل بيانات الموظف" : "إضافة موظف جديد"}</h2>
               <button onClick={() => setShowForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -650,9 +650,9 @@ export default function Employees() {
                   <input type="date" value={editEmp.hire_date ?? ""} onChange={e => set("hire_date", e.target.value)} className="erp-input w-full" />
                 </Field>
                 <Field label="الراتب الأساسي *">
-                  <div className="flex gap-1">
-                    <input type="number" value={editEmp.salary ?? 0} onChange={e => set("salary", Number(e.target.value))} className="erp-input flex-1" min={0} />
-                    <select value={editEmp.currency ?? "EGP"} onChange={e => set("currency", e.target.value)} className="erp-input w-16">
+                  <div className="flex gap-2 w-full">
+                    <input type="number" value={editEmp.salary ?? 0} onChange={e => set("salary", Number(e.target.value))} className="erp-input flex-1 min-w-0" min={0} />
+                    <select value={editEmp.currency ?? "EGP"} onChange={e => set("currency", e.target.value)} className="erp-input w-20 shrink-0">
                       {["EGP", "SAR", "AED", "USD"].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
@@ -682,7 +682,7 @@ export default function Employees() {
       {/* Status Change Dialog */}
       {statusDialog?.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><RefreshCw size={16} className="text-amber-400" /> تغيير حالة الموظف</h2>
               <button onClick={() => setStatusDialog(null)} className="text-white/40 hover:text-white"><X size={16} /></button>
@@ -715,7 +715,7 @@ export default function Employees() {
       {/* Delete Confirm */}
       {deleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center" dir="rtl">
             <UserX size={36} className="text-red-400 mx-auto mb-3" />
             <h2 className="text-lg font-bold text-white mb-1">حذف الموظف</h2>
             <p className="text-white/50 text-sm mb-4">هل أنت متأكد من حذف هذا الموظف؟ لا يمكن التراجع عن هذه العملية.</p>
@@ -732,7 +732,7 @@ export default function Employees() {
       {/* Add Document Form */}
       {showDocForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><FileText size={16} className="text-amber-400" /> إضافة مستند</h2>
               <button onClick={() => setShowDocForm(false)} className="text-white/40 hover:text-white"><X size={16} /></button>
@@ -767,7 +767,7 @@ export default function Employees() {
       {/* Add Contact Form */}
       {showContactForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Phone size={16} className="text-amber-400" /> إضافة جهة اتصال طوارئ</h2>
               <button onClick={() => setShowContactForm(false)} className="text-white/40 hover:text-white"><X size={16} /></button>
@@ -796,7 +796,7 @@ export default function Employees() {
       {/* Department Form */}
       {showDeptForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Building2 size={16} className="text-amber-400" /> {deptEditId ? "تعديل القسم" : "إضافة قسم جديد"}</h2>
               <button onClick={() => setShowDeptForm(false)} className="text-white/40 hover:text-white"><X size={16} /></button>
@@ -825,7 +825,7 @@ export default function Employees() {
       {/* Job Title Form */}
       {showJtForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Briefcase size={16} className="text-amber-400" /> {jtEditId ? "تعديل المسمى" : "إضافة مسمى وظيفي"}</h2>
               <button onClick={() => setShowJtForm(false)} className="text-white/40 hover:text-white"><X size={16} /></button>

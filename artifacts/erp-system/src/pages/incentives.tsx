@@ -228,7 +228,7 @@ export default function Incentives() {
       {/* مخطط حوافز جديد */}
       {showSchemeForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Gift size={16} className="text-amber-400" /> مخطط حوافز جديد</h2>
               <button onClick={() => setShowSchemeForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -251,7 +251,7 @@ export default function Incentives() {
       {/* قاعدة حافز */}
       {showRuleForm && selectedScheme && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><BarChart2 size={16} className="text-amber-400" /> قاعدة حافز — {String(selectedScheme.name_ar)}</h2>
               <button onClick={() => setShowRuleForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -283,7 +283,7 @@ export default function Incentives() {
       {/* تسجيل مقياس */}
       {showMetricForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><BarChart2 size={16} className="text-amber-400" /> تسجيل مقياس أداء</h2>
               <button onClick={() => setShowMetricForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -307,7 +307,7 @@ export default function Incentives() {
       {/* تعيين مخطط لموظف */}
       {showAssignForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><UserPlus size={16} className="text-amber-400" /> تعيين مخطط حوافز لموظف</h2>
               <button onClick={() => setShowAssignForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>

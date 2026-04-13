@@ -143,9 +143,30 @@ router.post("/salary-advances", wrap(async (req, res) => {
   res.status(201).json({ ...advance, requested_amount: n(advance.requested_amount), remaining_balance: n(advance.remaining_balance), created_at: fmt(advance.created_at), updated_at: fmt(advance.updated_at), approved_at: fmt(advance.approved_at) });
 }));
 
+/* ── Pending Approvals (MUST be before /:id) ──────────────────── */
+router.get("/salary-advances/pending-approvals", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user?.company_id ?? 1;
+  const rows = await db.select({
+    id: salaryAdvancesTable.id, employee_id: salaryAdvancesTable.employee_id,
+    requested_date: salaryAdvancesTable.requested_date, requested_amount: salaryAdvancesTable.requested_amount,
+    advance_type: salaryAdvancesTable.advance_type, reason: salaryAdvancesTable.reason,
+    currency: salaryAdvancesTable.currency, created_at: salaryAdvancesTable.created_at,
+    first_name_ar: employeesTable.first_name_ar, last_name_ar: employeesTable.last_name_ar,
+    employee_code: employeesTable.employee_code, salary: employeesTable.salary,
+  })
+    .from(salaryAdvancesTable)
+    .leftJoin(employeesTable, eq(salaryAdvancesTable.employee_id, employeesTable.id))
+    .where(and(eq(employeesTable.company_id, companyId), eq(salaryAdvancesTable.status, "pending")))
+    .orderBy(desc(salaryAdvancesTable.created_at));
+  res.json(rows.map(r => ({ ...r, requested_amount: n(r.requested_amount), salary: n(r.salary), created_at: fmt(r.created_at) })));
+}));
+
+/* ── Single Advance ───────────────────────────────────────────── */
 router.get("/salary-advances/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const id = parseInt(String(req.params["id"]), 10);
+  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
   const [advance] = await db.select({
     id: salaryAdvancesTable.id, employee_id: salaryAdvancesTable.employee_id,
     requested_date: salaryAdvancesTable.requested_date, requested_amount: salaryAdvancesTable.requested_amount,
@@ -275,25 +296,6 @@ router.get("/salary-advances/:employeeId/ledger", wrap(async (req, res) => {
     .where(eq(salaryAdvanceLedgerTable.employee_id, empId))
     .orderBy(desc(salaryAdvanceLedgerTable.ledger_date));
   res.json(rows.map(r => ({ ...r, amount: n(r.amount), balance: n(r.balance), created_at: fmt(r.created_at) })));
-}));
-
-/* ── Pending Approvals ────────────────────────────────────────── */
-router.get("/salary-advances/pending-approvals", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
-  const rows = await db.select({
-    id: salaryAdvancesTable.id, employee_id: salaryAdvancesTable.employee_id,
-    requested_date: salaryAdvancesTable.requested_date, requested_amount: salaryAdvancesTable.requested_amount,
-    advance_type: salaryAdvancesTable.advance_type, reason: salaryAdvancesTable.reason,
-    currency: salaryAdvancesTable.currency, created_at: salaryAdvancesTable.created_at,
-    first_name_ar: employeesTable.first_name_ar, last_name_ar: employeesTable.last_name_ar,
-    employee_code: employeesTable.employee_code, salary: employeesTable.salary,
-  })
-    .from(salaryAdvancesTable)
-    .leftJoin(employeesTable, eq(salaryAdvancesTable.employee_id, employeesTable.id))
-    .where(and(eq(employeesTable.company_id, companyId), eq(salaryAdvancesTable.status, "pending")))
-    .orderBy(desc(salaryAdvancesTable.created_at));
-  res.json(rows.map(r => ({ ...r, requested_amount: n(r.requested_amount), salary: n(r.salary), created_at: fmt(r.created_at) })));
 }));
 
 export default router;

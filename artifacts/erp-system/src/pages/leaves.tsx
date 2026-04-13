@@ -241,7 +241,7 @@ export default function Leaves() {
       {/* طلب إجازة */}
       {showRequestForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><CalendarDays size={16} className="text-amber-400" /> طلب إجازة جديد</h2>
               <button onClick={() => setShowRequestForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -273,7 +273,7 @@ export default function Leaves() {
       {/* رفض الإجازة */}
       {rejectId != null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h2 className="font-bold text-white">رفض طلب الإجازة</h2>
               <button onClick={() => { setRejectId(null); setRejectReason(""); }} className="text-white/40 hover:text-white"><X size={16} /></button>
@@ -296,7 +296,7 @@ export default function Leaves() {
       {/* نوع إجازة جديد */}
       {showTypeForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Tag size={16} className="text-amber-400" /> نوع إجازة جديد</h2>
               <button onClick={() => setShowTypeForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -326,7 +326,7 @@ export default function Leaves() {
       {/* فترة محظورة */}
       {showBlackoutForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Ban size={16} className="text-red-400" /> فترة محظورة للإجازات</h2>
               <button onClick={() => setShowBlackoutForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>

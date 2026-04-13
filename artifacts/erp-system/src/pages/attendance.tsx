@@ -266,7 +266,7 @@ export default function Attendance() {
       {/* تسجيل حضور */}
       {showCheckIn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Clock size={16} className="text-amber-400" /> تسجيل حضور</h2>
               <button onClick={() => setShowCheckIn(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -292,7 +292,7 @@ export default function Attendance() {
       {/* وردية جديدة */}
       {showShiftForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><AlarmClock size={16} className="text-amber-400" /> وردية جديدة</h2>
               <button onClick={() => setShowShiftForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
@@ -321,7 +321,7 @@ export default function Attendance() {
       {/* إجازة رسمية جديدة */}
       {showHolidayForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#181c2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="font-bold text-white flex items-center gap-2"><Sun size={16} className="text-amber-400" /> إجازة رسمية جديدة</h2>
               <button onClick={() => setShowHolidayForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
