@@ -927,6 +927,24 @@ html.light .erp-card:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
 
+/* ── ERP Modal (adapts to light/dark automatically) ─ */
+.erp-modal {
+  background: #181c2e;
+  border: 1px solid rgba(255,255,255,0.10);
+  color: #f8fafc;
+}
+html.light .erp-modal {
+  background: #ffffff !important;
+  border: 1px solid rgba(0,0,0,0.13) !important;
+  color: #0d1117 !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 24px rgba(0,0,0,0.10) !important;
+}
+html.light .erp-modal .border-white\/10,
+html.light .erp-modal .border-b,
+html.light .erp-modal .border-t {
+  border-color: rgba(0,0,0,0.10) !important;
+}
+
 /* ── ERP Card hover lift ──────────────────────────── */
 .erp-card-lift {
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease;

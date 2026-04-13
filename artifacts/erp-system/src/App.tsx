@@ -33,6 +33,12 @@ const Vouchers             = lazy(() => import("@/pages/vouchers"));
 const POS                  = lazy(() => import("@/pages/pos"));
 const SuperAdmin           = lazy(() => import("@/pages/super-admin"));
 const Branches             = lazy(() => import("@/pages/branches"));
+const Employees            = lazy(() => import("@/pages/employees"));
+const Payroll              = lazy(() => import("@/pages/payroll"));
+const Attendance           = lazy(() => import("@/pages/attendance"));
+const Leaves               = lazy(() => import("@/pages/leaves"));
+const Incentives           = lazy(() => import("@/pages/incentives"));
+const SalaryAdvances       = lazy(() => import("@/pages/salary-advances"));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -126,6 +132,12 @@ function Router() {
         <Route path="/accounts">{() => <Guard path="/accounts" component={Accounts} />}</Route>
         <Route path="/journal-entries">{() => <Guard path="/journal-entries" component={JournalEntries} />}</Route>
         <Route path="/branches">{() => <Guard path="/branches" component={Branches} />}</Route>
+        <Route path="/employees">{() => <Guard path="/employees" component={Employees} />}</Route>
+        <Route path="/payroll">{() => <Guard path="/payroll" component={Payroll} />}</Route>
+        <Route path="/attendance">{() => <Guard path="/attendance" component={Attendance} />}</Route>
+        <Route path="/leaves">{() => <Guard path="/leaves" component={Leaves} />}</Route>
+        <Route path="/incentives">{() => <Guard path="/incentives" component={Incentives} />}</Route>
+        <Route path="/salary-advances">{() => <Guard path="/salary-advances" component={SalaryAdvances} />}</Route>
         <Route path="/vouchers">{() => <Guard path="/vouchers" component={Vouchers} />}</Route>
         <Route path="/receipt-vouchers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/deposit-vouchers">{() => <Redirect to="/vouchers" />}</Route>

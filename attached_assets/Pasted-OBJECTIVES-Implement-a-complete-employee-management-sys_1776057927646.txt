@@ -1,0 +1,105 @@
+OBJECTIVES:
+Implement a complete employee management system with multi-tenant support, role-based access control, 
+document management, and full audit logging. This is a foundational module for all HR features (Payroll, 
+Attendance, Leave, Benefits, Incentives, Advances).
+
+DATABASE SCHEMA (Drizzle ORM):
+Tables to create:
+1. employees (id, company_id, employee_code, first_name_en, last_name_en, first_name_ar, last_name_ar, 
+   email, phone, personal_phone, national_id, job_title_id, department_id, hire_date, employment_status, 
+   salary, currency, bank_account, address_en, address_ar, city, country, created_at, updated_at, 
+   deleted_at, created_by, updated_by)
+2. employee_addresses (id, employee_id, address_type, address_en, address_ar, city, postal_code, country, created_at)
+3. employee_documents (id, employee_id, document_type, file_path, expiry_date, verified_by, created_at, updated_at)
+4. employee_contacts (id, employee_id, contact_type, name, relationship, phone, email, created_at)
+5. employee_status_history (id, employee_id, old_status, new_status, reason, changed_by, changed_at)
+6. departments (id, company_id, name_en, name_ar, description_en, description_ar, created_at)
+7. job_titles (id, company_id, name_en, name_ar, created_at)
+
+RELATIONSHIPS:
+- employees.company_id → companies.id
+- employees.job_title_id → job_titles.id
+- employees.department_id → departments.id
+- employee_*.employee_id → employees.id
+- departments.company_id → companies.id
+- job_titles.company_id → companies.id
+
+API ENDPOINTS (REST):
+POST /api/employees - Create new employee
+GET /api/employees - List employees (paginated, filterable)
+GET /api/employees/{id} - Get employee details
+PUT /api/employees/{id} - Update employee
+PATCH /api/employees/{id}/status - Change employment status
+DELETE /api/employees/{id} - Soft delete employee
+GET /api/employees/{id}/documents - Get employee documents
+POST /api/employees/{id}/documents - Upload document
+GET /api/employees/{id}/history - Get status change history
+GET /api/departments - List departments
+POST /api/departments - Create department
+GET /api/job-titles - List job titles
+POST /api/job-titles - Create job title
+
+BUSINESS LOGIC:
+- Employee codes must be unique per company
+- Hire date cannot be in future
+- Employment status transitions: Active → On Leave/Suspended → Terminated (with reason)
+- Salary changes are tracked in history
+- Documents can be marked as verified by managers
+- Multi-language support for names and addresses (EN/AR)
+- All operations logged with user context for audit trail
+- Support RTL Arabic for all string fields
+
+UI COMPONENTS & PAGES:
+- EmployeeList page with DataTable (search, filter by department/status, sort, export to Excel)
+- EmployeeForm component (create/edit with validation)
+- EmployeeDetails view (readonly summary, editable sections)
+- EmployeeDocuments component (upload, download, verify, delete)
+- EmployeeStatusHistory timeline view
+- DepartmentManager (CRUD)
+- JobTitleManager (CRUD)
+
+VALIDATION:
+- Required fields: first_name, email, national_id, job_title, department, hire_date, salary
+- Email format validation
+- Phone format validation (international format support)
+- National ID format validation (Egyptian 14-digit number)
+- Salary must be positive number
+- Unique constraints: email per company, employee_code per company, national_id per company
+- Soft-delete constraint: department/job_title with active employees cannot be deleted
+
+PERMISSIONS (RBAC):
+- Super Admin: Full CRUD on all employees
+- HR Manager: CRUD on employees, view salary info
+- Department Manager: View own department employees
+- Employee: View own profile
+- Accountant: View employee salary info (read-only)
+
+INTEGRATION POINTS:
+- Payroll module: Fetch active employees for salary processing
+- Attendance module: Validate employee existence
+- Leave module: Validate employee for leave requests
+- Benefits module: Link benefits to employees
+- Incentives module: Validate employee for incentives
+- Salary Advances module: Validate employee for advance requests
+- Accounting: Employee salaries appear in GL accounts (2100-Salaries, 2101-Salaries Payable)
+
+ERROR HANDLING:
+- 400: Invalid employee data
+- 409: Duplicate employee code/email/national_id
+- 404: Employee not found
+- 403: Insufficient permissions
+- 422: Cannot delete department/job_title with active employees
+
+TESTING:
+- Unit tests for employee code generation
+- Integration tests for CRUD operations
+- Multi-tenant isolation tests
+- Audit log verification tests
+- Soft-delete tests
+- Status transition validation tests
+
+NICE-TO-HAVE:
+- Bulk import employees from Excel
+- Employee photo upload
+- Biometric integration placeholder
+- Employee hierarchy/reporting structure

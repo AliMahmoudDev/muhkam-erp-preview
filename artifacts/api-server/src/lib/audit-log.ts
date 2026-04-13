@@ -42,7 +42,8 @@ export type AuditRecordType =
   | "user"
   // ── ERP critical types ─────────────────────────────────────────────────────
   | "account_balances"        // إصلاح أرصدة الحسابات المحاسبية
-  | "customer_balances";      // إصلاح أرصدة العملاء
+  | "customer_balances"       // إصلاح أرصدة العملاء
+  | "employee";               // إدارة الموظفين
 
 interface AuditUser {
   id?: number;

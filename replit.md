@@ -1,5 +1,20 @@
 # Workspace
 
+## CI/CD Status
+- **Deploy pipeline:** ✅ Working (GitHub Actions deploy.yml runs on push to main, deploys to VPS at 89.167.85.156)
+- **CI pipeline:** ✅ PASSING as of CI #70 (all 4 jobs: Backend Tests, Frontend Tests, Lint & Type Check, Build Check)
+
+### CI Fixes Applied (history)
+- Removed project `references` from `artifacts/api-server/tsconfig.json` (not needed with moduleResolution: bundler)
+- Fixed `artifacts/erp-system/tsconfig.json`: kept reference to `lib/api-client-react` (has composite tsconfig)
+- Added `lib/api-client-react` build script (`tsc -p tsconfig.json`) and CI step to build before type-check
+- Fixed `artifacts/api-server/src/routes/auth.ts`: renamed `getLockout→getLoginLockout`, `recordFailure→recordLoginFailure`, `clearLockout→clearLoginLockout`, added missing `await`
+- Fixed `artifacts/api-server/src/routes/alerts.ts`: `parseInt(String(req.params['id']), 10)` for Express 5 param type
+- Fixed `artifacts/api-server/src/routes/settings.ts`: `userId ?? undefined` (null→undefined for writeAuditLog)
+- Fixed `lib/db/src/schema/{accounts,returns,vouchers}.ts`: removed unused `z` import
+- Fixed `artifacts/erp-system/src/components/ui/spinner.tsx`: `React.ComponentProps<typeof Loader2Icon>` instead of `<"svg">`
+- Added `pnpm.overrides` in root `package.json` to deduplicate `@types/react` and fix `calendar.tsx` dual-types TS error
+
 ## Overview
 This project is a full-stack Arabic ERP System (نظام ERP) designed for Halal Tech, an Egyptian mobile repair shop. Its primary purpose is to provide a comprehensive management solution with an Arabic RTL interface and a dark glass-morphism UI. Key capabilities include dynamic currency, font, accent color, and company branding, all configurable from the Settings without requiring code changes. The system covers essential business functions such as sales (POS), purchases, inventory management, financial transactions, and reporting.
 
@@ -59,6 +74,19 @@ The system is built as a monorepo using pnpm workspaces. The architecture separa
   - **Multi-tenant Login Fix (Session 3):** `loginSchema` updated to accept optional `company_id`. Auth route username lookup now filters by company_id if provided — prevents username collision across companies on shared servers.
   - **Mobile Login company_id (Session 3):** `AuthContext.tsx` reads `EXPO_PUBLIC_COMPANY_ID` env var and passes it in login requests for proper per-deployment company scoping.
   - **Code Quality Pass (Session 4):** FK constraints now on ALL 26 DB schemas (29 references). try/catch blocks reduced from 58 → 19 (67% elimination) by migrating alerts, branches, companies, settings routes to use centralized `wrap()` from `async-handler.ts`. All errors now flow through the global error handler in `app.ts` for consistent Arabic error responses and structured logging.
+  - **HR Suite (Sessions 5-6 — complete):** Full HR management system with 6 modules.
+    - **DB Schema (`lib/db/src/schema/employees.ts`):** 5 tables: `departments`, `job_titles`, `employees` (soft-delete, auto-code EMP0001+), `employee_documents`, `employee_contacts`, `employee_status_history`. All scoped by `company_id`.
+    - **API Routes (`artifacts/api-server/src/routes/employees.ts`):** Full CRUD for departments (`/api/departments`), job titles (`/api/job-titles`), employees (`/api/employees`). Sub-routes for documents, contacts, history. Status change with audit trail. `requireHrAccess` middleware (admin/manager/super_admin only for writes). Salary visible only with `can_view_employee_salary` permission.
+    - **Frontend (`artifacts/erp-system/src/pages/employees.tsx`):** 3-tab RTL page (Employees / Departments / Job Titles). Employee list with search+filters, detail panel with 4 sub-tabs (info/docs/contacts/history). Full CRUD modals for all entities. Status change dialog. Salary hidden from non-HR roles.
+    - **Permissions:** `can_view_employees`, `can_manage_employees`, `can_view_employee_salary` — true for admin/manager/super_admin, false for cashier/salesperson. Added to both backend and frontend permission tables.
+    - **Navigation:** Registered in App.tsx (`/employees`), rbac.ts (ROUTE_ROLES + NAV_ITEMS with UserCheck icon), layout.tsx (new "الموارد البشرية" section).
+    - **Payroll Module (`payroll.ts` + `payroll.tsx`):** Schema: `salary_structures`, `tax_brackets`, `statutory_contributions`, `payroll_periods`, `payroll_records`, `payroll_line_items`. Process flow: create period → `POST /api/payroll/periods/:id/process` auto-processes all active employees (gross salary, statutory deductions, tax brackets, salary advance deductions, incentives from `monthly_incentive_summary`) → `POST /api/payroll/periods/:id/approve` for final approval. UI: 4-tab page (periods, structures, tax, contributions).
+    - **Attendance Module (`attendance.ts` + `attendance.tsx`):** Schema: `shifts`, `attendance_records`, `overtime_requests`, `public_holidays`. Check-in via `POST /api/attendance/check-in` — auto-calculates late_minutes vs shift grace period. UI: 4-tab page (records, shifts, overtime, holidays). Date range + employee ID filters.
+    - **Leaves Module (`leaves.ts` + `leaves.tsx`):** Schema: `leave_types`, `leave_policies`, `leave_balances`, `leave_requests`, `leave_blackout_dates`. Accrual: `POST /api/leave-accrual/run` (monthly run). Approval flow with overlap + blackout date checks. UI: 3-tab page (requests with approve/reject actions, types, blackout periods).
+    - **Incentives Module (`incentives.ts` + `incentives.tsx`):** Schema: `incentive_schemes`, `incentive_rules`, `incentive_slabs`, `employee_incentive_assignments`, `incentive_metrics`, `incentive_accruals`, `monthly_incentive_summary`. Calculation methods: achievement, slab, tiered. Metric recording: `POST /api/incentive-metrics/record` → auto-accrues. UI: 2-tab page (schemes+rules, tracking by employee+month).
+    - **Salary Advances Module (`salary-advances.ts` + `salary-advances.tsx`):** Schema: `salary_advance_settings`, `salary_advances`, `salary_advance_ledger`, `salary_advance_deductions`. Settings auto-created on first GET (defaults: 50% max, 2 concurrent, 3000 min salary). Approval creates ledger entry. Manual payments + payroll deductions tracked via `remaining_balance`. UI: 3-tab page (list, pending approvals, ledger).
+    - **New Permissions:** `can_view_payroll`, `can_manage_payroll`, `can_approve_payroll`, `can_view_attendance`, `can_manage_attendance`, `can_view_leaves`, `can_manage_leaves` — added to both backend + frontend permissions for admin (all true), manager (approve=false), others (all false).
+    - **Cross-module Safety:** `monthly_incentive_summary.included_in_payroll_record_id` and `salary_advance_deductions.payroll_record_id` use plain integers (no FK) to avoid circular imports between schemas.
   - **Seed Defaults:** `seedDefaults()` now auto-creates: default company (if none exists), super_admin user (username: superadmin, PIN: 000000), default company admin (username: admin, PIN: 123456).
   - **Frontend Registration Form:** Login page "حساب جديد" tab replaced with a real SaaS sign-up form (company name, admin name, email, password). On success → JWT stored → auto-redirect to dashboard.
   - **Super Admin Dashboard:** `artifacts/erp-system/src/pages/super-admin.tsx` — full-screen panel showing stats cards, company table with expand/collapse rows (activate, suspend, extend, upgrade plan). Includes "شركة جديدة" button with inline form to create company with name, plan type, and duration.
@@ -401,6 +429,40 @@ All financial documents (sales, purchases, deposit vouchers, payment vouchers, r
 - **Testing (Frontend)**: Vitest + React Testing Library — `pnpm --filter @workspace/erp-system test`
 - **Coverage (Backend)**: `pnpm --filter @workspace/api-server test:coverage` (scoped to core modules; thresholds: 50% stmts/lines, 55% funcs, 30% branches)
 - **Coverage (Frontend)**: `pnpm --filter @workspace/erp-system test:coverage` (thresholds: 60% lines/funcs)
+
+## Security Audit & Fixes (Completed)
+
+A comprehensive security audit was performed with the following results and remediation:
+
+### Vulnerabilities Fixed
+- **XSS in Print/Document.write** (`sales.tsx`, `combined-statement-modal.tsx`): Added `escHtml()` helper function that escapes `&`, `<`, `>`, `"`, `'` before injecting user-controlled data (product names, customer names, invoice numbers, phone numbers) into `document.write()` calls. All dynamic fields sanitized.
+- **Path Traversal in Backups** (`backups.ts`): Both download and delete endpoints now use `path.basename()` + `path.resolve()` to validate that computed file path stays within `BACKUP_DIR`. Returns 403 if path escapes. Content-Disposition header sanitized with regex to allow only safe characters.
+- **H2C Smuggling in nginx** (`deploy/nginx.conf`): Added `map $http_upgrade $connection_upgrade` block that blocks `h2c` upgrades (maps to `close`), passes WebSocket upgrades normally, and falls back to `close` for empty Upgrade headers. Removed forwarding of raw `$http_upgrade` via `Connection` header in favor of the mapped variable. Removed `$http_host` in favour of explicit `$host`.
+
+### Performance Indexes Added (DB Applied)
+Composite indexes added to DB schema and pushed via `drizzle-kit push`:
+- `sales`: `(company_id, date)`, `(company_id, posting_status)`
+- `purchases`: `(company_id, date)`, `(company_id, posting_status)`
+- `expenses`: `(company_id, created_at)`
+- `transactions`: `(company_id, date)`, `(company_id, type)`
+
+### Dependency Updates
+- `vite`: `7.3.2` already in `pnpm-workspace.yaml` catalog and `pnpm-lock.yaml` — no CVE exposure.
+
+### Secrets Management
+- `JWT_SECRET`, `JWT_REFRESH_SECRET`, `TOTP_ENCRYPTION_KEY`, `SUPER_ADMIN_PIN`, `DEFAULT_ADMIN_PIN` registered in Replit's secure env var store (shared environment).
+
+### SQL Parameterization — reports.ts (Completed)
+All 35 `sql.raw()` calls with string interpolation in `reports.ts` were replaced with Drizzle `sql\`...\`` template tag using proper parameterized values:
+- `cfSql(alias, companyId)` — emits `AND alias.company_id = $N` with companyId as a bound parameter
+- `cfSimpleSql(companyId)` — same without alias
+- `dfSql(alias, col, from, to)` — emits `AND alias.col >= $N AND alias.col <= $M` with dates as bound params
+- Table aliases and column names use `sql.raw()` only (developer-controlled string literals, never user input)
+- All 8 report endpoints tested and verified working with parameterized queries
+- SQL injection test confirmed: malicious date `2024-01-01' OR '1'='1` is silently rejected by `safeDate()` regex
+
+### Remaining Items
+- SAST: ~159 MEDIUM findings remain (primarily `console.log` in prod code, non-cryptographic Math.random, and dependency warnings — none are critical or High severity after the above fixes).
 
 ## Mobile App (erp-mobile)
 

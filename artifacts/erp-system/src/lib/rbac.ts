@@ -7,7 +7,8 @@ import {
   Package, Users, TrendingUp,
   FileText, Settings, Zap,
   BookOpen, HandCoins,
-  ReceiptText, Wallet, ClipboardList, GitBranch,
+  ReceiptText, Wallet, ClipboardList, GitBranch, UserCheck,
+  DollarSign, Clock, CalendarDays, Gift, Banknote,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,6 +33,12 @@ export const ROUTE_ROLES: Record<string, AppRole[]> = {
   "/vouchers":               ["admin", "manager"],
   "/branches":               ["admin", "manager"],
   "/settings":               ["admin"],
+  "/employees":              ["admin", "manager"],
+  "/payroll":                ["admin", "manager"],
+  "/attendance":             ["admin", "manager"],
+  "/leaves":                 ["admin", "manager"],
+  "/incentives":             ["admin", "manager"],
+  "/salary-advances":        ["admin", "manager"],
 };
 
 /* ── Nav items with role visibility + icons ─────────────── */
@@ -52,6 +59,12 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   { name: "السندات",            href: "/vouchers",               icon: HandCoins,       roles: ["admin","manager"] },
   { name: "الفروع",             href: "/branches",               icon: GitBranch,       roles: ["admin","manager"] },
   { name: "الإعدادات",         href: "/settings",               icon: Settings,        roles: ["admin"] },
+  { name: "الموظفون",          href: "/employees",              icon: UserCheck,       roles: ["admin", "manager"] },
+  { name: "الرواتب",           href: "/payroll",                icon: DollarSign,      roles: ["admin", "manager"] },
+  { name: "الحضور والانصراف", href: "/attendance",             icon: Clock,           roles: ["admin", "manager"] },
+  { name: "الإجازات",          href: "/leaves",                 icon: CalendarDays,    roles: ["admin", "manager"] },
+  { name: "الحوافز",           href: "/incentives",             icon: Gift,            roles: ["admin", "manager"] },
+  { name: "السلف",             href: "/salary-advances",        icon: Banknote,        roles: ["admin", "manager"] },
 ];
 
 /* ── Helpers ────────────────────────────────────────────── */
