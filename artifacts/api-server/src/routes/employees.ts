@@ -186,7 +186,7 @@ const employeeCreateSchema = z.object({
   last_name_ar:      z.string().min(1, "الاسم الأخير (عربي) مطلوب"),
   first_name_en:     z.string().optional().default(""),
   last_name_en:      z.string().optional().default(""),
-  email:             z.string().email("البريد الإلكتروني غير صحيح"),
+  email:             z.string().optional().default(""),
   phone:             z.string().optional(),
   personal_phone:    z.string().optional(),
   national_id:       z.string().optional(),
@@ -296,12 +296,6 @@ router.post("/employees", wrap(async (req, res) => {
     res.status(400).json({ error: "تاريخ التعيين لا يمكن أن يكون في المستقبل" }); return;
   }
 
-  const existing = await db.select({ id: employeesTable.id }).from(employeesTable)
-    .where(and(eq(employeesTable.company_id, companyId), eq(employeesTable.email, data.email.toLowerCase().trim()), isNull(employeesTable.deleted_at)));
-  if (existing.length > 0) {
-    res.status(409).json({ error: "البريد الإلكتروني مستخدم بالفعل لموظف آخر" }); return;
-  }
-
   if (data.national_id) {
     const dupNid = await db.select({ id: employeesTable.id }).from(employeesTable)
       .where(and(eq(employeesTable.company_id, companyId), eq(employeesTable.national_id, data.national_id), isNull(employeesTable.deleted_at)));
@@ -324,7 +318,7 @@ router.post("/employees", wrap(async (req, res) => {
     last_name_ar:      data.last_name_ar.trim(),
     first_name_en:     data.first_name_en?.trim() ?? "",
     last_name_en:      data.last_name_en?.trim() ?? "",
-    email:             data.email.toLowerCase().trim(),
+    email:             (data.email ?? "").toLowerCase().trim(),
     phone:             data.phone ?? null,
     personal_phone:    data.personal_phone ?? null,
     national_id:       data.national_id ?? null,
@@ -441,7 +435,6 @@ router.put("/employees/:id", wrap(async (req, res) => {
   if (data.last_name_ar  !== undefined) updates["last_name_ar"]  = data.last_name_ar.trim();
   if (data.first_name_en !== undefined) updates["first_name_en"] = data.first_name_en?.trim() ?? "";
   if (data.last_name_en  !== undefined) updates["last_name_en"]  = data.last_name_en?.trim() ?? "";
-  if (data.email         !== undefined) updates["email"]         = data.email.toLowerCase().trim();
   if (data.phone         !== undefined) updates["phone"]         = data.phone ?? null;
   if (data.personal_phone !== undefined) updates["personal_phone"] = data.personal_phone ?? null;
   if (data.national_id   !== undefined) updates["national_id"]   = data.national_id ?? null;

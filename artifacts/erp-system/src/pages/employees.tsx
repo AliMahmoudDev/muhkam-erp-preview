@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TableSkeleton } from "@/components/skeletons";
 import {
   UserCheck, Plus, Search, X, Pencil, Trash2, UserX,
-  RefreshCw, FileText, Phone, Mail, IdCard, Building2,
+  RefreshCw, FileText, Phone, IdCard, Building2,
   Briefcase, CalendarDays, Wallet, ChevronRight, CheckCircle,
   AlertCircle, Clock, History, Users,
 } from "lucide-react";
@@ -21,7 +21,7 @@ interface Employee {
   id: number; company_id: number; employee_code: string;
   first_name_ar: string; last_name_ar: string;
   first_name_en: string; last_name_en: string;
-  email: string; phone?: string | null; personal_phone?: string | null;
+  email?: string | null; phone?: string | null; personal_phone?: string | null;
   national_id?: string | null; job_title_id?: number | null; department_id?: number | null;
   branch_id?: number | null;
   hire_date: string; employment_status: string;
@@ -53,7 +53,7 @@ function StatusBadge({ status }: { status: string }) {
 function blankEmp(): Partial<Employee> {
   return {
     first_name_ar: "", last_name_ar: "", first_name_en: "", last_name_en: "",
-    email: "", phone: "", personal_phone: "", national_id: "",
+    phone: "", personal_phone: "", national_id: "",
     job_title_id: null, department_id: null, branch_id: null,
     hire_date: new Date().toISOString().split("T")[0],
     salary: 0, currency: "EGP", bank_account: "",
@@ -222,8 +222,7 @@ export default function Employees() {
     return (
       e.first_name_ar.includes(search) || e.last_name_ar.includes(search) ||
       e.first_name_en.toLowerCase().includes(q) || e.last_name_en.toLowerCase().includes(q) ||
-      e.employee_code.toLowerCase().includes(q) || (e.national_id ?? "").includes(search) ||
-      (e.email ?? "").toLowerCase().includes(q)
+      e.employee_code.toLowerCase().includes(q) || (e.national_id ?? "").includes(search)
     );
   }), [employees, search]);
 
@@ -348,7 +347,6 @@ export default function Employees() {
                         <td className="p-3 text-xs font-mono text-amber-300">{emp.employee_code}</td>
                         <td className="p-3">
                           <div className="font-semibold text-sm">{emp.first_name_ar} {emp.last_name_ar}</div>
-                          <div className="text-xs text-white/40">{emp.email}</div>
                         </td>
                         <td className="p-3 text-sm text-white/70">{emp.department_name ?? "—"}</td>
                         <td className="p-3 text-sm text-white/70">{emp.job_title_name ?? "—"}</td>
@@ -422,7 +420,6 @@ export default function Employees() {
               {/* Info Tab */}
               {detailTab === "info" && (
                 <div className="space-y-2 text-sm">
-                  <InfoRow icon={Mail}          label="البريد الإلكتروني"  value={selected.email} />
                   <InfoRow icon={Phone}          label="الهاتف"             value={selected.phone} />
                   <InfoRow icon={Phone}          label="الهاتف الشخصي"      value={selected.personal_phone} />
                   <InfoRow icon={IdCard}         label="الرقم القومي"       value={selected.national_id} />
