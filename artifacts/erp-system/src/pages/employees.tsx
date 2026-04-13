@@ -625,26 +625,11 @@ export default function Employees() {
                 <Field label="الاسم الأخير (عربي) *">
                   <input value={editEmp.last_name_ar ?? ""} onChange={e => set("last_name_ar", e.target.value)} className="erp-input w-full" placeholder="أحمد" />
                 </Field>
-                <Field label="الاسم الأول (إنجليزي)">
-                  <input value={editEmp.first_name_en ?? ""} onChange={e => set("first_name_en", e.target.value)} className="erp-input w-full" placeholder="Mohammed" />
-                </Field>
-                <Field label="الاسم الأخير (إنجليزي)">
-                  <input value={editEmp.last_name_en ?? ""} onChange={e => set("last_name_en", e.target.value)} className="erp-input w-full" placeholder="Ahmed" />
-                </Field>
               </div>
               {/* Contact */}
               <div className="grid grid-cols-2 gap-3">
-                <Field label="البريد الإلكتروني *">
-                  <input type="email" value={editEmp.email ?? ""} onChange={e => set("email", e.target.value)} className="erp-input w-full" placeholder="email@example.com" />
-                </Field>
                 <Field label="الهاتف">
                   <input value={editEmp.phone ?? ""} onChange={e => set("phone", e.target.value)} className="erp-input w-full" placeholder="+20..." />
-                </Field>
-                <Field label="الرقم القومي">
-                  <input value={editEmp.national_id ?? ""} onChange={e => set("national_id", e.target.value)} className="erp-input w-full" placeholder="14 رقم" />
-                </Field>
-                <Field label="الهاتف الشخصي">
-                  <input value={editEmp.personal_phone ?? ""} onChange={e => set("personal_phone", e.target.value)} className="erp-input w-full" placeholder="+20..." />
                 </Field>
               </div>
               {/* HR */}
@@ -667,19 +652,10 @@ export default function Employees() {
                 <Field label="الراتب الأساسي *">
                   <div className="flex gap-1">
                     <input type="number" value={editEmp.salary ?? 0} onChange={e => set("salary", Number(e.target.value))} className="erp-input flex-1" min={0} />
-                    <select value={editEmp.currency ?? "EGP"} onChange={e => set("currency", e.target.value)} className="erp-input w-20">
+                    <select value={editEmp.currency ?? "EGP"} onChange={e => set("currency", e.target.value)} className="erp-input w-16">
                       {["EGP", "SAR", "AED", "USD"].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
-                </Field>
-              </div>
-              {/* Financial */}
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="رقم الحساب البنكي">
-                  <input value={editEmp.bank_account ?? ""} onChange={e => set("bank_account", e.target.value)} className="erp-input w-full" />
-                </Field>
-                <Field label="المدينة">
-                  <input value={editEmp.city ?? ""} onChange={e => set("city", e.target.value)} className="erp-input w-full" placeholder="القاهرة" />
                 </Field>
               </div>
               <Field label="العنوان">
