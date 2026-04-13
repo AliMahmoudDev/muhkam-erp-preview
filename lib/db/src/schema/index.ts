@@ -23,3 +23,8 @@ export * from "./stock-count";
 export * from "./stock-transfers";
 export * from "./branches";
 export * from "./employees";
+export * from "./payroll";
+export * from "./attendance";
+export * from "./leaves";
+export * from "./incentives";
+export * from "./salary-advances";

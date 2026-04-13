@@ -17,6 +17,10 @@ const ROLE_DEFAULTS: Record<string, Record<string, boolean>> = {
     can_manage_users:            true,
     can_view_employees:          true, can_manage_employees:        true,
     can_view_employee_salary:    true,
+    can_view_payroll:            true, can_manage_payroll:          true,
+    can_approve_payroll:         true,
+    can_view_attendance:         true, can_manage_attendance:       true,
+    can_view_leaves:             true, can_manage_leaves:           true,
   },
   admin: {
     can_view_sales:              true,  can_create_sale:            true,
@@ -34,6 +38,10 @@ const ROLE_DEFAULTS: Record<string, Record<string, boolean>> = {
     can_manage_users:            true,
     can_view_employees:          true,  can_manage_employees:       true,
     can_view_employee_salary:    true,
+    can_view_payroll:            true,  can_manage_payroll:         true,
+    can_approve_payroll:         true,
+    can_view_attendance:         true,  can_manage_attendance:      true,
+    can_view_leaves:             true,  can_manage_leaves:          true,
   },
   manager: {
     can_view_sales:              true,  can_create_sale:            true,
@@ -51,6 +59,10 @@ const ROLE_DEFAULTS: Record<string, Record<string, boolean>> = {
     can_manage_users:            false,
     can_view_employees:          true,  can_manage_employees:       true,
     can_view_employee_salary:    true,
+    can_view_payroll:            true,  can_manage_payroll:         true,
+    can_approve_payroll:         false,
+    can_view_attendance:         true,  can_manage_attendance:      true,
+    can_view_leaves:             true,  can_manage_leaves:          true,
   },
   salesperson: {
     can_view_sales:              true,  can_create_sale:            true,
@@ -68,6 +80,10 @@ const ROLE_DEFAULTS: Record<string, Record<string, boolean>> = {
     can_manage_users:            false,
     can_view_employees:          false, can_manage_employees:       false,
     can_view_employee_salary:    false,
+    can_view_payroll:            false, can_manage_payroll:         false,
+    can_approve_payroll:         false,
+    can_view_attendance:         false, can_manage_attendance:      false,
+    can_view_leaves:             false, can_manage_leaves:          false,
   },
   cashier: {
     can_view_sales:              true,  can_create_sale:            true,
@@ -85,6 +101,10 @@ const ROLE_DEFAULTS: Record<string, Record<string, boolean>> = {
     can_manage_users:            false,
     can_view_employees:          false, can_manage_employees:       false,
     can_view_employee_salary:    false,
+    can_view_payroll:            false, can_manage_payroll:         false,
+    can_approve_payroll:         false,
+    can_view_attendance:         false, can_manage_attendance:      false,
+    can_view_leaves:             false, can_manage_leaves:          false,
   },
 };
 

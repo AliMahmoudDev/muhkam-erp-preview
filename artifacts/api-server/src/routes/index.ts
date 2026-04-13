@@ -35,6 +35,11 @@ import categoriesRouter from "./categories";
 import superRouter from "./super";
 import branchesRouter from "./branches";
 import employeesRouter from "./employees";
+import payrollRouter from "./payroll";
+import attendanceRouter from "./attendance";
+import leavesRouter from "./leaves";
+import incentivesRouter from "./incentives";
+import salaryAdvancesRouter from "./salary-advances";
 
 const router: IRouter = Router();
 
@@ -79,5 +84,10 @@ router.use(inventoryControlRouter);
 router.use(categoriesRouter);
 router.use(branchesRouter);
 router.use(employeesRouter);
+router.use(payrollRouter);
+router.use(attendanceRouter);
+router.use(leavesRouter);
+router.use(incentivesRouter);
+router.use(salaryAdvancesRouter);
 
 export default router;
