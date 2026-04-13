@@ -23,15 +23,17 @@ interface Employee {
   first_name_en: string; last_name_en: string;
   email: string; phone?: string | null; personal_phone?: string | null;
   national_id?: string | null; job_title_id?: number | null; department_id?: number | null;
+  branch_id?: number | null;
   hire_date: string; employment_status: string;
   salary?: number | null; currency: string;
   bank_account?: string | null; address_ar?: string | null; address_en?: string | null;
   city?: string | null; country?: string | null; notes?: string | null;
-  department_name?: string | null; job_title_name?: string | null;
+  department_name?: string | null; job_title_name?: string | null; branch_name?: string | null;
   created_at?: string; updated_at?: string;
 }
 interface Department { id: number; name_ar: string; name_en: string; description_ar?: string | null; created_at?: string; }
 interface JobTitle    { id: number; name_ar: string; name_en: string; created_at?: string; }
+interface Branch      { id: number; name: string; address?: string | null; is_active: boolean; }
 interface StatusHistoryEntry { id: number; old_status?: string | null; new_status: string; reason?: string | null; changed_at?: string; }
 interface EmpDocument { id: number; document_type: string; file_name: string; expiry_date?: string | null; verified_at?: string | null; notes?: string | null; created_at?: string; }
 
@@ -52,7 +54,7 @@ function blankEmp(): Partial<Employee> {
   return {
     first_name_ar: "", last_name_ar: "", first_name_en: "", last_name_en: "",
     email: "", phone: "", personal_phone: "", national_id: "",
-    job_title_id: null, department_id: null,
+    job_title_id: null, department_id: null, branch_id: null,
     hire_date: new Date().toISOString().split("T")[0],
     salary: 0, currency: "EGP", bank_account: "",
     address_ar: "", address_en: "", city: "", country: "مصر", notes: "",
@@ -103,6 +105,12 @@ export default function Employees() {
     queryFn:  () => authFetch(api("/api/job-titles")).then(r => r.json()),
   });
   const jobTitles: JobTitle[] = safeArray(jtsRaw);
+
+  const { data: branchesRaw } = useQuery({
+    queryKey: ["/api/branches"],
+    queryFn:  () => authFetch(api("/api/branches")).then(r => r.json()),
+  });
+  const branches: Branch[] = safeArray(branchesRaw);
 
   const { data: histRaw } = useQuery({
     queryKey: ["/api/employees", selected?.id, "history"],
@@ -420,6 +428,7 @@ export default function Employees() {
                   <InfoRow icon={IdCard}         label="الرقم القومي"       value={selected.national_id} />
                   <InfoRow icon={Building2}      label="القسم"              value={selected.department_name} />
                   <InfoRow icon={Briefcase}      label="المسمى الوظيفي"    value={selected.job_title_name} />
+                  <InfoRow icon={Building2}      label="الفرع"              value={selected.branch_name} />
                   <InfoRow icon={CalendarDays}   label="تاريخ التعيين"      value={selected.hire_date} />
                   {canViewSalary && selected.salary != null && (
                     <InfoRow icon={Wallet} label="الراتب" value={`${selected.salary.toLocaleString("ar-EG")} ${selected.currency}`} />
@@ -649,15 +658,29 @@ export default function Employees() {
                 <Field label="تاريخ التعيين *">
                   <input type="date" value={editEmp.hire_date ?? ""} onChange={e => set("hire_date", e.target.value)} className="erp-input w-full" />
                 </Field>
-                <Field label="الراتب الأساسي *">
-                  <div className="flex gap-2 w-full">
-                    <input type="number" value={editEmp.salary ?? 0} onChange={e => set("salary", Number(e.target.value))} className="erp-input flex-1 min-w-0" min={0} />
-                    <select value={editEmp.currency ?? "EGP"} onChange={e => set("currency", e.target.value)} className="erp-input w-20 shrink-0">
-                      {["EGP", "SAR", "AED", "USD"].map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
+                <Field label="الفرع">
+                  <select value={editEmp.branch_id ?? ""} onChange={e => set("branch_id", e.target.value ? Number(e.target.value) : null)} className="erp-input w-full">
+                    <option value="">— اختر الفرع —</option>
+                    {branches.filter(b => b.is_active).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
                 </Field>
               </div>
+              {/* Salary — full width to avoid cramping */}
+              <Field label="الراتب الأساسي *">
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={editEmp.salary ?? 0}
+                    onChange={e => set("salary", Number(e.target.value))}
+                    className="erp-input flex-1"
+                    min={0}
+                    style={{ minWidth: 0 }}
+                  />
+                  <select value={editEmp.currency ?? "EGP"} onChange={e => set("currency", e.target.value)} className="erp-input" style={{ width: "90px", flexShrink: 0 }}>
+                    {["EGP", "SAR", "AED", "USD"].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </Field>
               <Field label="العنوان">
                 <input value={editEmp.address_ar ?? ""} onChange={e => set("address_ar", e.target.value)} className="erp-input w-full" placeholder="العنوان الكامل" />
               </Field>

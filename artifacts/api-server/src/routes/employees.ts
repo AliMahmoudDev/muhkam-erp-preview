@@ -12,6 +12,7 @@ import {
   employeeStatusHistoryTable,
   departmentsTable,
   jobTitlesTable,
+  branchesTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
@@ -191,6 +192,7 @@ const employeeCreateSchema = z.object({
   national_id:       z.string().optional(),
   job_title_id:      z.number().optional().nullable(),
   department_id:     z.number().optional().nullable(),
+  branch_id:         z.number().optional().nullable(),
   hire_date:         z.string().min(1, "تاريخ التعيين مطلوب"),
   salary:            z.number().min(0, "الراتب يجب أن يكون رقماً موجباً"),
   currency:          z.string().optional().default("EGP"),
@@ -248,6 +250,7 @@ router.get("/employees", wrap(async (req, res) => {
       national_id:       employeesTable.national_id,
       job_title_id:      employeesTable.job_title_id,
       department_id:     employeesTable.department_id,
+      branch_id:         employeesTable.branch_id,
       hire_date:         employeesTable.hire_date,
       employment_status: employeesTable.employment_status,
       salary:            employeesTable.salary,
@@ -256,10 +259,12 @@ router.get("/employees", wrap(async (req, res) => {
       updated_at:        employeesTable.updated_at,
       department_name:   departmentsTable.name_ar,
       job_title_name:    jobTitlesTable.name_ar,
+      branch_name:       branchesTable.name,
     })
     .from(employeesTable)
     .leftJoin(departmentsTable, eq(employeesTable.department_id, departmentsTable.id))
     .leftJoin(jobTitlesTable,   eq(employeesTable.job_title_id, jobTitlesTable.id))
+    .leftJoin(branchesTable,    eq(employeesTable.branch_id, branchesTable.id))
     .where(and(...conditions))
     .orderBy(desc(employeesTable.created_at))
     .limit(limit)
@@ -325,6 +330,7 @@ router.post("/employees", wrap(async (req, res) => {
     national_id:       data.national_id ?? null,
     job_title_id:      data.job_title_id ?? null,
     department_id:     data.department_id ?? null,
+    branch_id:         data.branch_id ?? null,
     hire_date:         data.hire_date,
     employment_status: "active",
     salary:            String(data.salary),
@@ -376,6 +382,7 @@ router.get("/employees/:id", wrap(async (req, res) => {
       national_id:       employeesTable.national_id,
       job_title_id:      employeesTable.job_title_id,
       department_id:     employeesTable.department_id,
+      branch_id:         employeesTable.branch_id,
       hire_date:         employeesTable.hire_date,
       employment_status: employeesTable.employment_status,
       salary:            employeesTable.salary,
@@ -392,10 +399,12 @@ router.get("/employees/:id", wrap(async (req, res) => {
       created_by:        employeesTable.created_by,
       department_name:   departmentsTable.name_ar,
       job_title_name:    jobTitlesTable.name_ar,
+      branch_name:       branchesTable.name,
     })
     .from(employeesTable)
     .leftJoin(departmentsTable, eq(employeesTable.department_id, departmentsTable.id))
     .leftJoin(jobTitlesTable,   eq(employeesTable.job_title_id, jobTitlesTable.id))
+    .leftJoin(branchesTable,    eq(employeesTable.branch_id, branchesTable.id))
     .where(and(eq(employeesTable.id, id), eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at)));
 
   if (rows.length === 0) { res.status(404).json({ error: "الموظف غير موجود" }); return; }
@@ -438,6 +447,7 @@ router.put("/employees/:id", wrap(async (req, res) => {
   if (data.national_id   !== undefined) updates["national_id"]   = data.national_id ?? null;
   if (data.job_title_id  !== undefined) updates["job_title_id"]  = data.job_title_id ?? null;
   if (data.department_id !== undefined) updates["department_id"] = data.department_id ?? null;
+  if (data.branch_id     !== undefined) updates["branch_id"]     = data.branch_id ?? null;
   if (data.hire_date     !== undefined) updates["hire_date"]     = data.hire_date;
   if (data.salary        !== undefined) updates["salary"]        = String(data.salary);
   if (data.currency      !== undefined) updates["currency"]      = data.currency;

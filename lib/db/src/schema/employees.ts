@@ -3,6 +3,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { companiesTable } from "./companies";
+import { branchesTable } from "./branches";
 
 /* ── Departments ─────────────────────────────────────────────────── */
 export const departmentsTable = pgTable("departments", {
@@ -51,6 +52,7 @@ export const employeesTable = pgTable("employees", {
   national_id:        text("national_id"),
   job_title_id:       integer("job_title_id").references(() => jobTitlesTable.id),
   department_id:      integer("department_id").references(() => departmentsTable.id),
+  branch_id:          integer("branch_id").references(() => branchesTable.id),
   hire_date:          text("hire_date").notNull(),
   employment_status:  text("employment_status").notNull().default("active"),
   salary:             numeric("salary", { precision: 12, scale: 2 }).notNull().default("0"),
