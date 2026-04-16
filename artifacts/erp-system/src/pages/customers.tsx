@@ -1108,8 +1108,8 @@ export default function Customers() {
                   </select>
                   {formData.classification_id && (
                     <button type="button"
-                      onClick={() => setFormData(f => ({ ...f, classification_id: null }))}
-                      className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors shrink-0" title="حذف التصنيف المختار">
+                      onClick={() => handleDeleteClassification(formData.classification_id!)}
+                      className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors shrink-0" title="حذف التصنيف نهائياً">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
@@ -1344,8 +1344,8 @@ export default function Customers() {
                   </select>
                   {editFormData.classification_id && (
                     <button type="button"
-                      onClick={() => setEditFormData(f => ({ ...f, classification_id: null }))}
-                      className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors shrink-0" title="حذف التصنيف المختار">
+                      onClick={() => handleDeleteClassification(editFormData.classification_id!)}
+                      className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors shrink-0" title="حذف التصنيف نهائياً">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
