@@ -1526,7 +1526,7 @@ export default function Customers() {
       {confirmDeleteClassificationId !== null && (
         <ConfirmModal
           title="حذف التصنيف"
-          description={`هل أنت متأكد من حذف التصنيف "${classifications.find(c => c.id === confirmDeleteClassificationId)?.name ?? ""}"؟ سيتم إزالة التصنيف من جميع العملاء المرتبطين به دون التأثير على بياناتهم.`}
+          description={`هل أنت متأكد من حذف التصنيف "${classifications.find(c => c.id === confirmDeleteClassificationId)?.name ?? ""}"؟ لن يمكن الحذف إذا كان التصنيف مرتبطًا بأي عميل.`}
           isPending={false}
           onConfirm={async () => {
             const id = confirmDeleteClassificationId;
