@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, max, asc, sql } from "drizzle-orm";
-import { db, customersTable, transactionsTable, safesTable, customerLedgerTable } from "@workspace/db";
+import { db, customersTable, transactionsTable, safesTable, customerLedgerTable, customerClassificationsTable } from "@workspace/db";
 import { writeAuditLog } from "../lib/audit-log";
 import { hasPermission } from "../lib/permissions";
 import { getCustomerLedgerBalance } from "../lib/ledger-balance";
@@ -59,12 +59,14 @@ router.get("/customers", wrap(async (req, res) => {
     SELECT
       c.id, c.name, c.customer_code, c.phone,
       c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at,
+      c.classification_id,
       COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS ledger_balance
     FROM customers c
     LEFT JOIN customer_ledger cl ON cl.customer_id = c.id
     ${companyFilter}
     GROUP BY c.id, c.name, c.customer_code, c.phone,
-             c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at
+             c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at,
+             c.classification_id
     ORDER BY c.customer_code
     LIMIT ${limitC}
   `);
@@ -77,10 +79,11 @@ router.get("/customers", wrap(async (req, res) => {
     is_customer: r.is_customer ?? true,
     is_supplier: r.is_supplier ?? false,
     account_id: r.account_id,
+    classification_id: r.classification_id ?? null,
     normalized_name: r.normalized_name,
     created_at: new Date(r.created_at).toISOString(),
   }));
-  res.json(GetCustomersResponse.parse(customers));
+  res.json(customers);
 }));
 
 router.post("/customers", wrap(async (req, res) => {
@@ -106,6 +109,10 @@ router.post("/customers", wrap(async (req, res) => {
 
   const newCode = await getNextCustomerCode();
 
+  const newClassificationId = req.body.classification_id
+    ? parseInt(String(req.body.classification_id), 10) || null
+    : null;
+
   const [customer] = await db.insert(customersTable).values({
     name: parsed.data.name.trim(),
     customer_code: newCode,
@@ -114,6 +121,7 @@ router.post("/customers", wrap(async (req, res) => {
     balance: String(parsed.data.balance ?? 0),
     is_customer: parsed.data.is_customer ?? true,
     is_supplier: parsed.data.is_supplier ?? false,
+    classification_id: newClassificationId,
     company_id: req.user?.company_id ?? undefined,
   }).returning();
 
@@ -213,6 +221,10 @@ router.put("/customers/:id", wrap(async (req, res) => {
 
   const [before] = await db.select().from(customersTable).where(eq(customersTable.id, params.data.id));
 
+  const classificationId = req.body.classification_id !== undefined
+    ? (req.body.classification_id === null ? null : parseInt(String(req.body.classification_id), 10))
+    : undefined;
+
   const [customer] = await db.update(customersTable).set({
     name: parsed.data.name.trim(),
     normalized_name: normalized,
@@ -220,6 +232,7 @@ router.put("/customers/:id", wrap(async (req, res) => {
     balance: parsed.data.balance !== undefined ? String(parsed.data.balance) : undefined,
     is_customer: parsed.data.is_customer !== undefined ? parsed.data.is_customer : undefined,
     is_supplier: parsed.data.is_supplier !== undefined ? parsed.data.is_supplier : undefined,
+    ...(classificationId !== undefined ? { classification_id: isNaN(classificationId as number) ? null : classificationId } : {}),
   }).where(eq(customersTable.id, params.data.id)).returning();
   if (!customer) {
     res.status(404).json({ error: "Customer not found" });
@@ -475,6 +488,49 @@ router.post("/customers/:id/supplier-payment", wrap(async (req, res) => {
   });
 
   res.json({ success: true, customer: formatCustomer(resultCustomer!) });
+}));
+
+/* ─── تصنيفات العملاء ─── */
+
+router.get("/customer-classifications", wrap(async (req, res) => {
+  const companyId = req.user?.company_id ?? 1;
+  const rows = await db
+    .select()
+    .from(customerClassificationsTable)
+    .where(eq(customerClassificationsTable.company_id, companyId))
+    .orderBy(asc(customerClassificationsTable.name));
+  res.json(rows);
+}));
+
+router.post("/customer-classifications", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_customers")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
+  const name = String(req.body.name ?? "").trim();
+  if (!name) { res.status(400).json({ error: "أدخل اسم التصنيف" }); return; }
+  const companyId = req.user?.company_id ?? 1;
+  const [created] = await db
+    .insert(customerClassificationsTable)
+    .values({ name, company_id: companyId })
+    .returning();
+  res.status(201).json(created);
+}));
+
+router.delete("/customer-classifications/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_customers")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
+  const id = parseInt(String(req.params.id), 10);
+  if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
+  const companyId = req.user?.company_id ?? 1;
+  await db
+    .update(customersTable)
+    .set({ classification_id: null })
+    .where(eq(customersTable.classification_id, id));
+  await db
+    .delete(customerClassificationsTable)
+    .where(eq(customerClassificationsTable.id, id));
+  res.json({ success: true });
 }));
 
 export default router;

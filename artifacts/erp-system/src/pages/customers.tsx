@@ -811,16 +811,62 @@ export default function Customers() {
   const [showAdd, setShowAdd] = useState(false);
   const [showReceipt, setShowReceipt] = useState<{ id: number; name: string; balance: number } | null>(null);
   const [showStatement, setShowStatement] = useState<{ id: number; name: string; phone: string; balance: number; isSupplier: boolean } | null>(null);
-  const [formData, setFormData] = useState({ name: "", phone: "", balance: 0, is_customer: true, is_supplier: false });
+  const [formData, setFormData] = useState({ name: "", phone: "", balance: 0, is_customer: true, is_supplier: false, classification_id: null as number | null });
   const [receiptData, setReceiptData] = useState({ amount: "", notes: "", safe_id: "" });
 
   const [showSupplierPayment, setShowSupplierPayment] = useState<{ id: number; name: string; balance: number } | null>(null);
   const [supplierPaymentData, setSupplierPaymentData] = useState({ amount: "", notes: "", safe_id: "" });
 
-  const [showEdit, setShowEdit] = useState<{ id: number; name: string; phone: string; is_customer: boolean; is_supplier: boolean } | null>(null);
-  const [editFormData, setEditFormData] = useState({ name: "", phone: "", is_customer: true, is_supplier: false });
+  const [showEdit, setShowEdit] = useState<{ id: number; name: string; phone: string; is_customer: boolean; is_supplier: boolean; classification_id?: number | null } | null>(null);
+  const [editFormData, setEditFormData] = useState({ name: "", phone: "", is_customer: true, is_supplier: false, classification_id: null as number | null });
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+  const [showNewClassification, setShowNewClassification] = useState(false);
+  const [newClassificationName, setNewClassificationName] = useState("");
+
+  const { data: classificationsRaw, refetch: refetchClassifications } = useQuery({
+    queryKey: ["/api/customer-classifications"],
+    queryFn: async () => {
+      const r = await authFetch(api("/api/customer-classifications"));
+      return (await r.json()) as Array<{ id: number; name: string }>;
+    },
+  });
+  const classifications = safeArray(classificationsRaw);
+
+  const handleAddClassification = async () => {
+    if (!newClassificationName.trim()) return;
+    try {
+      const r = await authFetch(api("/api/customer-classifications"), {
+        method: "POST",
+        body: JSON.stringify({ name: newClassificationName.trim() }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "خطأ في الإضافة");
+      await refetchClassifications();
+      setFormData(f => ({ ...f, classification_id: j.id }));
+      setEditFormData(f => ({ ...f, classification_id: j.id }));
+      setNewClassificationName("");
+      setShowNewClassification(false);
+      toast({ title: "✅ تم إضافة التصنيف" });
+    } catch (e: unknown) {
+      toast({ title: (e as Error).message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteClassification = async (id: number) => {
+    try {
+      const r = await authFetch(api(`/api/customer-classifications/${id}`), { method: "DELETE" });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "خطأ في الحذف");
+      await refetchClassifications();
+      if (formData.classification_id === id) setFormData(f => ({ ...f, classification_id: null }));
+      if (editFormData.classification_id === id) setEditFormData(f => ({ ...f, classification_id: null }));
+      toast({ title: "✅ تم حذف التصنيف" });
+    } catch (e: unknown) {
+      toast({ title: (e as Error).message, variant: "destructive" });
+    }
+  };
 
   const filtered = customers.filter(c =>
     c.name.includes(search) ||
@@ -835,7 +881,9 @@ export default function Customers() {
         toast({ title: "✅ تم إضافة العميل بنجاح" });
         queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
         setShowAdd(false);
-        setFormData({ name: "", phone: "", balance: 0, is_customer: true, is_supplier: false });
+        setFormData({ name: "", phone: "", balance: 0, is_customer: true, is_supplier: false, classification_id: null });
+        setShowNewClassification(false);
+        setNewClassificationName("");
       }
     });
   };
@@ -919,10 +967,10 @@ export default function Customers() {
 
   // ─── تعديل عميل ───
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: number; name: string; phone: string; is_customer: boolean; is_supplier: boolean }) => {
+    mutationFn: async (data: { id: number; name: string; phone: string; is_customer: boolean; is_supplier: boolean; classification_id: number | null }) => {
       const r = await authFetch(api(`/api/customers/${data.id}`), {
         method: "PUT",
-        body: JSON.stringify({ name: data.name, phone: data.phone || null, is_customer: data.is_customer, is_supplier: data.is_supplier }),
+        body: JSON.stringify({ name: data.name, phone: data.phone || null, is_customer: data.is_customer, is_supplier: data.is_supplier, classification_id: data.classification_id }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "خطأ في التعديل");
@@ -940,7 +988,7 @@ export default function Customers() {
     e.preventDefault();
     if (!showEdit) return;
     if (!editFormData.name.trim()) { toast({ title: "أدخل اسم العميل", variant: "destructive" }); return; }
-    updateMutation.mutate({ id: showEdit.id, name: editFormData.name, phone: editFormData.phone, is_customer: editFormData.is_customer, is_supplier: editFormData.is_supplier });
+    updateMutation.mutate({ id: showEdit.id, name: editFormData.name, phone: editFormData.phone, is_customer: editFormData.is_customer, is_supplier: editFormData.is_supplier, classification_id: editFormData.classification_id });
   };
 
   // ─── حذف عميل ───
@@ -1026,6 +1074,56 @@ export default function Customers() {
                 <input type="number" step="0.01" className="glass-input" value={formData.balance || ''} onChange={e => setFormData({...formData, balance: parseFloat(e.target.value) || 0})} />
               </div>
 
+              {/* تصنيف العميل */}
+              <div>
+                <label className="block text-white/70 text-sm mb-1">تصنيف العميل</label>
+                <select
+                  className="glass-input w-full appearance-none"
+                  value={formData.classification_id ?? ""}
+                  onChange={e => setFormData(f => ({ ...f, classification_id: e.target.value ? parseInt(e.target.value) : null }))}
+                >
+                  <option value="" className="bg-gray-900">-- بدون تصنيف --</option>
+                  {classifications.map(c => (
+                    <option key={c.id} value={c.id} className="bg-gray-900">{c.name}</option>
+                  ))}
+                </select>
+                {canManageCustomers && (
+                  <div className="mt-2 space-y-1">
+                    {classifications.map(c => (
+                      <div key={c.id} className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                        <span className="text-white/60 text-xs">{c.name}</span>
+                        <button type="button" onClick={() => handleDeleteClassification(c.id)}
+                          className="text-red-400/70 hover:text-red-400 p-0.5 transition-colors" title="حذف التصنيف">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {showNewClassification ? (
+                      <div className="flex gap-2 mt-1">
+                        <input type="text" autoFocus className="glass-input flex-1 text-sm py-1.5"
+                          placeholder="اسم التصنيف الجديد"
+                          value={newClassificationName}
+                          onChange={e => setNewClassificationName(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddClassification(); } }} />
+                        <button type="button" onClick={handleAddClassification}
+                          className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors">
+                          حفظ
+                        </button>
+                        <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(""); }}
+                          className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors">
+                          إلغاء
+                        </button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => setShowNewClassification(true)}
+                        className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1 transition-colors">
+                        <Plus className="w-3 h-3" /> إضافة تصنيف جديد
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* أدوار الطرف الآخر */}
               <div className="border border-white/10 rounded-2xl p-4 bg-white/3 space-y-3">
                 <p className="text-white/50 text-xs font-semibold mb-1">الدور في العمليات</p>
@@ -1047,7 +1145,7 @@ export default function Customers() {
             </div>
             <div className="flex gap-4 mt-8">
               <button type="submit" disabled={createMutation.isPending} className="flex-1 btn-primary py-3">حفظ</button>
-              <button type="button" onClick={() => { setShowAdd(false); setFormData({ name: "", phone: "", balance: 0, is_customer: true, is_supplier: false }); }} className="flex-1 btn-secondary py-3">إلغاء</button>
+              <button type="button" onClick={() => { setShowAdd(false); setFormData({ name: "", phone: "", balance: 0, is_customer: true, is_supplier: false, classification_id: null }); setShowNewClassification(false); setNewClassificationName(""); }} className="flex-1 btn-secondary py-3">إلغاء</button>
             </div>
           </form>
         </div>
@@ -1218,6 +1316,56 @@ export default function Customers() {
                 <input type="text" className="glass-input" value={editFormData.phone}
                   onChange={e => setEditFormData(f => ({ ...f, phone: e.target.value }))} placeholder="01xxxxxxxxx" />
               </div>
+              {/* تصنيف العميل */}
+              <div>
+                <label className="block text-white/70 text-sm mb-1">تصنيف العميل</label>
+                <select
+                  className="glass-input w-full appearance-none"
+                  value={editFormData.classification_id ?? ""}
+                  onChange={e => setEditFormData(f => ({ ...f, classification_id: e.target.value ? parseInt(e.target.value) : null }))}
+                >
+                  <option value="" className="bg-gray-900">-- بدون تصنيف --</option>
+                  {classifications.map(c => (
+                    <option key={c.id} value={c.id} className="bg-gray-900">{c.name}</option>
+                  ))}
+                </select>
+                {canManageCustomers && (
+                  <div className="mt-2 space-y-1">
+                    {classifications.map(c => (
+                      <div key={c.id} className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                        <span className="text-white/60 text-xs">{c.name}</span>
+                        <button type="button" onClick={() => handleDeleteClassification(c.id)}
+                          className="text-red-400/70 hover:text-red-400 p-0.5 transition-colors" title="حذف التصنيف">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {showNewClassification ? (
+                      <div className="flex gap-2 mt-1">
+                        <input type="text" autoFocus className="glass-input flex-1 text-sm py-1.5"
+                          placeholder="اسم التصنيف الجديد"
+                          value={newClassificationName}
+                          onChange={e => setNewClassificationName(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddClassification(); } }} />
+                        <button type="button" onClick={handleAddClassification}
+                          className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors">
+                          حفظ
+                        </button>
+                        <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(""); }}
+                          className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors">
+                          إلغاء
+                        </button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => setShowNewClassification(true)}
+                        className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1 transition-colors">
+                        <Plus className="w-3 h-3" /> إضافة تصنيف جديد
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="border border-white/10 rounded-2xl p-4 bg-white/3 space-y-3">
                 <p className="text-white/50 text-xs font-semibold mb-1">الدور في العمليات</p>
                 <button type="button" onClick={() => setEditFormData(f => ({ ...f, is_customer: !f.is_customer }))}
@@ -1355,8 +1503,8 @@ export default function Customers() {
                         {canManageCustomers && (
                           <button
                             onClick={() => {
-                              setShowEdit({ id: customer.id, name: customer.name, phone: customer.phone || "", is_customer: customer.is_customer ?? true, is_supplier: customer.is_supplier ?? false });
-                              setEditFormData({ name: customer.name, phone: customer.phone || "", is_customer: customer.is_customer ?? true, is_supplier: customer.is_supplier ?? false });
+                              setShowEdit({ id: customer.id, name: customer.name, phone: customer.phone || "", is_customer: customer.is_customer ?? true, is_supplier: customer.is_supplier ?? false, classification_id: (customer as any).classification_id ?? null });
+                              setEditFormData({ name: customer.name, phone: customer.phone || "", is_customer: customer.is_customer ?? true, is_supplier: customer.is_supplier ?? false, classification_id: (customer as any).classification_id ?? null });
                             }}
                             className="p-1.5 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80 transition-colors border border-white/10"
                             title="تعديل"

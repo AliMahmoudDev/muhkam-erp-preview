@@ -3,6 +3,17 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { companiesTable } from "./companies";
 
+export const customerClassificationsTable = pgTable("customer_classifications", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const insertCustomerClassificationSchema = createInsertSchema(customerClassificationsTable).omit({ id: true, created_at: true });
+export type InsertCustomerClassification = z.infer<typeof insertCustomerClassificationSchema>;
+export type CustomerClassification = typeof customerClassificationsTable.$inferSelect;
+
 export const customersTable = pgTable("customers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -13,6 +24,7 @@ export const customersTable = pgTable("customers", {
   is_customer: boolean("is_customer").notNull().default(true),
   is_supplier: boolean("is_supplier").notNull().default(false),
   account_id: integer("account_id"),
+  classification_id: integer("classification_id").references(() => customerClassificationsTable.id),
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
