@@ -270,7 +270,7 @@ export default function Expenses() {
       {confirmDeleteCatId !== null && (
         <ConfirmModal
           title="حذف التصنيف"
-          description="هل أنت متأكد من حذف هذا التصنيف؟ لن يمكن الحذف إذا كان هناك أي مصروف مسجل عليه."
+          description="هل أنت متأكد من حذف هذا التصنيف؟ إذا كان هناك أي مصروف مسجل عليه فلن يمكن حذفه."
           isPending={false}
           onConfirm={() => handleDeleteCategory(confirmDeleteCatId)}
           onCancel={() => setConfirmDeleteCatId(null)}

@@ -88,13 +88,14 @@ router.delete("/categories/:id", wrap(async (req, res) => {
   if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
 
   const companyId = req.user?.company_id ?? 1;
-  const [linked] = await db
-    .select({ c: sql<number>`cast(count(*) as int)` })
+  const [purchaseCategory] = await db
+    .select({ id: productsTable.id })
     .from(productsTable)
-    .where(and(eq(productsTable.category_id, id), eq(productsTable.company_id, companyId)));
+    .where(and(eq(productsTable.category_id, id), eq(productsTable.company_id, companyId)))
+    .limit(1);
 
-  if ((linked?.c ?? 0) > 0) {
-    res.status(409).json({ error: "لا يمكن حذف تصنيف مرتبط بمنتجات" });
+  if (purchaseCategory) {
+    res.status(409).json({ error: "لا يمكن حذف التصنيف لأنه مرتبط بمنتجات" });
     return;
   }
 
