@@ -1114,6 +1114,26 @@ export default function Customers() {
                     </button>
                   )}
                 </div>
+                {canManageCustomers && (
+                  showNewClassification ? (
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <input type="text" autoFocus className="glass-input flex-1 text-sm py-1.5"
+                        placeholder="اسم التصنيف الجديد"
+                        value={newClassificationName}
+                        onChange={e => setNewClassificationName(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddClassification(); } if (e.key === "Escape") { setShowNewClassification(false); setNewClassificationName(""); } }} />
+                      <button type="button" onClick={handleAddClassification}
+                        className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors shrink-0">حفظ</button>
+                      <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(""); }}
+                        className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors shrink-0">إلغاء</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setShowNewClassification(true)}
+                      className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1.5 transition-colors">
+                      <Plus className="w-3 h-3" /> إضافة تصنيف جديد
+                    </button>
+                  )
+                )}
               </div>
 
               {/* أدوار الطرف الآخر */}
@@ -1330,6 +1350,26 @@ export default function Customers() {
                     </button>
                   )}
                 </div>
+                {canManageCustomers && (
+                  showNewClassification ? (
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <input type="text" autoFocus className="glass-input flex-1 text-sm py-1.5"
+                        placeholder="اسم التصنيف الجديد"
+                        value={newClassificationName}
+                        onChange={e => setNewClassificationName(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddClassification(); } if (e.key === "Escape") { setShowNewClassification(false); setNewClassificationName(""); } }} />
+                      <button type="button" onClick={handleAddClassification}
+                        className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors shrink-0">حفظ</button>
+                      <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(""); }}
+                        className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors shrink-0">إلغاء</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setShowNewClassification(true)}
+                      className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1.5 transition-colors">
+                      <Plus className="w-3 h-3" /> إضافة تصنيف جديد
+                    </button>
+                  )
+                )}
               </div>
 
               <div className="border border-white/10 rounded-2xl p-4 bg-white/3 space-y-3">
