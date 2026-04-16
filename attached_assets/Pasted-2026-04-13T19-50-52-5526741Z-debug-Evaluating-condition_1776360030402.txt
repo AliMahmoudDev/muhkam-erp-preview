@@ -1,0 +1,247 @@
+2026-04-13T19:50:52.5526741Z ##[debug]Evaluating condition for step: 'Lint backend'
+2026-04-13T19:50:52.5529143Z ##[debug]Evaluating: success()
+2026-04-13T19:50:52.5529724Z ##[debug]Evaluating success:
+2026-04-13T19:50:52.5530360Z ##[debug]=> true
+2026-04-13T19:50:52.5531333Z ##[debug]Result: true
+2026-04-13T19:50:52.5532187Z ##[debug]Starting: Lint backend
+2026-04-13T19:50:52.5543327Z ##[debug]Loading inputs
+2026-04-13T19:50:52.5544481Z ##[debug]Loading env
+2026-04-13T19:50:52.5547956Z ##[group]Run pnpm --filter @workspace/api-server lint
+2026-04-13T19:50:52.5548313Z [36;1mpnpm --filter @workspace/api-server lint[0m
+2026-04-13T19:50:52.5570036Z shell: /usr/bin/bash -e {0}
+2026-04-13T19:50:52.5570271Z env:
+2026-04-13T19:50:52.5570496Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+2026-04-13T19:50:52.5571054Z ##[endgroup]
+2026-04-13T19:50:52.5595429Z ##[debug]/usr/bin/bash -e /home/runner/work/_temp/60e79f19-ae35-4854-9162-3e94546a250d.sh
+2026-04-13T19:50:52.8791000Z 
+2026-04-13T19:50:52.8792151Z > @workspace/api-server@0.0.0 lint /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server
+2026-04-13T19:50:52.8793167Z > eslint src --ext .ts
+2026-04-13T19:50:52.8793390Z 
+2026-04-13T19:50:55.4008364Z 
+2026-04-13T19:50:55.4009563Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/__tests__/auth.test.ts
+2026-04-13T19:50:55.4046929Z ##[warning]  40:69  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4054908Z ##[warning]  48:69  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4055763Z 
+2026-04-13T19:50:55.4056114Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/__tests__/setup.ts
+2026-04-13T19:50:55.4057021Z ##[warning]  10:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4058274Z ##[warning]  10:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4059558Z ##[warning]  10:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4060313Z 
+2026-04-13T19:50:55.4061149Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/__tests__/tenant.test.ts
+2026-04-13T19:50:55.4062249Z ##[warning]  47:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4063657Z ##[warning]  77:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4064935Z ##[warning]  91:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4065699Z 
+2026-04-13T19:50:55.4066046Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/lib/alert-service.ts
+2026-04-13T19:50:55.4066967Z ##[warning]  55:22  warning  Generic Object Injection Sink  security/detect-object-injection
+2026-04-13T19:50:55.4067700Z 
+2026-04-13T19:50:55.4068028Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/lib/audit-log.ts
+2026-04-13T19:50:55.4068726Z ##[warning]  75:5  warning  Unexpected console statement  no-console
+2026-04-13T19:50:55.4069368Z 
+2026-04-13T19:50:55.4069715Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/lib/backup-service.ts
+2026-04-13T19:50:55.4071256Z ##[warning]   32:8   warning  Found existsSync from package "node:fs" with non literal argument at index 0     security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4072959Z ##[warning]   33:5   warning  Found mkdirSync from package "node:fs" with non literal argument at index 0      security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4074653Z ##[warning]  131:5   warning  Found writeFileSync from package "node:fs" with non literal argument at index 0  security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4076302Z ##[warning]  148:15  warning  Found existsSync from package "node:fs" with non literal argument at index 0     security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4078200Z ##[warning]  148:39  warning  Found unlinkSync from package "node:fs" with non literal argument at index 0     security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4079115Z 
+2026-04-13T19:50:55.4079436Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/lib/db-backup.ts
+2026-04-13T19:50:55.4080496Z ##[warning]  17:8   warning  Found existsSync from package "fs" with non literal argument at index 0   security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4082315Z ##[warning]  18:5   warning  Found mkdirSync from package "fs" with non literal argument at index 0    security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4083872Z ##[warning]  43:16  warning  Found statSync from package "fs" with non literal argument at index 0     security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4085461Z ##[warning]  51:8   warning  Found existsSync from package "fs" with non literal argument at index 0   security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4087031Z ##[warning]  52:17  warning  Found readdirSync from package "fs" with non literal argument at index 0  security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4088587Z ##[warning]  54:33  warning  Found statSync from package "fs" with non literal argument at index 0     security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4090131Z ##[warning]  58:5   warning  Found unlinkSync from package "fs" with non literal argument at index 0   security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4091877Z ##[warning]  64:8   warning  Found existsSync from package "fs" with non literal argument at index 0   security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4093445Z ##[warning]  65:10  warning  Found readdirSync from package "fs" with non literal argument at index 0  security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4095082Z ##[warning]  68:21  warning  Found statSync from package "fs" with non literal argument at index 0     security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4095941Z 
+2026-04-13T19:50:55.4096265Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/lib/integrity.ts
+2026-04-13T19:50:55.4097093Z ##[warning]   64:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4098339Z ##[warning]  112:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4099580Z ##[warning]  157:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4101197Z ##[warning]  198:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4102139Z 
+2026-04-13T19:50:55.4102651Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/lib/ledger-balance.ts
+2026-04-13T19:50:55.4103586Z ##[warning]  26:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4104946Z ##[warning]  40:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4106214Z ##[warning]  53:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4107442Z ##[warning]  66:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4108400Z 
+2026-04-13T19:50:55.4108733Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/lib/permissions.ts
+2026-04-13T19:50:55.4109531Z ##[warning]  126:7  warning  Generic Object Injection Sink  security/detect-object-injection
+2026-04-13T19:50:55.4110855Z ##[warning]  127:7  warning  Generic Object Injection Sink  security/detect-object-injection
+2026-04-13T19:50:55.4112048Z ##[warning]  131:7  warning  Generic Object Injection Sink  security/detect-object-injection
+2026-04-13T19:50:55.4113176Z ##[warning]  132:7  warning  Generic Object Injection Sink  security/detect-object-injection
+2026-04-13T19:50:55.4113886Z 
+2026-04-13T19:50:55.4114199Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/lib/sanitize.ts
+2026-04-13T19:50:55.4115123Z ##[warning]  11:16  warning  Generic Object Injection Sink  security/detect-object-injection
+2026-04-13T19:50:55.4116267Z ##[warning]  12:7   warning  Generic Object Injection Sink  security/detect-object-injection
+2026-04-13T19:50:55.4117405Z ##[warning]  12:65  warning  Generic Object Injection Sink  security/detect-object-injection
+2026-04-13T19:50:55.4118100Z 
+2026-04-13T19:50:55.4118426Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/accounts.ts
+2026-04-13T19:50:55.4119338Z ##[warning]  9:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4120095Z 
+2026-04-13T19:50:55.4120408Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/admin.ts
+2026-04-13T19:50:55.4121406Z ##[warning]   98:39  warning  Generic Object Injection Sink             security/detect-object-injection
+2026-04-13T19:50:55.4122661Z ##[warning]  103:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4123882Z ##[warning]  112:33  warning  Function Call Object Injection Sink       security/detect-object-injection
+2026-04-13T19:50:55.4125103Z ##[warning]  118:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4179653Z 
+2026-04-13T19:50:55.4180231Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/attendance.ts
+2026-04-13T19:50:55.4182667Z ##[error]  159:9  error  'today' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-04-13T19:50:55.4184146Z 
+2026-04-13T19:50:55.4184752Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/backups.ts
+2026-04-13T19:50:55.4186776Z ##[warning]  111:8   warning  Found existsSync from package "node:fs" with non literal argument at index 0  security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4189049Z ##[warning]  133:7   warning  Found existsSync from package "node:fs" with non literal argument at index 0  security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4191128Z ##[warning]  133:32  warning  Found unlinkSync from package "node:fs" with non literal argument at index 0  security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4192093Z 
+2026-04-13T19:50:55.4192435Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/contacts.ts
+2026-04-13T19:50:55.4193299Z ##[warning]  31:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4194067Z 
+2026-04-13T19:50:55.4194400Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/customers.ts
+2026-04-13T19:50:55.4195230Z ##[warning]   71:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4196466Z ##[warning]  174:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4197226Z 
+2026-04-13T19:50:55.4197587Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/deposit-vouchers.ts
+2026-04-13T19:50:55.4198428Z ##[warning]  11:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4199180Z 
+2026-04-13T19:50:55.4199691Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/employees.ts
+2026-04-13T19:50:55.4200549Z   454:3   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+2026-04-13T19:50:55.4202258Z ##[debug]Dropping file value '/home/runner/work/Schema-Sync/Schema-Sync/454:3   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')'. Path does not exist
+2026-04-13T19:50:55.4203594Z ##[warning]  456:21  warning  Unexpected any. Specify a different type                                                               @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4204660Z 
+2026-04-13T19:50:55.4204999Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/expenses.ts
+2026-04-13T19:50:55.4205704Z ##[warning]   94:7  warning  Unexpected console statement  no-console
+2026-04-13T19:50:55.4206688Z ##[warning]  146:7  warning  Unexpected console statement  no-console
+2026-04-13T19:50:55.4207342Z 
+2026-04-13T19:50:55.4207736Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/financial-transactions.ts
+2026-04-13T19:50:55.4208638Z ##[warning]  13:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4209428Z 
+2026-04-13T19:50:55.4209753Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/incentives.ts
+2026-04-13T19:50:55.4210606Z ##[error]   11:56  error    'employeesTable' is defined but never used      @typescript-eslint/no-unused-vars
+2026-04-13T19:50:55.4212332Z ##[error]  175:9   error    'companyId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-04-13T19:50:55.4213630Z ##[error]  176:9   error    'userId' is assigned a value but never used     @typescript-eslint/no-unused-vars
+2026-04-13T19:50:55.4214931Z ##[warning]  206:32  warning  Generic Object Injection Sink                   security/detect-object-injection
+2026-04-13T19:50:55.4215732Z 
+2026-04-13T19:50:55.4216120Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/inventory-control.ts
+2026-04-13T19:50:55.4217014Z ##[warning]   73:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4218286Z ##[warning]   73:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4219554Z ##[warning]  528:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4221080Z ##[warning]  569:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4221912Z 
+2026-04-13T19:50:55.4222246Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/inventory.ts
+2026-04-13T19:50:55.4223115Z ##[warning]  320:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4224385Z ##[warning]  373:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4225646Z ##[warning]  407:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4226419Z 
+2026-04-13T19:50:55.4226775Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/opening-balance.ts
+2026-04-13T19:50:55.4227616Z ##[warning]   20:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4228859Z ##[warning]   65:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4230110Z ##[warning]  141:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4231717Z ##[warning]  160:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4233053Z ##[warning]  210:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4234506Z ##[warning]  229:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4235771Z ##[warning]  280:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4237029Z ##[warning]  300:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4237805Z 
+2026-04-13T19:50:55.4238173Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/payment-vouchers.ts
+2026-04-13T19:50:55.4239051Z ##[warning]  12:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4240004Z 
+2026-04-13T19:50:55.4240328Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/payroll.ts
+2026-04-13T19:50:55.4241529Z ##[error]  12:23  error  'payrollAdjustmentsTable' is defined but never used  @typescript-eslint/no-unused-vars
+2026-04-13T19:50:55.4242887Z ##[error]  20:10  error  'z' is defined but never used                        @typescript-eslint/no-unused-vars
+2026-04-13T19:50:55.4243669Z 
+2026-04-13T19:50:55.4244000Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/products.ts
+2026-04-13T19:50:55.4244835Z ##[warning]   18:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4246111Z ##[warning]  154:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4247374Z ##[warning]  208:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4248170Z 
+2026-04-13T19:50:55.4248505Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/profits.ts
+2026-04-13T19:50:55.4249326Z ##[warning]  35:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4250128Z 
+2026-04-13T19:50:55.4250486Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/receipt-vouchers.ts
+2026-04-13T19:50:55.4251619Z ##[warning]  12:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4252438Z 
+2026-04-13T19:50:55.4252757Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/reports.ts
+2026-04-13T19:50:55.4253572Z ##[warning]    95:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4254843Z ##[warning]   128:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4256109Z ##[warning]   136:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4257389Z ##[warning]   185:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4258652Z ##[warning]   236:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4259915Z ##[warning]   237:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4261464Z ##[warning]   238:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4262923Z ##[warning]   314:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4264481Z ##[warning]   347:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4265781Z ##[warning]   355:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4267073Z ##[warning]   373:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4268336Z ##[warning]   387:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4269589Z ##[warning]   398:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4271550Z ##[warning]   409:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4272966Z ##[warning]   420:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4274251Z ##[warning]   430:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4275520Z ##[warning]   493:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4276770Z ##[warning]   502:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4278207Z ##[warning]   513:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4279473Z ##[warning]   524:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4281010Z ##[warning]   534:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4282353Z ##[warning]   545:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4283625Z ##[warning]   556:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4284885Z ##[warning]   608:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4286143Z ##[warning]   665:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4287406Z ##[warning]   738:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4288665Z ##[warning]   782:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4289946Z ##[warning]   789:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4291500Z ##[warning]   795:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4292832Z ##[warning]   809:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4294141Z ##[warning]   947:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4295429Z ##[warning]   976:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4296708Z ##[warning]   981:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4297989Z ##[warning]  1009:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4299264Z ##[warning]  1015:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4300536Z ##[warning]  1046:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4302127Z ##[warning]  1052:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4303408Z ##[warning]  1074:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4304689Z ##[warning]  1142:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4305969Z ##[warning]  1254:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4307253Z ##[warning]  1292:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4308533Z ##[warning]  1316:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4309991Z ##[warning]  1317:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4311084Z 
+2026-04-13T19:50:55.4311427Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/returns.ts
+2026-04-13T19:50:55.4312278Z ##[warning]   27:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4313576Z ##[warning]  536:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4314401Z 
+2026-04-13T19:50:55.4314970Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/safe-transfers.ts
+2026-04-13T19:50:55.4316339Z ##[warning]  15:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4318011Z ##[warning]  51:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4318834Z 
+2026-04-13T19:50:55.4319166Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/settings.ts
+2026-04-13T19:50:55.4319944Z ##[warning]  64:25  warning  Generic Object Injection Sink  security/detect-object-injection
+2026-04-13T19:50:55.4320988Z 
+2026-04-13T19:50:55.4321321Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/super.ts
+2026-04-13T19:50:55.4322376Z ##[warning]  350:20  warning  Found statSync from package "fs" with non literal argument at index 0  security/detect-non-literal-fs-filename
+2026-04-13T19:50:55.4323313Z 
+2026-04-13T19:50:55.4323626Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/system.ts
+2026-04-13T19:50:55.4324442Z ##[warning]   28:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4325739Z ##[warning]   29:69  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4327012Z ##[warning]  167:56  warning  Function Call Object Injection Sink       security/detect-object-injection
+2026-04-13T19:50:55.4328271Z ##[warning]  189:32  warning  Function Call Object Injection Sink       security/detect-object-injection
+2026-04-13T19:50:55.4329522Z ##[warning]  189:48  warning  Generic Object Injection Sink             security/detect-object-injection
+2026-04-13T19:50:55.4331017Z ##[warning]  224:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4331861Z 
+2026-04-13T19:50:55.4332239Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/transactions.ts
+2026-04-13T19:50:55.4333097Z ##[warning]  9:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4333907Z 
+2026-04-13T19:50:55.4334275Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server/src/routes/treasury-vouchers.ts
+2026-04-13T19:50:55.4335128Z ##[warning]  10:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-04-13T19:50:55.4335933Z 
+2026-04-13T19:50:55.4336331Z ✖ 142 problems (6 errors, 136 warnings)
+2026-04-13T19:50:55.4336730Z   0 errors and 1 warning potentially fixable with the `--fix` option.
+2026-04-13T19:50:55.4336990Z 
+2026-04-13T19:50:55.5092734Z /home/runner/work/Schema-Sync/Schema-Sync/artifacts/api-server:
+2026-04-13T19:50:55.5094079Z  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 lint: `eslint src --ext .ts`
+2026-04-13T19:50:55.5094710Z Exit status 1
+2026-04-13T19:50:55.5292048Z ##[error]Process completed with exit code 1.
+2026-04-13T19:50:55.5298064Z ##[debug]Finishing: Lint backend

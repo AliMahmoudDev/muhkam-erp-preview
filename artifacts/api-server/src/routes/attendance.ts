@@ -156,7 +156,6 @@ router.post("/attendance/check-in", wrap(async (req, res) => {
   if (existing.length > 0) { res.status(409).json({ error: "تم تسجيل الحضور لهذا اليوم مسبقاً" }); return; }
 
   // Get shift to calculate late minutes
-  const today = new Date().getDay().toString(); // 0=Sun...6=Sat
   const [assignment] = await db.select({ shift_schedule_id: employeeShiftAssignmentsTable.shift_schedule_id, start_time: shiftSchedulesTable.start_time, grace_minutes: shiftSchedulesTable.grace_minutes })
     .from(employeeShiftAssignmentsTable)
     .leftJoin(shiftSchedulesTable, eq(employeeShiftAssignmentsTable.shift_schedule_id, shiftSchedulesTable.id))

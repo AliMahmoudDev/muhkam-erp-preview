@@ -5,7 +5,6 @@ import { writeAuditLog } from "../lib/audit-log";
 import { hasPermission } from "../lib/permissions";
 import { getCustomerLedgerBalance } from "../lib/ledger-balance";
 import {
-  GetCustomersResponse,
   CreateCustomerBody,
   UpdateCustomerParams,
   UpdateCustomerBody,
@@ -568,7 +567,6 @@ router.delete("/customer-classifications/:id", wrap(async (req, res) => {
   }
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
   await db
     .update(customersTable)
     .set({ classification_id: null })

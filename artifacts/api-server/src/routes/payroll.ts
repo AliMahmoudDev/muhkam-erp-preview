@@ -9,7 +9,7 @@ import {
   salaryStructuresTable, salaryComponentsTable,
   taxBracketsTable, statutoryContributionsTable,
   payrollPeriodsTable, payrollRecordsTable, payrollLineItemsTable,
-  salaryHistoryTable, payrollAdjustmentsTable,
+  salaryHistoryTable,
   employeesTable,
   monthlyIncentiveSummaryTable,
   salaryAdvancesTable,
@@ -17,7 +17,6 @@ import {
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { writeAuditLog } from "../lib/audit-log";
-import { z } from "zod";
 
 const router: IRouter = Router();
 

@@ -8,7 +8,7 @@ import {
   db,
   incentiveSchemesTable, incentiveRulesTable, incentiveSlabsTable,
   employeeIncentiveAssignmentsTable, dailyIncentiveAccrualTable,
-  monthlyIncentiveSummaryTable, incentiveMetricsTable, employeesTable,
+  monthlyIncentiveSummaryTable, incentiveMetricsTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
@@ -172,8 +172,6 @@ router.get("/daily-accrual/:employeeId/:date", wrap(async (req, res) => {
 
 /* ── Record Metric & Calculate Accrual ────────────────────────── */
 router.post("/incentive-metrics/record", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
-  const userId    = req.user?.id ?? null;
   const { employee_id, incentive_rule_id, metric_date, metric_value, source_type, source_document_id } = req.body as Record<string, unknown>;
   if (!employee_id || !incentive_rule_id || !metric_date || metric_value == null) { res.status(400).json({ error: "بيانات المقياس غير مكتملة" }); return; }
 
