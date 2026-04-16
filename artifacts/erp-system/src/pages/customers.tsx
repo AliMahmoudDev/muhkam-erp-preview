@@ -824,6 +824,7 @@ export default function Customers() {
 
   const [showNewClassification, setShowNewClassification] = useState(false);
   const [newClassificationName, setNewClassificationName] = useState("");
+  const [editingClassification, setEditingClassification] = useState<{ id: number; name: string } | null>(null);
 
   const { data: classificationsRaw, refetch: refetchClassifications } = useQuery({
     queryKey: ["/api/customer-classifications"],
@@ -863,6 +864,23 @@ export default function Customers() {
       if (formData.classification_id === id) setFormData(f => ({ ...f, classification_id: null }));
       if (editFormData.classification_id === id) setEditFormData(f => ({ ...f, classification_id: null }));
       toast({ title: "✅ تم حذف التصنيف" });
+    } catch (e: unknown) {
+      toast({ title: (e as Error).message, variant: "destructive" });
+    }
+  };
+
+  const handleUpdateClassification = async () => {
+    if (!editingClassification || !editingClassification.name.trim()) return;
+    try {
+      const r = await authFetch(api(`/api/customer-classifications/${editingClassification.id}`), {
+        method: "PUT",
+        body: JSON.stringify({ name: editingClassification.name.trim() }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "خطأ في التعديل");
+      await refetchClassifications();
+      setEditingClassification(null);
+      toast({ title: "✅ تم تعديل التصنيف" });
     } catch (e: unknown) {
       toast({ title: (e as Error).message, variant: "destructive" });
     }
@@ -1088,36 +1106,59 @@ export default function Customers() {
                   ))}
                 </select>
                 {canManageCustomers && (
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-2 border border-white/10 rounded-xl overflow-hidden">
                     {classifications.map(c => (
-                      <div key={c.id} className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
-                        <span className="text-white/60 text-xs">{c.name}</span>
-                        <button type="button" onClick={() => handleDeleteClassification(c.id)}
-                          className="text-red-400/70 hover:text-red-400 p-0.5 transition-colors" title="حذف التصنيف">
-                          <X className="w-3 h-3" />
-                        </button>
+                      <div key={c.id} className="flex items-center gap-1 px-2 py-1 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors">
+                        {editingClassification?.id === c.id ? (
+                          <>
+                            <input autoFocus className="glass-input flex-1 text-xs py-0.5 px-2 h-6"
+                              value={editingClassification.name}
+                              onChange={e => setEditingClassification(prev => prev ? { ...prev, name: e.target.value } : prev)}
+                              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleUpdateClassification(); } if (e.key === "Escape") setEditingClassification(null); }} />
+                            <button type="button" onClick={handleUpdateClassification}
+                              className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-bold hover:bg-amber-500/30 transition-colors shrink-0">
+                              حفظ
+                            </button>
+                            <button type="button" onClick={() => setEditingClassification(null)}
+                              className="px-1.5 py-0.5 rounded bg-white/10 text-white/50 text-[10px] hover:bg-white/15 transition-colors shrink-0">
+                              إلغاء
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-white/70 text-xs truncate">{c.name}</span>
+                            <button type="button" onClick={() => setEditingClassification({ id: c.id, name: c.name })}
+                              className="p-1 rounded text-blue-400/60 hover:text-blue-400 hover:bg-blue-400/10 transition-colors shrink-0" title="تعديل">
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button type="button" onClick={() => handleDeleteClassification(c.id)}
+                              className="p-1 rounded text-red-400/60 hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0" title="حذف">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     ))}
                     {showNewClassification ? (
-                      <div className="flex gap-2 mt-1">
-                        <input type="text" autoFocus className="glass-input flex-1 text-sm py-1.5"
-                          placeholder="اسم التصنيف الجديد"
+                      <div className="flex items-center gap-1 px-2 py-1 bg-white/3">
+                        <input type="text" autoFocus className="glass-input flex-1 text-xs py-0.5 px-2 h-6"
+                          placeholder="اسم التصنيف"
                           value={newClassificationName}
                           onChange={e => setNewClassificationName(e.target.value)}
-                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddClassification(); } }} />
+                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddClassification(); } if (e.key === "Escape") { setShowNewClassification(false); setNewClassificationName(""); } }} />
                         <button type="button" onClick={handleAddClassification}
-                          className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors">
+                          className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-bold hover:bg-amber-500/30 transition-colors shrink-0">
                           حفظ
                         </button>
                         <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(""); }}
-                          className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors">
+                          className="px-1.5 py-0.5 rounded bg-white/10 text-white/50 text-[10px] hover:bg-white/15 transition-colors shrink-0">
                           إلغاء
                         </button>
                       </div>
                     ) : (
                       <button type="button" onClick={() => setShowNewClassification(true)}
-                        className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1 transition-colors">
-                        <Plus className="w-3 h-3" /> إضافة تصنيف جديد
+                        className="flex items-center gap-1 w-full px-2 py-1.5 text-[11px] text-amber-400 hover:text-amber-300 hover:bg-white/5 transition-colors">
+                        <Plus className="w-3 h-3" /> إضافة تصنيف
                       </button>
                     )}
                   </div>
@@ -1145,7 +1186,7 @@ export default function Customers() {
             </div>
             <div className="flex gap-4 mt-8">
               <button type="submit" disabled={createMutation.isPending} className="flex-1 btn-primary py-3">حفظ</button>
-              <button type="button" onClick={() => { setShowAdd(false); setFormData({ name: "", phone: "", balance: 0, is_customer: true, is_supplier: false, classification_id: null }); setShowNewClassification(false); setNewClassificationName(""); }} className="flex-1 btn-secondary py-3">إلغاء</button>
+              <button type="button" onClick={() => { setShowAdd(false); setFormData({ name: "", phone: "", balance: 0, is_customer: true, is_supplier: false, classification_id: null }); setShowNewClassification(false); setNewClassificationName(""); setEditingClassification(null); }} className="flex-1 btn-secondary py-3">إلغاء</button>
             </div>
           </form>
         </div>
@@ -1330,36 +1371,59 @@ export default function Customers() {
                   ))}
                 </select>
                 {canManageCustomers && (
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-2 border border-white/10 rounded-xl overflow-hidden">
                     {classifications.map(c => (
-                      <div key={c.id} className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
-                        <span className="text-white/60 text-xs">{c.name}</span>
-                        <button type="button" onClick={() => handleDeleteClassification(c.id)}
-                          className="text-red-400/70 hover:text-red-400 p-0.5 transition-colors" title="حذف التصنيف">
-                          <X className="w-3 h-3" />
-                        </button>
+                      <div key={c.id} className="flex items-center gap-1 px-2 py-1 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors">
+                        {editingClassification?.id === c.id ? (
+                          <>
+                            <input autoFocus className="glass-input flex-1 text-xs py-0.5 px-2 h-6"
+                              value={editingClassification.name}
+                              onChange={e => setEditingClassification(prev => prev ? { ...prev, name: e.target.value } : prev)}
+                              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleUpdateClassification(); } if (e.key === "Escape") setEditingClassification(null); }} />
+                            <button type="button" onClick={handleUpdateClassification}
+                              className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-bold hover:bg-amber-500/30 transition-colors shrink-0">
+                              حفظ
+                            </button>
+                            <button type="button" onClick={() => setEditingClassification(null)}
+                              className="px-1.5 py-0.5 rounded bg-white/10 text-white/50 text-[10px] hover:bg-white/15 transition-colors shrink-0">
+                              إلغاء
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-white/70 text-xs truncate">{c.name}</span>
+                            <button type="button" onClick={() => setEditingClassification({ id: c.id, name: c.name })}
+                              className="p-1 rounded text-blue-400/60 hover:text-blue-400 hover:bg-blue-400/10 transition-colors shrink-0" title="تعديل">
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button type="button" onClick={() => handleDeleteClassification(c.id)}
+                              className="p-1 rounded text-red-400/60 hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0" title="حذف">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     ))}
                     {showNewClassification ? (
-                      <div className="flex gap-2 mt-1">
-                        <input type="text" autoFocus className="glass-input flex-1 text-sm py-1.5"
-                          placeholder="اسم التصنيف الجديد"
+                      <div className="flex items-center gap-1 px-2 py-1 bg-white/3">
+                        <input type="text" autoFocus className="glass-input flex-1 text-xs py-0.5 px-2 h-6"
+                          placeholder="اسم التصنيف"
                           value={newClassificationName}
                           onChange={e => setNewClassificationName(e.target.value)}
-                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddClassification(); } }} />
+                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddClassification(); } if (e.key === "Escape") { setShowNewClassification(false); setNewClassificationName(""); } }} />
                         <button type="button" onClick={handleAddClassification}
-                          className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors">
+                          className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-bold hover:bg-amber-500/30 transition-colors shrink-0">
                           حفظ
                         </button>
                         <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(""); }}
-                          className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors">
+                          className="px-1.5 py-0.5 rounded bg-white/10 text-white/50 text-[10px] hover:bg-white/15 transition-colors shrink-0">
                           إلغاء
                         </button>
                       </div>
                     ) : (
                       <button type="button" onClick={() => setShowNewClassification(true)}
-                        className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1 transition-colors">
-                        <Plus className="w-3 h-3" /> إضافة تصنيف جديد
+                        className="flex items-center gap-1 w-full px-2 py-1.5 text-[11px] text-amber-400 hover:text-amber-300 hover:bg-white/5 transition-colors">
+                        <Plus className="w-3 h-3" /> إضافة تصنيف
                       </button>
                     )}
                   </div>
