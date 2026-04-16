@@ -602,17 +602,17 @@ router.get("/customer-reports", wrap(async (req, res) => {
         SELECT SUM(CAST(cl2.amount AS FLOAT8))
         FROM customer_ledger cl2
         WHERE cl2.customer_id = c.id
-          AND (${dateFrom}::text IS NULL OR cl2.date < ${dateFrom}::date)
+          AND (${dateFrom}::date IS NULL OR cl2.date < ${dateFrom}::date)
       ), 0) AS opening_balance,
       COALESCE(SUM(CASE
         WHEN CAST(cl.amount AS FLOAT8) > 0
-          AND (${dateFrom}::text IS NULL OR cl.date >= ${dateFrom}::date)
-          AND (${dateTo}::text   IS NULL OR cl.date <= ${dateTo}::date)
+          AND (${dateFrom}::date IS NULL OR cl.date >= ${dateFrom}::date)
+          AND (${dateTo}::date   IS NULL OR cl.date <= ${dateTo}::date)
         THEN CAST(cl.amount AS FLOAT8) ELSE 0 END), 0) AS period_debits,
       COALESCE(SUM(CASE
         WHEN CAST(cl.amount AS FLOAT8) < 0
-          AND (${dateFrom}::text IS NULL OR cl.date >= ${dateFrom}::date)
-          AND (${dateTo}::text   IS NULL OR cl.date <= ${dateTo}::date)
+          AND (${dateFrom}::date IS NULL OR cl.date >= ${dateFrom}::date)
+          AND (${dateTo}::date   IS NULL OR cl.date <= ${dateTo}::date)
         THEN ABS(CAST(cl.amount AS FLOAT8)) ELSE 0 END), 0) AS period_credits
     FROM customers c
     LEFT JOIN customer_classifications cc ON cc.id = c.classification_id
