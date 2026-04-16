@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, expensesTable, transactionsTable, safesTable } from "@workspace/db";
+import { eq, and, sql } from "drizzle-orm";
+import { db, expensesTable, expenseCategoriesTable, transactionsTable, safesTable } from "@workspace/db";
 import {
   GetExpensesResponse,
   CreateExpenseBody,
@@ -17,6 +17,92 @@ const router: IRouter = Router();
 function formatExpense(e: typeof expensesTable.$inferSelect) {
   return { ...e, amount: Number(e.amount), created_at: e.created_at.toISOString() };
 }
+
+/* ═══════════════════════════════════════════════════════════
+   تصنيفات المصروفات — Expense Categories
+═══════════════════════════════════════════════════════════ */
+
+router.get("/expense-categories", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_expenses")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
+  const companyId = req.user?.company_id ?? 1;
+  const cats = await db.select().from(expenseCategoriesTable)
+    .where(eq(expenseCategoriesTable.company_id, companyId))
+    .orderBy(expenseCategoriesTable.name);
+  res.json(cats);
+}));
+
+router.post("/expense-categories", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_add_expense")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
+  const companyId = req.user?.company_id ?? 1;
+  const name = String(req.body.name ?? "").trim();
+  if (!name) { res.status(400).json({ error: "اسم التصنيف مطلوب" }); return; }
+
+  const [existing] = await db.select().from(expenseCategoriesTable)
+    .where(and(eq(expenseCategoriesTable.company_id, companyId), eq(expenseCategoriesTable.name, name)));
+  if (existing) { res.status(400).json({ error: `التصنيف "${name}" موجود بالفعل` }); return; }
+
+  const [cat] = await db.insert(expenseCategoriesTable).values({ name, company_id: companyId }).returning();
+  res.status(201).json(cat);
+}));
+
+router.delete("/expense-categories/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_add_expense")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صالح" }); return; }
+  await db.delete(expenseCategoriesTable).where(eq(expenseCategoriesTable.id, id));
+  res.json({ success: true });
+}));
+
+/* ═══════════════════════════════════════════════════════════
+   تقارير المصروفات — Expense Reports
+═══════════════════════════════════════════════════════════ */
+
+router.get("/expense-reports", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_expenses")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
+  const companyId = req.user?.company_id ?? 1;
+  const category  = req.query.category  ? String(req.query.category)  : null;
+  const dateFrom  = req.query.date_from ? String(req.query.date_from) : null;
+  const dateTo    = req.query.date_to   ? String(req.query.date_to)   : null;
+
+  const rows = await db.execute(sql`
+    SELECT
+      e.id,
+      e.category,
+      CAST(e.amount AS FLOAT8) AS amount,
+      e.description,
+      e.safe_name,
+      TO_CHAR(e.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date
+    FROM expenses e
+    WHERE e.company_id = ${companyId}
+      AND (${category}::text IS NULL OR e.category = ${category}::text)
+      AND (${dateFrom}::date IS NULL OR e.created_at::date >= ${dateFrom}::date)
+      AND (${dateTo}::date   IS NULL OR e.created_at::date <= ${dateTo}::date)
+    ORDER BY e.created_at DESC
+  `);
+
+  const result = (rows.rows as any[]).map(r => ({
+    id:          r.id,
+    category:    r.category,
+    amount:      Math.round(Number(r.amount) * 100) / 100,
+    description: r.description ?? null,
+    safe_name:   r.safe_name   ?? null,
+    date:        r.date,
+  }));
+
+  res.json(result);
+}));
+
+/* ═══════════════════════════════════════════════════════════
+   المصروفات — Expenses CRUD
+═══════════════════════════════════════════════════════════ */
 
 router.get("/expenses", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_expenses")) {
@@ -70,11 +156,7 @@ router.post("/expenses", wrap(async (req, res) => {
     });
     return { exp, safe };
   });
-  /* ── قيد يومية تلقائي للمصروف النقدي ────────────────────────────────────
-   * مدين: مصروفات عمومية (EXP-GENERAL)
-   * دائن: الخزينة (SAFE-{safeId})
-   * ملاحظة: إذا لم تكن هناك خزينة فلا يوجد أثر نقدي فوري → لا قيد
-   * ─────────────────────────────────────────────────────────────────────── */
+
   const { exp: expense, safe } = result;
   if (safe) {
     try {
@@ -90,7 +172,6 @@ router.post("/expenses", wrap(async (req, res) => {
         amount: amt,
       });
     } catch (jeErr) {
-      /* غير فادح — المصروف سُجِّل بنجاح حتى لو فشل القيد */
       console.error("Failed to create journal entry for expense:", jeErr);
     }
   }
@@ -103,7 +184,6 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
   const [preCheck] = await db.select().from(expensesTable).where(eq(expensesTable.id, params.data.id));
   if (preCheck) await assertPeriodOpen(preCheck.created_at?.toISOString().split("T")[0] ?? null, req);
 
-  /* نحفظ بيانات المصروف قبل الحذف لإنشاء قيد عكسي */
   let deletedSafeId:   number | null = null;
   let deletedSafeName: string | null = null;
   let deletedAmount:   number        = 0;
@@ -126,9 +206,6 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
     await tx.delete(expensesTable).where(eq(expensesTable.id, params.data.id));
   });
 
-  /* ── قيد عكسي لإلغاء أثر المصروف المحذوف على الدفتر ──────────────────
-   * مدين: الخزينة / دائن: مصروفات عمومية   (عكس القيد الأصلي)
-   * ─────────────────────────────────────────────────────────────────────*/
   if (deletedSafeId !== null && deletedAmount > 0) {
     try {
       const safeAcct = await getOrCreateSafeAccount(deletedSafeId, deletedSafeName ?? `خزينة ${deletedSafeId}`);
