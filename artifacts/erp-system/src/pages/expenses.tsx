@@ -41,15 +41,16 @@ function printExpenseReport(opts: {
   companyName: string;
 }) {
   const { rows, category, dateFrom, dateTo, companyName } = opts;
+  const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
   const today = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
   const total = rows.reduce((s, r) => s + r.amount, 0);
 
   const rowsHtml = rows.map((r, i) => `
     <tr class="${i % 2 === 0 ? "even" : "odd"}">
-      <td>${r.date}</td>
-      <td>${r.category}</td>
-      <td>${r.description ?? "—"}</td>
-      <td>${r.safe_name ?? "—"}</td>
+      <td>${esc(r.date)}</td>
+      <td>${esc(r.category)}</td>
+      <td>${r.description ? esc(r.description) : "—"}</td>
+      <td>${r.safe_name ? esc(r.safe_name) : "—"}</td>
       <td class="num amount">${r.amount.toLocaleString("ar-EG", { minimumFractionDigits: 2 })} ج.م</td>
     </tr>`).join("");
 
@@ -75,12 +76,12 @@ function printExpenseReport(opts: {
       @media print { body { padding: 10px; } }
     </style></head><body>
     <div class="header">
-      <div class="company">${companyName}</div>
+      <div class="company">${esc(companyName)}</div>
       <div class="title">تقرير المصروفات</div>
       <div class="meta">
-        ${category ? `<span>التصنيف: ${category}</span>` : "<span>كل التصنيفات</span>"}
-        ${dateFrom ? `<span>من: ${dateFrom}</span>` : ""}
-        ${dateTo   ? `<span>إلى: ${dateTo}</span>`   : ""}
+        ${category ? `<span>التصنيف: ${esc(category)}</span>` : "<span>كل التصنيفات</span>"}
+        ${dateFrom ? `<span>من: ${esc(dateFrom)}</span>` : ""}
+        ${dateTo   ? `<span>إلى: ${esc(dateTo)}</span>`   : ""}
         <span>تاريخ الطباعة: ${today}</span>
       </div>
     </div>

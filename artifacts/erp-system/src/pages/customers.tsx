@@ -11,6 +11,7 @@ import {
   Printer, MessageCircle, Vault, FileDown, Pencil, Trash2, CreditCard, BarChart2,
 } from "lucide-react";
 import { TableSkeleton } from "@/components/skeletons";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { exportCustomersExcel } from "@/lib/export-excel";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -190,6 +191,99 @@ function printCustomerStatement(opts: {
     win.document.write(html);
     win.document.close();
   }
+}
+
+/* ─── دالة طباعة تقرير العملاء ─── */
+function printCustomerReport(opts: {
+  rows: Array<{ id: number; name: string; customer_code: number; classification_name: string | null; opening_balance: number; period_debits: number; period_credits: number; closing_balance: number }>;
+  customerName: string;
+  classificationName: string;
+  dateFrom: string;
+  dateTo: string;
+  companyName: string;
+}) {
+  const { rows, customerName, classificationName, dateFrom, dateTo, companyName } = opts;
+  const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+  const today = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+  const fmt = (n: number) => Math.abs(n).toLocaleString("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const totalOpening = rows.reduce((s, r) => s + r.opening_balance, 0);
+  const totalDebits  = rows.reduce((s, r) => s + r.period_debits,   0);
+  const totalCredits = rows.reduce((s, r) => s + r.period_credits,  0);
+  const totalClosing = rows.reduce((s, r) => s + r.closing_balance, 0);
+
+  const sideTag = (v: number) => v === 0 ? "" : (v > 0 ? '<span class="tag d">د</span>' : '<span class="tag l">ل</span>');
+
+  const rowsHtml = rows.map((r, i) => `
+    <tr class="${i % 2 === 0 ? "even" : "odd"}">
+      <td>${esc(r.customer_code)}</td>
+      <td>${esc(r.name)}</td>
+      <td>${r.classification_name ? esc(r.classification_name) : "—"}</td>
+      <td class="num">${fmt(r.opening_balance)} ${sideTag(r.opening_balance)}</td>
+      <td class="num debit">${fmt(r.period_debits)}</td>
+      <td class="num credit">${fmt(r.period_credits)}</td>
+      <td class="num closing">${fmt(r.closing_balance)} ${sideTag(r.closing_balance)}</td>
+    </tr>`).join("");
+
+  const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"/>
+    <title>تقرير العملاء</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; color: #1a1a2e; background: #fff; padding: 24px; font-size: 13px; }
+      .header { text-align: center; margin-bottom: 20px; }
+      .company { font-size: 22px; font-weight: 900; color: #1a1a2e; }
+      .title { font-size: 16px; font-weight: 700; color: #7c3aed; margin-top: 6px; }
+      .meta { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin: 12px 0 18px; font-size: 12px; color: #555; }
+      .meta span { background: #f3f0ff; padding: 4px 12px; border-radius: 6px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      th { background: #1a1a2e; color: #fff; padding: 8px 10px; text-align: right; font-size: 12px; font-weight: 600; }
+      td { padding: 7px 10px; border-bottom: 1px solid #eee; text-align: right; }
+      tr.even { background: #fafafa; }
+      tr.odd  { background: #fff; }
+      .num { text-align: left; font-family: monospace; font-weight: 600; }
+      .debit { color: #ea580c; }
+      .credit { color: #16a34a; }
+      .closing { font-weight: 800; color: #1a1a2e; }
+      .tag { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 4px; margin-right: 3px; vertical-align: middle; }
+      .tag.d { background: #fee2e2; color: #b91c1c; }
+      .tag.l { background: #dcfce7; color: #15803d; }
+      tfoot td { font-weight: 800; background: #f3f0ff; border-top: 2px solid #7c3aed; color: #1a1a2e; }
+      .footer { margin-top: 20px; font-size: 11px; color: #888; text-align: center; }
+      @media print { body { padding: 10px; } }
+    </style></head><body>
+    <div class="header">
+      <div class="company">${esc(companyName)}</div>
+      <div class="title">تقرير العملاء</div>
+      <div class="meta">
+        <span>العميل: ${customerName ? esc(customerName) : "كل العملاء"}</span>
+        <span>التصنيف: ${classificationName ? esc(classificationName) : "كل التصنيفات"}</span>
+        ${dateFrom ? `<span>من: ${esc(dateFrom)}</span>` : ""}
+        ${dateTo   ? `<span>إلى: ${esc(dateTo)}</span>`   : ""}
+        <span>تاريخ الطباعة: ${today}</span>
+      </div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>كود</th><th>اسم العميل</th><th>التصنيف</th>
+        <th>رصيد أول المدة</th><th>مدين (عليه)</th><th>دائن (له)</th><th>رصيد آخر المدة</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+      <tfoot><tr>
+        <td colspan="3">الإجمالي (${rows.length} عميل)</td>
+        <td class="num">${fmt(totalOpening)} ${sideTag(totalOpening)}</td>
+        <td class="num debit">${fmt(totalDebits)}</td>
+        <td class="num credit">${fmt(totalCredits)}</td>
+        <td class="num closing">${fmt(totalClosing)} ${sideTag(totalClosing)}</td>
+      </tr></tfoot>
+    </table>
+    <div class="footer">نظام Halal Tech ERP — تم الطباعة بتاريخ ${today}</div>
+    </body></html>`;
+
+  const w = window.open("", "_blank", "width=1000,height=700");
+  if (!w) return;
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 400);
 }
 
 /* ─── دالة واتساب ─── */
@@ -825,6 +919,7 @@ export default function Customers() {
   const [showNewClassification, setShowNewClassification] = useState(false);
   const [newClassificationName, setNewClassificationName] = useState("");
   const [editingClassification, setEditingClassification] = useState<{ id: number; name: string } | null>(null);
+  const [confirmDeleteClassificationId, setConfirmDeleteClassificationId] = useState<number | null>(null);
 
   const [showReports, setShowReports] = useState(false);
   const [reportFilters, setReportFilters] = useState({ customerId: "", classificationId: "", dateFrom: "", dateTo: "" });
@@ -1135,7 +1230,7 @@ export default function Customers() {
                   </select>
                   {formData.classification_id && (
                     <button type="button"
-                      onClick={() => handleDeleteClassification(formData.classification_id!)}
+                      onClick={() => setConfirmDeleteClassificationId(formData.classification_id!)}
                       className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors shrink-0" title="حذف التصنيف نهائياً">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1371,7 +1466,7 @@ export default function Customers() {
                   </select>
                   {editFormData.classification_id && (
                     <button type="button"
-                      onClick={() => handleDeleteClassification(editFormData.classification_id!)}
+                      onClick={() => setConfirmDeleteClassificationId(editFormData.classification_id!)}
                       className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors shrink-0" title="حذف التصنيف نهائياً">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1425,6 +1520,21 @@ export default function Customers() {
             </div>
           </form>
         </div>
+      )}
+
+      {/* ─── تأكيد حذف التصنيف ─── */}
+      {confirmDeleteClassificationId !== null && (
+        <ConfirmModal
+          title="حذف التصنيف"
+          description={`هل أنت متأكد من حذف التصنيف "${classifications.find(c => c.id === confirmDeleteClassificationId)?.name ?? ""}"؟ سيتم إزالة التصنيف من جميع العملاء المرتبطين به دون التأثير على بياناتهم.`}
+          isPending={false}
+          onConfirm={async () => {
+            const id = confirmDeleteClassificationId;
+            setConfirmDeleteClassificationId(null);
+            await handleDeleteClassification(id);
+          }}
+          onCancel={() => setConfirmDeleteClassificationId(null)}
+        />
       )}
 
       {/* ─── تأكيد الحذف ─── */}
@@ -1610,12 +1720,33 @@ export default function Customers() {
                     onChange={e => setReportFilters(f => ({ ...f, dateTo: e.target.value }))} />
                 </div>
               </div>
-              <button onClick={handleFetchReport} disabled={reportLoading}
-                className="mt-3 btn-primary px-6 py-2 text-sm flex items-center gap-2">
-                {reportLoading
-                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />جاري التحميل...</>
-                  : <><BarChart2 className="w-4 h-4" />عرض التقرير</>}
-              </button>
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                <button onClick={handleFetchReport} disabled={reportLoading}
+                  className="btn-primary px-6 py-2 text-sm flex items-center gap-2">
+                  {reportLoading
+                    ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />جاري التحميل...</>
+                    : <><BarChart2 className="w-4 h-4" />عرض التقرير</>}
+                </button>
+                {reportData && reportData.length > 0 && (
+                  <button
+                    onClick={() => printCustomerReport({
+                      rows: reportData,
+                      customerName: reportFilters.customerId
+                        ? (customers.find(c => String(c.id) === reportFilters.customerId)?.name ?? "")
+                        : "",
+                      classificationName: reportFilters.classificationId
+                        ? (classifications.find(c => String(c.id) === reportFilters.classificationId)?.name ?? "")
+                        : "",
+                      dateFrom: reportFilters.dateFrom,
+                      dateTo: reportFilters.dateTo,
+                      companyName: (user as any)?.company_name ?? "Halal Tech",
+                    })}
+                    className="px-6 py-2 text-sm flex items-center gap-2 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 border border-violet-500/30 font-bold transition-colors"
+                  >
+                    <Printer className="w-4 h-4" />طباعة التقرير
+                  </button>
+                )}
+              </div>
             </div>
             <div className="overflow-auto max-h-[60vh]">
               {reportData === null ? (
