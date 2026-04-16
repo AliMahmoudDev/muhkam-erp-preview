@@ -8,7 +8,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import {
   Plus, Search, DollarSign, FileText, X,
   TrendingUp, TrendingDown, RotateCcw, ArrowUpFromLine, ArrowDownToLine,
-  Printer, MessageCircle, Vault, FileDown, Pencil, Trash2, CreditCard,
+  Printer, MessageCircle, Vault, FileDown, Pencil, Trash2, CreditCard, BarChart2,
 } from "lucide-react";
 import { TableSkeleton } from "@/components/skeletons";
 import { exportCustomersExcel } from "@/lib/export-excel";
@@ -826,6 +826,11 @@ export default function Customers() {
   const [newClassificationName, setNewClassificationName] = useState("");
   const [editingClassification, setEditingClassification] = useState<{ id: number; name: string } | null>(null);
 
+  const [showReports, setShowReports] = useState(false);
+  const [reportFilters, setReportFilters] = useState({ customerId: "", classificationId: "", dateFrom: "", dateTo: "" });
+  const [reportData, setReportData] = useState<Array<{ id: number; name: string; customer_code: number; classification_name: string | null; opening_balance: number; period_debits: number; period_credits: number; closing_balance: number }> | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+
   const { data: classificationsRaw, refetch: refetchClassifications } = useQuery({
     queryKey: ["/api/customer-classifications"],
     queryFn: async () => {
@@ -883,6 +888,26 @@ export default function Customers() {
       toast({ title: "✅ تم تعديل التصنيف" });
     } catch (e: unknown) {
       toast({ title: (e as Error).message, variant: "destructive" });
+    }
+  };
+
+  const handleFetchReport = async () => {
+    setReportLoading(true);
+    setReportData(null);
+    try {
+      const params = new URLSearchParams();
+      if (reportFilters.customerId)       params.set("customer_id",       reportFilters.customerId);
+      if (reportFilters.classificationId) params.set("classification_id", reportFilters.classificationId);
+      if (reportFilters.dateFrom)         params.set("date_from",         reportFilters.dateFrom);
+      if (reportFilters.dateTo)           params.set("date_to",           reportFilters.dateTo);
+      const r = await authFetch(api(`/api/customer-reports?${params}`));
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "خطأ");
+      setReportData(j);
+    } catch (e: unknown) {
+      toast({ title: (e as Error).message, variant: "destructive" });
+    } finally {
+      setReportLoading(false);
     }
   };
 
@@ -1041,23 +1066,25 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-          <input type="text" placeholder="بحث عن عميل..." className="glass-input pl-4 pr-12 w-full"
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+          <input type="text" placeholder="بحث..." className="glass-input pl-3 pr-9 w-full py-2 text-sm"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => exportCustomersExcel(customers)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all whitespace-nowrap">
-            <FileDown className="w-4 h-4" /> Excel
+        <button onClick={() => { setShowReports(true); setReportData(null); }}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/40 text-violet-400 hover:bg-violet-500/30 transition-all whitespace-nowrap">
+          <BarChart2 className="w-4 h-4" /> تقارير العملاء
+        </button>
+        <button onClick={() => exportCustomersExcel(customers)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all whitespace-nowrap">
+          <FileDown className="w-4 h-4" /> Excel
+        </button>
+        {canManageCustomers && (
+          <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 whitespace-nowrap py-2">
+            <Plus className="w-4 h-4" /> إضافة عميل
           </button>
-          {canManageCustomers && (
-            <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 whitespace-nowrap">
-              <Plus className="w-5 h-5" /> إضافة عميل
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {/* كشف الحساب */}
@@ -1084,8 +1111,8 @@ export default function Customers() {
                 <input required type="text" className="glass-input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
               </div>
               <div>
-                <label className="block text-white/70 text-sm mb-1">رقم الهاتف</label>
-                <input type="text" className="glass-input" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="01xxxxxxxxx" />
+                <label className="block text-white/70 text-sm mb-1">رقم الهاتف *</label>
+                <input required type="text" className="glass-input" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="01xxxxxxxxx" />
               </div>
               <div>
                 <label className="block text-white/70 text-sm mb-1">رصيد ابتدائي (عليه)</label>
@@ -1536,6 +1563,112 @@ export default function Customers() {
           </table>
         </div>
       </div>
+
+      {/* ───── مودال تقارير العملاء ───── */}
+      {showReports && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-4 px-4 bg-black/60 backdrop-blur-sm modal-overlay overflow-y-auto">
+          <div className="glass-panel rounded-3xl w-full max-w-5xl border border-white/10 flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <BarChart2 className="w-5 h-5 text-violet-400" />
+                <h2 className="text-lg font-bold text-white">تقارير العملاء</h2>
+              </div>
+              <button onClick={() => setShowReports(false)} className="p-2 rounded-xl hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-6 py-4 border-b border-white/10">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-white/50 text-xs mb-1">العميل</label>
+                  <select className="glass-input w-full text-sm appearance-none"
+                    value={reportFilters.customerId}
+                    onChange={e => setReportFilters(f => ({ ...f, customerId: e.target.value }))}>
+                    <option value="" className="bg-gray-900">كل العملاء</option>
+                    {customers.map(c => <option key={c.id} value={c.id} className="bg-gray-900">{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-white/50 text-xs mb-1">التصنيف</label>
+                  <select className="glass-input w-full text-sm appearance-none"
+                    value={reportFilters.classificationId}
+                    onChange={e => setReportFilters(f => ({ ...f, classificationId: e.target.value }))}>
+                    <option value="" className="bg-gray-900">كل التصنيفات</option>
+                    {classifications.map(c => <option key={c.id} value={c.id} className="bg-gray-900">{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-white/50 text-xs mb-1">من تاريخ</label>
+                  <input type="date" className="glass-input w-full text-sm"
+                    value={reportFilters.dateFrom}
+                    onChange={e => setReportFilters(f => ({ ...f, dateFrom: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-white/50 text-xs mb-1">إلى تاريخ</label>
+                  <input type="date" className="glass-input w-full text-sm"
+                    value={reportFilters.dateTo}
+                    onChange={e => setReportFilters(f => ({ ...f, dateTo: e.target.value }))} />
+                </div>
+              </div>
+              <button onClick={handleFetchReport} disabled={reportLoading}
+                className="mt-3 btn-primary px-6 py-2 text-sm flex items-center gap-2">
+                {reportLoading
+                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />جاري التحميل...</>
+                  : <><BarChart2 className="w-4 h-4" />عرض التقرير</>}
+              </button>
+            </div>
+            <div className="overflow-auto max-h-[60vh]">
+              {reportData === null ? (
+                <div className="flex items-center justify-center py-16 text-white/30 text-sm">اضغط "عرض التقرير" لتحميل البيانات</div>
+              ) : reportData.length === 0 ? (
+                <div className="flex items-center justify-center py-16 text-white/30 text-sm">لا توجد بيانات بهذه الفلاتر</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0">
+                    <tr className="bg-white/5 text-white/50 text-xs">
+                      <th className="px-4 py-2.5 text-right font-semibold">#</th>
+                      <th className="px-4 py-2.5 text-right font-semibold">اسم العميل</th>
+                      <th className="px-4 py-2.5 text-right font-semibold">التصنيف</th>
+                      <th className="px-4 py-2.5 text-left font-semibold">رصيد أول المدة</th>
+                      <th className="px-4 py-2.5 text-left font-semibold">مدين (عليه)</th>
+                      <th className="px-4 py-2.5 text-left font-semibold">دائن (له)</th>
+                      <th className="px-4 py-2.5 text-left font-semibold">رصيد آخر المدة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData.map((row, i) => (
+                      <tr key={row.id} className={`border-t border-white/5 ${i % 2 === 0 ? "bg-white/2" : ""} hover:bg-white/5 transition-colors`}>
+                        <td className="px-4 py-2 text-white/40 text-xs">{row.customer_code}</td>
+                        <td className="px-4 py-2 text-white/90 font-medium">{row.name}</td>
+                        <td className="px-4 py-2 text-white/50 text-xs">{row.classification_name ?? "—"}</td>
+                        <td className={`px-4 py-2 text-left font-mono text-sm font-bold ${row.opening_balance > 0 ? "text-red-400" : row.opening_balance < 0 ? "text-green-400" : "text-white/40"}`}>
+                          {formatCurrency(Math.abs(row.opening_balance))}
+                          {row.opening_balance !== 0 && <span className="text-[10px] mr-1 opacity-70">{row.opening_balance > 0 ? "د" : "ل"}</span>}
+                        </td>
+                        <td className="px-4 py-2 text-left font-mono text-sm text-orange-300">{formatCurrency(row.period_debits)}</td>
+                        <td className="px-4 py-2 text-left font-mono text-sm text-green-300">{formatCurrency(row.period_credits)}</td>
+                        <td className={`px-4 py-2 text-left font-mono text-sm font-bold ${row.closing_balance > 0 ? "text-red-400" : row.closing_balance < 0 ? "text-green-400" : "text-white/40"}`}>
+                          {formatCurrency(Math.abs(row.closing_balance))}
+                          {row.closing_balance !== 0 && <span className="text-[10px] mr-1 opacity-70">{row.closing_balance > 0 ? "د" : "ل"}</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-white/20 bg-white/5 font-bold text-sm">
+                      <td colSpan={3} className="px-4 py-2.5 text-white/60">الإجمالي ({reportData.length} عميل)</td>
+                      <td className="px-4 py-2.5 text-left font-mono text-white/70">{formatCurrency(Math.abs(reportData.reduce((s, r) => s + r.opening_balance, 0)))}</td>
+                      <td className="px-4 py-2.5 text-left font-mono text-orange-300">{formatCurrency(reportData.reduce((s, r) => s + r.period_debits, 0))}</td>
+                      <td className="px-4 py-2.5 text-left font-mono text-green-300">{formatCurrency(reportData.reduce((s, r) => s + r.period_credits, 0))}</td>
+                      <td className="px-4 py-2.5 text-left font-mono text-amber-300">{formatCurrency(Math.abs(reportData.reduce((s, r) => s + r.closing_balance, 0)))}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
