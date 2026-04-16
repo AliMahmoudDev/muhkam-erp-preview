@@ -55,6 +55,10 @@ router.delete("/expense-categories/:id", wrap(async (req, res) => {
   }
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرف غير صالح" }); return; }
+  const [cat] = await db.select({ name: expenseCategoriesTable.name }).from(expenseCategoriesTable).where(eq(expenseCategoriesTable.id, id)).limit(1);
+  if (!cat) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
+  const [linkedExpense] = await db.select({ id: expensesTable.id }).from(expensesTable).where(eq(expensesTable.category, cat.name)).limit(1);
+  if (linkedExpense) { res.status(400).json({ error: "لا يمكن حذف التصنيف لأنه مرتبط بمصروفات" }); return; }
   await db.delete(expenseCategoriesTable).where(eq(expenseCategoriesTable.id, id));
   res.json({ success: true });
 }));

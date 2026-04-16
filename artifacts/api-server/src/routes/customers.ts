@@ -567,6 +567,8 @@ router.delete("/customer-classifications/:id", wrap(async (req, res) => {
   }
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
+  const [linkedCustomer] = await db.select({ id: customersTable.id }).from(customersTable).where(eq(customersTable.classification_id, id)).limit(1);
+  if (linkedCustomer) { res.status(400).json({ error: "لا يمكن حذف التصنيف لأنه مرتبط بعملاء" }); return; }
   await db
     .update(customersTable)
     .set({ classification_id: null })
