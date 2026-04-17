@@ -624,7 +624,7 @@ export default function Employees() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="بحث بالاسم أو الكود أو الرقم القومي..."
-                className="erp-input w-full pr-8 text-sm"
+                className="erp-input w-full text-sm pl-[20px] pr-[20px]"
               />
             </div>
             <select
