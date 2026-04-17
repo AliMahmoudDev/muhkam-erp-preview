@@ -609,7 +609,6 @@ export default function Employees() {
           <span className="erp-badge erp-badge-info">{totalActive} نشط</span>
         </div>
       </div>
-
       {/* Main grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* ── Left: List Panel ────────────────────────────────── */}
@@ -631,7 +630,7 @@ export default function Employees() {
             <select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value === '' ? '' : Number(e.target.value))}
-              className="erp-input text-sm"
+              className="erp-input text-sm pl-[8px] pr-[8px]"
             >
               <option value="">كل الأقسام</option>
               {departments.map((d) => (
@@ -1144,11 +1143,9 @@ export default function Employees() {
           </div>
         )}
       </div>
-
       {/* ═══════════════════════════════════════════════════════
           MODALS
       ════════════════════════════════════════════════════════ */}
-
       {/* Employee Create/Edit Form */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -1487,7 +1484,6 @@ export default function Employees() {
           </div>
         </div>
       )}
-
       {/* Status Change Dialog */}
       {statusDialog?.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -1553,7 +1549,6 @@ export default function Employees() {
           </div>
         </div>
       )}
-
       {/* Delete Confirm */}
       {deleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -1581,7 +1576,6 @@ export default function Employees() {
           </div>
         </div>
       )}
-
       {/* Add Document */}
       {showDocForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -1658,7 +1652,6 @@ export default function Employees() {
           </div>
         </div>
       )}
-
       {/* New Loan Form */}
       {showLoanForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -1736,7 +1729,6 @@ export default function Employees() {
           </div>
         </div>
       )}
-
       {/* Manual Payment / Deduction modal */}
       {showPayModal != null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -1777,7 +1769,6 @@ export default function Employees() {
           </div>
         </div>
       )}
-
       {/* Deduction Form */}
       {showDeductForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
