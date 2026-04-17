@@ -6,7 +6,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { safeArray } from "@/lib/safe-data";
 import { useToast } from "@/hooks/use-toast";
 import { TableSkeleton } from "@/components/skeletons";
-import { Clock, Plus, X, Calendar, Sun, AlarmClock } from "lucide-react";
+import { Clock, Plus, X, Sun, AlarmClock } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 type AnyRec = Record<string, unknown>;

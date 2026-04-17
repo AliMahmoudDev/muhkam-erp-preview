@@ -9,7 +9,7 @@ jobs:
   deploy:
     name: Deploy to Hetzner VPS
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -22,39 +22,93 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
-          command_timeout: 12m
-          envs: VPS_JWT_SECRET,VPS_JWT_REFRESH_SECRET
+          command_timeout: 15m
+          envs: VPS_DATABASE_URL,VPS_REDIS_URL,VPS_JWT_SECRET,VPS_JWT_REFRESH_SECRET
           script: |
-            set -e
+            set -euo pipefail
+
+            # ── 1. Pull latest code ────────────────────────────────────────────
             cd /root/Schema-Sync
             git fetch origin main
             git reset --hard origin/main
             git clean -fd
-            export DATABASE_URL="postgresql://erpuser:123456@localhost:5432/erp"
+
+            # ── 2. Export all required secrets into environment ────────────────
+            export DATABASE_URL="$VPS_DATABASE_URL"
+            export REDIS_URL="$VPS_REDIS_URL"
             export JWT_SECRET="$VPS_JWT_SECRET"
             export JWT_REFRESH_SECRET="$VPS_JWT_REFRESH_SECRET"
             export NODE_ENV=production
-            pnpm install
+
+            # ── 3. Install dependencies ────────────────────────────────────────
+            pnpm install --frozen-lockfile
+
+            # ── 4. DB integrity repair (idempotent — safe on every deploy) ──────
+            echo "Running DB repair script..."
+            psql "$DATABASE_URL" -f /root/Schema-Sync/scripts/db-repair.sql
+
+            # ── 5. Push schema migrations ──────────────────────────────────────
+            echo "Running drizzle push..."
             cd /root/Schema-Sync/lib/db
             pnpm run push
+
+            # ── 6. Build frontend ──────────────────────────────────────────────
+            echo "Building frontend..."
             cd /root/Schema-Sync/artifacts/erp-system
             NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
+
+            # ── 7. Build API server ────────────────────────────────────────────
+            echo "Building API server..."
             cd /root/Schema-Sync/artifacts/api-server
             pnpm run build
-            pm2 restart halaltech-api --update-env
+
+            # ── 8. Write pm2 ecosystem config with updated env vars ────────────
+            cat > /root/Schema-Sync/ecosystem.config.cjs << ECOSYSTEM
+            module.exports = {
+              apps: [{
+                name: 'halaltech-api',
+                script: './artifacts/api-server/dist/index.mjs',
+                cwd: '/root/Schema-Sync',
+                instances: 1,
+                autorestart: true,
+                watch: false,
+                max_memory_restart: '512M',
+                env: {
+                  NODE_ENV: 'production',
+                  DATABASE_URL: '${DATABASE_URL}',
+                  REDIS_URL: '${REDIS_URL}',
+                  JWT_SECRET: '${JWT_SECRET}',
+                  JWT_REFRESH_SECRET: '${JWT_REFRESH_SECRET}',
+                  PORT: '8080',
+                }
+              }]
+            };
+            ECOSYSTEM
+
+            # ── 9. Reload / start pm2 with updated env ─────────────────────────
+            echo "Reloading pm2..."
+            pm2 startOrReload /root/Schema-Sync/ecosystem.config.cjs --update-env
+
+            # ── 10. Health check (up to 60 s) ──────────────────────────────────
+            echo "Waiting for health check..."
             MAX_ATTEMPTS=24
             ATTEMPT=0
             until curl -sf http://localhost:8080/api/healthz > /dev/null 2>&1; do
               ATTEMPT=$((ATTEMPT + 1))
               if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
-                pm2 logs halaltech-api --lines 30 --nostream || true
+                echo "Health check failed after ${MAX_ATTEMPTS} attempts"
+                pm2 logs halaltech-api --lines 50 --nostream || true
                 exit 1
               fi
               sleep 2.5
             done
+
             pm2 status
+            echo "Deploy complete — halaltech-api is live"
 
         env:
+          VPS_DATABASE_URL: ${{ secrets.VPS_DATABASE_URL }}
+          VPS_REDIS_URL: ${{ secrets.VPS_REDIS_URL }}
           VPS_JWT_SECRET: ${{ secrets.VPS_JWT_SECRET }}
           VPS_JWT_REFRESH_SECRET: ${{ secrets.VPS_JWT_REFRESH_SECRET }}
 
@@ -67,7 +121,7 @@ jobs:
           port: 22
           command_timeout: 30s
           script: |
-            set -e
+            set -euo pipefail
             RESPONSE=$(curl -sf http://localhost:8080/api/healthz 2>&1) || {
               pm2 logs halaltech-api --lines 20 --nostream || true
               exit 1
@@ -77,4 +131,4 @@ jobs:
               pm2 logs halaltech-api --lines 20 --nostream || true
               exit 1
             fi
-            echo "OK - $STATUS - halaltec.com is live!"
+            echo "OK — $STATUS — halaltec.com is live!"

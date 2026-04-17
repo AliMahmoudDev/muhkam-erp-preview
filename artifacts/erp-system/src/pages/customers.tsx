@@ -918,7 +918,6 @@ export default function Customers() {
 
   const [showNewClassification, setShowNewClassification] = useState(false);
   const [newClassificationName, setNewClassificationName] = useState("");
-  const [editingClassification, setEditingClassification] = useState<{ id: number; name: string } | null>(null);
   const [confirmDeleteClassificationId, setConfirmDeleteClassificationId] = useState<number | null>(null);
 
   const [showReports, setShowReports] = useState(false);
@@ -964,23 +963,6 @@ export default function Customers() {
       if (formData.classification_id === id) setFormData(f => ({ ...f, classification_id: null }));
       if (editFormData.classification_id === id) setEditFormData(f => ({ ...f, classification_id: null }));
       toast({ title: "✅ تم حذف التصنيف" });
-    } catch (e: unknown) {
-      toast({ title: (e as Error).message, variant: "destructive" });
-    }
-  };
-
-  const handleUpdateClassification = async () => {
-    if (!editingClassification || !editingClassification.name.trim()) return;
-    try {
-      const r = await authFetch(api(`/api/customer-classifications/${editingClassification.id}`), {
-        method: "PUT",
-        body: JSON.stringify({ name: editingClassification.name.trim() }),
-      });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error || "خطأ في التعديل");
-      await refetchClassifications();
-      setEditingClassification(null);
-      toast({ title: "✅ تم تعديل التصنيف" });
     } catch (e: unknown) {
       toast({ title: (e as Error).message, variant: "destructive" });
     }
