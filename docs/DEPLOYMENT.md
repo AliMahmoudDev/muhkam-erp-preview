@@ -2,24 +2,40 @@
 
 ## GitHub Secrets المطلوبة
 
-في GitHub → Settings → Secrets and variables → Actions، أضف:
+في GitHub → Settings → Secrets and variables → Actions، يجب أن تكون هذه الـ secrets موجودة:
 
-| Secret | القيمة |
-|--------|--------|
-| `VPS_HOST` | عنوان IP الخاص بالسيرفر |
-| `VPS_USER` | اسم المستخدم (مثال: `root`) |
-| `VPS_SSH_KEY` | محتوى ملف `~/.ssh/id_rsa` الخاص |
-| `DATABASE_URL` | `postgresql://erpuser:PASSWORD@localhost:5432/erp` |
+| Secret | الوصف | الحالة |
+|--------|-------|--------|
+| `VPS_HOST` | عنوان IP الخاص بالسيرفر | ✅ مضاف |
+| `VPS_USER` | اسم المستخدم على السيرفر (مثال: `root`) | ✅ مضاف |
+| `VPS_PASSWORD` | كلمة مرور SSH للسيرفر | ✅ مضاف |
+| `VPS_DATABASE_URL` | رابط PostgreSQL على السيرفر، مثال: `postgresql://user:pass@localhost:5432/erp` | ✅ مضاف |
+| `VPS_REDIS_URL` | رابط Redis على السيرفر، مثال: `redis://localhost:6379` | ✅ مضاف |
+| `VPS_JWT_SECRET` | مفتاح JWT الأساسي (32+ حرف عشوائي) | ✅ مضاف |
+| `VPS_JWT_REFRESH_SECRET` | مفتاح JWT للـ refresh tokens | ✅ مضاف |
 
-## إعداد SSH Key للـ GitHub Actions
+> **ملاحظة:** `VPS_DATABASE_URL` و `VPS_REDIS_URL` مطلوبان لتشغيل `db-repair.sql`
+> وخطوة `drizzle-kit push` في pipeline الـ deploy، وكذلك لتوليد ملف `ecosystem.config.cjs`
+> الخاص بـ pm2 في كل deploy.
 
-على السيرفر:
+## كيف يستخدم الـ deploy.yml هذه الـ Secrets
+
+يمرر الـ workflow هذه المتغيرات إلى الـ SSH session عبر `envs:` ثم يستخدمها:
+
 ```bash
-ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_deploy
-cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
-cat ~/.ssh/github_deploy
+# خطوة 4 — إصلاح قاعدة البيانات
+psql "$DATABASE_URL" -f /root/Schema-Sync/scripts/db-repair.sql
+
+# خطوة 5 — push schema migrations
+cd /root/Schema-Sync/lib/db && pnpm run push
+
+# خطوة 8 — توليد ecosystem.config.cjs لـ pm2
+cat > /root/Schema-Sync/ecosystem.config.cjs << ECOSYSTEM
+  DATABASE_URL: '${DATABASE_URL}',
+  REDIS_URL: '${REDIS_URL}',
+  ...
+ECOSYSTEM
 ```
-انسخ المحتوى في GitHub Secret باسم `VPS_SSH_KEY`.
 
 ## تشغيل Docker محلياً
 
