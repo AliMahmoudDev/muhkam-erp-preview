@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "test:integrity": "node ./build-test.mjs"
+    "test:integrity": "node ./build-test.mjs",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",
