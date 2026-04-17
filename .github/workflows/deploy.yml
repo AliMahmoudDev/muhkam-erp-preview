@@ -89,6 +89,20 @@ jobs:
           NODE_ENV: test
         run: pnpm --filter @workspace/api-server run test:integration
 
+      - name: Notify Slack on scheduled health-check failure
+        if: failure() && github.event_name == 'schedule'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL secret not set — skipping Slack notification"
+            exit 0
+          fi
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -sf -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\":rotating_light: *Weekly health check failed!*\nThe scheduled Monday integration-test run failed.\n<${RUN_URL}|View failing logs>\"}"
+
   # ── Deploy ────────────────────────────────────────────────────────────────
   # Only runs when all integration tests pass, and only on push/dispatch
   # (not on pull_request events — PRs only need the test gate to block merges).

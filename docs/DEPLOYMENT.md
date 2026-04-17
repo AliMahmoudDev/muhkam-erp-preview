@@ -15,6 +15,7 @@
 | `VPS_JWT_REFRESH_SECRET` | مفتاح JWT للـ refresh tokens | ✅ مضاف |
 | `INTEGRATION_JWT_SECRET` | مفتاح JWT لتشغيل الـ integration tests في CI (32+ حرف) | ✅ مضاف |
 | `INTEGRATION_JWT_REFRESH_SECRET` | مفتاح JWT refresh للـ integration tests في CI (32+ حرف) | ✅ مضاف |
+| `SLACK_WEBHOOK_URL` | رابط Incoming Webhook لـ Slack — يُرسَل إليه إشعار عند فشل الـ scheduled health check الأسبوعي | ⚠️ مطلوب للتنبيهات |
 
 > **ملاحظة:** `VPS_DATABASE_URL` و `VPS_REDIS_URL` مطلوبان لتشغيل `db-repair.sql`
 > وخطوة `drizzle-kit push` في pipeline الـ deploy، وكذلك لتوليد ملف `ecosystem.config.cjs`
@@ -121,6 +122,42 @@ docker-compose.yml:
 | `NODE_ENV` | `production` أو `development` | لا |
 | `BACKUP_DIR` | مسار حفظ الـ backups | لا |
 | `SUPER_ADMIN_IPS` | IPs مسموح لها بالـ super admin (فارغ = الكل) | لا |
+
+---
+
+## إعداد تنبيهات Slack للـ Health Check الأسبوعي
+
+عند فشل الـ scheduled integration-test (كل اثنين 03:00 UTC)، يُرسَل إشعار فوري إلى Slack
+يتضمن رابطاً مباشراً للـ run الفاشل.
+
+### إنشاء Incoming Webhook في Slack
+
+1. افتح [Slack API Apps](https://api.slack.com/apps) واختر **Create New App → From scratch**
+2. في قائمة الـ app، اختر **Incoming Webhooks** ثم فعّلها
+3. اضغط **Add New Webhook to Workspace** واختر الـ channel المناسب (مثال: `#ops-alerts`)
+4. انسخ الـ Webhook URL (يبدأ بـ `https://hooks.slack.com/services/...`)
+
+### إضافة الـ Secret إلى GitHub
+
+```
+GitHub Repository → Settings → Secrets and variables → Actions → New repository secret
+```
+
+- **Name:** `SLACK_WEBHOOK_URL`
+- **Value:** الـ URL الذي نسخته من Slack
+
+### شكل الإشعار
+
+عند الفشل يصل إلى الـ channel رسالة بهذا الشكل:
+
+```
+🚨 Weekly health check failed!
+The scheduled Monday integration-test run failed.
+View failing logs → https://github.com/<org>/<repo>/actions/runs/<id>
+```
+
+> **ملاحظة:** إذا لم يُضَف `SLACK_WEBHOOK_URL`، تُتجاهَل خطوة الإشعار بدون أن تُفشِل الـ workflow.
+> GitHub Actions لا تزال ترسل إشعار بريد إلكتروني عند الفشل بغض النظر.
 
 ---
 
