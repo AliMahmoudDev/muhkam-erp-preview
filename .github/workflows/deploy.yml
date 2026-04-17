@@ -3,6 +3,8 @@ name: Deploy to Production
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -63,12 +65,14 @@ jobs:
         run: pnpm --filter @workspace/api-server run test:integration
 
   # ── Deploy ────────────────────────────────────────────────────────────────
-  # Only runs when all integration tests pass.
+  # Only runs when all integration tests pass, and only on push/dispatch
+  # (not on pull_request events — PRs only need the test gate to block merges).
   deploy:
     name: Deploy to Hetzner VPS
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [integration-test]
+    if: github.event_name != 'pull_request'
 
     steps:
       - name: Checkout
