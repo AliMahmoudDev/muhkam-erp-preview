@@ -1170,7 +1170,7 @@ export default function Employees() {
                     value={editEmp.first_name_ar ?? ''}
                     onChange={(e) => set('first_name_ar', e.target.value)}
                     className="erp-input w-full"
-                    placeholder="محمد"
+                    placeholder="صالح"
                   />
                 </Field>
                 <Field label="الاسم الأخير (عربي) *">
@@ -1178,7 +1178,7 @@ export default function Employees() {
                     value={editEmp.last_name_ar ?? ''}
                     onChange={(e) => set('last_name_ar', e.target.value)}
                     className="erp-input w-full"
-                    placeholder="أحمد"
+                    placeholder="المليجي"
                   />
                 </Field>
               </div>

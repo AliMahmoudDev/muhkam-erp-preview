@@ -1,0 +1,230 @@
+I want you to act as a senior backend engineer and FIX my ERP system to be production-safe for a multi-tenant SaaS.
+
+This is NOT a refactor. This is a CRITICAL SYSTEM HARDENING.
+
+You must be strict, surgical, and eliminate ALL dangerous patterns.
+
+---
+
+## 🔴 CRITICAL RULES (NON-NEGOTIABLE)
+
+1. Multi-tenant isolation MUST be 100% enforced.
+2. NO fallback values like `?? 1` or `|| 1` for company_id.
+3. Default behavior MUST be DENY, not allow.
+4. NO destructive operations without tenant filtering.
+5. The system must NEVER mix data between companies.
+
+---
+
+## 🔥 TASK 1 — REMOVE ALL `?? 1` AND `|| 1`
+
+Search entire codebase and REPLACE:
+
+```ts
+req.user?.company_id ?? 1
+```
+
+WITH:
+
+```ts
+const companyId = req.user?.company_id;
+if (!companyId) {
+  return res.status(403).json({ error: "Tenant not resolved" });
+}
+```
+
+Do this in ALL files.
+
+Also:
+
+* Remove any frontend fallback like localStorage || 1
+* company_id must NEVER be guessed or defaulted
+
+---
+
+## 🔥 TASK 2 — ENFORCE TENANT ISOLATION IN ALL DB QUERIES
+
+For EVERY query:
+
+BAD:
+
+```ts
+.where(eq(table.id, id))
+```
+
+GOOD:
+
+```ts
+.where(and(eq(table.id, id), eq(table.company_id, companyId)))
+```
+
+Apply this to:
+
+* SELECT
+* UPDATE
+* DELETE
+
+Search entire codebase and fix ALL occurrences.
+
+---
+
+## 🔥 TASK 3 — FIX system.ts (CRITICAL DATA LOSS RISK)
+
+Rewrite `/system/restore` completely:
+
+Requirements:
+
+* ONLY restore data for the current company
+* NEVER delete data of other companies
+* Validate:
+
+```ts
+if (file.company_id !== companyId) reject
+if (file._meta?.truncated) reject
+```
+
+* Add automatic pre-restore backup
+* Add audit log BEFORE and AFTER restore
+* Add idempotency protection (prevent double restore)
+* Add timeout handling (long transaction safe)
+
+Also:
+
+* ALL DELETE must be:
+
+```ts
+.where(eq(table.company_id, companyId))
+```
+
+---
+
+## 🔥 TASK 4 — FIX PERMISSIONS SYSTEM
+
+Update hasPermission:
+
+BAD:
+
+```ts
+return admin || manager || super_admin
+```
+
+GOOD:
+
+```ts
+return false
+```
+
+Rules:
+
+* Unknown permission = DENY
+* Explicit permissions only
+* Add missing permissions explicitly to ROLE_DEFAULTS
+
+---
+
+## 🔥 TASK 5 — DATABASE HARDENING
+
+Add missing indexes:
+
+```sql
+CREATE INDEX CONCURRENTLY products_company_id_idx ON products(company_id);
+CREATE INDEX CONCURRENTLY products_company_barcode_idx ON products(company_id, barcode);
+CREATE INDEX CONCURRENTLY customers_company_id_idx ON customers(company_id);
+CREATE INDEX CONCURRENTLY customers_company_phone_idx ON customers(company_id, phone);
+```
+
+Also:
+
+* Add indexes for all foreign keys
+* Add composite indexes for frequent queries
+
+---
+
+## 🔥 TASK 6 — ENFORCE company_id NOT NULL
+
+Run migration:
+
+```sql
+ALTER TABLE erp_users ALTER COLUMN company_id SET NOT NULL;
+```
+
+Also:
+
+* Validate all existing data
+* Fix any NULL company_id rows
+
+---
+
+## 🔥 TASK 7 — DISABLE DANGEROUS BACKUP BEHAVIOR
+
+* Remove backup triggers from login/logout
+* Ensure backup is:
+
+  * manual or scheduled
+  * NOT blocking requests
+
+---
+
+## 🔥 TASK 8 — ENABLE REDIS (MANDATORY)
+
+* Ensure REDIS_URL is required in production
+* NO fallback to memory in production mode
+* Use Redis for:
+
+  * session blacklist
+  * rate limiting
+  * caching
+
+---
+
+## 🔥 TASK 9 — INCREASE DB POOL
+
+Update DB config:
+
+```ts
+max: 50
+```
+
+Add:
+
+* proper timeout handling
+* retry strategy if needed
+
+---
+
+## 🔥 TASK 10 — FINAL VALIDATION
+
+After all fixes:
+
+1. Search again for:
+
+   * `?? 1`
+   * `|| 1`
+   * queries without company_id
+
+2. Confirm:
+
+   * NO cross-tenant access possible
+   * NO destructive global operations
+   * All sensitive actions logged
+
+---
+
+## OUTPUT REQUIRED
+
+Return:
+
+1. List of all files modified
+2. Summary of changes per file
+3. Any remaining risks (if any)
+4. Final statement:
+
+"System is now SAFE for multi-tenant SaaS" OR explain why not
+
+---
+
+IMPORTANT:
+
+* Do NOT skip any step
+* Do NOT give partial fixes
+* Be strict and paranoid about data safety
