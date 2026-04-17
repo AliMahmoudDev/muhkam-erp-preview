@@ -11,7 +11,8 @@
  */
 
 import { Router, type IRouter } from "express";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
+import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
 import {
   db,
   productsTable,
@@ -43,7 +44,7 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية إجراء جرد المخزون" }); return;
   }
 
-  const { warehouse_id = 1, notes, items } = req.body as {
+  const { warehouse_id, notes, items } = req.body as {
     warehouse_id?: number;
     notes?: string;
     items: Array<{ product_id: number; physical_qty: number; notes?: string }>;
@@ -53,8 +54,11 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
     res.status(400).json({ error: "يجب تحديد منتج واحد على الأقل في الجرد" }); return;
   }
 
+  const companyId = req.user!.company_id!;
+  const tenantWarehouseId = await resolveTenantWarehouseId(warehouse_id ?? null, companyId);
+
   const productIds = items.map(i => i.product_id);
-  const products = await db.select().from(productsTable).where(inArray(productsTable.id, productIds));
+  const products = await db.select().from(productsTable).where(and(inArray(productsTable.id, productIds), eq(productsTable.company_id, companyId)));
   const productMap = new Map(products.map(p => [p.id, p]));
 
   const missing = productIds.filter(id => !productMap.has(id));
@@ -66,7 +70,8 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
   const whStockRows = await db.execute(sql`
     SELECT product_id::int, COALESCE(SUM(CAST(quantity AS FLOAT8)), 0) AS wh_qty
     FROM stock_movements
-    WHERE warehouse_id = ${Number(warehouse_id)}
+    WHERE warehouse_id = ${tenantWarehouseId}
+      AND company_id = ${companyId}
       AND product_id = ANY(${productIds}::int[])
     GROUP BY product_id
   `);
@@ -74,10 +79,10 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
 
   const session = await db.transaction(async (tx) => {
     const [sess] = await tx.insert(stockCountSessionsTable).values({
-      warehouse_id,
+      warehouse_id: tenantWarehouseId,
       status: "draft",
       notes: notes ?? null,
-      company_id: req.user!.company_id!,
+      company_id: companyId,
       created_by: req.user?.id ?? null,
     }).returning();
 
@@ -117,6 +122,7 @@ router.get("/inventory/count-sessions", wrap(async (req, res) => {
   }
 
   const sessions = await db.select().from(stockCountSessionsTable)
+    .where(eq(stockCountSessionsTable.company_id, req.user!.company_id!))
     .orderBy(stockCountSessionsTable.created_at);
 
   res.json(sessions.map(s => ({
@@ -137,7 +143,7 @@ router.get("/inventory/count-sessions/:id", wrap(async (req, res) => {
 
   const sessionId = parseInt(String(req.params.id));
   const [session] = await db.select().from(stockCountSessionsTable)
-    .where(eq(stockCountSessionsTable.id, sessionId));
+    .where(and(eq(stockCountSessionsTable.id, sessionId), eq(stockCountSessionsTable.company_id, req.user!.company_id!)));
 
   if (!session) { res.status(404).json({ error: "جلسة الجرد غير موجودة" }); return; }
 
@@ -186,7 +192,7 @@ router.post("/inventory/count-sessions/:id/apply", wrap(async (req, res) => {
 
   const sessionId = parseInt(String(req.params.id));
   const [session] = await db.select().from(stockCountSessionsTable)
-    .where(eq(stockCountSessionsTable.id, sessionId));
+    .where(and(eq(stockCountSessionsTable.id, sessionId), eq(stockCountSessionsTable.company_id, req.user!.company_id!)));
 
   if (!session) { res.status(404).json({ error: "جلسة الجرد غير موجودة" }); return; }
   if (session.status === "applied") {
@@ -209,8 +215,12 @@ router.post("/inventory/count-sessions/:id/apply", wrap(async (req, res) => {
   }
 
   const productIds = items.map(i => i.product_id);
-  const products = await db.select().from(productsTable).where(inArray(productsTable.id, productIds));
+  const products = await db.select().from(productsTable).where(and(inArray(productsTable.id, productIds), eq(productsTable.company_id, req.user!.company_id!)));
   const productMap = new Map(products.map(p => [p.id, p]));
+  const missingProd = productIds.filter(pid => !productMap.has(pid));
+  if (missingProd.length > 0) {
+    res.status(400).json({ error: `منتجات غير تابعة لشركتك: ${missingProd.join(", ")}` }); return;
+  }
 
   const adjustments: Array<{ product_id: number; diff: number; oldQty: number; newQty: number }> = [];
 
@@ -229,7 +239,7 @@ router.post("/inventory/count-sessions/:id/apply", wrap(async (req, res) => {
       // تحديث كمية المنتج
       await tx.update(productsTable)
         .set({ quantity: String(newQty) })
-        .where(eq(productsTable.id, item.product_id));
+        .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, req.user!.company_id!)));
 
       // تسجيل حركة المخزون
       const refNo = `CNT-${session.id}-${item.product_id}`;
@@ -256,7 +266,7 @@ router.post("/inventory/count-sessions/:id/apply", wrap(async (req, res) => {
     // تحديث حالة الجلسة
     await tx.update(stockCountSessionsTable)
       .set({ status: "applied", applied_at: new Date() })
-      .where(eq(stockCountSessionsTable.id, sessionId));
+      .where(and(eq(stockCountSessionsTable.id, sessionId), eq(stockCountSessionsTable.company_id, req.user!.company_id!)));
   });
 
   // سجل audit
@@ -316,15 +326,25 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
     res.status(400).json({ error: "يجب تحديد منتج واحد على الأقل" }); return;
   }
 
-  // التحقق من أن المخازن موجودة
-  const [fromWH] = await db.select().from(warehousesTable).where(eq(warehousesTable.id, Number(from_warehouse_id)));
-  const [toWH]   = await db.select().from(warehousesTable).where(eq(warehousesTable.id, Number(to_warehouse_id)));
+  // ── Aggregate duplicate product lines to prevent stock-check bypass ──────
+  const aggregatedMap = new Map<number, number>();
+  for (const it of items) {
+    const pid = Number(it.product_id);
+    const qty = Number(it.quantity);
+    aggregatedMap.set(pid, (aggregatedMap.get(pid) ?? 0) + qty);
+  }
+  const aggregatedItems = Array.from(aggregatedMap.entries()).map(([pid, qty]) => ({ product_id: pid, quantity: qty }));
+
+  // التحقق من أن المخازن موجودة وتنتمي للشركة
+  const companyIdT = req.user!.company_id!;
+  const [fromWH] = await db.select().from(warehousesTable).where(and(eq(warehousesTable.id, Number(from_warehouse_id)), eq(warehousesTable.company_id, companyIdT)));
+  const [toWH]   = await db.select().from(warehousesTable).where(and(eq(warehousesTable.id, Number(to_warehouse_id)), eq(warehousesTable.company_id, companyIdT)));
   if (!fromWH) { res.status(404).json({ error: `مخزن المصدر غير موجود: ${from_warehouse_id}` }); return; }
   if (!toWH)   { res.status(404).json({ error: `مخزن الهدف غير موجود: ${to_warehouse_id}` }); return; }
 
   // جلب المنتجات
   const productIds = items.map(i => i.product_id);
-  const products   = await db.select().from(productsTable).where(inArray(productsTable.id, productIds));
+  const products   = await db.select().from(productsTable).where(and(inArray(productsTable.id, productIds), eq(productsTable.company_id, companyIdT)));
   const productMap = new Map(products.map(p => [p.id, p]));
 
   // ─── حساب كمية كل منتج في مخزن المصدر فقط (من حركات المخزون) ─────────────
@@ -335,6 +355,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
            COALESCE(SUM(CAST(quantity AS FLOAT8)), 0) AS wh_qty
     FROM   stock_movements
     WHERE  warehouse_id = ${Number(from_warehouse_id)}
+      AND  company_id   = ${companyIdT}
       AND  product_id   = ANY(${productIds}::int[])
     GROUP BY product_id
   `);
@@ -349,6 +370,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
            COALESCE(SUM(CAST(quantity AS FLOAT8)), 0) AS wh_qty
     FROM   stock_movements
     WHERE  warehouse_id = ${Number(to_warehouse_id)}
+      AND  company_id   = ${companyIdT}
       AND  product_id   = ANY(${productIds}::int[])
     GROUP BY product_id
   `);
@@ -357,8 +379,8 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
       .map(r => [Number(r.product_id), Number(r.wh_qty ?? 0)])
   );
 
-  // ─── التحقق من توفر الكمية في مخزن المصدر تحديداً ────────────────────────
-  for (const item of items) {
+  // ─── التحقق من توفر الكمية في مخزن المصدر تحديداً (على المجاميع) ───────
+  for (const item of aggregatedItems) {
     const product = productMap.get(item.product_id);
     if (!product) {
       res.status(404).json({ error: `المنتج غير موجود: ${item.product_id}` }); return;
@@ -390,7 +412,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
     const transferItems = [];
     const today = new Date().toISOString().split("T")[0];
 
-    for (const item of items) {
+    for (const item of aggregatedItems) {
       const product = productMap.get(item.product_id)!;
       const qty = Number(item.quantity);
 
@@ -487,6 +509,7 @@ router.get("/inventory/transfers", wrap(async (req, res) => {
   }
 
   const transfers = await db.select().from(stockTransfersTable)
+    .where(eq(stockTransfersTable.company_id, req.user!.company_id!))
     .orderBy(stockTransfersTable.created_at);
 
   res.json(transfers.map(t => ({
@@ -504,6 +527,7 @@ router.get("/inventory/count-sessions-enriched", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية عرض الجرد" }); return;
   }
 
+  const cidEnriched = req.user!.company_id!;
   const rows = await db.execute(sql`
     SELECT
       s.id,
@@ -521,6 +545,7 @@ router.get("/inventory/count-sessions-enriched", wrap(async (req, res) => {
       )::int AS adjustments_count
     FROM stock_count_sessions s
     LEFT JOIN stock_count_items i ON i.session_id = s.id
+    WHERE s.company_id = ${cidEnriched}
     GROUP BY s.id, s.warehouse_id, s.status, s.notes, s.company_id, s.created_by, s.created_at, s.applied_at
     ORDER BY s.created_at DESC
   `);
@@ -548,6 +573,7 @@ router.get("/inventory/transfers-enriched", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية عرض التحويلات" }); return;
   }
 
+  const cidT = req.user!.company_id!;
   const rows = await db.execute(sql`
     SELECT
       t.id,
@@ -562,6 +588,7 @@ router.get("/inventory/transfers-enriched", wrap(async (req, res) => {
       COALESCE(SUM(CAST(i.quantity AS FLOAT8)), 0) AS total_qty
     FROM stock_transfers t
     LEFT JOIN stock_transfer_items i ON i.transfer_id = t.id
+    WHERE t.company_id = ${cidT}
     GROUP BY t.id, t.from_warehouse_id, t.to_warehouse_id, t.status, t.notes, t.company_id, t.created_by, t.created_at
     ORDER BY t.created_at DESC
   `);

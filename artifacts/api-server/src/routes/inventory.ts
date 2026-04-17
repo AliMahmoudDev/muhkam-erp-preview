@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db, stockMovementsTable, productsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
@@ -183,7 +183,7 @@ router.get("/inventory/product/:id", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
-  const [product] = await db.select().from(productsTable).where(eq(productsTable.id, id));
+  const [product] = await db.select().from(productsTable).where(and(eq(productsTable.id, id), eq(productsTable.company_id, req.user!.company_id!)));
   if (!product) { res.status(404).json({ error: "المنتج غير موجود" }); return; }
 
   const movements = await db
@@ -237,7 +237,7 @@ router.post("/inventory/adjustment", wrap(async (req, res) => {
     res.status(400).json({ error: "بيانات غير صالحة" }); return;
   }
 
-  const [product] = await db.select().from(productsTable).where(eq(productsTable.id, prodId));
+  const [product] = await db.select().from(productsTable).where(and(eq(productsTable.id, prodId), eq(productsTable.company_id, req.user!.company_id!)));
   if (!product) { res.status(404).json({ error: "المنتج غير موجود" }); return; }
 
   const oldQty = Number(product.quantity);

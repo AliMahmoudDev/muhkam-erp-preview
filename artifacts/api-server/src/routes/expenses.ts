@@ -55,11 +55,12 @@ router.delete("/expense-categories/:id", wrap(async (req, res) => {
   }
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرف غير صالح" }); return; }
-  const [cat] = await db.select({ name: expenseCategoriesTable.name }).from(expenseCategoriesTable).where(eq(expenseCategoriesTable.id, id)).limit(1);
+  const cidExp = req.user!.company_id!;
+  const [cat] = await db.select({ name: expenseCategoriesTable.name }).from(expenseCategoriesTable).where(and(eq(expenseCategoriesTable.id, id), eq(expenseCategoriesTable.company_id, cidExp))).limit(1);
   if (!cat) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
-  const [linkedExpense] = await db.select({ id: expensesTable.id }).from(expensesTable).where(eq(expensesTable.category, cat.name)).limit(1);
+  const [linkedExpense] = await db.select({ id: expensesTable.id }).from(expensesTable).where(and(eq(expensesTable.category, cat.name), eq(expensesTable.company_id, cidExp))).limit(1);
   if (linkedExpense) { res.status(400).json({ error: "لا يمكن حذف التصنيف لأنه مرتبط بمصروفات" }); return; }
-  await db.delete(expenseCategoriesTable).where(eq(expenseCategoriesTable.id, id));
+  await db.delete(expenseCategoriesTable).where(and(eq(expenseCategoriesTable.id, id), eq(expenseCategoriesTable.company_id, cidExp)));
   res.json({ success: true });
 }));
 
@@ -185,8 +186,9 @@ router.post("/expenses", wrap(async (req, res) => {
 router.delete("/expenses/:id", wrap(async (req, res) => {
   const params = DeleteExpenseParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const [preCheck] = await db.select().from(expensesTable).where(eq(expensesTable.id, params.data.id));
-  if (preCheck) await assertPeriodOpen(preCheck.created_at?.toISOString().split("T")[0] ?? null, req);
+  const [preCheck] = await db.select().from(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, req.user!.company_id!)));
+  if (!preCheck) { res.status(404).json({ error: "المصروف غير موجود" }); return; }
+  await assertPeriodOpen(preCheck.created_at?.toISOString().split("T")[0] ?? null, req);
 
   let deletedSafeId:   number | null = null;
   let deletedSafeName: string | null = null;
@@ -194,7 +196,7 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
   let deletedCategory: string        = "";
 
   await db.transaction(async (tx) => {
-    const [exp] = await tx.select().from(expensesTable).where(eq(expensesTable.id, params.data.id));
+    const [exp] = await tx.select().from(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, req.user!.company_id!)));
     if (exp?.safe_id) {
       const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, exp.safe_id));
       if (safe) {
@@ -207,7 +209,7 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
       deletedAmount   = Number(exp.amount);
       deletedCategory = exp.category ?? "مصروف محذوف";
     }
-    await tx.delete(expensesTable).where(eq(expensesTable.id, params.data.id));
+    await tx.delete(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, req.user!.company_id!)));
   });
 
   if (deletedSafeId !== null && deletedAmount > 0) {

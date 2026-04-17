@@ -15,6 +15,19 @@
 - Fixed `artifacts/erp-system/src/components/ui/spinner.tsx`: `React.ComponentProps<typeof Loader2Icon>` instead of `<"svg">`
 - Added `pnpm.overrides` in root `package.json` to deduplicate `@types/react` and fix `calendar.tsx` dual-types TS error
 
+## Multi-Tenant Hardening (April 2026)
+Comprehensive multi-tenant isolation pass over financial/inventory write paths. All FK ownership lookups in mutating routes now constrain by `(id, company_id)`; idempotency `request_id` lookups are tenant-scoped; `stock_movements`, `transactions`, and `customer_ledger` inserts explicitly pass `company_id` (no reliance on default=1).
+
+Files hardened: `sales.ts`, `purchases.ts`, `customers.ts`, `expenses.ts`, `inventory-control.ts` (transfers + count-sessions), `returns.ts` (sales-returns + purchase-returns POST/DELETE).
+
+Key invariants enforced:
+- `BACKUP_COMPANY_ID=1` is a historical default; never relied on at insert time.
+- `super_admin` users have NULL `company_id` (CHECK constraint).
+- `resolveTenantWarehouseId()` replaces all `warehouse_id ?? 1` fallbacks.
+- POST handlers bulk-validate `product_id`/`customer_id`/`safe_id`/`sale_id`/`purchase_id` ownership before any writes.
+- Stock-transfer items are pre-aggregated by `product_id` to prevent duplicate-line stock-check bypass.
+- Child tables without `company_id` (`sale_items`, `purchase_items`) are constrained by validated parent `(sale_id|purchase_id)`.
+
 ## Overview
 This project is a full-stack Arabic ERP System (نظام ERP) designed for Halal Tech, an Egyptian mobile repair shop. Its primary purpose is to provide a comprehensive management solution with an Arabic RTL interface and a dark glass-morphism UI. Key capabilities include dynamic currency, font, accent color, and company branding, all configurable from the Settings without requiring code changes. The system covers essential business functions such as sales (POS), purchases, inventory management, financial transactions, and reporting.
 

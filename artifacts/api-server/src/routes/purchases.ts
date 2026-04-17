@@ -12,6 +12,7 @@ import { triggerBackup } from "../lib/backup-service";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { runAllChecks } from "../lib/alert-service";
 import { hasPermission } from "../lib/permissions";
+import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
 import {
   getOrCreateInventoryAccount,
   getOrCreateSafeAccount,
@@ -69,7 +70,7 @@ router.post("/purchases", wrap(async (req, res) => {
 
   if (requestId) {
     const [existing] = await db.select().from(purchasesTable)
-      .where(eq(purchasesTable.request_id, requestId)).limit(1);
+      .where(and(eq(purchasesTable.request_id, requestId), eq(purchasesTable.company_id, req.user!.company_id!))).limit(1);
     if (existing) return res.json(formatPurchase(existing));
   }
 
@@ -98,6 +99,11 @@ router.post("/purchases", wrap(async (req, res) => {
     res.status(400).json({ error: "يجب تحديد المخزن" }); return;
   }
 
+  const tenantWarehouseId = await resolveTenantWarehouseId(
+    effectiveWarehouseId,
+    req.user!.company_id!,
+  );
+
   let status = "paid";
   if (payment_type === "credit") status = "unpaid";
   else if (remaining > 0) status = "partial";
@@ -108,6 +114,18 @@ router.post("/purchases", wrap(async (req, res) => {
 
   if (paid_amount > 0 && !safe_id) {
     return res.status(400).json({ error: "يجب اختيار الخزينة للمدفوعات النقدية أو الجزئية" });
+  }
+
+  const cidPurchase = req.user!.company_id!;
+
+  // Validate FK ownership before mutation
+  if (customer_id) {
+    const [c] = await db.select({ id: customersTable.id }).from(customersTable).where(and(eq(customersTable.id, customer_id), eq(customersTable.company_id, cidPurchase)));
+    if (!c) { res.status(400).json({ error: "العميل/المورد غير موجود" }); return; }
+  }
+  if (safe_id) {
+    const [s] = await db.select({ id: safesTable.id }).from(safesTable).where(and(eq(safesTable.id, safe_id), eq(safesTable.company_id, cidPurchase)));
+    if (!s) { res.status(400).json({ error: "الخزينة غير موجودة" }); return; }
   }
 
   const purchase = await db.transaction(async (tx) => {
@@ -137,40 +155,40 @@ router.post("/purchases", wrap(async (req, res) => {
         total_price: String(item.total_price),
       });
 
-      const [prod] = await tx.select().from(productsTable).where(eq(productsTable.id, item.product_id));
-      if (prod) {
-        const oldQty = Number(prod.quantity);
-        const oldCost = Number(prod.cost_price);
-        const newItemQty = Number(item.quantity);
-        const newItemCost = Number(item.unit_price);
-        const newTotalQty = oldQty + newItemQty;
-        const newAvgCost = newTotalQty > 0
-          ? (oldQty * oldCost + newItemQty * newItemCost) / newTotalQty
-          : newItemCost;
+      const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidPurchase)));
+      if (!prod) throw httpError(400, `المنتج "${item.product_name}" غير موجود`);
+      const oldQty = Number(prod.quantity);
+      const oldCost = Number(prod.cost_price);
+      const newItemQty = Number(item.quantity);
+      const newItemCost = Number(item.unit_price);
+      const newTotalQty = oldQty + newItemQty;
+      const newAvgCost = newTotalQty > 0
+        ? (oldQty * oldCost + newItemQty * newItemCost) / newTotalQty
+        : newItemCost;
 
-        await tx.update(productsTable)
-          .set({
-            quantity: String(newTotalQty),
-            cost_price: String(newAvgCost.toFixed(4)),
-          })
-          .where(eq(productsTable.id, item.product_id));
+      await tx.update(productsTable)
+        .set({
+          quantity: String(newTotalQty),
+          cost_price: String(newAvgCost.toFixed(4)),
+        })
+        .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidPurchase)));
 
-        await tx.insert(stockMovementsTable).values({
-          product_id: item.product_id,
-          product_name: item.product_name,
-          movement_type: "purchase",
-          quantity: String(newItemQty),
-          quantity_before: String(oldQty),
-          quantity_after: String(newTotalQty),
-          unit_cost: String(newItemCost),
-          reference_type: "purchase",
-          reference_id: newPurchase.id,
-          reference_no: invoiceNo,
-          notes: displayName ? `مشتريات من ${displayName}` : "فاتورة مشتريات",
-          date: today,
-          warehouse_id: effectiveWarehouseId ?? 1,
-        });
-      }
+      await tx.insert(stockMovementsTable).values({
+        product_id: item.product_id,
+        product_name: item.product_name,
+        movement_type: "purchase",
+        quantity: String(newItemQty),
+        quantity_before: String(oldQty),
+        quantity_after: String(newTotalQty),
+        unit_cost: String(newItemCost),
+        reference_type: "purchase",
+        reference_id: newPurchase.id,
+        reference_no: invoiceNo,
+        notes: displayName ? `مشتريات من ${displayName}` : "فاتورة مشتريات",
+        date: today,
+        warehouse_id: tenantWarehouseId,
+        company_id: cidPurchase,
+      });
     }
 
     const cashOut = payment_type === "cash" ? total_amount
@@ -182,11 +200,11 @@ router.post("/purchases", wrap(async (req, res) => {
       : 0;
 
     if (cashOut > 0 && safe_id) {
-      const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, safe_id));
+      const [safe] = await tx.select().from(safesTable).where(and(eq(safesTable.id, safe_id), eq(safesTable.company_id, cidPurchase)));
       if (safe) {
         await tx.update(safesTable)
           .set({ balance: String(Number(safe.balance) - cashOut) })
-          .where(eq(safesTable.id, safe_id));
+          .where(and(eq(safesTable.id, safe_id), eq(safesTable.company_id, cidPurchase)));
         await tx.insert(transactionsTable).values({
           type: "purchase_cash",
           reference_type: "purchase",
@@ -205,11 +223,11 @@ router.post("/purchases", wrap(async (req, res) => {
 
     // آجل أو جزئي: رصيد العميل-المورد يصبح سالباً (نحن مدينون له)
     if (customerDebt > 0 && customer_id) {
-      const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, customer_id));
+      const [cust] = await tx.select().from(customersTable).where(and(eq(customersTable.id, customer_id), eq(customersTable.company_id, cidPurchase)));
       if (cust) {
         await tx.update(customersTable)
           .set({ balance: String(Number(cust.balance) - customerDebt) })
-          .where(eq(customersTable.id, customer_id));
+          .where(and(eq(customersTable.id, customer_id), eq(customersTable.company_id, cidPurchase)));
         await tx.insert(transactionsTable).values({
           type: "purchase_credit",
           reference_type: "purchase",
@@ -250,7 +268,7 @@ router.get("/purchases/:id", wrap(async (req, res) => {
     return;
   }
 
-  const [purchase] = await db.select().from(purchasesTable).where(eq(purchasesTable.id, params.data.id));
+  const [purchase] = await db.select().from(purchasesTable).where(and(eq(purchasesTable.id, params.data.id), eq(purchasesTable.company_id, req.user!.company_id!)));
   if (!purchase) {
     res.status(404).json({ error: "Purchase not found" });
     return;
@@ -323,7 +341,7 @@ router.post("/purchases/:id/post", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
-  const [purchase] = await db.select().from(purchasesTable).where(eq(purchasesTable.id, id));
+  const [purchase] = await db.select().from(purchasesTable).where(and(eq(purchasesTable.id, id), eq(purchasesTable.company_id, req.user!.company_id!)));
   if (!purchase) throw httpError(404, "الفاتورة غير موجودة");
   if (purchase.posting_status === "posted")    throw httpError(400, "الفاتورة مرحَّلة بالفعل");
   if (purchase.posting_status === "cancelled") throw httpError(400, "لا يمكن ترحيل فاتورة ملغاة");
@@ -369,7 +387,7 @@ router.post("/purchases/:id/cancel", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
-  const [purchase] = await db.select().from(purchasesTable).where(eq(purchasesTable.id, id));
+  const [purchase] = await db.select().from(purchasesTable).where(and(eq(purchasesTable.id, id), eq(purchasesTable.company_id, req.user!.company_id!)));
   if (!purchase) throw httpError(404, "الفاتورة غير موجودة");
   if (purchase.posting_status === "cancelled") throw httpError(400, "الفاتورة ملغاة بالفعل");
 
@@ -433,6 +451,10 @@ router.post("/purchases/:id/cancel", wrap(async (req, res) => {
   await assertPeriodOpen(purchase.date, req);
 
   const effectiveWarehouseId = req.user?.warehouse_id ?? null;
+  const tenantWarehouseId = await resolveTenantWarehouseId(
+    (purchase as { warehouse_id?: number | null }).warehouse_id ?? effectiveWarehouseId,
+    req.user!.company_id!,
+  );
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -482,7 +504,7 @@ router.post("/purchases/:id/cancel", wrap(async (req, res) => {
           reference_no: purchase.invoice_no,
           notes: `إلغاء فاتورة مشتريات ${purchase.invoice_no}`,
           date: today,
-          warehouse_id: effectiveWarehouseId ?? 1,
+          warehouse_id: tenantWarehouseId,
         });
       }
     }

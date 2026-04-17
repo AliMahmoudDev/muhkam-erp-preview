@@ -46,6 +46,10 @@ if (process.env.REDIS_URL) {
     redis = null;
   }
 } else {
+  if (process.env.NODE_ENV === 'production') {
+    logger.fatal('[BruteForce] REDIS_URL is REQUIRED in production — refusing to start with in-memory brute-force store (multi-instance unsafe)');
+    throw new Error('REDIS_URL is required in production for brute-force protection');
+  }
   logger.info('[BruteForce] REDIS_URL not set — using in-memory store (single-instance only)');
 }
 

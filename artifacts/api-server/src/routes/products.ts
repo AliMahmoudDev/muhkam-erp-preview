@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-zod";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
 
 const router: IRouter = Router();
 
@@ -150,6 +151,11 @@ router.post("/products", wrap(async (req, res) => {
   const effectiveWarehouseId = (role === "admin" || role === "manager") ? queryWarehouseId : (req.user?.warehouse_id ?? null);
   const companyId = req.user!.company_id!;
 
+  // Resolve warehouse only if opening stock will be inserted (avoids 400 for zero-qty products).
+  const tenantWarehouseId = parsed.data.quantity > 0
+    ? await resolveTenantWarehouseId(effectiveWarehouseId, companyId)
+    : 0;
+
   const resolvedCategoryId = await resolveCategoryId(
     (parsed.data as any).category_id,
     parsed.data.category,
@@ -181,7 +187,7 @@ router.post("/products", wrap(async (req, res) => {
       reference_no: `OB-${product.id}`,
       notes: "رصيد افتتاحي",
       date: new Date().toISOString().split("T")[0],
-      warehouse_id: effectiveWarehouseId ?? 1,
+      warehouse_id: tenantWarehouseId,
     });
   }
 
@@ -219,7 +225,7 @@ router.put("/products/:id", wrap(async (req, res) => {
     cost_price: parsed.data.cost_price !== undefined ? String(parsed.data.cost_price) : undefined,
     sale_price: parsed.data.sale_price !== undefined ? String(parsed.data.sale_price) : undefined,
     low_stock_threshold: parsed.data.low_stock_threshold ?? null,
-  }).where(eq(productsTable.id, params.data.id)).returning();
+  }).where(and(eq(productsTable.id, params.data.id), eq(productsTable.company_id, companyId))).returning();
 
   if (!product) { res.status(404).json({ error: "Product not found" }); return; }
 
@@ -238,7 +244,8 @@ router.delete("/products/:id", wrap(async (req, res) => {
   }
   const params = DeleteProductParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  await db.delete(productsTable).where(eq(productsTable.id, params.data.id));
+  const result = await db.delete(productsTable).where(and(eq(productsTable.id, params.data.id), eq(productsTable.company_id, req.user!.company_id!))).returning({ id: productsTable.id });
+  if (result.length === 0) { res.status(404).json({ error: "Product not found" }); return; }
   res.json(DeleteProductResponse.parse({ success: true, message: "Product deleted" }));
 }));
 

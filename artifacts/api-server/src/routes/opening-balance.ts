@@ -9,6 +9,7 @@ import {
   customersTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
 
 const router: IRouter = Router();
 
@@ -64,6 +65,8 @@ router.post("/inventory/opening-balance", wrap(async (req, res) => {
 
   const companyId: number = ((req as any).user.company_id as number);
 
+  const tenantWarehouseId = await resolveTenantWarehouseId(effectiveWarehouseId, companyId);
+
   const [product] = await db
     .select()
     .from(productsTable)
@@ -117,7 +120,7 @@ router.post("/inventory/opening-balance", wrap(async (req, res) => {
       reference_no: `OB-${Date.now()}`,
       notes: notes ?? "رصيد أول المدة",
       date: date ?? new Date().toISOString().split("T")[0],
-      warehouse_id: effectiveWarehouseId ?? 1,
+      warehouse_id: tenantWarehouseId,
       company_id: companyId,
     });
   });

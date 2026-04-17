@@ -241,7 +241,8 @@ router.put("/customers/:id", wrap(async (req, res) => {
     res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${dup.name}"` }); return;
   }
 
-  const [before] = await db.select().from(customersTable).where(eq(customersTable.id, params.data.id));
+  const [before] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!)));
+  if (!before) { res.status(404).json({ error: "Customer not found" }); return; }
 
   const classificationId = req.body.classification_id !== undefined
     ? (req.body.classification_id === null ? null : parseInt(String(req.body.classification_id), 10))
@@ -255,7 +256,7 @@ router.put("/customers/:id", wrap(async (req, res) => {
     is_customer: parsed.data.is_customer !== undefined ? parsed.data.is_customer : undefined,
     is_supplier: parsed.data.is_supplier !== undefined ? parsed.data.is_supplier : undefined,
     ...(classificationId !== undefined ? { classification_id: isNaN(classificationId as number) ? null : classificationId } : {}),
-  }).where(eq(customersTable.id, params.data.id)).returning();
+  }).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!))).returning();
   if (!customer) {
     res.status(404).json({ error: "Customer not found" });
     return;
@@ -295,8 +296,9 @@ router.delete("/customers/:id", wrap(async (req, res) => {
     return;
   }
 
-  const [before] = await db.select().from(customersTable).where(eq(customersTable.id, params.data.id));
-  await db.delete(customersTable).where(eq(customersTable.id, params.data.id));
+  const [before] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!)));
+  if (!before) { res.status(404).json({ error: "Customer not found" }); return; }
+  await db.delete(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!)));
 
   void writeAuditLog({
     action: "delete",
@@ -322,7 +324,7 @@ router.post("/customers/:id/receipt", wrap(async (req, res) => {
     return;
   }
 
-  const [customer] = await db.select().from(customersTable).where(eq(customersTable.id, params.data.id));
+  const [customer] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!)));
   if (!customer) {
     res.status(404).json({ error: "Customer not found" });
     return;
@@ -330,7 +332,7 @@ router.post("/customers/:id/receipt", wrap(async (req, res) => {
 
   const newBalance = Number(customer.balance) - parsed.data.amount;
   const [updated] = await db.update(customersTable).set({ balance: String(newBalance) })
-    .where(eq(customersTable.id, params.data.id)).returning();
+    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!))).returning();
 
   await db.insert(transactionsTable).values({
     type: "receipt",
@@ -347,7 +349,7 @@ router.get("/customers/:id/ledger", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
-  const [customer] = await db.select().from(customersTable).where(eq(customersTable.id, id));
+  const [customer] = await db.select().from(customersTable).where(and(eq(customersTable.id, id), eq(customersTable.company_id, req.user!.company_id!)));
   if (!customer) throw httpError(404, "العميل غير موجود");
 
   const entries = await db
@@ -396,18 +398,19 @@ router.post("/customers/:id/payment", wrap(async (req, res) => {
   const txDate = date ?? new Date().toISOString().split("T")[0];
   const paymentNo = `PAY-${Date.now()}`;
 
+  const cidPay = req.user!.company_id!;
   await db.transaction(async (tx) => {
-    const [customer] = await tx.select().from(customersTable).where(eq(customersTable.id, id));
+    const [customer] = await tx.select().from(customersTable).where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidPay)));
     if (!customer) throw httpError(404, "العميل غير موجود");
 
     // 1. خصم من رصيد الخزينة إن وُجدت
     if (safe_id) {
       const safeIdInt = parseInt(safe_id);
-      const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, safeIdInt));
+      const [safe] = await tx.select().from(safesTable).where(and(eq(safesTable.id, safeIdInt), eq(safesTable.company_id, cidPay)));
       if (safe) {
         await tx.update(safesTable)
           .set({ balance: String(Number(safe.balance) + amt) })
-          .where(eq(safesTable.id, safeIdInt));
+          .where(and(eq(safesTable.id, safeIdInt), eq(safesTable.company_id, cidPay)));
 
         // الحركة المالية المركزية
         await tx.insert(transactionsTable).values({
@@ -441,11 +444,11 @@ router.post("/customers/:id/payment", wrap(async (req, res) => {
     const newBalance = Number(customer.balance) - amt;
     await tx.update(customersTable)
       .set({ balance: String(newBalance) })
-      .where(eq(customersTable.id, id));
+      .where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidPay)));
   });
 
   // إعادة الرصيد المحدّث
-  const [updated] = await db.select().from(customersTable).where(eq(customersTable.id, id));
+  const [updated] = await db.select().from(customersTable).where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidPay)));
   const ledgerBal = await getCustomerLedgerBalance(updated.account_id);
   res.json({ success: true, customer: formatCustomer(updated, ledgerBal) });
 }));
@@ -464,22 +467,23 @@ router.post("/customers/:id/supplier-payment", wrap(async (req, res) => {
   const paymentNo = `SPAY-${Date.now()}`;
   let resultCustomer: typeof customersTable.$inferSelect | undefined;
 
+  const cidSPay = req.user!.company_id!;
   await db.transaction(async (tx) => {
-    const [customer] = await tx.select().from(customersTable).where(eq(customersTable.id, id));
+    const [customer] = await tx.select().from(customersTable).where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidSPay)));
     if (!customer) throw httpError(404, "العميل غير موجود");
     if (!customer.is_supplier) throw httpError(400, "هذا العميل ليس مورداً");
 
-    const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, safeId));
+    const [safe] = await tx.select().from(safesTable).where(and(eq(safesTable.id, safeId), eq(safesTable.company_id, cidSPay)));
     if (!safe) throw httpError(404, "الخزينة غير موجودة");
     if (Number(safe.balance) < amt) throw httpError(400, "رصيد الخزينة غير كافٍ");
 
     await tx.update(safesTable)
       .set({ balance: String(Number(safe.balance) - amt) })
-      .where(eq(safesTable.id, safe.id));
+      .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cidSPay)));
 
     const [updated] = await tx.update(customersTable)
       .set({ balance: String(Number(customer.balance) + amt) })
-      .where(eq(customersTable.id, id))
+      .where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidSPay)))
       .returning();
 
     await tx.insert(transactionsTable).values({
@@ -567,15 +571,14 @@ router.delete("/customer-classifications/:id", wrap(async (req, res) => {
   }
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const [linkedCustomer] = await db.select({ id: customersTable.id }).from(customersTable).where(eq(customersTable.classification_id, id)).limit(1);
+  const cidCC = req.user!.company_id!;
+  const [linkedCustomer] = await db.select({ id: customersTable.id }).from(customersTable).where(and(eq(customersTable.classification_id, id), eq(customersTable.company_id, cidCC))).limit(1);
   if (linkedCustomer) { res.status(400).json({ error: "لا يمكن حذف التصنيف لأنه مرتبط بعملاء" }); return; }
-  await db
-    .update(customersTable)
-    .set({ classification_id: null })
-    .where(eq(customersTable.classification_id, id));
-  await db
+  const result = await db
     .delete(customerClassificationsTable)
-    .where(eq(customerClassificationsTable.id, id));
+    .where(and(eq(customerClassificationsTable.id, id), eq(customerClassificationsTable.company_id, cidCC)))
+    .returning({ id: customerClassificationsTable.id });
+  if (result.length === 0) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
   res.json({ success: true });
 }));
 
