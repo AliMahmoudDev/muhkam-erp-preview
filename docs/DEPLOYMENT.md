@@ -13,6 +13,8 @@
 | `VPS_REDIS_URL` | رابط Redis على السيرفر، مثال: `redis://localhost:6379` | ✅ مضاف |
 | `VPS_JWT_SECRET` | مفتاح JWT الأساسي (32+ حرف عشوائي) | ✅ مضاف |
 | `VPS_JWT_REFRESH_SECRET` | مفتاح JWT للـ refresh tokens | ✅ مضاف |
+| `INTEGRATION_JWT_SECRET` | مفتاح JWT لتشغيل الـ integration tests في CI (32+ حرف) | ✅ مضاف |
+| `INTEGRATION_JWT_REFRESH_SECRET` | مفتاح JWT refresh للـ integration tests في CI (32+ حرف) | ✅ مضاف |
 
 > **ملاحظة:** `VPS_DATABASE_URL` و `VPS_REDIS_URL` مطلوبان لتشغيل `db-repair.sql`
 > وخطوة `drizzle-kit push` في pipeline الـ deploy، وكذلك لتوليد ملف `ecosystem.config.cjs`
@@ -60,7 +62,16 @@ docker-compose down
 - `lint` — ESLint + TypeScript type-check للـ packages الاثنين
 - `build` — يبني frontend + backend ويرفع الـ artifacts
 
-### `deploy.yml` — يشتغل عند push على `main` فقط
+### `deploy.yml` — يشتغل عند push على `main` أو PR على `main`
+
+#### job: `integration-test` (يشتغل أولاً على كل push و PR)
+- يرفع service container لـ PostgreSQL 16
+- يثبت الـ dependencies ويطبق schema بـ `drizzle-kit push --force`
+- يشغّل 20 integration test للتحقق من عزل البيانات بين الـ tenants
+- يستخدم `INTEGRATION_JWT_SECRET` و `INTEGRATION_JWT_REFRESH_SECRET` من repository secrets
+- إذا غابت الـ secrets (مثلاً في فورك)، يرجع `setup.ts` لقيم test افتراضية بشرط `NODE_ENV=test`
+
+#### job: `deploy` (يشتغل فقط بعد نجاح `integration-test`، وعلى push لـ `main` فقط)
 - يتصل بالـ VPS عبر SSH
 - يسحب آخر كود من `main`
 - يبني frontend + backend
@@ -94,3 +105,69 @@ docker-compose.yml:
 | `NODE_ENV` | `production` أو `development` | لا |
 | `BACKUP_DIR` | مسار حفظ الـ backups | لا |
 | `SUPER_ADMIN_IPS` | IPs مسموح لها بالـ super admin (فارغ = الكل) | لا |
+
+---
+
+## تدوير أسرار JWT للـ Integration Tests
+
+هذا الدليل يوضح كيفية تغيير (rotation) لـ `INTEGRATION_JWT_SECRET`
+و `INTEGRATION_JWT_REFRESH_SECRET` بدون انقطاع الـ CI.
+
+### الأسرار المعنية
+
+| Secret في GitHub | الاستخدام |
+|------------------|-----------|
+| `INTEGRATION_JWT_SECRET` | يُوقَّع به JWT في الـ integration tests (يُمرَّر كـ `JWT_SECRET` داخل الـ workflow) |
+| `INTEGRATION_JWT_REFRESH_SECRET` | يُوقَّع به refresh JWT في الـ integration tests |
+
+> هذه القيم **خاصة بالـ tests فقط** ولا تُستخدم في production.
+> أسرار الـ production تبدأ بـ `VPS_` وتُدار بشكل منفصل.
+
+### خطوات التدوير
+
+**1. توليد قيم جديدة (32+ حرف)**
+
+```bash
+# مثال — يمكن استخدام أي طريقة لتوليد string عشوائي بطول كافٍ
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**2. تحديث الـ secrets في GitHub**
+
+```
+GitHub Repository → Settings → Secrets and variables → Actions → Repository secrets
+```
+
+- اختر `INTEGRATION_JWT_SECRET` ← اضغط **Update** ← الصق القيمة الجديدة ← **Save**
+- كرر نفس الخطوة لـ `INTEGRATION_JWT_REFRESH_SECRET`
+
+**3. التحقق من نجاح التدوير**
+
+شغّل workflow يدوياً أو انتظر أي push:
+
+```
+GitHub → Actions → Deploy to Production → اختر آخر run
+```
+
+تحقق من الـ job المسمى **Multi-Tenant Integration Tests**:
+
+- يجب أن تجد سطر مشابه لـ: `20 passed` في نهاية الـ logs
+- لا يجب أن يظهر `[integration setup] ... Refusing to fall back` في الـ logs
+  (هذا الخطأ يعني أن السر غائب تماماً في بيئة غير test)
+
+### ماذا يحدث إذا غاب السر مؤقتاً؟
+
+إذا حُذف السر قبل إضافة القيمة الجديدة (نافذة التدوير):
+
+- `integration/setup.ts` يكتشف أن `process.env.JWT_SECRET` فارغ
+- نظراً لأن `NODE_ENV=test` داخل الـ CI، يرجع لقيمة افتراضية آمنة ومسماة
+- الـ 20 integration test تكمل بنجاح بالقيمة الافتراضية
+- لا يُوجَد خطر تسريب لـ production لأن هذه القيم test-only
+
+> **ملاحظة:** حتى في حالة الرجوع للقيمة الافتراضية، لن يتأثر الـ production
+> لأن tokens الـ integration tests لا تُستخدم خارج بيئة الـ CI.
+
+### للتطوير المحلي
+
+انسخ `artifacts/api-server/.env.test.example` إلى `artifacts/api-server/.env.test`
+واملأ القيم المناسبة. انظر الملف للتفاصيل.
