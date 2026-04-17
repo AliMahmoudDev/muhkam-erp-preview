@@ -1,5 +1,5 @@
 -- scripts/db-repair.sql
--- Idempotent — safe to run on every deploy.
+-- Idempotent — safe to run on every deploy, and on every re-run thereafter.
 --
 -- PURPOSE:
 --   Ensures the seed company (id = 1) exists before drizzle-kit push
@@ -9,6 +9,35 @@
 --   Also re-points any orphaned rows (rows whose company_id references a
 --   non-existent company) back to company 1, so existing data is never
 --   silently lost.
+--
+-- ERROR HANDLING:
+--   All work runs inside a nested BEGIN/EXCEPTION block. Any unexpected
+--   error (e.g. a constraint violation) is caught and immediately re-raised
+--   as RAISE EXCEPTION with a clear "db-repair FAILED" prefix. This makes
+--   failures LOUD and prevents any partial-fix state from being silently
+--   accepted. The outer Postgres transaction is rolled back automatically.
+--
+-- IDEMPOTENCY:
+--   • The company INSERT uses ON CONFLICT (id) DO NOTHING.
+--   • Every UPDATE skips rows that already point at a valid company.
+--   • Re-running against a fully-repaired DB produces zero changed rows and
+--     only NOTICE output — no harm done.
+--
+-- MANUAL TESTING (idempotency + orphan repair):
+--   1. Create a fake orphan:
+--        UPDATE products SET company_id = 99999
+--          WHERE id = (SELECT id FROM products LIMIT 1);
+--   2. Run the script:
+--        psql $DATABASE_URL -f scripts/db-repair.sql
+--   3. Confirm the orphan is repaired and you see:
+--        NOTICE:  db-repair: products orphans fixed
+--        NOTICE:  db-repair: completed successfully — ...
+--   4. Run the script again — confirm zero errors and identical NOTICE output.
+--
+-- FAILURE SIMULATION:
+--   To verify the exception handler fires, temporarily add inside the DO block:
+--        RAISE EXCEPTION 'simulated failure';
+--   You should see: ERROR: db-repair FAILED — simulated failure (SQLSTATE=P0001)
 
 DO $$
 BEGIN
@@ -36,6 +65,12 @@ BEGIN
   RAISE NOTICE 'db-repair: company id=1 ensured';
 
   -- ── 2. Re-point orphaned FK rows to company 1 ─────────────────────────────
+  --
+  -- All UPDATE work is wrapped in a nested BEGIN/EXCEPTION block.
+  -- Any unhandled error is re-raised with a clear "db-repair FAILED" prefix
+  -- so CI logs immediately show which step broke, and Postgres rolls back
+  -- the entire outer transaction automatically (nothing is half-applied).
+  BEGIN
   -- Every table with a company_id column is covered below.
   -- Tables are grouped by domain for readability.
   -- Tables with a nullable company_id use the extra IS NOT NULL guard so we
@@ -295,5 +330,15 @@ BEGIN
     UPDATE incentive_schemes SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
     RAISE NOTICE 'db-repair: incentive_schemes orphans fixed';
   END IF;
+
+  RAISE NOTICE 'db-repair: completed successfully — all orphaned rows re-pointed to company 1';
+
+  EXCEPTION
+    WHEN OTHERS THEN
+      -- Re-raise with a clear prefix so CI logs are unambiguous.
+      -- Postgres automatically rolls back the entire outer transaction,
+      -- so no partial state is ever committed.
+      RAISE EXCEPTION 'db-repair FAILED — % (SQLSTATE=%)', SQLERRM, SQLSTATE;
+  END; -- inner work block
 
 END $$;
