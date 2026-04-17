@@ -34,9 +34,7 @@ const POS = lazy(() => import('@/pages/pos'));
 const SuperAdmin = lazy(() => import('@/pages/super-admin'));
 const Branches = lazy(() => import('@/pages/branches'));
 const Employees = lazy(() => import('@/pages/employees'));
-const Payroll = lazy(() => import('@/pages/payroll'));
 const Attendance = lazy(() => import('@/pages/attendance'));
-const Incentives = lazy(() => import('@/pages/incentives'));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -150,15 +148,13 @@ function Router() {
         </Route>
         <Route path="/branches">{() => <Guard path="/branches" component={Branches} />}</Route>
         <Route path="/employees">{() => <Guard path="/employees" component={Employees} />}</Route>
-        <Route path="/payroll">{() => <Guard path="/payroll" component={Payroll} />}</Route>
+        <Route path="/payroll">{() => <Redirect to="/employees" />}</Route>
         <Route path="/attendance">
           {() => <Guard path="/attendance" component={Attendance} />}
         </Route>
         <Route path="/leaves">{() => <Redirect to="/employees" />}</Route>
         <Route path="/salary-advances">{() => <Redirect to="/employees" />}</Route>
-        <Route path="/incentives">
-          {() => <Guard path="/incentives" component={Incentives} />}
-        </Route>
+        <Route path="/incentives">{() => <Redirect to="/employees" />}</Route>
         <Route path="/vouchers">{() => <Guard path="/vouchers" component={Vouchers} />}</Route>
         <Route path="/receipt-vouchers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/deposit-vouchers">{() => <Redirect to="/vouchers" />}</Route>

@@ -26,7 +26,7 @@ const NAV_SECTIONS = [
   },
   { label: 'المالية', hrefs: ['/income', '/expenses', '/reports'] },
   { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries'] },
-  { label: 'الموارد البشرية', hrefs: ['/employees', '/payroll', '/attendance', '/incentives'] },
+  { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
   { label: 'النظام', hrefs: ['/settings', '/branches'] },
 ];
 
