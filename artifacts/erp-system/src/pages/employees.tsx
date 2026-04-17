@@ -1,251 +1,600 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/auth";
-import { hasPermission } from "@/lib/permissions";
-import { authFetch } from "@/lib/auth-fetch";
-import { safeArray } from "@/lib/safe-data";
-import { useToast } from "@/hooks/use-toast";
-import { TableSkeleton } from "@/components/skeletons";
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/auth';
+import { hasPermission } from '@/lib/permissions';
+import { authFetch } from '@/lib/auth-fetch';
+import { safeArray } from '@/lib/safe-data';
+import { useToast } from '@/hooks/use-toast';
+import { TableSkeleton } from '@/components/skeletons';
 import {
-  UserCheck, Plus, Search, X, Pencil, Trash2, UserX,
-  RefreshCw, FileText, Phone, IdCard, Building2,
-  Briefcase, CalendarDays, Wallet, ChevronRight, CheckCircle,
-  AlertCircle, Clock, History, Users,
-} from "lucide-react";
+  UserCheck,
+  Plus,
+  Search,
+  X,
+  Pencil,
+  Trash2,
+  UserX,
+  RefreshCw,
+  FileText,
+  Phone,
+  IdCard,
+  Building2,
+  Briefcase,
+  CalendarDays,
+  Wallet,
+  ChevronRight,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  History,
+  Users,
+  Banknote,
+  MinusCircle,
+  BarChart2,
+  Percent,
+} from 'lucide-react';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (p: string) => `${BASE}${p}`;
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const api = (p: string) => `${BASE}${p}`;
 
 /* ── Types ────────────────────────────────────────────────────── */
 interface Employee {
-  id: number; company_id: number; employee_code: string;
-  first_name_ar: string; last_name_ar: string;
-  first_name_en: string; last_name_en: string;
-  email?: string | null; phone?: string | null; personal_phone?: string | null;
-  national_id?: string | null; job_title_id?: number | null; department_id?: number | null;
+  id: number;
+  company_id: number;
+  employee_code: string;
+  first_name_ar: string;
+  last_name_ar: string;
+  first_name_en: string;
+  last_name_en: string;
+  email?: string | null;
+  phone?: string | null;
+  personal_phone?: string | null;
+  national_id?: string | null;
+  job_title_id?: number | null;
+  department_id?: number | null;
   branch_id?: number | null;
-  hire_date: string; employment_status: string;
-  salary?: number | null; currency: string;
-  bank_account?: string | null; address_ar?: string | null; address_en?: string | null;
-  city?: string | null; country?: string | null; notes?: string | null;
-  department_name?: string | null; job_title_name?: string | null; branch_name?: string | null;
-  created_at?: string; updated_at?: string;
+  hire_date: string;
+  employment_status: string;
+  salary?: number | null;
+  currency: string;
+  commission_rate?: number | null;
+  bank_account?: string | null;
+  address_ar?: string | null;
+  city?: string | null;
+  country?: string | null;
+  notes?: string | null;
+  department_name?: string | null;
+  job_title_name?: string | null;
+  branch_name?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
-interface Department { id: number; name_ar: string; name_en: string; description_ar?: string | null; created_at?: string; }
-interface JobTitle    { id: number; name_ar: string; name_en: string; created_at?: string; }
-interface Branch      { id: number; name: string; address?: string | null; is_active: boolean; }
-interface StatusHistoryEntry { id: number; old_status?: string | null; new_status: string; reason?: string | null; changed_at?: string; }
-interface EmpDocument { id: number; document_type: string; file_name: string; expiry_date?: string | null; verified_at?: string | null; notes?: string | null; created_at?: string; }
+interface Department {
+  id: number;
+  name_ar: string;
+  name_en: string;
+  description_ar?: string | null;
+}
+interface JobTitle {
+  id: number;
+  name_ar: string;
+  name_en: string;
+}
+interface Branch {
+  id: number;
+  name: string;
+  is_active: boolean;
+}
+interface StatusHistoryEntry {
+  id: number;
+  old_status?: string | null;
+  new_status: string;
+  reason?: string | null;
+  changed_at?: string;
+}
+interface EmpDocument {
+  id: number;
+  document_type: string;
+  file_name: string;
+  expiry_date?: string | null;
+  verified_at?: string | null;
+  notes?: string | null;
+  created_at?: string;
+}
+type AnyRec = Record<string, unknown>;
 
-/* ── Status helpers ───────────────────────────────────────────── */
+/* ── Helpers ──────────────────────────────────────────────────── */
+function fmt(v: unknown) {
+  return v != null ? Number(Number(v).toFixed(2)).toLocaleString('ar-EG') : '0';
+}
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <label className="text-xs text-white/50">{label}</label>
+      {children}
+    </div>
+  );
+}
+
 const STATUS_LABELS: Record<string, string> = {
-  active: "نشط", on_leave: "في إجازة", suspended: "موقوف", terminated: "منتهي الخدمة",
+  active: 'نشط',
+  on_leave: 'في إجازة',
+  suspended: 'موقوف',
+  terminated: 'منتهي الخدمة',
 };
 const STATUS_COLORS: Record<string, string> = {
-  active: "erp-badge erp-badge-success", on_leave: "erp-badge erp-badge-warning",
-  suspended: "erp-badge erp-badge-danger", terminated: "erp-badge erp-badge-info",
+  active: 'erp-badge erp-badge-success',
+  on_leave: 'erp-badge erp-badge-warning',
+  suspended: 'erp-badge erp-badge-danger',
+  terminated: 'erp-badge erp-badge-info',
 };
 function StatusBadge({ status }: { status: string }) {
-  return <span className={STATUS_COLORS[status] ?? "erp-badge"}>{STATUS_LABELS[status] ?? status}</span>;
+  return (
+    <span className={STATUS_COLORS[status] ?? 'erp-badge'}>{STATUS_LABELS[status] ?? status}</span>
+  );
+}
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value?: string | null;
+}) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-2 text-sm">
+      <Icon size={13} className="text-amber-400/60 mt-0.5 shrink-0" />
+      <span className="text-white/40 shrink-0">{label}:</span>
+      <span className="text-white/80 break-all">{value}</span>
+    </div>
+  );
+}
+
+function advStatusBadge(s: string) {
+  const map: Record<string, string> = {
+    approved: 'erp-badge erp-badge-success',
+    active: 'erp-badge erp-badge-success',
+    pending: 'erp-badge erp-badge-warning',
+    rejected: 'erp-badge erp-badge-danger',
+    completed: 'erp-badge erp-badge-info',
+    cancelled: 'erp-badge erp-badge-neutral',
+  };
+  return map[s] ?? 'erp-badge erp-badge-neutral';
+}
+function advStatusAr(s: string) {
+  const m: Record<string, string> = {
+    pending: 'معلّق',
+    approved: 'معتمد',
+    active: 'نشط',
+    rejected: 'مرفوض',
+    completed: 'مكتمل',
+    cancelled: 'ملغي',
+  };
+  return m[s] ?? s;
 }
 
 /* ── Blank form ───────────────────────────────────────────────── */
 function blankEmp(): Partial<Employee> {
   return {
-    first_name_ar: "", last_name_ar: "", first_name_en: "", last_name_en: "",
-    phone: "", personal_phone: "", national_id: "",
-    job_title_id: null, department_id: null, branch_id: null,
-    hire_date: new Date().toISOString().split("T")[0],
-    salary: 0, currency: "EGP", bank_account: "",
-    address_ar: "", address_en: "", city: "", country: "مصر", notes: "",
+    first_name_ar: '',
+    last_name_ar: '',
+    first_name_en: '',
+    last_name_en: '',
+    phone: '',
+    personal_phone: '',
+    national_id: '',
+    email: '',
+    job_title_id: null,
+    department_id: null,
+    branch_id: null,
+    hire_date: new Date().toISOString().split('T')[0],
+    salary: 0,
+    currency: 'EGP',
+    commission_rate: null,
+    bank_account: '',
+    address_ar: '',
+    city: '',
+    country: 'مصر',
+    notes: '',
   };
 }
 
 /* ══════════════════════════════════════════════════════════════ */
 export default function Employees() {
-  const { user }        = useAuth();
-  const qc              = useQueryClient();
-  const { toast }       = useToast();
-  const canManage       = hasPermission(user, "can_manage_employees");
-  const canViewSalary   = hasPermission(user, "can_view_employee_salary");
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const canManage = hasPermission(user, 'can_manage_employees');
+  const canViewSalary = hasPermission(user, 'can_view_employee_salary');
 
-  const [tab, setTab]   = useState<"employees" | "departments" | "job-titles">("employees");
-  const [search, setSearch]   = useState("");
-  const [deptFilter, setDeptFilter] = useState<number | "">("");
-  const [statusFilter, setStatusFilter] = useState("");
+  /* ── List state ─────────────────────────────────────────────── */
+  const [search, setSearch] = useState('');
+  const [deptFilter, setDeptFilter] = useState<number | ''>('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [selected, setSelected] = useState<Employee | null>(null);
-  const [detailTab, setDetailTab] = useState<"info" | "docs" | "contacts" | "history">("info");
+  const [detailTab, setDetailTab] = useState<
+    'info' | 'loans' | 'deductions' | 'reports' | 'docs' | 'history'
+  >('info');
+
+  /* ── Form state ─────────────────────────────────────────────── */
   const [showForm, setShowForm] = useState(false);
-  const [editEmp, setEditEmp]  = useState<Partial<Employee>>(blankEmp());
-  const [editId, setEditId]    = useState<number | null>(null);
+  const [editEmp, setEditEmp] = useState<Partial<Employee>>(blankEmp());
+  const [editId, setEditId] = useState<number | null>(null);
+  const [commissionMode, setCommissionMode] = useState(false);
+
+  /* ── Inline dept add ───────────────────────────────────────── */
+  const [showInlineDept, setShowInlineDept] = useState(false);
+  const [inlineDept, setInlineDept] = useState({ name_ar: '', name_en: '' });
+
+  /* ── Inline job title add ──────────────────────────────────── */
+  const [showInlineJt, setShowInlineJt] = useState(false);
+  const [inlineJt, setInlineJt] = useState({ name_ar: '', name_en: '' });
+
+  /* ── Other dialogs ─────────────────────────────────────────── */
   const [statusDialog, setStatusDialog] = useState<{ emp: Employee; open: boolean } | null>(null);
-  const [newStatus, setNewStatus]   = useState("");
-  const [statusReason, setStatusReason] = useState("");
-  const [deleteId, setDeleteId]    = useState<number | null>(null);
-  const [docForm, setDocForm]  = useState({ document_type: "", file_name: "", expiry_date: "", notes: "" });
+  const [newStatus, setNewStatus] = useState('');
+  const [statusReason, setStatusReason] = useState('');
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [docForm, setDocForm] = useState({
+    document_type: '',
+    file_name: '',
+    expiry_date: '',
+    notes: '',
+  });
   const [showDocForm, setShowDocForm] = useState(false);
-  const [contactForm, setContactForm] = useState({ name: "", relationship: "", phone: "", email: "" });
-  const [showContactForm, setShowContactForm] = useState(false);
+
+  /* ── Loans (salary advances) state ────────────────────────── */
+  const [showLoanForm, setShowLoanForm] = useState(false);
+  const [loanForm, setLoanForm] = useState({
+    requested_amount: '',
+    advance_type: 'personal',
+    reason: '',
+  });
+  const [showPayModal, setShowPayModal] = useState<number | null>(null);
+  const [payAmount, setPayAmount] = useState('');
+
+  /* ── Deductions state ──────────────────────────────────────── */
+  const [showDeductForm, setShowDeductForm] = useState(false);
+  const [deductForm, setDeductForm] = useState({
+    amount: '',
+    reason: '',
+    deduction_date: new Date().toISOString().split('T')[0],
+  });
 
   /* ── Queries ─────────────────────────────────────────────── */
   const { data: empsRaw, isLoading: empsLoading } = useQuery({
-    queryKey: ["/api/employees", search, deptFilter, statusFilter],
-    queryFn:  () => authFetch(api(`/api/employees?search=${encodeURIComponent(search)}&department_id=${deptFilter}&status=${statusFilter}`)).then(r => r.json()),
+    queryKey: ['/api/employees', search, deptFilter, statusFilter],
+    queryFn: () =>
+      authFetch(
+        api(
+          `/api/employees?search=${encodeURIComponent(search)}&department_id=${deptFilter}&status=${statusFilter}`
+        )
+      ).then((r) => r.json()),
   });
   const employees: Employee[] = safeArray(empsRaw);
 
-  const { data: deptsRaw, isLoading: deptsLoading } = useQuery({
-    queryKey: ["/api/departments"],
-    queryFn:  () => authFetch(api("/api/departments")).then(r => r.json()),
+  const { data: deptsRaw } = useQuery({
+    queryKey: ['/api/departments'],
+    queryFn: () => authFetch(api('/api/departments')).then((r) => r.json()),
   });
   const departments: Department[] = safeArray(deptsRaw);
 
-  const { data: jtsRaw, isLoading: jtsLoading } = useQuery({
-    queryKey: ["/api/job-titles"],
-    queryFn:  () => authFetch(api("/api/job-titles")).then(r => r.json()),
+  const { data: jtsRaw } = useQuery({
+    queryKey: ['/api/job-titles'],
+    queryFn: () => authFetch(api('/api/job-titles')).then((r) => r.json()),
   });
   const jobTitles: JobTitle[] = safeArray(jtsRaw);
 
   const { data: branchesRaw } = useQuery({
-    queryKey: ["/api/branches"],
-    queryFn:  () => authFetch(api("/api/branches")).then(r => r.json()),
+    queryKey: ['/api/branches'],
+    queryFn: () => authFetch(api('/api/branches')).then((r) => r.json()),
   });
   const branches: Branch[] = safeArray(branchesRaw);
 
+  /* Employee sub-data */
   const { data: histRaw } = useQuery({
-    queryKey: ["/api/employees", selected?.id, "history"],
-    queryFn:  () => selected ? authFetch(api(`/api/employees/${selected.id}/history`)).then(r => r.json()) : Promise.resolve([]),
-    enabled:  !!selected && detailTab === "history",
+    queryKey: ['/api/employees', selected?.id, 'history'],
+    queryFn: () =>
+      selected
+        ? authFetch(api(`/api/employees/${selected.id}/history`)).then((r) => r.json())
+        : Promise.resolve([]),
+    enabled: !!selected && detailTab === 'history',
   });
   const history: StatusHistoryEntry[] = safeArray(histRaw);
 
   const { data: docsRaw } = useQuery({
-    queryKey: ["/api/employees", selected?.id, "documents"],
-    queryFn:  () => selected ? authFetch(api(`/api/employees/${selected.id}/documents`)).then(r => r.json()) : Promise.resolve([]),
-    enabled:  !!selected && detailTab === "docs",
+    queryKey: ['/api/employees', selected?.id, 'documents'],
+    queryFn: () =>
+      selected
+        ? authFetch(api(`/api/employees/${selected.id}/documents`)).then((r) => r.json())
+        : Promise.resolve([]),
+    enabled: !!selected && detailTab === 'docs',
   });
   const documents: EmpDocument[] = safeArray(docsRaw);
 
-  const { data: contactsRaw } = useQuery({
-    queryKey: ["/api/employees", selected?.id, "contacts"],
-    queryFn:  () => selected ? authFetch(api(`/api/employees/${selected.id}/contacts`)).then(r => r.json()) : Promise.resolve([]),
-    enabled:  !!selected && detailTab === "contacts",
+  /* Salary advances for this employee */
+  const { data: loansRaw, isLoading: loansLoading } = useQuery({
+    queryKey: ['/api/salary-advances', selected?.id],
+    queryFn: () =>
+      selected
+        ? authFetch(api(`/api/salary-advances?employee_id=${selected.id}`)).then((r) => r.json())
+        : Promise.resolve([]),
+    enabled: !!selected && detailTab === 'loans',
   });
-  const contacts: Array<{ id: number; name: string; relationship?: string; phone?: string; email?: string; }> = safeArray(contactsRaw);
+  const loans: AnyRec[] = safeArray(loansRaw);
 
-  /* ── Mutations ───────────────────────────────────────────── */
+  /* Deductions ledger (from salary-advances ledger filtered by type) */
+  const { data: ledgerRaw, isLoading: ledgerLoading } = useQuery({
+    queryKey: ['/api/salary-advances', selected?.id, 'ledger'],
+    queryFn: () =>
+      selected
+        ? authFetch(api(`/api/salary-advances/${selected.id}/ledger`)).then((r) => r.json())
+        : Promise.resolve([]),
+    enabled: !!selected && (detailTab === 'deductions' || detailTab === 'reports'),
+  });
+  const ledger: AnyRec[] = safeArray(ledgerRaw);
+  const deductions = ledger.filter(
+    (l) => String(l.ledger_type) === 'deduction' || String(l.ledger_type) === 'manual_payment'
+  );
+
+  /* ── Employee mutations ───────────────────────────────────── */
   const createEmp = useMutation({
     mutationFn: (data: Partial<Employee>) =>
-      authFetch(api("/api/employees"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/employees"] }); setShowForm(false); toast({ title: "تمت إضافة الموظف بنجاح" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
+      authFetch(api('/api/employees'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employees'] });
+      setShowForm(false);
+      toast({ title: 'تمت إضافة الموظف بنجاح' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
   const updateEmp = useMutation({
     mutationFn: (data: Partial<Employee>) =>
-      authFetch(api(`/api/employees/${editId}`), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/employees"] }); setShowForm(false); toast({ title: "تم تحديث بيانات الموظف" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
+      authFetch(api(`/api/employees/${editId}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employees'] });
+      setShowForm(false);
+      toast({ title: 'تم تحديث بيانات الموظف' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
   const deleteEmp = useMutation({
     mutationFn: (id: number) =>
-      authFetch(api(`/api/employees/${id}`), { method: "DELETE" }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/employees"] }); setDeleteId(null); setSelected(null); toast({ title: "تم حذف الموظف" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
+      authFetch(api(`/api/employees/${id}`), { method: 'DELETE' }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employees'] });
+      setDeleteId(null);
+      setSelected(null);
+      toast({ title: 'تم حذف الموظف' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
   const changeStatus = useMutation({
     mutationFn: ({ id, new_status, reason }: { id: number; new_status: string; reason: string }) =>
-      authFetch(api(`/api/employees/${id}/status`), { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ new_status, reason }) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/employees"] }); setStatusDialog(null); toast({ title: "تم تغيير حالة الموظف" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
+      authFetch(api(`/api/employees/${id}/status`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_status, reason }),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employees'] });
+      setStatusDialog(null);
+      toast({ title: 'تم تغيير حالة الموظف' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
   const addDoc = useMutation({
     mutationFn: (data: typeof docForm) =>
-      authFetch(api(`/api/employees/${selected?.id}/documents`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/employees", selected?.id, "documents"] }); setShowDocForm(false); setDocForm({ document_type: "", file_name: "", expiry_date: "", notes: "" }); toast({ title: "تمت إضافة المستند" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
+      authFetch(api(`/api/employees/${selected?.id}/documents`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employees', selected?.id, 'documents'] });
+      setShowDocForm(false);
+      setDocForm({ document_type: '', file_name: '', expiry_date: '', notes: '' });
+      toast({ title: 'تمت إضافة المستند' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
   const deleteDoc = useMutation({
     mutationFn: (docId: number) =>
-      authFetch(api(`/api/employees/${selected?.id}/documents/${docId}`), { method: "DELETE" }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/employees", selected?.id, "documents"] }); toast({ title: "تم حذف المستند" }); },
-  });
-  const addContact = useMutation({
-    mutationFn: (data: typeof contactForm) =>
-      authFetch(api(`/api/employees/${selected?.id}/contacts`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...data, contact_type: "emergency" }) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/employees", selected?.id, "contacts"] }); setShowContactForm(false); setContactForm({ name: "", relationship: "", phone: "", email: "" }); toast({ title: "تمت إضافة جهة الاتصال" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
-  });
-  const deleteContact = useMutation({
-    mutationFn: (cid: number) =>
-      authFetch(api(`/api/employees/${selected?.id}/contacts/${cid}`), { method: "DELETE" }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/employees", selected?.id, "contacts"] }); toast({ title: "تم حذف جهة الاتصال" }); },
+      authFetch(api(`/api/employees/${selected?.id}/documents/${docId}`), {
+        method: 'DELETE',
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employees', selected?.id, 'documents'] });
+      toast({ title: 'تم حذف المستند' });
+    },
   });
 
-  /* ── Department mutations ────────────────────────────────── */
-  const [deptForm, setDeptForm] = useState({ name_ar: "", name_en: "", description_ar: "" });
-  const [deptEditId, setDeptEditId] = useState<number | null>(null);
-  const [showDeptForm, setShowDeptForm] = useState(false);
-  const createDept = useMutation({
-    mutationFn: (data: typeof deptForm) =>
-      authFetch(api(deptEditId ? `/api/departments/${deptEditId}` : "/api/departments"), { method: deptEditId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/departments"] }); setShowDeptForm(false); setDeptEditId(null); setDeptForm({ name_ar: "", name_en: "", description_ar: "" }); toast({ title: deptEditId ? "تم تحديث القسم" : "تمت إضافة القسم" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  /* ── Inline dept/jt creation ─────────────────────────────── */
+  const createInlineDept = useMutation({
+    mutationFn: (data: { name_ar: string; name_en: string }) =>
+      authFetch(api('/api/departments'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, description_ar: '' }),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: (d: Department) => {
+      qc.invalidateQueries({ queryKey: ['/api/departments'] });
+      setEditEmp((p) => ({ ...p, department_id: d.id }));
+      setShowInlineDept(false);
+      setInlineDept({ name_ar: '', name_en: '' });
+      toast({ title: 'تمت إضافة القسم' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
-  const deleteDept = useMutation({
-    mutationFn: (id: number) =>
-      authFetch(api(`/api/departments/${id}`), { method: "DELETE" }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/departments"] }); toast({ title: "تم حذف القسم" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  const createInlineJt = useMutation({
+    mutationFn: (data: { name_ar: string; name_en: string }) =>
+      authFetch(api('/api/job-titles'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: (d: JobTitle) => {
+      qc.invalidateQueries({ queryKey: ['/api/job-titles'] });
+      setEditEmp((p) => ({ ...p, job_title_id: d.id }));
+      setShowInlineJt(false);
+      setInlineJt({ name_ar: '', name_en: '' });
+      toast({ title: 'تمت إضافة المسمى الوظيفي' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
-  /* ── Job Title mutations ──────────────────────────────────── */
-  const [jtForm, setJtForm] = useState({ name_ar: "", name_en: "" });
-  const [jtEditId, setJtEditId] = useState<number | null>(null);
-  const [showJtForm, setShowJtForm] = useState(false);
-  const createJt = useMutation({
-    mutationFn: (data: typeof jtForm) =>
-      authFetch(api(jtEditId ? `/api/job-titles/${jtEditId}` : "/api/job-titles"), { method: jtEditId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/job-titles"] }); setShowJtForm(false); setJtEditId(null); setJtForm({ name_ar: "", name_en: "" }); toast({ title: jtEditId ? "تم تحديث المسمى" : "تمت إضافة المسمى الوظيفي" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  /* ── Loans mutations ─────────────────────────────────────── */
+  const createLoan = useMutation({
+    mutationFn: (data: AnyRec) =>
+      authFetch(api('/api/salary-advances'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id] });
+      setShowLoanForm(false);
+      setLoanForm({ requested_amount: '', advance_type: 'personal', reason: '' });
+      toast({ title: 'تم تقديم طلب السلفة' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
-  const deleteJt = useMutation({
+  const approveLoan = useMutation({
     mutationFn: (id: number) =>
-      authFetch(api(`/api/job-titles/${id}`), { method: "DELETE" }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/job-titles"] }); toast({ title: "تم حذف المسمى الوظيفي" }); },
-    onError:   (e: Error) => toast({ title: e.message, variant: "destructive" }),
+      authFetch(api(`/api/salary-advances/${id}/approve`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id] });
+      toast({ title: 'تم اعتماد السلفة' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
+  const manualPay = useMutation({
+    mutationFn: ({ id, amount }: { id: number; amount: number }) =>
+      authFetch(api(`/api/salary-advances/${id}/manual-payment`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id] });
+      qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id, 'ledger'] });
+      setShowPayModal(null);
+      setPayAmount('');
+      toast({ title: 'تم تسجيل الدفعة / الخصم' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+  });
+
+  /* ── Deduction: apply against active loan ─────────────────── */
+  const activeLoans = loans.filter((l) => ['active', 'approved'].includes(String(l.status)));
 
   /* ── Filtered employees ───────────────────────────────────── */
-  const filtered = useMemo(() => employees.filter(e => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      e.first_name_ar.includes(search) || e.last_name_ar.includes(search) ||
-      e.first_name_en.toLowerCase().includes(q) || e.last_name_en.toLowerCase().includes(q) ||
-      e.employee_code.toLowerCase().includes(q) || (e.national_id ?? "").includes(search)
-    );
-  }), [employees, search]);
+  const filtered = useMemo(
+    () =>
+      employees.filter((e) => {
+        if (!search) return true;
+        const q = search.toLowerCase();
+        return (
+          e.first_name_ar.includes(search) ||
+          e.last_name_ar.includes(search) ||
+          e.first_name_en.toLowerCase().includes(q) ||
+          e.last_name_en.toLowerCase().includes(q) ||
+          e.employee_code.toLowerCase().includes(q) ||
+          (e.national_id ?? '').includes(search)
+        );
+      }),
+    [employees, search]
+  );
 
   /* ── Helpers ─────────────────────────────────────────────── */
-  const set = (k: keyof Employee, v: unknown) => setEditEmp(prev => ({ ...prev, [k]: v }));
+  const set = (k: keyof Employee, v: unknown) => setEditEmp((prev) => ({ ...prev, [k]: v }));
 
   function openCreate() {
     setEditId(null);
     setEditEmp(blankEmp());
+    setCommissionMode(false);
     setShowForm(true);
   }
   function openEdit(emp: Employee) {
     setEditId(emp.id);
     setEditEmp({ ...emp });
+    setCommissionMode((emp.commission_rate ?? 0) > 0 && !emp.salary);
     setShowForm(true);
   }
   function saveEmployee() {
-    const payload = { ...editEmp, salary: Number(editEmp.salary ?? 0) };
+    const payload: Partial<Employee> = {
+      ...editEmp,
+      salary: commissionMode ? null : Number(editEmp.salary ?? 0),
+      commission_rate: commissionMode ? Number(editEmp.commission_rate ?? 0) : null,
+    };
     if (editId) updateEmp.mutate(payload);
-    else        createEmp.mutate(payload);
+    else createEmp.mutate(payload);
   }
 
-  const totalActive = employees.filter(e => e.employment_status === "active").length;
+  /* Reports summary */
+  const totalLoans = loans.reduce((s, l) => s + Number(l.requested_amount ?? 0), 0);
+  const remainingLoans = loans
+    .filter((l) => ['active', 'approved'].includes(String(l.status)))
+    .reduce((s, l) => s + Number(l.remaining_balance ?? 0), 0);
+  const totalDeducted = deductions.reduce((s, d) => s + Number(d.amount ?? 0), 0);
+  const totalActive = employees.filter((e) => e.employment_status === 'active').length;
 
   /* ═══════════════════════════════════════════════════════════
      RENDER
@@ -261,428 +610,862 @@ export default function Employees() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-white/10 mb-2">
-        {([
-          { key: "employees",  label: "الموظفون",           icon: Users },
-          { key: "departments", label: "الأقسام",            icon: Building2 },
-          { key: "job-titles",  label: "المسميات الوظيفية",  icon: Briefcase },
-        ] as const).map(t => (
-          <button
-            key={t.key}
-            onClick={() => { setTab(t.key); setSelected(null); }}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-t-lg transition-all ${
-              tab === t.key ? "bg-amber-500/20 text-amber-300 border-b-2 border-amber-400" : "text-white/50 hover:text-white/80"
-            }`}
-          >
-            <t.icon size={14} /> {t.label}
-          </button>
-        ))}
+      {/* Main grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        {/* ── Left: List Panel ────────────────────────────────── */}
+        <div className="xl:col-span-2 space-y-3">
+          {/* Search & Filters */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search
+                size={14}
+                className="absolute top-1/2 -translate-y-1/2 right-3 text-white/40"
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="بحث بالاسم أو الكود أو الرقم القومي..."
+                className="erp-input w-full pr-8 text-sm"
+              />
+            </div>
+            <select
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value === '' ? '' : Number(e.target.value))}
+              className="erp-input text-sm"
+            >
+              <option value="">كل الأقسام</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name_ar}
+                </option>
+              ))}
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="erp-input text-sm"
+            >
+              <option value="">كل الحالات</option>
+              {Object.entries(STATUS_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+            {canManage && (
+              <button
+                onClick={openCreate}
+                className="erp-btn erp-btn-primary flex items-center gap-1 text-sm"
+              >
+                <Plus size={14} /> موظف جديد
+              </button>
+            )}
+          </div>
+
+          {/* Table */}
+          <div className="erp-card overflow-x-auto">
+            {empsLoading ? (
+              <TableSkeleton />
+            ) : (
+              <table className="erp-table w-full">
+                <thead>
+                  <tr className="erp-table-header">
+                    <th className="p-3 text-right text-xs">الكود</th>
+                    <th className="p-3 text-right text-xs">الاسم</th>
+                    <th className="p-3 text-right text-xs">القسم</th>
+                    <th className="p-3 text-right text-xs">المسمى</th>
+                    <th className="p-3 text-right text-xs">الحالة</th>
+                    <th className="p-3 text-right text-xs">التعيين</th>
+                    {canViewSalary && <th className="p-3 text-right text-xs">الراتب / النسبة</th>}
+                    <th className="p-3 text-right text-xs"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="text-center py-12 text-white/40">
+                        <div className="erp-empty-state">
+                          <UserCheck size={36} className="mb-2 opacity-30" />
+                          <p>لا توجد بيانات موظفين</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  {filtered.map((emp) => (
+                    <tr
+                      key={emp.id}
+                      className={`erp-table-row cursor-pointer ${selected?.id === emp.id ? 'bg-amber-500/10' : ''}`}
+                      onClick={() => {
+                        setSelected(emp);
+                        setDetailTab('info');
+                      }}
+                    >
+                      <td className="p-3 text-xs font-mono text-amber-300">{emp.employee_code}</td>
+                      <td className="p-3">
+                        <div className="font-semibold text-sm">
+                          {emp.first_name_ar} {emp.last_name_ar}
+                        </div>
+                        {emp.national_id && (
+                          <div className="text-xs text-white/30 font-mono">{emp.national_id}</div>
+                        )}
+                      </td>
+                      <td className="p-3 text-sm text-white/70">{emp.department_name ?? '—'}</td>
+                      <td className="p-3 text-sm text-white/70">{emp.job_title_name ?? '—'}</td>
+                      <td className="p-3">
+                        <StatusBadge status={emp.employment_status} />
+                      </td>
+                      <td className="p-3 text-xs text-white/60 font-mono">{emp.hire_date}</td>
+                      {canViewSalary && (
+                        <td className="p-3 text-sm font-mono">
+                          {emp.commission_rate ? (
+                            <span className="text-purple-300">{emp.commission_rate}%</span>
+                          ) : emp.salary != null ? (
+                            <span className="text-emerald-300">
+                              {emp.salary.toLocaleString('ar-EG')} {emp.currency}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                      )}
+                      <td className="p-3">
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          {canManage && (
+                            <>
+                              <button
+                                onClick={() => openEdit(emp)}
+                                className="erp-btn erp-btn-ghost p-1"
+                                title="تعديل"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setStatusDialog({ emp, open: true });
+                                  setNewStatus(emp.employment_status);
+                                  setStatusReason('');
+                                }}
+                                className="erp-btn erp-btn-ghost p-1"
+                                title="تغيير الحالة"
+                              >
+                                <RefreshCw size={13} />
+                              </button>
+                              <button
+                                onClick={() => setDeleteId(emp.id)}
+                                className="erp-btn erp-btn-ghost p-1 text-red-400"
+                                title="حذف"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => {
+                              setSelected(emp);
+                              setDetailTab('info');
+                            }}
+                            className="erp-btn erp-btn-ghost p-1 text-amber-400"
+                            title="التفاصيل"
+                          >
+                            <ChevronRight size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* ── Right: Detail Panel ──────────────────────────────── */}
+        {selected && (
+          <div className="erp-card space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-lg font-bold text-white">
+                  {selected.first_name_ar} {selected.last_name_ar}
+                </div>
+                <div className="text-xs text-amber-300 font-mono">{selected.employee_code}</div>
+              </div>
+              <button onClick={() => setSelected(null)} className="text-white/40 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+            <StatusBadge status={selected.employment_status} />
+
+            {/* Detail Tabs */}
+            <div className="flex gap-1 flex-wrap border-b border-white/10 pb-2">
+              {(
+                [
+                  { key: 'info', label: 'البيانات', icon: IdCard },
+                  { key: 'loans', label: 'السلف', icon: Banknote },
+                  { key: 'deductions', label: 'الخصومات', icon: MinusCircle },
+                  { key: 'reports', label: 'التقارير', icon: BarChart2 },
+                  { key: 'docs', label: 'مستندات', icon: FileText },
+                  { key: 'history', label: 'السجل', icon: History },
+                ] as const
+              ).map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setDetailTab(t.key)}
+                  className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-all ${
+                    detailTab === t.key
+                      ? 'bg-amber-500/20 text-amber-300'
+                      : 'text-white/40 hover:text-white/60'
+                  }`}
+                >
+                  <t.icon size={11} /> {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Info Tab ───────────────────────────────────── */}
+            {detailTab === 'info' && (
+              <div className="space-y-2 text-sm">
+                <InfoRow icon={Phone} label="الهاتف" value={selected.phone} />
+                <InfoRow icon={Phone} label="الهاتف الشخصي" value={selected.personal_phone} />
+                <InfoRow icon={IdCard} label="رقم البطاقة" value={selected.national_id} />
+                <InfoRow icon={Building2} label="القسم" value={selected.department_name} />
+                <InfoRow icon={Briefcase} label="المسمى الوظيفي" value={selected.job_title_name} />
+                <InfoRow icon={Building2} label="الفرع" value={selected.branch_name} />
+                <InfoRow icon={CalendarDays} label="تاريخ التعيين" value={selected.hire_date} />
+                {canViewSalary &&
+                  (selected.commission_rate ? (
+                    <InfoRow
+                      icon={Percent}
+                      label="نسبة العمولة"
+                      value={`${selected.commission_rate}%`}
+                    />
+                  ) : selected.salary != null ? (
+                    <InfoRow
+                      icon={Wallet}
+                      label="الراتب"
+                      value={`${selected.salary.toLocaleString('ar-EG')} ${selected.currency}`}
+                    />
+                  ) : null)}
+                {canViewSalary && selected.bank_account && (
+                  <InfoRow icon={Wallet} label="الحساب البنكي" value={selected.bank_account} />
+                )}
+                {selected.address_ar && (
+                  <InfoRow
+                    icon={Building2}
+                    label="العنوان"
+                    value={`${selected.address_ar}${selected.city ? ` — ${selected.city}` : ''}`}
+                  />
+                )}
+                {selected.notes && (
+                  <div className="bg-white/5 rounded p-2 text-white/60 text-xs">
+                    {selected.notes}
+                  </div>
+                )}
+                {canManage && (
+                  <button
+                    onClick={() => openEdit(selected)}
+                    className="erp-btn erp-btn-ghost w-full flex items-center justify-center gap-1 text-xs mt-2"
+                  >
+                    <Pencil size={12} /> تعديل البيانات
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* ── Loans Tab ──────────────────────────────────── */}
+            {detailTab === 'loans' && (
+              <div className="space-y-2">
+                {canManage && (
+                  <button
+                    onClick={() => setShowLoanForm(true)}
+                    className="erp-btn erp-btn-primary w-full text-xs flex items-center justify-center gap-1"
+                  >
+                    <Plus size={12} /> طلب سلفة جديدة
+                  </button>
+                )}
+                {loansLoading ? (
+                  <TableSkeleton />
+                ) : loans.length === 0 ? (
+                  <div className="text-center py-6 text-white/30 text-xs">
+                    <Banknote size={28} className="mx-auto mb-2 opacity-30" />
+                    <p>لا توجد سلف لهذا الموظف</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {loans.map((l) => (
+                      <div key={String(l.id)} className="bg-white/5 rounded-lg p-3 space-y-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-sm font-bold text-amber-300 font-mono">
+                              {fmt(l.requested_amount)} {String(l.currency ?? 'EGP')}
+                            </span>
+                            <span className="text-xs text-white/40 mr-2">
+                              {String(l.advance_type ?? '')}
+                            </span>
+                          </div>
+                          <span className={advStatusBadge(String(l.status))}>
+                            {advStatusAr(String(l.status))}
+                          </span>
+                        </div>
+                        {Number(l.remaining_balance) > 0 && (
+                          <div className="text-xs text-red-400">
+                            متبقي: <span className="font-mono">{fmt(l.remaining_balance)}</span>
+                          </div>
+                        )}
+                        {l.reason && (
+                          <div className="text-xs text-white/40">{String(l.reason)}</div>
+                        )}
+                        <div className="text-xs text-white/30 font-mono">
+                          {String(l.requested_date ?? '')}
+                        </div>
+                        {canManage && (
+                          <div className="flex gap-1 mt-2">
+                            {l.status === 'pending' && (
+                              <button
+                                onClick={() => approveLoan.mutate(l.id as number)}
+                                className="erp-btn erp-btn-ghost text-xs text-emerald-400 border border-emerald-500/30 p-1"
+                              >
+                                اعتماد
+                              </button>
+                            )}
+                            {(l.status === 'active' || l.status === 'approved') && (
+                              <button
+                                onClick={() => {
+                                  setShowPayModal(l.id as number);
+                                  setPayAmount('');
+                                }}
+                                className="erp-btn erp-btn-ghost text-xs text-amber-400 border border-amber-500/30 p-1"
+                              >
+                                تسجيل دفعة
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Deductions Tab ─────────────────────────────── */}
+            {detailTab === 'deductions' && (
+              <div className="space-y-2">
+                {canManage && (
+                  <button
+                    onClick={() => setShowDeductForm(true)}
+                    className="erp-btn erp-btn-primary w-full text-xs flex items-center justify-center gap-1"
+                  >
+                    <Plus size={12} /> إضافة خصم
+                  </button>
+                )}
+                {ledgerLoading ? (
+                  <TableSkeleton />
+                ) : deductions.length === 0 ? (
+                  <div className="text-center py-6 text-white/30 text-xs">
+                    <MinusCircle size={28} className="mx-auto mb-2 opacity-30" />
+                    <p>لا توجد خصومات</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {deductions.map((d) => (
+                      <div
+                        key={String(d.id)}
+                        className="bg-red-500/5 border border-red-500/10 rounded-lg p-3"
+                      >
+                        <div className="flex justify-between">
+                          <span className="text-sm font-bold text-red-400 font-mono">
+                            - {fmt(d.amount)}
+                          </span>
+                          <span className="text-xs text-white/30 font-mono">
+                            {String(d.ledger_date ?? '')}
+                          </span>
+                        </div>
+                        {d.notes && (
+                          <div className="text-xs text-white/50 mt-1">{String(d.notes)}</div>
+                        )}
+                      </div>
+                    ))}
+                    <div className="bg-white/5 rounded-lg p-2 text-xs text-center">
+                      إجمالي الخصومات:{' '}
+                      <span className="text-red-400 font-bold font-mono">{fmt(totalDeducted)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Reports Tab ────────────────────────────────── */}
+            {detailTab === 'reports' && (
+              <div className="space-y-3">
+                {/* Salary card */}
+                {canViewSalary && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
+                    <div className="text-xs text-white/40 mb-1">الراتب الأساسي</div>
+                    {selected.commission_rate ? (
+                      <div className="text-lg font-bold text-purple-300">
+                        {selected.commission_rate}% عمولة
+                      </div>
+                    ) : (
+                      <div className="text-lg font-bold text-emerald-300 font-mono">
+                        {fmt(selected.salary)} {selected.currency}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* Loans summary */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-base font-bold text-amber-300 font-mono">
+                      {fmt(totalLoans)}
+                    </div>
+                    <div className="text-xs text-white/40 mt-0.5">إجمالي السلف</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-base font-bold text-red-400 font-mono">
+                      {fmt(remainingLoans)}
+                    </div>
+                    <div className="text-xs text-white/40 mt-0.5">رصيد متبقي</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-base font-bold text-orange-400 font-mono">
+                      {fmt(totalDeducted)}
+                    </div>
+                    <div className="text-xs text-white/40 mt-0.5">إجمالي الخصومات</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-base font-bold text-white/70">{loans.length}</div>
+                    <div className="text-xs text-white/40 mt-0.5">عدد السلف</div>
+                  </div>
+                </div>
+                {/* Status */}
+                <div className="bg-white/5 rounded-lg p-3 space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-white/40">تاريخ التعيين</span>
+                    <span className="font-mono text-white/70">{selected.hire_date}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/40">الحالة</span>
+                    <StatusBadge status={selected.employment_status} />
+                  </div>
+                  {selected.national_id && (
+                    <div className="flex justify-between">
+                      <span className="text-white/40">رقم البطاقة</span>
+                      <span className="font-mono text-white/70">{selected.national_id}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Documents Tab ──────────────────────────────── */}
+            {detailTab === 'docs' && (
+              <div className="space-y-2">
+                {canManage && (
+                  <button
+                    onClick={() => setShowDocForm(true)}
+                    className="erp-btn erp-btn-primary w-full text-xs flex items-center justify-center gap-1"
+                  >
+                    <Plus size={12} /> إضافة مستند
+                  </button>
+                )}
+                {documents.length === 0 && (
+                  <p className="text-white/40 text-xs text-center py-4">لا توجد مستندات</p>
+                )}
+                {documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="bg-white/5 rounded-lg p-2 flex items-start justify-between gap-2"
+                  >
+                    <div>
+                      <div className="text-xs font-semibold text-white">{doc.file_name}</div>
+                      <div className="text-xs text-white/50">{doc.document_type}</div>
+                      {doc.expiry_date && (
+                        <div className="text-xs text-amber-300">ينتهي: {doc.expiry_date}</div>
+                      )}
+                      {doc.verified_at ? (
+                        <div className="flex items-center gap-1 text-xs text-emerald-400">
+                          <CheckCircle size={10} /> تم التحقق
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-xs text-white/30">
+                          <AlertCircle size={10} /> لم يُتحقق
+                        </div>
+                      )}
+                    </div>
+                    {canManage && (
+                      <button
+                        onClick={() => deleteDoc.mutate(doc.id)}
+                        className="text-red-400/60 hover:text-red-400"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── History Tab ────────────────────────────────── */}
+            {detailTab === 'history' && (
+              <div className="space-y-2">
+                {history.length === 0 && (
+                  <p className="text-white/40 text-xs text-center py-4">لا يوجد سجل</p>
+                )}
+                {history.map((h) => (
+                  <div key={h.id} className="flex gap-3 text-xs">
+                    <div className="mt-0.5">
+                      <Clock size={12} className="text-amber-300/60" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1">
+                        {h.old_status && (
+                          <>
+                            <StatusBadge status={h.old_status} />
+                            <span className="text-white/30">→</span>
+                          </>
+                        )}
+                        <StatusBadge status={h.new_status} />
+                      </div>
+                      {h.reason && <div className="text-white/50 mt-0.5">{h.reason}</div>}
+                      <div className="text-white/30">
+                        {h.changed_at
+                          ? new Date(h.changed_at).toLocaleDateString('ar-EG', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : ''}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ─── EMPLOYEES TAB ─────────────────────────────────────── */}
-      {tab === "employees" && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          {/* List Panel */}
-          <div className="xl:col-span-2 space-y-3">
-            {/* Search & Filters */}
-            <div className="flex flex-wrap gap-2 items-center">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search size={14} className="absolute top-1/2 -translate-y-1/2 right-3 text-white/40" />
-                <input
-                  value={search} onChange={e => setSearch(e.target.value)}
-                  placeholder="بحث بالاسم أو الكود أو الرقم القومي..."
-                  className="erp-input w-full pr-8 text-sm"
-                />
-              </div>
-              <select
-                value={deptFilter} onChange={e => setDeptFilter(e.target.value === "" ? "" : Number(e.target.value))}
-                className="erp-input text-sm"
-              >
-                <option value="">كل الأقسام</option>
-                {departments.map(d => <option key={d.id} value={d.id}>{d.name_ar}</option>)}
-              </select>
-              <select
-                value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                className="erp-input text-sm"
-              >
-                <option value="">كل الحالات</option>
-                {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-              {canManage && (
-                <button onClick={openCreate} className="erp-btn erp-btn-primary flex items-center gap-1 text-sm">
-                  <Plus size={14} /> موظف جديد
-                </button>
-              )}
-            </div>
-
-            {/* Table */}
-            <div className="erp-card overflow-x-auto">
-              {empsLoading ? <TableSkeleton /> : (
-                <table className="erp-table w-full">
-                  <thead>
-                    <tr className="erp-table-header">
-                      <th className="p-3 text-right text-xs">الكود</th>
-                      <th className="p-3 text-right text-xs">الاسم</th>
-                      <th className="p-3 text-right text-xs">القسم</th>
-                      <th className="p-3 text-right text-xs">المسمى الوظيفي</th>
-                      <th className="p-3 text-right text-xs">الحالة</th>
-                      <th className="p-3 text-right text-xs">تاريخ التعيين</th>
-                      {canViewSalary && <th className="p-3 text-right text-xs">الراتب</th>}
-                      <th className="p-3 text-right text-xs"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.length === 0 && (
-                      <tr><td colSpan={8} className="text-center py-12 text-white/40">
-                        <div className="erp-empty-state"><UserCheck size={36} className="mb-2 opacity-30" /><p>لا توجد بيانات موظفين</p></div>
-                      </td></tr>
-                    )}
-                    {filtered.map(emp => (
-                      <tr
-                        key={emp.id}
-                        className={`erp-table-row cursor-pointer ${selected?.id === emp.id ? "bg-amber-500/10" : ""}`}
-                        onClick={() => { setSelected(emp); setDetailTab("info"); }}
-                      >
-                        <td className="p-3 text-xs font-mono text-amber-300">{emp.employee_code}</td>
-                        <td className="p-3">
-                          <div className="font-semibold text-sm">{emp.first_name_ar} {emp.last_name_ar}</div>
-                        </td>
-                        <td className="p-3 text-sm text-white/70">{emp.department_name ?? "—"}</td>
-                        <td className="p-3 text-sm text-white/70">{emp.job_title_name ?? "—"}</td>
-                        <td className="p-3"><StatusBadge status={emp.employment_status} /></td>
-                        <td className="p-3 text-sm text-white/60 font-mono">{emp.hire_date}</td>
-                        {canViewSalary && (
-                          <td className="p-3 text-sm text-emerald-300 font-mono">
-                            {emp.salary != null ? `${emp.salary.toLocaleString("ar-EG")} ${emp.currency}` : "—"}
-                          </td>
-                        )}
-                        <td className="p-3">
-                          <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                            {canManage && (
-                              <>
-                                <button onClick={() => openEdit(emp)} className="erp-btn erp-btn-ghost p-1" title="تعديل">
-                                  <Pencil size={13} />
-                                </button>
-                                <button onClick={() => { setStatusDialog({ emp, open: true }); setNewStatus(emp.employment_status); setStatusReason(""); }} className="erp-btn erp-btn-ghost p-1" title="تغيير الحالة">
-                                  <RefreshCw size={13} />
-                                </button>
-                                <button onClick={() => setDeleteId(emp.id)} className="erp-btn erp-btn-ghost p-1 text-red-400" title="حذف">
-                                  <Trash2 size={13} />
-                                </button>
-                              </>
-                            )}
-                            <button onClick={() => { setSelected(emp); setDetailTab("info"); }} className="erp-btn erp-btn-ghost p-1 text-amber-400" title="التفاصيل">
-                              <ChevronRight size={13} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-
-          {/* Detail Panel */}
-          {selected && (
-            <div className="erp-card space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-lg font-bold text-white">{selected.first_name_ar} {selected.last_name_ar}</div>
-                  <div className="text-xs text-amber-300 font-mono">{selected.employee_code}</div>
-                </div>
-                <button onClick={() => setSelected(null)} className="text-white/40 hover:text-white"><X size={16} /></button>
-              </div>
-              <StatusBadge status={selected.employment_status} />
-
-              {/* Detail Tabs */}
-              <div className="flex gap-1 flex-wrap">
-                {([
-                  { key: "info",     label: "البيانات",   icon: IdCard },
-                  { key: "docs",     label: "المستندات",  icon: FileText },
-                  { key: "contacts", label: "اتصال طوارئ", icon: Phone },
-                  { key: "history",  label: "السجل",      icon: History },
-                ] as const).map(t => (
-                  <button
-                    key={t.key}
-                    onClick={() => setDetailTab(t.key)}
-                    className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-all ${
-                      detailTab === t.key ? "bg-amber-500/20 text-amber-300" : "text-white/40 hover:text-white/60"
-                    }`}
-                  >
-                    <t.icon size={11} /> {t.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Info Tab */}
-              {detailTab === "info" && (
-                <div className="space-y-2 text-sm">
-                  <InfoRow icon={Phone}          label="الهاتف"             value={selected.phone} />
-                  <InfoRow icon={Phone}          label="الهاتف الشخصي"      value={selected.personal_phone} />
-                  <InfoRow icon={IdCard}         label="الرقم القومي"       value={selected.national_id} />
-                  <InfoRow icon={Building2}      label="القسم"              value={selected.department_name} />
-                  <InfoRow icon={Briefcase}      label="المسمى الوظيفي"    value={selected.job_title_name} />
-                  <InfoRow icon={Building2}      label="الفرع"              value={selected.branch_name} />
-                  <InfoRow icon={CalendarDays}   label="تاريخ التعيين"      value={selected.hire_date} />
-                  {canViewSalary && selected.salary != null && (
-                    <InfoRow icon={Wallet} label="الراتب" value={`${selected.salary.toLocaleString("ar-EG")} ${selected.currency}`} />
-                  )}
-                  {canViewSalary && selected.bank_account && (
-                    <InfoRow icon={Wallet} label="الحساب البنكي" value={selected.bank_account} />
-                  )}
-                  {selected.address_ar && <InfoRow icon={Building2} label="العنوان" value={`${selected.address_ar}${selected.city ? ` — ${selected.city}` : ""}${selected.country ? ` — ${selected.country}` : ""}`} />}
-                  {selected.notes && <div className="bg-white/5 rounded p-2 text-white/60 text-xs">{selected.notes}</div>}
-                  {canManage && (
-                    <button onClick={() => openEdit(selected)} className="erp-btn erp-btn-ghost w-full flex items-center justify-center gap-1 text-xs mt-2">
-                      <Pencil size={12} /> تعديل البيانات
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Documents Tab */}
-              {detailTab === "docs" && (
-                <div className="space-y-2">
-                  {canManage && (
-                    <button onClick={() => setShowDocForm(true)} className="erp-btn erp-btn-primary w-full text-xs flex items-center justify-center gap-1">
-                      <Plus size={12} /> إضافة مستند
-                    </button>
-                  )}
-                  {documents.length === 0 && <p className="text-white/40 text-xs text-center py-4">لا توجد مستندات</p>}
-                  {documents.map(doc => (
-                    <div key={doc.id} className="bg-white/5 rounded-lg p-2 flex items-start justify-between gap-2">
-                      <div>
-                        <div className="text-xs font-semibold text-white">{doc.file_name}</div>
-                        <div className="text-xs text-white/50">{doc.document_type}</div>
-                        {doc.expiry_date && <div className="text-xs text-amber-300">ينتهي: {doc.expiry_date}</div>}
-                        {doc.verified_at ? (
-                          <div className="flex items-center gap-1 text-xs text-emerald-400"><CheckCircle size={10} /> تم التحقق</div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-xs text-white/30"><AlertCircle size={10} /> لم يُتحقق منه</div>
-                        )}
-                      </div>
-                      {canManage && (
-                        <button onClick={() => deleteDoc.mutate(doc.id)} className="text-red-400/60 hover:text-red-400"><Trash2 size={12} /></button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Contacts Tab */}
-              {detailTab === "contacts" && (
-                <div className="space-y-2">
-                  {canManage && (
-                    <button onClick={() => setShowContactForm(true)} className="erp-btn erp-btn-primary w-full text-xs flex items-center justify-center gap-1">
-                      <Plus size={12} /> إضافة جهة اتصال
-                    </button>
-                  )}
-                  {contacts.length === 0 && <p className="text-white/40 text-xs text-center py-4">لا توجد جهات اتصال</p>}
-                  {contacts.map(c => (
-                    <div key={c.id} className="bg-white/5 rounded-lg p-2 flex items-start justify-between gap-2">
-                      <div>
-                        <div className="text-xs font-semibold text-white">{c.name}</div>
-                        {c.relationship && <div className="text-xs text-white/50">{c.relationship}</div>}
-                        {c.phone && <div className="text-xs text-amber-300 font-mono">{c.phone}</div>}
-                      </div>
-                      {canManage && (
-                        <button onClick={() => deleteContact.mutate(c.id)} className="text-red-400/60 hover:text-red-400"><Trash2 size={12} /></button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* History Tab */}
-              {detailTab === "history" && (
-                <div className="space-y-2">
-                  {history.length === 0 && <p className="text-white/40 text-xs text-center py-4">لا يوجد سجل</p>}
-                  {history.map(h => (
-                    <div key={h.id} className="flex gap-3 text-xs">
-                      <div className="mt-0.5"><Clock size={12} className="text-amber-300/60" /></div>
-                      <div>
-                        <div className="flex items-center gap-1">
-                          {h.old_status && <><StatusBadge status={h.old_status} /><span className="text-white/30">→</span></>}
-                          <StatusBadge status={h.new_status} />
-                        </div>
-                        {h.reason && <div className="text-white/50 mt-0.5">{h.reason}</div>}
-                        <div className="text-white/30">{h.changed_at ? new Date(h.changed_at).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" }) : ""}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ─── DEPARTMENTS TAB ────────────────────────────────────── */}
-      {tab === "departments" && (
-        <div className="erp-card space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-white flex items-center gap-2"><Building2 size={16} className="text-amber-400" /> الأقسام</h2>
-            {canManage && (
-              <button onClick={() => { setDeptEditId(null); setDeptForm({ name_ar: "", name_en: "", description_ar: "" }); setShowDeptForm(true); }} className="erp-btn erp-btn-primary text-xs flex items-center gap-1">
-                <Plus size={12} /> قسم جديد
-              </button>
-            )}
-          </div>
-          {deptsLoading ? <TableSkeleton /> : (
-            <table className="erp-table w-full">
-              <thead>
-                <tr className="erp-table-header">
-                  <th className="p-3 text-right text-xs">الاسم (عربي)</th>
-                  <th className="p-3 text-right text-xs">الاسم (إنجليزي)</th>
-                  <th className="p-3 text-right text-xs">الوصف</th>
-                  <th className="p-3 text-right text-xs"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {departments.length === 0 && (
-                  <tr><td colSpan={4} className="text-center py-8 text-white/40">لا توجد أقسام</td></tr>
-                )}
-                {departments.map(d => (
-                  <tr key={d.id} className="erp-table-row">
-                    <td className="p-3 font-semibold text-sm">{d.name_ar}</td>
-                    <td className="p-3 text-sm text-white/60">{d.name_en}</td>
-                    <td className="p-3 text-xs text-white/50">{d.description_ar ?? "—"}</td>
-                    <td className="p-3">
-                      {canManage && (
-                        <div className="flex gap-1">
-                          <button onClick={() => { setDeptEditId(d.id); setDeptForm({ name_ar: d.name_ar, name_en: d.name_en, description_ar: d.description_ar ?? "" }); setShowDeptForm(true); }} className="erp-btn erp-btn-ghost p-1"><Pencil size={13} /></button>
-                          <button onClick={() => deleteDept.mutate(d.id)} className="erp-btn erp-btn-ghost p-1 text-red-400"><Trash2 size={13} /></button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
-      {/* ─── JOB TITLES TAB ─────────────────────────────────────── */}
-      {tab === "job-titles" && (
-        <div className="erp-card space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-white flex items-center gap-2"><Briefcase size={16} className="text-amber-400" /> المسميات الوظيفية</h2>
-            {canManage && (
-              <button onClick={() => { setJtEditId(null); setJtForm({ name_ar: "", name_en: "" }); setShowJtForm(true); }} className="erp-btn erp-btn-primary text-xs flex items-center gap-1">
-                <Plus size={12} /> مسمى جديد
-              </button>
-            )}
-          </div>
-          {jtsLoading ? <TableSkeleton /> : (
-            <table className="erp-table w-full">
-              <thead>
-                <tr className="erp-table-header">
-                  <th className="p-3 text-right text-xs">المسمى (عربي)</th>
-                  <th className="p-3 text-right text-xs">المسمى (إنجليزي)</th>
-                  <th className="p-3 text-right text-xs"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobTitles.length === 0 && (
-                  <tr><td colSpan={3} className="text-center py-8 text-white/40">لا توجد مسميات وظيفية</td></tr>
-                )}
-                {jobTitles.map(jt => (
-                  <tr key={jt.id} className="erp-table-row">
-                    <td className="p-3 font-semibold text-sm">{jt.name_ar}</td>
-                    <td className="p-3 text-sm text-white/60">{jt.name_en}</td>
-                    <td className="p-3">
-                      {canManage && (
-                        <div className="flex gap-1">
-                          <button onClick={() => { setJtEditId(jt.id); setJtForm({ name_ar: jt.name_ar, name_en: jt.name_en }); setShowJtForm(true); }} className="erp-btn erp-btn-ghost p-1"><Pencil size={13} /></button>
-                          <button onClick={() => deleteJt.mutate(jt.id)} className="erp-btn erp-btn-ghost p-1 text-red-400"><Trash2 size={13} /></button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
+      {/* ═══════════════════════════════════════════════════════
           MODALS
-      ══════════════════════════════════════════════════════════════ */}
+      ════════════════════════════════════════════════════════ */}
 
       {/* Employee Create/Edit Form */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          <div
+            className="erp-modal rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            dir="rtl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <h2 className="text-lg font-bold text-white">{editId ? "تعديل بيانات الموظف" : "إضافة موظف جديد"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Users size={18} className="text-amber-400" />
+                {editId ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد'}
+              </h2>
+              <button onClick={() => setShowForm(false)} className="text-white/40 hover:text-white">
+                <X size={18} />
+              </button>
             </div>
             <div className="p-5 space-y-4">
               {/* Names */}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="الاسم الأول (عربي) *">
-                  <input value={editEmp.first_name_ar ?? ""} onChange={e => set("first_name_ar", e.target.value)} className="erp-input w-full" placeholder="محمد" />
+                  <input
+                    value={editEmp.first_name_ar ?? ''}
+                    onChange={(e) => set('first_name_ar', e.target.value)}
+                    className="erp-input w-full"
+                    placeholder="محمد"
+                  />
                 </Field>
                 <Field label="الاسم الأخير (عربي) *">
-                  <input value={editEmp.last_name_ar ?? ""} onChange={e => set("last_name_ar", e.target.value)} className="erp-input w-full" placeholder="أحمد" />
+                  <input
+                    value={editEmp.last_name_ar ?? ''}
+                    onChange={(e) => set('last_name_ar', e.target.value)}
+                    className="erp-input w-full"
+                    placeholder="أحمد"
+                  />
                 </Field>
               </div>
+
               {/* Contact */}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="الهاتف">
-                  <input value={editEmp.phone ?? ""} onChange={e => set("phone", e.target.value)} className="erp-input w-full" placeholder="+20..." />
-                </Field>
-              </div>
-              {/* HR */}
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="القسم">
-                  <select value={editEmp.department_id ?? ""} onChange={e => set("department_id", e.target.value ? Number(e.target.value) : null)} className="erp-input w-full">
-                    <option value="">— اختر القسم —</option>
-                    {departments.map(d => <option key={d.id} value={d.id}>{d.name_ar}</option>)}
-                  </select>
-                </Field>
-                <Field label="المسمى الوظيفي">
-                  <select value={editEmp.job_title_id ?? ""} onChange={e => set("job_title_id", e.target.value ? Number(e.target.value) : null)} className="erp-input w-full">
-                    <option value="">— اختر المسمى —</option>
-                    {jobTitles.map(jt => <option key={jt.id} value={jt.id}>{jt.name_ar}</option>)}
-                  </select>
-                </Field>
-                <Field label="تاريخ التعيين *">
-                  <input type="date" value={editEmp.hire_date ?? ""} onChange={e => set("hire_date", e.target.value)} className="erp-input w-full" />
-                </Field>
-                <Field label="الفرع">
-                  <select value={editEmp.branch_id ?? ""} onChange={e => set("branch_id", e.target.value ? Number(e.target.value) : null)} className="erp-input w-full">
-                    <option value="">— اختر الفرع —</option>
-                    {branches.filter(b => b.is_active).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                  </select>
-                </Field>
-              </div>
-              {/* Salary — full width to avoid cramping */}
-              <Field label="الراتب الأساسي *">
-                <div className="flex gap-2">
                   <input
-                    type="number"
-                    value={editEmp.salary ?? 0}
-                    onChange={e => set("salary", Number(e.target.value))}
-                    className="erp-input flex-1"
-                    min={0}
-                    style={{ minWidth: 0 }}
+                    value={editEmp.phone ?? ''}
+                    onChange={(e) => set('phone', e.target.value)}
+                    className="erp-input w-full"
+                    placeholder="+20..."
                   />
-                  <select value={editEmp.currency ?? "EGP"} onChange={e => set("currency", e.target.value)} className="erp-input" style={{ width: "90px", flexShrink: 0 }}>
-                    {["EGP", "SAR", "AED", "USD"].map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                </Field>
+                <Field label="الهاتف الشخصي">
+                  <input
+                    value={editEmp.personal_phone ?? ''}
+                    onChange={(e) => set('personal_phone', e.target.value)}
+                    className="erp-input w-full"
+                  />
+                </Field>
+              </div>
+
+              {/* National ID */}
+              <Field label="رقم البطاقة القومية">
+                <div className="relative">
+                  <IdCard
+                    size={14}
+                    className="absolute top-1/2 -translate-y-1/2 right-3 text-white/30"
+                  />
+                  <input
+                    value={editEmp.national_id ?? ''}
+                    onChange={(e) => set('national_id', e.target.value)}
+                    className="erp-input w-full pr-8"
+                    placeholder="14 رقم"
+                    maxLength={14}
+                  />
                 </div>
               </Field>
-              <Field label="العنوان">
-                <input value={editEmp.address_ar ?? ""} onChange={e => set("address_ar", e.target.value)} className="erp-input w-full" placeholder="العنوان الكامل" />
+
+              {/* Department — with inline add */}
+              <Field label="القسم">
+                <div className="flex gap-2">
+                  <select
+                    value={editEmp.department_id ?? ''}
+                    onChange={(e) =>
+                      set('department_id', e.target.value ? Number(e.target.value) : null)
+                    }
+                    className="erp-input flex-1"
+                  >
+                    <option value="">— اختر القسم —</option>
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name_ar}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowInlineDept((v) => !v)}
+                    className="erp-btn erp-btn-ghost px-2 text-amber-400 border border-amber-500/30"
+                    title="إضافة قسم جديد"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+                {showInlineDept && (
+                  <div className="mt-2 bg-white/5 rounded-lg p-3 space-y-2 border border-amber-500/20">
+                    <div className="text-xs text-amber-300 mb-1">قسم جديد</div>
+                    <input
+                      value={inlineDept.name_ar}
+                      onChange={(e) => setInlineDept((p) => ({ ...p, name_ar: e.target.value }))}
+                      className="erp-input w-full text-sm"
+                      placeholder="اسم القسم بالعربي *"
+                    />
+                    <input
+                      value={inlineDept.name_en}
+                      onChange={(e) => setInlineDept((p) => ({ ...p, name_en: e.target.value }))}
+                      className="erp-input w-full text-sm"
+                      placeholder="Department Name (English)"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => createInlineDept.mutate(inlineDept)}
+                        disabled={!inlineDept.name_ar.trim() || createInlineDept.isPending}
+                        className="erp-btn erp-btn-primary text-xs flex-1"
+                      >
+                        {createInlineDept.isPending ? 'جاري...' : 'إضافة'}
+                      </button>
+                      <button
+                        onClick={() => setShowInlineDept(false)}
+                        className="erp-btn erp-btn-ghost text-xs"
+                      >
+                        إلغاء
+                      </button>
+                    </div>
+                  </div>
+                )}
               </Field>
+
+              {/* Job Title — with inline add */}
+              <Field label="المسمى الوظيفي">
+                <div className="flex gap-2">
+                  <select
+                    value={editEmp.job_title_id ?? ''}
+                    onChange={(e) =>
+                      set('job_title_id', e.target.value ? Number(e.target.value) : null)
+                    }
+                    className="erp-input flex-1"
+                  >
+                    <option value="">— اختر المسمى —</option>
+                    {jobTitles.map((jt) => (
+                      <option key={jt.id} value={jt.id}>
+                        {jt.name_ar}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowInlineJt((v) => !v)}
+                    className="erp-btn erp-btn-ghost px-2 text-amber-400 border border-amber-500/30"
+                    title="إضافة مسمى جديد"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+                {showInlineJt && (
+                  <div className="mt-2 bg-white/5 rounded-lg p-3 space-y-2 border border-amber-500/20">
+                    <div className="text-xs text-amber-300 mb-1">مسمى وظيفي جديد</div>
+                    <input
+                      value={inlineJt.name_ar}
+                      onChange={(e) => setInlineJt((p) => ({ ...p, name_ar: e.target.value }))}
+                      className="erp-input w-full text-sm"
+                      placeholder="المسمى بالعربي *"
+                    />
+                    <input
+                      value={inlineJt.name_en}
+                      onChange={(e) => setInlineJt((p) => ({ ...p, name_en: e.target.value }))}
+                      className="erp-input w-full text-sm"
+                      placeholder="Job Title (English)"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => createInlineJt.mutate(inlineJt)}
+                        disabled={!inlineJt.name_ar.trim() || createInlineJt.isPending}
+                        className="erp-btn erp-btn-primary text-xs flex-1"
+                      >
+                        {createInlineJt.isPending ? 'جاري...' : 'إضافة'}
+                      </button>
+                      <button
+                        onClick={() => setShowInlineJt(false)}
+                        className="erp-btn erp-btn-ghost text-xs"
+                      >
+                        إلغاء
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </Field>
+
+              {/* Hire Date & Branch */}
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="تاريخ التعيين *">
+                  <input
+                    type="date"
+                    value={editEmp.hire_date ?? ''}
+                    onChange={(e) => set('hire_date', e.target.value)}
+                    className="erp-input w-full"
+                  />
+                </Field>
+                <Field label="الفرع">
+                  <select
+                    value={editEmp.branch_id ?? ''}
+                    onChange={(e) =>
+                      set('branch_id', e.target.value ? Number(e.target.value) : null)
+                    }
+                    className="erp-input w-full"
+                  >
+                    <option value="">— اختر الفرع —</option>
+                    {branches
+                      .filter((b) => b.is_active)
+                      .map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                  </select>
+                </Field>
+              </div>
+
+              {/* Salary / Commission toggle */}
+              <div className="bg-white/5 rounded-lg p-3 space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-white/50">نوع التعويض:</span>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setCommissionMode(false)}
+                      className={`px-3 py-1 rounded-lg text-xs transition-all ${!commissionMode ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-white/40 hover:text-white/60'}`}
+                    >
+                      <Wallet size={11} className="inline ml-1" /> راتب ثابت
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCommissionMode(true)}
+                      className={`px-3 py-1 rounded-lg text-xs transition-all ${commissionMode ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'text-white/40 hover:text-white/60'}`}
+                    >
+                      <Percent size={11} className="inline ml-1" /> نسبة عمولة
+                    </button>
+                  </div>
+                </div>
+                {!commissionMode ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={editEmp.salary ?? 0}
+                      onChange={(e) => set('salary', Number(e.target.value))}
+                      className="erp-input flex-1"
+                      min={0}
+                      placeholder="0.00"
+                      style={{ minWidth: 0 }}
+                    />
+                    <select
+                      value={editEmp.currency ?? 'EGP'}
+                      onChange={(e) => set('currency', e.target.value)}
+                      className="erp-input"
+                      style={{ width: '90px', flexShrink: 0 }}
+                    >
+                      {['EGP', 'SAR', 'AED', 'USD'].map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="number"
+                      value={editEmp.commission_rate ?? ''}
+                      onChange={(e) => set('commission_rate', Number(e.target.value))}
+                      className="erp-input flex-1"
+                      min={0}
+                      max={100}
+                      placeholder="مثال: 5"
+                      style={{ minWidth: 0 }}
+                    />
+                    <span className="text-white/50 text-sm shrink-0">% من المبيعات</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Address & Notes */}
+              <Field label="العنوان">
+                <input
+                  value={editEmp.address_ar ?? ''}
+                  onChange={(e) => set('address_ar', e.target.value)}
+                  className="erp-input w-full"
+                  placeholder="العنوان الكامل"
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="المدينة">
+                  <input
+                    value={editEmp.city ?? ''}
+                    onChange={(e) => set('city', e.target.value)}
+                    className="erp-input w-full"
+                  />
+                </Field>
+                <Field label="الحساب البنكي">
+                  <input
+                    value={editEmp.bank_account ?? ''}
+                    onChange={(e) => set('bank_account', e.target.value)}
+                    className="erp-input w-full"
+                  />
+                </Field>
+              </div>
               <Field label="ملاحظات">
-                <textarea value={editEmp.notes ?? ""} onChange={e => set("notes", e.target.value)} className="erp-input w-full" rows={2} />
+                <textarea
+                  value={editEmp.notes ?? ''}
+                  onChange={(e) => set('notes', e.target.value)}
+                  className="erp-input w-full"
+                  rows={2}
+                />
               </Field>
             </div>
             <div className="flex gap-2 p-5 border-t border-white/10">
@@ -691,9 +1474,15 @@ export default function Employees() {
                 disabled={createEmp.isPending || updateEmp.isPending}
                 className="erp-btn erp-btn-primary flex-1"
               >
-                {(createEmp.isPending || updateEmp.isPending) ? "جاري الحفظ..." : (editId ? "حفظ التعديلات" : "إضافة الموظف")}
+                {createEmp.isPending || updateEmp.isPending
+                  ? 'جاري الحفظ...'
+                  : editId
+                    ? 'حفظ التعديلات'
+                    : 'إضافة الموظف'}
               </button>
-              <button onClick={() => setShowForm(false)} className="erp-btn erp-btn-ghost">إلغاء</button>
+              <button onClick={() => setShowForm(false)} className="erp-btn erp-btn-ghost">
+                إلغاء
+              </button>
             </div>
           </div>
         </div>
@@ -704,29 +1493,62 @@ export default function Employees() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2"><RefreshCw size={16} className="text-amber-400" /> تغيير حالة الموظف</h2>
-              <button onClick={() => setStatusDialog(null)} className="text-white/40 hover:text-white"><X size={16} /></button>
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <RefreshCw size={16} className="text-amber-400" /> تغيير حالة الموظف
+              </h2>
+              <button
+                onClick={() => setStatusDialog(null)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={16} />
+              </button>
             </div>
             <div className="p-4 space-y-3">
-              <div className="text-sm text-white/60">الموظف: <strong className="text-white">{statusDialog.emp.first_name_ar} {statusDialog.emp.last_name_ar}</strong></div>
+              <div className="text-sm text-white/60">
+                الموظف:{' '}
+                <strong className="text-white">
+                  {statusDialog.emp.first_name_ar} {statusDialog.emp.last_name_ar}
+                </strong>
+              </div>
               <Field label="الحالة الجديدة">
-                <select value={newStatus} onChange={e => setNewStatus(e.target.value)} className="erp-input w-full">
-                  {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                <select
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                  className="erp-input w-full"
+                >
+                  {Object.entries(STATUS_LABELS).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="السبب">
-                <input value={statusReason} onChange={e => setStatusReason(e.target.value)} className="erp-input w-full" placeholder="سبب التغيير..." />
+                <input
+                  value={statusReason}
+                  onChange={(e) => setStatusReason(e.target.value)}
+                  className="erp-input w-full"
+                  placeholder="سبب التغيير..."
+                />
               </Field>
             </div>
             <div className="flex gap-2 p-4 border-t border-white/10">
               <button
-                onClick={() => changeStatus.mutate({ id: statusDialog.emp.id, new_status: newStatus, reason: statusReason })}
+                onClick={() =>
+                  changeStatus.mutate({
+                    id: statusDialog.emp.id,
+                    new_status: newStatus,
+                    reason: statusReason,
+                  })
+                }
                 disabled={changeStatus.isPending}
                 className="erp-btn erp-btn-primary flex-1"
               >
-                {changeStatus.isPending ? "جاري التغيير..." : "تأكيد"}
+                {changeStatus.isPending ? 'جاري التغيير...' : 'تأكيد'}
               </button>
-              <button onClick={() => setStatusDialog(null)} className="erp-btn erp-btn-ghost">إلغاء</button>
+              <button onClick={() => setStatusDialog(null)} className="erp-btn erp-btn-ghost">
+                إلغاء
+              </button>
             </div>
           </div>
         </div>
@@ -735,161 +1557,316 @@ export default function Employees() {
       {/* Delete Confirm */}
       {deleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center" dir="rtl">
+          <div
+            className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center"
+            dir="rtl"
+          >
             <UserX size={36} className="text-red-400 mx-auto mb-3" />
             <h2 className="text-lg font-bold text-white mb-1">حذف الموظف</h2>
-            <p className="text-white/50 text-sm mb-4">هل أنت متأكد من حذف هذا الموظف؟ لا يمكن التراجع عن هذه العملية.</p>
+            <p className="text-white/50 text-sm mb-4">
+              هل أنت متأكد من حذف هذا الموظف؟ لا يمكن التراجع عن هذه العملية.
+            </p>
             <div className="flex gap-2">
-              <button onClick={() => deleteEmp.mutate(deleteId)} disabled={deleteEmp.isPending} className="erp-btn flex-1 bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30">
-                {deleteEmp.isPending ? "جاري الحذف..." : "حذف"}
+              <button
+                onClick={() => deleteEmp.mutate(deleteId)}
+                disabled={deleteEmp.isPending}
+                className="erp-btn flex-1 bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
+              >
+                {deleteEmp.isPending ? 'جاري الحذف...' : 'حذف'}
               </button>
-              <button onClick={() => setDeleteId(null)} className="erp-btn erp-btn-ghost flex-1">إلغاء</button>
+              <button onClick={() => setDeleteId(null)} className="erp-btn erp-btn-ghost flex-1">
+                إلغاء
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Document Form */}
+      {/* Add Document */}
       {showDocForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2"><FileText size={16} className="text-amber-400" /> إضافة مستند</h2>
-              <button onClick={() => setShowDocForm(false)} className="text-white/40 hover:text-white"><X size={16} /></button>
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <FileText size={16} className="text-amber-400" /> إضافة مستند
+              </h2>
+              <button
+                onClick={() => setShowDocForm(false)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={16} />
+              </button>
             </div>
             <div className="p-4 space-y-3">
               <Field label="نوع المستند *">
-                <select value={docForm.document_type} onChange={e => setDocForm(p => ({ ...p, document_type: e.target.value }))} className="erp-input w-full">
+                <select
+                  value={docForm.document_type}
+                  onChange={(e) => setDocForm((p) => ({ ...p, document_type: e.target.value }))}
+                  className="erp-input w-full"
+                >
                   <option value="">— اختر —</option>
-                  {["بطاقة هوية وطنية", "جواز سفر", "عقد عمل", "شهادة مؤهل", "شهادة خبرة", "أخرى"].map(v => <option key={v} value={v}>{v}</option>)}
+                  {[
+                    'بطاقة هوية وطنية',
+                    'جواز سفر',
+                    'عقد عمل',
+                    'شهادة مؤهل',
+                    'شهادة خبرة',
+                    'أخرى',
+                  ].map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="اسم الملف *">
-                <input value={docForm.file_name} onChange={e => setDocForm(p => ({ ...p, file_name: e.target.value }))} className="erp-input w-full" placeholder="مثال: هوية_محمد_أحمد.pdf" />
+                <input
+                  value={docForm.file_name}
+                  onChange={(e) => setDocForm((p) => ({ ...p, file_name: e.target.value }))}
+                  className="erp-input w-full"
+                  placeholder="مثال: هوية_محمد.pdf"
+                />
               </Field>
               <Field label="تاريخ الانتهاء">
-                <input type="date" value={docForm.expiry_date} onChange={e => setDocForm(p => ({ ...p, expiry_date: e.target.value }))} className="erp-input w-full" />
+                <input
+                  type="date"
+                  value={docForm.expiry_date}
+                  onChange={(e) => setDocForm((p) => ({ ...p, expiry_date: e.target.value }))}
+                  className="erp-input w-full"
+                />
               </Field>
               <Field label="ملاحظات">
-                <input value={docForm.notes} onChange={e => setDocForm(p => ({ ...p, notes: e.target.value }))} className="erp-input w-full" />
+                <input
+                  value={docForm.notes}
+                  onChange={(e) => setDocForm((p) => ({ ...p, notes: e.target.value }))}
+                  className="erp-input w-full"
+                />
               </Field>
             </div>
             <div className="flex gap-2 p-4 border-t border-white/10">
-              <button onClick={() => addDoc.mutate(docForm)} disabled={addDoc.isPending} className="erp-btn erp-btn-primary flex-1">
-                {addDoc.isPending ? "جاري الإضافة..." : "إضافة"}
+              <button
+                onClick={() => addDoc.mutate(docForm)}
+                disabled={addDoc.isPending}
+                className="erp-btn erp-btn-primary flex-1"
+              >
+                {addDoc.isPending ? 'جاري...' : 'إضافة'}
               </button>
-              <button onClick={() => setShowDocForm(false)} className="erp-btn erp-btn-ghost">إلغاء</button>
+              <button onClick={() => setShowDocForm(false)} className="erp-btn erp-btn-ghost">
+                إلغاء
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Contact Form */}
-      {showContactForm && (
+      {/* New Loan Form */}
+      {showLoanForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+            <div className="flex items-center justify-between p-5 border-b border-white/10">
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <Banknote size={16} className="text-amber-400" />
+                سلفة جديدة — {selected?.first_name_ar} {selected?.last_name_ar}
+              </h2>
+              <button
+                onClick={() => setShowLoanForm(false)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-3">
+              <Field label="المبلغ المطلوب *">
+                <input
+                  type="number"
+                  value={loanForm.requested_amount}
+                  onChange={(e) => setLoanForm((p) => ({ ...p, requested_amount: e.target.value }))}
+                  className="erp-input w-full"
+                  min={0}
+                />
+              </Field>
+              <Field label="نوع السلفة">
+                <select
+                  value={loanForm.advance_type}
+                  onChange={(e) => setLoanForm((p) => ({ ...p, advance_type: e.target.value }))}
+                  className="erp-input w-full"
+                >
+                  {[
+                    ['personal', 'شخصي'],
+                    ['emergency', 'طارئ'],
+                    ['medical', 'علاجي'],
+                    ['educational', 'تعليمي'],
+                    ['other', 'أخرى'],
+                  ].map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="السبب *">
+                <input
+                  value={loanForm.reason}
+                  onChange={(e) => setLoanForm((p) => ({ ...p, reason: e.target.value }))}
+                  className="erp-input w-full"
+                  placeholder="اكتب سبب السلفة..."
+                />
+              </Field>
+            </div>
+            <div className="flex gap-2 p-5 border-t border-white/10">
+              <button
+                onClick={() =>
+                  createLoan.mutate({
+                    employee_id: selected?.id,
+                    ...loanForm,
+                    requested_amount: Number(loanForm.requested_amount),
+                  })
+                }
+                disabled={
+                  !loanForm.requested_amount || !loanForm.reason.trim() || createLoan.isPending
+                }
+                className="erp-btn erp-btn-primary flex-1"
+              >
+                {createLoan.isPending ? 'جاري التقديم...' : 'تقديم السلفة'}
+              </button>
+              <button onClick={() => setShowLoanForm(false)} className="erp-btn erp-btn-ghost">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Payment / Deduction modal */}
+      {showPayModal != null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2"><Phone size={16} className="text-amber-400" /> إضافة جهة اتصال طوارئ</h2>
-              <button onClick={() => setShowContactForm(false)} className="text-white/40 hover:text-white"><X size={16} /></button>
+              <h2 className="font-bold text-white">تسجيل دفعة / خصم</h2>
+              <button
+                onClick={() => setShowPayModal(null)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <div className="p-4 space-y-3">
-              <Field label="الاسم *">
-                <input value={contactForm.name} onChange={e => setContactForm(p => ({ ...p, name: e.target.value }))} className="erp-input w-full" />
-              </Field>
-              <Field label="صلة القرابة">
-                <input value={contactForm.relationship} onChange={e => setContactForm(p => ({ ...p, relationship: e.target.value }))} className="erp-input w-full" placeholder="أب / أم / زوج..." />
-              </Field>
-              <Field label="رقم الهاتف">
-                <input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} className="erp-input w-full" />
+            <div className="p-4">
+              <Field label="المبلغ *">
+                <input
+                  type="number"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="erp-input w-full"
+                  min={0}
+                  autoFocus
+                />
               </Field>
             </div>
             <div className="flex gap-2 p-4 border-t border-white/10">
-              <button onClick={() => addContact.mutate(contactForm)} disabled={addContact.isPending} className="erp-btn erp-btn-primary flex-1">
-                {addContact.isPending ? "جاري الإضافة..." : "إضافة"}
+              <button
+                onClick={() => manualPay.mutate({ id: showPayModal, amount: Number(payAmount) })}
+                disabled={!payAmount || Number(payAmount) <= 0 || manualPay.isPending}
+                className="erp-btn erp-btn-primary flex-1"
+              >
+                {manualPay.isPending ? 'جاري...' : 'تأكيد'}
               </button>
-              <button onClick={() => setShowContactForm(false)} className="erp-btn erp-btn-ghost">إلغاء</button>
+              <button onClick={() => setShowPayModal(null)} className="erp-btn erp-btn-ghost">
+                إلغاء
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Department Form */}
-      {showDeptForm && (
+      {/* Deduction Form */}
+      {showDeductForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2"><Building2 size={16} className="text-amber-400" /> {deptEditId ? "تعديل القسم" : "إضافة قسم جديد"}</h2>
-              <button onClick={() => setShowDeptForm(false)} className="text-white/40 hover:text-white"><X size={16} /></button>
-            </div>
-            <div className="p-4 space-y-3">
-              <Field label="الاسم (عربي) *">
-                <input value={deptForm.name_ar} onChange={e => setDeptForm(p => ({ ...p, name_ar: e.target.value }))} className="erp-input w-full" placeholder="قسم المبيعات" />
-              </Field>
-              <Field label="الاسم (إنجليزي)">
-                <input value={deptForm.name_en} onChange={e => setDeptForm(p => ({ ...p, name_en: e.target.value }))} className="erp-input w-full" placeholder="Sales Department" />
-              </Field>
-              <Field label="الوصف">
-                <input value={deptForm.description_ar} onChange={e => setDeptForm(p => ({ ...p, description_ar: e.target.value }))} className="erp-input w-full" />
-              </Field>
-            </div>
-            <div className="flex gap-2 p-4 border-t border-white/10">
-              <button onClick={() => createDept.mutate(deptForm)} disabled={createDept.isPending} className="erp-btn erp-btn-primary flex-1">
-                {createDept.isPending ? "جاري الحفظ..." : "حفظ"}
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+            <div className="flex items-center justify-between p-5 border-b border-white/10">
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <MinusCircle size={16} className="text-red-400" />
+                خصم من الراتب — {selected?.first_name_ar} {selected?.last_name_ar}
+              </h2>
+              <button
+                onClick={() => setShowDeductForm(false)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={18} />
               </button>
-              <button onClick={() => setShowDeptForm(false)} className="erp-btn erp-btn-ghost">إلغاء</button>
             </div>
+            <div className="p-5 space-y-3">
+              {activeLoans.length > 0 ? (
+                <>
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-300">
+                    سيتم خصم المبلغ من السلفة النشطة الأولى
+                  </div>
+                  <Field label="المبلغ المطلوب خصمه *">
+                    <input
+                      type="number"
+                      value={deductForm.amount}
+                      onChange={(e) => setDeductForm((p) => ({ ...p, amount: e.target.value }))}
+                      className="erp-input w-full"
+                      min={0}
+                    />
+                  </Field>
+                  <Field label="سبب الخصم">
+                    <input
+                      value={deductForm.reason}
+                      onChange={(e) => setDeductForm((p) => ({ ...p, reason: e.target.value }))}
+                      className="erp-input w-full"
+                      placeholder="مثال: خصم غياب، جزاء..."
+                    />
+                  </Field>
+                  <Field label="تاريخ الخصم">
+                    <input
+                      type="date"
+                      value={deductForm.deduction_date}
+                      onChange={(e) =>
+                        setDeductForm((p) => ({ ...p, deduction_date: e.target.value }))
+                      }
+                      className="erp-input w-full"
+                    />
+                  </Field>
+                </>
+              ) : (
+                <div className="text-center py-4 text-white/40 text-sm">
+                  <MinusCircle size={32} className="mx-auto mb-2 opacity-30" />
+                  <p>لا توجد سلف نشطة لتطبيق الخصم عليها</p>
+                  <p className="text-xs mt-1">أضف سلفة أولاً ثم طبّق الخصم عليها</p>
+                </div>
+              )}
+            </div>
+            {activeLoans.length > 0 && (
+              <div className="flex gap-2 p-5 border-t border-white/10">
+                <button
+                  onClick={() => {
+                    const firstActive = activeLoans[0];
+                    manualPay.mutate({
+                      id: firstActive.id as number,
+                      amount: Number(deductForm.amount),
+                    });
+                    setShowDeductForm(false);
+                    setDeductForm({
+                      amount: '',
+                      reason: '',
+                      deduction_date: new Date().toISOString().split('T')[0],
+                    });
+                  }}
+                  disabled={
+                    !deductForm.amount || Number(deductForm.amount) <= 0 || manualPay.isPending
+                  }
+                  className="erp-btn flex-1 bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
+                >
+                  {manualPay.isPending ? 'جاري...' : 'تنفيذ الخصم'}
+                </button>
+                <button onClick={() => setShowDeductForm(false)} className="erp-btn erp-btn-ghost">
+                  إلغاء
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
-
-      {/* Job Title Form */}
-      {showJtForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2"><Briefcase size={16} className="text-amber-400" /> {jtEditId ? "تعديل المسمى" : "إضافة مسمى وظيفي"}</h2>
-              <button onClick={() => setShowJtForm(false)} className="text-white/40 hover:text-white"><X size={16} /></button>
-            </div>
-            <div className="p-4 space-y-3">
-              <Field label="المسمى (عربي) *">
-                <input value={jtForm.name_ar} onChange={e => setJtForm(p => ({ ...p, name_ar: e.target.value }))} className="erp-input w-full" placeholder="مدير مبيعات" />
-              </Field>
-              <Field label="المسمى (إنجليزي)">
-                <input value={jtForm.name_en} onChange={e => setJtForm(p => ({ ...p, name_en: e.target.value }))} className="erp-input w-full" placeholder="Sales Manager" />
-              </Field>
-            </div>
-            <div className="flex gap-2 p-4 border-t border-white/10">
-              <button onClick={() => createJt.mutate(jtForm)} disabled={createJt.isPending} className="erp-btn erp-btn-primary flex-1">
-                {createJt.isPending ? "جاري الحفظ..." : "حفظ"}
-              </button>
-              <button onClick={() => setShowJtForm(false)} className="erp-btn erp-btn-ghost">إلغاء</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Small helper components ──────────────────────────────────── */
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs text-white/50">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function InfoRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ size?: number; className?: string }>; label: string; value?: string | null | number }) {
-  if (!value && value !== 0) return null;
-  return (
-    <div className="flex items-start gap-2 text-xs">
-      <Icon size={12} className="text-amber-400/60 mt-0.5 shrink-0" />
-      <div>
-        <div className="text-white/40">{label}</div>
-        <div className="text-white/80">{value}</div>
-      </div>
     </div>
   );
 }

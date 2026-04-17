@@ -3,68 +3,107 @@
  * These are UI-level guards only — real security is enforced on the backend.
  */
 import {
-  LayoutDashboard, Receipt, CreditCard,
-  Package, Users, TrendingUp,
-  FileText, Settings, Zap,
-  BookOpen, HandCoins,
-  ReceiptText, Wallet, ClipboardList, GitBranch, UserCheck,
-  DollarSign, Clock, CalendarDays, Gift, Banknote,
+  LayoutDashboard,
+  Receipt,
+  CreditCard,
+  Package,
+  Users,
+  TrendingUp,
+  FileText,
+  Settings,
+  Zap,
+  BookOpen,
+  HandCoins,
+  ReceiptText,
+  Wallet,
+  ClipboardList,
+  GitBranch,
+  UserCheck,
+  DollarSign,
+  Clock,
+  Gift,
   type LucideIcon,
-} from "lucide-react";
+} from 'lucide-react';
 
-export type AppRole = "admin" | "manager" | "cashier" | "salesperson";
+export type AppRole = 'admin' | 'manager' | 'cashier' | 'salesperson';
 export type UserRole = AppRole;
 
 /* ── Which roles can access each route ─────────────────── */
 export const ROUTE_ROLES: Record<string, AppRole[]> = {
-  "/":                       ["admin", "manager", "cashier", "salesperson"],
-  "/treasury":               ["admin", "manager", "cashier", "salesperson"],
-  "/pos":                    ["admin", "manager", "cashier", "salesperson"],
-  "/sales":                  ["admin", "manager", "cashier", "salesperson"],
-  "/purchases":              ["admin", "manager"],
-  "/products":               ["admin", "manager", "cashier", "salesperson"],
-  "/inventory":              ["admin", "manager"],
-  "/customers":              ["admin", "manager", "cashier", "salesperson"],
-  "/accounts":               ["admin"],
-  "/journal-entries":        ["admin"],
-  "/reports":                ["admin", "manager"],
-  "/expenses":               ["admin", "manager"],
-  "/income":                 ["admin", "manager"],
-  "/vouchers":               ["admin", "manager"],
-  "/branches":               ["admin", "manager"],
-  "/settings":               ["admin"],
-  "/employees":              ["admin", "manager"],
-  "/payroll":                ["admin", "manager"],
-  "/attendance":             ["admin", "manager"],
-  "/leaves":                 ["admin", "manager"],
-  "/incentives":             ["admin", "manager"],
-  "/salary-advances":        ["admin", "manager"],
+  '/': ['admin', 'manager', 'cashier', 'salesperson'],
+  '/treasury': ['admin', 'manager', 'cashier', 'salesperson'],
+  '/pos': ['admin', 'manager', 'cashier', 'salesperson'],
+  '/sales': ['admin', 'manager', 'cashier', 'salesperson'],
+  '/purchases': ['admin', 'manager'],
+  '/products': ['admin', 'manager', 'cashier', 'salesperson'],
+  '/inventory': ['admin', 'manager'],
+  '/customers': ['admin', 'manager', 'cashier', 'salesperson'],
+  '/accounts': ['admin'],
+  '/journal-entries': ['admin'],
+  '/reports': ['admin', 'manager'],
+  '/expenses': ['admin', 'manager'],
+  '/income': ['admin', 'manager'],
+  '/vouchers': ['admin', 'manager'],
+  '/branches': ['admin', 'manager'],
+  '/settings': ['admin'],
+  '/employees': ['admin', 'manager'],
+  '/payroll': ['admin', 'manager'],
+  '/attendance': ['admin', 'manager'],
+  '/incentives': ['admin', 'manager'],
 };
 
 /* ── Nav items with role visibility + icons ─────────────── */
 export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: AppRole[] }[] = [
-  { name: "لوحة القيادة",      href: "/",                       icon: LayoutDashboard, roles: ["admin","manager","cashier","salesperson"] },
-  { name: "السندات والخزينة", href: "/treasury",               icon: Wallet,          roles: ["admin","manager","cashier","salesperson"] },
-  { name: "نقطة البيع",        href: "/pos",                    icon: Zap,             roles: ["admin","manager","cashier","salesperson"] },
-  { name: "المبيعات",          href: "/sales",                  icon: Receipt,         roles: ["admin","manager","cashier","salesperson"] },
-  { name: "المشتريات",         href: "/purchases",              icon: CreditCard,      roles: ["admin","manager"] },
-  { name: "المنتجات",           href: "/products",               icon: Package,         roles: ["admin","manager","cashier","salesperson"] },
-  { name: "المخزون",            href: "/inventory",              icon: ClipboardList,   roles: ["admin","manager"] },
-  { name: "العملاء",           href: "/customers",              icon: Users,           roles: ["admin","manager","cashier","salesperson"] },
-  { name: "الإيرادات",         href: "/income",                 icon: TrendingUp,      roles: ["admin","manager"] },
-  { name: "المصروفات",         href: "/expenses",               icon: ReceiptText,     roles: ["admin","manager"] },
-  { name: "التقارير",          href: "/reports",                icon: FileText,        roles: ["admin","manager"] },
-  { name: "شجرة الحسابات",    href: "/accounts",               icon: BookOpen,        roles: ["admin"] },
-  { name: "القيود اليومية",    href: "/journal-entries",        icon: FileText,        roles: ["admin"] },
-  { name: "السندات",            href: "/vouchers",               icon: HandCoins,       roles: ["admin","manager"] },
-  { name: "الفروع",             href: "/branches",               icon: GitBranch,       roles: ["admin","manager"] },
-  { name: "الإعدادات",         href: "/settings",               icon: Settings,        roles: ["admin"] },
-  { name: "الموظفون",          href: "/employees",              icon: UserCheck,       roles: ["admin", "manager"] },
-  { name: "الرواتب",           href: "/payroll",                icon: DollarSign,      roles: ["admin", "manager"] },
-  { name: "الحضور والانصراف", href: "/attendance",             icon: Clock,           roles: ["admin", "manager"] },
-  { name: "الإجازات",          href: "/leaves",                 icon: CalendarDays,    roles: ["admin", "manager"] },
-  { name: "الحوافز",           href: "/incentives",             icon: Gift,            roles: ["admin", "manager"] },
-  { name: "السلف",             href: "/salary-advances",        icon: Banknote,        roles: ["admin", "manager"] },
+  {
+    name: 'لوحة القيادة',
+    href: '/',
+    icon: LayoutDashboard,
+    roles: ['admin', 'manager', 'cashier', 'salesperson'],
+  },
+  {
+    name: 'السندات والخزينة',
+    href: '/treasury',
+    icon: Wallet,
+    roles: ['admin', 'manager', 'cashier', 'salesperson'],
+  },
+  {
+    name: 'نقطة البيع',
+    href: '/pos',
+    icon: Zap,
+    roles: ['admin', 'manager', 'cashier', 'salesperson'],
+  },
+  {
+    name: 'المبيعات',
+    href: '/sales',
+    icon: Receipt,
+    roles: ['admin', 'manager', 'cashier', 'salesperson'],
+  },
+  { name: 'المشتريات', href: '/purchases', icon: CreditCard, roles: ['admin', 'manager'] },
+  {
+    name: 'المنتجات',
+    href: '/products',
+    icon: Package,
+    roles: ['admin', 'manager', 'cashier', 'salesperson'],
+  },
+  { name: 'المخزون', href: '/inventory', icon: ClipboardList, roles: ['admin', 'manager'] },
+  {
+    name: 'العملاء',
+    href: '/customers',
+    icon: Users,
+    roles: ['admin', 'manager', 'cashier', 'salesperson'],
+  },
+  { name: 'الإيرادات', href: '/income', icon: TrendingUp, roles: ['admin', 'manager'] },
+  { name: 'المصروفات', href: '/expenses', icon: ReceiptText, roles: ['admin', 'manager'] },
+  { name: 'التقارير', href: '/reports', icon: FileText, roles: ['admin', 'manager'] },
+  { name: 'شجرة الحسابات', href: '/accounts', icon: BookOpen, roles: ['admin'] },
+  { name: 'القيود اليومية', href: '/journal-entries', icon: FileText, roles: ['admin'] },
+  { name: 'السندات', href: '/vouchers', icon: HandCoins, roles: ['admin', 'manager'] },
+  { name: 'الفروع', href: '/branches', icon: GitBranch, roles: ['admin', 'manager'] },
+  { name: 'الإعدادات', href: '/settings', icon: Settings, roles: ['admin'] },
+  { name: 'الموظفون', href: '/employees', icon: UserCheck, roles: ['admin', 'manager'] },
+  { name: 'الرواتب', href: '/payroll', icon: DollarSign, roles: ['admin', 'manager'] },
+  { name: 'الحضور والانصراف', href: '/attendance', icon: Clock, roles: ['admin', 'manager'] },
+  { name: 'الحوافز', href: '/incentives', icon: Gift, roles: ['admin', 'manager'] },
 ];
 
 /* ── Helpers ────────────────────────────────────────────── */
@@ -75,19 +114,23 @@ export function canAccess(role: string | undefined, route: string): boolean {
   return allowed.includes(role as AppRole);
 }
 
-export function isAdmin(role?: string)   { return role === "admin"; }
-export function isManager(role?: string) { return role === "admin" || role === "manager"; }
+export function isAdmin(role?: string) {
+  return role === 'admin';
+}
+export function isManager(role?: string) {
+  return role === 'admin' || role === 'manager';
+}
 
-export { translateRole as ROLE_LABELS_FN } from "./roles";
+export { translateRole as ROLE_LABELS_FN } from './roles';
 
 export const ROLE_LABELS: Record<string, string> = {
-  super_admin:    "المسؤول العام",
-  company_admin:  "مدير الشركة",
-  branch_manager: "مدير الفرع",
-  admin:          "مدير النظام",
-  manager:        "مشرف",
-  cashier:        "كاشير",
-  salesperson:    "مندوب مبيعات",
-  agent:          "موظف مبيعات",
-  client:         "عميل",
+  super_admin: 'المسؤول العام',
+  company_admin: 'مدير الشركة',
+  branch_manager: 'مدير الفرع',
+  admin: 'مدير النظام',
+  manager: 'مشرف',
+  cashier: 'كاشير',
+  salesperson: 'مندوب مبيعات',
+  agent: 'موظف مبيعات',
+  client: 'عميل',
 };

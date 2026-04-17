@@ -1,44 +1,42 @@
-import { lazy, Suspense } from "react";
-import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AppLayout } from "@/components/layout";
-import { SubscriptionBanner } from "@/components/subscription-banner";
-import { AuthProvider, useAuth } from "@/contexts/auth";
-import { AppSettingsProvider } from "@/contexts/app-settings";
-import { WarehouseProvider } from "@/contexts/warehouse";
-import { canAccess, type UserRole } from "@/lib/rbac";
-import { Spinner } from "@/components/ui/spinner";
-import NotFound from "@/pages/not-found";
-import AccessDenied from "@/pages/access-denied";
-import SubscriptionExpired from "@/pages/subscription-expired";
+import { lazy, Suspense } from 'react';
+import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from 'wouter';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { AppLayout } from '@/components/layout';
+import { SubscriptionBanner } from '@/components/subscription-banner';
+import { AuthProvider, useAuth } from '@/contexts/auth';
+import { AppSettingsProvider } from '@/contexts/app-settings';
+import { WarehouseProvider } from '@/contexts/warehouse';
+import { canAccess, type UserRole } from '@/lib/rbac';
+import { Spinner } from '@/components/ui/spinner';
+import NotFound from '@/pages/not-found';
+import AccessDenied from '@/pages/access-denied';
+import SubscriptionExpired from '@/pages/subscription-expired';
 
 /* ── Lazy-loaded pages ─────────────────────────────────── */
-const Login                = lazy(() => import("@/pages/login"));
-const Dashboard            = lazy(() => import("@/pages/dashboard"));
-const Sales                = lazy(() => import("@/pages/sales"));
-const Purchases            = lazy(() => import("@/pages/purchases"));
-const Customers            = lazy(() => import("@/pages/customers"));
-const Expenses             = lazy(() => import("@/pages/expenses"));
-const Income               = lazy(() => import("@/pages/income"));
-const Reports              = lazy(() => import("@/pages/reports"));
-const Settings             = lazy(() => import("@/pages/settings"));
-const Accounts             = lazy(() => import("@/pages/accounts"));
-const JournalEntries       = lazy(() => import("@/pages/journal-entries"));
-const Treasury             = lazy(() => import("@/pages/treasury"));
-const Products             = lazy(() => import("@/pages/products"));
-const Inventory            = lazy(() => import("@/pages/inventory"));
-const Vouchers             = lazy(() => import("@/pages/vouchers"));
-const POS                  = lazy(() => import("@/pages/pos"));
-const SuperAdmin           = lazy(() => import("@/pages/super-admin"));
-const Branches             = lazy(() => import("@/pages/branches"));
-const Employees            = lazy(() => import("@/pages/employees"));
-const Payroll              = lazy(() => import("@/pages/payroll"));
-const Attendance           = lazy(() => import("@/pages/attendance"));
-const Leaves               = lazy(() => import("@/pages/leaves"));
-const Incentives           = lazy(() => import("@/pages/incentives"));
-const SalaryAdvances       = lazy(() => import("@/pages/salary-advances"));
+const Login = lazy(() => import('@/pages/login'));
+const Dashboard = lazy(() => import('@/pages/dashboard'));
+const Sales = lazy(() => import('@/pages/sales'));
+const Purchases = lazy(() => import('@/pages/purchases'));
+const Customers = lazy(() => import('@/pages/customers'));
+const Expenses = lazy(() => import('@/pages/expenses'));
+const Income = lazy(() => import('@/pages/income'));
+const Reports = lazy(() => import('@/pages/reports'));
+const Settings = lazy(() => import('@/pages/settings'));
+const Accounts = lazy(() => import('@/pages/accounts'));
+const JournalEntries = lazy(() => import('@/pages/journal-entries'));
+const Treasury = lazy(() => import('@/pages/treasury'));
+const Products = lazy(() => import('@/pages/products'));
+const Inventory = lazy(() => import('@/pages/inventory'));
+const Vouchers = lazy(() => import('@/pages/vouchers'));
+const POS = lazy(() => import('@/pages/pos'));
+const SuperAdmin = lazy(() => import('@/pages/super-admin'));
+const Branches = lazy(() => import('@/pages/branches'));
+const Employees = lazy(() => import('@/pages/employees'));
+const Payroll = lazy(() => import('@/pages/payroll'));
+const Attendance = lazy(() => import('@/pages/attendance'));
+const Incentives = lazy(() => import('@/pages/incentives'));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -62,7 +60,7 @@ function PageFallback() {
 
 function Guard({ path, component: Component }: { path: string; component: React.ComponentType }) {
   const { user } = useAuth();
-  const role = (user?.role ?? "cashier") as UserRole;
+  const role = (user?.role ?? 'cashier') as UserRole;
   if (!canAccess(role, path)) return <AccessDenied />;
   return (
     <Suspense fallback={<PageFallback />}>
@@ -76,12 +74,16 @@ function Router() {
   const [location] = useLocation();
 
   if (!user) {
-    return location === "/login"
-      ? <Suspense fallback={<PageFallback />}><Login /></Suspense>
-      : <Redirect to="/login" />;
+    return location === '/login' ? (
+      <Suspense fallback={<PageFallback />}>
+        <Login />
+      </Suspense>
+    ) : (
+      <Redirect to="/login" />
+    );
   }
-  if (location === "/login") {
-    return user.role === "super_admin" ? <Redirect to="/super-admin" /> : <Redirect to="/" />;
+  if (location === '/login') {
+    return user.role === 'super_admin' ? <Redirect to="/super-admin" /> : <Redirect to="/" />;
   }
 
   /* ── Subscription expired: full-screen block ─────────── */
@@ -90,7 +92,7 @@ function Router() {
   }
 
   /* ── Super admin: isolated full-screen panel ─────────── */
-  if (user.role === "super_admin") {
+  if (user.role === 'super_admin') {
     return (
       <Suspense fallback={<PageFallback />}>
         <SuperAdmin />
@@ -99,11 +101,20 @@ function Router() {
   }
 
   /* ── POS: full-screen standalone (no sidebar / layout) ── */
-  if (location === "/pos") {
-    const posRole = (user?.role ?? "cashier") as UserRole;
-    if (!canAccess(posRole, "/pos")) return <AccessDenied />;
+  if (location === '/pos') {
+    const posRole = (user?.role ?? 'cashier') as UserRole;
+    if (!canAccess(posRole, '/pos')) return <AccessDenied />;
     return (
-      <Suspense fallback={<div className="fixed inset-0 flex items-center justify-center" style={{ background: "hsl(225,28%,4%)" }}><Spinner className="w-8 h-8 text-amber-500" /></div>}>
+      <Suspense
+        fallback={
+          <div
+            className="fixed inset-0 flex items-center justify-center"
+            style={{ background: 'hsl(225,28%,4%)' }}
+          >
+            <Spinner className="w-8 h-8 text-amber-500" />
+          </div>
+        }
+      >
         <POS />
       </Suspense>
     );
@@ -114,7 +125,11 @@ function Router() {
       <SubscriptionBanner />
       <Switch>
         <Route path="/">
-          {() => <Suspense fallback={<PageFallback />}><Dashboard /></Suspense>}
+          {() => (
+            <Suspense fallback={<PageFallback />}>
+              <Dashboard />
+            </Suspense>
+          )}
         </Route>
         <Route path="/sales">{() => <Guard path="/sales" component={Sales} />}</Route>
         <Route path="/purchases">{() => <Guard path="/purchases" component={Purchases} />}</Route>
@@ -130,14 +145,20 @@ function Router() {
         <Route path="/reports">{() => <Guard path="/reports" component={Reports} />}</Route>
         <Route path="/settings">{() => <Guard path="/settings" component={Settings} />}</Route>
         <Route path="/accounts">{() => <Guard path="/accounts" component={Accounts} />}</Route>
-        <Route path="/journal-entries">{() => <Guard path="/journal-entries" component={JournalEntries} />}</Route>
+        <Route path="/journal-entries">
+          {() => <Guard path="/journal-entries" component={JournalEntries} />}
+        </Route>
         <Route path="/branches">{() => <Guard path="/branches" component={Branches} />}</Route>
         <Route path="/employees">{() => <Guard path="/employees" component={Employees} />}</Route>
         <Route path="/payroll">{() => <Guard path="/payroll" component={Payroll} />}</Route>
-        <Route path="/attendance">{() => <Guard path="/attendance" component={Attendance} />}</Route>
-        <Route path="/leaves">{() => <Guard path="/leaves" component={Leaves} />}</Route>
-        <Route path="/incentives">{() => <Guard path="/incentives" component={Incentives} />}</Route>
-        <Route path="/salary-advances">{() => <Guard path="/salary-advances" component={SalaryAdvances} />}</Route>
+        <Route path="/attendance">
+          {() => <Guard path="/attendance" component={Attendance} />}
+        </Route>
+        <Route path="/leaves">{() => <Redirect to="/employees" />}</Route>
+        <Route path="/salary-advances">{() => <Redirect to="/employees" />}</Route>
+        <Route path="/incentives">
+          {() => <Guard path="/incentives" component={Incentives} />}
+        </Route>
         <Route path="/vouchers">{() => <Guard path="/vouchers" component={Vouchers} />}</Route>
         <Route path="/receipt-vouchers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/deposit-vouchers">{() => <Redirect to="/vouchers" />}</Route>
@@ -157,7 +178,7 @@ function App() {
         <AppSettingsProvider>
           <WarehouseProvider>
             <AuthProvider>
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
                 <Router />
               </WouterRouter>
               <Toaster />
