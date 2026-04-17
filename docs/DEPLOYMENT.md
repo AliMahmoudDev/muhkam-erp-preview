@@ -71,7 +71,7 @@ docker-compose down
 - يستخدم `INTEGRATION_JWT_SECRET` و `INTEGRATION_JWT_REFRESH_SECRET` من repository secrets
 - إذا غابت الـ secrets (مثلاً في فورك)، يرجع `setup.ts` لقيم test افتراضية بشرط `NODE_ENV=test`
 
-#### job: `deploy` (يشتغل فقط بعد نجاح `integration-test`، وعلى push لـ `main` فقط)
+#### job: `deploy` (يشتغل فقط بعد نجاح `integration-test`، وعلى push لـ `main` أو manual dispatch فقط)
 - يتصل بالـ VPS عبر SSH
 - يسحب آخر كود من `main`
 - يبني frontend + backend
@@ -151,7 +151,7 @@ GitHub → Actions → Deploy to Production → اختر آخر run
 
 تحقق من الـ job المسمى **Multi-Tenant Integration Tests**:
 
-- يجب أن تجد سطر مشابه لـ: `20 passed` في نهاية الـ logs
+- يجب أن تجد سطر مشابه لـ: `X passed` (كل الـ tests) في نهاية الـ logs
 - لا يجب أن يظهر `[integration setup] ... Refusing to fall back` في الـ logs
   (هذا الخطأ يعني أن السر غائب تماماً في بيئة غير test)
 
