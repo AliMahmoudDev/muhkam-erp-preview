@@ -28,7 +28,12 @@ export type AuditAction =
   | "COMPANY_ACTIVATED"
   | "COMPANY_SUSPENDED"
   | "COMPANY_EXTENDED"
-  | "COMPANY_DELETED";
+  | "COMPANY_DELETED"
+  // ── Backup / restore lifecycle ────────────────────────────────────────────
+  | "RESTORE_STARTED"
+  | "RESTORE_REJECTED"
+  | "RESTORE_FAILED"
+  | "RESTORE_COMPLETED";
 
 export type AuditRecordType =
   | "customer"
@@ -50,7 +55,8 @@ export type AuditRecordType =
   | "customer_balances"       // إصلاح أرصدة العملاء
   | "employee"                // إدارة الموظفين
   | "company"                 // SaaS company management
-  | "subscription";           // تجديد/تمديد الاشتراك
+  | "subscription"            // تجديد/تمديد الاشتراك
+  | "system";                 // tenant-level system actions (restore, etc.)
 
 interface AuditUser {
   id?: number;
@@ -76,7 +82,9 @@ export async function writeAuditLog(opts: {
       new_value: opts.new_value ?? null,
       user_id: opts.user?.id ?? null,
       username: opts.user?.username ?? null,
-      company_id: opts.company_id ?? 1,
+      /* NULL when no tenant context (super_admin/system events). NEVER default
+         to a tenant id — that pollutes another tenant's forensic trail. */
+      company_id: opts.company_id ?? null,
     });
   } catch (err) {
     console.error("[audit-log] failed to write log:", err);

@@ -5,22 +5,26 @@
  */
 
 import { db, systemSettingsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { triggerBackup } from "./backup-service";
 import { logger } from "./logger";
 
 const SCHEDULE_KEY     = "backup_schedule";
 const LAST_RUN_KEY     = "backup_last_scheduled";
 const TICK_MS          = 60 * 1000; // check every minute
+/* Backup config lives under the dedicated meta-tenant row so that tenant
+   admins cannot pollute the scheduler's view via their own system_settings. */
+const BACKUP_COMPANY_ID = 1;
 
 async function getSetting(key: string): Promise<string | null> {
-  const [row] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.key, key));
+  const [row] = await db.select().from(systemSettingsTable)
+    .where(and(eq(systemSettingsTable.key, key), eq(systemSettingsTable.company_id, BACKUP_COMPANY_ID)));
   return row?.value ?? null;
 }
 
 async function setSetting(key: string, value: string) {
   await db.insert(systemSettingsTable)
-    .values({ key, value })
+    .values({ key, value, company_id: BACKUP_COMPANY_ID })
     .onConflictDoUpdate({
       target: [systemSettingsTable.key, systemSettingsTable.company_id],
       set: { value, updated_at: new Date() },

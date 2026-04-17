@@ -28,7 +28,7 @@ function numOrNull(v: string | null | undefined) { return v != null ? Number(v) 
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/salary-structures", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select().from(salaryStructuresTable)
     .where(eq(salaryStructuresTable.company_id, companyId))
     .orderBy(salaryStructuresTable.name_ar);
@@ -37,7 +37,7 @@ router.get("/salary-structures", wrap(async (req, res) => {
 
 router.post("/salary-structures", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { name_ar, name_en, base_salary, description } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: "اسم الهيكل الوظيفي مطلوب" }); return; }
   const [row] = await db.insert(salaryStructuresTable).values({
@@ -49,7 +49,7 @@ router.post("/salary-structures", wrap(async (req, res) => {
 
 router.put("/salary-structures/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { name_ar, name_en, base_salary, description, is_active } = req.body as Record<string, unknown>;
   const [row] = await db.update(salaryStructuresTable)
@@ -62,7 +62,7 @@ router.put("/salary-structures/:id", wrap(async (req, res) => {
 
 router.delete("/salary-structures/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(salaryComponentsTable).where(eq(salaryComponentsTable.salary_structure_id, id));
   await db.delete(salaryStructuresTable).where(and(eq(salaryStructuresTable.id, id), eq(salaryStructuresTable.company_id, companyId)));
@@ -105,7 +105,7 @@ router.delete("/salary-structures/:structId/components/:id", wrap(async (req, re
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/tax-brackets", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const year = String(req.query["year"] ?? new Date().getFullYear());
   const rows = await db.select().from(taxBracketsTable)
     .where(and(eq(taxBracketsTable.company_id, companyId), eq(taxBracketsTable.fiscal_year, year)))
@@ -115,7 +115,7 @@ router.get("/tax-brackets", wrap(async (req, res) => {
 
 router.post("/tax-brackets", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { fiscal_year, min_salary, max_salary, tax_rate } = req.body as Record<string, unknown>;
   const [row] = await db.insert(taxBracketsTable).values({
     company_id: companyId, fiscal_year: String(fiscal_year ?? new Date().getFullYear()),
@@ -127,7 +127,7 @@ router.post("/tax-brackets", wrap(async (req, res) => {
 
 router.put("/tax-brackets/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { fiscal_year, min_salary, max_salary, tax_rate } = req.body as Record<string, unknown>;
   const [row] = await db.update(taxBracketsTable)
@@ -140,7 +140,7 @@ router.put("/tax-brackets/:id", wrap(async (req, res) => {
 
 router.delete("/tax-brackets/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(taxBracketsTable).where(and(eq(taxBracketsTable.id, id), eq(taxBracketsTable.company_id, companyId)));
   res.json({ ok: true });
@@ -151,7 +151,7 @@ router.delete("/tax-brackets/:id", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/statutory-contributions", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select().from(statutoryContributionsTable)
     .where(eq(statutoryContributionsTable.company_id, companyId))
     .orderBy(statutoryContributionsTable.name_ar);
@@ -160,7 +160,7 @@ router.get("/statutory-contributions", wrap(async (req, res) => {
 
 router.post("/statutory-contributions", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { contribution_type, name_ar, name_en, employee_percentage, employer_percentage, is_mandatory } = req.body as Record<string, unknown>;
   if (!name_ar || !contribution_type) { res.status(400).json({ error: "بيانات الاشتراك غير مكتملة" }); return; }
   const [row] = await db.insert(statutoryContributionsTable).values({
@@ -175,7 +175,7 @@ router.post("/statutory-contributions", wrap(async (req, res) => {
 
 router.put("/statutory-contributions/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { name_ar, name_en, employee_percentage, employer_percentage, is_mandatory, is_active } = req.body as Record<string, unknown>;
   const [row] = await db.update(statutoryContributionsTable)
@@ -188,7 +188,7 @@ router.put("/statutory-contributions/:id", wrap(async (req, res) => {
 
 router.delete("/statutory-contributions/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(statutoryContributionsTable).where(and(eq(statutoryContributionsTable.id, id), eq(statutoryContributionsTable.company_id, companyId)));
   res.json({ ok: true });
@@ -200,7 +200,7 @@ router.delete("/statutory-contributions/:id", wrap(async (req, res) => {
 
 router.get("/payroll/periods", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select().from(payrollPeriodsTable)
     .where(eq(payrollPeriodsTable.company_id, companyId))
     .orderBy(desc(payrollPeriodsTable.start_date));
@@ -209,7 +209,7 @@ router.get("/payroll/periods", wrap(async (req, res) => {
 
 router.post("/payroll/periods", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const { name, start_date, end_date, notes } = req.body as Record<string, string>;
   if (!name?.trim() || !start_date || !end_date) { res.status(400).json({ error: "اسم الفترة وتواريخها مطلوبة" }); return; }
@@ -225,7 +225,7 @@ router.post("/payroll/periods", wrap(async (req, res) => {
 
 router.get("/payroll/periods/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const [period] = await db.select().from(payrollPeriodsTable)
     .where(and(eq(payrollPeriodsTable.id, id), eq(payrollPeriodsTable.company_id, companyId)));
@@ -248,7 +248,7 @@ router.get("/payroll/periods/:id", wrap(async (req, res) => {
 
 router.put("/payroll/periods/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { name, notes } = req.body as Record<string, string>;
   const [row] = await db.update(payrollPeriodsTable)
@@ -262,7 +262,7 @@ router.put("/payroll/periods/:id", wrap(async (req, res) => {
 /* ── Process Payroll ──────────────────────────────────────────── */
 router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
 
@@ -394,7 +394,7 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
 /* ── Approve Period ───────────────────────────────────────────── */
 router.post("/payroll/periods/:id/approve", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_approve_payroll")) { res.status(403).json({ error: "غير مصرح بالاعتماد" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
   const [row] = await db.update(payrollPeriodsTable)

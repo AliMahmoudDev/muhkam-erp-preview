@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq, desc, or, count, and, ne, inArray } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { authenticate, requireRole } from "../middleware/auth";
+import { authenticate, requireRole, requireTenantStrict } from "../middleware/auth";
 import { hashPin } from "../lib/hash";
 import { createUserSchema, updateUserSchema, validate } from "../lib/schemas";
 import { wrap } from "../lib/async-handler";
@@ -116,7 +116,7 @@ router.post("/settings/users", authenticate, requireRole("admin"), wrap(async (r
     record_id: user.id,
     new_value: { name: user.name, username: user.username, role: user.role },
     user: { id: req.user!.id, username: req.user!.username },
-    company_id: companyId ?? 1,
+    company_id: companyId,
   });
   res.json({ ...user, pin: "****" });
 }));
@@ -192,7 +192,7 @@ router.delete("/settings/users/:id", authenticate, requireRole("admin"), wrap(as
     record_id: id,
     old_value: { name: target.name, username: target.username, role: target.role },
     user: { id: req.user!.id, username: req.user!.username },
-    company_id: companyId ?? 1,
+    company_id: companyId,
   });
   res.json({ success: true });
 }));
@@ -216,19 +216,23 @@ router.post("/settings/safes", authenticate, requireRole("admin"), wrap(async (r
   res.json(safe);
 }));
 
-router.put("/settings/safes/:id", authenticate, requireRole("admin"), wrap(async (req, res) => {
+router.put("/settings/safes/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
   const id = Number(req.params.id);
+  const tenant = req.user!.company_id!;
   const { name, balance } = req.body;
   const [safe] = await db.update(safesTable)
     .set({ name, balance: String(balance) })
-    .where(eq(safesTable.id, id))
+    .where(and(eq(safesTable.id, id), eq(safesTable.company_id, tenant)))
     .returning();
+  if (!safe) { res.status(404).json({ error: "الخزينة غير موجودة" }); return; }
   res.json(safe);
 }));
 
-router.delete("/settings/safes/:id", authenticate, requireRole("admin"), wrap(async (req, res) => {
+router.delete("/settings/safes/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const [safe] = await db.select().from(safesTable).where(eq(safesTable.id, id));
+  const tenant = req.user!.company_id!;
+  const [safe] = await db.select().from(safesTable)
+    .where(and(eq(safesTable.id, id), eq(safesTable.company_id, tenant)));
   if (!safe) { res.status(404).json({ error: "الخزينة غير موجودة" }); return; }
 
   if (Number(safe.balance) !== 0) {
@@ -255,23 +259,28 @@ router.delete("/settings/safes/:id", authenticate, requireRole("admin"), wrap(as
     res.status(409).json({ error: "لا يمكن حذف خزينة لها حركات مالية مسجّلة" }); return;
   }
 
-  await db.delete(safesTable).where(eq(safesTable.id, id));
+  await db.delete(safesTable).where(and(eq(safesTable.id, id), eq(safesTable.company_id, tenant)));
   res.json({ success: true });
 }));
 
-router.post("/settings/safes/:id/close", authenticate, wrap(async (req, res) => {
+/* Closing a safe creates financial adjustment transactions. Restrict to
+   admin role to prevent any authenticated tenant user from mutating
+   treasury balances. */
+router.post("/settings/safes/:id/close", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
   const id = Number(req.params.id);
+  const tenant = req.user!.company_id!;
   const { date, actual_balance, notes } = req.body;
   const closeDate = date ?? new Date().toISOString().split("T")[0];
 
-  const [safe] = await db.select().from(safesTable).where(eq(safesTable.id, id));
+  const [safe] = await db.select().from(safesTable)
+    .where(and(eq(safesTable.id, id), eq(safesTable.company_id, tenant)));
   if (!safe) { res.status(404).json({ error: "الخزينة غير موجودة" }); return; }
 
   const systemBalance = Number(safe.balance);
   const closing_no = `CLO-${id}-${Date.now()}`;
 
   const todayTx = await db.select().from(transactionsTable)
-    .where(eq(transactionsTable.safe_id, id))
+    .where(and(eq(transactionsTable.safe_id, id), eq(transactionsTable.company_id, tenant)))
     .orderBy(desc(transactionsTable.created_at));
 
   const dayTx = todayTx.filter(t => (t.date ?? "") === closeDate);
@@ -297,11 +306,12 @@ router.post("/settings/safes/:id/close", authenticate, wrap(async (req, res) => 
         direction: difference > 0 ? "in" : "out",
         description: adjustmentNote,
         date: closeDate,
+        company_id: tenant,
       });
 
       await db.update(safesTable)
         .set({ balance: String(Number(actual_balance)) })
-        .where(eq(safesTable.id, id));
+        .where(and(eq(safesTable.id, id), eq(safesTable.company_id, tenant)));
     }
   }
 
@@ -314,6 +324,7 @@ router.post("/settings/safes/:id/close", authenticate, wrap(async (req, res) => 
     direction: "in",
     description: notes ? `${notes} — إقفال ${closing_no}` : `إقفال خزينة ${safe.name} — ${closeDate}`,
     date: closeDate,
+    company_id: tenant,
   });
 
   res.json({
@@ -335,15 +346,17 @@ router.post("/settings/safes/:id/close", authenticate, wrap(async (req, res) => 
   });
 }));
 
-router.get("/settings/safes/:id/statement", authenticate, wrap(async (req, res) => {
+router.get("/settings/safes/:id/statement", authenticate, requireTenantStrict, wrap(async (req, res) => {
   const id = Number(req.params.id);
+  const tenant = req.user!.company_id!;
   const { date_from, date_to } = req.query as { date_from?: string; date_to?: string };
 
-  const [safe] = await db.select().from(safesTable).where(eq(safesTable.id, id));
+  const [safe] = await db.select().from(safesTable)
+    .where(and(eq(safesTable.id, id), eq(safesTable.company_id, tenant)));
   if (!safe) { res.status(404).json({ error: "الخزينة غير موجودة" }); return; }
 
   let txList = await db.select().from(transactionsTable)
-    .where(eq(transactionsTable.safe_id, id))
+    .where(and(eq(transactionsTable.safe_id, id), eq(transactionsTable.company_id, tenant)))
     .orderBy(transactionsTable.date, transactionsTable.created_at);
 
   if (date_from) txList = txList.filter(t => (t.date ?? "") >= date_from);
@@ -398,9 +411,11 @@ router.post("/settings/warehouses", authenticate, requireRole("admin"), wrap(asy
   res.json(warehouse);
 }));
 
-router.delete("/settings/warehouses/:id", authenticate, requireRole("admin"), wrap(async (req, res) => {
+router.delete("/settings/warehouses/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const [wh] = await db.select().from(warehousesTable).where(eq(warehousesTable.id, id));
+  const tenant = req.user!.company_id!;
+  const [wh] = await db.select().from(warehousesTable)
+    .where(and(eq(warehousesTable.id, id), eq(warehousesTable.company_id, tenant)));
   if (!wh) { res.status(404).json({ error: "المخزن غير موجود" }); return; }
 
   const [[movements], [sessions], [transfers]] = await Promise.all([
@@ -428,7 +443,7 @@ router.delete("/settings/warehouses/:id", authenticate, requireRole("admin"), wr
 // ─── PERIOD LOCK ──────────────────────────────────────────────────────────────
 
 router.get("/settings/period", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const s = await readSettings(["closing_date", "lock_locked_by", "lock_locked_at", "lock_mode"], companyId);
   res.json({
     closing_date: s["closing_date"],
@@ -443,7 +458,7 @@ router.put("/settings/period", authenticate, requireRole("admin"), wrap(async (r
   const { closing_date, unlock_reason, lock_mode } = req.body;
   const username  = req.user?.username  ?? "مجهول";
   const userId    = req.user?.id        ?? null;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
 
   if (closing_date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(closing_date)) {
@@ -514,7 +529,7 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
     res.status(400).json({ error: "يجب كتابة عبارة التأكيد بشكل صحيح" }); return;
   }
 
-  const companyId    = req.user!.company_id ?? 1;
+  const companyId    = req.user!.company_id!;
   const currentUserId = req.user!.id;
 
   const saleIds = (await db.select({ id: salesTable.id }).from(salesTable).where(eq(salesTable.company_id, companyId))).map(r => r.id);
@@ -622,7 +637,14 @@ router.get("/customers/:id/statement", authenticate, wrap(async (req, res) => {
 
 router.get("/settings/system", authenticate, wrap(async (req, res) => {
   const role      = req.user?.role ?? "";
-  const companyId = role === "super_admin" ? 1 : (req.user?.company_id ?? 1);
+  const companyId = role === "super_admin"
+    ? Number(req.query.company_id)
+    : req.user?.company_id;
+  if (!companyId || !Number.isFinite(companyId)) {
+    res.status(role === "super_admin" ? 400 : 403)
+       .json({ error: role === "super_admin" ? "company_id query param required" : "Tenant not resolved" });
+    return;
+  }
   const rows = await db.select().from(systemSettingsTable)
     .where(eq(systemSettingsTable.company_id, companyId));
   const result: Record<string, string> = {};
@@ -637,7 +659,14 @@ router.post("/settings/system", authenticate, wrap(async (req, res) => {
   }
   const { key, value } = req.body as { key?: string; value?: string };
   if (!key?.trim()) { res.status(400).json({ error: "المفتاح مطلوب" }); return; }
-  const companyId = role === "super_admin" ? 1 : (req.user?.company_id ?? 1);
+  const companyId = role === "super_admin"
+    ? Number(req.body?.company_id ?? req.query.company_id)
+    : req.user?.company_id;
+  if (!companyId || !Number.isFinite(companyId)) {
+    res.status(role === "super_admin" ? 400 : 403)
+       .json({ error: role === "super_admin" ? "company_id required" : "Tenant not resolved" });
+    return;
+  }
   await upsertSetting(key.trim(), value ?? "", companyId);
   res.json({ success: true, key: key.trim(), value: value ?? "" });
 }));

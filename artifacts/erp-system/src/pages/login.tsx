@@ -52,14 +52,20 @@ export default function Login() {
 
   const logoSrc = settings.customLogo || `${import.meta.env.BASE_URL}logo.png`;
 
-  /* company_id: read from localStorage (set after login) or URL param, default 1 */
-  const storedCompanyId = typeof window !== "undefined"
-    ? (Number(new URLSearchParams(window.location.search).get("company_id")) ||
-       Number(localStorage.getItem("erp_company_id")) || 1)
-    : 1;
+  /* company_id: explicit URL param ONLY. NEVER fall back to a hard-coded
+     company id — that silently routes credentials to the wrong tenant. */
+  const storedCompanyId: number | null = (() => {
+    if (typeof window === "undefined") return null;
+    const fromUrl = Number(new URLSearchParams(window.location.search).get("company_id"));
+    if (Number.isFinite(fromUrl) && fromUrl > 0) return fromUrl;
+    const fromStorage = Number(localStorage.getItem("erp_company_id"));
+    if (Number.isFinite(fromStorage) && fromStorage > 0) return fromStorage;
+    return null;
+  })();
 
   const { data: users = [] } = useQuery<ErpUser[]>({
     queryKey: ["/api/auth/users", storedCompanyId],
+    enabled: storedCompanyId !== null,
     queryFn: () =>
       fetch(api(`/api/auth/users?company_id=${storedCompanyId}`)).then((r) => {
         if (!r.ok) throw new Error("فشل جلب المستخدمين");

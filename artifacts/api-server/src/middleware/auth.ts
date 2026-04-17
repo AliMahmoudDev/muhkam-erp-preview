@@ -164,10 +164,69 @@ export function sanitizeBody(req: Request, _res: Response, next: NextFunction): 
   next();
 }
 
+/* ─────────────────────────────────────────────────────────
+   requireTenant — MANDATORY tenant resolution guard.
+   Must run AFTER `authenticate`. Rejects any non-super_admin
+   request that has no company_id. Eliminates `?? 1` fallbacks
+   completely — every route can safely use req.user!.company_id!
+   after this middleware passes.
+   ───────────────────────────────────────────────────────── */
+/* Stricter than requireTenant — REJECTS super_admin too. Use on routes
+   that mutate tenant-scoped resources by id and have no business
+   running cross-tenant. */
+export function requireTenantStrict(req: any, res: any, next: any): void {
+  const cid = req.user?.company_id;
+  if (typeof cid !== "number" || cid <= 0) {
+    res.status(403).json({
+      error: "هذه العملية تتطلب سياق شركة (tenant) — استخدم حساب مستخدم تابع للشركة",
+    });
+    return;
+  }
+  next();
+}
+
+export function requireTenant(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({ error: "غير مصرح: يلزم تسجيل الدخول أولاً" });
+    return;
+  }
+  // super_admin operates across tenants — must explicitly pass company_id when needed
+  if (req.user.role === "super_admin") {
+    next();
+    return;
+  }
+  if (!req.user.company_id || typeof req.user.company_id !== "number") {
+    res.status(403).json({ error: "Tenant not resolved — حساب غير مرتبط بشركة" });
+    return;
+  }
+  req.companyId = req.user.company_id;
+  next();
+}
+
+/* ─────────────────────────────────────────────────────────
+   getTenant(req) — strict tenant accessor for route handlers.
+   Throws (caught by error handler → 403) if company_id missing.
+   For super_admin, requires explicit ?company_id= query param.
+   ───────────────────────────────────────────────────────── */
+export function getTenant(req: Request): number {
+  const cid = req.user?.company_id;
+  if (typeof cid === "number" && cid > 0) return cid;
+  if (req.user?.role === "super_admin") {
+    const q = Number(req.query?.company_id ?? req.body?.company_id);
+    if (Number.isFinite(q) && q > 0) return q;
+    const err: any = new Error("super_admin must provide company_id");
+    err.status = 400;
+    throw err;
+  }
+  const err: any = new Error("Tenant not resolved");
+  err.status = 403;
+  throw err;
+}
+
 /* ── Convenience combos ─────────────────────────────────── */
-export const adminOnly    = [authenticate, requireRole("admin")] as const;
-export const managerUp    = [authenticate, requireRole("admin", "manager")] as const;
-export const anyAuth      = [authenticate] as const;
+export const adminOnly    = [authenticate, requireRole("admin"), requireTenant] as const;
+export const managerUp    = [authenticate, requireRole("admin", "manager"), requireTenant] as const;
+export const anyAuth      = [authenticate, requireTenant] as const;
 
 /* ── IP Allowlist guard for super_admin routes ──────────── */
 export function superAdminIPGuard(req: Request, res: Response, next: NextFunction): void {

@@ -24,7 +24,7 @@ const router: IRouter = Router();
 // ══════════════════════════════════════════════════════════════════════════════
 
 router.get("/sales-returns", wrap(async (req, res) => {
-  const companyId: number = (req as any).user?.company_id ?? 1;
+  const companyId: number = ((req as any).user.company_id as number);
   const items = await db.select().from(salesReturnsTable)
     .where(eq(salesReturnsTable.company_id, companyId))
     .orderBy(desc(salesReturnsTable.created_at));
@@ -173,7 +173,7 @@ router.post("/sales-returns", wrap(async (req, res) => {
       notes: notes ?? null,
       user_id: req.user?.id ?? null,
       warehouse_id: effectiveWarehouseId ?? null,
-      company_id: req.user?.company_id ?? 1,
+      company_id: req.user!.company_id!,
     }).returning();
 
     let actualTotal = 0;
@@ -533,7 +533,7 @@ router.delete("/sales-returns/:id", wrap(async (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 router.get("/purchase-returns", wrap(async (req, res) => {
-  const companyId: number = (req as any).user?.company_id ?? 1;
+  const companyId: number = ((req as any).user.company_id as number);
   const items = await db.select().from(purchaseReturnsTable)
     .where(eq(purchaseReturnsTable.company_id, companyId))
     .orderBy(desc(purchaseReturnsTable.created_at));

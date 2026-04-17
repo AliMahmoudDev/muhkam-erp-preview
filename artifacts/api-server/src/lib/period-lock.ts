@@ -57,7 +57,7 @@ export async function assertPeriodOpen(
   docDate: string | null | undefined,
   req: Request,
 ): Promise<void> {
-  const companyId  = req.user?.company_id ?? 1;
+  const companyId  = req.user!.company_id!;
   const closingDate = await getClosingDate(companyId);
   if (!closingDate) return; // لا قفل مُفعَّل
 

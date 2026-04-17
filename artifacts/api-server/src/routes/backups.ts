@@ -6,7 +6,7 @@ import { Router, type IRouter } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { db, backupsTable, systemSettingsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticate, requireRole } from "../middleware/auth";
 import { wrap, httpError } from "../lib/async-handler";
 import { triggerBackup, isBackupInProgress, BACKUP_DIR } from "../lib/backup-service";
@@ -28,18 +28,24 @@ async function upsertBackupSetting(key: string, value: string) {
 
 async function getBackupSetting(key: string): Promise<string | null> {
   const [row] = await db.select().from(systemSettingsTable)
-    .where(eq(systemSettingsTable.key, key));
+    .where(and(eq(systemSettingsTable.key, key), eq(systemSettingsTable.company_id, BACKUP_COMPANY_ID)));
   return row?.value ?? null;
 }
 
 /* ── GET /api/backups/settings ── ────────────────────────────── */
-router.get("/backups/settings", authenticate, requireRole("admin"), wrap(async (_req, res) => {
+router.get("/backups/settings", authenticate, requireRole("super_admin"), wrap(async (_req, res) => {
+  /* All backup settings are scoped to the dedicated BACKUP_COMPANY_ID row to
+     avoid collisions with tenant system_settings entries of the same key. */
+  const pick = (key: string) =>
+    db.select().from(systemSettingsTable)
+      .where(and(eq(systemSettingsTable.key, key), eq(systemSettingsTable.company_id, BACKUP_COMPANY_ID)))
+      .then(r => r[0]);
   const [schedRow, destRow, lastRow, onLoginRow, onLogoutRow] = await Promise.all([
-    db.select().from(systemSettingsTable).where(eq(systemSettingsTable.key, "backup_schedule")).then(r => r[0]),
-    db.select().from(systemSettingsTable).where(eq(systemSettingsTable.key, "backup_destination")).then(r => r[0]),
-    db.select().from(systemSettingsTable).where(eq(systemSettingsTable.key, "backup_last_scheduled")).then(r => r[0]),
-    db.select().from(systemSettingsTable).where(eq(systemSettingsTable.key, "backup_on_login")).then(r => r[0]),
-    db.select().from(systemSettingsTable).where(eq(systemSettingsTable.key, "backup_on_logout")).then(r => r[0]),
+    pick("backup_schedule"),
+    pick("backup_destination"),
+    pick("backup_last_scheduled"),
+    pick("backup_on_login"),
+    pick("backup_on_logout"),
   ]);
 
   res.json({
@@ -52,7 +58,7 @@ router.get("/backups/settings", authenticate, requireRole("admin"), wrap(async (
 }));
 
 /* ── PUT /api/backups/settings ── ────────────────────────────── */
-router.put("/backups/settings", authenticate, requireRole("admin"), wrap(async (req, res) => {
+router.put("/backups/settings", authenticate, requireRole("super_admin"), wrap(async (req, res) => {
   const { schedule, destination, on_login, on_logout } = req.body as {
     schedule?:    string;
     destination?: string;
@@ -77,13 +83,13 @@ router.put("/backups/settings", authenticate, requireRole("admin"), wrap(async (
 }));
 
 /* ── GET /api/backups ── list all ─────────────────────────────── */
-router.get("/backups", authenticate, requireRole("admin"), wrap(async (_req, res) => {
+router.get("/backups", authenticate, requireRole("super_admin"), wrap(async (_req, res) => {
   const list = await db.select().from(backupsTable).orderBy(desc(backupsTable.created_at));
   res.json(list);
 }));
 
 /* ── POST /api/backups ── trigger manual server backup ─────────── */
-router.post("/backups", authenticate, requireRole("admin"), wrap(async (_req, res) => {
+router.post("/backups", authenticate, requireRole("super_admin"), wrap(async (_req, res) => {
   if (isBackupInProgress()) {
     res.status(409).json({ error: "جارٍ تنفيذ نسخة احتياطية حالياً، انتظر قليلاً" });
     return;
@@ -94,7 +100,7 @@ router.post("/backups", authenticate, requireRole("admin"), wrap(async (_req, re
 }));
 
 /* ── GET /api/backups/:id/download ─────────────────────────────── */
-router.get("/backups/:id/download", authenticate, requireRole("admin"), wrap(async (req, res) => {
+router.get("/backups/:id/download", authenticate, requireRole("super_admin"), wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
@@ -117,7 +123,7 @@ router.get("/backups/:id/download", authenticate, requireRole("admin"), wrap(asy
 }));
 
 /* ── DELETE /api/backups/:id ─────────────────────────────────── */
-router.delete("/backups/:id", authenticate, requireRole("admin"), wrap(async (req, res) => {
+router.delete("/backups/:id", authenticate, requireRole("super_admin"), wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 

@@ -13,7 +13,7 @@ router.get("/categories", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_products")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db
     .select({
       id: categoriesTable.id,
@@ -41,7 +41,7 @@ router.post("/categories", wrap(async (req, res) => {
   }
   const name = String(req.body?.name ?? "").trim();
   if (!name) { res.status(400).json({ error: "اسم التصنيف مطلوب" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
 
   const [existing] = await db
     .select()
@@ -69,7 +69,7 @@ router.put("/categories/:id", wrap(async (req, res) => {
   const name = String(req.body?.name ?? "").trim();
   if (!name || isNaN(id)) { res.status(400).json({ error: "بيانات غير صحيحة" }); return; }
 
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
 
   const [duplicate] = await db
     .select()
@@ -103,7 +103,7 @@ router.delete("/categories/:id", wrap(async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
 
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const [purchaseCategory] = await db
     .select({ id: productsTable.id })
     .from(productsTable)

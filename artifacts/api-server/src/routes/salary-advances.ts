@@ -30,7 +30,7 @@ async function logHistory(advanceId: number, oldStatus: string | null, newStatus
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/salary-advances/settings", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const [settings] = await db.select().from(salaryAdvanceSettingsTable)
     .where(eq(salaryAdvanceSettingsTable.company_id, companyId));
   if (!settings) {
@@ -42,7 +42,7 @@ router.get("/salary-advances/settings", wrap(async (req, res) => {
 
 router.put("/salary-advances/settings", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { max_advance_percentage, max_concurrent_advances, min_salary_for_advance, repayment_tenure_months, requires_approval } = req.body as Record<string, unknown>;
   const [existing] = await db.select().from(salaryAdvanceSettingsTable).where(eq(salaryAdvanceSettingsTable.company_id, companyId));
   if (existing) {
@@ -64,7 +64,7 @@ router.put("/salary-advances/settings", wrap(async (req, res) => {
 
 router.get("/salary-advances", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const empId  = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
   const status = String(req.query["status"] ?? "");
 
@@ -92,7 +92,7 @@ router.get("/salary-advances", wrap(async (req, res) => {
 }));
 
 router.post("/salary-advances", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const { employee_id, requested_amount, advance_type, reason } = req.body as Record<string, unknown>;
   if (!employee_id || !requested_amount || !advance_type || !reason) { res.status(400).json({ error: "جميع بيانات السلفة مطلوبة" }); return; }
@@ -146,7 +146,7 @@ router.post("/salary-advances", wrap(async (req, res) => {
 /* ── Pending Approvals (MUST be before /:id) ──────────────────── */
 router.get("/salary-advances/pending-approvals", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select({
     id: salaryAdvancesTable.id, employee_id: salaryAdvancesTable.employee_id,
     requested_date: salaryAdvancesTable.requested_date, requested_amount: salaryAdvancesTable.requested_amount,

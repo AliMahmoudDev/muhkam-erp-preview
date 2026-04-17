@@ -100,7 +100,7 @@ router.post("/admin/clear", authenticate, requireRole("admin"), wrap(async (req,
     res.status(400).json({ error: `جداول غير معروفة: ${invalid.join(", ")}` }); return;
   }
 
-  const companyId: number = (req as any).user?.company_id ?? 1;
+  const companyId: number = ((req as any).user.company_id as number);
 
   const ORDER = [
     "sales", "purchases", "expenses", "income",
@@ -115,7 +115,7 @@ router.post("/admin/clear", authenticate, requireRole("admin"), wrap(async (req,
 
 /* ── ربط تلقائي: إنشاء حسابات للعملاء الموجودين ──────────────────────────── */
 router.post("/admin/backfill-accounts", [authenticate, requireRole("admin", "manager")], wrap(async (req, res) => {
-  const companyId: number = (req as any).user?.company_id ?? 1;
+  const companyId: number = ((req as any).user.company_id as number);
   const customers = await db.select().from(customersTable)
     .where(sql`${customersTable.account_id} IS NULL AND ${customersTable.company_id} = ${companyId}`);
 

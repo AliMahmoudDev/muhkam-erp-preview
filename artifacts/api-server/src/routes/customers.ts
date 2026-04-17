@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, max, asc, sql } from "drizzle-orm";
+import { eq, and, max, asc, sql } from "drizzle-orm";
 import { db, customersTable, transactionsTable, safesTable, customerLedgerTable, customerClassificationsTable } from "@workspace/db";
 import { writeAuditLog } from "../lib/audit-log";
 import { hasPermission } from "../lib/permissions";
@@ -96,7 +96,7 @@ router.post("/customers", wrap(async (req, res) => {
   }
 
   const normalized = normalizeName(parsed.data.name);
-  const companyIdPost = req.user?.company_id ?? 1;
+  const companyIdPost = req.user!.company_id!;
 
   // رقم الهاتف إلزامي
   const phonePost = String(parsed.data.phone ?? "").trim();
@@ -219,7 +219,7 @@ router.put("/customers/:id", wrap(async (req, res) => {
   }
 
   const normalized = normalizeName(parsed.data.name);
-  const companyIdPut = req.user?.company_id ?? 1;
+  const companyIdPut = req.user!.company_id!;
 
   // رقم الهاتف إلزامي
   const phonePut = String(parsed.data.phone ?? "").trim();
@@ -515,7 +515,7 @@ router.post("/customers/:id/supplier-payment", wrap(async (req, res) => {
 /* ─── تصنيفات العملاء ─── */
 
 router.get("/customer-classifications", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db
     .select()
     .from(customerClassificationsTable)
@@ -530,7 +530,7 @@ router.post("/customer-classifications", wrap(async (req, res) => {
   }
   const name = String(req.body.name ?? "").trim();
   if (!name) { res.status(400).json({ error: "أدخل اسم التصنيف" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   // تحقق من تكرار اسم التصنيف
   const dupClass = await db.execute(sql`SELECT id FROM customer_classifications WHERE LOWER(name) = LOWER(${name}) AND company_id = ${companyId} LIMIT 1`);
   if ((dupClass.rows as any[]).length > 0) {
@@ -551,7 +551,7 @@ router.put("/customer-classifications/:id", wrap(async (req, res) => {
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   const name = String(req.body.name ?? "").trim();
   if (!name) { res.status(400).json({ error: "أدخل اسم التصنيف" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const [updated] = await db
     .update(customerClassificationsTable)
     .set({ name })
@@ -583,7 +583,7 @@ router.get("/customer-reports", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_customers")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const customerId  = req.query.customer_id  ? parseInt(String(req.query.customer_id),  10) : null;
   const classId     = req.query.classification_id ? parseInt(String(req.query.classification_id), 10) : null;
   const dateFrom    = req.query.date_from ? String(req.query.date_from) : null;

@@ -10,7 +10,7 @@ function fmt(t: typeof transactionsTable.$inferSelect) {
 }
 
 router.get("/financial-transactions", wrap(async (req, res) => {
-  const cid: number = (req as any).user?.company_id ?? 1;
+  const cid: number = ((req as any).user.company_id as number);
   const { safe_id, direction, type, from, to, search } = req.query as Record<string, string>;
   const conditions = [eq(transactionsTable.company_id, cid)];
 

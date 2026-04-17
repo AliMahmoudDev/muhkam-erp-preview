@@ -33,7 +33,7 @@ router.get("/alerts", wrap(async (req, res) => {
 }));
 
 router.get("/alerts/settings", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db
     .select()
     .from(systemSettingsTable)
@@ -61,7 +61,7 @@ router.get("/alerts/settings", wrap(async (req, res) => {
 
 router.post("/alerts/settings", wrap(async (req, res) => {
   const body      = req.body as Record<string, boolean>;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
 
   async function upsertSetting(key: string, value: string) {
     await db

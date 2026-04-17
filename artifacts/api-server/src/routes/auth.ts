@@ -27,7 +27,9 @@ import {
   reset2FALockout,
   MAX_ATTEMPTS,
 } from '../lib/brute-force-store';
-import { maybeBackupAsync } from '../lib/backup-service';
+/* maybeBackupAsync intentionally NOT imported — backups are now manual or
+   scheduled only (see backup-scheduler.ts). Triggering full DB backups on
+   every login/logout caused massive pool pressure under load. */
 
 const JWT_SECRET: string = process.env.JWT_SECRET!;
 
@@ -217,7 +219,6 @@ router.post('/auth/login', async (req, res) => {
       /* ignore */
     }
 
-    maybeBackupAsync("login");
 
     res.json({
       token,
@@ -306,7 +307,6 @@ router.get('/auth/subscription', authenticate, async (req, res) => {
 router.post('/auth/logout', authenticate, async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (token) await blacklistToken(token);
-  maybeBackupAsync("logout");
   res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
 });
 
@@ -488,7 +488,6 @@ router.post('/auth/2fa/login', async (req, res) => {
 
     const token = signToken(user.id, user.role, user.company_id ?? null);
     const refreshToken = signRefreshToken(user.id);
-    maybeBackupAsync("login");
     res.json({
       token,
       refreshToken,

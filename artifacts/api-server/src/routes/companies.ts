@@ -10,7 +10,9 @@ import { wrap } from "../lib/async-handler";
 
 const router = Router();
 
-const adminOnly = [authenticate, requireRole("admin")];
+/* SaaS company management is super_admin only — tenant admins must NEVER
+   list, create, update, deactivate, or reassign other companies. */
+const adminOnly = [authenticate, requireRole("super_admin")];
 
 function daysRemaining(endDate: string): number {
   const now  = new Date();

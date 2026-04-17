@@ -8,7 +8,7 @@ import { hasPermission } from "../lib/permissions";
 const router: IRouter = Router();
 
 function getCid(req: any): number {
-  return req.user?.company_id ?? 1;
+  return req.user!.company_id!;
 }
 
 function fmt(v: typeof treasuryVouchersTable.$inferSelect) {

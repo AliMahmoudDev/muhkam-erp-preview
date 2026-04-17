@@ -26,7 +26,7 @@ router.get("/expense-categories", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_expenses")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const cats = await db.select().from(expenseCategoriesTable)
     .where(eq(expenseCategoriesTable.company_id, companyId))
     .orderBy(expenseCategoriesTable.name);
@@ -37,7 +37,7 @@ router.post("/expense-categories", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_add_expense")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const name = String(req.body.name ?? "").trim();
   if (!name) { res.status(400).json({ error: "اسم التصنيف مطلوب" }); return; }
 
@@ -71,7 +71,7 @@ router.get("/expense-reports", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_expenses")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const category  = req.query.category  ? String(req.query.category)  : null;
   const dateFrom  = req.query.date_from ? String(req.query.date_from) : null;
   const dateTo    = req.query.date_to   ? String(req.query.date_to)   : null;

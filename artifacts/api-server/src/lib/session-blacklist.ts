@@ -13,6 +13,13 @@ const KEY = (token: string) => `bl:tok:${token}`;
 
 let redis: import("ioredis").Redis | null = null;
 
+if (process.env.NODE_ENV === "production" && !process.env.REDIS_URL) {
+  throw new Error(
+    "[FATAL] REDIS_URL is required in production. Session blacklist cannot " +
+    "be safely served from in-memory store across multiple instances/restarts.",
+  );
+}
+
 if (process.env.REDIS_URL) {
   try {
     const { default: Redis } = await import("ioredis");

@@ -6,7 +6,7 @@ import { wrap } from "../lib/async-handler";
 const router: IRouter = Router();
 
 function getCid(req: Request): number {
-  return (req as any).user?.company_id ?? 1;
+  return ((req as any).user.company_id as number);
 }
 
 function fmt(a: typeof accountsTable.$inferSelect) {

@@ -22,7 +22,7 @@ function numStr(v: unknown) { return v != null ? Number(v) : 0; }
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/leave-types", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select().from(leaveTypesTable)
     .where(and(eq(leaveTypesTable.company_id, companyId), eq(leaveTypesTable.is_active, true)))
     .orderBy(leaveTypesTable.name_ar);
@@ -31,7 +31,7 @@ router.get("/leave-types", wrap(async (req, res) => {
 
 router.post("/leave-types", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { name_ar, name_en, code, is_paid, requires_approval, carryover_allowed, carryover_limit } = req.body as Record<string, unknown>;
   if (!name_ar || !code) { res.status(400).json({ error: "اسم ورمز نوع الإجازة مطلوبان" }); return; }
   const [row] = await db.insert(leaveTypesTable).values({
@@ -46,7 +46,7 @@ router.post("/leave-types", wrap(async (req, res) => {
 
 router.put("/leave-types/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { name_ar, name_en, is_paid, requires_approval, carryover_allowed, carryover_limit, is_active } = req.body as Record<string, unknown>;
   const [row] = await db.update(leaveTypesTable)
@@ -62,7 +62,7 @@ router.put("/leave-types/:id", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/leave-policies", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select({
     id: leavePoliciesTable.id, company_id: leavePoliciesTable.company_id,
     leave_type_id: leavePoliciesTable.leave_type_id, entitlement_days_per_year: leavePoliciesTable.entitlement_days_per_year,
@@ -78,7 +78,7 @@ router.get("/leave-policies", wrap(async (req, res) => {
 
 router.post("/leave-policies", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { leave_type_id, entitlement_days_per_year, accrual_method, min_duration, max_consecutive_days, probation_days } = req.body as Record<string, unknown>;
   if (!leave_type_id) { res.status(400).json({ error: "نوع الإجازة مطلوب" }); return; }
   const [row] = await db.insert(leavePoliciesTable).values({
@@ -94,7 +94,7 @@ router.post("/leave-policies", wrap(async (req, res) => {
 
 router.put("/leave-policies/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { entitlement_days_per_year, accrual_method, min_duration, max_consecutive_days, probation_days } = req.body as Record<string, unknown>;
   const [row] = await db.update(leavePoliciesTable)
@@ -135,7 +135,7 @@ router.get("/employee-leave-balance/:employeeId", wrap(async (req, res) => {
 
 router.get("/leave-requests", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const empId   = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
   const status  = String(req.query["status"] ?? "");
   const from    = String(req.query["from"] ?? "");
@@ -168,7 +168,7 @@ router.get("/leave-requests", wrap(async (req, res) => {
 }));
 
 router.post("/leave-requests", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const { employee_id, leave_type_id, start_date, end_date, reason } = req.body as Record<string, unknown>;
   if (!employee_id || !leave_type_id || !start_date || !end_date) { res.status(400).json({ error: "جميع بيانات الإجازة مطلوبة" }); return; }
@@ -302,7 +302,7 @@ router.post("/leave-requests/:id/reject", wrap(async (req, res) => {
 /* ── Accrual Run ──────────────────────────────────────────────── */
 router.post("/leave-accrual/run", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const month = String(req.body?.month ?? new Date().toISOString().substring(0, 7));
 
   // Get all active employees
@@ -352,7 +352,7 @@ router.post("/leave-accrual/run", wrap(async (req, res) => {
 
 /* ── Blackout Dates ───────────────────────────────────────────── */
 router.get("/leave-blackout-dates", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select().from(leaveBlackoutDatesTable)
     .where(eq(leaveBlackoutDatesTable.company_id, companyId))
     .orderBy(leaveBlackoutDatesTable.start_date);
@@ -361,7 +361,7 @@ router.get("/leave-blackout-dates", wrap(async (req, res) => {
 
 router.post("/leave-blackout-dates", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { start_date, end_date, reason_ar, reason_en } = req.body as Record<string, string>;
   if (!start_date || !end_date) { res.status(400).json({ error: "تواريخ الفترة المحظورة مطلوبة" }); return; }
   const [row] = await db.insert(leaveBlackoutDatesTable).values({
@@ -372,7 +372,7 @@ router.post("/leave-blackout-dates", wrap(async (req, res) => {
 
 router.delete("/leave-blackout-dates/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(leaveBlackoutDatesTable).where(and(eq(leaveBlackoutDatesTable.id, id), eq(leaveBlackoutDatesTable.company_id, companyId)));
   res.json({ ok: true });

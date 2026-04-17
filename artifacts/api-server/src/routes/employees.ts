@@ -71,7 +71,7 @@ function requireHrAccess(req: Request, res: Response): boolean {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/departments", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db
     .select()
     .from(departmentsTable)
@@ -82,7 +82,7 @@ router.get("/departments", wrap(async (req, res) => {
 
 router.post("/departments", wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { name_en, name_ar, description_en, description_ar } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: "اسم القسم (عربي) مطلوب" }); return; }
   const [dep] = await db.insert(departmentsTable).values({
@@ -94,7 +94,7 @@ router.post("/departments", wrap(async (req, res) => {
 
 router.put("/departments/:id", wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { name_en, name_ar, description_en, description_ar } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: "اسم القسم (عربي) مطلوب" }); return; }
@@ -108,7 +108,7 @@ router.put("/departments/:id", wrap(async (req, res) => {
 
 router.delete("/departments/:id", wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const active = await db
     .select({ count: sql<number>`COUNT(*)::int` })
@@ -127,7 +127,7 @@ router.delete("/departments/:id", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/job-titles", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db
     .select()
     .from(jobTitlesTable)
@@ -138,7 +138,7 @@ router.get("/job-titles", wrap(async (req, res) => {
 
 router.post("/job-titles", wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { name_en, name_ar } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: "المسمى الوظيفي (عربي) مطلوب" }); return; }
   const [jt] = await db.insert(jobTitlesTable).values({
@@ -149,7 +149,7 @@ router.post("/job-titles", wrap(async (req, res) => {
 
 router.put("/job-titles/:id", wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { name_en, name_ar } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: "المسمى الوظيفي (عربي) مطلوب" }); return; }
@@ -163,7 +163,7 @@ router.put("/job-titles/:id", wrap(async (req, res) => {
 
 router.delete("/job-titles/:id", wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const active = await db
     .select({ count: sql<number>`COUNT(*)::int` })
@@ -209,7 +209,7 @@ router.get("/employees", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) {
     res.status(403).json({ error: "غير مصرح بعرض الموظفين" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const search    = String(req.query["search"] ?? "").trim();
   const deptId    = req.query["department_id"] ? parseInt(String(req.query["department_id"]), 10) : null;
   const status    = String(req.query["status"] ?? "");
@@ -283,7 +283,7 @@ router.post("/employees", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) {
     res.status(403).json({ error: "غير مصرح بإضافة موظفين" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
 
   const parsed = employeeCreateSchema.safeParse(req.body);
@@ -358,7 +358,7 @@ router.get("/employees/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
 
   const rows = await db
@@ -412,7 +412,7 @@ router.put("/employees/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) {
     res.status(403).json({ error: "غير مصرح بتعديل الموظف" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
 
@@ -469,7 +469,7 @@ router.put("/employees/:id", wrap(async (req, res) => {
 /* ── PATCH /employees/:id/status ────────────────────────────── */
 router.patch("/employees/:id/status", wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
 
@@ -505,7 +505,7 @@ router.patch("/employees/:id/status", wrap(async (req, res) => {
 /* ── DELETE /employees/:id ──────────────────────────────────── */
 router.delete("/employees/:id", wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
 
@@ -540,7 +540,7 @@ router.get("/employees/:id/documents", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const emp = await db.select({ id: employeesTable.id })
     .from(employeesTable)
@@ -557,7 +557,7 @@ router.post("/employees/:id/documents", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { document_type, file_name, file_path, expiry_date, notes } = req.body as Record<string, string>;
   if (!document_type || !file_name) {
@@ -577,7 +577,7 @@ router.post("/employees/:id/documents", wrap(async (req, res) => {
 
 router.patch("/employees/:id/documents/:docId/verify", wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
   const docId     = parseInt(String(req.params["docId"]), 10);
@@ -599,7 +599,7 @@ router.delete("/employees/:id/documents/:docId", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id        = parseInt(String(req.params["id"]), 10);
   const docId     = parseInt(String(req.params["docId"]), 10);
 
@@ -621,7 +621,7 @@ router.get("/employees/:id/contacts", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const emp = await db.select({ id: employeesTable.id })
     .from(employeesTable)
@@ -638,7 +638,7 @@ router.post("/employees/:id/contacts", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { contact_type, name, relationship, phone, email } = req.body as Record<string, string>;
   if (!name?.trim()) { res.status(400).json({ error: "اسم جهة الاتصال مطلوب" }); return; }
@@ -672,7 +672,7 @@ router.get("/employees/:id/history", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const emp = await db.select({ id: employeesTable.id })
     .from(employeesTable)

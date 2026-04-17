@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { authenticate } from "../middleware/auth";
+import { authenticate, requireTenant } from "../middleware/auth";
 import healthRouter from "./health";
 import productsRouter from "./products";
 import customersRouter from "./customers";
@@ -50,6 +50,12 @@ router.use(healthRouter); // /health
 /* ── Global auth guard — all routes below require valid JWT ────── */
 router.use(authenticate);
 
+/* ── super_admin cross-tenant routes mount BEFORE requireTenant ── */
+router.use(superRouter);
+
+/* ── Tenant guard — every route below MUST resolve a company_id ── */
+router.use(requireTenant);
+
 /* ── Protected routes ─────────────────────────────────────────── */
 router.use(productsRouter);
 router.use(customersRouter);
@@ -71,7 +77,6 @@ router.use(financialTransactionsRouter);
 router.use(adminRouter);
 router.use(profitsRouter);
 router.use(inventoryRouter);
-router.use(superRouter);
 router.use(reportsRouter);
 router.use(openingBalanceRouter);
 router.use(contactsRouter);

@@ -32,7 +32,7 @@ router.get("/profits", wrap(async (req, res) => {
     ? warehouse_ids.split(",").map(Number).filter(n => !isNaN(n) && n > 0)
     : [];
 
-  const companyId: number = (req as any).user?.company_id ?? 1;
+  const companyId: number = ((req as any).user.company_id as number);
 
   // ── Sale conditions ─────────────────────────────────────────────────────────
   const saleConditions = [ne(salesTable.posting_status, "cancelled"), eq(salesTable.company_id, companyId)];

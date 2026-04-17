@@ -21,7 +21,7 @@ function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOStr
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/shifts", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select().from(shiftSchedulesTable)
     .where(eq(shiftSchedulesTable.company_id, companyId))
     .orderBy(shiftSchedulesTable.name_ar);
@@ -30,7 +30,7 @@ router.get("/shifts", wrap(async (req, res) => {
 
 router.post("/shifts", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { name_ar, name_en, start_time, end_time, break_duration, grace_minutes, weekly_hours, working_days } = req.body as Record<string, unknown>;
   if (!name_ar || !start_time || !end_time) { res.status(400).json({ error: "بيانات الوردية غير مكتملة" }); return; }
   const [row] = await db.insert(shiftSchedulesTable).values({
@@ -44,7 +44,7 @@ router.post("/shifts", wrap(async (req, res) => {
 
 router.put("/shifts/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { name_ar, name_en, start_time, end_time, break_duration, grace_minutes, weekly_hours, working_days, is_active } = req.body as Record<string, unknown>;
   const [row] = await db.update(shiftSchedulesTable)
@@ -57,7 +57,7 @@ router.put("/shifts/:id", wrap(async (req, res) => {
 
 router.delete("/shifts/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(shiftSchedulesTable).where(and(eq(shiftSchedulesTable.id, id), eq(shiftSchedulesTable.company_id, companyId)));
   res.json({ ok: true });
@@ -99,7 +99,7 @@ router.get("/employee-shifts/:employeeId", wrap(async (req, res) => {
 
 router.get("/attendance/records", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const from     = String(req.query["from"] ?? "");
   const to       = String(req.query["to"] ?? "");
   const empId    = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
@@ -137,7 +137,7 @@ router.get("/attendance/records", wrap(async (req, res) => {
 
 /* ── Check In ─────────────────────────────────────────────────── */
 router.post("/attendance/check-in", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const { employee_id, attendance_date, check_in_time, notes } = req.body as Record<string, unknown>;
   const empId = employee_id ? Number(employee_id) : userId;
@@ -188,7 +188,7 @@ router.post("/attendance/check-in", wrap(async (req, res) => {
 
 /* ── Check Out ────────────────────────────────────────────────── */
 router.post("/attendance/check-out", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const { employee_id, attendance_date, check_out_time } = req.body as Record<string, unknown>;
   const empId = employee_id ? Number(employee_id) : userId;
@@ -289,7 +289,7 @@ router.get("/attendance/summary/:employeeId", wrap(async (req, res) => {
 
 router.get("/attendance/overtime", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select({
     id: overtimeRecordsTable.id, employee_id: overtimeRecordsTable.employee_id,
     date: overtimeRecordsTable.date, hours: overtimeRecordsTable.hours,
@@ -322,7 +322,7 @@ router.post("/attendance/overtime", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/public-holidays", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select().from(publicHolidaysTable)
     .where(eq(publicHolidaysTable.company_id, companyId))
     .orderBy(publicHolidaysTable.holiday_date);
@@ -331,7 +331,7 @@ router.get("/public-holidays", wrap(async (req, res) => {
 
 router.post("/public-holidays", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { holiday_date, name_ar, name_en } = req.body as Record<string, string>;
   if (!holiday_date || !name_ar) { res.status(400).json({ error: "تاريخ ومسمى الإجازة مطلوبان" }); return; }
   const [row] = await db.insert(publicHolidaysTable).values({
@@ -342,7 +342,7 @@ router.post("/public-holidays", wrap(async (req, res) => {
 
 router.delete("/public-holidays/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(publicHolidaysTable).where(and(eq(publicHolidaysTable.id, id), eq(publicHolidaysTable.company_id, companyId)));
   res.json({ ok: true });

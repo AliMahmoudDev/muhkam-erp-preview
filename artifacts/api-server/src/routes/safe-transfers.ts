@@ -12,7 +12,7 @@ router.get("/safe-transfers", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_treasury")) {
     res.status(403).json({ error: "ليس لديك صلاحية عرض الخزينة" }); return;
   }
-  const companyId: number = (req as any).user?.company_id ?? 1;
+  const companyId: number = ((req as any).user.company_id as number);
   const items = await db.select().from(transactionsTable)
     .where(and(
       eq(transactionsTable.reference_type, "safe_transfer"),
@@ -48,7 +48,7 @@ router.post("/safe-transfers", wrap(async (req, res) => {
   const transferRef = `TRF-${Date.now()}`;
   const txDate = date ?? new Date().toISOString().split("T")[0];
 
-  const companyId: number = (req as any).user?.company_id ?? 1;
+  const companyId: number = ((req as any).user.company_id as number);
 
   const result = await db.transaction(async (tx) => {
     const [fromSafe] = await tx.select().from(safesTable).where(eq(safesTable.id, parseInt(from_safe_id)));

@@ -131,6 +131,7 @@ export function hasPermission(
   if (roleDefaults[permission] === true)  return true;
   if (roleDefaults[permission] === false) return false;
 
-  // Final fallback: super_admin/admin/manager allow unknown perms, others deny
-  return user.role === "super_admin" || user.role === "admin" || user.role === "manager";
+  // Final fallback: DENY by default. Unknown permissions must be added
+  // explicitly to ROLE_DEFAULTS — never grant access implicitly.
+  return false;
 }

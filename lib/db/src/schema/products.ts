@@ -1,4 +1,4 @@
-import { pgTable, serial, text, numeric, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, numeric, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { companiesTable } from "./companies";
@@ -15,7 +15,13 @@ export const productsTable = pgTable("products", {
   low_stock_threshold: integer("low_stock_threshold"),
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [
+  index("products_company_id_idx").on(t.company_id),
+  index("products_company_sku_idx").on(t.company_id, t.sku),
+  index("products_company_name_idx").on(t.company_id, t.name),
+  index("products_category_id_idx").on(t.category_id),
+  index("products_company_category_idx").on(t.company_id, t.category_id),
+]);
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({ id: true, created_at: true });
 export type InsertProduct = z.infer<typeof insertProductSchema>;

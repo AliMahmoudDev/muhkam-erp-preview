@@ -77,7 +77,7 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
       warehouse_id,
       status: "draft",
       notes: notes ?? null,
-      company_id: req.user?.company_id ?? 1,
+      company_id: req.user!.company_id!,
       created_by: req.user?.id ?? null,
     }).returning();
 
@@ -383,7 +383,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
       to_warehouse_id:   Number(to_warehouse_id),
       status:    "completed",
       notes:     notes ?? null,
-      company_id: req.user?.company_id ?? 1,
+      company_id: req.user!.company_id!,
       created_by: req.user?.id ?? null,
     }).returning();
 
@@ -425,7 +425,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
         notes: `تحويل خروج → ${toWH.name}`,
         date:  today,
         warehouse_id:  Number(from_warehouse_id),
-        company_id:    req.user?.company_id ?? 1,
+        company_id:    req.user!.company_id!,
       });
 
       // حركة دخول إلى المخزن الهدف — quantity موجبة
@@ -443,7 +443,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
         notes: `تحويل دخول ← ${fromWH.name}`,
         date:  today,
         warehouse_id:  Number(to_warehouse_id),
-        company_id:    req.user?.company_id ?? 1,
+        company_id:    req.user!.company_id!,
       });
     }
 

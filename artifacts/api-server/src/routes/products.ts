@@ -148,7 +148,7 @@ router.post("/products", wrap(async (req, res) => {
   const role = req.user?.role ?? "cashier";
   const queryWarehouseId = req.query.warehouse_id ? parseInt(String(req.query.warehouse_id), 10) : null;
   const effectiveWarehouseId = (role === "admin" || role === "manager") ? queryWarehouseId : (req.user?.warehouse_id ?? null);
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
 
   const resolvedCategoryId = await resolveCategoryId(
     (parsed.data as any).category_id,
@@ -203,7 +203,7 @@ router.put("/products/:id", wrap(async (req, res) => {
   const parsed = UpdateProductBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const resolvedCategoryId = await resolveCategoryId(
     (parsed.data as any).category_id,
     parsed.data.category,

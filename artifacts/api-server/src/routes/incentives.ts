@@ -22,7 +22,7 @@ function n(v: unknown) { return v != null ? Number(v) : 0; }
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/incentive-schemes", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const rows = await db.select().from(incentiveSchemesTable)
     .where(eq(incentiveSchemesTable.company_id, companyId))
     .orderBy(incentiveSchemesTable.name_ar);
@@ -31,7 +31,7 @@ router.get("/incentive-schemes", wrap(async (req, res) => {
 
 router.post("/incentive-schemes", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const { name_ar, name_en, description } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: "اسم مخطط الحوافز مطلوب" }); return; }
   const [row] = await db.insert(incentiveSchemesTable).values({
@@ -43,7 +43,7 @@ router.post("/incentive-schemes", wrap(async (req, res) => {
 
 router.put("/incentive-schemes/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user?.company_id ?? 1;
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   const { name_ar, name_en, description, status } = req.body as Record<string, string>;
   const [row] = await db.update(incentiveSchemesTable)
