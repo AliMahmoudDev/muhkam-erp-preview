@@ -20,6 +20,21 @@ jobs:
     name: Backend Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,6 +43,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -37,21 +53,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Run backend tests
-        run: pnpm --filter @workspace/api-server test
+      - name: Push database schema
         env:
-          JWT_SECRET: test-secret-for-ci
-          JWT_REFRESH_SECRET: test-refresh-secret-for-ci
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+        # push-force skips interactive confirmation — safe for a fresh container
+        run: pnpm --filter @workspace/db run push-force
+
+      - name: Run backend tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          JWT_SECRET: ci-unit-test-jwt-secret-minimum-32chars!!
+          JWT_REFRESH_SECRET: ci-unit-test-jwt-refresh-secret-min-32chars!!
           NODE_ENV: test
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
+        run: pnpm --filter @workspace/api-server test
 
       - name: Backend coverage report
-        run: pnpm --filter @workspace/api-server test:coverage
         env:
-          JWT_SECRET: test-secret-for-ci
-          JWT_REFRESH_SECRET: test-refresh-secret-for-ci
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          JWT_SECRET: ci-unit-test-jwt-secret-minimum-32chars!!
+          JWT_REFRESH_SECRET: ci-unit-test-jwt-refresh-secret-min-32chars!!
           NODE_ENV: test
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
+        run: pnpm --filter @workspace/api-server test:coverage
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
