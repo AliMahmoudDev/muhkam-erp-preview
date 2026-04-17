@@ -7,7 +7,7 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
-    "lint": "pnpm --filter @workspace/api-server lint && pnpm --filter @workspace/erp-system lint",
+    "lint": "pnpm --filter @workspace/api-server lint && pnpm --filter @workspace/erp-system lint && pnpm --filter @workspace/scripts check-repair-coverage",
     "lint:fix": "pnpm --filter @workspace/api-server lint:fix && pnpm --filter @workspace/erp-system lint:fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
