@@ -62,16 +62,32 @@ docker-compose down
 - `lint` — ESLint + TypeScript type-check للـ packages الاثنين
 - `build` — يبني frontend + backend ويرفع الـ artifacts
 
-### `deploy.yml` — يشتغل عند push على `main` أو PR على `main`
+### `deploy.yml` — يشتغل عند push على `main` أو PR على `main`، أو تلقائياً كل اثنين الساعة 03:00 UTC
 
-#### job: `integration-test` (يشتغل أولاً على كل push و PR)
+#### الـ Schedule التلقائي
+
+يحتوي الـ workflow على trigger أسبوعي:
+
+```yaml
+schedule:
+  - cron: '0 3 * * 1'  # كل اثنين الساعة 03:00 UTC
+```
+
+عند تشغيله بهذه الطريقة:
+- **`integration-test`** يشتغل بالكامل — يتحقق من أن الـ dependencies الخارجية والـ schema لا تزال متوافقة
+- **`deploy`** يُتجاهَل — الـ deploy يحدث فقط على `push` أو `workflow_dispatch`
+- إذا فشل الـ job، ترسل GitHub Actions إشعاراً (email وتنبيه في واجهة Actions) لأصحاب الـ repository
+
+هذا الـ scheduled run يكتشف أي تغييرات خارجية قد تكسر الـ tests (مثل تغيير سلوك dependency أو انتهاء صلاحية بيئة CI) بدون الحاجة لـ push جديد.
+
+#### job: `integration-test` (يشتغل أولاً على كل push و PR وعلى الـ schedule الأسبوعي)
 - يرفع service container لـ PostgreSQL 16
 - يثبت الـ dependencies ويطبق schema بـ `drizzle-kit push --force`
 - يشغّل 20 integration test للتحقق من عزل البيانات بين الـ tenants
 - يستخدم `INTEGRATION_JWT_SECRET` و `INTEGRATION_JWT_REFRESH_SECRET` من repository secrets
 - إذا غابت الـ secrets (مثلاً في فورك)، يرجع `setup.ts` لقيم test افتراضية بشرط `NODE_ENV=test`
 
-#### job: `deploy` (يشتغل فقط بعد نجاح `integration-test`، وعلى push لـ `main` أو manual dispatch فقط)
+#### job: `deploy` (يشتغل فقط بعد نجاح `integration-test`، وعلى `push` لـ `main` أو `workflow_dispatch` فقط — لا يشتغل على PR ولا على الـ schedule)
 - يتصل بالـ VPS عبر SSH
 - يسحب آخر كود من `main`
 - يبني frontend + backend
@@ -143,7 +159,7 @@ GitHub Repository → Settings → Secrets and variables → Actions → Reposit
 
 **3. التحقق من نجاح التدوير**
 
-شغّل workflow يدوياً أو انتظر أي push:
+شغّل workflow يدوياً، أو انتظر أي push، أو انتظر الـ scheduled run الأسبوعي (كل اثنين 03:00 UTC):
 
 ```
 GitHub → Actions → Deploy to Production → اختر آخر run

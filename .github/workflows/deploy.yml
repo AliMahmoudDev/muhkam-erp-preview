@@ -18,6 +18,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1'  # every Monday at 03:00 UTC
 
 jobs:
   # ── Integration Tests ─────────────────────────────────────────────────────
@@ -85,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [integration-test]
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout
