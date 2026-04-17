@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gt, not, inArray } from "drizzle-orm";
+import { eq, and, gt, not, inArray, sql } from "drizzle-orm";
 import { db, purchasesTable, purchaseItemsTable, productsTable, customersTable, safesTable, transactionsTable, stockMovementsTable, accountsTable, purchaseReturnsTable, journalEntriesTable, journalEntryLinesTable, customerLedgerTable } from "@workspace/db";
 import {
   GetPurchasesResponse,
@@ -217,6 +217,7 @@ router.post("/purchases", wrap(async (req, res) => {
           direction: "out",
           description: `دفع نقدي — فاتورة مشتريات ${invoiceNo}${displayName ? ` (${displayName})` : ""}`,
           date: today,
+          company_id: cidPurchase,
         });
       }
     }
@@ -240,6 +241,7 @@ router.post("/purchases", wrap(async (req, res) => {
           direction: "out",
           description: `مشتريات آجل من ${displayName ?? "مورد"} — فاتورة ${invoiceNo}`,
           date: today,
+          company_id: cidPurchase,
         });
 
         await tx.insert(customerLedgerTable).values({
@@ -251,6 +253,7 @@ router.post("/purchases", wrap(async (req, res) => {
           reference_no: invoiceNo,
           description: `مشتريات آجل ${invoiceNo} — ${displayName ?? "مورد"}`,
           date: today,
+          company_id: cidPurchase,
         });
       }
     }
@@ -486,55 +489,66 @@ router.post("/purchases/:id/cancel", wrap(async (req, res) => {
     for (const item of purchaseItems) {
       const qty = Number(item.quantity);
       const purchaseUnitCost = Number(item.unit_price);
-      const [prod] = await tx.select().from(productsTable).where(eq(productsTable.id, item.product_id));
-      if (prod) {
-        const oldQty = Number(prod.quantity);
-        const oldWAC = Number(prod.cost_price);
-        const newQty = Math.max(0, oldQty - qty);
-        let newWAC = oldWAC;
-        if (newQty > 0) {
-          newWAC = Math.max(0, (oldQty * oldWAC - qty * purchaseUnitCost) / newQty);
-        }
-        await tx.update(productsTable)
-          .set({ quantity: String(newQty), cost_price: String(newWAC.toFixed(4)) })
-          .where(eq(productsTable.id, item.product_id));
 
-        await tx.insert(stockMovementsTable).values({
-          product_id: item.product_id,
-          product_name: item.product_name,
-          movement_type: "adjustment",
-          quantity: String(-qty),
-          quantity_before: String(oldQty),
-          quantity_after: String(newQty),
-          unit_cost: String(purchaseUnitCost),
-          reference_type: "purchase_cancel",
-          reference_id: purchase.id,
-          reference_no: purchase.invoice_no,
-          notes: `إلغاء فاتورة مشتريات ${purchase.invoice_no}`,
-          date: today,
-          warehouse_id: tenantWarehouseId,
-        });
+      // SELECT FOR UPDATE — row-level lock to prevent concurrent cancel/purchase races
+      const lockResult = await tx.execute(
+        sql`SELECT id, quantity::text AS qty, cost_price::text AS wac
+            FROM products
+            WHERE id = ${item.product_id} AND company_id = ${cidCancel}
+            FOR UPDATE`
+      );
+      if (!lockResult.rows.length) continue; // not this tenant's product — skip
+      const lockedProd = lockResult.rows[0] as { id: number; qty: string; wac: string };
+
+      const oldQty = Number(lockedProd.qty);
+      const oldWAC = Number(lockedProd.wac);
+      const newQty = Math.max(0, oldQty - qty);
+      let newWAC = oldWAC;
+      if (newQty > 0) {
+        newWAC = Math.max(0, (oldQty * oldWAC - qty * purchaseUnitCost) / newQty);
       }
+      await tx.update(productsTable)
+        .set({ quantity: String(newQty), cost_price: String(newWAC.toFixed(4)) })
+        .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidCancel)));
+
+      await tx.insert(stockMovementsTable).values({
+        product_id:    item.product_id,
+        product_name:  item.product_name,
+        movement_type: "adjustment",
+        quantity:      String(-qty),
+        quantity_before: String(oldQty),
+        quantity_after:  String(newQty),
+        unit_cost:     String(purchaseUnitCost),
+        reference_type: "purchase_cancel",
+        reference_id:  purchase.id,
+        reference_no:  purchase.invoice_no,
+        notes:         `إلغاء فاتورة مشتريات ${purchase.invoice_no}`,
+        date:          today,
+        warehouse_id:  tenantWarehouseId,
+        company_id:    cidCancel,
+      });
     }
 
     // 3. عكس رصيد العميل-المورد (الآجل)
     const remainingAmt = Number(purchase.remaining_amount);
     if (remainingAmt > 0 && purchase.customer_id) {
-      const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, purchase.customer_id));
+      const [cust] = await tx.select().from(customersTable)
+        .where(and(eq(customersTable.id, purchase.customer_id), eq(customersTable.company_id, cidCancel)));
       if (cust) {
         await tx.update(customersTable)
           .set({ balance: String(Number(cust.balance) + remainingAmt) })
-          .where(eq(customersTable.id, cust.id));
+          .where(and(eq(customersTable.id, cust.id), eq(customersTable.company_id, cidCancel)));
 
         await tx.insert(customerLedgerTable).values({
-          customer_id: purchase.customer_id,
-          type: "purchase_cancel",
-          amount: String(remainingAmt),
+          customer_id:    purchase.customer_id,
+          type:           "purchase_cancel",
+          amount:         String(remainingAmt),
           reference_type: "purchase_cancel",
-          reference_id: purchase.id,
-          reference_no: purchase.invoice_no,
-          description: `إلغاء فاتورة مشتريات ${purchase.invoice_no}`,
-          date: today,
+          reference_id:   purchase.id,
+          reference_no:   purchase.invoice_no,
+          description:    `إلغاء فاتورة مشتريات ${purchase.invoice_no}`,
+          date:           today,
+          company_id:     cidCancel,
         });
       }
     }
@@ -547,26 +561,29 @@ router.post("/purchases/:id/cancel", wrap(async (req, res) => {
         .where(and(
           eq(transactionsTable.reference_type, "purchase"),
           eq(transactionsTable.reference_id, purchase.id),
+          eq(transactionsTable.company_id, cidCancel),
         ))
         .limit(1);
 
       if (txRow?.safe_id) {
-        const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, txRow.safe_id));
+        const [safe] = await tx.select().from(safesTable)
+          .where(and(eq(safesTable.id, txRow.safe_id), eq(safesTable.company_id, cidCancel)));
         if (safe) {
           await tx.update(safesTable)
             .set({ balance: String(Number(safe.balance) + paidAmt) })
-            .where(eq(safesTable.id, safe.id));
+            .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cidCancel)));
         }
         await tx.insert(transactionsTable).values({
-          type: "purchase_cancel",
+          type:           "purchase_cancel",
           reference_type: "purchase_cancel",
-          reference_id: purchase.id,
-          safe_id: txRow.safe_id,
-          safe_name: txRow.safe_name ?? "",
-          amount: String(paidAmt),
-          direction: "in",
-          description: `إلغاء فاتورة مشتريات ${purchase.invoice_no}`,
-          date: today,
+          reference_id:   purchase.id,
+          safe_id:        txRow.safe_id,
+          safe_name:      txRow.safe_name ?? "",
+          amount:         String(paidAmt),
+          direction:      "in",
+          description:    `إلغاء فاتورة مشتريات ${purchase.invoice_no}`,
+          date:           today,
+          company_id:     cidCancel,
         });
       }
     }

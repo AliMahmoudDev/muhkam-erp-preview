@@ -354,6 +354,7 @@ router.post("/sales", wrap(async (req, res) => {
             reference_no: invoiceNo,
             description: `فاتورة مبيعات ${invoiceNo}`,
             date: date ?? new Date().toISOString().split("T")[0],
+            company_id: cidSale,
           });
         }
         // ب. الدفعة الفورية (نقدي / جزئي) → تُقلّل الدين
@@ -367,6 +368,7 @@ router.post("/sales", wrap(async (req, res) => {
             reference_no: invoiceNo,
             description: `دفعة فورية على فاتورة ${invoiceNo}`,
             date: date ?? new Date().toISOString().split("T")[0],
+            company_id: cidSale,
           });
         }
       }
@@ -385,6 +387,7 @@ router.post("/sales", wrap(async (req, res) => {
         direction: paid_amount > 0 ? "in" : "none",
         description: `فاتورة مبيعات ${invoiceNo}`,
         date: new Date().toISOString().split("T")[0],
+        company_id: cidSale,
       });
 
       return newSale;
@@ -687,56 +690,67 @@ router.post("/sales/:id/cancel", wrap(async (req, res) => {
       const qty          = Number(item.quantity);
       const costAtSale   = Number(item.cost_price);
 
-      const [prod] = await tx.select().from(productsTable).where(eq(productsTable.id, item.product_id));
-      if (prod) {
-        const oldQty = Number(prod.quantity);
-        const oldWAC = Number(prod.cost_price);
-        const newQty = oldQty + qty;
-        const newWAC = newQty > 0
-          ? ((oldQty * oldWAC) + (qty * costAtSale)) / newQty
-          : costAtSale;
+      // SELECT FOR UPDATE — locks this product row for the duration of the txn,
+      // preventing concurrent cancel/sale races from reading a stale quantity.
+      const lockResult = await tx.execute(
+        sql`SELECT id, quantity::text AS qty, cost_price::text AS wac
+            FROM products
+            WHERE id = ${item.product_id} AND company_id = ${cidCancel}
+            FOR UPDATE`
+      );
+      if (!lockResult.rows.length) continue; // not this tenant's product — skip
+      const lockedProd = lockResult.rows[0] as { id: number; qty: string; wac: string };
 
-        await tx.update(productsTable)
-          .set({ quantity: String(newQty), cost_price: String(newWAC.toFixed(4)) })
-          .where(eq(productsTable.id, item.product_id));
+      const oldQty = Number(lockedProd.qty);
+      const oldWAC = Number(lockedProd.wac);
+      const newQty = oldQty + qty;
+      const newWAC = newQty > 0
+        ? ((oldQty * oldWAC) + (qty * costAtSale)) / newQty
+        : costAtSale;
 
-        await tx.insert(stockMovementsTable).values({
-          product_id:      item.product_id,
-          product_name:    item.product_name,
-          movement_type:   "adjustment",
-          quantity:        String(qty),
-          quantity_before: String(oldQty),
-          quantity_after:  String(newQty),
-          unit_cost:       String(costAtSale),
-          reference_type:  "sale_cancel",
-          reference_id:    sale.id,
-          reference_no:    sale.invoice_no,
-          notes:           `إلغاء فاتورة مبيعات ${sale.invoice_no}`,
-          date:            today,
-          warehouse_id:    tenantWarehouseId,
-        });
-      }
+      await tx.update(productsTable)
+        .set({ quantity: String(newQty), cost_price: String(newWAC.toFixed(4)) })
+        .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidCancel)));
+
+      await tx.insert(stockMovementsTable).values({
+        product_id:      item.product_id,
+        product_name:    item.product_name,
+        movement_type:   "adjustment",
+        quantity:        String(qty),
+        quantity_before: String(oldQty),
+        quantity_after:  String(newQty),
+        unit_cost:       String(costAtSale),
+        reference_type:  "sale_cancel",
+        reference_id:    sale.id,
+        reference_no:    sale.invoice_no,
+        notes:           `إلغاء فاتورة مبيعات ${sale.invoice_no}`,
+        date:            today,
+        warehouse_id:    tenantWarehouseId,
+        company_id:      cidCancel,
+      });
     }
 
     // ── 3. عكس رصيد العميل (الآجل / الجزئي) ─────────────────────────────
     const remainingAmt = Number(sale.remaining_amount);
     if (remainingAmt > 0 && sale.customer_id) {
-      const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, sale.customer_id));
+      const [cust] = await tx.select().from(customersTable)
+        .where(and(eq(customersTable.id, sale.customer_id), eq(customersTable.company_id, cidCancel)));
       if (cust) {
         await tx.update(customersTable)
           .set({ balance: String(Number(cust.balance) - remainingAmt) })
-          .where(eq(customersTable.id, cust.id));
+          .where(and(eq(customersTable.id, cust.id), eq(customersTable.company_id, cidCancel)));
       }
     }
 
     // ── 4. عكس رصيد الخزينة (النقدي / الجزئي) ────────────────────────────
     const paidAmt = Number(sale.paid_amount);
     if (paidAmt > 0 && sale.safe_id) {
-      const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, sale.safe_id));
+      const [safe] = await tx.select().from(safesTable)
+        .where(and(eq(safesTable.id, sale.safe_id), eq(safesTable.company_id, cidCancel)));
       if (safe) {
         await tx.update(safesTable)
           .set({ balance: String(Number(safe.balance) - paidAmt) })
-          .where(eq(safesTable.id, sale.safe_id));
+          .where(and(eq(safesTable.id, sale.safe_id), eq(safesTable.company_id, cidCancel)));
       }
       await tx.insert(transactionsTable).values({
         type:           "sale_cancel",
@@ -750,6 +764,7 @@ router.post("/sales/:id/cancel", wrap(async (req, res) => {
         direction:      "out",
         description:    `إلغاء فاتورة مبيعات ${sale.invoice_no}`,
         date:           today,
+        company_id:     cidCancel,
       });
     }
 
@@ -759,26 +774,28 @@ router.post("/sales/:id/cancel", wrap(async (req, res) => {
       const totalAmt = Number(sale.total_amount);
       if (totalAmt > 0) {
         await tx.insert(customerLedgerTable).values({
-          customer_id: sale.customer_id,
-          type: "sale_cancel",
-          amount: String(-totalAmt),
+          customer_id:    sale.customer_id,
+          type:           "sale_cancel",
+          amount:         String(-totalAmt),
           reference_type: "sale",
-          reference_id: sale.id,
-          reference_no: sale.invoice_no,
-          description: `إلغاء فاتورة مبيعات ${sale.invoice_no}`,
-          date: today,
+          reference_id:   sale.id,
+          reference_no:   sale.invoice_no,
+          description:    `إلغاء فاتورة مبيعات ${sale.invoice_no}`,
+          date:           today,
+          company_id:     cidCancel,
         });
       }
       if (paidAmt > 0) {
         await tx.insert(customerLedgerTable).values({
-          customer_id: sale.customer_id,
-          type: "sale_cancel",
-          amount: String(paidAmt),
+          customer_id:    sale.customer_id,
+          type:           "sale_cancel",
+          amount:         String(paidAmt),
           reference_type: "sale",
-          reference_id: sale.id,
-          reference_no: sale.invoice_no,
-          description: `إلغاء دفعة فاتورة ${sale.invoice_no}`,
-          date: today,
+          reference_id:   sale.id,
+          reference_no:   sale.invoice_no,
+          description:    `إلغاء دفعة فاتورة ${sale.invoice_no}`,
+          date:           today,
+          company_id:     cidCancel,
         });
       }
     }

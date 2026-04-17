@@ -1,11 +1,11 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TableSkeletonProps {
-  cols: number;
+  cols?: number;
   rows?: number;
 }
 
-export function TableSkeleton({ cols, rows = 6 }: TableSkeletonProps) {
+export function TableSkeleton({ cols = 5, rows = 6 }: TableSkeletonProps) {
   return (
     <>
       {Array.from({ length: rows }).map((_, i) => (

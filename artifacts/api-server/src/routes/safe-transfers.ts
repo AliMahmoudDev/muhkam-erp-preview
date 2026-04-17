@@ -51,18 +51,20 @@ router.post("/safe-transfers", wrap(async (req, res) => {
   const companyId: number = ((req as any).user.company_id as number);
 
   const result = await db.transaction(async (tx) => {
-    const [fromSafe] = await tx.select().from(safesTable).where(eq(safesTable.id, parseInt(from_safe_id)));
-    const [toSafe] = await tx.select().from(safesTable).where(eq(safesTable.id, parseInt(to_safe_id)));
-    if (!fromSafe) throw httpError(400, "خزينة المصدر غير موجودة");
-    if (!toSafe) throw httpError(400, "خزينة الوجهة غير موجودة");
-    /* Verify both safes belong to the user's company */
-    if (fromSafe.company_id !== companyId || toSafe.company_id !== companyId) {
-      throw httpError(403, "لا يمكن التحويل بين خزائن شركات مختلفة");
-    }
+    const [fromSafe] = await tx.select().from(safesTable)
+      .where(and(eq(safesTable.id, parseInt(from_safe_id)), eq(safesTable.company_id, companyId)));
+    const [toSafe] = await tx.select().from(safesTable)
+      .where(and(eq(safesTable.id, parseInt(to_safe_id)), eq(safesTable.company_id, companyId)));
+    if (!fromSafe) throw httpError(400, "خزينة المصدر غير موجودة أو لا تنتمي لشركتك");
+    if (!toSafe) throw httpError(400, "خزينة الوجهة غير موجودة أو لا تنتمي لشركتك");
     if (Number(fromSafe.balance) < amt) throw httpError(400, `رصيد خزينة "${fromSafe.name}" غير كافٍ (${Number(fromSafe.balance).toFixed(2)} ج.م)`);
 
-    await tx.update(safesTable).set({ balance: String(Number(fromSafe.balance) - amt) }).where(eq(safesTable.id, fromSafe.id));
-    await tx.update(safesTable).set({ balance: String(Number(toSafe.balance) + amt) }).where(eq(safesTable.id, toSafe.id));
+    await tx.update(safesTable)
+      .set({ balance: String(Number(fromSafe.balance) - amt) })
+      .where(and(eq(safesTable.id, fromSafe.id), eq(safesTable.company_id, companyId)));
+    await tx.update(safesTable)
+      .set({ balance: String(Number(toSafe.balance) + amt) })
+      .where(and(eq(safesTable.id, toSafe.id), eq(safesTable.company_id, companyId)));
 
     // ── سجل في جدول safe_transfers للتاريخ ─────────────────────────────────
     await tx.insert(safeTransfersTable).values({

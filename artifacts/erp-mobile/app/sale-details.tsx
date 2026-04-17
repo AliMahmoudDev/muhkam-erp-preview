@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", padding: 14 },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 14 },
   label: { fontSize: 13, fontFamily: "Tajawal_400Regular" },
-  value: { fontSize: 14, fontFamily: "Tajawal_700Bold", textAlign: "left", flex: 1, textAlign: "left", marginRight: 8 },
+  value: { fontSize: 14, fontFamily: "Tajawal_700Bold", textAlign: "left", flex: 1, marginRight: 8 },
   totalLabel: { fontSize: 15, fontFamily: "Tajawal_700Bold" },
   totalValue: { fontSize: 20, fontFamily: "Tajawal_800ExtraBold" },
   sectionTitle: { fontSize: 12, fontFamily: "Tajawal_500Medium", textAlign: "right", marginTop: 4 },
