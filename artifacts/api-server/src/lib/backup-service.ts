@@ -207,13 +207,16 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
     ensureBackupDir();
 
     /* Quick row-count probe — if data is huge, skip JSON snapshot entirely. */
-    const [{ count: rowEstimate } = { count: 0 }] = await db.execute<{ count: number }>(
+    const probeResult = await db.execute<{ count: number | string }>(
       sql`SELECT (
         SELECT COALESCE(SUM(reltuples)::bigint, 0)
         FROM pg_class
         WHERE relkind = 'r' AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
       ) AS count`
-    ) as unknown as Array<{ count: number }>;
+    );
+    const probeRows = (probeResult as unknown as { rows?: Array<{ count: number | string }> }).rows
+      ?? (probeResult as unknown as Array<{ count: number | string }>);
+    const rowEstimate = Number(probeRows?.[0]?.count ?? 0);
 
     if (rowEstimate > MAX_TOTAL_ROWS) {
       logger.warn(

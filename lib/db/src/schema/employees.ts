@@ -2,6 +2,7 @@ import {
   pgTable, serial, text, integer, timestamp, numeric, index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod/v4";
 import { companiesTable } from "./companies";
 import { branchesTable } from "./branches";
 
@@ -20,7 +21,7 @@ export const departmentsTable = pgTable("departments", {
 
 export const insertDepartmentSchema = createInsertSchema(departmentsTable).omit({ id: true, created_at: true });
 export type Department = typeof departmentsTable.$inferSelect;
-export type InsertDepartment = typeof insertDepartmentSchema._type;
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 
 /* ── Job Titles ──────────────────────────────────────────────────── */
 export const jobTitlesTable = pgTable("job_titles", {
@@ -35,7 +36,7 @@ export const jobTitlesTable = pgTable("job_titles", {
 
 export const insertJobTitleSchema = createInsertSchema(jobTitlesTable).omit({ id: true, created_at: true });
 export type JobTitle = typeof jobTitlesTable.$inferSelect;
-export type InsertJobTitle = typeof insertJobTitleSchema._type;
+export type InsertJobTitle = z.infer<typeof insertJobTitleSchema>;
 
 /* ── Employees ───────────────────────────────────────────────────── */
 export const employeesTable = pgTable("employees", {
@@ -79,7 +80,7 @@ export const insertEmployeeSchema = createInsertSchema(employeesTable).omit({
   id: true, created_at: true, updated_at: true, deleted_at: true,
 });
 export type Employee = typeof employeesTable.$inferSelect;
-export type InsertEmployee = typeof insertEmployeeSchema._type;
+export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 
 /* ── Employee Documents ──────────────────────────────────────────── */
 export const employeeDocumentsTable = pgTable("employee_documents", {

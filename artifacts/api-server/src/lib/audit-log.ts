@@ -56,6 +56,8 @@ export type AuditRecordType =
   | "employee"                // إدارة الموظفين
   | "company"                 // SaaS company management
   | "subscription"            // تجديد/تمديد الاشتراك
+  | "payroll_period"          // payroll period lifecycle
+  | "salary_advance"          // salary advance lifecycle
   | "system";                 // tenant-level system actions (restore, etc.)
 
 interface AuditUser {
