@@ -17,7 +17,10 @@ import app from '../../app';
 
 /* ── Constants ──────────────────────────────────────────────────── */
 
-const JWT_SECRET = 'integration-test-jwt-secret-minimum-32chars!!';
+// JWT_SECRET is guaranteed to be set by integration/setup.ts (a vitest
+// setupFiles entry that runs before this module is imported).
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+const JWT_SECRET = process.env.JWT_SECRET!;
 const RUN_ID     = Date.now();               // unique tag for this test run
 const PREFIX     = `INTTEST_${RUN_ID}`;      // safe to grep / delete by
 
