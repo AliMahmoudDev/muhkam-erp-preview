@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 import {
   db, salesReturnsTable, saleReturnItemsTable,
   purchaseReturnsTable, purchaseReturnItemsTable,
@@ -86,7 +86,7 @@ router.post("/sales-returns", wrap(async (req, res) => {
   const reqProductIds = Array.from(new Set(items.map((i: { product_id: number }) => Number(i.product_id))));
   if (reqProductIds.length > 0) {
     const ownedProducts = await db.select({ id: productsTable.id }).from(productsTable)
-      .where(and(sql`${productsTable.id} = ANY(${reqProductIds}::int[])`, eq(productsTable.company_id, req.user!.company_id!)));
+      .where(and(inArray(productsTable.id, reqProductIds as number[]), eq(productsTable.company_id, req.user!.company_id!)));
     if (ownedProducts.length !== reqProductIds.length) {
       res.status(400).json({ error: "أحد المنتجات غير موجود" }); return;
     }
@@ -634,7 +634,7 @@ router.post("/purchase-returns", wrap(async (req, res) => {
   const reqProductIds2 = Array.from(new Set(items.map((i: { product_id: number }) => Number(i.product_id))));
   if (reqProductIds2.length > 0) {
     const ownedProducts2 = await db.select({ id: productsTable.id }).from(productsTable)
-      .where(and(sql`${productsTable.id} = ANY(${reqProductIds2}::int[])`, eq(productsTable.company_id, req.user!.company_id!)));
+      .where(and(inArray(productsTable.id, reqProductIds2 as number[]), eq(productsTable.company_id, req.user!.company_id!)));
     if (ownedProducts2.length !== reqProductIds2.length) {
       res.status(400).json({ error: "أحد المنتجات غير موجود" }); return;
     }

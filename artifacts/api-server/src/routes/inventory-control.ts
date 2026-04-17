@@ -67,14 +67,15 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
   }
 
   // احسب المخزون الفعلي لكل منتج في المخزن المحدد من حركات المخزون
-  const whStockRows = await db.execute(sql`
+  const safeProductIdsCsv = productIds.map(Number).filter(Number.isInteger).join(",");
+  const whStockRows = safeProductIdsCsv ? await db.execute(sql`
     SELECT product_id::int, COALESCE(SUM(CAST(quantity AS FLOAT8)), 0) AS wh_qty
     FROM stock_movements
     WHERE warehouse_id = ${tenantWarehouseId}
       AND company_id = ${companyId}
-      AND product_id = ANY(${productIds}::int[])
+      AND product_id IN (${sql.raw(safeProductIdsCsv)})
     GROUP BY product_id
-  `);
+  `) : { rows: [] as any[] };
   const whStockMap = new Map((whStockRows.rows as any[]).map((r: any) => [Number(r.product_id), Number(r.wh_qty ?? 0)]));
 
   const session = await db.transaction(async (tx) => {
@@ -350,30 +351,31 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
   // ─── حساب كمية كل منتج في مخزن المصدر فقط (من حركات المخزون) ─────────────
   // المنطق: SUM(quantity) لكل منتج في هذا المخزن = الرصيد الفعلي الحالي
   // (حركات الدخول موجبة، حركات الخروج سالبة — مسجّلة هكذا في stock_movements)
-  const fromStockRows = await db.execute(sql`
+  const safeIdsCsvT = productIds.map(Number).filter(Number.isInteger).join(",");
+  const fromStockRows = safeIdsCsvT ? await db.execute(sql`
     SELECT product_id::int,
            COALESCE(SUM(CAST(quantity AS FLOAT8)), 0) AS wh_qty
     FROM   stock_movements
     WHERE  warehouse_id = ${Number(from_warehouse_id)}
       AND  company_id   = ${companyIdT}
-      AND  product_id   = ANY(${productIds}::int[])
+      AND  product_id   IN (${sql.raw(safeIdsCsvT)})
     GROUP BY product_id
-  `);
+  `) : { rows: [] as any[] };
   const fromStockMap = new Map<number, number>(
     (fromStockRows.rows as Array<{ product_id: number; wh_qty: number }>)
       .map(r => [Number(r.product_id), Number(r.wh_qty ?? 0)])
   );
 
   // جلب رصيد مخزن الهدف أيضاً لتسجيل quantity_before صحيح
-  const toStockRows = await db.execute(sql`
+  const toStockRows = safeIdsCsvT ? await db.execute(sql`
     SELECT product_id::int,
            COALESCE(SUM(CAST(quantity AS FLOAT8)), 0) AS wh_qty
     FROM   stock_movements
     WHERE  warehouse_id = ${Number(to_warehouse_id)}
       AND  company_id   = ${companyIdT}
-      AND  product_id   = ANY(${productIds}::int[])
+      AND  product_id   IN (${sql.raw(safeIdsCsvT)})
     GROUP BY product_id
-  `);
+  `) : { rows: [] as any[] };
   const toStockMap = new Map<number, number>(
     (toStockRows.rows as Array<{ product_id: number; wh_qty: number }>)
       .map(r => [Number(r.product_id), Number(r.wh_qty ?? 0)])

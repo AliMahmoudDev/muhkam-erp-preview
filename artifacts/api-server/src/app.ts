@@ -73,9 +73,10 @@ app.use(
 );
 
 /* ── General rate limiter: 100 req/min per IP ─────────────── */
+const LOAD_TEST_MODE = process.env.LOAD_TEST_MODE === "1" && process.env.NODE_ENV !== "production";
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
-  limit: 100,
+  limit: LOAD_TEST_MODE ? 1_000_000 : 100,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   store: makeRateLimitStore("rl:gen:"),
@@ -85,7 +86,7 @@ const generalLimiter = rateLimit({
 /* ── Auth rate limiter: 10 req/min per IP ──────────────────── */
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
-  limit: 10,
+  limit: LOAD_TEST_MODE ? 1_000_000 : 10,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   store: makeRateLimitStore("rl:auth:"),

@@ -27,6 +27,12 @@ Key invariants enforced:
 - POST handlers bulk-validate `product_id`/`customer_id`/`safe_id`/`sale_id`/`purchase_id` ownership before any writes.
 - Stock-transfer items are pre-aggregated by `product_id` to prevent duplicate-line stock-check bypass.
 - Child tables without `company_id` (`sale_items`, `purchase_items`) are constrained by validated parent `(sale_id|purchase_id)`.
+- **No `ANY(${jsArray}::int[])` SQL anywhere.** Drizzle's `sql` template silently passes scalars instead of arrays, causing 500s. Use `inArray()` for query-builder calls; use `IN (${sql.raw(intIds.join(",")})` (with `Number.isInteger` validation) for raw `db.execute(sql\`...\`)` calls. Audited and fixed in `returns.ts`, `inventory.ts`, `inventory-control.ts`.
+
+## Production Operational Invariants
+- **Redis required in production**: `rate-limit-store.ts`, `brute-force-store.ts`, `session-blacklist.ts` all `throw` at module load if `NODE_ENV=production && !REDIS_URL`. Server refuses to start. Verified empirically.
+- **Rate limiting**: dev/staging may set `LOAD_TEST_MODE=1` to bump limits to 1M for benchmarking; the constant is gated by `NODE_ENV !== "production"` so it has no effect in prod even if leaked.
+- **Validation results (April 2026)**: 14/14 cross-tenant data-integrity checks PASS. Load test (rate-limit bypassed): list_products c=200 p95=186ms ~1100 rps; list_sales c=200 p95=764ms ~540 rps; create_sale c=200 p95=1862ms ~120 rps; 0% errors. Login is bcrypt-bound (~50ms/op), p95 climbs under high concurrency — recommend keeping login rate limit conservative.
 
 ## Overview
 This project is a full-stack Arabic ERP System (نظام ERP) designed for Halal Tech, an Egyptian mobile repair shop. Its primary purpose is to provide a comprehensive management solution with an Arabic RTL interface and a dark glass-morphism UI. Key capabilities include dynamic currency, font, accent color, and company branding, all configurable from the Settings without requiring code changes. The system covers essential business functions such as sales (POS), purchases, inventory management, financial transactions, and reporting.

@@ -387,7 +387,11 @@ router.get("/inventory/low-stock", wrap(async (req, res) => {
   }
 
   /* ── 2. Fetch all warehouse stock for the affected products ─────────────── */
-  const productIds = [...new Set(lowItems.map(r => r.product_id))];
+  const productIds = [...new Set(lowItems.map(r => Number(r.product_id)))].filter(Number.isInteger);
+  if (productIds.length === 0) {
+    res.json({ items: [], zero_count: 0, low_count: 0 }); return;
+  }
+  const idsCsv = productIds.join(",");
 
   const whRows = await db.execute(sql`
     SELECT
@@ -397,7 +401,7 @@ router.get("/inventory/low-stock", wrap(async (req, res) => {
       SUM(CAST(sm.quantity AS FLOAT8)) AS wh_qty
     FROM stock_movements sm
     JOIN warehouses w ON w.id = sm.warehouse_id
-    WHERE sm.product_id = ANY(${productIds}::int[])
+    WHERE sm.product_id IN (${sql.raw(idsCsv)})
     GROUP BY sm.product_id, sm.warehouse_id, w.name
     HAVING SUM(CAST(sm.quantity AS FLOAT8)) > 0
   `);
