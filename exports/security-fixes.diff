@@ -1,0 +1,950 @@
+diff --git a/artifacts/api-server/src/__tests__/security.test.ts b/artifacts/api-server/src/__tests__/security.test.ts
+index 24fa3b5..afcd05b 100644
+--- a/artifacts/api-server/src/__tests__/security.test.ts
++++ b/artifacts/api-server/src/__tests__/security.test.ts
+@@ -29,14 +29,14 @@ vi.mock('@workspace/db', () => ({
+ }));
+ 
+ describe('Session Blacklist', () => {
+-  it('يجب أن يضيف token للـ blacklist', () => {
++  it('يجب أن يضيف token للـ blacklist', async () => {
+     const token = `test-token-${Date.now()}`;
+-    blacklistToken(token);
+-    expect(isTokenBlacklisted(token)).toBe(true);
++    await blacklistToken(token);
++    expect(await isTokenBlacklisted(token)).toBe(true);
+   });
+ 
+-  it('يجب أن يقبل token غير موجود في الـ blacklist', () => {
+-    expect(isTokenBlacklisted('non-blacklisted-token-xyz')).toBe(false);
++  it('يجب أن يقبل token غير موجود في الـ blacklist', async () => {
++    expect(await isTokenBlacklisted('non-blacklisted-token-xyz')).toBe(false);
+   });
+ });
+ 
+diff --git a/artifacts/api-server/src/app.ts b/artifacts/api-server/src/app.ts
+index ffababa..1cdd2a7 100644
+--- a/artifacts/api-server/src/app.ts
++++ b/artifacts/api-server/src/app.ts
+@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
+ import router from "./routes";
+ import { logger } from "./lib/logger";
+ import { sanitizeBody } from "./middleware/auth";
++import { makeRateLimitStore } from "./lib/rate-limit-store";
+ 
+ const app: Express = express();
+ 
+@@ -77,6 +78,7 @@ const generalLimiter = rateLimit({
+   limit: 100,
+   standardHeaders: "draft-7",
+   legacyHeaders: false,
++  store: makeRateLimitStore("rl:gen:"),
+   message: { error: "تجاوزت حد الطلبات، حاول مجدداً بعد دقيقة" },
+ });
+ 
+@@ -86,6 +88,7 @@ const authLimiter = rateLimit({
+   limit: 10,
+   standardHeaders: "draft-7",
+   legacyHeaders: false,
++  store: makeRateLimitStore("rl:auth:"),
+   message: { error: "تجاوزت محاولات تسجيل الدخول، حاول مجدداً بعد دقيقة" },
+ });
+ 
+diff --git a/artifacts/api-server/src/lib/audit-log.ts b/artifacts/api-server/src/lib/audit-log.ts
+index a2513a7..be2b091 100644
+--- a/artifacts/api-server/src/lib/audit-log.ts
++++ b/artifacts/api-server/src/lib/audit-log.ts
+@@ -23,7 +23,12 @@ export type AuditAction =
+   | "INVENTORY_ADJUSTMENT"      // تسوية يدوية للمخزون
+   | "INVENTORY_COUNT_APPLIED"   // تطبيق جلسة جرد مخزون
+   | "INVENTORY_TRANSFER"        // تحويل مخزون بين مخازن
+-  | "PERIOD_OVERRIDE";          // تجاوز مدير للقفل المالي
++  | "PERIOD_OVERRIDE"           // تجاوز مدير للقفل المالي
++  // ── SaaS / super-admin events ─────────────────────────────────────────────
++  | "COMPANY_ACTIVATED"
++  | "COMPANY_SUSPENDED"
++  | "COMPANY_EXTENDED"
++  | "COMPANY_DELETED";
+ 
+ export type AuditRecordType =
+   | "customer"
+@@ -43,7 +48,9 @@ export type AuditRecordType =
+   // ── ERP critical types ─────────────────────────────────────────────────────
+   | "account_balances"        // إصلاح أرصدة الحسابات المحاسبية
+   | "customer_balances"       // إصلاح أرصدة العملاء
+-  | "employee";               // إدارة الموظفين
++  | "employee"                // إدارة الموظفين
++  | "company"                 // SaaS company management
++  | "subscription";           // تجديد/تمديد الاشتراك
+ 
+ interface AuditUser {
+   id?: number;
+diff --git a/artifacts/api-server/src/lib/backup-service.ts b/artifacts/api-server/src/lib/backup-service.ts
+index b567e91..4e22ca5 100644
+--- a/artifacts/api-server/src/lib/backup-service.ts
++++ b/artifacts/api-server/src/lib/backup-service.ts
+@@ -1,6 +1,14 @@
+ /**
+  * backup-service.ts
+- * Shared backup logic: build snapshot, save to disk, record in DB.
++ *
++ * Builds JSON snapshots of application data and persists them to disk.
++ *
++ * Memory safety:
++ * - Tables are streamed one at a time (not Promise.all) and written to disk
++ *   in 1000-row pages. The full snapshot is never held in memory at once.
++ * - A hard cap (`MAX_TOTAL_ROWS`) protects against unbounded growth on very
++ *   large tenants — exceeding the cap aborts the JSON snapshot and falls back
++ *   to a metadata-only record (operator should run pg_dump for full snapshot).
+  */
+ 
+ import fs from "node:fs";
+@@ -22,7 +30,7 @@ import {
+   erpUsersTable, systemSettingsTable,
+   alertsTable, auditLogsTable,
+ } from "@workspace/db";
+-import { asc, eq } from "drizzle-orm";
++import { asc, eq, sql } from "drizzle-orm";
+ import { logger } from "./logger";
+ 
+ /* ── Backup folder ─────────────────────────────────────────────── */
+@@ -37,78 +45,154 @@ function ensureBackupDir() {
+ /* ── Concurrency guard ─────────────────────────────────────────── */
+ let isBackingUp = false;
+ 
+-/* ── Max backups to keep ───────────────────────────────────────── */
+-const MAX_BACKUPS = 20;
++/* ── Limits ────────────────────────────────────────────────────── */
++const MAX_BACKUPS    = 20;
++const PAGE_SIZE      = 1000;        // rows per chunk per table
++const MAX_TOTAL_ROWS = 2_000_000;   // hard cap → fall back to pg_dump
+ 
+-/* ── Build the backup JSON object (same structure as system.ts) ── */
+-export async function buildBackupPayload() {
+-  const [
+-    products, customers,
+-    sales, saleItems,
+-    purchases, purchaseItems,
+-    salesReturns, saleReturnItems,
+-    purchaseReturns, purchaseReturnItems,
+-    expenses, income, transactions,
+-    accounts, journalEntries, journalEntryLines,
+-    receiptVouchers, depositVouchers,
+-    paymentVouchers, treasuryVouchers,
+-    safeTransfers, stockMovements,
+-    safes, warehouses,
+-    users, settings,
+-    alerts, auditLogs,
+-  ] = await Promise.all([
+-    db.select().from(productsTable),
+-    db.select().from(customersTable),
+-    db.select().from(salesTable),
+-    db.select().from(saleItemsTable),
+-    db.select().from(purchasesTable),
+-    db.select().from(purchaseItemsTable),
+-    db.select().from(salesReturnsTable),
+-    db.select().from(saleReturnItemsTable),
+-    db.select().from(purchaseReturnsTable),
+-    db.select().from(purchaseReturnItemsTable),
+-    db.select().from(expensesTable),
+-    db.select().from(incomeTable),
+-    db.select().from(transactionsTable),
+-    db.select().from(accountsTable),
+-    db.select().from(journalEntriesTable),
+-    db.select().from(journalEntryLinesTable),
+-    db.select().from(receiptVouchersTable),
+-    db.select().from(depositVouchersTable),
+-    db.select().from(paymentVouchersTable),
+-    db.select().from(treasuryVouchersTable),
+-    db.select().from(safeTransfersTable),
+-    db.select().from(stockMovementsTable),
+-    db.select().from(safesTable),
+-    db.select().from(warehousesTable),
+-    db.select().from(erpUsersTable),
+-    db.select().from(systemSettingsTable),
+-    db.select().from(alertsTable),
+-    db.select().from(auditLogsTable),
+-  ]);
++/* ── Tables to back up (order is preserved in the JSON output) ── */
++const TABLES = [
++  ["products",                productsTable],
++  ["customers",               customersTable],
++  ["sales",                   salesTable],
++  ["sale_items",              saleItemsTable],
++  ["purchases",               purchasesTable],
++  ["purchase_items",          purchaseItemsTable],
++  ["sales_returns",           salesReturnsTable],
++  ["sale_return_items",       saleReturnItemsTable],
++  ["purchase_returns",        purchaseReturnsTable],
++  ["purchase_return_items",   purchaseReturnItemsTable],
++  ["expenses",                expensesTable],
++  ["income",                  incomeTable],
++  ["transactions",            transactionsTable],
++  ["accounts",                accountsTable],
++  ["journal_entries",         journalEntriesTable],
++  ["journal_entry_lines",     journalEntryLinesTable],
++  ["receipt_vouchers",        receiptVouchersTable],
++  ["deposit_vouchers",        depositVouchersTable],
++  ["payment_vouchers",        paymentVouchersTable],
++  ["treasury_vouchers",       treasuryVouchersTable],
++  ["safe_transfers",          safeTransfersTable],
++  ["stock_movements",         stockMovementsTable],
++  ["safes",                   safesTable],
++  ["warehouses",              warehousesTable],
++  ["users",                   erpUsersTable],
++  ["settings",                systemSettingsTable],
++  ["alerts",                  alertsTable],
++  ["audit_logs",              auditLogsTable],
++] as const;
++
++/* ── Streaming JSON writer ───────────────────────────────────────
++ * Writes:
++ *   { "version": "...", "app": "...", "created_at": "...",
++ *     "data": { "table1": [ ... ], "table2": [ ... ] } }
++ * one row at a time. */
++async function streamBackupToFile(
++  filepath: string,
++): Promise<{ size: number; totalRows: number; truncated: boolean }> {
++  const stream = fs.createWriteStream(filepath, { encoding: "utf8" });
++  let streamErr: Error | null = null;
++  /* Single error listener — avoid leak from per-chunk `once` listeners. */
++  stream.on("error", (err) => { streamErr = err; });
++
++  const write = (chunk: string) =>
++    new Promise<void>((resolve, reject) => {
++      if (streamErr) return reject(streamErr);
++      const ok = stream.write(chunk, (err) => {
++        if (err) reject(err);
++        else if (ok) resolve();
++      });
++      if (!ok) stream.once("drain", () => resolve());
++    });
++
++  let size = 0;
++  let totalRows = 0;
++  let truncated = false;
++
++  const safeWrite = async (chunk: string) => {
++    size += Buffer.byteLength(chunk, "utf8");
++    await write(chunk);
++  };
++
++  const created_at = new Date().toISOString();
++  await safeWrite(`{"version":"2.1","app":"Halal Tech ERP","created_at":${JSON.stringify(created_at)},"data":{`);
++
++  for (let t = 0; t < TABLES.length; t++) {
++    const [name, table] = TABLES[t]!;
++    await safeWrite(`${t === 0 ? "" : ","}${JSON.stringify(name)}:[`);
++
++    let offset = 0;
++    let firstRow = true;
++    /* paginate to avoid loading the whole table into memory */
++    // eslint-disable-next-line no-constant-condition
++    while (true) {
++      const rows = await db
++        .select()
++        .from(table as never)
++        .limit(PAGE_SIZE)
++        .offset(offset) as unknown[];
++
++      if (rows.length === 0) break;
++
++      for (const row of rows) {
++        if (totalRows >= MAX_TOTAL_ROWS) { truncated = true; break; }
++        await safeWrite(`${firstRow ? "" : ","}${JSON.stringify(row)}`);
++        firstRow = false;
++        totalRows++;
++      }
++
++      if (truncated || rows.length < PAGE_SIZE) break;
++      offset += PAGE_SIZE;
++    }
+ 
++    await safeWrite(`]`);
++    if (truncated) break;
++  }
++
++  await safeWrite(truncated
++    ? `},"_meta":{"truncated":true,"reason":"max_rows_exceeded","not_restorable":true}}`
++    : `}}`,
++  );
++  await new Promise<void>((resolve, reject) => {
++    stream.end((err?: Error | null) => (err ? reject(err) : resolve()));
++  });
++  if (streamErr) throw streamErr;
++
++  return { size, totalRows, truncated };
++}
++
++/**
++ * @deprecated Use `triggerBackup` directly. Kept for callers (e.g. system.ts
++ * download endpoint). This loads the whole snapshot into memory and should
++ * NOT be used in hot paths — prefer `triggerBackup` which streams to disk.
++ *
++ * Now sequential (not Promise.all) and bounded by MAX_TOTAL_ROWS to prevent
++ * OOM on large tenants. Throws if the cap would be exceeded so callers can
++ * surface a clear 413/507 to the operator.
++ */
++export async function buildBackupPayload() {
++  const result: Record<string, unknown> = {};
++  let total = 0;
++  for (const [name, table] of TABLES) {
++    const rows = await db.select().from(table as never);
++    total += rows.length;
++    if (total > MAX_TOTAL_ROWS) {
++      throw new Error(
++        `Snapshot too large (>${MAX_TOTAL_ROWS} rows) — use SQL backup (pg_dump) endpoint instead.`,
++      );
++    }
++    result[name] = rows;
++  }
+   return {
+     version: "2.0",
+     app: "Halal Tech ERP",
+     created_at: new Date().toISOString(),
+-    data: {
+-      products, customers,
+-      sales, sale_items: saleItems,
+-      purchases, purchase_items: purchaseItems,
+-      sales_returns: salesReturns, sale_return_items: saleReturnItems,
+-      purchase_returns: purchaseReturns, purchase_return_items: purchaseReturnItems,
+-      expenses, income, transactions,
+-      accounts, journal_entries: journalEntries, journal_entry_lines: journalEntryLines,
+-      receipt_vouchers: receiptVouchers, deposit_vouchers: depositVouchers,
+-      payment_vouchers: paymentVouchers, treasury_vouchers: treasuryVouchers,
+-      safe_transfers: safeTransfers, stock_movements: stockMovements,
+-      safes, warehouses, users, settings, alerts, audit_logs: auditLogs,
+-    },
++    data: result,
+   };
+ }
+ 
+ /**
+- * Trigger a backup.
++ * Trigger a backup. Streams the snapshot to disk to bound memory.
+  * - trigger: "login" | "logout" | "sale_post" | "purchase_post" | "scheduled" | "manual"
+  * - Returns the DB record, or null if a backup is already in progress.
+  */
+@@ -122,14 +206,28 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
+   try {
+     ensureBackupDir();
+ 
+-    const payload = await buildBackupPayload();
+-    const json = JSON.stringify(payload, null, 2);
++    /* Quick row-count probe — if data is huge, skip JSON snapshot entirely. */
++    const [{ count: rowEstimate } = { count: 0 }] = await db.execute<{ count: number }>(
++      sql`SELECT (
++        SELECT COALESCE(SUM(reltuples)::bigint, 0)
++        FROM pg_class
++        WHERE relkind = 'r' AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
++      ) AS count`
++    ) as unknown as Array<{ count: number }>;
++
++    if (rowEstimate > MAX_TOTAL_ROWS) {
++      logger.warn(
++        { trigger, rowEstimate, MAX_TOTAL_ROWS },
++        "Database too large for JSON backup — skipping (use pg_dump via /api/backups SQL endpoint)",
++      );
++      return null;
++    }
++
+     const dt = new Date().toISOString().replace("T", "_").replace(/:/g, "-").slice(0, 19);
+     const filename = `halal-tech-${trigger}_${dt}.json`;
+     const filepath = path.join(BACKUP_DIR, filename);
+ 
+-    fs.writeFileSync(filepath, json, "utf8");
+-    const size = Buffer.byteLength(json, "utf8");
++    const { size, totalRows, truncated } = await streamBackupToFile(filepath);
+ 
+     /* Insert into DB */
+     const [record] = await db.insert(backupsTable).values({
+@@ -153,7 +251,7 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
+       }
+     }
+ 
+-    logger.info({ trigger, filename, size }, "Backup completed");
++    logger.info({ trigger, filename, size, totalRows, truncated }, "Backup completed");
+     return record!;
+   } catch (err) {
+     logger.error({ trigger, err }, "Backup failed");
+diff --git a/artifacts/api-server/src/lib/db-backup.ts b/artifacts/api-server/src/lib/db-backup.ts
+index 0280ec1..1b1a19c 100644
+--- a/artifacts/api-server/src/lib/db-backup.ts
++++ b/artifacts/api-server/src/lib/db-backup.ts
+@@ -5,6 +5,7 @@
+ import { exec } from "child_process";
+ import { promisify } from "util";
+ import fs from "fs";
++import os from "os";
+ import path from "path";
+ import { logger } from "./logger";
+ 
+@@ -26,20 +27,38 @@ export async function createDatabaseBackup(): Promise<string> {
+   if (!dbUrl) throw new Error("DATABASE_URL is not set");
+ 
+   const url = new URL(dbUrl);
++  const host = url.hostname;
++  const port = url.port || "5432";
++  const user = decodeURIComponent(url.username);
++  const password = decodeURIComponent(url.password);
++  const dbName = url.pathname.slice(1);
++
++  /* ── Use a temp .pgpass file (mode 600) instead of inline PGPASSWORD —
++        prevents password exposure in /proc/<pid>/environ and `ps e`. ── */
++  const pgpassFile = path.join(os.tmpdir(), `.pgpass-${process.pid}-${Date.now()}`);
++  const escape = (s: string) => s.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
++  const pgpassLine = `${escape(host)}:${port}:${escape(dbName)}:${escape(user)}:${escape(password)}\n`;
++  fs.writeFileSync(pgpassFile, pgpassLine, { mode: 0o600 });
++
++  try {
++    const command = [
++      "pg_dump",
++      `-h ${host}`,
++      `-p ${port}`,
++      `-U ${user}`,
++      `-d ${dbName}`,
++      "--no-owner",
++      "--no-acl",
++      `| gzip > "${filepath}"`,
++    ].join(" ");
++
++    await execAsync(command, {
++      env: { ...process.env, PGPASSFILE: pgpassFile },
++    });
++  } finally {
++    try { fs.unlinkSync(pgpassFile); } catch { /* ignore */ }
++  }
+ 
+-  const command = [
+-    `PGPASSWORD="${url.password}"`,
+-    "pg_dump",
+-    `-h ${url.hostname}`,
+-    `-p ${url.port || 5432}`,
+-    `-U ${url.username}`,
+-    `-d ${url.pathname.slice(1)}`,
+-    "--no-owner",
+-    "--no-acl",
+-    `| gzip > "${filepath}"`,
+-  ].join(" ");
+-
+-  await execAsync(command);
+   const size = fs.statSync(filepath).size;
+   logger.info({ filepath, size }, "Database backup created");
+ 
+diff --git a/artifacts/api-server/src/lib/rate-limit-store.ts b/artifacts/api-server/src/lib/rate-limit-store.ts
+new file mode 100644
+index 0000000..dd5b6ad
+--- /dev/null
++++ b/artifacts/api-server/src/lib/rate-limit-store.ts
+@@ -0,0 +1,99 @@
++/**
++ * rate-limit-store.ts
++ *
++ * Lightweight Redis-backed store for `express-rate-limit` v8.
++ *
++ * Reliability:
++ * - When REDIS_URL is set and reachable: uses Redis (distributed across
++ *   instances and survives restarts).
++ * - When Redis is unavailable or fails mid-flight: silently delegates to an
++ *   in-process `MemoryStore` so rate limiting is *never* fully bypassed.
++ *   This avoids fail-open behaviour during Redis outages.
++ */
++
++import type { Store, IncrementResponse, Options } from "express-rate-limit";
++import { MemoryStore } from "express-rate-limit";
++import { logger } from "./logger";
++
++let redis: import("ioredis").Redis | null = null;
++
++if (process.env.REDIS_URL) {
++  try {
++    const { default: Redis } = await import("ioredis");
++    redis = new Redis(process.env.REDIS_URL, {
++      maxRetriesPerRequest: 2,
++      enableOfflineQueue: false,
++      lazyConnect: true,
++    });
++    redis.on("error", (err: Error) => {
++      logger.warn({ err }, "[RateLimit] Redis error — using in-memory fallback for new requests");
++      redis = null;
++    });
++    await redis.ping();
++    logger.info("[RateLimit] Connected to Redis — rate limits are distributed");
++  } catch (err) {
++    logger.warn({ err }, "[RateLimit] Redis unavailable — using in-memory fallback");
++    redis = null;
++  }
++}
++
++class RedisStore implements Store {
++  prefix = "rl:";
++  windowMs = 60_000;
++  localKeys = false;
++
++  /** In-process MemoryStore used when Redis is unreachable. Always-on so we
++   *  never fail open. */
++  private memory = new MemoryStore();
++
++  init(options: Options): void {
++    this.windowMs = options.windowMs;
++    this.memory.init(options);
++  }
++
++  private k(key: string): string {
++    return this.prefix + key;
++  }
++
++  async increment(key: string): Promise<IncrementResponse> {
++    if (!redis) {
++      return this.memory.increment(key);
++    }
++
++    const ttlSec = Math.max(1, Math.ceil(this.windowMs / 1000));
++    const fullKey = this.k(key);
++    try {
++      const exec = await redis
++        .multi()
++        .incr(fullKey)
++        .expire(fullKey, ttlSec, "NX")
++        .pttl(fullKey)
++        .exec();
++
++      const totalHits = Number((exec?.[0]?.[1] as number) ?? 1);
++      let pttl = Number((exec?.[2]?.[1] as number) ?? this.windowMs);
++      if (!Number.isFinite(pttl) || pttl < 0) pttl = this.windowMs;
++      return { totalHits, resetTime: new Date(Date.now() + pttl) };
++    } catch (err) {
++      logger.warn({ err }, "[RateLimit] Redis increment failed — falling back to in-memory");
++      return this.memory.increment(key);
++    }
++  }
++
++  async decrement(key: string): Promise<void> {
++    if (!redis) return this.memory.decrement(key);
++    try { await redis.decr(this.k(key)); } catch { await this.memory.decrement(key); }
++  }
++
++  async resetKey(key: string): Promise<void> {
++    if (redis) { try { await redis.del(this.k(key)); } catch { /* ignore */ } }
++    await this.memory.resetKey(key);
++  }
++}
++
++/** Returns a Redis-backed store with always-on in-memory fallback. */
++export function makeRateLimitStore(prefix: string): Store {
++  const store = new RedisStore();
++  store.prefix = prefix;
++  return store;
++}
+diff --git a/artifacts/api-server/src/lib/session-blacklist.ts b/artifacts/api-server/src/lib/session-blacklist.ts
+index a8a9ca9..4b634ff 100644
+--- a/artifacts/api-server/src/lib/session-blacklist.ts
++++ b/artifacts/api-server/src/lib/session-blacklist.ts
+@@ -1,18 +1,88 @@
+ /**
+- * In-memory token blacklist for immediate logout / session revocation.
+- * Resets on server restart — sufficient for single-instance MVP.
+- * For multi-instance: replace with Redis SET with TTL.
++ * Token blacklist for immediate logout / session revocation.
++ *
++ * - When REDIS_URL is set: uses Redis SET with TTL → safe across restarts and
++ *   multiple server instances (load-balanced deployment).
++ * - Otherwise: in-memory fallback → cleared on restart, single-instance only.
+  */
+ 
+-const blacklistedTokens = new Set<string>();
++import { logger } from "./logger";
+ 
+-/** Add a token to the blacklist. Auto-removes after its remaining TTL (max 4h). */
+-export function blacklistToken(token: string, ttlMs = 4 * 60 * 60 * 1000): void {
+-  blacklistedTokens.add(token);
+-  setTimeout(() => blacklistedTokens.delete(token), ttlMs);
++const DEFAULT_TTL_MS = 4 * 60 * 60 * 1000; // 4h — matches access-token expiry
++const KEY = (token: string) => `bl:tok:${token}`;
++
++let redis: import("ioredis").Redis | null = null;
++
++if (process.env.REDIS_URL) {
++  try {
++    const { default: Redis } = await import("ioredis");
++    redis = new Redis(process.env.REDIS_URL, {
++      maxRetriesPerRequest: 2,
++      enableOfflineQueue: false,
++      lazyConnect: true,
++    });
++    redis.on("error", (err: Error) => {
++      logger.warn({ err }, "[SessionBlacklist] Redis error — falling back to in-memory for new requests");
++      redis = null;
++    });
++    await redis.ping();
++    logger.info("[SessionBlacklist] Connected to Redis — token blacklist is distributed");
++  } catch (err) {
++    logger.warn({ err }, "[SessionBlacklist] Redis unavailable — using in-memory fallback");
++    redis = null;
++  }
++} else {
++  logger.info("[SessionBlacklist] REDIS_URL not set — using in-memory store (single-instance only)");
++}
++
++/* ── In-memory fallback ─────────────────────────────────── */
++const memoryBlacklist = new Map<string, number>(); // token → expiresAt(ms)
++
++function memCleanup() {
++  const now = Date.now();
++  for (const [tok, exp] of memoryBlacklist) {
++    if (exp <= now) memoryBlacklist.delete(tok);
++  }
+ }
+ 
+-/** Returns true if the token has been explicitly revoked. */
+-export function isTokenBlacklisted(token: string): boolean {
+-  return blacklistedTokens.has(token);
++/** Add a token to the blacklist for ttlMs (default = remaining access-token TTL). */
++export async function blacklistToken(token: string, ttlMs = DEFAULT_TTL_MS): Promise<void> {
++  if (redis) {
++    try {
++      const ttlSec = Math.max(1, Math.ceil(ttlMs / 1000));
++      await redis.set(KEY(token), "1", "EX", ttlSec);
++      return;
++    } catch {
++      /* fall through to memory */
++    }
++  }
++  memoryBlacklist.set(token, Date.now() + ttlMs);
++  if (memoryBlacklist.size > 10_000) memCleanup();
++}
++
++/** Synchronous in-memory check (used when Redis is not available). */
++function isBlacklistedMem(token: string): boolean {
++  const exp = memoryBlacklist.get(token);
++  if (exp === undefined) return false;
++  if (exp <= Date.now()) {
++    memoryBlacklist.delete(token);
++    return false;
++  }
++  return true;
++}
++
++/**
++ * Returns true if the token has been explicitly revoked.
++ * Async to support Redis lookup. Falls back to memory on Redis errors.
++ */
++export async function isTokenBlacklisted(token: string): Promise<boolean> {
++  if (redis) {
++    try {
++      const exists = await redis.exists(KEY(token));
++      return exists === 1;
++    } catch {
++      /* fall through to memory */
++    }
++  }
++  return isBlacklistedMem(token);
+ }
+diff --git a/artifacts/api-server/src/middleware/auth.ts b/artifacts/api-server/src/middleware/auth.ts
+index cf38253..c74f4db 100644
+--- a/artifacts/api-server/src/middleware/auth.ts
++++ b/artifacts/api-server/src/middleware/auth.ts
+@@ -76,7 +76,7 @@ export async function authenticate(
+   const token = auth.slice(7);
+ 
+   /* Check token blacklist (logout / revocation) */
+-  if (isTokenBlacklisted(token)) {
++  if (await isTokenBlacklisted(token)) {
+     res.status(401).json({ error: "انتهت الجلسة، يرجى تسجيل الدخول مجدداً" });
+     return;
+   }
+diff --git a/artifacts/api-server/src/routes/auth.ts b/artifacts/api-server/src/routes/auth.ts
+index a745b0d..9b1ca05 100644
+--- a/artifacts/api-server/src/routes/auth.ts
++++ b/artifacts/api-server/src/routes/auth.ts
+@@ -303,9 +303,9 @@ router.get('/auth/subscription', authenticate, async (req, res) => {
+ });
+ 
+ /* ── POST /auth/logout — blacklist the current access token ─── */
+-router.post('/auth/logout', authenticate, (req, res) => {
++router.post('/auth/logout', authenticate, async (req, res) => {
+   const token = req.headers.authorization?.split(' ')[1];
+-  if (token) blacklistToken(token);
++  if (token) await blacklistToken(token);
+   maybeBackupAsync("logout");
+   res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
+ });
+diff --git a/artifacts/api-server/src/routes/categories.ts b/artifacts/api-server/src/routes/categories.ts
+index 305e1fe..7dd0c8b 100644
+--- a/artifacts/api-server/src/routes/categories.ts
++++ b/artifacts/api-server/src/routes/categories.ts
+@@ -2,10 +2,17 @@ import { Router, type IRouter } from "express";
+ import { eq, and, sql } from "drizzle-orm";
+ import { db, categoriesTable, productsTable } from "@workspace/db";
+ import { wrap } from "../lib/async-handler";
++import { authenticate } from "../middleware/auth";
++import { hasPermission } from "../lib/permissions";
+ 
+ const router: IRouter = Router();
+ 
++router.use(authenticate);
++
+ router.get("/categories", wrap(async (req, res) => {
++  if (!hasPermission(req.user, "can_view_products")) {
++    res.status(403).json({ error: "غير مصرح" }); return;
++  }
+   const companyId = req.user?.company_id ?? 1;
+   const rows = await db
+     .select({
+@@ -29,6 +36,9 @@ router.get("/categories", wrap(async (req, res) => {
+ }));
+ 
+ router.post("/categories", wrap(async (req, res) => {
++  if (!hasPermission(req.user, "can_manage_products")) {
++    res.status(403).json({ error: "غير مصرح" }); return;
++  }
+   const name = String(req.body?.name ?? "").trim();
+   if (!name) { res.status(400).json({ error: "اسم التصنيف مطلوب" }); return; }
+   const companyId = req.user?.company_id ?? 1;
+@@ -52,6 +62,9 @@ router.post("/categories", wrap(async (req, res) => {
+ }));
+ 
+ router.put("/categories/:id", wrap(async (req, res) => {
++  if (!hasPermission(req.user, "can_manage_products")) {
++    res.status(403).json({ error: "غير مصرح" }); return;
++  }
+   const id = parseInt(String(req.params.id), 10);
+   const name = String(req.body?.name ?? "").trim();
+   if (!name || isNaN(id)) { res.status(400).json({ error: "بيانات غير صحيحة" }); return; }
+@@ -76,7 +89,7 @@ router.put("/categories/:id", wrap(async (req, res) => {
+   const [cat] = await db
+     .update(categoriesTable)
+     .set({ name })
+-    .where(eq(categoriesTable.id, id))
++    .where(and(eq(categoriesTable.id, id), eq(categoriesTable.company_id, companyId)))
+     .returning();
+ 
+   if (!cat) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
+@@ -84,6 +97,9 @@ router.put("/categories/:id", wrap(async (req, res) => {
+ }));
+ 
+ router.delete("/categories/:id", wrap(async (req, res) => {
++  if (!hasPermission(req.user, "can_manage_products")) {
++    res.status(403).json({ error: "غير مصرح" }); return;
++  }
+   const id = parseInt(String(req.params.id), 10);
+   if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
+ 
+@@ -99,7 +115,13 @@ router.delete("/categories/:id", wrap(async (req, res) => {
+     return;
+   }
+ 
+-  await db.delete(categoriesTable).where(eq(categoriesTable.id, id));
++  const result = await db
++    .delete(categoriesTable)
++    .where(and(eq(categoriesTable.id, id), eq(categoriesTable.company_id, companyId)))
++    .returning({ id: categoriesTable.id });
++  if (result.length === 0) {
++    res.status(404).json({ error: "التصنيف غير موجود" }); return;
++  }
+   res.json({ success: true, message: "تم حذف التصنيف" });
+ }));
+ 
+diff --git a/artifacts/api-server/src/routes/customers.ts b/artifacts/api-server/src/routes/customers.ts
+index 120359f..9ff60ec 100644
+--- a/artifacts/api-server/src/routes/customers.ts
++++ b/artifacts/api-server/src/routes/customers.ts
+@@ -555,7 +555,7 @@ router.put("/customer-classifications/:id", wrap(async (req, res) => {
+   const [updated] = await db
+     .update(customerClassificationsTable)
+     .set({ name })
+-    .where(eq(customerClassificationsTable.id, id) && eq(customerClassificationsTable.company_id, companyId) as any)
++    .where(and(eq(customerClassificationsTable.id, id), eq(customerClassificationsTable.company_id, companyId)))
+     .returning();
+   if (!updated) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
+   res.json(updated);
+diff --git a/artifacts/api-server/src/routes/super.ts b/artifacts/api-server/src/routes/super.ts
+index f4f38be..184e584 100644
+--- a/artifacts/api-server/src/routes/super.ts
++++ b/artifacts/api-server/src/routes/super.ts
+@@ -11,6 +11,7 @@ import { wrap } from "../lib/async-handler";
+ import { hashPin } from "../lib/hash";
+ import { createCompanySchema, validate } from "../lib/schemas";
+ import { createDatabaseBackup, listBackups } from "../lib/db-backup";
++import { writeAuditLog } from "../lib/audit-log";
+ import fs from "fs";
+ 
+ const router = Router();
+@@ -33,12 +34,21 @@ router.get("/super/companies", ...superOnly, wrap(async (_req, res) => {
+     .from(companiesTable)
+     .orderBy(desc(companiesTable.created_at));
+ 
+-  const result = await Promise.all(companies.map(async (co) => {
+-    const userCount = await db
+-      .select({ id: erpUsersTable.id })
+-      .from(erpUsersTable)
+-      .where(eq(erpUsersTable.company_id, co.id));
++  /* Single GROUP BY query instead of N+1 — was running 1 query per company. */
++  const userCounts = await db
++    .select({
++      company_id: erpUsersTable.company_id,
++      count: sql<number>`cast(count(*) as int)`,
++    })
++    .from(erpUsersTable)
++    .groupBy(erpUsersTable.company_id);
+ 
++  const countMap = new Map<number, number>();
++  for (const row of userCounts) {
++    if (row.company_id != null) countMap.set(row.company_id, row.count);
++  }
++
++  const result = companies.map((co) => {
+     const days = daysRemaining(co.end_date);
+     const status =
+       !co.is_active ? "suspended" :
+@@ -49,9 +59,9 @@ router.get("/super/companies", ...superOnly, wrap(async (_req, res) => {
+       ...co,
+       daysRemaining: days,
+       status,
+-      userCount: userCount.length,
++      userCount: countMap.get(co.id) ?? 0,
+     };
+-  }));
++  });
+ 
+   res.json(result);
+ }));
+@@ -84,6 +94,9 @@ router.put("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
+     name?: string; plan_type?: string; end_date?: string; is_active?: boolean;
+   };
+ 
++  const [before] = await db.select().from(companiesTable).where(eq(companiesTable.id, id));
++  if (!before) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
++
+   const updates: Partial<typeof companiesTable.$inferInsert> = {};
+   if (name      !== undefined) updates.name      = name.trim();
+   if (plan_type !== undefined) updates.plan_type = plan_type;
+@@ -94,7 +107,18 @@ router.put("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
+     .update(companiesTable).set(updates)
+     .where(eq(companiesTable.id, id)).returning();
+ 
+-  if (!updated) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
++  if (!updated) {
++    res.status(404).json({ error: "الشركة حُذفت أثناء التحديث" });
++    return;
++  }
++
++  await writeAuditLog({
++    action: "update", record_type: "company", record_id: id,
++    old_value: before, new_value: updated,
++    user: req.user, company_id: req.user?.company_id ?? null,
++    note: "تعديل بيانات الشركة من لوحة المدير العام",
++  });
++
+   res.json({ ...updated, daysRemaining: daysRemaining(updated.end_date) });
+ }));
+ 
+@@ -106,6 +130,13 @@ router.post("/super/companies/:id/activate", ...superOnly, wrap(async (req, res)
+     .set({ is_active: true })
+     .where(eq(companiesTable.id, id)).returning();
+   if (!updated) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
++
++  await writeAuditLog({
++    action: "COMPANY_ACTIVATED", record_type: "company", record_id: id,
++    new_value: { is_active: true },
++    user: req.user, company_id: req.user?.company_id ?? null,
++  });
++
+   res.json({ message: "تم تفعيل الشركة", company: updated });
+ }));
+ 
+@@ -117,6 +148,13 @@ router.post("/super/companies/:id/suspend", ...superOnly, wrap(async (req, res)
+     .set({ is_active: false })
+     .where(eq(companiesTable.id, id)).returning();
+   if (!updated) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
++
++  await writeAuditLog({
++    action: "COMPANY_SUSPENDED", record_type: "company", record_id: id,
++    new_value: { is_active: false },
++    user: req.user, company_id: req.user?.company_id ?? null,
++  });
++
+   res.json({ message: "تم إيقاف الشركة", company: updated });
+ }));
+ 
+@@ -139,6 +177,14 @@ router.post("/super/companies/:id/extend", ...superOnly, wrap(async (req, res) =
+     .update(companiesTable).set(updates)
+     .where(eq(companiesTable.id, id)).returning();
+ 
++  await writeAuditLog({
++    action: "COMPANY_EXTENDED", record_type: "subscription", record_id: id,
++    old_value: { end_date: co.end_date, plan_type: co.plan_type, is_active: co.is_active },
++    new_value: { end_date: newEndDate, plan_type: updates.plan_type ?? co.plan_type, is_active: true, days_added: Number(days) },
++    user: req.user, company_id: req.user?.company_id ?? null,
++    note: `تمديد الاشتراك ${days} يوم`,
++  });
++
+   res.json({ message: `تم تمديد الاشتراك ${days} يوم`, company: { ...updated, daysRemaining: daysRemaining(newEndDate) } });
+ }));
+ 
+@@ -202,6 +248,14 @@ router.delete("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
+   }
+ 
+   await db.delete(companiesTable).where(eq(companiesTable.id, id));
++
++  await writeAuditLog({
++    action: "COMPANY_DELETED", record_type: "company", record_id: id,
++    old_value: co, new_value: { deleted_user_count: usersInCompany.length, force: !!force },
++    user: req.user, company_id: req.user?.company_id ?? null,
++    note: "حذف شركة من لوحة المدير العام",
++  });
++
+   res.json({ message: "تم حذف الشركة وجميع مستخدميها بنجاح" });
+ }));
+ 
+diff --git a/lib/db/src/schema/users.ts b/lib/db/src/schema/users.ts
+index e3d3ac9..c7adf52 100644
+--- a/lib/db/src/schema/users.ts
++++ b/lib/db/src/schema/users.ts
+@@ -6,7 +6,7 @@ export const erpUsersTable = pgTable("erp_users", {
+   name: text("name").notNull(),
+   username: text("username").notNull(),
+   email: text("email"),
+-  pin: text("pin").default("0000"),
++  pin: text("pin").notNull(),
+   role: text("role").notNull().default("cashier"),
+   permissions: text("permissions").default("{}"),
+   active: boolean("active").default(true),
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 3226182..df9a05d 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -148,6 +148,9 @@ importers:
+       qrcode:
+         specifier: ^1.5.4
+         version: 1.5.4
++      rate-limit-redis:
++        specifier: ^4.3.1
++        version: 4.3.1(express-rate-limit@8.3.1(express@5.2.1))
+       speakeasy:
+         specifier: ^2.0.0
+         version: 2.0.0
+@@ -7035,6 +7038,12 @@ packages:
+     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
+     engines: {node: '>= 0.6'}
+ 
++  rate-limit-redis@4.3.1:
++    resolution: {integrity: sha512-+a1zU8+D7L8siDK9jb14refQXz60vq427VuiplgnaLk9B2LnvGe/APLTfhwb4uNIL7eWVknh8GnRp/unCj+lMA==}
++    engines: {node: '>= 16'}
++    peerDependencies:
++      express-rate-limit: '>= 6'
++
+   raw-body@3.0.2:
+     resolution: {integrity: sha512-K5zQjDllxWkf7Z5xJdV0/B0WTNqx6vxG70zJE4N0kBs4LovmEYWJzQGxC9bS9RAKu3bgM40lrd5zoLJ12MQ5BA==}
+     engines: {node: '>= 0.10'}
+@@ -15410,6 +15419,10 @@ snapshots:
+ 
+   range-parser@1.2.1: {}
+ 
++  rate-limit-redis@4.3.1(express-rate-limit@8.3.1(express@5.2.1)):
++    dependencies:
++      express-rate-limit: 8.3.1(express@5.2.1)
++
+   raw-body@3.0.2:
+     dependencies:
+       bytes: 3.1.2
