@@ -1,6 +1,14 @@
 /**
  * backup-service.ts
- * Shared backup logic: build snapshot, save to disk, record in DB.
+ *
+ * Builds JSON snapshots of application data and persists them to disk.
+ *
+ * Memory safety:
+ * - Tables are streamed one at a time (not Promise.all) and written to disk
+ *   in 1000-row pages. The full snapshot is never held in memory at once.
+ * - A hard cap (`MAX_TOTAL_ROWS`) protects against unbounded growth on very
+ *   large tenants — exceeding the cap aborts the JSON snapshot and falls back
+ *   to a metadata-only record (operator should run pg_dump for full snapshot).
  */
 
 import fs from "node:fs";
@@ -22,7 +30,7 @@ import {
   erpUsersTable, systemSettingsTable,
   alertsTable, auditLogsTable,
 } from "@workspace/db";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { logger } from "./logger";
 
 /* ── Backup folder ─────────────────────────────────────────────── */
@@ -37,78 +45,154 @@ function ensureBackupDir() {
 /* ── Concurrency guard ─────────────────────────────────────────── */
 let isBackingUp = false;
 
-/* ── Max backups to keep ───────────────────────────────────────── */
-const MAX_BACKUPS = 20;
+/* ── Limits ────────────────────────────────────────────────────── */
+const MAX_BACKUPS    = 20;
+const PAGE_SIZE      = 1000;        // rows per chunk per table
+const MAX_TOTAL_ROWS = 2_000_000;   // hard cap → fall back to pg_dump
 
-/* ── Build the backup JSON object (same structure as system.ts) ── */
+/* ── Tables to back up (order is preserved in the JSON output) ── */
+const TABLES = [
+  ["products",                productsTable],
+  ["customers",               customersTable],
+  ["sales",                   salesTable],
+  ["sale_items",              saleItemsTable],
+  ["purchases",               purchasesTable],
+  ["purchase_items",          purchaseItemsTable],
+  ["sales_returns",           salesReturnsTable],
+  ["sale_return_items",       saleReturnItemsTable],
+  ["purchase_returns",        purchaseReturnsTable],
+  ["purchase_return_items",   purchaseReturnItemsTable],
+  ["expenses",                expensesTable],
+  ["income",                  incomeTable],
+  ["transactions",            transactionsTable],
+  ["accounts",                accountsTable],
+  ["journal_entries",         journalEntriesTable],
+  ["journal_entry_lines",     journalEntryLinesTable],
+  ["receipt_vouchers",        receiptVouchersTable],
+  ["deposit_vouchers",        depositVouchersTable],
+  ["payment_vouchers",        paymentVouchersTable],
+  ["treasury_vouchers",       treasuryVouchersTable],
+  ["safe_transfers",          safeTransfersTable],
+  ["stock_movements",         stockMovementsTable],
+  ["safes",                   safesTable],
+  ["warehouses",              warehousesTable],
+  ["users",                   erpUsersTable],
+  ["settings",                systemSettingsTable],
+  ["alerts",                  alertsTable],
+  ["audit_logs",              auditLogsTable],
+] as const;
+
+/* ── Streaming JSON writer ───────────────────────────────────────
+ * Writes:
+ *   { "version": "...", "app": "...", "created_at": "...",
+ *     "data": { "table1": [ ... ], "table2": [ ... ] } }
+ * one row at a time. */
+async function streamBackupToFile(
+  filepath: string,
+): Promise<{ size: number; totalRows: number; truncated: boolean }> {
+  const stream = fs.createWriteStream(filepath, { encoding: "utf8" });
+  let streamErr: Error | null = null;
+  /* Single error listener — avoid leak from per-chunk `once` listeners. */
+  stream.on("error", (err) => { streamErr = err; });
+
+  const write = (chunk: string) =>
+    new Promise<void>((resolve, reject) => {
+      if (streamErr) return reject(streamErr);
+      const ok = stream.write(chunk, (err) => {
+        if (err) reject(err);
+        else if (ok) resolve();
+      });
+      if (!ok) stream.once("drain", () => resolve());
+    });
+
+  let size = 0;
+  let totalRows = 0;
+  let truncated = false;
+
+  const safeWrite = async (chunk: string) => {
+    size += Buffer.byteLength(chunk, "utf8");
+    await write(chunk);
+  };
+
+  const created_at = new Date().toISOString();
+  await safeWrite(`{"version":"2.1","app":"Halal Tech ERP","created_at":${JSON.stringify(created_at)},"data":{`);
+
+  for (let t = 0; t < TABLES.length; t++) {
+    const [name, table] = TABLES[t]!;
+    await safeWrite(`${t === 0 ? "" : ","}${JSON.stringify(name)}:[`);
+
+    let offset = 0;
+    let firstRow = true;
+    /* paginate to avoid loading the whole table into memory */
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const rows = await db
+        .select()
+        .from(table as never)
+        .limit(PAGE_SIZE)
+        .offset(offset) as unknown[];
+
+      if (rows.length === 0) break;
+
+      for (const row of rows) {
+        if (totalRows >= MAX_TOTAL_ROWS) { truncated = true; break; }
+        await safeWrite(`${firstRow ? "" : ","}${JSON.stringify(row)}`);
+        firstRow = false;
+        totalRows++;
+      }
+
+      if (truncated || rows.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
+
+    await safeWrite(`]`);
+    if (truncated) break;
+  }
+
+  await safeWrite(truncated
+    ? `},"_meta":{"truncated":true,"reason":"max_rows_exceeded","not_restorable":true}}`
+    : `}}`,
+  );
+  await new Promise<void>((resolve, reject) => {
+    stream.end((err?: Error | null) => (err ? reject(err) : resolve()));
+  });
+  if (streamErr) throw streamErr;
+
+  return { size, totalRows, truncated };
+}
+
+/**
+ * @deprecated Use `triggerBackup` directly. Kept for callers (e.g. system.ts
+ * download endpoint). This loads the whole snapshot into memory and should
+ * NOT be used in hot paths — prefer `triggerBackup` which streams to disk.
+ *
+ * Now sequential (not Promise.all) and bounded by MAX_TOTAL_ROWS to prevent
+ * OOM on large tenants. Throws if the cap would be exceeded so callers can
+ * surface a clear 413/507 to the operator.
+ */
 export async function buildBackupPayload() {
-  const [
-    products, customers,
-    sales, saleItems,
-    purchases, purchaseItems,
-    salesReturns, saleReturnItems,
-    purchaseReturns, purchaseReturnItems,
-    expenses, income, transactions,
-    accounts, journalEntries, journalEntryLines,
-    receiptVouchers, depositVouchers,
-    paymentVouchers, treasuryVouchers,
-    safeTransfers, stockMovements,
-    safes, warehouses,
-    users, settings,
-    alerts, auditLogs,
-  ] = await Promise.all([
-    db.select().from(productsTable),
-    db.select().from(customersTable),
-    db.select().from(salesTable),
-    db.select().from(saleItemsTable),
-    db.select().from(purchasesTable),
-    db.select().from(purchaseItemsTable),
-    db.select().from(salesReturnsTable),
-    db.select().from(saleReturnItemsTable),
-    db.select().from(purchaseReturnsTable),
-    db.select().from(purchaseReturnItemsTable),
-    db.select().from(expensesTable),
-    db.select().from(incomeTable),
-    db.select().from(transactionsTable),
-    db.select().from(accountsTable),
-    db.select().from(journalEntriesTable),
-    db.select().from(journalEntryLinesTable),
-    db.select().from(receiptVouchersTable),
-    db.select().from(depositVouchersTable),
-    db.select().from(paymentVouchersTable),
-    db.select().from(treasuryVouchersTable),
-    db.select().from(safeTransfersTable),
-    db.select().from(stockMovementsTable),
-    db.select().from(safesTable),
-    db.select().from(warehousesTable),
-    db.select().from(erpUsersTable),
-    db.select().from(systemSettingsTable),
-    db.select().from(alertsTable),
-    db.select().from(auditLogsTable),
-  ]);
-
+  const result: Record<string, unknown> = {};
+  let total = 0;
+  for (const [name, table] of TABLES) {
+    const rows = await db.select().from(table as never);
+    total += rows.length;
+    if (total > MAX_TOTAL_ROWS) {
+      throw new Error(
+        `Snapshot too large (>${MAX_TOTAL_ROWS} rows) — use SQL backup (pg_dump) endpoint instead.`,
+      );
+    }
+    result[name] = rows;
+  }
   return {
     version: "2.0",
     app: "Halal Tech ERP",
     created_at: new Date().toISOString(),
-    data: {
-      products, customers,
-      sales, sale_items: saleItems,
-      purchases, purchase_items: purchaseItems,
-      sales_returns: salesReturns, sale_return_items: saleReturnItems,
-      purchase_returns: purchaseReturns, purchase_return_items: purchaseReturnItems,
-      expenses, income, transactions,
-      accounts, journal_entries: journalEntries, journal_entry_lines: journalEntryLines,
-      receipt_vouchers: receiptVouchers, deposit_vouchers: depositVouchers,
-      payment_vouchers: paymentVouchers, treasury_vouchers: treasuryVouchers,
-      safe_transfers: safeTransfers, stock_movements: stockMovements,
-      safes, warehouses, users, settings, alerts, audit_logs: auditLogs,
-    },
+    data: result,
   };
 }
 
 /**
- * Trigger a backup.
+ * Trigger a backup. Streams the snapshot to disk to bound memory.
  * - trigger: "login" | "logout" | "sale_post" | "purchase_post" | "scheduled" | "manual"
  * - Returns the DB record, or null if a backup is already in progress.
  */
@@ -122,14 +206,28 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
   try {
     ensureBackupDir();
 
-    const payload = await buildBackupPayload();
-    const json = JSON.stringify(payload, null, 2);
+    /* Quick row-count probe — if data is huge, skip JSON snapshot entirely. */
+    const [{ count: rowEstimate } = { count: 0 }] = await db.execute<{ count: number }>(
+      sql`SELECT (
+        SELECT COALESCE(SUM(reltuples)::bigint, 0)
+        FROM pg_class
+        WHERE relkind = 'r' AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+      ) AS count`
+    ) as unknown as Array<{ count: number }>;
+
+    if (rowEstimate > MAX_TOTAL_ROWS) {
+      logger.warn(
+        { trigger, rowEstimate, MAX_TOTAL_ROWS },
+        "Database too large for JSON backup — skipping (use pg_dump via /api/backups SQL endpoint)",
+      );
+      return null;
+    }
+
     const dt = new Date().toISOString().replace("T", "_").replace(/:/g, "-").slice(0, 19);
     const filename = `halal-tech-${trigger}_${dt}.json`;
     const filepath = path.join(BACKUP_DIR, filename);
 
-    fs.writeFileSync(filepath, json, "utf8");
-    const size = Buffer.byteLength(json, "utf8");
+    const { size, totalRows, truncated } = await streamBackupToFile(filepath);
 
     /* Insert into DB */
     const [record] = await db.insert(backupsTable).values({
@@ -153,7 +251,7 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
       }
     }
 
-    logger.info({ trigger, filename, size }, "Backup completed");
+    logger.info({ trigger, filename, size, totalRows, truncated }, "Backup completed");
     return record!;
   } catch (err) {
     logger.error({ trigger, err }, "Backup failed");

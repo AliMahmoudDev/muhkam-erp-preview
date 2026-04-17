@@ -29,14 +29,14 @@ vi.mock('@workspace/db', () => ({
 }));
 
 describe('Session Blacklist', () => {
-  it('يجب أن يضيف token للـ blacklist', () => {
+  it('يجب أن يضيف token للـ blacklist', async () => {
     const token = `test-token-${Date.now()}`;
-    blacklistToken(token);
-    expect(isTokenBlacklisted(token)).toBe(true);
+    await blacklistToken(token);
+    expect(await isTokenBlacklisted(token)).toBe(true);
   });
 
-  it('يجب أن يقبل token غير موجود في الـ blacklist', () => {
-    expect(isTokenBlacklisted('non-blacklisted-token-xyz')).toBe(false);
+  it('يجب أن يقبل token غير موجود في الـ blacklist', async () => {
+    expect(await isTokenBlacklisted('non-blacklisted-token-xyz')).toBe(false);
   });
 });
 

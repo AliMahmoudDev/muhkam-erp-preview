@@ -11,6 +11,7 @@ import { wrap } from "../lib/async-handler";
 import { hashPin } from "../lib/hash";
 import { createCompanySchema, validate } from "../lib/schemas";
 import { createDatabaseBackup, listBackups } from "../lib/db-backup";
+import { writeAuditLog } from "../lib/audit-log";
 import fs from "fs";
 
 const router = Router();
@@ -33,12 +34,21 @@ router.get("/super/companies", ...superOnly, wrap(async (_req, res) => {
     .from(companiesTable)
     .orderBy(desc(companiesTable.created_at));
 
-  const result = await Promise.all(companies.map(async (co) => {
-    const userCount = await db
-      .select({ id: erpUsersTable.id })
-      .from(erpUsersTable)
-      .where(eq(erpUsersTable.company_id, co.id));
+  /* Single GROUP BY query instead of N+1 — was running 1 query per company. */
+  const userCounts = await db
+    .select({
+      company_id: erpUsersTable.company_id,
+      count: sql<number>`cast(count(*) as int)`,
+    })
+    .from(erpUsersTable)
+    .groupBy(erpUsersTable.company_id);
 
+  const countMap = new Map<number, number>();
+  for (const row of userCounts) {
+    if (row.company_id != null) countMap.set(row.company_id, row.count);
+  }
+
+  const result = companies.map((co) => {
     const days = daysRemaining(co.end_date);
     const status =
       !co.is_active ? "suspended" :
@@ -49,9 +59,9 @@ router.get("/super/companies", ...superOnly, wrap(async (_req, res) => {
       ...co,
       daysRemaining: days,
       status,
-      userCount: userCount.length,
+      userCount: countMap.get(co.id) ?? 0,
     };
-  }));
+  });
 
   res.json(result);
 }));
@@ -84,6 +94,9 @@ router.put("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
     name?: string; plan_type?: string; end_date?: string; is_active?: boolean;
   };
 
+  const [before] = await db.select().from(companiesTable).where(eq(companiesTable.id, id));
+  if (!before) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
+
   const updates: Partial<typeof companiesTable.$inferInsert> = {};
   if (name      !== undefined) updates.name      = name.trim();
   if (plan_type !== undefined) updates.plan_type = plan_type;
@@ -94,7 +107,18 @@ router.put("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
     .update(companiesTable).set(updates)
     .where(eq(companiesTable.id, id)).returning();
 
-  if (!updated) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
+  if (!updated) {
+    res.status(404).json({ error: "الشركة حُذفت أثناء التحديث" });
+    return;
+  }
+
+  await writeAuditLog({
+    action: "update", record_type: "company", record_id: id,
+    old_value: before, new_value: updated,
+    user: req.user, company_id: req.user?.company_id ?? null,
+    note: "تعديل بيانات الشركة من لوحة المدير العام",
+  });
+
   res.json({ ...updated, daysRemaining: daysRemaining(updated.end_date) });
 }));
 
@@ -106,6 +130,13 @@ router.post("/super/companies/:id/activate", ...superOnly, wrap(async (req, res)
     .set({ is_active: true })
     .where(eq(companiesTable.id, id)).returning();
   if (!updated) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
+
+  await writeAuditLog({
+    action: "COMPANY_ACTIVATED", record_type: "company", record_id: id,
+    new_value: { is_active: true },
+    user: req.user, company_id: req.user?.company_id ?? null,
+  });
+
   res.json({ message: "تم تفعيل الشركة", company: updated });
 }));
 
@@ -117,6 +148,13 @@ router.post("/super/companies/:id/suspend", ...superOnly, wrap(async (req, res) 
     .set({ is_active: false })
     .where(eq(companiesTable.id, id)).returning();
   if (!updated) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
+
+  await writeAuditLog({
+    action: "COMPANY_SUSPENDED", record_type: "company", record_id: id,
+    new_value: { is_active: false },
+    user: req.user, company_id: req.user?.company_id ?? null,
+  });
+
   res.json({ message: "تم إيقاف الشركة", company: updated });
 }));
 
@@ -138,6 +176,14 @@ router.post("/super/companies/:id/extend", ...superOnly, wrap(async (req, res) =
   const [updated] = await db
     .update(companiesTable).set(updates)
     .where(eq(companiesTable.id, id)).returning();
+
+  await writeAuditLog({
+    action: "COMPANY_EXTENDED", record_type: "subscription", record_id: id,
+    old_value: { end_date: co.end_date, plan_type: co.plan_type, is_active: co.is_active },
+    new_value: { end_date: newEndDate, plan_type: updates.plan_type ?? co.plan_type, is_active: true, days_added: Number(days) },
+    user: req.user, company_id: req.user?.company_id ?? null,
+    note: `تمديد الاشتراك ${days} يوم`,
+  });
 
   res.json({ message: `تم تمديد الاشتراك ${days} يوم`, company: { ...updated, daysRemaining: daysRemaining(newEndDate) } });
 }));
@@ -202,6 +248,14 @@ router.delete("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
   }
 
   await db.delete(companiesTable).where(eq(companiesTable.id, id));
+
+  await writeAuditLog({
+    action: "COMPANY_DELETED", record_type: "company", record_id: id,
+    old_value: co, new_value: { deleted_user_count: usersInCompany.length, force: !!force },
+    user: req.user, company_id: req.user?.company_id ?? null,
+    note: "حذف شركة من لوحة المدير العام",
+  });
+
   res.json({ message: "تم حذف الشركة وجميع مستخدميها بنجاح" });
 }));
 

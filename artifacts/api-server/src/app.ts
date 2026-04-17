@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { sanitizeBody } from "./middleware/auth";
+import { makeRateLimitStore } from "./lib/rate-limit-store";
 
 const app: Express = express();
 
@@ -77,6 +78,7 @@ const generalLimiter = rateLimit({
   limit: 100,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  store: makeRateLimitStore("rl:gen:"),
   message: { error: "تجاوزت حد الطلبات، حاول مجدداً بعد دقيقة" },
 });
 
@@ -86,6 +88,7 @@ const authLimiter = rateLimit({
   limit: 10,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  store: makeRateLimitStore("rl:auth:"),
   message: { error: "تجاوزت محاولات تسجيل الدخول، حاول مجدداً بعد دقيقة" },
 });
 

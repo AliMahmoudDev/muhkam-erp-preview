@@ -2,10 +2,17 @@ import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
 import { db, categoriesTable, productsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { authenticate } from "../middleware/auth";
+import { hasPermission } from "../lib/permissions";
 
 const router: IRouter = Router();
 
+router.use(authenticate);
+
 router.get("/categories", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_products")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
   const companyId = req.user?.company_id ?? 1;
   const rows = await db
     .select({
@@ -29,6 +36,9 @@ router.get("/categories", wrap(async (req, res) => {
 }));
 
 router.post("/categories", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_products")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
   const name = String(req.body?.name ?? "").trim();
   if (!name) { res.status(400).json({ error: "اسم التصنيف مطلوب" }); return; }
   const companyId = req.user?.company_id ?? 1;
@@ -52,6 +62,9 @@ router.post("/categories", wrap(async (req, res) => {
 }));
 
 router.put("/categories/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_products")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
   const id = parseInt(String(req.params.id), 10);
   const name = String(req.body?.name ?? "").trim();
   if (!name || isNaN(id)) { res.status(400).json({ error: "بيانات غير صحيحة" }); return; }
@@ -76,7 +89,7 @@ router.put("/categories/:id", wrap(async (req, res) => {
   const [cat] = await db
     .update(categoriesTable)
     .set({ name })
-    .where(eq(categoriesTable.id, id))
+    .where(and(eq(categoriesTable.id, id), eq(categoriesTable.company_id, companyId)))
     .returning();
 
   if (!cat) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
@@ -84,6 +97,9 @@ router.put("/categories/:id", wrap(async (req, res) => {
 }));
 
 router.delete("/categories/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_products")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
 
@@ -99,7 +115,13 @@ router.delete("/categories/:id", wrap(async (req, res) => {
     return;
   }
 
-  await db.delete(categoriesTable).where(eq(categoriesTable.id, id));
+  const result = await db
+    .delete(categoriesTable)
+    .where(and(eq(categoriesTable.id, id), eq(categoriesTable.company_id, companyId)))
+    .returning({ id: categoriesTable.id });
+  if (result.length === 0) {
+    res.status(404).json({ error: "التصنيف غير موجود" }); return;
+  }
   res.json({ success: true, message: "تم حذف التصنيف" });
 }));
 

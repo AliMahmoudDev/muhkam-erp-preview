@@ -555,7 +555,7 @@ router.put("/customer-classifications/:id", wrap(async (req, res) => {
   const [updated] = await db
     .update(customerClassificationsTable)
     .set({ name })
-    .where(eq(customerClassificationsTable.id, id) && eq(customerClassificationsTable.company_id, companyId) as any)
+    .where(and(eq(customerClassificationsTable.id, id), eq(customerClassificationsTable.company_id, companyId)))
     .returning();
   if (!updated) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
   res.json(updated);

@@ -23,7 +23,12 @@ export type AuditAction =
   | "INVENTORY_ADJUSTMENT"      // تسوية يدوية للمخزون
   | "INVENTORY_COUNT_APPLIED"   // تطبيق جلسة جرد مخزون
   | "INVENTORY_TRANSFER"        // تحويل مخزون بين مخازن
-  | "PERIOD_OVERRIDE";          // تجاوز مدير للقفل المالي
+  | "PERIOD_OVERRIDE"           // تجاوز مدير للقفل المالي
+  // ── SaaS / super-admin events ─────────────────────────────────────────────
+  | "COMPANY_ACTIVATED"
+  | "COMPANY_SUSPENDED"
+  | "COMPANY_EXTENDED"
+  | "COMPANY_DELETED";
 
 export type AuditRecordType =
   | "customer"
@@ -43,7 +48,9 @@ export type AuditRecordType =
   // ── ERP critical types ─────────────────────────────────────────────────────
   | "account_balances"        // إصلاح أرصدة الحسابات المحاسبية
   | "customer_balances"       // إصلاح أرصدة العملاء
-  | "employee";               // إدارة الموظفين
+  | "employee"                // إدارة الموظفين
+  | "company"                 // SaaS company management
+  | "subscription";           // تجديد/تمديد الاشتراك
 
 interface AuditUser {
   id?: number;

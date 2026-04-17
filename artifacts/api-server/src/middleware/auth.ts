@@ -76,7 +76,7 @@ export async function authenticate(
   const token = auth.slice(7);
 
   /* Check token blacklist (logout / revocation) */
-  if (isTokenBlacklisted(token)) {
+  if (await isTokenBlacklisted(token)) {
     res.status(401).json({ error: "انتهت الجلسة، يرجى تسجيل الدخول مجدداً" });
     return;
   }

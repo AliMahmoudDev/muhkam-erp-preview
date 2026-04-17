@@ -303,9 +303,9 @@ router.get('/auth/subscription', authenticate, async (req, res) => {
 });
 
 /* ── POST /auth/logout — blacklist the current access token ─── */
-router.post('/auth/logout', authenticate, (req, res) => {
+router.post('/auth/logout', authenticate, async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
-  if (token) blacklistToken(token);
+  if (token) await blacklistToken(token);
   maybeBackupAsync("logout");
   res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
 });

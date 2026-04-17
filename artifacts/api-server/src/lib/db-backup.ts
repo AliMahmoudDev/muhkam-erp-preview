@@ -5,6 +5,7 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { logger } from "./logger";
 
@@ -26,20 +27,38 @@ export async function createDatabaseBackup(): Promise<string> {
   if (!dbUrl) throw new Error("DATABASE_URL is not set");
 
   const url = new URL(dbUrl);
+  const host = url.hostname;
+  const port = url.port || "5432";
+  const user = decodeURIComponent(url.username);
+  const password = decodeURIComponent(url.password);
+  const dbName = url.pathname.slice(1);
 
-  const command = [
-    `PGPASSWORD="${url.password}"`,
-    "pg_dump",
-    `-h ${url.hostname}`,
-    `-p ${url.port || 5432}`,
-    `-U ${url.username}`,
-    `-d ${url.pathname.slice(1)}`,
-    "--no-owner",
-    "--no-acl",
-    `| gzip > "${filepath}"`,
-  ].join(" ");
+  /* ── Use a temp .pgpass file (mode 600) instead of inline PGPASSWORD —
+        prevents password exposure in /proc/<pid>/environ and `ps e`. ── */
+  const pgpassFile = path.join(os.tmpdir(), `.pgpass-${process.pid}-${Date.now()}`);
+  const escape = (s: string) => s.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
+  const pgpassLine = `${escape(host)}:${port}:${escape(dbName)}:${escape(user)}:${escape(password)}\n`;
+  fs.writeFileSync(pgpassFile, pgpassLine, { mode: 0o600 });
 
-  await execAsync(command);
+  try {
+    const command = [
+      "pg_dump",
+      `-h ${host}`,
+      `-p ${port}`,
+      `-U ${user}`,
+      `-d ${dbName}`,
+      "--no-owner",
+      "--no-acl",
+      `| gzip > "${filepath}"`,
+    ].join(" ");
+
+    await execAsync(command, {
+      env: { ...process.env, PGPASSFILE: pgpassFile },
+    });
+  } finally {
+    try { fs.unlinkSync(pgpassFile); } catch { /* ignore */ }
+  }
+
   const size = fs.statSync(filepath).size;
   logger.info({ filepath, size }, "Database backup created");
 
