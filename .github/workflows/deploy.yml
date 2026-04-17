@@ -1,5 +1,17 @@
 name: Deploy to Production
 
+# ── Required GitHub Actions repository secrets ────────────────────────────────
+# Production (deploy job):
+#   VPS_HOST, VPS_USER, VPS_PASSWORD
+#   VPS_DATABASE_URL, VPS_REDIS_URL, VPS_JWT_SECRET, VPS_JWT_REFRESH_SECRET
+#
+# Integration tests (integration-test job):
+#   INTEGRATION_JWT_SECRET        — JWT signing secret used by the test runner
+#   INTEGRATION_JWT_REFRESH_SECRET — JWT refresh secret used by the test runner
+#   (If absent, integration/setup.ts falls back to safe hardcoded test values
+#    so CI still passes on forks that don't have access to repository secrets.)
+# ─────────────────────────────────────────────────────────────────────────────
+
 on:
   push:
     branches: [main]
@@ -57,10 +69,11 @@ jobs:
       - name: Run multi-tenant isolation tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-          # JWT secrets are also set by vitest setupFiles (integration/setup.ts)
-          # but setting them here ensures they are visible to any early imports.
-          JWT_SECRET: integration-test-jwt-secret-minimum-32chars!!
-          JWT_REFRESH_SECRET: integration-test-jwt-refresh-secret-min-32chars!!
+          # JWT secrets are pulled from GitHub Actions repository secrets so they
+          # can be rotated without a code change.  If the secrets are absent (e.g.
+          # on a fork), integration/setup.ts falls back to safe hardcoded values.
+          JWT_SECRET: ${{ secrets.INTEGRATION_JWT_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.INTEGRATION_JWT_REFRESH_SECRET }}
           NODE_ENV: test
         run: pnpm --filter @workspace/api-server run test:integration
 
