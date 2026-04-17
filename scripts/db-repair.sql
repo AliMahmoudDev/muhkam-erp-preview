@@ -12,10 +12,11 @@
 --
 -- ERROR HANDLING:
 --   All work runs inside a nested BEGIN/EXCEPTION block. Any unexpected
---   error (e.g. a constraint violation) is caught and immediately re-raised
---   as RAISE EXCEPTION with a clear "db-repair FAILED" prefix. This makes
---   failures LOUD and prevents any partial-fix state from being silently
---   accepted. The outer Postgres transaction is rolled back automatically.
+--   error (e.g. a constraint violation) is caught, logged via RAISE NOTICE
+--   with a clear "db-repair FAILED" prefix, then re-raised with RAISE; so
+--   the original SQLSTATE and detail are preserved for machine parsing.
+--   The outer Postgres transaction is rolled back automatically — nothing
+--   is ever half-applied.
 --
 -- IDEMPOTENCY:
 --   • The company INSERT uses ON CONFLICT (id) DO NOTHING.
@@ -35,9 +36,13 @@
 --   4. Run the script again — confirm zero errors and identical NOTICE output.
 --
 -- FAILURE SIMULATION:
---   To verify the exception handler fires, temporarily add inside the DO block:
+--   To verify the exception handler fires, temporarily add inside the inner
+--   BEGIN block (before the EXCEPTION keyword):
 --        RAISE EXCEPTION 'simulated failure';
---   You should see: ERROR: db-repair FAILED — simulated failure (SQLSTATE=P0001)
+--   You should see two lines:
+--        NOTICE:  db-repair FAILED — simulated failure (SQLSTATE=P0001)
+--        ERROR:   simulated failure
+--   The original error text and SQLSTATE are preserved in the final ERROR line.
 
 DO $$
 BEGIN
@@ -50,7 +55,16 @@ BEGIN
     RETURN;
   END IF;
 
-  -- ── 1. Ensure the seed company (id = 1) exists ────────────────────────────
+  -- ── 1 & 2. Seed company + re-point orphaned FK rows ─────────────────────
+  --
+  -- All data work (INSERT + UPDATEs) runs inside a single nested
+  -- BEGIN/EXCEPTION block.  Any unhandled error emits a clear
+  -- "db-repair FAILED" NOTICE then re-raises the *original* exception
+  -- (preserving SQLSTATE) so CI logs are unambiguous and the outer
+  -- Postgres transaction is rolled back automatically (nothing is
+  -- half-applied).
+  BEGIN
+
   INSERT INTO companies (id, name, plan_type, start_date, end_date, is_active)
   VALUES (
     1,
@@ -64,13 +78,6 @@ BEGIN
 
   RAISE NOTICE 'db-repair: company id=1 ensured';
 
-  -- ── 2. Re-point orphaned FK rows to company 1 ─────────────────────────────
-  --
-  -- All UPDATE work is wrapped in a nested BEGIN/EXCEPTION block.
-  -- Any unhandled error is re-raised with a clear "db-repair FAILED" prefix
-  -- so CI logs immediately show which step broke, and Postgres rolls back
-  -- the entire outer transaction automatically (nothing is half-applied).
-  BEGIN
   -- Every table with a company_id column is covered below.
   -- Tables are grouped by domain for readability.
   -- Tables with a nullable company_id use the extra IS NOT NULL guard so we
@@ -335,10 +342,13 @@ BEGIN
 
   EXCEPTION
     WHEN OTHERS THEN
-      -- Re-raise with a clear prefix so CI logs are unambiguous.
-      -- Postgres automatically rolls back the entire outer transaction,
-      -- so no partial state is ever committed.
-      RAISE EXCEPTION 'db-repair FAILED — % (SQLSTATE=%)', SQLERRM, SQLSTATE;
+      -- Emit a clear "db-repair FAILED" notice for CI log grep,
+      -- then re-raise the *original* exception unchanged so its SQLSTATE
+      -- and detail fields are preserved for automated error parsing.
+      -- Postgres automatically rolls back the entire outer transaction;
+      -- no partial state is ever committed.
+      RAISE NOTICE 'db-repair FAILED — % (SQLSTATE=%)', SQLERRM, SQLSTATE;
+      RAISE;
   END; -- inner work block
 
 END $$;
