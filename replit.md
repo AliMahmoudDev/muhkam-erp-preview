@@ -1,5 +1,14 @@
 # Workspace
 
+## Replit Environment
+- **Backend:** Express API server running on port 8080 via `Start Backend` workflow
+- **Frontend:** React/Vite ERP system running on port 5000 via `Start Frontend` workflow
+- **Database:** PostgreSQL provisioned via Replit (heliumdb), schema pushed via Drizzle ORM
+- **Packages:** Managed via pnpm workspaces
+- **Workflows:** Both `Start Backend` and `Start Frontend` are configured and running
+- **Frontend env vars:** `PORT=5000 BASE_PATH=/` set directly in workflow command (required by vite.config.ts)
+- **Default super admin:** username: `superadmin`, PIN from `SUPER_ADMIN_PIN` env var
+
 ## CI/CD Status
 - **Deploy pipeline:** ✅ Working (GitHub Actions deploy.yml runs on push to main, deploys to VPS at 89.167.85.156)
 - **CI pipeline:** ✅ PASSING as of CI #70 (all 4 jobs: Backend Tests, Frontend Tests, Lint & Type Check, Build Check)
