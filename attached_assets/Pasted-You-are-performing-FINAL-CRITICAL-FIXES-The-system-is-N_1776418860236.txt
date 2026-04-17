@@ -1,0 +1,157 @@
+You are performing FINAL CRITICAL FIXES.
+
+The system is NOT safe yet. Fix ALL blockers below.
+
+NO partial fixes. NO shortcuts.
+
+---
+
+## 🔴 FIX 1 — STOCK RACE CONDITION (CRITICAL)
+
+Replace ALL stock updates:
+
+BAD:
+
+* SELECT quantity
+* check in JS
+* UPDATE later
+
+GOOD (atomic):
+
+```ts
+const r = await tx.update(productsTable)
+  .set({
+    quantity: sql`${productsTable.quantity} - ${item.quantity}`
+  })
+  .where(and(
+    eq(productsTable.id, item.productId),
+    eq(productsTable.companyId, companyId),
+    gte(productsTable.quantity, item.quantity)
+  ))
+  .returning();
+
+if (r.length === 0) {
+  throw new Error("INSUFFICIENT_STOCK");
+}
+```
+
+Apply to:
+
+* sales.ts
+* returns.ts
+* any stock mutation
+
+---
+
+## 🔴 FIX 2 — FOREIGN KEY TENANT VALIDATION
+
+For ALL routes:
+
+Before using ANY ID from request body:
+
+```ts
+const entity = await db.query.table.findFirst({
+  where: and(
+    eq(table.id, incomingId),
+    eq(table.companyId, req.user.company_id)
+  )
+});
+
+if (!entity) return 404;
+```
+
+Apply to:
+
+* safes
+* customers
+* employees
+* vouchers
+* payroll
+* incentives
+* salary-advances
+* ALL tables
+
+---
+
+## 🔴 FIX 3 — REMOVE companyId = 1 DEFAULTS
+
+Search:
+companyId = 1
+
+Remove ALL of them.
+
+Make companyId REQUIRED everywhere.
+
+TypeScript must fail if missing.
+
+---
+
+## 🔴 FIX 4 — RESTORE LOCK (MULTI-INSTANCE SAFE)
+
+At start of restore:
+
+```ts
+await tx.execute(sql`
+  SELECT pg_advisory_xact_lock(
+    hashtext('restore:' || ${companyId})
+  )
+`);
+```
+
+---
+
+## 🔴 FIX 5 — MOVE IDEMPOTENCY OUT OF MEMORY
+
+Replace Map with:
+
+EITHER:
+
+* Redis SETNX + TTL
+
+OR:
+
+* Postgres table
+
+---
+
+## 🔴 FIX 6 — ADD BODY LIMIT TO RESTORE
+
+```ts
+app.use('/system/restore',
+  express.json({ limit: '50mb' })
+);
+```
+
+---
+
+## 🔴 FIX 7 — REMOVE ALL RAW SQL RISKS
+
+Search:
+sql.raw
+
+Replace or whitelist inputs strictly.
+
+---
+
+## 🔴 FINAL CHECK
+
+Search entire codebase:
+
+* missing companyId
+* unsafe UPDATE/DELETE
+* race conditions
+* fallback defaults
+
+---
+
+## OUTPUT
+
+Return:
+
+1. ALL files modified
+2. ALL critical fixes applied
+3. FINAL verdict:
+
+"SAFE FOR MULTI-TENANT PRODUCTION"
+
+OR list remaining risks

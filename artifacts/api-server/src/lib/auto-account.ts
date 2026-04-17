@@ -4,22 +4,14 @@
  * ربط تلقائي: عند إنشاء عميل أو مورد يُنشئ النظام حساباً محاسبياً مرتبطاً
  * تلقائياً في شجرة الحسابات، ويعيد account_id.
  *
- * قواعد الترميز:
- *   عميل          → كود "AR-{customer_code}"   نوع: asset     (ذمم مدينة)
- *   مورد          → كود "AP-{supplier_code}"   نوع: liability  (ذمم دائنة)
- *   خزينة         → كود "SAFE-{safe_id}"       نوع: asset     (نقدية)
- *   مخزون بضاعة  → كود "ASSET-INVENTORY"      نوع: asset     (بضاعة — يُدان عند الشراء، يُقيَّد دائناً عند البيع)
- *   إيرادات       → كود "REV-SALES"            نوع: revenue   (مبيعات)
- *   تكلفة البضاعة → كود "EXP-COGS"            نوع: expense   (تكلفة البضاعة المباعة — يُدان عند البيع)
- *
- * ملاحظة: حساب "EXP-PURCHASES" (القديم) أُبقي للتوافق العكسي مع القيود القديمة
- * لكن لا يُستخدم في القيود الجديدة.
+ * SECURITY: companyId is REQUIRED on every helper. There are no defaults — every
+ * caller must pass the authenticated tenant id. A missing companyId would
+ * otherwise silently bind accounts/journal entries to company 1.
  */
 
 import { eq, and, count, sql } from "drizzle-orm";
 import { db, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 
-/** نوع مشترك يقبل `db` أو `tx` داخل transaction */
 type DbOrTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
@@ -42,11 +34,14 @@ export interface JournalLine {
   credit: number;
 }
 
-/**
- * Returns existing account by (code, company_id), or creates it if not found.
- * Never creates a duplicate within the same company.
- */
-export async function getOrCreateAccount(spec: AccountSpec, companyId = 1): Promise<AccountRef> {
+function assertCompanyId(companyId: number, fnName: string): void {
+  if (!Number.isFinite(companyId) || companyId <= 0) {
+    throw new Error(`auto-account.${fnName}: companyId is required (got ${companyId})`);
+  }
+}
+
+export async function getOrCreateAccount(spec: AccountSpec, companyId: number): Promise<AccountRef> {
+  assertCompanyId(companyId, "getOrCreateAccount");
   const [existing] = await db
     .select({ id: accountsTable.id, code: accountsTable.code, name: accountsTable.name })
     .from(accountsTable)
@@ -72,11 +67,10 @@ export async function getOrCreateAccount(spec: AccountSpec, companyId = 1): Prom
   return created;
 }
 
-/** حساب ذمم مدينة للعميل (asset — ما يدين به العميل لنا) */
 export async function getOrCreateCustomerAccount(
   customerCode: number,
   customerName: string,
-  companyId = 1,
+  companyId: number,
 ): Promise<AccountRef> {
   return getOrCreateAccount({
     code: `AR-${customerCode}`,
@@ -85,11 +79,10 @@ export async function getOrCreateCustomerAccount(
   }, companyId);
 }
 
-/** حساب ذمم دائنة للعميل-المورد (liability — ما ندين به للعميل كمورد) */
 export async function getOrCreateCustomerPayableAccount(
   customerCode: number,
   customerName: string,
-  companyId = 1,
+  companyId: number,
 ): Promise<AccountRef> {
   return getOrCreateAccount({
     code: `AP-C-${customerCode}`,
@@ -98,11 +91,11 @@ export async function getOrCreateCustomerPayableAccount(
   }, companyId);
 }
 
-/** @deprecated Use getOrCreateCustomerPayableAccount. Kept for backward-compat with old journal entries. */
+/** @deprecated Use getOrCreateCustomerPayableAccount. Kept for backward-compat. */
 export async function getOrCreateSupplierAccount(
   supplierCode: number,
   supplierName: string,
-  companyId = 1,
+  companyId: number,
 ): Promise<AccountRef> {
   return getOrCreateAccount({
     code: `AP-${supplierCode}`,
@@ -111,11 +104,10 @@ export async function getOrCreateSupplierAccount(
   }, companyId);
 }
 
-/** حساب نقدية للخزينة */
 export async function getOrCreateSafeAccount(
   safeId: number,
   safeName: string,
-  companyId = 1,
+  companyId: number,
 ): Promise<AccountRef> {
   return getOrCreateAccount({
     code: `SAFE-${safeId}`,
@@ -124,8 +116,7 @@ export async function getOrCreateSafeAccount(
   }, companyId);
 }
 
-/** حساب إيرادات المبيعات (مشترك لجميع الفواتير) */
-export async function getOrCreateSalesRevenueAccount(companyId = 1): Promise<AccountRef> {
+export async function getOrCreateSalesRevenueAccount(companyId: number): Promise<AccountRef> {
   return getOrCreateAccount({
     code: "REV-SALES",
     name: "إيرادات المبيعات",
@@ -133,11 +124,7 @@ export async function getOrCreateSalesRevenueAccount(companyId = 1): Promise<Acc
   }, companyId);
 }
 
-/**
- * حساب مخزون البضاعة (أصل — يُدان عند الشراء، يُقيَّد دائناً عند بيع البضاعة)
- * يستخدم كحساب مقابل لـ EXP-COGS
- */
-export async function getOrCreateInventoryAccount(companyId = 1): Promise<AccountRef> {
+export async function getOrCreateInventoryAccount(companyId: number): Promise<AccountRef> {
   return getOrCreateAccount({
     code: "ASSET-INVENTORY",
     name: "بضاعة المخزون",
@@ -145,12 +132,7 @@ export async function getOrCreateInventoryAccount(companyId = 1): Promise<Accoun
   }, companyId);
 }
 
-/**
- * حساب تكلفة البضاعة المباعة — COGS
- * يُدان عند ترحيل فاتورة البيع (DR COGS / CR Inventory)
- * يُعكس عند الإلغاء أو مرتجع المبيعات
- */
-export async function getOrCreateCOGSAccount(companyId = 1): Promise<AccountRef> {
+export async function getOrCreateCOGSAccount(companyId: number): Promise<AccountRef> {
   return getOrCreateAccount({
     code: "EXP-COGS",
     name: "تكلفة البضاعة المباعة",
@@ -158,11 +140,7 @@ export async function getOrCreateCOGSAccount(companyId = 1): Promise<AccountRef>
   }, companyId);
 }
 
-/**
- * حساب المصروفات العمومية — يُدان عند تسجيل مصروف نقدي
- * DR EXP-GENERAL / CR SAFE-{safeId}
- */
-export async function getOrCreateGeneralExpenseAccount(companyId = 1): Promise<AccountRef> {
+export async function getOrCreateGeneralExpenseAccount(companyId: number): Promise<AccountRef> {
   return getOrCreateAccount({
     code: "EXP-GENERAL",
     name: "مصروفات عمومية وإدارية",
@@ -170,11 +148,7 @@ export async function getOrCreateGeneralExpenseAccount(companyId = 1): Promise<A
   }, companyId);
 }
 
-/**
- * حساب الإيرادات المتنوعة — يُقيَّد دائناً عند استلام مبالغ بلا عميل محدد
- * DR SAFE-{safeId} / CR REV-MISC
- */
-export async function getOrCreateMiscRevenueAccount(companyId = 1): Promise<AccountRef> {
+export async function getOrCreateMiscRevenueAccount(companyId: number): Promise<AccountRef> {
   return getOrCreateAccount({
     code: "REV-MISC",
     name: "إيرادات متنوعة",
@@ -182,11 +156,8 @@ export async function getOrCreateMiscRevenueAccount(companyId = 1): Promise<Acco
   }, companyId);
 }
 
-/**
- * @deprecated استخدم getOrCreateInventoryAccount بدلاً منه للمشتريات الجديدة.
- * أُبقي للتوافق العكسي مع القيود المحاسبية القديمة فقط.
- */
-export async function getOrCreatePurchasesCostAccount(companyId = 1): Promise<AccountRef> {
+/** @deprecated Use getOrCreateInventoryAccount. */
+export async function getOrCreatePurchasesCostAccount(companyId: number): Promise<AccountRef> {
   return getOrCreateAccount({
     code: "EXP-PURCHASES",
     name: "تكلفة المشتريات (قديم)",
@@ -195,10 +166,7 @@ export async function getOrCreatePurchasesCostAccount(companyId = 1): Promise<Ac
 }
 
 /**
- * Creates a POSTED multi-line journal entry and updates current_balance
- * for every account referenced in the lines.
- *
- * All lines must balance (total debits === total credits) — caller is responsible.
+ * Creates a POSTED multi-line journal entry. companyId is REQUIRED.
  */
 export async function createJournalEntry(
   opts: {
@@ -206,12 +174,13 @@ export async function createJournalEntry(
     description: string;
     reference: string;
     lines: JournalLine[];
-    companyId?: number;
+    companyId: number;
   },
   tx?: DbOrTx,
 ): Promise<void> {
   const runner: DbOrTx = tx ?? (db as unknown as DbOrTx);
-  const { date, description, reference, lines, companyId = 1 } = opts;
+  const { date, description, reference, lines, companyId } = opts;
+  assertCompanyId(companyId, "createJournalEntry");
 
   const totalDebit = lines.reduce((s, l) => s + l.debit, 0);
   const totalCredit = lines.reduce((s, l) => s + l.credit, 0);
@@ -263,10 +232,6 @@ export async function createJournalEntry(
   }
 }
 
-/**
- * Convenience wrapper: two-line symmetric entry (one debit, one credit).
- * Kept for backward-compatibility with receipt/payment voucher code.
- */
 export async function createAutoJournalEntry(opts: {
   date: string;
   description: string;
@@ -274,9 +239,10 @@ export async function createAutoJournalEntry(opts: {
   debit: AccountRef;
   credit: AccountRef;
   amount: number;
-  companyId?: number;
+  companyId: number;
 }): Promise<void> {
-  const { date, description, reference, debit, credit, amount, companyId = 1 } = opts;
+  const { date, description, reference, debit, credit, amount, companyId } = opts;
+  assertCompanyId(companyId, "createAutoJournalEntry");
   await createJournalEntry({
     date,
     description,

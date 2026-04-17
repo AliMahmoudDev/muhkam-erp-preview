@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { db,
   productsTable, customersTable,
   salesTable, saleItemsTable,
@@ -14,6 +14,7 @@ import { db,
   safesTable, warehousesTable,
   erpUsersTable, systemSettingsTable,
   alertsTable, auditLogsTable,
+  idempotencyKeysTable,
 } from "@workspace/db";
 import { authenticate, requireRole, requireTenant } from "../middleware/auth";
 import { wrap } from "../lib/async-handler";
@@ -132,16 +133,33 @@ router.post("/system/backup", authenticate, requireRole("admin"), requireTenant,
    7. Long transaction explicitly raises statement_timeout
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* In-process idempotency map: token → expiresAt (ms). */
-const restoreIdempotency = new Map<string, number>();
+/* Idempotency window for restore (matches retention policy). */
 const IDEMPOTENCY_TTL_MS = 5 * 60 * 1000;
 
-function checkIdempotency(token: string): boolean {
-  const now = Date.now();
-  for (const [k, exp] of restoreIdempotency) if (exp <= now) restoreIdempotency.delete(k);
-  if (restoreIdempotency.has(token)) return false;
-  restoreIdempotency.set(token, now + IDEMPOTENCY_TTL_MS);
-  return true;
+/**
+ * Persisted idempotency claim. Returns true if the (company, scope, key) was
+ * NOT seen within the TTL window and is now claimed; false if it was already
+ * claimed (caller should reject as duplicate).
+ */
+async function claimIdempotency(
+  companyId: number,
+  scope: string,
+  key: string,
+): Promise<boolean> {
+  const cutoff = new Date(Date.now() - IDEMPOTENCY_TTL_MS);
+  // Best-effort GC of stale rows for this scope (keeps the table small)
+  await db.delete(idempotencyKeysTable)
+    .where(sql`${idempotencyKeysTable.scope} = ${scope} AND ${idempotencyKeysTable.created_at} < ${cutoff}`);
+  try {
+    await db.insert(idempotencyKeysTable).values({
+      company_id: companyId, scope, key,
+    });
+    return true;
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    if (code === "23505") return false; // unique violation = duplicate
+    throw err;
+  }
 }
 
 router.post("/system/restore", authenticate, requireRole("admin"), requireTenant,
@@ -155,7 +173,7 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
     res.status(400).json({ error: "Idempotency-Key header (≥8 chars) مطلوب لمنع الاستعادة المكررة" });
     return;
   }
-  if (!checkIdempotency(`${companyId}:${idemToken}`)) {
+  if (!(await claimIdempotency(companyId, "restore", idemToken))) {
     res.status(409).json({ error: "تم تنفيذ نفس عملية الاستعادة خلال آخر 5 دقائق — مرفوضة لمنع التكرار" });
     return;
   }
@@ -312,8 +330,13 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
   try {
     await db.transaction(async (tx) => {
       /* Allow longer txn — restore can take a while on big tenants */
-      await tx.execute(`SET LOCAL statement_timeout = '300000'`);
-      await tx.execute(`SET LOCAL lock_timeout = '60000'`);
+      await tx.execute(sql`SET LOCAL statement_timeout = '300000'`);
+      await tx.execute(sql`SET LOCAL lock_timeout = '60000'`);
+
+      /* Serialize concurrent restores for the same tenant — prevents two
+         admins from racing each other and corrupting the dataset. The lock
+         is released automatically at txn commit/rollback. */
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${'restore:' + companyId}))`);
 
       /* Collect this tenant's parent IDs for cascade-style child deletes */
       const tenantSaleIds = (await tx.select({ id: salesTable.id }).from(salesTable)

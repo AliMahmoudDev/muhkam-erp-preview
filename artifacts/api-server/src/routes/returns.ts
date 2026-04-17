@@ -336,8 +336,9 @@ router.post("/sales-returns", wrap(async (req, res) => {
     // يعكس تكلفة البضاعة التي كانت خُصمت عند ترحيل البيع الأصلي،
     // ليبقى رصيد EXP-COGS و ASSET-INVENTORY متوافقاً مع الحركة المخزنية.
     if (totalCOGSReversed > 0) {
-      const inventoryAcct = await getOrCreateInventoryAccount();
-      const cogsAcct      = await getOrCreateCOGSAccount();
+      const cidRet = req.user!.company_id!;
+      const inventoryAcct = await getOrCreateInventoryAccount(cidRet);
+      const cogsAcct      = await getOrCreateCOGSAccount(cidRet);
       await createJournalEntry({
         date:        txDate,
         description: `عكس تكلفة مرتجع مبيعات ${return_no}${customer_name ? ` — ${customer_name}` : ""}`,
@@ -346,6 +347,7 @@ router.post("/sales-returns", wrap(async (req, res) => {
           { account: inventoryAcct, debit: totalCOGSReversed, credit: 0 },
           { account: cogsAcct,      debit: 0, credit: totalCOGSReversed },
         ],
+        companyId: cidRet,
       }, tx);
     }
 
@@ -463,10 +465,24 @@ router.delete("/sales-returns/:id", wrap(async (req, res) => {
       // ── عكس المخزون (البضاعة تخرج مرة أخرى) ─────────────────────────────
       const unitCost = Number(item.unit_cost_at_return) || Number(item.unit_price);
       totalCOGSRebook += retQty * unitCost;
-      const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, req.user!.company_id!)));
+      const cidDel = req.user!.company_id!;
+      const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidDel)));
       if (prod) {
         const oldQty = Number(prod.quantity);
-        const newQty = Math.max(0, oldQty - retQty);
+        const qtyStr = String(retQty);
+        // Atomic check + decrement (race-safe). 0 rows → would go negative.
+        const dec = await tx.update(productsTable)
+          .set({ quantity: sql`${productsTable.quantity}::numeric - ${qtyStr}::numeric` })
+          .where(and(
+            eq(productsTable.id, item.product_id),
+            eq(productsTable.company_id, cidDel),
+            sql`${productsTable.quantity}::numeric >= ${qtyStr}::numeric`,
+          ))
+          .returning({ quantity: productsTable.quantity });
+        if (dec.length === 0) {
+          throw httpError(400, `لا يمكن إلغاء المرتجع: المخزون الحالي لـ "${item.product_name}" أقل من الكمية المُراد سحبها (${retQty})`);
+        }
+        const newQty = Number(dec[0].quantity);
 
         // تعديل WAC عند إزالة الكمية المُرتجَعة (عكس الإضافة)
         const oldWAC = Number(prod.cost_price);
@@ -478,8 +494,8 @@ router.delete("/sales-returns/:id", wrap(async (req, res) => {
         }
 
         await tx.update(productsTable)
-          .set({ quantity: String(newQty), cost_price: String(newWAC.toFixed(4)) })
-          .where(eq(productsTable.id, item.product_id));
+          .set({ cost_price: String(newWAC.toFixed(4)) })
+          .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidDel)));
 
         await tx.insert(stockMovementsTable).values({
           product_id:      item.product_id,
@@ -503,8 +519,9 @@ router.delete("/sales-returns/:id", wrap(async (req, res) => {
     // ── إعادة تطبيق COGS عند إلغاء المرتجع: DR EXP-COGS / CR ASSET-INVENTORY ─
     // البضاعة تخرج من المخزون مرة أخرى، لذا يعود COGS كما كان قبل المرتجع.
     if (totalCOGSRebook > 0) {
-      const inventoryAcct = await getOrCreateInventoryAccount();
-      const cogsAcct      = await getOrCreateCOGSAccount();
+      const cidRebook = req.user!.company_id!;
+      const inventoryAcct = await getOrCreateInventoryAccount(cidRebook);
+      const cogsAcct      = await getOrCreateCOGSAccount(cidRebook);
       await createJournalEntry({
         date:        new Date().toISOString().split("T")[0],
         description: `إلغاء مرتجع مبيعات — إعادة COGS ${ret.return_no}`,
@@ -513,6 +530,7 @@ router.delete("/sales-returns/:id", wrap(async (req, res) => {
           { account: cogsAcct,      debit: totalCOGSRebook, credit: 0 },
           { account: inventoryAcct, debit: 0, credit: totalCOGSRebook },
         ],
+        companyId: cidRebook,
       }, tx);
     }
 

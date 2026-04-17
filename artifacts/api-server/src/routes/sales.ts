@@ -263,37 +263,45 @@ router.post("/sales", wrap(async (req, res) => {
         company_id: req.user?.company_id ?? undefined,
       }).returning();
 
-      // 3. البنود: خصم المخزون + تسجيل التكلفة + حركة مخزون صادر
+      // 3. البنود: خصم المخزون (atomic) + تسجيل التكلفة + حركة مخزون صادر
       for (const item of items) {
         const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidSale)));
         if (!prod) throw httpError(400, `المنتج "${item.product_name}" غير موجود`);
         const costAtSale = Number(prod.cost_price);
         const costTotal = costAtSale * item.quantity;
-        const oldQty = Number(prod.quantity);
+        const qtyStr = String(item.quantity);
 
-        if (oldQty < item.quantity - 0.001) {
+        // Atomic stock decrement: SELECT-then-UPDATE allows oversell under concurrency.
+        // The single UPDATE with `quantity::numeric >= qty` predicate is race-safe.
+        const updated = await tx.update(productsTable)
+          .set({ quantity: sql`${productsTable.quantity}::numeric - ${qtyStr}::numeric` })
+          .where(and(
+            eq(productsTable.id, item.product_id),
+            eq(productsTable.company_id, cidSale),
+            sql`${productsTable.quantity}::numeric >= ${qtyStr}::numeric`,
+          ))
+          .returning({ quantity: productsTable.quantity });
+
+        if (updated.length === 0) {
+          const oldQtyNow = Number(prod.quantity);
           throw httpError(
             400,
-            `كمية "${item.product_name}" في المخزون (${oldQty.toFixed(3)}) أقل من الكمية المطلوبة (${item.quantity}) — لا يمكن البيع بكميات تتجاوز المخزون المتاح`,
+            `كمية "${item.product_name}" في المخزون (${oldQtyNow.toFixed(3)}) أقل من الكمية المطلوبة (${item.quantity}) — لا يمكن البيع بكميات تتجاوز المخزون المتاح`,
           );
         }
-
-        const newQty = oldQty - item.quantity;
+        const oldQty = Number(prod.quantity);
+        const newQty = Number(updated[0].quantity);
 
         await tx.insert(saleItemsTable).values({
           sale_id: newSale.id,
           product_id: item.product_id,
           product_name: item.product_name,
-          quantity: String(item.quantity),
+          quantity: qtyStr,
           unit_price: String(item.unit_price),
           total_price: String(item.total_price),
           cost_price: String(costAtSale),
           cost_total: String(costTotal),
         });
-
-        await tx.update(productsTable)
-          .set({ quantity: String(newQty) })
-          .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidSale)));
 
         // ── تسجيل حركة مخزون صادر (مبيعات) ────────────────
         await tx.insert(stockMovementsTable).values({
@@ -401,7 +409,7 @@ router.post("/sales", wrap(async (req, res) => {
   // ── ترحيل فوري للكاشير ───────────────────────────────────────────────────
   // الكاشير لا يعرف مفهوم المسودة — كل فاتورة تُرحَّل فوراً عند الإنشاء
   if (role === "cashier") {
-    const postLines = await buildSaleJournalLines(sale);
+    const postLines = await buildSaleJournalLines(sale, cidSale);
     await db.transaction(async (tx) => {
       if (postLines.length >= 2) {
         await createJournalEntry({
@@ -409,6 +417,7 @@ router.post("/sales", wrap(async (req, res) => {
           description: `فاتورة مبيعات ${sale.invoice_no}${sale.customer_name ? ` — ${sale.customer_name}` : ""}`,
           reference: sale.invoice_no,
           lines: postLines,
+          companyId: cidSale,
         }, tx);
       }
       await tx.update(salesTable).set({ posting_status: "posted" }).where(eq(salesTable.id, sale.id));
@@ -459,35 +468,33 @@ router.get("/sales/:id", wrap(async (req, res) => {
 //   - انخفاض قيمة المخزون في الميزانية العمومية عند البيع
 //   - الربح = الإيرادات - COGS (وليس مجرد الفارق بين سعر البيع وتكلفة المنتج الحالية)
 //
-async function buildSaleJournalLines(sale: typeof salesTable.$inferSelect): Promise<JournalLine[]> {
+async function buildSaleJournalLines(sale: typeof salesTable.$inferSelect, companyId: number): Promise<JournalLine[]> {
   const total  = Number(sale.total_amount);
   const paid   = Number(sale.paid_amount);
   const debt   = total - paid;
   const lines: JournalLine[] = [];
 
   // ── قيد الإيراد ─────────────────────────────────────────────────────────
-  const revenueAcct = await getOrCreateSalesRevenueAccount();
+  const revenueAcct = await getOrCreateSalesRevenueAccount(companyId);
   lines.push({ account: revenueAcct, debit: 0, credit: total });
 
   if (paid > 0 && sale.safe_id && sale.safe_name) {
-    const safeAcct = await getOrCreateSafeAccount(sale.safe_id, sale.safe_name);
+    const safeAcct = await getOrCreateSafeAccount(sale.safe_id, sale.safe_name, companyId);
     lines.push({ account: safeAcct, debit: paid, credit: 0 });
   }
 
   if (debt > 0 && sale.customer_id) {
-    const [cust] = await db.select().from(customersTable).where(eq(customersTable.id, sale.customer_id));
+    const [cust] = await db.select().from(customersTable).where(and(eq(customersTable.id, sale.customer_id), eq(customersTable.company_id, companyId)));
     if (cust?.account_id) {
       const [acctRow] = await db.select({ id: accountsTable.id, code: accountsTable.code, name: accountsTable.name })
-        .from(accountsTable).where(eq(accountsTable.id, cust.account_id));
+        .from(accountsTable).where(and(eq(accountsTable.id, cust.account_id), eq(accountsTable.company_id, companyId)));
       if (acctRow) lines.push({ account: acctRow, debit: debt, credit: 0 });
     } else if (cust?.customer_code) {
-      const custAcct = await getOrCreateCustomerAccount(cust.customer_code, cust.name);
+      const custAcct = await getOrCreateCustomerAccount(cust.customer_code, cust.name, companyId);
       lines.push({ account: custAcct, debit: debt, credit: 0 });
     }
   }
 
-  // ── قيد تكلفة البضاعة المباعة (COGS) ────────────────────────────────────
-  // نحسب إجمالي التكلفة من بنود الفاتورة (cost_total مخزّن وقت البيع = متوسط مرجّح تاريخي)
   const saleItems = await db.select({ cost_total: saleItemsTable.cost_total })
     .from(saleItemsTable)
     .where(eq(saleItemsTable.sale_id, sale.id));
@@ -495,8 +502,8 @@ async function buildSaleJournalLines(sale: typeof salesTable.$inferSelect): Prom
   const totalCOGS = saleItems.reduce((sum, item) => sum + Number(item.cost_total), 0);
 
   if (totalCOGS > 0) {
-    const cogsAcct      = await getOrCreateCOGSAccount();
-    const inventoryAcct = await getOrCreateInventoryAccount();
+    const cogsAcct      = await getOrCreateCOGSAccount(companyId);
+    const inventoryAcct = await getOrCreateInventoryAccount(companyId);
     lines.push({ account: cogsAcct,      debit: totalCOGS, credit: 0 });
     lines.push({ account: inventoryAcct, debit: 0, credit: totalCOGS });
   }
@@ -516,7 +523,8 @@ router.post("/sales/:id/post", wrap(async (req, res) => {
 
   await assertPeriodOpen(sale.date, req);
 
-  const lines = await buildSaleJournalLines(sale);
+  const cidPost = req.user!.company_id!;
+  const lines = await buildSaleJournalLines(sale, cidPost);
 
   const updated = await db.transaction(async (tx) => {
     if (lines.length >= 2) {
@@ -525,11 +533,12 @@ router.post("/sales/:id/post", wrap(async (req, res) => {
         description: `فاتورة مبيعات ${sale.invoice_no}${sale.customer_name ? ` — ${sale.customer_name}` : ""}`,
         reference: sale.invoice_no,
         lines,
+        companyId: cidPost,
       }, tx);
     }
     const [row] = await tx.update(salesTable)
       .set({ posting_status: "posted" })
-      .where(eq(salesTable.id, id))
+      .where(and(eq(salesTable.id, id), eq(salesTable.company_id, cidPost)))
       .returning();
     return row;
   });
@@ -652,10 +661,11 @@ router.post("/sales/:id/cancel", wrap(async (req, res) => {
 
   const today = new Date().toISOString().split("T")[0];
 
+  const cidCancel = req.user!.company_id!;
   await db.transaction(async (tx) => {
     // ── 1. عكس القيد المحاسبي (للفواتير المرحَّلة فقط) ──────────────────
     if (sale.posting_status === "posted") {
-      const lines = await buildSaleJournalLines(sale);
+      const lines = await buildSaleJournalLines(sale, cidCancel);
       if (lines.length >= 2) {
         const reversed = lines.map(l => ({ account: l.account, debit: l.credit, credit: l.debit }));
         await createJournalEntry({
@@ -663,6 +673,7 @@ router.post("/sales/:id/cancel", wrap(async (req, res) => {
           description: `إلغاء فاتورة مبيعات ${sale.invoice_no}${sale.customer_name ? ` — ${sale.customer_name}` : ""}`,
           reference: `REV-${sale.invoice_no}`,
           lines: reversed,
+          companyId: cidCancel,
         }, tx);
       }
     }

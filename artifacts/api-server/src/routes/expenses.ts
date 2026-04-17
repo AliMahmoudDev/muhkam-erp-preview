@@ -165,8 +165,9 @@ router.post("/expenses", wrap(async (req, res) => {
   const { exp: expense, safe } = result;
   if (safe) {
     try {
-      const expAcct  = await getOrCreateGeneralExpenseAccount();
-      const safeAcct = await getOrCreateSafeAccount(safe.id, safe.name);
+      const cidExp = req.user!.company_id!;
+      const expAcct  = await getOrCreateGeneralExpenseAccount(cidExp);
+      const safeAcct = await getOrCreateSafeAccount(safe.id, safe.name, cidExp);
       const todayStr = new Date().toISOString().split("T")[0];
       await createAutoJournalEntry({
         date:        todayStr,
@@ -175,6 +176,7 @@ router.post("/expenses", wrap(async (req, res) => {
         debit:  expAcct,
         credit: safeAcct,
         amount: amt,
+        companyId: cidExp,
       });
     } catch (jeErr) {
       console.error("Failed to create journal entry for expense:", jeErr);
@@ -214,8 +216,9 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
 
   if (deletedSafeId !== null && deletedAmount > 0) {
     try {
-      const safeAcct = await getOrCreateSafeAccount(deletedSafeId, deletedSafeName ?? `خزينة ${deletedSafeId}`);
-      const expAcct  = await getOrCreateGeneralExpenseAccount();
+      const cidDel = req.user!.company_id!;
+      const safeAcct = await getOrCreateSafeAccount(deletedSafeId, deletedSafeName ?? `خزينة ${deletedSafeId}`, cidDel);
+      const expAcct  = await getOrCreateGeneralExpenseAccount(cidDel);
       const todayStr = new Date().toISOString().split("T")[0];
       await createAutoJournalEntry({
         date:        todayStr,
@@ -224,6 +227,7 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
         debit:  safeAcct,
         credit: expAcct,
         amount: deletedAmount,
+        companyId: cidDel,
       });
     } catch (jeErr) {
       console.error("Failed to create reversal JE for deleted expense:", jeErr);

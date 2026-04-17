@@ -283,13 +283,16 @@ router.get("/purchases/:id", wrap(async (req, res) => {
 }));
 
 /* ── بناء قيود المشتريات ────────────────────────────────────────────────── */
-async function buildPurchaseJournalLines(purchase: typeof purchasesTable.$inferSelect): Promise<JournalLine[]> {
+async function buildPurchaseJournalLines(
+  purchase: typeof purchasesTable.$inferSelect,
+  companyId: number,
+): Promise<JournalLine[]> {
   const total       = Number(purchase.total_amount);
   const paid        = Number(purchase.paid_amount);
   const supplierDebt = total - paid;
   const lines: JournalLine[] = [];
 
-  const inventoryAcct = await getOrCreateInventoryAccount();
+  const inventoryAcct = await getOrCreateInventoryAccount(companyId);
   lines.push({ account: inventoryAcct, debit: total, credit: 0 });
 
   if (paid > 0) {
@@ -302,7 +305,7 @@ async function buildPurchaseJournalLines(purchase: typeof purchasesTable.$inferS
       .limit(1);
 
     if (txRow?.safe_id && txRow.safe_name) {
-      const safeAcct = await getOrCreateSafeAccount(txRow.safe_id, txRow.safe_name);
+      const safeAcct = await getOrCreateSafeAccount(txRow.safe_id, txRow.safe_name, companyId);
       lines.push({ account: safeAcct, debit: 0, credit: paid });
     }
   }
@@ -327,6 +330,7 @@ async function buildPurchaseJournalLines(purchase: typeof purchasesTable.$inferS
         apAcct = await getOrCreateCustomerPayableAccount(
           cust.customer_code ?? purchase.customer_id,
           cust.name,
+          companyId,
         );
       }
       lines.push({ account: apAcct, debit: 0, credit: supplierDebt });
@@ -348,7 +352,8 @@ router.post("/purchases/:id/post", wrap(async (req, res) => {
 
   await assertPeriodOpen(purchase.date, req);
 
-  const lines = await buildPurchaseJournalLines(purchase);
+  const cidPost = req.user!.company_id!;
+  const lines = await buildPurchaseJournalLines(purchase, cidPost);
 
   const updated = await db.transaction(async (tx) => {
     if (lines.length >= 2) {
@@ -357,6 +362,7 @@ router.post("/purchases/:id/post", wrap(async (req, res) => {
         description: `فاتورة مشتريات ${purchase.invoice_no}${purchase.supplier_name ? ` — ${purchase.supplier_name}` : ""}`,
         reference: purchase.invoice_no,
         lines,
+        companyId: cidPost,
       }, tx);
     }
     const [row] = await tx.update(purchasesTable)
@@ -458,10 +464,11 @@ router.post("/purchases/:id/cancel", wrap(async (req, res) => {
 
   const today = new Date().toISOString().split("T")[0];
 
+  const cidCancel = req.user!.company_id!;
   await db.transaction(async (tx) => {
     // 1. عكس القيد المحاسبي
     if (purchase.posting_status === "posted") {
-      const lines = await buildPurchaseJournalLines(purchase);
+      const lines = await buildPurchaseJournalLines(purchase, cidCancel);
       if (lines.length >= 2) {
         const reversed = lines.map(l => ({ account: l.account, debit: l.credit, credit: l.debit }));
         await createJournalEntry({
@@ -469,6 +476,7 @@ router.post("/purchases/:id/cancel", wrap(async (req, res) => {
           description: `إلغاء فاتورة مشتريات ${purchase.invoice_no}${purchase.supplier_name ? ` — ${purchase.supplier_name}` : ""}`,
           reference: `REV-${purchase.invoice_no}`,
           lines: reversed,
+          companyId: cidCancel,
         }, tx);
       }
     }

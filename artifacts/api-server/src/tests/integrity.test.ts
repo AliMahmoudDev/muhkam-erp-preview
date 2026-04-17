@@ -43,7 +43,8 @@ import {
 
 /* ─── معرّف اختبار فريد لكل جلسة تشغيل ──────────────────────────────────── */
 const TS = Date.now();
-const P  = `TINT${TS}`;   // prefix قصير لتجنب تجاوز حد طول الكود
+const P  = `TINT${TS}`;
+const TEST_COMPANY_ID = 1;   // prefix قصير لتجنب تجاوز حد طول الكود
 
 /* ─── سجلات لتنظيفها بعد الانتهاء ───────────────────────────────────────── */
 const createdAccountIds:        number[] = [];
@@ -128,6 +129,7 @@ describe("1 — Journal Entry Balance Enforcement", () => {
           { account: drAcct, debit: 1000, credit: 0 },
           { account: crAcct, debit: 0,    credit: 900 }, // 100 فرق متعمد
         ],
+              companyId: TEST_COMPANY_ID,
       }),
       /imbalance/i,
       "يجب أن يرفض القيد غير المتوازن",
@@ -146,6 +148,7 @@ describe("1 — Journal Entry Balance Enforcement", () => {
         { account: drAcct, debit: 500, credit: 0 },
         { account: crAcct, debit: 0,   credit: 500 },
       ],
+          companyId: TEST_COMPANY_ID,
     });
 
     /* سجّل القيد للحذف */
@@ -186,6 +189,7 @@ describe("2 — Account Balance Drift Detection & Repair", () => {
         { account: a1, debit: 300, credit: 0 },
         { account: a2, debit: 0,   credit: 300 },
       ],
+          companyId: TEST_COMPANY_ID,
     });
 
     const [entry] = await db.select({ id: journalEntriesTable.id }).from(journalEntriesTable).where(eq(journalEntriesTable.reference, `${P}-DRIFT`));
@@ -363,6 +367,7 @@ describe("5 — Expense creates correct journal entry", () => {
       debit:       expAcct,
       credit:      safeAcct,
       amount:      200,
+          companyId: TEST_COMPANY_ID,
     });
 
     const [entry] = await db.select({ id: journalEntriesTable.id }).from(journalEntriesTable).where(eq(journalEntriesTable.reference, expRef));
@@ -411,6 +416,7 @@ describe("6 — Reversal creates opposite accounting effect", () => {
         { account: a1, debit: 750, credit: 0 },
         { account: a2, debit: 0,   credit: 750 },
       ],
+          companyId: TEST_COMPANY_ID,
     });
     const [orig] = await db.select({ id: journalEntriesTable.id }).from(journalEntriesTable).where(eq(journalEntriesTable.reference, origRef));
     if (orig) createdJournalEntryIds.push(orig.id);
@@ -422,6 +428,7 @@ describe("6 — Reversal creates opposite accounting effect", () => {
         { account: a2, debit: 750, credit: 0 },
         { account: a1, debit: 0,   credit: 750 },
       ],
+          companyId: TEST_COMPANY_ID,
     });
     const [rev] = await db.select({ id: journalEntriesTable.id }).from(journalEntriesTable).where(eq(journalEntriesTable.reference, revRef));
     if (rev) createdJournalEntryIds.push(rev.id);
@@ -497,6 +504,7 @@ describe("8 — COGS reversal JE on sale_return nets to zero", () => {
         { account: cogsAcct, debit: COGS_AMT, credit: 0        },   // DR EXP-COGS
         { account: invAcct,  debit: 0,        credit: COGS_AMT },   // CR ASSET-INVENTORY
       ],
+          companyId: TEST_COMPANY_ID,
     });
     const [saleJE] = await db.select({ id: journalEntriesTable.id }).from(journalEntriesTable).where(eq(journalEntriesTable.reference, saleRef));
     if (saleJE) createdJournalEntryIds.push(saleJE.id);
@@ -516,6 +524,7 @@ describe("8 — COGS reversal JE on sale_return nets to zero", () => {
         { account: invAcct,  debit: COGS_AMT, credit: 0        },   // DR ASSET-INVENTORY
         { account: cogsAcct, debit: 0,        credit: COGS_AMT },   // CR EXP-COGS
       ],
+          companyId: TEST_COMPANY_ID,
     });
     const [retJE] = await db.select({ id: journalEntriesTable.id }).from(journalEntriesTable).where(eq(journalEntriesTable.reference, retRef));
     if (retJE) createdJournalEntryIds.push(retJE.id);

@@ -63,10 +63,30 @@ function buildValidation(checks: Omit<CheckItem, "ok">[]): ValidationResult {
   };
 }
 
+/* ── مساعد: hardcoded whitelists لمنع SQL injection عبر sql.raw() ─────────
+   كل alias / column يمر إلى sql.raw() يجب أن يكون ضمن هذه القائمة. */
+const ALLOWED_ALIASES = new Set([
+  "s", "sr", "e", "c", "p", "je", "jel", "pr", "pi", "si", "sri", "v", "t",
+]);
+const ALLOWED_DATE_COLS = new Set(["date", "created_at"]);
+
+function safeAlias(alias: string): string {
+  if (!ALLOWED_ALIASES.has(alias)) {
+    throw new Error(`reports: alias not whitelisted: ${alias}`);
+  }
+  return alias;
+}
+function safeCol(col: string): string {
+  if (!ALLOWED_DATE_COLS.has(col)) {
+    throw new Error(`reports: column not whitelisted: ${col}`);
+  }
+  return col;
+}
+
 /* ── مساعد: بناء جزء SQL لفلتر company_id مع alias (parameterized) ── */
 function cfSql(alias: string, companyId: number | null) {
   if (companyId === null) return sql`AND 1=0`;
-  return sql`AND ${sql.raw(alias)}.company_id = ${companyId}`;
+  return sql`AND ${sql.raw(safeAlias(alias))}.company_id = ${companyId}`;
 }
 
 /* ── مساعد: بناء جزء SQL لفلتر company_id بدون alias (parameterized) ── */
@@ -79,7 +99,7 @@ function cfSimpleSql(companyId: number | null) {
 function dfSql(alias: string, col: string, from?: string, to?: string) {
   const sf = safeDate(from);
   const st = safeDate(to);
-  const colRef = sql.raw(`${alias}.${col}`);
+  const colRef = sql.raw(`${safeAlias(alias)}.${safeCol(col)}`);
   if (sf && st) return sql`AND ${colRef} >= ${sf} AND ${colRef} <= ${st}`;
   if (sf)       return sql`AND ${colRef} >= ${sf}`;
   if (st)       return sql`AND ${colRef} <= ${st}`;

@@ -116,6 +116,9 @@ app.use(
   }),
 );
 
+/* ── Larger body limit for system restore (must come BEFORE the global parser) ── */
+app.use("/api/system/restore", express.json({ limit: "50mb" }));
+
 /* ── Body parsing with 10mb limit ──────────────────────────── */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));

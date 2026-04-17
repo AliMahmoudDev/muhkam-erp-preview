@@ -136,7 +136,7 @@ router.post("/customers", wrap(async (req, res) => {
     company_id: req.user?.company_id ?? undefined,
   }).returning();
 
-  const acct = await getOrCreateCustomerAccount(newCode, parsed.data.name.trim());
+  const acct = await getOrCreateCustomerAccount(newCode, parsed.data.name.trim(), req.user!.company_id!);
   const [updated] = await db.update(customersTable)
     .set({ account_id: acct.id })
     .where(eq(customersTable.id, customer.id))

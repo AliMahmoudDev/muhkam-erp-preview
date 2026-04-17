@@ -123,12 +123,12 @@ router.post("/admin/backfill-accounts", [authenticate, requireRole("admin", "man
 
   for (const c of customers) {
     if (!c.customer_code) continue;
-    const acct = await getOrCreateCustomerAccount(c.customer_code, c.name);
+    const acct = await getOrCreateCustomerAccount(c.customer_code, c.name, companyId);
     await db.update(customersTable).set({ account_id: acct.id }).where(sql`id = ${c.id}`);
     customersLinked++;
 
     if (c.is_supplier) {
-      await getOrCreateCustomerPayableAccount(c.customer_code, c.name);
+      await getOrCreateCustomerPayableAccount(c.customer_code, c.name, companyId);
     }
   }
 
