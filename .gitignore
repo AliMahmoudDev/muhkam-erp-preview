@@ -48,3 +48,10 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Environment / secrets — local overrides must never be committed
+# Files matching *.example ARE intentionally tracked (e.g. .env.test.example)
+.env
+.env.local
+.env.test
+.env.*.local
