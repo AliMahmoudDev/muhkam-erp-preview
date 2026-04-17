@@ -21,6 +21,16 @@ on:
   schedule:
     - cron: '0 3 * * 1'  # every Monday at 03:00 UTC
 
+# ── Concurrency control ───────────────────────────────────────────────────────
+# Group runs by workflow name + ref so:
+#   • A push to main and the weekly schedule share one slot → push preempts schedule
+#   • Each PR branch gets its own slot → PRs never cancel each other
+#   • manual dispatch (workflow_dispatch) joins the same slot as push to main
+# cancel-in-progress: the older run is cancelled the moment a newer one queues.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ── Integration Tests ─────────────────────────────────────────────────────
   # Runs the real-DB multi-tenant isolation tests against a fresh Postgres
