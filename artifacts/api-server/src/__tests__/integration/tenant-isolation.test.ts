@@ -460,3 +460,137 @@ describe('Multi-Tenant Isolation — Purchases', () => {
     expect(invoices, 'company B token must NOT see company A purchase').not.toContain(purchaseAInvoice);
   });
 });
+
+/* ═══════════════════════════════════════════════════════════════════
+   BY-ID ISOLATION — cross-tenant read/mutate on single records
+   ═══════════════════════════════════════════════════════════════════ */
+
+describe('Multi-Tenant Isolation — Sales by ID (cross-tenant blocked)', () => {
+
+  it('GET /api/sales/:id with tokenA — can read own sale', async () => {
+    expect(saleAId, 'sale A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .get(`/api/sales/${saleAId}`)
+      .set('Authorization', `Bearer ${tokenA}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(saleAId);
+  });
+
+  it('GET /api/sales/:id with tokenB using company A sale ID — blocked (404)', async () => {
+    expect(saleAId, 'sale A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .get(`/api/sales/${saleAId}`)
+      .set('Authorization', `Bearer ${tokenB}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('POST /api/sales/:id/post with tokenB using company A sale ID — blocked (404)', async () => {
+    expect(saleAId, 'sale A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .post(`/api/sales/${saleAId}/post`)
+      .set('Authorization', `Bearer ${tokenB}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('POST /api/sales/:id/cancel with tokenB using company A sale ID — blocked (404)', async () => {
+    expect(saleAId, 'sale A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .post(`/api/sales/${saleAId}/cancel`)
+      .set('Authorization', `Bearer ${tokenB}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('GET /api/sales/:id with tokenB — can read own sale', async () => {
+    expect(saleBId, 'sale B must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .get(`/api/sales/${saleBId}`)
+      .set('Authorization', `Bearer ${tokenB}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(saleBId);
+  });
+
+  it('GET /api/sales/:id with tokenA using company B sale ID — blocked (404)', async () => {
+    expect(saleBId, 'sale B must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .get(`/api/sales/${saleBId}`)
+      .set('Authorization', `Bearer ${tokenA}`);
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('Multi-Tenant Isolation — Purchases by ID (cross-tenant blocked)', () => {
+
+  it('GET /api/purchases/:id with tokenA — can read own purchase', async () => {
+    expect(purchaseAId, 'purchase A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .get(`/api/purchases/${purchaseAId}`)
+      .set('Authorization', `Bearer ${tokenA}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(purchaseAId);
+  });
+
+  it('GET /api/purchases/:id with tokenB using company A purchase ID — blocked (404)', async () => {
+    expect(purchaseAId, 'purchase A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .get(`/api/purchases/${purchaseAId}`)
+      .set('Authorization', `Bearer ${tokenB}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('POST /api/purchases/:id/post with tokenB using company A purchase ID — blocked (404)', async () => {
+    expect(purchaseAId, 'purchase A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .post(`/api/purchases/${purchaseAId}/post`)
+      .set('Authorization', `Bearer ${tokenB}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('POST /api/purchases/:id/cancel with tokenB using company A purchase ID — blocked (404)', async () => {
+    expect(purchaseAId, 'purchase A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .post(`/api/purchases/${purchaseAId}/cancel`)
+      .set('Authorization', `Bearer ${tokenB}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('GET /api/purchases/:id with tokenB — can read own purchase', async () => {
+    expect(purchaseBId, 'purchase B must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .get(`/api/purchases/${purchaseBId}`)
+      .set('Authorization', `Bearer ${tokenB}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(purchaseBId);
+  });
+
+  it('GET /api/purchases/:id with tokenA using company B purchase ID — blocked (404)', async () => {
+    expect(purchaseBId, 'purchase B must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .get(`/api/purchases/${purchaseBId}`)
+      .set('Authorization', `Bearer ${tokenA}`);
+
+    expect(res.status).toBe(404);
+  });
+});
