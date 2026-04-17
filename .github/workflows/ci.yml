@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+# ── Concurrency control ───────────────────────────────────────────────────────
+# Group runs by workflow name + ref so:
+#   • Rapid pushes to main/develop share one slot → older run is cancelled
+#   • Each PR branch gets its own slot → PRs never cancel each other
+# cancel-in-progress: the older run is cancelled the moment a newer one queues.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-backend:
     name: Backend Tests
