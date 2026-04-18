@@ -25,6 +25,15 @@ async function logHistory(advanceId: number, oldStatus: string | null, newStatus
   });
 }
 
+/** يجلب السلفة مع التحقق من ملكية الشركة عبر علاقة الموظف. يرجع null لو غير مملوكة. */
+async function getAdvanceForCompany(advanceId: number, companyId: number) {
+  const [row] = await db.select({ adv: salaryAdvancesTable })
+    .from(salaryAdvancesTable)
+    .innerJoin(employeesTable, eq(salaryAdvancesTable.employee_id, employeesTable.id))
+    .where(and(eq(salaryAdvancesTable.id, advanceId), eq(employeesTable.company_id, companyId)));
+  return row?.adv ?? null;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    SETTINGS
 ══════════════════════════════════════════════════════════════════════ */
@@ -170,6 +179,7 @@ router.get("/salary-advances/pending-approvals", wrap(async (req, res) => {
 /* ── Single Advance ───────────────────────────────────────────── */
 router.get("/salary-advances/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
   const [advance] = await db.select({
@@ -184,8 +194,8 @@ router.get("/salary-advances/:id", wrap(async (req, res) => {
     first_name_ar: employeesTable.first_name_ar, last_name_ar: employeesTable.last_name_ar, employee_code: employeesTable.employee_code,
   })
     .from(salaryAdvancesTable)
-    .leftJoin(employeesTable, eq(salaryAdvancesTable.employee_id, employeesTable.id))
-    .where(eq(salaryAdvancesTable.id, id));
+    .innerJoin(employeesTable, eq(salaryAdvancesTable.employee_id, employeesTable.id))
+    .where(and(eq(salaryAdvancesTable.id, id), eq(employeesTable.company_id, companyId)));
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
   res.json({ ...advance, requested_amount: n(advance.requested_amount), approved_amount: advance.approved_amount != null ? n(advance.approved_amount) : null, remaining_balance: n(advance.remaining_balance), created_at: fmt(advance.created_at), approved_at: fmt(advance.approved_at) });
 }));
@@ -193,11 +203,12 @@ router.get("/salary-advances/:id", wrap(async (req, res) => {
 /* ── Approve ──────────────────────────────────────────────────── */
 router.post("/salary-advances/:id/approve", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح بالاعتماد" }); return; }
+  const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
   const { approved_amount } = req.body as { approved_amount?: number };
 
-  const [advance] = await db.select().from(salaryAdvancesTable).where(eq(salaryAdvancesTable.id, id));
+  const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
   if (advance.status !== "pending") { res.status(409).json({ error: "السلفة غير معلّقة" }); return; }
 
@@ -222,10 +233,11 @@ router.post("/salary-advances/:id/approve", wrap(async (req, res) => {
 /* ── Reject ───────────────────────────────────────────────────── */
 router.post("/salary-advances/:id/reject", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
   const { reason } = req.body as { reason?: string };
-  const [advance] = await db.select({ status: salaryAdvancesTable.status }).from(salaryAdvancesTable).where(eq(salaryAdvancesTable.id, id));
+  const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
   if (advance.status !== "pending") { res.status(409).json({ error: "لا يمكن رفض سلفة غير معلّقة" }); return; }
   await db.update(salaryAdvancesTable).set({ status: "rejected", rejection_reason: reason ?? "مرفوض", updated_at: new Date() }).where(eq(salaryAdvancesTable.id, id));
@@ -236,9 +248,10 @@ router.post("/salary-advances/:id/reject", wrap(async (req, res) => {
 /* ── Cancel ───────────────────────────────────────────────────── */
 router.post("/salary-advances/:id/cancel", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
-  const [advance] = await db.select().from(salaryAdvancesTable).where(eq(salaryAdvancesTable.id, id));
+  const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
   await db.update(salaryAdvancesTable).set({ status: "cancelled", updated_at: new Date() }).where(eq(salaryAdvancesTable.id, id));
   await logHistory(id, advance.status, "cancelled", userId, "إلغاء من المدير");
@@ -247,7 +260,11 @@ router.post("/salary-advances/:id/cancel", wrap(async (req, res) => {
 
 /* ── Deductions ───────────────────────────────────────────────── */
 router.get("/salary-advances/:id/deductions", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
+  const advance = await getAdvanceForCompany(id, companyId);
+  if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
   const rows = await db.select().from(salaryAdvanceDeductionsTable)
     .where(eq(salaryAdvanceDeductionsTable.salary_advance_id, id))
     .orderBy(desc(salaryAdvanceDeductionsTable.deduction_date));
@@ -257,12 +274,13 @@ router.get("/salary-advances/:id/deductions", wrap(async (req, res) => {
 /* ── Manual Payment ───────────────────────────────────────────── */
 router.post("/salary-advances/:id/manual-payment", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
   const { amount, notes } = req.body as { amount?: number; notes?: string };
   if (!amount || amount <= 0) { res.status(400).json({ error: "مبلغ السداد يجب أن يكون موجباً" }); return; }
 
-  const [advance] = await db.select().from(salaryAdvancesTable).where(eq(salaryAdvancesTable.id, id));
+  const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
   const remaining = n(advance.remaining_balance);
   if (amount > remaining) { res.status(400).json({ error: `المبلغ يتجاوز الرصيد المتبقي (${remaining})` }); return; }

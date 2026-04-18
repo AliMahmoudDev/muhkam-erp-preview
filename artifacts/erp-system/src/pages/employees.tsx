@@ -98,6 +98,56 @@ interface EmpDocument {
 type AnyRec = Record<string, unknown>;
 
 /* ── Helpers ──────────────────────────────────────────────────── */
+function CustodyLinesPanel({ custodyId }: { custodyId: number }) {
+  const { data, isLoading } = useQuery<Record<string, unknown>[]>({
+    queryKey: ['/api/employee-custody', custodyId, 'lines'],
+    queryFn: async () => {
+      const r = await authFetch(`/api/employee-custody/${custodyId}/lines`);
+      if (!r.ok) throw new Error('failed');
+      return r.json();
+    },
+  });
+  if (isLoading) {
+    return <div className="text-xs text-white/40 mt-2 text-center py-2">جارِ التحميل…</div>;
+  }
+  const lines = data ?? [];
+  if (lines.length === 0) {
+    return (
+      <div className="text-xs text-white/40 mt-2 text-center py-2 bg-white/5 rounded">
+        لا توجد بنود مصروفات
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2 bg-black/20 rounded border border-white/10 overflow-hidden">
+      <table className="w-full text-xs">
+        <thead className="bg-white/5 text-white/50">
+          <tr>
+            <th className="text-right p-1.5">المبلغ</th>
+            <th className="text-right p-1.5">النوع</th>
+            <th className="text-right p-1.5">الوصف</th>
+            <th className="text-right p-1.5">التاريخ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lines.map((l) => (
+            <tr key={String(l['id'])} className="border-t border-white/5">
+              <td className="p-1.5 font-mono text-amber-300">
+                {Number(l['amount'] ?? 0).toFixed(2)}
+              </td>
+              <td className="p-1.5 text-white/70">{String(l['category'] ?? '')}</td>
+              <td className="p-1.5 text-white/60">{String(l['description'] ?? '—')}</td>
+              <td className="p-1.5 font-mono text-white/40">
+                {String(l['line_date'] ?? '')}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function fmt(v: unknown) {
   return v != null ? Number(Number(v).toFixed(2)).toLocaleString('ar-EG-u-nu-latn') : '0';
 }
@@ -250,6 +300,10 @@ export default function Employees() {
     safe_id: '' as string | number,
   });
   const [showSettleCustody, setShowSettleCustody] = useState<number | null>(null);
+  const [expandedCustody, setExpandedCustody] = useState<number | null>(null);
+  const [showReimburseCustody, setShowReimburseCustody] = useState<number | null>(null);
+  const [reimburseSafeId, setReimburseSafeId] = useState<string>('');
+  const [reimburseNotes, setReimburseNotes] = useState<string>('');
   type SettleLine = { amount: string; category: string; description: string; date: string };
   const blankSettleLine = (): SettleLine => ({
     amount: '',
@@ -509,6 +563,27 @@ export default function Employees() {
       setSettleLines([blankSettleLine()]);
       setSettleNotes('');
       toast({ title: 'تم تسوية العهدة' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+  });
+  const reimburseCustody = useMutation({
+    mutationFn: (vars: { id: number; safe_id: number; notes?: string }) =>
+      authFetch(api(`/api/employee-custody/${vars.id}/reimburse`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ safe_id: vars.safe_id, notes: vars.notes }),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employee-custody', selected?.id] });
+      qc.invalidateQueries({ queryKey: ['/api/settings/safes'] });
+      setShowReimburseCustody(null);
+      setReimburseSafeId('');
+      setReimburseNotes('');
+      toast({ title: 'تم صرف المستحقات' });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
@@ -1254,6 +1329,8 @@ export default function Employees() {
                   <div className="space-y-2">
                     {custody.map((c) => {
                       const isOpen = String(c.status) === 'open';
+                      const reimbursement = Number(c.reimbursement_due ?? 0);
+                      const isExpanded = expandedCustody === Number(c.id);
                       return (
                         <div
                           key={String(c.id)}
@@ -1281,6 +1358,28 @@ export default function Employees() {
                                   <CheckCircle size={10} /> مردودة:{' '}
                                   <span className="font-mono">{fmt(c.returned_amount)}</span>
                                   {c.settled_date ? ` — ${String(c.settled_date)}` : ''}
+                                </div>
+                              )}
+                              {reimbursement > 0 && (
+                                <div className="text-xs text-rose-300 mt-1 flex items-center gap-2 bg-rose-500/10 border border-rose-400/30 rounded px-2 py-1">
+                                  <span>
+                                    مستحق للموظف:{' '}
+                                    <span className="font-mono font-bold">
+                                      {fmt(reimbursement)}
+                                    </span>
+                                  </span>
+                                  {canManage && (
+                                    <button
+                                      onClick={() => {
+                                        setShowReimburseCustody(Number(c.id));
+                                        setReimburseSafeId('');
+                                        setReimburseNotes('');
+                                      }}
+                                      className="erp-btn erp-btn-ghost text-xs text-emerald-300 border border-emerald-400/40 px-2 py-0.5"
+                                    >
+                                      صرف المستحقات
+                                    </button>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1313,6 +1412,19 @@ export default function Employees() {
                                 حذف
                               </button>
                             </div>
+                          )}
+                          {!isOpen && (
+                            <button
+                              onClick={() =>
+                                setExpandedCustody(isExpanded ? null : Number(c.id))
+                              }
+                              className="erp-btn erp-btn-ghost text-xs text-white/60 mt-2"
+                            >
+                              {isExpanded ? '▲ إخفاء التفاصيل' : '▼ عرض بنود التسوية'}
+                            </button>
+                          )}
+                          {!isOpen && isExpanded && (
+                            <CustodyLinesPanel custodyId={Number(c.id)} />
                           )}
                         </div>
                       );
@@ -2423,6 +2535,93 @@ export default function Employees() {
                 </button>
                 <button
                   onClick={() => setShowSettleCustody(null)}
+                  className="erp-btn erp-btn-ghost"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {showReimburseCustody != null && (() => {
+        const current = custody.find(
+          (c: AnyRec) => Number(c.id) === showReimburseCustody,
+        );
+        const due = Number(current?.['reimbursement_due'] ?? 0);
+        const empBranch = selected?.branch_id ?? null;
+        const eligibleSafes = safes.filter(
+          (s) =>
+            s['branch_id'] == null ||
+            empBranch == null ||
+            Number(s['branch_id']) === Number(empBranch),
+        );
+        const canSubmit =
+          !!reimburseSafeId &&
+          due > 0 &&
+          !reimburseCustody.isPending;
+        return (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+            <div className="erp-card max-w-md w-full p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-bold">صرف مستحقات الموظف</h3>
+                <button
+                  onClick={() => setShowReimburseCustody(null)}
+                  className="text-white/40 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="bg-rose-500/10 border border-rose-400/30 rounded p-2 text-xs text-rose-200 mb-3">
+                المبلغ المستحق:{' '}
+                <span className="font-mono font-bold">{fmt(due)}</span>{' '}
+                {String(current?.['currency'] ?? 'EGP')}
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-xs text-white/60 block mb-1">
+                    خزينة الصرف *
+                  </label>
+                  <select
+                    value={reimburseSafeId}
+                    onChange={(e) => setReimburseSafeId(e.target.value)}
+                    className="erp-input w-full text-xs"
+                  >
+                    <option value="">— اختر —</option>
+                    {eligibleSafes.map((s) => (
+                      <option key={String(s['id'])} value={String(s['id'])}>
+                        {String(s['name'])} (الرصيد: {fmt(s['balance'])})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-white/60 block mb-1">ملاحظات</label>
+                  <input
+                    value={reimburseNotes}
+                    onChange={(e) => setReimburseNotes(e.target.value)}
+                    placeholder="(اختياري)"
+                    className="erp-input w-full text-xs"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4 justify-end">
+                <button
+                  disabled={!canSubmit}
+                  onClick={() =>
+                    reimburseCustody.mutate({
+                      id: showReimburseCustody!,
+                      safe_id: Number(reimburseSafeId),
+                      notes: reimburseNotes || undefined,
+                    })
+                  }
+                  className="erp-btn erp-btn-primary disabled:opacity-50"
+                >
+                  {reimburseCustody.isPending ? 'جاري...' : 'تأكيد الصرف'}
+                </button>
+                <button
+                  onClick={() => setShowReimburseCustody(null)}
                   className="erp-btn erp-btn-ghost"
                 >
                   إلغاء

@@ -368,4 +368,85 @@ router.delete("/employee-custody/:id", wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
+/* ─────────────────────────────────────────────────────────────────
+ * POST /employee-custody/:id/reimburse
+ * صرف المستحقات للموظف (لما يكون صرف أكثر من العهدة)
+ * Body: { safe_id: number, notes?: string }
+ * ─ يخصم reimbursement_due من الخزينة ويسجّل حركة out ويصفّر الحقل
+ * ──────────────────────────────────────────────────────────────── */
+router.post("/employee-custody/:id/reimburse", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_employees")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
+  const companyId = req.user!.company_id!;
+  const id = parseInt(String(req.params["id"]), 10);
+  const { safe_id, notes } = req.body as { safe_id?: number; notes?: string };
+  if (!safe_id || Number(safe_id) <= 0) {
+    res.status(400).json({ error: "اختر خزينة الصرف" }); return;
+  }
+
+  const [custody] = await db.select().from(employeeCustodyTable)
+    .where(and(eq(employeeCustodyTable.id, id), eq(employeeCustodyTable.company_id, companyId)));
+  if (!custody) { res.status(404).json({ error: "العهدة غير موجودة" }); return; }
+  if (custody.status !== "settled") {
+    res.status(409).json({ error: "العهدة غير مغلقة بعد" }); return;
+  }
+  const due = n(custody.reimbursement_due);
+  if (due <= 0) {
+    res.status(409).json({ error: "لا توجد مستحقات لهذه العهدة" }); return;
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  await assertPeriodOpen(today, req);
+
+  const result = await db.transaction(async (tx) => {
+    // خصم ذرّي مع فحص الرصيد + ملكية الشركة
+    const updated = await tx.update(safesTable)
+      .set({ balance: sql`${safesTable.balance} - ${String(due)}` })
+      .where(and(
+        eq(safesTable.id, Number(safe_id)),
+        eq(safesTable.company_id, companyId),
+        sql`${safesTable.balance} >= ${String(due)}`,
+      ))
+      .returning();
+    const safe = updated[0];
+    if (!safe) {
+      throw httpError(409, "رصيد الخزينة غير كافٍ أو الخزينة غير صالحة");
+    }
+    await tx.insert(transactionsTable).values({
+      type: "custody_reimbursement",
+      reference_type: "employee_custody",
+      reference_id: id,
+      safe_id: safe.id,
+      safe_name: safe.name,
+      amount: String(due),
+      direction: "out",
+      description: notes ?? `صرف مستحقات عهدة #${id}`,
+      date: today,
+      company_id: companyId,
+    });
+    const [row] = await tx.update(employeeCustodyTable)
+      .set({ reimbursement_due: "0", updated_at: new Date() })
+      .where(and(
+        eq(employeeCustodyTable.id, id),
+        eq(employeeCustodyTable.company_id, companyId),
+      ))
+      .returning();
+    return row;
+  });
+
+  res.json({
+    ok: true,
+    reimbursed: due,
+    custody: {
+      ...result,
+      amount: n(result.amount),
+      returned_amount: n(result.returned_amount),
+      reimbursement_due: n(result.reimbursement_due),
+      created_at: fmtTs(result.created_at),
+      updated_at: fmtTs(result.updated_at),
+    },
+  });
+}));
+
 export default router;
