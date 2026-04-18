@@ -109,7 +109,7 @@ type AnyRec = Record<string, unknown>;
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 function fmt(v: unknown) {
-  return v != null ? Number(Number(v).toFixed(2)).toLocaleString('ar-EG') : '0';
+  return v != null ? Number(Number(v).toFixed(2)).toLocaleString('ar-EG-u-nu-latn') : '0';
 }
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -231,11 +231,11 @@ export default function Employees() {
 
   /* ── Inline dept add ───────────────────────────────────────── */
   const [showInlineDept, setShowInlineDept] = useState(false);
-  const [inlineDept, setInlineDept] = useState({ name_ar: '', name_en: '' });
+  const [inlineDept, setInlineDept] = useState({ name_ar: '' });
 
   /* ── Inline job title add ──────────────────────────────────── */
   const [showInlineJt, setShowInlineJt] = useState(false);
-  const [inlineJt, setInlineJt] = useState({ name_ar: '', name_en: '' });
+  const [inlineJt, setInlineJt] = useState({ name_ar: '' });
 
   /* ── Other dialogs ─────────────────────────────────────────── */
   const [statusDialog, setStatusDialog] = useState<{ emp: Employee; open: boolean } | null>(null);
@@ -450,7 +450,7 @@ export default function Employees() {
 
   /* ── Inline dept/jt creation ─────────────────────────────── */
   const createInlineDept = useMutation({
-    mutationFn: (data: { name_ar: string; name_en: string }) =>
+    mutationFn: (data: { name_ar: string }) =>
       authFetch(api('/api/departments'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -464,13 +464,13 @@ export default function Employees() {
       qc.invalidateQueries({ queryKey: ['/api/departments'] });
       setEditEmp((p) => ({ ...p, department_id: d.id }));
       setShowInlineDept(false);
-      setInlineDept({ name_ar: '', name_en: '' });
+      setInlineDept({ name_ar: '' });
       toast({ title: 'تمت إضافة القسم' });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
   const createInlineJt = useMutation({
-    mutationFn: (data: { name_ar: string; name_en: string }) =>
+    mutationFn: (data: { name_ar: string }) =>
       authFetch(api('/api/job-titles'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -484,7 +484,7 @@ export default function Employees() {
       qc.invalidateQueries({ queryKey: ['/api/job-titles'] });
       setEditEmp((p) => ({ ...p, job_title_id: d.id }));
       setShowInlineJt(false);
-      setInlineJt({ name_ar: '', name_en: '' });
+      setInlineJt({ name_ar: '' });
       toast({ title: 'تمت إضافة المسمى الوظيفي' });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
@@ -746,7 +746,7 @@ export default function Employees() {
                             <span className="text-purple-300">{emp.commission_rate}%</span>
                           ) : emp.salary != null ? (
                             <span className="text-emerald-300">
-                              {emp.salary.toLocaleString('ar-EG')} {emp.currency}
+                              {emp.salary.toLocaleString('ar-EG-u-nu-latn')} {emp.currency}
                             </span>
                           ) : (
                             '—'
@@ -866,7 +866,7 @@ export default function Employees() {
                     <InfoRow
                       icon={Wallet}
                       label="الراتب"
-                      value={`${selected.salary.toLocaleString('ar-EG')} ${selected.currency}`}
+                      value={`${selected.salary.toLocaleString('ar-EG-u-nu-latn')} ${selected.currency}`}
                     />
                   ) : null)}
                 {canViewSalary && selected.bank_account && (
@@ -1153,7 +1153,7 @@ export default function Employees() {
                       {h.reason && <div className="text-white/50 mt-0.5">{h.reason}</div>}
                       <div className="text-white/30">
                         {h.changed_at
-                          ? new Date(h.changed_at).toLocaleDateString('ar-EG', {
+                          ? new Date(h.changed_at).toLocaleDateString('ar-EG-u-nu-latn', {
                               year: 'numeric',
                               month: 'short',
                               day: 'numeric',
@@ -1337,13 +1337,8 @@ export default function Employees() {
                         value={inlineDept.name_ar}
                         onChange={(e) => setInlineDept((p) => ({ ...p, name_ar: e.target.value }))}
                         className="erp-input w-full text-sm"
-                        placeholder="اسم القسم بالعربي *"
-                      />
-                      <input
-                        value={inlineDept.name_en}
-                        onChange={(e) => setInlineDept((p) => ({ ...p, name_en: e.target.value }))}
-                        className="erp-input w-full text-sm"
-                        placeholder="Department Name (English)"
+                        placeholder="اسم القسم *"
+                        autoFocus
                       />
                       <div className="flex gap-2">
                         <button
@@ -1396,13 +1391,8 @@ export default function Employees() {
                         value={inlineJt.name_ar}
                         onChange={(e) => setInlineJt((p) => ({ ...p, name_ar: e.target.value }))}
                         className="erp-input w-full text-sm"
-                        placeholder="المسمى بالعربي *"
-                      />
-                      <input
-                        value={inlineJt.name_en}
-                        onChange={(e) => setInlineJt((p) => ({ ...p, name_en: e.target.value }))}
-                        className="erp-input w-full text-sm"
-                        placeholder="Job Title (English)"
+                        placeholder="اسم المسمى الوظيفي *"
+                        autoFocus
                       />
                       <div className="flex gap-2">
                         <button

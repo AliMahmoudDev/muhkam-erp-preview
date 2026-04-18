@@ -1,97 +1,119 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { authFetch } from "@/lib/auth-fetch";
-import { useAuth } from "@/contexts/auth";
-import { useToast } from "@/hooks/use-toast";
-import { ConfirmModal } from "@/components/confirm-modal";
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { authFetch } from '@/lib/auth-fetch';
+import { useAuth } from '@/contexts/auth';
+import { useToast } from '@/hooks/use-toast';
+import { ConfirmModal } from '@/components/confirm-modal';
 import {
-  Plus, Pencil, Trash2, GitBranch, MapPin, Phone,
-  CheckCircle2, XCircle, Building2,
-} from "lucide-react";
+  Plus,
+  Pencil,
+  Trash2,
+  GitBranch,
+  MapPin,
+  Phone,
+  CheckCircle2,
+  XCircle,
+  Building2,
+} from 'lucide-react';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (p: string) => `${BASE}${p}`;
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const api = (p: string) => `${BASE}${p}`;
 
 interface Branch {
-  id:         number;
+  id: number;
   company_id: number;
-  name:       string;
-  address:    string | null;
-  phone:      string | null;
-  is_active:  boolean;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  is_active: boolean;
   created_at: string;
 }
 
-const EMPTY_FORM = { name: "", address: "", phone: "", is_active: true };
+const EMPTY_FORM = { name: '', address: '', phone: '', is_active: true };
 
 export default function Branches() {
   const { user } = useAuth();
-  const qc       = useQueryClient();
+  const qc = useQueryClient();
   const { toast } = useToast();
-  const isAdmin   = user?.role === "admin";
+  const isAdmin = user?.role === 'admin';
 
-  const [showForm,    setShowForm]    = useState(false);
-  const [editId,      setEditId]      = useState<number | null>(null);
-  const [deleteId,    setDeleteId]    = useState<number | null>(null);
-  const [form,        setForm]        = useState(EMPTY_FORM);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
 
   /* ── Queries ─────────────────────────────────────────────── */
   const { data: branches = [], isLoading } = useQuery<Branch[]>({
-    queryKey: ["/api/branches"],
-    queryFn:  () => authFetch(api("/api/branches")).then(r => {
-      if (!r.ok) throw new Error("خطأ في جلب الفروع");
-      return r.json();
-    }),
+    queryKey: ['/api/branches'],
+    queryFn: () =>
+      authFetch(api('/api/branches')).then((r) => {
+        if (!r.ok) throw new Error('خطأ في جلب الفروع');
+        return r.json();
+      }),
   });
 
   /* ── Mutations ───────────────────────────────────────────── */
   const createMutation = useMutation({
-    mutationFn: async (body: { name: string; address?: string; phone?: string; is_active: boolean }) => {
-      const r = await authFetch(api("/api/branches"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+    mutationFn: async (body: {
+      name: string;
+      address?: string;
+      phone?: string;
+      is_active: boolean;
+    }) => {
+      const r = await authFetch(api('/api/branches'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (!r.ok) { const e = await r.json(); throw new Error(e.error || "خطأ"); }
+      if (!r.ok) {
+        const e = await r.json();
+        throw new Error(e.error || 'خطأ');
+      }
       return r.json();
     },
     onSuccess: () => {
-      toast({ title: "تم إنشاء الفرع بنجاح" });
-      qc.invalidateQueries({ queryKey: ["/api/branches"] });
+      toast({ title: 'تم إنشاء الفرع بنجاح' });
+      qc.invalidateQueries({ queryKey: ['/api/branches'] });
       resetForm();
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, body }: { id: number; body: Partial<typeof EMPTY_FORM> }) => {
       const r = await authFetch(api(`/api/branches/${id}`), {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (!r.ok) { const e = await r.json(); throw new Error(e.error || "خطأ"); }
+      if (!r.ok) {
+        const e = await r.json();
+        throw new Error(e.error || 'خطأ');
+      }
       return r.json();
     },
     onSuccess: () => {
-      toast({ title: "تم تحديث الفرع بنجاح" });
-      qc.invalidateQueries({ queryKey: ["/api/branches"] });
+      toast({ title: 'تم تحديث الفرع بنجاح' });
+      qc.invalidateQueries({ queryKey: ['/api/branches'] });
       resetForm();
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const r = await authFetch(api(`/api/branches/${id}`), { method: "DELETE" });
-      if (!r.ok) { const e = await r.json(); throw new Error(e.error || "خطأ"); }
+      const r = await authFetch(api(`/api/branches/${id}`), { method: 'DELETE' });
+      if (!r.ok) {
+        const e = await r.json();
+        throw new Error(e.error || 'خطأ');
+      }
     },
     onSuccess: () => {
-      toast({ title: "تم حذف الفرع" });
-      qc.invalidateQueries({ queryKey: ["/api/branches"] });
+      toast({ title: 'تم حذف الفرع' });
+      qc.invalidateQueries({ queryKey: ['/api/branches'] });
       setDeleteId(null);
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
   /* ── Helpers ─────────────────────────────────────────────── */
@@ -102,15 +124,28 @@ export default function Branches() {
   }
 
   function startEdit(b: Branch) {
-    setForm({ name: b.name, address: b.address ?? "", phone: b.phone ?? "", is_active: b.is_active });
+    setForm({
+      name: b.name,
+      address: b.address ?? '',
+      phone: b.phone ?? '',
+      is_active: b.is_active,
+    });
     setEditId(b.id);
     setShowForm(true);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim()) { toast({ title: "اسم الفرع مطلوب", variant: "destructive" }); return; }
-    const body = { name: form.name.trim(), address: form.address.trim() || undefined, phone: form.phone.trim() || undefined, is_active: form.is_active };
+    if (!form.name.trim()) {
+      toast({ title: 'اسم الفرع مطلوب', variant: 'destructive' });
+      return;
+    }
+    const body = {
+      name: form.name.trim(),
+      address: form.address.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      is_active: form.is_active,
+    };
     if (editId !== null) {
       updateMutation.mutate({ id: editId, body });
     } else {
@@ -118,12 +153,11 @@ export default function Branches() {
     }
   }
 
-  const activeBranches   = branches.filter(b => b.is_active).length;
+  const activeBranches = branches.filter((b) => b.is_active).length;
   const inactiveBranches = branches.length - activeBranches;
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto" dir="rtl">
-
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -137,7 +171,10 @@ export default function Branches() {
         </div>
         {isAdmin && (
           <button
-            onClick={() => { resetForm(); setShowForm(true); }}
+            onClick={() => {
+              resetForm();
+              setShowForm(true);
+            }}
             className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold px-4 py-2 rounded-xl transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -149,14 +186,18 @@ export default function Branches() {
       {/* ── Stats ──────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "إجمالي الفروع",  value: branches.length,  icon: Building2,    color: "#F59E0B" },
-          { label: "فروع نشطة",       value: activeBranches,   icon: CheckCircle2, color: "#10B981" },
-          { label: "فروع موقوفة",     value: inactiveBranches, icon: XCircle,      color: "#EF4444" },
-        ].map(s => (
-          <div key={s.label}
+          { label: 'إجمالي الفروع', value: branches.length, icon: Building2, color: '#F59E0B' },
+          { label: 'فروع نشطة', value: activeBranches, icon: CheckCircle2, color: '#10B981' },
+          { label: 'فروع موقوفة', value: inactiveBranches, icon: XCircle, color: '#EF4444' },
+        ].map((s) => (
+          <div
+            key={s.label}
             className="rounded-xl p-4 flex items-center gap-3 bg-[var(--erp-bg-card)] border border-[var(--erp-border)]"
           >
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: s.color + "1A" }}>
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center"
+              style={{ background: s.color + '1A' }}
+            >
               <s.icon className="w-4 h-4" style={{ color: s.color }} />
             </div>
             <div>
@@ -172,9 +213,14 @@ export default function Branches() {
         <div className="rounded-2xl p-5 bg-[var(--erp-bg-card)] border border-amber-500/25 shadow-[var(--erp-shadow-card)]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-[var(--erp-text-1)]">
-              {editId !== null ? "تعديل الفرع" : "فرع جديد"}
+              {editId !== null ? 'تعديل الفرع' : 'فرع جديد'}
             </h2>
-            <button onClick={resetForm} className="text-[var(--erp-text-3)] hover:text-[var(--erp-text-2)] transition-colors text-sm">إلغاء</button>
+            <button
+              onClick={resetForm}
+              className="text-[var(--erp-text-3)] hover:text-[var(--erp-text-2)] transition-colors text-sm"
+            >
+              إلغاء
+            </button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -182,7 +228,7 @@ export default function Branches() {
                 <label className="block text-xs text-[var(--erp-text-3)] mb-1.5">اسم الفرع *</label>
                 <input
                   value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="مثال: الفرع الرئيسي"
                   required
                   className="glass-input w-full rounded-lg px-3 py-2.5 text-sm"
@@ -192,7 +238,7 @@ export default function Branches() {
                 <label className="block text-xs text-[var(--erp-text-3)] mb-1.5">العنوان</label>
                 <input
                   value={form.address}
-                  onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                  onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
                   placeholder="عنوان الفرع"
                   className="glass-input w-full rounded-lg px-3 py-2.5 text-sm"
                 />
@@ -201,7 +247,7 @@ export default function Branches() {
                 <label className="block text-xs text-[var(--erp-text-3)] mb-1.5">رقم الهاتف</label>
                 <input
                   value={form.phone}
-                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                   placeholder="رقم هاتف الفرع"
                   className="glass-input w-full rounded-lg px-3 py-2.5 text-sm"
                 />
@@ -212,23 +258,36 @@ export default function Branches() {
                 <label className="text-sm text-[var(--erp-text-2)]">حالة الفرع:</label>
                 <button
                   type="button"
-                  onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.is_active ? "bg-amber-500" : "bg-white/15"}`}
+                  onClick={() => setForm((f) => ({ ...f, is_active: !f.is_active }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.is_active ? 'bg-amber-500' : 'bg-white/15'}`}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.is_active ? "-translate-x-6" : "-translate-x-1"}`} />
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.is_active ? '-translate-x-6' : '-translate-x-1'}`}
+                  />
                 </button>
-                <span className="text-sm text-[var(--erp-text-3)]">{form.is_active ? "نشط" : "موقوف"}</span>
+                <span className="text-sm text-[var(--erp-text-3)]">
+                  {form.is_active ? 'نشط' : 'موقوف'}
+                </span>
               </div>
             )}
             <div className="flex gap-3 justify-end">
-              <button type="button" onClick={resetForm}
-                className="px-4 py-2 text-sm text-[var(--erp-text-3)] hover:text-[var(--erp-text-1)] transition-colors">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-4 py-2 text-sm text-[var(--erp-text-3)] hover:text-[var(--erp-text-1)] transition-colors"
+              >
                 إلغاء
               </button>
-              <button type="submit"
+              <button
+                type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold rounded-lg transition-colors disabled:opacity-50">
-                {createMutation.isPending || updateMutation.isPending ? "جاري الحفظ..." : editId !== null ? "حفظ التعديلات" : "إنشاء الفرع"}
+                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? 'جاري الحفظ...'
+                  : editId !== null
+                    ? 'حفظ التعديلات'
+                    : 'إنشاء الفرع'}
               </button>
             </div>
           </form>
@@ -246,8 +305,10 @@ export default function Branches() {
             <GitBranch className="w-12 h-12 text-[var(--erp-text-4)] mb-3" />
             <p className="text-[var(--erp-text-3)] font-medium">لا توجد فروع بعد</p>
             {isAdmin && (
-              <button onClick={() => setShowForm(true)}
-                className="mt-4 text-sm text-amber-400 hover:text-amber-300 transition-colors">
+              <button
+                onClick={() => setShowForm(true)}
+                className="mt-4 text-sm text-amber-400 hover:text-amber-300 transition-colors"
+              >
                 أضف أول فرع
               </button>
             )}
@@ -256,15 +317,29 @@ export default function Branches() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--erp-border)]">
-                {["الفرع", "العنوان", "الهاتف", "الحالة", "تاريخ الإنشاء", isAdmin ? "إجراءات" : ""].map(h => (
-                  <th key={h} className="py-3 px-4 text-right text-xs font-medium text-[var(--erp-text-3)]">{h}</th>
+                {[
+                  'الفرع',
+                  'العنوان',
+                  'الهاتف',
+                  'الحالة',
+                  'تاريخ الإنشاء',
+                  isAdmin ? 'إجراءات' : '',
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="py-3 px-4 text-right text-xs font-medium text-[var(--erp-text-3)]"
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {branches.map((b, i) => (
-                <tr key={b.id}
-                  className={`transition-colors hover:bg-[var(--erp-bg-hover)] ${i < branches.length - 1 ? "border-b border-[var(--erp-border)]" : ""}`}>
+                <tr
+                  key={b.id}
+                  className={`transition-colors hover:bg-[var(--erp-bg-hover)] ${i < branches.length - 1 ? 'border-b border-[var(--erp-border)]' : ''}`}
+                >
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
@@ -297,17 +372,21 @@ export default function Branches() {
                     <span
                       className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
                       style={{
-                        background: b.is_active ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
-                        color:      b.is_active ? "#10B981" : "#EF4444",
-                        border:     `1px solid ${b.is_active ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+                        background: b.is_active ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                        color: b.is_active ? '#10B981' : '#EF4444',
+                        border: `1px solid ${b.is_active ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
                       }}
                     >
-                      {b.is_active ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                      {b.is_active ? "نشط" : "موقوف"}
+                      {b.is_active ? (
+                        <CheckCircle2 className="w-3 h-3" />
+                      ) : (
+                        <XCircle className="w-3 h-3" />
+                      )}
+                      {b.is_active ? 'نشط' : 'موقوف'}
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-[var(--erp-text-3)] text-xs">
-                    {new Date(b.created_at).toLocaleDateString("ar-EG")}
+                    {new Date(b.created_at).toLocaleDateString('ar-EG-u-nu-latn')}
                   </td>
                   {isAdmin && (
                     <td className="py-3.5 px-4">

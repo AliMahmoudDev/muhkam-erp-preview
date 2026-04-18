@@ -1,34 +1,45 @@
 function escapeHtml(unsafe: string | null | undefined): string {
-  if (unsafe == null) return "";
+  if (unsafe == null) return '';
   return String(unsafe)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function getSettings(): { companyName: string; phone: string; address: string } {
   try {
-    const raw = localStorage.getItem("halal_erp_settings");
+    const raw = localStorage.getItem('halal_erp_settings');
     if (raw) {
       const p = JSON.parse(raw);
-      return { companyName: p.companyName ?? "هالال تك", phone: p.phone ?? "", address: p.address ?? "" };
+      return {
+        companyName: p.companyName ?? 'هالال تك',
+        phone: p.phone ?? '',
+        address: p.address ?? '',
+      };
     }
   } catch {}
-  return { companyName: "هالال تك", phone: "", address: "" };
+  return { companyName: 'هالال تك', phone: '', address: '' };
 }
 
 function getCurrencySymbol(): string {
   try {
-    const raw = localStorage.getItem("halal_erp_settings");
+    const raw = localStorage.getItem('halal_erp_settings');
     if (raw) {
       const p = JSON.parse(raw);
-      const map: Record<string, string> = { EGP: "ج.م", SAR: "ر.س", AED: "د.إ", USD: "$", KWD: "د.ك", BHD: "د.ب" };
-      return map[p.currency] ?? "ج.م";
+      const map: Record<string, string> = {
+        EGP: 'ج.م',
+        SAR: 'ر.س',
+        AED: 'د.إ',
+        USD: '$',
+        KWD: 'د.ك',
+        BHD: 'د.ب',
+      };
+      return map[p.currency] ?? 'ج.م';
     }
   } catch {}
-  return "ج.م";
+  return 'ج.م';
 }
 
 function fmtMoney(n: number | null | undefined): string {
@@ -37,16 +48,20 @@ function fmtMoney(n: number | null | undefined): string {
 }
 
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "-";
-  return new Date(d).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
+  if (!d) return '-';
+  return new Date(d).toLocaleDateString('ar-EG-u-nu-latn', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 function payLabel(t: string): string {
-  return ({ cash: "نقدي", credit: "آجل", partial: "جزئي" })[t] ?? t;
+  return { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' }[t] ?? t;
 }
 
 function statusLabel(s: string): string {
-  return ({ paid: "مدفوع", partial: "جزئي", pending: "معلق", unpaid: "غير مدفوع" })[s] ?? s;
+  return { paid: 'مدفوع', partial: 'جزئي', pending: 'معلق', unpaid: 'غير مدفوع' }[s] ?? s;
 }
 
 const PRINT_STYLES = `
@@ -90,11 +105,17 @@ const PRINT_STYLES = `
 
 function buildWindow(title: string, bodyHtml: string): void {
   const s = getSettings();
-  const now = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
-  const safeTitle       = escapeHtml(title);
+  const now = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const safeTitle = escapeHtml(title);
   const safeCompanyName = escapeHtml(s.companyName);
-  const safePhone       = escapeHtml(s.phone);
-  const safeAddress     = escapeHtml(s.address);
+  const safePhone = escapeHtml(s.phone);
+  const safeAddress = escapeHtml(s.address);
 
   const html = `<!DOCTYPE html><html dir="rtl" lang="ar">
 <head>
@@ -110,8 +131,8 @@ function buildWindow(title: string, bodyHtml: string): void {
   <div class="header">
     <div>
       <div class="company-name">${safeCompanyName}</div>
-      ${safePhone ? `<div class="company-info">📞 ${safePhone}</div>` : ""}
-      ${safeAddress ? `<div class="company-info">📍 ${safeAddress}</div>` : ""}
+      ${safePhone ? `<div class="company-info">📞 ${safePhone}</div>` : ''}
+      ${safeAddress ? `<div class="company-info">📍 ${safeAddress}</div>` : ''}
     </div>
     <div class="report-info">
       <div class="report-title">${safeTitle}</div>
@@ -126,8 +147,11 @@ function buildWindow(title: string, bodyHtml: string): void {
 </script>
 </body></html>`;
 
-  const win = window.open("", "_blank", "width=900,height=700");
-  if (!win) { alert("يرجى السماح بالنوافذ المنبثقة في المتصفح ثم أعد المحاولة"); return; }
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) {
+    alert('يرجى السماح بالنوافذ المنبثقة في المتصفح ثم أعد المحاولة');
+    return;
+  }
   win.document.open();
   win.document.write(html);
   win.document.close();
@@ -150,17 +174,21 @@ export function printSalesReport(sales: SaleForPdf[]) {
   const paid = sales.reduce((s, v) => s + Number(v.paid_amount), 0);
   const remaining = sales.reduce((s, v) => s + Number(v.remaining_amount), 0);
 
-  const rows = sales.map(s => `
+  const rows = sales
+    .map(
+      (s) => `
     <tr>
       <td><strong>${escapeHtml(s.invoice_no)}</strong></td>
-      <td>${escapeHtml(s.customer_name) || "عميل نقدي"}</td>
+      <td>${escapeHtml(s.customer_name) || 'عميل نقدي'}</td>
       <td><strong>${fmtMoney(Number(s.total_amount))}</strong></td>
       <td style="color:#059669;font-weight:700">${fmtMoney(Number(s.paid_amount))}</td>
-      <td style="color:${Number(s.remaining_amount) > 0 ? "#dc2626" : "#9ca3af"};font-weight:700">${Number(s.remaining_amount) > 0 ? fmtMoney(Number(s.remaining_amount)) : "—"}</td>
-      <td><span class="badge badge-${s.payment_type === "cash" ? "green" : s.payment_type === "credit" ? "red" : "yellow"}">${payLabel(s.payment_type)}</span></td>
-      <td><span class="badge badge-${s.status === "paid" ? "green" : s.status === "partial" ? "yellow" : "red"}">${statusLabel(s.status)}</span></td>
+      <td style="color:${Number(s.remaining_amount) > 0 ? '#dc2626' : '#9ca3af'};font-weight:700">${Number(s.remaining_amount) > 0 ? fmtMoney(Number(s.remaining_amount)) : '—'}</td>
+      <td><span class="badge badge-${s.payment_type === 'cash' ? 'green' : s.payment_type === 'credit' ? 'red' : 'yellow'}">${payLabel(s.payment_type)}</span></td>
+      <td><span class="badge badge-${s.status === 'paid' ? 'green' : s.status === 'partial' ? 'yellow' : 'red'}">${statusLabel(s.status)}</span></td>
       <td style="color:#6b7280;font-size:11px">${fmtDate(s.created_at)}</td>
-    </tr>`).join("");
+    </tr>`
+    )
+    .join('');
 
   const body = `
     <div class="summary">
@@ -184,7 +212,7 @@ export function printSalesReport(sales: SaleForPdf[]) {
       </tr></tfoot>
     </table>`;
 
-  buildWindow("تقرير المبيعات", body);
+  buildWindow('تقرير المبيعات', body);
 }
 
 /* ─── Purchases PDF ───────────────────────────────────────── */
@@ -205,17 +233,21 @@ export function printPurchasesReport(purchases: PurchaseForPdf[]) {
   const paid = purchases.reduce((s, v) => s + Number(v.paid_amount), 0);
   const remaining = purchases.reduce((s, v) => s + Number(v.remaining_amount), 0);
 
-  const rows = purchases.map(p => `
+  const rows = purchases
+    .map(
+      (p) => `
     <tr>
       <td><strong>${escapeHtml(p.invoice_no)}</strong></td>
-      <td>${escapeHtml(p.supplier_name) || "—"}</td>
-      <td>${escapeHtml(p.customer_name) || "—"}</td>
+      <td>${escapeHtml(p.supplier_name) || '—'}</td>
+      <td>${escapeHtml(p.customer_name) || '—'}</td>
       <td><strong>${fmtMoney(Number(p.total_amount))}</strong></td>
       <td style="color:#059669;font-weight:700">${fmtMoney(Number(p.paid_amount))}</td>
-      <td style="color:${Number(p.remaining_amount) > 0 ? "#dc2626" : "#9ca3af"};font-weight:700">${Number(p.remaining_amount) > 0 ? fmtMoney(Number(p.remaining_amount)) : "—"}</td>
-      <td><span class="badge badge-${p.payment_type === "cash" ? "green" : p.payment_type === "credit" ? "red" : "yellow"}">${payLabel(p.payment_type)}</span></td>
+      <td style="color:${Number(p.remaining_amount) > 0 ? '#dc2626' : '#9ca3af'};font-weight:700">${Number(p.remaining_amount) > 0 ? fmtMoney(Number(p.remaining_amount)) : '—'}</td>
+      <td><span class="badge badge-${p.payment_type === 'cash' ? 'green' : p.payment_type === 'credit' ? 'red' : 'yellow'}">${payLabel(p.payment_type)}</span></td>
       <td style="color:#6b7280;font-size:11px">${fmtDate(p.created_at)}</td>
-    </tr>`).join("");
+    </tr>`
+    )
+    .join('');
 
   const body = `
     <div class="summary">
@@ -239,7 +271,7 @@ export function printPurchasesReport(purchases: PurchaseForPdf[]) {
       </tr></tfoot>
     </table>`;
 
-  buildWindow("تقرير المشتريات", body);
+  buildWindow('تقرير المشتريات', body);
 }
 
 /* ─── Customer Statement PDF ──────────────────────────────── */
@@ -258,7 +290,12 @@ export interface StatementSale {
   payment_type: string;
   status: string;
   created_at: string;
-  items?: Array<{ product_name: string; quantity: number; unit_price: number; total_price: number }>;
+  items?: Array<{
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>;
 }
 
 export interface StatementReturn {
@@ -283,7 +320,7 @@ export function printCustomerStatement(
   salesReturns: StatementReturn[],
   receiptVouchers: StatementVoucher[],
   depositVouchers: StatementVoucher[],
-  paymentVouchers: StatementVoucher[],
+  paymentVouchers: StatementVoucher[]
 ) {
   const totalSales = sales.reduce((s, v) => s + Number(v.total_amount), 0);
   const totalPaid = sales.reduce((s, v) => s + Number(v.paid_amount), 0);
@@ -292,70 +329,92 @@ export function printCustomerStatement(
   const totalDeposits = depositVouchers.reduce((s, v) => s + Number(v.amount), 0);
   const totalPayments = paymentVouchers.reduce((s, v) => s + Number(v.amount), 0);
 
-  const salesRows = sales.map(s => `
+  const salesRows = sales
+    .map(
+      (s) => `
     <tr>
       <td><strong style="color:#d97706">${escapeHtml(s.invoice_no)}</strong></td>
       <td>${fmtMoney(Number(s.total_amount))}</td>
       <td style="color:#059669;font-weight:700">${fmtMoney(Number(s.paid_amount))}</td>
-      <td style="color:${Number(s.remaining_amount) > 0 ? "#dc2626" : "#9ca3af"};font-weight:700">${Number(s.remaining_amount) > 0 ? fmtMoney(Number(s.remaining_amount)) : "—"}</td>
-      <td><span class="badge badge-${s.payment_type === "cash" ? "green" : s.payment_type === "credit" ? "red" : "yellow"}">${payLabel(s.payment_type)}</span></td>
+      <td style="color:${Number(s.remaining_amount) > 0 ? '#dc2626' : '#9ca3af'};font-weight:700">${Number(s.remaining_amount) > 0 ? fmtMoney(Number(s.remaining_amount)) : '—'}</td>
+      <td><span class="badge badge-${s.payment_type === 'cash' ? 'green' : s.payment_type === 'credit' ? 'red' : 'yellow'}">${payLabel(s.payment_type)}</span></td>
       <td style="color:#6b7280;font-size:11px">${fmtDate(s.created_at)}</td>
-    </tr>`).join("");
+    </tr>`
+    )
+    .join('');
 
-  const returnRows = salesReturns.map(r => `
+  const returnRows = salesReturns
+    .map(
+      (r) => `
     <tr>
       <td><strong style="color:#dc2626">${escapeHtml(r.return_no)}</strong></td>
       <td style="color:#dc2626;font-weight:700">${fmtMoney(Number(r.total_amount))}</td>
-      <td>${r.refund_type === "cash" ? "نقدي" : "رصيد"}</td>
-      <td style="color:#6b7280">${escapeHtml(r.reason) || "—"}</td>
+      <td>${r.refund_type === 'cash' ? 'نقدي' : 'رصيد'}</td>
+      <td style="color:#6b7280">${escapeHtml(r.reason) || '—'}</td>
       <td style="color:#6b7280;font-size:11px">${fmtDate(r.created_at)}</td>
-    </tr>`).join("");
+    </tr>`
+    )
+    .join('');
 
-  const receiptRows = receiptVouchers.map(v => `
+  const receiptRows = receiptVouchers
+    .map(
+      (v) => `
     <tr>
       <td><strong style="color:#059669">${escapeHtml(v.voucher_no)}</strong></td>
       <td style="color:#059669;font-weight:700">${fmtMoney(Number(v.amount))}</td>
       <td>${escapeHtml(v.safe_name)}</td>
-      <td style="color:#6b7280">${escapeHtml(v.notes) || "—"}</td>
+      <td style="color:#6b7280">${escapeHtml(v.notes) || '—'}</td>
       <td style="color:#6b7280;font-size:11px">${fmtDate(v.date)}</td>
-    </tr>`).join("");
+    </tr>`
+    )
+    .join('');
 
-  const depositRows = depositVouchers.map(v => `
+  const depositRows = depositVouchers
+    .map(
+      (v) => `
     <tr>
       <td><strong style="color:#2563eb">${escapeHtml(v.voucher_no)}</strong></td>
       <td style="color:#2563eb;font-weight:700">${fmtMoney(Number(v.amount))}</td>
       <td>${escapeHtml(v.safe_name)}</td>
-      <td style="color:#6b7280">${escapeHtml(v.notes) || "—"}</td>
+      <td style="color:#6b7280">${escapeHtml(v.notes) || '—'}</td>
       <td style="color:#6b7280;font-size:11px">${fmtDate(v.date)}</td>
-    </tr>`).join("");
+    </tr>`
+    )
+    .join('');
 
-  const paymentRows = paymentVouchers.map(v => `
+  const paymentRows = paymentVouchers
+    .map(
+      (v) => `
     <tr>
       <td><strong style="color:#7c3aed">${escapeHtml(v.voucher_no)}</strong></td>
       <td style="color:#7c3aed;font-weight:700">${fmtMoney(Number(v.amount))}</td>
       <td>${escapeHtml(v.safe_name)}</td>
-      <td style="color:#6b7280">${escapeHtml(v.notes) || "—"}</td>
+      <td style="color:#6b7280">${escapeHtml(v.notes) || '—'}</td>
       <td style="color:#6b7280;font-size:11px">${fmtDate(v.date)}</td>
-    </tr>`).join("");
+    </tr>`
+    )
+    .join('');
 
   const body = `
     <div class="customer-info">
       <div class="info-item"><label>اسم العميل</label><span>${escapeHtml(customer.name)}</span></div>
-      <div class="info-item"><label>الهاتف</label><span>${escapeHtml(customer.phone) || "—"}</span></div>
-      <div class="info-item"><label>الرصيد المستحق</label><span style="color:${Number(customer.balance) > 0 ? "#dc2626" : "#059669"}">${fmtMoney(Number(customer.balance))}</span></div>
+      <div class="info-item"><label>الهاتف</label><span>${escapeHtml(customer.phone) || '—'}</span></div>
+      <div class="info-item"><label>الرصيد المستحق</label><span style="color:${Number(customer.balance) > 0 ? '#dc2626' : '#059669'}">${fmtMoney(Number(customer.balance))}</span></div>
     </div>
 
     <div class="summary">
       <div class="card"><div class="card-label">إجمالي المبيعات</div><div class="card-value">${fmtMoney(totalSales)}</div></div>
       <div class="card"><div class="card-label">المحصَّل (فواتير)</div><div class="card-value green">${fmtMoney(totalPaid)}</div></div>
-      ${totalReturns > 0 ? `<div class="card"><div class="card-label">المرتجعات</div><div class="card-value red">${fmtMoney(totalReturns)}</div></div>` : ""}
-      ${totalReceipts > 0 ? `<div class="card"><div class="card-label">سندات القبض</div><div class="card-value green">${fmtMoney(totalReceipts)}</div></div>` : ""}
-      ${totalDeposits > 0 ? `<div class="card"><div class="card-label">سندات الإيداع</div><div class="card-value">${fmtMoney(totalDeposits)}</div></div>` : ""}
-      ${totalPayments > 0 ? `<div class="card"><div class="card-label">سندات الصرف</div><div class="card-value red">${fmtMoney(totalPayments)}</div></div>` : ""}
-      <div class="card"><div class="card-label">الرصيد المستحق</div><div class="card-value ${Number(customer.balance) > 0 ? "red" : "green"}">${fmtMoney(Number(customer.balance))}</div></div>
+      ${totalReturns > 0 ? `<div class="card"><div class="card-label">المرتجعات</div><div class="card-value red">${fmtMoney(totalReturns)}</div></div>` : ''}
+      ${totalReceipts > 0 ? `<div class="card"><div class="card-label">سندات القبض</div><div class="card-value green">${fmtMoney(totalReceipts)}</div></div>` : ''}
+      ${totalDeposits > 0 ? `<div class="card"><div class="card-label">سندات الإيداع</div><div class="card-value">${fmtMoney(totalDeposits)}</div></div>` : ''}
+      ${totalPayments > 0 ? `<div class="card"><div class="card-label">سندات الصرف</div><div class="card-value red">${fmtMoney(totalPayments)}</div></div>` : ''}
+      <div class="card"><div class="card-label">الرصيد المستحق</div><div class="card-value ${Number(customer.balance) > 0 ? 'red' : 'green'}">${fmtMoney(Number(customer.balance))}</div></div>
     </div>
 
-    ${sales.length > 0 ? `
+    ${
+      sales.length > 0
+        ? `
       <div class="section-title">فواتير المبيعات (${sales.length})</div>
       <table>
         <thead><tr><th>رقم الفاتورة</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>طريقة الدفع</th><th>التاريخ</th></tr></thead>
@@ -367,9 +426,13 @@ export function printCustomerStatement(
           <td style="color:#dc2626">${fmtMoney(totalSales - totalPaid)}</td>
           <td colspan="2"></td>
         </tr></tfoot>
-      </table>` : ""}
+      </table>`
+        : ''
+    }
 
-    ${salesReturns.length > 0 ? `
+    ${
+      salesReturns.length > 0
+        ? `
       <div class="section-title">المرتجعات (${salesReturns.length})</div>
       <table>
         <thead><tr><th>رقم المرتجع</th><th>المبلغ</th><th>نوع الاسترداد</th><th>السبب</th><th>التاريخ</th></tr></thead>
@@ -379,9 +442,13 @@ export function printCustomerStatement(
           <td style="color:#dc2626">${fmtMoney(totalReturns)}</td>
           <td colspan="3"></td>
         </tr></tfoot>
-      </table>` : ""}
+      </table>`
+        : ''
+    }
 
-    ${receiptVouchers.length > 0 ? `
+    ${
+      receiptVouchers.length > 0
+        ? `
       <div class="section-title">سندات القبض — مدفوعات العميل (${receiptVouchers.length})</div>
       <table>
         <thead><tr><th>رقم السند</th><th>المبلغ</th><th>الخزينة</th><th>بيان</th><th>التاريخ</th></tr></thead>
@@ -391,9 +458,13 @@ export function printCustomerStatement(
           <td style="color:#059669">${fmtMoney(totalReceipts)}</td>
           <td colspan="3"></td>
         </tr></tfoot>
-      </table>` : ""}
+      </table>`
+        : ''
+    }
 
-    ${depositVouchers.length > 0 ? `
+    ${
+      depositVouchers.length > 0
+        ? `
       <div class="section-title">سندات الإيداع (${depositVouchers.length})</div>
       <table>
         <thead><tr><th>رقم السند</th><th>المبلغ</th><th>الخزينة</th><th>بيان</th><th>التاريخ</th></tr></thead>
@@ -403,9 +474,13 @@ export function printCustomerStatement(
           <td style="color:#2563eb">${fmtMoney(totalDeposits)}</td>
           <td colspan="3"></td>
         </tr></tfoot>
-      </table>` : ""}
+      </table>`
+        : ''
+    }
 
-    ${paymentVouchers.length > 0 ? `
+    ${
+      paymentVouchers.length > 0
+        ? `
       <div class="section-title">سندات الصرف — مردودات للعميل (${paymentVouchers.length})</div>
       <table>
         <thead><tr><th>رقم السند</th><th>المبلغ</th><th>الخزينة</th><th>بيان</th><th>التاريخ</th></tr></thead>
@@ -415,11 +490,19 @@ export function printCustomerStatement(
           <td style="color:#7c3aed">${fmtMoney(totalPayments)}</td>
           <td colspan="3"></td>
         </tr></tfoot>
-      </table>` : ""}
+      </table>`
+        : ''
+    }
 
-    ${sales.length === 0 && salesReturns.length === 0 && receiptVouchers.length === 0 && depositVouchers.length === 0 && paymentVouchers.length === 0
-      ? '<div class="no-data">لا توجد حركات مالية لهذا العميل</div>'
-      : ""}
+    ${
+      sales.length === 0 &&
+      salesReturns.length === 0 &&
+      receiptVouchers.length === 0 &&
+      depositVouchers.length === 0 &&
+      paymentVouchers.length === 0
+        ? '<div class="no-data">لا توجد حركات مالية لهذا العميل</div>'
+        : ''
+    }
   `;
 
   buildWindow(`كشف حساب — ${customer.name}`, body);
@@ -469,8 +552,11 @@ const INVOICE_STYLES = `
 `;
 
 function invoiceWindow(title: string, body: string): void {
-  const win = window.open("", "_blank", "width=900,height=750");
-  if (!win) { alert("يرجى السماح بالنوافذ المنبثقة في المتصفح"); return; }
+  const win = window.open('', '_blank', 'width=900,height=750');
+  if (!win) {
+    alert('يرجى السماح بالنوافذ المنبثقة في المتصفح');
+    return;
+  }
   win.document.open();
   win.document.write(`<!DOCTYPE html><html dir="rtl" lang="ar"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -511,19 +597,27 @@ export interface FullSaleData {
 }
 
 export function printSaleInvoice(sale: FullSaleData): void {
-  const s  = getSettings();
+  const s = getSettings();
   const sym = getCurrencySymbol();
   const dateStr = sale.date
-    ? new Date(sale.date + "T12:00:00").toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" })
+    ? new Date(sale.date + 'T12:00:00').toLocaleDateString('ar-EG-u-nu-latn', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
     : fmtDate(sale.created_at);
 
-  const rows = sale.items.map((it, i) => `<tr>
+  const rows = sale.items
+    .map(
+      (it, i) => `<tr>
     <td>${i + 1}</td>
     <td style="font-weight:700">${escapeHtml(it.product_name)}</td>
     <td>${Number(it.quantity)}</td>
     <td>${Number(it.unit_price).toFixed(2)} ${sym}</td>
     <td style="font-weight:700;color:#d97706">${Number(it.total_price).toFixed(2)} ${sym}</td>
-  </tr>`).join("");
+  </tr>`
+    )
+    .join('');
 
   const subtotal = sale.items.reduce((s, i) => s + Number(i.total_price), 0);
 
@@ -531,8 +625,8 @@ export function printSaleInvoice(sale: FullSaleData): void {
   <div class="inv-head">
     <div>
       <div class="co-name">${escapeHtml(s.companyName)}</div>
-      ${s.phone ? `<div class="co-sub">📞 ${escapeHtml(s.phone)}</div>` : ""}
-      ${s.address ? `<div class="co-sub">📍 ${escapeHtml(s.address)}</div>` : ""}
+      ${s.phone ? `<div class="co-sub">📞 ${escapeHtml(s.phone)}</div>` : ''}
+      ${s.address ? `<div class="co-sub">📍 ${escapeHtml(s.address)}</div>` : ''}
     </div>
     <div class="inv-meta">
       <div class="inv-title">فاتورة مبيعات</div>
@@ -541,11 +635,15 @@ export function printSaleInvoice(sale: FullSaleData): void {
     </div>
   </div>
   <hr class="gold">
-  ${sale.customer_name ? `<div class="party-box">
+  ${
+    sale.customer_name
+      ? `<div class="party-box">
     <div class="party-title">بيانات العميل</div>
     <div class="party-name">${escapeHtml(sale.customer_name)}</div>
-    ${sale.phone ? `<div class="party-phone">📞 ${escapeHtml(sale.phone)}</div>` : ""}
-  </div>` : ""}
+    ${sale.phone ? `<div class="party-phone">📞 ${escapeHtml(sale.phone)}</div>` : ''}
+  </div>`
+      : ''
+  }
   <table class="items">
     <thead><tr><th>#</th><th>المنتج</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead>
     <tbody>${rows}</tbody>
@@ -558,14 +656,14 @@ export function printSaleInvoice(sale: FullSaleData): void {
     <div class="totals-inner">
       <div class="t-row grand"><span>الإجمالي الكلي</span><span>${Number(sale.total_amount).toFixed(2)} ${sym}</span></div>
       <div class="t-row paid"><span>المدفوع ✓</span><span>${Number(sale.paid_amount).toFixed(2)} ${sym}</span></div>
-      ${Number(sale.remaining_amount) > 0 ? `<div class="t-row remaining"><span>المتبقي ⚠</span><span>${Number(sale.remaining_amount).toFixed(2)} ${sym}</span></div>` : ""}
+      ${Number(sale.remaining_amount) > 0 ? `<div class="t-row remaining"><span>المتبقي ⚠</span><span>${Number(sale.remaining_amount).toFixed(2)} ${sym}</span></div>` : ''}
     </div>
   </div>
   <div class="foot-row">
     <div>
       <div><strong>طريقة الدفع:</strong> <span class="badge badge-${sale.payment_type}">${payLabel(sale.payment_type)}</span></div>
-      ${sale.safe_name ? `<div style="margin-top:4px"><strong>الخزينة:</strong> ${escapeHtml(sale.safe_name)}</div>` : ""}
-      ${sale.notes ? `<div style="margin-top:4px"><strong>ملاحظات:</strong> ${escapeHtml(sale.notes)}</div>` : ""}
+      ${sale.safe_name ? `<div style="margin-top:4px"><strong>الخزينة:</strong> ${escapeHtml(sale.safe_name)}</div>` : ''}
+      ${sale.notes ? `<div style="margin-top:4px"><strong>ملاحظات:</strong> ${escapeHtml(sale.notes)}</div>` : ''}
     </div>
     <div style="text-align:left;color:#9ca3af;font-size:11px">
       ${escapeHtml(s.companyName)}<br>تم الإنشاء: ${fmtDate(sale.created_at)}
@@ -603,20 +701,28 @@ export interface FullPurchaseData {
 }
 
 export function printPurchaseInvoice(purchase: FullPurchaseData): void {
-  const s   = getSettings();
-  const sym  = getCurrencySymbol();
-  const party = purchase.supplier_name ?? purchase.customer_name ?? "—";
+  const s = getSettings();
+  const sym = getCurrencySymbol();
+  const party = purchase.supplier_name ?? purchase.customer_name ?? '—';
   const dateStr = purchase.date
-    ? new Date(purchase.date + "T12:00:00").toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" })
+    ? new Date(purchase.date + 'T12:00:00').toLocaleDateString('ar-EG-u-nu-latn', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
     : fmtDate(purchase.created_at);
 
-  const rows = purchase.items.map((it, i) => `<tr>
+  const rows = purchase.items
+    .map(
+      (it, i) => `<tr>
     <td>${i + 1}</td>
     <td style="font-weight:700">${escapeHtml(it.product_name)}</td>
     <td>${Number(it.quantity)}</td>
     <td>${Number(it.unit_price).toFixed(2)} ${sym}</td>
     <td style="font-weight:700;color:#2563eb">${Number(it.total_price).toFixed(2)} ${sym}</td>
-  </tr>`).join("");
+  </tr>`
+    )
+    .join('');
 
   const subtotal = purchase.items.reduce((s, i) => s + Number(i.total_price), 0);
 
@@ -624,8 +730,8 @@ export function printPurchaseInvoice(purchase: FullPurchaseData): void {
   <div class="inv-head">
     <div>
       <div class="co-name">${escapeHtml(s.companyName)}</div>
-      ${s.phone ? `<div class="co-sub">📞 ${escapeHtml(s.phone)}</div>` : ""}
-      ${s.address ? `<div class="co-sub">📍 ${escapeHtml(s.address)}</div>` : ""}
+      ${s.phone ? `<div class="co-sub">📞 ${escapeHtml(s.phone)}</div>` : ''}
+      ${s.address ? `<div class="co-sub">📍 ${escapeHtml(s.address)}</div>` : ''}
     </div>
     <div class="inv-meta">
       <div class="inv-title" style="color:#2563eb">فاتورة مشتريات</div>
@@ -634,10 +740,14 @@ export function printPurchaseInvoice(purchase: FullPurchaseData): void {
     </div>
   </div>
   <hr style="border:none;border-top:2px solid #2563eb;margin:14px 0">
-  ${party !== "—" ? `<div class="party-box">
+  ${
+    party !== '—'
+      ? `<div class="party-box">
     <div class="party-title">بيانات المورد</div>
     <div class="party-name">${escapeHtml(party)}</div>
-  </div>` : ""}
+  </div>`
+      : ''
+  }
   <table class="items">
     <thead><tr><th>#</th><th>المنتج</th><th>الكمية</th><th>سعر الشراء</th><th>الإجمالي</th></tr></thead>
     <tbody>${rows}</tbody>
@@ -650,14 +760,14 @@ export function printPurchaseInvoice(purchase: FullPurchaseData): void {
     <div class="totals-inner">
       <div class="t-row grand" style="background:#dbeafe"><span>إجمالي قيمة المشتريات</span><span>${Number(purchase.total_amount).toFixed(2)} ${sym}</span></div>
       <div class="t-row" style="color:#059669;font-weight:700"><span>المبلغ المدفوع ✓</span><span>${Number(purchase.paid_amount).toFixed(2)} ${sym}</span></div>
-      ${Number(purchase.remaining_amount) > 0 ? `<div class="t-row remaining"><span>المتبقي للمورد ⚠</span><span>${Number(purchase.remaining_amount).toFixed(2)} ${sym}</span></div>` : ""}
+      ${Number(purchase.remaining_amount) > 0 ? `<div class="t-row remaining"><span>المتبقي للمورد ⚠</span><span>${Number(purchase.remaining_amount).toFixed(2)} ${sym}</span></div>` : ''}
     </div>
   </div>
   <div class="foot-row">
     <div>
       <div><strong>طريقة الدفع:</strong> <span class="badge badge-${purchase.payment_type}">${payLabel(purchase.payment_type)}</span></div>
-      ${purchase.safe_name ? `<div style="margin-top:4px"><strong>الخزينة:</strong> ${escapeHtml(purchase.safe_name)}</div>` : ""}
-      ${purchase.notes ? `<div style="margin-top:4px"><strong>ملاحظات:</strong> ${escapeHtml(purchase.notes)}</div>` : ""}
+      ${purchase.safe_name ? `<div style="margin-top:4px"><strong>الخزينة:</strong> ${escapeHtml(purchase.safe_name)}</div>` : ''}
+      ${purchase.notes ? `<div style="margin-top:4px"><strong>ملاحظات:</strong> ${escapeHtml(purchase.notes)}</div>` : ''}
     </div>
     <div style="text-align:left;color:#9ca3af;font-size:11px">
       ${escapeHtml(s.companyName)}<br>تم التسجيل: ${fmtDate(purchase.created_at)}
@@ -686,8 +796,20 @@ export interface PLReportData {
   credit_sales?: number;
   partial_sales?: number;
   return_amount?: number;
-  by_product: Array<{ product_name: string; qty_sold: number; revenue: number; cost: number; profit: number }>;
-  by_warehouse?: Array<{ warehouse_name: string; revenue: number; cost: number; gross_profit: number; invoice_count: number }>;
+  by_product: Array<{
+    product_name: string;
+    qty_sold: number;
+    revenue: number;
+    cost: number;
+    profit: number;
+  }>;
+  by_warehouse?: Array<{
+    warehouse_name: string;
+    revenue: number;
+    cost: number;
+    gross_profit: number;
+    invoice_count: number;
+  }>;
   by_expense_category?: Array<{ category: string; total: number }>;
 }
 
@@ -748,71 +870,87 @@ const PL_STYLES = `
 `;
 
 export function printPLReport(data: PLReportData): void {
-  const s   = getSettings();
-  const sym  = getCurrencySymbol();
-  const m    = (n: number | null | undefined) => `${Number(n ?? 0).toFixed(2)} ${sym}`;
-  const pct  = (n: number) => `${n.toFixed(1)}%`;
-  const now  = new Date().toLocaleDateString("ar-EG", { year:"numeric", month:"long", day:"numeric", hour:"2-digit", minute:"2-digit" });
+  const s = getSettings();
+  const sym = getCurrencySymbol();
+  const m = (n: number | null | undefined) => `${Number(n ?? 0).toFixed(2)} ${sym}`;
+  const pct = (n: number) => `${n.toFixed(1)}%`;
+  const now = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   const isProfit = data.net_profit >= 0;
   const grossMargin = data.total_revenue > 0 ? (data.gross_profit / data.total_revenue) * 100 : 0;
-  const netMargin   = data.total_revenue > 0 ? (data.net_profit   / data.total_revenue) * 100 : 0;
+  const netMargin = data.total_revenue > 0 ? (data.net_profit / data.total_revenue) * 100 : 0;
 
   /* ── Top products ── */
   const topProducts = [...data.by_product].sort((a, b) => b.profit - a.profit).slice(0, 10);
-  const _productRows = topProducts.map((p, i) => {
-    const margin = p.revenue > 0 ? (p.profit / p.revenue) * 100 : 0;
-    const barW   = Math.max(0, Math.min(100, margin));
-    return `<tr>
+  const _productRows = topProducts
+    .map((p, i) => {
+      const margin = p.revenue > 0 ? (p.profit / p.revenue) * 100 : 0;
+      const barW = Math.max(0, Math.min(100, margin));
+      return `<tr>
       <td>${i + 1}</td>
       <td style="font-weight:700">${p.product_name}</td>
       <td>${p.qty_sold}</td>
       <td class="num green">${m(p.revenue)}</td>
       <td class="num red">${m(p.cost)}</td>
-      <td class="num ${p.profit >= 0 ? "green" : "red"}" style="font-weight:900">${m(p.profit)}</td>
+      <td class="num ${p.profit >= 0 ? 'green' : 'red'}" style="font-weight:900">${m(p.profit)}</td>
       <td>
-        <div style="font-size:11px;font-weight:700;color:${margin>=30?"#059669":margin>=15?"#d97706":"#dc2626"}">${pct(margin)}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${barW}%;background:${margin>=30?"#059669":margin>=15?"#d97706":"#dc2626"}"></div></div>
+        <div style="font-size:11px;font-weight:700;color:${margin >= 30 ? '#059669' : margin >= 15 ? '#d97706' : '#dc2626'}">${pct(margin)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${barW}%;background:${margin >= 30 ? '#059669' : margin >= 15 ? '#d97706' : '#dc2626'}"></div></div>
       </td>
     </tr>`;
-  }).join("");
+    })
+    .join('');
 
   /* ── Branch table ── */
-  const branches = (data.by_warehouse ?? []).filter(w => w.revenue > 0);
-  const maxRev   = Math.max(...branches.map(b => b.revenue), 1);
-  const _branchRows = branches.map(w => {
-    const mg  = w.revenue > 0 ? (w.gross_profit / w.revenue) * 100 : 0;
-    const barW = Math.round((w.revenue / maxRev) * 100);
-    return `<tr>
+  const branches = (data.by_warehouse ?? []).filter((w) => w.revenue > 0);
+  const maxRev = Math.max(...branches.map((b) => b.revenue), 1);
+  const _branchRows = branches
+    .map((w) => {
+      const mg = w.revenue > 0 ? (w.gross_profit / w.revenue) * 100 : 0;
+      const barW = Math.round((w.revenue / maxRev) * 100);
+      return `<tr>
       <td style="font-weight:700">${w.warehouse_name}</td>
       <td class="num">${m(w.revenue)}</td>
       <td class="num red">${m(w.cost)}</td>
-      <td class="num ${w.gross_profit>=0?"green":"red"}" style="font-weight:900">${m(w.gross_profit)}</td>
-      <td style="font-weight:700;color:${mg>=30?"#059669":mg>=15?"#d97706":"#dc2626"}">${pct(mg)}</td>
+      <td class="num ${w.gross_profit >= 0 ? 'green' : 'red'}" style="font-weight:900">${m(w.gross_profit)}</td>
+      <td style="font-weight:700;color:${mg >= 30 ? '#059669' : mg >= 15 ? '#d97706' : '#dc2626'}">${pct(mg)}</td>
       <td>${w.invoice_count}</td>
       <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${barW}%"></div></div></td>
     </tr>`;
-  }).join("");
+    })
+    .join('');
 
   /* ── Expense table ── */
   const expenses = data.by_expense_category ?? [];
-  const _expRows  = expenses.map(e => {
-    const pctE = data.total_expenses > 0 ? (e.total / data.total_expenses) * 100 : 0;
-    return `<tr><td style="font-weight:600">${e.category}</td><td class="num">${m(e.total)}</td><td style="color:#6b7280">${pctE.toFixed(1)}%</td></tr>`;
-  }).join("");
+  const _expRows = expenses
+    .map((e) => {
+      const pctE = data.total_expenses > 0 ? (e.total / data.total_expenses) * 100 : 0;
+      return `<tr><td style="font-weight:600">${e.category}</td><td class="num">${m(e.total)}</td><td style="color:#6b7280">${pctE.toFixed(1)}%</td></tr>`;
+    })
+    .join('');
 
   /* ── Payment breakdown ── */
-  const cashS    = data.cash_sales    ?? 0;
-  const creditS  = data.credit_sales  ?? 0;
+  const cashS = data.cash_sales ?? 0;
+  const creditS = data.credit_sales ?? 0;
   const partialS = data.partial_sales ?? 0;
-  const retAmt   = data.return_amount ?? 0;
+  const retAmt = data.return_amount ?? 0;
   const _hasPayBreakdown = cashS + creditS + partialS + retAmt > 0;
 
   /* ── Build expense lines for statement ── */
-  const expLines = expenses.slice(0, 8).map(e =>
-    `<tr class="sub"><td>(−) ${e.category}</td><td class="num red">(${m(e.total)})</td></tr>`
-  ).join("");
-  const otherExpAmt = expenses.slice(8).reduce((s,e)=>s+e.total, 0);
+  const expLines = expenses
+    .slice(0, 8)
+    .map(
+      (e) =>
+        `<tr class="sub"><td>(−) ${e.category}</td><td class="num red">(${m(e.total)})</td></tr>`
+    )
+    .join('');
+  const otherExpAmt = expenses.slice(8).reduce((s, e) => s + e.total, 0);
 
   const html = `
 <div class="page">
@@ -821,8 +959,8 @@ export function printPLReport(data: PLReportData): void {
   <div class="pl-header">
     <div>
       <div class="pl-company">${s.companyName}</div>
-      ${s.phone    ? `<div class="pl-company-sub">📞 ${s.phone}</div>` : ""}
-      ${s.address  ? `<div class="pl-company-sub">📍 ${s.address}</div>` : ""}
+      ${s.phone ? `<div class="pl-company-sub">📞 ${s.phone}</div>` : ''}
+      ${s.address ? `<div class="pl-company-sub">📍 ${s.address}</div>` : ''}
     </div>
     <div class="pl-title-block">
       <div class="pl-title">قائمة الأرباح والخسائر</div>
@@ -841,9 +979,9 @@ export function printPLReport(data: PLReportData): void {
       <div class="kpi-label">إجمالي المصروفات</div>
       <div class="kpi-value red">${m(data.total_expenses)}</div>
     </div>
-    <div class="kpi-box ${isProfit?"profit":"loss"}">
+    <div class="kpi-box ${isProfit ? 'profit' : 'loss'}">
       <div class="kpi-label">صافي الربح</div>
-      <div class="kpi-value ${isProfit?"green":"red"}">${m(data.net_profit)}</div>
+      <div class="kpi-value ${isProfit ? 'green' : 'red'}">${m(data.net_profit)}</div>
       <div class="kpi-sub">${pct(netMargin)}</div>
     </div>
   </div>
@@ -853,66 +991,79 @@ export function printPLReport(data: PLReportData): void {
     <!-- الإيرادات -->
     <tr class="sec-hd"><td colspan="2">الإيرادات</td></tr>
     <tr><td>إجمالي المبيعات</td><td class="num green">${m(data.total_revenue)}</td></tr>
-    ${retAmt > 0 ? `<tr class="sub"><td>(−) مرتجعات المبيعات</td><td class="num red">(${m(retAmt)})</td></tr>
-    <tr class="total"><td>صافي الإيرادات</td><td class="num">${m(data.total_revenue - retAmt)}</td></tr>` : ""}
+    ${
+      retAmt > 0
+        ? `<tr class="sub"><td>(−) مرتجعات المبيعات</td><td class="num red">(${m(retAmt)})</td></tr>
+    <tr class="total"><td>صافي الإيرادات</td><td class="num">${m(data.total_revenue - retAmt)}</td></tr>`
+        : ''
+    }
 
     <!-- تكلفة البضاعة -->
     <tr class="sec-hd"><td colspan="2">تكلفة البضاعة المباعة</td></tr>
     <tr class="sub"><td>(−) تكلفة البضاعة المباعة</td><td class="num red">(${m(data.total_cost)})</td></tr>
     <tr class="gross">
       <td>= مجمل الربح</td>
-      <td class="num ${data.gross_profit>=0?"amber":"red"}">${m(data.gross_profit)} <span style="font-size:11px;opacity:0.65">${pct(grossMargin)}</span></td>
+      <td class="num ${data.gross_profit >= 0 ? 'amber' : 'red'}">${m(data.gross_profit)} <span style="font-size:11px;opacity:0.65">${pct(grossMargin)}</span></td>
     </tr>
 
     <!-- المصروفات -->
     <tr class="sec-hd"><td colspan="2">المصروفات التشغيلية</td></tr>
     ${expLines || (data.total_expenses > 0 ? `<tr class="sub"><td>(−) مصروفات تشغيلية</td><td class="num red">(${m(data.total_expenses)})</td></tr>` : `<tr><td colspan="2" style="color:#9ca3af;text-align:center;font-style:italic">لا توجد مصروفات</td></tr>`)}
-    ${otherExpAmt > 0 ? `<tr class="sub"><td>(−) مصروفات أخرى</td><td class="num red">(${m(otherExpAmt)})</td></tr>` : ""}
-    ${expenses.length > 0 ? `<tr class="total"><td>إجمالي المصروفات</td><td class="num red">(${m(data.total_expenses)})</td></tr>` : ""}
+    ${otherExpAmt > 0 ? `<tr class="sub"><td>(−) مصروفات أخرى</td><td class="num red">(${m(otherExpAmt)})</td></tr>` : ''}
+    ${expenses.length > 0 ? `<tr class="total"><td>إجمالي المصروفات</td><td class="num red">(${m(data.total_expenses)})</td></tr>` : ''}
 
     <!-- صافي الربح -->
-    <tr class="${isProfit?"net-pos":"net-neg"}">
+    <tr class="${isProfit ? 'net-pos' : 'net-neg'}">
       <td>= صافي الربح / الخسارة</td>
       <td class="num" style="font-size:16px">${m(data.net_profit)} <span style="font-size:11px;opacity:0.7">${pct(netMargin)}</span></td>
     </tr>
   </table>
 
-  ${branches.length > 1 ? `
+  ${
+    branches.length > 1
+      ? `
   <!-- Branch Comparison -->
   <div class="sec-hd-bar">مقارنة الفروع · ${branches.length} فروع</div>
   <table class="data">
     <thead><tr><th>الفرع</th><th>المبيعات</th><th>التكلفة</th><th>مجمل الربح</th><th>الهامش</th><th>الفواتير</th></tr></thead>
-    <tbody>${branches.map(w => {
-      const mg = w.revenue > 0 ? (w.gross_profit / w.revenue) * 100 : 0;
-      return `<tr>
+    <tbody>${branches
+      .map((w) => {
+        const mg = w.revenue > 0 ? (w.gross_profit / w.revenue) * 100 : 0;
+        return `<tr>
         <td style="font-weight:700">${w.warehouse_name}</td>
         <td>${m(w.revenue)}</td>
         <td style="color:#dc2626">${m(w.cost)}</td>
-        <td style="font-weight:700;color:${w.gross_profit>=0?"#059669":"#dc2626"}">${m(w.gross_profit)}</td>
+        <td style="font-weight:700;color:${w.gross_profit >= 0 ? '#059669' : '#dc2626'}">${m(w.gross_profit)}</td>
         <td>${mg.toFixed(1)}%</td>
         <td>${w.invoice_count}</td>
       </tr>`;
-    }).join("")}</tbody>
+      })
+      .join('')}</tbody>
     <tfoot><tr>
       <td>الإجمالي</td>
-      <td>${m(branches.reduce((s,b)=>s+b.revenue,0))}</td>
-      <td>${m(branches.reduce((s,b)=>s+b.cost,0))}</td>
-      <td style="color:${branches.reduce((s,b)=>s+b.gross_profit,0)>=0?"#059669":"#dc2626"}">${m(branches.reduce((s,b)=>s+b.gross_profit,0))}</td>
+      <td>${m(branches.reduce((s, b) => s + b.revenue, 0))}</td>
+      <td>${m(branches.reduce((s, b) => s + b.cost, 0))}</td>
+      <td style="color:${branches.reduce((s, b) => s + b.gross_profit, 0) >= 0 ? '#059669' : '#dc2626'}">${m(branches.reduce((s, b) => s + b.gross_profit, 0))}</td>
       <td colspan="2"></td>
     </tr></tfoot>
-  </table>` : ""}
+  </table>`
+      : ''
+  }
 
   <!-- Footer -->
   <div class="pl-footer">
     <span>طُبع: ${now}</span>
-    <span>عدد الفواتير: ${data.invoice_count}${data.item_count ? ` · ${data.item_count} صنف` : ""}</span>
+    <span>عدد الفواتير: ${data.invoice_count}${data.item_count ? ` · ${data.item_count} صنف` : ''}</span>
     <span>نظام هالال تك ERP</span>
   </div>
 
 </div>`;
 
-  const win = window.open("", "_blank", "width=960,height=750");
-  if (!win) { alert("يرجى السماح بالنوافذ المنبثقة ثم أعد المحاولة"); return; }
+  const win = window.open('', '_blank', 'width=960,height=750');
+  if (!win) {
+    alert('يرجى السماح بالنوافذ المنبثقة ثم أعد المحاولة');
+    return;
+  }
   win.document.open();
   win.document.write(`<!DOCTYPE html><html dir="rtl" lang="ar">
 <head>
@@ -929,34 +1080,44 @@ export function printPLReport(data: PLReportData): void {
 
 /* ── Balance Sheet PDF ─────────────────────────────────────────────────── */
 export interface BalanceSheetPrintData {
-  assets:      { cash: number; receivables: number; inventory: number; total: number };
+  assets: { cash: number; receivables: number; inventory: number; total: number };
   liabilities: { payables: number; total: number };
-  equity:      { opening_capital: number; retained_earnings: number; total: number };
+  equity: { opening_capital: number; retained_earnings: number; total: number };
   total_liabilities_equity: number;
   balanced: boolean;
   as_of: string;
 }
 
 export function printBalanceSheet(data: BalanceSheetPrintData): void {
-  const s   = getSettings();
+  const s = getSettings();
   const sym = getCurrencySymbol();
-  const m   = (n: number) => `${Number(n ?? 0).toFixed(2)} ${sym}`;
-  const now = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
-  const asOf = new Date(data.as_of).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+  const m = (n: number) => `${Number(n ?? 0).toFixed(2)} ${sym}`;
+  const now = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const asOf = new Date(data.as_of).toLocaleDateString('ar-EG-u-nu-latn', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
   const retainedIsPos = data.equity.retained_earnings >= 0;
-  const eqIsPos       = data.equity.total >= 0;
-  const eqColor       = eqIsPos ? "#059669" : "#dc2626";
-  const eqBg          = eqIsPos ? "#f0fdf4"  : "#fef2f2";
-  const eqBdr         = eqIsPos ? "#059669"  : "#dc2626";
+  const eqIsPos = data.equity.total >= 0;
+  const eqColor = eqIsPos ? '#059669' : '#dc2626';
+  const eqBg = eqIsPos ? '#f0fdf4' : '#fef2f2';
+  const eqBdr = eqIsPos ? '#059669' : '#dc2626';
 
   const html = `
 <div class="page">
   <div class="pl-header">
     <div>
       <div class="pl-company">${s.companyName}</div>
-      ${s.phone   ? `<div class="pl-company-sub">📞 ${s.phone}</div>` : ""}
-      ${s.address ? `<div class="pl-company-sub">📍 ${s.address}</div>` : ""}
+      ${s.phone ? `<div class="pl-company-sub">📞 ${s.phone}</div>` : ''}
+      ${s.address ? `<div class="pl-company-sub">📍 ${s.address}</div>` : ''}
     </div>
     <div class="pl-title-block">
       <div class="pl-title">الميزانية العمومية</div>
@@ -975,9 +1136,9 @@ export function printBalanceSheet(data: BalanceSheetPrintData): void {
       <div class="kpi-value red">${m(data.liabilities.total)}</div>
       <div class="kpi-sub">ذمم الموردين الدائنة</div>
     </div>
-    <div class="kpi-box ${eqIsPos ? "profit" : "loss"}">
+    <div class="kpi-box ${eqIsPos ? 'profit' : 'loss'}">
       <div class="kpi-label">حقوق الملكية</div>
-      <div class="kpi-value ${eqIsPos ? "green" : "red"}">${m(data.equity.total)}</div>
+      <div class="kpi-value ${eqIsPos ? 'green' : 'red'}">${m(data.equity.total)}</div>
       <div class="kpi-sub">رأس المال + الأرباح المحتجزة</div>
     </div>
   </div>
@@ -1026,7 +1187,7 @@ export function printBalanceSheet(data: BalanceSheetPrintData): void {
     <!-- ══ حقوق الملكية ══ -->
     <tr class="sec-hd"><td colspan="2">حقوق الملكية</td></tr>
     <tr class="sub"><td>رأس المال المفتوح — الأرصدة الافتتاحية</td><td class="num">${m(data.equity.opening_capital)}</td></tr>
-    <tr class="sub"><td>الأرباح المحتجزة — صافي الربح الكلي</td><td class="num ${retainedIsPos ? "green" : "red"}">${m(data.equity.retained_earnings)}</td></tr>
+    <tr class="sub"><td>الأرباح المحتجزة — صافي الربح الكلي</td><td class="num ${retainedIsPos ? 'green' : 'red'}">${m(data.equity.retained_earnings)}</td></tr>
     <tr class="total" style="background:${eqBg};border-top-color:${eqBdr};border-bottom-color:${eqBdr}">
       <td style="color:${eqColor}">= إجمالي حقوق الملكية</td>
       <td class="num" style="color:${eqColor}">${m(data.equity.total)}</td>
@@ -1035,14 +1196,18 @@ export function printBalanceSheet(data: BalanceSheetPrintData): void {
     <tr><td colspan="2" style="height:4px;background:#f9fafb"></td></tr>
 
     <!-- ══ معادلة التوازن ══ -->
-    <tr class="${data.balanced ? "net-pos" : "net-neg"}">
-      <td style="font-size:15px">= إجمالي الخصوم + حقوق الملكية &nbsp;${data.balanced ? "✓" : "⚠"}</td>
+    <tr class="${data.balanced ? 'net-pos' : 'net-neg'}">
+      <td style="font-size:15px">= إجمالي الخصوم + حقوق الملكية &nbsp;${data.balanced ? '✓' : '⚠'}</td>
       <td class="num" style="font-size:15px">${m(data.total_liabilities_equity)}</td>
     </tr>
-    ${!data.balanced ? `
+    ${
+      !data.balanced
+        ? `
     <tr style="background:#fef2f2"><td colspan="2" style="padding:8px 16px;font-size:11px;color:#dc2626;font-weight:700">
       ⚠️ يوجد فرق: ${m(Math.abs(data.assets.total - data.total_liabilities_equity))} — الأصول (${m(data.assets.total)}) ≠ الخصوم + الملكية (${m(data.total_liabilities_equity)})
-    </td></tr>` : ""}
+    </td></tr>`
+        : ''
+    }
 
   </table>
 
@@ -1052,7 +1217,7 @@ export function printBalanceSheet(data: BalanceSheetPrintData): void {
   </div>
 </div>`;
 
-  const win = window.open("", "_blank");
+  const win = window.open('', '_blank');
   if (!win) return;
   win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head>
   <meta charset="UTF-8"><title>الميزانية العمومية — ${s.companyName}</title>
@@ -1067,39 +1232,57 @@ export function printBalanceSheet(data: BalanceSheetPrintData): void {
 }
 
 export interface CashFlowPrintData {
-  total_in: number; total_out: number; net_cash_flow: number;
-  customer_receipts: number; receipts_in: number; cash_sales: number;
-  deposits_in: number; payments_out: number; expenses_out: number;
-  dateFrom: string; dateTo: string;
+  total_in: number;
+  total_out: number;
+  net_cash_flow: number;
+  customer_receipts: number;
+  receipts_in: number;
+  cash_sales: number;
+  deposits_in: number;
+  payments_out: number;
+  expenses_out: number;
+  dateFrom: string;
+  dateTo: string;
   closingBalance?: number;
 }
 
 export function printCashFlow(data: CashFlowPrintData): void {
-  const s   = getSettings();
+  const s = getSettings();
   const sym = getCurrencySymbol();
-  const m   = (n: number) => `${Number(n ?? 0).toFixed(2)} ${sym}`;
-  const now = new Date().toLocaleDateString("ar-EG", { year:"numeric", month:"long", day:"numeric", hour:"2-digit", minute:"2-digit" });
+  const m = (n: number) => `${Number(n ?? 0).toFixed(2)} ${sym}`;
+  const now = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
-  const operatingNet   = data.customer_receipts - data.payments_out - data.expenses_out;
-  const hasInvesting   = data.deposits_in > 0;
-  const showSub        = data.receipts_in > 0 && data.cash_sales > 0;
-  const isPos          = data.net_cash_flow >= 0;
-  const closingBal     = data.closingBalance ?? null;
-  const openingBal     = closingBal !== null ? closingBal - data.net_cash_flow : null;
-  const fmtN = (n: number) => { const a = Math.abs(n).toFixed(2); return n < 0 ? `(${a})` : a; };
+  const operatingNet = data.customer_receipts - data.payments_out - data.expenses_out;
+  const hasInvesting = data.deposits_in > 0;
+  const showSub = data.receipts_in > 0 && data.cash_sales > 0;
+  const isPos = data.net_cash_flow >= 0;
+  const closingBal = data.closingBalance ?? null;
+  const openingBal = closingBal !== null ? closingBal - data.net_cash_flow : null;
+  const fmtN = (n: number) => {
+    const a = Math.abs(n).toFixed(2);
+    return n < 0 ? `(${a})` : a;
+  };
 
-  const investingSection = hasInvesting ? `
+  const investingSection = hasInvesting
+    ? `
     <tr class="sec-hd"><td colspan="2">التدفقات الاستثمارية</td></tr>
     <tr class="sub"><td>إيداعات</td><td class="num" style="color:#4b5563">${m(data.deposits_in)}</td></tr>
-    <tr class="total"><td>= صافي التدفقات الاستثمارية</td><td class="num" style="color:#4b5563">${m(data.deposits_in)}</td></tr>` : "";
+    <tr class="total"><td>= صافي التدفقات الاستثمارية</td><td class="num" style="color:#4b5563">${m(data.deposits_in)}</td></tr>`
+    : '';
 
   const html = `
 <div class="page">
   <div class="pl-header">
     <div>
       <div class="pl-company">${s.companyName}</div>
-      ${s.phone   ? `<div class="pl-company-sub">📞 ${s.phone}</div>` : ""}
-      ${s.address ? `<div class="pl-company-sub">📍 ${s.address}</div>` : ""}
+      ${s.phone ? `<div class="pl-company-sub">📞 ${s.phone}</div>` : ''}
+      ${s.address ? `<div class="pl-company-sub">📍 ${s.address}</div>` : ''}
     </div>
     <div class="pl-title-block">
       <div class="pl-title">قائمة التدفقات النقدية</div>
@@ -1117,30 +1300,42 @@ export function printCashFlow(data: CashFlowPrintData): void {
       <div class="kpi-label">إجمالي الخارج النقدي</div>
       <div class="kpi-value red">${m(data.total_out)}</div>
     </div>
-    <div class="kpi-box ${isPos ? "profit" : "loss"}">
+    <div class="kpi-box ${isPos ? 'profit' : 'loss'}">
       <div class="kpi-label">صافي التدفق النقدي</div>
-      <div class="kpi-value ${isPos ? "green" : "red"}">${m(data.net_cash_flow)}</div>
+      <div class="kpi-value ${isPos ? 'green' : 'red'}">${m(data.net_cash_flow)}</div>
     </div>
   </div>
 
   <table class="stmt">
-    ${openingBal !== null ? `
-    <tr style="background:#f9fafb"><td style="color:#6b7280;font-style:italic;padding:10px 16px;border-bottom:1px solid #f3f4f6;font-size:12px">رصيد أول الفترة (الخزينة)</td><td class="num" style="color:#6b7280;font-style:italic;font-size:12px;padding:10px 16px;border-bottom:1px solid #f3f4f6">${m(openingBal)}</td></tr>` : ""}
+    ${
+      openingBal !== null
+        ? `
+    <tr style="background:#f9fafb"><td style="color:#6b7280;font-style:italic;padding:10px 16px;border-bottom:1px solid #f3f4f6;font-size:12px">رصيد أول الفترة (الخزينة)</td><td class="num" style="color:#6b7280;font-style:italic;font-size:12px;padding:10px 16px;border-bottom:1px solid #f3f4f6">${m(openingBal)}</td></tr>`
+        : ''
+    }
     <tr class="sec-hd"><td colspan="2">التدفقات التشغيلية</td></tr>
     <tr><td style="font-weight:600">مقبوضات من العملاء</td><td class="num green">${m(data.customer_receipts)}</td></tr>
-    ${showSub ? `
+    ${
+      showSub
+        ? `
     <tr class="sub"><td>· سندات القبض المرحّلة</td><td class="num">${m(data.receipts_in)}</td></tr>
-    <tr class="sub"><td>· مبيعات نقدية مباشرة</td><td class="num">${m(data.cash_sales)}</td></tr>` : ""}
-    <tr class="sub"><td>(−) مدفوعات للموردين</td><td class="num red">${data.payments_out > 0 ? `(${m(data.payments_out)})` : "—"}</td></tr>
-    <tr class="sub"><td>(−) مصروفات تشغيلية</td><td class="num red">${data.expenses_out > 0 ? `(${m(data.expenses_out)})` : "—"}</td></tr>
-    <tr class="total"><td>= صافي التدفق التشغيلي</td><td class="num ${operatingNet >= 0 ? "green" : "red"}">${fmtN(operatingNet)}</td></tr>
+    <tr class="sub"><td>· مبيعات نقدية مباشرة</td><td class="num">${m(data.cash_sales)}</td></tr>`
+        : ''
+    }
+    <tr class="sub"><td>(−) مدفوعات للموردين</td><td class="num red">${data.payments_out > 0 ? `(${m(data.payments_out)})` : '—'}</td></tr>
+    <tr class="sub"><td>(−) مصروفات تشغيلية</td><td class="num red">${data.expenses_out > 0 ? `(${m(data.expenses_out)})` : '—'}</td></tr>
+    <tr class="total"><td>= صافي التدفق التشغيلي</td><td class="num ${operatingNet >= 0 ? 'green' : 'red'}">${fmtN(operatingNet)}</td></tr>
     ${investingSection}
-    <tr class="${isPos ? "net-pos" : "net-neg"}">
+    <tr class="${isPos ? 'net-pos' : 'net-neg'}">
       <td style="font-size:17px">= صافي التدفق النقدي</td>
       <td class="num" style="font-size:17px">${fmtN(data.net_cash_flow)}</td>
     </tr>
-    ${closingBal !== null ? `
-    <tr style="background:#f8fafc;border-top:1px solid #e5e7eb"><td style="font-weight:700;padding:12px 16px;border-bottom:none">= رصيد آخر الفترة (الخزينة)</td><td class="num" style="padding:12px 16px;border-bottom:none;font-weight:700">${m(closingBal)}</td></tr>` : ""}
+    ${
+      closingBal !== null
+        ? `
+    <tr style="background:#f8fafc;border-top:1px solid #e5e7eb"><td style="font-weight:700;padding:12px 16px;border-bottom:none">= رصيد آخر الفترة (الخزينة)</td><td class="num" style="padding:12px 16px;border-bottom:none;font-weight:700">${m(closingBal)}</td></tr>`
+        : ''
+    }
   </table>
 
   <div class="pl-footer">
@@ -1149,7 +1344,7 @@ export function printCashFlow(data: CashFlowPrintData): void {
   </div>
 </div>`;
 
-  const win = window.open("", "_blank");
+  const win = window.open('', '_blank');
   if (!win) return;
   win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head>
   <meta charset="UTF-8"><title>قائمة التدفقات النقدية — ${s.companyName}</title>

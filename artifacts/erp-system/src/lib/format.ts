@@ -1,14 +1,14 @@
-const STORAGE_KEY = "halal_erp_settings";
+const STORAGE_KEY = 'halal_erp_settings';
 
-type CurrencyCode = "EGP" | "SAR" | "AED" | "USD" | "KWD" | "BHD";
+type CurrencyCode = 'EGP' | 'SAR' | 'AED' | 'USD' | 'KWD' | 'BHD';
 
 const CURRENCY_MAP: Record<CurrencyCode, { locale: string; symbol: string }> = {
-  EGP: { locale: "ar-EG", symbol: "ج.م" },
-  SAR: { locale: "ar-SA", symbol: "ر.س" },
-  AED: { locale: "ar-AE", symbol: "د.إ" },
-  USD: { locale: "en-US", symbol: "$" },
-  KWD: { locale: "ar-KW", symbol: "د.ك" },
-  BHD: { locale: "ar-BH", symbol: "د.ب" },
+  EGP: { locale: 'ar-EG-u-nu-latn', symbol: 'ج.م' },
+  SAR: { locale: 'ar-SA', symbol: 'ر.س' },
+  AED: { locale: 'ar-AE', symbol: 'د.إ' },
+  USD: { locale: 'en-US', symbol: '$' },
+  KWD: { locale: 'ar-KW', symbol: 'د.ك' },
+  BHD: { locale: 'ar-BH', symbol: 'د.ب' },
 };
 
 /* ─── numeral helpers ──────────────────────────────────────── */
@@ -33,34 +33,34 @@ function getActiveCurrency(): CurrencyCode {
       }
     }
   } catch {}
-  return "EGP";
+  return 'EGP';
 }
 
-function getActiveNumberFormat(): "western" | "arabic-indic" {
+function getActiveNumberFormat(): 'western' | 'arabic-indic' {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.numberFormat === "arabic-indic") return "arabic-indic";
+      if (parsed.numberFormat === 'arabic-indic') return 'arabic-indic';
     }
   } catch {}
-  return "western";
+  return 'western';
 }
 
 /** Apply the stored number-format preference to an already-formatted string */
-function applyNumberFormat(str: string, fmt: "western" | "arabic-indic"): string {
-  if (fmt === "arabic-indic") return toArabicIndic(toWestern(str)); // normalise then convert
+function applyNumberFormat(str: string, fmt: 'western' | 'arabic-indic'): string {
+  if (fmt === 'arabic-indic') return toArabicIndic(toWestern(str)); // normalise then convert
   return toWestern(str); // strip any Arabic-Indic digits
 }
 
 export function formatCurrency(amount: number | undefined | null): string {
-  if (amount === undefined || amount === null) return "0.00";
+  if (amount === undefined || amount === null) return '0.00';
   const code = getActiveCurrency();
   const { locale, symbol } = CURRENCY_MAP[code];
   const fmt = getActiveNumberFormat();
   try {
     const raw = new Intl.NumberFormat(locale, {
-      style: "currency",
+      style: 'currency',
       currency: code,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -78,9 +78,9 @@ export function formatCurrency(amount: number | undefined | null): string {
  * @param decimals  Number of decimal places (default 2)
  */
 export function formatNumber(value: number | undefined | null, decimals = 2): string {
-  if (value === undefined || value === null) return "0";
+  if (value === undefined || value === null) return '0';
   const fmt = getActiveNumberFormat();
-  const raw = value.toLocaleString("en-US", {
+  const raw = value.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
@@ -94,12 +94,12 @@ export function formatNumber(value: number | undefined | null, decimals = 2): st
 export function formatCurrencyPreview(
   amount: number,
   currency: CurrencyCode,
-  numberFormat: "western" | "arabic-indic",
+  numberFormat: 'western' | 'arabic-indic'
 ): string {
   const { locale, symbol } = CURRENCY_MAP[currency];
   try {
     const raw = new Intl.NumberFormat(locale, {
-      style: "currency",
+      style: 'currency',
       currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -112,13 +112,13 @@ export function formatCurrencyPreview(
 }
 
 export function formatDate(dateStr: string | undefined | null): string {
-  if (!dateStr) return "-";
+  if (!dateStr) return '-';
   const date = new Date(dateStr);
-  return new Intl.DateTimeFormat("ar-EG", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Intl.DateTimeFormat('ar-EG-u-nu-latn', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date);
 }
