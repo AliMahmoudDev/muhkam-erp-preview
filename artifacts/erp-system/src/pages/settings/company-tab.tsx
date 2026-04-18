@@ -7,6 +7,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Phone, MapPin, FileText, Globe, Loader2, Save, CheckCircle2,
+  Percent, Mail, Printer,
 } from "lucide-react";
 import { PageHeader, FieldLabel, SInput } from "./_shared";
 
@@ -16,26 +17,36 @@ const api  = (p: string) => `${BASE}${p}`;
 interface CompanySettings {
   company_name:    string;
   company_phone:   string;
+  company_email:   string;
   company_address: string;
   company_tax_id:  string;
   company_website: string;
+  company_vat_rate: string;
+  invoice_header:  string;
+  invoice_footer:  string;
   company_notes:   string;
 }
 
 const EMPTY: CompanySettings = {
   company_name:    "",
   company_phone:   "",
+  company_email:   "",
   company_address: "",
   company_tax_id:  "",
   company_website: "",
+  company_vat_rate: "14",
+  invoice_header:  "",
+  invoice_footer:  "",
   company_notes:   "",
 };
 
-const FIELDS: { key: keyof CompanySettings; label: string; placeholder: string; icon: React.FC<{ className?: string }> }[] = [
+const FIELDS: { key: keyof CompanySettings; label: string; placeholder: string; icon: React.FC<{ className?: string }>; type?: string }[] = [
   { key: "company_name",    label: "اسم الشركة",          placeholder: "مثال: شركة حلال تك للتجارة",      icon: Building2 },
-  { key: "company_phone",   label: "رقم الهاتف",           placeholder: "مثال: 966500000000+",             icon: Phone },
-  { key: "company_address", label: "العنوان",              placeholder: "مثال: الرياض، حي العليا",         icon: MapPin },
-  { key: "company_tax_id",  label: "الرقم الضريبي",        placeholder: "مثال: 300000000000003",           icon: FileText },
+  { key: "company_email",   label: "البريد الإلكتروني",   placeholder: "مثال: info@company.com",           icon: Mail },
+  { key: "company_phone",   label: "رقم الهاتف",           placeholder: "مثال: 201000000000+",             icon: Phone },
+  { key: "company_address", label: "العنوان",              placeholder: "مثال: القاهرة، مدينة نصر",         icon: MapPin },
+  { key: "company_tax_id",  label: "الرقم الضريبي",        placeholder: "مثال: 123456789",                 icon: FileText },
+  { key: "company_vat_rate", label: "نسبة ضريبة القيمة المضافة %", placeholder: "14",                     icon: Percent, type: "number" },
   { key: "company_website", label: "الموقع الإلكتروني",    placeholder: "مثال: https://example.com",       icon: Globe },
 ];
 
@@ -143,6 +154,34 @@ export default function CompanyTab() {
                 </div>
               );
             })}
+
+            {/* رأس وتذييل الفاتورة */}
+            <div className="sm:col-span-2">
+              <FieldLabel>
+                <span className="flex items-center gap-1.5">
+                  <Printer className="w-3.5 h-3.5 text-white/30" />
+                  رأس الفاتورة (invoice header)
+                </span>
+              </FieldLabel>
+              <textarea
+                rows={2}
+                placeholder="نص يظهر في أعلى كل فاتورة مطبوعة، مثال: بسم الله الرحمن الرحيم"
+                value={form.invoice_header}
+                onChange={e => update("invoice_header", e.target.value)}
+                className="glass-input w-full rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-500/40 resize-none transition-colors"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <FieldLabel>تذييل الفاتورة (invoice footer)</FieldLabel>
+              <textarea
+                rows={2}
+                placeholder="نص يظهر في أسفل كل فاتورة مطبوعة، مثال: شكراً لتعاملكم معنا"
+                value={form.invoice_footer}
+                onChange={e => update("invoice_footer", e.target.value)}
+                className="glass-input w-full rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-500/40 resize-none transition-colors"
+              />
+            </div>
 
             {/* ملاحظات */}
             <div className="sm:col-span-2">

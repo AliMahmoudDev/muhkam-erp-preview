@@ -19,6 +19,7 @@ import ProductProfitReport from "./ProductProfitReport";
 import SalesAnalysisReport from "./SalesAnalysisReport";
 import TrialBalanceReport  from "./TrialBalanceReport";
 import VatReport           from "./VatReport";
+import AgingReport         from "./AgingReport";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 interface BsSnapshot {
@@ -83,7 +84,7 @@ function FinancialConsistencyBar() {
 }
 
 /* ── Tab config ─────────────────────────────────────────────────────────── */
-type Tab = "health" | "pl" | "cashflow" | "balance" | "products" | "analysis" | "trial-balance" | "vat";
+type Tab = "health" | "pl" | "cashflow" | "balance" | "products" | "analysis" | "trial-balance" | "vat" | "aging";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "health",         label: "🩺 صحة النظام" },
@@ -92,6 +93,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "balance",        label: "⚖️ الميزانية" },
   { id: "trial-balance",  label: "📋 ميزان المراجعة" },
   { id: "vat",            label: "🧾 ضريبة القيمة المضافة" },
+  { id: "aging",          label: "📅 أعمار الديون" },
   { id: "products",       label: "📦 ربحية المنتجات" },
   { id: "analysis",       label: "📈 تحليل المبيعات" },
 ];
@@ -139,6 +141,7 @@ export default function Reports() {
           {tab === "balance"       && <BalanceSheetReport />}
           {tab === "trial-balance" && <TrialBalanceReport />}
           {tab === "vat"           && <VatReport />}
+          {tab === "aging"         && <AgingReport />}
           {tab === "products"      && <ProductProfitReport />}
           {tab === "analysis"      && <SalesAnalysisReport />}
         </motion.div>

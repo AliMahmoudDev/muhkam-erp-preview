@@ -716,10 +716,14 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
     const payLabel: Record<string, string> = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
     const s = sale as any;
     const itemsHtml = (sale.items || []).map((item, i) =>
-      `<tr><td>${i+1}</td><td><strong>${escHtml(item.product_name)}</strong></td><td>${Number(item.quantity)}</td><td>${Number(item.unit_price).toFixed(2)} ج.م</td><td><strong>${Number(item.total_price).toFixed(2)} ج.م</strong></td></tr>`
+      `<tr><td>${i+1}</td><td><strong>${escHtml(item.product_name)}</strong></td><td>${Number(item.quantity)}</td><td>${Number(item.unit_price).toFixed(2)} ج.م</td><td>${(s as any)?.tax_rate != null ? `${Number((s as any).tax_rate).toFixed(0)}%` : "—"}</td><td><strong>${Number(item.total_price).toFixed(2)} ج.م</strong></td></tr>`
     ).join("");
+    const taxAmount = Number(s.tax_amount ?? 0);
+    const subtotal = Number(sale.total_amount) - taxAmount + Number(s.discount_amount ?? 0);
+    const vatHtml = taxAmount > 0 ? `
+      <div class="total-row"><span>المجموع قبل الضريبة</span><span>${subtotal.toFixed(2)} ج.م</span></div>
+      <div class="total-row" style="color:#c05621;background:#fff8e1;padding:6px 8px;border-radius:4px;font-weight:700"><span>ضريبة القيمة المضافة (${Number(s.tax_rate ?? 14).toFixed(0)}%)</span><span>${taxAmount.toFixed(2)} ج.م</span></div>` : "";
     const discountHtml = Number(s.discount_amount) > 0 ? `
-      <div class="total-row"><span>الإجمالي قبل الخصم</span><span>${(Number(sale.total_amount) + Number(s.discount_amount)).toFixed(2)} ج.م</span></div>
       <div class="total-row"><span>الخصم (${Number(s.discount_percent)}%)</span><span>- ${Number(s.discount_amount).toFixed(2)} ج.م</span></div>` : "";
     const remainHtml = Number(sale.remaining_amount) > 0 ?
       `<div class="total-row" style="color:red"><span>المتبقي</span><span><strong>${Number(sale.remaining_amount).toFixed(2)} ج.م</strong></span></div>` : "";
@@ -767,11 +771,12 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
   ${extraMeta}
 </div>
 <table>
-  <thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead>
+  <thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>ضريبة%</th><th>الإجمالي</th></tr></thead>
   <tbody>${itemsHtml}</tbody>
 </table>
 <div class="totals">
   ${discountHtml}
+  ${vatHtml}
   <div class="total-row total-final"><span>الإجمالي الكلي</span><span>${Number(sale.total_amount).toFixed(2)} ج.م</span></div>
   <div class="total-row"><span>المدفوع</span><span>${Number(sale.paid_amount).toFixed(2)} ج.م</span></div>
   ${remainHtml}

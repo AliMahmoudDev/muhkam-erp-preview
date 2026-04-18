@@ -20,6 +20,7 @@ import {
   GitBranch,
   UserCheck,
   Clock,
+  Shield,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -39,6 +40,7 @@ export const ROUTE_ROLES: Record<string, AppRole[]> = {
   '/accounts': ['admin'],
   '/journal-entries': ['admin'],
   '/fiscal-years': ['admin'],
+  '/audit-log': ['admin'],
   '/reports': ['admin', 'manager'],
   '/expenses': ['admin', 'manager'],
   '/income': ['admin', 'manager'],
@@ -95,6 +97,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   { name: 'شجرة الحسابات', href: '/accounts', icon: BookOpen, roles: ['admin'] },
   { name: 'القيود اليومية', href: '/journal-entries', icon: FileText, roles: ['admin'] },
   { name: 'السنوات المالية', href: '/fiscal-years', icon: BookOpen, roles: ['admin'] },
+  { name: 'سجل التدقيق', href: '/audit-log', icon: Shield, roles: ['admin'] },
   { name: 'السندات', href: '/vouchers', icon: HandCoins, roles: ['admin', 'manager'] },
   { name: 'الفروع', href: '/branches', icon: GitBranch, roles: ['admin', 'manager'] },
   { name: 'الإعدادات', href: '/settings', icon: Settings, roles: ['admin'] },

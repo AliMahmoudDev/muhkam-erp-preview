@@ -166,6 +166,30 @@ export async function getOrCreatePurchasesCostAccount(companyId: number): Promis
 }
 
 /**
+ * حساب ضريبة القيمة المضافة المستحقة (ذمم ضريبية - التزام)
+ * يُقيَّد فيه الضريبة المحصّلة من العملاء
+ */
+export async function getOrCreateVatPayableAccount(companyId: number): Promise<AccountRef> {
+  return getOrCreateAccount({
+    code: "LIAB-VAT-PAYABLE",
+    name: "ضريبة القيمة المضافة المستحقة",
+    type: "liability",
+  }, companyId);
+}
+
+/**
+ * حساب ضريبة القيمة المضافة على المشتريات (أصل ضريبي)
+ * يُقيَّد فيه الضريبة المدفوعة للموردين
+ */
+export async function getOrCreateVatInputAccount(companyId: number): Promise<AccountRef> {
+  return getOrCreateAccount({
+    code: "ASSET-VAT-INPUT",
+    name: "ضريبة القيمة المضافة على المشتريات",
+    type: "asset",
+  }, companyId);
+}
+
+/**
  * Creates a POSTED multi-line journal entry. companyId is REQUIRED.
  */
 export async function createJournalEntry(

@@ -29,6 +29,7 @@ const Settings = lazy(() => import('@/pages/settings'));
 const Accounts = lazy(() => import('@/pages/accounts'));
 const JournalEntries = lazy(() => import('@/pages/journal-entries'));
 const FiscalYears = lazy(() => import('@/pages/fiscal-years'));
+const AuditLog = lazy(() => import('@/pages/audit-log'));
 const Treasury = lazy(() => import('@/pages/treasury'));
 const Products = lazy(() => import('@/pages/products'));
 const Inventory = lazy(() => import('@/pages/inventory'));
@@ -151,6 +152,9 @@ function Router() {
         </Route>
         <Route path="/fiscal-years">
           {() => <Guard path="/fiscal-years" component={FiscalYears} />}
+        </Route>
+        <Route path="/audit-log">
+          {() => <Guard path="/audit-log" component={AuditLog} />}
         </Route>
         <Route path="/branches">{() => <Guard path="/branches" component={Branches} />}</Route>
         <Route path="/employees">{() => <Guard path="/employees" component={Employees} />}</Route>

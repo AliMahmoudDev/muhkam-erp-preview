@@ -1535,4 +1535,92 @@ router.get("/reports/vat-report", wrap(async (req, res) => {
   });
 }));
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * تقرير أعمار الديون (العملاء والموردين)
+ * GET /api/reports/aging?type=customers|suppliers&as_of=YYYY-MM-DD
+ * ───────────────────────────────────────────────────────────────────────── */
+router.get("/reports/aging", wrap(async (req, res) => {
+  const companyId = (req as any).user?.company_id ?? null;
+  const { type = "customers", as_of } = req.query as Record<string, string | undefined>;
+  const asOfDate = as_of ? new Date(as_of) : new Date();
+  const asOfStr  = asOfDate.toISOString().split("T")[0];
+
+  const cond = companyId
+    ? sql`AND s.company_id = ${companyId}`
+    : sql``;
+
+  // جلب كل السجلات المعلقة (credit) حسب النوع
+  let rows: Array<{ id: number; name: string; date: string; remaining: number; invoice_no: string }> = [];
+
+  if (type === "customers") {
+    const r = await db.execute(sql`
+      SELECT s.id, s.customer_name AS name, s.date, CAST(s.remaining_amount AS FLOAT8) AS remaining, s.invoice_no
+      FROM sales s
+      WHERE s.payment_type IN ('credit','partial')
+        AND CAST(s.remaining_amount AS FLOAT8) > 0
+        AND s.date <= ${asOfStr}
+        ${cond}
+      ORDER BY s.date ASC
+    `);
+    rows = (r.rows as any[]).map(x => ({
+      id: x.id,
+      name: String(x.name ?? ""),
+      date: String(x.date ?? ""),
+      remaining: Number(x.remaining ?? 0),
+      invoice_no: String(x.invoice_no ?? ""),
+    }));
+  } else {
+    const r = await db.execute(sql`
+      SELECT p.id, p.supplier_name AS name, p.date, CAST(p.remaining_amount AS FLOAT8) AS remaining, p.invoice_no
+      FROM purchases p
+      WHERE p.payment_type IN ('credit','partial')
+        AND CAST(p.remaining_amount AS FLOAT8) > 0
+        AND p.date <= ${asOfStr}
+        ${cond}
+      ORDER BY p.date ASC
+    `);
+    rows = (r.rows as any[]).map(x => ({
+      id: x.id,
+      name: String(x.name ?? ""),
+      date: String(x.date ?? ""),
+      remaining: Number(x.remaining ?? 0),
+      invoice_no: String(x.invoice_no ?? ""),
+    }));
+  }
+
+  // تصنيف حسب فئات الأعمار
+  interface AgingItem {
+    id: number; name: string; date: string; invoice_no: string; remaining: number; days: number;
+    bucket: "0-30" | "31-60" | "61-90" | "90+";
+  }
+  const buckets = { "0-30": 0, "31-60": 0, "61-90": 0, "90+": 0 };
+  const items: AgingItem[] = rows.map(row => {
+    const invoiceDate = new Date(row.date);
+    const days = Math.floor((asOfDate.getTime() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
+    let bucket: AgingItem["bucket"];
+    if (days <= 30)       { bucket = "0-30";  buckets["0-30"]  += row.remaining; }
+    else if (days <= 60)  { bucket = "31-60"; buckets["31-60"] += row.remaining; }
+    else if (days <= 90)  { bucket = "61-90"; buckets["61-90"] += row.remaining; }
+    else                  { bucket = "90+";   buckets["90+"]   += row.remaining; }
+    return { ...row, days, bucket };
+  });
+
+  const total = items.reduce((s, r) => s + r.remaining, 0);
+
+  res.json({
+    type,
+    as_of:   asOfStr,
+    total:   Number(total.toFixed(2)),
+    buckets: {
+      "0-30":  Number(buckets["0-30"].toFixed(2)),
+      "31-60": Number(buckets["31-60"].toFixed(2)),
+      "61-90": Number(buckets["61-90"].toFixed(2)),
+      "90+":   Number(buckets["90+"].toFixed(2)),
+    },
+    items,
+    generated_at: new Date().toISOString(),
+  });
+}));
+
 export default router;
+

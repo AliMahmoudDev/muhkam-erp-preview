@@ -171,13 +171,79 @@ router.delete("/journal-entries/:id", wrap(async (req, res) => {
   const cid = getCid(req);
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const [entry] = await db.select({ id: journalEntriesTable.id })
+  const [entry] = await db.select({ id: journalEntriesTable.id, status: journalEntriesTable.status })
     .from(journalEntriesTable)
     .where(and(eq(journalEntriesTable.id, id), eq(journalEntriesTable.company_id, cid)));
   if (!entry) { res.status(404).json({ error: "غير موجود" }); return; }
+  if (entry.status === "posted") { res.status(400).json({ error: "لا يمكن حذف قيد منشور — استخدم عكس القيد" }); return; }
   await db.delete(journalEntryLinesTable).where(eq(journalEntryLinesTable.entry_id, id));
   await db.delete(journalEntriesTable).where(eq(journalEntriesTable.id, id));
   res.json({ success: true });
+}));
+
+/* ── عكس القيد (Reversal) ──────────────────────────────────────────── */
+router.post("/journal-entries/:id/reverse", wrap(async (req, res) => {
+  const cid = getCid(req);
+  const id  = parseInt(req.params.id as string);
+  if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
+
+  const [original] = await db.select()
+    .from(journalEntriesTable)
+    .where(and(eq(journalEntriesTable.id, id), eq(journalEntriesTable.company_id, cid)));
+  if (!original) { res.status(404).json({ error: "القيد غير موجود" }); return; }
+  if (original.status !== "posted") { res.status(400).json({ error: "يمكن عكس القيود المنشورة فقط" }); return; }
+
+  const origLines = await db.select().from(journalEntryLinesTable).where(eq(journalEntryLinesTable.entry_id, id));
+  if (!origLines.length) { res.status(400).json({ error: "القيد لا يحتوي على بنود" }); return; }
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const reversalEntry = await db.transaction(async (tx) => {
+    // 1. إنشاء قيد العكس
+    const [rev] = await tx.insert(journalEntriesTable).values({
+      entry_no:     `REV-${original.entry_no}`,
+      date:         today,
+      description:  `عكس القيد: ${original.description}`,
+      status:       "posted",
+      reference:    `REV-${id}`,
+      total_debit:  original.total_credit,
+      total_credit: original.total_debit,
+      company_id:   cid,
+    }).returning();
+
+    // 2. عكس بنود القيد (قلب الدائن والمدين)
+    for (const line of origLines) {
+      await tx.insert(journalEntryLinesTable).values({
+        entry_id:     rev.id,
+        account_id:   line.account_id,
+        account_name: line.account_name,
+        account_code: line.account_code,
+        debit:        line.credit,
+        credit:       line.debit,
+        description:  line.description,
+      });
+
+      // تحديث رصيد الحساب عكسياً
+      const [acc] = await tx.select().from(accountsTable).where(eq(accountsTable.id, line.account_id));
+      if (acc) {
+        const reverseImpact = (acc.type === "asset" || acc.type === "expense")
+          ? Number(line.credit) - Number(line.debit)
+          : Number(line.debit) - Number(line.credit);
+        await tx.update(accountsTable)
+          .set({ current_balance: String(Number(acc.current_balance) + reverseImpact) })
+          .where(eq(accountsTable.id, acc.id));
+      }
+    }
+
+    // 3. تعيين القيد الأصلي كمعكوس
+    await tx.update(journalEntriesTable)
+      .set({ status: "reversed", reference: `REVERSED-BY-${rev.id}` })
+      .where(eq(journalEntriesTable.id, id));
+
+    return rev;
+  });
+
+  res.json({ success: true, reversal_entry: fmtEntry(reversalEntry) });
 }));
 
 export default router;

@@ -17,6 +17,7 @@ import {
   getOrCreateInventoryAccount,
   getOrCreateSafeAccount,
   getOrCreateCustomerPayableAccount,
+  getOrCreateVatInputAccount,
   createJournalEntry,
   type JournalLine,
 } from "../lib/auto-account";
@@ -145,6 +146,9 @@ router.post("/purchases", wrap(async (req, res) => {
       company_id: req.user?.company_id ?? undefined,
     }).returning();
 
+    // حساب ضريبة القيمة المضافة من معدل ضريبة كل منتج
+    let totalTaxAmount = 0;
+
     for (const item of items) {
       await tx.insert(purchaseItemsTable).values({
         purchase_id: newPurchase.id,
@@ -165,6 +169,14 @@ router.post("/purchases", wrap(async (req, res) => {
       const newAvgCost = newTotalQty > 0
         ? (oldQty * oldCost + newItemQty * newItemCost) / newTotalQty
         : newItemCost;
+
+      // تراكم ضريبة القيمة المضافة من معدل ضريبة المنتج
+      const itemTaxRate = Number(prod.tax_rate ?? 0);
+      if (itemTaxRate > 0) {
+        const itemNetPrice = Number(item.unit_price) / (1 + itemTaxRate / 100);
+        const itemTax = (Number(item.unit_price) - itemNetPrice) * Number(item.quantity);
+        totalTaxAmount += itemTax;
+      }
 
       await tx.update(productsTable)
         .set({
@@ -189,6 +201,19 @@ router.post("/purchases", wrap(async (req, res) => {
         warehouse_id: tenantWarehouseId,
         company_id: cidPurchase,
       });
+    }
+
+    // تحديث فاتورة المشتريات بضريبة القيمة المضافة المحسوبة تلقائياً
+    if (totalTaxAmount > 0) {
+      const effectivePurchaseTaxRate = total_amount > 0
+        ? (totalTaxAmount / total_amount) * 100
+        : 0;
+      await tx.update(purchasesTable)
+        .set({
+          tax_amount: String(totalTaxAmount.toFixed(2)),
+          tax_rate:   String(effectivePurchaseTaxRate.toFixed(2)),
+        })
+        .where(eq(purchasesTable.id, newPurchase.id));
     }
 
     const cashOut = payment_type === "cash" ? total_amount
@@ -290,13 +315,22 @@ async function buildPurchaseJournalLines(
   purchase: typeof purchasesTable.$inferSelect,
   companyId: number,
 ): Promise<JournalLine[]> {
-  const total       = Number(purchase.total_amount);
-  const paid        = Number(purchase.paid_amount);
+  const total        = Number(purchase.total_amount);
+  const paid         = Number(purchase.paid_amount);
   const supplierDebt = total - paid;
+  const taxAmount    = Number((purchase as any).tax_amount ?? 0);
+  const netCost      = total - taxAmount;  // تكلفة المخزون صافي بدون ضريبة
   const lines: JournalLine[] = [];
 
+  // ── قيد المخزون (مدين: صافي التكلفة بدون ضريبة) ──────────────────────────
   const inventoryAcct = await getOrCreateInventoryAccount(companyId);
-  lines.push({ account: inventoryAcct, debit: total, credit: 0 });
+  lines.push({ account: inventoryAcct, debit: netCost > 0 ? netCost : total, credit: 0 });
+
+  // ── قيد ضريبة القيمة المضافة على المشتريات (مدين: أصل ضريبي) ─────────────
+  if (taxAmount > 0) {
+    const vatInputAcct = await getOrCreateVatInputAccount(companyId);
+    lines.push({ account: vatInputAcct, debit: taxAmount, credit: 0 });
+  }
 
   if (paid > 0) {
     const [txRow] = await db.select({ safe_id: transactionsTable.safe_id, safe_name: transactionsTable.safe_name })

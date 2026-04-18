@@ -4,7 +4,7 @@
  */
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Receipt, ArrowUpCircle, ArrowDownCircle, Scale, RefreshCw } from "lucide-react";
+import { Receipt, ArrowUpCircle, ArrowDownCircle, Scale, RefreshCw, Download } from "lucide-react";
 import { api, authFetch, formatCurrency } from "./shared";
 
 interface VatData {
@@ -34,6 +34,32 @@ export default function VatReport() {
 
   const handleGenerate = () => { setEnabled(true); void refetch(); };
 
+  const handleCsvExport = () => {
+    if (!data) return;
+    const rows = [
+      ["البيان", "القيمة"],
+      ["إجمالي المبيعات", Number(data.output_vat.total_sales).toFixed(2)],
+      ["عدد فواتير المبيعات", String(data.output_vat.invoice_count)],
+      ["ضريبة المخرجات (مبيعات)", Number(data.output_vat.tax_amount).toFixed(2)],
+      [],
+      ["إجمالي المشتريات", Number(data.input_vat.total_purchases).toFixed(2)],
+      ["عدد فواتير المشتريات", String(data.input_vat.invoice_count)],
+      ["ضريبة المدخلات (مشتريات)", Number(data.input_vat.tax_amount).toFixed(2)],
+      [],
+      ["صافي الضريبة المستحقة", Number(data.net_vat_payable).toFixed(2)],
+      ["الحالة", data.vat_status === "payable" ? "مستحقة للسداد" : data.vat_status === "refundable" ? "مستحقة الاسترداد" : "متوازنة"],
+      [],
+      ["من تاريخ", data.period.date_from ?? ""],
+      ["إلى تاريخ", data.period.date_to ?? ""],
+    ];
+    const csv = "\uFEFF" + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `vat-report-${dateFrom}-${dateTo}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const netPositive = (data?.net_vat_payable ?? 0) >= 0;
 
   return (
@@ -55,6 +81,13 @@ export default function VatReport() {
           {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           توليد تقرير الضريبة
         </button>
+        {data && (
+          <button onClick={handleCsvExport}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 rounded-xl text-sm transition-all font-bold">
+            <Download className="w-4 h-4" />
+            تصدير CSV
+          </button>
+        )}
       </div>
 
       {/* KPI Cards */}

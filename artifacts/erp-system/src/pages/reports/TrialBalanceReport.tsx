@@ -57,6 +57,30 @@ export default function TrialBalanceReport() {
 
   const handlePrint = () => window.print();
 
+  const handleCsvExport = () => {
+    if (!data) return;
+    const rows = [
+      ["كود الحساب", "اسم الحساب", "نوع الحساب", "إجمالي المدين", "إجمالي الدائن", "الرصيد"],
+      ...data.accounts.map(a => [
+        a.account_code,
+        a.account_name,
+        TYPE_LABELS[a.account_type] ?? a.account_type,
+        Number(a.total_debit).toFixed(2),
+        Number(a.total_credit).toFixed(2),
+        Number(a.balance).toFixed(2),
+      ]),
+      [],
+      ["", "الإجمالي", "", Number(data.summary.grand_debit).toFixed(2), Number(data.summary.grand_credit).toFixed(2), ""],
+      ["", "الفرق", "", "", "", Number(data.summary.difference).toFixed(2)],
+    ];
+    const csv = "\uFEFF" + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `trial-balance-${dateFrom}-${dateTo}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const grouped = data?.accounts.reduce<Record<string, TrialAccount[]>>((acc, item) => {
     const t = item.account_type;
     if (!acc[t]) acc[t] = [];
@@ -83,13 +107,18 @@ export default function TrialBalanceReport() {
           {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           توليد الميزان
         </button>
-        {data && (
+        {data && (<>
           <button onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 text-white rounded-xl text-sm transition-all border border-white/10">
             <Download className="w-4 h-4" />
             طباعة
           </button>
-        )}
+          <button onClick={handleCsvExport}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 rounded-xl text-sm transition-all font-bold">
+            <Download className="w-4 h-4" />
+            تصدير CSV
+          </button>
+        </>)}
       </div>
 
       {/* Summary Bar */}

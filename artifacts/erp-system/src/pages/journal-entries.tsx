@@ -19,9 +19,9 @@ interface JournalEntry {
 interface JournalEntryDetail extends JournalEntry { lines: EntryLine[]; }
 
 function StatusBadge({ status }: { status: string }) {
-  return status === "posted"
-    ? <span className="px-3 py-1 rounded-full text-xs font-bold border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 flex items-center gap-1.5"><CheckCircle className="w-3 h-3" /> مرحَّل</span>
-    : <span className="px-3 py-1 rounded-full text-xs font-bold border bg-yellow-500/20 text-yellow-400 border-yellow-500/30">مسودة</span>;
+  if (status === "posted")   return <span className="px-3 py-1 rounded-full text-xs font-bold border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 flex items-center gap-1.5"><CheckCircle className="w-3 h-3" /> مرحَّل</span>;
+  if (status === "reversed") return <span className="px-3 py-1 rounded-full text-xs font-bold border bg-orange-500/20 text-orange-400 border-orange-500/30">↩ معكوس</span>;
+  return <span className="px-3 py-1 rounded-full text-xs font-bold border bg-yellow-500/20 text-yellow-400 border-yellow-500/30">مسودة</span>;
 }
 
 function EntryDetailModal({ entryId, onClose }: { entryId: number; onClose: () => void }) {
@@ -37,8 +37,14 @@ function EntryDetailModal({ entryId, onClose }: { entryId: number; onClose: () =
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/journal-entries"] }); toast({ title: "✅ تم ترحيل القيد" }); onClose(); },
   });
   const deleteMutation = useMutation({
-    mutationFn: () => authFetch(api(`/api/journal-entries/${entryId}`), { method: "DELETE" }).then(r => { if (!r.ok) throw new Error("خطأ في جلب البيانات"); return r.json(); }),
+    mutationFn: () => authFetch(api(`/api/journal-entries/${entryId}`), { method: "DELETE" }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error); return j; }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/journal-entries"] }); toast({ title: "🗑 تم الحذف" }); onClose(); },
+    onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
+  });
+  const reversalMutation = useMutation({
+    mutationFn: () => authFetch(api(`/api/journal-entries/${entryId}/reverse`), { method: "POST" }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error); return j; }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/journal-entries"] }); toast({ title: "↩ تم عكس القيد بنجاح" }); onClose(); },
+    onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
   return (
@@ -69,6 +75,15 @@ function EntryDetailModal({ entryId, onClose }: { entryId: number; onClose: () =
                   <Trash2 className="w-4 h-4" />
                 </button>
               </>
+            )}
+            {entry?.status === "posted" && (
+              <button
+                onClick={() => { if (confirm("هل تريد عكس هذا القيد المحاسبي؟ سيتم إنشاء قيد معاكس جديد.")) reversalMutation.mutate(); }}
+                disabled={reversalMutation.isPending}
+                className="px-4 py-2 rounded-xl bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 text-sm font-bold border border-orange-500/30 transition-colors"
+              >
+                {reversalMutation.isPending ? "..." : "↩ عكس القيد"}
+              </button>
             )}
             <button onClick={onClose} className="p-2 rounded-xl bg-white/10 hover:bg-white/20"><X className="w-4 h-4 text-white/70" /></button>
           </div>

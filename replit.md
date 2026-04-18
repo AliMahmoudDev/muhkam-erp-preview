@@ -611,3 +611,87 @@ Standalone iOS & Android mobile companion app at `artifacts/erp-mobile/`. Built 
 - Fonts: Inter via `@expo-google-fonts/inter` (400/500/600/700 weights).
 - Safe area handling via `react-native-safe-area-context`.
 - Pull-to-refresh on all list screens.
+## April 2026 — Session 4: Advanced Accounting, Audit & Export
+
+### Audit Log Viewer (`/audit-log`)
+- Full Arabic-labeled audit log page at `artifacts/erp-system/src/pages/audit-log.tsx`
+- Filters: record_type, action, user, search text, row limit (100/200/500)
+- Expandable JSON diff for old_value / new_value with chevron toggle
+- Stats cards showing top 4 actions by count
+- Polls `/api/settings/audit-logs` every 30s with `useQuery`
+- Admin-only access enforced client-side + backend RBAC
+- Added to sidebar under "المحاسبة" section
+
+### Company Settings Enhancements
+- Added `company_email`, `company_vat_rate`, `invoice_header`, `invoice_footer` fields to company-tab.tsx
+- Invoice header/footer used in printed invoices
+- VAT rate stored via systemSettingsTable key-value store
+
+### InvoicePrint Component (`/components/InvoicePrint.tsx`)
+- Reusable print-to-new-window invoice with full Arabic RTL layout
+- Shows: company header, customer info, items table with tax% per line, VAT breakdown, totals, footer
+- Print button opens new window, auto-prints, auto-closes on afterprint event
+- Accepts InvoiceData interface with optional company settings (name, address, phone, tax_id, header, footer)
+
+### Sales Print Upgrade
+- `SaleDetailModal` print function enhanced: added ضريبة% column to items table
+- vatHtml block shows "المجموع قبل الضريبة" and "ضريبة القيمة المضافة" rows (only when tax_amount > 0)
+
+### CSV Export for Reports
+- Trial Balance: "تصدير CSV" button downloads `trial-balance-{from}-{to}.csv` with UTF-8 BOM for Arabic Excel
+- VAT Report: "تصدير CSV" button downloads `vat-report-{from}-{to}.csv` with full Arabic labels
+- Both use browser Blob API, no server round-trip
+
+### VAT Payable Journal Entries (Double-Entry)
+- `auto-account.ts`: Added `getOrCreateVatPayableAccount` (code: `LIAB-VAT-PAYABLE`, type: liability)
+- `auto-account.ts`: Added `getOrCreateVatInputAccount` (code: `ASSET-VAT-INPUT`, type: asset)
+- `buildSaleJournalLines` now splits revenue: Revenue credit = total − tax_amount, VAT Payable credit = tax_amount
+- Correct accounting: Dr Cash/AR = total | Cr Revenue = net | Cr VAT Payable = tax
+- Only activates when sale.tax_amount > 0 (backward compatible with zero-VAT sales)
+
+### Shield Import Fix
+- `rbac.ts`: Added `Shield` to lucide-react imports
+- `rbac.ts`: Added `/audit-log` route → ['admin'] permission
+- `rbac.ts`: Added audit-log NAV_ITEM with Shield icon
+- `layout.tsx`: audit-log added to "المحاسبة" sidebar section
+- `App.tsx`: Lazy-imported AuditLog + Route added
+
+---
+
+## Session 5 — Advanced Accounting & Reports (April 18, 2026)
+
+### Purchases VAT Auto-Calculation
+- `purchases.ts` POST route: added `totalTaxAmount` accumulation inside items loop
+- Reads `prod.tax_rate` from product to compute item-level VAT
+- Uses tax-inclusive formula: `itemNetPrice = unitPrice / (1 + taxRate/100)`, `tax = (unitPrice - netPrice) × qty`
+- After items loop: UPDATE purchasesTable with `tax_amount` and effective `tax_rate` if totalTaxAmount > 0
+- Backward compatible: no-op when product tax_rate = 0
+
+### Customer Aging Report — API + UI
+- **Backend:** `GET /api/reports/aging?type=customers|suppliers&as_of=YYYY-MM-DD`
+  - Returns items grouped into buckets: 0-30, 31-60, 61-90, 90+ days
+  - Queries `sales` or `purchases` for credit/partial with remaining > 0
+  - Multi-tenant safe (company_id filter applied)
+- **Frontend:** `AgingReport.tsx` — fully Arabic RTL component
+  - Toggle between customers/suppliers
+  - Date picker for "as of" date
+  - 4 summary bucket cards with mini progress bars + click-to-filter
+  - Detailed table with color-coded rows by age bucket
+  - CSV export with UTF-8 BOM for Arabic Excel
+- **Integrated** as "📅 أعمار الديون" tab in reports/index.tsx
+
+### Journal Entry Reversal (عكس القيد)
+- **Backend:** `POST /api/journal-entries/:id/reverse`
+  - Validates entry is "posted" (only posted entries can be reversed)
+  - Creates new entry with `REV-` prefix, flipped debit/credit across all lines
+  - Updates all affected account balances (reverseImpact = opposite direction)
+  - Sets original entry status to "reversed", reference to `REVERSED-BY-{new_id}`
+- **Frontend:** `journal-entries.tsx`
+  - `reversalMutation` using POST /reverse endpoint
+  - "↩ عكس القيد" button visible only for posted entries
+  - `StatusBadge` updated to show "↩ معكوس" (orange) for reversed entries
+  - DELETE endpoint now blocks deletion of posted entries with helpful Arabic error
+  
+### Reports Page Enhancement
+- Reports now has 9 tabs: health / P&L / cashflow / balance / trial-balance / VAT / aging / products / analysis
+

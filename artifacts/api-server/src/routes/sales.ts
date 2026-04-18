@@ -21,6 +21,7 @@ import {
   getOrCreateCustomerAccount,
   getOrCreateCOGSAccount,
   getOrCreateInventoryAccount,
+  getOrCreateVatPayableAccount,
   createJournalEntry,
   type JournalLine,
 } from "../lib/auto-account";
@@ -264,11 +265,16 @@ router.post("/sales", wrap(async (req, res) => {
       }).returning();
 
       // 3. البنود: خصم المخزون (atomic) + تسجيل التكلفة + حركة مخزون صادر
+      let totalTaxAmount = 0; // يُحتسب تلقائياً من tax_rate لكل منتج
       for (const item of items) {
         const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidSale)));
         if (!prod) throw httpError(400, `المنتج "${item.product_name}" غير موجود`);
         const costAtSale = Number(prod.cost_price);
         const costTotal = costAtSale * item.quantity;
+        // احتساب ضريبة القيمة المضافة لهذا البند (tax_rate من بيانات المنتج)
+        const itemTaxRate = Number(prod.tax_rate ?? 0);
+        const itemTax = item.quantity * item.unit_price * (itemTaxRate / 100);
+        totalTaxAmount += itemTax;
         const qtyStr = String(item.quantity);
 
         // Atomic stock decrement: SELECT-then-UPDATE allows oversell under concurrency.
@@ -320,6 +326,15 @@ router.post("/sales", wrap(async (req, res) => {
           warehouse_id: tenantWarehouseId,
           company_id: cidSale,
         });
+      }
+
+      // 3.5 تحديث ضريبة القيمة المضافة المحتسبة على الفاتورة
+      if (totalTaxAmount > 0) {
+        const effectiveTaxRate = total_amount > 0 ? (totalTaxAmount / total_amount) * 100 : 0;
+        await tx.update(salesTable).set({
+          tax_amount: String(totalTaxAmount.toFixed(2)),
+          tax_rate:   String(effectiveTaxRate.toFixed(2)),
+        }).where(eq(salesTable.id, newSale.id));
       }
 
       // 4. تحديث رصيد العميل
@@ -472,14 +487,22 @@ router.get("/sales/:id", wrap(async (req, res) => {
 //   - الربح = الإيرادات - COGS (وليس مجرد الفارق بين سعر البيع وتكلفة المنتج الحالية)
 //
 async function buildSaleJournalLines(sale: typeof salesTable.$inferSelect, companyId: number): Promise<JournalLine[]> {
-  const total  = Number(sale.total_amount);
-  const paid   = Number(sale.paid_amount);
-  const debt   = total - paid;
+  const total     = Number(sale.total_amount);
+  const paid      = Number(sale.paid_amount);
+  const debt      = total - paid;
+  const taxAmount = Number((sale as any).tax_amount ?? 0);
+  const netRevenue = total - taxAmount;  // الإيراد صافي بدون ضريبة
   const lines: JournalLine[] = [];
 
-  // ── قيد الإيراد ─────────────────────────────────────────────────────────
+  // ── قيد الإيراد (صافي بدون ضريبة) ──────────────────────────────────────
   const revenueAcct = await getOrCreateSalesRevenueAccount(companyId);
-  lines.push({ account: revenueAcct, debit: 0, credit: total });
+  lines.push({ account: revenueAcct, debit: 0, credit: netRevenue > 0 ? netRevenue : total });
+
+  // ── قيد ضريبة القيمة المضافة (دائن: التزام ضريبي) ──────────────────────
+  if (taxAmount > 0) {
+    const vatPayableAcct = await getOrCreateVatPayableAccount(companyId);
+    lines.push({ account: vatPayableAcct, debit: 0, credit: taxAmount });
+  }
 
   if (paid > 0 && sale.safe_id && sale.safe_name) {
     const safeAcct = await getOrCreateSafeAccount(sale.safe_id, sale.safe_name, companyId);
