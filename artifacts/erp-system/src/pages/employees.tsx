@@ -250,7 +250,15 @@ export default function Employees() {
     safe_id: '' as string | number,
   });
   const [showSettleCustody, setShowSettleCustody] = useState<number | null>(null);
-  const [settleAmount, setSettleAmount] = useState('');
+  type SettleLine = { amount: string; category: string; description: string; date: string };
+  const blankSettleLine = (): SettleLine => ({
+    amount: '',
+    category: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+  });
+  const [settleLines, setSettleLines] = useState<SettleLine[]>([blankSettleLine()]);
+  const [settleNotes, setSettleNotes] = useState('');
 
   /* ── Queries ─────────────────────────────────────────────── */
   const { data: empsRaw, isLoading: empsLoading } = useQuery({
@@ -288,6 +296,12 @@ export default function Employees() {
     queryFn: () => authFetch(api('/api/settings/safes')).then((r) => r.json()),
   });
   const safes: AnyRec[] = safeArray(safesRaw);
+  const { data: expCatsRaw } = useQuery({
+    queryKey: ['/api/expense-categories'],
+    queryFn: () => authFetch(api('/api/expense-categories')).then((r) => r.json()),
+  });
+  const expenseCategories: AnyRec[] = safeArray(expCatsRaw);
+
   const safesForEmployee = (emp: Employee | null) =>
     safes.filter(
       (s) =>
@@ -469,11 +483,20 @@ export default function Employees() {
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
   const settleCustody = useMutation({
-    mutationFn: ({ id, returned_amount }: { id: number; returned_amount: number }) =>
-      authFetch(api(`/api/employee-custody/${id}/settle`), {
+    mutationFn: (payload: {
+      id: number;
+      lines: { amount: number; category: string; description: string | null; date: string }[];
+      returned_amount: number;
+      notes: string | null;
+    }) =>
+      authFetch(api(`/api/employee-custody/${payload.id}/settle`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ returned_amount }),
+        body: JSON.stringify({
+          lines: payload.lines,
+          returned_amount: payload.returned_amount,
+          notes: payload.notes,
+        }),
       }).then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
@@ -481,8 +504,10 @@ export default function Employees() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['/api/employee-custody', selected?.id] });
+      qc.invalidateQueries({ queryKey: ['/api/settings/safes'] });
       setShowSettleCustody(null);
-      setSettleAmount('');
+      setSettleLines([blankSettleLine()]);
+      setSettleNotes('');
       toast({ title: 'تم تسوية العهدة' });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
@@ -1274,7 +1299,8 @@ export default function Employees() {
                               <button
                                 onClick={() => {
                                   setShowSettleCustody(c.id as number);
-                                  setSettleAmount(String(c.amount ?? ''));
+                                  setSettleLines([blankSettleLine()]);
+                                  setSettleNotes('');
                                 }}
                                 className="erp-btn erp-btn-ghost text-xs text-emerald-400 border border-emerald-500/30 p-1"
                               >
@@ -2196,55 +2222,216 @@ export default function Employees() {
         </div>
       )}
       {/* Settle Custody */}
-      {showSettleCustody != null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2">
-                <CheckCircle size={16} className="text-emerald-400" /> تسوية العهدة
-              </h2>
-              <button
-                onClick={() => setShowSettleCustody(null)}
-                className="text-white/40 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="p-4">
-              <Field label="المبلغ المردود *">
-                <input
-                  type="number"
-                  value={settleAmount}
-                  onChange={(e) => setSettleAmount(e.target.value)}
-                  className="erp-input w-full"
-                  min={0}
-                  autoFocus
-                />
-              </Field>
-            </div>
-            <div className="flex gap-2 p-4 border-t border-white/10">
-              <button
-                onClick={() =>
-                  settleCustody.mutate({
-                    id: showSettleCustody,
-                    returned_amount: Number(settleAmount),
-                  })
-                }
-                disabled={!settleAmount || Number(settleAmount) < 0 || settleCustody.isPending}
-                className="erp-btn erp-btn-primary flex-1"
-              >
-                {settleCustody.isPending ? 'جاري...' : 'تأكيد التسوية'}
-              </button>
-              <button
-                onClick={() => setShowSettleCustody(null)}
-                className="erp-btn erp-btn-ghost"
-              >
-                إلغاء
-              </button>
+      {showSettleCustody != null && (() => {
+        const current = custody.find((c: AnyRec) => Number(c.id) === showSettleCustody);
+        const original = current ? Number(current.amount) : 0;
+        const sumLines = settleLines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+        const overspent = sumLines > original;
+        const reimbursement = overspent ? +(sumLines - original).toFixed(2) : 0;
+        const returned = overspent ? 0 : +(original - sumLines).toFixed(2);
+        const linesValid = settleLines.every(
+          (l) => Number(l.amount) > 0 && l.category.trim() !== '',
+        );
+        const canSubmit = linesValid && returned >= 0 && !settleCustody.isPending;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div
+              className="erp-modal rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
+              dir="rtl"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-white/10">
+                <h2 className="font-bold text-white flex items-center gap-2">
+                  <CheckCircle size={16} className="text-emerald-400" /> تسوية العهدة
+                  {current && (
+                    <span className="text-xs text-white/60 mr-2">
+                      (إجمالي: {original.toLocaleString('ar-EG-u-nu-latn')})
+                    </span>
+                  )}
+                </h2>
+                <button
+                  onClick={() => setShowSettleCustody(null)}
+                  className="text-white/40 hover:text-white"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="p-4 space-y-3 overflow-auto">
+                <div className="text-xs text-white/60">
+                  أدخل تفاصيل المصروفات الفعلية. كل بند سيُسجَّل كمصروف منفصل.
+                </div>
+
+                {settleLines.map((line, idx) => (
+                  <div
+                    key={idx}
+                    className="grid grid-cols-12 gap-2 p-2 rounded-lg bg-white/5 border border-white/10"
+                  >
+                    <div className="col-span-3">
+                      <label className="text-[10px] text-white/50">المبلغ</label>
+                      <input
+                        type="number"
+                        value={line.amount}
+                        onChange={(e) =>
+                          setSettleLines((arr) =>
+                            arr.map((l, i) => (i === idx ? { ...l, amount: e.target.value } : l)),
+                          )
+                        }
+                        className="erp-input w-full text-sm"
+                        min={0}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <label className="text-[10px] text-white/50">نوع المصروف</label>
+                      <select
+                        value={line.category}
+                        onChange={(e) =>
+                          setSettleLines((arr) =>
+                            arr.map((l, i) => (i === idx ? { ...l, category: e.target.value } : l)),
+                          )
+                        }
+                        className="erp-input w-full text-sm"
+                      >
+                        <option value="">— اختر —</option>
+                        {expenseCategories.map((c) => (
+                          <option key={String(c.id)} value={String(c.name)}>
+                            {String(c.name)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-[10px] text-white/50">التاريخ</label>
+                      <input
+                        type="date"
+                        value={line.date}
+                        onChange={(e) =>
+                          setSettleLines((arr) =>
+                            arr.map((l, i) => (i === idx ? { ...l, date: e.target.value } : l)),
+                          )
+                        }
+                        className="erp-input w-full text-sm"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <label className="text-[10px] text-white/50">الوصف</label>
+                      <input
+                        value={line.description}
+                        onChange={(e) =>
+                          setSettleLines((arr) =>
+                            arr.map((l, i) =>
+                              i === idx ? { ...l, description: e.target.value } : l,
+                            ),
+                          )
+                        }
+                        className="erp-input w-full text-sm"
+                        placeholder="اختياري"
+                      />
+                    </div>
+                    <div className="col-span-1 flex items-end justify-center">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSettleLines((arr) =>
+                            arr.length > 1 ? arr.filter((_, i) => i !== idx) : arr,
+                          )
+                        }
+                        disabled={settleLines.length === 1}
+                        className="text-red-400 hover:text-red-300 disabled:opacity-30 p-1"
+                        title="حذف البند"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => setSettleLines((arr) => [...arr, blankSettleLine()])}
+                  className="erp-btn erp-btn-ghost text-xs"
+                >
+                  + إضافة بند مصروف
+                </button>
+
+                <div className="grid grid-cols-3 gap-2 mt-2 p-3 rounded-lg bg-white/5 border border-white/10 text-sm">
+                  <div>
+                    <div className="text-[10px] text-white/50">إجمالي العهدة</div>
+                    <div className="font-bold text-white">
+                      {original.toLocaleString('ar-EG-u-nu-latn')}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-white/50">إجمالي المصروفات</div>
+                    <div className="font-bold text-amber-300">
+                      {sumLines.toLocaleString('ar-EG-u-nu-latn')}
+                    </div>
+                  </div>
+                  <div>
+                    {overspent ? (
+                      <>
+                        <div className="text-[10px] text-rose-300">مستحق للموظف</div>
+                        <div className="font-bold text-rose-300">
+                          {reimbursement.toLocaleString('ar-EG-u-nu-latn')}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-[10px] text-emerald-300">مرتجع للخزينة</div>
+                        <div className="font-bold text-emerald-300">
+                          {returned.toLocaleString('ar-EG-u-nu-latn')}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {overspent && (
+                  <div className="text-xs text-rose-300 bg-rose-500/10 border border-rose-400/20 rounded-lg p-2">
+                    تنبيه: مجموع المصروفات أكبر من العهدة. سيُسجَّل الفرق ({reimbursement}) كمستحق
+                    للموظف.
+                  </div>
+                )}
+
+                <Field label="ملاحظات التسوية">
+                  <input
+                    value={settleNotes}
+                    onChange={(e) => setSettleNotes(e.target.value)}
+                    className="erp-input w-full"
+                  />
+                </Field>
+              </div>
+              <div className="flex gap-2 p-4 border-t border-white/10">
+                <button
+                  onClick={() =>
+                    settleCustody.mutate({
+                      id: showSettleCustody,
+                      lines: settleLines.map((l) => ({
+                        amount: Number(l.amount),
+                        category: l.category.trim(),
+                        description: l.description.trim() || null,
+                        date: l.date,
+                      })),
+                      returned_amount: returned,
+                      notes: settleNotes.trim() || null,
+                    })
+                  }
+                  disabled={!canSubmit}
+                  className="erp-btn erp-btn-primary flex-1"
+                >
+                  {settleCustody.isPending ? 'جاري...' : 'تأكيد التسوية'}
+                </button>
+                <button
+                  onClick={() => setShowSettleCustody(null)}
+                  className="erp-btn erp-btn-ghost"
+                >
+                  إلغاء
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

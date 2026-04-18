@@ -37,6 +37,8 @@ export const employeeCustodyTable = pgTable("employee_custody", {
   granted_by:      integer("granted_by"),
   currency:        text("currency").notNull().default("EGP"),
   notes:           text("notes"),
+  /** المبلغ المستحق للموظف بعد التسوية (لو الموظف صرف أكثر من قيمة العهدة) */
+  reimbursement_due: numeric("reimbursement_due", { precision: 14, scale: 2 }).notNull().default("0"),
   created_at:      timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updated_at:      timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
@@ -46,3 +48,23 @@ export const employeeCustodyTable = pgTable("employee_custody", {
 ]);
 
 export type EmployeeCustody = typeof employeeCustodyTable.$inferSelect;
+
+/* ── Employee Custody Lines (بنود تسوية العهدة) ─────────────────── */
+export const employeeCustodyLinesTable = pgTable("employee_custody_lines", {
+  id:           serial("id").primaryKey(),
+  company_id:   integer("company_id").notNull().references(() => companiesTable.id),
+  custody_id:   integer("custody_id").notNull().references(() => employeeCustodyTable.id, { onDelete: "cascade" }),
+  /** اسم تصنيف المصروف (نخزّنه نصاً تماشياً مع expensesTable.category) */
+  category:     text("category").notNull(),
+  amount:       numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  description:  text("description"),
+  line_date:    text("line_date").notNull(),
+  /** ربط بسجل المصروف الذي أُنشئ تلقائياً عند التسوية */
+  expense_id:   integer("expense_id"),
+  created_at:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("emp_custody_lines_company_idx").on(t.company_id),
+  index("emp_custody_lines_custody_idx").on(t.custody_id),
+]);
+
+export type EmployeeCustodyLine = typeof employeeCustodyLinesTable.$inferSelect;
