@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { authenticate, requireTenant } from "../middleware/auth";
+import { tenantGuard } from "../middleware/tenant-guard";
 import healthRouter from "./health";
 import productsRouter from "./products";
 import customersRouter from "./customers";
@@ -56,6 +57,9 @@ router.use(superRouter);
 
 /* ── Tenant guard — every route below MUST resolve a company_id ── */
 router.use(requireTenant);
+
+/* ── Subscription guard — blocks expired/inactive companies ────── */
+router.use(tenantGuard);
 
 /* ── Protected routes ─────────────────────────────────────────── */
 router.use(productsRouter);

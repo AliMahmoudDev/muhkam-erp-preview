@@ -24,6 +24,38 @@
 - Fixed `artifacts/erp-system/src/components/ui/spinner.tsx`: `React.ComponentProps<typeof Loader2Icon>` instead of `<"svg">`
 - Added `pnpm.overrides` in root `package.json` to deduplicate `@types/react` and fix `calendar.tsx` dual-types TS error
 
+## Performance & Security Improvements (April 2026 — Session 2)
+
+### Subscription Enforcement Middleware (`tenant-guard.ts`)
+New `tenantGuard` middleware wired globally after `requireTenant` in `routes/index.ts`:
+- **Inactive companies → 403** with Arabic error message
+- **Expired subscriptions → 402** with `days_past_due` and `code: SUBSCRIPTION_EXPIRED`
+- **GET requests → 7-day grace period** (read-only access for recently expired companies)
+- **Super admins → bypass** (cross-tenant operations not blocked)
+- **In-process cache:** company status cached 60 s to avoid per-request DB hits
+- **Fail-open on DB error:** subscription check failure allows the request (avoids full outage)
+- `invalidateTenantCache(companyId)` exported for use after subscription renewals
+
+### Dashboard N+1 Fix
+`GET /api/dashboard` previously loaded ALL company products into JS memory then filtered in-app for low-stock.
+Now uses a single SQL query with `CAST(quantity AS FLOAT8) <= CAST(low_stock_threshold AS FLOAT8)` predicate + `.limit(50)`.
+
+### Query Unbounded Protection (Pagination)
+Added `?limit=` cap (default 500, max 2000) to all previously unbounded list endpoints:
+- `/api/financial-transactions`
+- `/api/deposit-vouchers`
+- `/api/receipt-vouchers`
+- `/api/payment-vouchers`
+- `/api/safe-transfers`
+
+### Compound DB Indexes Added
+Pushed to DB via `pnpm run push` in `lib/db`:
+- `income`: `income_company_id_idx`, `income_company_created_at_idx`
+- `accounts`: `accounts_company_id_idx`
+- `journal_entries`: `journal_entries_company_id_idx`, `journal_entries_company_date_idx`
+
+---
+
 ## Multi-Tenant Hardening (April 2026)
 Comprehensive multi-tenant isolation pass over financial/inventory write paths. All FK ownership lookups in mutating routes now constrain by `(id, company_id)`; idempotency `request_id` lookups are tenant-scoped; `stock_movements`, `transactions`, and `customer_ledger` inserts explicitly pass `company_id` (no reliance on default=1).
 

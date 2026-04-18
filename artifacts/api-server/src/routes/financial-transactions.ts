@@ -28,9 +28,13 @@ router.get("/financial-transactions", wrap(async (req, res) => {
     );
   }
 
+  // Prevent unbounded queries — cap at 2000 records. Pass ?limit= to override.
+  const limit = Math.min(2000, Math.max(1, parseInt(String(req.query["limit"] ?? "500"), 10)));
+
   const items = await db.select().from(transactionsTable)
     .where(and(...conditions))
-    .orderBy(desc(transactionsTable.created_at));
+    .orderBy(desc(transactionsTable.created_at))
+    .limit(limit);
 
   res.json(items.map(fmt));
 }));

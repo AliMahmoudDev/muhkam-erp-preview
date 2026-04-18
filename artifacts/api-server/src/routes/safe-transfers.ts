@@ -13,12 +13,14 @@ router.get("/safe-transfers", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية عرض الخزينة" }); return;
   }
   const companyId: number = ((req as any).user.company_id as number);
+  const safeLimit = Math.min(2000, Math.max(1, parseInt(String(req.query["limit"] ?? "500"), 10)));
   const items = await db.select().from(transactionsTable)
     .where(and(
       eq(transactionsTable.reference_type, "safe_transfer"),
       eq(transactionsTable.company_id, companyId),
     ))
-    .orderBy(desc(transactionsTable.created_at));
+    .orderBy(desc(transactionsTable.created_at))
+    .limit(safeLimit);
   res.json(items.map(t => ({
     ...t,
     amount: Number(t.amount),

@@ -16,6 +16,7 @@ export const accountsTable = pgTable("accounts", {
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
+  index("accounts_company_id_idx").on(t.company_id),
   index("accounts_type_idx").on(t.type),
   index("accounts_parent_id_idx").on(t.parent_id),
   index("accounts_is_active_idx").on(t.is_active),
@@ -34,6 +35,8 @@ export const journalEntriesTable = pgTable("journal_entries", {
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
+  index("journal_entries_company_id_idx").on(t.company_id),
+  index("journal_entries_company_date_idx").on(t.company_id, t.date),
   index("journal_entries_date_idx").on(t.date),
   index("journal_entries_status_idx").on(t.status),
   index("journal_entries_created_at_idx").on(t.created_at),

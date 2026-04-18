@@ -40,28 +40,28 @@ export async function getSupplierLedgerBalance(accountId: number | null | undefi
   return r2(Number((result.rows[0] as any)?.balance ?? 0));
 }
 
-/* ── إجمالي ذمم جميع العملاء (AR) ───────────────────────────────────────── */
-export async function getTotalCustomerLedgerBalance(): Promise<number> {
+/* ── إجمالي ذمم جميع العملاء لشركة محددة (AR) ───────────────────────────── */
+export async function getTotalCustomerLedgerBalance(companyId: number): Promise<number> {
   const result = await db.execute(sql`
     SELECT
       COALESCE(SUM(CAST(jel.debit  AS FLOAT8)), 0)
     - COALESCE(SUM(CAST(jel.credit AS FLOAT8)), 0) AS total
     FROM journal_entry_lines jel
     JOIN journal_entries je ON je.id = jel.entry_id AND je.status = 'posted'
-    JOIN accounts a ON a.id = jel.account_id AND a.code LIKE 'AR-%'
+    JOIN accounts a ON a.id = jel.account_id AND a.code LIKE 'AR-%' AND a.company_id = ${companyId}
   `);
   return r2(Number((result.rows[0] as any)?.total ?? 0));
 }
 
-/* ── إجمالي ذمم جميع الموردين (AP) ──────────────────────────────────────── */
-export async function getTotalSupplierLedgerBalance(): Promise<number> {
+/* ── إجمالي ذمم جميع الموردين لشركة محددة (AP) ──────────────────────────── */
+export async function getTotalSupplierLedgerBalance(companyId: number): Promise<number> {
   const result = await db.execute(sql`
     SELECT
       COALESCE(SUM(CAST(jel.credit AS FLOAT8)), 0)
     - COALESCE(SUM(CAST(jel.debit  AS FLOAT8)), 0) AS total
     FROM journal_entry_lines jel
     JOIN journal_entries je ON je.id = jel.entry_id AND je.status = 'posted'
-    JOIN accounts a ON a.id = jel.account_id AND a.code LIKE 'AP-%'
+    JOIN accounts a ON a.id = jel.account_id AND a.code LIKE 'AP-%' AND a.company_id = ${companyId}
   `);
   return r2(Number((result.rows[0] as any)?.total ?? 0));
 }

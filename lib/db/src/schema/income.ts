@@ -17,6 +17,8 @@ export const incomeTable = pgTable("income", {
   index("income_safe_id_idx").on(t.safe_id),
   index("income_source_idx").on(t.source),
   index("income_created_at_idx").on(t.created_at),
+  index("income_company_id_idx").on(t.company_id),
+  index("income_company_created_at_idx").on(t.company_id, t.created_at),
 ]);
 
 export const insertIncomeSchema = createInsertSchema(incomeTable).omit({ id: true, created_at: true });

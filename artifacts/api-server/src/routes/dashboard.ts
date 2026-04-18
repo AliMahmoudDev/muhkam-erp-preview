@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { gte, sum, desc, inArray, and, eq } from "drizzle-orm";
+import { gte, sum, desc, inArray, and, eq, sql } from "drizzle-orm";
 import {
   db, salesTable, saleItemsTable, expensesTable, incomeTable,
   productsTable, transactionsTable,
@@ -37,12 +37,18 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
 
   // ── مصاريف اليوم ─────────────────────────────────────────────────────────
   const [expensesToday] = await db.select({ total: sum(expensesTable.amount) })
-    .from(expensesTable).where(gte(expensesTable.created_at, today));
+    .from(expensesTable).where(and(
+      gte(expensesTable.created_at, today),
+      companyId !== null ? eq(expensesTable.company_id, companyId) : undefined,
+    ));
   const total_expenses_today = Number(expensesToday?.total ?? 0);
 
   // ── إيرادات اليوم ─────────────────────────────────────────────────────────
   const [incomeToday] = await db.select({ total: sum(incomeTable.amount) })
-    .from(incomeTable).where(gte(incomeTable.created_at, today));
+    .from(incomeTable).where(and(
+      gte(incomeTable.created_at, today),
+      companyId !== null ? eq(incomeTable.company_id, companyId) : undefined,
+    ));
   const total_income_today = Number(incomeToday?.total ?? 0);
 
   // ── صافي الربح: تكلفة المبيعات الفعلية لا إجمالي المبيعات ───────────────
@@ -62,22 +68,29 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
 
   // ── ديون العملاء والموردين — من دفتر الأستاذ (AR / AP) ──────────────────
   const [total_customer_debts, total_supplier_debts] = await Promise.all([
-    getTotalCustomerLedgerBalance(),
-    getTotalSupplierLedgerBalance(),
+    companyId !== null ? getTotalCustomerLedgerBalance(companyId) : Promise.resolve(0),
+    companyId !== null ? getTotalSupplierLedgerBalance(companyId) : Promise.resolve(0),
   ]);
 
-  // ── منتجات منخفضة المخزون ────────────────────────────────────────────────
-  const allProducts = await db.select().from(productsTable)
-    .where(companyId !== null ? eq(productsTable.company_id, companyId) : undefined);
-  const low_stock_products = allProducts
-    .filter(p => p.low_stock_threshold !== null && Number(p.quantity) <= (p.low_stock_threshold ?? 0))
-    .map(p => ({
-      ...p,
-      quantity: Number(p.quantity),
-      cost_price: Number(p.cost_price),
-      sale_price: Number(p.sale_price),
-      created_at: p.created_at.toISOString(),
-    }));
+  // ── منتجات منخفضة المخزون — فقط المنتجات التي تجاوزت الحد الأدنى ────────
+  const lowStockRows = await db.select({
+    id: productsTable.id, name: productsTable.name, sku: productsTable.sku,
+    quantity: productsTable.quantity, low_stock_threshold: productsTable.low_stock_threshold,
+    cost_price: productsTable.cost_price, sale_price: productsTable.sale_price,
+    created_at: productsTable.created_at,
+  }).from(productsTable)
+    .where(and(
+      companyId !== null ? eq(productsTable.company_id, companyId) : undefined,
+      sql`low_stock_threshold IS NOT NULL AND CAST(quantity AS FLOAT8) <= CAST(low_stock_threshold AS FLOAT8)`,
+    ))
+    .limit(50);
+  const low_stock_products = lowStockRows.map(p => ({
+    ...p,
+    quantity: Number(p.quantity),
+    cost_price: Number(p.cost_price),
+    sale_price: Number(p.sale_price),
+    created_at: p.created_at.toISOString(),
+  }));
 
   // ── آخر الحركات المالية ───────────────────────────────────────────────────
   const ALLOWED_TX_TYPES = new Set([
@@ -88,6 +101,7 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
     "safe_adjustment","deposit_voucher",
   ]);
   const recentTxns = await db.select().from(transactionsTable)
+    .where(companyId !== null ? eq(transactionsTable.company_id, companyId) : undefined)
     .orderBy(desc(transactionsTable.created_at)).limit(50);
   const recent_transactions = recentTxns
     .filter(t => ALLOWED_TX_TYPES.has(t.type))

@@ -18,9 +18,11 @@ function fmt(v: typeof depositVouchersTable.$inferSelect) {
 
 router.get("/deposit-vouchers", wrap(async (req, res) => {
   const cid = getCid(req);
+  const limit = Math.min(2000, Math.max(1, parseInt(String(req.query["limit"] ?? "500"), 10)));
   const items = await db.select().from(depositVouchersTable)
     .where(eq(depositVouchersTable.company_id, cid))
-    .orderBy(desc(depositVouchersTable.created_at));
+    .orderBy(desc(depositVouchersTable.created_at))
+    .limit(limit);
   res.json(items.map(fmt));
 }));
 
