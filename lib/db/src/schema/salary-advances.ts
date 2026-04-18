@@ -39,6 +39,8 @@ export const salaryAdvancesTable = pgTable("salary_advances", {
   rejection_reason: text("rejection_reason"),
   remaining_balance:numeric("remaining_balance", { precision: 14, scale: 2 }).notNull().default("0"),
   currency:         text("currency").notNull().default("EGP"),
+  deduct_from:      text("deduct_from").notNull().default("fixed"),
+  // fixed | commission | both — which earnings the deduction applies against
   created_at:       timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updated_at:       timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [

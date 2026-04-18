@@ -28,4 +28,5 @@ export * from "./attendance";
 export * from "./leaves";
 export * from "./incentives";
 export * from "./salary-advances";
+export * from "./employee-bonuses-custody";
 export * from "./idempotency-keys";

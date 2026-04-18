@@ -94,8 +94,10 @@ router.get("/salary-advances", wrap(async (req, res) => {
 router.post("/salary-advances", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
-  const { employee_id, requested_amount, advance_type, reason } = req.body as Record<string, unknown>;
+  const { employee_id, requested_amount, advance_type, reason, deduct_from } = req.body as Record<string, unknown>;
   if (!employee_id || !requested_amount || !advance_type || !reason) { res.status(400).json({ error: "جميع بيانات السلفة مطلوبة" }); return; }
+  const df = String(deduct_from ?? "fixed");
+  if (!["fixed", "commission", "both"].includes(df)) { res.status(400).json({ error: "قيمة الخصم غير صحيحة" }); return; }
 
   // Verify employee and minimum salary
   const [emp] = await db.select().from(employeesTable)
@@ -122,7 +124,7 @@ router.post("/salary-advances", wrap(async (req, res) => {
   const [advance] = await db.insert(salaryAdvancesTable).values({
     employee_id: Number(employee_id), requested_date: new Date().toISOString().split("T")[0],
     requested_amount: String(reqAmt), advance_type: String(advance_type),
-    reason: String(reason), status: requiresApproval ? "pending" : "approved",
+    reason: String(reason), deduct_from: df, status: requiresApproval ? "pending" : "approved",
     currency: emp.currency ?? "EGP",
     approved_amount: !requiresApproval ? String(reqAmt) : null,
     approved_at: !requiresApproval ? new Date() : null,

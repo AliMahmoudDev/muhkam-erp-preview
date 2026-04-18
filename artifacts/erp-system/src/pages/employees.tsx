@@ -14,7 +14,6 @@ import {
   Pencil,
   Trash2,
   UserX,
-  RefreshCw,
   FileText,
   Phone,
   IdCard,
@@ -23,15 +22,13 @@ import {
   CalendarDays,
   Wallet,
   ChevronRight,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  History,
-  Users,
   Banknote,
   MinusCircle,
   BarChart2,
   Percent,
+  Award,
+  Package,
+  CheckCircle,
 } from 'lucide-react';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -89,13 +86,6 @@ interface Branch {
   name: string;
   is_active: boolean;
 }
-interface StatusHistoryEntry {
-  id: number;
-  old_status?: string | null;
-  new_status: string;
-  reason?: string | null;
-  changed_at?: string;
-}
 interface EmpDocument {
   id: number;
   document_type: string;
@@ -120,23 +110,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  active: 'نشط',
-  on_leave: 'في إجازة',
-  suspended: 'موقوف',
-  terminated: 'منتهي الخدمة',
-};
-const STATUS_COLORS: Record<string, string> = {
-  active: 'erp-badge erp-badge-success',
-  on_leave: 'erp-badge erp-badge-warning',
-  suspended: 'erp-badge erp-badge-danger',
-  terminated: 'erp-badge erp-badge-info',
-};
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span className={STATUS_COLORS[status] ?? 'erp-badge'}>{STATUS_LABELS[status] ?? status}</span>
-  );
-}
 function InfoRow({
   icon: Icon,
   label,
@@ -218,10 +191,9 @@ export default function Employees() {
   /* ── List state ─────────────────────────────────────────────── */
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState<number | ''>('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [selected, setSelected] = useState<Employee | null>(null);
   const [detailTab, setDetailTab] = useState<
-    'info' | 'loans' | 'deductions' | 'reports' | 'docs' | 'history'
+    'info' | 'loans' | 'deductions' | 'reports' | 'docs' | 'bonuses' | 'custody'
   >('info');
 
   /* ── Form state ─────────────────────────────────────────────── */
@@ -238,17 +210,7 @@ export default function Employees() {
   const [inlineJt, setInlineJt] = useState({ name_ar: '' });
 
   /* ── Other dialogs ─────────────────────────────────────────── */
-  const [statusDialog, setStatusDialog] = useState<{ emp: Employee; open: boolean } | null>(null);
-  const [newStatus, setNewStatus] = useState('');
-  const [statusReason, setStatusReason] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [docForm, setDocForm] = useState({
-    document_type: '',
-    file_name: '',
-    expiry_date: '',
-    notes: '',
-  });
-  const [showDocForm, setShowDocForm] = useState(false);
 
   /* ── Loans (salary advances) state ────────────────────────── */
   const [showLoanForm, setShowLoanForm] = useState(false);
@@ -256,6 +218,7 @@ export default function Employees() {
     requested_amount: '',
     advance_type: 'personal',
     reason: '',
+    deduct_from: 'fixed' as 'fixed' | 'commission' | 'both',
   });
   const [showPayModal, setShowPayModal] = useState<number | null>(null);
   const [payAmount, setPayAmount] = useState('');
@@ -268,13 +231,32 @@ export default function Employees() {
     deduction_date: new Date().toISOString().split('T')[0],
   });
 
+  /* ── Bonuses (الحافز) state ────────────────────────────────── */
+  const [showBonusForm, setShowBonusForm] = useState(false);
+  const [bonusForm, setBonusForm] = useState({
+    amount: '',
+    reason: '',
+    granted_date: new Date().toISOString().split('T')[0],
+  });
+
+  /* ── Custody (عهدة) state ──────────────────────────────────── */
+  const [showCustodyForm, setShowCustodyForm] = useState(false);
+  const [custodyForm, setCustodyForm] = useState({
+    amount: '',
+    purpose: '',
+    granted_date: new Date().toISOString().split('T')[0],
+    notes: '',
+  });
+  const [showSettleCustody, setShowSettleCustody] = useState<number | null>(null);
+  const [settleAmount, setSettleAmount] = useState('');
+
   /* ── Queries ─────────────────────────────────────────────── */
   const { data: empsRaw, isLoading: empsLoading } = useQuery({
-    queryKey: ['/api/employees', search, deptFilter, statusFilter],
+    queryKey: ['/api/employees', search, deptFilter],
     queryFn: () =>
       authFetch(
         api(
-          `/api/employees?search=${encodeURIComponent(search)}&department_id=${deptFilter}&status=${statusFilter}`
+          `/api/employees?search=${encodeURIComponent(search)}&department_id=${deptFilter}`
         )
       ).then((r) => r.json()),
   });
@@ -299,16 +281,6 @@ export default function Employees() {
   const branches: Branch[] = safeArray(branchesRaw);
 
   /* Employee sub-data */
-  const { data: histRaw } = useQuery({
-    queryKey: ['/api/employees', selected?.id, 'history'],
-    queryFn: () =>
-      selected
-        ? authFetch(api(`/api/employees/${selected.id}/history`)).then((r) => r.json())
-        : Promise.resolve([]),
-    enabled: !!selected && detailTab === 'history',
-  });
-  const history: StatusHistoryEntry[] = safeArray(histRaw);
-
   const { data: docsRaw } = useQuery({
     queryKey: ['/api/employees', selected?.id, 'documents'],
     queryFn: () =>
@@ -318,6 +290,28 @@ export default function Employees() {
     enabled: !!selected && detailTab === 'docs',
   });
   const documents: EmpDocument[] = safeArray(docsRaw);
+
+  /* Bonuses for this employee */
+  const { data: bonusesRaw } = useQuery({
+    queryKey: ['/api/employee-bonuses', selected?.id],
+    queryFn: () =>
+      selected
+        ? authFetch(api(`/api/employee-bonuses?employee_id=${selected.id}`)).then((r) => r.json())
+        : Promise.resolve([]),
+    enabled: !!selected && (detailTab === 'bonuses' || detailTab === 'reports'),
+  });
+  const bonuses: AnyRec[] = safeArray(bonusesRaw);
+
+  /* Custody for this employee */
+  const { data: custodyRaw } = useQuery({
+    queryKey: ['/api/employee-custody', selected?.id],
+    queryFn: () =>
+      selected
+        ? authFetch(api(`/api/employee-custody?employee_id=${selected.id}`)).then((r) => r.json())
+        : Promise.resolve([]),
+    enabled: !!selected && (detailTab === 'custody' || detailTab === 'reports'),
+  });
+  const custody: AnyRec[] = safeArray(custodyRaw);
 
   /* Salary advances for this employee */
   const { data: loansRaw, isLoading: loansLoading } = useQuery({
@@ -396,27 +390,10 @@ export default function Employees() {
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
-  const changeStatus = useMutation({
-    mutationFn: ({ id, new_status, reason }: { id: number; new_status: string; reason: string }) =>
-      authFetch(api(`/api/employees/${id}/status`), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ new_status, reason }),
-      }).then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error);
-        return d;
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/employees'] });
-      setStatusDialog(null);
-      toast({ title: 'تم تغيير حالة الموظف' });
-    },
-    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-  });
-  const addDoc = useMutation({
-    mutationFn: (data: typeof docForm) =>
-      authFetch(api(`/api/employees/${selected?.id}/documents`), {
+  /* ── Bonuses + Custody mutations ─────────────────────────── */
+  const createBonus = useMutation({
+    mutationFn: (data: AnyRec) =>
+      authFetch(api('/api/employee-bonuses'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -426,26 +403,85 @@ export default function Employees() {
         return d;
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/employees', selected?.id, 'documents'] });
-      setShowDocForm(false);
-      setDocForm({ document_type: '', file_name: '', expiry_date: '', notes: '' });
-      toast({ title: 'تمت إضافة المستند' });
+      qc.invalidateQueries({ queryKey: ['/api/employee-bonuses', selected?.id] });
+      setShowBonusForm(false);
+      setBonusForm({
+        amount: '',
+        reason: '',
+        granted_date: new Date().toISOString().split('T')[0],
+      });
+      toast({ title: 'تمت إضافة الحافز' });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
-  const deleteDoc = useMutation({
-    mutationFn: (docId: number) =>
-      authFetch(api(`/api/employees/${selected?.id}/documents/${docId}`), {
-        method: 'DELETE',
+  const deleteBonus = useMutation({
+    mutationFn: (id: number) =>
+      authFetch(api(`/api/employee-bonuses/${id}`), { method: 'DELETE' }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employee-bonuses', selected?.id] });
+      toast({ title: 'تم حذف الحافز' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+  });
+  const createCustody = useMutation({
+    mutationFn: (data: AnyRec) =>
+      authFetch(api('/api/employee-custody'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       }).then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
         return d;
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/employees', selected?.id, 'documents'] });
-      toast({ title: 'تم حذف المستند' });
+      qc.invalidateQueries({ queryKey: ['/api/employee-custody', selected?.id] });
+      setShowCustodyForm(false);
+      setCustodyForm({
+        amount: '',
+        purpose: '',
+        granted_date: new Date().toISOString().split('T')[0],
+        notes: '',
+      });
+      toast({ title: 'تمت إضافة العهدة' });
     },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+  });
+  const settleCustody = useMutation({
+    mutationFn: ({ id, returned_amount }: { id: number; returned_amount: number }) =>
+      authFetch(api(`/api/employee-custody/${id}/settle`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ returned_amount }),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employee-custody', selected?.id] });
+      setShowSettleCustody(null);
+      setSettleAmount('');
+      toast({ title: 'تم تسوية العهدة' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+  });
+  const deleteCustody = useMutation({
+    mutationFn: (id: number) =>
+      authFetch(api(`/api/employee-custody/${id}`), { method: 'DELETE' }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employee-custody', selected?.id] });
+      toast({ title: 'تم حذف العهدة' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
   /* ── Inline dept/jt creation ─────────────────────────────── */
@@ -505,7 +541,7 @@ export default function Employees() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id] });
       setShowLoanForm(false);
-      setLoanForm({ requested_amount: '', advance_type: 'personal', reason: '' });
+      setLoanForm({ requested_amount: '', advance_type: 'personal', reason: '', deduct_from: 'fixed' });
       toast({ title: 'تم تقديم طلب السلفة' });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
@@ -665,18 +701,6 @@ export default function Employees() {
                 </option>
               ))}
             </select>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="erp-input text-sm"
-            >
-              <option value="">كل الحالات</option>
-              {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
             {canManage && (
               <button
                 onClick={openCreate}
@@ -699,7 +723,6 @@ export default function Employees() {
                     <th className="p-3 text-right text-xs">الاسم</th>
                     <th className="p-3 text-right text-xs">القسم</th>
                     <th className="p-3 text-right text-xs">المسمى</th>
-                    <th className="p-3 text-right text-xs">الحالة</th>
                     <th className="p-3 text-right text-xs">التعيين</th>
                     {canViewSalary && <th className="p-3 text-right text-xs">الراتب / النسبة</th>}
                     <th className="p-3 text-right text-xs"></th>
@@ -708,7 +731,7 @@ export default function Employees() {
                 <tbody>
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="text-center py-12 text-white/40">
+                      <td colSpan={7} className="text-center py-12 text-white/40">
                         <div className="erp-empty-state">
                           <UserCheck size={36} className="mb-2 opacity-30" />
                           <p>لا توجد بيانات موظفين</p>
@@ -736,9 +759,6 @@ export default function Employees() {
                       </td>
                       <td className="p-3 text-sm text-white/70">{emp.department_name ?? '—'}</td>
                       <td className="p-3 text-sm text-white/70">{emp.job_title_name ?? '—'}</td>
-                      <td className="p-3">
-                        <StatusBadge status={emp.employment_status} />
-                      </td>
                       <td className="p-3 text-xs text-white/60 font-mono">{emp.hire_date}</td>
                       {canViewSalary && (
                         <td className="p-3 text-sm font-mono">
@@ -763,17 +783,6 @@ export default function Employees() {
                                 title="تعديل"
                               >
                                 <Pencil size={13} />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setStatusDialog({ emp, open: true });
-                                  setNewStatus(emp.employment_status);
-                                  setStatusReason('');
-                                }}
-                                className="erp-btn erp-btn-ghost p-1"
-                                title="تغيير الحالة"
-                              >
-                                <RefreshCw size={13} />
                               </button>
                               <button
                                 onClick={() => setDeleteId(emp.id)}
@@ -818,7 +827,6 @@ export default function Employees() {
                 <X size={16} />
               </button>
             </div>
-            <StatusBadge status={selected.employment_status} />
 
             {/* Detail Tabs */}
             <div className="flex gap-1 flex-wrap border-b border-white/10 pb-2">
@@ -827,9 +835,10 @@ export default function Employees() {
                   { key: 'info', label: 'البيانات', icon: IdCard },
                   { key: 'loans', label: 'السلف', icon: Banknote },
                   { key: 'deductions', label: 'الخصومات', icon: MinusCircle },
+                  { key: 'bonuses', label: 'الحافز', icon: Award },
+                  { key: 'custody', label: 'عهدة', icon: Package },
                   { key: 'reports', label: 'التقارير', icon: BarChart2 },
                   { key: 'docs', label: 'مستندات', icon: FileText },
-                  { key: 'history', label: 'السجل', icon: History },
                 ] as const
               ).map((t) => (
                 <button
@@ -855,20 +864,20 @@ export default function Employees() {
                 <InfoRow icon={Briefcase} label="المسمى الوظيفي" value={selected.job_title_name} />
                 <InfoRow icon={Building2} label="الفرع" value={selected.branch_name} />
                 <InfoRow icon={CalendarDays} label="تاريخ التعيين" value={selected.hire_date} />
-                {canViewSalary &&
-                  (selected.commission_rate ? (
-                    <InfoRow
-                      icon={Percent}
-                      label="نسبة العمولة"
-                      value={`${selected.commission_rate}%`}
-                    />
-                  ) : selected.salary != null ? (
-                    <InfoRow
-                      icon={Wallet}
-                      label="الراتب"
-                      value={`${selected.salary.toLocaleString('ar-EG-u-nu-latn')} ${selected.currency}`}
-                    />
-                  ) : null)}
+                {canViewSalary && (selected.salary ?? 0) > 0 && (
+                  <InfoRow
+                    icon={Wallet}
+                    label="الراتب"
+                    value={`${(selected.salary ?? 0).toLocaleString('ar-EG-u-nu-latn')} ${selected.currency}`}
+                  />
+                )}
+                {canViewSalary && (selected.commission_rate ?? 0) > 0 && (
+                  <InfoRow
+                    icon={Percent}
+                    label="نسبة العمولة"
+                    value={`${selected.commission_rate}%`}
+                  />
+                )}
                 {canViewSalary && selected.bank_account && (
                   <InfoRow icon={Wallet} label="الحساب البنكي" value={selected.bank_account} />
                 )}
@@ -1023,16 +1032,25 @@ export default function Employees() {
               <div className="space-y-3">
                 {/* Salary card */}
                 {canViewSalary && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
-                    <div className="text-xs text-white/40 mb-1">الراتب الأساسي</div>
-                    {selected.commission_rate ? (
-                      <div className="text-lg font-bold text-purple-300">
-                        {selected.commission_rate}% عمولة
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 space-y-1">
+                    {(selected.salary ?? 0) > 0 && (
+                      <div>
+                        <div className="text-xs text-white/40 mb-1">الراتب الأساسي</div>
+                        <div className="text-lg font-bold text-emerald-300 font-mono">
+                          {fmt(selected.salary)} {selected.currency}
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-lg font-bold text-emerald-300 font-mono">
-                        {fmt(selected.salary)} {selected.currency}
+                    )}
+                    {(selected.commission_rate ?? 0) > 0 && (
+                      <div>
+                        <div className="text-xs text-white/40 mb-1">نسبة العمولة</div>
+                        <div className="text-lg font-bold text-purple-300">
+                          {selected.commission_rate}%
+                        </div>
                       </div>
+                    )}
+                    {(selected.salary ?? 0) === 0 && !selected.commission_rate && (
+                      <div className="text-sm text-white/50">لم يتم تحديد الراتب بعد</div>
                     )}
                   </div>
                 )}
@@ -1061,15 +1079,11 @@ export default function Employees() {
                     <div className="text-xs text-white/40 mt-0.5">عدد السلف</div>
                   </div>
                 </div>
-                {/* Status */}
+                {/* Info summary */}
                 <div className="bg-white/5 rounded-lg p-3 space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-white/40">تاريخ التعيين</span>
                     <span className="font-mono text-white/70">{selected.hire_date}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/40">الحالة</span>
-                    <StatusBadge status={selected.employment_status} />
                   </div>
                   {selected.national_id && (
                     <div className="flex justify-between">
@@ -1084,85 +1098,198 @@ export default function Employees() {
             {/* ── Documents Tab ──────────────────────────────── */}
             {detailTab === 'docs' && (
               <div className="space-y-2">
-                {canManage && (
-                  <button
-                    onClick={() => setShowDocForm(true)}
-                    className="erp-btn erp-btn-primary w-full text-xs flex items-center justify-center gap-1"
-                  >
-                    <Plus size={12} /> إضافة مستند
-                  </button>
+                {selected.national_id_image && (
+                  <div className="bg-white/5 rounded-lg p-2 space-y-2">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-white">
+                      <IdCard size={12} className="text-amber-400" /> صورة البطاقة الشخصية
+                    </div>
+                    <a
+                      href={selected.national_id_image}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <img
+                        src={selected.national_id_image}
+                        alt="بطاقة شخصية"
+                        className="rounded max-h-48 w-auto border border-white/10"
+                      />
+                    </a>
+                  </div>
                 )}
-                {documents.length === 0 && (
+                {documents.length === 0 && !selected.national_id_image && (
                   <p className="text-white/40 text-xs text-center py-4">لا توجد مستندات</p>
                 )}
                 {documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className="bg-white/5 rounded-lg p-2 flex items-start justify-between gap-2"
+                    className="bg-white/5 rounded-lg p-2"
                   >
-                    <div>
-                      <div className="text-xs font-semibold text-white">{doc.file_name}</div>
-                      <div className="text-xs text-white/50">{doc.document_type}</div>
-                      {doc.expiry_date && (
-                        <div className="text-xs text-amber-300">ينتهي: {doc.expiry_date}</div>
-                      )}
-                      {doc.verified_at ? (
-                        <div className="flex items-center gap-1 text-xs text-emerald-400">
-                          <CheckCircle size={10} /> تم التحقق
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-xs text-white/30">
-                          <AlertCircle size={10} /> لم يُتحقق
-                        </div>
-                      )}
-                    </div>
-                    {canManage && (
-                      <button
-                        onClick={() => deleteDoc.mutate(doc.id)}
-                        className="text-red-400/60 hover:text-red-400"
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                    <div className="text-xs font-semibold text-white">{doc.file_name}</div>
+                    <div className="text-xs text-white/50">{doc.document_type}</div>
+                    {doc.expiry_date && (
+                      <div className="text-xs text-amber-300">ينتهي: {doc.expiry_date}</div>
                     )}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* ── History Tab ────────────────────────────────── */}
-            {detailTab === 'history' && (
+            {/* ── Bonuses Tab (الحافز) ───────────────────────── */}
+            {detailTab === 'bonuses' && (
               <div className="space-y-2">
-                {history.length === 0 && (
-                  <p className="text-white/40 text-xs text-center py-4">لا يوجد سجل</p>
+                {canManage && (
+                  <button
+                    onClick={() => setShowBonusForm(true)}
+                    className="erp-btn erp-btn-primary w-full text-xs flex items-center justify-center gap-1"
+                  >
+                    <Plus size={12} /> إضافة حافز
+                  </button>
                 )}
-                {history.map((h) => (
-                  <div key={h.id} className="flex gap-3 text-xs">
-                    <div className="mt-0.5">
-                      <Clock size={12} className="text-amber-300/60" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1">
-                        {h.old_status && (
-                          <>
-                            <StatusBadge status={h.old_status} />
-                            <span className="text-white/30">→</span>
-                          </>
-                        )}
-                        <StatusBadge status={h.new_status} />
+                {bonuses.length === 0 ? (
+                  <div className="text-center py-6 text-white/30 text-xs">
+                    <Award size={28} className="mx-auto mb-2 opacity-30" />
+                    <p>لا توجد حوافز لهذا الموظف</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {bonuses.map((b) => (
+                      <div
+                        key={String(b.id)}
+                        className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-3"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="text-sm font-bold text-emerald-300 font-mono">
+                              + {fmt(b.amount)} {String(b.currency ?? 'EGP')}
+                            </div>
+                            {b.reason ? (
+                              <div className="text-xs text-white/60 mt-1">{String(b.reason)}</div>
+                            ) : null}
+                            <div className="text-xs text-white/30 font-mono mt-1">
+                              {String(b.granted_date ?? '')}
+                            </div>
+                          </div>
+                          {canManage && (
+                            <button
+                              onClick={() => deleteBonus.mutate(b.id as number)}
+                              className="text-red-400/60 hover:text-red-400"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      {h.reason && <div className="text-white/50 mt-0.5">{h.reason}</div>}
-                      <div className="text-white/30">
-                        {h.changed_at
-                          ? new Date(h.changed_at).toLocaleDateString('ar-EG-u-nu-latn', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })
-                          : ''}
-                      </div>
+                    ))}
+                    <div className="bg-white/5 rounded-lg p-2 text-xs text-center">
+                      إجمالي الحوافز:{' '}
+                      <span className="text-emerald-300 font-bold font-mono">
+                        {fmt(bonuses.reduce((s, b) => s + Number(b.amount ?? 0), 0))}
+                      </span>
                     </div>
                   </div>
-                ))}
+                )}
+              </div>
+            )}
+
+            {/* ── Custody Tab (عهدة) ─────────────────────────── */}
+            {detailTab === 'custody' && (
+              <div className="space-y-2">
+                {canManage && (
+                  <button
+                    onClick={() => setShowCustodyForm(true)}
+                    className="erp-btn erp-btn-primary w-full text-xs flex items-center justify-center gap-1"
+                  >
+                    <Plus size={12} /> إضافة عهدة
+                  </button>
+                )}
+                {custody.length === 0 ? (
+                  <div className="text-center py-6 text-white/30 text-xs">
+                    <Package size={28} className="mx-auto mb-2 opacity-30" />
+                    <p>لا توجد عهد لهذا الموظف</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {custody.map((c) => {
+                      const isOpen = String(c.status) === 'open';
+                      return (
+                        <div
+                          key={String(c.id)}
+                          className={`rounded-lg p-3 border ${
+                            isOpen
+                              ? 'bg-amber-500/5 border-amber-500/20'
+                              : 'bg-white/5 border-white/10'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-sm font-bold text-amber-300 font-mono">
+                                {fmt(c.amount)} {String(c.currency ?? 'EGP')}
+                              </div>
+                              {c.purpose ? (
+                                <div className="text-xs text-white/60 mt-1">
+                                  {String(c.purpose)}
+                                </div>
+                              ) : null}
+                              <div className="text-xs text-white/30 font-mono mt-1">
+                                {String(c.granted_date ?? '')}
+                              </div>
+                              {!isOpen && (
+                                <div className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                                  <CheckCircle size={10} /> مردودة:{' '}
+                                  <span className="font-mono">{fmt(c.returned_amount)}</span>
+                                  {c.settled_date ? ` — ${String(c.settled_date)}` : ''}
+                                </div>
+                              )}
+                            </div>
+                            <span
+                              className={
+                                isOpen
+                                  ? 'erp-badge erp-badge-warning'
+                                  : 'erp-badge erp-badge-success'
+                              }
+                            >
+                              {isOpen ? 'مفتوحة' : 'مسواة'}
+                            </span>
+                          </div>
+                          {canManage && isOpen && (
+                            <div className="flex gap-1 mt-2">
+                              <button
+                                onClick={() => {
+                                  setShowSettleCustody(c.id as number);
+                                  setSettleAmount(String(c.amount ?? ''));
+                                }}
+                                className="erp-btn erp-btn-ghost text-xs text-emerald-400 border border-emerald-500/30 p-1"
+                              >
+                                تسوية
+                              </button>
+                              <button
+                                onClick={() => deleteCustody.mutate(c.id as number)}
+                                className="erp-btn erp-btn-ghost text-xs text-red-400 border border-red-500/30 p-1"
+                              >
+                                حذف
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <div className="bg-white/5 rounded-lg p-2 text-xs text-center">
+                      عهد مفتوحة:{' '}
+                      <span className="text-amber-300 font-bold font-mono">
+                        {fmt(
+                          custody
+                            .filter((c) => String(c.status) === 'open')
+                            .reduce(
+                              (s, c) =>
+                                s + Number(c.amount ?? 0) - Number(c.returned_amount ?? 0),
+                              0
+                            )
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1180,7 +1307,7 @@ export default function Employees() {
           >
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Users size={18} className="text-amber-400" />
+                <UserCheck size={18} className="text-amber-400" />
                 {editId ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد'}
               </h2>
               <button onClick={() => setShowForm(false)} className="text-white/40 hover:text-white">
@@ -1604,71 +1731,6 @@ export default function Employees() {
           </div>
         </div>
       )}
-      {/* Status Change Dialog */}
-      {statusDialog?.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2">
-                <RefreshCw size={16} className="text-amber-400" /> تغيير حالة الموظف
-              </h2>
-              <button
-                onClick={() => setStatusDialog(null)}
-                className="text-white/40 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              <div className="text-sm text-white/60">
-                الموظف:{' '}
-                <strong className="text-white">
-                  {statusDialog.emp.first_name_ar} {statusDialog.emp.last_name_ar}
-                </strong>
-              </div>
-              <Field label="الحالة الجديدة">
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="erp-input w-full"
-                >
-                  {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="السبب">
-                <input
-                  value={statusReason}
-                  onChange={(e) => setStatusReason(e.target.value)}
-                  className="erp-input w-full"
-                  placeholder="سبب التغيير..."
-                />
-              </Field>
-            </div>
-            <div className="flex gap-2 p-4 border-t border-white/10">
-              <button
-                onClick={() =>
-                  changeStatus.mutate({
-                    id: statusDialog.emp.id,
-                    new_status: newStatus,
-                    reason: statusReason,
-                  })
-                }
-                disabled={changeStatus.isPending}
-                className="erp-btn erp-btn-primary flex-1"
-              >
-                {changeStatus.isPending ? 'جاري التغيير...' : 'تأكيد'}
-              </button>
-              <button onClick={() => setStatusDialog(null)} className="erp-btn erp-btn-ghost">
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Delete Confirm */}
       {deleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -1690,82 +1752,6 @@ export default function Employees() {
                 {deleteEmp.isPending ? 'جاري الحذف...' : 'حذف'}
               </button>
               <button onClick={() => setDeleteId(null)} className="erp-btn erp-btn-ghost flex-1">
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Add Document */}
-      {showDocForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2">
-                <FileText size={16} className="text-amber-400" /> إضافة مستند
-              </h2>
-              <button
-                onClick={() => setShowDocForm(false)}
-                className="text-white/40 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              <Field label="نوع المستند *">
-                <select
-                  value={docForm.document_type}
-                  onChange={(e) => setDocForm((p) => ({ ...p, document_type: e.target.value }))}
-                  className="erp-input w-full"
-                >
-                  <option value="">— اختر —</option>
-                  {[
-                    'بطاقة هوية وطنية',
-                    'جواز سفر',
-                    'عقد عمل',
-                    'شهادة مؤهل',
-                    'شهادة خبرة',
-                    'أخرى',
-                  ].map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="اسم الملف *">
-                <input
-                  value={docForm.file_name}
-                  onChange={(e) => setDocForm((p) => ({ ...p, file_name: e.target.value }))}
-                  className="erp-input w-full"
-                  placeholder="مثال: هوية_محمد.pdf"
-                />
-              </Field>
-              <Field label="تاريخ الانتهاء">
-                <input
-                  type="date"
-                  value={docForm.expiry_date}
-                  onChange={(e) => setDocForm((p) => ({ ...p, expiry_date: e.target.value }))}
-                  className="erp-input w-full"
-                />
-              </Field>
-              <Field label="ملاحظات">
-                <input
-                  value={docForm.notes}
-                  onChange={(e) => setDocForm((p) => ({ ...p, notes: e.target.value }))}
-                  className="erp-input w-full"
-                />
-              </Field>
-            </div>
-            <div className="flex gap-2 p-4 border-t border-white/10">
-              <button
-                onClick={() => addDoc.mutate(docForm)}
-                disabled={addDoc.isPending}
-                className="erp-btn erp-btn-primary flex-1"
-              >
-                {addDoc.isPending ? 'جاري...' : 'إضافة'}
-              </button>
-              <button onClick={() => setShowDocForm(false)} className="erp-btn erp-btn-ghost">
                 إلغاء
               </button>
             </div>
@@ -1824,6 +1810,22 @@ export default function Employees() {
                   className="erp-input w-full"
                   placeholder="اكتب سبب السلفة..."
                 />
+              </Field>
+              <Field label="خصم السلفة من">
+                <select
+                  value={loanForm.deduct_from}
+                  onChange={(e) =>
+                    setLoanForm((p) => ({
+                      ...p,
+                      deduct_from: e.target.value as 'fixed' | 'commission' | 'both',
+                    }))
+                  }
+                  className="erp-input w-full"
+                >
+                  <option value="fixed">الراتب الثابت</option>
+                  <option value="commission">العمولة</option>
+                  <option value="both">من الراتب الثابت والعمولة معاً</option>
+                </select>
               </Field>
             </div>
             <div className="flex gap-2 p-5 border-t border-white/10">
@@ -1975,6 +1977,209 @@ export default function Employees() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Bonus Form (الحافز) */}
+      {showBonusForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+            <div className="flex items-center justify-between p-5 border-b border-white/10">
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <Award size={16} className="text-emerald-400" />
+                إضافة حافز — {selected?.first_name_ar} {selected?.last_name_ar}
+              </h2>
+              <button
+                onClick={() => setShowBonusForm(false)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-3">
+              <Field label="قيمة الحافز *">
+                <input
+                  type="number"
+                  value={bonusForm.amount}
+                  onChange={(e) => setBonusForm((p) => ({ ...p, amount: e.target.value }))}
+                  className="erp-input w-full"
+                  min={0}
+                  autoFocus
+                />
+              </Field>
+              <Field label="السبب">
+                <input
+                  value={bonusForm.reason}
+                  onChange={(e) => setBonusForm((p) => ({ ...p, reason: e.target.value }))}
+                  className="erp-input w-full"
+                  placeholder="مثال: حافز إنتاجية، مكافأة..."
+                />
+              </Field>
+              <Field label="تاريخ المنح">
+                <input
+                  type="date"
+                  value={bonusForm.granted_date}
+                  onChange={(e) =>
+                    setBonusForm((p) => ({ ...p, granted_date: e.target.value }))
+                  }
+                  className="erp-input w-full"
+                />
+              </Field>
+            </div>
+            <div className="flex gap-2 p-5 border-t border-white/10">
+              <button
+                onClick={() =>
+                  createBonus.mutate({
+                    employee_id: selected?.id,
+                    amount: Number(bonusForm.amount),
+                    reason: bonusForm.reason || null,
+                    granted_date: bonusForm.granted_date,
+                  })
+                }
+                disabled={
+                  !bonusForm.amount || Number(bonusForm.amount) <= 0 || createBonus.isPending
+                }
+                className="erp-btn erp-btn-primary flex-1"
+              >
+                {createBonus.isPending ? 'جاري...' : 'إضافة الحافز'}
+              </button>
+              <button onClick={() => setShowBonusForm(false)} className="erp-btn erp-btn-ghost">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Custody Form (عهدة) */}
+      {showCustodyForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+            <div className="flex items-center justify-between p-5 border-b border-white/10">
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <Package size={16} className="text-amber-400" />
+                إضافة عهدة — {selected?.first_name_ar} {selected?.last_name_ar}
+              </h2>
+              <button
+                onClick={() => setShowCustodyForm(false)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-3">
+              <Field label="قيمة العهدة *">
+                <input
+                  type="number"
+                  value={custodyForm.amount}
+                  onChange={(e) => setCustodyForm((p) => ({ ...p, amount: e.target.value }))}
+                  className="erp-input w-full"
+                  min={0}
+                  autoFocus
+                />
+              </Field>
+              <Field label="الغرض">
+                <input
+                  value={custodyForm.purpose}
+                  onChange={(e) => setCustodyForm((p) => ({ ...p, purpose: e.target.value }))}
+                  className="erp-input w-full"
+                  placeholder="مثال: شراء مستلزمات، مصاريف انتقالات..."
+                />
+              </Field>
+              <Field label="تاريخ صرف العهدة">
+                <input
+                  type="date"
+                  value={custodyForm.granted_date}
+                  onChange={(e) =>
+                    setCustodyForm((p) => ({ ...p, granted_date: e.target.value }))
+                  }
+                  className="erp-input w-full"
+                />
+              </Field>
+              <Field label="ملاحظات">
+                <input
+                  value={custodyForm.notes}
+                  onChange={(e) => setCustodyForm((p) => ({ ...p, notes: e.target.value }))}
+                  className="erp-input w-full"
+                />
+              </Field>
+            </div>
+            <div className="flex gap-2 p-5 border-t border-white/10">
+              <button
+                onClick={() =>
+                  createCustody.mutate({
+                    employee_id: selected?.id,
+                    amount: Number(custodyForm.amount),
+                    purpose: custodyForm.purpose || null,
+                    granted_date: custodyForm.granted_date,
+                    notes: custodyForm.notes || null,
+                  })
+                }
+                disabled={
+                  !custodyForm.amount ||
+                  Number(custodyForm.amount) <= 0 ||
+                  createCustody.isPending
+                }
+                className="erp-btn erp-btn-primary flex-1"
+              >
+                {createCustody.isPending ? 'جاري...' : 'إضافة العهدة'}
+              </button>
+              <button
+                onClick={() => setShowCustodyForm(false)}
+                className="erp-btn erp-btn-ghost"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Settle Custody */}
+      {showSettleCustody != null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <CheckCircle size={16} className="text-emerald-400" /> تسوية العهدة
+              </h2>
+              <button
+                onClick={() => setShowSettleCustody(null)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-4">
+              <Field label="المبلغ المردود *">
+                <input
+                  type="number"
+                  value={settleAmount}
+                  onChange={(e) => setSettleAmount(e.target.value)}
+                  className="erp-input w-full"
+                  min={0}
+                  autoFocus
+                />
+              </Field>
+            </div>
+            <div className="flex gap-2 p-4 border-t border-white/10">
+              <button
+                onClick={() =>
+                  settleCustody.mutate({
+                    id: showSettleCustody,
+                    returned_amount: Number(settleAmount),
+                  })
+                }
+                disabled={!settleAmount || Number(settleAmount) < 0 || settleCustody.isPending}
+                className="erp-btn erp-btn-primary flex-1"
+              >
+                {settleCustody.isPending ? 'جاري...' : 'تأكيد التسوية'}
+              </button>
+              <button
+                onClick={() => setShowSettleCustody(null)}
+                className="erp-btn erp-btn-ghost"
+              >
+                إلغاء
+              </button>
+            </div>
           </div>
         </div>
       )}
