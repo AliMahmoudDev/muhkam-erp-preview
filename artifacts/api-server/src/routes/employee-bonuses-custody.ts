@@ -88,7 +88,7 @@ router.post("/employee-custody", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
-  const { employee_id, amount, purpose, granted_date, currency, notes } = req.body as Record<string, unknown>;
+  const { employee_id, amount, purpose, granted_date, currency, notes, safe_id } = req.body as Record<string, unknown>;
   if (!employee_id || amount == null || Number(amount) <= 0) {
     res.status(400).json({ error: "بيانات العهدة غير مكتملة" }); return;
   }
@@ -98,6 +98,7 @@ router.post("/employee-custody", wrap(async (req, res) => {
   const [row] = await db.insert(employeeCustodyTable).values({
     company_id: companyId,
     employee_id: Number(employee_id),
+    safe_id: safe_id != null && safe_id !== "" ? Number(safe_id) : null,
     amount: String(Number(amount)),
     purpose: (purpose as string) ?? null,
     granted_date: String(granted_date ?? new Date().toISOString().split("T")[0]),

@@ -219,6 +219,7 @@ export default function Employees() {
     advance_type: 'personal',
     reason: '',
     deduct_from: 'fixed' as 'fixed' | 'commission' | 'both',
+    safe_id: '' as string | number,
   });
   const [showPayModal, setShowPayModal] = useState<number | null>(null);
   const [payAmount, setPayAmount] = useState('');
@@ -246,6 +247,7 @@ export default function Employees() {
     purpose: '',
     granted_date: new Date().toISOString().split('T')[0],
     notes: '',
+    safe_id: '' as string | number,
   });
   const [showSettleCustody, setShowSettleCustody] = useState<number | null>(null);
   const [settleAmount, setSettleAmount] = useState('');
@@ -279,6 +281,20 @@ export default function Employees() {
     queryFn: () => authFetch(api('/api/branches')).then((r) => r.json()),
   });
   const branches: Branch[] = safeArray(branchesRaw);
+
+  /* All safes (خزائن) — filter per employee branch in form */
+  const { data: safesRaw } = useQuery({
+    queryKey: ['/api/settings/safes'],
+    queryFn: () => authFetch(api('/api/settings/safes')).then((r) => r.json()),
+  });
+  const safes: AnyRec[] = safeArray(safesRaw);
+  const safesForEmployee = (emp: Employee | null) =>
+    safes.filter(
+      (s) =>
+        s.branch_id == null ||
+        emp?.branch_id == null ||
+        Number(s.branch_id) === Number(emp.branch_id)
+    );
 
   /* Employee sub-data */
   const { data: docsRaw } = useQuery({
@@ -446,6 +462,7 @@ export default function Employees() {
         purpose: '',
         granted_date: new Date().toISOString().split('T')[0],
         notes: '',
+        safe_id: '',
       });
       toast({ title: 'تمت إضافة العهدة' });
     },
@@ -541,7 +558,7 @@ export default function Employees() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id] });
       setShowLoanForm(false);
-      setLoanForm({ requested_amount: '', advance_type: 'personal', reason: '', deduct_from: 'fixed' });
+      setLoanForm({ requested_amount: '', advance_type: 'personal', reason: '', deduct_from: 'fixed', safe_id: '' });
       toast({ title: 'تم تقديم طلب السلفة' });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
@@ -1827,6 +1844,28 @@ export default function Employees() {
                   <option value="both">من الراتب الثابت والعمولة معاً</option>
                 </select>
               </Field>
+              <Field label="الخزينة (اختياري)">
+                <select
+                  value={loanForm.safe_id}
+                  onChange={(e) => setLoanForm((p) => ({ ...p, safe_id: e.target.value }))}
+                  className="erp-input w-full"
+                >
+                  <option value="">— بدون خزينة —</option>
+                  {safesForEmployee(selected).map((s) => (
+                    <option key={String(s.id)} value={String(s.id)}>
+                      {String(s.name)}
+                      {s.balance != null
+                        ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})`
+                        : ''}
+                    </option>
+                  ))}
+                </select>
+                {selected?.branch_id && safesForEmployee(selected).length === 0 && (
+                  <div className="text-xs text-amber-300/70 mt-1">
+                    لا توجد خزائن متاحة لهذا الفرع
+                  </div>
+                )}
+              </Field>
             </div>
             <div className="flex gap-2 p-5 border-t border-white/10">
               <button
@@ -2095,6 +2134,28 @@ export default function Employees() {
                   className="erp-input w-full"
                 />
               </Field>
+              <Field label="الخزينة (اختياري)">
+                <select
+                  value={custodyForm.safe_id}
+                  onChange={(e) => setCustodyForm((p) => ({ ...p, safe_id: e.target.value }))}
+                  className="erp-input w-full"
+                >
+                  <option value="">— بدون خزينة —</option>
+                  {safesForEmployee(selected).map((s) => (
+                    <option key={String(s.id)} value={String(s.id)}>
+                      {String(s.name)}
+                      {s.balance != null
+                        ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})`
+                        : ''}
+                    </option>
+                  ))}
+                </select>
+                {selected?.branch_id && safesForEmployee(selected).length === 0 && (
+                  <div className="text-xs text-amber-300/70 mt-1">
+                    لا توجد خزائن متاحة لهذا الفرع
+                  </div>
+                )}
+              </Field>
               <Field label="ملاحظات">
                 <input
                   value={custodyForm.notes}
@@ -2112,6 +2173,7 @@ export default function Employees() {
                     purpose: custodyForm.purpose || null,
                     granted_date: custodyForm.granted_date,
                     notes: custodyForm.notes || null,
+                    safe_id: custodyForm.safe_id || null,
                   })
                 }
                 disabled={

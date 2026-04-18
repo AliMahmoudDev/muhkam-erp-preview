@@ -41,6 +41,8 @@ export const salaryAdvancesTable = pgTable("salary_advances", {
   currency:         text("currency").notNull().default("EGP"),
   deduct_from:      text("deduct_from").notNull().default("fixed"),
   // fixed | commission | both — which earnings the deduction applies against
+  safe_id:          integer("safe_id"),
+  // optional: which cash safe (خزينة) the advance was disbursed from
   created_at:       timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updated_at:       timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [

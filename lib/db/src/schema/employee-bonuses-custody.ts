@@ -27,6 +27,7 @@ export const employeeCustodyTable = pgTable("employee_custody", {
   id:              serial("id").primaryKey(),
   company_id:      integer("company_id").notNull().references(() => companiesTable.id),
   employee_id:     integer("employee_id").notNull().references(() => employeesTable.id),
+  safe_id:         integer("safe_id"),
   amount:          numeric("amount", { precision: 14, scale: 2 }).notNull(),
   returned_amount: numeric("returned_amount", { precision: 14, scale: 2 }).notNull().default("0"),
   purpose:         text("purpose"),

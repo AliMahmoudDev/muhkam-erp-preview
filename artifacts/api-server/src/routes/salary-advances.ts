@@ -78,6 +78,7 @@ router.get("/salary-advances", wrap(async (req, res) => {
     approved_amount: salaryAdvancesTable.approved_amount, advance_type: salaryAdvancesTable.advance_type,
     reason: salaryAdvancesTable.reason, status: salaryAdvancesTable.status,
     deduct_from: salaryAdvancesTable.deduct_from,
+    safe_id: salaryAdvancesTable.safe_id,
     remaining_balance: salaryAdvancesTable.remaining_balance, currency: salaryAdvancesTable.currency,
     approved_at: salaryAdvancesTable.approved_at, created_at: salaryAdvancesTable.created_at,
     first_name_ar: employeesTable.first_name_ar, last_name_ar: employeesTable.last_name_ar,
@@ -95,7 +96,7 @@ router.get("/salary-advances", wrap(async (req, res) => {
 router.post("/salary-advances", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
-  const { employee_id, requested_amount, advance_type, reason, deduct_from } = req.body as Record<string, unknown>;
+  const { employee_id, requested_amount, advance_type, reason, deduct_from, safe_id } = req.body as Record<string, unknown>;
   if (!employee_id || !requested_amount || !advance_type || !reason) { res.status(400).json({ error: "جميع بيانات السلفة مطلوبة" }); return; }
   const df = String(deduct_from ?? "fixed");
   if (!["fixed", "commission", "both"].includes(df)) { res.status(400).json({ error: "قيمة الخصم غير صحيحة" }); return; }
@@ -126,6 +127,7 @@ router.post("/salary-advances", wrap(async (req, res) => {
     employee_id: Number(employee_id), requested_date: new Date().toISOString().split("T")[0],
     requested_amount: String(reqAmt), advance_type: String(advance_type),
     reason: String(reason), deduct_from: df, status: requiresApproval ? "pending" : "approved",
+    safe_id: safe_id != null && safe_id !== "" ? Number(safe_id) : null,
     currency: emp.currency ?? "EGP",
     approved_amount: !requiresApproval ? String(reqAmt) : null,
     approved_at: !requiresApproval ? new Date() : null,
@@ -176,6 +178,7 @@ router.get("/salary-advances/:id", wrap(async (req, res) => {
     approved_amount: salaryAdvancesTable.approved_amount, advance_type: salaryAdvancesTable.advance_type,
     reason: salaryAdvancesTable.reason, status: salaryAdvancesTable.status,
     deduct_from: salaryAdvancesTable.deduct_from,
+    safe_id: salaryAdvancesTable.safe_id,
     rejection_reason: salaryAdvancesTable.rejection_reason, remaining_balance: salaryAdvancesTable.remaining_balance,
     currency: salaryAdvancesTable.currency, created_at: salaryAdvancesTable.created_at, approved_at: salaryAdvancesTable.approved_at,
     first_name_ar: employeesTable.first_name_ar, last_name_ar: employeesTable.last_name_ar, employee_code: employeesTable.employee_code,
