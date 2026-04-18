@@ -58,6 +58,7 @@ export type AuditRecordType =
   | "subscription"            // تجديد/تمديد الاشتراك
   | "payroll_period"          // payroll period lifecycle
   | "salary_advance"          // salary advance lifecycle
+  | "fiscal_year"             // fiscal year open/close
   | "system";                 // tenant-level system actions (restore, etc.)
 
 interface AuditUser {

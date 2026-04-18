@@ -1387,4 +1387,152 @@ router.get("/reports/balance-sheet", wrap(async (req, res) => {
   });
 }));
 
+/* ─────────────────────────────────────────────────────────────────────────── *
+ * GET /api/reports/trial-balance?date_from=&date_to=
+ *
+ * ميزان المراجعة — يُجمِّع كل حركات المدين والدائن لكل حساب
+ * في الفترة المحددة (أو كل الفترات إذا لم تُحدَّد).
+ * الشرط الأساسي: مجموع المدين = مجموع الدائن
+ * ─────────────────────────────────────────────────────────────────────────── */
+router.get("/reports/trial-balance", wrap(async (req, res) => {
+  const companyId = (req as unknown as { user?: { company_id?: number } }).user?.company_id;
+  if (!companyId) { res.status(400).json({ error: "company_id مطلوب" }); return; }
+
+  const dateFrom = safeDate(req.query.date_from as string | undefined);
+  const dateTo   = safeDate(req.query.date_to   as string | undefined);
+
+  const dateFilter = dateFrom && dateTo
+    ? sql`AND je.date BETWEEN ${dateFrom} AND ${dateTo}`
+    : dateFrom
+      ? sql`AND je.date >= ${dateFrom}`
+      : dateTo
+        ? sql`AND je.date <= ${dateTo}`
+        : sql``;
+
+  const rawRows = await db.execute(sql`
+    SELECT
+      a.id          AS account_id,
+      a.code        AS account_code,
+      a.name        AS account_name,
+      a.type        AS account_type,
+      COALESCE(SUM(CASE WHEN jel.debit  > 0 THEN jel.debit  ELSE 0 END), 0) AS total_debit,
+      COALESCE(SUM(CASE WHEN jel.credit > 0 THEN jel.credit ELSE 0 END), 0) AS total_credit
+    FROM accounts a
+    LEFT JOIN journal_entry_lines jel ON jel.account_id = a.id
+    LEFT JOIN journal_entries je ON je.id = jel.entry_id
+      AND je.company_id = ${companyId}
+      AND je.status = 'posted'
+      ${dateFilter}
+    WHERE a.company_id = ${companyId}
+      AND a.is_active = true
+    GROUP BY a.id, a.code, a.name, a.type
+    ORDER BY a.code
+  `);
+
+  const accounts = (rawRows.rows as any[]).map((r: any) => ({
+    account_id:    r.account_id,
+    account_code:  r.account_code,
+    account_name:  r.account_name,
+    account_type:  r.account_type,
+    total_debit:   Number(r.total_debit),
+    total_credit:  Number(r.total_credit),
+    balance:       Number(r.total_debit) - Number(r.total_credit),
+  }));
+
+  const grandDebit  = accounts.reduce((s, a) => s + a.total_debit,  0);
+  const grandCredit = accounts.reduce((s, a) => s + a.total_credit, 0);
+  const diff        = Math.abs(grandDebit - grandCredit);
+  const TOLERANCE   = 0.01;
+
+  res.json({
+    accounts,
+    summary: {
+      grand_debit:  Number(grandDebit.toFixed(2)),
+      grand_credit: Number(grandCredit.toFixed(2)),
+      difference:   Number(diff.toFixed(2)),
+      is_balanced:  diff <= TOLERANCE,
+    },
+    period: { date_from: dateFrom ?? null, date_to: dateTo ?? null },
+    generated_at: new Date().toISOString(),
+  });
+}));
+
+/* ─────────────────────────────────────────────────────────────────────────── *
+ * GET /api/reports/vat-report?date_from=&date_to=
+ *
+ * تقرير ضريبة القيمة المضافة (VAT)
+ * ضريبة المخرجات (على المبيعات) — ضريبة المدخلات (على المشتريات)
+ * ─────────────────────────────────────────────────────────────────────────── */
+router.get("/reports/vat-report", wrap(async (req, res) => {
+  const companyId = (req as unknown as { user?: { company_id?: number } }).user?.company_id;
+  if (!companyId) { res.status(400).json({ error: "company_id مطلوب" }); return; }
+
+  const dateFrom = safeDate(req.query.date_from as string | undefined);
+  const dateTo   = safeDate(req.query.date_to   as string | undefined);
+
+  const dateFilter = dateFrom && dateTo
+    ? sql`AND s.date BETWEEN ${dateFrom} AND ${dateTo}`
+    : dateFrom
+      ? sql`AND s.date >= ${dateFrom}`
+      : dateTo
+        ? sql`AND s.date <= ${dateTo}`
+        : sql``;
+
+  const purchaseDateFilter = dateFrom && dateTo
+    ? sql`AND p.date BETWEEN ${dateFrom} AND ${dateTo}`
+    : dateFrom
+      ? sql`AND p.date >= ${dateFrom}`
+      : dateTo
+        ? sql`AND p.date <= ${dateTo}`
+        : sql``;
+
+  /* Output VAT (on sales) */
+  const salesVatRaw = await db.execute(sql`
+    SELECT
+      COALESCE(SUM(s.total_amount), 0) AS total_sales,
+      COALESCE(SUM(s.tax_amount), 0)   AS total_tax,
+      COUNT(*)                          AS invoice_count
+    FROM sales s
+    WHERE s.company_id = ${companyId}
+      AND s.posting_status = 'posted'
+      ${dateFilter}
+  `);
+
+  /* Input VAT (on purchases) */
+  const purchasesVatRaw = await db.execute(sql`
+    SELECT
+      COALESCE(SUM(p.total_amount), 0) AS total_purchases,
+      COALESCE(SUM(p.tax_amount), 0)   AS total_tax,
+      COUNT(*)                          AS invoice_count
+    FROM purchases p
+    WHERE p.company_id = ${companyId}
+      AND p.posting_status = 'posted'
+      ${purchaseDateFilter}
+  `);
+
+  const sv = (salesVatRaw.rows as any[])[0] ?? {};
+  const pv = (purchasesVatRaw.rows as any[])[0] ?? {};
+
+  const outputVat = Number(sv.total_tax ?? 0);
+  const inputVat  = Number(pv.total_tax ?? 0);
+  const netVat    = outputVat - inputVat;
+
+  res.json({
+    output_vat: {
+      total_sales:   Number(sv.total_sales ?? 0),
+      tax_amount:    Number(outputVat.toFixed(2)),
+      invoice_count: Number(sv.invoice_count ?? 0),
+    },
+    input_vat: {
+      total_purchases: Number(pv.total_purchases ?? 0),
+      tax_amount:      Number(inputVat.toFixed(2)),
+      invoice_count:   Number(pv.invoice_count ?? 0),
+    },
+    net_vat_payable: Number(netVat.toFixed(2)),
+    vat_status:      netVat >= 0 ? "مستحقة الدفع" : "مستحقة الاسترداد",
+    period:          { date_from: dateFrom ?? null, date_to: dateTo ?? null },
+    generated_at:    new Date().toISOString(),
+  });
+}));
+
 export default router;

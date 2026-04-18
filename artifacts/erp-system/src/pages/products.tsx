@@ -115,6 +115,7 @@ function ProductsTab() {
       cost_price: Number(product.cost_price),
       sale_price: Number(product.sale_price),
       low_stock_threshold: product.low_stock_threshold ?? 5,
+      tax_rate: Number((product as { tax_rate?: unknown }).tax_rate ?? 14),
     });
   };
 

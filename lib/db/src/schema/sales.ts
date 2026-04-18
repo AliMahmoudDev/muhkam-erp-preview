@@ -24,6 +24,8 @@ export const salesTable = pgTable("sales", {
   salesperson_name: text("salesperson_name"),
   discount_percent: numeric("discount_percent", { precision: 5, scale: 2 }).default("0"),
   discount_amount: numeric("discount_amount", { precision: 12, scale: 2 }).default("0"),
+  tax_amount: numeric("tax_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  tax_rate: numeric("tax_rate", { precision: 5, scale: 2 }).notNull().default("0"),
   notes: text("notes"),
   date: text("date"),
   user_id: integer("user_id"),

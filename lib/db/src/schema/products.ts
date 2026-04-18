@@ -13,6 +13,7 @@ export const productsTable = pgTable("products", {
   cost_price: numeric("cost_price", { precision: 12, scale: 2 }).notNull().default("0"),
   sale_price: numeric("sale_price", { precision: 12, scale: 2 }).notNull().default("0"),
   low_stock_threshold: integer("low_stock_threshold"),
+  tax_rate: numeric("tax_rate", { precision: 5, scale: 2 }).notNull().default("0"),
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

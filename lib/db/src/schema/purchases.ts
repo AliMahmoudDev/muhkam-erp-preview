@@ -17,6 +17,8 @@ export const purchasesTable = pgTable("purchases", {
   remaining_amount: numeric("remaining_amount", { precision: 12, scale: 2 }).notNull().default("0"),
   status: text("status").notNull().default("paid"),
   posting_status: text("posting_status").notNull().default("draft"), // draft | posted | cancelled
+  tax_amount: numeric("tax_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  tax_rate: numeric("tax_rate", { precision: 5, scale: 2 }).notNull().default("0"),
   notes: text("notes"),
   date: text("date"),
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),

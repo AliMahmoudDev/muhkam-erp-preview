@@ -14,11 +14,13 @@ export type ProductFormData = {
   cost_price: number;
   sale_price: number;
   low_stock_threshold: number;
+  tax_rate: number;
 };
 
 export const emptyProductForm: ProductFormData = {
   name: "", sku: "", category_id: null, category_name: "",
   quantity: 0, cost_price: 0, sale_price: 0, low_stock_threshold: 5,
+  tax_rate: 14,
 };
 
 export function generateBarcode(): string {
@@ -282,6 +284,32 @@ export function ProductFormModal({
               هامش الربح: {margin.toFixed(1)}% | ربح الوحدة: {formatCurrency(form.sale_price - form.cost_price)}
             </div>
           )}
+
+          {/* Tax rate + Quantity */}
+          <div>
+            <label className="block text-white/70 text-xs mb-1">
+              نسبة ضريبة القيمة المضافة (%)
+              <span className="text-white/30 mr-1">— 14% الافتراضي في مصر</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                max="100"
+                className="glass-input flex-1"
+                placeholder="14"
+                value={form.tax_rate ?? ""}
+                onChange={e => set("tax_rate", parseFloat(e.target.value) || 0)}
+              />
+              <span className="text-white/40 text-sm">%</span>
+            </div>
+            {form.tax_rate > 0 && form.sale_price > 0 && (
+              <p className="text-xs text-amber-400/70 mt-1">
+                سعر البيع شامل الضريبة: {((form.sale_price) * (1 + form.tax_rate / 100)).toFixed(2)} ج.م
+              </p>
+            )}
+          </div>
 
           {/* Quantity + threshold */}
           <div className="grid grid-cols-2 gap-4">

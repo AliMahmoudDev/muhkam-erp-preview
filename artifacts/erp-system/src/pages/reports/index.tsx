@@ -17,6 +17,8 @@ import CashFlowReport      from "./CashFlowReport";
 import BalanceSheetReport  from "./BalanceSheetReport";
 import ProductProfitReport from "./ProductProfitReport";
 import SalesAnalysisReport from "./SalesAnalysisReport";
+import TrialBalanceReport  from "./TrialBalanceReport";
+import VatReport           from "./VatReport";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 interface BsSnapshot {
@@ -81,15 +83,17 @@ function FinancialConsistencyBar() {
 }
 
 /* ── Tab config ─────────────────────────────────────────────────────────── */
-type Tab = "health" | "pl" | "cashflow" | "balance" | "products" | "analysis";
+type Tab = "health" | "pl" | "cashflow" | "balance" | "products" | "analysis" | "trial-balance" | "vat";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "health",   label: "🩺 صحة النظام" },
-  { id: "pl",       label: "📊 الأرباح والخسائر" },
-  { id: "cashflow", label: "💰 التدفق النقدي" },
-  { id: "balance",  label: "⚖️ الميزانية" },
-  { id: "products", label: "📦 ربحية المنتجات" },
-  { id: "analysis", label: "📈 تحليل المبيعات" },
+  { id: "health",         label: "🩺 صحة النظام" },
+  { id: "pl",             label: "📊 الأرباح والخسائر" },
+  { id: "cashflow",       label: "💰 التدفق النقدي" },
+  { id: "balance",        label: "⚖️ الميزانية" },
+  { id: "trial-balance",  label: "📋 ميزان المراجعة" },
+  { id: "vat",            label: "🧾 ضريبة القيمة المضافة" },
+  { id: "products",       label: "📦 ربحية المنتجات" },
+  { id: "analysis",       label: "📈 تحليل المبيعات" },
 ];
 
 /* ── Main Page ──────────────────────────────────────────────────────────── */
@@ -129,12 +133,14 @@ export default function Reports() {
 
       <AnimatePresence mode="wait">
         <motion.div key={tab} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }} transition={{ duration:0.18 }}>
-          {tab === "health"   && <HealthCheckReport />}
-          {tab === "pl"       && <ProfitLossReport />}
-          {tab === "cashflow" && <CashFlowReport />}
-          {tab === "balance"  && <BalanceSheetReport />}
-          {tab === "products" && <ProductProfitReport />}
-          {tab === "analysis" && <SalesAnalysisReport />}
+          {tab === "health"        && <HealthCheckReport />}
+          {tab === "pl"            && <ProfitLossReport />}
+          {tab === "cashflow"      && <CashFlowReport />}
+          {tab === "balance"       && <BalanceSheetReport />}
+          {tab === "trial-balance" && <TrialBalanceReport />}
+          {tab === "vat"           && <VatReport />}
+          {tab === "products"      && <ProductProfitReport />}
+          {tab === "analysis"      && <SalesAnalysisReport />}
         </motion.div>
       </AnimatePresence>
     </div>

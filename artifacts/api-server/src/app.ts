@@ -7,11 +7,15 @@ import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
+import swaggerUi from "swagger-ui-express";
 import router from "./routes";
+import { swaggerSpec } from "./lib/swagger-spec";
 import { logger } from "./lib/logger";
 import { sanitizeBody } from "./middleware/auth";
 import { makeRateLimitStore } from "./lib/rate-limit-store";
 import { recordRequest } from "./lib/request-counter";
+import { requestTimeout } from "./middleware/request-timeout";
+import { perTenantRateLimit } from "./middleware/per-tenant-rate-limit";
 
 const app: Express = express();
 
@@ -130,6 +134,9 @@ app.use(sanitizeBody);
 /* ── HTTP Parameter Pollution prevention ───────────────────── */
 app.use(hpp());
 
+/* ── Request timeout: abort after 30 s ─────────────────────── */
+app.use(requestTimeout);
+
 /* ── Request metrics collector ──────────────────────────────── */
 app.use((_req, res, next) => {
   const start = Date.now();
@@ -140,12 +147,24 @@ app.use((_req, res, next) => {
 /* Apply general limiter to all API routes */
 app.use("/api", generalLimiter);
 
+/* ── Swagger UI — accessible at /api/docs ────────────────────── */
+app.use("/api/docs", swaggerUi.serve);
+app.get("/api/docs", swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: "Halal Tech ERP — API Docs",
+  customCss: ".swagger-ui .topbar { display: none }",
+  swaggerOptions: { persistAuthorization: true, docExpansion: "none" },
+}));
+app.get("/api/docs/spec.json", (_req, res) => res.json(swaggerSpec));
+
 /* Apply stricter limiter to auth routes */
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 app.use("/api/auth/login/email", authLimiter);
 app.use("/api/auth/refresh", authLimiter);
 app.use("/api/auth/2fa/login", authLimiter);
+
+/* ── Per-tenant rate limiting (after auth routes) ─────────── */
+app.use("/api", perTenantRateLimit);
 
 app.use("/api", router);
 

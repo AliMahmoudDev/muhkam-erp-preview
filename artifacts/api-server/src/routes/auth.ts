@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import { db, erpUsersTable, companiesTable } from '@workspace/db';
 import { authenticate, signToken, signRefreshToken, verifyRefreshToken } from '../middleware/auth';
 import { blacklistToken } from '../lib/session-blacklist';
+import { storeRefreshToken, consumeRefreshToken, revokeUserRefreshTokens } from '../lib/refresh-token-store';
 import {
   generateTOTPSecret,
   generateQRCode,
@@ -32,6 +33,19 @@ import {
    every login/logout caused massive pool pressure under load. */
 
 const JWT_SECRET: string = process.env.JWT_SECRET!;
+
+/** Enforce strong password: min 8 chars, uppercase, digit, special char */
+function validatePasswordStrength(password: string): string | null {
+  if (password.length < 8)
+    return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+  if (!/[A-Z]/.test(password))
+    return 'كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل';
+  if (!/[0-9]/.test(password))
+    return 'كلمة المرور يجب أن تحتوي على رقم واحد على الأقل';
+  if (!/[^A-Za-z0-9]/.test(password))
+    return 'كلمة المرور يجب أن تحتوي على رمز خاص واحد على الأقل (@, #, $, ...)';
+  return null;
+}
 
 function daysRemaining(endDate: string): number {
   const now = new Date();
@@ -205,6 +219,7 @@ router.post('/auth/login', async (req, res) => {
 
     const token = signToken(user.id, user.role, user.company_id ?? null);
     const refreshToken = signRefreshToken(user.id);
+    void storeRefreshToken(refreshToken, user.id);
 
     /* Update last_login timestamp */
     await db
@@ -240,7 +255,7 @@ router.post('/auth/login', async (req, res) => {
   }
 });
 
-/* ── POST /auth/refresh — exchange refresh token for new access token ─ */
+/* ── POST /auth/refresh — rotate refresh token + issue new access token ─ */
 router.post('/auth/refresh', async (req, res) => {
   try {
     const { refreshToken } = req.body as { refreshToken?: string };
@@ -248,21 +263,38 @@ router.post('/auth/refresh', async (req, res) => {
       res.status(400).json({ error: 'refresh token مطلوب' });
       return;
     }
-    const payload = verifyRefreshToken(refreshToken);
-    if (!payload) {
+
+    /* Step 1: verify JWT signature */
+    const jwtPayload = verifyRefreshToken(refreshToken);
+    if (!jwtPayload) {
       res.status(401).json({ error: 'refresh token غير صالح أو منتهي الصلاحية' });
       return;
     }
+
+    /* Step 2: consume DB record (marks old token as used → prevents replay) */
+    const dbPayload = await consumeRefreshToken(refreshToken);
+    if (!dbPayload) {
+      /* Token already used or revoked — possible token theft, revoke all */
+      void revokeUserRefreshTokens(jwtPayload.userId);
+      res.status(401).json({ error: 'تم رصد إعادة استخدام رمز منتهي — جميع الجلسات أُلغيت' });
+      return;
+    }
+
     const [user] = await db
       .select()
       .from(erpUsersTable)
-      .where(and(eq(erpUsersTable.id, payload.userId), eq(erpUsersTable.active, true)));
+      .where(and(eq(erpUsersTable.id, dbPayload.userId), eq(erpUsersTable.active, true)));
     if (!user) {
       res.status(401).json({ error: 'المستخدم غير موجود أو موقوف' });
       return;
     }
+
+    /* Step 3: issue NEW access token + NEW refresh token (rotation) */
     const newToken = signToken(user.id, user.role, user.company_id ?? null);
-    res.json({ token: newToken });
+    const newRefreshToken = signRefreshToken(user.id);
+    void storeRefreshToken(newRefreshToken, user.id);
+
+    res.json({ token: newToken, refreshToken: newRefreshToken });
   } catch {
     res.status(500).json({ error: 'فشل تجديد الجلسة' });
   }
@@ -303,10 +335,18 @@ router.get('/auth/subscription', authenticate, async (req, res) => {
   }
 });
 
-/* ── POST /auth/logout — blacklist the current access token ─── */
+/* ── POST /auth/logout — blacklist access token + revoke refresh tokens ─ */
 router.post('/auth/logout', authenticate, async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (token) await blacklistToken(token);
+
+  /* Revoke the supplied refresh token if provided */
+  const { refreshToken } = req.body as { refreshToken?: string };
+  if (refreshToken) {
+    const payload = verifyRefreshToken(refreshToken);
+    if (payload) void revokeUserRefreshTokens(payload.userId);
+  }
+
   res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
 });
 
@@ -488,6 +528,7 @@ router.post('/auth/2fa/login', async (req, res) => {
 
     const token = signToken(user.id, user.role, user.company_id ?? null);
     const refreshToken = signRefreshToken(user.id);
+    void storeRefreshToken(refreshToken, user.id);
     res.json({
       token,
       refreshToken,
@@ -547,8 +588,13 @@ router.post('/auth/register', async (req, res) => {
       res.status(400).json({ error: 'بريد إلكتروني صحيح مطلوب' });
       return;
     }
-    if (!password || password.length < 6) {
-      res.status(400).json({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' });
+    if (!password) {
+      res.status(400).json({ error: 'كلمة المرور مطلوبة' });
+      return;
+    }
+    const pwError = validatePasswordStrength(password);
+    if (pwError) {
+      res.status(400).json({ error: pwError });
       return;
     }
 

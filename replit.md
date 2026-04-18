@@ -559,6 +559,40 @@ Standalone iOS & Android mobile companion app at `artifacts/erp-mobile/`. Built 
 - **Data Fetching**: `@tanstack/react-query` with `useQuery` — manual `apiFetch` calls (no generated hooks) for simplicity.
 - **Colors**: `constants/colors.ts` — light/dark palettes with navy primary `#0049A1` + gold accent `#E8A020`. Hook: `hooks/useColors.ts`.
 
+---
+
+## Security & Accounting Hardening (April 2026 — Session 3)
+
+### Security (T001-T003)
+- **Refresh token rotation:** `refresh_tokens` DB table — each token is single-use; replay detection revokes ALL sessions for that user.
+- **Password strength policy:** 8+ chars, uppercase, digit, special character enforced on registration/password-change.
+- **Request timeout:** 30s abort middleware globally wired — prevents slow-client attacks.
+
+### Accounting (T004-T006)
+- **VAT 14% schema:** `tax_rate` on `products`, `tax_amount` + `tax_rate` on `sales`/`purchases`. DB migrated.
+- **VAT Report API:** `GET /api/reports/vat-report?date_from&date_to` — output VAT, input VAT, net payable; frontend tab "🧾 ضريبة القيمة المضافة" in Reports.
+- **Trial Balance API:** `GET /api/reports/trial-balance?date_from&date_to` — per-account debit/credit/balance with balance check; frontend tab "📋 ميزان المراجعة" in Reports.
+- **Fiscal Years CRUD:** `GET/POST /api/fiscal-years`, `PATCH .../close`, `PATCH .../reopen`, `PATCH .../set-current`, `DELETE /:id`. Frontend page at `/fiscal-years` in sidebar under المحاسبة section.
+- **Product VAT field:** `tax_rate` input (default 14%) added to product create/edit form with live "price inc. VAT" preview.
+
+### Reliability (T008)
+- **Deep health check:** `GET /healthz/deep` — DB read+write round-trip, pool size, latency. Returns 503 if degraded.
+- **Startup env validation:** Server refuses to start without `JWT_SECRET`, `JWT_REFRESH_SECRET`, `DATABASE_URL`.
+- **Daily token purge:** Scheduler cleans expired refresh tokens every 24h.
+
+### API Documentation (T007)
+- **Swagger UI:** `GET /api/docs` — interactive OpenAPI 3.0 UI powered by swagger-ui-express. No auth required.
+- **OpenAPI spec:** `GET /api/docs/spec.json` — machine-readable spec with 20 documented paths, auth schemas, request/response models.
+- **Tags:** Auth, Products, Sales, Purchases, Inventory, Customers, Employees, Accounts, Journal, FiscalYears, Reports, Health, Treasury.
+
+### Per-Tenant Rate Limiting (T009)
+- **`perTenantRateLimit` middleware:** Applied after auth routes on all `/api` requests.
+- **Read limit:** 600 req/min per company (company_id from JWT).
+- **Write limit (POST/PUT/PATCH/DELETE):** 120 req/min per company.
+- **Unauthenticated fallback:** Keyed on IP address.
+- **Headers:** `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `X-RateLimit-Tenant`.
+- **Redis-backed:** Falls back to in-memory if Redis unavailable.
+
 ### Screens
 - **Login** (`app/login.tsx`): 2-step: username input → 6-digit PIN pad with haptic feedback.
 - **Dashboard** (`app/(tabs)/index.tsx`): Net profit banner + stats grid (sales, purchases, expenses, income, customers, products, low-stock, pending).
