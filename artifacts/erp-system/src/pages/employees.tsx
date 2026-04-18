@@ -50,6 +50,7 @@ interface Employee {
   phone?: string | null;
   personal_phone?: string | null;
   national_id?: string | null;
+  national_id_image?: string | null;
   job_title_id?: number | null;
   department_id?: number | null;
   branch_id?: number | null;
@@ -57,7 +58,10 @@ interface Employee {
   employment_status: string;
   salary?: number | null;
   currency: string;
+  salary_type?: 'fixed' | 'commission' | 'fixed_plus_commission';
   commission_rate?: number | null;
+  commission_basis?: 'gross' | 'net' | null;
+  commission_scope_dept_id?: number | null;
   bank_account?: string | null;
   address_ar?: string | null;
   city?: string | null;
@@ -183,8 +187,8 @@ function blankEmp(): Partial<Employee> {
     first_name_en: '',
     last_name_en: '',
     phone: '',
-    personal_phone: '',
     national_id: '',
+    national_id_image: null,
     email: '',
     job_title_id: null,
     department_id: null,
@@ -192,10 +196,12 @@ function blankEmp(): Partial<Employee> {
     hire_date: new Date().toISOString().split('T')[0],
     salary: 0,
     currency: 'EGP',
+    salary_type: 'fixed',
     commission_rate: null,
+    commission_basis: null,
+    commission_scope_dept_id: null,
     bank_account: '',
     address_ar: '',
-    city: '',
     country: 'مصر',
     notes: '',
   };
@@ -222,7 +228,6 @@ export default function Employees() {
   const [showForm, setShowForm] = useState(false);
   const [editEmp, setEditEmp] = useState<Partial<Employee>>(blankEmp());
   const [editId, setEditId] = useState<number | null>(null);
-  const [commissionMode, setCommissionMode] = useState(false);
 
   /* ── Inline dept add ───────────────────────────────────────── */
   const [showInlineDept, setShowInlineDept] = useState(false);
@@ -569,20 +574,41 @@ export default function Employees() {
   function openCreate() {
     setEditId(null);
     setEditEmp(blankEmp());
-    setCommissionMode(false);
     setShowForm(true);
   }
   function openEdit(emp: Employee) {
+    const inferredType: 'fixed' | 'commission' | 'fixed_plus_commission' =
+      emp.salary_type ??
+      ((emp.commission_rate ?? 0) > 0 && (emp.salary ?? 0) > 0
+        ? 'fixed_plus_commission'
+        : (emp.commission_rate ?? 0) > 0
+          ? 'commission'
+          : 'fixed');
     setEditId(emp.id);
-    setEditEmp({ ...emp });
-    setCommissionMode((emp.commission_rate ?? 0) > 0 && !emp.salary);
+    setEditEmp({ ...emp, salary_type: inferredType });
     setShowForm(true);
   }
   function saveEmployee() {
+    const st = editEmp.salary_type ?? 'fixed';
+    const phone = (editEmp.phone ?? '').toString().trim();
+    const nid = (editEmp.national_id ?? '').toString().trim();
+    if (phone && !/^\d{11}$/.test(phone)) {
+      toast({ title: 'رقم الهاتف يجب أن يكون 11 رقم بالضبط', variant: 'destructive' });
+      return;
+    }
+    if (nid && !/^\d{14}$/.test(nid)) {
+      toast({ title: 'الرقم القومي يجب أن يكون 14 رقم بالضبط', variant: 'destructive' });
+      return;
+    }
     const payload: Partial<Employee> = {
       ...editEmp,
-      salary: commissionMode ? null : Number(editEmp.salary ?? 0),
-      commission_rate: commissionMode ? Number(editEmp.commission_rate ?? 0) : null,
+      phone: phone || null,
+      national_id: nid || null,
+      salary_type: st,
+      salary: st === 'commission' ? 0 : Number(editEmp.salary ?? 0),
+      commission_rate: st === 'fixed' ? null : Number(editEmp.commission_rate ?? 0),
+      commission_basis: st === 'fixed' ? null : (editEmp.commission_basis ?? 'gross'),
+      commission_scope_dept_id: st === 'fixed' ? null : (editEmp.commission_scope_dept_id ?? null),
     };
     if (editId) updateEmp.mutate(payload);
     else createEmp.mutate(payload);
@@ -824,7 +850,6 @@ export default function Employees() {
             {detailTab === 'info' && (
               <div className="space-y-2 text-sm">
                 <InfoRow icon={Phone} label="الهاتف" value={selected.phone} />
-                <InfoRow icon={Phone} label="الهاتف الشخصي" value={selected.personal_phone} />
                 <InfoRow icon={IdCard} label="رقم البطاقة" value={selected.national_id} />
                 <InfoRow icon={Building2} label="القسم" value={selected.department_name} />
                 <InfoRow icon={Briefcase} label="المسمى الوظيفي" value={selected.job_title_name} />
@@ -1183,161 +1208,221 @@ export default function Employees() {
                 </Field>
               </div>
 
-              {/* Contact */}
+              {/* Phone (11 digits exact) */}
+              <Field label="الهاتف (11 رقم)">
+                <input
+                  value={editEmp.phone ?? ''}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    set('phone', v);
+                  }}
+                  className="erp-input w-full"
+                  placeholder="01012345678"
+                  inputMode="numeric"
+                  maxLength={11}
+                />
+                {(editEmp.phone ?? '') && (editEmp.phone ?? '').length !== 11 && (
+                  <div className="text-xs text-red-400 mt-1">
+                    يجب إدخال 11 رقم بالضبط ({(editEmp.phone ?? '').length}/11)
+                  </div>
+                )}
+              </Field>
+
+              {/* National ID + Image upload — same row */}
               <div className="grid grid-cols-2 gap-3">
-                <Field label="الهاتف">
-                  <input
-                    value={editEmp.phone ?? ''}
-                    onChange={(e) => set('phone', e.target.value)}
-                    className="erp-input w-full"
-                    placeholder="+20..."
-                  />
+                <Field label="الرقم القومي (14 رقم)">
+                  <div className="relative">
+                    <IdCard
+                      size={14}
+                      className="absolute top-1/2 -translate-y-1/2 right-3 text-white/30"
+                    />
+                    <input
+                      value={editEmp.national_id ?? ''}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, '').slice(0, 14);
+                        set('national_id', v);
+                      }}
+                      className="erp-input w-full pr-8"
+                      placeholder="14 رقم"
+                      inputMode="numeric"
+                      maxLength={14}
+                    />
+                  </div>
+                  {(editEmp.national_id ?? '') && (editEmp.national_id ?? '').length !== 14 && (
+                    <div className="text-xs text-red-400 mt-1">
+                      يجب 14 رقم ({(editEmp.national_id ?? '').length}/14)
+                    </div>
+                  )}
                 </Field>
-                <Field label="الهاتف الشخصي">
-                  <input
-                    value={editEmp.personal_phone ?? ''}
-                    onChange={(e) => set('personal_phone', e.target.value)}
-                    className="erp-input w-full"
-                  />
+                <Field label="صورة البطاقة">
+                  <div className="flex items-center gap-2">
+                    <label className="erp-btn erp-btn-ghost text-xs cursor-pointer flex-1 text-center border border-white/10">
+                      {editEmp.national_id_image ? 'تغيير الصورة' : 'رفع صورة'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          if (f.size > 2 * 1024 * 1024) {
+                            toast({
+                              title: 'حجم الصورة يجب ألا يزيد عن 2 ميجابايت',
+                              variant: 'destructive',
+                            });
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = () => set('national_id_image', String(reader.result));
+                          reader.readAsDataURL(f);
+                        }}
+                      />
+                    </label>
+                    {editEmp.national_id_image && (
+                      <>
+                        <a
+                          href={editEmp.national_id_image}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="erp-btn erp-btn-ghost text-xs px-2 border border-emerald-500/30 text-emerald-300"
+                          title="عرض الصورة"
+                        >
+                          عرض
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => set('national_id_image', null)}
+                          className="erp-btn erp-btn-ghost text-xs px-2 border border-red-500/30 text-red-300"
+                          title="حذف"
+                        >
+                          <X size={12} />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </Field>
               </div>
 
-              {/* National ID */}
-              <Field label="رقم البطاقة القومية">
-                <div className="relative">
-                  <IdCard
-                    size={14}
-                    className="absolute top-1/2 -translate-y-1/2 right-3 text-white/30"
-                  />
-                  <input
-                    value={editEmp.national_id ?? ''}
-                    onChange={(e) => set('national_id', e.target.value)}
-                    className="erp-input w-full pr-8"
-                    placeholder="14 رقم"
-                    maxLength={14}
-                  />
-                </div>
-              </Field>
-
-              {/* Department — with inline add */}
-              <Field label="القسم">
-                <div className="flex gap-2">
-                  <select
-                    value={editEmp.department_id ?? ''}
-                    onChange={(e) =>
-                      set('department_id', e.target.value ? Number(e.target.value) : null)
-                    }
-                    className="erp-input flex-1"
-                  >
-                    <option value="">— اختر القسم —</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name_ar}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setShowInlineDept((v) => !v)}
-                    className="erp-btn erp-btn-ghost px-2 text-amber-400 border border-amber-500/30"
-                    title="إضافة قسم جديد"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-                {showInlineDept && (
-                  <div className="mt-2 bg-white/5 rounded-lg p-3 space-y-2 border border-amber-500/20">
-                    <div className="text-xs text-amber-300 mb-1">قسم جديد</div>
-                    <input
-                      value={inlineDept.name_ar}
-                      onChange={(e) => setInlineDept((p) => ({ ...p, name_ar: e.target.value }))}
-                      className="erp-input w-full text-sm"
-                      placeholder="اسم القسم بالعربي *"
-                    />
-                    <input
-                      value={inlineDept.name_en}
-                      onChange={(e) => setInlineDept((p) => ({ ...p, name_en: e.target.value }))}
-                      className="erp-input w-full text-sm"
-                      placeholder="Department Name (English)"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => createInlineDept.mutate(inlineDept)}
-                        disabled={!inlineDept.name_ar.trim() || createInlineDept.isPending}
-                        className="erp-btn erp-btn-primary text-xs flex-1"
-                      >
-                        {createInlineDept.isPending ? 'جاري...' : 'إضافة'}
-                      </button>
-                      <button
-                        onClick={() => setShowInlineDept(false)}
-                        className="erp-btn erp-btn-ghost text-xs"
-                      >
-                        إلغاء
-                      </button>
-                    </div>
+              {/* Department + Job Title — same row, both with inline add */}
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="القسم">
+                  <div className="flex gap-2">
+                    <select
+                      value={editEmp.department_id ?? ''}
+                      onChange={(e) =>
+                        set('department_id', e.target.value ? Number(e.target.value) : null)
+                      }
+                      className="erp-input flex-1"
+                    >
+                      <option value="">— اختر القسم —</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name_ar}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowInlineDept((v) => !v)}
+                      className="erp-btn erp-btn-ghost px-2 text-amber-400 border border-amber-500/30"
+                      title="إضافة قسم جديد"
+                    >
+                      <Plus size={14} />
+                    </button>
                   </div>
-                )}
-              </Field>
-
-              {/* Job Title — with inline add */}
-              <Field label="المسمى الوظيفي">
-                <div className="flex gap-2">
-                  <select
-                    value={editEmp.job_title_id ?? ''}
-                    onChange={(e) =>
-                      set('job_title_id', e.target.value ? Number(e.target.value) : null)
-                    }
-                    className="erp-input flex-1"
-                  >
-                    <option value="">— اختر المسمى —</option>
-                    {jobTitles.map((jt) => (
-                      <option key={jt.id} value={jt.id}>
-                        {jt.name_ar}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setShowInlineJt((v) => !v)}
-                    className="erp-btn erp-btn-ghost px-2 text-amber-400 border border-amber-500/30"
-                    title="إضافة مسمى جديد"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-                {showInlineJt && (
-                  <div className="mt-2 bg-white/5 rounded-lg p-3 space-y-2 border border-amber-500/20">
-                    <div className="text-xs text-amber-300 mb-1">مسمى وظيفي جديد</div>
-                    <input
-                      value={inlineJt.name_ar}
-                      onChange={(e) => setInlineJt((p) => ({ ...p, name_ar: e.target.value }))}
-                      className="erp-input w-full text-sm"
-                      placeholder="المسمى بالعربي *"
-                    />
-                    <input
-                      value={inlineJt.name_en}
-                      onChange={(e) => setInlineJt((p) => ({ ...p, name_en: e.target.value }))}
-                      className="erp-input w-full text-sm"
-                      placeholder="Job Title (English)"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => createInlineJt.mutate(inlineJt)}
-                        disabled={!inlineJt.name_ar.trim() || createInlineJt.isPending}
-                        className="erp-btn erp-btn-primary text-xs flex-1"
-                      >
-                        {createInlineJt.isPending ? 'جاري...' : 'إضافة'}
-                      </button>
-                      <button
-                        onClick={() => setShowInlineJt(false)}
-                        className="erp-btn erp-btn-ghost text-xs"
-                      >
-                        إلغاء
-                      </button>
+                  {showInlineDept && (
+                    <div className="mt-2 bg-white/5 rounded-lg p-3 space-y-2 border border-amber-500/20">
+                      <div className="text-xs text-amber-300 mb-1">قسم جديد</div>
+                      <input
+                        value={inlineDept.name_ar}
+                        onChange={(e) => setInlineDept((p) => ({ ...p, name_ar: e.target.value }))}
+                        className="erp-input w-full text-sm"
+                        placeholder="اسم القسم بالعربي *"
+                      />
+                      <input
+                        value={inlineDept.name_en}
+                        onChange={(e) => setInlineDept((p) => ({ ...p, name_en: e.target.value }))}
+                        className="erp-input w-full text-sm"
+                        placeholder="Department Name (English)"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => createInlineDept.mutate(inlineDept)}
+                          disabled={!inlineDept.name_ar.trim() || createInlineDept.isPending}
+                          className="erp-btn erp-btn-primary text-xs flex-1"
+                        >
+                          {createInlineDept.isPending ? 'جاري...' : 'إضافة'}
+                        </button>
+                        <button
+                          onClick={() => setShowInlineDept(false)}
+                          className="erp-btn erp-btn-ghost text-xs"
+                        >
+                          إلغاء
+                        </button>
+                      </div>
                     </div>
+                  )}
+                </Field>
+
+                <Field label="المسمى الوظيفي">
+                  <div className="flex gap-2">
+                    <select
+                      value={editEmp.job_title_id ?? ''}
+                      onChange={(e) =>
+                        set('job_title_id', e.target.value ? Number(e.target.value) : null)
+                      }
+                      className="erp-input flex-1"
+                    >
+                      <option value="">— اختر المسمى —</option>
+                      {jobTitles.map((jt) => (
+                        <option key={jt.id} value={jt.id}>
+                          {jt.name_ar}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowInlineJt((v) => !v)}
+                      className="erp-btn erp-btn-ghost px-2 text-amber-400 border border-amber-500/30"
+                      title="إضافة مسمى جديد"
+                    >
+                      <Plus size={14} />
+                    </button>
                   </div>
-                )}
-              </Field>
+                  {showInlineJt && (
+                    <div className="mt-2 bg-white/5 rounded-lg p-3 space-y-2 border border-amber-500/20">
+                      <div className="text-xs text-amber-300 mb-1">مسمى وظيفي جديد</div>
+                      <input
+                        value={inlineJt.name_ar}
+                        onChange={(e) => setInlineJt((p) => ({ ...p, name_ar: e.target.value }))}
+                        className="erp-input w-full text-sm"
+                        placeholder="المسمى بالعربي *"
+                      />
+                      <input
+                        value={inlineJt.name_en}
+                        onChange={(e) => setInlineJt((p) => ({ ...p, name_en: e.target.value }))}
+                        className="erp-input w-full text-sm"
+                        placeholder="Job Title (English)"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => createInlineJt.mutate(inlineJt)}
+                          disabled={!inlineJt.name_ar.trim() || createInlineJt.isPending}
+                          className="erp-btn erp-btn-primary text-xs flex-1"
+                        >
+                          {createInlineJt.isPending ? 'جاري...' : 'إضافة'}
+                        </button>
+                        <button
+                          onClick={() => setShowInlineJt(false)}
+                          className="erp-btn erp-btn-ghost text-xs"
+                        >
+                          إلغاء
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </Field>
+              </div>
 
               {/* Hire Date & Branch */}
               <div className="grid grid-cols-2 gap-3">
@@ -1369,64 +1454,116 @@ export default function Employees() {
                 </Field>
               </div>
 
-              {/* Salary / Commission toggle */}
+              {/* Salary section — 3 modes */}
               <div className="bg-white/5 rounded-lg p-3 space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-white/50">نوع التعويض:</span>
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setCommissionMode(false)}
-                      className={`px-3 py-1 rounded-lg text-xs transition-all ${!commissionMode ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-white/40 hover:text-white/60'}`}
-                    >
-                      <Wallet size={11} className="inline ml-1" /> راتب ثابت
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCommissionMode(true)}
-                      className={`px-3 py-1 rounded-lg text-xs transition-all ${commissionMode ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'text-white/40 hover:text-white/60'}`}
-                    >
-                      <Percent size={11} className="inline ml-1" /> نسبة عمولة
-                    </button>
-                  </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-white/50 ml-1">الراتب:</span>
+                  {(
+                    [
+                      { v: 'fixed', label: 'راتب ثابت', icon: Wallet, color: 'emerald' },
+                      { v: 'commission', label: 'نسبة عمولة', icon: Percent, color: 'purple' },
+                      {
+                        v: 'fixed_plus_commission',
+                        label: 'راتب + عمولة',
+                        icon: Plus,
+                        color: 'amber',
+                      },
+                    ] as const
+                  ).map(({ v, label, icon: Icon, color }) => {
+                    const active = (editEmp.salary_type ?? 'fixed') === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => set('salary_type', v)}
+                        className={`px-3 py-1 rounded-lg text-xs transition-all ${
+                          active
+                            ? `bg-${color}-500/20 text-${color}-300 border border-${color}-500/30`
+                            : 'text-white/40 hover:text-white/60'
+                        }`}
+                      >
+                        <Icon size={11} className="inline ml-1" /> {label}
+                      </button>
+                    );
+                  })}
                 </div>
-                {!commissionMode ? (
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      value={editEmp.salary ?? 0}
-                      onChange={(e) => set('salary', Number(e.target.value))}
-                      className="erp-input flex-1"
-                      min={0}
-                      placeholder="0.00"
-                      style={{ minWidth: 0 }}
-                    />
-                    <select
-                      value={editEmp.currency ?? 'EGP'}
-                      onChange={(e) => set('currency', e.target.value)}
-                      className="erp-input"
-                      style={{ width: '90px', flexShrink: 0 }}
-                    >
-                      {['EGP', 'SAR', 'AED', 'USD'].map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
+
+                {/* Fixed-salary input (shown for fixed & fixed_plus_commission) */}
+                {(editEmp.salary_type ?? 'fixed') !== 'commission' && (
+                  <div>
+                    <div className="text-xs text-white/40 mb-1">الراتب الأساسي</div>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={editEmp.salary ?? 0}
+                        onChange={(e) => set('salary', Number(e.target.value))}
+                        className="erp-input flex-1"
+                        min={0}
+                        placeholder="0.00"
+                        style={{ minWidth: 0 }}
+                      />
+                      <select
+                        value={editEmp.currency ?? 'EGP'}
+                        onChange={(e) => set('currency', e.target.value)}
+                        className="erp-input"
+                        style={{ width: '90px', flexShrink: 0 }}
+                      >
+                        {['EGP', 'SAR', 'AED', 'USD'].map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="number"
-                      value={editEmp.commission_rate ?? ''}
-                      onChange={(e) => set('commission_rate', Number(e.target.value))}
-                      className="erp-input flex-1"
-                      min={0}
-                      max={100}
-                      placeholder="مثال: 5"
-                      style={{ minWidth: 0 }}
-                    />
-                    <span className="text-white/50 text-sm shrink-0">% من المبيعات</span>
+                )}
+
+                {/* Commission inputs (shown for commission & fixed_plus_commission) */}
+                {(editEmp.salary_type ?? 'fixed') !== 'fixed' && (
+                  <div className="space-y-2">
+                    <div className="text-xs text-white/40 mb-1">نسبة العمولة</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          value={editEmp.commission_rate ?? ''}
+                          onChange={(e) => set('commission_rate', Number(e.target.value))}
+                          className="erp-input w-full"
+                          min={0}
+                          max={100}
+                          placeholder="مثال: 5"
+                          style={{ minWidth: 0 }}
+                        />
+                        <span className="text-white/50 text-xs shrink-0">%</span>
+                      </div>
+                      <select
+                        value={editEmp.commission_basis ?? 'gross'}
+                        onChange={(e) => set('commission_basis', e.target.value as 'gross' | 'net')}
+                        className="erp-input"
+                        title="أساس حساب العمولة"
+                      >
+                        <option value="gross">من إجمالي الدخل</option>
+                        <option value="net">من صافي الربح</option>
+                      </select>
+                      <select
+                        value={editEmp.commission_scope_dept_id ?? ''}
+                        onChange={(e) =>
+                          set(
+                            'commission_scope_dept_id',
+                            e.target.value ? Number(e.target.value) : null
+                          )
+                        }
+                        className="erp-input"
+                        title="نطاق العمولة (قسم)"
+                      >
+                        <option value="">— كل الأقسام —</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name_ar}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1440,14 +1577,7 @@ export default function Employees() {
                   placeholder="العنوان الكامل"
                 />
               </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="المدينة">
-                  <input
-                    value={editEmp.city ?? ''}
-                    onChange={(e) => set('city', e.target.value)}
-                    className="erp-input w-full"
-                  />
-                </Field>
+              <div className="grid grid-cols-1 gap-3">
                 <Field label="الحساب البنكي">
                   <input
                     value={editEmp.bank_account ?? ''}
