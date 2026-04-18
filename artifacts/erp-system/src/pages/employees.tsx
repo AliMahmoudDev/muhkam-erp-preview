@@ -21,7 +21,6 @@ import {
   Briefcase,
   CalendarDays,
   Wallet,
-  ChevronRight,
   ChevronLeft,
   Banknote,
   MinusCircle,

@@ -2,7 +2,7 @@
  * InvoicePrint — فاتورة مطبوعة مع تفاصيل ضريبة القيمة المضافة
  * يُعرض في نافذة مستقلة عند الطباعة.
  */
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 
 interface InvoiceItem {
   name:      string;
