@@ -251,7 +251,7 @@ export default function Login() {
               }}
               style={{ width: "80px", height: "80px", objectFit: "contain",
                 filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.5)) brightness(1.1)" }}
-            />
+              className="border-t-[1px] border-r-[1px] border-b-[1px] border-l-[1px]" />
           </div>
 
           {/* Brand name */}
