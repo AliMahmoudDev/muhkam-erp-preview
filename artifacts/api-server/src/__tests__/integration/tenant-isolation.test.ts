@@ -177,18 +177,19 @@ afterAll(async () => {
     const saleIds = [saleAId, saleBId].filter(Number.isFinite);
     const purchaseIds = [purchaseAId, purchaseBId].filter(Number.isFinite);
     const allRefIds = [...saleIds, ...purchaseIds];
+    const allRefTexts = allRefIds.map(String);
 
     /* journal_entry_lines (FK: entry_id → journal_entries.id) */
-    if (allRefIds.length) {
+    if (allRefTexts.length) {
       await pool.query(
         `
         DELETE FROM journal_entry_lines
         WHERE entry_id IN (
           SELECT id FROM journal_entries
-          WHERE company_id = $2 AND reference_id = ANY($1::int[])
+          WHERE company_id = $2 AND reference = ANY($1::text[])
         )
       `,
-        [allRefIds, companyAId]
+        [allRefTexts, companyAId]
       );
     }
     await pool.query(
@@ -202,13 +203,13 @@ afterAll(async () => {
     );
 
     /* journal_entries */
-    if (allRefIds.length) {
+    if (allRefTexts.length) {
       await pool.query(
         `
         DELETE FROM journal_entries
-        WHERE company_id = $2 AND reference_id = ANY($1::int[])
+        WHERE company_id = $2 AND reference = ANY($1::text[])
       `,
-        [allRefIds, companyAId]
+        [allRefTexts, companyAId]
       );
     }
     await pool.query(`DELETE FROM journal_entries WHERE company_id = $1`, [companyBId]);
