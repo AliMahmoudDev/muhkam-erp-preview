@@ -892,6 +892,16 @@ export default function Employees() {
                       )}
                       <td className="p-3">
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => {
+                              setSelected(emp);
+                              setDetailTab('info');
+                            }}
+                            className="erp-btn erp-btn-ghost p-1 text-amber-400"
+                            title="التفاصيل"
+                          >
+                            <ChevronRight size={13} />
+                          </button>
                           {canManage && (
                             <>
                               <button
@@ -910,16 +920,6 @@ export default function Employees() {
                               </button>
                             </>
                           )}
-                          <button
-                            onClick={() => {
-                              setSelected(emp);
-                              setDetailTab('info');
-                            }}
-                            className="erp-btn erp-btn-ghost p-1 text-amber-400"
-                            title="التفاصيل"
-                          >
-                            <ChevronRight size={13} />
-                          </button>
                         </div>
                       </td>
                     </tr>
