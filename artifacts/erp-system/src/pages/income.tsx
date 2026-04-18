@@ -108,7 +108,7 @@ export default function Income() {
               <label className="block text-white/70 text-sm mb-1">الخزينة المستلِمة</label>
               <select className="glass-input w-full" value={formData.safe_id} onChange={e => setFormData({...formData, safe_id: e.target.value})}>
                 <option value="">-- بدون خزينة --</option>
-                {safes.map(s => <option key={s.id} value={s.id}>{s.name} ({formatCurrency(Number(s.balance))})</option>)}
+                {safes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
             <div>

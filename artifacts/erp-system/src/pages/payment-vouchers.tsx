@@ -197,7 +197,7 @@ export default function PaymentVouchers() {
               <select required className="glass-input w-full" value={form.safe_id}
                 onChange={e => setForm(f => ({ ...f, safe_id: e.target.value }))}>
                 <option value="">-- اختر الخزينة --</option>
-                {safes.map(s => <option key={s.id} value={s.id}>{s.name} ({formatCurrency(Number(s.balance))})</option>)}
+                {safes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
 

@@ -464,7 +464,7 @@ function SalesReturnsPanel() {
                       <label className="text-white/50 text-xs font-semibold block mb-1">الخزينة الصارفة *</label>
                       <select className="glass-input w-full appearance-none" value={safeId} onChange={e => setSafeId(e.target.value)}>
                         <option value="" className="bg-gray-900">— اختر خزينة —</option>
-                        {safes.map(s => <option key={s.id} value={String(s.id)} className="bg-gray-900">{s.name} ({formatCurrency(Number(s.balance))})</option>)}
+                        {safes.map(s => <option key={s.id} value={String(s.id)} className="bg-gray-900">{s.name}</option>)}
                       </select>
                     </div>
                   )}
@@ -566,7 +566,7 @@ function SalesReturnsPanel() {
                 <select required className="glass-input w-full appearance-none" value={standalone.safe_id}
                   onChange={e => setStandalone(f => ({ ...f, safe_id: e.target.value }))}>
                   <option value="" className="bg-gray-900">-- اختر خزينة --</option>
-                  {safes.map(s => <option key={s.id} value={String(s.id)} className="bg-gray-900">{s.name} ({formatCurrency(Number(s.balance))})</option>)}
+                  {safes.map(s => <option key={s.id} value={String(s.id)} className="bg-gray-900">{s.name}</option>)}
                 </select>
               </div>
             )}
@@ -1404,7 +1404,7 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
               ) : selectRow("الخزينة", <Vault className="w-3.5 h-3.5 text-amber-400/70" />,
                 <select className="bg-transparent text-white outline-none w-full appearance-none text-xs" value={safeId} onChange={e => setSafeId(e.target.value)}>
                   <option value="" className="bg-slate-900">-- اختر الخزينة --</option>
-                  {safes.map(s => <option key={s.id} value={s.id} className="bg-slate-900">{s.name} ({formatCurrency(Number(s.balance))})</option>)}
+                  {safes.map(s => <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>)}
                 </select>
               )}
             </div>
