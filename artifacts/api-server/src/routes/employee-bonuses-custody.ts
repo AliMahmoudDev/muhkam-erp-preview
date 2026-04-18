@@ -221,7 +221,12 @@ router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
   if (!existing) { res.status(404).json({ error: "العهدة غير موجودة" }); return; }
   if (existing.status === "settled") { res.status(409).json({ error: "العهدة مغلقة بالفعل" }); return; }
 
+  // التحقق من قفل الفترة لكلٍ من تاريخ التسوية وتاريخ كل بند
   await assertPeriodOpen(settledDate, req);
+  const uniqueLineDates = Array.from(new Set(lines.map((l) => l.line_date)));
+  for (const d of uniqueLineDates) {
+    if (d !== settledDate) await assertPeriodOpen(d, req);
+  }
 
   const original = Number(existing.amount);
   let returned = body["returned_amount"] != null ? Number(body["returned_amount"]) : Math.max(0, original - sumLines);
@@ -249,6 +254,17 @@ router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
     .where(and(eq(employeesTable.id, existing.employee_id), eq(employeesTable.company_id, companyId)));
 
   const result = await db.transaction(async (tx) => {
+    // قفل صف العهدة ومنع التسوية المتزامنة (single-writer)
+    const lockedRows = await tx.execute(sql`
+      SELECT id, status FROM ${employeeCustodyTable}
+      WHERE id = ${id} AND company_id = ${companyId}
+      FOR UPDATE
+    `);
+    const locked = (lockedRows as unknown as { rows: Array<{ id: number; status: string }> }).rows?.[0]
+      ?? (lockedRows as unknown as Array<{ id: number; status: string }>)[0];
+    if (!locked) throw httpError(404, "العهدة غير موجودة");
+    if (locked.status === "settled") throw httpError(409, "العهدة مغلقة بالفعل");
+
     let safe: typeof safesTable.$inferSelect | null = null;
     if (existing.safe_id) {
       const [s] = await tx.select().from(safesTable)
@@ -313,8 +329,13 @@ router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
         notes: (body["notes"] as string) ?? existing.notes,
         updated_at: new Date(),
       })
-      .where(and(eq(employeeCustodyTable.id, id), eq(employeeCustodyTable.company_id, companyId)))
+      .where(and(
+        eq(employeeCustodyTable.id, id),
+        eq(employeeCustodyTable.company_id, companyId),
+        eq(employeeCustodyTable.status, "open"),
+      ))
       .returning();
+    if (!updated) throw httpError(409, "العهدة مغلقة بالفعل");
     return updated;
   });
 
@@ -385,28 +406,32 @@ router.post("/employee-custody/:id/reimburse", wrap(async (req, res) => {
     res.status(400).json({ error: "اختر خزينة الصرف" }); return;
   }
 
-  const [custody] = await db.select().from(employeeCustodyTable)
-    .where(and(eq(employeeCustodyTable.id, id), eq(employeeCustodyTable.company_id, companyId)));
-  if (!custody) { res.status(404).json({ error: "العهدة غير موجودة" }); return; }
-  if (custody.status !== "settled") {
-    res.status(409).json({ error: "العهدة غير مغلقة بعد" }); return;
-  }
-  const due = n(custody.reimbursement_due);
-  if (due <= 0) {
-    res.status(409).json({ error: "لا توجد مستحقات لهذه العهدة" }); return;
-  }
-
   const today = new Date().toISOString().split("T")[0];
   await assertPeriodOpen(today, req);
 
-  const result = await db.transaction(async (tx) => {
+  const { result, due } = await db.transaction(async (tx) => {
+    // قفل صف العهدة لمنع الصرف المتزامن (idempotent)
+    const lockedRows = await tx.execute(sql`
+      SELECT id, status, reimbursement_due
+      FROM ${employeeCustodyTable}
+      WHERE id = ${id} AND company_id = ${companyId}
+      FOR UPDATE
+    `);
+    const locked =
+      (lockedRows as unknown as { rows: Array<{ id: number; status: string; reimbursement_due: string | number }> }).rows?.[0]
+      ?? (lockedRows as unknown as Array<{ id: number; status: string; reimbursement_due: string | number }>)[0];
+    if (!locked) throw httpError(404, "العهدة غير موجودة");
+    if (locked.status !== "settled") throw httpError(409, "العهدة غير مغلقة بعد");
+    const lockedDue = Number(locked.reimbursement_due ?? 0);
+    if (lockedDue <= 0) throw httpError(409, "لا توجد مستحقات لهذه العهدة");
+
     // خصم ذرّي مع فحص الرصيد + ملكية الشركة
     const updated = await tx.update(safesTable)
-      .set({ balance: sql`${safesTable.balance} - ${String(due)}` })
+      .set({ balance: sql`${safesTable.balance} - ${String(lockedDue)}` })
       .where(and(
         eq(safesTable.id, Number(safe_id)),
         eq(safesTable.company_id, companyId),
-        sql`${safesTable.balance} >= ${String(due)}`,
+        sql`${safesTable.balance} >= ${String(lockedDue)}`,
       ))
       .returning();
     const safe = updated[0];
@@ -419,20 +444,23 @@ router.post("/employee-custody/:id/reimburse", wrap(async (req, res) => {
       reference_id: id,
       safe_id: safe.id,
       safe_name: safe.name,
-      amount: String(due),
+      amount: String(lockedDue),
       direction: "out",
       description: notes ?? `صرف مستحقات عهدة #${id}`,
       date: today,
       company_id: companyId,
     });
+    // تصفير المستحقات بشرط بقائها كما هي (دفاع إضافي)
     const [row] = await tx.update(employeeCustodyTable)
       .set({ reimbursement_due: "0", updated_at: new Date() })
       .where(and(
         eq(employeeCustodyTable.id, id),
         eq(employeeCustodyTable.company_id, companyId),
+        sql`${employeeCustodyTable.reimbursement_due} = ${String(lockedDue)}`,
       ))
       .returning();
-    return row;
+    if (!row) throw httpError(409, "تم صرف المستحقات بالفعل بشكل متزامن");
+    return { result: row, due: lockedDue };
   });
 
   res.json({

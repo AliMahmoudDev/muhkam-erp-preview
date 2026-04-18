@@ -303,9 +303,21 @@ router.post("/salary-advances/:id/manual-payment", wrap(async (req, res) => {
   res.json({ ok: true, remaining_balance: newBalance, status: newStatus });
 }));
 
+/** التحقق من ملكية الموظف للشركة. يرجع true لو موجود ضمن نفس الشركة. */
+async function employeeBelongsToCompany(empId: number, companyId: number) {
+  const [row] = await db.select({ id: employeesTable.id }).from(employeesTable)
+    .where(and(eq(employeesTable.id, empId), eq(employeesTable.company_id, companyId)));
+  return !!row;
+}
+
 /* ── Outstanding Balance ──────────────────────────────────────── */
 router.get("/salary-advances/:employeeId/balance", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
   const empId = parseInt(String(req.params["employeeId"]), 10);
+  if (!(await employeeBelongsToCompany(empId, companyId))) {
+    res.status(404).json({ error: "الموظف غير موجود" }); return;
+  }
   const advances = await db.select({ remaining_balance: salaryAdvancesTable.remaining_balance, status: salaryAdvancesTable.status, currency: salaryAdvancesTable.currency })
     .from(salaryAdvancesTable)
     .where(and(eq(salaryAdvancesTable.employee_id, empId), sql`status IN ('active','approved')`));
@@ -316,7 +328,11 @@ router.get("/salary-advances/:employeeId/balance", wrap(async (req, res) => {
 /* ── Ledger ───────────────────────────────────────────────────── */
 router.get("/salary-advances/:employeeId/ledger", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
   const empId = parseInt(String(req.params["employeeId"]), 10);
+  if (!(await employeeBelongsToCompany(empId, companyId))) {
+    res.status(404).json({ error: "الموظف غير موجود" }); return;
+  }
   const rows = await db.select().from(salaryAdvanceLedgerTable)
     .where(eq(salaryAdvanceLedgerTable.employee_id, empId))
     .orderBy(desc(salaryAdvanceLedgerTable.ledger_date));
