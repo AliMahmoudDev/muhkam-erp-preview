@@ -41,7 +41,7 @@ const DEFAULTS: AppSettings = {
   fontFamily: 'Tajawal',
   fontSize: 'md',
   accentColor: 'amber',
-  companyName: 'مُحكم - MUHKAM ERP',
+  companyName: 'مُحكم | MUHKAM',
   companySlogan: 'الحلال = البركة',
   customLogo: '',
   loginBg: 'default',
@@ -230,7 +230,14 @@ function applySettings(s: AppSettings) {
 function loadSettings(): AppSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<AppSettings>;
+      if (parsed.companyName === 'Halal Tech' || parsed.companyName === 'مُحكم - MUHKAM ERP') {
+        parsed.companyName = DEFAULTS.companyName;
+      }
+      if (!parsed.companyName) parsed.companyName = DEFAULTS.companyName;
+      return { ...DEFAULTS, ...parsed };
+    }
   } catch {}
   return { ...DEFAULTS };
 }

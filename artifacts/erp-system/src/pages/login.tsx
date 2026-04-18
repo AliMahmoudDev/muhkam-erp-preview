@@ -262,10 +262,7 @@ export default function Login() {
             lineHeight: 1.1,
             fontFamily: "inherit",
           }}>
-            {settings.companyName
-              ? settings.companyName
-              : <><span style={{ color: "#fff" }}>مُحكم</span>{" "}<span style={{ color: "rgba(245,224,154,0.7)", fontSize: "22px" }}>|</span>{" "}<span>MUHKAM</span></>
-            }
+            {settings.companyName || "مُحكم | MUHKAM"}
           </h1>
 
           {/* Subtitle */}
