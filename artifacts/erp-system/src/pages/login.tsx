@@ -327,7 +327,7 @@ export default function Login() {
           fontSize: "11px", color: "rgba(212,175,55,0.4)",
           letterSpacing: "0.18em", fontWeight: 600,
         }}>
-          MUHKAM ERP v3.0 &nbsp;|&nbsp; Cairo, Egypt
+          MUHKAM ERP v2.0 &nbsp;|&nbsp; Cairo, Egypt
         </div>
       </div>
       {/* ════════════════════════════════════════════════════
