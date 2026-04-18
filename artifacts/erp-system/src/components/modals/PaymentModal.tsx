@@ -7,7 +7,6 @@ import { safeArray } from "@/lib/safe-data";
 import { authFetch } from "@/lib/auth-fetch";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useGetSettingsSafes } from "@workspace/api-client-react";
-import { formatCurrency } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import { SearchableSelect } from "@/components/searchable-select";
 import { ArrowUpFromLine, X } from "lucide-react";

@@ -137,10 +137,10 @@ jobs:
         run: pnpm --filter @workspace/api-client-react build
 
       - name: Lint backend
-        run: pnpm --filter @workspace/api-server lint -- --max-warnings=1000
+        run: pnpm --filter @workspace/api-server lint
 
       - name: Lint frontend
-        run: pnpm --filter @workspace/erp-system lint -- --max-warnings=1000
+        run: pnpm --filter @workspace/erp-system lint
 
       - name: Type check backend
         run: pnpm --filter @workspace/api-server type-check

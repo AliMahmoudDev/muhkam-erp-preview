@@ -229,7 +229,7 @@ router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
   }
 
   const original = Number(existing.amount);
-  let returned = body["returned_amount"] != null ? Number(body["returned_amount"]) : Math.max(0, original - sumLines);
+  const returned = body["returned_amount"] != null ? Number(body["returned_amount"]) : Math.max(0, original - sumLines);
   if (!isFinite(returned) || returned < 0) { res.status(400).json({ error: "المبلغ المرتجع غير صالح" }); return; }
 
   let reimbursement = 0;
