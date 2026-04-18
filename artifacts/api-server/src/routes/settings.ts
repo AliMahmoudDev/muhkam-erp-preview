@@ -161,7 +161,9 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
       warehouse_id: warehouse_id !== undefined ? (warehouse_id ? Number(warehouse_id) : null) : undefined,
       safe_id: safe_id !== undefined ? (safe_id ? Number(safe_id) : null) : undefined,
     })
-    .where(eq(erpUsersTable.id, id))
+    .where(companyId !== null
+      ? and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId))
+      : eq(erpUsersTable.id, id))
     .returning();
   res.json({ ...user, pin: "****" });
 }));
@@ -185,7 +187,11 @@ router.delete("/settings/users/:id", authenticate, requireRole("admin"), wrap(as
     res.status(403).json({ error: "لا يمكن حذف حساب المسؤول العام من هنا" }); return;
   }
 
-  await db.delete(erpUsersTable).where(eq(erpUsersTable.id, id));
+  await db.delete(erpUsersTable).where(
+    companyId !== null
+      ? and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId))
+      : eq(erpUsersTable.id, id)
+  );
   await writeAuditLog({
     action: "delete",
     record_type: "user",
