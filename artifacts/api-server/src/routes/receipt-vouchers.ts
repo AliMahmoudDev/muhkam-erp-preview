@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { db, receiptVouchersTable, customersTable, safesTable, transactionsTable, accountsTable, customerLedgerTable } from "@workspace/db";
 
 import { wrap, httpError } from "../lib/async-handler";
@@ -51,9 +51,14 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
   await assertPeriodOpen(date ?? null, req);
 
   const voucher = await db.transaction(async (tx) => {
-    const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, parseInt(safe_id)));
+    const [safe] = await tx.select().from(safesTable).where(and(
+      eq(safesTable.id, parseInt(safe_id)),
+      eq(safesTable.company_id, cid),
+    ));
     if (!safe) throw httpError(400, "الخزينة غير موجودة");
-    await tx.update(safesTable).set({ balance: String(Number(safe.balance) + amt) }).where(eq(safesTable.id, safe.id));
+    await tx.update(safesTable)
+      .set({ balance: sql`${safesTable.balance} + ${String(amt)}` })
+      .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cid)));
 
     if (customer_id) {
       const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, parseInt(customer_id)));
@@ -225,8 +230,22 @@ router.delete("/receipt-vouchers/:id", wrap(async (req, res) => {
     if (!v) throw httpError(404, "سند القبض غير موجود");
     if (v.posting_status === "posted") throw httpError(400, "لا يمكن حذف سند مرحَّل — استخدم الإلغاء");
 
-    const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, v.safe_id));
-    if (safe) await tx.update(safesTable).set({ balance: String(Number(safe.balance) - Number(v.amount)) }).where(eq(safesTable.id, safe.id));
+    const [safe] = await tx.select().from(safesTable).where(and(
+      eq(safesTable.id, v.safe_id),
+      eq(safesTable.company_id, cid),
+    ));
+    if (safe) {
+      // عكس قبض ⇒ خصم ذرّي بشرط كفاية الرصيد
+      const debited = await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} - ${String(Number(v.amount))}` })
+        .where(and(
+          eq(safesTable.id, safe.id),
+          eq(safesTable.company_id, cid),
+          sql`${safesTable.balance} >= ${String(Number(v.amount))}`,
+        ))
+        .returning();
+      if (!debited[0]) throw httpError(400, "رصيد الخزينة غير كافٍ لإلغاء سند القبض — تم صرف المبلغ بالفعل");
+    }
     if (v.customer_id) {
       const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, v.customer_id));
       if (cust) await tx.update(customersTable).set({ balance: String(Number(cust.balance) + Number(v.amount)) }).where(eq(customersTable.id, cust.id));

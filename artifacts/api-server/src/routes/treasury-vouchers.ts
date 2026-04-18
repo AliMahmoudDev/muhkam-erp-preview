@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { db, treasuryVouchersTable, safesTable, transactionsTable } from "@workspace/db";
 
-import { wrap } from "../lib/async-handler";
+import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 
 const router: IRouter = Router();
@@ -45,20 +45,32 @@ router.post("/treasury-vouchers", wrap(async (req, res) => {
   if (!type || !safe_id || !amount || !description) {
     res.status(400).json({ error: "البيانات غير مكتملة" }); return;
   }
-  const [safe] = await db.select().from(safesTable).where(eq(safesTable.id, parseInt(safe_id)));
+  const [safe] = await db.select().from(safesTable).where(and(
+    eq(safesTable.id, parseInt(safe_id)),
+    eq(safesTable.company_id, cid),
+  ));
   if (!safe) { res.status(404).json({ error: "الخزانة غير موجودة" }); return; }
 
   const amt = Number(amount);
-  const currentBal = Number(safe.balance);
-  if (type === "payment" && currentBal < amt) {
-    res.status(400).json({ error: `رصيد الخزانة غير كافٍ (${currentBal.toFixed(2)} ج.م)` }); return;
-  }
-
-  const newBalance = type === "receipt" ? currentBal + amt : currentBal - amt;
   const voucher_no = `${type === "receipt" ? "RV" : "PV"}-${Date.now()}`;
 
   const voucher = await db.transaction(async (tx) => {
-    await tx.update(safesTable).set({ balance: String(newBalance) }).where(eq(safesTable.id, safe.id));
+    // تحديث ذرّي مع شرط كفاية الرصيد للسحب
+    if (type === "receipt") {
+      await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} + ${String(amt)}` })
+        .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cid)));
+    } else {
+      const debited = await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} - ${String(amt)}` })
+        .where(and(
+          eq(safesTable.id, safe.id),
+          eq(safesTable.company_id, cid),
+          sql`${safesTable.balance} >= ${String(amt)}`,
+        ))
+        .returning();
+      if (!debited[0]) throw httpError(400, `رصيد الخزانة غير كافٍ (${Number(safe.balance).toFixed(2)} ج.م)`);
+    }
     const [v] = await tx.insert(treasuryVouchersTable).values({
       voucher_no, type,
       safe_id: safe.id, safe_name: safe.name,
@@ -86,15 +98,28 @@ router.delete("/treasury-vouchers/:id", wrap(async (req, res) => {
   const cid = getCid(req);
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const [v] = await db.select().from(treasuryVouchersTable)
-    .where(and(eq(treasuryVouchersTable.id, id), eq(treasuryVouchersTable.company_id, cid)));
-  if (!v) { res.status(404).json({ error: "غير موجود" }); return; }
-  const [safe] = await db.select().from(safesTable).where(eq(safesTable.id, v.safe_id));
-  if (safe) {
-    const reversal = v.type === "receipt" ? -Number(v.amount) : Number(v.amount);
-    await db.update(safesTable).set({ balance: String(Number(safe.balance) + reversal) }).where(eq(safesTable.id, safe.id));
-  }
-  await db.delete(treasuryVouchersTable).where(eq(treasuryVouchersTable.id, id));
+  await db.transaction(async (tx) => {
+    const [v] = await tx.select().from(treasuryVouchersTable)
+      .where(and(eq(treasuryVouchersTable.id, id), eq(treasuryVouchersTable.company_id, cid)));
+    if (!v) throw httpError(404, "غير موجود");
+    if (v.type === "receipt") {
+      // عكس قبض ⇒ خصم من الخزينة بشرط كفاية الرصيد
+      const debited = await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} - ${String(Number(v.amount))}` })
+        .where(and(
+          eq(safesTable.id, v.safe_id),
+          eq(safesTable.company_id, cid),
+          sql`${safesTable.balance} >= ${String(Number(v.amount))}`,
+        ))
+        .returning();
+      if (!debited[0]) throw httpError(400, "رصيد الخزانة غير كافٍ لإلغاء سند القبض — تم صرف المبلغ بالفعل");
+    } else {
+      await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} + ${String(Number(v.amount))}` })
+        .where(and(eq(safesTable.id, v.safe_id), eq(safesTable.company_id, cid)));
+    }
+    await tx.delete(treasuryVouchersTable).where(and(eq(treasuryVouchersTable.id, id), eq(treasuryVouchersTable.company_id, cid)));
+  });
   res.json({ success: true });
 }));
 

@@ -136,10 +136,22 @@ router.post("/expenses", wrap(async (req, res) => {
   const result = await db.transaction(async (tx) => {
     let safe: typeof safesTable.$inferSelect | null = null;
     if (safe_id) {
-      const [s] = await tx.select().from(safesTable).where(eq(safesTable.id, safe_id));
+      const cidPre = req.user?.company_id ?? undefined;
+      const [s] = await tx.select().from(safesTable).where(and(
+        eq(safesTable.id, safe_id),
+        ...(cidPre !== undefined ? [eq(safesTable.company_id, cidPre)] : []),
+      ));
       if (!s) throw httpError(400, "الخزينة غير موجودة");
-      if (Number(s.balance) < amt) throw httpError(400, `رصيد الخزينة غير كافٍ (${Number(s.balance).toFixed(2)} ج.م)`);
-      await tx.update(safesTable).set({ balance: String(Number(s.balance) - amt) }).where(eq(safesTable.id, s.id));
+      // خصم ذرّي مع شرط كفاية الرصيد لمنع التضارب المتزامن
+      const debited = await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} - ${String(amt)}` })
+        .where(and(
+          eq(safesTable.id, s.id),
+          ...(cidPre !== undefined ? [eq(safesTable.company_id, cidPre)] : []),
+          sql`${safesTable.balance} >= ${String(amt)}`,
+        ))
+        .returning();
+      if (!debited[0]) throw httpError(400, `رصيد الخزينة غير كافٍ (${Number(s.balance).toFixed(2)} ج.م)`);
       safe = s;
     }
     const companyId = req.user?.company_id ?? undefined;
@@ -200,11 +212,17 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
   await db.transaction(async (tx) => {
     const [exp] = await tx.select().from(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, req.user!.company_id!)));
     if (exp?.safe_id) {
-      const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, exp.safe_id));
+      const cidGuard = req.user!.company_id!;
+      const [safe] = await tx.select().from(safesTable).where(and(
+        eq(safesTable.id, exp.safe_id),
+        eq(safesTable.company_id, cidGuard),
+      ));
       if (safe) {
         deletedSafeId   = safe.id;
         deletedSafeName = safe.name;
-        await tx.update(safesTable).set({ balance: String(Number(safe.balance) + Number(exp.amount)) }).where(eq(safesTable.id, safe.id));
+        await tx.update(safesTable)
+          .set({ balance: sql`${safesTable.balance} + ${String(Number(exp.amount))}` })
+          .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cidGuard)));
       }
     }
     if (exp) {

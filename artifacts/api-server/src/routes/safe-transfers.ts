@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { db, safesTable, safeTransfersTable, transactionsTable } from "@workspace/db";
 
 import { wrap, httpError } from "../lib/async-handler";
@@ -51,19 +51,38 @@ router.post("/safe-transfers", wrap(async (req, res) => {
   const companyId: number = ((req as any).user.company_id as number);
 
   const result = await db.transaction(async (tx) => {
-    const [fromSafe] = await tx.select().from(safesTable)
-      .where(and(eq(safesTable.id, parseInt(from_safe_id)), eq(safesTable.company_id, companyId)));
-    const [toSafe] = await tx.select().from(safesTable)
-      .where(and(eq(safesTable.id, parseInt(to_safe_id)), eq(safesTable.company_id, companyId)));
-    if (!fromSafe) throw httpError(400, "خزينة المصدر غير موجودة أو لا تنتمي لشركتك");
-    if (!toSafe) throw httpError(400, "خزينة الوجهة غير موجودة أو لا تنتمي لشركتك");
-    if (Number(fromSafe.balance) < amt) throw httpError(400, `رصيد خزينة "${fromSafe.name}" غير كافٍ (${Number(fromSafe.balance).toFixed(2)} ج.م)`);
+    const fromId = parseInt(from_safe_id);
+    const toId   = parseInt(to_safe_id);
 
+    // قفل الصفّين بترتيب الـ id الأصغر أولاً لمنع الـ deadlock بين عمليتين متعاكستين
+    const [first, second] = fromId < toId ? [fromId, toId] : [toId, fromId];
+    const lockRes = await tx.execute(sql`
+      SELECT id, name, balance FROM ${safesTable}
+      WHERE id IN (${first}, ${second}) AND company_id = ${companyId}
+      ORDER BY id
+      FOR UPDATE
+    `);
+    const lockedRows = ((lockRes as unknown as { rows?: Array<{ id: number; name: string; balance: string }> }).rows
+      ?? (lockRes as unknown as Array<{ id: number; name: string; balance: string }>));
+    const fromSafe = lockedRows.find((r) => r.id === fromId);
+    const toSafe   = lockedRows.find((r) => r.id === toId);
+    if (!fromSafe) throw httpError(400, "خزينة المصدر غير موجودة أو لا تنتمي لشركتك");
+    if (!toSafe)   throw httpError(400, "خزينة الوجهة غير موجودة أو لا تنتمي لشركتك");
+
+    // خصم ذرّي مع شرط كفاية الرصيد
+    const debited = await tx.update(safesTable)
+      .set({ balance: sql`${safesTable.balance} - ${String(amt)}` })
+      .where(and(
+        eq(safesTable.id, fromSafe.id),
+        eq(safesTable.company_id, companyId),
+        sql`${safesTable.balance} >= ${String(amt)}`,
+      ))
+      .returning();
+    if (!debited[0]) {
+      throw httpError(400, `رصيد خزينة "${fromSafe.name}" غير كافٍ (${Number(fromSafe.balance).toFixed(2)} ج.م)`);
+    }
     await tx.update(safesTable)
-      .set({ balance: String(Number(fromSafe.balance) - amt) })
-      .where(and(eq(safesTable.id, fromSafe.id), eq(safesTable.company_id, companyId)));
-    await tx.update(safesTable)
-      .set({ balance: String(Number(toSafe.balance) + amt) })
+      .set({ balance: sql`${safesTable.balance} + ${String(amt)}` })
       .where(and(eq(safesTable.id, toSafe.id), eq(safesTable.company_id, companyId)));
 
     // ── سجل في جدول safe_transfers للتاريخ ─────────────────────────────────

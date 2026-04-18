@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { db, paymentVouchersTable, safesTable, customersTable, transactionsTable, accountsTable, customerLedgerTable } from "@workspace/db";
 
 import { wrap, httpError } from "../lib/async-handler";
@@ -51,11 +51,21 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
   await assertPeriodOpen(date ?? null, req);
 
   const voucher = await db.transaction(async (tx) => {
-    const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, parseInt(safe_id)));
+    const [safe] = await tx.select().from(safesTable).where(and(
+      eq(safesTable.id, parseInt(safe_id)),
+      eq(safesTable.company_id, cid),
+    ));
     if (!safe) throw httpError(400, "الخزينة غير موجودة");
-    const newSafeBal = Number(safe.balance) - amt;
-    if (newSafeBal < 0) throw httpError(400, "رصيد الخزينة غير كافٍ");
-    await tx.update(safesTable).set({ balance: String(newSafeBal) }).where(eq(safesTable.id, safe.id));
+    // خصم ذرّي مع شرط كفاية الرصيد لمنع التضارب المتزامن
+    const debited = await tx.update(safesTable)
+      .set({ balance: sql`${safesTable.balance} - ${String(amt)}` })
+      .where(and(
+        eq(safesTable.id, safe.id),
+        eq(safesTable.company_id, cid),
+        sql`${safesTable.balance} >= ${String(amt)}`,
+      ))
+      .returning();
+    if (!debited[0]) throw httpError(400, "رصيد الخزينة غير كافٍ");
 
     if (customer_id) {
       const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, parseInt(customer_id)));
@@ -227,8 +237,15 @@ router.delete("/payment-vouchers/:id", wrap(async (req, res) => {
     if (!v) throw httpError(404, "غير موجود");
     if (v.posting_status === "posted") throw httpError(400, "لا يمكن حذف سند مرحَّل — استخدم الإلغاء");
 
-    const [safe] = await tx.select().from(safesTable).where(eq(safesTable.id, v.safe_id));
-    if (safe) await tx.update(safesTable).set({ balance: String(Number(safe.balance) + Number(v.amount)) }).where(eq(safesTable.id, safe.id));
+    const [safe] = await tx.select().from(safesTable).where(and(
+      eq(safesTable.id, v.safe_id),
+      eq(safesTable.company_id, cid),
+    ));
+    if (safe) {
+      await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} + ${String(Number(v.amount))}` })
+        .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cid)));
+    }
 
     if (v.customer_id) {
       const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, v.customer_id));

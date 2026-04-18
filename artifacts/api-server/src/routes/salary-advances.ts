@@ -282,25 +282,50 @@ router.post("/salary-advances/:id/manual-payment", wrap(async (req, res) => {
 
   const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
-  const remaining = n(advance.remaining_balance);
-  if (amount > remaining) { res.status(400).json({ error: `المبلغ يتجاوز الرصيد المتبقي (${remaining})` }); return; }
 
-  const newBalance = remaining - amount;
-  const newStatus  = newBalance <= 0 ? "completed" : "active";
+  const result = await db.transaction(async (tx) => {
+    // قفل صف السلفة لمنع تسديدين متزامنين يتجاوزان الرصيد
+    const [locked] = await tx.execute(sql`
+      SELECT id, remaining_balance, status FROM ${salaryAdvancesTable}
+      WHERE id = ${id} AND company_id = ${companyId}
+      FOR UPDATE
+    `).then((r: any) => (r.rows ?? r) as Array<{ id: number; remaining_balance: string; status: string }>);
+    if (!locked) return { error: { status: 404, message: "السلفة غير موجودة" } };
+    const remaining = n(locked.remaining_balance);
+    if (amount > remaining) return { error: { status: 400, message: `المبلغ يتجاوز الرصيد المتبقي (${remaining})` } };
 
-  await db.update(salaryAdvancesTable).set({ remaining_balance: String(newBalance), status: newStatus, updated_at: new Date() }).where(eq(salaryAdvancesTable.id, id));
-  await db.insert(salaryAdvanceDeductionsTable).values({
-    salary_advance_id: id, deduction_amount: String(amount),
-    deduction_date: new Date().toISOString().split("T")[0], notes: notes ?? "دفعة يدوية",
+    const newBalance = remaining - amount;
+    const newStatus  = newBalance <= 0 ? "completed" : "active";
+
+    // تحديث ذرّي مع شرط أن الحالة لم تتغير ومن الرصيد كافٍ
+    const updated = await tx.update(salaryAdvancesTable)
+      .set({ remaining_balance: String(newBalance), status: newStatus, updated_at: new Date() })
+      .where(and(
+        eq(salaryAdvancesTable.id, id),
+        eq(salaryAdvancesTable.company_id, companyId),
+        sql`${salaryAdvancesTable.remaining_balance} >= ${String(amount)}`,
+      ))
+      .returning();
+    if (!updated[0]) return { error: { status: 409, message: "تعذّر السداد — الحالة تغيّرت، حاول مجدداً" } };
+
+    await tx.insert(salaryAdvanceDeductionsTable).values({
+      salary_advance_id: id, deduction_amount: String(amount),
+      deduction_date: new Date().toISOString().split("T")[0], notes: notes ?? "دفعة يدوية",
+    });
+    await tx.insert(salaryAdvanceLedgerTable).values({
+      employee_id: advance.employee_id, advance_id: id,
+      ledger_type: "manual_payment", amount: String(amount), balance: String(newBalance),
+      ledger_date: new Date().toISOString().split("T")[0], notes: notes ?? null,
+    });
+    return { ok: true, newBalance, newStatus };
   });
-  await db.insert(salaryAdvanceLedgerTable).values({
-    employee_id: advance.employee_id, advance_id: id,
-    ledger_type: "manual_payment", amount: String(amount), balance: String(newBalance),
-    ledger_date: new Date().toISOString().split("T")[0], notes: notes ?? null,
-  });
-  if (newStatus === "completed") await logHistory(id, "active", "completed", userId, "تم السداد الكامل");
 
-  res.json({ ok: true, remaining_balance: newBalance, status: newStatus });
+  if ("error" in result && result.error) {
+    res.status(result.error.status).json({ error: result.error.message });
+    return;
+  }
+  if (result.newStatus === "completed") await logHistory(id, "active", "completed", userId, "تم السداد الكامل");
+  res.json({ ok: true, remaining_balance: result.newBalance, status: result.newStatus });
 }));
 
 /** التحقق من ملكية الموظف للشركة. يرجع true لو موجود ضمن نفس الشركة. */
