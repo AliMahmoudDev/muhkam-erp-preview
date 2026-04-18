@@ -131,6 +131,10 @@ afterAll(async () => {
     }
 
     await pool.query(`DELETE FROM erp_users WHERE id = ANY($1::int[])`, [[userId, userBId].filter(Number.isFinite)]);
+    await pool.query(
+      `DELETE FROM accounts WHERE company_id = ANY($1::int[])`,
+      [[companyId, companyBId].filter(Number.isFinite)],
+    );
     await pool.query(`DELETE FROM companies WHERE id = ANY($1::int[])`, [[companyId, companyBId].filter(Number.isFinite)]);
   } catch (err) {
     console.error('[concurrency cleanup] error:', err);

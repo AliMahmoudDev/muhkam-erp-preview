@@ -136,18 +136,17 @@ router.post("/expenses", wrap(async (req, res) => {
   const result = await db.transaction(async (tx) => {
     let safe: typeof safesTable.$inferSelect | null = null;
     if (safe_id) {
-      const cidPre = req.user?.company_id ?? undefined;
-      const [s] = await tx.select().from(safesTable).where(and(
-        eq(safesTable.id, safe_id),
-        ...(cidPre !== undefined ? [eq(safesTable.company_id, cidPre)] : []),
-      ));
+      const cidPre = req.user?.company_id;
+      if (typeof cidPre !== "number") throw httpError(403, "تعذر تحديد الشركة");
+      const [s] = await tx.select().from(safesTable).where(eq(safesTable.id, safe_id));
       if (!s) throw httpError(400, "الخزينة غير موجودة");
+      if (s.company_id !== cidPre) throw httpError(403, "غير مسموح باستخدام هذه الخزينة");
       // خصم ذرّي مع شرط كفاية الرصيد لمنع التضارب المتزامن
       const debited = await tx.update(safesTable)
         .set({ balance: sql`${safesTable.balance} - ${String(amt)}` })
         .where(and(
           eq(safesTable.id, s.id),
-          ...(cidPre !== undefined ? [eq(safesTable.company_id, cidPre)] : []),
+          eq(safesTable.company_id, cidPre),
           sql`${safesTable.balance} >= ${String(amt)}`,
         ))
         .returning();

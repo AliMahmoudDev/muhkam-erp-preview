@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 import { db, safesTable, safeTransfersTable, transactionsTable } from "@workspace/db";
 
 import { wrap, httpError } from "../lib/async-handler";
@@ -49,11 +49,31 @@ router.post("/safe-transfers", wrap(async (req, res) => {
   const txDate = date ?? new Date().toISOString().split("T")[0];
 
   const companyId: number = ((req as any).user.company_id as number);
+  const fromId = parseInt(from_safe_id);
+  const toId   = parseInt(to_safe_id);
+  if (Number.isNaN(fromId) || Number.isNaN(toId)) {
+    res.status(400).json({ error: "معرف الخزينة غير صالح" });
+    return;
+  }
+
+  const precheckSafes = await db.select({
+    id: safesTable.id,
+    company_id: safesTable.company_id,
+  }).from(safesTable).where(inArray(safesTable.id, [fromId, toId]));
+  const fromSafe = precheckSafes.find((safe) => safe.id === fromId);
+  const toSafe = precheckSafes.find((safe) => safe.id === toId);
+  const crossTenantError = { error: "لا يمكن التحويل بين خزائن شركات مختلفة" };
+
+  if (!fromSafe || fromSafe.company_id !== companyId) {
+    res.status(403).json(crossTenantError);
+    return;
+  }
+  if (!toSafe || toSafe.company_id !== companyId) {
+    res.status(403).json(crossTenantError);
+    return;
+  }
 
   const result = await db.transaction(async (tx) => {
-    const fromId = parseInt(from_safe_id);
-    const toId   = parseInt(to_safe_id);
-
     // قفل الصفّين بترتيب الـ id الأصغر أولاً لمنع الـ deadlock بين عمليتين متعاكستين
     const [first, second] = fromId < toId ? [fromId, toId] : [toId, fromId];
     const lockRes = await tx.execute(sql`
