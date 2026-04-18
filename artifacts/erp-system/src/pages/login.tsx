@@ -270,7 +270,7 @@ export default function Login() {
             fontSize: "14px", color: "rgba(212,175,55,0.75)",
             marginBottom: "38px", lineHeight: 1.7, fontWeight: 500,
           }}>
-            {settings.companySlogan || "نظام إدارة مُحكّم لمستقبل أعمالك"}
+            {settings.companySlogan || "نظام إدارة مُحكم، لمستقبل أحكم"}
           </p>
 
           {/* Feature 2×2 grid */}
@@ -330,7 +330,6 @@ export default function Login() {
           MUHKAM ERP v3.0 &nbsp;|&nbsp; Cairo, Egypt
         </div>
       </div>
-
       {/* ════════════════════════════════════════════════════
           FORM PANEL  (right in LTR, left in RTL)
       ════════════════════════════════════════════════════ */}
@@ -511,7 +510,6 @@ export default function Login() {
           &copy; {new Date().getFullYear()} MUHKAM Enterprise Solutions &nbsp;-&nbsp; جميع الحقوق محفوظة
         </p>
       </div>
-
       {/* ════════════════════════════════════════════════════
           Global styles
       ════════════════════════════════════════════════════ */}
@@ -673,7 +671,6 @@ function LoginForm({
 
   return (
     <form onSubmit={onSubmit} noValidate>
-
       {/* Heading */}
       <div style={{ marginBottom: "28px", textAlign: "center" }}>
         <div style={{ fontSize: "36px", marginBottom: "6px" }}>🤩</div>
@@ -687,7 +684,6 @@ function LoginForm({
           سجّل دخولك للوصول إلى لوحة التحكم
         </p>
       </div>
-
       {/* ── Username ─────────────────────────────────── */}
       <div style={{ marginBottom: "18px" }}>
         <label style={{
@@ -778,7 +774,6 @@ function LoginForm({
           </div>
         )}
       </div>
-
       {/* ── PIN ──────────────────────────────────────── */}
       <div style={{ marginBottom: "22px" }}>
         <label style={{
@@ -842,7 +837,6 @@ function LoginForm({
           </button>
         </div>
       </div>
-
       {/* ── Error ────────────────────────────────────── */}
       {error && (
         <div
@@ -862,7 +856,6 @@ function LoginForm({
           <span>{error}</span>
         </div>
       )}
-
       {/* ── Submit button ─────────────────────────────── */}
       <button
         type="submit"
@@ -898,10 +891,9 @@ function LoginForm({
             <span>جاري التحقق...</span>
           </>
         ) : (
-          <span>🔐 دخول آمن (MUHKAM) ←</span>
+          <span>🔐 دخول آمن (مُحكم) ←</span>
         )}
       </button>
-
       {/* ── Quick-select avatars ───────────────────────── */}
       {users.length > 0 && (
         <div style={{ borderTop: "1px solid rgba(212,175,55,0.2)", paddingTop: "18px" }}>

@@ -42,7 +42,7 @@ const DEFAULTS: AppSettings = {
   fontSize: 'md',
   accentColor: 'amber',
   companyName: 'مُحكم | MUHKAM',
-  companySlogan: 'الحلال = البركة',
+  companySlogan: 'نظام إدارة مُحكم، لمستقبل أحكم',
   customLogo: '',
   loginBg: 'default',
   loginBgImage: '',
@@ -236,6 +236,9 @@ function loadSettings(): AppSettings {
         parsed.companyName = DEFAULTS.companyName;
       }
       if (!parsed.companyName) parsed.companyName = DEFAULTS.companyName;
+      if (parsed.companySlogan === 'الحلال = البركة' || parsed.companySlogan === 'أدِر عملك باحترافية وثقة كاملة') {
+        parsed.companySlogan = DEFAULTS.companySlogan;
+      }
       return { ...DEFAULTS, ...parsed };
     }
   } catch {}
