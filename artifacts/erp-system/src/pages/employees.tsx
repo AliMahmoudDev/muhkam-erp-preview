@@ -809,7 +809,7 @@ export default function Employees() {
             <select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value === '' ? '' : Number(e.target.value))}
-              className="erp-input text-sm pl-[8px] pr-[8px]"
+              className="erp-input text-sm pl-[8px] pr-[8px] ml-[250px] mr-[250px]"
             >
               <option value="">كل الأقسام</option>
               {departments.map((d) => (
