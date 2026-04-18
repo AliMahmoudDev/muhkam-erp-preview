@@ -12,18 +12,25 @@ import { hashPin, isHashed } from "./hash";
 
 export async function seedDefaults(): Promise<void> {
   try {
-    /* ── 1. Ensure default company exists ──────────────────────── */
-    const companies = await db.select({ id: companiesTable.id }).from(companiesTable).limit(1);
-    if (companies.length === 0) {
-      await db.insert(companiesTable).values({
+    /* ── 1. Ensure default company exists — capture its real ID ─── */
+    let [defaultCompany] = await db
+      .select({ id: companiesTable.id })
+      .from(companiesTable)
+      .limit(1);
+
+    if (!defaultCompany) {
+      const [inserted] = await db.insert(companiesTable).values({
         name:       "الشركة الافتراضية",
         plan_type:  "professional",
         is_active:  true,
         start_date: new Date().toISOString().split("T")[0],
         end_date:   new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      });
+      }).returning({ id: companiesTable.id });
+      defaultCompany = inserted;
       logger.info("Default company created");
     }
+
+    const defaultCompanyId = defaultCompany.id;
 
     /* ── 2. Ensure super_admin user exists ─────────────────────── */
     const [superAdmin] = await db
@@ -55,11 +62,11 @@ export async function seedDefaults(): Promise<void> {
       logger.info(`Super admin PIN updated from SUPER_ADMIN_PIN env var`);
     }
 
-    /* ── 3. Ensure default company_admin exists (company_id = 1) ── */
+    /* ── 3. Ensure default company_admin exists (dynamic company ID) */
     const [companyUsers] = await db
       .select({ id: erpUsersTable.id })
       .from(erpUsersTable)
-      .where(eq(erpUsersTable.company_id, 1))
+      .where(eq(erpUsersTable.company_id, defaultCompanyId))
       .limit(1);
 
     if (!companyUsers) {
@@ -70,17 +77,17 @@ export async function seedDefaults(): Promise<void> {
         username:   "admin",
         pin:        hashed,
         role:       "admin",
-        company_id: 1,
+        company_id: defaultCompanyId,
         active:     true,
       });
-      logger.info(`Default company admin created — username: admin, PIN: ${defaultAdminPin}`);
+      logger.info(`Default company admin created — username: admin, PIN: ${defaultAdminPin} (company_id: ${defaultCompanyId})`);
     } else if (process.env.DEFAULT_ADMIN_PIN) {
       /* If DEFAULT_ADMIN_PIN env var is explicitly set, update the PIN on startup */
       const hashed = await hashPin(process.env.DEFAULT_ADMIN_PIN);
       const [firstCompanyAdmin] = await db
         .select({ id: erpUsersTable.id })
         .from(erpUsersTable)
-        .where(eq(erpUsersTable.company_id, 1))
+        .where(eq(erpUsersTable.company_id, defaultCompanyId))
         .limit(1);
       if (firstCompanyAdmin) {
         await db

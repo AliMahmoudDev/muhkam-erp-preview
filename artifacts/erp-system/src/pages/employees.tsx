@@ -1061,7 +1061,7 @@ export default function Employees() {
                             متبقي: <span className="font-mono">{fmt(l.remaining_balance)}</span>
                           </div>
                         )}
-                        {l.reason && (
+                        {!!l.reason && (
                           <div className="text-xs text-white/40">{String(l.reason)}</div>
                         )}
                         <div className="text-xs text-white/30 font-mono">
@@ -1130,7 +1130,7 @@ export default function Employees() {
                             {String(d.ledger_date ?? '')}
                           </span>
                         </div>
-                        {d.notes && (
+                        {!!d.notes && (
                           <div className="text-xs text-white/50 mt-1">{String(d.notes)}</div>
                         )}
                       </div>

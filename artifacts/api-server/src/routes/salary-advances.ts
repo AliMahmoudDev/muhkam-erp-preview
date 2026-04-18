@@ -133,6 +133,7 @@ router.post("/salary-advances", wrap(async (req, res) => {
 
   const requiresApproval = settings?.requires_approval !== false;
   const [advance] = await db.insert(salaryAdvancesTable).values({
+    company_id: companyId,
     employee_id: Number(employee_id), requested_date: new Date().toISOString().split("T")[0],
     requested_amount: String(reqAmt), advance_type: String(advance_type),
     reason: String(reason), deduct_from: df, status: requiresApproval ? "pending" : "approved",

@@ -63,18 +63,17 @@ function extractInvoices(body: unknown): InvoiceItem[] {
 /* ── Setup ──────────────────────────────────────────────────────── */
 
 beforeAll(async () => {
-  /* 0. Wipe all tenant data so sequences reset and no stale rows cause
-   *    duplicate-key errors on the next run. CASCADE removes dependent rows
-   *    (warehouses, erp_users, products, sales, purchases, …) automatically. */
-  await pool.query('TRUNCATE TABLE companies RESTART IDENTITY CASCADE');
-
-  /* 1. Insert company A (tenant A — the "main" company).
-   *    No hardcoded ID: let the sequence assign it and capture via RETURNING. */
-  const coARes = await pool.query<{ id: number }>(`
+  /* 1. Insert company A (tenant A) with a unique prefix so parallel test
+   *    files do not interfere with each other.  Never TRUNCATE companies —
+   *    that would destroy data owned by concurrently-running test suites. */
+  const coARes = await pool.query<{ id: number }>(
+    `
     INSERT INTO companies (name, plan_type, start_date, end_date, is_active)
-    VALUES ('HalalTech', 'pro', '2020-01-01', '2099-12-31', true)
+    VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true)
     RETURNING id
-  `);
+  `,
+    [`${PREFIX}_CompanyA`]
+  );
   companyAId = coARes.rows[0].id;
 
   /* 2. Insert a fresh, isolated test company for tenant B */

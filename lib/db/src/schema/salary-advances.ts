@@ -25,6 +25,7 @@ export type SalaryAdvanceSettings = typeof salaryAdvanceSettingsTable.$inferSele
 /* ── Salary Advances ─────────────────────────────────────────── */
 export const salaryAdvancesTable = pgTable("salary_advances", {
   id:               serial("id").primaryKey(),
+  company_id:       integer("company_id").notNull().default(1).references(() => companiesTable.id),
   employee_id:      integer("employee_id").notNull().references(() => employeesTable.id),
   requested_date:   text("requested_date").notNull(),
   requested_amount: numeric("requested_amount", { precision: 14, scale: 2 }).notNull(),
