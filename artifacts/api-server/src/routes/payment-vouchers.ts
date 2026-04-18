@@ -68,9 +68,15 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
     if (!debited[0]) throw httpError(400, "رصيد الخزينة غير كافٍ");
 
     if (customer_id) {
-      const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, parseInt(customer_id)));
+      const [cust] = await tx.select().from(customersTable).where(and(
+        eq(customersTable.id, parseInt(customer_id)),
+        eq(customersTable.company_id, cid),
+      ));
       if (cust) {
-        await tx.update(customersTable).set({ balance: String(Number(cust.balance) + amt) }).where(eq(customersTable.id, cust.id));
+        await tx.update(customersTable).set({ balance: String(Number(cust.balance) + amt) }).where(and(
+          eq(customersTable.id, cust.id),
+          eq(customersTable.company_id, cid),
+        ));
       }
     }
 
@@ -248,8 +254,14 @@ router.delete("/payment-vouchers/:id", wrap(async (req, res) => {
     }
 
     if (v.customer_id) {
-      const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, v.customer_id));
-      if (cust) await tx.update(customersTable).set({ balance: String(Number(cust.balance) - Number(v.amount)) }).where(eq(customersTable.id, cust.id));
+      const [cust] = await tx.select().from(customersTable).where(and(
+        eq(customersTable.id, v.customer_id),
+        eq(customersTable.company_id, cid),
+      ));
+      if (cust) await tx.update(customersTable).set({ balance: String(Number(cust.balance) - Number(v.amount)) }).where(and(
+        eq(customersTable.id, cust.id),
+        eq(customersTable.company_id, cid),
+      ));
       await tx.insert(customerLedgerTable).values({
         customer_id: v.customer_id,
         type: "payment_voucher",

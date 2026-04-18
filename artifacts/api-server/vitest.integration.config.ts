@@ -10,5 +10,8 @@ export default defineConfig({
     hookTimeout: 60000,
     pool:        'forks',
     isolate:     true,
+    // تشغيل ملفات الاختبار بالتسلسل لمنع التعارض على قاعدة البيانات
+    maxWorkers:  1,
+    minWorkers:  1,
   },
 });

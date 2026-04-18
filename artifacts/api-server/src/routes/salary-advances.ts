@@ -345,7 +345,11 @@ router.get("/salary-advances/:employeeId/balance", wrap(async (req, res) => {
   }
   const advances = await db.select({ remaining_balance: salaryAdvancesTable.remaining_balance, status: salaryAdvancesTable.status, currency: salaryAdvancesTable.currency })
     .from(salaryAdvancesTable)
-    .where(and(eq(salaryAdvancesTable.employee_id, empId), sql`status IN ('active','approved')`));
+    .where(and(
+      eq(salaryAdvancesTable.employee_id, empId),
+      eq(salaryAdvancesTable.company_id, companyId),
+      sql`${salaryAdvancesTable.status} IN ('active','approved')`,
+    ));
   const total = advances.reduce((s, a) => s + n(a.remaining_balance), 0);
   res.json({ employee_id: empId, outstanding_balance: total, currency: advances[0]?.currency ?? "EGP", advances_count: advances.length });
 }));
@@ -358,7 +362,27 @@ router.get("/salary-advances/:employeeId/ledger", wrap(async (req, res) => {
   if (!(await employeeBelongsToCompany(empId, companyId))) {
     res.status(404).json({ error: "الموظف غير موجود" }); return;
   }
-  const rows = await db.select().from(salaryAdvanceLedgerTable)
+  // الحماية مسبقة via employeeBelongsToCompany — نضيف فلترة الـ advance_id عبر JOIN دفاعياً
+  const rows = await db
+    .select({
+      id: salaryAdvanceLedgerTable.id,
+      employee_id: salaryAdvanceLedgerTable.employee_id,
+      advance_id: salaryAdvanceLedgerTable.advance_id,
+      ledger_type: salaryAdvanceLedgerTable.ledger_type,
+      amount: salaryAdvanceLedgerTable.amount,
+      balance: salaryAdvanceLedgerTable.balance,
+      ledger_date: salaryAdvanceLedgerTable.ledger_date,
+      notes: salaryAdvanceLedgerTable.notes,
+      created_at: salaryAdvanceLedgerTable.created_at,
+    })
+    .from(salaryAdvanceLedgerTable)
+    .innerJoin(
+      salaryAdvancesTable,
+      and(
+        eq(salaryAdvancesTable.id, salaryAdvanceLedgerTable.advance_id),
+        eq(salaryAdvancesTable.company_id, companyId),
+      ),
+    )
     .where(eq(salaryAdvanceLedgerTable.employee_id, empId))
     .orderBy(desc(salaryAdvanceLedgerTable.ledger_date));
   res.json(rows.map(r => ({ ...r, amount: n(r.amount), balance: n(r.balance), created_at: fmt(r.created_at) })));

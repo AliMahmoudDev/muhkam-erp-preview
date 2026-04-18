@@ -61,10 +61,16 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
       .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cid)));
 
     if (customer_id) {
-      const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, parseInt(customer_id)));
+      const [cust] = await tx.select().from(customersTable).where(and(
+        eq(customersTable.id, parseInt(customer_id)),
+        eq(customersTable.company_id, cid),
+      ));
       if (cust) {
         const newBalance = Number(cust.balance) - amt;
-        await tx.update(customersTable).set({ balance: String(newBalance) }).where(eq(customersTable.id, cust.id));
+        await tx.update(customersTable).set({ balance: String(newBalance) }).where(and(
+          eq(customersTable.id, cust.id),
+          eq(customersTable.company_id, cid),
+        ));
       }
     }
 
@@ -247,8 +253,14 @@ router.delete("/receipt-vouchers/:id", wrap(async (req, res) => {
       if (!debited[0]) throw httpError(400, "رصيد الخزينة غير كافٍ لإلغاء سند القبض — تم صرف المبلغ بالفعل");
     }
     if (v.customer_id) {
-      const [cust] = await tx.select().from(customersTable).where(eq(customersTable.id, v.customer_id));
-      if (cust) await tx.update(customersTable).set({ balance: String(Number(cust.balance) + Number(v.amount)) }).where(eq(customersTable.id, cust.id));
+      const [cust] = await tx.select().from(customersTable).where(and(
+        eq(customersTable.id, v.customer_id),
+        eq(customersTable.company_id, cid),
+      ));
+      if (cust) await tx.update(customersTable).set({ balance: String(Number(cust.balance) + Number(v.amount)) }).where(and(
+        eq(customersTable.id, cust.id),
+        eq(customersTable.company_id, cid),
+      ));
 
       await tx.delete(customerLedgerTable)
         .where(and(
