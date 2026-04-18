@@ -11,6 +11,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { sanitizeBody } from "./middleware/auth";
 import { makeRateLimitStore } from "./lib/rate-limit-store";
+import { recordRequest } from "./lib/request-counter";
 
 const app: Express = express();
 
@@ -128,6 +129,13 @@ app.use(sanitizeBody);
 
 /* ── HTTP Parameter Pollution prevention ───────────────────── */
 app.use(hpp());
+
+/* ── Request metrics collector ──────────────────────────────── */
+app.use((_req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => recordRequest(res.statusCode, Date.now() - start));
+  next();
+});
 
 /* Apply general limiter to all API routes */
 app.use("/api", generalLimiter);

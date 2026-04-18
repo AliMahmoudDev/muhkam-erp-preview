@@ -13,6 +13,8 @@ import { Spinner } from '@/components/ui/spinner';
 import NotFound from '@/pages/not-found';
 import AccessDenied from '@/pages/access-denied';
 import SubscriptionExpired from '@/pages/subscription-expired';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { OfflineBanner } from '@/components/offline-banner';
 
 /* ── Lazy-loaded pages ─────────────────────────────────── */
 const Login = lazy(() => import('@/pages/login'));
@@ -169,20 +171,23 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AppSettingsProvider>
-          <WarehouseProvider>
-            <AuthProvider>
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-                <Router />
-              </WouterRouter>
-              <Toaster />
-            </AuthProvider>
-          </WarehouseProvider>
-        </AppSettingsProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AppSettingsProvider>
+            <WarehouseProvider>
+              <AuthProvider>
+                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+                  <Router />
+                </WouterRouter>
+                <Toaster />
+                <OfflineBanner />
+              </AuthProvider>
+            </WarehouseProvider>
+          </AppSettingsProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

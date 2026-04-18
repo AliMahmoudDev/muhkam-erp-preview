@@ -54,6 +54,29 @@ Pushed to DB via `pnpm run push` in `lib/db`:
 - `accounts`: `accounts_company_id_idx`
 - `journal_entries`: `journal_entries_company_id_idx`, `journal_entries_company_date_idx`
 
+### Background Job Queue (`job-queue.ts`)
+Lightweight in-memory async job queue (no Redis dependency in dev):
+- `enqueueJob(type, payload, handler)` → returns `jobId` immediately, runs handler via `setImmediate`
+- Progress tracking (0-100%), job cap at 1000 entries (auto-evict oldest)
+- `getQueueStats()` for monitoring dashboard
+
+### Async Payroll Processing
+- `POST /api/payroll/periods/:id/process-async` → returns `{ job_id, status: "queued" }` instantly (HTTP 202)
+- `GET /api/payroll/jobs/:jobId` → poll for job status, progress, and result
+- Payroll processing runs in background without blocking API response
+
+### Metrics Endpoint (`/api/metrics`) — Admin only
+Returns real-time operational data: health status, request counts, status code distribution, p50/p95/p99 latency percentiles, job queue stats, memory usage.
+- Backed by `request-counter.ts` middleware hooked on `res.finish` event
+- Admin + super_admin access only
+
+### Frontend Polish (T008)
+- `ErrorBoundary` component: catches React render errors, shows Arabic recovery UI with retry button
+- `OfflineBanner` component: fixed toast appears when offline, green "connection restored" toast for 3 s on reconnect
+- Both components wired into `App.tsx` root level
+- Dashboard: rich animated `db-skeleton` loader (already existed)
+- Products/Sales: `TableSkeleton` component for table loading states (already existed)
+
 ---
 
 ## Multi-Tenant Hardening (April 2026)

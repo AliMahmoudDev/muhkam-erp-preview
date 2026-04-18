@@ -17,6 +17,7 @@ import {
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { writeAuditLog } from "../lib/audit-log";
+import { enqueueJob, getJobStatus } from "../lib/job-queue";
 
 const router: IRouter = Router();
 
@@ -404,6 +405,132 @@ router.post("/payroll/periods/:id/approve", wrap(async (req, res) => {
   if (!row) { res.status(409).json({ error: "لا يمكن اعتماد هذه الفترة في حالتها الحالية" }); return; }
   await db.update(payrollRecordsTable).set({ status: "approved", updated_at: new Date() }).where(eq(payrollRecordsTable.payroll_period_id, id));
   res.json({ ok: true, status: "approved" });
+}));
+
+/* ── Async payroll processing (fire & forget) ─────────────────── */
+router.post("/payroll/periods/:id/process-async", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
+  const userId    = req.user?.id ?? null;
+  const periodId  = parseInt(String(req.params["id"]), 10);
+
+  const [period] = await db.select({ id: payrollPeriodsTable.id, status: payrollPeriodsTable.status })
+    .from(payrollPeriodsTable)
+    .where(and(eq(payrollPeriodsTable.id, periodId), eq(payrollPeriodsTable.company_id, companyId)));
+  if (!period) { res.status(404).json({ error: "الفترة غير موجودة" }); return; }
+  if (period.status !== "draft") { res.status(409).json({ error: "تمت معالجة هذه الفترة مسبقاً" }); return; }
+
+  const jobId = enqueueJob("payroll_process", { periodId, companyId, userId }, async (_job, updateProgress) => {
+    // Delegate to the synchronous processor by calling the shared payroll logic
+    const employees = await db.select().from(employeesTable)
+      .where(and(eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at), eq(employeesTable.employment_status, "active")));
+
+    updateProgress(5);
+
+    const year = new Date().getFullYear().toString();
+    const [taxBrackets, contributions] = await Promise.all([
+      db.select().from(taxBracketsTable)
+        .where(and(eq(taxBracketsTable.company_id, companyId), eq(taxBracketsTable.fiscal_year, year)))
+        .orderBy(taxBracketsTable.min_salary),
+      db.select().from(statutoryContributionsTable)
+        .where(and(eq(statutoryContributionsTable.company_id, companyId), eq(statutoryContributionsTable.is_active, true))),
+    ]);
+
+    updateProgress(10);
+    const total = employees.length;
+    let processed = 0;
+
+    for (const emp of employees) {
+      const existing = await db.select({ id: payrollRecordsTable.id }).from(payrollRecordsTable)
+        .where(and(eq(payrollRecordsTable.payroll_period_id, periodId), eq(payrollRecordsTable.employee_id, emp.id)));
+      if (existing.length > 0) { processed++; continue; }
+
+      const baseSalary = Number(emp.salary ?? 0);
+      if (baseSalary <= 0) { processed++; continue; }
+      const grossSalary = baseSalary;
+      const lineItems: Array<{ component_name: string; component_type: string; amount: number; description?: string }> = [];
+      lineItems.push({ component_name: "الراتب الأساسي", component_type: "base", amount: baseSalary });
+
+      let totalDeductions = 0;
+      for (const contrib of contributions) {
+        const empDeduction = grossSalary * Number(contrib.employee_percentage) / 100;
+        if (empDeduction > 0) {
+          lineItems.push({ component_name: contrib.name_ar, component_type: "deduction", amount: -empDeduction });
+          totalDeductions += empDeduction;
+        }
+      }
+
+      let taxAmount = 0;
+      for (const bracket of taxBrackets) {
+        const min = Number(bracket.min_salary);
+        const max = bracket.max_salary != null ? Number(bracket.max_salary) : Infinity;
+        const rate = Number(bracket.tax_rate);
+        if (grossSalary > min) taxAmount += (Math.min(grossSalary, max) - min) * rate / 100;
+      }
+      if (taxAmount > 0) lineItems.push({ component_name: "ضريبة الدخل", component_type: "tax", amount: -taxAmount });
+
+      const advances = await db.select().from(salaryAdvancesTable)
+        .where(and(eq(salaryAdvancesTable.employee_id, emp.id), eq(salaryAdvancesTable.status, "active")));
+      let advanceDeductions = 0;
+      for (const adv of advances) {
+        const deductAmt = Math.min(Number(adv.remaining_balance ?? 0), Number(adv.approved_amount ?? 0));
+        if (deductAmt > 0) {
+          lineItems.push({ component_name: `خصم سلفة #${adv.id}`, component_type: "advance", amount: -deductAmt });
+          advanceDeductions += deductAmt;
+        }
+      }
+
+      const [period2] = await db.select({ start_date: payrollPeriodsTable.start_date })
+        .from(payrollPeriodsTable).where(eq(payrollPeriodsTable.id, periodId));
+      const periodMonth = (period2?.start_date ?? "").substring(0, 7);
+      const [incentiveSummary] = await db.select().from(monthlyIncentiveSummaryTable)
+        .where(and(eq(monthlyIncentiveSummaryTable.employee_id, emp.id), eq(monthlyIncentiveSummaryTable.month, periodMonth)));
+      let incentiveAmount = 0;
+      if (incentiveSummary?.status === "pending") {
+        incentiveAmount = Number(incentiveSummary.total_accrued ?? 0);
+        if (incentiveAmount > 0) lineItems.push({ component_name: "الحوافز الشهرية", component_type: "incentive", amount: incentiveAmount });
+      }
+
+      const netSalary = Math.max(0, grossSalary - totalDeductions - taxAmount - advanceDeductions + incentiveAmount);
+      const [record] = await db.insert(payrollRecordsTable).values({
+        payroll_period_id: periodId, employee_id: emp.id,
+        gross_salary: String(grossSalary), total_allowances: "0",
+        total_deductions: String(totalDeductions), tax_amount: String(taxAmount),
+        net_salary: String(netSalary), currency: emp.currency ?? "EGP",
+        advance_deductions: String(advanceDeductions), incentive_amount: String(incentiveAmount), status: "draft",
+      }).returning();
+      await db.insert(payrollLineItemsTable).values(
+        lineItems.map(li => ({ payroll_record_id: record.id, component_name: li.component_name, component_type: li.component_type, amount: String(li.amount), description: li.description ?? null }))
+      );
+      if (incentiveSummary && incentiveAmount > 0) {
+        await db.update(monthlyIncentiveSummaryTable)
+          .set({ status: "included_in_payroll", included_in_payroll_record_id: record.id, updated_at: new Date() })
+          .where(eq(monthlyIncentiveSummaryTable.id, incentiveSummary.id));
+      }
+      processed++;
+      updateProgress(10 + Math.round(processed / total * 85));
+    }
+
+    await db.update(payrollPeriodsTable)
+      .set({ status: "processing", processed_by: userId, processed_at: new Date(), updated_at: new Date() })
+      .where(eq(payrollPeriodsTable.id, periodId));
+    await writeAuditLog({
+      action: "update", record_type: "payroll_period", record_id: periodId,
+      new_value: { status: "processing", processed_records: processed },
+      user: { id: userId ?? undefined },
+    });
+    return { processed_records: processed };
+  });
+
+  res.status(202).json({ job_id: jobId, status: "queued", message: "جارٍ معالجة الرواتب في الخلفية" });
+}));
+
+/* ── Job status check ────────────────────────────────────────── */
+router.get("/payroll/jobs/:jobId", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const job = getJobStatus(String(req.params["jobId"]));
+  if (!job) { res.status(404).json({ error: "المهمة غير موجودة" }); return; }
+  res.json(job);
 }));
 
 /* ─ Payroll Record ────────────────────────────────────────────── */
