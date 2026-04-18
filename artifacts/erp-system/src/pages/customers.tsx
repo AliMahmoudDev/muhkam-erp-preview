@@ -403,7 +403,7 @@ function printCustomerReport(opts: {
         <td class="num closing">${fmt(totalClosing)} ${sideTag(totalClosing)}</td>
       </tr></tfoot>
     </table>
-    <div class="footer">نظام Halal Tech ERP — تم الطباعة بتاريخ ${today}</div>
+    <div class="footer">نظام مُحكم - MUHKAM ERP — تم الطباعة بتاريخ ${today}</div>
     </body></html>`;
 
   const w = window.open('', '_blank', 'width=1000,height=700');
@@ -815,7 +815,7 @@ function CustomerStatementModal({
 
   // قراءة اسم الشركة من الإعدادات المحلية
   const settings = JSON.parse(localStorage.getItem('halal_erp_settings') || '{}');
-  const companyName = settings.companyName || 'Halal Tech';
+  const companyName = settings.companyName || 'مُحكم - MUHKAM ERP';
   const companySlogan = settings.companySlogan || '';
 
   const handlePrint = () => {
@@ -2897,7 +2897,7 @@ export default function Customers() {
                           : '',
                         dateFrom: reportFilters.dateFrom,
                         dateTo: reportFilters.dateTo,
-                        companyName: (user as any)?.company_name ?? 'Halal Tech',
+                        companyName: (user as any)?.company_name ?? 'مُحكم - MUHKAM ERP',
                       })
                     }
                     className="px-6 py-2 text-sm flex items-center gap-2 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 border border-violet-500/30 font-bold transition-colors"

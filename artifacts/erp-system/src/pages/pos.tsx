@@ -119,7 +119,7 @@ function printReceipt(invoice: SuccessInvoice) {
 </style>
 </head>
 <body>
-<div class="center bold title">Halal Tech</div>
+<div class="center bold title">مُحكم - MUHKAM</div>
 <div class="center" style="font-size:10px;">فاتورة مبيعات</div>
 <div class="sep"></div>
 <div class="row"><span>رقم الفاتورة:</span><span class="bold">${invoice.invoice_no}</span></div>
@@ -137,7 +137,7 @@ ${invoice.customer_name ? `<div class="row"><span>العميل:</span><span>${in
 <div class="row total-row"><span>الإجمالي</span><span>${invoice.total_amount.toFixed(2)} ج.م</span></div>
 <div class="row" style="margin-top:3px;"><span>طريقة الدفع:</span><span>${payLabel[invoice.payment_type] ?? invoice.payment_type}</span></div>
 <div class="sep"></div>
-<div class="footer">شكراً لتعاملكم معنا 🙏<br/>Halal Tech © ${now.getFullYear()}</div>
+<div class="footer">شكراً لتعاملكم معنا 🙏<br/>مُحكم - MUHKAM ERP © ${now.getFullYear()}</div>
 </body></html>`;
 
   const w = window.open('', '_blank', 'width=340,height=600');
@@ -159,7 +159,7 @@ function SuccessModal({ invoice, onClose }: { invoice: SuccessInvoice; onClose: 
 
   const waMsg = () => {
     const lines = [
-      `🧾 *فاتورة مبيعات - Halal Tech*`,
+      `🧾 *فاتورة مبيعات - مُحكم - MUHKAM*`,
       `رقم الفاتورة: ${invoice.invoice_no}`,
       ``,
       `*الأصناف:*`,

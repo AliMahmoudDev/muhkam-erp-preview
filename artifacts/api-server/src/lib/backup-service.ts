@@ -115,7 +115,7 @@ async function streamBackupToFile(
   };
 
   const created_at = new Date().toISOString();
-  await safeWrite(`{"version":"2.1","app":"Halal Tech ERP","created_at":${JSON.stringify(created_at)},"data":{`);
+  await safeWrite(`{"version":"2.1","app":"مُحكم - MUHKAM ERP","created_at":${JSON.stringify(created_at)},"data":{`);
 
   for (let t = 0; t < TABLES.length; t++) {
     const [name, table] = TABLES[t]!;
@@ -185,7 +185,7 @@ export async function buildBackupPayload() {
   }
   return {
     version: "2.0",
-    app: "Halal Tech ERP",
+    app: "مُحكم - MUHKAM ERP",
     created_at: new Date().toISOString(),
     data: result,
   };

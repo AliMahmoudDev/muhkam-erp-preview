@@ -205,7 +205,7 @@ export default function BackupTab() {
       const bundle: Record<string, unknown> = {
         version: '1.0',
         created_at: new Date().toISOString(),
-        app: 'Halal Tech ERP',
+        app: 'مُحكم - MUHKAM ERP',
         modules: selected.map((m) => m.label),
       };
       const step = Math.floor(75 / selected.length);

@@ -99,7 +99,7 @@ export default function CloseSafeModal({ onClose }: Props) {
     .sm{background:#f9f9f9;padding:10px;border-radius:6px;margin-top:12px}
     .sr{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #ddd}
     .vp{color:green;font-weight:bold}.vn{color:red;font-weight:bold}</style></head><body>
-    <h2>Halal Tech — إقفال الخزينة</h2>
+    <h2>مُحكم - MUHKAM — إقفال الخزينة</h2>
     <p class="sub">الخزينة: ${selectedSafe?.name || ''} | التاريخ: ${closingDate}</p>
     <div class="tc">
       <table><tr><th colspan="2">الوارد</th></tr>
@@ -119,7 +119,7 @@ export default function CloseSafeModal({ onClose }: Props) {
       ${actual !== null ? `<div class="sr"><span>الرصيد الفعلي (جرد)</span><span>${formatCurrency(actual)}</span></div>` : ''}
       ${variance !== null ? `<div class="sr"><span>العجز / الزيادة</span><span class="${variance >= 0 ? 'vp' : 'vn'}">${variance >= 0 ? '+' : ''}${formatCurrency(variance)}</span></div>` : ''}
     </div>
-    <p style="text-align:center;font-size:10px;color:#999;margin-top:20px">طُبع بواسطة Halal Tech ERP — ${new Date().toLocaleString('ar-EG-u-nu-latn')}</p>
+    <p style="text-align:center;font-size:10px;color:#999;margin-top:20px">طُبع بواسطة مُحكم - MUHKAM ERP — ${new Date().toLocaleString('ar-EG-u-nu-latn')}</p>
     <script>window.print();</script></body></html>`;
     const w = window.open('', '_blank');
     if (w) {

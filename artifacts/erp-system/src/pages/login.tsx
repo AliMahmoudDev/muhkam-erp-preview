@@ -272,13 +272,13 @@ export default function Login() {
           {/* Company name */}
           <h1
             style={{
-              fontSize: "34px", fontWeight: 900, color: "#fff",
+              fontSize: "26px", fontWeight: 900, color: "#fff",
               marginBottom: "10px", letterSpacing: "-0.5px",
               textShadow: "0 2px 24px rgba(167,139,250,0.4)",
-              lineHeight: 1.1,
+              lineHeight: 1.2, whiteSpace: "nowrap",
             }}
           >
-            {settings.companyName || "Halal Tech ERP"}
+            {settings.companyName || "مُحكم - MUHKAM ERP"}
           </h1>
 
           {/* Tagline */}
@@ -332,7 +332,7 @@ export default function Login() {
             letterSpacing: "0.14em", fontWeight: 500,
           }}
         >
-          HALAL TECH ERP v2.0
+          مُحكم - MUHKAM ERP
         </div>
       </div>
 
@@ -381,7 +381,7 @@ export default function Login() {
             />
           </div>
           <div style={{ fontSize: "20px", fontWeight: 800, color: "#1e1b4b" }}>
-            {settings.companyName || "Halal Tech ERP"}
+            {settings.companyName || "مُحكم - MUHKAM ERP"}
           </div>
         </div>
 
@@ -510,7 +510,7 @@ export default function Login() {
             letterSpacing: "0.02em",
           }}
         >
-          {settings.companyName || "Halal Tech ERP"} &copy; {new Date().getFullYear()}
+          {settings.companyName || "مُحكم - MUHKAM ERP"} &copy; {new Date().getFullYear()}
           &nbsp;·&nbsp; جميع الحقوق محفوظة
         </p>
       </div>

@@ -150,7 +150,7 @@ app.use("/api", generalLimiter);
 /* ── Swagger UI — accessible at /api/docs ────────────────────── */
 app.use("/api/docs", swaggerUi.serve);
 app.get("/api/docs", swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: "Halal Tech ERP — API Docs",
+  customSiteTitle: "مُحكم - MUHKAM ERP — API Docs",
   customCss: ".swagger-ui .topbar { display: none }",
   swaggerOptions: { persistAuthorization: true, docExpansion: "none" },
 }));

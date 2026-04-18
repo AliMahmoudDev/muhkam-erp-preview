@@ -1,4 +1,4 @@
-# Workspace
+# مُحكم - MUHKAM ERP Workspace
 
 ## Replit Environment
 - **Backend:** Express API server running on port 8080 via `Start Backend` workflow

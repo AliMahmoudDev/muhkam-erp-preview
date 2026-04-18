@@ -2,7 +2,7 @@ import speakeasy from "speakeasy";
 import QRCode from "qrcode";
 import crypto from "crypto";
 
-const APP_NAME = "Halal Tech ERP";
+const APP_NAME = "مُحكم - MUHKAM ERP";
 
 /* ── AES-256-CBC encryption key for TOTP secrets ─────────────
    Prefer TOTP_ENCRYPTION_KEY env var (exactly 32 chars).

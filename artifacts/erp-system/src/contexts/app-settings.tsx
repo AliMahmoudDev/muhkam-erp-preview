@@ -41,7 +41,7 @@ const DEFAULTS: AppSettings = {
   fontFamily: 'Tajawal',
   fontSize: 'md',
   accentColor: 'amber',
-  companyName: 'Halal Tech',
+  companyName: 'مُحكم - MUHKAM ERP',
   companySlogan: 'الحلال = البركة',
   customLogo: '',
   loginBg: 'default',

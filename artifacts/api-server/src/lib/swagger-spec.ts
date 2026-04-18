@@ -1,15 +1,15 @@
 /**
- * OpenAPI 3.0 specification for Halal Tech ERP API.
+ * OpenAPI 3.0 specification for مُحكم - MUHKAM ERP API.
  * Served at /api/docs via swagger-ui-express.
  */
 
 export const swaggerSpec = {
   openapi: "3.0.0",
   info: {
-    title: "Halal Tech ERP — Arabic ERP API",
+    title: "مُحكم - MUHKAM ERP — Arabic ERP API",
     version: "1.0.0",
     description: "Production-grade ERP system for Egyptian mobile repair shops. Features: POS, inventory, HR, multi-tenant SaaS, period-lock accounting, VAT 14%.",
-    contact: { name: "Halal Tech Support", email: "support@halaltech.app" },
+    contact: { name: "MUHKAM Support", email: "support@muhkam-erp.com" },
     license: { name: "Proprietary" },
   },
   servers: [

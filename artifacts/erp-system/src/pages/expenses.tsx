@@ -121,7 +121,7 @@ function printExpenseReport(opts: {
         <td class="num amount">${total.toLocaleString('ar-EG-u-nu-latn', { minimumFractionDigits: 2 })} ج.م</td>
       </tr></tfoot>
     </table>
-    <div class="footer">نظام Halal Tech ERP — تم الطباعة بتاريخ ${today}</div>
+    <div class="footer">نظام مُحكم - MUHKAM ERP — تم الطباعة بتاريخ ${today}</div>
     </body></html>`;
 
   const w = window.open('', '_blank', 'width=900,height=700');
@@ -139,7 +139,7 @@ export default function Expenses() {
   const canView = hasPermission(user, 'can_view_expenses') === true;
   const canAdd = hasPermission(user, 'can_add_expense') === true;
   const isCashier = user?.role === 'cashier';
-  const companyName = (user as any)?.company_name ?? 'Halal Tech';
+  const companyName = (user as any)?.company_name ?? 'مُحكم - MUHKAM ERP';
 
   const queryClient = useQueryClient();
   const { toast } = useToast();

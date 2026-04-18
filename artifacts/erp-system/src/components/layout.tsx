@@ -481,7 +481,7 @@ export function AppLayout({ children }: LayoutProps) {
           className="flex items-center justify-between px-4"
           style={{ height: 40, borderTop: sidebarBdr, flexShrink: 0 }}
         >
-          <span style={{ fontSize: 10, color: textMuted }}>ERP v2.0</span>
+          <span style={{ fontSize: 10, color: textMuted }}>MUHKAM ERP</span>
           <div className="glow-dot" />
         </div>
       </aside>

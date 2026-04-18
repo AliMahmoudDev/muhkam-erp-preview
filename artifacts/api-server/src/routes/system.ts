@@ -92,7 +92,7 @@ router.post("/system/backup", authenticate, requireRole("admin"), requireTenant,
 
   const backup = {
     version: "2.0",
-    app: "Halal Tech ERP",
+    app: "مُحكم - MUHKAM ERP",
     created_at: new Date().toISOString(),
     company_id: companyId,
     _meta: { truncated: false },
@@ -281,7 +281,7 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
     ]);
 
     const snap = {
-      version: "2.0", app: "Halal Tech ERP",
+      version: "2.0", app: "مُحكم - MUHKAM ERP",
       created_at: new Date().toISOString(),
       company_id: companyId, _meta: { truncated: false, kind: "pre-restore" },
       data: {

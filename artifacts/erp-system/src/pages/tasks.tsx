@@ -376,7 +376,7 @@ function SafeClosingForm({ safes, onSuccess }: { safes: Safe[]; onSuccess: (m: s
       .variance-pos { color: green; font-weight: bold; }
       .variance-neg { color: red; font-weight: bold; }
     </style></head><body>
-    <h2>Halal Tech — إقفال الخزينة</h2>
+    <h2>مُحكم - MUHKAM — إقفال الخزينة</h2>
     <p class="sub">الخزينة: ${selectedSafe?.name || ''} | التاريخ: ${closingDate}</p>
     <div class="two-col">
       <table>
@@ -400,7 +400,7 @@ function SafeClosingForm({ safes, onSuccess }: { safes: Safe[]; onSuccess: (m: s
       ${actual !== null ? `<div class="row"><span>الرصيد الفعلي (جرد)</span><span>${formatCurrency(actual)}</span></div>` : ''}
       ${variance !== null ? `<div class="row"><span>العجز / الزيادة</span><span class="${variance >= 0 ? 'variance-pos' : 'variance-neg'}">${variance >= 0 ? '+' : ''}${formatCurrency(variance)}</span></div>` : ''}
     </div>
-    <br/><p style="text-align:center;font-size:10px;color:#999">طُبع بواسطة Halal Tech ERP — ${new Date().toLocaleString('ar-EG-u-nu-latn')}</p>
+    <br/><p style="text-align:center;font-size:10px;color:#999">طُبع بواسطة مُحكم - MUHKAM ERP — ${new Date().toLocaleString('ar-EG-u-nu-latn')}</p>
     <script>window.print();</script>
     </body></html>`;
     const w = window.open('', '_blank');

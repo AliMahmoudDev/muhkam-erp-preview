@@ -758,7 +758,7 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
 </style></head>
 <body>
 <div class="header">
-  <div class="company-name">Halal Tech — حلال تك</div>
+  <div class="company-name">مُحكم - MUHKAM ERP</div>
   <div class="company-slogan">الحلال = البركة | متخصصون في صيانة الهواتف المحمولة</div>
   <div class="company-info">📍 مصر — القاهرة &nbsp;&nbsp; 📞 01000000000</div>
 </div>
@@ -781,7 +781,7 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
   <div class="total-row"><span>المدفوع</span><span>${Number(sale.paid_amount).toFixed(2)} ج.م</span></div>
   ${remainHtml}
 </div>
-<div class="footer">شكراً لتعاملكم معنا — Halal Tech | الحلال = البركة</div>
+<div class="footer">شكراً لتعاملكم معنا — مُحكم - MUHKAM ERP</div>
 </body></html>`;
     const w = window.open("", "_blank", "width=820,height=950");
     if (!w) return;
@@ -881,7 +881,7 @@ function WhatsAppSuccessModal({ invoice, onClose }: { invoice: SuccessInvoice; o
 
   const buildWhatsAppMsg = () => {
     const lines = [
-      `🧾 *فاتورة مبيعات - Halal Tech*`,
+      `🧾 *فاتورة مبيعات - مُحكم - MUHKAM*`,
       `رقم الفاتورة: ${invoice.invoice_no}`,
       ``,
       `*الأصناف:*`,

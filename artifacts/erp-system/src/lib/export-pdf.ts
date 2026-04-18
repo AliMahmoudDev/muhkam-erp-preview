@@ -1213,7 +1213,7 @@ export function printBalanceSheet(data: BalanceSheetPrintData): void {
 
   <div class="pl-footer">
     <span>تاريخ الطباعة: ${now}</span>
-    <span>Halal Tech ERP v2.0</span>
+    <span>مُحكم - MUHKAM ERP</span>
   </div>
 </div>`;
 
@@ -1340,7 +1340,7 @@ export function printCashFlow(data: CashFlowPrintData): void {
 
   <div class="pl-footer">
     <span>تاريخ الطباعة: ${now}</span>
-    <span>Halal Tech ERP v2.0</span>
+    <span>مُحكم - MUHKAM ERP</span>
   </div>
 </div>`;
 
