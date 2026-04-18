@@ -3,13 +3,14 @@
  * /api/employee-custody  — employee custody / imprest (عهدة)
  */
 import { Router, type IRouter } from "express";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import {
   db, employeeBonusesTable, employeeCustodyTable, employeeCustodyLinesTable,
   employeesTable, safesTable, transactionsTable, expensesTable,
 } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { assertPeriodOpen } from "../lib/period-lock";
 
 const router: IRouter = Router();
 const fmtTs = (v: Date | null | undefined) => (v instanceof Date ? v.toISOString() : (v ?? null));
@@ -119,15 +120,28 @@ router.post("/employee-custody", wrap(async (req, res) => {
     .where(and(eq(employeesTable.id, Number(employee_id)), eq(employeesTable.company_id, companyId)));
   if (!emp) { res.status(404).json({ error: "الموظف غير موجود" }); return; }
 
+  await assertPeriodOpen(dateStr, req);
+
   const row = await db.transaction(async (tx) => {
     let safe: typeof safesTable.$inferSelect | null = null;
     if (safeIdNum) {
-      const [s] = await tx.select().from(safesTable)
-        .where(and(eq(safesTable.id, safeIdNum), eq(safesTable.company_id, companyId)));
-      if (!s) throw httpError(400, "الخزينة غير موجودة");
-      if (Number(s.balance) < amt) throw httpError(400, `رصيد الخزينة غير كافٍ (${Number(s.balance).toFixed(2)})`);
-      await tx.update(safesTable).set({ balance: String(Number(s.balance) - amt) }).where(eq(safesTable.id, s.id));
-      safe = s;
+      // Atomic conditional decrement (prevents race conditions / overdraft)
+      const updated = await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} - ${String(amt)}` })
+        .where(and(
+          eq(safesTable.id, safeIdNum),
+          eq(safesTable.company_id, companyId),
+          sql`${safesTable.balance} >= ${String(amt)}`,
+        ))
+        .returning();
+      if (updated.length === 0) {
+        // Determine specific cause
+        const [s] = await tx.select().from(safesTable)
+          .where(and(eq(safesTable.id, safeIdNum), eq(safesTable.company_id, companyId)));
+        if (!s) throw httpError(400, "الخزينة غير موجودة");
+        throw httpError(400, `رصيد الخزينة غير كافٍ (${Number(s.balance).toFixed(2)})`);
+      }
+      safe = updated[0]!;
     }
     const [created] = await tx.insert(employeeCustodyTable).values({
       company_id: companyId,
@@ -207,6 +221,8 @@ router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
   if (!existing) { res.status(404).json({ error: "العهدة غير موجودة" }); return; }
   if (existing.status === "settled") { res.status(409).json({ error: "العهدة مغلقة بالفعل" }); return; }
 
+  await assertPeriodOpen(settledDate, req);
+
   const original = Number(existing.amount);
   let returned = body["returned_amount"] != null ? Number(body["returned_amount"]) : Math.max(0, original - sumLines);
   if (!isFinite(returned) || returned < 0) { res.status(400).json({ error: "المبلغ المرتجع غير صالح" }); return; }
@@ -273,11 +289,11 @@ router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
       });
     }
 
-    // إعادة المبلغ المتبقي للخزينة
+    // إعادة المبلغ المتبقي للخزينة (atomic increment)
     if (safe && returned > 0) {
       await tx.update(safesTable)
-        .set({ balance: String(Number(safe.balance) + returned) })
-        .where(eq(safesTable.id, safe.id));
+        .set({ balance: sql`${safesTable.balance} + ${String(returned)}` })
+        .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, companyId)));
       await tx.insert(transactionsTable).values({
         type: "custody_return", reference_type: "employee_custody", reference_id: id,
         safe_id: safe.id, safe_name: safe.name,
@@ -297,7 +313,7 @@ router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
         notes: (body["notes"] as string) ?? existing.notes,
         updated_at: new Date(),
       })
-      .where(eq(employeeCustodyTable.id, id))
+      .where(and(eq(employeeCustodyTable.id, id), eq(employeeCustodyTable.company_id, companyId)))
       .returning();
     return updated;
   });
@@ -324,26 +340,30 @@ router.delete("/employee-custody/:id", wrap(async (req, res) => {
     res.status(409).json({ error: "لا يمكن حذف عهدة مغلقة. أنشئ تسوية عكسية بدلاً من ذلك." }); return;
   }
 
+  const today = new Date().toISOString().split("T")[0];
+  await assertPeriodOpen(today, req);
+
   await db.transaction(async (tx) => {
-    // إعادة المال للخزينة (لو خُصم منها وقت الصرف)
+    // إعادة المال للخزينة (لو خُصم منها وقت الصرف) — atomic increment
     if (existing.safe_id) {
-      const [s] = await tx.select().from(safesTable)
-        .where(and(eq(safesTable.id, existing.safe_id), eq(safesTable.company_id, companyId)));
+      const updated = await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} + ${String(existing.amount)}` })
+        .where(and(eq(safesTable.id, existing.safe_id), eq(safesTable.company_id, companyId)))
+        .returning();
+      const s = updated[0];
       if (s) {
-        await tx.update(safesTable)
-          .set({ balance: String(Number(s.balance) + Number(existing.amount)) })
-          .where(eq(safesTable.id, s.id));
         await tx.insert(transactionsTable).values({
           type: "custody_cancel", reference_type: "employee_custody", reference_id: id,
           safe_id: s.id, safe_name: s.name,
           amount: String(existing.amount), direction: "in",
           description: `إلغاء عهدة #${id}`,
-          date: new Date().toISOString().split("T")[0],
+          date: today,
           company_id: companyId,
         });
       }
     }
-    await tx.delete(employeeCustodyTable).where(eq(employeeCustodyTable.id, id));
+    await tx.delete(employeeCustodyTable)
+      .where(and(eq(employeeCustodyTable.id, id), eq(employeeCustodyTable.company_id, companyId)));
   });
   res.json({ ok: true });
 }));
