@@ -841,7 +841,7 @@ export default function Employees() {
                     <th className="p-3 text-right text-xs">القسم</th>
                     <th className="p-3 text-right text-xs">المسمى</th>
                     <th className="p-3 text-right text-xs">التعيين</th>
-                    {canViewSalary && <th className="p-3 text-right text-xs">الراتب / النسبة</th>}
+                    {canViewSalary && <th className="p-3 text-right text-xs">الراتب - عمولة</th>}
                     <th className="p-3 text-right text-xs"></th>
                   </tr>
                 </thead>
@@ -2544,7 +2544,6 @@ export default function Employees() {
           </div>
         );
       })()}
-
       {showReimburseCustody != null && (() => {
         const current = custody.find(
           (c: AnyRec) => Number(c.id) === showReimburseCustody,
