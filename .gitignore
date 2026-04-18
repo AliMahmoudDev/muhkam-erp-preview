@@ -48,6 +48,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+attached_assets/
 
 # Environment / secrets — local overrides must never be committed
 # Files matching *.example ARE intentionally tracked (e.g. .env.test.example)
