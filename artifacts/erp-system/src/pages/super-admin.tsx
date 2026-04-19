@@ -6,6 +6,10 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { useLocation } from 'wouter';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const api = (p: string) => `${BASE}${p}`;
@@ -525,8 +529,6 @@ export default function SuperAdmin() {
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
   const [generatedCode, setGeneratedCode] = useState('');
   const [enteredCode, setEnteredCode] = useState('');
-  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
-
   /* ── Managers state ─── */
   const [showAddMgr, setShowAddMgr] = useState(false);
   const [editMgr, setEditMgr] = useState<Manager | null>(null);
@@ -1878,226 +1880,187 @@ export default function SuperAdmin() {
               </div>
             )}
 
-            {/* ── Monthly Signups — Smooth Area Chart ── */}
+            {/* ── Monthly Signups — Recharts Area Chart ── */}
             {stats && stats.monthlySignups && stats.monthlySignups.some(m => m.count > 0) && (() => {
-              const data = stats.monthlySignups;
-              const maxVal = Math.max(...data.map(m => m.count), 1);
-              const total  = data.reduce((s, m) => s + m.count, 0);
-              const last   = data[data.length - 1]?.count ?? 0;
-              const prev   = data[data.length - 2]?.count ?? 0;
+              const raw   = stats.monthlySignups;
+              const total = raw.reduce((s, m) => s + m.count, 0);
+              const last  = raw[raw.length - 1]?.count ?? 0;
+              const prev  = raw[raw.length - 2]?.count ?? 0;
               const growthPct = prev > 0 ? Math.round(((last - prev) / prev) * 100) : 0;
               const growing   = growthPct >= 0;
+              const maxVal    = Math.max(...raw.map(m => m.count), 1);
 
-              /* SVG coordinate helpers */
-              const W = 600; const H = 180;
-              const PL = 8; const PR = 8; const PT = 20; const PB = 40;
-              const iW = W - PL - PR;
-              const iH = H - PT - PB;
+              const chartData = raw.map(m => ({ name: m.month, شركات: m.count }));
 
-              const pts = data.map((m, i) => ({
-                x: PL + (i / (data.length - 1)) * iW,
-                y: PT + iH - (m.count / maxVal) * iH,
-                count: m.count,
-                month: m.month,
-              }));
-
-              /* Smooth bezier path */
-              const bezier = (p0: {x:number,y:number}, p1: {x:number,y:number}, p2: {x:number,y:number}, p3: {x:number,y:number}) => {
-                const cp1x = p1.x + (p2.x - p0.x) / 6;
-                const cp1y = p1.y + (p2.y - p0.y) / 6;
-                const cp2x = p2.x - (p3.x - p1.x) / 6;
-                const cp2y = p2.y - (p3.y - p1.y) / 6;
-                return `C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+              const CustomTooltip = ({ active, payload, label }: any) => {
+                if (!active || !payload?.length) return null;
+                return (
+                  <div style={{
+                    background: '#0f172a',
+                    border: '1px solid rgba(249,115,22,0.4)',
+                    borderRadius: '12px',
+                    padding: '10px 16px',
+                    fontFamily: FONT,
+                    direction: 'rtl',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
+                  }}>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>{label}</div>
+                    <div style={{ fontSize: '22px', fontWeight: 900, color: '#f97316', lineHeight: 1 }}>
+                      {payload[0].value}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>شركة مسجّلة</div>
+                  </div>
+                );
               };
-              let linePath = `M ${pts[0].x},${pts[0].y}`;
-              for (let i = 1; i < pts.length; i++) {
-                const p0 = pts[Math.max(i-2,0)];
-                const p1 = pts[i-1];
-                const p2 = pts[i];
-                const p3 = pts[Math.min(i+1, pts.length-1)];
-                linePath += ' ' + bezier(p0, p1, p2, p3);
-              }
-              const areaPath = `${linePath} L ${pts[pts.length-1].x},${PT+iH} L ${pts[0].x},${PT+iH} Z`;
 
               return (
                 <div style={{
-                  background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                  background: 'linear-gradient(160deg, #0f172a 0%, #1a2540 60%, #1e293b 100%)',
                   borderRadius: '24px',
-                  padding: '28px 28px 20px',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+                  overflow: 'hidden',
                 }}>
-                  {/* Top row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                  {/* Header section */}
+                  <div style={{ padding: '28px 32px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    {/* Left: Title + Big number */}
                     <div>
-                      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', fontWeight: 500, marginBottom: '6px', letterSpacing: '0.5px' }}>
-                        التسجيلات الشهرية
+                      <div style={{
+                        fontSize: '11px', fontWeight: 600,
+                        color: 'rgba(255,255,255,0.35)',
+                        letterSpacing: '1.5px', textTransform: 'uppercase',
+                        marginBottom: '10px',
+                      }}>
+                        التسجيلات الشهرية · آخر 6 أشهر
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                        <span style={{ fontSize: '42px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '14px' }}>
+                        <div style={{ fontSize: '52px', fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-2px' }}>
                           {total}
-                        </span>
-                        <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>شركة</span>
-                        <span style={{
-                          fontSize: '13px', fontWeight: 700, padding: '3px 10px',
-                          borderRadius: '20px',
-                          background: growing ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                          color: growing ? '#4ade80' : '#f87171',
-                          border: `1px solid ${growing ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                        }}>
-                          {growing ? '▲' : '▼'} {Math.abs(growthPct)}%
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>
-                        آخر 6 أشهر · مقارنةً بالشهر السابق
+                        </div>
+                        <div style={{ paddingBottom: '10px' }}>
+                          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)' }}>إجمالي الشركات</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '3px',
+                              fontSize: '12px', fontWeight: 700,
+                              padding: '2px 10px', borderRadius: '20px',
+                              background: growing ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                              color: growing ? '#4ade80' : '#f87171',
+                              border: `1px solid ${growing ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                            }}>
+                              {growing ? '↑' : '↓'} {Math.abs(growthPct)}%
+                            </span>
+                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>مقارنةً بالشهر السابق</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Mini stat pills */}
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    {/* Right: Stat pills */}
+                    <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
                       {[
-                        { label: 'هذا الشهر', value: last,   color: '#f97316' },
-                        { label: 'الأعلى',    value: maxVal, color: '#a78bfa' },
+                        { label: 'هذا الشهر', value: last,                  icon: '📅', color: '#f97316', bg: 'rgba(249,115,22,0.1)'  },
+                        { label: 'الأعلى',    value: maxVal,                 icon: '🏆', color: '#a78bfa', bg: 'rgba(167,139,250,0.1)' },
+                        { label: 'المتوسط',   value: (total/raw.length).toFixed(1), icon: '📊', color: '#38bdf8', bg: 'rgba(56,189,248,0.1)'  },
                       ].map(s => (
                         <div key={s.label} style={{
-                          background: 'rgba(255,255,255,0.06)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: '14px', padding: '10px 16px',
-                          textAlign: 'center', minWidth: '70px',
+                          background: s.bg,
+                          border: `1px solid ${s.color}30`,
+                          borderRadius: '16px', padding: '12px 18px',
+                          textAlign: 'center', minWidth: '76px',
                         }}>
-                          <div style={{ fontSize: '22px', fontWeight: 900, color: s.color }}>{s.value}</div>
-                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{s.label}</div>
+                          <div style={{ fontSize: '16px', marginBottom: '4px' }}>{s.icon}</div>
+                          <div style={{ fontSize: '24px', fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>{s.label}</div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* SVG Area Chart */}
-                  <div style={{ position: 'relative' }}>
-                    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '160px', overflow: 'visible', display: 'block' }}>
-                      <defs>
-                        <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%"   stopColor="#f97316" />
-                          <stop offset="50%"  stopColor="#fb923c" />
-                          <stop offset="100%" stopColor="#fbbf24" />
-                        </linearGradient>
-                        <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%"   stopColor="#f97316" stopOpacity="0.35" />
-                          <stop offset="70%"  stopColor="#f97316" stopOpacity="0.08" />
-                          <stop offset="100%" stopColor="#f97316" stopOpacity="0"    />
-                        </linearGradient>
-                        <filter id="glow">
-                          <feGaussianBlur stdDeviation="3" result="blur" />
-                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
-                        <filter id="dotGlow">
-                          <feGaussianBlur stdDeviation="4" result="blur" />
-                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
-                      </defs>
+                  {/* Chart */}
+                  <div style={{ padding: '16px 8px 0' }}>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <AreaChart data={chartData} margin={{ top: 10, right: 24, bottom: 0, left: -10 }}>
+                        <defs>
+                          <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%"   stopColor="#f97316" stopOpacity={0.4}  />
+                            <stop offset="50%"  stopColor="#f97316" stopOpacity={0.12} />
+                            <stop offset="100%" stopColor="#f97316" stopOpacity={0}    />
+                          </linearGradient>
+                          <linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%"   stopColor="#ea580c" />
+                            <stop offset="50%"  stopColor="#f97316" />
+                            <stop offset="100%" stopColor="#fbbf24" />
+                          </linearGradient>
+                        </defs>
 
-                      {/* Faint horizontal grid lines */}
-                      {[0.25, 0.5, 0.75].map(pct => (
-                        <line key={pct}
-                          x1={PL} y1={PT + iH * (1 - pct)}
-                          x2={W - PR} y2={PT + iH * (1 - pct)}
-                          stroke="rgba(255,255,255,0.04)" strokeWidth="1"
+                        <CartesianGrid
+                          vertical={false}
+                          stroke="rgba(255,255,255,0.05)"
+                          strokeDasharray="4 4"
                         />
-                      ))}
 
-                      {/* Area fill */}
-                      <path d={areaPath} fill="url(#fillGrad)" />
+                        <XAxis
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: FONT }}
+                          dy={10}
+                        />
 
-                      {/* Glow line (blurred copy) */}
-                      <path d={linePath} fill="none" stroke="#f97316" strokeWidth="3"
-                        strokeOpacity="0.4" filter="url(#glow)" />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 11, fontFamily: FONT }}
+                          tickCount={4}
+                          width={32}
+                        />
 
-                      {/* Main line */}
-                      <path d={linePath} fill="none" stroke="url(#lineGrad)"
-                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <Tooltip
+                          content={<CustomTooltip />}
+                          cursor={{ stroke: 'rgba(249,115,22,0.25)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                        />
 
-                      {/* Data point dots + labels */}
-                      {pts.map((p, i) => {
-                        const isHov = hoveredBar === i;
-                        const isLast = i === pts.length - 1;
-                        return (
-                          <g key={i}
-                            onMouseEnter={() => setHoveredBar(i)}
-                            onMouseLeave={() => setHoveredBar(null)}
-                            style={{ cursor: 'default' }}
-                          >
-                            {/* Hit area */}
-                            <rect
-                              x={p.x - (iW / data.length) / 2} y={PT}
-                              width={iW / data.length} height={iH + PB}
-                              fill="transparent"
-                            />
+                        <Area
+                          type="monotone"
+                          dataKey="شركات"
+                          stroke="url(#strokeGrad)"
+                          strokeWidth={3}
+                          fill="url(#areaFill)"
+                          dot={{ fill: '#1e293b', stroke: '#f97316', strokeWidth: 2, r: 5 }}
+                          activeDot={{ fill: '#f97316', stroke: '#fbbf24', strokeWidth: 2, r: 7 }}
+                          isAnimationActive={true}
+                          animationDuration={1000}
+                          animationEasing="ease-out"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
 
-                            {/* Dot glow */}
-                            {(isHov || isLast) && (
-                              <circle cx={p.x} cy={p.y} r="10"
-                                fill="#f97316" fillOpacity="0.15" />
-                            )}
-
-                            {/* Outer ring */}
-                            <circle cx={p.x} cy={p.y} r={isHov ? 7 : isLast ? 5.5 : 4}
-                              fill="#1e293b"
-                              stroke={isHov ? '#fbbf24' : isLast ? '#f97316' : '#fb923c'}
-                              strokeWidth={isHov ? 2.5 : isLast ? 2 : 1.5}
-                              style={{ transition: 'r 0.15s, stroke 0.15s' }}
-                            />
-
-                            {/* Tooltip bubble */}
-                            {isHov && (
-                              <g>
-                                <rect
-                                  x={p.x - 30} y={p.y - 36}
-                                  width="60" height="26"
-                                  rx="8" ry="8"
-                                  fill="#0f172a"
-                                  stroke="rgba(249,115,22,0.5)"
-                                  strokeWidth="1"
-                                />
-                                <polygon
-                                  points={`${p.x-6},${p.y-11} ${p.x+6},${p.y-11} ${p.x},${p.y-4}`}
-                                  fill="#0f172a"
-                                />
-                                <text x={p.x} y={p.y - 25}
-                                  fontSize="11" fontWeight="800" fill="#f97316"
-                                  textAnchor="middle" dominantBaseline="middle"
-                                >{p.count}</text>
-                                <text x={p.x} y={p.y - 13}
-                                  fontSize="8" fill="rgba(255,255,255,0.5)"
-                                  textAnchor="middle" dominantBaseline="middle"
-                                >شركة</text>
-                              </g>
-                            )}
-
-                            {/* Month label */}
-                            <text
-                              x={p.x} y={PT + iH + 18}
-                              fontSize="11" fill={isHov ? '#f97316' : 'rgba(255,255,255,0.35)'}
-                              textAnchor="middle" fontWeight={isHov || isLast ? '700' : '400'}
-                              style={{ transition: 'fill 0.15s' }}
-                            >
-                              {p.month}
-                            </text>
-
-                            {/* Value above dot (for last & hovered) */}
-                            {isLast && !isHov && (
-                              <text x={p.x} y={p.y - 12}
-                                fontSize="10" fontWeight="700" fill="#fbbf24"
-                                textAnchor="middle"
-                              >{p.count}</text>
-                            )}
-                          </g>
-                        );
-                      })}
-
-                      {/* Baseline */}
-                      <line x1={PL} y1={PT + iH} x2={W - PR} y2={PT + iH}
-                        stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-                    </svg>
+                  {/* Bottom month summary bar */}
+                  <div style={{
+                    padding: '16px 32px',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    borderTop: '1px solid rgba(255,255,255,0.04)',
+                  }}>
+                    {raw.map((m, i) => {
+                      const pct  = maxVal > 0 ? m.count / maxVal : 0;
+                      const isLast = i === raw.length - 1;
+                      return (
+                        <div key={i} style={{ textAlign: 'center', flex: 1 }}>
+                          <div style={{
+                            height: '3px', borderRadius: '2px', marginBottom: '6px',
+                            background: isLast
+                              ? `linear-gradient(90deg,#f97316,#fbbf24)`
+                              : `rgba(249,115,22,${0.15 + pct * 0.4})`,
+                          }} />
+                          <div style={{ fontSize: '14px', fontWeight: isLast ? 800 : 500, color: isLast ? '#f97316' : 'rgba(255,255,255,0.35)' }}>
+                            {m.count}
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)', marginTop: '2px' }}>{m.month}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
