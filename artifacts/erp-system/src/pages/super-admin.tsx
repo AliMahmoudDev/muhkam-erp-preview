@@ -6,10 +6,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { useLocation } from 'wouter';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const api = (p: string) => `${BASE}${p}`;
@@ -2014,184 +2010,83 @@ export default function SuperAdmin() {
               </div>
             )}
 
-            {/* ── Monthly Signups — Recharts Area Chart ── */}
+            {/* ── Monthly Signups — Compact Strip ── */}
             {stats && stats.monthlySignups && stats.monthlySignups.some(m => m.count > 0) && (() => {
               const raw   = stats.monthlySignups;
               const total = raw.reduce((s, m) => s + m.count, 0);
               const last  = raw[raw.length - 1]?.count ?? 0;
-              const prev  = raw[raw.length - 2]?.count ?? 0;
+              const prev     = raw[raw.length - 2]?.count ?? 0;
               const growthPct = prev > 0 ? Math.round(((last - prev) / prev) * 100) : 0;
               const growing   = growthPct >= 0;
               const maxVal    = Math.max(...raw.map(m => m.count), 1);
 
-              const chartData = raw.map(m => ({ name: m.month, شركات: m.count }));
-
-              const CustomTooltip = ({ active, payload, label }: any) => {
-                if (!active || !payload?.length) return null;
-                return (
-                  <div style={{
-                    background: '#0f172a',
-                    border: '1px solid rgba(249,115,22,0.4)',
-                    borderRadius: '12px',
-                    padding: '10px 16px',
-                    fontFamily: FONT,
-                    direction: 'rtl',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
-                  }}>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>{label}</div>
-                    <div style={{ fontSize: '22px', fontWeight: 900, color: '#f97316', lineHeight: 1 }}>
-                      {payload[0].value}
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>شركة مسجّلة</div>
-                  </div>
-                );
-              };
-
               return (
                 <div style={{
-                  background: 'linear-gradient(160deg, #0f172a 0%, #1a2540 60%, #1e293b 100%)',
-                  borderRadius: '24px',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
-                  overflow: 'hidden',
+                  background: C.card,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: '16px',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '20px',
                 }}>
-                  {/* Header section */}
-                  <div style={{ padding: '28px 32px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    {/* Left: Title + Big number */}
-                    <div>
-                      <div style={{
-                        fontSize: '11px', fontWeight: 600,
-                        color: 'rgba(255,255,255,0.35)',
-                        letterSpacing: '1.5px', textTransform: 'uppercase',
-                        marginBottom: '10px',
+                  {/* Label + total */}
+                  <div style={{ flexShrink: 0, borderLeft: `3px solid ${C.orange}`, paddingLeft: '14px' }}>
+                    <div style={{ fontSize: '11px', color: C.muted, marginBottom: '4px', whiteSpace: 'nowrap' }}>
+                      التسجيلات — آخر 6 أشهر
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '26px', fontWeight: 900, color: C.orange, lineHeight: 1 }}>
+                        {total}
+                      </span>
+                      <span style={{
+                        fontSize: '11px', fontWeight: 700,
+                        padding: '2px 8px', borderRadius: '20px',
+                        background: growing ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                        color: growing ? C.success : C.danger,
+                        border: `1px solid ${growing ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
                       }}>
-                        التسجيلات الشهرية · آخر 6 أشهر
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '14px' }}>
-                        <div style={{ fontSize: '52px', fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-2px' }}>
-                          {total}
-                        </div>
-                        <div style={{ paddingBottom: '10px' }}>
-                          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)' }}>إجمالي الشركات</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                            <span style={{
-                              display: 'inline-flex', alignItems: 'center', gap: '3px',
-                              fontSize: '12px', fontWeight: 700,
-                              padding: '2px 10px', borderRadius: '20px',
-                              background: growing ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                              color: growing ? '#4ade80' : '#f87171',
-                              border: `1px solid ${growing ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
-                            }}>
-                              {growing ? '↑' : '↓'} {Math.abs(growthPct)}%
-                            </span>
-                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>مقارنةً بالشهر السابق</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Stat pills */}
-                    <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
-                      {[
-                        { label: 'هذا الشهر', value: last,                  icon: '📅', color: '#f97316', bg: 'rgba(249,115,22,0.1)'  },
-                        { label: 'الأعلى',    value: maxVal,                 icon: '🏆', color: '#a78bfa', bg: 'rgba(167,139,250,0.1)' },
-                        { label: 'المتوسط',   value: (total/raw.length).toFixed(1), icon: '📊', color: '#38bdf8', bg: 'rgba(56,189,248,0.1)'  },
-                      ].map(s => (
-                        <div key={s.label} style={{
-                          background: s.bg,
-                          border: `1px solid ${s.color}30`,
-                          borderRadius: '16px', padding: '12px 18px',
-                          textAlign: 'center', minWidth: '76px',
-                        }}>
-                          <div style={{ fontSize: '16px', marginBottom: '4px' }}>{s.icon}</div>
-                          <div style={{ fontSize: '24px', fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.value}</div>
-                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>{s.label}</div>
-                        </div>
-                      ))}
+                        {growing ? '↑' : '↓'}{Math.abs(growthPct)}%
+                      </span>
                     </div>
                   </div>
 
-                  {/* Chart */}
-                  <div style={{ padding: '16px 8px 0' }}>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <AreaChart data={chartData} margin={{ top: 10, right: 24, bottom: 0, left: -10 }}>
-                        <defs>
-                          <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%"   stopColor="#f97316" stopOpacity={0.4}  />
-                            <stop offset="50%"  stopColor="#f97316" stopOpacity={0.12} />
-                            <stop offset="100%" stopColor="#f97316" stopOpacity={0}    />
-                          </linearGradient>
-                          <linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%"   stopColor="#ea580c" />
-                            <stop offset="50%"  stopColor="#f97316" />
-                            <stop offset="100%" stopColor="#fbbf24" />
-                          </linearGradient>
-                        </defs>
-
-                        <CartesianGrid
-                          vertical={false}
-                          stroke="rgba(255,255,255,0.05)"
-                          strokeDasharray="4 4"
-                        />
-
-                        <XAxis
-                          dataKey="name"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: FONT }}
-                          dy={10}
-                        />
-
-                        <YAxis
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 11, fontFamily: FONT }}
-                          tickCount={4}
-                          width={32}
-                        />
-
-                        <Tooltip
-                          content={<CustomTooltip />}
-                          cursor={{ stroke: 'rgba(249,115,22,0.25)', strokeWidth: 1, strokeDasharray: '4 4' }}
-                        />
-
-                        <Area
-                          type="monotone"
-                          dataKey="شركات"
-                          stroke="url(#strokeGrad)"
-                          strokeWidth={3}
-                          fill="url(#areaFill)"
-                          dot={{ fill: '#1e293b', stroke: '#f97316', strokeWidth: 2, r: 5 }}
-                          activeDot={{ fill: '#f97316', stroke: '#fbbf24', strokeWidth: 2, r: 7 }}
-                          isAnimationActive={true}
-                          animationDuration={1000}
-                          animationEasing="ease-out"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {/* Bottom month summary bar */}
-                  <div style={{
-                    padding: '16px 32px',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    borderTop: '1px solid rgba(255,255,255,0.04)',
-                  }}>
+                  {/* Month columns */}
+                  <div style={{ flex: 1, display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                     {raw.map((m, i) => {
-                      const pct  = maxVal > 0 ? m.count / maxVal : 0;
+                      const pct    = maxVal > 0 ? m.count / maxVal : 0;
                       const isLast = i === raw.length - 1;
+                      const barH   = Math.max(pct * 36, m.count > 0 ? 4 : 2);
                       return (
-                        <div key={i} style={{ textAlign: 'center', flex: 1 }}>
+                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          {/* Count */}
                           <div style={{
-                            height: '3px', borderRadius: '2px', marginBottom: '6px',
-                            background: isLast
-                              ? `linear-gradient(90deg,#f97316,#fbbf24)`
-                              : `rgba(249,115,22,${0.15 + pct * 0.4})`,
-                          }} />
-                          <div style={{ fontSize: '14px', fontWeight: isLast ? 800 : 500, color: isLast ? '#f97316' : 'rgba(255,255,255,0.35)' }}>
-                            {m.count}
+                            fontSize: '13px',
+                            fontWeight: isLast ? 900 : 600,
+                            color: isLast ? C.orange : m.count > 0 ? C.text : C.muted,
+                          }}>
+                            {m.count || '—'}
                           </div>
-                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)', marginTop: '2px' }}>{m.month}</div>
+                          {/* Bar */}
+                          <div style={{
+                            width: '100%',
+                            height: `${barH}px`,
+                            borderRadius: '4px',
+                            background: isLast
+                              ? `linear-gradient(to top, ${C.orange}, ${C.warning})`
+                              : m.count > 0
+                                ? `rgba(249,115,22,${0.2 + pct * 0.5})`
+                                : C.border,
+                          }} />
+                          {/* Month */}
+                          <div style={{
+                            fontSize: '10px',
+                            color: isLast ? C.orange : C.muted,
+                            fontWeight: isLast ? 700 : 400,
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {m.month}
+                          </div>
                         </div>
                       );
                     })}
