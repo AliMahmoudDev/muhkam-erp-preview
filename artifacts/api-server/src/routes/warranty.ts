@@ -1,25 +1,42 @@
 import { Router } from "express";
-import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db, warrantyTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { writeAuditLog } from "../lib/audit-log";
 
 const router = Router();
 
+/* ── إحصائيات الضمان (قبل /:id لتجنب التعارض) ───────────────────── */
+router.get("/warranty/stats", wrap(async (req, res) => {
+  const companyId = (req as any).user?.company_id;
+  const today = new Date().toISOString().split("T")[0];
+  const soon = new Date();
+  soon.setDate(soon.getDate() + 30);
+  const soonStr = soon.toISOString().split("T")[0];
+
+  const rows = await db.select().from(warrantyTable)
+    .where(eq(warrantyTable.company_id, companyId));
+
+  const total        = rows.length;
+  const active       = rows.filter(r => r.status === "active" && r.warranty_end >= today).length;
+  const expired      = rows.filter(r => r.status !== "active" || r.warranty_end < today).length;
+  const expiringSoon = rows.filter(r =>
+    r.status === "active" && r.warranty_end >= today && r.warranty_end <= soonStr
+  ).length;
+
+  res.json({ total, active, expired, expiring_soon: expiringSoon });
+}));
+
 /* ── جلب كل سجلات الضمان ─────────────────────────────────────────── */
 router.get("/warranty", wrap(async (req, res) => {
   const companyId = (req as any).user?.company_id;
-  const { status, customer_id, search } = req.query as Record<string, string | undefined>;
+  const { search } = req.query as Record<string, string | undefined>;
 
-  let query = db.select().from(warrantyTable)
+  const rows = await db.select().from(warrantyTable)
     .where(eq(warrantyTable.company_id, companyId))
     .orderBy(desc(warrantyTable.warranty_end));
 
-  const rows = await query;
-
   let filtered = rows;
-  if (status && status !== "all") filtered = filtered.filter(r => r.status === status);
-  if (customer_id) filtered = filtered.filter(r => r.customer_id === parseInt(customer_id));
   if (search) filtered = filtered.filter(r =>
     r.product_name.includes(search) ||
     (r.customer_name ?? "").includes(search) ||
@@ -30,7 +47,9 @@ router.get("/warranty", wrap(async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
   const enriched = filtered.map(r => ({
     ...r,
-    days_remaining: Math.ceil((new Date(r.warranty_end).getTime() - new Date(today).getTime()) / 86400000),
+    days_remaining: Math.ceil(
+      (new Date(r.warranty_end).getTime() - new Date(today).getTime()) / 86400000
+    ),
   }));
 
   res.json(enriched);
@@ -113,27 +132,6 @@ router.delete("/warranty/:id", wrap(async (req, res) => {
     .where(and(eq(warrantyTable.id, id), eq(warrantyTable.company_id, companyId)));
 
   res.json({ success: true });
-}));
-
-/* ── إحصائيات الضمان ─────────────────────────────────────────────── */
-router.get("/warranty/stats", wrap(async (req, res) => {
-  const companyId = (req as any).user?.company_id;
-  const today = new Date().toISOString().split("T")[0];
-  const soon = new Date();
-  soon.setDate(soon.getDate() + 30);
-  const soonStr = soon.toISOString().split("T")[0];
-
-  const rows = await db.select().from(warrantyTable)
-    .where(eq(warrantyTable.company_id, companyId));
-
-  const total   = rows.length;
-  const active  = rows.filter(r => r.status === "active" && r.warranty_end >= today).length;
-  const expired = rows.filter(r => r.status !== "active" || r.warranty_end < today).length;
-  const expiringSoon = rows.filter(r =>
-    r.status === "active" && r.warranty_end >= today && r.warranty_end <= soonStr
-  ).length;
-
-  res.json({ total, active, expired, expiring_soon: expiringSoon });
 }));
 
 export default router;

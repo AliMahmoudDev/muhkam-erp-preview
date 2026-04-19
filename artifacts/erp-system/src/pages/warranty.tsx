@@ -3,15 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/format";
+import { authFetch } from "@/lib/auth-fetch";
+import { safeArray } from "@/lib/safe-data";
 import { Search, Plus, Shield, ShieldCheck, ShieldX, Clock, Trash2 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const api  = (p: string) => `${BASE}${p}`;
-
-async function authFetch(url: string, opts?: RequestInit) {
-  const token = localStorage.getItem("erp_token");
-  return fetch(url, { ...opts, headers: { ...opts?.headers, "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-}
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 interface WarrantyRecord {
@@ -147,15 +144,24 @@ export default function Warranty() {
 
   const { data: stats } = useQuery<WarrantyStats>({
     queryKey: ["/api/warranty/stats"],
-    queryFn: () => authFetch(api("/api/warranty/stats")).then(r => r.json()),
+    queryFn: async () => {
+      const r = await authFetch(api("/api/warranty/stats"));
+      if (!r.ok) throw new Error(`${r.status}`);
+      return r.json();
+    },
     staleTime: 60_000,
   });
 
-  const { data: records = [], isLoading } = useQuery<WarrantyRecord[]>({
+  const { data: rawRecords, isLoading } = useQuery({
     queryKey: ["/api/warranty"],
-    queryFn: () => authFetch(api("/api/warranty")).then(r => r.json()),
+    queryFn: async () => {
+      const r = await authFetch(api("/api/warranty"));
+      if (!r.ok) throw new Error(`${r.status}`);
+      return r.json();
+    },
     staleTime: 60_000,
   });
+  const records: WarrantyRecord[] = safeArray(rawRecords);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
