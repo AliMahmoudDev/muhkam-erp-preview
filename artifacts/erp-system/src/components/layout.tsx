@@ -22,7 +22,7 @@ const NAV_SECTIONS = [
   { label: 'الرئيسية', hrefs: ['/', '/treasury'] },
   {
     label: 'التجارة',
-    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers'],
+    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/stock-count', '/stock-transfers', '/customers', '/suppliers', '/returns'],
   },
   { label: 'المالية', hrefs: ['/income', '/expenses', '/reports'] },
   { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log'] },
