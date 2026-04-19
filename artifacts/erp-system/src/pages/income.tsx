@@ -4,7 +4,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDeleteIncome, useGetSettingsSafes } from "@workspace/api-client-react";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { Plus, Trash2, Search, X, TrendingUp } from "lucide-react";
+import { Plus, Trash2, Search, X, TrendingUp, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TableSkeleton } from "@/components/skeletons";
 import { ConfirmModal } from "@/components/confirm-modal";
@@ -19,6 +19,55 @@ interface Income {
 }
 
 const ARABIC_MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+/* ── Detail Modal ── */
+function IncomeDetailModal({ item, onClose }: { item: Income; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm modal-overlay">
+      <div className="glass-panel rounded-3xl w-full max-w-md border border-white/10 animate-in zoom-in-95">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+            </div>
+            <h3 className="font-bold text-white text-lg">تفاصيل الإيراد</h3>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          <Row label="المصدر" value={item.source} valueClass="text-white font-bold text-base" />
+          <Row label="المبلغ" value={formatCurrency(item.amount)} valueClass="text-emerald-400 font-black text-xl" />
+          <Row label="الخزينة" value={item.safe_name ?? '—'} valueClass={item.safe_name ? "text-blue-300 font-bold" : "text-white/30"} />
+          <Row label="التفاصيل" value={item.description || '—'} valueClass={item.description ? "text-white/80" : "text-white/30"} />
+          <Row label="التاريخ والوقت" value={formatDate(item.created_at)} valueClass="text-white/60" />
+        </div>
+
+        <div className="px-6 pb-5">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 font-bold transition-colors text-sm"
+          >
+            إغلاق
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="text-white/40 text-sm shrink-0">{label}</span>
+      <span className={`text-sm text-right ${valueClass ?? 'text-white/80'}`}>{value}</span>
+    </div>
+  );
+}
 
 export default function Income() {
   const { data: incomeList = [], isLoading } = useQuery<Income[]>({
@@ -36,11 +85,11 @@ export default function Income() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [detailItem, setDetailItem] = useState<Income | null>(null);
 
   const now = new Date();
   const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-  // Build month options from existing records
   const monthOptions = useMemo(() => {
     const set = new Set<string>();
     incomeList.forEach(inc => {
@@ -50,13 +99,11 @@ export default function Income() {
     return Array.from(set).sort().reverse();
   }, [incomeList]);
 
-  // Stats
-  const totalAll  = incomeList.reduce((s, i) => s + i.amount, 0);
+  const totalAll   = incomeList.reduce((s, i) => s + i.amount, 0);
   const totalMonth = incomeList
     .filter(i => new Date(i.created_at).toISOString().slice(0,7) === thisMonthKey)
     .reduce((s, i) => s + i.amount, 0);
 
-  // Filter
   const filtered = useMemo(() => {
     return incomeList.filter(inc => {
       const matchSearch = !search || inc.source.includes(search) || (inc.description || "").includes(search) || (inc.safe_name || "").includes(search);
@@ -124,6 +171,8 @@ export default function Income() {
           onCancel={() => setConfirmDeleteId(null)}
         />
       )}
+
+      {detailItem && <IncomeDetailModal item={detailItem} onClose={() => setDetailItem(null)} />}
 
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -195,7 +244,7 @@ export default function Income() {
                 <th className="p-4 font-medium">الخزينة</th>
                 <th className="p-4 font-medium">التفاصيل</th>
                 <th className="p-4 font-medium">التاريخ</th>
-                <th className="p-4 font-medium w-16"></th>
+                <th className="p-4 font-medium w-24"></th>
               </tr>
             </thead>
             <tbody>
@@ -226,9 +275,18 @@ export default function Income() {
                     <td className="p-4 text-white/60 text-sm max-w-xs truncate">{inc.description || '—'}</td>
                     <td className="p-4 text-sm text-white/50">{formatDate(inc.created_at)}</td>
                     <td className="p-4">
-                      <button onClick={() => setConfirmDeleteId(inc.id)} className="btn-icon btn-icon-danger">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2 justify-end">
+                        <button
+                          onClick={() => setDetailItem(inc)}
+                          className="btn-icon"
+                          title="عرض التفاصيل"
+                        >
+                          <Eye className="w-4 h-4 text-emerald-400" />
+                        </button>
+                        <button onClick={() => setConfirmDeleteId(inc.id)} className="btn-icon btn-icon-danger">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
