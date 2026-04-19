@@ -4,160 +4,28 @@ import { authFetch } from '@/lib/auth-fetch';
 import { formatDate } from '@/lib/format';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Loader2,
-  Lock,
-  LockOpen,
-  AlertOctagon,
-  Info,
-  ClipboardList,
-  ChevronDown,
+  Loader2, Lock, LockOpen, AlertOctagon, Info, ExternalLink, Shield,
 } from 'lucide-react';
 import { PageHeader, FieldLabel } from './_shared';
-import { ACTION_LABELS } from './_constants';
-
-/* ── Arabic label maps for audit log ───────────────────────── */
-const RECORD_TYPE_AR: Record<string, string> = {
-  user: 'مستخدم',
-  customer: 'عميل',
-  supplier: 'مورد',
-  product: 'صنف',
-  category: 'تصنيف',
-  sale: 'فاتورة بيع',
-  sale_return: 'مرتجع مبيعات',
-  sales_return: 'مرتجع مبيعات',
-  purchase: 'فاتورة شراء',
-  purchase_return: 'مرتجع مشتريات',
-  expense: 'مصروف',
-  income: 'إيراد',
-  voucher: 'سند',
-  receipt_voucher: 'سند قبض',
-  payment_voucher: 'سند صرف',
-  financial_transaction: 'حركة مالية',
-  inventory: 'مخزون',
-  branch: 'فرع',
-  warehouse: 'مخزن',
-  safe: 'خزينة',
-  period: 'فترة مالية',
-  setting: 'إعداد',
-  backup: 'نسخة احتياطية',
-};
-
-const FIELD_AR: Record<string, string> = {
-  name: 'الاسم',
-  username: 'اسم المستخدم',
-  email: 'البريد الإلكتروني',
-  phone: 'الهاتف',
-  address: 'العنوان',
-  role: 'الدور',
-  active: 'الحالة',
-  customer_code: 'كود العميل',
-  customer_name: 'اسم العميل',
-  customer_id: 'رقم العميل',
-  supplier_name: 'اسم المورد',
-  supplier_id: 'رقم المورد',
-  total_amount: 'الإجمالي',
-  amount: 'المبلغ',
-  refund_type: 'نوع الإرجاع',
-  description: 'البيان',
-  date: 'التاريخ',
-  direction: 'الاتجاه',
-  type: 'النوع',
-  notes: 'ملاحظات',
-  tax_id: 'الرقم الضريبي',
-  balance: 'الرصيد',
-  opening_balance: 'رصيد أول مدة',
-  closing_date: 'تاريخ الإغلاق',
-  lock_mode: 'وضع الإغلاق',
-  unlock_reason: 'سبب الفتح',
-  quantity: 'الكمية',
-  price: 'السعر',
-  barcode: 'الباركود',
-  sku: 'كود الصنف',
-};
-
-/* Fields to hide from audit detail (technical/internal) */
-const SKIP_FIELDS = new Set([
-  'id',
-  'company_id',
-  'normalized_name',
-  'created_at',
-  'updated_at',
-  'password',
-  'totp_secret',
-  'permissions',
-  'deleted_at',
-  'branch_id',
-  'warehouse_id',
-  'safe_id',
-]);
-
-function formatDetailValue(key: string, value: unknown): string {
-  if (value === null || value === undefined) return '—';
-  if (key === 'active') return value ? 'نشط' : 'موقوف';
-  if (key === 'direction') return value === 'in' ? 'وارد' : 'صادر';
-  if (key === 'refund_type') {
-    const map: Record<string, string> = { credit: 'آجل', cash: 'نقدي', partial: 'جزئي' };
-    return map[String(value)] ?? String(value);
-  }
-  if (key === 'role') {
-    const map: Record<string, string> = {
-      super_admin: 'المسؤول العام',
-      company_admin: 'مدير الشركة',
-      admin: 'مدير النظام',
-      manager: 'مشرف',
-      cashier: 'كاشير',
-      branch_manager: 'مدير الفرع',
-      salesperson: 'مندوب مبيعات',
-    };
-    return map[String(value)] ?? String(value);
-  }
-  if (typeof value === 'number') return value.toLocaleString('ar-EG-u-nu-latn');
-  return String(value);
-}
-
-function buildDetail(record: Record<string, unknown>): string {
-  return (
-    Object.entries(record)
-      .filter(([k]) => !SKIP_FIELDS.has(k))
-      .map(([k, v]) => {
-        const label = FIELD_AR[k] ?? k;
-        return `${label}: ${formatDetailValue(k, v)}`;
-      })
-      .join(' · ') || '—'
-  );
-}
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
+const api  = (p: string) => `${BASE}${p}`;
 
 interface PeriodStatus {
   closing_date: string | null;
-  locked_by: string | null;
-  locked_at: string | null;
-  lock_mode: string;
-  is_locked: boolean;
-}
-
-interface AuditLogEntry {
-  id: number;
-  action: string;
-  record_type: string;
-  record_id: number;
-  old_value: object | null;
-  new_value: object | null;
-  user_id: number | null;
-  username: string | null;
-  created_at: string;
+  locked_by:    string | null;
+  locked_at:    string | null;
+  lock_mode:    string;
+  is_locked:    boolean;
 }
 
 export default function FinancialLockTab() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [lockDate, setLockDate] = useState('');
+  const [lockDate,         setLockDate]         = useState('');
   const [showUnlockDialog, setShowUnlockDialog] = useState(false);
-  const [unlockReason, setUnlockReason] = useState('');
-  const [showAuditLog, setShowAuditLog] = useState(false);
+  const [unlockReason,     setUnlockReason]     = useState('');
 
   const { data: status, isLoading: statusLoading } = useQuery<PeriodStatus>({
     queryKey: ['period-status'],
@@ -167,17 +35,6 @@ export default function FinancialLockTab() {
       return r.json();
     },
     staleTime: 10_000,
-  });
-
-  const { data: auditLogs = [], isLoading: logsLoading } = useQuery<AuditLogEntry[]>({
-    queryKey: ['financial-audit-logs'],
-    queryFn: async () => {
-      const r = await authFetch(api('/api/settings/audit-logs?limit=100'));
-      if (!r.ok) throw new Error(`API Error: ${r.status}`);
-      return r.json();
-    },
-    staleTime: 30_000,
-    enabled: showAuditLog,
   });
 
   const lockMutation = useMutation({
@@ -196,7 +53,6 @@ export default function FinancialLockTab() {
       toast({ title: 'تم إغلاق الفترة المالية', description: `مغلق حتى ${lockDate}` });
       setLockDate('');
       qc.invalidateQueries({ queryKey: ['period-status'] });
-      qc.invalidateQueries({ queryKey: ['financial-audit-logs'] });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
@@ -218,7 +74,6 @@ export default function FinancialLockTab() {
       setShowUnlockDialog(false);
       setUnlockReason('');
       qc.invalidateQueries({ queryKey: ['period-status'] });
-      qc.invalidateQueries({ queryKey: ['financial-audit-logs'] });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
@@ -226,29 +81,25 @@ export default function FinancialLockTab() {
   const locked = status?.is_locked ?? false;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" dir="rtl">
       <PageHeader
         title="إغلاق الفترات المالية"
-        sub="تحكم في إغلاق الفترات المحاسبية وسجل التدقيق"
+        sub="تحكم في إغلاق الفترات المحاسبية ومنع التعديل على السجلات القديمة"
       />
 
       {/* ── Status Card ── */}
-      <div
-        className={`rounded-2xl border p-5 ${locked ? 'bg-red-500/5 border-red-500/20' : 'bg-green-500/5 border-green-500/20'}`}
-      >
+      <div className={`rounded-2xl border p-5 ${locked ? 'bg-red-500/5 border-red-500/20' : 'bg-green-500/5 border-green-500/20'}`}>
         {statusLoading ? (
           <div className="flex items-center gap-2 text-white/40">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            جاري التحميل...
+            <Loader2 className="w-4 h-4 animate-spin" /> جاري التحميل...
           </div>
         ) : (
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              {locked ? (
-                <Lock className="w-7 h-7 text-red-400" />
-              ) : (
-                <LockOpen className="w-7 h-7 text-green-400" />
-              )}
+              {locked
+                ? <Lock     className="w-7 h-7 text-red-400" />
+                : <LockOpen className="w-7 h-7 text-green-400" />
+              }
               <div>
                 <p className={`text-lg font-bold ${locked ? 'text-red-400' : 'text-green-400'}`}>
                   {locked ? 'الفترة مغلقة' : 'الفترة مفتوحة'}
@@ -256,35 +107,23 @@ export default function FinancialLockTab() {
                 {locked && status?.closing_date && (
                   <p className="text-white/50 text-sm mt-0.5">
                     مغلق حتى:{' '}
-                    <span className="text-white/80 font-semibold">
-                      {formatDate(status.closing_date)}
-                    </span>
+                    <span className="text-white/80 font-semibold">{formatDate(status.closing_date)}</span>
                   </p>
                 )}
                 {locked && status?.locked_by && (
                   <p className="text-white/40 text-xs mt-1">
                     بواسطة: <span className="text-white/60">{status.locked_by}</span>
                     {status.locked_at && (
-                      <>
-                        {' '}
-                        ·{' '}
-                        <span className="text-white/40">
-                          {new Date(status.locked_at).toLocaleString('ar-EG-u-nu-latn')}
-                        </span>
-                      </>
+                      <> · <span className="text-white/40">{new Date(status.locked_at).toLocaleString('ar-EG-u-nu-latn')}</span></>
                     )}
                   </p>
                 )}
                 {!locked && (
-                  <p className="text-green-400/60 text-xs mt-0.5">
-                    لا يوجد إغلاق مالي مفعَّل حالياً
-                  </p>
+                  <p className="text-green-400/60 text-xs mt-0.5">لا يوجد إغلاق مالي مفعَّل حالياً</p>
                 )}
               </div>
             </div>
-            <span
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border ${locked ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-green-400 bg-green-500/10 border-green-500/30'}`}
-            >
+            <span className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border ${locked ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-green-400 bg-green-500/10 border-green-500/30'}`}>
               {locked ? '🔒 مغلقة' : '🔓 مفتوحة'}
             </span>
           </div>
@@ -305,10 +144,7 @@ export default function FinancialLockTab() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* ── Lock Action ── */}
-        <div
-          className="rounded-2xl border border-white/10 p-5 space-y-4"
-          style={{ background: 'var(--erp-bg-card)' }}
-        >
+        <div className="rounded-2xl border border-white/10 p-5 space-y-4" style={{ background: 'var(--erp-bg-card)' }}>
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-red-400" />
             <p className="text-white font-bold text-sm">إغلاق فترة مالية</p>
@@ -318,7 +154,7 @@ export default function FinancialLockTab() {
             <input
               type="date"
               value={lockDate}
-              onChange={(e) => setLockDate(e.target.value)}
+              onChange={e => setLockDate(e.target.value)}
               max={new Date().toISOString().split('T')[0]}
               className="w-full rounded-xl px-3 py-2.5 bg-[#1A2235] border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500/50"
             />
@@ -328,11 +164,7 @@ export default function FinancialLockTab() {
             disabled={lockMutation.isPending || !lockDate}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 font-semibold text-sm hover:bg-red-500/25 transition-all disabled:opacity-40"
           >
-            {lockMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Lock className="w-4 h-4" />
-            )}
+            {lockMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
             تنفيذ الإغلاق
           </button>
           <p className="text-white/25 text-[10px]">
@@ -341,10 +173,7 @@ export default function FinancialLockTab() {
         </div>
 
         {/* ── Unlock Action ── */}
-        <div
-          className="rounded-2xl border border-white/10 p-5 space-y-4"
-          style={{ background: 'var(--erp-bg-card)' }}
-        >
+        <div className="rounded-2xl border border-white/10 p-5 space-y-4" style={{ background: 'var(--erp-bg-card)' }}>
           <div className="flex items-center gap-2">
             <LockOpen className="w-4 h-4 text-green-400" />
             <p className="text-white font-bold text-sm">فتح الفترة المالية</p>
@@ -352,57 +181,36 @@ export default function FinancialLockTab() {
           {locked ? (
             <>
               <p className="text-white/40 text-xs leading-relaxed">
-                فتح الفترة يتطلب تقديم سبب واضح ويُسجَّل فوراً في سجل التدقيق. هذه العملية للمدير
-                فقط.
+                فتح الفترة يتطلب تقديم سبب واضح ويُسجَّل فوراً في سجل التدقيق. هذه العملية للمدير فقط.
               </p>
               <button
                 onClick={() => setShowUnlockDialog(true)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-500/10 border border-green-500/25 text-green-400 font-semibold text-sm hover:bg-green-500/20 transition-all"
               >
-                <LockOpen className="w-4 h-4" />
-                فتح الفترة
+                <LockOpen className="w-4 h-4" /> فتح الفترة
               </button>
             </>
           ) : (
             <div className="flex flex-col items-center gap-2 py-4 text-white/25">
               <LockOpen className="w-8 h-8" />
-              <p className="text-xs text-center">
-                الفترة مفتوحة حالياً
-                <br />
-                لا يلزم أي إجراء
-              </p>
+              <p className="text-xs text-center">الفترة مفتوحة حالياً<br />لا يلزم أي إجراء</p>
             </div>
           )}
         </div>
       </div>
 
       {/* ── How Corrections Work ── */}
-      <div
-        className="rounded-2xl border border-white/8 p-5"
-        style={{ background: 'var(--erp-bg-card)' }}
-      >
+      <div className="rounded-2xl border border-white/8 p-5" style={{ background: 'var(--erp-bg-card)' }}>
         <div className="flex items-center gap-2 mb-3">
           <Info className="w-4 h-4 text-blue-400" />
           <p className="text-white font-bold text-sm">كيف يتم التصحيح بعد الإغلاق؟</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            {
-              icon: '🔄',
-              title: 'سند عكسي',
-              desc: 'لسند إيصال أو صرف مقفل — أنشئ سنداً معاكساً بنفس المبلغ مرتبطاً بالأصلي',
-            },
-            {
-              icon: '📝',
-              title: 'فاتورة إرجاع',
-              desc: 'لفاتورة مبيعات مقفلة — استخدم فاتورة إرجاع ولا تعدّل الأصل مباشرة',
-            },
-            {
-              icon: '↩️',
-              title: 'مصروف عكسي',
-              desc: 'لمصروف خاطئ — أنشئ مصروفاً سالباً ثم أنشئ المصروف الصحيح',
-            },
-          ].map((c) => (
+            { icon: '🔄', title: 'سند عكسي',     desc: 'لسند إيصال أو صرف مقفل — أنشئ سنداً معاكساً بنفس المبلغ مرتبطاً بالأصلي' },
+            { icon: '📝', title: 'فاتورة إرجاع', desc: 'لفاتورة مبيعات مقفلة — استخدم فاتورة إرجاع ولا تعدّل الأصل مباشرة' },
+            { icon: '↩️', title: 'مصروف عكسي',  desc: 'لمصروف خاطئ — أنشئ مصروفاً سالباً ثم أنشئ المصروف الصحيح' },
+          ].map(c => (
             <div key={c.title} className="rounded-xl p-3 bg-white/3 border border-white/6">
               <p className="text-lg mb-1">{c.icon}</p>
               <p className="text-white/80 font-semibold text-xs mb-1">{c.title}</p>
@@ -412,107 +220,30 @@ export default function FinancialLockTab() {
         </div>
       </div>
 
-      {/* ── Audit Log ── */}
-      <div
-        className="rounded-2xl border border-white/10 overflow-hidden"
+      {/* ── Link to full Audit Log page ── */}
+      <a
+        href={`${BASE}/audit-log`}
+        className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-white/8 hover:border-amber-500/25 hover:bg-amber-500/[0.03] transition-all group"
         style={{ background: 'var(--erp-bg-card)' }}
       >
-        <button
-          onClick={() => setShowAuditLog((p) => !p)}
-          className="w-full flex items-center justify-between gap-2 px-5 py-4 hover:bg-white/3 transition-all"
-        >
-          <div className="flex items-center gap-2">
-            <ClipboardList className="w-4 h-4 text-amber-400" />
-            <p className="text-white font-bold text-sm">سجل التدقيق المالي</p>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <Shield className="w-4.5 h-4.5 text-amber-400" />
           </div>
-          <ChevronDown
-            className={`w-4 h-4 text-white/40 transition-transform ${showAuditLog ? 'rotate-180' : ''}`}
-          />
-        </button>
-
-        {showAuditLog && (
-          <div className="border-t border-white/8">
-            {logsLoading ? (
-              <div className="flex items-center justify-center gap-2 py-8 text-white/40">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                جاري تحميل السجل...
-              </div>
-            ) : auditLogs.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8 text-white/25">
-                <ClipboardList className="w-8 h-8" />
-                <p className="text-sm">لا توجد سجلات بعد</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-white/8">
-                      {['الإجراء', 'النوع', 'المستخدم', 'التوقيت', 'التفاصيل'].map((h) => (
-                        <th
-                          key={h}
-                          className="px-4 py-3 text-right text-white/30 text-xs font-bold"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {auditLogs.map((log, i) => {
-                      const actionInfo = ACTION_LABELS[log.action] ?? {
-                        label: log.action,
-                        color: 'text-white/40 bg-white/5 border-white/10',
-                      };
-                      const recordTypeAr = RECORD_TYPE_AR[log.record_type] ?? log.record_type;
-                      const detail = log.new_value
-                        ? buildDetail(log.new_value as Record<string, unknown>)
-                        : '—';
-                      return (
-                        <tr
-                          key={log.id}
-                          className={`border-b border-white/5 hover:bg-white/3 ${i % 2 === 0 ? '' : 'bg-white/[0.015]'}`}
-                        >
-                          <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${actionInfo.color}`}
-                            >
-                              {actionInfo.label}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-white/50 text-xs">{recordTypeAr}</td>
-                          <td className="px-4 py-3 text-white/70 text-xs font-medium">
-                            {log.username ?? '—'}
-                          </td>
-                          <td className="px-4 py-3 text-white/40 text-xs">
-                            {new Date(log.created_at).toLocaleString('ar-EG-u-nu-latn')}
-                          </td>
-                          <td
-                            className="px-4 py-3 text-white/35 text-[11px] max-w-[200px] truncate"
-                            title={detail}
-                          >
-                            {detail}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <div>
+            <p className="text-white font-bold text-sm">سجل التدقيق الشامل</p>
+            <p className="text-white/35 text-xs mt-0.5">
+              عرض جميع العمليات مع فلترة متقدمة حسب المستخدم والنوع والتاريخ
+            </p>
           </div>
-        )}
-      </div>
+        </div>
+        <ExternalLink className="w-4 h-4 text-white/25 group-hover:text-amber-400 transition-colors shrink-0" />
+      </a>
 
       {/* ── Unlock Dialog ── */}
       {showUnlockDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.7)' }}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-white/10 shadow-2xl p-6 space-y-5"
-            style={{ background: 'var(--erp-bg-card)' }}
-          >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="w-full max-w-md rounded-2xl border border-white/10 shadow-2xl p-6 space-y-5" style={{ background: 'var(--erp-bg-card)' }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
                 <LockOpen className="w-5 h-5 text-amber-400" />
@@ -524,15 +255,14 @@ export default function FinancialLockTab() {
             </div>
 
             <div className="p-3 rounded-xl bg-red-500/8 border border-red-500/20 text-red-400/80 text-xs leading-relaxed">
-              ⚠️ بعد فتح الفترة، يمكن تعديل السجلات القديمة مباشرة. تأكد من وجود سبب موثَّق قبل
-              المتابعة.
+              ⚠️ بعد فتح الفترة، يمكن تعديل السجلات القديمة مباشرة. تأكد من وجود سبب موثَّق قبل المتابعة.
             </div>
 
             <div className="space-y-2">
               <FieldLabel>سبب فتح الفترة *</FieldLabel>
               <textarea
                 value={unlockReason}
-                onChange={(e) => setUnlockReason(e.target.value)}
+                onChange={e => setUnlockReason(e.target.value)}
                 placeholder="اكتب سبباً واضحاً لفتح الفترة المالية..."
                 rows={3}
                 className="w-full rounded-xl px-3 py-2.5 bg-[#1A2235] border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500/50 resize-none"
@@ -542,10 +272,7 @@ export default function FinancialLockTab() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setShowUnlockDialog(false);
-                  setUnlockReason('');
-                }}
+                onClick={() => { setShowUnlockDialog(false); setUnlockReason(''); }}
                 className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm font-semibold hover:bg-white/5 transition-all"
               >
                 إلغاء
@@ -555,11 +282,10 @@ export default function FinancialLockTab() {
                 disabled={unlockMutation.isPending || unlockReason.trim().length < 3}
                 className="flex-1 py-2.5 rounded-xl bg-green-500/15 border border-green-500/30 text-green-400 text-sm font-semibold hover:bg-green-500/25 transition-all disabled:opacity-40 flex items-center justify-center gap-2"
               >
-                {unlockMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <LockOpen className="w-4 h-4" />
-                )}
+                {unlockMutation.isPending
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <LockOpen className="w-4 h-4" />
+                }
                 تأكيد الفتح
               </button>
             </div>
