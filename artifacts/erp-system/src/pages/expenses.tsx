@@ -476,37 +476,59 @@ export default function Expenses() {
       )}
 
       {/* ─── Filters (one row) ─── */}
-      <div className="flex items-center gap-2">
+      <div className="glass-panel rounded-2xl border border-white/8 flex items-center divide-x divide-x-reverse divide-white/8">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث..."
-            className="glass-input pr-9 pl-3 py-2 text-sm w-full" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 pointer-events-none" />
+          <input
+            type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث بالتصنيف أو التفاصيل..."
+            className="w-full bg-transparent text-white/80 text-sm placeholder:text-white/25 pr-9 pl-3 py-2.5 outline-none"
+          />
           {search && (
             <button onClick={() => setSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2">
-              <X className="w-3.5 h-3.5 text-white/40 hover:text-white/70" />
+              <X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" />
             </button>
           )}
         </div>
-        {/* Category filter */}
-        <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
-          className="glass-input text-sm w-36 shrink-0">
-          <option value="">كل التصنيفات</option>
-          {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+        {/* Divider */}
+        <div className="w-px self-stretch bg-white/8" />
+        {/* Category */}
+        <select
+          value={catFilter} onChange={e => setCatFilter(e.target.value)}
+          className="bg-transparent text-white/70 text-sm px-3 py-2.5 outline-none cursor-pointer w-36 shrink-0"
+        >
+          <option value="" className="bg-gray-900">كل التصنيفات</option>
+          {categories.map(c => <option key={c.id} value={c.name} className="bg-gray-900">{c.name}</option>)}
         </select>
+        {/* Divider */}
+        <div className="w-px self-stretch bg-white/8" />
         {/* Date from */}
-        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-          className="glass-input text-sm w-34 shrink-0" title="من تاريخ" />
+        <input
+          type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+          title="من تاريخ"
+          className="bg-transparent text-white/70 text-sm px-3 py-2.5 outline-none w-36 shrink-0 [color-scheme:dark]"
+        />
+        {/* Divider */}
+        <div className="w-px self-stretch bg-white/8" />
         {/* Date to */}
-        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-          className="glass-input text-sm w-34 shrink-0" title="إلى تاريخ" />
-        {/* Clear */}
+        <input
+          type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+          title="إلى تاريخ"
+          className="bg-transparent text-white/70 text-sm px-3 py-2.5 outline-none w-36 shrink-0 [color-scheme:dark]"
+        />
+        {/* Clear btn */}
         {hasFilter && (
-          <button onClick={() => { setSearch(''); setCatFilter(''); setDateFrom(''); setDateTo(''); }}
-            className="shrink-0 p-2 rounded-lg border border-white/10 hover:border-white/20 text-white/40 hover:text-white/70 transition-colors" title="مسح الفلاتر">
-            <X className="w-4 h-4" />
-          </button>
+          <>
+            <div className="w-px self-stretch bg-white/8" />
+            <button
+              onClick={() => { setSearch(''); setCatFilter(''); setDateFrom(''); setDateTo(''); }}
+              title="مسح الفلاتر"
+              className="px-3 py-2.5 text-white/30 hover:text-red-400 transition-colors shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </>
         )}
       </div>
 
