@@ -388,8 +388,17 @@ function CustomerDrill({ isSupplier }: { isSupplier: boolean }) {
   });
 
   const filtered = (data ?? [])
-    .filter((c) => c.is_supplier === isSupplier && Number(c.balance) > 0.001)
-    .sort((a, b) => Number(b.balance) - Number(a.balance));
+    .filter((c) => {
+      const bal = Number(c.balance);
+      if (isSupplier) {
+        // الموردون: الرصيد يصبح سالباً عند الشراء منهم (أنت مدين لهم)
+        return c.is_supplier && bal < -0.001;
+      } else {
+        // العملاء: الرصيد يكون موجباً عندما يدينون لك
+        return !c.is_supplier && bal > 0.001;
+      }
+    })
+    .sort((a, b) => Math.abs(Number(b.balance)) - Math.abs(Number(a.balance)));
 
   if (isLoading)
     return <p style={{ fontSize: 11, color: txtSub, padding: '8px 4px' }}>جاري التحميل…</p>;
@@ -428,6 +437,9 @@ function CustomerDrill({ isSupplier }: { isSupplier: boolean }) {
                 }}
               >
                 {c.name}
+                {c.is_supplier && !isSupplier && (
+                  <span style={{ fontSize: 9, marginRight: 4, color: '#6366f1', fontWeight: 700 }}>مورد</span>
+                )}
               </td>
               <td
                 style={{
@@ -435,10 +447,10 @@ function CustomerDrill({ isSupplier }: { isSupplier: boolean }) {
                   textAlign: 'left',
                   fontVariantNumeric: 'tabular-nums',
                   fontWeight: 600,
-                  color: '#d97706',
+                  color: isSupplier ? '#ef4444' : '#d97706',
                 }}
               >
-                {formatCurrency(Number(c.balance))}
+                {formatCurrency(Math.abs(Number(c.balance)))}
               </td>
             </tr>
           ))}
@@ -451,7 +463,7 @@ function CustomerDrill({ isSupplier }: { isSupplier: boolean }) {
             }}
           >
             <td style={{ padding: '5px 10px', fontWeight: 700, fontSize: 11, color: txtSub }}>
-              الإجمالي ({filtered.length} {isSupplier ? 'مورد' : 'عميل'})
+              {isSupplier ? 'إجمالي ذمم دائنة' : 'إجمالي ذمم مدينة'} ({filtered.length} {isSupplier ? 'مورد' : 'عميل'})
             </td>
             <td
               style={{
@@ -459,10 +471,10 @@ function CustomerDrill({ isSupplier }: { isSupplier: boolean }) {
                 textAlign: 'left',
                 fontVariantNumeric: 'tabular-nums',
                 fontWeight: 800,
-                color: '#d97706',
+                color: isSupplier ? '#ef4444' : '#d97706',
               }}
             >
-              {formatCurrency(filtered.reduce((s, c) => s + Number(c.balance), 0))}
+              {formatCurrency(filtered.reduce((s, c) => s + Math.abs(Number(c.balance)), 0))}
             </td>
           </tr>
         </tfoot>

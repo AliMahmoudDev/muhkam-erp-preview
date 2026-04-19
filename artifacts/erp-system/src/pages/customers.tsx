@@ -1558,6 +1558,7 @@ export default function Customers() {
   const { toast } = useToast();
 
   const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'customers' | 'suppliers' | 'debtors' | 'creditors'>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [showReceipt, setShowReceipt] = useState<{
     id: number;
@@ -1701,12 +1702,25 @@ export default function Customers() {
     }
   };
 
-  const filtered = customers.filter(
-    (c) =>
+  const filtered = customers.filter((c) => {
+    const matchSearch =
       c.name.includes(search) ||
       (c.phone && c.phone.includes(search)) ||
-      (c.customer_code && String(c.customer_code).includes(search))
-  );
+      (c.customer_code && String(c.customer_code).includes(search));
+    if (!matchSearch) return false;
+    const bal = Number(c.balance);
+    if (typeFilter === 'customers') return !c.is_supplier;
+    if (typeFilter === 'suppliers') return !!c.is_supplier;
+    if (typeFilter === 'debtors')  return bal > 0.001;           // عليه — ذمم مدينة
+    if (typeFilter === 'creditors') return bal < -0.001;          // له — ذمم دائنة
+    return true;
+  });
+
+  // إحصائيات AR/AP
+  const totalAR = customers.filter(c => Number(c.balance) > 0.001).reduce((s, c) => s + Number(c.balance), 0);
+  const totalAP = customers.filter(c => Number(c.balance) < -0.001).reduce((s, c) => s + Math.abs(Number(c.balance)), 0);
+  const totalSuppliers = customers.filter(c => c.is_supplier).length;
+  const debtorCount = customers.filter(c => Number(c.balance) > 0.001).length;
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1955,6 +1969,90 @@ export default function Customers() {
             className="btn-primary flex items-center gap-2 whitespace-nowrap py-2"
           >
             <Plus className="w-4 h-4" /> إضافة عميل
+          </button>
+        )}
+      </div>
+
+      {/* ── إحصائيات AR / AP ── */}
+      {customers.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div
+            className="glass-panel rounded-2xl p-4 border cursor-pointer transition-all"
+            style={{ borderColor: typeFilter === 'debtors' ? 'rgba(245,158,11,0.5)' : 'rgba(245,158,11,0.15)', background: typeFilter === 'debtors' ? 'rgba(245,158,11,0.08)' : undefined }}
+            onClick={() => setTypeFilter(f => f === 'debtors' ? 'all' : 'debtors')}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
+              <p className="text-white/40 text-xs font-bold">ذمم مدينة (AR)</p>
+            </div>
+            <p className="text-xl font-black text-amber-400">{formatCurrency(totalAR)}</p>
+            <p className="text-white/30 text-xs mt-0.5">{debtorCount} عميل عليه رصيد</p>
+          </div>
+          <div
+            className="glass-panel rounded-2xl p-4 border cursor-pointer transition-all"
+            style={{ borderColor: typeFilter === 'creditors' ? 'rgba(239,68,68,0.5)' : 'rgba(239,68,68,0.15)', background: typeFilter === 'creditors' ? 'rgba(239,68,68,0.06)' : undefined }}
+            onClick={() => setTypeFilter(f => f === 'creditors' ? 'all' : 'creditors')}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+              <p className="text-white/40 text-xs font-bold">ذمم دائنة (AP)</p>
+            </div>
+            <p className="text-xl font-black text-red-400">{formatCurrency(totalAP)}</p>
+            <p className="text-white/30 text-xs mt-0.5">{customers.filter(c => Number(c.balance) < -0.001).length} له رصيد عليك</p>
+          </div>
+          <div className="glass-panel rounded-2xl p-4 border border-white/5">
+            <div className="flex items-center gap-2 mb-1">
+              <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+              <p className="text-white/40 text-xs font-bold">الصافي</p>
+            </div>
+            <p className={`text-xl font-black ${totalAR - totalAP >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(Math.abs(totalAR - totalAP))}</p>
+            <p className="text-white/30 text-xs mt-0.5">{totalAR - totalAP >= 0 ? 'لصالحك' : 'عليك صافياً'}</p>
+          </div>
+          <div
+            className="glass-panel rounded-2xl p-4 border cursor-pointer transition-all"
+            style={{ borderColor: typeFilter === 'suppliers' ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.15)', background: typeFilter === 'suppliers' ? 'rgba(99,102,241,0.08)' : undefined }}
+            onClick={() => setTypeFilter(f => f === 'suppliers' ? 'all' : 'suppliers')}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <ArrowDownToLine className="w-3.5 h-3.5 text-indigo-400" />
+              <p className="text-white/40 text-xs font-bold">موردون</p>
+            </div>
+            <p className="text-xl font-black text-indigo-400">{totalSuppliers}</p>
+            <p className="text-white/30 text-xs mt-0.5">جهة يتم الشراء منها</p>
+          </div>
+        </div>
+      )}
+
+      {/* فلتر النوع */}
+      <div className="flex flex-wrap gap-2">
+        {([
+          { key: 'all',       label: 'الكل' },
+          { key: 'customers', label: 'عملاء فقط' },
+          { key: 'suppliers', label: 'موردون فقط' },
+          { key: 'debtors',   label: 'عليهم رصيد (AR)' },
+          { key: 'creditors', label: 'لهم رصيد (AP)' },
+        ] as const).map(f => (
+          <button
+            key={f.key}
+            onClick={() => setTypeFilter(v => v === f.key ? 'all' : f.key)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+              typeFilter === f.key
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'
+            }`}
+          >
+            {f.label}
+            {typeFilter === f.key && filtered.length > 0 && (
+              <span className="mr-1.5 text-amber-400/70">({filtered.length})</span>
+            )}
+          </button>
+        ))}
+        {(typeFilter !== 'all' || search) && (
+          <button
+            onClick={() => { setTypeFilter('all'); setSearch(''); }}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 transition-all flex items-center gap-1"
+          >
+            <X className="w-3 h-3" /> مسح الفلتر
           </button>
         )}
       </div>
@@ -2653,7 +2751,10 @@ export default function Customers() {
                 <th className="p-4 font-semibold text-white/60">الكود</th>
                 <th className="p-4 font-semibold text-white/60">العميل</th>
                 <th className="p-4 font-semibold text-white/60">رقم الهاتف</th>
-                <th className="p-4 font-semibold text-white/60">الرصيد</th>
+                <th className="p-4 font-semibold text-white/60">
+                  الرصيد
+                  <span className="text-white/25 text-xs font-normal mr-1">(+ عليه | − له)</span>
+                </th>
                 <th className="p-4 font-semibold text-white/60">الإجراءات</th>
               </tr>
             </thead>
@@ -2687,14 +2788,14 @@ export default function Customers() {
                     <td className="p-4 text-white/60">{customer.phone || '-'}</td>
                     <td className="p-4 font-bold">
                       {Number(customer.balance) > 0 ? (
-                        <span className="text-yellow-400">
+                        <span className="text-amber-400 flex items-center gap-1.5">
                           {formatCurrency(Number(customer.balance))}
-                          <span className="text-xs font-normal text-white/40 mr-1">عليه</span>
+                          <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/20">AR عليه</span>
                         </span>
                       ) : Number(customer.balance) < 0 ? (
-                        <span className="text-blue-400">
+                        <span className="text-red-400 flex items-center gap-1.5">
                           {formatCurrency(Math.abs(Number(customer.balance)))}
-                          <span className="text-xs font-normal text-white/40 mr-1">دائن له</span>
+                          <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-red-500/15 text-red-400 border border-red-500/20">AP له</span>
                         </span>
                       ) : (
                         <span className="text-white/30">متسوّى</span>
