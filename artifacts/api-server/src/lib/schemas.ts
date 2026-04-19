@@ -57,8 +57,8 @@ export const createCompanySchema = z.object({
   name: z.string({ required_error: "اسم الشركة مطلوب" })
     .min(2, "اسم الشركة يجب أن يكون حرفين على الأقل")
     .max(200, "اسم الشركة طويل جداً"),
-  plan_type: z.enum(["trial", "basic", "pro"], {
-    errorMap: () => ({ message: "نوع الخطة يجب أن يكون: trial أو basic أو pro" }),
+  plan_type: z.enum(["trial", "basic", "pro", "paid", "professional"], {
+    errorMap: () => ({ message: "نوع الخطة غير صحيح" }),
   }).default("trial"),
   duration_days: z.number()
     .int("عدد الأيام يجب أن يكون عدداً صحيحاً")
@@ -66,6 +66,13 @@ export const createCompanySchema = z.object({
     .max(3650, "لا يمكن تجاوز 10 سنوات")
     .default(7),
   admin_email: z.string().email("بريد إلكتروني غير صحيح").optional().nullable(),
+  /* Admin user fields — required for manual creation by super-admin */
+  admin_name: z.string().min(2, "اسم المدير يجب أن يكون حرفين على الأقل").optional(),
+  admin_username: z.string()
+    .min(3, "اسم المستخدم يجب أن يكون 3 أحرف على الأقل")
+    .max(50, "اسم المستخدم طويل جداً")
+    .regex(/^[a-zA-Z0-9_]+$/, "اسم المستخدم يجب أن يحتوي على حروف إنجليزية وأرقام وشرطة سفلية فقط")
+    .optional(),
 });
 
 export const updateCompanySchema = createCompanySchema.partial();

@@ -520,6 +520,14 @@ export default function SuperAdmin() {
   const [newName, setNewName] = useState('');
   const [newPlan, setNewPlan] = useState('trial');
   const [newDays, setNewDays] = useState(14);
+  const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminUsername, setNewAdminUsername] = useState('');
+  const [createResult, setCreateResult] = useState<{
+    company_name: string;
+    username: string;
+    admin_name: string;
+    temp_password: string;
+  } | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
@@ -1225,6 +1233,132 @@ export default function SuperAdmin() {
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = '#6d28d9'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = '#7c3aed'; }}
+            >
+              تم — إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Create Company Result Modal — shows credentials ── */}
+      {createResult && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 9999, padding: '20px',
+          }}
+          onClick={() => setCreateResult(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: '24px', padding: '40px',
+              maxWidth: '500px', width: '100%', direction: 'rtl',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
+              border: '2px solid #f97316',
+            }}
+          >
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <div style={{
+                width: '64px', height: '64px', borderRadius: '50%',
+                background: 'linear-gradient(135deg,#f97316,#fbbf24)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 14px', fontSize: '28px',
+              }}>🏢</div>
+              <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b', fontFamily: FONT }}>
+                تم إنشاء الشركة بنجاح!
+              </div>
+              <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px', fontFamily: FONT }}>
+                {createResult.company_name}
+              </div>
+            </div>
+
+            {/* Credentials box */}
+            <div style={{
+              background: '#fff7ed', border: '1.5px solid #fed7aa',
+              borderRadius: '16px', padding: '20px', marginBottom: '20px',
+            }}>
+              <div style={{ fontSize: '12px', color: '#c2410c', fontWeight: 700, fontFamily: FONT, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>🔐</span> بيانات دخول المدير — أرسلها للعميل
+              </div>
+
+              {[
+                { label: 'اسم المدير', value: createResult.admin_name, mono: false },
+                { label: 'اسم المستخدم', value: createResult.username, mono: true },
+                { label: 'كلمة المرور المؤقتة', value: createResult.temp_password, mono: true, secret: true },
+              ].map(row => (
+                <div key={row.label} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '10px 0',
+                  borderBottom: '1px solid #fed7aa',
+                }}>
+                  <span style={{ fontSize: '12px', color: '#92400e', fontFamily: FONT }}>{row.label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {row.mono ? (
+                      <code style={{
+                        fontSize: row.secret ? '18px' : '14px',
+                        fontWeight: 800,
+                        color: row.secret ? '#ea580c' : '#1e293b',
+                        background: row.secret ? '#fff7ed' : '#f8fafc',
+                        padding: '4px 10px', borderRadius: '8px',
+                        letterSpacing: row.secret ? '2px' : '0.5px',
+                        fontFamily: 'monospace',
+                      }}>
+                        {row.value}
+                      </code>
+                    ) : (
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', fontFamily: FONT }}>
+                        {row.value}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => navigator.clipboard.writeText(row.value)}
+                      title="نسخ"
+                      style={{
+                        padding: '4px 8px', borderRadius: '6px', border: '1px solid #fed7aa',
+                        background: '#fff', cursor: 'pointer', fontSize: '12px',
+                      }}
+                    >📋</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Copy all button */}
+            <button
+              onClick={() => {
+                const text = `بيانات دخول نظام مُحكم ERP\nالشركة: ${createResult.company_name}\nاسم المستخدم: ${createResult.username}\nكلمة المرور المؤقتة: ${createResult.temp_password}\n\nيرجى تغيير كلمة المرور فور تسجيل الدخول.`;
+                navigator.clipboard.writeText(text);
+                showToast('تم نسخ بيانات الدخول!');
+              }}
+              style={{
+                width: '100%', padding: '13px', borderRadius: '12px',
+                border: 'none', background: 'linear-gradient(135deg,#f97316,#ea580c)',
+                color: '#fff', fontSize: '14px', fontWeight: 700,
+                cursor: 'pointer', fontFamily: FONT, marginBottom: '10px',
+              }}
+            >
+              📋 نسخ كل بيانات الدخول
+            </button>
+
+            <div style={{
+              background: '#fef3c7', borderRadius: '10px', padding: '12px',
+              fontSize: '12px', color: '#92400e', fontFamily: FONT, lineHeight: '1.6',
+              marginBottom: '16px',
+            }}>
+              ⚠️ احفظ كلمة المرور الآن — لن تظهر مجدداً. يمكنك دائماً إعادة تعيينها من قائمة الشركات.
+            </div>
+
+            <button
+              onClick={() => setCreateResult(null)}
+              style={{
+                width: '100%', padding: '12px', borderRadius: '12px',
+                border: '1px solid #e2e8f0', background: '#f8fafc',
+                color: '#64748b', fontSize: '14px', fontWeight: 700,
+                cursor: 'pointer', fontFamily: FONT,
+              }}
             >
               تم — إغلاق
             </button>
@@ -2315,9 +2449,55 @@ export default function SuperAdmin() {
                         ))}
                       </select>
                     </div>
+                    {/* Admin name */}
+                    <div style={{ flex: '1 1 160px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
+                        اسم المدير *
+                      </label>
+                      <input
+                        value={newAdminName}
+                        onChange={(e) => setNewAdminName(e.target.value)}
+                        placeholder="مثال: أحمد محمد"
+                        style={{
+                          width: '100%', border: `1.5px solid ${C.border}`,
+                          borderRadius: '10px', padding: '10px 14px',
+                          fontSize: '14px', outline: 'none', fontFamily: FONT,
+                          boxSizing: 'border-box', background: C.bg, color: C.text,
+                        }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = C.orange; }}
+                        onBlur={(e)  => { e.currentTarget.style.borderColor = C.border; }}
+                      />
+                    </div>
+
+                    {/* Admin username */}
+                    <div style={{ flex: '1 1 150px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
+                        اسم مستخدم المدير
+                        <span style={{ fontWeight: 400, color: C.muted, marginRight: '4px' }}>(اختياري)</span>
+                      </label>
+                      <input
+                        value={newAdminUsername}
+                        onChange={(e) => setNewAdminUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase())}
+                        placeholder="مثال: ahmed_mgr"
+                        dir="ltr"
+                        style={{
+                          width: '100%', border: `1.5px solid ${C.border}`,
+                          borderRadius: '10px', padding: '10px 14px',
+                          fontSize: '14px', outline: 'none', fontFamily: 'monospace',
+                          boxSizing: 'border-box', background: C.bg, color: C.text,
+                        }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = C.orange; }}
+                        onBlur={(e)  => { e.currentTarget.style.borderColor = C.border; }}
+                      />
+                      <div style={{ fontSize: '10px', color: C.muted, marginTop: '3px' }}>
+                        يُكمَّل تلقائياً لو تُركت فارغة
+                      </div>
+                    </div>
+
+                    {/* Submit */}
                     <button
                       onClick={() => {
-                        if (!newName.trim()) return;
+                        if (!newName.trim() || !newAdminName.trim()) return;
                         coMutate.mutate(
                           {
                             url: '/api/super/companies',
@@ -2326,35 +2506,36 @@ export default function SuperAdmin() {
                               name: newName.trim(),
                               plan_type: newPlan,
                               duration_days: newDays,
+                              admin_name: newAdminName.trim(),
+                              admin_username: newAdminUsername.trim() || undefined,
                             },
                           },
                           {
-                            onSuccess: () => {
+                            onSuccess: (data: any) => {
                               setShowCreate(false);
-                              setNewName('');
-                              setNewPlan('trial');
-                              setNewDays(14);
-                              showToast('تم إنشاء الشركة بنجاح');
+                              setNewName(''); setNewPlan('trial'); setNewDays(14);
+                              setNewAdminName(''); setNewAdminUsername('');
+                              setCreateResult({
+                                company_name: data.company?.name ?? newName,
+                                username:     data.admin?.username ?? '',
+                                admin_name:   data.admin?.name    ?? newAdminName,
+                                temp_password: data.admin?.temp_password ?? '',
+                              });
                             },
                           }
                         );
                       }}
-                      disabled={!newName.trim() || coMutate.isPending}
+                      disabled={!newName.trim() || !newAdminName.trim() || coMutate.isPending}
                       style={{
-                        padding: '10px 22px',
-                        borderRadius: '10px',
-                        border: 'none',
-                        background: newName.trim() ? C.orange : C.border,
-                        color: '#fff',
-                        fontSize: '14px',
-                        fontWeight: 700,
-                        cursor: newName.trim() ? 'pointer' : 'default',
-                        fontFamily: FONT,
-                        flexShrink: 0,
-                        transition: 'filter 0.15s',
+                        padding: '10px 22px', borderRadius: '10px', border: 'none',
+                        background: (newName.trim() && newAdminName.trim()) ? C.orange : C.border,
+                        color: '#fff', fontSize: '14px', fontWeight: 700,
+                        cursor: (newName.trim() && newAdminName.trim()) ? 'pointer' : 'default',
+                        fontFamily: FONT, flexShrink: 0, transition: 'filter 0.15s',
+                        alignSelf: 'flex-end', marginBottom: '20px',
                       }}
                     >
-                      {coMutate.isPending ? 'جاري الإنشاء...' : 'إنشاء الشركة'}
+                      {coMutate.isPending ? 'جاري الإنشاء...' : '🏢 إنشاء الشركة'}
                     </button>
                   </div>
                 </div>

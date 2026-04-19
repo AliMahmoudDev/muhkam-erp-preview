@@ -288,26 +288,91 @@ router.post("/super/companies/:id/extend", ...superOnly, wrap(async (req, res) =
   res.json({ message: `تم تمديد الاشتراك ${days} يوم`, company: { ...updated, daysRemaining: daysRemaining(newEndDate) } });
 }));
 
-/* ── POST /super/companies — create company manually (super only) ── */
+/* ── POST /super/companies — create company + admin user manually (super only) ── */
 router.post("/super/companies", ...superOnly, wrap(async (req, res) => {
   const v = validate(createCompanySchema, req.body);
   if (!v.success) { res.status(400).json({ error: "بيانات غير صحيحة", details: v.errors }); return; }
 
-  const { name, plan_type, duration_days, admin_email } = v.data;
+  const { name, plan_type, duration_days, admin_email, admin_name, admin_username } = v.data;
   const today = new Date();
   const end   = new Date(today);
   end.setDate(end.getDate() + (duration_days ?? 30));
 
-  const [co] = await db.insert(companiesTable).values({
-    name:        name.trim(),
-    plan_type,
-    start_date:  today.toISOString().slice(0, 10),
-    end_date:    end.toISOString().slice(0, 10),
-    is_active:   true,
-    admin_email: admin_email ?? null,
-  }).returning();
+  /* Generate a temp password: 12 chars — letters + digits + symbols */
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$!";
+  let tempPassword = "";
+  for (let i = 0; i < 12; i++) tempPassword += chars[Math.floor(Math.random() * chars.length)];
 
-  res.status(201).json(co);
+  const result = await db.transaction(async (tx) => {
+    /* 1. Create the company */
+    const [co] = await tx.insert(companiesTable).values({
+      name:        name.trim(),
+      plan_type,
+      start_date:  today.toISOString().slice(0, 10),
+      end_date:    end.toISOString().slice(0, 10),
+      is_active:   true,
+      admin_email: admin_email ?? null,
+    }).returning();
+
+    /* 2. Create the admin user */
+    const resolvedAdminName = admin_name?.trim() || `مدير ${name.trim()}`;
+
+    /* Auto-generate username: sanitize company name → ascii slug + company id */
+    let resolvedUsername = admin_username?.trim().toLowerCase();
+    if (!resolvedUsername) {
+      const slug = name
+        .trim()
+        .toLowerCase()
+        .replace(/[\u0600-\u06ff\s]+/g, "_") // Arabic chars → _
+        .replace(/[^a-z0-9_]/g, "")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")
+        .slice(0, 20) || "admin";
+      resolvedUsername = `${slug}_${co.id}`;
+    }
+
+    /* Ensure username uniqueness */
+    const [taken] = await tx
+      .select({ id: erpUsersTable.id })
+      .from(erpUsersTable)
+      .where(sql`LOWER(${erpUsersTable.username}) = ${resolvedUsername}`);
+    if (taken) resolvedUsername = `${resolvedUsername}_${co.id}`;
+
+    const hashedPw = await hashPin(tempPassword);
+    const [user] = await tx.insert(erpUsersTable).values({
+      name:        resolvedAdminName,
+      username:    resolvedUsername,
+      pin:         hashedPw,
+      role:        "admin",
+      active:      true,
+      company_id:  co.id,
+      permissions: "{}",
+      email:       admin_email ?? null,
+    }).returning({
+      id: erpUsersTable.id,
+      username: erpUsersTable.username,
+      name: erpUsersTable.name,
+    });
+
+    return { company: co, admin: user };
+  });
+
+  await writeAuditLog({
+    action: "CREATE", record_type: "company", record_id: result.company.id,
+    old_value: null, new_value: { name, plan_type, admin: result.admin.username },
+    user: req.user, company_id: null,
+    note: `إنشاء شركة جديدة مع مستخدم مدير: ${result.admin.username}`,
+  });
+
+  res.status(201).json({
+    company: result.company,
+    admin: {
+      username:      result.admin.username,
+      name:          result.admin.name,
+      temp_password: tempPassword,
+    },
+    message: "تم إنشاء الشركة والمستخدم بنجاح",
+  });
 }));
 
 /* ── POST /super/companies/:id/reset-admin-password — generate a temp password ── */
