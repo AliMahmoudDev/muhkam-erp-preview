@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppLayout } from '@/components/layout';
 import { SubscriptionBanner } from '@/components/subscription-banner';
+import { AnnouncementBanner } from '@/components/announcement-banner';
 import { AuthProvider, useAuth } from '@/contexts/auth';
 import { AppSettingsProvider } from '@/contexts/app-settings';
 import { WarehouseProvider } from '@/contexts/warehouse';
@@ -127,6 +128,7 @@ function Router() {
   return (
     <AppLayout>
       <SubscriptionBanner />
+      <AnnouncementBanner />
       <Switch>
         <Route path="/">
           {() => (
