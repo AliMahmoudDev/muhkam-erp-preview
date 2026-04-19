@@ -24,6 +24,33 @@
 - Fixed `artifacts/erp-system/src/components/ui/spinner.tsx`: `React.ComponentProps<typeof Loader2Icon>` instead of `<"svg">`
 - Added `pnpm.overrides` in root `package.json` to deduplicate `@types/react` and fix `calendar.tsx` dual-types TS error
 
+## Features Added (April 2026 — Session 4)
+
+### 1. فلتر الفرع/المستودع في التقارير (Branch Filter in Reports)
+- Added `wfSql()` helper to `artifacts/api-server/src/routes/reports.ts` for warehouse_id SQL filtering
+- Updated `/api/reports/product-profit` and `/api/reports/sales-analysis` to accept `?warehouse_id=` param
+- Added `WarehouseFilter` component in `reports/index.tsx` — shows dropdown when on Products or Analysis tabs
+- Updated `ProductProfitReport` and `SalesAnalysisReport` to accept optional `warehouseId` prop and pass to queries
+- **Fixed bug:** `GET /api/reports/aging` used `s.company_id` alias in the suppliers query — now correctly uses `p.company_id`
+
+### 2. واتساب من قائمة المبيعات (WhatsApp from Sales List)
+- Added `buildSaleWhatsAppUrl()` helper in `sales.tsx` — builds a `wa.me/?text=...` link from a SaleRecord
+- Added WhatsApp button (green icon) to every row in `SalesHistoryPanel` table — opens WhatsApp with formatted invoice message
+- Message includes: invoice number, customer name, total, payment type, thank-you line
+
+### 3. رمز QR للمنتجات (QR Code for Products)
+- Installed `qrcode.react@^4.2.0` in `artifacts/erp-system`
+- Added `QrCode` icon button in products table (purple, beside Edit/Delete)
+- Click opens a modal showing `QRCodeSVG` with product ID, name, and SKU encoded as `MUHKAM-PRODUCT|id:...|name:...|sku:...`
+- QR code is high error-correction (level H) at 180x180 px on white background
+
+### 4. نظام متابعة الضمانات (Warranty Tracking System)
+- **DB schema:** `lib/db/src/schema/warranty.ts` → `warranty_records` table (pushed to DB)
+- **Backend routes:** `artifacts/api-server/src/routes/warranty.ts` — CRUD (GET list, POST create, PATCH update, DELETE, GET stats)
+- **Frontend:** `artifacts/erp-system/src/pages/warranty.tsx` — full page with stats cards, search/filter, table, form modal, WhatsApp reminder button
+- **Routing:** registered in `App.tsx` (lazy) and `rbac.ts` (role: admin/manager/cashier, ShieldCheck icon)
+- Supports: product name, customer, phone, serial number, device model, warranty duration (1/3/6/12/24 months), auto-calculated end date, days remaining, expiry states (active/expiring soon/expired)
+
 ## Performance & Security Improvements (April 2026 — Session 2)
 
 ### Subscription Enforcement Middleware (`tenant-guard.ts`)

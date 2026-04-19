@@ -8,7 +8,7 @@ interface ProductProfitData {
   summary: { total_revenue:number; total_cogs:number; total_profit:number; overall_margin:number };
 }
 
-export default function ProductProfitReport() {
+export default function ProductProfitReport({ warehouseId }: { warehouseId?: number | null }) {
   const [mode,setMode]             = useState<DateMode>("month");
   const [customFrom,setCustomFrom] = useState(thisMonthStart());
   const [customTo,setCustomTo]     = useState(todayStr());
@@ -16,9 +16,11 @@ export default function ProductProfitReport() {
   const [sort,setSort]             = useState<"profit"|"revenue"|"margin"|"qty">("profit");
   const [dateFrom,dateTo]          = getDateRange(mode,customFrom,customTo);
 
+  const wParam = warehouseId ? `&warehouse_id=${warehouseId}` : "";
+
   const { data, isLoading } = useQuery<ProductProfitData>({
-    queryKey:["/api/reports/product-profit",dateFrom,dateTo],
-    queryFn:()=>authFetch(api(`/api/reports/product-profit?date_from=${dateFrom}&date_to=${dateTo}`)).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }),
+    queryKey:["/api/reports/product-profit",dateFrom,dateTo,warehouseId],
+    queryFn:()=>authFetch(api(`/api/reports/product-profit?date_from=${dateFrom}&date_to=${dateTo}${wParam}`)).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }),
     staleTime:60_000,
   });
 

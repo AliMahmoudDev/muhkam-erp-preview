@@ -21,6 +21,30 @@ import TrialBalanceReport  from "./TrialBalanceReport";
 import VatReport           from "./VatReport";
 import AgingReport         from "./AgingReport";
 
+interface Warehouse { id: number; name: string; }
+
+/* ── Warehouse filter selector ───────────────────────────────────────── */
+function WarehouseFilter({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  const { data: warehouses = [] } = useQuery<Warehouse[]>({
+    queryKey: ["/api/settings/warehouses"],
+    queryFn: () => authFetch(api("/api/settings/warehouses")).then(r => r.json()),
+    staleTime: 300_000,
+  });
+  if (!warehouses.length) return null;
+  return (
+    <select
+      value={value ?? ""}
+      onChange={e => onChange(e.target.value ? Number(e.target.value) : null)}
+      className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white/70 focus:outline-none focus:ring-1 focus:ring-amber-400/40"
+    >
+      <option value="" className="bg-[#1a1a2e]">🏪 كل الفروع</option>
+      {warehouses.map(w => (
+        <option key={w.id} value={w.id} className="bg-[#1a1a2e]">{w.name}</option>
+      ))}
+    </select>
+  );
+}
+
 /* ── Types ─────────────────────────────────────────────────────────────── */
 interface BsSnapshot {
   assets:      { total: number };
@@ -103,6 +127,7 @@ export default function Reports() {
   const { user } = useAuth();
   const canView  = hasPermission(user, "can_view_reports") === true;
   const [tab, setTab] = useState<Tab>("health");
+  const [warehouseId, setWarehouseId] = useState<number | null>(null);
 
   if (!canView) return (
     <div className="flex flex-col items-center justify-center py-20 text-center" style={{ fontFamily:"'Tajawal','Cairo',sans-serif" }}>
@@ -116,8 +141,8 @@ export default function Reports() {
 
   return (
     <div className="space-y-4" style={{ fontFamily:"'Tajawal','Cairo',sans-serif" }} dir="rtl">
-      {/* ── Tab bar — flat, clean ── */}
-      <div className="no-print flex flex-wrap gap-1.5 bg-white/5 rounded-2xl p-1.5 border border-white/10">
+      {/* ── Tab bar + warehouse filter ── */}
+      <div className="no-print flex flex-wrap gap-1.5 bg-white/5 rounded-2xl p-1.5 border border-white/10 items-center">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
@@ -128,6 +153,11 @@ export default function Reports() {
             {t.label}
           </button>
         ))}
+        {(tab === "products" || tab === "analysis") && (
+          <div className="mr-auto">
+            <WarehouseFilter value={warehouseId} onChange={setWarehouseId} />
+          </div>
+        )}
       </div>
 
       {/* ── Financial Consistency Bar — always visible ── */}
@@ -142,8 +172,8 @@ export default function Reports() {
           {tab === "trial-balance" && <TrialBalanceReport />}
           {tab === "vat"           && <VatReport />}
           {tab === "aging"         && <AgingReport />}
-          {tab === "products"      && <ProductProfitReport />}
-          {tab === "analysis"      && <SalesAnalysisReport />}
+          {tab === "products"      && <ProductProfitReport warehouseId={warehouseId} />}
+          {tab === "analysis"      && <SalesAnalysisReport warehouseId={warehouseId} />}
         </motion.div>
       </AnimatePresence>
     </div>

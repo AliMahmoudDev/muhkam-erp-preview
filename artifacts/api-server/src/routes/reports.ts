@@ -106,12 +106,20 @@ function dfSql(alias: string, col: string, from?: string, to?: string) {
   return sql``;
 }
 
+/* ── مساعد: بناء جزء SQL لفلتر المستودع ── */
+function wfSql(alias: string, warehouseId?: string | number | null) {
+  const wid = warehouseId ? Number(warehouseId) : null;
+  if (!wid || isNaN(wid)) return sql``;
+  const col = sql.raw(`${safeAlias(alias)}.warehouse_id`);
+  return sql`AND ${col} = ${wid}`;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
  * 1. تقرير ربحية المنتجات
- * GET /api/reports/product-profit?date_from=&date_to=
+ * GET /api/reports/product-profit?date_from=&date_to=&warehouse_id=
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/product-profit", wrap(async (req, res) => {
-  const { date_from, date_to } = req.query as Record<string, string | undefined>;
+  const { date_from, date_to, warehouse_id } = req.query as Record<string, string | undefined>;
   const companyId = (req as any).user?.company_id ?? null;
 
   const rows = await db.execute(sql`
@@ -126,6 +134,7 @@ router.get("/reports/product-profit", wrap(async (req, res) => {
     WHERE s.posting_status = 'posted'
       ${dfSql("s", "date", date_from, date_to)}
       ${cfSql("s", companyId)}
+      ${wfSql("s", warehouse_id)}
     GROUP BY si.product_id, si.product_name
     ORDER BY revenue DESC
   `);
@@ -330,7 +339,7 @@ router.get("/reports/daily-profit", wrap(async (req, res) => {
  * GET /api/reports/sales-analysis?date_from=&date_to=
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/sales-analysis", wrap(async (req, res) => {
-  const { date_from, date_to } = req.query as Record<string, string | undefined>;
+  const { date_from, date_to, warehouse_id } = req.query as Record<string, string | undefined>;
   const companyId = (req as any).user?.company_id ?? null;
 
   const byProduct = await db.execute(sql`
@@ -345,6 +354,7 @@ router.get("/reports/sales-analysis", wrap(async (req, res) => {
     WHERE s.posting_status = 'posted'
       ${dfSql("s", "date", date_from, date_to)}
       ${cfSql("s", companyId)}
+      ${wfSql("s", warehouse_id)}
     GROUP BY si.product_id, si.product_name
     ORDER BY total_revenue DESC
   `);
@@ -359,6 +369,7 @@ router.get("/reports/sales-analysis", wrap(async (req, res) => {
     WHERE s.posting_status = 'posted'
       ${dfSql("s", "date", date_from, date_to)}
       ${cfSql("s", companyId)}
+      ${wfSql("s", warehouse_id)}
     GROUP BY s.customer_id, s.customer_name
     ORDER BY total_revenue DESC
   `);
@@ -1545,9 +1556,8 @@ router.get("/reports/aging", wrap(async (req, res) => {
   const asOfDate = as_of ? new Date(as_of) : new Date();
   const asOfStr  = asOfDate.toISOString().split("T")[0];
 
-  const cond = companyId
-    ? sql`AND s.company_id = ${companyId}`
-    : sql``;
+  const condSales = companyId ? sql`AND s.company_id = ${companyId}` : sql``;
+  const condPurch = companyId ? sql`AND p.company_id = ${companyId}` : sql``;
 
   // جلب كل السجلات المعلقة (credit) حسب النوع
   let rows: Array<{ id: number; name: string; date: string; remaining: number; invoice_no: string }> = [];
@@ -1559,7 +1569,7 @@ router.get("/reports/aging", wrap(async (req, res) => {
       WHERE s.payment_type IN ('credit','partial')
         AND CAST(s.remaining_amount AS FLOAT8) > 0
         AND s.date <= ${asOfStr}
-        ${cond}
+        ${condSales}
       ORDER BY s.date ASC
     `);
     rows = (r.rows as any[]).map(x => ({
@@ -1576,7 +1586,7 @@ router.get("/reports/aging", wrap(async (req, res) => {
       WHERE p.payment_type IN ('credit','partial')
         AND CAST(p.remaining_amount AS FLOAT8) > 0
         AND p.date <= ${asOfStr}
-        ${cond}
+        ${condPurch}
       ORDER BY p.date ASC
     `);
     rows = (r.rows as any[]).map(x => ({

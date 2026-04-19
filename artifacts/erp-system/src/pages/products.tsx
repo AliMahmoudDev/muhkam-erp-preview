@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { authFetch } from "@/lib/auth-fetch";
 import { useAuth } from "@/contexts/auth";
 import { hasPermission } from "@/lib/permissions";
@@ -6,7 +7,7 @@ import { useGetProducts, useCreateProduct, useDeleteProduct, useGetCategories, u
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/format";
 import {
-  Plus, Search, Trash2, AlertTriangle, Pencil, FileDown, Package, ShieldX, Check, X, Tag,
+  Plus, Search, Trash2, AlertTriangle, Pencil, FileDown, Package, ShieldX, Check, X, Tag, QrCode,
 } from "lucide-react";
 import { exportProductsExcel } from "@/lib/export-excel";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,7 @@ function ProductsTab() {
   const [showAdd, setShowAdd]             = useState(false);
   const [editProduct, setEditProduct]     = useState<(ProductFormData & { id: number }) | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [qrProduct, setQrProduct]             = useState<{ id: number; name: string; sku?: string | null } | null>(null);
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: ProductFormData }) => {
@@ -192,6 +194,26 @@ function ProductsTab() {
           isPending={updateMutation.isPending}
         />
       )}
+      {qrProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" dir="rtl" onClick={() => setQrProduct(null)}>
+          <div className="glass-panel rounded-3xl p-6 w-full max-w-xs border border-white/10 space-y-4 text-center" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-black text-white">رمز QR للمنتج</h2>
+              <button onClick={() => setQrProduct(null)} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex justify-center p-4 bg-white rounded-2xl">
+              <QRCodeSVG
+                value={`MUHKAM-PRODUCT|id:${qrProduct.id}|name:${qrProduct.name}${qrProduct.sku ? `|sku:${qrProduct.sku}` : ""}`}
+                size={180}
+                level="H"
+              />
+            </div>
+            <p className="text-white font-bold text-sm">{qrProduct.name}</p>
+            {qrProduct.sku && <p className="text-white/40 text-xs font-mono">SKU: {qrProduct.sku}</p>}
+            <p className="text-white/30 text-xs">امسح الرمز لتحديد المنتج</p>
+          </div>
+        </div>
+      )}
 
       <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
         <div className="overflow-x-auto">
@@ -266,6 +288,13 @@ function ProductsTab() {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setQrProduct({ id: product.id, name: product.name, sku: product.sku })}
+                            title="رمز QR"
+                            className="p-2 rounded-lg text-purple-400 hover:text-purple-300 hover:bg-purple-400/10 transition-colors"
+                          >
+                            <QrCode className="w-4 h-4" />
+                          </button>
                           {canManageProducts && (
                             <button
                               onClick={() => openEdit(product)}

@@ -8,7 +8,7 @@ interface SalesAnalysisData {
   by_customer: Array<{ customer_id:number|null; customer_name:string; total_revenue:number; invoice_count:number }>;
 }
 
-export default function SalesAnalysisReport() {
+export default function SalesAnalysisReport({ warehouseId }: { warehouseId?: number | null }) {
   const [mode,setMode]             = useState<DateMode>("month");
   const [customFrom,setCustomFrom] = useState(thisMonthStart());
   const [customTo,setCustomTo]     = useState(todayStr());
@@ -16,9 +16,11 @@ export default function SalesAnalysisReport() {
   const [topLimit,setTopLimit]     = useState<"all"|"5"|"10">("all");
   const [dateFrom,dateTo]          = getDateRange(mode,customFrom,customTo);
 
+  const wParam = warehouseId ? `&warehouse_id=${warehouseId}` : "";
+
   const { data, isLoading } = useQuery<SalesAnalysisData>({
-    queryKey:["/api/reports/sales-analysis",dateFrom,dateTo],
-    queryFn:()=>authFetch(api(`/api/reports/sales-analysis?date_from=${dateFrom}&date_to=${dateTo}`)).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }),
+    queryKey:["/api/reports/sales-analysis",dateFrom,dateTo,warehouseId],
+    queryFn:()=>authFetch(api(`/api/reports/sales-analysis?date_from=${dateFrom}&date_to=${dateTo}${wParam}`)).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }),
     staleTime:60_000,
   });
 
