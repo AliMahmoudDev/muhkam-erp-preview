@@ -2090,13 +2090,15 @@ export default function Customers() {
                 />
               </div>
               <div>
-                <label className="block text-white/70 text-sm mb-1">رقم الهاتف *</label>
+                <label className="block text-white/70 text-sm mb-1">رقم الهاتف * <span className="text-white/30 text-xs">(11 رقم)</span></label>
                 <input
                   required
                   type="text"
+                  inputMode="numeric"
                   className="glass-input"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })}
+                  maxLength={11}
                   placeholder="01xxxxxxxxx"
                 />
               </div>
@@ -2536,12 +2538,15 @@ export default function Customers() {
                 />
               </div>
               <div>
-                <label className="block text-white/70 text-sm mb-1">رقم الهاتف</label>
+                <label className="block text-white/70 text-sm mb-1">رقم الهاتف * <span className="text-white/30 text-xs">(11 رقم)</span></label>
                 <input
+                  required
                   type="text"
+                  inputMode="numeric"
                   className="glass-input"
                   value={editFormData.phone}
-                  onChange={(e) => setEditFormData((f) => ({ ...f, phone: e.target.value }))}
+                  onChange={(e) => setEditFormData((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 11) }))}
+                  maxLength={11}
                   placeholder="01xxxxxxxxx"
                 />
               </div>

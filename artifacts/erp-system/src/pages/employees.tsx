@@ -1491,8 +1491,9 @@ export default function Employees() {
               </div>
 
               {/* Phone (11 digits exact) */}
-              <Field label="الهاتف (11 رقم)">
+              <Field label="الهاتف * (11 رقم)">
                 <input
+                  required
                   value={editEmp.phone ?? ''}
                   onChange={(e) => {
                     const v = e.target.value.replace(/\D/g, '').slice(0, 11);

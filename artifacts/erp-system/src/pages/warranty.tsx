@@ -81,8 +81,17 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
             <input className="glass-input w-full text-sm" placeholder="العميل" value={form.customer_name} onChange={e => field("customer_name", e.target.value)} />
           </div>
           <div>
-            <label className="text-white/50 text-xs mb-1 block">رقم الهاتف</label>
-            <input className="glass-input w-full text-sm" placeholder="01xxxxxxxxx" value={form.customer_phone} onChange={e => field("customer_phone", e.target.value)} />
+            <label className="text-white/50 text-xs mb-1 block">رقم الهاتف * <span className="text-white/30">(11 رقم)</span></label>
+            <input
+              required
+              type="text"
+              inputMode="numeric"
+              maxLength={11}
+              className="glass-input w-full text-sm"
+              placeholder="01xxxxxxxxx"
+              value={form.customer_phone}
+              onChange={e => field("customer_phone", e.target.value.replace(/\D/g, '').slice(0, 11))}
+            />
           </div>
           <div>
             <label className="text-white/50 text-xs mb-1 block">الرقم التسلسلي</label>

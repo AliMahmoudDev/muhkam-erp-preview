@@ -198,9 +198,17 @@ export default function Branches() {
                   placeholder="عنوان الفرع" className="glass-input w-full rounded-lg px-3 py-2.5 text-sm" />
               </div>
               <div>
-                <label className="block text-xs text-[var(--erp-text-3)] mb-1.5">رقم الهاتف</label>
-                <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  placeholder="رقم هاتف الفرع" className="glass-input w-full rounded-lg px-3 py-2.5 text-sm" />
+                <label className="block text-xs text-[var(--erp-text-3)] mb-1.5">رقم الهاتف * <span className="text-white/25">(11 رقم)</span></label>
+                <input
+                  required
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={11}
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 11) }))}
+                  placeholder="01xxxxxxxxx"
+                  className="glass-input w-full rounded-lg px-3 py-2.5 text-sm"
+                />
               </div>
             </div>
             {editId !== null && (

@@ -153,7 +153,7 @@ export default function Reports() {
             {t.label}
           </button>
         ))}
-        {(tab === "products" || tab === "analysis") && (
+        {(tab === "products" || tab === "analysis" || tab === "vat") && (
           <div className="mr-auto">
             <WarehouseFilter value={warehouseId} onChange={setWarehouseId} />
           </div>
@@ -170,7 +170,7 @@ export default function Reports() {
           {tab === "cashflow"      && <CashFlowReport />}
           {tab === "balance"       && <BalanceSheetReport />}
           {tab === "trial-balance" && <TrialBalanceReport />}
-          {tab === "vat"           && <VatReport />}
+          {tab === "vat"           && <VatReport warehouseId={warehouseId} />}
           {tab === "aging"         && <AgingReport />}
           {tab === "products"      && <ProductProfitReport warehouseId={warehouseId} />}
           {tab === "analysis"      && <SalesAnalysisReport warehouseId={warehouseId} />}

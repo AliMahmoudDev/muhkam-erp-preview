@@ -16,17 +16,19 @@ interface VatData {
   generated_at: string;
 }
 
-export default function VatReport() {
+export default function VatReport({ warehouseId }: { warehouseId?: number | null }) {
   const today = new Date().toISOString().split("T")[0];
   const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
   const [dateFrom, setDateFrom] = useState(firstOfMonth);
   const [dateTo, setDateTo]   = useState(today);
   const [enabled, setEnabled] = useState(false);
 
+  const whParam = warehouseId ? `&warehouse_id=${warehouseId}` : "";
+
   const { data, isLoading, refetch } = useQuery<VatData>({
-    queryKey: ["vat-report", dateFrom, dateTo],
+    queryKey: ["vat-report", dateFrom, dateTo, warehouseId],
     queryFn: () =>
-      authFetch(api(`/api/reports/vat-report?date_from=${dateFrom}&date_to=${dateTo}`))
+      authFetch(api(`/api/reports/vat-report?date_from=${dateFrom}&date_to=${dateTo}${whParam}`))
         .then(async r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
     enabled,
     staleTime: 30_000,

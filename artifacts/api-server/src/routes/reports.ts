@@ -1478,8 +1478,9 @@ router.get("/reports/vat-report", wrap(async (req, res) => {
   const companyId = (req as unknown as { user?: { company_id?: number } }).user?.company_id;
   if (!companyId) { res.status(400).json({ error: "company_id مطلوب" }); return; }
 
-  const dateFrom = safeDate(req.query.date_from as string | undefined);
-  const dateTo   = safeDate(req.query.date_to   as string | undefined);
+  const dateFrom    = safeDate(req.query.date_from as string | undefined);
+  const dateTo      = safeDate(req.query.date_to   as string | undefined);
+  const warehouseId = req.query.warehouse_id ? Number(req.query.warehouse_id) : null;
 
   const dateFilter = dateFrom && dateTo
     ? sql`AND s.date BETWEEN ${dateFrom} AND ${dateTo}`
@@ -1488,6 +1489,8 @@ router.get("/reports/vat-report", wrap(async (req, res) => {
       : dateTo
         ? sql`AND s.date <= ${dateTo}`
         : sql``;
+
+  const whFilter = warehouseId ? sql`AND s.warehouse_id = ${warehouseId}` : sql``;
 
   const purchaseDateFilter = dateFrom && dateTo
     ? sql`AND p.date BETWEEN ${dateFrom} AND ${dateTo}`
@@ -1507,6 +1510,7 @@ router.get("/reports/vat-report", wrap(async (req, res) => {
     WHERE s.company_id = ${companyId}
       AND s.posting_status = 'posted'
       ${dateFilter}
+      ${whFilter}
   `);
 
   /* Input VAT (on purchases) */
