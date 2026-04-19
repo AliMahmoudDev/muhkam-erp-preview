@@ -29,6 +29,7 @@ export type AuditAction =
   | "COMPANY_SUSPENDED"
   | "COMPANY_EXTENDED"
   | "COMPANY_DELETED"
+  | "ADMIN_PASSWORD_RESET"
   // ── Backup / restore lifecycle ────────────────────────────────────────────
   | "RESTORE_STARTED"
   | "RESTORE_REJECTED"
@@ -59,6 +60,7 @@ export type AuditRecordType =
   | "payroll_period"          // payroll period lifecycle
   | "salary_advance"          // salary advance lifecycle
   | "fiscal_year"             // fiscal year open/close
+  | "erp_user"               // user account management (password reset, etc.)
   | "system";                 // tenant-level system actions (restore, etc.)
 
 interface AuditUser {

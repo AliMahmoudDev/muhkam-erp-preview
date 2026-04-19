@@ -310,6 +310,62 @@ router.post("/super/companies", ...superOnly, wrap(async (req, res) => {
   res.status(201).json(co);
 }));
 
+/* ── POST /super/companies/:id/reset-admin-password — generate a temp password ── */
+router.post("/super/companies/:id/reset-admin-password", ...superOnly, wrap(async (req, res) => {
+  const id = Number(req.params.id);
+
+  const [co] = await db.select().from(companiesTable).where(eq(companiesTable.id, id));
+  if (!co) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
+
+  /* Find the primary admin of this company */
+  const admins = await db
+    .select({ id: erpUsersTable.id, username: erpUsersTable.username, name: erpUsersTable.name })
+    .from(erpUsersTable)
+    .where(eq(erpUsersTable.company_id, id))
+    .orderBy(erpUsersTable.id);
+
+  if (admins.length === 0) {
+    res.status(400).json({ error: "لا يوجد مستخدمون لهذه الشركة" });
+    return;
+  }
+
+  /* Find the admin-role user first, else fall back to first user */
+  const adminUsers = await db
+    .select({ id: erpUsersTable.id, username: erpUsersTable.username, name: erpUsersTable.name })
+    .from(erpUsersTable)
+    .where(eq(erpUsersTable.company_id, id))
+    .orderBy(erpUsersTable.id);
+
+  const target = adminUsers[0];
+
+  /* Generate a random 10-char temp password */
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$";
+  let tempPassword = "";
+  for (let i = 0; i < 10; i++) {
+    tempPassword += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  const hashed = await hashPin(tempPassword);
+  await db
+    .update(erpUsersTable)
+    .set({ pin: hashed, login_attempts: 0 })
+    .where(eq(erpUsersTable.id, target.id));
+
+  await writeAuditLog({
+    action: "ADMIN_PASSWORD_RESET", record_type: "erp_user", record_id: target.id,
+    old_value: null, new_value: { company_id: id, reset_by: "super_admin" },
+    user: req.user, company_id: null,
+    note: `إعادة تعيين كلمة مرور مدير شركة: ${co.name}`,
+  });
+
+  res.json({
+    message: "تم إعادة تعيين كلمة المرور بنجاح",
+    username: target.username,
+    name: target.name,
+    temp_password: tempPassword,
+  });
+}));
+
 /* ── DELETE /super/companies/:id — delete a company ── */
 /* Trial companies: users are deleted too (cascade in app layer).
    Paid/active companies with users require confirmation code + force=true.

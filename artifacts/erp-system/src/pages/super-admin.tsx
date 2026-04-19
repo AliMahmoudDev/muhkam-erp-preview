@@ -545,6 +545,15 @@ export default function SuperAdmin() {
   const [supportEmail, setSupportEmail] = useState('');
   const [settingSaving, setSettingSaving] = useState(false);
 
+  /* ── Password Reset ─── */
+  const [resetPassResult, setResetPassResult] = useState<{
+    company_name: string;
+    username: string;
+    name: string;
+    temp_password: string;
+  } | null>(null);
+  const [resetPassCopied, setResetPassCopied] = useState(false);
+
   /* ── Toast ─── */
   const [toast, setToast] = useState<{ msg: string; type?: 'success' | 'error' } | null>(null);
 
@@ -886,6 +895,24 @@ export default function SuperAdmin() {
     onError: (e: Error) => setDeleteMgrErr(e.message),
   });
 
+  /* ── Reset company admin password ─── */
+  const resetPassword = useMutation({
+    mutationFn: ({ id, company_name }: { id: number; company_name: string }) =>
+      fetch(api(`/api/super/companies/${id}/reset-admin-password`), {
+        method: 'POST',
+        headers: authHeaders(token ?? ''),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error ?? 'خطأ في إعادة التعيين');
+        return { ...d, company_name };
+      }),
+    onSuccess: (data) => {
+      setResetPassResult(data);
+      setResetPassCopied(false);
+    },
+    onError: (e: Error) => showToast(e.message, 'error'),
+  });
+
   /* ── Form helpers ─── */
   const resetAddForm = () => {
     setMgName('');
@@ -1048,6 +1075,112 @@ export default function SuperAdmin() {
       style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT, color: C.text }}
     >
       {/* ── Modals ─── */}
+
+      {/* ── Password Reset Result Modal ─── */}
+      {resetPassResult && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 9999, padding: '20px',
+          }}
+          onClick={() => setResetPassResult(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: '20px', padding: '36px',
+              maxWidth: '460px', width: '100%', direction: 'rtl',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+              border: '2px solid #7c3aed22',
+            }}
+          >
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ fontSize: '52px', marginBottom: '8px' }}>🔑</div>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: '#7c3aed', fontFamily: FONT }}>
+                تم إعادة تعيين كلمة المرور
+              </div>
+              <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '6px', fontFamily: FONT }}>
+                {resetPassResult.company_name}
+              </div>
+            </div>
+
+            <div style={{
+              background: '#f9f5ff', border: '1.5px solid #7c3aed44',
+              borderRadius: '14px', padding: '20px', marginBottom: '20px',
+            }}>
+              <div style={{ fontSize: '12px', color: '#7c3aed', fontFamily: FONT, marginBottom: '8px', fontWeight: 700 }}>
+                بيانات الدخول المؤقتة:
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>اسم المستخدم:</span>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#111', fontFamily: FONT, letterSpacing: '0.5px' }}>
+                    {resetPassResult.username}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>الاسم:</span>
+                  <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{resetPassResult.name}</span>
+                </div>
+                <div style={{ height: '1px', background: '#7c3aed22' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>كلمة المرور المؤقتة:</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <code style={{
+                      fontSize: '18px', fontWeight: 800, color: '#7c3aed',
+                      background: '#ede9fe', padding: '6px 14px', borderRadius: '8px',
+                      letterSpacing: '2px', fontFamily: 'monospace',
+                    }}>
+                      {resetPassResult.temp_password}
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(resetPassResult.temp_password);
+                        setResetPassCopied(true);
+                        setTimeout(() => setResetPassCopied(false), 2000);
+                      }}
+                      style={{
+                        padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #7c3aed44',
+                        background: resetPassCopied ? '#7c3aed' : '#f9f5ff',
+                        color: resetPassCopied ? '#fff' : '#7c3aed',
+                        fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                        fontFamily: FONT,
+                      }}
+                    >
+                      {resetPassCopied ? '✓ نُسخ' : '📋 نسخ'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              background: '#fef3c7', border: '1px solid #fcd34d',
+              borderRadius: '10px', padding: '12px 16px', marginBottom: '20px',
+              fontSize: '12px', color: '#92400e', fontFamily: FONT, lineHeight: '1.6',
+            }}>
+              ⚠️ أرسل كلمة المرور المؤقتة هذه للعميل بشكل آمن. ستُفقد عند إغلاق هذه النافذة.
+              يُنصح العميل بتغيير كلمة المرور فور تسجيل الدخول.
+            </div>
+
+            <button
+              onClick={() => setResetPassResult(null)}
+              style={{
+                width: '100%', padding: '12px', borderRadius: '12px',
+                border: 'none', background: '#7c3aed', color: '#fff',
+                fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+                fontFamily: FONT, transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#6d28d9'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#7c3aed'; }}
+            >
+              تم — إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
       {deleteTarget && deleteStep === 'confirm' && (
         <ConfirmDeleteModal
           title="حذف الشركة"
@@ -2164,6 +2297,17 @@ export default function SuperAdmin() {
                                     url: `/api/super/companies/${co.id}`,
                                     method: 'PUT',
                                     body: { plan_type: 'paid' },
+                                  })
+                                }
+                              />
+                              <ActionBtn
+                                label="🔑 إعادة تعيين كلمة المرور"
+                                icon=""
+                                color="#7c3aed"
+                                onClick={() =>
+                                  resetPassword.mutate({
+                                    id: co.id,
+                                    company_name: co.name,
                                   })
                                 }
                               />
