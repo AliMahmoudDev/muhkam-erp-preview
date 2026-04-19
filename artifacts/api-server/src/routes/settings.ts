@@ -214,10 +214,10 @@ router.get("/settings/safes", wrap(async (req, res) => {
 }));
 
 router.post("/settings/safes", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const { name, balance } = req.body;
+  const { name, balance, branch_id } = req.body;
   const companyId = req.user?.company_id ?? undefined;
   const [safe] = await db.insert(safesTable)
-    .values({ name, balance: String(balance || 0), company_id: companyId })
+    .values({ name, balance: String(balance || 0), company_id: companyId, branch_id: branch_id ? Number(branch_id) : null })
     .returning();
   res.json(safe);
 }));
@@ -225,9 +225,13 @@ router.post("/settings/safes", authenticate, requireRole("admin"), wrap(async (r
 router.put("/settings/safes/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
   const id = Number(req.params.id);
   const tenant = req.user!.company_id!;
-  const { name, balance } = req.body;
+  const { name, balance, branch_id } = req.body;
+  const updates: Record<string, unknown> = {};
+  if (name !== undefined) updates.name = String(name).trim();
+  if (balance !== undefined) updates.balance = String(balance);
+  if (branch_id !== undefined) updates.branch_id = branch_id ? Number(branch_id) : null;
   const [safe] = await db.update(safesTable)
-    .set({ name, balance: String(balance) })
+    .set(updates)
     .where(and(eq(safesTable.id, id), eq(safesTable.company_id, tenant)))
     .returning();
   if (!safe) { res.status(404).json({ error: "الخزينة غير موجودة" }); return; }
@@ -409,12 +413,28 @@ router.get("/settings/warehouses", wrap(async (req, res) => {
 }));
 
 router.post("/settings/warehouses", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const { name, address } = req.body;
+  const { name, address, branch_id } = req.body;
   const companyId = req.user?.company_id ?? undefined;
   const [warehouse] = await db.insert(warehousesTable)
-    .values({ name, address: address || null, company_id: companyId })
+    .values({ name, address: address || null, company_id: companyId, branch_id: branch_id ? Number(branch_id) : null })
     .returning();
   res.json(warehouse);
+}));
+
+router.put("/settings/warehouses/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const tenant = req.user!.company_id!;
+  const { name, address, branch_id } = req.body;
+  const updates: Record<string, unknown> = {};
+  if (name    !== undefined) updates.name      = String(name).trim();
+  if (address !== undefined) updates.address   = address ? String(address).trim() : null;
+  if (branch_id !== undefined) updates.branch_id = branch_id ? Number(branch_id) : null;
+  const [wh] = await db.update(warehousesTable)
+    .set(updates)
+    .where(and(eq(warehousesTable.id, id), eq(warehousesTable.company_id, tenant)))
+    .returning();
+  if (!wh) { res.status(404).json({ error: "المخزن غير موجود" }); return; }
+  res.json(wh);
 }));
 
 router.delete("/settings/warehouses/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {

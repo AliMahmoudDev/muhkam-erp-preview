@@ -41,7 +41,7 @@ type ModalType = 'receipt' | 'payment' | 'transfer' | 'safe-closing' | null;
 export default function Treasury() {
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [showAddSafe, setShowAddSafe] = useState(false);
-  const [addForm, setAddForm] = useState({ name: '', balance: '' });
+  const [addForm, setAddForm] = useState({ name: '', balance: '', branch_id: '' });
   const [deleteTarget, setDeleteTarget] = useState<{
     id: number;
     name: string;
@@ -60,7 +60,21 @@ export default function Treasury() {
   const canCloseSafe = hasPermission(user, 'can_close_shift');
 
   const { data: safesRaw } = useGetSettingsSafes();
-  const safes = safeArray(safesRaw);
+  const safes = safeArray(safesRaw) as { id: number; name: string; balance: string; branch_id: number | null }[];
+
+  /* branches for safe assignment */
+  const { data: branchesRaw } = useQuery<{ id: number; name: string }[]>({
+    queryKey: ['/api/branches'],
+    queryFn: async () => {
+      const r = await authFetch(api('/api/branches'));
+      if (!r.ok) return [];
+      const j = await r.json();
+      return Array.isArray(j) ? j : (j.branches ?? []);
+    },
+    staleTime: 120_000,
+  });
+  const branches = safeArray(branchesRaw) as { id: number; name: string }[];
+  const isAdmin = user?.role === 'admin';
 
   const { data: stats } = useQuery<Record<string, number>>({
     queryKey: ['/api/dashboard/stats'],
@@ -221,27 +235,47 @@ export default function Treasury() {
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-white/20 outline-none focus:border-sky-500/50 transition-colors"
                 />
               </div>
+              {branches.length > 0 && (
+                <div>
+                  <label className="block text-white/50 text-xs font-bold mb-1.5">الفرع (اختياري)</label>
+                  <select
+                    value={addForm.branch_id}
+                    onChange={(e) => setAddForm((f) => ({ ...f, branch_id: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-sky-500/50 transition-colors"
+                  >
+                    <option value="">— بدون فرع —</option>
+                    {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="flex gap-3 px-6 py-4 border-t border-white/8">
               <button
                 disabled={createSafe.isPending}
-                onClick={() => {
+                onClick={async () => {
                   if (!addForm.name.trim()) {
                     toast({ title: 'اسم الخزينة مطلوب', variant: 'destructive' });
                     return;
                   }
-                  createSafe.mutate(
-                    { name: addForm.name.trim(), balance: Number(addForm.balance) || 0 },
-                    {
-                      onSuccess: () => {
-                        invalidateSafes();
-                        toast({ title: 'تم إضافة الخزينة بنجاح' });
-                        setAddForm({ name: '', balance: '' });
-                        setShowAddSafe(false);
-                      },
-                      onError: () => toast({ title: 'فشل إضافة الخزينة', variant: 'destructive' }),
-                    }
-                  );
+                  try {
+                    const r = await authFetch(api('/api/settings/safes'), {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: addForm.name.trim(),
+                        balance: Number(addForm.balance) || 0,
+                        branch_id: addForm.branch_id ? Number(addForm.branch_id) : undefined,
+                      }),
+                    });
+                    if (!r.ok) throw new Error((await r.json()).error ?? 'فشل الإضافة');
+                    invalidateSafes();
+                    queryClient.invalidateQueries({ queryKey: ['/api/branches'] });
+                    toast({ title: 'تم إضافة الخزينة بنجاح' });
+                    setAddForm({ name: '', balance: '', branch_id: '' });
+                    setShowAddSafe(false);
+                  } catch (e: any) {
+                    toast({ title: e?.message ?? 'فشل إضافة الخزينة', variant: 'destructive' });
+                  }
                 }}
                 className="flex-1 flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white font-bold text-sm rounded-xl py-2.5 transition-colors"
               >
@@ -419,6 +453,30 @@ export default function Treasury() {
 
                   {/* Name & balance */}
                   <p className="text-white font-bold text-sm mb-1 truncate">{s.name}</p>
+                  {/* الفرع */}
+                  {isAdmin && branches.length > 0 ? (
+                    <select
+                      className="mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-white/5 border border-white/10 text-white/50 hover:border-amber-500/30 transition-colors outline-none cursor-pointer"
+                      value={s.branch_id ?? ''}
+                      onChange={async (e) => {
+                        const bid = e.target.value;
+                        await authFetch(api(`/api/settings/safes/${s.id}`), {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ branch_id: bid ? Number(bid) : null }),
+                        });
+                        invalidateSafes();
+                        queryClient.invalidateQueries({ queryKey: ['/api/branches'] });
+                      }}
+                    >
+                      <option value="">— بدون فرع —</option>
+                      {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                  ) : s.branch_id ? (
+                    <p className="text-amber-400/60 text-[10px] mb-2">
+                      {branches.find(b => b.id === s.branch_id)?.name ?? ''}
+                    </p>
+                  ) : <div className="mb-1" />}
                   <p className="text-amber-400 font-black text-xl mb-3">
                     {formatCurrency(balance)}
                   </p>

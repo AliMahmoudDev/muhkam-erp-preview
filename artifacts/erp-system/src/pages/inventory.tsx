@@ -203,17 +203,27 @@ export default function Inventory() {
   /* ── warehouse CRUD ── */
   const { data: warehousesRaw, isLoading: loadingWH } = useGetSettingsWarehouses();
   const warehouses = safeArray(warehousesRaw) as {
-    id: number;
-    name: string;
-    address: string | null;
-    created_at: string;
+    id: number; name: string; address: string | null; branch_id: number | null; created_at: string;
   }[];
   const createWH = useCreateSettingsWarehouse();
   const deleteWH = useDeleteSettingsWarehouse();
 
+  /* branches for warehouse assignment */
+  const { data: branchesRaw } = useQuery<{ id: number; name: string }[]>({
+    queryKey: ['/api/branches'],
+    queryFn: async () => {
+      const r = await authFetch(`${BASE}/api/branches`);
+      if (!r.ok) return [];
+      const j = await r.json();
+      return Array.isArray(j) ? j : (j.branches ?? []);
+    },
+    staleTime: 120_000,
+  });
+  const branches = safeArray(branchesRaw) as { id: number; name: string }[];
+
   const [showAddWH, setShowAddWH] = useState(false);
   const [deleteWHTarget, setDeleteWHTarget] = useState<{ id: number; name: string } | null>(null);
-  const [whForm, setWhForm] = useState({ name: '', address: '' });
+  const [whForm, setWhForm] = useState({ name: '', address: '', branch_id: '' });
   const invalidateWH = () => qc.invalidateQueries({ queryKey: ['/api/settings/warehouses'] });
 
   /* ── per-warehouse summary ── */
@@ -352,7 +362,7 @@ export default function Inventory() {
               {isAdmin && (
                 <button
                   onClick={() => {
-                    setWhForm({ name: '', address: '' });
+                    setWhForm({ name: '', address: '', branch_id: '' });
                     setShowAddWH(true);
                   }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
@@ -378,7 +388,7 @@ export default function Inventory() {
                 {isAdmin && (
                   <button
                     onClick={() => {
-                      setWhForm({ name: '', address: '' });
+                      setWhForm({ name: '', address: '', branch_id: '' });
                       setShowAddWH(true);
                     }}
                     className="mt-3 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
@@ -410,8 +420,32 @@ export default function Inventory() {
                       </div>
                       <p className="text-white font-bold text-sm mb-1">{w.name}</p>
                       {w.address && (
-                        <p className="text-white/40 text-xs truncate mb-2">{w.address}</p>
+                        <p className="text-white/40 text-xs truncate">{w.address}</p>
                       )}
+                      {/* الفرع */}
+                      {isAdmin && branches.length > 0 ? (
+                        <select
+                          className="mt-1.5 mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-white/5 border border-white/10 text-white/50 hover:border-violet-500/30 transition-colors outline-none cursor-pointer"
+                          value={w.branch_id ?? ''}
+                          onChange={async (e) => {
+                            const bid = e.target.value;
+                            await authFetch(`${BASE}/api/settings/warehouses/${w.id}`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ branch_id: bid ? Number(bid) : null }),
+                            });
+                            invalidateWH();
+                            qc.invalidateQueries({ queryKey: ['/api/branches'] });
+                          }}
+                        >
+                          <option value="">— بدون فرع —</option>
+                          {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </select>
+                      ) : w.branch_id ? (
+                        <p className="text-violet-400/70 text-[10px] mb-2">
+                          {branches.find(b => b.id === w.branch_id)?.name ?? ''}
+                        </p>
+                      ) : <div className="mb-2" />}
                       {ws && (
                         <div className="space-y-1 pt-2 border-t border-white/5">
                           <div className="flex items-center justify-between">
@@ -594,28 +628,47 @@ export default function Inventory() {
                   onChange={(e) => setWhForm((f) => ({ ...f, address: e.target.value }))}
                 />
               </div>
+              {branches.length > 0 && (
+                <div>
+                  <label className="block text-white/60 text-xs mb-1.5">الفرع (اختياري)</label>
+                  <select
+                    className="glass-input w-full"
+                    value={whForm.branch_id}
+                    onChange={(e) => setWhForm((f) => ({ ...f, branch_id: e.target.value }))}
+                  >
+                    <option value="">— بدون فرع —</option>
+                    {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="flex gap-3 mt-6">
               <button
                 disabled={createWH.isPending}
-                onClick={() => {
+                onClick={async () => {
                   if (!whForm.name.trim()) {
                     toast({ title: 'الاسم مطلوب', variant: 'destructive' });
                     return;
                   }
-                  createWH.mutate(
-                    { name: whForm.name, address: whForm.address || undefined },
-                    {
-                      onSuccess: () => {
-                        invalidateWH();
-                        qc.invalidateQueries({ queryKey: ['inventory-warehouse-summary'] });
-                        toast({ title: '✅ تم إضافة المخزن' });
-                        setShowAddWH(false);
-                      },
-                      onError: (e: any) =>
-                        toast({ title: e?.message ?? 'فشل الإضافة', variant: 'destructive' }),
-                    }
-                  );
+                  try {
+                    const r = await authFetch(`${BASE}/api/settings/warehouses`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: whForm.name.trim(),
+                        address: whForm.address.trim() || undefined,
+                        branch_id: whForm.branch_id ? Number(whForm.branch_id) : undefined,
+                      }),
+                    });
+                    if (!r.ok) throw new Error((await r.json()).error ?? 'فشل الإضافة');
+                    invalidateWH();
+                    qc.invalidateQueries({ queryKey: ['inventory-warehouse-summary'] });
+                    toast({ title: 'تم إضافة المخزن بنجاح' });
+                    setWhForm({ name: '', address: '', branch_id: '' });
+                    setShowAddWH(false);
+                  } catch (e: any) {
+                    toast({ title: e?.message ?? 'فشل الإضافة', variant: 'destructive' });
+                  }
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
               >
