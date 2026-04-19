@@ -123,7 +123,7 @@ export default function LoginScreen() {
               borderColor: c.isDark ? "rgba(245,158,11,0.28)" : "rgba(245,158,11,0.22)",
             }]}>
               <Image
-                source={require("@/assets/images/halal-logo.png")}
+                source={require("@/assets/images/muhkam-logo.png")}
                 style={styles.logo}
                 contentFit="contain"
               />

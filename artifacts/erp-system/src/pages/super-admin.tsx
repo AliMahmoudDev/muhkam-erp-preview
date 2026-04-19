@@ -525,6 +525,7 @@ export default function SuperAdmin() {
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
   const [generatedCode, setGeneratedCode] = useState('');
   const [enteredCode, setEnteredCode] = useState('');
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
 
   /* ── Managers state ─── */
   const [showAddMgr, setShowAddMgr] = useState(false);
@@ -1034,15 +1035,35 @@ export default function SuperAdmin() {
       icon: '🏢',
       color: C.orange,
       sub: `${activePercent}% نشطة`,
+      filter: 'all',
+      tab: 'companies' as const,
     },
-    { label: 'نشطة', value: stats?.active ?? 0, icon: '✅', color: C.success, sub: 'اشتراك فعّال' },
-    { label: 'مدفوعة', value: stats?.paid ?? 0, icon: '💎', color: '#7c3aed', sub: 'خطة مدفوعة' },
+    {
+      label: 'نشطة',
+      value: stats?.active ?? 0,
+      icon: '✅',
+      color: C.success,
+      sub: 'اشتراك فعّال',
+      filter: 'active',
+      tab: 'companies' as const,
+    },
+    {
+      label: 'مدفوعة',
+      value: stats?.paid ?? 0,
+      icon: '💎',
+      color: '#7c3aed',
+      sub: 'خطة مدفوعة',
+      filter: 'active',
+      tab: 'companies' as const,
+    },
     {
       label: 'تجريبية',
       value: stats?.trial ?? 0,
       icon: '⏳',
       color: C.warning,
       sub: 'فترة تجريبية',
+      filter: 'trial',
+      tab: 'companies' as const,
     },
     {
       label: 'منتهية',
@@ -1050,14 +1071,26 @@ export default function SuperAdmin() {
       icon: '❌',
       color: C.danger,
       sub: 'تجاوزت التاريخ',
+      filter: 'expired',
+      tab: 'companies' as const,
     },
-    { label: 'موقوفة', value: stats?.suspended ?? 0, icon: '⛔', color: C.muted, sub: 'معطّلة' },
+    {
+      label: 'موقوفة',
+      value: stats?.suspended ?? 0,
+      icon: '⛔',
+      color: C.muted,
+      sub: 'معطّلة',
+      filter: 'suspended',
+      tab: 'companies' as const,
+    },
     {
       label: 'المستخدمون',
       value: stats?.totalUsers ?? 0,
       icon: '👥',
       color: C.blue,
       sub: 'إجمالي الحسابات',
+      filter: null,
+      tab: 'managers' as const,
     },
     {
       label: 'انضموا هذا الشهر',
@@ -1065,6 +1098,8 @@ export default function SuperAdmin() {
       icon: '🆕',
       color: '#06b6d4',
       sub: 'آخر 30 يوم',
+      filter: 'all',
+      tab: 'companies' as const,
     },
   ];
 
@@ -1724,47 +1759,65 @@ export default function SuperAdmin() {
             ══════════════════════════════ */}
         {activeTab === 'companies' && (
           <>
-            {/* Stats cards */}
+            {/* Stats cards — 8 in one row */}
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))',
-                gap: '16px',
-                marginBottom: '32px',
+                gridTemplateColumns: 'repeat(8, minmax(0, 1fr))',
+                gap: '12px',
+                marginBottom: '28px',
               }}
             >
               {statCards.map((s) => (
                 <div
                   key={s.label}
+                  onClick={() => {
+                    setActiveTab(s.tab);
+                    if (s.filter !== null && s.tab === 'companies') setStatusFilter(s.filter);
+                    setTimeout(() => {
+                      document.getElementById('companies-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
                   style={{
                     background: C.card,
-                    borderRadius: '16px',
+                    borderRadius: '14px',
                     border: `1px solid ${C.border}`,
-                    borderBottom: `3px solid ${s.color}`,
-                    padding: '22px 18px 18px',
+                    borderTop: `3px solid ${s.color}`,
+                    padding: '16px 10px 14px',
                     textAlign: 'center',
                     transition: 'all 0.2s',
-                    cursor: 'default',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = `0 8px 30px ${s.color}22`;
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                    e.currentTarget.style.boxShadow = `0 8px 24px ${s.color}30`;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
-                  <div style={{ fontSize: '24px', marginBottom: '10px' }}>{s.icon}</div>
-                  <div style={{ fontSize: '3rem', fontWeight: 900, color: s.color, lineHeight: 1 }}>
+                  {/* Glow blob */}
+                  <div style={{
+                    position: 'absolute', top: '-10px', right: '-10px',
+                    width: '50px', height: '50px', borderRadius: '50%',
+                    background: `${s.color}18`, pointerEvents: 'none',
+                  }} />
+                  <div style={{ fontSize: '20px', marginBottom: '8px' }}>{s.icon}</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 900, color: s.color, lineHeight: 1 }}>
                     <AnimatedNumber target={s.value} />
                   </div>
-                  <div
-                    style={{ fontSize: '12px', color: C.text, marginTop: '8px', fontWeight: 700 }}
-                  >
+                  <div style={{ fontSize: '11px', color: C.text, marginTop: '6px', fontWeight: 700, lineHeight: 1.3 }}>
                     {s.label}
                   </div>
-                  <div style={{ fontSize: '11px', color: C.muted, marginTop: '3px' }}>{s.sub}</div>
+                  <div style={{ fontSize: '10px', color: C.muted, marginTop: '2px' }}>{s.sub}</div>
+                  {/* Arrow hint */}
+                  <div style={{
+                    position: 'absolute', bottom: '6px', left: '8px',
+                    fontSize: '10px', color: s.color, opacity: 0.6,
+                  }}>↗</div>
                 </div>
               ))}
             </div>
@@ -1825,43 +1878,189 @@ export default function SuperAdmin() {
               </div>
             )}
 
-            {/* ── Monthly Signups Mini-Chart ── */}
-            {stats && stats.monthlySignups && stats.monthlySignups.some(m => m.count > 0) && (
-              <div style={{
-                background: C.card, border: `1px solid ${C.border}`,
-                borderRadius: '16px', padding: '20px',
-              }}>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: C.text, marginBottom: '16px' }}>
-                  📈 التسجيلات الشهرية (آخر 6 أشهر)
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '80px' }}>
-                  {(() => {
-                    const maxVal = Math.max(...stats.monthlySignups.map(m => m.count), 1);
-                    return stats.monthlySignups.map((m, i) => (
-                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                        <div style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>
-                          {m.count > 0 ? m.count : ''}
-                        </div>
-                        <div style={{
-                          width: '100%', borderRadius: '6px 6px 0 0',
-                          height: `${Math.max((m.count / maxVal) * 60, m.count > 0 ? 8 : 2)}px`,
-                          background: m.count > 0
-                            ? `linear-gradient(to top, ${C.orange}, ${C.warning})`
-                            : C.border,
-                          transition: 'height 0.4s ease',
-                        }} />
-                        <div style={{ fontSize: '10px', color: C.muted, textAlign: 'center', lineHeight: 1.2 }}>
-                          {m.month}
-                        </div>
+            {/* ── Monthly Signups Professional Chart ── */}
+            {stats && stats.monthlySignups && stats.monthlySignups.some(m => m.count > 0) && (() => {
+              const data = stats.monthlySignups;
+              const maxVal = Math.max(...data.map(m => m.count), 1);
+              const total = data.reduce((s, m) => s + m.count, 0);
+              const avg = total / data.length;
+              const chartW = 100; // percentage units via viewBox
+              const chartH = 160;
+              const padL = 32; const padR = 8; const padT = 20; const padB = 36;
+              const innerW = chartW - padL - padR;
+              const innerH = chartH - padT - padB;
+              const barW = (innerW / data.length) * 0.55;
+              const gap = (innerW / data.length) * 0.45;
+              const yTicks = [0, 25, 50, 75, 100];
+              return (
+                <div style={{
+                  background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: '20px', padding: '24px',
+                  boxShadow: '0 2px 20px rgba(0,0,0,0.04)',
+                }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: C.text }}>
+                        التسجيلات الشهرية
                       </div>
-                    ));
-                  })()}
+                      <div style={{ fontSize: '12px', color: C.muted, marginTop: '2px' }}>آخر 6 أشهر</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      {[
+                        { label: 'الإجمالي', value: total, color: C.orange },
+                        { label: 'المتوسط', value: avg.toFixed(1), color: C.blue },
+                        { label: 'الأعلى', value: maxVal, color: C.success },
+                      ].map(s => (
+                        <div key={s.label} style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '18px', fontWeight: 900, color: s.color }}>{s.value}</div>
+                          <div style={{ fontSize: '10px', color: C.muted, marginTop: '1px' }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SVG Chart */}
+                  <div style={{ position: 'relative' }}>
+                    <svg viewBox={`0 0 ${chartW} ${chartH}`} style={{ width: '100%', height: '220px', overflow: 'visible' }}>
+                      <defs>
+                        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={C.warning} stopOpacity="1" />
+                          <stop offset="100%" stopColor={C.orange} stopOpacity="0.85" />
+                        </linearGradient>
+                        <linearGradient id="barGradHover" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#fbbf24" stopOpacity="1" />
+                          <stop offset="100%" stopColor="#ea580c" stopOpacity="1" />
+                        </linearGradient>
+                        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={C.orange} stopOpacity="0.12" />
+                          <stop offset="100%" stopColor={C.orange} stopOpacity="0" />
+                        </linearGradient>
+                        <filter id="barShadow">
+                          <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor={C.orange} floodOpacity="0.3" />
+                        </filter>
+                      </defs>
+
+                      {/* Y-axis grid lines & labels */}
+                      {yTicks.map(pct => {
+                        const y = padT + innerH - (pct / 100) * innerH;
+                        const val = Math.round((pct / 100) * maxVal);
+                        return (
+                          <g key={pct}>
+                            <line
+                              x1={padL} y1={y} x2={chartW - padR} y2={y}
+                              stroke={C.border} strokeWidth="0.4"
+                              strokeDasharray={pct === 0 ? 'none' : '1.5 1.5'}
+                            />
+                            {pct > 0 && (
+                              <text
+                                x={padL - 2} y={y + 1}
+                                fontSize="5" fill={C.muted}
+                                textAnchor="end" dominantBaseline="middle"
+                              >
+                                {val}
+                              </text>
+                            )}
+                          </g>
+                        );
+                      })}
+
+                      {/* Area fill under trend line */}
+                      {(() => {
+                        const pts = data.map((m, i) => {
+                          const cx = padL + (i + 0.5) * (innerW / data.length);
+                          const h = (m.count / maxVal) * innerH;
+                          const cy = padT + innerH - h;
+                          return { cx, cy };
+                        });
+                        const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.cx} ${p.cy}`).join(' ');
+                        const areaD = `${pathD} L ${pts[pts.length-1].cx} ${padT + innerH} L ${pts[0].cx} ${padT + innerH} Z`;
+                        return (
+                          <>
+                            <path d={areaD} fill="url(#areaGrad)" />
+                            <path d={pathD} fill="none" stroke={C.orange} strokeWidth="0.8" strokeOpacity="0.5" strokeDasharray="2 1" />
+                          </>
+                        );
+                      })()}
+
+                      {/* Bars */}
+                      {data.map((m, i) => {
+                        const slotW = innerW / data.length;
+                        const bx = padL + i * slotW + (slotW - barW) / 2;
+                        const bh = m.count > 0 ? Math.max((m.count / maxVal) * innerH, 4) : 1.5;
+                        const by = padT + innerH - bh;
+                        const isHov = hoveredBar === i;
+                        return (
+                          <g key={i}
+                            onMouseEnter={() => setHoveredBar(i)}
+                            onMouseLeave={() => setHoveredBar(null)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {/* Hit area */}
+                            <rect x={bx - gap/2} y={padT} width={barW + gap} height={innerH} fill="transparent" />
+                            {/* Bar */}
+                            <rect
+                              x={bx} y={by} width={barW} height={bh}
+                              rx="2" ry="2"
+                              fill={m.count > 0 ? (isHov ? 'url(#barGradHover)' : 'url(#barGrad)') : C.border}
+                              filter={isHov && m.count > 0 ? 'url(#barShadow)' : undefined}
+                              style={{ transition: 'all 0.15s' }}
+                            />
+                            {/* Value on top */}
+                            {m.count > 0 && (
+                              <text
+                                x={bx + barW / 2} y={by - 3}
+                                fontSize="5" fontWeight="700"
+                                fill={isHov ? C.warning : C.muted}
+                                textAnchor="middle"
+                              >
+                                {m.count}
+                              </text>
+                            )}
+                            {/* Month label */}
+                            <text
+                              x={bx + barW / 2} y={padT + innerH + 12}
+                              fontSize="5" fill={isHov ? C.orange : C.muted}
+                              textAnchor="middle" fontWeight={isHov ? '700' : '400'}
+                            >
+                              {m.month}
+                            </text>
+                            {/* Tooltip */}
+                            {isHov && (
+                              <g>
+                                <rect
+                                  x={bx + barW/2 - 14} y={by - 20}
+                                  width="28" height="14"
+                                  rx="3" fill="#1e293b" opacity="0.9"
+                                />
+                                <text
+                                  x={bx + barW/2} y={by - 10}
+                                  fontSize="5.5" fill="#fff"
+                                  textAnchor="middle" fontWeight="700"
+                                >
+                                  {m.count} شركة
+                                </text>
+                              </g>
+                            )}
+                          </g>
+                        );
+                      })}
+
+                      {/* X axis base line */}
+                      <line
+                        x1={padL} y1={padT + innerH}
+                        x2={chartW - padR} y2={padT + innerH}
+                        stroke={C.border} strokeWidth="0.6"
+                      />
+                    </svg>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Companies table card */}
             <div
+              id="companies-table"
               style={{
                 background: C.card,
                 borderRadius: '20px',

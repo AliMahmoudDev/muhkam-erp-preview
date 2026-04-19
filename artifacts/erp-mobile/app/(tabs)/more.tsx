@@ -204,7 +204,7 @@ export default function MoreScreen() {
             </View>
             <View style={[styles.logoWrap, { backgroundColor: AMBER + "15", borderColor: AMBER + "25" }]}>
               <Image
-                source={require("@/assets/images/halal-logo.png")}
+                source={require("@/assets/images/muhkam-logo.png")}
                 style={styles.logoImg}
                 contentFit="contain"
               />

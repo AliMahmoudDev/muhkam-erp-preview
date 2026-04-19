@@ -4,12 +4,12 @@
     "slug": "erp-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/halal-logo.png",
+    "icon": "./assets/images/muhkam-logo.png",
     "scheme": "erp-mobile",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/halal-logo.png",
+      "image": "./assets/images/muhkam-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#090c14"
     },
@@ -20,7 +20,7 @@
       "backgroundColor": "#090c14"
     },
     "web": {
-      "favicon": "./assets/images/halal-logo.png"
+      "favicon": "./assets/images/muhkam-logo.png"
     },
     "plugins": [
       [
