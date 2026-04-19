@@ -46,13 +46,6 @@ export default function FiscalYears() {
     queryFn: () => authFetch(api("/api/fiscal-years")).then(async r => { if (!r.ok) throw new Error(); return r.json(); }),
   });
 
-  const mutate = (url: string, method = "PATCH") => useMutation({
-    mutationFn: (body?: object) =>
-      authFetch(api(url), { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined })
-        .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? "خطأ"); return d; }),
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["fiscal-years"] }); },
-  });
-
   const createMut = useMutation({
     mutationFn: (body: object) =>
       authFetch(api("/api/fiscal-years"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -92,8 +85,6 @@ export default function FiscalYears() {
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ["fiscal-years"] }); toast("تم حذف السنة المالية"); },
     onError: (e: Error) => toast(e.message, "error"),
   });
-
-  void mutate; // suppress unused warning
 
   const handleCreate = () => {
     if (!form.year_label || !form.start_date || !form.end_date) {

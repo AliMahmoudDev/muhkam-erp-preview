@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import {
   Users, BookOpen, Lock, Store, Settings, Building2,
-  Bell, FileText, HardDrive, Server, Info, Cpu,
+  Bell, FileText, HardDrive, Cpu,
 } from "lucide-react";
 
 /* ─── Lazy-load each tab ─── */

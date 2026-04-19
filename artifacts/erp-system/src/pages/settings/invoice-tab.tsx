@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Printer, FileText, QrCode, Copy, LayoutGrid, Loader2, Save, CheckCircle2, Check,
+  Printer, FileText, Copy, LayoutGrid, Loader2, Save, CheckCircle2, Check,
 } from "lucide-react";
 import { PageHeader, FieldLabel, SInput } from "./_shared";
 
