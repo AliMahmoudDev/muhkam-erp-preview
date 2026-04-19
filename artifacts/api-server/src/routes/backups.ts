@@ -117,7 +117,11 @@ router.get("/backups/:id/download", authenticate, requireRole("super_admin"), wr
   if (!fs.existsSync(safepath)) throw httpError(404, "الملف غير موجود على الخادم");
 
   const safeFilename = path.basename(record.filename).replace(/[^\w.\-]/g, "_");
-  res.setHeader("Content-Type", "application/json");
+  /* Encrypted backups (.enc) are binary AES-256-GCM blobs; set octet-stream
+     so the browser saves them verbatim without trying to render them. */
+  const isEnc = safeFilename.endsWith(".enc");
+  res.setHeader("Content-Type", isEnc ? "application/octet-stream" : "application/json");
+  if (isEnc) res.setHeader("X-Backup-Encrypted", "aes-256-gcm");
   res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
   res.sendFile(safepath);
 }));

@@ -20,6 +20,13 @@ import { authenticate, requireRole, requireTenant } from "../middleware/auth";
 import { wrap } from "../lib/async-handler";
 import { writeAuditLog } from "../lib/audit-log";
 import { BACKUP_DIR } from "../lib/backup-service";
+import {
+  isEncryptionEnabled,
+  isEncryptedBuffer,
+  decryptBuffer,
+  encryptBuffer,
+  encryptedExtension,
+} from "../lib/backup-crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -113,11 +120,20 @@ router.post("/system/backup", authenticate, requireRole("admin"), requireTenant,
 
   const json = JSON.stringify(backup, null, 2);
   const dt   = new Date().toISOString().replace("T", "_").replace(/:/g, "-").slice(0, 19);
-  const filename = `halal-tech-backup_company-${companyId}_${dt}.json`;
+  const ext  = encryptedExtension(); // ".enc" or ""
+  const filename = `halal-tech-backup_company-${companyId}_${dt}.json${ext}`;
 
-  res.setHeader("Content-Type", "application/json");
-  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-  res.send(json);
+  if (isEncryptionEnabled()) {
+    const ciphertext = encryptBuffer(Buffer.from(json, "utf8"));
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("X-Backup-Encrypted", "aes-256-gcm");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(ciphertext);
+  } else {
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(json);
+  }
 }));
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -165,7 +181,37 @@ async function claimIdempotency(
 router.post("/system/restore", authenticate, requireRole("admin"), requireTenant,
   wrap(async (req, res) => {
   const companyId: number = req.user!.company_id!;
-  const body = req.body as Record<string, unknown>;
+
+  /* ── -1. Body parsing: raw bytes → JSON object ──────────────────────────
+     The /api/system/restore endpoint uses express.raw() (see app.ts) to support
+     both plaintext JSON and AES-256-GCM-encrypted backup files. We detect the
+     format by checking the magic header, decrypt if needed, then JSON.parse. */
+  let body: Record<string, unknown>;
+  try {
+    const raw = req.body as Buffer;
+    if (!raw || !Buffer.isBuffer(raw) || raw.length === 0) {
+      res.status(400).json({ error: "لم يتم استلام ملف النسخة الاحتياطية" });
+      return;
+    }
+    let plaintext: Buffer;
+    if (isEncryptedBuffer(raw)) {
+      if (!isEncryptionEnabled()) {
+        res.status(400).json({
+          error: "الملف مشفّر لكن مفتاح التشفير غير مهيّأ على الخادم — راجع المدير",
+        });
+        return;
+      }
+      plaintext = decryptBuffer(raw);
+    } else {
+      plaintext = raw;
+    }
+    body = JSON.parse(plaintext.toString("utf8")) as Record<string, unknown>;
+  } catch (err) {
+    res.status(400).json({
+      error: err instanceof Error ? err.message : "ملف النسخة الاحتياطية غير صالح",
+    });
+    return;
+  }
 
   /* ── 0. Idempotency check ────────────────────────────────── */
   const idemToken = String(req.headers["idempotency-key"] ?? "");

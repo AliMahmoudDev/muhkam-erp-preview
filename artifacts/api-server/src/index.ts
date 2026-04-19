@@ -5,6 +5,7 @@ import { startBackupScheduler, stopBackupScheduler } from "./lib/backup-schedule
 import { startDbBackupScheduler } from "./lib/db-backup";
 import { startMonitoring } from "./lib/monitor";
 import { seedDefaults } from "./lib/seed-defaults";
+import { initRLS } from "./lib/rls-init";
 import { purgeExpiredRefreshTokens } from "./lib/refresh-token-store";
 import { pool } from "@workspace/db";
 
@@ -44,6 +45,14 @@ async function main() {
   }
 
   await seedDefaults();
+
+  /* Defense-in-depth: enable PostgreSQL RLS on tenant tables.
+     Failure here is non-fatal — application-level filtering is still in effect. */
+  try {
+    await initRLS();
+  } catch (err) {
+    logger.error({ err }, "[startup] RLS init failed — continuing without RLS");
+  }
 
   const server = app.listen(PORT, (err?: Error) => {
     if (err) {

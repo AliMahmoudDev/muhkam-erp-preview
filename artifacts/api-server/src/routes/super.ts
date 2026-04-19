@@ -127,8 +127,37 @@ function daysRemaining(endDate: string): number {
   return Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+/* ── GET /super/audit-log — forensic trail of super-admin actions ──
+   Returns audit_logs entries originating from super_admin (no tenant context).
+   Supports optional filters: ?action=&record_type=&limit= */
+router.get("/super/audit-log", ...superOnly, wrap(async (req, res) => {
+  const { auditLogsTable } = await import("@workspace/db");
+  const limit = Math.min(Math.max(Number(req.query.limit ?? 100), 1), 500);
+  const action = req.query.action ? String(req.query.action) : null;
+  const recordType = req.query.record_type ? String(req.query.record_type) : null;
+
+  const conditions: any[] = [sql`${auditLogsTable.company_id} IS NULL`];
+  if (action)     conditions.push(eq(auditLogsTable.action, action));
+  if (recordType) conditions.push(eq(auditLogsTable.record_type, recordType));
+
+  const rows = await db
+    .select()
+    .from(auditLogsTable)
+    .where(sql.join(conditions, sql` AND `))
+    .orderBy(desc(auditLogsTable.created_at))
+    .limit(limit);
+
+  res.json({ count: rows.length, rows });
+}));
+
 /* ── GET /super/companies — list all companies with stats ── */
-router.get("/super/companies", ...superOnly, wrap(async (_req, res) => {
+router.get("/super/companies", ...superOnly, wrap(async (req, res) => {
+  /* Forensic: log that super_admin enumerated the tenant directory */
+  void writeAuditLog({
+    action: "SUPER_ADMIN_LIST_VIEW", record_type: "company", record_id: 0,
+    user: req.user, company_id: null,
+    note: "عرض قائمة كل الشركات",
+  });
   const companies = await db
     .select()
     .from(companiesTable)
@@ -171,6 +200,14 @@ router.get("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
   const id = Number(req.params.id);
   const [co] = await db.select().from(companiesTable).where(eq(companiesTable.id, id));
   if (!co) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
+
+  /* Forensic: super_admin opened a tenant's detail page — record the access. */
+  void writeAuditLog({
+    action: "SUPER_ADMIN_ACCESS", record_type: "company", record_id: id,
+    new_value: { viewed_company_name: co.name },
+    user: req.user, company_id: null,
+    note: `عرض تفاصيل شركة: ${co.name}`,
+  });
 
   const users = await db
     .select({

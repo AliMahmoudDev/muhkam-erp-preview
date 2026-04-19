@@ -122,7 +122,9 @@ app.use(
 );
 
 /* ── Larger body limit for system restore (must come BEFORE the global parser) ── */
-app.use("/api/system/restore", express.json({ limit: "50mb" }));
+/* Restore accepts EITHER plaintext JSON OR encrypted binary (MUHKAM-encrypted
+   backup). Use raw byte parser; route handler will detect format and parse. */
+app.use("/api/system/restore", express.raw({ type: "*/*", limit: "60mb" }));
 
 /* ── Body parsing with 10mb limit ──────────────────────────── */
 app.use(express.json({ limit: "10mb" }));

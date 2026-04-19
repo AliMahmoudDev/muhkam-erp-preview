@@ -32,6 +32,7 @@ import {
 } from "@workspace/db";
 import { asc, eq, sql } from "drizzle-orm";
 import { logger } from "./logger";
+import { isEncryptionEnabled, encryptFile, encryptedExtension } from "./backup-crypto";
 
 /* ── Backup folder ─────────────────────────────────────────────── */
 export const BACKUP_DIR = process.env.BACKUP_DIR ?? "/home/runner/erp-backups";
@@ -227,15 +228,41 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
     }
 
     const dt = new Date().toISOString().replace("T", "_").replace(/:/g, "-").slice(0, 19);
-    const filename = `halal-tech-${trigger}_${dt}.json`;
-    const filepath = path.join(BACKUP_DIR, filename);
+    const plainFilename = `halal-tech-${trigger}_${dt}.json`;
+    const plainPath = path.join(BACKUP_DIR, plainFilename);
 
-    const { size, totalRows, truncated } = await streamBackupToFile(filepath);
+    const { size: plainSize, totalRows, truncated } = await streamBackupToFile(plainPath);
+
+    /* If AES-256-GCM encryption is configured, encrypt the file in place
+       and remove the plaintext snapshot. */
+    let finalFilename = plainFilename;
+    let finalSize = plainSize;
+    if (isEncryptionEnabled()) {
+      const encFilename = `${plainFilename}${encryptedExtension()}`; // .json.enc
+      const encPath = path.join(BACKUP_DIR, encFilename);
+      try {
+        await encryptFile(plainPath, encPath);
+        fs.unlinkSync(plainPath); // remove plaintext only after encryption succeeds
+        const stat = fs.statSync(encPath);
+        finalFilename = encFilename;
+        finalSize = stat.size;
+        logger.info({ trigger, filename: finalFilename, plainSize, encSize: finalSize }, "Backup encrypted");
+      } catch (encErr) {
+        /* Fail-closed: when an encryption key is configured, refuse to keep the
+           plaintext file on disk. Delete the unencrypted snapshot and abort. */
+        logger.error({ trigger, err: encErr }, "Backup encryption failed — deleting plaintext snapshot (fail-closed)");
+        try { fs.unlinkSync(filepath); } catch { /* ignore */ }
+        throw new Error(
+          `Backup encryption failed and BACKUP_ENCRYPTION_KEY is set. ` +
+          `Refusing to retain plaintext snapshot. Cause: ${encErr instanceof Error ? encErr.message : String(encErr)}`
+        );
+      }
+    }
 
     /* Insert into DB */
     const [record] = await db.insert(backupsTable).values({
-      filename,
-      size,
+      filename: finalFilename,
+      size: finalSize,
       trigger,
     }).returning();
 
@@ -254,7 +281,7 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
       }
     }
 
-    logger.info({ trigger, filename, size, totalRows, truncated }, "Backup completed");
+    logger.info({ trigger, filename: finalFilename, size: finalSize, totalRows, truncated }, "Backup completed");
     return record!;
   } catch (err) {
     logger.error({ trigger, err }, "Backup failed");

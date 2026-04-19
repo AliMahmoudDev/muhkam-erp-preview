@@ -6,20 +6,49 @@ import { isTokenBlacklisted } from "../lib/session-blacklist";
 import { sanitizeObject } from "../lib/sanitize";
 
 /**
- * setDbContext — sets PostgreSQL session variables for Row Level Security.
- * Must be called after user identity is confirmed.
- * RLS policies on business tables read these variables to enforce tenant isolation.
+ * setDbContext — sets PostgreSQL session variables for Row Level Security
+ * and switches to the constrained app role (erp_app_role).
+ *
+ * IMPORTANT — connection-pool caveat:
+ *   The PRIMARY tenant guard is the application-layer
+ *   `where(eq(table.company_id, req.companyId))` clause used in every route.
+ *   RLS is defense-in-depth. Because Drizzle's global `db` checks out a
+ *   different pooled connection for each query, `SET ROLE` and `set_config`
+ *   here apply only to ONE connection. Subsequent queries in the same request
+ *   may run on a different connection where neither the role nor the GUCs are
+ *   set — those queries will run as the owner role (RLS bypassed) with no
+ *   tenant GUC (policy permits, treated as background job).
+ *   Full RLS enforcement requires per-request connection pinning (transaction
+ *   or pool checkout) — tracked as a follow-up. The current setup still
+ *   protects whichever queries happen to land on the prepared connection.
  */
 async function setDbContext(user: { company_id: number | null; role: string }): Promise<void> {
   const companyId = user.company_id ? String(user.company_id) : "";
   const isSuperAdmin = user.role === "super_admin" ? "true" : "false";
   try {
+    await db.execute(sql`SET ROLE erp_app_role`);
     await db.execute(
       sql`SELECT set_config('app.current_company_id', ${companyId}, false),
                  set_config('app.is_super_admin', ${isSuperAdmin}, false)`
     );
   } catch {
     /* Non-fatal: app-level company_id filtering is still the primary guard */
+  }
+}
+
+/**
+ * clearDbContext — best-effort cleanup of the role/GUC state on the pooled
+ * connection that handled the current request, to limit cross-request leakage.
+ */
+async function clearDbContext(): Promise<void> {
+  try {
+    await db.execute(sql`RESET ROLE`);
+    await db.execute(
+      sql`SELECT set_config('app.current_company_id', '', false),
+                 set_config('app.is_super_admin', 'false', false)`
+    );
+  } catch {
+    /* ignore — best effort */
   }
 }
 
@@ -155,6 +184,11 @@ export async function authenticate(
 
   /* Set PostgreSQL session context for RLS (defense-in-depth layer) */
   await setDbContext(user);
+
+  /* Best-effort cleanup on response end to limit cross-request leakage of
+     role/GUC state on pooled connections. */
+  res.on("finish", () => { void clearDbContext(); });
+  res.on("close",  () => { void clearDbContext(); });
 
   next();
 }
