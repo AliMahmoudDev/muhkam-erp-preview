@@ -112,6 +112,7 @@ export default function BackupTab() {
   } | null>(null);
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const restoreFileRef = useRef<HTMLInputElement>(null);
+  const pendingEncFileRef = useRef<File | null>(null);
 
   /* ── Modal تأكيد الاستعادة ── */
   const [modal, setModal] = useState(false);
@@ -357,13 +358,31 @@ export default function BackupTab() {
     }
   };
 
-  /* ── اختيار ملف الاستعادة ── */
+  /* ── اختيار ملف الاستعادة (.json أو .json.enc) ── */
   const handleRestoreFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
-    if (!file.name.endsWith('.json')) {
-      toast({ title: 'يجب اختيار ملف JSON', variant: 'destructive' });
+    const isEnc = file.name.endsWith('.json.enc');
+    const isJson = file.name.endsWith('.json');
+    if (!isJson && !isEnc) {
+      toast({ title: 'يجب اختيار ملف .json أو .json.enc', variant: 'destructive' });
+      return;
+    }
+    if (isEnc) {
+      /* Encrypted backup — skip JSON parsing, store file directly */
+      setPending({
+        fileName: file.name,
+        parsed: null,          /* sentinel: encrypted */
+        version: 'مشفّر',
+        date: null,
+        tableCount: 0,
+      });
+      /* Keep raw file in a closure via a temporary ref hack */
+      (pendingEncFileRef as React.MutableRefObject<File | null>).current = file;
+      setModalText('');
+      setUnderstood(false);
+      setModal(true);
       return;
     }
     try {
@@ -391,10 +410,22 @@ export default function BackupTab() {
     setRestoreResult(null);
     setRestoreError(null);
     try {
+      let body: BodyInit;
+      let contentType: string;
+      const encFile = (pendingEncFileRef as React.MutableRefObject<File | null>).current;
+      if (pending.parsed === null && encFile) {
+        /* Encrypted file — send binary */
+        body = await encFile.arrayBuffer();
+        contentType = 'application/octet-stream';
+        (pendingEncFileRef as React.MutableRefObject<File | null>).current = null;
+      } else {
+        body = JSON.stringify(pending.parsed);
+        contentType = 'application/json';
+      }
       const r = await authFetch(api('/api/system/restore'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pending.parsed),
+        headers: { 'Content-Type': contentType },
+        body,
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error ?? 'فشل الاستعادة');
@@ -598,7 +629,7 @@ export default function BackupTab() {
               <input
                 ref={restoreFileRef}
                 type="file"
-                accept=".json"
+                accept=".json,.json.enc"
                 className="hidden"
                 onChange={handleRestoreFile}
               />

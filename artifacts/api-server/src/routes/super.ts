@@ -6,6 +6,8 @@
 import { Router } from "express";
 import { eq, desc, sql } from "drizzle-orm";
 import { db, companiesTable, erpUsersTable } from "@workspace/db";
+import fs from "fs";
+import path from "path";
 
 /* Full cascade delete for a company — handles all FK-constrained tables in
    the correct order so Postgres doesn't throw a foreign-key violation. */
@@ -722,6 +724,34 @@ router.post("/super/backup/create", ...superOnly, wrap(async (_req, res) => {
 router.get("/super/backup/list", ...superOnly, wrap(async (_req, res) => {
   const backups = listBackups();
   res.json({ backups, total: backups.length });
+}));
+
+/* ── GET /super/backup/download/:filename — stream a backup file ── */
+router.get("/super/backup/download/:filename", ...superOnly, wrap(async (req, res) => {
+  const BACKUP_DIR = process.env.BACKUP_DIR ?? "/home/runner/workspace/db-backups";
+  const raw = req.params.filename as string;
+
+  /* Sanitize: strip any directory traversal */
+  const filename = path.basename(raw);
+  if (!filename || filename !== raw) {
+    res.status(400).json({ error: "اسم ملف غير صالح" });
+    return;
+  }
+
+  const filepath = path.join(BACKUP_DIR, filename);
+  if (!fs.existsSync(filepath)) {
+    res.status(404).json({ error: "الملف غير موجود" });
+    return;
+  }
+
+  const isEnc = filename.endsWith(".enc");
+  res.setHeader(
+    "Content-Type",
+    isEnc ? "application/octet-stream" : "application/json"
+  );
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.setHeader("Content-Length", fs.statSync(filepath).size);
+  fs.createReadStream(filepath).pipe(res);
 }));
 
 export default router;

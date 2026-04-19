@@ -614,6 +614,15 @@ export default function SuperAdmin() {
 
   /* ── Backup state + query ─── */
   const [creatingBackup, setCreatingBackup] = useState(false);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreOk, setRestoreOk] = useState<string | null>(null);
+  const [restoreErr, setRestoreErr] = useState<string | null>(null);
+  const [restoreModal, setRestoreModal] = useState(false);
+  const [restoreCode, setRestoreCode] = useState('');
+  const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null);
+  const restoreInputRef = useRef<HTMLInputElement>(null);
+
   const { data: backupData, refetch: refetchBackups } = useQuery<{
     backups: BackupFile[];
     total: number;
@@ -648,6 +657,83 @@ export default function SuperAdmin() {
       showToast('فشل إنشاء النسخة الاحتياطية', 'error');
     } finally {
       setCreatingBackup(false);
+    }
+  }
+
+  async function downloadBackup(filename: string) {
+    setDownloadingFile(filename);
+    try {
+      const res = await fetch(api(`/api/super/backup/download/${encodeURIComponent(filename)}`), {
+        headers: authHeaders(token ?? ''),
+      });
+      if (!res.ok) { showToast('فشل التنزيل', 'error'); return; }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      showToast('خطأ في التنزيل', 'error');
+    } finally {
+      setDownloadingFile(null);
+    }
+  }
+
+  function openRestorePicker() {
+    setRestoreOk(null);
+    setRestoreErr(null);
+    restoreInputRef.current?.click();
+  }
+
+  async function handleRestoreFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.name.endsWith('.json') && !file.name.endsWith('.json.enc')) {
+      showToast('يجب اختيار ملف .json أو .json.enc', 'error');
+      return;
+    }
+    setPendingRestoreFile(file);
+    setRestoreCode('');
+    setRestoreModal(true);
+  }
+
+  async function confirmRestore() {
+    if (!pendingRestoreFile || restoreCode !== 'RESTORE') return;
+    setRestoreModal(false);
+    setRestoring(true);
+    setRestoreOk(null);
+    setRestoreErr(null);
+    try {
+      const isEnc = pendingRestoreFile.name.endsWith('.enc');
+      let body: BodyInit;
+      let headers: HeadersInit = authHeaders(token ?? '');
+      if (isEnc) {
+        body = await pendingRestoreFile.arrayBuffer();
+        headers = { ...headers, 'Content-Type': 'application/octet-stream' };
+      } else {
+        const text = await pendingRestoreFile.text();
+        body = text;
+        headers = { ...headers, 'Content-Type': 'application/json' };
+      }
+      const res = await fetch(api('/api/system/restore'), {
+        method: 'POST',
+        headers,
+        body,
+      });
+      const data: { counts?: Record<string, number>; error?: string } = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'فشل الاستعادة');
+      const total = Object.values(data.counts ?? {}).reduce((a, b) => a + b, 0);
+      setRestoreOk(`تمت الاستعادة بنجاح — ${total} سجل`);
+      showToast(`✅ تمت الاستعادة — ${total} سجل`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setRestoreErr(msg);
+      showToast('فشل الاستعادة: ' + msg, 'error');
+    } finally {
+      setRestoring(false);
+      setPendingRestoreFile(null);
     }
   }
 
@@ -3143,83 +3229,165 @@ export default function SuperAdmin() {
             TAB: BACKUPS
             ══════════════════════════════ */}
         {activeTab === 'backups' && (
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Hidden restore file input */}
+            <input
+              ref={restoreInputRef}
+              type="file"
+              accept=".json,.json.enc"
+              style={{ display: 'none' }}
+              onChange={(e) => { void handleRestoreFileChange(e); }}
+            />
+
+            {/* Restore confirmation modal */}
+            {restoreModal && (
+              <div style={{
+                position: 'fixed', inset: 0, zIndex: 1000,
+                background: 'rgba(0,0,0,0.7)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', padding: '20px',
+              }}>
+                <div style={{
+                  background: '#111827', borderRadius: '20px',
+                  border: '1px solid rgba(239,68,68,0.4)', padding: '28px',
+                  width: '100%', maxWidth: '440px', direction: 'rtl',
+                }}>
+                  <div style={{ fontSize: '22px', marginBottom: '8px' }}>⚠️</div>
+                  <h3 style={{ color: '#EF4444', fontWeight: 800, marginBottom: '8px' }}>
+                    تأكيد الاستعادة
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '16px' }}>
+                    سيتم حذف البيانات الحالية لجميع الشركات واستبدالها بمحتوى الملف.<br />
+                    <strong style={{ color: '#F97316' }}>{pendingRestoreFile?.name}</strong>
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '8px' }}>
+                    اكتب <strong style={{ color: '#EF4444' }}>RESTORE</strong> للتأكيد:
+                  </p>
+                  <input
+                    value={restoreCode}
+                    onChange={(e) => setRestoreCode(e.target.value)}
+                    placeholder="RESTORE"
+                    style={{
+                      width: '100%', padding: '10px 14px', borderRadius: '10px',
+                      background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#fff', fontSize: '14px', marginBottom: '16px',
+                      fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => { setRestoreModal(false); setPendingRestoreFile(null); }}
+                      style={{
+                        flex: 1, padding: '10px', borderRadius: '10px',
+                        border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+                        color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: FONT,
+                      }}
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      onClick={() => { void confirmRestore(); }}
+                      disabled={restoreCode !== 'RESTORE'}
+                      style={{
+                        flex: 1, padding: '10px', borderRadius: '10px', border: 'none',
+                        background: restoreCode === 'RESTORE' ? '#EF4444' : 'rgba(239,68,68,0.2)',
+                        color: restoreCode === 'RESTORE' ? '#fff' : 'rgba(255,255,255,0.3)',
+                        cursor: restoreCode === 'RESTORE' ? 'pointer' : 'not-allowed',
+                        fontWeight: 800, fontFamily: FONT,
+                      }}
+                    >
+                      تأكيد الاستعادة
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Header card */}
-            <div
-              style={{
-                background: C.card,
-                borderRadius: '16px',
-                border: `1px solid ${C.border}`,
-                padding: '20px 24px',
-                marginBottom: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '12px',
-              }}
-            >
+            <div style={{
+              background: C.card, borderRadius: '16px',
+              border: `1px solid ${C.border}`, padding: '20px 24px',
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
+            }}>
               <div>
                 <h2 style={{ fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>
                   النسخ الاحتياطية للقاعدة
                 </h2>
                 <p style={{ fontSize: '12px', color: C.muted, margin: 0 }}>
-                  النسخ الاحتياطي التلقائي يعمل يومياً الساعة 3:00 صباحاً •{' '}
+                  النسخ التلقائي يعمل يومياً الساعة 3:00 صباحاً •{' '}
                   {backupData ? `${backupData.total} نسخة متوفرة` : 'جاري التحميل...'}
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  void triggerBackup();
-                }}
-                disabled={creatingBackup}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 20px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: creatingBackup ? C.border : C.orange,
-                  color: '#fff',
-                  fontSize: '14px',
-                  fontWeight: 800,
-                  cursor: creatingBackup ? 'not-allowed' : 'pointer',
-                  fontFamily: FONT,
-                  transition: 'filter 0.15s',
-                  flexShrink: 0,
-                }}
-              >
-                💾 {creatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة احتياطية الآن'}
-              </button>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => { void triggerBackup(); }}
+                  disabled={creatingBackup}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '10px 18px', borderRadius: '10px', border: 'none',
+                    background: creatingBackup ? C.border : C.orange,
+                    color: '#fff', fontSize: '13px', fontWeight: 800,
+                    cursor: creatingBackup ? 'not-allowed' : 'pointer',
+                    fontFamily: FONT,
+                  }}
+                >
+                  💾 {creatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة الآن'}
+                </button>
+                <button
+                  onClick={openRestorePicker}
+                  disabled={restoring}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '10px 18px', borderRadius: '10px',
+                    border: '1px solid rgba(139,92,246,0.4)',
+                    background: 'rgba(139,92,246,0.1)',
+                    color: '#A78BFA', fontSize: '13px', fontWeight: 800,
+                    cursor: restoring ? 'not-allowed' : 'pointer',
+                    fontFamily: FONT,
+                  }}
+                >
+                  {restoring ? '⏳ جاري الاستعادة...' : '📥 استعادة من ملف'}
+                </button>
+              </div>
             </div>
 
+            {/* Restore result */}
+            {restoreOk && (
+              <div style={{
+                padding: '14px 18px', borderRadius: '12px',
+                background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+                color: '#22C55E', fontSize: '13px', fontWeight: 700,
+              }}>
+                ✅ {restoreOk}
+              </div>
+            )}
+            {restoreErr && (
+              <div style={{
+                padding: '14px 18px', borderRadius: '12px',
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                color: '#EF4444', fontSize: '13px',
+              }}>
+                ❌ {restoreErr}
+              </div>
+            )}
+
             {/* Backups table */}
-            <div
-              style={{
-                background: C.card,
-                borderRadius: '16px',
-                border: `1px solid ${C.border}`,
-                overflow: 'hidden',
-              }}
-            >
+            <div style={{
+              background: C.card, borderRadius: '16px',
+              border: `1px solid ${C.border}`, overflow: 'hidden',
+            }}>
               {/* Column headers */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 100px 180px',
-                  gap: '8px',
-                  padding: '10px 24px',
-                  background: 'rgba(249,115,22,0.08)',
-                  borderBottom: `1px solid ${C.border}`,
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: C.orange,
-                }}
-              >
+              <div style={{
+                display: 'grid', gridTemplateColumns: '1fr 90px 160px 110px',
+                gap: '8px', padding: '10px 20px',
+                background: 'rgba(249,115,22,0.08)',
+                borderBottom: `1px solid ${C.border}`,
+                fontSize: '11px', fontWeight: 700, color: C.orange,
+              }}>
                 <div>اسم الملف</div>
                 <div style={{ textAlign: 'center' }}>الحجم</div>
                 <div style={{ textAlign: 'center' }}>التاريخ</div>
+                <div style={{ textAlign: 'center' }}>تنزيل</div>
               </div>
 
               {!backupData ? (
@@ -3231,49 +3399,81 @@ export default function SuperAdmin() {
                   <div style={{ fontSize: '32px', marginBottom: '12px' }}>💾</div>
                   <div>لا توجد نسخ احتياطية بعد</div>
                   <div style={{ fontSize: '12px', marginTop: '6px' }}>
-                    اضغط "إنشاء نسخة احتياطية الآن" للبدء
+                    اضغط "إنشاء نسخة الآن" للبدء
                   </div>
                 </div>
               ) : (
-                backupData.backups.map((b, idx) => (
-                  <div
-                    key={b.filename}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 100px 180px',
-                      gap: '8px',
-                      padding: '12px 24px',
-                      alignItems: 'center',
-                      borderBottom:
-                        idx < backupData.backups.length - 1 ? `1px solid ${C.border}` : 'none',
-                      background: idx % 2 === 1 ? 'rgba(15,23,42,0.4)' : 'transparent',
-                    }}
-                  >
+                backupData.backups.map((b, idx) => {
+                  const isEnc = b.filename.endsWith('.enc');
+                  const isDownloading = downloadingFile === b.filename;
+                  return (
                     <div
+                      key={b.filename}
                       style={{
-                        fontSize: '13px',
-                        color: C.text,
-                        fontFamily: 'monospace',
-                        wordBreak: 'break-all',
+                        display: 'grid', gridTemplateColumns: '1fr 90px 160px 110px',
+                        gap: '8px', padding: '12px 20px', alignItems: 'center',
+                        borderBottom: idx < backupData.backups.length - 1 ? `1px solid ${C.border}` : 'none',
+                        background: idx % 2 === 1 ? 'rgba(15,23,42,0.4)' : 'transparent',
                       }}
                     >
-                      {b.filename}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                        <span style={{ fontSize: '14px' }}>{isEnc ? '🔒' : '📄'}</span>
+                        <span style={{
+                          fontSize: '12px', color: C.text,
+                          fontFamily: 'monospace', overflow: 'hidden',
+                          textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>
+                          {b.filename}
+                        </span>
+                        {isEnc && (
+                          <span style={{
+                            fontSize: '9px', padding: '1px 5px', borderRadius: '4px',
+                            background: 'rgba(251,191,36,0.15)', color: '#FBB024',
+                            fontWeight: 700, flexShrink: 0,
+                          }}>
+                            مشفّر
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: C.muted, textAlign: 'center' }}>
+                        {b.size_mb} MB
+                      </div>
+                      <div style={{ fontSize: '11px', color: C.muted, textAlign: 'center' }}>
+                        {new Date(b.created_at).toLocaleString('ar-EG-u-nu-latn', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <button
+                          onClick={() => { void downloadBackup(b.filename); }}
+                          disabled={isDownloading}
+                          style={{
+                            padding: '6px 12px', borderRadius: '8px',
+                            border: '1px solid rgba(34,197,94,0.3)',
+                            background: isDownloading ? 'transparent' : 'rgba(34,197,94,0.1)',
+                            color: isDownloading ? C.muted : '#22C55E',
+                            fontSize: '11px', fontWeight: 700,
+                            cursor: isDownloading ? 'not-allowed' : 'pointer',
+                            fontFamily: FONT,
+                          }}
+                        >
+                          {isDownloading ? '...' : '⬇ تنزيل'}
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ fontSize: '12px', color: C.muted, textAlign: 'center' }}>
-                      {b.size_mb} MB
-                    </div>
-                    <div style={{ fontSize: '12px', color: C.muted, textAlign: 'center' }}>
-                      {new Date(b.created_at).toLocaleString('ar-EG-u-nu-latn', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
+            </div>
+
+            {/* Info note */}
+            <div style={{
+              padding: '12px 16px', borderRadius: '10px',
+              background: 'rgba(249,115,22,0.05)', border: '1px solid rgba(249,115,22,0.15)',
+              fontSize: '12px', color: C.muted,
+            }}>
+              💡 الملفات المشفّرة (.json.enc) محمية بتشفير AES-256. احتفظ بمفتاح التشفير في مكان آمن — بدونه لا يمكن فك تشفير أي نسخة.
             </div>
           </div>
         )}
