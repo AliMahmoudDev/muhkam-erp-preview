@@ -726,6 +726,16 @@ router.get("/super/backup/list", ...superOnly, wrap(async (_req, res) => {
   res.json({ backups, total: backups.length });
 }));
 
+/* ── GET /super/encryption-key — return the backup encryption key (super admin only) ── */
+router.get("/super/encryption-key", ...superOnly, wrap(async (_req, res) => {
+  const key = process.env.BACKUP_ENCRYPTION_KEY ?? null;
+  if (!key) {
+    res.json({ key: null, enabled: false });
+    return;
+  }
+  res.json({ key, enabled: true, length: key.length });
+}));
+
 /* ── GET /super/backup/download/:filename — stream a backup file ── */
 router.get("/super/backup/download/:filename", ...superOnly, wrap(async (req, res) => {
   const BACKUP_DIR = process.env.BACKUP_DIR ?? "/home/runner/workspace/db-backups";

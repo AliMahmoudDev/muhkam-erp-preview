@@ -623,6 +623,50 @@ export default function SuperAdmin() {
   const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null);
   const restoreInputRef = useRef<HTMLInputElement>(null);
 
+  /* ── Encryption key info ─── */
+  const [encKey, setEncKey] = useState<string | null>(null);
+  const [encEnabled, setEncEnabled] = useState(false);
+  const [encKeyVisible, setEncKeyVisible] = useState(false);
+  const [encKeyCopied, setEncKeyCopied] = useState(false);
+  const [encKeyLoading, setEncKeyLoading] = useState(false);
+
+  async function loadEncKey() {
+    if (encKey !== null) { setEncKeyVisible(true); return; }
+    setEncKeyLoading(true);
+    try {
+      const res = await fetch(api('/api/super/encryption-key'), {
+        headers: authHeaders(token ?? ''),
+      });
+      const data: { key: string | null; enabled: boolean } = await res.json();
+      setEncEnabled(data.enabled);
+      setEncKey(data.key ?? '');
+      setEncKeyVisible(true);
+    } catch {
+      showToast('فشل جلب مفتاح التشفير', 'error');
+    } finally {
+      setEncKeyLoading(false);
+    }
+  }
+
+  function copyEncKey() {
+    if (!encKey) return;
+    void navigator.clipboard.writeText(encKey).then(() => {
+      setEncKeyCopied(true);
+      setTimeout(() => setEncKeyCopied(false), 2500);
+    });
+  }
+
+  function emailEncKey() {
+    if (!encKey) return;
+    const subject = encodeURIComponent('مفتاح تشفير النسخ الاحتياطية — MUHKAM ERP');
+    const body = encodeURIComponent(
+      `مفتاح تشفير النسخ الاحتياطية لنظام مُحكم:\n\n${encKey}\n\n` +
+      `التاريخ: ${new Date().toLocaleString('ar-EG')}\n\n` +
+      `⚠️ تحذير: احتفظ بهذا المفتاح في مكان آمن. بدونه لا يمكن استعادة أي نسخة مشفّرة.`
+    );
+    window.open(`mailto:m.elmelegy@me.com?subject=${subject}&body=${body}`, '_blank');
+  }
+
   const { data: backupData, refetch: refetchBackups } = useQuery<{
     backups: BackupFile[];
     total: number;
@@ -3474,6 +3518,162 @@ export default function SuperAdmin() {
               fontSize: '12px', color: C.muted,
             }}>
               💡 الملفات المشفّرة (.json.enc) محمية بتشفير AES-256. احتفظ بمفتاح التشفير في مكان آمن — بدونه لا يمكن فك تشفير أي نسخة.
+            </div>
+
+            {/* ── بطاقة معلومات التشفير ── */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(17,24,39,1) 0%, rgba(30,15,40,1) 100%)',
+              borderRadius: '18px',
+              border: '1px solid rgba(168,85,247,0.25)',
+              overflow: 'hidden',
+            }}>
+              {/* رأس البطاقة */}
+              <div style={{
+                padding: '18px 22px',
+                borderBottom: '1px solid rgba(168,85,247,0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: 'rgba(168,85,247,0.07)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '10px',
+                    background: 'rgba(168,85,247,0.15)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '18px',
+                  }}>🔑</div>
+                  <div>
+                    <div style={{ fontWeight: 800, color: '#E9D5FF', fontSize: '14px' }}>
+                      مفتاح تشفير النسخ الاحتياطية
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(168,85,247,0.7)', marginTop: '1px' }}>
+                      AES-256-GCM — {encEnabled ? 'مفعّل ✓' : 'غير مفعّل'}
+                    </div>
+                  </div>
+                </div>
+                {!encKeyVisible && (
+                  <button
+                    onClick={() => { void loadEncKey(); }}
+                    disabled={encKeyLoading}
+                    style={{
+                      padding: '8px 16px', borderRadius: '9px',
+                      border: '1px solid rgba(168,85,247,0.35)',
+                      background: 'rgba(168,85,247,0.12)',
+                      color: '#C084FC', fontSize: '12px', fontWeight: 700,
+                      cursor: encKeyLoading ? 'not-allowed' : 'pointer',
+                      fontFamily: FONT,
+                    }}
+                  >
+                    {encKeyLoading ? '...' : '👁 إظهار المفتاح'}
+                  </button>
+                )}
+              </div>
+
+              {/* تحذير */}
+              <div style={{
+                margin: '16px 22px 0',
+                padding: '10px 14px', borderRadius: '10px',
+                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                display: 'flex', gap: '8px', alignItems: 'flex-start',
+              }}>
+                <span style={{ fontSize: '14px', flexShrink: 0 }}>⚠️</span>
+                <p style={{ fontSize: '11px', color: 'rgba(252,165,165,0.85)', margin: 0, lineHeight: 1.6 }}>
+                  هذا المفتاح <strong style={{ color: '#FCA5A5' }}>سري للغاية</strong>. لا تشاركه مع أحد.
+                  بدونه لا يمكن فتح أي نسخة احتياطية مشفّرة. احتفظ بنسخة منه في مكان آمن خارج السيرفر.
+                </p>
+              </div>
+
+              {/* قيمة المفتاح */}
+              <div style={{ padding: '16px 22px' }}>
+                {!encKeyVisible ? (
+                  <div style={{
+                    padding: '14px', borderRadius: '10px',
+                    background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)',
+                    textAlign: 'center', color: 'rgba(255,255,255,0.25)',
+                    fontSize: '13px', letterSpacing: '4px',
+                  }}>
+                    ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '14px 16px', borderRadius: '10px',
+                    background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(168,85,247,0.2)',
+                    fontFamily: 'monospace', fontSize: '12px',
+                    color: '#C4B5FD', wordBreak: 'break-all', lineHeight: 1.7,
+                    position: 'relative',
+                  }}>
+                    {encKey || '—'}
+                  </div>
+                )}
+
+                {/* أزرار الإجراءات */}
+                {encKeyVisible && encKey && (
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={copyEncKey}
+                      style={{
+                        flex: 1, minWidth: '120px', padding: '10px 16px',
+                        borderRadius: '10px', border: '1px solid rgba(168,85,247,0.3)',
+                        background: encKeyCopied ? 'rgba(34,197,94,0.12)' : 'rgba(168,85,247,0.1)',
+                        color: encKeyCopied ? '#86EFAC' : '#C084FC',
+                        fontSize: '13px', fontWeight: 700,
+                        cursor: 'pointer', fontFamily: FONT,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                      }}
+                    >
+                      {encKeyCopied ? '✅ تم النسخ' : '📋 نسخ المفتاح'}
+                    </button>
+
+                    <button
+                      onClick={emailEncKey}
+                      style={{
+                        flex: 1, minWidth: '160px', padding: '10px 16px',
+                        borderRadius: '10px', border: '1px solid rgba(59,130,246,0.3)',
+                        background: 'rgba(59,130,246,0.1)',
+                        color: '#93C5FD',
+                        fontSize: '13px', fontWeight: 700,
+                        cursor: 'pointer', fontFamily: FONT,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                      }}
+                    >
+                      ✉️ إرسال لـ m.elmelegy@me.com
+                    </button>
+
+                    <button
+                      onClick={() => setEncKeyVisible(false)}
+                      style={{
+                        padding: '10px 14px', borderRadius: '10px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'transparent', color: 'rgba(255,255,255,0.3)',
+                        fontSize: '13px', cursor: 'pointer', fontFamily: FONT,
+                      }}
+                    >
+                      🙈 إخفاء
+                    </button>
+                  </div>
+                )}
+
+                {/* تعليمات الحفظ */}
+                <div style={{
+                  marginTop: '16px', padding: '12px 14px', borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                }}>
+                  <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px', fontWeight: 700 }}>
+                    📌 أماكن الحفظ الموصى بها:
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    {[
+                      ['🖨️', 'اطبعه وضعه في خزنة أو مكان آمن'],
+                      ['🔐', 'احفظه في برنامج كلمات مرور (1Password / Bitwarden)'],
+                      ['✉️', 'أرسله لبريدك الشخصي كنسخة طوارئ'],
+                    ].map(([icon, text]) => (
+                      <div key={text} style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                        <span>{icon}</span>
+                        <span>{text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
