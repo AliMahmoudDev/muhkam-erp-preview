@@ -456,80 +456,96 @@ export default function Expenses() {
 
       {/* ─── Category quick-filter pills ─── */}
       {categoryBreakdown.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-white/30 text-xs shrink-0">هذا الشهر:</span>
-          {categoryBreakdown.slice(0, 6).map(({ cat, amt }) => (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-white/25 text-xs font-medium shrink-0 ml-1">اختصارات الشهر:</span>
+          {categoryBreakdown.slice(0, 6).map(({ cat, amt }) => {
+            const active = catFilter === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setCatFilter(active ? '' : cat)}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
+                  active
+                    ? 'bg-orange-500/25 text-orange-200 border-orange-400/40 shadow-[0_0_12px_rgba(249,115,22,0.2)]'
+                    : 'bg-white/[0.04] text-white/55 border-white/[0.08] hover:bg-white/[0.08] hover:text-white/80 hover:border-white/15'
+                }`}
+              >
+                <span>{cat}</span>
+                <span className={`font-black tabular-nums ${active ? 'text-orange-300' : 'text-red-400/60'}`}>
+                  {formatCurrency(amt)}
+                </span>
+              </button>
+            );
+          })}
+          {catFilter && (
             <button
-              key={cat}
-              onClick={() => setCatFilter(catFilter === cat ? '' : cat)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${
-                catFilter === cat
-                  ? 'bg-orange-500/30 text-orange-200 border-orange-500/50'
-                  : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10 hover:text-white/80'
-              }`}
+              onClick={() => setCatFilter('')}
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs text-white/30 hover:text-white/60 border border-white/8 hover:border-white/15 transition-all"
             >
-              {cat}
-              <span className={catFilter === cat ? 'text-orange-300' : 'text-red-400/70'}>{formatCurrency(amt)}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* ─── Filters (one row) ─── */}
-      <div className="glass-panel rounded-2xl border border-white/8 flex items-center divide-x divide-x-reverse divide-white/8">
-        {/* Search */}
-        <div className="relative w-[28%] shrink-0">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 pointer-events-none" />
-          <input
-            type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث..."
-            className="w-full bg-transparent text-white/80 text-sm placeholder:text-white/25 pr-9 pl-3 py-2.5 outline-none"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2">
-              <X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" />
+              <X className="w-3 h-3" /> إلغاء
             </button>
           )}
         </div>
-        {/* Divider */}
-        <div className="w-px self-stretch bg-white/8" />
+      )}
+
+      {/* ─── Filters Row ─── */}
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
+        {/* Search */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-white/30 text-xs font-medium pr-1">بحث</label>
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 pointer-events-none" />
+            <input
+              type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث بالتصنيف أو التفاصيل..."
+              className="glass-input w-full pr-9 text-sm py-2.5"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Category */}
-        <select
-          value={catFilter} onChange={e => setCatFilter(e.target.value)}
-          className="bg-transparent text-white/70 text-sm px-3 py-2.5 outline-none cursor-pointer w-36 shrink-0"
-        >
-          <option value="" className="bg-gray-900">كل التصنيفات</option>
-          {categories.map(c => <option key={c.id} value={c.name} className="bg-gray-900">{c.name}</option>)}
-        </select>
-        {/* Divider */}
-        <div className="w-px self-stretch bg-white/8" />
-        {/* Date from */}
-        <input
-          type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-          title="من تاريخ"
-          className="bg-transparent text-white/70 text-sm px-3 py-2.5 outline-none w-36 shrink-0 [color-scheme:dark]"
-        />
-        {/* Divider */}
-        <div className="w-px self-stretch bg-white/8" />
-        {/* Date to */}
-        <input
-          type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-          title="إلى تاريخ"
-          className="bg-transparent text-white/70 text-sm px-3 py-2.5 outline-none w-36 shrink-0 [color-scheme:dark]"
-        />
-        {/* Clear btn */}
-        {hasFilter && (
-          <>
-            <div className="w-px self-stretch bg-white/8" />
-            <button
-              onClick={() => { setSearch(''); setCatFilter(''); setDateFrom(''); setDateTo(''); }}
-              title="مسح الفلاتر"
-              className="px-3 py-2.5 text-white/30 hover:text-red-400 transition-colors shrink-0"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </>
-        )}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-white/30 text-xs font-medium pr-1">التصنيف</label>
+          <select
+            value={catFilter} onChange={e => setCatFilter(e.target.value)}
+            className="glass-input text-sm py-2.5 w-36"
+          >
+            <option value="" className="bg-gray-900">الكل</option>
+            {categories.map(c => <option key={c.id} value={c.name} className="bg-gray-900">{c.name}</option>)}
+          </select>
+        </div>
+
+        {/* Date range */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-white/30 text-xs font-medium pr-1">من تاريخ</label>
+          <input
+            type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="glass-input text-sm py-2.5 w-36 [color-scheme:dark]"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-white/30 text-xs font-medium pr-1">إلى تاريخ</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              className="glass-input text-sm py-2.5 w-36 [color-scheme:dark]"
+            />
+            {hasFilter && (
+              <button
+                onClick={() => { setSearch(''); setCatFilter(''); setDateFrom(''); setDateTo(''); }}
+                title="مسح كل الفلاتر"
+                className="flex-shrink-0 w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ─── Add Modal ─── */}
