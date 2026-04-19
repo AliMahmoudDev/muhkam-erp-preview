@@ -20,7 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 
 const AMBER = "#F59E0B";
 
-interface Transaction { id: number; type?: string; direction?: string; amount: number; }
+interface Safe { id: number; name: string; balance: number; }
 interface Expense { id: number; amount: number; }
 
 function ThemeSwitcher() {
@@ -141,9 +141,9 @@ export default function MoreScreen() {
   const isWeb = Platform.OS === "web";
   const { user, logout } = useAuth();
 
-  const { data: transactions } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: () => apiFetch<Transaction[]>("/api/transactions"),
+  const { data: safes = [] } = useQuery({
+    queryKey: ["safes"],
+    queryFn: () => apiFetch<Safe[]>("/api/settings/safes"),
     staleTime: 60_000,
   });
 
@@ -153,16 +153,7 @@ export default function MoreScreen() {
     staleTime: 60_000,
   });
 
-  // FIX 6: دعم كلا الحقلين type و direction
-  const totalIn = (transactions || [])
-    .filter((t) => t.type === "in" || t.direction === "in")
-    .reduce((a, t) => a + Number(t.amount), 0);
-
-  const totalOut = (transactions || [])
-    .filter((t) => t.type === "out" || t.direction === "out")
-    .reduce((a, t) => a + Number(t.amount), 0);
-
-  const cashBalance = totalIn - totalOut;
+  const totalSafesBalance = safes.reduce((a, s) => a + Number(s.balance), 0);
   const totalExpenses = (expenses || []).reduce((a, e) => a + Number(e.amount), 0);
 
   const roleLabel =
@@ -221,10 +212,30 @@ export default function MoreScreen() {
         </SectionCard>
 
         {/* الخزينة */}
-        <SectionCard title="الخزينة">
-          <MenuItem icon="trending-up"   label="إجمالي الواردات"  value={`${formatCurrency(totalIn)} ج.م`}         color="#10B981" />
-          <MenuItem icon="trending-down" label="إجمالي المدفوعات" value={`${formatCurrency(totalOut)} ج.م`}        color="#EF4444" />
-          <MenuItem icon="dollar-sign"   label="الرصيد النقدي"    value={`${formatCurrency(cashBalance)} ج.م`}     color={cashBalance >= 0 ? "#10B981" : "#EF4444"} last />
+        <SectionCard title="الخزائن">
+          {safes.length === 0 ? (
+            <MenuItem icon="database" label="لا توجد خزائن مُعرَّفة" color="#EF4444" last />
+          ) : (
+            safes.map((s, idx) => (
+              <MenuItem
+                key={s.id}
+                icon="dollar-sign"
+                label={s.name}
+                value={`${formatCurrency(Number(s.balance))} ج.م`}
+                color={Number(s.balance) >= 0 ? "#10B981" : "#EF4444"}
+                last={idx === safes.length - 1}
+              />
+            ))
+          )}
+          {safes.length > 1 && (
+            <MenuItem
+              icon="layers"
+              label="الإجمالي الكلي"
+              value={`${formatCurrency(totalSafesBalance)} ج.م`}
+              color={totalSafesBalance >= 0 ? AMBER : "#EF4444"}
+              last
+            />
+          )}
         </SectionCard>
 
         {/* العمليات */}

@@ -102,16 +102,32 @@ export default function SalesScreen() {
     staleTime: 30_000,
   });
 
-  const filtered = (data || []).filter((s) =>
-    !search || s.invoice_no.includes(search) || (s.customer_name || "").includes(search)
-  );
+  const [statusFilter, setStatusFilter] = useState<"all"|"paid"|"partial"|"unpaid">("all");
+
+  const filtered = (data || []).filter((s) => {
+    const matchSearch = !search || s.invoice_no.includes(search) || (s.customer_name || "").includes(search);
+    const matchStatus = statusFilter === "all" || s.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const filteredTotal = filtered.reduce((sum, s) => sum + s.total_amount, 0);
+  const filteredUnpaid = filtered.reduce((sum, s) => sum + s.remaining_amount, 0);
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <View style={[styles.header, { backgroundColor: c.headerBg, paddingTop: isWeb ? 67 : insets.top + 12 }]}>
         <View style={styles.headerLine} />
-        <Text style={styles.headerTitle}>المبيعات</Text>
-        <Text style={styles.headerSub}>{data?.length || 0} فاتورة</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerStats}>
+            <Text style={styles.headerStatVal}>{formatCurrency(filteredTotal)}</Text>
+            <Text style={styles.headerStatLbl}>إجمالي ج.م</Text>
+          </View>
+          <View style={styles.headerStats}>
+            <Text style={[styles.headerStatVal, { color: filteredUnpaid > 0 ? "#EF4444" : "#10B981" }]}>{formatCurrency(filteredUnpaid)}</Text>
+            <Text style={styles.headerStatLbl}>متبقي ج.م</Text>
+          </View>
+        </View>
+        <Text style={styles.headerSub}>{filtered.length} فاتورة{data && data.length !== filtered.length ? ` من ${data.length}` : ""}</Text>
       </View>
 
       <View style={[styles.searchBox, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -127,6 +143,26 @@ export default function SalesScreen() {
         {search ? (
           <Feather name="x" size={16} color={c.mutedForeground} onPress={() => setSearch("")} />
         ) : null}
+      </View>
+
+      <View style={styles.statusFilters}>
+        {([
+          { key: "all",     label: "الكل"         },
+          { key: "paid",    label: "مدفوع"        },
+          { key: "partial", label: "جزئي"         },
+          { key: "unpaid",  label: "غير مدفوع"   },
+        ] as const).map(f => (
+          <TouchableOpacity
+            key={f.key}
+            style={[styles.statusChip, {
+              backgroundColor: statusFilter === f.key ? (STATUS[f.key]?.color ?? AMBER) : c.card,
+              borderColor:     statusFilter === f.key ? (STATUS[f.key]?.color ?? AMBER) : c.border,
+            }]}
+            onPress={() => setStatusFilter(f.key)}
+          >
+            <Text style={[styles.statusChipText, { color: statusFilter === f.key ? "#fff" : c.mutedForeground }]}>{f.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {isLoading ? (
@@ -161,10 +197,17 @@ export default function SalesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingBottom: 16, paddingHorizontal: 20, position: "relative" },
+  header: { paddingBottom: 12, paddingHorizontal: 20, position: "relative" },
   headerLine: { position: "absolute", top: 0, left: 0, right: 0, height: 2, backgroundColor: AMBER },
+  headerRow: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 },
+  headerStats: { alignItems: "flex-end" },
+  headerStatVal: { fontSize: 16, fontFamily: "Tajawal_700Bold", color: AMBER },
+  headerStatLbl: { fontSize: 10, fontFamily: "Tajawal_400Regular", color: "rgba(255,255,255,0.4)", marginTop: 1 },
   headerTitle: { fontSize: 22, fontFamily: "Tajawal_700Bold", color: "#F0F7FF", textAlign: "right" },
-  headerSub: { fontSize: 12, color: AMBER, fontFamily: "Tajawal_400Regular", textAlign: "right", marginTop: 2 },
+  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Tajawal_400Regular", textAlign: "right" },
+  statusFilters: { flexDirection: "row-reverse", gap: 8, paddingHorizontal: 16, paddingBottom: 6 },
+  statusChip: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
+  statusChipText: { fontSize: 12, fontFamily: "Tajawal_500Medium" },
   searchBox: {
     flexDirection: "row-reverse", alignItems: "center",
     marginHorizontal: 16, marginTop: 12, marginBottom: 4,
