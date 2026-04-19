@@ -24,6 +24,30 @@
 - Fixed `artifacts/erp-system/src/components/ui/spinner.tsx`: `React.ComponentProps<typeof Loader2Icon>` instead of `<"svg">`
 - Added `pnpm.overrides` in root `package.json` to deduplicate `@types/react` and fix `calendar.tsx` dual-types TS error
 
+## Super Admin Panel — 6 New Features (April 2026 — Session 7)
+
+### DB
+- Added `announcements` table (title, body, type, target, company_id, is_active, expires_at, created_by)
+
+### Backend New Endpoints (all protected by superOnly middleware)
+1. `GET /api/super/revenue` — MRR, ARR, ARPU, conversion rate, plan breakdown, 12-month revenue chart
+2. `GET /api/super/alerts` — Smart alerts: expiring within 3/7 days, expired-but-active, new signups, system health
+3. `GET /api/super/export/companies` — CSV download with UTF-8 BOM for Excel Arabic support
+4. `GET/POST/PATCH/DELETE /api/super/announcements` — Full CRUD for announcements
+5. `GET /api/super/health` — Deep health + request metrics + DB pool stats + memory breakdown
+
+### Frontend New Tabs in Super Admin Panel
+1. 📊 الإيرادات — KPI cards (MRR/ARR/ARPU/conversion), CSS bar chart (12mo), plan breakdown bars
+2. 🔔 التنبيهات — Summary cards, color-coded alert list, auto-refreshes every 60s
+3. 📋 سجل التدقيق — Paginated table with action/limit filters
+4. 📢 الإعلانات — Create form + active/pause/delete list
+5. 🌡️ صحة السيرفر — Status banner, 8 KPI cards, API latency (P50/P95/P99), status codes, DB pool, auto-refreshes every 15s
+
+### Plan Prices (for revenue calculation)
+- trial: 0 EGP, basic: 299, pro: 599, paid: 399, professional: 799
+
+---
+
 ## Features Added (April 2026 — Session 4)
 
 ### 1. فلتر الفرع/المستودع في التقارير (Branch Filter in Reports)

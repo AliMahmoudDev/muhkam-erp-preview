@@ -764,4 +764,330 @@ router.get("/super/backup/download/:filename", ...superOnly, wrap(async (req, re
   fs.createReadStream(filepath).pipe(res);
 }));
 
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 1 — Revenue Dashboard
+   GET /super/revenue — MRR, plan breakdown, monthly revenue trends
+   ══════════════════════════════════════════════════════════════════ */
+const PLAN_PRICES: Record<string, number> = {
+  trial:        0,
+  basic:        299,
+  pro:          599,
+  paid:         399,
+  professional: 799,
+};
+
+router.get("/super/revenue", ...superOnly, wrap(async (_req, res) => {
+  const companies = await db.select().from(companiesTable);
+  const now = new Date();
+  const nowStr = now.toISOString().slice(0, 10);
+
+  const activeCompanies = companies.filter(c => c.is_active && c.end_date >= nowStr);
+
+  /* MRR = sum of prices for all currently active, non-trial companies */
+  const mrr = activeCompanies.reduce((sum, c) => sum + (PLAN_PRICES[c.plan_type] ?? 0), 0);
+  const arr  = mrr * 12;
+
+  /* Plan breakdown */
+  const planBreakdown = Object.entries(PLAN_PRICES).map(([plan, price]) => ({
+    plan,
+    price,
+    count: activeCompanies.filter(c => c.plan_type === plan).length,
+    revenue: activeCompanies.filter(c => c.plan_type === plan).length * price,
+  }));
+
+  /* Monthly revenue for last 12 months */
+  const monthlyRevenue: { month: string; revenue: number; count: number }[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - i);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const label = d.toLocaleDateString("ar-EG", { month: "short", year: "2-digit" });
+    const activeInMonth = companies.filter(c => {
+      const start = new Date(c.start_date);
+      const end   = new Date(c.end_date);
+      const monthStart = new Date(y, m, 1);
+      const monthEnd   = new Date(y, m + 1, 0);
+      return c.is_active && start <= monthEnd && end >= monthStart;
+    });
+    const revenue = activeInMonth.reduce((sum, c) => sum + (PLAN_PRICES[c.plan_type] ?? 0), 0);
+    monthlyRevenue.push({ month: label, revenue, count: activeInMonth.length });
+  }
+
+  /* Conversion rate: trial → paid */
+  const totalTrialEver = companies.filter(c => c.plan_type === "trial").length;
+  const totalPaidEver  = companies.filter(c => c.plan_type !== "trial").length;
+  const conversionRate = companies.length > 0
+    ? Math.round((totalPaidEver / companies.length) * 100)
+    : 0;
+
+  /* ARPU */
+  const arpu = activeCompanies.length > 0
+    ? Math.round(mrr / activeCompanies.length)
+    : 0;
+
+  res.json({
+    mrr, arr, arpu, conversionRate,
+    activeCompanies: activeCompanies.length,
+    trialCompanies:  activeCompanies.filter(c => c.plan_type === "trial").length,
+    paidCompanies:   activeCompanies.filter(c => c.plan_type !== "trial").length,
+    planBreakdown,
+    monthlyRevenue,
+    totalPaidEver, totalTrialEver,
+  });
+}));
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 2 — Smart Alerts Center
+   GET /super/alerts — expiring, inactive, system issues
+   ══════════════════════════════════════════════════════════════════ */
+router.get("/super/alerts", ...superOnly, wrap(async (_req, res) => {
+  const companies = await db.select().from(companiesTable);
+  const now    = new Date();
+  const nowStr = now.toISOString().slice(0, 10);
+
+  const alerts: {
+    type: "warning" | "danger" | "info" | "success";
+    category: string;
+    title: string;
+    body: string;
+    company_id?: number;
+    company_name?: string;
+    days?: number;
+  }[] = [];
+
+  /* ── Expiring within 3 days (danger) ── */
+  const in3 = new Date(now); in3.setDate(in3.getDate() + 3);
+  const in3Str = in3.toISOString().slice(0, 10);
+  companies
+    .filter(c => c.is_active && c.end_date >= nowStr && c.end_date <= in3Str)
+    .forEach(c => {
+      const days = Math.ceil((new Date(c.end_date).getTime() - now.getTime()) / 86400000);
+      alerts.push({
+        type: "danger", category: "expiry",
+        title: `⚠️ ينتهي الاشتراك خلال ${days} ${days === 1 ? "يوم" : "أيام"}`,
+        body: `شركة "${c.name}" — خطة ${c.plan_type} — تنتهي في ${c.end_date}`,
+        company_id: c.id, company_name: c.name, days,
+      });
+    });
+
+  /* ── Expiring within 7 days (warning) ── */
+  const in7 = new Date(now); in7.setDate(in7.getDate() + 7);
+  const in7Str = in7.toISOString().slice(0, 10);
+  companies
+    .filter(c => c.is_active && c.end_date > in3Str && c.end_date <= in7Str)
+    .forEach(c => {
+      const days = Math.ceil((new Date(c.end_date).getTime() - now.getTime()) / 86400000);
+      alerts.push({
+        type: "warning", category: "expiry",
+        title: `🔔 ينتهي الاشتراك قريباً (${days} أيام)`,
+        body: `شركة "${c.name}" — خطة ${c.plan_type} — تنتهي في ${c.end_date}`,
+        company_id: c.id, company_name: c.name, days,
+      });
+    });
+
+  /* ── Expired (ended but still marked active) ── */
+  companies
+    .filter(c => c.is_active && c.end_date < nowStr)
+    .forEach(c => {
+      alerts.push({
+        type: "danger", category: "expired",
+        title: "⛔ اشتراك منتهي (الحساب لا يزال نشطاً!)",
+        body: `شركة "${c.name}" — انتهى في ${c.end_date} — يجب تعليقه أو تجديده`,
+        company_id: c.id, company_name: c.name,
+      });
+    });
+
+  /* ── New signups this week ── */
+  const ago7 = new Date(now); ago7.setDate(ago7.getDate() - 7);
+  const newThisWeek = companies.filter(c => new Date(c.created_at) >= ago7);
+  if (newThisWeek.length > 0) {
+    alerts.push({
+      type: "success", category: "signup",
+      title: `🎉 ${newThisWeek.length} شركة جديدة هذا الأسبوع`,
+      body: newThisWeek.map(c => c.name).join("، "),
+    });
+  }
+
+  /* ── High number of trials (conversion concern) ── */
+  const trialCount = companies.filter(c => c.plan_type === "trial" && c.is_active && c.end_date >= nowStr).length;
+  const paidCount  = companies.filter(c => c.plan_type !== "trial" && c.is_active && c.end_date >= nowStr).length;
+  if (trialCount > paidCount && trialCount > 2) {
+    alerts.push({
+      type: "warning", category: "conversion",
+      title: "📊 معدل تحويل منخفض",
+      body: `${trialCount} شركة تجريبية مقابل ${paidCount} مدفوعة — حاول التواصل معهم لتحويلهم`,
+    });
+  }
+
+  /* ── System health check ── */
+  const mem = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+  if (mem > 400) {
+    alerts.push({
+      type: "warning", category: "system",
+      title: "💾 استهلاك ذاكرة مرتفع",
+      body: `الخادم يستخدم ${mem} MB من الذاكرة — راقب الوضع`,
+    });
+  }
+
+  const critical   = alerts.filter(a => a.type === "danger").length;
+  const warnings   = alerts.filter(a => a.type === "warning").length;
+  const info_count = alerts.filter(a => a.type === "info").length;
+  const successes  = alerts.filter(a => a.type === "success").length;
+
+  res.json({ alerts, summary: { critical, warnings, info: info_count, successes, total: alerts.length } });
+}));
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 4 — Export Companies as CSV
+   GET /super/export/companies — download companies list as CSV
+   ══════════════════════════════════════════════════════════════════ */
+router.get("/super/export/companies", ...superOnly, wrap(async (_req, res) => {
+  const companies = await db.select().from(companiesTable);
+  const users = await db
+    .select({ id: erpUsersTable.id, company_id: erpUsersTable.company_id })
+    .from(erpUsersTable)
+    .where(sql`${erpUsersTable.role} != 'super_admin'`);
+
+  const now = new Date();
+  const nowStr = now.toISOString().slice(0, 10);
+  const userCountByCompany: Record<number, number> = {};
+  for (const u of users) {
+    if (u.company_id) userCountByCompany[u.company_id] = (userCountByCompany[u.company_id] ?? 0) + 1;
+  }
+
+  const header = "الرقم,اسم الشركة,نوع الخطة,تاريخ البداية,تاريخ الانتهاء,الحالة,عدد المستخدمين,الإيراد الشهري (ج.م.),تاريخ التسجيل";
+  const rows = companies.map(c => {
+    const status = !c.is_active ? "موقوف" : c.end_date < nowStr ? "منتهي" : c.plan_type === "trial" ? "تجريبي" : "نشط";
+    const revenue = PLAN_PRICES[c.plan_type] ?? 0;
+    const userCount = userCountByCompany[c.id] ?? 0;
+    return [
+      c.id,
+      `"${c.name.replace(/"/g, '""')}"`,
+      c.plan_type,
+      c.start_date,
+      c.end_date,
+      status,
+      userCount,
+      revenue,
+      new Date(c.created_at).toLocaleDateString("ar-EG"),
+    ].join(",");
+  });
+
+  const csv = "\uFEFF" + header + "\n" + rows.join("\n"); // BOM for Excel Arabic support
+  const filename = `muhkam-companies-${nowStr}.csv`;
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.send(csv);
+}));
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 5 — Announcements / Notifications
+   CRUD: GET / POST / PATCH /:id / DELETE /:id
+   Also: GET /super/announcements/for-company/:id (for tenant display)
+   ══════════════════════════════════════════════════════════════════ */
+router.get("/super/announcements", ...superOnly, wrap(async (_req, res) => {
+  const { announcementsTable } = await import("@workspace/db");
+  const rows = await db
+    .select()
+    .from(announcementsTable)
+    .orderBy(desc(announcementsTable.created_at));
+  res.json({ announcements: rows, total: rows.length });
+}));
+
+router.post("/super/announcements", ...superOnly, wrap(async (req, res) => {
+  const { announcementsTable } = await import("@workspace/db");
+  const { title, body, type = "info", target = "all", company_id, expires_at } = req.body as {
+    title: string; body: string; type?: string; target?: string;
+    company_id?: number; expires_at?: string;
+  };
+  if (!title?.trim() || !body?.trim()) {
+    res.status(400).json({ error: "العنوان والنص مطلوبان" });
+    return;
+  }
+  const [row] = await db.insert(announcementsTable).values({
+    title: title.trim(),
+    body: body.trim(),
+    type,
+    target: company_id ? String(company_id) : "all",
+    company_id: company_id ?? null,
+    is_active: true,
+    created_by: (req.user as any)?.username ?? "super_admin",
+    expires_at: expires_at ? new Date(expires_at) : null,
+  }).returning();
+  void writeAuditLog({
+    action: "CREATE", record_type: "announcement", record_id: row.id,
+    user: req.user, company_id: null, note: `إشعار جديد: ${title}`,
+  });
+  res.status(201).json(row);
+}));
+
+router.patch("/super/announcements/:id", ...superOnly, wrap(async (req, res) => {
+  const { announcementsTable } = await import("@workspace/db");
+  const id = Number(req.params.id);
+  const updates: Partial<{ title: string; body: string; type: string; is_active: boolean; expires_at: Date | null }> = {};
+  if (req.body.title !== undefined) updates.title = String(req.body.title).trim();
+  if (req.body.body  !== undefined) updates.body  = String(req.body.body).trim();
+  if (req.body.type  !== undefined) updates.type  = String(req.body.type);
+  if (req.body.is_active !== undefined) updates.is_active = Boolean(req.body.is_active);
+  if (req.body.expires_at !== undefined) updates.expires_at = req.body.expires_at ? new Date(req.body.expires_at) : null;
+  const [row] = await db.update(announcementsTable).set(updates).where(eq(announcementsTable.id, id)).returning();
+  if (!row) { res.status(404).json({ error: "الإشعار غير موجود" }); return; }
+  res.json(row);
+}));
+
+router.delete("/super/announcements/:id", ...superOnly, wrap(async (req, res) => {
+  const { announcementsTable } = await import("@workspace/db");
+  const id = Number(req.params.id);
+  await db.delete(announcementsTable).where(eq(announcementsTable.id, id));
+  void writeAuditLog({
+    action: "DELETE", record_type: "announcement", record_id: id,
+    user: req.user, company_id: null, note: `حذف إشعار رقم ${id}`,
+  });
+  res.json({ ok: true });
+}));
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 6 — Server Health & Metrics
+   GET /super/health — deep health + request metrics + DB pool stats
+   ══════════════════════════════════════════════════════════════════ */
+router.get("/super/health", ...superOnly, wrap(async (_req, res) => {
+  const { checkDeepHealth } = await import("../lib/monitor");
+  const { getMetrics }      = await import("../lib/request-counter");
+  const { pool }            = await import("@workspace/db");
+
+  const [health, metrics] = await Promise.all([
+    checkDeepHealth(),
+    Promise.resolve(getMetrics()),
+  ]);
+
+  const poolStats = {
+    total:   pool.totalCount,
+    idle:    pool.idleCount,
+    waiting: pool.waitingCount,
+  };
+
+  const mem = process.memoryUsage();
+
+  res.json({
+    health,
+    metrics,
+    pool: poolStats,
+    memory: {
+      heap_used_mb:  Math.round(mem.heapUsed  / 1024 / 1024),
+      heap_total_mb: Math.round(mem.heapTotal / 1024 / 1024),
+      rss_mb:        Math.round(mem.rss       / 1024 / 1024),
+      external_mb:   Math.round(mem.external  / 1024 / 1024),
+    },
+    process: {
+      uptime_hours: Math.round(process.uptime() / 3600 * 10) / 10,
+      node_version: process.version,
+      pid:          process.pid,
+      env:          process.env.NODE_ENV ?? "development",
+    },
+    timestamp: new Date().toISOString(),
+  });
+}));
+
 export default router;

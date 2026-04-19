@@ -506,7 +506,8 @@ export default function SuperAdmin() {
 
   /* ── Tab ─── */
   const [activeTab, setActiveTab] = useState<
-    'companies' | 'managers' | 'backups' | 'security' | 'settings'
+    'companies' | 'managers' | 'backups' | 'security' | 'settings' |
+    'revenue' | 'alerts' | 'audit' | 'announcements' | 'health'
   >('companies');
 
   /* ── Companies state ─── */
@@ -665,6 +666,149 @@ export default function SuperAdmin() {
       `⚠️ تحذير: احتفظ بهذا المفتاح في مكان آمن. بدونه لا يمكن استعادة أي نسخة مشفّرة.`
     );
     window.open(`mailto:m.elmelegy@me.com?subject=${subject}&body=${body}`, '_blank');
+  }
+
+  /* ══════════════════════════════════════════════
+     New Tab Queries
+     ══════════════════════════════════════════════ */
+
+  /* Revenue */
+  interface RevenueData {
+    mrr: number; arr: number; arpu: number; conversionRate: number;
+    activeCompanies: number; trialCompanies: number; paidCompanies: number;
+    planBreakdown: { plan: string; price: number; count: number; revenue: number }[];
+    monthlyRevenue: { month: string; revenue: number; count: number }[];
+    totalPaidEver: number; totalTrialEver: number;
+  }
+  const { data: revenueData, isLoading: revenueLoading } = useQuery<RevenueData>({
+    queryKey: ['/api/super/revenue'],
+    queryFn: () => fetcher('/api/super/revenue'),
+    enabled: activeTab === 'revenue',
+    staleTime: 60_000,
+  });
+
+  /* Alerts */
+  interface AlertItem {
+    type: 'warning' | 'danger' | 'info' | 'success';
+    category: string; title: string; body: string;
+    company_id?: number; company_name?: string; days?: number;
+  }
+  interface AlertsData {
+    alerts: AlertItem[];
+    summary: { critical: number; warnings: number; info: number; successes: number; total: number };
+  }
+  const { data: alertsData, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery<AlertsData>({
+    queryKey: ['/api/super/alerts'],
+    queryFn: () => fetcher('/api/super/alerts'),
+    enabled: activeTab === 'alerts',
+    staleTime: 30_000,
+    refetchInterval: activeTab === 'alerts' ? 60_000 : false,
+  });
+
+  /* Audit log */
+  interface AuditRow {
+    id: number; action: string; record_type: string; record_id: number;
+    user_id: number | null; username: string | null; note: string | null;
+    company_id: number | null; created_at: string;
+  }
+  const [auditLimit, setAuditLimit] = useState(50);
+  const [auditAction, setAuditAction] = useState('');
+  const { data: auditData, isLoading: auditLoading, refetch: refetchAudit } = useQuery<{ count: number; rows: AuditRow[] }>({
+    queryKey: ['/api/super/audit-log', auditLimit, auditAction],
+    queryFn: () => fetcher(`/api/super/audit-log?limit=${auditLimit}${auditAction ? `&action=${auditAction}` : ''}`),
+    enabled: activeTab === 'audit',
+    staleTime: 30_000,
+  });
+
+  /* Announcements */
+  interface AnnounceItem {
+    id: number; title: string; body: string; type: string;
+    target: string; company_id: number | null; is_active: boolean;
+    created_by: string; expires_at: string | null; created_at: string;
+  }
+  const [annTitle, setAnnTitle] = useState('');
+  const [annBody, setAnnBody] = useState('');
+  const [annType, setAnnType] = useState('info');
+  const [annTarget, setAnnTarget] = useState('all');
+  const [annCompanyId, setAnnCompanyId] = useState('');
+  const [annExpires, setAnnExpires] = useState('');
+  const [annSaving, setAnnSaving] = useState(false);
+  const { data: annData, refetch: refetchAnn } = useQuery<{ announcements: AnnounceItem[]; total: number }>({
+    queryKey: ['/api/super/announcements'],
+    queryFn: () => fetcher('/api/super/announcements'),
+    enabled: activeTab === 'announcements',
+    staleTime: 30_000,
+  });
+
+  async function saveAnnouncement() {
+    if (!annTitle.trim() || !annBody.trim()) { showToast('العنوان والنص مطلوبان', 'error'); return; }
+    setAnnSaving(true);
+    try {
+      const res = await fetch(api('/api/super/announcements'), {
+        method: 'POST',
+        headers: { ...authHeaders(token ?? ''), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: annTitle.trim(), body: annBody.trim(),
+          type: annType, target: annTarget,
+          company_id: annTarget !== 'all' && annCompanyId ? Number(annCompanyId) : undefined,
+          expires_at: annExpires || undefined,
+        }),
+      });
+      if (!res.ok) { showToast('فشل الحفظ', 'error'); return; }
+      showToast('✅ تم نشر الإشعار');
+      setAnnTitle(''); setAnnBody(''); setAnnExpires(''); setAnnCompanyId('');
+      void refetchAnn();
+    } catch { showToast('فشل الحفظ', 'error'); }
+    finally { setAnnSaving(false); }
+  }
+
+  async function toggleAnn(id: number, is_active: boolean) {
+    await fetch(api(`/api/super/announcements/${id}`), {
+      method: 'PATCH',
+      headers: { ...authHeaders(token ?? ''), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: !is_active }),
+    });
+    void refetchAnn();
+  }
+
+  async function deleteAnn(id: number) {
+    await fetch(api(`/api/super/announcements/${id}`), {
+      method: 'DELETE', headers: authHeaders(token ?? ''),
+    });
+    void refetchAnn();
+  }
+
+  /* Health */
+  interface HealthData {
+    health: { status: string; db: boolean; memory_mb: number; uptime_hours: number; db_read_latency_ms: number; db_write_latency_ms: number; pool_ok: boolean; node_version: string };
+    metrics: { uptime_seconds: number; total_requests: number; status_codes: Record<string, number>; latency_ms: { p50: number; p95: number; p99: number; samples: number } };
+    pool: { total: number; idle: number; waiting: number };
+    memory: { heap_used_mb: number; heap_total_mb: number; rss_mb: number; external_mb: number };
+    process: { uptime_hours: number; node_version: string; pid: number; env: string };
+    timestamp: string;
+  }
+  const { data: healthData, isLoading: healthLoading, refetch: refetchHealth, dataUpdatedAt: healthUpdated } = useQuery<HealthData>({
+    queryKey: ['/api/super/health'],
+    queryFn: () => fetcher('/api/super/health'),
+    enabled: activeTab === 'health',
+    staleTime: 10_000,
+    refetchInterval: activeTab === 'health' ? 15_000 : false,
+  });
+
+  /* CSV Export */
+  async function exportCompaniesCSV() {
+    try {
+      const res = await fetch(api('/api/super/export/companies'), {
+        headers: authHeaders(token ?? ''),
+      });
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `muhkam-companies-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('✅ تم تصدير بيانات الشركات');
+    } catch { showToast('فشل التصدير', 'error'); }
   }
 
   const { data: backupData, refetch: refetchBackups } = useQuery<{
@@ -1984,11 +2128,16 @@ export default function SuperAdmin() {
         <div style={{ display: 'flex', gap: '10px', marginBottom: '28px' }}>
           {(
             [
-              { key: 'companies', label: '🏢 الشركات المسجلة' },
-              { key: 'managers', label: '👑 المديرون العامون' },
-              { key: 'backups', label: '💾 النسخ الاحتياطية' },
-              { key: 'security', label: '🔐 الأمان' },
-              { key: 'settings', label: '⚙️ إعدادات النظام' },
+              { key: 'companies',     label: '🏢 الشركات' },
+              { key: 'revenue',       label: '📊 الإيرادات' },
+              { key: 'alerts',        label: '🔔 التنبيهات' },
+              { key: 'audit',         label: '📋 سجل التدقيق' },
+              { key: 'announcements', label: '📢 الإعلانات' },
+              { key: 'health',        label: '🌡️ صحة السيرفر' },
+              { key: 'managers',      label: '👑 المديرون' },
+              { key: 'backups',       label: '💾 النسخ' },
+              { key: 'security',      label: '🔐 الأمان' },
+              { key: 'settings',      label: '⚙️ الإعدادات' },
             ] as const
           ).map((tab) => {
             const active = activeTab === tab.key;
@@ -4066,7 +4215,656 @@ export default function SuperAdmin() {
             </div>
           </div>
         )}
-      </div>
+
+        {/* ═══════════════════════════════════════════════
+          TAB: REVENUE  📊
+          ═══════════════════════════════════════════════ */}
+      {activeTab === 'revenue' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h2 style={{ margin: 0, fontWeight: 900, fontSize: '22px', color: C.text }}>📊 لوحة الإيرادات</h2>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>تتبع الإيرادات الشهرية والنمو ومعدلات التحويل</p>
+            </div>
+            <button onClick={() => exportCompaniesCSV()} style={{
+              padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.3)',
+              background: 'rgba(34,197,94,0.1)', color: '#86EFAC', fontSize: '13px',
+              fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+            }}>📤 تصدير CSV</button>
+          </div>
+
+          {revenueLoading ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>⏳ جارٍ التحميل...</div>
+          ) : revenueData ? (
+            <>
+              {/* KPI Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+                {[
+                  { label: 'MRR', value: `${revenueData.mrr.toLocaleString('ar-EG')} ج.م.`, sub: 'الإيراد الشهري المتكرر', color: '#A78BFA', icon: '💰' },
+                  { label: 'ARR', value: `${revenueData.arr.toLocaleString('ar-EG')} ج.م.`, sub: 'الإيراد السنوي المتوقع', color: '#34D399', icon: '📈' },
+                  { label: 'ARPU', value: `${revenueData.arpu.toLocaleString('ar-EG')} ج.م.`, sub: 'متوسط إيراد العميل', color: '#60A5FA', icon: '👤' },
+                  { label: 'معدل التحويل', value: `${revenueData.conversionRate}%`, sub: 'من تجريبي إلى مدفوع', color: '#F59E0B', icon: '🔄' },
+                  { label: 'شركات نشطة', value: String(revenueData.activeCompanies), sub: `${revenueData.paidCompanies} مدفوعة • ${revenueData.trialCompanies} تجريبية`, color: '#FB923C', icon: '🏢' },
+                ].map(kpi => (
+                  <div key={kpi.label} style={{
+                    background: C.card, borderRadius: '16px', border: `1px solid ${kpi.color}22`,
+                    padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '22px' }}>{kpi.icon}</span>
+                      <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>{kpi.label}</span>
+                    </div>
+                    <div style={{ fontSize: '22px', fontWeight: 900, color: kpi.color }}>{kpi.value}</div>
+                    <div style={{ fontSize: '11px', color: C.muted }}>{kpi.sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Monthly Revenue Chart (CSS bars) */}
+              <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, padding: '24px' }}>
+                <h3 style={{ margin: '0 0 20px', fontWeight: 800, fontSize: '15px', color: C.text }}>📅 الإيراد الشهري (آخر 12 شهراً)</h3>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '160px', overflowX: 'auto', paddingBottom: '8px' }}>
+                  {revenueData.monthlyRevenue.map((m, i) => {
+                    const maxRev = Math.max(...revenueData.monthlyRevenue.map(x => x.revenue), 1);
+                    const pct = (m.revenue / maxRev) * 100;
+                    const isLast = i === revenueData.monthlyRevenue.length - 1;
+                    return (
+                      <div key={m.month} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1, minWidth: '48px' }}>
+                        {m.revenue > 0 && <span style={{ fontSize: '10px', color: C.muted }}>{m.revenue.toLocaleString('ar-EG')}</span>}
+                        <div style={{
+                          width: '100%', borderRadius: '6px 6px 0 0',
+                          background: isLast ? 'linear-gradient(180deg, #A78BFA, #7C3AED)' : 'rgba(167,139,250,0.3)',
+                          height: `${Math.max(pct, 4)}%`,
+                          border: isLast ? '1px solid rgba(167,139,250,0.5)' : 'none',
+                          transition: 'height 0.5s ease',
+                        }} />
+                        <span style={{ fontSize: '9px', color: C.muted, whiteSpace: 'nowrap', transform: 'rotate(-30deg)', transformOrigin: 'top right' }}>{m.month}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Plan Breakdown */}
+              <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, padding: '24px' }}>
+                <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '15px', color: C.text }}>💳 توزيع الخطط</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {revenueData.planBreakdown.filter(p => p.count > 0 || p.plan === 'trial').map(p => {
+                    const planColors: Record<string, string> = { trial: '#94A3B8', basic: '#60A5FA', pro: '#A78BFA', paid: '#34D399', professional: '#F59E0B' };
+                    const planNames: Record<string, string> = { trial: 'تجريبية', basic: 'أساسية', pro: 'احترافية', paid: 'مدفوعة', professional: 'مميزة' };
+                    const col = planColors[p.plan] ?? '#94A3B8';
+                    const maxCount = Math.max(...revenueData.planBreakdown.map(x => x.count), 1);
+                    return (
+                      <div key={p.plan}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: col }}>{planNames[p.plan] ?? p.plan}</span>
+                          <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: C.muted }}>
+                            <span>{p.count} شركة</span>
+                            <span style={{ color: col, fontWeight: 700 }}>{p.revenue.toLocaleString('ar-EG')} ج.م./شهر</span>
+                            <span>{p.price} ج.م./شركة</span>
+                          </div>
+                        </div>
+                        <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', borderRadius: '4px', background: col, width: `${(p.count / maxCount) * 100}%`, transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════
+          TAB: ALERTS  🔔
+          ═══════════════════════════════════════════════ */}
+      {activeTab === 'alerts' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h2 style={{ margin: 0, fontWeight: 900, fontSize: '22px', color: C.text }}>🔔 مركز التنبيهات الذكية</h2>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>يتجدد تلقائياً كل دقيقة</p>
+            </div>
+            <button onClick={() => void refetchAlerts()} style={{
+              padding: '10px 20px', borderRadius: '10px', border: `1px solid ${C.border}`,
+              background: 'transparent', color: C.muted, fontSize: '13px',
+              fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+            }}>🔄 تحديث</button>
+          </div>
+
+          {/* Summary Cards */}
+          {alertsData && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+              {[
+                { label: 'حرجة', count: alertsData.summary.critical, color: '#EF4444', icon: '🚨' },
+                { label: 'تحذيرات', count: alertsData.summary.warnings, color: '#F59E0B', icon: '⚠️' },
+                { label: 'معلومات', count: alertsData.summary.info, color: '#60A5FA', icon: 'ℹ️' },
+                { label: 'إيجابية', count: alertsData.summary.successes, color: '#34D399', icon: '✅' },
+              ].map(s => (
+                <div key={s.label} style={{
+                  background: C.card, borderRadius: '14px', border: `1px solid ${s.color}33`,
+                  padding: '16px', textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: '24px' }}>{s.icon}</div>
+                  <div style={{ fontSize: '28px', fontWeight: 900, color: s.color }}>{s.count}</div>
+                  <div style={{ fontSize: '12px', color: C.muted, marginTop: '4px' }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Alerts List */}
+          {alertsLoading ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>⏳ جارٍ التحميل...</div>
+          ) : alertsData?.alerts.length === 0 ? (
+            <div style={{
+              textAlign: 'center', padding: '60px', background: C.card,
+              borderRadius: '18px', border: `1px solid ${C.border}`,
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: C.text }}>لا توجد تنبيهات</div>
+              <div style={{ fontSize: '13px', color: C.muted, marginTop: '8px' }}>كل شيء يسير بشكل طبيعي</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {alertsData?.alerts.map((alert, i) => {
+                const colors: Record<string, { bg: string; border: string; badge: string }> = {
+                  danger:  { bg: 'rgba(239,68,68,0.07)',   border: 'rgba(239,68,68,0.25)',   badge: '#EF4444' },
+                  warning: { bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.25)',  badge: '#F59E0B' },
+                  success: { bg: 'rgba(52,211,153,0.07)',  border: 'rgba(52,211,153,0.25)',  badge: '#34D399' },
+                  info:    { bg: 'rgba(96,165,250,0.07)',  border: 'rgba(96,165,250,0.25)',  badge: '#60A5FA' },
+                };
+                const col = colors[alert.type] ?? colors.info;
+                return (
+                  <div key={i} style={{
+                    background: col.bg, borderRadius: '14px', border: `1px solid ${col.border}`,
+                    padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: '14px',
+                  }}>
+                    <div style={{
+                      width: '8px', height: '8px', borderRadius: '50%',
+                      background: col.badge, flexShrink: 0, marginTop: '6px',
+                    }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 800, fontSize: '14px', color: C.text, marginBottom: '4px' }}>{alert.title}</div>
+                      <div style={{ fontSize: '13px', color: C.muted, lineHeight: 1.5 }}>{alert.body}</div>
+                    </div>
+                    {alert.company_id && (
+                      <button
+                        onClick={() => setActiveTab('companies')}
+                        style={{
+                          flexShrink: 0, padding: '6px 12px', borderRadius: '8px',
+                          border: `1px solid ${col.border}`, background: 'transparent',
+                          color: col.badge, fontSize: '11px', fontWeight: 700,
+                          cursor: 'pointer', fontFamily: FONT,
+                        }}
+                      >عرض</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════
+          TAB: AUDIT LOG  📋
+          ═══════════════════════════════════════════════ */}
+      {activeTab === 'audit' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* Header + controls */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 style={{ margin: 0, fontWeight: 900, fontSize: '22px', color: C.text }}>📋 سجل التدقيق الجنائي</h2>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>كل إجراء قام به المدير العام مُسجَّل هنا</p>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <select
+                value={auditAction}
+                onChange={e => setAuditAction(e.target.value)}
+                style={{
+                  padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`,
+                  background: C.card, color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer',
+                }}
+              >
+                <option value="">كل الإجراءات</option>
+                <option value="SUPER_ADMIN_LIST_VIEW">عرض الشركات</option>
+                <option value="CREATE">إنشاء</option>
+                <option value="UPDATE">تحديث</option>
+                <option value="DELETE">حذف</option>
+                <option value="ACTIVATE">تفعيل</option>
+                <option value="SUSPEND">تعليق</option>
+                <option value="EXTEND">تمديد</option>
+                <option value="BACKUP_CREATED">نسخة احتياطية</option>
+                <option value="RESTORE_STARTED">استعادة</option>
+              </select>
+              <select
+                value={auditLimit}
+                onChange={e => setAuditLimit(Number(e.target.value))}
+                style={{
+                  padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`,
+                  background: C.card, color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer',
+                }}
+              >
+                {[25, 50, 100, 200, 500].map(n => <option key={n} value={n}>{n} سجل</option>)}
+              </select>
+              <button onClick={() => void refetchAudit()} style={{
+                padding: '8px 16px', borderRadius: '10px', border: `1px solid ${C.border}`,
+                background: 'transparent', color: C.muted, fontSize: '13px',
+                fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+              }}>🔄 تحديث</button>
+            </div>
+          </div>
+
+          {/* Table */}
+          {auditLoading ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>⏳ جارٍ التحميل...</div>
+          ) : (
+            <div style={{
+              background: C.card, borderRadius: '18px',
+              border: `1px solid ${C.border}`, overflow: 'hidden',
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
+                padding: '12px 20px',
+                background: 'rgba(255,255,255,0.03)',
+                borderBottom: `1px solid ${C.border}`,
+                fontSize: '11px', fontWeight: 800, color: C.muted, gap: '12px',
+              }}>
+                <span>الإجراء</span><span>النوع</span><span>رقم السجل</span><span>الملاحظة</span><span>التاريخ</span>
+              </div>
+              {!auditData?.rows.length ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>لا توجد سجلات</div>
+              ) : (
+                <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+                  {auditData.rows.map(row => {
+                    const actionColors: Record<string, string> = {
+                      CREATE: '#34D399', UPDATE: '#60A5FA', DELETE: '#EF4444',
+                      ACTIVATE: '#A78BFA', SUSPEND: '#F59E0B', EXTEND: '#FB923C',
+                    };
+                    const col = actionColors[row.action] ?? '#94A3B8';
+                    return (
+                      <div key={row.id} style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
+                        padding: '12px 20px', gap: '12px',
+                        borderBottom: `1px solid rgba(255,255,255,0.04)`,
+                        fontSize: '12px', alignItems: 'center',
+                      }}>
+                        <span style={{ color: col, fontWeight: 700 }}>{row.action}</span>
+                        <span style={{ color: C.muted }}>{row.record_type}</span>
+                        <span style={{ color: C.muted, textAlign: 'center' }}>#{row.record_id}</span>
+                        <span style={{ color: C.text, fontSize: '11px', lineHeight: 1.4 }}>{row.note ?? '—'}</span>
+                        <span style={{ color: C.muted, fontSize: '11px', direction: 'ltr', textAlign: 'right' }}>
+                          {new Date(row.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {auditData && (
+                <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.border}`, fontSize: '12px', color: C.muted }}>
+                  إجمالي السجلات المعروضة: {auditData.count}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════
+          TAB: ANNOUNCEMENTS  📢
+          ═══════════════════════════════════════════════ */}
+      {activeTab === 'announcements' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          <div>
+            <h2 style={{ margin: 0, fontWeight: 900, fontSize: '22px', color: C.text }}>📢 إعلانات وإشعارات النظام</h2>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>أرسل إشعارات لشركة محددة أو لجميع العملاء</p>
+          </div>
+
+          {/* Create form */}
+          <div style={{
+            background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, padding: '24px',
+          }}>
+            <h3 style={{ margin: '0 0 20px', fontWeight: 800, fontSize: '15px', color: C.text }}>➕ إشعار جديد</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', color: C.muted, fontWeight: 700, display: 'block', marginBottom: '6px' }}>نوع الإشعار</label>
+                  <select value={annType} onChange={e => setAnnType(e.target.value)} style={{
+                    width: '100%', padding: '10px 14px', borderRadius: '10px',
+                    border: `1px solid ${C.border}`, background: C.bg, color: C.text,
+                    fontSize: '13px', fontFamily: FONT,
+                  }}>
+                    <option value="info">ℹ️ معلوماتي</option>
+                    <option value="success">✅ إيجابي</option>
+                    <option value="warning">⚠️ تحذير</option>
+                    <option value="danger">🚨 عاجل</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: C.muted, fontWeight: 700, display: 'block', marginBottom: '6px' }}>الجمهور المستهدف</label>
+                  <select value={annTarget} onChange={e => setAnnTarget(e.target.value)} style={{
+                    width: '100%', padding: '10px 14px', borderRadius: '10px',
+                    border: `1px solid ${C.border}`, background: C.bg, color: C.text,
+                    fontSize: '13px', fontFamily: FONT,
+                  }}>
+                    <option value="all">🌐 جميع الشركات</option>
+                    <option value="specific">🏢 شركة محددة</option>
+                  </select>
+                </div>
+                {annTarget === 'specific' && (
+                  <div>
+                    <label style={{ fontSize: '12px', color: C.muted, fontWeight: 700, display: 'block', marginBottom: '6px' }}>رقم الشركة (ID)</label>
+                    <input
+                      type="number"
+                      value={annCompanyId}
+                      onChange={e => setAnnCompanyId(e.target.value)}
+                      placeholder="مثال: 5"
+                      style={{
+                        width: '100%', padding: '10px 14px', borderRadius: '10px',
+                        border: `1px solid ${C.border}`, background: C.bg, color: C.text,
+                        fontSize: '13px', fontFamily: FONT, boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: C.muted, fontWeight: 700, display: 'block', marginBottom: '6px' }}>عنوان الإشعار *</label>
+                <input
+                  value={annTitle}
+                  onChange={e => setAnnTitle(e.target.value)}
+                  placeholder="مثال: صيانة مجدولة يوم الجمعة"
+                  style={{
+                    width: '100%', padding: '10px 14px', borderRadius: '10px',
+                    border: `1px solid ${C.border}`, background: C.bg, color: C.text,
+                    fontSize: '13px', fontFamily: FONT, boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: C.muted, fontWeight: 700, display: 'block', marginBottom: '6px' }}>نص الرسالة *</label>
+                <textarea
+                  value={annBody}
+                  onChange={e => setAnnBody(e.target.value)}
+                  placeholder="اكتب تفاصيل الإشعار هنا..."
+                  rows={3}
+                  style={{
+                    width: '100%', padding: '10px 14px', borderRadius: '10px',
+                    border: `1px solid ${C.border}`, background: C.bg, color: C.text,
+                    fontSize: '13px', fontFamily: FONT, resize: 'vertical', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'flex-end' }}>
+                <div>
+                  <label style={{ fontSize: '12px', color: C.muted, fontWeight: 700, display: 'block', marginBottom: '6px' }}>تاريخ انتهاء الإشعار (اختياري)</label>
+                  <input
+                    type="datetime-local"
+                    value={annExpires}
+                    onChange={e => setAnnExpires(e.target.value)}
+                    style={{
+                      width: '100%', padding: '10px 14px', borderRadius: '10px',
+                      border: `1px solid ${C.border}`, background: C.bg, color: C.text,
+                      fontSize: '13px', fontFamily: FONT, boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={() => void saveAnnouncement()}
+                  disabled={annSaving}
+                  style={{
+                    padding: '11px 28px', borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
+                    border: 'none', color: '#fff', fontSize: '14px',
+                    fontWeight: 800, cursor: annSaving ? 'not-allowed' : 'pointer',
+                    fontFamily: FONT, whiteSpace: 'nowrap',
+                  }}
+                >
+                  {annSaving ? '...' : '📢 نشر الإشعار'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Announcements list */}
+          <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, fontWeight: 800, fontSize: '14px', color: C.text }}>
+              📋 الإشعارات المنشورة ({annData?.total ?? 0})
+            </div>
+            {!annData?.announcements.length ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>لا توجد إشعارات بعد</div>
+            ) : (
+              <div>
+                {annData.announcements.map(ann => {
+                  const typeColors: Record<string, { color: string; icon: string }> = {
+                    info:    { color: '#60A5FA', icon: 'ℹ️' },
+                    success: { color: '#34D399', icon: '✅' },
+                    warning: { color: '#F59E0B', icon: '⚠️' },
+                    danger:  { color: '#EF4444', icon: '🚨' },
+                  };
+                  const tc = typeColors[ann.type] ?? typeColors.info;
+                  return (
+                    <div key={ann.id} style={{
+                      padding: '16px 20px', borderBottom: `1px solid rgba(255,255,255,0.04)`,
+                      display: 'flex', gap: '16px', alignItems: 'flex-start',
+                      opacity: ann.is_active ? 1 : 0.5,
+                    }}>
+                      <span style={{ fontSize: '20px', flexShrink: 0 }}>{tc.icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 800, fontSize: '14px', color: C.text }}>{ann.title}</span>
+                          <span style={{
+                            padding: '2px 8px', borderRadius: '6px', fontSize: '10px',
+                            background: `${tc.color}22`, color: tc.color, fontWeight: 700,
+                          }}>{ann.type}</span>
+                          <span style={{
+                            padding: '2px 8px', borderRadius: '6px', fontSize: '10px',
+                            background: ann.is_active ? 'rgba(52,211,153,0.15)' : 'rgba(148,163,184,0.15)',
+                            color: ann.is_active ? '#34D399' : '#94A3B8', fontWeight: 700,
+                          }}>{ann.is_active ? 'نشط' : 'معطّل'}</span>
+                          <span style={{ fontSize: '11px', color: C.muted }}>
+                            {ann.target === 'all' ? '🌐 للجميع' : `🏢 شركة #${ann.company_id}`}
+                          </span>
+                        </div>
+                        <p style={{ margin: '0 0 6px', fontSize: '13px', color: C.muted, lineHeight: 1.5 }}>{ann.body}</p>
+                        <div style={{ fontSize: '11px', color: C.muted }}>
+                          {new Date(ann.created_at).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}
+                          {ann.expires_at && ` • ينتهي: ${new Date(ann.expires_at).toLocaleDateString('ar-EG')}`}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                        <button
+                          onClick={() => void toggleAnn(ann.id, ann.is_active)}
+                          style={{
+                            padding: '6px 12px', borderRadius: '8px',
+                            border: `1px solid ${C.border}`, background: 'transparent',
+                            color: ann.is_active ? '#F59E0B' : '#34D399',
+                            fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                          }}
+                        >{ann.is_active ? '⏸ إيقاف' : '▶️ تفعيل'}</button>
+                        <button
+                          onClick={() => void deleteAnn(ann.id)}
+                          style={{
+                            padding: '6px 12px', borderRadius: '8px',
+                            border: '1px solid rgba(239,68,68,0.3)', background: 'transparent',
+                            color: '#EF4444', fontSize: '11px', fontWeight: 700,
+                            cursor: 'pointer', fontFamily: FONT,
+                          }}
+                        >🗑 حذف</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════
+          TAB: SERVER HEALTH  🌡️
+          ═══════════════════════════════════════════════ */}
+      {activeTab === 'health' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h2 style={{ margin: 0, fontWeight: 900, fontSize: '22px', color: C.text }}>🌡️ صحة السيرفر والنظام</h2>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>
+                يتجدد كل 15 ثانية
+                {healthUpdated ? ` • آخر تحديث: ${new Date(healthUpdated).toLocaleTimeString('ar-EG')}` : ''}
+              </p>
+            </div>
+            <button onClick={() => void refetchHealth()} style={{
+              padding: '10px 20px', borderRadius: '10px', border: `1px solid ${C.border}`,
+              background: 'transparent', color: C.muted, fontSize: '13px',
+              fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+            }}>🔄 تحديث فوري</button>
+          </div>
+
+          {healthLoading ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>⏳ جارٍ جلب بيانات السيرفر...</div>
+          ) : healthData ? (
+            <>
+              {/* Status Banner */}
+              <div style={{
+                padding: '20px 24px', borderRadius: '16px',
+                background: healthData.health.status === 'healthy'
+                  ? 'rgba(52,211,153,0.1)' : healthData.health.status === 'degraded'
+                  ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+                border: `1px solid ${healthData.health.status === 'healthy' ? 'rgba(52,211,153,0.3)' : healthData.health.status === 'degraded' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                display: 'flex', alignItems: 'center', gap: '16px',
+              }}>
+                <span style={{ fontSize: '36px' }}>
+                  {healthData.health.status === 'healthy' ? '✅' : healthData.health.status === 'degraded' ? '⚠️' : '🚨'}
+                </span>
+                <div>
+                  <div style={{
+                    fontSize: '20px', fontWeight: 900,
+                    color: healthData.health.status === 'healthy' ? '#34D399' : healthData.health.status === 'degraded' ? '#F59E0B' : '#EF4444',
+                  }}>
+                    {healthData.health.status === 'healthy' ? 'النظام يعمل بشكل مثالي' : healthData.health.status === 'degraded' ? 'أداء منخفض' : 'النظام يواجه مشكلة'}
+                  </div>
+                  <div style={{ fontSize: '13px', color: C.muted, marginTop: '2px' }}>
+                    Node.js {healthData.process.node_version} • PID {healthData.process.pid} • {healthData.process.env}
+                  </div>
+                </div>
+              </div>
+
+              {/* KPI Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px' }}>
+                {[
+                  { label: 'وقت التشغيل', value: `${healthData.process.uptime_hours}h`, icon: '⏱️', color: '#A78BFA' },
+                  { label: 'ذاكرة Heap', value: `${healthData.memory.heap_used_mb} MB`, icon: '💾', color: healthData.memory.heap_used_mb > 400 ? '#EF4444' : '#34D399' },
+                  { label: 'RSS الكلي', value: `${healthData.memory.rss_mb} MB`, icon: '📊', color: '#60A5FA' },
+                  { label: 'قاعدة البيانات', value: healthData.health.db ? '✓ متصل' : '✗ منقطع', icon: '🗄️', color: healthData.health.db ? '#34D399' : '#EF4444' },
+                  { label: 'زمن قراءة DB', value: `${healthData.health.db_read_latency_ms}ms`, icon: '📖', color: healthData.health.db_read_latency_ms > 200 ? '#F59E0B' : '#34D399' },
+                  { label: 'زمن كتابة DB', value: `${healthData.health.db_write_latency_ms}ms`, icon: '✏️', color: healthData.health.db_write_latency_ms > 500 ? '#F59E0B' : '#34D399' },
+                  { label: 'طلبات API', value: healthData.metrics.total_requests.toLocaleString('ar-EG'), icon: '🌐', color: '#FB923C' },
+                  { label: 'اتصالات DB', value: `${healthData.pool.total}/${healthData.pool.idle} نشط`, icon: '🔌', color: '#F472B6' },
+                ].map(k => (
+                  <div key={k.label} style={{
+                    background: C.card, borderRadius: '14px', border: `1px solid ${k.color}22`,
+                    padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '20px' }}>{k.icon}</span>
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: k.color }}>{k.value}</div>
+                    <div style={{ fontSize: '11px', color: C.muted }}>{k.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* API Latency */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ background: C.card, borderRadius: '16px', border: `1px solid ${C.border}`, padding: '20px' }}>
+                  <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '14px', color: C.text }}>⚡ زمن استجابة API</h3>
+                  {[
+                    { label: 'P50 (متوسط)', value: healthData.metrics.latency_ms.p50, good: 200, warn: 500 },
+                    { label: 'P95 (95% من الطلبات)', value: healthData.metrics.latency_ms.p95, good: 500, warn: 1000 },
+                    { label: 'P99 (أبطأ الطلبات)', value: healthData.metrics.latency_ms.p99, good: 1000, warn: 2000 },
+                  ].map(l => {
+                    const col = l.value <= l.good ? '#34D399' : l.value <= l.warn ? '#F59E0B' : '#EF4444';
+                    return (
+                      <div key={l.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '12px', color: C.muted }}>{l.label}</span>
+                        <span style={{ fontSize: '16px', fontWeight: 800, color: col, fontFamily: 'monospace' }}>{l.value}ms</span>
+                      </div>
+                    );
+                  })}
+                  <div style={{ fontSize: '11px', color: C.muted, marginTop: '8px' }}>
+                    إجمالي العينات: {healthData.metrics.latency_ms.samples.toLocaleString('ar-EG')}
+                  </div>
+                </div>
+
+                {/* Status codes */}
+                <div style={{ background: C.card, borderRadius: '16px', border: `1px solid ${C.border}`, padding: '20px' }}>
+                  <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '14px', color: C.text }}>📊 رموز الاستجابة</h3>
+                  {Object.entries(healthData.metrics.status_codes)
+                    .sort(([a], [b]) => Number(a) - Number(b))
+                    .map(([code, count]) => {
+                      const col = code.startsWith('2') ? '#34D399' : code.startsWith('4') ? '#F59E0B' : code.startsWith('5') ? '#EF4444' : '#94A3B8';
+                      const total = Object.values(healthData.metrics.status_codes).reduce((s, v) => s + v, 0);
+                      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                      return (
+                        <div key={code} style={{ marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '12px', color: col, fontWeight: 700, fontFamily: 'monospace' }}>{code}</span>
+                            <span style={{ fontSize: '12px', color: C.muted }}>{count.toLocaleString('ar-EG')} ({pct}%)</span>
+                          </div>
+                          <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.05)' }}>
+                            <div style={{ height: '100%', borderRadius: '3px', background: col, width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  {!Object.keys(healthData.metrics.status_codes).length && (
+                    <div style={{ color: C.muted, fontSize: '13px' }}>لا توجد بيانات بعد</div>
+                  )}
+                </div>
+              </div>
+
+              {/* DB Pool */}
+              <div style={{ background: C.card, borderRadius: '16px', border: `1px solid ${C.border}`, padding: '20px' }}>
+                <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '14px', color: C.text }}>🔌 اتصالات قاعدة البيانات (Connection Pool)</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                  {[
+                    { label: 'إجمالي الاتصالات', value: healthData.pool.total, color: '#60A5FA', max: 50 },
+                    { label: 'اتصالات خاملة', value: healthData.pool.idle, color: '#34D399', max: healthData.pool.total || 1 },
+                    { label: 'طلبات في الانتظار', value: healthData.pool.waiting, color: healthData.pool.waiting > 5 ? '#EF4444' : '#94A3B8', max: 20 },
+                  ].map(p => (
+                    <div key={p.label}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', color: C.muted }}>{p.label}</span>
+                        <span style={{ fontSize: '18px', fontWeight: 900, color: p.color }}>{p.value}</span>
+                      </div>
+                      <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}>
+                        <div style={{ height: '100%', borderRadius: '4px', background: p.color, width: `${Math.min((p.value / p.max) * 100, 100)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
+      )}
+
+      </div>{/* end maxWidth container */}
 
       <style>{`
         @keyframes sa-fade-in { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
