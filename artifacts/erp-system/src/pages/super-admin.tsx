@@ -1878,180 +1878,225 @@ export default function SuperAdmin() {
               </div>
             )}
 
-            {/* ── Monthly Signups Professional Chart ── */}
+            {/* ── Monthly Signups — Smooth Area Chart ── */}
             {stats && stats.monthlySignups && stats.monthlySignups.some(m => m.count > 0) && (() => {
               const data = stats.monthlySignups;
               const maxVal = Math.max(...data.map(m => m.count), 1);
-              const total = data.reduce((s, m) => s + m.count, 0);
-              const avg = total / data.length;
-              const chartW = 100; // percentage units via viewBox
-              const chartH = 160;
-              const padL = 32; const padR = 8; const padT = 20; const padB = 36;
-              const innerW = chartW - padL - padR;
-              const innerH = chartH - padT - padB;
-              const barW = (innerW / data.length) * 0.55;
-              const gap = (innerW / data.length) * 0.45;
-              const yTicks = [0, 25, 50, 75, 100];
+              const total  = data.reduce((s, m) => s + m.count, 0);
+              const last   = data[data.length - 1]?.count ?? 0;
+              const prev   = data[data.length - 2]?.count ?? 0;
+              const growthPct = prev > 0 ? Math.round(((last - prev) / prev) * 100) : 0;
+              const growing   = growthPct >= 0;
+
+              /* SVG coordinate helpers */
+              const W = 600; const H = 180;
+              const PL = 8; const PR = 8; const PT = 20; const PB = 40;
+              const iW = W - PL - PR;
+              const iH = H - PT - PB;
+
+              const pts = data.map((m, i) => ({
+                x: PL + (i / (data.length - 1)) * iW,
+                y: PT + iH - (m.count / maxVal) * iH,
+                count: m.count,
+                month: m.month,
+              }));
+
+              /* Smooth bezier path */
+              const bezier = (p0: {x:number,y:number}, p1: {x:number,y:number}, p2: {x:number,y:number}, p3: {x:number,y:number}) => {
+                const cp1x = p1.x + (p2.x - p0.x) / 6;
+                const cp1y = p1.y + (p2.y - p0.y) / 6;
+                const cp2x = p2.x - (p3.x - p1.x) / 6;
+                const cp2y = p2.y - (p3.y - p1.y) / 6;
+                return `C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+              };
+              let linePath = `M ${pts[0].x},${pts[0].y}`;
+              for (let i = 1; i < pts.length; i++) {
+                const p0 = pts[Math.max(i-2,0)];
+                const p1 = pts[i-1];
+                const p2 = pts[i];
+                const p3 = pts[Math.min(i+1, pts.length-1)];
+                linePath += ' ' + bezier(p0, p1, p2, p3);
+              }
+              const areaPath = `${linePath} L ${pts[pts.length-1].x},${PT+iH} L ${pts[0].x},${PT+iH} Z`;
+
               return (
                 <div style={{
-                  background: C.card, border: `1px solid ${C.border}`,
-                  borderRadius: '20px', padding: '24px',
-                  boxShadow: '0 2px 20px rgba(0,0,0,0.04)',
+                  background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                  borderRadius: '24px',
+                  padding: '28px 28px 20px',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
                 }}>
-                  {/* Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                  {/* Top row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                     <div>
-                      <div style={{ fontSize: '15px', fontWeight: 800, color: C.text }}>
+                      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', fontWeight: 500, marginBottom: '6px', letterSpacing: '0.5px' }}>
                         التسجيلات الشهرية
                       </div>
-                      <div style={{ fontSize: '12px', color: C.muted, marginTop: '2px' }}>آخر 6 أشهر</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                        <span style={{ fontSize: '42px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                          {total}
+                        </span>
+                        <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>شركة</span>
+                        <span style={{
+                          fontSize: '13px', fontWeight: 700, padding: '3px 10px',
+                          borderRadius: '20px',
+                          background: growing ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                          color: growing ? '#4ade80' : '#f87171',
+                          border: `1px solid ${growing ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                        }}>
+                          {growing ? '▲' : '▼'} {Math.abs(growthPct)}%
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>
+                        آخر 6 أشهر · مقارنةً بالشهر السابق
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '16px' }}>
+
+                    {/* Mini stat pills */}
+                    <div style={{ display: 'flex', gap: '10px' }}>
                       {[
-                        { label: 'الإجمالي', value: total, color: C.orange },
-                        { label: 'المتوسط', value: avg.toFixed(1), color: C.blue },
-                        { label: 'الأعلى', value: maxVal, color: C.success },
+                        { label: 'هذا الشهر', value: last,   color: '#f97316' },
+                        { label: 'الأعلى',    value: maxVal, color: '#a78bfa' },
                       ].map(s => (
-                        <div key={s.label} style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '18px', fontWeight: 900, color: s.color }}>{s.value}</div>
-                          <div style={{ fontSize: '10px', color: C.muted, marginTop: '1px' }}>{s.label}</div>
+                        <div key={s.label} style={{
+                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: '14px', padding: '10px 16px',
+                          textAlign: 'center', minWidth: '70px',
+                        }}>
+                          <div style={{ fontSize: '22px', fontWeight: 900, color: s.color }}>{s.value}</div>
+                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{s.label}</div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* SVG Chart */}
+                  {/* SVG Area Chart */}
                   <div style={{ position: 'relative' }}>
-                    <svg viewBox={`0 0 ${chartW} ${chartH}`} style={{ width: '100%', height: '220px', overflow: 'visible' }}>
+                    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '160px', overflow: 'visible', display: 'block' }}>
                       <defs>
-                        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={C.warning} stopOpacity="1" />
-                          <stop offset="100%" stopColor={C.orange} stopOpacity="0.85" />
+                        <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%"   stopColor="#f97316" />
+                          <stop offset="50%"  stopColor="#fb923c" />
+                          <stop offset="100%" stopColor="#fbbf24" />
                         </linearGradient>
-                        <linearGradient id="barGradHover" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#fbbf24" stopOpacity="1" />
-                          <stop offset="100%" stopColor="#ea580c" stopOpacity="1" />
+                        <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%"   stopColor="#f97316" stopOpacity="0.35" />
+                          <stop offset="70%"  stopColor="#f97316" stopOpacity="0.08" />
+                          <stop offset="100%" stopColor="#f97316" stopOpacity="0"    />
                         </linearGradient>
-                        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={C.orange} stopOpacity="0.12" />
-                          <stop offset="100%" stopColor={C.orange} stopOpacity="0" />
-                        </linearGradient>
-                        <filter id="barShadow">
-                          <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor={C.orange} floodOpacity="0.3" />
+                        <filter id="glow">
+                          <feGaussianBlur stdDeviation="3" result="blur" />
+                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                        </filter>
+                        <filter id="dotGlow">
+                          <feGaussianBlur stdDeviation="4" result="blur" />
+                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                         </filter>
                       </defs>
 
-                      {/* Y-axis grid lines & labels */}
-                      {yTicks.map(pct => {
-                        const y = padT + innerH - (pct / 100) * innerH;
-                        const val = Math.round((pct / 100) * maxVal);
-                        return (
-                          <g key={pct}>
-                            <line
-                              x1={padL} y1={y} x2={chartW - padR} y2={y}
-                              stroke={C.border} strokeWidth="0.4"
-                              strokeDasharray={pct === 0 ? 'none' : '1.5 1.5'}
-                            />
-                            {pct > 0 && (
-                              <text
-                                x={padL - 2} y={y + 1}
-                                fontSize="5" fill={C.muted}
-                                textAnchor="end" dominantBaseline="middle"
-                              >
-                                {val}
-                              </text>
-                            )}
-                          </g>
-                        );
-                      })}
+                      {/* Faint horizontal grid lines */}
+                      {[0.25, 0.5, 0.75].map(pct => (
+                        <line key={pct}
+                          x1={PL} y1={PT + iH * (1 - pct)}
+                          x2={W - PR} y2={PT + iH * (1 - pct)}
+                          stroke="rgba(255,255,255,0.04)" strokeWidth="1"
+                        />
+                      ))}
 
-                      {/* Area fill under trend line */}
-                      {(() => {
-                        const pts = data.map((m, i) => {
-                          const cx = padL + (i + 0.5) * (innerW / data.length);
-                          const h = (m.count / maxVal) * innerH;
-                          const cy = padT + innerH - h;
-                          return { cx, cy };
-                        });
-                        const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.cx} ${p.cy}`).join(' ');
-                        const areaD = `${pathD} L ${pts[pts.length-1].cx} ${padT + innerH} L ${pts[0].cx} ${padT + innerH} Z`;
-                        return (
-                          <>
-                            <path d={areaD} fill="url(#areaGrad)" />
-                            <path d={pathD} fill="none" stroke={C.orange} strokeWidth="0.8" strokeOpacity="0.5" strokeDasharray="2 1" />
-                          </>
-                        );
-                      })()}
+                      {/* Area fill */}
+                      <path d={areaPath} fill="url(#fillGrad)" />
 
-                      {/* Bars */}
-                      {data.map((m, i) => {
-                        const slotW = innerW / data.length;
-                        const bx = padL + i * slotW + (slotW - barW) / 2;
-                        const bh = m.count > 0 ? Math.max((m.count / maxVal) * innerH, 4) : 1.5;
-                        const by = padT + innerH - bh;
+                      {/* Glow line (blurred copy) */}
+                      <path d={linePath} fill="none" stroke="#f97316" strokeWidth="3"
+                        strokeOpacity="0.4" filter="url(#glow)" />
+
+                      {/* Main line */}
+                      <path d={linePath} fill="none" stroke="url(#lineGrad)"
+                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                      {/* Data point dots + labels */}
+                      {pts.map((p, i) => {
                         const isHov = hoveredBar === i;
+                        const isLast = i === pts.length - 1;
                         return (
                           <g key={i}
                             onMouseEnter={() => setHoveredBar(i)}
                             onMouseLeave={() => setHoveredBar(null)}
-                            style={{ cursor: 'pointer' }}
+                            style={{ cursor: 'default' }}
                           >
                             {/* Hit area */}
-                            <rect x={bx - gap/2} y={padT} width={barW + gap} height={innerH} fill="transparent" />
-                            {/* Bar */}
                             <rect
-                              x={bx} y={by} width={barW} height={bh}
-                              rx="2" ry="2"
-                              fill={m.count > 0 ? (isHov ? 'url(#barGradHover)' : 'url(#barGrad)') : C.border}
-                              filter={isHov && m.count > 0 ? 'url(#barShadow)' : undefined}
-                              style={{ transition: 'all 0.15s' }}
+                              x={p.x - (iW / data.length) / 2} y={PT}
+                              width={iW / data.length} height={iH + PB}
+                              fill="transparent"
                             />
-                            {/* Value on top */}
-                            {m.count > 0 && (
-                              <text
-                                x={bx + barW / 2} y={by - 3}
-                                fontSize="5" fontWeight="700"
-                                fill={isHov ? C.warning : C.muted}
-                                textAnchor="middle"
-                              >
-                                {m.count}
-                              </text>
+
+                            {/* Dot glow */}
+                            {(isHov || isLast) && (
+                              <circle cx={p.x} cy={p.y} r="10"
+                                fill="#f97316" fillOpacity="0.15" />
                             )}
-                            {/* Month label */}
-                            <text
-                              x={bx + barW / 2} y={padT + innerH + 12}
-                              fontSize="5" fill={isHov ? C.orange : C.muted}
-                              textAnchor="middle" fontWeight={isHov ? '700' : '400'}
-                            >
-                              {m.month}
-                            </text>
-                            {/* Tooltip */}
+
+                            {/* Outer ring */}
+                            <circle cx={p.x} cy={p.y} r={isHov ? 7 : isLast ? 5.5 : 4}
+                              fill="#1e293b"
+                              stroke={isHov ? '#fbbf24' : isLast ? '#f97316' : '#fb923c'}
+                              strokeWidth={isHov ? 2.5 : isLast ? 2 : 1.5}
+                              style={{ transition: 'r 0.15s, stroke 0.15s' }}
+                            />
+
+                            {/* Tooltip bubble */}
                             {isHov && (
                               <g>
                                 <rect
-                                  x={bx + barW/2 - 14} y={by - 20}
-                                  width="28" height="14"
-                                  rx="3" fill="#1e293b" opacity="0.9"
+                                  x={p.x - 30} y={p.y - 36}
+                                  width="60" height="26"
+                                  rx="8" ry="8"
+                                  fill="#0f172a"
+                                  stroke="rgba(249,115,22,0.5)"
+                                  strokeWidth="1"
                                 />
-                                <text
-                                  x={bx + barW/2} y={by - 10}
-                                  fontSize="5.5" fill="#fff"
-                                  textAnchor="middle" fontWeight="700"
-                                >
-                                  {m.count} شركة
-                                </text>
+                                <polygon
+                                  points={`${p.x-6},${p.y-11} ${p.x+6},${p.y-11} ${p.x},${p.y-4}`}
+                                  fill="#0f172a"
+                                />
+                                <text x={p.x} y={p.y - 25}
+                                  fontSize="11" fontWeight="800" fill="#f97316"
+                                  textAnchor="middle" dominantBaseline="middle"
+                                >{p.count}</text>
+                                <text x={p.x} y={p.y - 13}
+                                  fontSize="8" fill="rgba(255,255,255,0.5)"
+                                  textAnchor="middle" dominantBaseline="middle"
+                                >شركة</text>
                               </g>
+                            )}
+
+                            {/* Month label */}
+                            <text
+                              x={p.x} y={PT + iH + 18}
+                              fontSize="11" fill={isHov ? '#f97316' : 'rgba(255,255,255,0.35)'}
+                              textAnchor="middle" fontWeight={isHov || isLast ? '700' : '400'}
+                              style={{ transition: 'fill 0.15s' }}
+                            >
+                              {p.month}
+                            </text>
+
+                            {/* Value above dot (for last & hovered) */}
+                            {isLast && !isHov && (
+                              <text x={p.x} y={p.y - 12}
+                                fontSize="10" fontWeight="700" fill="#fbbf24"
+                                textAnchor="middle"
+                              >{p.count}</text>
                             )}
                           </g>
                         );
                       })}
 
-                      {/* X axis base line */}
-                      <line
-                        x1={padL} y1={padT + innerH}
-                        x2={chartW - padR} y2={padT + innerH}
-                        stroke={C.border} strokeWidth="0.6"
-                      />
+                      {/* Baseline */}
+                      <line x1={PL} y1={PT + iH} x2={W - PR} y2={PT + iH}
+                        stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
                     </svg>
                   </div>
                 </div>
