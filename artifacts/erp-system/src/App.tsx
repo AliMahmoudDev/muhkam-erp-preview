@@ -39,10 +39,7 @@ const SuperAdmin = lazy(() => import('@/pages/super-admin'));
 const Branches = lazy(() => import('@/pages/branches'));
 const Employees = lazy(() => import('@/pages/employees'));
 const Attendance = lazy(() => import('@/pages/attendance'));
-const Suppliers = lazy(() => import('@/pages/suppliers'));
 const Returns = lazy(() => import('@/pages/returns'));
-const StockCount = lazy(() => import('@/pages/stock-count'));
-const StockTransfers = lazy(() => import('@/pages/stock-transfers'));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -139,10 +136,8 @@ function Router() {
         </Route>
         <Route path="/sales">{() => <Guard path="/sales" component={Sales} />}</Route>
         <Route path="/purchases">{() => <Guard path="/purchases" component={Purchases} />}</Route>
-        <Route path="/suppliers">{() => <Guard path="/suppliers" component={Suppliers} />}</Route>
+        <Route path="/suppliers">{() => <Redirect to="/customers" />}</Route>
         <Route path="/returns">{() => <Guard path="/returns" component={Returns} />}</Route>
-        <Route path="/stock-count">{() => <Guard path="/stock-count" component={StockCount} />}</Route>
-        <Route path="/stock-transfers">{() => <Guard path="/stock-transfers" component={StockTransfers} />}</Route>
         <Route path="/products">{() => <Guard path="/products" component={Products} />}</Route>
         <Route path="/inventory">{() => <Guard path="/inventory" component={Inventory} />}</Route>
         <Route path="/customers">{() => <Guard path="/customers" component={Customers} />}</Route>
