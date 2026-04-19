@@ -1,9 +1,27 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { db, erpUsersTable, companiesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { isTokenBlacklisted } from "../lib/session-blacklist";
 import { sanitizeObject } from "../lib/sanitize";
+
+/**
+ * setDbContext — sets PostgreSQL session variables for Row Level Security.
+ * Must be called after user identity is confirmed.
+ * RLS policies on business tables read these variables to enforce tenant isolation.
+ */
+async function setDbContext(user: { company_id: number | null; role: string }): Promise<void> {
+  const companyId = user.company_id ? String(user.company_id) : "";
+  const isSuperAdmin = user.role === "super_admin" ? "true" : "false";
+  try {
+    await db.execute(
+      sql`SELECT set_config('app.current_company_id', ${companyId}, false),
+                 set_config('app.is_super_admin', ${isSuperAdmin}, false)`
+    );
+  } catch {
+    /* Non-fatal: app-level company_id filtering is still the primary guard */
+  }
+}
 
 if (!process.env.JWT_SECRET) {
   throw new Error("[FATAL] JWT_SECRET environment variable is not set. Server cannot start securely.");
@@ -134,6 +152,10 @@ export async function authenticate(
   }
 
   req.user = user as AuthUser;
+
+  /* Set PostgreSQL session context for RLS (defense-in-depth layer) */
+  await setDbContext(user);
+
   next();
 }
 

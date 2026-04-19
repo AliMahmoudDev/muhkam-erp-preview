@@ -11,7 +11,7 @@ import { logger } from "./logger";
 
 const execAsync = promisify(exec);
 
-const BACKUP_DIR  = process.env.BACKUP_DIR ?? "/root/db-backups";
+const BACKUP_DIR  = process.env.BACKUP_DIR ?? "/home/runner/workspace/db-backups";
 const MAX_BACKUPS = 30;
 
 export async function createDatabaseBackup(): Promise<string> {

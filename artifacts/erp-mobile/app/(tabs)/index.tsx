@@ -64,7 +64,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
           <View style={styles.headerTextWrap}>
             <Text style={styles.greeting}>مرحباً، {user?.name?.split(" ")[0]} 👋</Text>
-            <Text style={styles.subGreeting}>نظام Halal Tech ERP</Text>
+            <Text style={styles.subGreeting}>نظام مُحكم ERP</Text>
           </View>
         </View>
 

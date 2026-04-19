@@ -415,19 +415,68 @@ router.delete("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
   res.json({ message: "تم حذف الشركة وجميع بياناتها بنجاح" });
 }));
 
-/* ── GET /super/stats — overall stats ── */
+/* ── GET /super/stats — overall stats (enhanced) ── */
 router.get("/super/stats", ...superOnly, wrap(async (_req, res) => {
   const companies = await db.select().from(companiesTable);
-  const users = await db.select({ id: erpUsersTable.id }).from(erpUsersTable);
+  const users = await db
+    .select({ id: erpUsersTable.id, company_id: erpUsersTable.company_id })
+    .from(erpUsersTable)
+    .where(sql`${erpUsersTable.role} != 'super_admin'`);
 
-  const now = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const nowStr = now.toISOString().slice(0, 10);
+
+  /* expiring soon: active companies whose end_date is within 7 days */
+  const in7 = new Date(now);
+  in7.setDate(in7.getDate() + 7);
+  const in7Str = in7.toISOString().slice(0, 10);
+
+  /* recent signups: created in last 30 days */
+  const ago30 = new Date(now);
+  ago30.setDate(ago30.getDate() - 30);
+
+  const expiringSoon = companies.filter(c =>
+    c.is_active && c.end_date >= nowStr && c.end_date <= in7Str
+  );
+
+  /* per-company user counts */
+  const userCountByCompany: Record<number, number> = {};
+  for (const u of users) {
+    if (u.company_id) userCountByCompany[u.company_id] = (userCountByCompany[u.company_id] ?? 0) + 1;
+  }
+
+  /* monthly signups for last 6 months */
+  const monthlySignups: { month: string; count: number }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - i);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const label = d.toLocaleDateString("ar-EG", { month: "short", year: "2-digit" });
+    const count = companies.filter(c => {
+      const cd = new Date(c.created_at);
+      return cd.getFullYear() === y && cd.getMonth() === m;
+    }).length;
+    monthlySignups.push({ month: label, count });
+  }
+
   const stats = {
     total: companies.length,
-    active: companies.filter(c => c.is_active && c.end_date >= now).length,
-    trial:  companies.filter(c => c.plan_type === "trial" && c.is_active && c.end_date >= now).length,
-    expired: companies.filter(c => c.end_date < now).length,
+    active: companies.filter(c => c.is_active && c.end_date >= nowStr).length,
+    trial: companies.filter(c => c.plan_type === "trial" && c.is_active && c.end_date >= nowStr).length,
+    paid: companies.filter(c => c.plan_type === "paid" && c.is_active && c.end_date >= nowStr).length,
+    expired: companies.filter(c => c.end_date < nowStr).length,
     suspended: companies.filter(c => !c.is_active).length,
     totalUsers: users.length,
+    expiringSoon: expiringSoon.length,
+    expiringSoonList: expiringSoon.map(c => ({
+      id: c.id, name: c.name,
+      end_date: c.end_date, plan_type: c.plan_type,
+      days_left: Math.ceil((new Date(c.end_date).getTime() - now.getTime()) / 86400000),
+    })),
+    recentSignups: companies.filter(c => new Date(c.created_at) >= ago30).length,
+    monthlySignups,
+    userCountByCompany,
   };
 
   res.json(stats);

@@ -127,7 +127,7 @@ export default function ReportsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <ModalHeader title="التقارير" subtitle="Halal Tech ERP" />
+      <ModalHeader title="التقارير" subtitle="مُحكم ERP" />
 
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: isWeb ? 34 : insets.bottom + 100 }]}

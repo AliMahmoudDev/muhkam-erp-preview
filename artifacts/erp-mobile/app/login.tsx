@@ -128,8 +128,8 @@ export default function LoginScreen() {
                 contentFit="contain"
               />
             </View>
-            <Text style={[styles.brandName, { color: c.text }]}>Halal Tech</Text>
-            <Text style={[styles.brandSlogan, { color: AMBER }]}>الحلال = البركة</Text>
+            <Text style={[styles.brandName, { color: c.text }]}>مُحكم</Text>
+            <Text style={[styles.brandSlogan, { color: AMBER }]}>نظام إدارة مُحكم</Text>
           </View>
 
           {/* البطاقة الرئيسية */}
@@ -250,7 +250,7 @@ export default function LoginScreen() {
           نظام إدارة موارد المؤسسة
         </Text>
         <View style={[styles.bottomDot, { backgroundColor: AMBER }]} />
-        <Text style={[styles.bottomBarBrand, { color: AMBER }]}>Halal Tech ERP</Text>
+        <Text style={[styles.bottomBarBrand, { color: AMBER }]}>مُحكم ERP</Text>
       </View>
     </View>
   );

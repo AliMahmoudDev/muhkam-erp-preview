@@ -33,9 +33,15 @@ interface Stats {
   total: number;
   active: number;
   trial: number;
+  paid: number;
   expired: number;
   suspended: number;
   totalUsers: number;
+  expiringSoon: number;
+  expiringSoonList: { id: number; name: string; end_date: string; plan_type: string; days_left: number }[];
+  recentSignups: number;
+  monthlySignups: { month: string; count: number }[];
+  userCountByCompany: Record<number, number>;
 }
 interface Manager {
   id: number;
@@ -1030,6 +1036,7 @@ export default function SuperAdmin() {
       sub: `${activePercent}% نشطة`,
     },
     { label: 'نشطة', value: stats?.active ?? 0, icon: '✅', color: C.success, sub: 'اشتراك فعّال' },
+    { label: 'مدفوعة', value: stats?.paid ?? 0, icon: '💎', color: '#7c3aed', sub: 'خطة مدفوعة' },
     {
       label: 'تجريبية',
       value: stats?.trial ?? 0,
@@ -1051,6 +1058,13 @@ export default function SuperAdmin() {
       icon: '👥',
       color: C.blue,
       sub: 'إجمالي الحسابات',
+    },
+    {
+      label: 'انضموا هذا الشهر',
+      value: stats?.recentSignups ?? 0,
+      icon: '🆕',
+      color: '#06b6d4',
+      sub: 'آخر 30 يوم',
     },
   ];
 
@@ -1754,6 +1768,97 @@ export default function SuperAdmin() {
                 </div>
               ))}
             </div>
+
+            {/* ── Expiring Soon Alert ── */}
+            {stats && stats.expiringSoon > 0 && (
+              <div style={{
+                background: 'rgba(239,68,68,0.06)',
+                border: '1.5px solid rgba(239,68,68,0.3)',
+                borderRadius: '16px',
+                padding: '18px 22px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '20px' }}>⚠️</span>
+                  <span style={{ fontWeight: 800, color: C.danger, fontSize: '15px' }}>
+                    {stats.expiringSoon} شركة اشتراكها ينتهي خلال 7 أيام
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {stats.expiringSoonList.map(c => (
+                    <div key={c.id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      background: C.card, borderRadius: '10px', padding: '10px 16px',
+                      border: `1px solid ${C.border}`,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{
+                          background: c.days_left <= 2 ? 'rgba(239,68,68,0.15)' : 'rgba(249,115,22,0.12)',
+                          color: c.days_left <= 2 ? C.danger : C.warning,
+                          borderRadius: '8px', padding: '3px 10px',
+                          fontSize: '13px', fontWeight: 700,
+                        }}>
+                          {c.days_left === 0 ? 'ينتهي اليوم' : `${c.days_left} يوم`}
+                        </span>
+                        <span style={{ fontSize: '13px', color: C.text, fontWeight: 600 }}>{c.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '12px', color: C.muted }}>{c.end_date}</span>
+                        <button
+                          onClick={() => coMutate.mutate({
+                            url: `/api/super/companies/${c.id}/extend`,
+                            body: { days: 30, plan_type: c.plan_type },
+                          })}
+                          style={{
+                            padding: '5px 12px', borderRadius: '8px',
+                            border: '1px solid rgba(249,115,22,0.4)',
+                            background: 'rgba(249,115,22,0.1)',
+                            color: C.warning, fontSize: '12px',
+                            fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                          }}
+                        >
+                          ⏳ تمديد 30 يوم
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Monthly Signups Mini-Chart ── */}
+            {stats && stats.monthlySignups && stats.monthlySignups.some(m => m.count > 0) && (
+              <div style={{
+                background: C.card, border: `1px solid ${C.border}`,
+                borderRadius: '16px', padding: '20px',
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: C.text, marginBottom: '16px' }}>
+                  📈 التسجيلات الشهرية (آخر 6 أشهر)
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '80px' }}>
+                  {(() => {
+                    const maxVal = Math.max(...stats.monthlySignups.map(m => m.count), 1);
+                    return stats.monthlySignups.map((m, i) => (
+                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>
+                          {m.count > 0 ? m.count : ''}
+                        </div>
+                        <div style={{
+                          width: '100%', borderRadius: '6px 6px 0 0',
+                          height: `${Math.max((m.count / maxVal) * 60, m.count > 0 ? 8 : 2)}px`,
+                          background: m.count > 0
+                            ? `linear-gradient(to top, ${C.orange}, ${C.warning})`
+                            : C.border,
+                          transition: 'height 0.4s ease',
+                        }} />
+                        <div style={{ fontSize: '10px', color: C.muted, textAlign: 'center', lineHeight: 1.2 }}>
+                          {m.month}
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+            )}
 
             {/* Companies table card */}
             <div

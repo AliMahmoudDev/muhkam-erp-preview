@@ -184,7 +184,7 @@ export default function MoreScreen() {
       <View style={[styles.header, { backgroundColor: c.headerBg, paddingTop: isWeb ? 67 : insets.top + 12, borderBottomColor: c.border }]}>
         <View style={[styles.headerLine, { backgroundColor: AMBER }]} />
         <Text style={[styles.headerTitle, { color: c.text }]}>المزيد</Text>
-        <Text style={[styles.headerSub, { color: AMBER }]}>Halal Tech ERP</Text>
+        <Text style={[styles.headerSub, { color: AMBER }]}>مُحكم ERP</Text>
       </View>
 
       <ScrollView
@@ -244,7 +244,7 @@ export default function MoreScreen() {
           <MenuItem icon="log-out" label="تسجيل الخروج" color="#EF4444" onPress={handleLogout} last />
         </SectionCard>
 
-        <Text style={[styles.version, { color: c.mutedForeground }]}>Halal Tech ERP v1.0</Text>
+        <Text style={[styles.version, { color: c.mutedForeground }]}>مُحكم ERP v2.0</Text>
       </ScrollView>
     </View>
   );
