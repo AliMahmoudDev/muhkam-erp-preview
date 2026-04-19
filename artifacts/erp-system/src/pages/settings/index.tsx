@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import {
-  Users, BookOpen, Lock, Store, HardDrive, Database, Settings, Building2,
+  Users, BookOpen, Lock, Store, Settings, Building2,
+  Bell, FileText, HardDrive, Server, Info, Cpu,
 } from "lucide-react";
 
 /* ─── Lazy-load each tab ─── */
@@ -8,19 +9,31 @@ const UsersTab          = lazy(() => import("./users-tab"));
 const OpeningBalanceTab = lazy(() => import("./opening-balance-tab"));
 const FinancialLockTab  = lazy(() => import("./financial-lock-tab"));
 const CurrencyTab       = lazy(() => import("./currency-tab"));
-const BackupTab         = lazy(() => import("./backup-tab"));
-const DataTab           = lazy(() => import("./data-tab"));
 const CompanyTab        = lazy(() => import("./company-tab"));
+const AlertsTab         = lazy(() => import("./alerts-tab"));
+const InvoiceTab        = lazy(() => import("./invoice-tab"));
+const SystemTab         = lazy(() => import("./system-tab"));
 
 /* ─── Tab types ─── */
-type Tab = "users" | "opening-balance" | "financial-lock" | "currency" | "backup" | "data" | "company";
+type Tab =
+  | "users"
+  | "opening-balance"
+  | "financial-lock"
+  | "currency"
+  | "company"
+  | "alerts"
+  | "invoice"
+  | "system";
 
-/* ─── Section config (explicit iteration — NOT flatMap, preserves section headers) ─── */
-const TAB_SECTIONS: { section: string; tabs: { id: Tab; label: string; icon: React.FC<{ className?: string }> }[] }[] = [
+/* ─── Section config ─── */
+const TAB_SECTIONS: {
+  section: string;
+  tabs: { id: Tab; label: string; icon: React.FC<{ className?: string }> }[];
+}[] = [
   {
     section: "الإدارة",
     tabs: [
-      { id: "users",   label: "المستخدمون",  icon: Users },
+      { id: "users",   label: "المستخدمون",   icon: Users    },
       { id: "company", label: "بيانات الشركة", icon: Building2 },
     ],
   },
@@ -28,20 +41,21 @@ const TAB_SECTIONS: { section: string; tabs: { id: Tab; label: string; icon: Rea
     section: "المالية",
     tabs: [
       { id: "opening-balance", label: "أول المدة",      icon: BookOpen },
-      { id: "financial-lock",  label: "إغلاق الفترات", icon: Lock },
+      { id: "financial-lock",  label: "إغلاق الفترات", icon: Lock     },
     ],
   },
   {
     section: "التخصيص",
     tabs: [
-      { id: "currency", label: "إعدادات المتجر", icon: Store },
+      { id: "currency", label: "إعدادات المتجر", icon: Store    },
+      { id: "alerts",   label: "التنبيهات",       icon: Bell     },
+      { id: "invoice",  label: "الفاتورة",         icon: FileText },
     ],
   },
   {
     section: "النظام",
     tabs: [
-      { id: "backup", label: "نسخ احتياطي", icon: HardDrive },
-      { id: "data",   label: "البيانات",    icon: Database },
+      { id: "system", label: "النسخ والبيانات", icon: HardDrive },
     ],
   },
 ];
@@ -58,11 +72,36 @@ function TabSkeleton() {
   );
 }
 
+/* ─── System Info Card (sidebar bottom) ─── */
+function SystemInfoCard() {
+  return (
+    <div className="mx-3 mb-4 rounded-xl border border-white/6 bg-white/[0.02] overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
+        <Cpu className="w-3 h-3 text-white/20" />
+        <p className="text-white/20 text-[10px] font-bold uppercase tracking-wider">معلومات النظام</p>
+      </div>
+      <div className="px-3 py-2.5 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-white/25 text-[10px]">الإصدار</span>
+          <span className="text-white/50 text-[10px] font-mono font-bold">v2.1.0</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-white/25 text-[10px]">المنصة</span>
+          <span className="text-white/50 text-[10px] font-bold">MUHKAM ERP</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-white/25 text-[10px]">الدعم</span>
+          <span className="text-emerald-400/70 text-[10px] font-bold">نشط</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("users");
 
-  /* Flat list only used for finding the active label */
-  const allTabs = TAB_SECTIONS.flatMap(s => s.tabs);
+  const allTabs    = TAB_SECTIONS.flatMap(s => s.tabs);
   const activeLabel = allTabs.find(t => t.id === activeTab)?.label ?? "";
 
   return (
@@ -78,16 +117,12 @@ export default function SettingsPage() {
           <p className="text-white/60 text-xs font-black uppercase tracking-widest">الإعدادات</p>
         </div>
 
-        <nav className="px-3 pb-6 space-y-5 mt-3">
-          {/* ── Render section headers explicitly — NOT flatMap ── */}
+        <nav className="flex-1 px-3 pb-3 space-y-5 mt-3 overflow-y-auto">
           {TAB_SECTIONS.map(section => (
             <div key={section.section}>
-              {/* Section header */}
               <p className="text-white/25 text-[10px] font-black uppercase tracking-widest px-2 mb-1.5">
                 {section.section}
               </p>
-
-              {/* Tabs within section */}
               <div className="space-y-0.5">
                 {section.tabs.map(tab => {
                   const active = activeTab === tab.id;
@@ -114,6 +149,9 @@ export default function SettingsPage() {
             </div>
           ))}
         </nav>
+
+        {/* ─── System info card ─── */}
+        <SystemInfoCard />
       </aside>
 
       {/* ─────────── Mobile Tab Bar ─────────── */}
@@ -153,8 +191,9 @@ export default function SettingsPage() {
             {activeTab === "opening-balance" && <OpeningBalanceTab />}
             {activeTab === "financial-lock"  && <FinancialLockTab />}
             {activeTab === "currency"        && <CurrencyTab />}
-            {activeTab === "backup"          && <BackupTab />}
-            {activeTab === "data"            && <DataTab />}
+            {activeTab === "alerts"          && <AlertsTab />}
+            {activeTab === "invoice"         && <InvoiceTab />}
+            {activeTab === "system"          && <SystemTab />}
           </Suspense>
         </div>
       </main>

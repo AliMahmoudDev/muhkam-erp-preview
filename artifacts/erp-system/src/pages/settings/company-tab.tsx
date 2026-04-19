@@ -2,12 +2,12 @@
  * company-tab.tsx — إعدادات الشركة والعلامة التجارية
  * يحفظ عبر POST /api/settings/system
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Phone, MapPin, FileText, Globe, Loader2, Save, CheckCircle2,
-  Percent, Mail, Printer,
+  Percent, Mail, Printer, ImagePlus, Trash2,
 } from "lucide-react";
 import { PageHeader, FieldLabel, SInput } from "./_shared";
 
@@ -25,6 +25,7 @@ interface CompanySettings {
   invoice_header:  string;
   invoice_footer:  string;
   company_notes:   string;
+  company_logo:    string;
 }
 
 const EMPTY: CompanySettings = {
@@ -38,6 +39,7 @@ const EMPTY: CompanySettings = {
   invoice_header:  "",
   invoice_footer:  "",
   company_notes:   "",
+  company_logo:    "",
 };
 
 const FIELDS: { key: keyof CompanySettings; label: string; placeholder: string; icon: React.FC<{ className?: string }>; type?: string }[] = [
@@ -58,6 +60,21 @@ export default function CompanyTab() {
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [dirty,   setDirty]   = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      toast({ title: "حجم الصورة كبير جداً — الحد الأقصى 500 كيلوبايت", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      update("company_logo", reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   /* ── جلب الإعدادات الحالية ── */
   useEffect(() => {
@@ -115,6 +132,53 @@ export default function CompanyTab() {
           </button>
         }
       />
+
+      {/* ═══ Logo Upload ═══ */}
+      <div className="bg-[var(--erp-bg-card)] border border-[var(--erp-border-md)] rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--erp-border)] flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center">
+            <ImagePlus className="w-4 h-4 text-violet-400" />
+          </div>
+          <div>
+            <p className="font-bold text-[var(--erp-text-1)] text-sm">شعار الشركة</p>
+            <p className="text-[var(--erp-text-4)] text-xs">يظهر في رأس الفواتير والتقارير المطبوعة</p>
+          </div>
+        </div>
+        <div className="p-5 flex items-center gap-5">
+          {/* Preview */}
+          <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-white/15 flex items-center justify-center overflow-hidden bg-white/3 shrink-0">
+            {form.company_logo
+              ? <img src={form.company_logo} alt="شعار" className="w-full h-full object-contain" />
+              : <div className="flex flex-col items-center gap-1 text-white/20">
+                  <ImagePlus className="w-6 h-6" />
+                  <span className="text-[10px]">الشعار</span>
+                </div>
+            }
+          </div>
+          {/* Actions */}
+          <div className="flex flex-col gap-2">
+            <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/25 text-violet-300 font-bold text-xs transition-all"
+            >
+              <ImagePlus className="w-3.5 h-3.5" />
+              {form.company_logo ? "تغيير الشعار" : "رفع شعار"}
+            </button>
+            {form.company_logo && (
+              <button
+                type="button"
+                onClick={() => update("company_logo", "")}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-bold text-xs transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> حذف الشعار
+              </button>
+            )}
+            <p className="text-white/25 text-[10px]">PNG أو JPG — الحد الأقصى 500 كيلوبايت</p>
+          </div>
+        </div>
+      </div>
 
       {/* ═══════════════════════════════════════════════════
           بطاقة — بيانات الشركة الأساسية

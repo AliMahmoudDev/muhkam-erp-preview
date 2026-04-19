@@ -8,6 +8,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   Users, Plus, Trash2, Edit2, Eye, EyeOff, Save, Loader2, Search, RotateCcw,
+  Clock, Warehouse, ShieldCheck,
 } from "lucide-react";
 import {
   PageHeader, CardSkeleton, Modal, FieldLabel, SInput, SSelect,
@@ -21,6 +22,21 @@ function getInitials(name: string) {
   const p = name.trim().split(" ");
   if (p.length >= 2) return p[0][0] + p[1][0];
   return name.slice(0, 2);
+}
+
+function formatLastLogin(dateStr?: string): { label: string; online: boolean } {
+  if (!dateStr) return { label: "لم يسجّل دخولاً بعد", online: false };
+  const d = new Date(dateStr);
+  const nowMs = Date.now();
+  const diffMs = nowMs - d.getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 5)  return { label: "متصل الآن",          online: true  };
+  if (diffMin < 60) return { label: `منذ ${diffMin} دقيقة`, online: false };
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return { label: `منذ ${diffH} ساعة`,     online: false };
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 30) return { label: `منذ ${diffD} يوم`,      online: false };
+  return { label: d.toLocaleDateString("ar-EG"), online: false };
 }
 
 export default function UsersTab() {
@@ -141,55 +157,81 @@ export default function UsersTab() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {users.map((u: any) => {
-            const role = ROLES[u.role] ?? ROLES.cashier;
+            const role       = ROLES[u.role] ?? ROLES.cashier;
+            const lastLogin  = formatLastLogin(u.last_login);
+            let perms: Record<string, boolean> = {};
+            try { perms = JSON.parse(u.permissions || "{}"); } catch {}
+            const permCount = Object.values(perms).filter(Boolean).length;
             return (
               <div
                 key={u.id}
-                className="group bg-[var(--erp-bg-card)] border border-[var(--erp-border)] hover:border-amber-500/20 rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)]"
+                className="group bg-[var(--erp-bg-card)] border border-[var(--erp-border)] hover:border-amber-500/20 rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)]"
               >
-                <div className="flex items-start gap-3 mb-4">
-                  <div className={`w-12 h-12 rounded-xl ${role.avatarBg} flex items-center justify-center shrink-0`}>
-                    <span className={`font-black text-lg ${role.avatarText}`}>{getInitials(u.name)}</span>
+                {/* Card top */}
+                <div className="p-5 pb-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    {/* Avatar with online dot */}
+                    <div className="relative shrink-0">
+                      <div className={`w-12 h-12 rounded-xl ${role.avatarBg} flex items-center justify-center`}>
+                        <span className={`font-black text-lg ${role.avatarText}`}>{getInitials(u.name)}</span>
+                      </div>
+                      {lastLogin.online && (
+                        <span className="absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[var(--erp-bg-card)]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-white truncate">{u.name}</p>
+                      <p className="text-white/40 text-xs font-mono mt-0.5">@{u.username}</p>
+                    </div>
+                    {/* Active/suspended badge top-right */}
+                    <span className={`shrink-0 px-2 py-0.5 rounded-lg text-[10px] font-bold border ${
+                      u.active
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        : "bg-red-500/10 text-red-400 border-red-500/20"
+                    }`}>
+                      {u.active ? "نشط" : "موقوف"}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white truncate">{u.name}</p>
-                    <p className="text-white/40 text-xs font-mono mt-0.5">@{u.username}</p>
-                  </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${role.badge}`}>
-                    {role.label}
-                  </span>
-                  <span className={`px-2 py-1 rounded-lg text-[11px] font-bold border ${
-                    u.active
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                      : "bg-red-500/10 text-red-400 border-red-500/20"
-                  }`}>
-                    {u.active ? "نشط" : "موقوف"}
-                  </span>
-                  {(() => {
-                    let perms: Record<string, boolean> = {};
-                    try { perms = JSON.parse(u.permissions || "{}"); } catch {}
-                    const count = Object.values(perms).filter(Boolean).length;
-                    return count > 0 ? (
+                  {/* Badges */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${role.badge}`}>
+                      {role.label}
+                    </span>
+                    {permCount > 0 && (
                       <span className="px-2 py-1 rounded-lg text-[11px] font-bold border bg-amber-500/10 text-amber-400 border-amber-500/20">
-                        ⚙ {count} مخصصة
+                        <ShieldCheck className="w-3 h-3 inline-block ml-0.5" />
+                        {permCount} صلاحية
                       </span>
-                    ) : null;
-                  })()}
+                    )}
+                    {u.warehouse_id && (
+                      <span className="px-2 py-1 rounded-lg text-[11px] font-bold border bg-blue-500/10 text-blue-400 border-blue-500/20">
+                        <Warehouse className="w-3 h-3 inline-block ml-0.5" />
+                        مخزن مخصص
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex gap-2 pt-3 border-t border-[var(--erp-border)]">
+                {/* Last login bar */}
+                <div className="flex items-center gap-1.5 px-5 py-2.5 bg-white/[0.02] border-y border-white/5">
+                  <Clock className="w-3 h-3 text-white/20 shrink-0" />
+                  <span className={`text-[11px] ${lastLogin.online ? "text-emerald-400 font-semibold" : "text-white/30"}`}>
+                    {lastLogin.label}
+                  </span>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2 p-3">
                   <button
                     onClick={() => handleEdit(u)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-bold transition-all"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-bold transition-all"
                   >
                     <Edit2 className="w-3.5 h-3.5" /> تعديل
                   </button>
                   <button
                     onClick={() => setDeleteTarget({ id: u.id, name: u.name })}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-all"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-all"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> حذف
                   </button>
