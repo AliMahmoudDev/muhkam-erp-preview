@@ -103,16 +103,21 @@ router.post('/auth/login', async (req, res) => {
       uid = userId;
     } else {
       const usernameNorm = username!.trim().toLowerCase();
+      const isEmail = usernameNorm.includes('@');
       const [found] = await db
         .select({ id: erpUsersTable.id, company_id: erpUsersTable.company_id })
         .from(erpUsersTable)
         .where(
           loginCompanyId
             ? and(
-                sql`LOWER(${erpUsersTable.username}) = ${usernameNorm}`,
+                isEmail
+                  ? eq(erpUsersTable.email, usernameNorm)
+                  : sql`LOWER(${erpUsersTable.username}) = ${usernameNorm}`,
                 eq(erpUsersTable.company_id, loginCompanyId),
               )
-            : sql`LOWER(${erpUsersTable.username}) = ${usernameNorm}`,
+            : isEmail
+              ? eq(erpUsersTable.email, usernameNorm)
+              : sql`LOWER(${erpUsersTable.username}) = ${usernameNorm}`,
         );
       if (!found) {
         res.status(401).json({ error: 'الحساب غير موجود أو معطل' });
