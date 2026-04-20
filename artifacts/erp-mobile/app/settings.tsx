@@ -349,7 +349,7 @@ export default function SettingsScreen() {
 
   const { data: branches = [] } = useQuery({
     queryKey: ["branches"],
-    queryFn: () => apiFetch<Branch[]>("/api/branches"),
+    queryFn: () => apiFetch<{ branches: Branch[] } | Branch[]>("/api/branches").then(r => Array.isArray(r) ? r : (r as { branches: Branch[] }).branches ?? []),
     staleTime: 60_000,
   });
 
