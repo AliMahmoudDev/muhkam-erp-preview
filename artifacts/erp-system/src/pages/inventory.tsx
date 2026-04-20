@@ -234,7 +234,7 @@ export default function Inventory() {
   }>({
     queryKey: ['inventory-warehouse-summary'],
     queryFn: () => authFetch(api('/api/inventory/warehouse-summary')).then((r) => r.json()),
-    staleTime: 30_000,
+    staleTime: 60_000,
     enabled: canViewInventory,
   });
   const whSummaryMap = new Map((whSummaryData?.warehouses ?? []).map((s) => [s.warehouse_id, s]));
@@ -242,9 +242,9 @@ export default function Inventory() {
 
   /* ── global stats for header ── */
   const { data: globalAudit } = useQuery<{ summary: AuditSummary }>({
-    queryKey: ['inventory-audit-global'],
+    queryKey: ['inventory-audit', null],
     queryFn: () => authFetch(api('/api/inventory/audit')).then((r) => r.json()),
-    staleTime: 30_000,
+    staleTime: 300_000,
     enabled: canViewInventory,
   });
   const gs = globalAudit?.summary;
@@ -257,7 +257,7 @@ export default function Inventory() {
   }>({
     queryKey: ['inventory-low-stock'],
     queryFn: () => authFetch(api('/api/inventory/low-stock')).then((r) => r.json()),
-    staleTime: 30_000,
+    staleTime: 60_000,
     enabled: canViewInventory,
   });
   const alertsBadge = (lowStockMeta?.zero_count ?? 0) + (lowStockMeta?.low_count ?? 0);
@@ -946,13 +946,20 @@ function ReviewTab({
   const products = auditData?.products ?? [];
   const _summary = auditData?.summary;
 
-  const filtered = products
-    .filter(
-      (p) =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        (p.sku ?? '').toLowerCase().includes(search.toLowerCase()) ||
-        (p.category ?? '').toLowerCase().includes(search.toLowerCase())
-    )
+  const searched = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.sku ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (p.category ?? '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  const zeroCount = searched.filter((p) => p.actual_qty <= 0).length;
+  const positiveCount = searched.filter((p) => p.actual_qty > 0).length;
+  const lowCount = searched.filter(
+    (p) => p.low_stock_threshold !== null && p.actual_qty <= p.low_stock_threshold
+  ).length;
+
+  const filtered = searched
     .filter((p) => !showZeroOnly || p.actual_qty <= 0)
     .filter((p) => !showPositiveOnly || p.actual_qty > 0)
     .filter(
@@ -1044,6 +1051,7 @@ function ReviewTab({
           }`}
         >
           <TrendingDown className="w-3.5 h-3.5" /> منتجات بدون مخزون
+          <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-[10px] font-mono">{zeroCount}</span>
         </button>
         <button
           onClick={() => {
@@ -1058,6 +1066,7 @@ function ReviewTab({
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5" /> منتجات موجبة
+          <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-[10px] font-mono">{positiveCount}</span>
         </button>
         <button
           onClick={() => {
@@ -1072,6 +1081,7 @@ function ReviewTab({
           }`}
         >
           <AlertTriangle className="w-3.5 h-3.5" /> تحت حد الطلب فقط
+          <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-[10px] font-mono">{lowCount}</span>
         </button>
       </div>
 
@@ -1878,21 +1888,36 @@ function CountTab({
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={() => createAndApplyMutation.mutate()}
-                  disabled={createAndApplyMutation.isPending || !canApply}
-                  className="shrink-0 flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-colors whitespace-nowrap"
-                >
-                  {createAndApplyMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> جاري التطبيق...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4" /> تطبيق الجرد ({enteredProducts.length})
-                    </>
+                <div className="shrink-0 flex items-center gap-2">
+                  {enteredProducts.length > 0 && (
+                    <button
+                      onClick={() => {
+                        if (confirm(`هل تريد مسح ${enteredProducts.length} كمية مدخلة؟`)) {
+                          setPhysicalQtys({});
+                          setItemNotes({});
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 rounded-xl text-xs font-bold transition-colors whitespace-nowrap"
+                    >
+                      <X className="w-3.5 h-3.5" /> مسح الكميات
+                    </button>
                   )}
-                </button>
+                  <button
+                    onClick={() => createAndApplyMutation.mutate()}
+                    disabled={createAndApplyMutation.isPending || !canApply}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-colors whitespace-nowrap"
+                  >
+                    {createAndApplyMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> جاري التطبيق...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4" /> تطبيق الجرد ({enteredProducts.length})
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1941,6 +1966,7 @@ function CountTab({
                       <tr
                         key={p.id}
                         className={`border-b border-white/5 erp-table-row ${hasDiff ? 'bg-amber-500/5' : ''}`}
+                        style={{ contentVisibility: 'auto', containIntrinsicSize: '60px' }}
                       >
                         <td className="p-3">
                           <div className="text-white font-medium">{p.name}</div>
@@ -1958,10 +1984,28 @@ function CountTab({
                             type="number"
                             min="0"
                             step="0.001"
+                            data-qty-input={p.id}
                             value={physicalQtys[p.id] ?? ''}
                             onChange={(e) =>
                               setPhysicalQtys((prev) => ({ ...prev, [p.id]: e.target.value }))
                             }
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const idx = countTableProducts.findIndex((x) => x.id === p.id);
+                                const next = countTableProducts[idx + 1];
+                                if (next) {
+                                  e.preventDefault();
+                                  const nextEl = document.querySelector<HTMLInputElement>(
+                                    `input[data-qty-input="${next.id}"]`
+                                  );
+                                  if (nextEl) {
+                                    nextEl.scrollIntoView({ block: 'nearest' });
+                                    nextEl.focus();
+                                    nextEl.select();
+                                  }
+                                }
+                              }
+                            }}
                             placeholder="أدخل الكمية"
                             className="w-32 bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-violet-400/50 text-sm font-mono"
                           />

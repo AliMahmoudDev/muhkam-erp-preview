@@ -26,6 +26,9 @@ export const stockMovementsTable = pgTable("stock_movements", {
   index("stock_movements_reference_type_idx").on(t.reference_type),
   index("stock_movements_date_idx").on(t.date),
   index("stock_movements_created_at_idx").on(t.created_at),
+  index("stock_movements_product_warehouse_idx").on(t.product_id, t.warehouse_id),
+  index("stock_movements_warehouse_id_idx").on(t.warehouse_id),
+  index("stock_movements_company_id_idx").on(t.company_id),
 ]);
 
 export type StockMovement = typeof stockMovementsTable.$inferSelect;
