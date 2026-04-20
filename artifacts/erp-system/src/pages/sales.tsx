@@ -1033,6 +1033,7 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
   const [recentlyAdded, setRecentlyAdded] = useState<number | null>(null);
   const [editingPrice, setEditingPrice] = useState<{ pid: number; val: string } | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false);
 
   const updatePrice = useCallback((pid: number, rawVal: string) => {
     const newPrice = parseFloat(rawVal);
@@ -1128,8 +1129,14 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     if (payRowKey > 0) setTimeout(() => payAmountRef.current?.focus(), 60);
   }, [payRowKey]);
 
+  const requestCheckout = () => {
+    if (!canCheckout) return;
+    setShowCheckoutConfirm(true);
+  };
+
   const handleCheckout = () => {
     if (!canCheckout) return;
+    setShowCheckoutConfirm(false);
     if (!effectiveWarehouseId) {
       toast({ title: "المخزن غير محدد — يرجى مراجعة المدير لإعداد حسابك", variant: "destructive" }); return;
     }
@@ -1151,8 +1158,8 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
 
   /* ── مرجع حقل البحث واختصارات لوحة المفاتيح ── */
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const _checkoutRef = useRef(handleCheckout);
-  _checkoutRef.current = handleCheckout;
+  const _checkoutRef = useRef(requestCheckout);
+  _checkoutRef.current = requestCheckout;
 
   // تركيز تلقائي عند فتح الصفحة
   useEffect(() => { searchInputRef.current?.focus(); }, []);
@@ -1662,7 +1669,7 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
             )}
 
             {/* ── زر إتمام البيع ── */}
-            <button onClick={handleCheckout} disabled={!canCheckout}
+            <button onClick={requestCheckout} disabled={!canCheckout}
               className="w-full py-3.5 rounded-xl font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               style={{
                 background: canCheckout ? "linear-gradient(135deg,#f59e0b 0%,#d97706 100%)" : undefined,
@@ -1687,7 +1694,119 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
       <style>{`
         @keyframes erp-shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
         .erp-shake { animation: erp-shake 0.35s ease; }
+        @keyframes modal-in { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }
+        .modal-in { animation: modal-in 0.18s cubic-bezier(0.34,1.56,0.64,1) forwards; }
       `}</style>
+
+      {/* ═══ modal تأكيد إتمام البيع ═══ */}
+      {showCheckoutConfirm && (
+        <div
+          className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}
+          onClick={() => setShowCheckoutConfirm(false)}
+        >
+          <div
+            className="modal-in w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl"
+            style={{ background: 'linear-gradient(145deg,#1a1f2e,#141821)', border: '1px solid rgba(245,158,11,0.22)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* رأس */}
+            <div className="px-5 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.15)' }}>
+                  <Banknote className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <p className="font-black text-white text-sm">تأكيد إتمام البيع</p>
+                  <p className="text-white/40 text-[11px]">راجع الفاتورة قبل الإصدار</p>
+                </div>
+              </div>
+            </div>
+
+            {/* جسم الملخص */}
+            <div className="px-5 py-4 space-y-3">
+
+              {/* الإجمالي */}
+              <div className="rounded-xl px-4 py-3 text-center" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}>
+                <p className="text-white/50 text-xs mb-0.5">إجمالي الفاتورة</p>
+                <p className="text-amber-400 font-black text-2xl tabular-nums">{formatCurrency(cartTotal)}</p>
+                {discountAmount > 0 && (
+                  <p className="text-white/35 text-[11px] mt-0.5">
+                    بعد خصم {formatCurrency(discountAmount)} ({discountPct}%)
+                  </p>
+                )}
+              </div>
+
+              {/* تفاصيل */}
+              <div className="space-y-2 text-sm">
+                {/* العميل */}
+                <div className="flex justify-between items-center">
+                  <span className="text-emerald-400 font-bold truncate">
+                    {selectedCustomer?.name ?? "عميل نقدي"}
+                  </span>
+                  <span className="text-white/40 text-xs shrink-0">العميل</span>
+                </div>
+                {/* عدد الأصناف */}
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-bold">
+                    {cart.length} صنف · {cart.reduce((s, i) => s + i.quantity, 0)} وحدة
+                  </span>
+                  <span className="text-white/40 text-xs">الأصناف</span>
+                </div>
+                {/* طريقة الدفع */}
+                {payRows.map((r, i) => (
+                  <div key={r.id} className="flex justify-between items-center">
+                    <span className={`font-bold tabular-nums ${r.type === 'cash' ? 'text-emerald-400' : 'text-blue-400'}`}>
+                      {formatCurrency(r.amount)}
+                    </span>
+                    <span className="text-white/40 text-xs">
+                      {i === 0 ? 'طريقة الدفع' : ''} {r.type === 'cash' ? '💵 نقدي' : '🕐 آجل'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* فاصل الأصناف */}
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="max-h-32 overflow-y-auto">
+                  {cart.map((item, idx) => (
+                    <div key={item.product_id}
+                      className="flex justify-between items-center px-3 py-1.5 text-xs"
+                      style={{ background: idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent' }}>
+                      <span className="text-emerald-400 font-bold tabular-nums shrink-0">{formatCurrency(item.total_price)}</span>
+                      <div className="text-right min-w-0 mr-2">
+                        <span className="text-white/70 truncate block">{item.product_name}</span>
+                      </div>
+                      <span className="text-white/30 shrink-0 ml-2 w-5 text-center">{idx + 1}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* أزرار */}
+            <div className="px-5 pb-5 grid grid-cols-2 gap-2.5">
+              <button
+                onClick={() => setShowCheckoutConfirm(false)}
+                className="py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 active:scale-[0.97]"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.6)' }}
+              >
+                ✕ إلغاء
+              </button>
+              <button
+                onClick={handleCheckout}
+                disabled={checkoutMutation.isPending}
+                className="py-3 rounded-xl text-sm font-black transition-all active:scale-[0.97] flex items-center justify-center gap-1.5"
+                style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#000', boxShadow: '0 4px 18px rgba(245,158,11,0.4)' }}
+              >
+                {checkoutMutation.isPending
+                  ? <><div className="w-4 h-4 border-2 border-black/40 border-t-transparent rounded-full animate-spin" /> جارٍ...</>
+                  : <><Banknote className="w-4 h-4" /> تأكيد وإصدار</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
