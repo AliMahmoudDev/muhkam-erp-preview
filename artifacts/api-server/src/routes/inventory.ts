@@ -566,4 +566,44 @@ router.get("/inventory/reorder-suggestions", wrap(async (req, res) => {
   });
 }));
 
+/**
+ * GET /api/inventory/movements-chart
+ * Daily movement aggregates for the last N days (default 30).
+ * Returns [{ day, in_qty, out_qty, net }]
+ */
+router.get("/inventory/movements-chart", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_inventory")) {
+    res.status(403).json({ error: "ليس لديك صلاحية" }); return;
+  }
+  const companyId = req.user?.company_id ?? null;
+  if (!companyId) { res.status(403).json({ error: "غير مرتبط بشركة" }); return; }
+
+  const days = Math.max(7, Math.min(90, Number(req.query.days) || 30));
+  const warehouseId = req.query.warehouse_id ? Number(req.query.warehouse_id) : null;
+
+  const rows = await db.execute(sql`
+    SELECT
+      COALESCE(date, DATE(created_at AT TIME ZONE 'UTC')::text) AS day,
+      ROUND(SUM(CASE WHEN CAST(quantity AS FLOAT8) > 0 THEN CAST(quantity AS FLOAT8) ELSE 0 END)::numeric, 2) AS in_qty,
+      ROUND(SUM(CASE WHEN CAST(quantity AS FLOAT8) < 0 THEN ABS(CAST(quantity AS FLOAT8)) ELSE 0 END)::numeric, 2) AS out_qty,
+      COUNT(*) AS moves
+    FROM stock_movements
+    WHERE company_id = ${companyId}
+      AND created_at >= NOW() - (${days} || ' days')::interval
+      ${warehouseId ? sql`AND warehouse_id = ${warehouseId}` : sql``}
+    GROUP BY 1
+    ORDER BY 1 ASC
+  `);
+
+  const result = (rows.rows as { day: string; in_qty: string; out_qty: string; moves: string }[]).map(r => ({
+    day: String(r.day),
+    in_qty: Number(r.in_qty),
+    out_qty: Number(r.out_qty),
+    net: Number(r.in_qty) - Number(r.out_qty),
+    moves: Number(r.moves),
+  }));
+
+  res.json(result);
+}));
+
 export default router;

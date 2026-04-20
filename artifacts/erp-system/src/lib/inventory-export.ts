@@ -112,6 +112,55 @@ export function exportToPDF<T>(opts: {
   w.document.close();
 }
 
+/* ── Multi-sheet Excel export ── */
+export interface MultiSheetExport {
+  sheetName: string;
+  title: string;
+  columns: ExportColumn<Record<string, unknown>>[];
+  rows: Record<string, unknown>[];
+}
+
+export async function exportToExcelMulti(opts: {
+  filename: string;
+  sheets: MultiSheetExport[];
+}): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'MUHKAM ERP';
+  wb.created = new Date();
+
+  for (const sheet of opts.sheets) {
+    const ws = wb.addWorksheet(sheet.sheetName, { views: [{ rightToLeft: true }] });
+    ws.mergeCells(1, 1, 1, sheet.columns.length);
+    const titleCell = ws.getCell(1, 1);
+    titleCell.value = sheet.title;
+    titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6D28D9' } } as ExcelJS.Fill;
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(1).height = 26;
+
+    ws.getRow(2).values = sheet.columns.map(c => c.header);
+    ws.getRow(2).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    ws.getRow(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4C1D95' } } as ExcelJS.Fill;
+    ws.getRow(2).alignment = { horizontal: 'center', vertical: 'middle' };
+    sheet.columns.forEach((c, i) => { ws.getColumn(i + 1).width = c.width ?? 18; });
+
+    for (const row of sheet.rows) {
+      const values = sheet.columns.map(c =>
+        c.format ? c.format(row) : (row[c.key as string] as string | number | null) ?? '',
+      );
+      ws.addRow(values);
+    }
+    for (let r = 3; r <= ws.rowCount; r++) {
+      ws.getRow(r).alignment = { horizontal: 'center', vertical: 'middle' };
+      if (r % 2 === 0) ws.getRow(r).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } } as ExcelJS.Fill;
+    }
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  triggerDownload(blob, opts.filename + '.xlsx');
+}
+
 function triggerDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

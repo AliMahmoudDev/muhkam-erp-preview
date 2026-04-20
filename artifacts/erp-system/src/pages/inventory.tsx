@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
   import { authFetch } from '@/lib/auth-fetch';
   import { useQuery, useQueryClient } from '@tanstack/react-query';
   import { useWarehouse } from '@/contexts/warehouse';
   import { useAuth } from '@/contexts/auth';
   import { hasPermission } from '@/lib/permissions';
   import { formatCurrency } from '@/lib/format';
+  import { exportToExcelMulti } from '@/lib/inventory-export';
   import {
     Package,
   AlertTriangle,
@@ -23,6 +24,9 @@ import { useState } from 'react';
   LayoutDashboard,
   ArrowRight,
   Shield,
+  Search,
+  FileSpreadsheet,
+  Eye,
   } from 'lucide-react';
   import { Link } from 'wouter';
   import { useToast } from '@/hooks/use-toast';
@@ -66,6 +70,11 @@ export default function Inventory() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [transferPrefill, setTransferPrefill] = useState<TransferPrefill | null>(null);
   const [movementsFilter, setMovementsFilter] = useState<'all' | 'zero' | 'low'>('all');
+  /* ── overview product table ── */
+  const [overviewSearch, setOverviewSearch] = useState('');
+  const [overviewCategoryFilter, setOverviewCategoryFilter] = useState('');
+  /* ── warehouse detail modal ── */
+  const [warehouseDetailId, setWarehouseDetailId] = useState<number | null>(null);
 
   function handleQuickFilter(filter: 'zero' | 'low') {
     setMovementsFilter(filter);
@@ -132,6 +141,93 @@ export default function Inventory() {
     enabled: canViewInventory,
   });
   const alertsBadge = (lowStockMeta?.zero_count ?? 0) + (lowStockMeta?.low_count ?? 0);
+
+  /* ── overview products (T1) ── */
+  interface AuditProductLite {
+    id: number; name: string; sku: string | null; category: string | null;
+    actual_qty: number; total_value: number; low_stock_threshold: number | null;
+    cost_price: number; sale_price: number;
+  }
+  const { data: overviewAudit } = useQuery<{ products: AuditProductLite[] }>({
+    queryKey: ['inventory-audit-products'],
+    queryFn: () => authFetch(api('/api/inventory/audit')).then(r => r.json()),
+    staleTime: 300_000,
+    enabled: canViewInventory,
+  });
+  const allProducts = overviewAudit?.products ?? [];
+  const overviewCategories = useMemo(() => {
+    const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean) as string[])];
+    return cats.sort((a, b) => a.localeCompare(b, 'ar'));
+  }, [allProducts]);
+  const overviewFiltered = useMemo(() => {
+    const q = overviewSearch.toLowerCase();
+    return allProducts
+      .filter(p => !q || p.name.toLowerCase().includes(q) || (p.sku ?? '').toLowerCase().includes(q) || (p.category ?? '').toLowerCase().includes(q))
+      .filter(p => !overviewCategoryFilter || p.category === overviewCategoryFilter);
+  }, [allProducts, overviewSearch, overviewCategoryFilter]);
+
+  /* ── warehouse detail products (T2) ── */
+  const { data: whDetailAudit, isLoading: whDetailLoading } = useQuery<{ products: AuditProductLite[] }>({
+    queryKey: ['inventory-audit-products-wh', warehouseDetailId],
+    queryFn: () => authFetch(api(`/api/inventory/audit?warehouse_id=${warehouseDetailId!}`)).then(r => r.json()),
+    staleTime: 60_000,
+    enabled: warehouseDetailId !== null,
+  });
+  const whDetailProducts = whDetailAudit?.products ?? [];
+
+  /* ── overview export (T4) ── */
+  async function handleOverviewExport() {
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const whRows = (whSummaryData?.warehouses ?? []).map(w => ({
+      name: warehouses.find(x => x.id === w.warehouse_id)?.name ?? String(w.warehouse_id),
+      item_count: w.item_count,
+      total_value: w.total_value,
+      pct_of_total: w.pct_of_total,
+    }));
+    await exportToExcelMulti({
+      filename: `inventory-overview-${dateStr}`,
+      sheets: [
+        {
+          sheetName: 'الإحصائيات',
+          title: `إحصائيات المخزون — ${dateStr}`,
+          columns: [
+            { header: 'البند', key: 'label', width: 28 },
+            { header: 'القيمة', key: 'value', width: 22 },
+          ],
+          rows: gs ? [
+            { label: 'إجمالي المنتجات', value: gs.total_products },
+            { label: 'قيمة المخزون الكلية', value: formatCurrency(grandTotal || gs.total_inventory_value) },
+            { label: 'تحت حد الطلب', value: gs.low_stock_count },
+            { label: 'نفد المخزون', value: gs.zero_stock_count },
+          ] : [],
+        },
+        {
+          sheetName: 'المخازن',
+          title: `تفاصيل المخازن — ${dateStr}`,
+          columns: [
+            { header: 'اسم المخزن', key: 'name', width: 25 },
+            { header: 'عدد الأصناف', key: 'item_count', width: 14 },
+            { header: 'قيمة المخزون', key: 'total_value', width: 18 },
+            { header: 'نسبة من الإجمالي', key: 'pct_of_total', width: 18 },
+          ],
+          rows: whRows as Record<string, unknown>[],
+        },
+        {
+          sheetName: 'المنتجات',
+          title: `قائمة المنتجات — ${dateStr}`,
+          columns: [
+            { header: 'المنتج', key: 'name', width: 30 },
+            { header: 'SKU', key: 'sku', width: 15 },
+            { header: 'التصنيف', key: 'category', width: 18 },
+            { header: 'الكمية الفعلية', key: 'actual_qty', width: 15 },
+            { header: 'تكلفة الوحدة', key: 'cost_price', width: 15 },
+            { header: 'قيمة المخزون', key: 'total_value', width: 18 },
+          ],
+          rows: allProducts as unknown as Record<string, unknown>[],
+        },
+      ],
+    });
+  }
 
   function handleTransferPrefill(prefill: TransferPrefill) {
     setTransferPrefill(prefill);
@@ -301,17 +397,27 @@ export default function Inventory() {
                   إدارة مواقع التخزين ومتابعة قيمة كل مخزن
                 </p>
               </div>
-              {isAdmin && (
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    setWhForm({ name: '', address: '', branch_id: '' });
-                    setShowAddWH(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
+                  onClick={() => void handleOverviewExport()}
+                  disabled={allProducts.length === 0}
+                  title="تصدير نظرة عامة — Excel (3 ورقات)"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-500/15 border border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-40 transition-all"
                 >
-                  <Plus className="w-4 h-4" /> إضافة مخزن
+                  <FileSpreadsheet className="w-4 h-4" /> تصدير Excel
                 </button>
-              )}
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setWhForm({ name: '', address: '', branch_id: '' });
+                      setShowAddWH(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
+                  >
+                    <Plus className="w-4 h-4" /> إضافة مخزن
+                  </button>
+                )}
+              </div>
             </div>
 
             {loadingWH ? (
@@ -436,12 +542,130 @@ export default function Inventory() {
                           المخزن النشط
                         </span>
                       )}
+                      {/* زر عرض المنتجات */}
+                      {ws && ws.item_count > 0 && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setWarehouseDetailId(w.id); }}
+                          className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg text-[11px] bg-white/5 hover:bg-violet-500/15 text-white/50 hover:text-violet-300 border border-white/5 hover:border-violet-500/20 transition-all"
+                        >
+                          <Eye className="w-3 h-3" /> عرض المنتجات
+                        </button>
+                      )}
                     </div>
                   );
                 })}
               </div>
             )}
           </section>
+
+          {/* ══ T1: جدول المنتجات ════════════════════════════════════════════════ */}
+          {allProducts.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h2 className="text-lg font-bold text-white">كل المنتجات</h2>
+                  <p className="text-white/40 text-xs mt-0.5">{allProducts.length} صنف إجمالاً</p>
+                </div>
+                <div className="flex gap-2 flex-wrap items-center">
+                  {overviewCategories.length > 0 && (
+                    <select
+                      value={overviewCategoryFilter}
+                      onChange={e => setOverviewCategoryFilter(e.target.value)}
+                      className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none focus:ring-2 focus:ring-white/20"
+                    >
+                      <option value="">كل التصنيفات</option>
+                      {overviewCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  )}
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                    <input
+                      value={overviewSearch}
+                      onChange={e => setOverviewSearch(e.target.value)}
+                      placeholder="ابحث..."
+                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 pe-9 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 w-44"
+                    />
+                    {overviewSearch && (
+                      <button onClick={() => setOverviewSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-2xl border border-white/10">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-white/5 text-white/50 font-medium">
+                      <th className="p-3 text-right">المنتج</th>
+                      <th className="p-3 text-center">التصنيف</th>
+                      <th className="p-3 text-center">الكمية</th>
+                      <th className="p-3 text-center">تكلفة الوحدة</th>
+                      <th className="p-3 text-center">قيمة المخزون</th>
+                      <th className="p-3 text-center">الحالة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {overviewFiltered.slice(0, 200).map(p => {
+                      const isZero = p.actual_qty <= 0;
+                      const isLow = p.low_stock_threshold !== null && p.actual_qty <= p.low_stock_threshold && !isZero;
+                      return (
+                        <tr key={p.id} className="border-b border-white/5 erp-table-row">
+                          <td className="p-3">
+                            <div className="font-medium text-white">{p.name}</div>
+                            {p.sku && <div className="text-white/30 text-xs">{p.sku}</div>}
+                          </td>
+                          <td className="p-3 text-center">
+                            {p.category ? (
+                              <span className="px-2 py-0.5 rounded-lg bg-white/5 text-white/50 text-xs">{p.category}</span>
+                            ) : <span className="text-white/20">—</span>}
+                          </td>
+                          <td className="p-3 text-center font-mono font-bold">
+                            <span className={isZero ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}>
+                              {p.actual_qty.toFixed(2)}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center text-white/60">{formatCurrency(p.cost_price)}</td>
+                          <td className="p-3 text-center font-bold text-white">{formatCurrency(p.total_value)}</td>
+                          <td className="p-3 text-center">
+                            {isZero ? (
+                              <span className="px-2 py-0.5 rounded-lg bg-red-500/15 text-red-400 text-xs border border-red-500/20">نافد</span>
+                            ) : isLow ? (
+                              <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-400 text-xs border border-amber-500/20">منخفض</span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs border border-emerald-500/15">متوفر</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {overviewFiltered.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-white/30">
+                          <Package className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                          لا توجد منتجات مطابقة
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  {overviewFiltered.length > 0 && (
+                    <tfoot>
+                      <tr className="border-t border-white/15 bg-white/5">
+                        <td colSpan={4} className="p-3 text-white/50 font-bold">المجموع ({overviewFiltered.length} صنف)</td>
+                        <td className="p-3 text-center font-bold text-white">
+                          {formatCurrency(overviewFiltered.reduce((s, p) => s + p.total_value, 0))}
+                        </td>
+                        <td />
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+              {overviewFiltered.length > 200 && (
+                <p className="text-center text-white/30 text-xs">يُعرض أول 200 صنف — استخدم البحث للتضييق</p>
+              )}
+            </section>
+          )}
         </>
       )}
 
@@ -646,6 +870,103 @@ export default function Inventory() {
                 إلغاء
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* ── Modal: تفاصيل مخزن (T2) ── */}
+      {warehouseDetailId !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setWarehouseDetailId(null)}
+        >
+          <div
+            className="bg-[#111827] border border-white/10 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[85vh] flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* رأس الـ modal */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Warehouse className="w-5 h-5 text-violet-400" />
+                {warehouses.find(w => w.id === warehouseDetailId)?.name ?? 'تفاصيل المخزن'}
+              </h3>
+              <button
+                onClick={() => setWarehouseDetailId(null)}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <X className="w-4 h-4 text-white/60" />
+              </button>
+            </div>
+
+            {/* المحتوى */}
+            {whDetailLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+              </div>
+            ) : whDetailProducts.length === 0 ? (
+              <div className="text-center py-16 text-white/30">
+                <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p>لا توجد منتجات في هذا المخزن</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-white/40 text-xs mb-3">{whDetailProducts.length} صنف في هذا المخزن</p>
+                <div className="overflow-y-auto flex-1 rounded-xl border border-white/10">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-[#111827]">
+                      <tr className="border-b border-white/10 bg-white/5 text-white/50 font-medium">
+                        <th className="p-3 text-right">المنتج</th>
+                        <th className="p-3 text-center">التصنيف</th>
+                        <th className="p-3 text-center">الكمية</th>
+                        <th className="p-3 text-center">الحالة</th>
+                        <th className="p-3 text-center">قيمة المخزون</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {whDetailProducts.map(p => {
+                        const isZero = p.actual_qty <= 0;
+                        const isLow = p.low_stock_threshold !== null && p.actual_qty <= p.low_stock_threshold && !isZero;
+                        return (
+                          <tr key={p.id} className="border-b border-white/5 erp-table-row">
+                            <td className="p-3">
+                              <div className="text-white font-medium">{p.name}</div>
+                              {p.sku && <div className="text-white/30 text-xs">{p.sku}</div>}
+                            </td>
+                            <td className="p-3 text-center">
+                              {p.category ? (
+                                <span className="px-2 py-0.5 rounded-lg bg-white/5 text-white/50 text-xs">{p.category}</span>
+                              ) : <span className="text-white/20">—</span>}
+                            </td>
+                            <td className="p-3 text-center font-mono font-bold">
+                              <span className={isZero ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}>
+                                {p.actual_qty.toFixed(2)}
+                              </span>
+                            </td>
+                            <td className="p-3 text-center">
+                              {isZero ? (
+                                <span className="px-2 py-0.5 rounded-lg bg-red-500/15 text-red-400 text-xs">نافد</span>
+                              ) : isLow ? (
+                                <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-400 text-xs">منخفض</span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs">متوفر</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center font-bold text-white">{formatCurrency(p.total_value)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-white/15 bg-white/5">
+                        <td colSpan={4} className="p-3 text-white/50 font-bold">الإجمالي</td>
+                        <td className="p-3 text-center font-bold text-white">
+                          {formatCurrency(whDetailProducts.reduce((s, p) => s + p.total_value, 0))}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

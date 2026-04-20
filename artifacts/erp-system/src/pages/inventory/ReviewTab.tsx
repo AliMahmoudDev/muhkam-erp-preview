@@ -7,7 +7,8 @@ import { TableSkeleton } from '@/components/skeletons';
 import { formatCurrency } from '@/lib/format';
 import { useDebouncedValue } from '@/hooks/use-debounce';
 import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
-import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, X, RefreshCw, ChevronUp, ChevronDown, Edit3, FileSpreadsheet, FileText, CalendarDays } from 'lucide-react';
+import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, X, RefreshCw, ChevronUp, ChevronDown, Edit3, FileSpreadsheet, FileText, CalendarDays, Settings2 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { api, movementTypeLabel } from './_shared';
 import type {
   AuditProduct,
@@ -43,6 +44,36 @@ function ReviewTab({
   const [showPositiveOnly, setShowPositiveOnly] = useState(false);
   const [modalDateFrom, setModalDateFrom] = useState('');
   const [modalDateTo, setModalDateTo] = useState('');
+  const [showColPicker, setShowColPicker] = useState(false);
+
+  /* ── column visibility (localStorage) ── */
+  const ALL_COLS = ['opening_qty','purchased_qty','sale_return_qty','sold_qty','purchase_return_qty','calculated_qty','discrepancy','cost_price'] as const;
+  type OptCol = typeof ALL_COLS[number];
+  const [visibleCols, setVisibleCols] = useState<Set<OptCol>>(() => {
+    try {
+      const stored = localStorage.getItem('inv_review_cols');
+      if (stored) return new Set(JSON.parse(stored) as OptCol[]);
+    } catch { /* ignore */ }
+    return new Set(ALL_COLS);
+  });
+  function toggleCol(col: OptCol) {
+    setVisibleCols(prev => {
+      const next = new Set(prev);
+      if (next.has(col)) next.delete(col); else next.add(col);
+      try { localStorage.setItem('inv_review_cols', JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
+  /* ── movements chart ── */
+  const { data: chartData = [] } = useQuery<{ day: string; in_qty: number; out_qty: number; net: number }[]>({
+    queryKey: ['inventory-movements-chart', currentWarehouseId],
+    queryFn: () => {
+      const param = currentWarehouseId ? `?warehouse_id=${currentWarehouseId}` : '';
+      return authFetch(api(`/api/inventory/movements-chart${param}`)).then(r => r.json());
+    },
+    staleTime: 300_000,
+  });
 
   useEffect(() => {
     if (!quickFilter || quickFilter === 'all') return;
@@ -223,6 +254,46 @@ function ReviewTab({
           ))}
         </div>
         <div className="flex items-center gap-2">
+          {/* Column Picker */}
+          <div className="relative">
+            <button
+              onClick={() => setShowColPicker(p => !p)}
+              className={`flex items-center gap-2 px-3 py-2 text-sm rounded-xl transition-colors border ${showColPicker ? 'bg-violet-500/20 border-violet-500/30 text-violet-300' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'}`}
+              title="تخصيص الأعمدة"
+            >
+              <Settings2 className="w-3.5 h-3.5" /> الأعمدة
+            </button>
+            {showColPicker && (
+              <div className="absolute left-0 top-full mt-1 z-50 glass-card border border-white/10 rounded-2xl p-3 shadow-2xl min-w-[180px]">
+                <p className="text-white/50 text-xs mb-2 font-medium">اختر الأعمدة</p>
+                {([
+                  { id: 'opening_qty', label: 'افتتاحي' },
+                  { id: 'purchased_qty', label: 'وارد (مشتريات)' },
+                  { id: 'sale_return_qty', label: 'مرتجع مبيعات' },
+                  { id: 'sold_qty', label: 'صادر (مبيعات)' },
+                  { id: 'purchase_return_qty', label: 'مرتجع مشتريات' },
+                  { id: 'calculated_qty', label: 'محسوب' },
+                  { id: 'discrepancy', label: 'فرق' },
+                  { id: 'cost_price', label: 'تكلفة الوحدة' },
+                ] as { id: OptCol; label: string }[]).map(col => (
+                  <label key={col.id} className="flex items-center gap-2 py-1 cursor-pointer group text-sm text-white/70 hover:text-white">
+                    <input
+                      type="checkbox"
+                      checked={visibleCols.has(col.id)}
+                      onChange={() => toggleCol(col.id)}
+                      className="accent-violet-500 w-3.5 h-3.5"
+                    />
+                    {col.label}
+                  </label>
+                ))}
+                <div className="mt-2 pt-2 border-t border-white/10 flex gap-1">
+                  <button onClick={() => { const all = new Set(ALL_COLS); setVisibleCols(all); localStorage.setItem('inv_review_cols', JSON.stringify([...all])); }} className="text-[10px] text-violet-300 hover:text-violet-200">الكل</button>
+                  <span className="text-white/20 text-[10px]">|</span>
+                  <button onClick={() => { const none = new Set<OptCol>([]); setVisibleCols(none); localStorage.setItem('inv_review_cols', JSON.stringify([])); }} className="text-[10px] text-white/40 hover:text-white/70">الأقل</button>
+                </div>
+              </div>
+            )}
+          </div>
           <button
             onClick={handleExportExcel}
             disabled={filtered.length === 0}
@@ -247,6 +318,39 @@ function ReviewTab({
           </button>
         </div>
       </div>
+
+      {/* مخطط الحركات (30 يوم) */}
+      {chartData.length > 0 && (
+        <div className="glass-card p-4 rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-white/70 text-sm font-medium">حركات المخزون — آخر 30 يوم</p>
+            <div className="flex gap-3 text-xs text-white/50">
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> وارد</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" /> صادر</span>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={130}>
+            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }} barSize={8} barGap={2}>
+              <XAxis
+                dataKey="day"
+                tick={{ fill: '#ffffff50', fontSize: 10 }}
+                tickFormatter={d => d.slice(5)}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12, color: '#fff' }}
+                labelStyle={{ color: '#ffffff90' }}
+                formatter={(v: number, name: string) => [v.toFixed(2), name === 'in_qty' ? 'وارد' : 'صادر']}
+                labelFormatter={(l: string) => l}
+              />
+              <Bar dataKey="in_qty" fill="#10b981" radius={[3,3,0,0]} name="وارد" />
+              <Bar dataKey="out_qty" fill="#f87171" radius={[3,3,0,0]} name="صادر" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* بحث + فلاتر سريعة */}
       <div className="flex gap-2 flex-wrap items-center">
@@ -330,19 +434,19 @@ function ReviewTab({
               <tr className="border-b border-white/10 bg-white/5">
                 {(
                   [
-                    { key: 'name' as const, label: 'المنتج' },
-                    { key: 'opening_qty' as const, label: 'افتتاحي' },
-                    { key: 'purchased_qty' as const, label: 'وارد' },
-                    { key: 'sale_return_qty' as const, label: 'مرتجع مبيعات' },
-                    { key: 'sold_qty' as const, label: 'صادر' },
-                    { key: 'purchase_return_qty' as const, label: 'مرتجع مشتريات' },
-                    { key: 'calculated_qty' as const, label: 'محسوب' },
-                    { key: 'actual_qty' as const, label: 'فعلي (إجمالي)' },
-                    { key: 'discrepancy' as const, label: 'فرق' },
-                    { key: 'cost_price' as const, label: 'تكلفة' },
-                    { key: 'total_value' as const, label: 'قيمة المخزون' },
-                  ] as { key: keyof AuditProduct; label: string }[]
-                ).map((col) => (
+                    { key: 'name' as const, label: 'المنتج', always: true },
+                    { key: 'opening_qty' as const, label: 'افتتاحي', always: false },
+                    { key: 'purchased_qty' as const, label: 'وارد', always: false },
+                    { key: 'sale_return_qty' as const, label: 'مرتجع مبيعات', always: false },
+                    { key: 'sold_qty' as const, label: 'صادر', always: false },
+                    { key: 'purchase_return_qty' as const, label: 'مرتجع مشتريات', always: false },
+                    { key: 'calculated_qty' as const, label: 'محسوب', always: false },
+                    { key: 'actual_qty' as const, label: 'فعلي (إجمالي)', always: true },
+                    { key: 'discrepancy' as const, label: 'فرق', always: false },
+                    { key: 'cost_price' as const, label: 'تكلفة', always: false },
+                    { key: 'total_value' as const, label: 'قيمة المخزون', always: true },
+                  ] as { key: keyof AuditProduct; label: string; always: boolean }[]
+                ).filter(col => col.always || visibleCols.has(col.key as OptCol)).map((col) => (
                   <th
                     key={col.key}
                     onClick={() => toggleSort(col.key)}
@@ -379,45 +483,17 @@ function ReviewTab({
                         </div>
                       </div>
                     </td>
-                    <td className="p-3 text-blue-300 font-mono">
-                      {p.opening_qty > 0 ? `+${p.opening_qty}` : '—'}
-                    </td>
-                    <td className="p-3 text-emerald-400 font-mono">
-                      {p.purchased_qty > 0 ? `+${p.purchased_qty}` : '—'}
-                    </td>
-                    <td className="p-3 text-teal-300 font-mono">
-                      {p.sale_return_qty > 0 ? `+${p.sale_return_qty}` : '—'}
-                    </td>
-                    <td className="p-3 text-red-400 font-mono">
-                      {p.sold_qty > 0 ? `-${p.sold_qty}` : '—'}
-                    </td>
-                    <td className="p-3 text-orange-300 font-mono">
-                      {p.purchase_return_qty > 0 ? `-${p.purchase_return_qty}` : '—'}
-                    </td>
-                    <td className="p-3 font-bold text-white font-mono">
-                      {p.calculated_qty.toFixed(2)}
-                    </td>
+                    {visibleCols.has('opening_qty') && <td className="p-3 text-blue-300 font-mono">{p.opening_qty > 0 ? `+${p.opening_qty}` : '—'}</td>}
+                    {visibleCols.has('purchased_qty') && <td className="p-3 text-emerald-400 font-mono">{p.purchased_qty > 0 ? `+${p.purchased_qty}` : '—'}</td>}
+                    {visibleCols.has('sale_return_qty') && <td className="p-3 text-teal-300 font-mono">{p.sale_return_qty > 0 ? `+${p.sale_return_qty}` : '—'}</td>}
+                    {visibleCols.has('sold_qty') && <td className="p-3 text-red-400 font-mono">{p.sold_qty > 0 ? `-${p.sold_qty}` : '—'}</td>}
+                    {visibleCols.has('purchase_return_qty') && <td className="p-3 text-orange-300 font-mono">{p.purchase_return_qty > 0 ? `-${p.purchase_return_qty}` : '—'}</td>}
+                    {visibleCols.has('calculated_qty') && <td className="p-3 font-bold text-white font-mono">{p.calculated_qty.toFixed(2)}</td>}
                     <td className="p-3 font-bold font-mono">
-                      <span
-                        className={
-                          isZero ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'
-                        }
-                      >
-                        {p.actual_qty.toFixed(2)}
-                      </span>
+                      <span className={isZero ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}>{p.actual_qty.toFixed(2)}</span>
                     </td>
-                    <td className="p-3 font-mono">
-                      {hasDisc ? (
-                        <span className="text-red-400 font-bold">
-                          {p.discrepancy > 0
-                            ? `+${p.discrepancy.toFixed(2)}`
-                            : p.discrepancy.toFixed(2)}
-                        </span>
-                      ) : (
-                        <span className="text-emerald-400">✓</span>
-                      )}
-                    </td>
-                    <td className="p-3 text-white/70">{formatCurrency(p.cost_price)}</td>
+                    {visibleCols.has('discrepancy') && <td className="p-3 font-mono">{hasDisc ? (<span className="text-red-400 font-bold">{p.discrepancy > 0 ? `+${p.discrepancy.toFixed(2)}` : p.discrepancy.toFixed(2)}</span>) : (<span className="text-emerald-400">✓</span>)}</td>}
+                    {visibleCols.has('cost_price') && <td className="p-3 text-white/70">{formatCurrency(p.cost_price)}</td>}
                     <td className="p-3 text-white font-bold">{formatCurrency(p.total_value)}</td>
                     <td className="p-3">
                       <div className="flex gap-1">
@@ -450,7 +526,7 @@ function ReviewTab({
               })}
               {filtered.length > chunkLimit && (
                 <tr>
-                  <td colSpan={12} className="py-3 text-center bg-white/[0.03]">
+                  <td colSpan={4 + visibleCols.size} className="py-3 text-center bg-white/[0.03]">
                     <button
                       onClick={() => setChunkLimit((c) => c + ROWS_PER_CHUNK)}
                       className="px-4 py-1.5 text-xs bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg transition-colors"
@@ -462,7 +538,7 @@ function ReviewTab({
               )}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="py-16 text-center">
+                  <td colSpan={4 + visibleCols.size} className="py-16 text-center">
                     <Package className="w-10 h-10 text-white/10 mx-auto mb-3" />
                     <p className="text-white/40 font-bold mb-1">
                       {showZeroOnly
@@ -486,7 +562,7 @@ function ReviewTab({
             {filtered.length > 0 && (
               <tfoot>
                 <tr className="border-t border-white/20 bg-white/5">
-                  <td className="p-3 text-white/60 font-bold" colSpan={10}>
+                  <td className="p-3 text-white/60 font-bold" colSpan={3 + visibleCols.size}>
                     المجموع
                   </td>
                   <td className="p-3 text-white font-bold">
