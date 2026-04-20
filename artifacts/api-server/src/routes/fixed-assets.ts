@@ -75,22 +75,24 @@ function calcMonthlyDep(asset: typeof fixedAssetsTable.$inferSelect): number {
   const cost = Number(asset.purchase_cost);
   const residual = Number(asset.residual_value);
   const months = asset.useful_life_months;
+  if (months < 1 || cost <= 0) return 0;
   if (asset.depreciation_method === "straight_line") {
     return (cost - residual) / months;
   }
   const bookValue = cost - Number(asset.accumulated_depreciation);
   if (bookValue <= residual) return 0;
-  const annualRate = 1 - Math.pow(Math.max(residual / cost, 0.0001), 1 / (months / 12));
+  const annualRate = 1 - Math.pow(Math.max(residual / cost, 0.0001), 12 / months);
   return (bookValue * annualRate) / 12;
 }
 
 function buildSchedule(asset: typeof fixedAssetsTable.$inferSelect) {
-  const schedule = [];
+  const schedule: { period: string; depreciation: number; accumulated: number; book_value: number }[] = [];
   let accumulated = 0;
   let bookValue = Number(asset.purchase_cost);
   const residual = Number(asset.residual_value);
   const cost = Number(asset.purchase_cost);
   const months = asset.useful_life_months;
+  if (months < 1 || cost <= 0) return schedule;
   const parts = asset.purchase_date.split("-").map(Number);
   const startY = parts[0], startM = parts[1];
 
@@ -99,7 +101,7 @@ function buildSchedule(asset: typeof fixedAssetsTable.$inferSelect) {
     if (asset.depreciation_method === "straight_line") {
       dep = (cost - residual) / months;
     } else {
-      const annualRate = 1 - Math.pow(Math.max(residual / cost, 0.0001), 1 / (months / 12));
+      const annualRate = 1 - Math.pow(Math.max(residual / cost, 0.0001), 12 / months);
       dep = (bookValue * annualRate) / 12;
     }
     dep = Math.min(dep, bookValue - residual);
@@ -140,6 +142,8 @@ router.post("/fixed-assets", wrap(async (req, res) => {
   if (!name || !purchase_date || !purchase_cost || !useful_life_months) {
     throw httpError(400, "البيانات الأساسية ناقصة");
   }
+  if (Number(useful_life_months) < 1) throw httpError(400, "العمر الإنتاجي يجب أن يكون شهراً واحداً على الأقل");
+  if (Number(purchase_cost) <= 0) throw httpError(400, "تكلفة الشراء يجب أن تكون أكبر من صفر");
 
   const safeCode = (code || name).replace(/\s+/g, "-").toUpperCase().slice(0, 20);
 

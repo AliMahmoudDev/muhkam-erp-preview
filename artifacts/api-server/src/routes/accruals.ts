@@ -14,7 +14,7 @@ function fmt(a: typeof accrualsTable.$inferSelect) {
     ...a,
     total_amount: Number(a.total_amount),
     amount_recognized: Number(a.amount_recognized),
-    monthly_amount: Number(a.total_amount) / a.months_total,
+    monthly_amount: a.months_total > 0 ? Number(a.total_amount) / a.months_total : 0,
     created_at: a.created_at.toISOString(),
   };
 }
@@ -97,7 +97,7 @@ router.post("/accruals/:id/recognize", wrap(async (req, res) => {
     ));
   if (existing) throw httpError(409, "تم التسجيل لهذه الفترة مسبقاً");
 
-  const monthly = Number(accrual.total_amount) / accrual.months_total;
+  const monthly = accrual.months_total > 0 ? Number(accrual.total_amount) / accrual.months_total : 0;
   const remaining = Number(accrual.total_amount) - Number(accrual.amount_recognized);
   const amount = Math.min(monthly, remaining);
   if (amount < 0.001) throw httpError(400, "لا يوجد مبلغ متبقي للتسجيل");
