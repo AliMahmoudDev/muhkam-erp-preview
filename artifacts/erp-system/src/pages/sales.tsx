@@ -5,7 +5,7 @@ import { useGetSaleById, useGetProducts, useGetCustomers, useGetSettingsSafes, u
 import { ProductFormModal, ProductFormData } from "@/components/product-form-modal";
 import { useWarehouse } from "@/contexts/warehouse";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { Search, Plus, Minus, Trash2, X, Printer, ShoppingCart, User, Package, Receipt, RotateCcw, Percent, Vault, Lock, CheckCircle, XCircle, ClipboardList, Banknote, Coins, Clock } from "lucide-react";
+import { Search, Plus, Minus, Trash2, X, Printer, ShoppingCart, User, Package, Receipt, RotateCcw, Percent, Vault, Lock, CheckCircle, XCircle, ClipboardList, Banknote, Coins, Clock, FileText, UserPlus, ScanLine, PauseCircle, PlayCircle, Tag } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
@@ -668,7 +668,20 @@ interface CartItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  item_disc?: number;           // قيمة الخصم على الصنف
+  item_disc_mode?: 'pct'|'amt'; // نسبة مئوية أم مبلغ
 }
+
+type HeldInvoice = {
+  id: string;
+  ts: number;
+  cart: CartItem[];
+  customerId: string;
+  discountPct: string;
+  discountMode: 'pct'|'amt';
+  invoiceNote: string;
+  label: string; // اسم العميل أو "بدون عميل"
+};
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -957,6 +970,18 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState<string>("");
+  const [invoiceNote, setInvoiceNote] = useState("");
+  const [discountMode, setDiscountMode] = useState<'pct'|'amt'>('pct');
+  const [barcodeMode, setBarcodeMode] = useState(false);
+  const [editingDisc, setEditingDisc] = useState<{ pid: number; val: string; mode: 'pct'|'amt' } | null>(null);
+  const [showQuickCustomer, setShowQuickCustomer] = useState(false);
+  const [quickCustName, setQuickCustName] = useState("");
+  const [quickCustPhone, setQuickCustPhone] = useState("");
+  const [quickCustLoading, setQuickCustLoading] = useState(false);
+  const [heldInvoices, setHeldInvoices] = useState<HeldInvoice[]>(() => {
+    try { return JSON.parse(localStorage.getItem('muhkam_held_invoices') || '[]'); } catch { return []; }
+  });
+  const [showHeld, setShowHeld] = useState(false);
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [discountPct, setDiscountPct] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
@@ -1012,7 +1037,7 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
         payment_type: data.payment_type ?? "cash",
         items: [...cart],
       });
-      setCart([]); setCustomerId(""); setDiscountPct("");
+      setCart([]); setCustomerId(""); setDiscountPct(""); setInvoiceNote(""); setDiscountMode('pct');
     },
     onError: (e: Error) => {
       setCheckoutError(e.message);
@@ -1027,12 +1052,29 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
   });
 
   const cartSubtotal = useMemo(() => cart.reduce((s, i) => s + i.total_price, 0), [cart]);
-  const discountAmount = useMemo(() => cartSubtotal * (parseFloat(discountPct) || 0) / 100, [cartSubtotal, discountPct]);
+  const discountAmount = useMemo(() => {
+    const v = parseFloat(discountPct) || 0;
+    return discountMode === 'pct' ? cartSubtotal * v / 100 : Math.min(v, cartSubtotal);
+  }, [cartSubtotal, discountPct, discountMode]);
   const cartTotal = useMemo(() => cartSubtotal - discountAmount, [cartSubtotal, discountAmount]);
 
   const [recentlyAdded, setRecentlyAdded] = useState<number | null>(null);
   const [editingPrice, setEditingPrice] = useState<{ pid: number; val: string } | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // حساب إجمالي سطر مع مراعاة الخصم على الصنف
+  const calcLineTotal = (unit_price: number, quantity: number, item_disc = 0, item_disc_mode: 'pct'|'amt' = 'pct') => {
+    const discAmt = item_disc_mode === 'pct' ? unit_price * item_disc / 100 : item_disc;
+    return Math.max(0, unit_price - discAmt) * quantity;
+  };
+
+  const updateItemDisc = (pid: number, val: string, mode: 'pct'|'amt') => {
+    const disc = Math.max(0, parseFloat(val) || 0);
+    setCart(prev => prev.map(i => i.product_id !== pid ? i : {
+      ...i, item_disc: disc, item_disc_mode: mode,
+      total_price: calcLineTotal(i.unit_price, i.quantity, disc, mode),
+    }));
+  };
 
   const updatePrice = useCallback((pid: number, rawVal: string) => {
     const newPrice = parseFloat(rawVal);
@@ -1043,13 +1085,19 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
       toast({ title: `⚠ السعر (${formatCurrency(newPrice)}) أقل من تكلفة الشراء (${formatCurrency(costPrice)})`, variant: "destructive" });
       return;
     }
-    setCart(prev => prev.map(i => i.product_id !== pid ? i : { ...i, unit_price: newPrice, total_price: newPrice * i.quantity }));
+    setCart(prev => prev.map(i => i.product_id !== pid ? i : {
+      ...i, unit_price: newPrice,
+      total_price: calcLineTotal(newPrice, i.quantity, i.item_disc, i.item_disc_mode),
+    }));
   }, [products, currentUser, toast]);
 
   const addToCart = (product: typeof products[0]) => {
     setCart(prev => {
       const existing = prev.find(i => i.product_id === product.id);
-      if (existing) return prev.map(i => i.product_id === product.id ? { ...i, quantity: i.quantity + 1, total_price: (i.quantity + 1) * i.unit_price } : i);
+      if (existing) return prev.map(i => i.product_id === product.id ? {
+        ...i, quantity: i.quantity + 1,
+        total_price: calcLineTotal(i.unit_price, i.quantity + 1, i.item_disc, i.item_disc_mode),
+      } : i);
       return [...prev, { product_id: product.id, product_name: product.name, quantity: 1, unit_price: product.sale_price, total_price: product.sale_price }];
     });
     setRecentlyAdded(product.id);
@@ -1074,7 +1122,7 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
   const updateQty = (pid: number, delta: number) => setCart(prev => prev.map(i => {
     if (i.product_id !== pid) return i;
     const newQ = Math.max(1, i.quantity + delta);
-    return { ...i, quantity: newQ, total_price: newQ * i.unit_price };
+    return { ...i, quantity: newQ, total_price: calcLineTotal(i.unit_price, newQ, i.item_disc, i.item_disc_mode) };
   }));
 
   const selectedCustomer = customers.find(c => c.id === parseInt(customerId));
@@ -1159,6 +1207,7 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
       warehouse_id: effectiveWarehouseId ? parseInt(effectiveWarehouseId) : null,
       salesperson_id: salespersonId ? parseInt(salespersonId) : null,
       discount_percent: parseFloat(discountPct) || 0, discount_amount: discountAmount,
+      notes: invoiceNote.trim() || undefined,
       items: cart,
       payments: payRows.map(r => ({ type: r.type, safe_id: r.safe_id, amount: r.amount })),
     });
@@ -1187,6 +1236,22 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
+  // وضع الباركود: كل ضغطة تُعيد التركيز لحقل البحث
+  const barcodeModeRef = useRef(barcodeMode);
+  barcodeModeRef.current = barcodeMode;
+  useEffect(() => {
+    const bc = (e: KeyboardEvent) => {
+      if (!barcodeModeRef.current) return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", bc);
+    return () => document.removeEventListener("keydown", bc);
+  }, []);
+
   // Enter في حقل البحث → إضافة أول منتج متاح للسلة
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter") return;
@@ -1210,9 +1275,65 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
   );
 
   const _handleNewSale = () => {
-    setCart([]); setCustomerId(""); setSearch(""); setDiscountPct("");
-    setPayRows([]); setPayAmount(''); setPayRowKey(k => k + 1);
+    setCart([]); setCustomerId(""); setSearch(""); setDiscountPct(""); setInvoiceNote(""); setDiscountMode('pct');
+    setPayRows([]); setPayAmount(''); setPayRowKey(k => k + 1); setEditingDisc(null);
     setTimeout(() => searchInputRef.current?.focus(), 0);
+  };
+
+  // ═══ إيداع الفاتورة / استئنافها ═══
+  const holdInvoice = () => {
+    if (cart.length === 0) return;
+    const custName = customers.find(c => c.id === parseInt(customerId))?.name ?? "بدون عميل";
+    const held: HeldInvoice = {
+      id: Date.now().toString(),
+      ts: Date.now(),
+      cart, customerId, discountPct, discountMode, invoiceNote,
+      label: custName,
+    };
+    const updated = [held, ...heldInvoices];
+    setHeldInvoices(updated);
+    localStorage.setItem('muhkam_held_invoices', JSON.stringify(updated));
+    _handleNewSale();
+    toast({ title: `✅ تم إيداع الفاتورة — ${custName}` });
+  };
+
+  const resumeHold = (id: string) => {
+    const held = heldInvoices.find(h => h.id === id);
+    if (!held) return;
+    setCart(held.cart); setCustomerId(held.customerId);
+    setDiscountPct(held.discountPct); setDiscountMode(held.discountMode);
+    setInvoiceNote(held.invoiceNote);
+    const updated = heldInvoices.filter(h => h.id !== id);
+    setHeldInvoices(updated);
+    localStorage.setItem('muhkam_held_invoices', JSON.stringify(updated));
+    setShowHeld(false);
+  };
+
+  const deleteHold = (id: string) => {
+    const updated = heldInvoices.filter(h => h.id !== id);
+    setHeldInvoices(updated);
+    localStorage.setItem('muhkam_held_invoices', JSON.stringify(updated));
+  };
+
+  // ═══ إضافة عميل سريع ═══
+  const createQuickCustomer = async () => {
+    if (!quickCustName.trim()) { toast({ title: "اسم العميل مطلوب", variant: "destructive" }); return; }
+    setQuickCustLoading(true);
+    try {
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: quickCustName.trim(), phone: quickCustPhone.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'فشل الإضافة');
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      setCustomerId(String(data.id ?? data.customer?.id ?? ''));
+      setShowQuickCustomer(false); setQuickCustName(""); setQuickCustPhone("");
+      toast({ title: `✅ تم إضافة العميل "${quickCustName.trim()}"` });
+    } catch (e: any) {
+      toast({ title: `❌ ${e.message}`, variant: "destructive" });
+    } finally { setQuickCustLoading(false); }
   };
 
   return (
@@ -1261,7 +1382,20 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
                   <X className="w-4 h-4" />
                 </button>
               )}
+              <button
+                onClick={() => setBarcodeMode(v => !v)}
+                title={barcodeMode ? "إيقاف وضع الباركود" : "تفعيل وضع الباركود"}
+                className={`shrink-0 transition-colors rounded-lg p-1 ${barcodeMode ? 'text-amber-400 bg-amber-500/15' : 'sale-muted-text hover:text-amber-400'}`}
+              >
+                <ScanLine className="w-4 h-4" />
+              </button>
             </div>
+            {barcodeMode && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-400 font-bold px-1 pb-0.5 animate-pulse">
+                <ScanLine className="w-3 h-3" />
+                وضع الباركود نشط — امسح الكود وسيُضاف تلقائياً
+              </div>
+            )}
             {/* Pill category filter */}
             <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
               <button
@@ -1356,6 +1490,19 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
                     <RotateCcw className="w-3 h-3" /> تفريغ
                   </button>
                 )}
+                {cart.length > 0 && (
+                  <button onClick={holdInvoice} title="إيداع الفاتورة"
+                    className="text-[11px] sale-muted-text hover:text-blue-400 transition-colors flex items-center gap-1">
+                    <PauseCircle className="w-3 h-3" /> إيداع
+                  </button>
+                )}
+                {heldInvoices.length > 0 && (
+                  <button onClick={() => setShowHeld(v => !v)} title="الفواتير المودعة"
+                    className="text-[11px] relative flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors">
+                    <PlayCircle className="w-3 h-3" />
+                    <span className="bg-blue-500/25 px-1.5 py-0.5 rounded-full font-black">{heldInvoices.length}</span>
+                  </button>
+                )}
               </div>
               <h3 className="font-black sale-text-primary flex items-center gap-2 text-sm">
                 <ShoppingCart className="w-4 h-4 text-amber-400" /> فاتورة مبيعات
@@ -1396,12 +1543,33 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
               </div>
             ) : (
               <>
+                {/* الفواتير المودعة */}
+                {showHeld && heldInvoices.length > 0 && (
+                  <div className="mx-2 mb-1 rounded-xl overflow-hidden border border-blue-500/20 bg-blue-500/5 shrink-0">
+                    {heldInvoices.map(h => (
+                      <div key={h.id} className="flex items-center gap-2 px-3 py-1.5 border-b border-blue-500/10 last:border-0 hover:bg-blue-500/10 transition-colors">
+                        <button onClick={() => resumeHold(h.id)} className="flex-1 flex items-center gap-2 text-right">
+                          <PlayCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold sale-text-primary truncate">{h.label}</p>
+                            <p className="text-[10px] sale-muted-text">{h.cart.length} صنف · {new Date(h.ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </button>
+                        <button onClick={() => deleteHold(h.id)} className="w-5 h-5 flex items-center justify-center text-red-400/40 hover:text-red-400 transition-colors">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* رأس الأعمدة */}
                 <div className="sale-invoice-header flex items-center gap-1 px-3 py-1.5 shrink-0">
                   <span className="sale-muted-text text-[10px] font-bold flex-1">المنتج</span>
-                  <span className="sale-muted-text text-[10px] font-bold w-[66px] text-center">الكمية</span>
-                  <span className="sale-muted-text text-[10px] font-bold w-[52px] text-center">سعر</span>
-                  <span className="sale-muted-text text-[10px] font-bold w-[68px] text-center">الإجمالي</span>
+                  <span className="sale-muted-text text-[10px] font-bold w-[58px] text-center">الكمية</span>
+                  <span className="sale-muted-text text-[10px] font-bold w-[46px] text-center">سعر</span>
+                  <span className="sale-muted-text text-[10px] font-bold w-[44px] text-center flex items-center justify-center gap-0.5"><Tag className="w-2.5 h-2.5" />خصم</span>
+                  <span className="sale-muted-text text-[10px] font-bold w-[60px] text-center">الإجمالي</span>
                   <span className="w-5 shrink-0" />
                 </div>
 
@@ -1427,12 +1595,12 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
                         </div>
 
                         {/* الكمية */}
-                        <div className="w-[66px] flex items-center justify-center gap-0.5 shrink-0">
+                        <div className="w-[58px] flex items-center justify-center gap-0.5 shrink-0">
                           <button onClick={() => updateQty(item.product_id, -1)}
                             className="sale-qty-btn-sm w-[20px] h-[20px] rounded-md flex items-center justify-center">
                             <Minus className="w-2.5 h-2.5 sale-text-primary" />
                           </button>
-                          <span className="sale-text-primary font-black text-xs w-[22px] text-center tabular-nums">{item.quantity}</span>
+                          <span className="sale-text-primary font-black text-xs w-[18px] text-center tabular-nums">{item.quantity}</span>
                           <button onClick={() => updateQty(item.product_id, 1)}
                             className="sale-qty-btn-sm-amber w-[20px] h-[20px] rounded-md flex items-center justify-center">
                             <Plus className="w-2.5 h-2.5 text-amber-400" />
@@ -1440,7 +1608,7 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
                         </div>
 
                         {/* سعر الوحدة */}
-                        <div className="w-[52px] shrink-0 flex items-center justify-center">
+                        <div className="w-[46px] shrink-0 flex items-center justify-center">
                           {canEditPrice ? (
                             editingPrice?.pid === item.product_id ? (
                               <input type="number" step="0.01" autoFocus
@@ -1464,8 +1632,35 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
                           )}
                         </div>
 
+                        {/* خصم الصنف */}
+                        <div className="w-[44px] shrink-0 flex items-center justify-center">
+                          {editingDisc?.pid === item.product_id ? (
+                            <div className="flex items-center gap-0.5 w-full">
+                              <input type="number" min="0" step="0.1" autoFocus
+                                className="sale-price-input flex-1 min-w-0 rounded-md px-0.5 py-0.5 text-[10px] outline-none tabular-nums text-center"
+                                value={editingDisc.val}
+                                onChange={e => setEditingDisc(d => d ? { ...d, val: e.target.value } : null)}
+                                onBlur={() => { updateItemDisc(item.product_id, editingDisc.val, editingDisc.mode); setEditingDisc(null); }}
+                                onKeyDown={e => { if (e.key === "Enter") { updateItemDisc(item.product_id, editingDisc.val, editingDisc.mode); setEditingDisc(null); } if (e.key === "Escape") setEditingDisc(null); }}
+                              />
+                              <button
+                                className="text-[9px] text-amber-400 font-black shrink-0 hover:opacity-70"
+                                onMouseDown={e => { e.preventDefault(); setEditingDisc(d => d ? { ...d, mode: d.mode === 'pct' ? 'amt' : 'pct' } : null); }}
+                              >{editingDisc.mode === 'pct' ? '%' : 'ج'}</button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEditingDisc({ pid: item.product_id, val: String(item.item_disc ?? ''), mode: item.item_disc_mode ?? 'pct' })}
+                              className={`text-[10px] tabular-nums text-center w-full transition-colors hover:text-rose-400 ${item.item_disc ? 'text-rose-400 font-bold' : 'sale-muted-text opacity-40 hover:opacity-100'}`}
+                              title="اضغط لإضافة خصم على الصنف"
+                            >
+                              {item.item_disc ? `${shortNum(item.item_disc)}${item.item_disc_mode === 'pct' ? '%' : 'ج'}` : '—'}
+                            </button>
+                          )}
+                        </div>
+
                         {/* الإجمالي */}
-                        <span className="w-[68px] shrink-0 text-center font-black text-emerald-400 text-xs tabular-nums">
+                        <span className="w-[60px] shrink-0 text-center font-black text-emerald-400 text-xs tabular-nums">
                           {shortNum(item.total_price)}
                         </span>
 
@@ -1510,7 +1705,33 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
                 className="w-full min-w-0"
                 inputClassName="bg-transparent text-xs"
               />
+              <button onClick={() => setShowQuickCustomer(true)} title="عميل جديد"
+                className="shrink-0 sale-muted-text hover:text-emerald-400 transition-colors">
+                <UserPlus className="w-3.5 h-3.5" />
+              </button>
             </div>
+
+            {/* نافذة إضافة عميل سريع */}
+            {showQuickCustomer && (
+              <div className="sale-field-row rounded-xl px-3 py-2.5 space-y-2 border border-emerald-500/25">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5"><UserPlus className="w-3 h-3" />عميل جديد</span>
+                  <button onClick={() => { setShowQuickCustomer(false); setQuickCustName(""); setQuickCustPhone(""); }}
+                    className="sale-muted-text hover:text-red-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                </div>
+                <input type="text" placeholder="اسم العميل *" autoFocus
+                  className="w-full bg-transparent text-xs sale-text-primary placeholder:opacity-40 outline-none border-b sale-border pb-1"
+                  value={quickCustName} onChange={e => setQuickCustName(e.target.value)} />
+                <input type="text" placeholder="رقم الهاتف (اختياري)"
+                  className="w-full bg-transparent text-xs sale-text-primary placeholder:opacity-40 outline-none border-b sale-border pb-1"
+                  value={quickCustPhone} onChange={e => setQuickCustPhone(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') createQuickCustomer(); }} />
+                <button onClick={createQuickCustomer} disabled={quickCustLoading || !quickCustName.trim()}
+                  className="w-full text-xs font-black py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40">
+                  {quickCustLoading ? 'جارٍ الإضافة...' : '+ إضافة العميل'}
+                </button>
+              </div>
+            )}
 
             {/* رصيد العميل */}
             {selectedCustomer && (
@@ -1535,14 +1756,35 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
               </div>
             )}
 
-            {/* الخصم */}
+            {/* الخصم على الفاتورة */}
             <div className="sale-field-row flex items-center gap-1.5 rounded-xl px-3 py-2">
               <Percent className="w-3 h-3 sale-muted-text shrink-0" />
-              <span className="sale-label-text text-xs shrink-0">خصم %</span>
-              <input type="number" min="0" max="100" step="1" placeholder="0"
+              <span className="sale-label-text text-xs shrink-0">خصم الفاتورة</span>
+              <input type="number" min="0" step="1" placeholder="0"
                 className="bg-transparent outline-none flex-1 text-xs sale-text-primary placeholder:opacity-25"
                 value={discountPct} onChange={e => setDiscountPct(e.target.value)} />
+              <button
+                onClick={() => { setDiscountMode(m => m === 'pct' ? 'amt' : 'pct'); setDiscountPct(''); }}
+                className="text-xs font-black sale-muted-text hover:text-amber-400 transition-colors px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 shrink-0"
+                title="تبديل بين % ومبلغ"
+              >
+                {discountMode === 'pct' ? '%' : 'ج'}
+              </button>
               {discountAmount > 0 && <span className="text-red-400 text-xs font-bold shrink-0">-{formatCurrency(discountAmount)}</span>}
+            </div>
+
+            {/* ملاحظات الفاتورة */}
+            <div className="sale-field-row flex items-center gap-1.5 rounded-xl px-3 py-2">
+              <FileText className="w-3 h-3 sale-muted-text shrink-0" />
+              <span className="sale-label-text text-xs shrink-0">ملاحظات</span>
+              <input type="text" placeholder="ملاحظة على الفاتورة..."
+                className="bg-transparent outline-none flex-1 text-xs sale-text-primary placeholder:opacity-25"
+                value={invoiceNote} onChange={e => setInvoiceNote(e.target.value)} />
+              {invoiceNote && (
+                <button onClick={() => setInvoiceNote("")} className="shrink-0 sale-muted-text hover:text-red-400 transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
 
             {/* ── الإجمالي ── */}
@@ -1550,7 +1792,9 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
               {discountAmount > 0 ? (
                 <div className="text-left">
                   <p className="text-[10px] sale-muted-text line-through tabular-nums">{formatCurrency(cartSubtotal)}</p>
-                  <p className="text-[10px] sale-label-text">بعد خصم {discountPct}%</p>
+                  <p className="text-[10px] sale-label-text">
+                    {discountMode === 'pct' ? `بعد خصم ${discountPct}%` : `بعد خصم ${formatCurrency(discountAmount)}`}
+                  </p>
                 </div>
               ) : (
                 <span className="text-xs sale-label-text font-medium">إجمالي الفاتورة</span>

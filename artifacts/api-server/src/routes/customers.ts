@@ -98,11 +98,7 @@ router.post("/customers", wrap(async (req, res) => {
   const normalized = normalizeName(parsed.data.name);
   const companyIdPost = req.user!.company_id!;
 
-  // رقم الهاتف إلزامي
   const phonePost = String(parsed.data.phone ?? "").trim();
-  if (!phonePost) {
-    res.status(400).json({ error: "رقم الهاتف مطلوب" }); return;
-  }
 
   // تحقق من تكرار الاسم
   const existingName = await db.execute(sql`SELECT id, name FROM customers WHERE normalized_name = ${normalized} AND company_id = ${companyIdPost} LIMIT 1`);
@@ -111,11 +107,13 @@ router.post("/customers", wrap(async (req, res) => {
     res.status(400).json({ error: `يوجد عميل بنفس الاسم بالفعل: "${dup.name}"` }); return;
   }
 
-  // تحقق من تكرار رقم الهاتف
-  const existingPhone = await db.execute(sql`SELECT id, name FROM customers WHERE phone = ${phonePost} AND company_id = ${companyIdPost} LIMIT 1`);
-  if ((existingPhone.rows as Record<string, unknown>[]).length > 0) {
-    const dup = (existingPhone.rows as Record<string, unknown>[])[0];
-    res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${dup.name}"` }); return;
+  // تحقق من تكرار رقم الهاتف (فقط إذا تم إدخاله)
+  if (phonePost) {
+    const existingPhone = await db.execute(sql`SELECT id, name FROM customers WHERE phone = ${phonePost} AND company_id = ${companyIdPost} LIMIT 1`);
+    if ((existingPhone.rows as Record<string, unknown>[]).length > 0) {
+      const dup = (existingPhone.rows as Record<string, unknown>[])[0];
+      res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${dup.name}"` }); return;
+    }
   }
 
   const newCode = await getNextCustomerCode();
