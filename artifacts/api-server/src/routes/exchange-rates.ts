@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, type SQLWrapper } from "drizzle-orm";
 import { db, exchangeRatesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { z } from "zod/v4";
@@ -10,7 +10,7 @@ router.get("/exchange-rates", wrap(async (req, res) => {
   const companyId = req.user?.company_id ?? null;
   const { currency, date } = req.query as { currency?: string; date?: string };
 
-  let conditions: any[] = [];
+  const conditions: SQLWrapper[] = [];
   if (companyId !== null) conditions.push(eq(exchangeRatesTable.company_id, companyId));
   if (currency) conditions.push(eq(exchangeRatesTable.currency, currency));
   if (date) conditions.push(eq(exchangeRatesTable.date, date));

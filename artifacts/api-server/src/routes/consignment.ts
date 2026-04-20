@@ -57,7 +57,7 @@ router.get("/consignment/report", wrap(async (req, res) => {
     purchases.map(p => p.consignment_warehouse_id).filter(Boolean)
   )] as number[];
 
-  let stockMap: Record<string, number> = {};
+  const stockMap: Record<string, number> = {};
   if (consWHIds.length > 0) {
     const stockRows = await db.execute(sql`
       SELECT warehouse_id, product_id, COALESCE(SUM(CAST(quantity AS FLOAT8)), 0) AS remaining_qty
@@ -71,7 +71,7 @@ router.get("/consignment/report", wrap(async (req, res) => {
   }
 
   /* 4) مخازن الائتمان */
-  let warehouseMap: Record<number, { name: string; supplier_id: number | null }> = {};
+  const warehouseMap: Record<number, { name: string; supplier_id: number | null }> = {};
   if (consWHIds.length > 0) {
     const whRows = await db
       .select({ id: warehousesTable.id, name: warehousesTable.name, supplier_id: warehousesTable.supplier_id })
