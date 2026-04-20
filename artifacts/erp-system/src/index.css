@@ -4138,3 +4138,55 @@ html.light .sale-pay-fill { background: rgba(245,158,11,0.07); border-color: rgb
 html.light .sale-qty-btn { background: #F1F5F9; border-color: #CBD5E1; }
 html.light .sale-qty-btn:hover { background: #E2E8F0; }
 html.light .sale-price-input { background: #FFFFFF; border-color: rgba(245,158,11,0.38); color: #0D1117; }
+
+/* ════════════════════════════════════════════════════
+   14. SALES — Compact invoice table (POS-style rows)
+════════════════════════════════════════════════════ */
+
+/* Header row */
+.sale-invoice-header {
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  position: sticky; top: 0; z-index: 2;
+}
+
+/* Item row */
+.sale-invoice-row { transition: background 0.12s ease; border-radius: 10px; }
+.sale-invoice-row:hover { background: rgba(255,255,255,0.055); }
+.sale-invoice-row:nth-child(even) { background: rgba(255,255,255,0.018); }
+.sale-invoice-row:nth-child(even):hover { background: rgba(255,255,255,0.055); }
+
+/* Row number badge */
+.sale-row-num {
+  font-size: 9px; font-weight: 900; min-width: 16px; height: 16px;
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.28);
+  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Small qty buttons */
+.sale-qty-btn-sm {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09);
+  transition: background 0.12s; cursor: pointer; flex-shrink: 0;
+}
+.sale-qty-btn-sm:hover { background: rgba(255,255,255,0.14); }
+.sale-qty-btn-sm-amber {
+  background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.22);
+  transition: background 0.12s; cursor: pointer; flex-shrink: 0;
+}
+.sale-qty-btn-sm-amber:hover { background: rgba(245,158,11,0.22); }
+
+/* Subtotal strip */
+.sale-invoice-subtotal { background: rgba(255,255,255,0.02); }
+
+/* ══ Light mode ══ */
+html.light .sale-invoice-header { background: #F5F8FB; border-bottom-color: #E2E8F0; }
+html.light .sale-invoice-row:hover { background: #EEF2F8; }
+html.light .sale-invoice-row:nth-child(even) { background: rgba(0,0,0,0.018); }
+html.light .sale-invoice-row:nth-child(even):hover { background: #EEF2F8; }
+html.light .sale-row-num { background: #E8ECF2; color: #94A3B8; }
+html.light .sale-qty-btn-sm { background: #F1F5F9; border-color: #CBD5E1; }
+html.light .sale-qty-btn-sm:hover { background: #E2E8F0; }
+html.light .sale-qty-btn-sm-amber { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.22); }
+html.light .sale-qty-btn-sm-amber:hover { background: rgba(245,158,11,0.14); }
+html.light .sale-invoice-subtotal { background: #F8FAFC; }

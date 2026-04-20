@@ -1370,66 +1370,113 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
             </div>
           </div>
 
-          {/* أصناف السلة — قابلة للتمرير */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
+          {/* ═══ أصناف الفاتورة — جدول POS احترافي ═══ */}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center gap-3 py-6">
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-6">
                 <div className="sale-empty-icon-bg w-16 h-16 rounded-2xl flex items-center justify-center">
                   <ShoppingCart className="w-7 h-7 sale-muted-text opacity-40" />
                 </div>
                 <p className="text-sm sale-muted-text font-bold opacity-50">اضغط على أي منتج للإضافة</p>
               </div>
-            ) : cart.map(item => {
-              const origPrice = products.find(p => p.id === item.product_id)?.sale_price ?? item.unit_price;
-              const priceChanged = Math.abs(item.unit_price - Number(origPrice)) > 0.001;
-              return (
-                <div key={item.product_id} className="sale-cart-item rounded-2xl p-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <button onClick={() => setCart(prev => prev.filter(i => i.product_id !== item.product_id))}
-                      className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/22 text-red-400/60 hover:text-red-400 flex items-center justify-center transition-colors shrink-0">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    <div className="flex-1 mr-2 min-w-0">
-                      <p className="sale-text-primary font-bold text-sm truncate">{item.product_name}</p>
-                      {priceChanged && <span className="text-amber-400 text-[10px]">⚠ سعر معدّل</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-black text-emerald-400 text-base tabular-nums">{formatCurrency(item.total_price)}</span>
-                    <div className="flex items-center gap-1.5">
-                      {canEditPrice ? (
-                        editingPrice?.pid === item.product_id ? (
-                          <input type="number" step="0.01" autoFocus
-                            className="sale-price-input w-20 rounded-lg px-2 py-0.5 text-xs outline-none tabular-nums"
-                            value={editingPrice.val}
-                            onChange={e => setEditingPrice(p => p ? { ...p, val: e.target.value } : null)}
-                            onBlur={() => { updatePrice(item.product_id, editingPrice.val); setEditingPrice(null); }}
-                            onKeyDown={e => { if (e.key === "Enter") { updatePrice(item.product_id, editingPrice.val); setEditingPrice(null); } if (e.key === "Escape") setEditingPrice(null); }}
-                          />
-                        ) : (
-                          <button onClick={() => setEditingPrice({ pid: item.product_id, val: String(item.unit_price) })}
-                            className={`text-xs tabular-nums transition-colors hover:text-amber-400 ${priceChanged ? "text-amber-400" : "sale-muted-text"}`}
-                            title="اضغط لتعديل السعر">
-                            × {formatCurrency(item.unit_price)}
-                          </button>
-                        )
-                      ) : (
-                        <span className={`text-xs tabular-nums ${priceChanged ? "text-amber-400" : "sale-muted-text"}`}>
-                          × {formatCurrency(item.unit_price)}
-                        </span>
-                      )}
-                      <button onClick={() => updateQty(item.product_id, -1)} className="sale-qty-btn w-7 h-7 rounded-lg flex items-center justify-center">
-                        <Minus className="w-3 h-3 sale-text-primary" />
-                      </button>
-                      <span className="sale-text-primary font-black text-sm w-6 text-center tabular-nums">{item.quantity}</span>
-                      <button onClick={() => updateQty(item.product_id, 1)} className="w-7 h-7 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/22 flex items-center justify-center transition-colors">
-                        <Plus className="w-3 h-3 text-amber-400" />
-                      </button>
-                    </div>
-                  </div>
+            ) : (
+              <>
+                {/* رأس الأعمدة */}
+                <div className="sale-invoice-header flex items-center gap-1 px-3 py-1.5 shrink-0">
+                  <span className="sale-muted-text text-[10px] font-bold flex-1">المنتج</span>
+                  <span className="sale-muted-text text-[10px] font-bold w-[66px] text-center">الكمية</span>
+                  <span className="sale-muted-text text-[10px] font-bold w-[52px] text-center">سعر</span>
+                  <span className="sale-muted-text text-[10px] font-bold w-[68px] text-center">الإجمالي</span>
+                  <span className="w-5 shrink-0" />
                 </div>
-              );
-            })}
+
+                {/* صفوف الأصناف */}
+                <div className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+                  {cart.map((item, index) => {
+                    const origPrice = products.find(p => p.id === item.product_id)?.sale_price ?? item.unit_price;
+                    const priceChanged = Math.abs(item.unit_price - Number(origPrice)) > 0.001;
+                    const shortNum = (n: number) => n >= 1000
+                      ? n.toLocaleString('en', { maximumFractionDigits: 0 })
+                      : n.toFixed(n % 1 === 0 ? 0 : 1);
+                    return (
+                      <div key={item.product_id}
+                        className="sale-invoice-row group flex items-center gap-1 px-2 py-2">
+
+                        {/* # + اسم المنتج */}
+                        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                          <span className="sale-row-num">{index + 1}</span>
+                          <div className="min-w-0">
+                            <p className="sale-text-primary text-xs font-bold truncate leading-tight">{item.product_name}</p>
+                            {priceChanged && <span className="text-amber-400 text-[9px] font-bold leading-none">⚠ معدّل</span>}
+                          </div>
+                        </div>
+
+                        {/* الكمية */}
+                        <div className="w-[66px] flex items-center justify-center gap-0.5 shrink-0">
+                          <button onClick={() => updateQty(item.product_id, -1)}
+                            className="sale-qty-btn-sm w-[20px] h-[20px] rounded-md flex items-center justify-center">
+                            <Minus className="w-2.5 h-2.5 sale-text-primary" />
+                          </button>
+                          <span className="sale-text-primary font-black text-xs w-[22px] text-center tabular-nums">{item.quantity}</span>
+                          <button onClick={() => updateQty(item.product_id, 1)}
+                            className="sale-qty-btn-sm-amber w-[20px] h-[20px] rounded-md flex items-center justify-center">
+                            <Plus className="w-2.5 h-2.5 text-amber-400" />
+                          </button>
+                        </div>
+
+                        {/* سعر الوحدة */}
+                        <div className="w-[52px] shrink-0 flex items-center justify-center">
+                          {canEditPrice ? (
+                            editingPrice?.pid === item.product_id ? (
+                              <input type="number" step="0.01" autoFocus
+                                className="sale-price-input w-full rounded-md px-1 py-0.5 text-[10px] outline-none tabular-nums text-center"
+                                value={editingPrice.val}
+                                onChange={e => setEditingPrice(p => p ? { ...p, val: e.target.value } : null)}
+                                onBlur={() => { updatePrice(item.product_id, editingPrice.val); setEditingPrice(null); }}
+                                onKeyDown={e => { if (e.key === "Enter") { updatePrice(item.product_id, editingPrice.val); setEditingPrice(null); } if (e.key === "Escape") setEditingPrice(null); }}
+                              />
+                            ) : (
+                              <button onClick={() => setEditingPrice({ pid: item.product_id, val: String(item.unit_price) })}
+                                className={`text-[10px] tabular-nums transition-colors hover:text-amber-400 text-center truncate w-full ${priceChanged ? "text-amber-400" : "sale-muted-text"}`}
+                                title="اضغط لتعديل السعر">
+                                {shortNum(item.unit_price)}
+                              </button>
+                            )
+                          ) : (
+                            <span className={`text-[10px] tabular-nums text-center ${priceChanged ? "text-amber-400" : "sale-muted-text"}`}>
+                              {shortNum(item.unit_price)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* الإجمالي */}
+                        <span className="w-[68px] shrink-0 text-center font-black text-emerald-400 text-xs tabular-nums">
+                          {shortNum(item.total_price)}
+                        </span>
+
+                        {/* حذف — يظهر عند hover */}
+                        <button onClick={() => setCart(prev => prev.filter(i => i.product_id !== item.product_id))}
+                          className="w-5 h-5 shrink-0 rounded-lg flex items-center justify-center transition-all text-transparent group-hover:text-red-400/50 hover:!text-red-400 hover:bg-red-500/15">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* شريط الإجمالي الجزئي */}
+                {cart.length > 1 && (
+                  <div className="sale-invoice-subtotal border-t sale-border flex items-center justify-between px-3 py-1.5 shrink-0">
+                    <span className="sale-muted-text text-[10px] tabular-nums">
+                      {cart.reduce((s, i) => s + i.quantity, 0)} وحدة
+                    </span>
+                    <span className="sale-muted-text text-[10px] font-bold tabular-nums">
+                      مجموع: {cartSubtotal.toLocaleString('en', { maximumFractionDigits: 0 })} ج.م
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* ─── قدم الفاتورة ─── */}
