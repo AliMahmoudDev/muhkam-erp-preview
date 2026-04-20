@@ -1213,83 +1213,109 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
           isPending={createProductMutation.isPending}
         />
       )}
-      <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-220px)]">
-        {/* Products grid */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="glass-panel rounded-2xl p-3 mb-1 shrink-0 flex flex-wrap gap-2 items-center border border-white/10">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+
+      <div className="flex flex-col lg:flex-row gap-3" style={{ height: 'calc(100vh - 178px)' }}>
+
+        {/* ═══════════════════════════════════════
+            يسار — كتالوج المنتجات
+        ═══════════════════════════════════════ */}
+        <div className="flex-1 flex flex-col min-h-0 gap-2">
+
+          {/* شريط البحث + الفئات */}
+          <div className="sale-search-bar rounded-2xl px-3 pt-3 pb-2 shrink-0 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
               <Search className="w-4 h-4 text-amber-400/60 shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
                 placeholder="ابحث عن منتج... (Enter للإضافة)"
-                className="bg-transparent text-white outline-none text-sm w-full placeholder:text-white/25"
+                className="sale-search-input bg-transparent text-sm w-full"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
               />
               {search && filteredProducts.filter(p => Number(p.quantity) > 0).length > 0 && (
-                <span className="shrink-0 text-xs text-amber-400/80 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg whitespace-nowrap font-bold">
-                  ↵ {filteredProducts.filter(p => Number(p.quantity) > 0).length === 1 ? filteredProducts[0].name.slice(0, 18) : `${filteredProducts.filter(p => Number(p.quantity) > 0).length} منتج`}
+                <span className="shrink-0 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg whitespace-nowrap font-bold">
+                  ↵ {filteredProducts.filter(p => Number(p.quantity) > 0).length === 1
+                    ? filteredProducts[0].name.slice(0, 18)
+                    : `${filteredProducts.filter(p => Number(p.quantity) > 0).length} نتيجة`}
                 </span>
               )}
+              {search && (
+                <button onClick={() => setSearch("")} className="shrink-0 sale-muted-text hover:text-red-400 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <select className="bg-black/30 text-white/70 border border-white/10 rounded-xl px-3 py-1.5 text-sm outline-none appearance-none" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
-              <option value="">كل الأصناف</option>
-              {categories.map(cat => <option key={cat.id} value={cat.name} className="bg-gray-900">{cat.name}</option>)}
-            </select>
+            {/* Pill category filter */}
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+              <button
+                onClick={() => setCategoryFilter("")}
+                className={`sale-cat-pill text-xs font-bold px-3 py-1 rounded-full shrink-0 ${!categoryFilter ? 'active' : ''}`}
+              >كل الأصناف</button>
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategoryFilter(prev => prev === cat.name ? "" : cat.name)}
+                  className={`sale-cat-pill text-xs font-bold px-3 py-1 rounded-full shrink-0 ${categoryFilter === cat.name ? 'active' : ''}`}
+                >{cat.name}</button>
+              ))}
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto glass-panel rounded-2xl p-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+
+          {/* شبكة المنتجات */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5 pb-1">
               {filteredProducts.map(product => {
                 const outOfStock = product.quantity <= 0;
                 const lowStock = !outOfStock && product.quantity <= 5;
                 const isFlashing = recentlyAdded === product.id;
                 return (
-                  <button key={product.id} onClick={() => addToCart(product)} disabled={outOfStock}
-                    className={`group relative rounded-2xl p-3 text-right border transition-all overflow-hidden ${
-                      outOfStock
-                        ? "opacity-40 cursor-not-allowed bg-white/3 border-white/5"
-                        : `bg-white/4 border-white/8 hover:border-amber-500/50 hover:bg-amber-500/5 hover:-translate-y-1 active:scale-95 ${isFlashing ? "pos-card-flash" : ""}`
-                    }`}>
-                    {/* Icon area */}
-                    <div className={`h-14 rounded-xl mb-3 flex items-center justify-center border transition-colors ${
-                      outOfStock ? "bg-white/3 border-white/5" : "bg-white/5 border-white/8 group-hover:bg-amber-500/10 group-hover:border-amber-500/20"
-                    }`}>
-                      <Package className={`w-6 h-6 transition-colors ${outOfStock ? "text-white/15" : "text-white/25 group-hover:text-amber-400/60"}`} />
+                  <button
+                    key={product.id}
+                    onClick={() => addToCart(product)}
+                    disabled={outOfStock}
+                    className={`sale-product-card group rounded-2xl p-3.5 text-right overflow-hidden ${isFlashing ? 'pos-card-flash' : ''}`}
+                  >
+                    <div className="sale-product-icon-bg h-12 rounded-xl mb-3 flex items-center justify-center">
+                      <Package className="sale-product-icon w-5 h-5" />
                     </div>
-                    {/* Name */}
-                    <p className="font-bold text-white text-sm truncate leading-tight">{product.name}</p>
-                    {product.category && <p className="text-xs text-amber-400/60 mt-0.5 truncate">{product.category}</p>}
-                    {/* Price row */}
-                    <div className="flex justify-between items-center mt-2">
+                    <p className="sale-product-name font-bold text-sm truncate leading-tight">{product.name}</p>
+                    {product.category && (
+                      <span className="text-[10px] text-amber-500/70 font-bold mt-0.5 block truncate">{product.category}</span>
+                    )}
+                    <div className="flex items-center justify-between mt-2.5">
                       <span className="text-emerald-400 font-black text-sm tabular-nums">{formatCurrency(product.sale_price)}</span>
-                      <span className={`text-xs font-bold tabular-nums ${outOfStock ? "text-red-400/70" : lowStock ? "text-orange-400" : "text-white/35"}`}>
-                        {outOfStock ? "نفد" : product.quantity}
+                      <span className={`sale-stock-badge text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-md ${
+                        outOfStock ? "!bg-red-500/15 !text-red-400"
+                        : lowStock  ? "!bg-orange-500/15 !text-orange-400"
+                        : ""
+                      }`}>
+                        {outOfStock ? "نفد" : lowStock ? `${product.quantity} ⚠` : product.quantity}
                       </span>
                     </div>
-                    {/* Hover add hint */}
                     {!outOfStock && (
-                      <div className="mt-2 py-0.5 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity bg-amber-500/15 text-amber-400 border border-amber-500/20 text-center">
-                        + إضافة
+                      <div className="mt-2 py-1 rounded-lg text-[11px] font-black text-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ background: 'rgba(245,158,11,0.11)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.20)' }}>
+                        + أضف للفاتورة
                       </div>
                     )}
                   </button>
                 );
               })}
 
-              {/* Inline create card — only when search finds nothing */}
+              {/* لا توجد منتجات → زر إضافة سريعة */}
               {search && filteredProducts.length === 0 && (
                 <button
                   onClick={() => setShowCreateProduct(true)}
-                  className="rounded-2xl p-3 text-right border border-dashed border-violet-500/40 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/60 transition-all flex flex-col items-center justify-center gap-2 min-h-[130px]"
+                  className="rounded-2xl p-3.5 text-right border border-dashed border-violet-500/40 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/60 transition-all flex flex-col items-center justify-center gap-2 min-h-[140px]"
                 >
                   <div className="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
                     <Plus className="w-5 h-5 text-violet-400" />
                   </div>
                   <div className="text-center">
-                    <p className="text-violet-300 text-xs font-bold">➕ إضافة منتج جديد</p>
-                    <p className="text-white/30 text-xs mt-0.5 truncate max-w-[120px]">«{search}»</p>
+                    <p className="text-violet-300 text-xs font-bold">إضافة منتج جديد</p>
+                    <p className="sale-muted-text text-xs mt-0.5 truncate max-w-[120px] opacity-70">«{search}»</p>
                   </div>
                 </button>
               )}
@@ -1297,298 +1323,306 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
           </div>
         </div>
 
-        {/* Cart panel */}
-        <div className="w-full lg:w-[400px] flex flex-col glass-panel rounded-2xl overflow-hidden shrink-0">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold text-white flex items-center gap-2 text-base">
-                <ShoppingCart className="w-5 h-5 text-amber-400" /> فاتورة مبيعات
+        {/* ═══════════════════════════════════════
+            يمين — لوحة الفاتورة
+        ═══════════════════════════════════════ */}
+        <div className="w-full lg:w-[385px] flex flex-col sale-cart-panel rounded-2xl overflow-hidden shrink-0">
+
+          {/* رأس اللوحة */}
+          <div className="sale-cart-header px-4 pt-3 pb-2.5 border-b sale-border shrink-0">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-black px-2.5 py-1 rounded-full ${cart.length > 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'sale-badge-empty'}`}>
+                  {cart.length} صنف
+                </span>
+                {cart.length > 0 && (
+                  <button onClick={_handleNewSale} title="تفريغ الفاتورة"
+                    className="text-[11px] sale-muted-text hover:text-red-400 transition-colors flex items-center gap-1">
+                    <RotateCcw className="w-3 h-3" /> تفريغ
+                  </button>
+                )}
+              </div>
+              <h3 className="font-black sale-text-primary flex items-center gap-2 text-sm">
+                <ShoppingCart className="w-4 h-4 text-amber-400" /> فاتورة مبيعات
               </h3>
-              <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-xs font-bold">{cart.length} صنف</span>
             </div>
-            {/* حقول الفاتورة الرئيسية */}
-            <div className="grid grid-cols-2 gap-1.5 text-xs">
+            <div className="grid grid-cols-2 gap-1.5">
               {isRestricted ? (
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-                  <span className="text-white/30 shrink-0"><Vault className="w-3.5 h-3.5" /></span>
-                  <span className="text-white/40 text-xs shrink-0">الفرع</span>
-                  <span className="text-emerald-300 text-xs font-bold truncate">{effectiveWarehouseName}</span>
+                <div className="sale-field-row flex items-center gap-2 rounded-xl px-3 py-2">
+                  <Vault className="w-3.5 h-3.5 sale-muted-text shrink-0" />
+                  <span className="sale-label-text text-xs shrink-0">الفرع</span>
+                  <span className="text-emerald-400 text-xs font-bold truncate">{effectiveWarehouseName}</span>
                 </div>
-              ) : selectRow("المخزن", <Vault className="w-3.5 h-3.5" />,
-                <select className="bg-transparent text-white outline-none w-full appearance-none text-xs" value={warehouseId} onChange={e => setWarehouseId(e.target.value)}>
-                  {warehouses.map(w => <option key={w.id} value={w.id} className="bg-slate-900">{w.name}</option>)}
-                </select>
+              ) : (
+                <div className="sale-field-row flex items-center gap-2 rounded-xl px-3 py-2">
+                  <Vault className="w-3.5 h-3.5 sale-muted-text shrink-0" />
+                  <span className="sale-label-text text-xs shrink-0">المخزن</span>
+                  <select className="bg-transparent outline-none w-full appearance-none text-xs sale-text-primary" value={warehouseId} onChange={e => setWarehouseId(e.target.value)}>
+                    {warehouses.map(w => <option key={w.id} value={w.id} className="bg-slate-900">{w.name}</option>)}
+                  </select>
+                </div>
               )}
-              <div className="flex items-center gap-2 bg-white/5 border border-amber-500/20 rounded-xl px-3 py-2">
-                <span className="text-amber-400/60 shrink-0"><Lock className="w-3.5 h-3.5" /></span>
-                <span className="text-white/40 text-xs w-14 shrink-0">المندوب</span>
-                <span className="text-amber-300 text-xs font-bold truncate">{salespersonName}</span>
+              <div className="sale-field-row border !border-amber-500/22 flex items-center gap-2 rounded-xl px-3 py-2">
+                <Lock className="w-3.5 h-3.5 text-amber-400/55 shrink-0" />
+                <span className="sale-label-text text-xs shrink-0">المندوب</span>
+                <span className="text-amber-400 text-xs font-bold truncate">{salespersonName}</span>
               </div>
             </div>
           </div>
 
-          {/* Cart items */}
+          {/* أصناف السلة — قابلة للتمرير */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
             {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-white/20 gap-3 py-10">
-                <ShoppingCart className="w-14 h-14 opacity-20" />
-                <p className="text-sm font-bold">اضغط على أي منتج للإضافة</p>
+              <div className="h-full flex flex-col items-center justify-center gap-3 py-6">
+                <div className="sale-empty-icon-bg w-16 h-16 rounded-2xl flex items-center justify-center">
+                  <ShoppingCart className="w-7 h-7 sale-muted-text opacity-40" />
+                </div>
+                <p className="text-sm sale-muted-text font-bold opacity-50">اضغط على أي منتج للإضافة</p>
               </div>
             ) : cart.map(item => {
               const origPrice = products.find(p => p.id === item.product_id)?.sale_price ?? item.unit_price;
               const priceChanged = Math.abs(item.unit_price - Number(origPrice)) > 0.001;
               return (
-              <div key={item.product_id} className="bg-white/5 border border-white/8 rounded-2xl p-3 transition-all hover:border-white/15 hover:bg-white/7">
-                <div className="flex justify-between items-start mb-2.5">
-                  <div className="flex-1 ml-2 min-w-0">
-                    <p className="font-bold text-white text-sm truncate leading-tight">{item.product_name}</p>
-                    {priceChanged && <span className="text-amber-400 text-xs">⚠ سعر معدّل</span>}
+                <div key={item.product_id} className="sale-cart-item rounded-2xl p-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <button onClick={() => setCart(prev => prev.filter(i => i.product_id !== item.product_id))}
+                      className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/22 text-red-400/60 hover:text-red-400 flex items-center justify-center transition-colors shrink-0">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="flex-1 mr-2 min-w-0">
+                      <p className="sale-text-primary font-bold text-sm truncate">{item.product_name}</p>
+                      {priceChanged && <span className="text-amber-400 text-[10px]">⚠ سعر معدّل</span>}
+                    </div>
                   </div>
-                  <button onClick={() => setCart(prev => prev.filter(i => i.product_id !== item.product_id))}
-                    className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400/60 hover:text-red-400 flex items-center justify-center transition-colors shrink-0">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={() => updateQty(item.product_id, -1)}
-                      className="w-7 h-7 rounded-lg bg-white/8 hover:bg-white/18 flex items-center justify-center transition-colors border border-white/10">
-                      <Minus className="w-3 h-3 text-white" />
-                    </button>
-                    <span className="text-white font-black text-sm w-7 text-center tabular-nums">{item.quantity}</span>
-                    <button onClick={() => updateQty(item.product_id, 1)}
-                      className="w-7 h-7 rounded-lg bg-amber-500/18 hover:bg-amber-500/30 border border-amber-500/25 flex items-center justify-center transition-colors">
-                      <Plus className="w-3 h-3 text-amber-400" />
-                    </button>
-                    {canEditPrice ? (
-                      editingPrice?.pid === item.product_id ? (
-                        <input
-                          type="number" step="0.01" autoFocus
-                          className="w-20 bg-white/10 border border-amber-500/50 rounded-lg px-2 py-0.5 text-white text-xs outline-none tabular-nums"
-                          value={editingPrice.val}
-                          onChange={e => setEditingPrice(p => p ? { ...p, val: e.target.value } : null)}
-                          onBlur={() => { updatePrice(item.product_id, editingPrice.val); setEditingPrice(null); }}
-                          onKeyDown={e => { if (e.key === "Enter") { updatePrice(item.product_id, editingPrice.val); setEditingPrice(null); } if (e.key === "Escape") setEditingPrice(null); }}
-                        />
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-emerald-400 text-base tabular-nums">{formatCurrency(item.total_price)}</span>
+                    <div className="flex items-center gap-1.5">
+                      {canEditPrice ? (
+                        editingPrice?.pid === item.product_id ? (
+                          <input type="number" step="0.01" autoFocus
+                            className="sale-price-input w-20 rounded-lg px-2 py-0.5 text-xs outline-none tabular-nums"
+                            value={editingPrice.val}
+                            onChange={e => setEditingPrice(p => p ? { ...p, val: e.target.value } : null)}
+                            onBlur={() => { updatePrice(item.product_id, editingPrice.val); setEditingPrice(null); }}
+                            onKeyDown={e => { if (e.key === "Enter") { updatePrice(item.product_id, editingPrice.val); setEditingPrice(null); } if (e.key === "Escape") setEditingPrice(null); }}
+                          />
+                        ) : (
+                          <button onClick={() => setEditingPrice({ pid: item.product_id, val: String(item.unit_price) })}
+                            className={`text-xs tabular-nums transition-colors hover:text-amber-400 ${priceChanged ? "text-amber-400" : "sale-muted-text"}`}
+                            title="اضغط لتعديل السعر">
+                            × {formatCurrency(item.unit_price)}
+                          </button>
+                        )
                       ) : (
-                        <button
-                          onClick={() => setEditingPrice({ pid: item.product_id, val: String(item.unit_price) })}
-                          className={`text-xs mr-1 tabular-nums transition-colors hover:text-amber-400 ${priceChanged ? "text-amber-400" : "text-white/35"}`}
-                          title="اضغط لتعديل السعر">
+                        <span className={`text-xs tabular-nums ${priceChanged ? "text-amber-400" : "sale-muted-text"}`}>
                           × {formatCurrency(item.unit_price)}
-                        </button>
-                      )
-                    ) : (
-                      <span className={`text-xs mr-1 tabular-nums ${priceChanged ? "text-amber-400" : "text-white/35"}`}>
-                        × {formatCurrency(item.unit_price)}
-                      </span>
-                    )}
+                        </span>
+                      )}
+                      <button onClick={() => updateQty(item.product_id, -1)} className="sale-qty-btn w-7 h-7 rounded-lg flex items-center justify-center">
+                        <Minus className="w-3 h-3 sale-text-primary" />
+                      </button>
+                      <span className="sale-text-primary font-black text-sm w-6 text-center tabular-nums">{item.quantity}</span>
+                      <button onClick={() => updateQty(item.product_id, 1)} className="w-7 h-7 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/22 flex items-center justify-center transition-colors">
+                        <Plus className="w-3 h-3 text-amber-400" />
+                      </button>
+                    </div>
                   </div>
-                  <span className="font-black text-emerald-400 text-base tabular-nums">{formatCurrency(item.total_price)}</span>
                 </div>
-              </div>
               );
             })}
           </div>
 
-          {/* Footer: بيانات الدفع */}
-          <div className="p-3 border-t border-white/10 bg-black/40 space-y-2">
-            {/* العميل والخزينة */}
-            <div className="grid grid-cols-1 gap-1.5">
-              {selectRow("العميل", <User className="w-3.5 h-3.5" />,
-                <SearchableSelect
-                  items={customerSaleItems}
-                  value={customerId}
-                  onChange={setCustomerId}
-                  placeholder="ابحث باسم أو كود..."
-                  emptyLabel="عميل نقدي"
-                  className="w-full min-w-0"
-                  inputClassName="bg-transparent text-xs"
-                />
-              )}
-              {selectedCustomer && (
-                <div className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-bold ${
-                  Number(selectedCustomer.balance) > 0
-                    ? "bg-red-500/10 border-red-500/20"
-                    : Number(selectedCustomer.balance) < 0
-                    ? "bg-emerald-500/10 border-emerald-500/20"
-                    : "bg-white/5 border-white/10"
-                }`}>
-                  <span className="text-white/50">رصيد العميل</span>
-                  <span className={
-                    Number(selectedCustomer.balance) > 0 ? "text-red-400" :
-                    Number(selectedCustomer.balance) < 0 ? "text-emerald-400" : "text-white/30"
-                  }>
-                    {Number(selectedCustomer.balance) === 0
-                      ? "متسوّى ✓"
-                      : Number(selectedCustomer.balance) > 0
-                      ? `دين: ${formatCurrency(Number(selectedCustomer.balance))}`
-                      : `له: ${formatCurrency(Math.abs(Number(selectedCustomer.balance)))}`}
-                  </span>
-                </div>
-              )}
-              {selectedCustomer?.phone && (
-                <div className="text-xs text-[#25D366] flex items-center gap-1 px-2">
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  {selectedCustomer.phone} — سيُرسل الفاتورة للواتساب بعد التسجيل
-                </div>
-              )}
+          {/* ─── قدم الفاتورة ─── */}
+          <div className="sale-cart-footer p-3 space-y-2 shrink-0">
+
+            {/* العميل */}
+            <div className="sale-field-row flex items-center gap-2 rounded-xl px-3 py-2">
+              <User className="w-3.5 h-3.5 sale-muted-text shrink-0" />
+              <span className="sale-label-text text-xs shrink-0">العميل</span>
+              <SearchableSelect
+                items={customerSaleItems}
+                value={customerId}
+                onChange={setCustomerId}
+                placeholder="ابحث باسم أو كود..."
+                emptyLabel="عميل نقدي"
+                className="w-full min-w-0"
+                inputClassName="bg-transparent text-xs"
+              />
             </div>
 
-            {/* خصم */}
-            <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
-              <Percent className="w-3 h-3 text-white/30 shrink-0" />
-              <span className="text-white/40 text-xs shrink-0">خصم %</span>
-              <input type="number" min="0" max="100" step="1" placeholder="0" className="bg-transparent text-white outline-none flex-1 text-xs placeholder:text-white/20" value={discountPct} onChange={e => setDiscountPct(e.target.value)} />
+            {/* رصيد العميل */}
+            {selectedCustomer && (
+              <div className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold ${
+                Number(selectedCustomer.balance) > 0 ? "bg-red-500/10 border border-red-500/20"
+                : Number(selectedCustomer.balance) < 0 ? "bg-emerald-500/10 border border-emerald-500/20"
+                : "sale-field-row"
+              }`}>
+                <span className="sale-muted-text">رصيد العميل</span>
+                <span className={Number(selectedCustomer.balance) > 0 ? "text-red-400" : Number(selectedCustomer.balance) < 0 ? "text-emerald-400" : "sale-muted-text"}>
+                  {Number(selectedCustomer.balance) === 0 ? "متسوّى ✓"
+                    : Number(selectedCustomer.balance) > 0 ? `دين: ${formatCurrency(Number(selectedCustomer.balance))}`
+                    : `له: ${formatCurrency(Math.abs(Number(selectedCustomer.balance)))}`}
+                </span>
+              </div>
+            )}
+
+            {selectedCustomer?.phone && (
+              <div className="text-xs text-[#25D366] flex items-center gap-1 px-1">
+                <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                {selectedCustomer.phone}
+              </div>
+            )}
+
+            {/* الخصم */}
+            <div className="sale-field-row flex items-center gap-1.5 rounded-xl px-3 py-2">
+              <Percent className="w-3 h-3 sale-muted-text shrink-0" />
+              <span className="sale-label-text text-xs shrink-0">خصم %</span>
+              <input type="number" min="0" max="100" step="1" placeholder="0"
+                className="bg-transparent outline-none flex-1 text-xs sale-text-primary placeholder:opacity-25"
+                value={discountPct} onChange={e => setDiscountPct(e.target.value)} />
               {discountAmount > 0 && <span className="text-red-400 text-xs font-bold shrink-0">-{formatCurrency(discountAmount)}</span>}
             </div>
 
-            {/* ── صندوق الإجماليات ── */}
-            <div className="rounded-2xl border border-white/12 overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(255,255,255,0.02))" }}>
-              {discountAmount > 0 && (
-                <div className="flex justify-between px-3 py-1.5 text-xs border-b border-white/8">
-                  <span className="text-white/40">قبل الخصم ({discountPct}%)</span>
-                  <span className="text-white/40 line-through tabular-nums">{formatCurrency(cartSubtotal)}</span>
+            {/* ── الإجمالي ── */}
+            <div className="sale-total-box rounded-2xl px-4 py-3 flex items-center justify-between">
+              {discountAmount > 0 ? (
+                <div className="text-left">
+                  <p className="text-[10px] sale-muted-text line-through tabular-nums">{formatCurrency(cartSubtotal)}</p>
+                  <p className="text-[10px] sale-label-text">بعد خصم {discountPct}%</p>
                 </div>
+              ) : (
+                <span className="text-xs sale-label-text font-medium">إجمالي الفاتورة</span>
               )}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                <span className="text-white/55 text-xs font-bold uppercase tracking-wide">إجمالي الفاتورة</span>
-                <span className="font-black text-white tabular-nums" style={{ fontSize: "1.55rem", letterSpacing: "-0.5px", lineHeight: 1 }}>{formatCurrency(cartTotal)}</span>
-              </div>
+              <span className="font-black sale-text-primary tabular-nums" style={{ fontSize: '1.5rem', letterSpacing: '-0.5px', lineHeight: 1 }}>
+                {formatCurrency(cartTotal)}
+              </span>
             </div>
 
-            {/* ── قسم الدفع المدمج ── */}
-            {cart.length > 0 && (
-              <div className="rounded-2xl border border-amber-500/20 overflow-hidden" style={{ background: 'rgba(245,158,11,0.04)' }}>
-                {/* شريط التقدم */}
-                <div className="px-3 pt-2.5 pb-2">
-                  <div className="flex justify-between items-center text-xs mb-1.5">
-                    <span className="font-bold tabular-nums transition-colors" style={{ color: payIsDone ? '#10B981' : '#F59E0B' }}>
-                      {payIsDone ? '✓ مكتمل' : payPaidSoFar > 0 ? `متبقي: ${formatCurrency(payRemaining)}` : 'أدخل طريقة الدفع'}
-                    </span>
-                    <span className="text-white/30">{Math.round(payPct)}%</span>
+            {/* ══ قسم الدفع — دائماً مرئي ══ */}
+            <div className="sale-pay-box rounded-2xl overflow-hidden">
+
+              {/* شريط التقدم */}
+              <div className="px-3 pt-2.5 pb-2">
+                <div className="flex justify-between items-center text-xs mb-1.5">
+                  <span className="font-bold tabular-nums transition-colors" style={{
+                    color: payIsDone ? '#10B981' : cart.length === 0 ? '#94A3B8' : '#F59E0B'
+                  }}>
+                    {payIsDone ? '✓ مكتمل'
+                      : cart.length === 0 ? 'أضف منتجاً للبدء'
+                      : payPaidSoFar > 0 ? `متبقي: ${formatCurrency(payRemaining)}`
+                      : 'اختر طريقة الدفع'}
+                  </span>
+                  <span className="sale-muted-text">{Math.round(payPct)}%</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${payPct}%`, background: payIsDone ? 'linear-gradient(90deg,#10B981,#34D399)' : 'linear-gradient(90deg,#F59E0B,#FBBF24)' }} />
+                </div>
+              </div>
+
+              {/* الصفوف المؤكدة */}
+              {payRows.length > 0 && (
+                <div className="px-2 pb-2 space-y-1">
+                  {payRows.map(row => (
+                    <div key={row.id}
+                      className={`flex items-center gap-1.5 rounded-xl px-2 py-1.5 ${row.type === 'credit' ? 'sale-pay-row-credit' : 'sale-pay-row-cash'}`}>
+                      <button onClick={() => setPayRows(prev => prev.filter(r => r.id !== row.id))}
+                        className="w-5 h-5 rounded flex items-center justify-center shrink-0 text-red-400/60 hover:text-red-400 transition-colors"
+                        style={{ background: 'rgba(239,68,68,0.08)' }}>
+                        <X className="w-3 h-3" />
+                      </button>
+                      <span className={`text-xs shrink-0 flex items-center gap-1 ${row.type === 'credit' ? 'text-indigo-400' : 'text-emerald-400'}`}>
+                        {row.type === 'cash' ? <Coins className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                        {row.type === 'cash' ? (safes.find(s => s.id === row.safe_id)?.name ?? '—') : 'ائتمان'}
+                      </span>
+                      <span className="sale-text-primary font-black text-sm tabular-nums mr-auto">{formatCurrency(row.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* حقل الإدخال */}
+              {!payIsDone && (
+                <div className={`px-2 pb-2.5 ${payShake ? 'erp-shake' : ''}`}>
+                  {/* أزرار نوع الدفع */}
+                  <div className="flex gap-1.5 mb-2">
+                    <button onClick={() => setPayType('cash')}
+                      className={`sale-pay-btn flex-1 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 ${payType === 'cash' ? 'sale-pay-btn-cash-active' : 'sale-pay-btn-inactive'}`}>
+                      <Coins className="w-3 h-3" /> نقدي
+                    </button>
+                    <button onClick={() => setPayType('credit')}
+                      className={`sale-pay-btn flex-1 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 ${payType === 'credit' ? 'sale-pay-btn-credit-active' : 'sale-pay-btn-inactive'}`}>
+                      <Clock className="w-3 h-3" /> آجل
+                    </button>
                   </div>
-                  <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                    <div className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${payPct}%`, background: payIsDone ? 'linear-gradient(90deg,#10B981,#34D399)' : 'linear-gradient(90deg,#F59E0B,#FBBF24)' }} />
+
+                  {/* الخزينة + المبلغ */}
+                  <div className="flex gap-1.5 items-stretch mb-1.5">
+                    {payType === 'cash' ? (
+                      <select value={paySafe ?? ''} onChange={e => setPaySafe(parseInt(e.target.value) || null)}
+                        disabled={isRestricted}
+                        className="sale-pay-safe flex-1 min-w-0"
+                        style={{ cursor: isRestricted ? 'not-allowed' : 'pointer' }}>
+                        {safes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    ) : (
+                      <div className="sale-pay-credit-ph flex-1 flex items-center justify-end text-xs">
+                        ائتمان العميل
+                      </div>
+                    )}
+                    <div className="relative shrink-0" style={{ width: 94 }}>
+                      <input key={payRowKey} ref={payAmountRef} type="number" min="0" step="any"
+                        value={payAmount}
+                        onChange={e => setPayAmount(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); confirmPayRow(); } }}
+                        onFocus={e => e.target.select()}
+                        placeholder={cart.length > 0 ? payRemaining.toFixed(0) : '0'}
+                        disabled={cart.length === 0}
+                        className="sale-pay-amount disabled:opacity-40"
+                        dir="ltr"
+                      />
+                      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none sale-muted-text">ج.م</span>
+                    </div>
+                  </div>
+
+                  {/* أزرار التأكيد */}
+                  <div className="flex gap-1.5">
+                    <button onClick={confirmPayRow} disabled={cart.length === 0} className="sale-pay-confirm shrink-0">
+                      ↵ تأكيد
+                    </button>
+                    <button onClick={fillPayRemaining} disabled={cart.length === 0} className="sale-pay-fill">
+                      كل المتبقي {cart.length > 0 ? `(${formatCurrency(payRemaining)})` : ''}
+                    </button>
                   </div>
                 </div>
+              )}
 
-                {/* الصفوف المؤكدة */}
-                {payRows.length > 0 && (
-                  <div className="px-2 pb-2 space-y-1">
-                    {payRows.map(row => (
-                      <div key={row.id} className="flex items-center gap-1.5 rounded-xl px-2 py-1.5"
-                        style={{
-                          background: row.type === 'credit' ? 'rgba(99,102,241,0.08)' : 'rgba(16,185,129,0.07)',
-                          border: `1px solid ${row.type === 'credit' ? 'rgba(99,102,241,0.20)' : 'rgba(16,185,129,0.15)'}`,
-                        }}>
-                        <button onClick={() => setPayRows(prev => prev.filter(r => r.id !== row.id))}
-                          className="w-5 h-5 rounded flex items-center justify-center shrink-0 text-red-400/60 hover:text-red-400 transition-colors"
-                          style={{ background: 'rgba(239,68,68,0.08)' }}>
-                          <X className="w-3 h-3" />
-                        </button>
-                        <span className="text-xs shrink-0 flex items-center gap-1"
-                          style={{ color: row.type === 'credit' ? '#818CF8' : '#34D399' }}>
-                          {row.type === 'cash' ? <Coins className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                          {row.type === 'cash' ? (safes.find(s => s.id === row.safe_id)?.name ?? '—') : 'ائتمان'}
-                        </span>
-                        <span className="font-black text-white text-sm tabular-nums mr-auto">{formatCurrency(row.amount)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {/* تحذير الائتمان بدون عميل */}
+              {payCreditWarn && (
+                <div className="mx-2 mb-2 px-3 py-2 rounded-xl text-xs font-bold"
+                  style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)', color: '#F59E0B' }}>
+                  ⚠ اختر العميل أولاً للبيع الآجل
+                </div>
+              )}
+            </div>
 
-                {/* حقل الإدخال النشط */}
-                {!payIsDone && (
-                  <div className={`px-2 pb-2.5 ${payShake ? 'erp-shake' : ''}`}>
-                    {/* نوع الدفع */}
-                    <div className="flex gap-1 mb-2">
-                      <button onClick={() => setPayType('cash')}
-                        className="flex-1 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all"
-                        style={{
-                          background: payType === 'cash' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${payType === 'cash' ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                          color: payType === 'cash' ? '#34D399' : 'rgba(255,255,255,0.35)',
-                        }}>
-                        <Coins className="w-3 h-3" /> نقدي
-                      </button>
-                      <button onClick={() => setPayType('credit')}
-                        className="flex-1 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all"
-                        style={{
-                          background: payType === 'credit' ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${payType === 'credit' ? 'rgba(99,102,241,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                          color: payType === 'credit' ? '#818CF8' : 'rgba(255,255,255,0.35)',
-                        }}>
-                        <Clock className="w-3 h-3" /> آجل
-                      </button>
-                    </div>
-                    {/* خزينة + مبلغ */}
-                    <div className="flex gap-1.5 items-stretch mb-1.5">
-                      {payType === 'cash' ? (
-                        <select value={paySafe ?? ''} onChange={e => setPaySafe(parseInt(e.target.value) || null)}
-                          disabled={isRestricted}
-                          className="flex-1 min-w-0 rounded-xl text-xs outline-none appearance-none"
-                          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#fff', padding: '8px 10px', direction: 'rtl', cursor: isRestricted ? 'not-allowed' : 'pointer' }}>
-                          {safes.map(s => <option key={s.id} value={s.id} style={{ background: '#0f0f19', color: '#fff' }}>{s.name}</option>)}
-                        </select>
-                      ) : (
-                        <div className="flex-1 rounded-xl px-3 flex items-center justify-end text-xs"
-                          style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.18)', color: '#818CF8' }}>
-                          ائتمان العميل
-                        </div>
-                      )}
-                      <div className="relative shrink-0" style={{ width: 100 }}>
-                        <input key={payRowKey} ref={payAmountRef} type="number" min="0" step="any"
-                          value={payAmount} onChange={e => setPayAmount(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); confirmPayRow(); } }}
-                          onFocus={e => e.target.select()}
-                          placeholder={payRemaining.toFixed(0)}
-                          className="w-full rounded-xl text-center text-xs font-bold outline-none"
-                          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(245,158,11,0.30)', color: '#fff', padding: '8px 22px 8px 6px' }} dir="ltr" />
-                        <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none" style={{ color: 'rgba(255,255,255,0.25)' }}>ج.م</span>
-                      </div>
-                    </div>
-                    {/* أزرار التأكيد والملء */}
-                    <div className="flex gap-1.5">
-                      <button onClick={confirmPayRow}
-                        className="px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 shrink-0"
-                        style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', color: '#0a0500', boxShadow: '0 2px 8px rgba(245,158,11,0.25)' }}>
-                        ↵ تأكيد
-                      </button>
-                      <button onClick={fillPayRemaining}
-                        className="flex-1 text-xs px-2 py-1.5 rounded-xl text-center transition-all hover:opacity-80 truncate"
-                        style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', color: '#F59E0B' }}>
-                        كل المتبقي ({formatCurrency(payRemaining)})
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* تحذير الائتمان بدون عميل */}
-                {payCreditWarn && (
-                  <div className="mx-2 mb-2 px-2 py-1.5 rounded-xl text-xs font-bold"
-                    style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)', color: '#F59E0B' }}>
-                    ⚠ اختر العميل أولاً للبيع الآجل
-                  </div>
-                )}
-              </div>
-            )}
-
+            {/* خطأ التسجيل */}
             {checkoutError && (
               <div className="bg-red-500/10 border border-red-500/25 rounded-xl px-3 py-2">
-                <p className="text-red-400 text-xs font-bold leading-tight">❌ فشل التسجيل</p>
-                <p className="text-red-300/70 text-xs mt-0.5 leading-tight">{checkoutError}</p>
+                <p className="text-red-400 text-xs font-bold">❌ فشل التسجيل</p>
+                <p className="text-red-300/70 text-xs mt-0.5">{checkoutError}</p>
               </div>
             )}
+
+            {/* ── زر إتمام البيع ── */}
             <button onClick={handleCheckout} disabled={!canCheckout}
-              className="w-full py-3.5 rounded-xl font-black text-sm disabled:opacity-40 transition-all active:scale-97 flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-xl font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               style={{
-                background: canCheckout ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" : undefined,
+                background: canCheckout ? "linear-gradient(135deg,#f59e0b 0%,#d97706 100%)" : undefined,
                 color: canCheckout ? "#000" : undefined,
-                boxShadow: canCheckout ? "0 6px 22px rgba(245,158,11,0.40), 0 1px 3px rgba(0,0,0,0.2)" : "none",
+                boxShadow: canCheckout ? "0 6px 22px rgba(245,158,11,0.38), 0 1px 3px rgba(0,0,0,0.2)" : "none",
                 border: canCheckout ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                opacity: canCheckout ? 1 : 0.42,
               }}>
               {checkoutMutation.isPending ? (
                 <><div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> جارٍ التسجيل...</>
@@ -1597,18 +1631,16 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
               )}
             </button>
 
-            <div className="flex items-center justify-center gap-4 text-xs text-white/20 pb-1">
-              <span>⌨ Ctrl+S حفظ</span>
-              <span>·</span>
-              <span>Enter إضافة</span>
+            <div className="flex items-center justify-center gap-4 text-[11px] sale-muted-text opacity-40 pb-0.5">
+              <span>⌨ Ctrl+S حفظ</span><span>·</span><span>Enter إضافة</span>
             </div>
-            <style>{`
-              @keyframes erp-shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
-              .erp-shake { animation: erp-shake 0.35s ease; }
-            `}</style>
           </div>
         </div>
       </div>
+      <style>{`
+        @keyframes erp-shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+        .erp-shake { animation: erp-shake 0.35s ease; }
+      `}</style>
     </>
   );
 }
