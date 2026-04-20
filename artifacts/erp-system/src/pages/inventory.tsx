@@ -55,7 +55,7 @@ export default function Inventory() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { currentWarehouseId } = useWarehouse();
+  const { currentWarehouseId, setWarehouseId } = useWarehouse();
   const currentWarehouseIdNum: number | null = currentWarehouseId
     ? Number(currentWarehouseId)
     : null;
@@ -216,6 +216,8 @@ export default function Inventory() {
                 icon={<Package className="w-5 h-5 text-violet-400" />}
                 color="text-white"
                 bg="bg-violet-500/10 border-violet-500/20"
+                onClick={() => setActiveTab('reports')}
+                hint="عرض تقارير المخزون"
               />
               <StatCard
                 label="قيمة المخزون الكلية"
@@ -223,6 +225,8 @@ export default function Inventory() {
                 icon={<BarChart3 className="w-5 h-5 text-emerald-400" />}
                 color="text-emerald-400"
                 bg="bg-emerald-500/10 border-emerald-500/20"
+                onClick={() => setActiveTab('reports')}
+                hint="عرض تقارير المخزون"
               />
               <StatCard
                 label="تحت حد الطلب"
@@ -234,6 +238,8 @@ export default function Inventory() {
                     ? 'bg-amber-500/10 border-amber-500/20'
                     : 'bg-white/5 border-white/5'
                 }
+                onClick={() => setActiveTab('alerts')}
+                hint="عرض تنبيهات المخزون"
               />
               <StatCard
                 label="نفد المخزون"
@@ -245,6 +251,8 @@ export default function Inventory() {
                     ? 'bg-red-500/10 border-red-500/20'
                     : 'bg-white/5 border-white/5'
                 }
+                onClick={() => setActiveTab('alerts')}
+                hint="عرض تنبيهات المخزون"
               />
             </div>
           )}
@@ -335,14 +343,24 @@ export default function Inventory() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {warehouses.map((w) => {
                   const ws = whSummaryMap.get(w.id);
+                  const isSelected = currentWarehouseIdNum === w.id;
                   return (
                     <div
                       key={w.id}
-                      className="group relative bg-[#111827] border border-white/5 hover:border-violet-500/20 rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setWarehouseId(String(w.id))}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setWarehouseId(String(w.id)); }}
+                      title="انقر لتعيين كمخزن نشط"
+                      className={`group relative rounded-2xl p-5 transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] select-none ${
+                        isSelected
+                          ? 'bg-violet-500/10 border border-violet-500/40 shadow-[0_0_20px_rgba(139,92,246,0.15)]'
+                          : 'bg-[#111827] border border-white/5 hover:border-violet-500/20'
+                      }`}
                     >
                       {isAdmin && (
                         <button
-                          onClick={() => setDeleteWHTarget({ id: w.id, name: w.name })}
+                          onClick={(e) => { e.stopPropagation(); setDeleteWHTarget({ id: w.id, name: w.name }); }}
                           className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
                           title="حذف المخزن"
                         >
@@ -361,7 +379,9 @@ export default function Inventory() {
                         <select
                           className="mt-1.5 mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-white/5 border border-white/10 text-white/50 hover:border-violet-500/30 transition-colors outline-none cursor-pointer"
                           value={w.branch_id ?? ''}
+                          onClick={(e) => e.stopPropagation()}
                           onChange={async (e) => {
+                            e.stopPropagation();
                             const bid = e.target.value;
                             await authFetch(`${BASE}/api/settings/warehouses/${w.id}`, {
                               method: 'PUT',
@@ -410,9 +430,10 @@ export default function Inventory() {
                           )}
                         </div>
                       )}
-                      {currentWarehouseIdNum === w.id && (
-                        <span className="inline-block mt-2 px-2 py-0.5 rounded-lg text-xs bg-violet-500/20 text-violet-300 font-medium">
-                          المخزن الحالي
+                      {isSelected && (
+                        <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-lg text-xs bg-violet-500/25 text-violet-300 font-bold border border-violet-500/30">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                          المخزن النشط
                         </span>
                       )}
                     </div>
