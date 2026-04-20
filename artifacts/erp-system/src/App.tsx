@@ -42,6 +42,7 @@ const Employees = lazy(() => import('@/pages/employees'));
 const Attendance = lazy(() => import('@/pages/attendance'));
 const Returns = lazy(() => import('@/pages/returns'));
 const Warranty = lazy(() => import('@/pages/warranty'));
+const Consignment = lazy(() => import('@/pages/consignment'));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -139,6 +140,7 @@ function Router() {
         </Route>
         <Route path="/sales">{() => <Guard path="/sales" component={Sales} />}</Route>
         <Route path="/purchases">{() => <Guard path="/purchases" component={Purchases} />}</Route>
+        <Route path="/consignment">{() => <Guard path="/consignment" component={Consignment} />}</Route>
         <Route path="/suppliers">{() => <Redirect to="/customers" />}</Route>
         <Route path="/returns">{() => <Guard path="/returns" component={Returns} />}</Route>
         <Route path="/warranty">{() => <Guard path="/warranty" component={Warranty} />}</Route>

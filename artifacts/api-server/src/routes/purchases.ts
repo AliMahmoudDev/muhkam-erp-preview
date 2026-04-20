@@ -90,6 +90,8 @@ router.post("/purchases", wrap(async (req, res) => {
     date,
     currency,
     exchange_rate,
+    is_consignment,
+    consignment_warehouse_id,
   } = parsed.data;
 
   const remaining = total_amount - paid_amount;
@@ -149,6 +151,8 @@ router.post("/purchases", wrap(async (req, res) => {
       notes: notes ?? null,
       currency: currency ?? "EGP",
       exchange_rate: String(exchange_rate ?? 1),
+      is_consignment: is_consignment ?? false,
+      consignment_warehouse_id: consignment_warehouse_id ?? null,
       company_id: req.user?.company_id ?? undefined,
     }).returning();
 

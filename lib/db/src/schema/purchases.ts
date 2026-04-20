@@ -1,4 +1,4 @@
-import { pgTable, serial, text, numeric, integer, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, numeric, integer, boolean, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { productsTable } from "./products";
@@ -21,6 +21,8 @@ export const purchasesTable = pgTable("purchases", {
   tax_rate: numeric("tax_rate", { precision: 5, scale: 2 }).notNull().default("0"),
   currency: text("currency").notNull().default("EGP"),
   exchange_rate: numeric("exchange_rate", { precision: 12, scale: 6 }).notNull().default("1"),
+  is_consignment: boolean("is_consignment").notNull().default(false),
+  consignment_warehouse_id: integer("consignment_warehouse_id"),
   notes: text("notes"),
   date: text("date"),
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),

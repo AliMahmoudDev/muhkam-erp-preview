@@ -75,6 +75,8 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
   const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [currency, setCurrency] = useState<PurchaseCurrency>("EGP");
   const [exchangeRate, setExchangeRate] = useState<string>("1");
+  const [isConsignment, setIsConsignment] = useState(false);
+  const [consignmentWarehouseId, setConsignmentWarehouseId] = useState<number | null>(null);
 
   // Auto-set warehouse (scoped to user's warehouse for cashier/salesperson)
   useEffect(() => {
@@ -159,22 +161,50 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
     i.product_id !== pid ? i : { ...i, unit_price: price, total_price: i.quantity * price }
   ));
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cart.length === 0) { toast({ title: "السلة فارغة", variant: "destructive" }); return; }
-    if ((paymentType === "credit" || paymentType === "partial") && !partyKey) {
+    if (isConsignment && !partyKey) {
+      toast({ title: "يجب اختيار المورد لفاتورة الائتمان", variant: "destructive" }); return;
+    }
+    if (!isConsignment && (paymentType === "credit" || paymentType === "partial") && !partyKey) {
       toast({ title: "يجب اختيار الطرف الآخر للآجل أو الجزئي", variant: "destructive" }); return;
     }
-    if ((paymentType === "cash" || paymentType === "partial") && !safeId) {
+    if (!isConsignment && (paymentType === "cash" || paymentType === "partial") && !safeId) {
       toast({ title: "يجب اختيار الخزينة للدفع النقدي", variant: "destructive" }); return;
     }
 
-    const actualPaid = paymentType === "cash" ? egpTotal : paymentType === "credit" ? 0 : parseFloat(paidAmount) || 0;
+    const actualPaid = isConsignment ? 0 : (paymentType === "cash" ? egpTotal : paymentType === "credit" ? 0 : parseFloat(paidAmount) || 0);
 
     let finalCustomerId: number | null = null;
     let finalCustomerName: string | null = null;
     if (selectedParty?.type === "customer") {
       finalCustomerId = selectedParty.id;
       finalCustomerName = selectedParty.name;
+    } else if (selectedParty?.type === "manual") {
+      finalCustomerName = selectedParty.name;
+    }
+
+    // للائتمان: تأكد من وجود مخزن ائتمان للمورد
+    let finalConsignmentWarehouseId: number | null = consignmentWarehouseId;
+    if (isConsignment && selectedParty) {
+      try {
+        const whRes = await authFetch(api("/api/consignment/warehouses/ensure"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            supplier_name: selectedParty.name,
+            supplier_id: selectedParty.type === "customer" ? selectedParty.id : undefined,
+          }),
+        });
+        if (whRes.ok) {
+          const wh = await whRes.json();
+          finalConsignmentWarehouseId = wh.id;
+          setConsignmentWarehouseId(wh.id);
+        }
+      } catch {
+        toast({ title: "فشل إنشاء مخزن الائتمان", variant: "destructive" });
+        return;
+      }
     }
 
     const convertedItems = cart.map(item => ({
@@ -186,33 +216,46 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
       unit_price_foreign: currency !== "EGP" ? item.unit_price : undefined,
     }));
 
+    const effectivePaymentType = isConsignment ? "credit" : paymentType;
+    const effectiveWarehouseId = isConsignment && finalConsignmentWarehouseId
+      ? finalConsignmentWarehouseId
+      : (warehouseId ? parseInt(warehouseId) : null);
+
     createMutation.mutate({
       data: {
         customer_id: finalCustomerId,
         customer_name: finalCustomerName,
-        safe_id: safeId ? parseInt(safeId) : null,
-        warehouse_id: warehouseId ? parseInt(warehouseId) : null,
-        payment_type: paymentType,
+        safe_id: isConsignment ? null : (safeId ? parseInt(safeId) : null),
+        warehouse_id: effectiveWarehouseId,
+        payment_type: effectivePaymentType,
         total_amount: egpTotal,
         paid_amount: actualPaid,
         currency,
         exchange_rate: rate,
+        is_consignment: isConsignment,
+        consignment_warehouse_id: isConsignment ? finalConsignmentWarehouseId : null,
         items: convertedItems,
-      }
+      } as any
     }, {
       onSuccess: () => {
-        toast({ title: "✅ تم تسجيل فاتورة الشراء — تم تحديث المخزن والخزينة" });
+        const msg = isConsignment
+          ? "✅ تم تسجيل فاتورة الائتمان — البضاعة في مخزن الائتمان"
+          : "✅ تم تسجيل فاتورة الشراء — تم تحديث المخزن والخزينة";
+        toast({ title: msg });
         queryClient.invalidateQueries({ queryKey: ["/api/purchases"] });
         queryClient.invalidateQueries({ queryKey: ["/api/products"] });
         queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
         queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
         queryClient.invalidateQueries({ queryKey: ["/api/settings/safes"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/settings/warehouses"] });
         authFetch(api("/api/exchange-rates"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ currency, rate, date: new Date().toISOString().split("T")[0] }),
         }).catch(() => {});
-        setCart([]); setPaidAmount(""); setPartyKey(""); setCustomerId(""); setSafeId(""); setPaymentType("cash");
+        setCart([]); setPaidAmount(""); setPartyKey(""); setCustomerId(""); setSafeId("");
+        if (!isConsignment) setPaymentType("cash");
+        setConsignmentWarehouseId(null);
         onDone();
       },
       onError: (e: Error) => toast({ title: e.message, variant: "destructive" })
@@ -430,14 +473,36 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
               )}
             </div>
 
-            <div className="flex gap-1">
-              {[{ v: "cash", l: "نقدي" }, { v: "credit", l: "آجل" }, { v: "partial", l: "جزئي" }].map(opt => (
-                <button key={opt.v} onClick={() => setPaymentType(opt.v as "cash" | "credit" | "partial")}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${paymentType === opt.v ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}>
-                  {opt.l}
-                </button>
-              ))}
-            </div>
+            {/* زر الائتمان */}
+            <button
+              onClick={() => setIsConsignment(v => !v)}
+              className={`w-full py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                isConsignment
+                  ? 'bg-violet-500/20 text-violet-300 border-violet-500/40'
+                  : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 hover:text-white/60'
+              }`}
+            >
+              <span className="text-base leading-none">📦</span>
+              {isConsignment ? "ائتمان مفعّل — البضاعة للعرض فقط" : "ائتمان (بضاعة أمانة)"}
+            </button>
+
+            {!isConsignment && (
+              <div className="flex gap-1">
+                {[{ v: "cash", l: "نقدي" }, { v: "credit", l: "آجل" }, { v: "partial", l: "جزئي" }].map(opt => (
+                  <button key={opt.v} onClick={() => setPaymentType(opt.v as "cash" | "credit" | "partial")}
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${paymentType === opt.v ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}>
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {isConsignment && (
+              <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-2 text-xs text-violet-300/90 space-y-1">
+                <p className="font-bold">📋 فاتورة ائتمان</p>
+                <p className="text-violet-300/60">البضاعة تُودَع في مخزن الائتمان الخاص بالمورد ولا تُحسب مبيعاً حتى تُباع. اختر المورد من الحقل أعلاه.</p>
+              </div>
+            )}
 
             {paymentType === "partial" && (
               <input type="number" step="0.01" placeholder="المبلغ المدفوع نقداً الآن..." className="glass-input text-xs py-2" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />

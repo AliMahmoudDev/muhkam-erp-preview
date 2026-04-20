@@ -47,6 +47,7 @@ import employeeBonusesCustodyRouter from "./employee-bonuses-custody";
 import fiscalYearsRouter from "./fiscal-years";
 import announcementsRouter from "./announcements";
 import exchangeRatesRouter from "./exchange-rates";
+import consignmentRouter from "./consignment";
 
 const router: IRouter = Router();
 
@@ -110,5 +111,6 @@ router.use(employeeBonusesCustodyRouter);
 router.use(fiscalYearsRouter);
 router.use(announcementsRouter);
 router.use(exchangeRatesRouter);
+router.use(consignmentRouter);
 
 export default router;

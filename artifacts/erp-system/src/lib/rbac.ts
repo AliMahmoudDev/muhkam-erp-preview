@@ -23,6 +23,7 @@ import {
   Shield,
   ShieldCheck,
   RotateCcw,
+  Archive,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -41,6 +42,7 @@ export const ROUTE_ROLES: Record<string, AppRole[]> = {
   '/customers': ['admin', 'manager', 'cashier', 'salesperson'],
   '/returns': ['admin', 'manager'],
   '/warranty': ['admin', 'manager', 'cashier'],
+  '/consignment': ['admin', 'manager'],
   '/accounts': ['admin'],
   '/journal-entries': ['admin'],
   '/fiscal-years': ['admin'],
@@ -97,6 +99,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   },
   { name: 'المرتجعات', href: '/returns', icon: RotateCcw, roles: ['admin', 'manager'] },
   { name: 'الضمانات', href: '/warranty', icon: ShieldCheck, roles: ['admin', 'manager', 'cashier'] },
+  { name: 'الائتمان', href: '/consignment', icon: Archive, roles: ['admin', 'manager'] },
   { name: 'الإيرادات', href: '/income', icon: TrendingUp, roles: ['admin', 'manager'] },
   { name: 'المصروفات', href: '/expenses', icon: ReceiptText, roles: ['admin', 'manager'] },
   { name: 'التقارير', href: '/reports', icon: FileText, roles: ['admin', 'manager'] },
