@@ -3,11 +3,12 @@
  */
 
 import { Router } from "express";
-import { eq, and, desc } from "drizzle-orm";
-import { db, fiscalYearsTable } from "@workspace/db";
-import { wrap } from "../lib/async-handler";
+import { eq, and, desc, sql, count } from "drizzle-orm";
+import { db, fiscalYearsTable, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
+import { wrap, httpError } from "../lib/async-handler";
 import { requireTenant, getTenant } from "../middleware/auth";
 import { writeAuditLog } from "../lib/audit-log";
+import { getOrCreateAccount } from "../lib/auto-account";
 
 const router = Router();
 
@@ -154,6 +155,136 @@ router.delete("/fiscal-years/:id", requireTenant, wrap(async (req, res) => {
   });
 
   res.json({ message: "تم حذف السنة المالية بنجاح" });
+}));
+
+/* ── POST /fiscal-years/:id/closing-entries — قيود الإقفال المحاسبي ─── */
+router.post("/fiscal-years/:id/closing-entries", requireTenant, wrap(async (req, res) => {
+  const companyId = getTenant(req);
+  const role = req.user?.role;
+  if (role !== "admin" && role !== "super_admin") throw httpError(403, "للمسؤول فقط");
+
+  const id = parseInt(String(req.params.id));
+  if (isNaN(id)) throw httpError(400, "id غير صحيح");
+
+  const [fy] = await db.select().from(fiscalYearsTable)
+    .where(and(eq(fiscalYearsTable.id, id), eq(fiscalYearsTable.company_id, companyId)));
+  if (!fy) throw httpError(404, "السنة المالية غير موجودة");
+
+  // جلب أرصدة حسابات الإيرادات والمصروفات خلال فترة السنة المالية
+  const balances = await db.execute(sql`
+    SELECT
+      a.id,
+      a.code,
+      a.name,
+      a.type,
+      COALESCE(SUM(CAST(jel.debit AS FLOAT8)), 0)  AS total_debit,
+      COALESCE(SUM(CAST(jel.credit AS FLOAT8)), 0) AS total_credit
+    FROM accounts a
+    JOIN journal_entry_lines jel ON jel.account_id = a.id
+    JOIN journal_entries je      ON je.id = jel.entry_id AND je.status = 'posted'
+    WHERE a.company_id = ${companyId}
+      AND je.company_id = ${companyId}
+      AND a.type IN ('revenue', 'expense')
+      AND je.date >= ${fy.start_date}
+      AND je.date <= ${fy.end_date}
+      AND je.description NOT LIKE 'إقفال السنة المالية%'
+    GROUP BY a.id, a.code, a.name, a.type
+    HAVING COALESCE(SUM(CAST(jel.debit AS FLOAT8)), 0) != COALESCE(SUM(CAST(jel.credit AS FLOAT8)), 0)
+  `);
+
+  const rows = balances.rows as Array<{
+    id: number; code: string; name: string; type: string;
+    total_debit: number; total_credit: number;
+  }>;
+
+  if (rows.length === 0) throw httpError(400, "لا توجد حسابات إيرادات أو مصروفات لإقفالها في هذه الفترة");
+
+  let totalRevenue = 0;
+  let totalExpense = 0;
+
+  type JLine = { accountId: number; accountCode: string; accountName: string; debit: number; credit: number };
+  const lines: JLine[] = [];
+
+  for (const row of rows) {
+    const netDebit  = Number(row.total_debit);
+    const netCredit = Number(row.total_credit);
+    if (row.type === "revenue") {
+      const netBalance = netCredit - netDebit;
+      if (netBalance > 0.001) {
+        lines.push({ accountId: Number(row.id), accountCode: row.code, accountName: row.name, debit: netBalance, credit: 0 });
+        totalRevenue += netBalance;
+      }
+    } else if (row.type === "expense") {
+      const netBalance = netDebit - netCredit;
+      if (netBalance > 0.001) {
+        lines.push({ accountId: Number(row.id), accountCode: row.code, accountName: row.name, debit: 0, credit: netBalance });
+        totalExpense += netBalance;
+      }
+    }
+  }
+
+  const netIncome = totalRevenue - totalExpense;
+
+  // حساب الأرباح المحتجزة
+  const retainedEarnings = await getOrCreateAccount(
+    { code: "EQUITY-RETAINED", name: "الأرباح المحتجزة", type: "equity" }, companyId
+  );
+
+  if (netIncome > 0.001) {
+    lines.push({ accountId: retainedEarnings.id, accountCode: retainedEarnings.code, accountName: retainedEarnings.name, debit: 0, credit: netIncome });
+  } else if (netIncome < -0.001) {
+    lines.push({ accountId: retainedEarnings.id, accountCode: retainedEarnings.code, accountName: retainedEarnings.name, debit: Math.abs(netIncome), credit: 0 });
+  }
+
+  if (lines.length === 0) throw httpError(400, "لا يوجد رصيد لإقفاله");
+
+  // إنشاء القيد
+  const [{ total }] = await db.select({ total: count() })
+    .from(journalEntriesTable).where(eq(journalEntriesTable.company_id, companyId));
+
+  const entryNo = `JE-${String(Number(total) + 1).padStart(5, "0")}`;
+  const totalDebit  = lines.reduce((s, l) => s + l.debit, 0);
+  const totalCredit = lines.reduce((s, l) => s + l.credit, 0);
+
+  const [entry] = await db.insert(journalEntriesTable).values({
+    entry_no: entryNo,
+    date: fy.end_date,
+    description: `إقفال السنة المالية ${fy.year_label}`,
+    status: "posted",
+    reference: `CLOSING-${fy.id}`,
+    total_debit: String(totalDebit),
+    total_credit: String(totalCredit),
+    company_id: companyId,
+  }).returning();
+
+  await db.insert(journalEntryLinesTable).values(
+    lines.map(l => ({
+      entry_id: entry.id,
+      account_id: l.accountId,
+      account_code: l.accountCode,
+      account_name: l.accountName,
+      debit: String(l.debit),
+      credit: String(l.credit),
+    }))
+  );
+
+  // تحديث أرصدة الحسابات
+  for (const l of lines) {
+    const delta = l.debit - l.credit;
+    if (Math.abs(delta) < 0.001) continue;
+    await db.update(accountsTable)
+      .set({ current_balance: sql`current_balance + ${String(delta)}::numeric` })
+      .where(eq(accountsTable.id, l.accountId));
+  }
+
+  res.json({
+    message: "تم إنشاء قيود الإقفال بنجاح",
+    entry_no: entryNo,
+    total_revenue: Math.round(totalRevenue * 100) / 100,
+    total_expense: Math.round(totalExpense * 100) / 100,
+    net_income: Math.round(netIncome * 100) / 100,
+    lines_count: lines.length,
+  });
 }));
 
 export default router;

@@ -19,7 +19,8 @@ import ProductProfitReport from "./ProductProfitReport";
 import SalesAnalysisReport from "./SalesAnalysisReport";
 import TrialBalanceReport  from "./TrialBalanceReport";
 import VatReport           from "./VatReport";
-import AgingReport         from "./AgingReport";
+import AgingReport                from "./AgingReport";
+import CashFlowIndirectReport    from "./CashFlowIndirectReport";
 
 interface Warehouse { id: number; name: string; }
 
@@ -108,18 +109,19 @@ function FinancialConsistencyBar() {
 }
 
 /* ── Tab config ─────────────────────────────────────────────────────────── */
-type Tab = "health" | "pl" | "cashflow" | "balance" | "products" | "analysis" | "trial-balance" | "vat" | "aging";
+type Tab = "health" | "pl" | "cashflow" | "cashflow-indirect" | "balance" | "products" | "analysis" | "trial-balance" | "vat" | "aging";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "health",         label: "🩺 صحة النظام" },
-  { id: "pl",             label: "📊 الأرباح والخسائر" },
-  { id: "cashflow",       label: "💰 التدفق النقدي" },
-  { id: "balance",        label: "⚖️ الميزانية" },
-  { id: "trial-balance",  label: "📋 ميزان المراجعة" },
-  { id: "vat",            label: "🧾 ضريبة القيمة المضافة" },
-  { id: "aging",          label: "📅 أعمار الديون" },
-  { id: "products",       label: "📦 ربحية المنتجات" },
-  { id: "analysis",       label: "📈 تحليل المبيعات" },
+  { id: "health",             label: "🩺 صحة النظام" },
+  { id: "pl",                 label: "📊 الأرباح والخسائر" },
+  { id: "cashflow",           label: "💰 التدفق النقدي" },
+  { id: "cashflow-indirect",  label: "🔄 التدفق النقدي (غير مباشر)" },
+  { id: "balance",            label: "⚖️ الميزانية" },
+  { id: "trial-balance",      label: "📋 ميزان المراجعة" },
+  { id: "vat",                label: "🧾 ضريبة القيمة المضافة" },
+  { id: "aging",              label: "📅 أعمار الديون" },
+  { id: "products",           label: "📦 ربحية المنتجات" },
+  { id: "analysis",           label: "📈 تحليل المبيعات" },
 ];
 
 /* ── Main Page ──────────────────────────────────────────────────────────── */
@@ -167,8 +169,9 @@ export default function Reports() {
         <motion.div key={tab} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }} transition={{ duration:0.18 }}>
           {tab === "health"        && <HealthCheckReport />}
           {tab === "pl"            && <ProfitLossReport />}
-          {tab === "cashflow"      && <CashFlowReport />}
-          {tab === "balance"       && <BalanceSheetReport />}
+          {tab === "cashflow"           && <CashFlowReport />}
+          {tab === "cashflow-indirect"  && <CashFlowIndirectReport />}
+          {tab === "balance"            && <BalanceSheetReport />}
           {tab === "trial-balance" && <TrialBalanceReport />}
           {tab === "vat"           && <VatReport warehouseId={warehouseId} />}
           {tab === "aging"         && <AgingReport />}

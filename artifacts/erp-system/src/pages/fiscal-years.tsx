@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Calendar, Lock, Unlock, CheckCircle, Plus, X } from "lucide-react";
+import { Calendar, Lock, Unlock, CheckCircle, Plus, X, BookMarked } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { useAuth } from "@/contexts/auth";
 
@@ -67,6 +67,14 @@ export default function FiscalYears() {
       authFetch(api(`/api/fiscal-years/${id}/reopen`), { method: "PATCH" })
         .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? "خطأ"); return d; }),
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ["fiscal-years"] }); toast("تم إعادة فتح السنة المالية"); },
+    onError: (e: Error) => toast(e.message, "error"),
+  });
+
+  const closingEntriesMut = useMutation({
+    mutationFn: (id: number) =>
+      authFetch(api(`/api/fiscal-years/${id}/closing-entries`), { method: "POST" })
+        .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? "خطأ"); return d; }),
+    onSuccess: (d) => toast(`تم إنشاء قيود الإقفال — إيرادات: ${d.total_revenue} | مصروفات: ${d.total_expense} | صافي ربح: ${d.net_income}`),
     onError: (e: Error) => toast(e.message, "error"),
   });
 
@@ -208,12 +216,21 @@ export default function FiscalYears() {
                       </button>
                     )}
                     {fy.is_open && (
-                      <button onClick={() => { if (confirm(`هل تريد إقفال "${fy.year_label}"؟ لن يمكن الترحيل عليها بعد الإقفال.`)) closeMut.mutate(fy.id); }}
-                        disabled={closeMut.isPending}
-                        className="flex items-center gap-1 text-xs px-3 py-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 rounded-xl font-bold transition-colors border border-red-500/20">
-                        <Lock className="w-3 h-3" />
-                        إقفال
-                      </button>
+                      <>
+                        <button
+                          onClick={() => { if (confirm(`إنشاء قيود الإقفال لـ "${fy.year_label}"؟\n\nسيتم تصفير حسابات الإيرادات والمصروفات وترحيل الصافي للأرباح المحتجزة.`)) closingEntriesMut.mutate(fy.id); }}
+                          disabled={closingEntriesMut.isPending}
+                          className="flex items-center gap-1 text-xs px-3 py-1.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-400 rounded-xl font-bold transition-colors border border-purple-500/20">
+                          <BookMarked className="w-3 h-3" />
+                          {closingEntriesMut.isPending ? '...' : 'قيود الإقفال'}
+                        </button>
+                        <button onClick={() => { if (confirm(`هل تريد إقفال "${fy.year_label}"؟ لن يمكن الترحيل عليها بعد الإقفال.`)) closeMut.mutate(fy.id); }}
+                          disabled={closeMut.isPending}
+                          className="flex items-center gap-1 text-xs px-3 py-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 rounded-xl font-bold transition-colors border border-red-500/20">
+                          <Lock className="w-3 h-3" />
+                          إقفال
+                        </button>
+                      </>
                     )}
                     {!fy.is_open && (
                       <button onClick={() => reopenMut.mutate(fy.id)} disabled={reopenMut.isPending}

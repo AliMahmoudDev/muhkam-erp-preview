@@ -51,9 +51,11 @@ export const journalEntryLinesTable = pgTable("journal_entry_lines", {
   debit: numeric("debit", { precision: 12, scale: 2 }).notNull().default("0"),
   credit: numeric("credit", { precision: 12, scale: 2 }).notNull().default("0"),
   description: text("description"),
+  cost_center_id: integer("cost_center_id"),
 }, (t) => [
   index("journal_entry_lines_entry_id_idx").on(t.entry_id),
   index("journal_entry_lines_account_id_idx").on(t.account_id),
+  index("journal_entry_lines_cost_center_idx").on(t.cost_center_id),
 ]);
 
 export const insertAccountSchema = createInsertSchema(accountsTable).omit({ id: true, created_at: true });

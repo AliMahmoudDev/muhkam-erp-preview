@@ -49,6 +49,10 @@ import announcementsRouter from "./announcements";
 import exchangeRatesRouter from "./exchange-rates";
 import consignmentRouter from "./consignment";
 import fixedAssetsRouter from "./fixed-assets";
+import accrualsRouter from "./accruals";
+import bankReconciliationRouter from "./bank-reconciliation";
+import budgetsRouter from "./budgets";
+import costCentersRouter from "./cost-centers";
 
 const router: IRouter = Router();
 
@@ -114,5 +118,9 @@ router.use(announcementsRouter);
 router.use(exchangeRatesRouter);
 router.use(consignmentRouter);
 router.use(fixedAssetsRouter);
+router.use(accrualsRouter);
+router.use(bankReconciliationRouter);
+router.use(budgetsRouter);
+router.use(costCentersRouter);
 
 export default router;

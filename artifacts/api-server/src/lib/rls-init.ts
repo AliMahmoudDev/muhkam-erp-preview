@@ -52,6 +52,15 @@ const RLS_TABLES = [
   "customer_ledger",
   "categories",
   "suppliers",
+  "fixed_assets",
+  "depreciation_runs",
+  "accruals",
+  "accrual_runs",
+  "bank_accounts",
+  "bank_statement_lines",
+  "budgets",
+  "budget_lines",
+  "cost_centers",
 ] as const;
 
 const POLICY_NAME = "muhkam_tenant_isolation";

@@ -25,7 +25,7 @@ const NAV_SECTIONS = [
     hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/warranty', '/consignment'],
   },
   { label: 'المالية', hrefs: ['/income', '/expenses', '/reports'] },
-  { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/fixed-assets'] },
+  { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/fixed-assets', '/accruals', '/bank-reconciliation', '/budgets', '/cost-centers'] },
   { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
   { label: 'النظام', hrefs: ['/settings', '/branches'] },
 ];
@@ -243,7 +243,15 @@ export function AppLayout({ children }: LayoutProps) {
                       ? 'القيود اليومية'
                       : location === '/fixed-assets'
                         ? 'الأصول الثابتة'
-                        : 'مرحباً بك');
+                        : location === '/accruals'
+                          ? 'الاستحقاقات والمدفوعات المقدمة'
+                          : location === '/bank-reconciliation'
+                            ? 'المطابقة البنكية'
+                            : location === '/budgets'
+                              ? 'الميزانية التقديرية'
+                              : location === '/cost-centers'
+                                ? 'مراكز التكلفة'
+                                : 'مرحباً بك');
 
   /* ── Colors ── */
   const sidebarBg = isDark ? 'hsla(225,28%,6.5%,0.98)' : 'rgba(255,255,255,0.99)';

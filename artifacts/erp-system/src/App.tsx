@@ -44,6 +44,10 @@ const Returns = lazy(() => import('@/pages/returns'));
 const Warranty = lazy(() => import('@/pages/warranty'));
 const Consignment = lazy(() => import('@/pages/consignment'));
 const FixedAssets = lazy(() => import('@/pages/fixed-assets'));
+const Accruals = lazy(() => import('@/pages/accruals'));
+const BankReconciliation = lazy(() => import('@/pages/bank-reconciliation'));
+const Budgets = lazy(() => import('@/pages/budgets'));
+const CostCenters = lazy(() => import('@/pages/cost-centers'));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -181,6 +185,10 @@ function Router() {
         <Route path="/safe-transfers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/financial-transactions">{() => <Redirect to="/reports" />}</Route>
         <Route path="/fixed-assets">{() => <Guard path="/fixed-assets" component={FixedAssets} />}</Route>
+        <Route path="/accruals">{() => <Guard path="/accruals" component={Accruals} />}</Route>
+        <Route path="/bank-reconciliation">{() => <Guard path="/bank-reconciliation" component={BankReconciliation} />}</Route>
+        <Route path="/budgets">{() => <Guard path="/budgets" component={Budgets} />}</Route>
+        <Route path="/cost-centers">{() => <Guard path="/cost-centers" component={CostCenters} />}</Route>
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
