@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppSettings } from "@/contexts/app-settings";
 import { formatCurrencyPreview } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Save, CheckCircle2, DollarSign, AlignLeft, CaseSensitive, Sun } from "lucide-react";
+import { Check, Save, CheckCircle2, DollarSign, AlignLeft, CaseSensitive, Sun, TrendingUp, Loader2 } from "lucide-react";
 import { PageHeader } from "./_shared";
 import type { CurrencyCode, NumberFormat, FontFamily, LightVariant } from "@/contexts/app-settings";
 
@@ -44,6 +44,152 @@ function Section({ icon: Icon, title, children }: { icon: React.FC<{ className?:
   );
 }
 
+const EXCHANGE_CURRENCIES = [
+  { code: "USD", flag: "🇺🇸", label: "دولار أمريكي",   symbol: "$"   },
+  { code: "CNY", flag: "🇨🇳", label: "يوان صيني",      symbol: "¥"   },
+  { code: "EUR", flag: "🇪🇺", label: "يورو أوروبي",    symbol: "€"   },
+  { code: "SAR", flag: "🇸🇦", label: "ريال سعودي",     symbol: "ر.س" },
+  { code: "AED", flag: "🇦🇪", label: "درهم إماراتي",   symbol: "د.إ" },
+] as const;
+
+function ExchangeRatesSection() {
+  const { toast } = useToast();
+  const [rates, setRates] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    fetch("/api/exchange-rates/latest")
+      .then(r => r.json())
+      .then((data: Record<string, number>) => {
+        const mapped: Record<string, string> = {};
+        EXCHANGE_CURRENCIES.forEach(c => {
+          mapped[c.code] = data[c.code] ? String(data[c.code]) : "";
+        });
+        setRates(mapped);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const saveSingle = async (code: string) => {
+    const rateVal = parseFloat(rates[code]);
+    if (!rateVal || rateVal <= 0) {
+      toast({ title: "قيمة غير صحيحة", description: "أدخل سعر صرف أكبر من صفر", variant: "destructive" });
+      return;
+    }
+    setSaving(s => ({ ...s, [code]: true }));
+    try {
+      const res = await fetch("/api/exchange-rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currency: code, rate: rateVal, date: today }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast({ title: `✓ تم حفظ سعر ${code}`, description: `1 ${code} = ${rateVal.toFixed(2)} ج.م — ${today}` });
+    } catch {
+      toast({ title: "خطأ في الحفظ", variant: "destructive" });
+    } finally {
+      setSaving(s => ({ ...s, [code]: false }));
+    }
+  };
+
+  const saveAll = async () => {
+    const toSave = EXCHANGE_CURRENCIES.filter(c => {
+      const v = parseFloat(rates[c.code]);
+      return v > 0;
+    });
+    if (!toSave.length) return;
+    setSaving(s => {
+      const next = { ...s };
+      toSave.forEach(c => (next[c.code] = true));
+      return next;
+    });
+    try {
+      await Promise.all(toSave.map(c =>
+        fetch("/api/exchange-rates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currency: c.code, rate: parseFloat(rates[c.code]), date: today }),
+        })
+      ));
+      toast({ title: "✓ تم حفظ أسعار الصرف", description: `تم تحديث ${toSave.length} عملة ليوم ${today}` });
+    } catch {
+      toast({ title: "خطأ في الحفظ", variant: "destructive" });
+    } finally {
+      setSaving({});
+    }
+  };
+
+  return (
+    <div className="border border-white/5 rounded-2xl overflow-hidden" style={{ background: "var(--erp-bg-card)" }}>
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5">
+        <div className="flex items-center gap-2.5">
+          <TrendingUp className="w-4 h-4 text-blue-400" />
+          <p className="text-white/70 text-xs font-bold uppercase tracking-wider">أسعار الصرف اليومية</p>
+        </div>
+        <span className="text-xs text-white/30 font-mono">{today}</span>
+      </div>
+      <div className="p-5">
+        <p className="text-white/40 text-xs mb-4">أدخل سعر صرف كل عملة مقابل الجنيه المصري — يُستخدم تلقائياً في فواتير المشتريات</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 text-white/30 animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {EXCHANGE_CURRENCIES.map(c => {
+              const isSavingThis = saving[c.code];
+              return (
+                <div key={c.code} className="flex items-center gap-3 bg-[#0D1424] rounded-xl p-3 border border-white/5">
+                  <span className="text-xl shrink-0">{c.flag}</span>
+                  <div className="w-20 shrink-0">
+                    <p className="text-white/80 text-sm font-bold">{c.code}</p>
+                    <p className="text-white/30 text-xs">{c.label}</p>
+                  </div>
+                  <div className="flex-1 flex items-center gap-2">
+                    <span className="text-white/30 text-xs shrink-0">1 {c.symbol} =</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      placeholder="0.00"
+                      value={rates[c.code] ?? ""}
+                      onChange={e => setRates(r => ({ ...r, [c.code]: e.target.value }))}
+                      className="flex-1 bg-[#1A2235] border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500/50 text-left ltr"
+                      dir="ltr"
+                    />
+                    <span className="text-white/50 text-xs shrink-0">ج.م</span>
+                  </div>
+                  <button
+                    onClick={() => saveSingle(c.code)}
+                    disabled={isSavingThis || !rates[c.code]}
+                    className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
+                    style={{ background: "rgba(59,130,246,0.15)", color: "#60A5FA", border: "1px solid rgba(59,130,246,0.2)" }}
+                  >
+                    {isSavingThis ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "حفظ"}
+                  </button>
+                </div>
+              );
+            })}
+            <button
+              onClick={saveAll}
+              disabled={Object.values(saving).some(Boolean)}
+              className="w-full mt-2 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: "rgba(59,130,246,0.15)", color: "#60A5FA", border: "1px solid rgba(59,130,246,0.2)" }}
+            >
+              {Object.values(saving).some(Boolean)
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> جاري الحفظ...</>
+                : <><Save className="w-4 h-4" /> حفظ جميع الأسعار</>
+              }
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CurrencyTab() {
   const { settings, update } = useAppSettings();
   const { toast } = useToast();
@@ -68,6 +214,9 @@ export default function CurrencyTab() {
   return (
     <div className="space-y-6">
       <PageHeader title="إعدادات المتجر" sub="تخصيص العملة والأرقام والخطوط المستخدمة في النظام" />
+
+      {/* Exchange Rates */}
+      <ExchangeRatesSection />
 
       {/* Currency */}
       <Section icon={DollarSign} title="إعدادات العملة">
