@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { safeArray } from '@/lib/safe-data';
-import { AlertTriangle, Truck, Plus, Trash2, Loader2, ArrowLeft, ArrowRightLeft } from 'lucide-react';
+import { AlertTriangle, Truck, Plus, Trash2, Loader2, ArrowLeft, ArrowRightLeft, FileSpreadsheet, FileText } from 'lucide-react';
+import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
 import { api } from './_shared';
 import type {
   AuditProduct,
@@ -40,7 +41,6 @@ function TransferTab({
   ]);
   const [view, setView] = useState<'new' | 'history'>('new');
 
-  /* Apply prefill when navigated from AlertsTab */
   useEffect(() => {
     if (!prefill) return;
     setFromWH(prefill.fromWH);
@@ -155,21 +155,75 @@ function TransferTab({
   ).length;
   const transfers = safeArray(enrichedTransfers) as TransferEnriched[];
 
+  function handleExportExcel() {
+    void exportToExcel({
+      filename: `transfers-history-${new Date().toISOString().slice(0, 10)}`,
+      sheetName: 'سجل التحويلات',
+      title: `سجل تحويلات المخزون — ${transfers.length} تحويل`,
+      columns: [
+        { header: 'رقم التحويل', key: 'id', width: 12 },
+        { header: 'من مخزن', key: '_from', width: 20, format: (t: TransferEnriched) => warehouses.find((w) => w.id === t.from_warehouse_id)?.name ?? `#${t.from_warehouse_id}` },
+        { header: 'إلى مخزن', key: '_to', width: 20, format: (t: TransferEnriched) => warehouses.find((w) => w.id === t.to_warehouse_id)?.name ?? `#${t.to_warehouse_id}` },
+        { header: 'عدد الأصناف', key: 'items_count', width: 12 },
+        { header: 'إجمالي الوحدات', key: 'total_qty', width: 14, format: (t: TransferEnriched) => t.total_qty.toFixed(2) },
+        { header: 'الحالة', key: 'status', width: 12 },
+        { header: 'التاريخ', key: '_date', width: 18, format: (t: TransferEnriched) => new Date(t.created_at).toLocaleString('ar-EG-u-nu-latn') },
+        { header: 'ملاحظات', key: 'notes', width: 30 },
+      ],
+      rows: transfers,
+    });
+  }
+
+  function handleExportPDF() {
+    exportToPDF({
+      filename: 'transfers-history',
+      title: `سجل تحويلات المخزون — ${transfers.length} تحويل`,
+      columns: [
+        { header: '#', key: 'id' },
+        { header: 'من', key: '_from', format: (t: TransferEnriched) => warehouses.find((w) => w.id === t.from_warehouse_id)?.name ?? `#${t.from_warehouse_id}` },
+        { header: 'إلى', key: '_to', format: (t: TransferEnriched) => warehouses.find((w) => w.id === t.to_warehouse_id)?.name ?? `#${t.to_warehouse_id}` },
+        { header: 'أصناف', key: 'items_count' },
+        { header: 'وحدات', key: 'total_qty', format: (t: TransferEnriched) => t.total_qty.toFixed(2) },
+        { header: 'التاريخ', key: '_date', format: (t: TransferEnriched) => new Date(t.created_at).toLocaleDateString('ar-EG-u-nu-latn') },
+        { header: 'ملاحظات', key: 'notes' },
+      ],
+      rows: transfers,
+    });
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
-        <button
-          onClick={() => setView('new')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'new' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
-        >
-          تحويل جديد
-        </button>
-        <button
-          onClick={() => setView('history')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'history' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
-        >
-          سجل التحويلات ({transfers.length})
-        </button>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setView('new')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'new' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
+          >
+            تحويل جديد
+          </button>
+          <button
+            onClick={() => setView('history')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'history' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
+          >
+            سجل التحويلات ({transfers.length})
+          </button>
+        </div>
+        {view === 'history' && transfers.length > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 text-xs rounded-xl border border-emerald-500/20 transition-colors"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
+            </button>
+            <button
+              onClick={handleExportPDF}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-xs rounded-xl border border-rose-500/20 transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5" /> PDF
+            </button>
+          </div>
+        )}
       </div>
 
       {view === 'new' && (
@@ -355,7 +409,6 @@ function TransferTab({
         </div>
       )}
 
-      {/* سجل التحويلات — مُثرى */}
       {view === 'history' && (
         <div className="space-y-3">
           {transfers.length === 0 && (

@@ -7,7 +7,7 @@ import { TableSkeleton } from '@/components/skeletons';
 import { formatCurrency } from '@/lib/format';
 import { useDebouncedValue } from '@/hooks/use-debounce';
 import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
-import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, X, RefreshCw, ChevronUp, ChevronDown, Edit3, FileSpreadsheet, FileText } from 'lucide-react';
+import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, X, RefreshCw, ChevronUp, ChevronDown, Edit3, FileSpreadsheet, FileText, CalendarDays } from 'lucide-react';
 import { api, movementTypeLabel } from './_shared';
 import type {
   AuditProduct,
@@ -41,6 +41,8 @@ function ReviewTab({
   const [showZeroOnly, setShowZeroOnly] = useState(false);
   const [showLowOnly, setShowLowOnly] = useState(false);
   const [showPositiveOnly, setShowPositiveOnly] = useState(false);
+  const [modalDateFrom, setModalDateFrom] = useState('');
+  const [modalDateTo, setModalDateTo] = useState('');
 
   useEffect(() => {
     if (!quickFilter || quickFilter === 'all') return;
@@ -420,7 +422,11 @@ function ReviewTab({
                     <td className="p-3">
                       <div className="flex gap-1">
                         <button
-                          onClick={() => setSelectedProduct(p.id)}
+                          onClick={() => {
+                            setSelectedProduct(p.id);
+                            setModalDateFrom('');
+                            setModalDateTo('');
+                          }}
                           className="px-2 py-1 text-xs bg-blue-500/20 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-colors whitespace-nowrap"
                         >
                           الحركات
@@ -495,13 +501,22 @@ function ReviewTab({
       )}
 
       {/* Modal: تفاصيل حركات منتج */}
-      {selectedProduct && productDetail && (
+      {selectedProduct && productDetail && (() => {
+        const allMovements = productDetail.movements;
+        const filteredMovements = allMovements.filter((m) => {
+          const movDate = m.date ?? m.created_at.slice(0, 10);
+          if (modalDateFrom && movDate < modalDateFrom) return false;
+          if (modalDateTo && movDate > modalDateTo) return false;
+          return true;
+        });
+        const isDateFiltered = modalDateFrom || modalDateTo;
+        return (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-12 px-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-8 px-4"
           onClick={() => setSelectedProduct(null)}
         >
           <div
-            className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto shadow-2xl"
+            className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-6 w-full max-w-3xl max-h-[85vh] overflow-y-auto shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -546,18 +561,57 @@ function ReviewTab({
                 </div>
               ))}
             </div>
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-white/60 mb-2">
-                سجل الحركات ({productDetail.movements.length})
-              </h3>
-              {productDetail.movements.length === 0 && (
-                <p className="text-white/30 text-sm text-center py-4">لا توجد حركات مسجّلة</p>
+
+            {/* فلتر التاريخ */}
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <CalendarDays className="w-3.5 h-3.5 text-white/40 shrink-0" />
+              <span className="text-white/40 text-xs">فلتر الفترة:</span>
+              <input
+                type="date"
+                value={modalDateFrom}
+                onChange={(e) => setModalDateFrom(e.target.value)}
+                className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-violet-400/50"
+              />
+              <span className="text-white/30 text-xs">→</span>
+              <input
+                type="date"
+                value={modalDateTo}
+                onChange={(e) => setModalDateTo(e.target.value)}
+                className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-violet-400/50"
+              />
+              {isDateFiltered && (
+                <button
+                  onClick={() => { setModalDateFrom(''); setModalDateTo(''); }}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-white/50 hover:text-white bg-white/5 rounded-lg transition-colors"
+                >
+                  <X className="w-3 h-3" /> مسح
+                </button>
               )}
-              <MovementsVirtualList movements={productDetail.movements} />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-white/60 mb-2 flex items-center gap-2">
+                سجل الحركات
+                <span className="px-2 py-0.5 rounded-md bg-white/10 text-xs font-mono text-white/50">
+                  {isDateFiltered
+                    ? `${filteredMovements.length} / ${allMovements.length}`
+                    : allMovements.length}
+                </span>
+                {isDateFiltered && (
+                  <span className="text-xs text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded-md">مفلترة</span>
+                )}
+              </h3>
+              {filteredMovements.length === 0 && (
+                <p className="text-white/30 text-sm text-center py-4">
+                  {isDateFiltered ? 'لا توجد حركات في هذه الفترة' : 'لا توجد حركات مسجّلة'}
+                </p>
+              )}
+              <MovementsVirtualList movements={filteredMovements} />
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Modal: التسوية اليدوية */}
       {showAdjust !== null && (
