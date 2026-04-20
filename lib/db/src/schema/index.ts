@@ -35,3 +35,5 @@ export * from "./fiscal-years";
 export * from "./warranty";
 export * from "./announcements";
 export * from "./exchange-rates";
+
+export * from "./fixed-assets";

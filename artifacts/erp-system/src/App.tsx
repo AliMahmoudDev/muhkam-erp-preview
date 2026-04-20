@@ -43,6 +43,7 @@ const Attendance = lazy(() => import('@/pages/attendance'));
 const Returns = lazy(() => import('@/pages/returns'));
 const Warranty = lazy(() => import('@/pages/warranty'));
 const Consignment = lazy(() => import('@/pages/consignment'));
+const FixedAssets = lazy(() => import('@/pages/fixed-assets'));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -179,6 +180,7 @@ function Router() {
         <Route path="/payment-vouchers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/safe-transfers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/financial-transactions">{() => <Redirect to="/reports" />}</Route>
+        <Route path="/fixed-assets">{() => <Guard path="/fixed-assets" component={FixedAssets} />}</Route>
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

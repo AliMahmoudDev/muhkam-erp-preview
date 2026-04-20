@@ -48,6 +48,7 @@ import fiscalYearsRouter from "./fiscal-years";
 import announcementsRouter from "./announcements";
 import exchangeRatesRouter from "./exchange-rates";
 import consignmentRouter from "./consignment";
+import fixedAssetsRouter from "./fixed-assets";
 
 const router: IRouter = Router();
 
@@ -112,5 +113,6 @@ router.use(fiscalYearsRouter);
 router.use(announcementsRouter);
 router.use(exchangeRatesRouter);
 router.use(consignmentRouter);
+router.use(fixedAssetsRouter);
 
 export default router;

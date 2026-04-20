@@ -25,7 +25,7 @@ const NAV_SECTIONS = [
     hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/warranty', '/consignment'],
   },
   { label: 'المالية', hrefs: ['/income', '/expenses', '/reports'] },
-  { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log'] },
+  { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/fixed-assets'] },
   { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
   { label: 'النظام', hrefs: ['/settings', '/branches'] },
 ];
@@ -241,7 +241,9 @@ export function AppLayout({ children }: LayoutProps) {
                     ? 'شجرة الحسابات'
                     : location === '/journal-entries'
                       ? 'القيود اليومية'
-                      : 'مرحباً بك');
+                      : location === '/fixed-assets'
+                        ? 'الأصول الثابتة'
+                        : 'مرحباً بك');
 
   /* ── Colors ── */
   const sidebarBg = isDark ? 'hsla(225,28%,6.5%,0.98)' : 'rgba(255,255,255,0.99)';
