@@ -1448,7 +1448,7 @@ function CountTab({
   const [countDate, setCountDate] = useState(today());
   const [countTime, setCountTime] = useState(nowTime());
   const [sessionNotes, setSessionNotes] = useState('');
-  const [countMode, setCountMode] = useState<'full' | 'partial'>('full');
+  const [countMode, setCountMode] = useState<'full' | 'partial' | 'positive'>('full');
 
   const [partialSearch, setPartialSearch] = useState('');
   const [partialCategory, setPartialCategory] = useState('all');
@@ -1501,7 +1501,11 @@ function CountTab({
   });
 
   const countTableProducts =
-    countMode === 'full' ? allProducts : allProducts.filter((p) => selectedProductIds.has(p.id));
+    countMode === 'full'
+      ? allProducts
+      : countMode === 'positive'
+        ? allProducts.filter((p) => p.actual_qty > 0)
+        : allProducts.filter((p) => selectedProductIds.has(p.id));
 
   const enteredProducts = allProducts.filter(
     (p) => physicalQtys[p.id] !== undefined && physicalQtys[p.id] !== ''
@@ -1697,6 +1701,7 @@ function CountTab({
               <div className="flex gap-2">
                 {[
                   { v: 'full' as const, label: 'شامل — كل المنتجات' },
+                  { v: 'positive' as const, label: 'منتجات موجبة' },
                   { v: 'partial' as const, label: 'جزئي — منتجات محددة' },
                 ].map((opt) => (
                   <button
@@ -1704,10 +1709,15 @@ function CountTab({
                     onClick={() => setCountMode(opt.v)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                       countMode === opt.v
-                        ? 'bg-violet-500 text-white'
+                        ? opt.v === 'positive'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-violet-500 text-white'
                         : 'bg-white/10 text-white/50 hover:text-white'
                     }`}
                   >
+                    {opt.v === 'positive' && (
+                      <TrendingUp className="w-3 h-3 inline me-1" />
+                    )}
                     {opt.label}
                   </button>
                 ))}
