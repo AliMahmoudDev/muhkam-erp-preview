@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
-import { X, Plus, RefreshCw, Tag, ChevronDown, Loader2 } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
-import { useGetCategories, useCreateCategory } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { safeArray } from "@/lib/safe-data";
+import { useState, useRef, useEffect } from 'react';
+import { X, Plus, RefreshCw, Tag, ChevronDown, Loader2 } from 'lucide-react';
+import { formatCurrency } from '@/lib/format';
+import { useGetCategories, useCreateCategory } from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { safeArray } from '@/lib/safe-data';
+import { useVatSettings } from '@/hooks/useVatSettings';
 
 export type ProductFormData = {
   name: string;
@@ -18,14 +19,22 @@ export type ProductFormData = {
 };
 
 export const emptyProductForm: ProductFormData = {
-  name: "", sku: "", category_id: null, category_name: "",
-  quantity: 0, cost_price: 0, sale_price: 0, low_stock_threshold: 5,
-  tax_rate: 14,
+  name: '',
+  sku: '',
+  category_id: null,
+  category_name: '',
+  quantity: 0,
+  cost_price: 0,
+  sale_price: 0,
+  low_stock_threshold: 5,
+  tax_rate: 0,
 };
 
 export function generateBarcode(): string {
   const ts = Date.now().toString().slice(-9);
-  const rand = Math.floor(Math.random() * 100).toString().padStart(2, "0");
+  const rand = Math.floor(Math.random() * 100)
+    .toString()
+    .padStart(2, '0');
   return `HT${ts}${rand}`;
 }
 
@@ -38,7 +47,7 @@ interface ProductFormModalProps {
 }
 
 export function ProductFormModal({
-  title = "منتج جديد",
+  title = 'منتج جديد',
   initial,
   onSave,
   onClose,
@@ -48,28 +57,36 @@ export function ProductFormModal({
   const { data: catsRaw } = useGetCategories();
   const categories = safeArray(catsRaw);
   const createCategoryMutation = useCreateCategory();
+  const { data: vatSettings } = useVatSettings();
+  const vatEnabled = vatSettings?.vatEnabled ?? false;
+  const vatRate = vatSettings?.vatRate ?? 14;
 
   const [form, setForm] = useState<ProductFormData>({
     ...emptyProductForm,
     sku: generateBarcode(),
+    tax_rate: vatEnabled ? vatRate : 0,
     ...initial,
   });
 
   const set = (k: keyof ProductFormData, v: string | number | null) =>
-    setForm(f => ({ ...f, [k]: v }));
+    setForm((f) => ({ ...f, [k]: v }));
 
-  const [catInput, setCatInput] = useState(initial?.category_name || "");
+  useEffect(() => {
+    if (vatSettings && initial?.tax_rate == null) {
+      setForm((f) => ({ ...f, tax_rate: vatEnabled ? vatRate : 0 }));
+    }
+  }, [vatSettings, vatEnabled, vatRate, initial?.tax_rate]);
+
+  const [catInput, setCatInput] = useState(initial?.category_name || '');
   const [catOpen, setCatOpen] = useState(false);
   const [catCreating, setCatCreating] = useState(false);
   const catRef = useRef<HTMLDivElement>(null);
 
   const filtered = catInput.trim()
-    ? categories.filter(c => c.name.toLowerCase().includes(catInput.trim().toLowerCase()))
+    ? categories.filter((c) => c.name.toLowerCase().includes(catInput.trim().toLowerCase()))
     : categories;
 
-  const exactMatch = categories.some(
-    c => c.name.toLowerCase() === catInput.trim().toLowerCase()
-  );
+  const exactMatch = categories.some((c) => c.name.toLowerCase() === catInput.trim().toLowerCase());
   const canCreate = catInput.trim().length > 0 && !exactMatch;
 
   useEffect(() => {
@@ -78,13 +95,13 @@ export function ProductFormModal({
         setCatOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   const selectCategory = (cat: { id: number; name: string }) => {
-    set("category_id", cat.id);
-    set("category_name", cat.name);
+    set('category_id', cat.id);
+    set('category_name', cat.name);
     setCatInput(cat.name);
     setCatOpen(false);
   };
@@ -93,14 +110,17 @@ export function ProductFormModal({
     const name = catInput.trim();
     if (!name) return;
     setCatCreating(true);
-    createCategoryMutation.mutate({ data: { name } }, {
-      onSuccess: (newCat) => {
-        queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
-        selectCategory({ id: newCat.id, name: newCat.name });
-        setCatCreating(false);
-      },
-      onError: () => setCatCreating(false),
-    });
+    createCategoryMutation.mutate(
+      { data: { name } },
+      {
+        onSuccess: (newCat) => {
+          queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+          selectCategory({ id: newCat.id, name: newCat.name });
+          setCatCreating(false);
+        },
+        onError: () => setCatCreating(false),
+      }
+    );
   };
 
   const margin =
@@ -143,7 +163,7 @@ export function ProductFormModal({
               className="glass-input"
               placeholder="مثال: شاشة سامسونج 6.5"
               value={form.name}
-              onChange={e => set("name", e.target.value)}
+              onChange={(e) => set('name', e.target.value)}
             />
           </div>
 
@@ -155,18 +175,20 @@ export function ProductFormModal({
                 type="text"
                 className="glass-input flex-1 font-mono text-sm tracking-wider text-amber-300"
                 value={form.sku}
-                onChange={e => set("sku", e.target.value)}
+                onChange={(e) => set('sku', e.target.value)}
                 placeholder="تلقائي عند الحفظ"
               />
               <button
                 type="button"
-                onClick={() => set("sku", generateBarcode())}
+                onClick={() => set('sku', generateBarcode())}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-xs font-bold shrink-0 transition-all"
               >
                 <RefreshCw className="w-3 h-3" /> توليد
               </button>
             </div>
-            <p className="text-white/25 text-xs mt-1.5">إذا تُرك فارغاً سيُولَّد تلقائياً عند الحفظ</p>
+            <p className="text-white/25 text-xs mt-1.5">
+              إذا تُرك فارغاً سيُولَّد تلقائياً عند الحفظ
+            </p>
           </div>
 
           {/* Category — combobox */}
@@ -184,10 +206,10 @@ export function ProductFormModal({
                     placeholder="ابحث أو أنشئ تصنيفاً..."
                     value={catInput}
                     autoComplete="off"
-                    onChange={e => {
+                    onChange={(e) => {
                       setCatInput(e.target.value);
-                      set("category_id", null);
-                      set("category_name", "");
+                      set('category_id', null);
+                      set('category_name', '');
                       setCatOpen(true);
                     }}
                     onFocus={() => setCatOpen(true)}
@@ -206,13 +228,15 @@ export function ProductFormModal({
                   {filtered.length === 0 && !canCreate && (
                     <p className="px-3 py-2 text-white/40 text-xs text-center">لا توجد تصنيفات</p>
                   )}
-                  {filtered.map(cat => (
+                  {filtered.map((cat) => (
                     <button
                       key={cat.id}
                       type="button"
                       onClick={() => selectCategory(cat)}
                       className={`w-full text-right px-3 py-2 text-sm hover:bg-white/10 transition-colors flex items-center justify-between ${
-                        form.category_id === cat.id ? "text-violet-300 bg-violet-500/10" : "text-white/80"
+                        form.category_id === cat.id
+                          ? 'text-violet-300 bg-violet-500/10'
+                          : 'text-white/80'
                       }`}
                     >
                       <span>{cat.name}</span>
@@ -251,8 +275,8 @@ export function ProductFormModal({
                 min="0"
                 className="glass-input"
                 placeholder="0.00"
-                value={form.cost_price || ""}
-                onChange={e => set("cost_price", parseFloat(e.target.value) || 0)}
+                value={form.cost_price || ''}
+                onChange={(e) => set('cost_price', parseFloat(e.target.value) || 0)}
               />
             </div>
             <div>
@@ -264,8 +288,8 @@ export function ProductFormModal({
                 min="0"
                 className="glass-input"
                 placeholder="0.00"
-                value={form.sale_price || ""}
-                onChange={e => set("sale_price", parseFloat(e.target.value) || 0)}
+                value={form.sale_price || ''}
+                onChange={(e) => set('sale_price', parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
@@ -275,41 +299,45 @@ export function ProductFormModal({
             <div
               className={`rounded-xl px-3 py-2 text-xs border ${
                 margin >= 20
-                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                   : margin > 0
-                  ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                  : "bg-red-500/10 border-red-500/20 text-red-400"
+                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                    : 'bg-red-500/10 border-red-500/20 text-red-400'
               }`}
             >
-              هامش الربح: {margin.toFixed(1)}% | ربح الوحدة: {formatCurrency(form.sale_price - form.cost_price)}
+              هامش الربح: {margin.toFixed(1)}% | ربح الوحدة:{' '}
+              {formatCurrency(form.sale_price - form.cost_price)}
             </div>
           )}
 
-          {/* Tax rate + Quantity */}
-          <div>
-            <label className="block text-white/70 text-xs mb-1">
-              نسبة ضريبة القيمة المضافة (%)
-              <span className="text-white/30 mr-1">— 14% الافتراضي في مصر</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                max="100"
-                className="glass-input flex-1"
-                placeholder="14"
-                value={form.tax_rate ?? ""}
-                onChange={e => set("tax_rate", parseFloat(e.target.value) || 0)}
-              />
-              <span className="text-white/40 text-sm">%</span>
+          {/* Tax rate — shown only when VAT is enabled in settings */}
+          {vatEnabled && (
+            <div>
+              <label className="block text-white/70 text-xs mb-1">
+                نسبة ضريبة القيمة المضافة (%)
+                <span className="text-white/30 mr-1">— {vatRate}% المعدل المضبوط</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  max="100"
+                  className="glass-input flex-1"
+                  placeholder={String(vatRate)}
+                  value={form.tax_rate ?? ''}
+                  onChange={(e) => set('tax_rate', parseFloat(e.target.value) || 0)}
+                />
+                <span className="text-white/40 text-sm">%</span>
+              </div>
+              {form.tax_rate > 0 && form.sale_price > 0 && (
+                <p className="text-xs text-amber-400/70 mt-1">
+                  سعر البيع شامل الضريبة: {(form.sale_price * (1 + form.tax_rate / 100)).toFixed(2)}{' '}
+                  ج.م
+                </p>
+              )}
             </div>
-            {form.tax_rate > 0 && form.sale_price > 0 && (
-              <p className="text-xs text-amber-400/70 mt-1">
-                سعر البيع شامل الضريبة: {((form.sale_price) * (1 + form.tax_rate / 100)).toFixed(2)} ج.م
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Quantity + threshold */}
           <div className="grid grid-cols-2 gap-4">
@@ -319,8 +347,8 @@ export function ProductFormModal({
                 type="number"
                 min="0"
                 className="glass-input"
-                value={form.quantity || ""}
-                onChange={e => set("quantity", parseInt(e.target.value) || 0)}
+                value={form.quantity || ''}
+                onChange={(e) => set('quantity', parseInt(e.target.value) || 0)}
               />
             </div>
             <div>
@@ -329,8 +357,8 @@ export function ProductFormModal({
                 type="number"
                 min="0"
                 className="glass-input"
-                value={form.low_stock_threshold || ""}
-                onChange={e => set("low_stock_threshold", parseInt(e.target.value) || 0)}
+                value={form.low_stock_threshold || ''}
+                onChange={(e) => set('low_stock_threshold', parseInt(e.target.value) || 0)}
               />
             </div>
           </div>
@@ -338,7 +366,7 @@ export function ProductFormModal({
 
         <div className="flex gap-3 mt-6">
           <button type="submit" disabled={isPending} className="flex-1 btn-primary py-3 font-bold">
-            {isPending ? "جاري الحفظ..." : "حفظ المنتج"}
+            {isPending ? 'جاري الحفظ...' : 'حفظ المنتج'}
           </button>
           <button type="button" onClick={onClose} className="flex-1 btn-secondary py-3">
             إلغاء

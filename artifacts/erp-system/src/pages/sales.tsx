@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useVatSettings } from '@/hooks/useVatSettings';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import { TableSkeleton } from '@/components/skeletons';
@@ -1081,6 +1082,8 @@ function PaymentBadge({ type }: { type: string }) {
 
 function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => void }) {
   const { data: sale, isLoading } = useGetSaleById(saleId);
+  const { data: vatSettings } = useVatSettings();
+  const vatEnabled = vatSettings?.vatEnabled ?? false;
 
   const escHtml = (v: unknown): string => {
     if (v == null) return '';
@@ -1099,7 +1102,7 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
     const itemsHtml = (sale.items || [])
       .map(
         (item, i) =>
-          `<tr><td>${i + 1}</td><td><strong>${escHtml(item.product_name)}</strong></td><td>${Number(item.quantity)}</td><td>${Number(item.unit_price).toFixed(2)} ج.م</td><td>${(s as any)?.tax_rate != null ? `${Number((s as any).tax_rate).toFixed(0)}%` : '—'}</td><td><strong>${Number(item.total_price).toFixed(2)} ج.م</strong></td></tr>`
+          `<tr><td>${i + 1}</td><td><strong>${escHtml(item.product_name)}</strong></td><td>${Number(item.quantity)}</td><td>${Number(item.unit_price).toFixed(2)} ج.م</td>${vatEnabled ? `<td>${(s as any)?.tax_rate != null ? `${Number((s as any).tax_rate).toFixed(0)}%` : '—'}</td>` : ''}<td><strong>${Number(item.total_price).toFixed(2)} ج.م</strong></td></tr>`
       )
       .join('');
     const taxAmount = Number(s.tax_amount ?? 0);
@@ -1167,7 +1170,7 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
   ${extraMeta}
 </div>
 <table>
-  <thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>ضريبة%</th><th>الإجمالي</th></tr></thead>
+  <thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th>${vatEnabled ? '<th>ضريبة%</th>' : ''}<th>الإجمالي</th></tr></thead>
   <tbody>${itemsHtml}</tbody>
 </table>
 <div class="totals">
