@@ -26,6 +26,7 @@ import {
   X,
   Trash2,
   AlertTriangle,
+  Pencil,
 } from 'lucide-react';
 import ReceiptModal from '@/components/modals/ReceiptModal';
 import PaymentModal from '@/components/modals/PaymentModal';
@@ -47,6 +48,13 @@ export default function Treasury() {
     name: string;
     balance: number;
   } | null>(null);
+  const [editTarget, setEditTarget] = useState<{
+    id: number;
+    name: string;
+    branch_id: number | null;
+  } | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', branch_id: '' });
+  const [editSaving, setEditSaving] = useState(false);
 
   const queryClient = useQueryClient();
   const createSafe = useCreateSettingsSafe();
@@ -358,6 +366,102 @@ export default function Treasury() {
         </div>
       )}
 
+      {/* ── Edit Safe Modal ── */}
+      {editTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+        >
+          <div className="bg-[#111827] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                  <Pencil className="w-4 h-4 text-amber-400" />
+                </div>
+                <p className="font-black text-white text-sm">تعديل الخزينة</p>
+              </div>
+              <button
+                onClick={() => setEditTarget(null)}
+                className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-white/50 text-xs font-bold mb-1.5">اسم الخزينة</label>
+                <input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="اسم الخزينة"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-white/20 outline-none focus:border-amber-500/50 transition-colors"
+                />
+              </div>
+              {branches.length > 0 && (
+                <div>
+                  <label className="block text-white/50 text-xs font-bold mb-1.5">الفرع</label>
+                  <select
+                    value={editForm.branch_id}
+                    onChange={(e) => setEditForm((f) => ({ ...f, branch_id: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-colors"
+                  >
+                    <option value="">— بدون فرع —</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3 px-6 py-4 border-t border-white/8">
+              <button
+                disabled={editSaving}
+                onClick={async () => {
+                  if (!editForm.name.trim()) {
+                    toast({ title: 'اسم الخزينة مطلوب', variant: 'destructive' });
+                    return;
+                  }
+                  setEditSaving(true);
+                  try {
+                    const r = await authFetch(api(`/api/settings/safes/${editTarget.id}`), {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: editForm.name.trim(),
+                        branch_id: editForm.branch_id ? Number(editForm.branch_id) : null,
+                      }),
+                    });
+                    if (!r.ok) throw new Error((await r.json()).error ?? 'فشل التعديل');
+                    invalidateSafes();
+                    queryClient.invalidateQueries({ queryKey: ['/api/branches'] });
+                    toast({ title: 'تم تعديل الخزينة بنجاح' });
+                    setEditTarget(null);
+                  } catch (e: any) {
+                    toast({ title: e?.message ?? 'فشل تعديل الخزينة', variant: 'destructive' });
+                  } finally {
+                    setEditSaving(false);
+                  }
+                }}
+                className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white font-bold text-sm rounded-xl py-2.5 transition-colors"
+              >
+                {editSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Pencil className="w-4 h-4" />
+                )}
+                حفظ
+              </button>
+              <button
+                onClick={() => setEditTarget(null)}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold text-sm rounded-xl py-2.5 transition-colors border border-white/8"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Page title ── */}
       <div>
         <h1 className="text-2xl font-black text-white flex items-center gap-3">
@@ -427,8 +531,23 @@ export default function Treasury() {
                       <Landmark className="w-5 h-5 text-amber-400" />
                     </div>
 
-                    {/* Delete button */}
-                    <div className="relative">
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-1">
+                      {/* Edit button */}
+                      <button
+                        onClick={() => {
+                          setEditTarget({ id: s.id as number, name: s.name, branch_id: s.branch_id });
+                          setEditForm({
+                            name: s.name,
+                            branch_id: s.branch_id != null ? String(s.branch_id) : '',
+                          });
+                        }}
+                        title="تعديل الخزينة"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 cursor-pointer"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      {/* Delete button */}
                       <button
                         onClick={() => {
                           if (canDelete) {
