@@ -153,6 +153,58 @@ export default function Inventory() {
 
   return (
     <div className="p-6 space-y-6 text-right" dir="rtl">
+      {/* ══ تبويبات المخزون — في الأعلى دائماً ════════════════════════════════ */}
+      <div>
+        <div className="flex gap-2 border-b border-white/10 mb-6 flex-wrap">
+          <TabBtn
+            id="overview"
+            label="نظرة عامة"
+            icon={<LayoutDashboard className="w-4 h-4" />}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+          <TabBtn
+            id="movements"
+            label="الحركات"
+            icon={<Package className="w-4 h-4" />}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+          {canAdjustInventory && (
+            <TabBtn
+              id="count"
+              label="الجرد"
+              icon={<ClipboardList className="w-4 h-4" />}
+              active={activeTab}
+              onClick={setActiveTab}
+            />
+          )}
+          {canAdjustInventory && (
+            <TabBtn
+              id="transfer"
+              label="التحويلات"
+              icon={<Truck className="w-4 h-4" />}
+              active={activeTab}
+              onClick={setActiveTab}
+            />
+          )}
+          <TabBtnBadge
+            id="alerts"
+            label="تنبيهات المخزون"
+            icon={<Bell className="w-4 h-4" />}
+            badge={alertsBadge}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+          <TabBtn
+            id="reports"
+            label="تقارير المخزون"
+            icon={<BarChart3 className="w-4 h-4" />}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+        </div>
+
       {/* ══ Overview tab: stats + warehouses + quick filters ══════════════════ */}
       {activeTab === 'overview' && (
         <>
@@ -371,58 +423,6 @@ export default function Inventory() {
           </section>
         </>
       )}
-
-      {/* ══ تبويبات المخزون ══════════════════════════════════════════════════ */}
-      <div>
-        <div className="flex gap-2 border-b border-white/10 mb-6 flex-wrap">
-          <TabBtn
-            id="overview"
-            label="نظرة عامة"
-            icon={<LayoutDashboard className="w-4 h-4" />}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-          <TabBtn
-            id="movements"
-            label="الحركات"
-            icon={<Package className="w-4 h-4" />}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-          {canAdjustInventory && (
-            <TabBtn
-              id="count"
-              label="الجرد"
-              icon={<ClipboardList className="w-4 h-4" />}
-              active={activeTab}
-              onClick={setActiveTab}
-            />
-          )}
-          {canAdjustInventory && (
-            <TabBtn
-              id="transfer"
-              label="التحويلات"
-              icon={<Truck className="w-4 h-4" />}
-              active={activeTab}
-              onClick={setActiveTab}
-            />
-          )}
-          <TabBtnBadge
-            id="alerts"
-            label="تنبيهات المخزون"
-            icon={<Bell className="w-4 h-4" />}
-            badge={alertsBadge}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-          <TabBtn
-            id="reports"
-            label="تقارير المخزون"
-            icon={<BarChart3 className="w-4 h-4" />}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-        </div>
 
         {activeTab === 'overview' && !gs && (
           <div className="text-center py-20 text-white/30 text-sm">
