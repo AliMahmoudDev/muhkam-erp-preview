@@ -8,7 +8,7 @@ const router = Router();
 
 /* ── إحصائيات الضمان (قبل /:id لتجنب التعارض) ───────────────────── */
 router.get("/warranty/stats", wrap(async (req, res) => {
-  const companyId = (req as any).user?.company_id;
+  const companyId = req.user?.company_id;
   const today = new Date().toISOString().split("T")[0];
   const soon = new Date();
   soon.setDate(soon.getDate() + 30);
@@ -29,7 +29,7 @@ router.get("/warranty/stats", wrap(async (req, res) => {
 
 /* ── جلب كل سجلات الضمان ─────────────────────────────────────────── */
 router.get("/warranty", wrap(async (req, res) => {
-  const companyId = (req as any).user?.company_id;
+  const companyId = req.user?.company_id;
   const { search } = req.query as Record<string, string | undefined>;
 
   const rows = await db.select().from(warrantyTable)
@@ -57,7 +57,7 @@ router.get("/warranty", wrap(async (req, res) => {
 
 /* ── إنشاء سجل ضمان جديد ─────────────────────────────────────────── */
 router.post("/warranty", wrap(async (req, res) => {
-  const companyId = (req as any).user?.company_id;
+  const companyId = req.user?.company_id;
   const {
     sale_id, product_id, product_name, customer_id, customer_name, customer_phone,
     serial_number, device_model, warranty_months, warranty_start, notes,
@@ -89,7 +89,7 @@ router.post("/warranty", wrap(async (req, res) => {
   }).returning();
 
   await writeAuditLog({
-    companyId, userId: (req as any).user?.id,
+    companyId, userId: req.user?.id,
     action: "warranty.create",
     entityType: "warranty", entityId: record.id,
     newData: record,
@@ -100,7 +100,7 @@ router.post("/warranty", wrap(async (req, res) => {
 
 /* ── تحديث حالة الضمان ───────────────────────────────────────────── */
 router.patch("/warranty/:id", wrap(async (req, res) => {
-  const companyId = (req as any).user?.company_id;
+  const companyId = req.user?.company_id;
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) return httpError(res, 400, "معرّف غير صالح");
 
@@ -124,7 +124,7 @@ router.patch("/warranty/:id", wrap(async (req, res) => {
 
 /* ── حذف سجل ضمان ────────────────────────────────────────────────── */
 router.delete("/warranty/:id", wrap(async (req, res) => {
-  const companyId = (req as any).user?.company_id;
+  const companyId = req.user?.company_id;
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) return httpError(res, 400, "معرّف غير صالح");
 

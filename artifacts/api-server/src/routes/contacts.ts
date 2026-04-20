@@ -28,7 +28,7 @@ type StatRow = {
 };
 
 router.get("/contacts/:id/full-statement", wrap(async (req, res) => {
-  const cid: number = ((req as any).user.company_id as number);
+  const cid: number = req.user!.company_id!;
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 

@@ -95,6 +95,7 @@ export async function writeAuditLog(opts: {
       company_id: opts.company_id ?? null,
     });
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error("[audit-log] failed to write log:", err);
   }
 }

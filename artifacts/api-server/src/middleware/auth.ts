@@ -230,7 +230,7 @@ export function sanitizeBody(req: Request, _res: Response, next: NextFunction): 
 /* Stricter than requireTenant — REJECTS super_admin too. Use on routes
    that mutate tenant-scoped resources by id and have no business
    running cross-tenant. */
-export function requireTenantStrict(req: any, res: any, next: any): void {
+export function requireTenantStrict(req: Request, res: Response, next: NextFunction): void {
   const cid = req.user?.company_id;
   if (typeof cid !== "number" || cid <= 0) {
     res.status(403).json({
@@ -270,12 +270,10 @@ export function getTenant(req: Request): number {
   if (req.user?.role === "super_admin") {
     const q = Number(req.query?.company_id ?? req.body?.company_id);
     if (Number.isFinite(q) && q > 0) return q;
-    const err: any = new Error("super_admin must provide company_id");
-    err.status = 400;
+    const err = Object.assign(new Error("super_admin must provide company_id"), { status: 400 });
     throw err;
   }
-  const err: any = new Error("Tenant not resolved");
-  err.status = 403;
+  const err = Object.assign(new Error("Tenant not resolved"), { status: 403 });
   throw err;
 }
 

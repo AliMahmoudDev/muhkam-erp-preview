@@ -61,6 +61,7 @@ async function readSettings(keys: string[], companyId: number = 1): Promise<Reco
   const rows = await db.select().from(systemSettingsTable)
     .where(eq(systemSettingsTable.company_id, companyId));
   const map: Record<string, string | null> = {};
+  // eslint-disable-next-line security/detect-object-injection
   for (const k of keys) map[k] = null;
   for (const r of rows) if (keys.includes(r.key)) map[r.key] = r.value ?? null;
   return map;

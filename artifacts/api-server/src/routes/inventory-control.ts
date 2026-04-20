@@ -75,8 +75,8 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
       AND company_id = ${companyId}
       AND product_id IN (${sql.raw(safeProductIdsCsv)})
     GROUP BY product_id
-  `) : { rows: [] as any[] };
-  const whStockMap = new Map((whStockRows.rows as any[]).map((r: any) => [Number(r.product_id), Number(r.wh_qty ?? 0)]));
+  `) : { rows: [] as Record<string, unknown>[] };
+  const whStockMap = new Map((whStockRows.rows as Record<string, unknown>[]).map((r: any) => [Number(r.product_id), Number(r.wh_qty ?? 0)]));
 
   const session = await db.transaction(async (tx) => {
     const [sess] = await tx.insert(stockCountSessionsTable).values({
@@ -360,7 +360,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
       AND  company_id   = ${companyIdT}
       AND  product_id   IN (${sql.raw(safeIdsCsvT)})
     GROUP BY product_id
-  `) : { rows: [] as any[] };
+  `) : { rows: [] as Record<string, unknown>[] };
   const fromStockMap = new Map<number, number>(
     (fromStockRows.rows as Array<{ product_id: number; wh_qty: number }>)
       .map(r => [Number(r.product_id), Number(r.wh_qty ?? 0)])
@@ -375,7 +375,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
       AND  company_id   = ${companyIdT}
       AND  product_id   IN (${sql.raw(safeIdsCsvT)})
     GROUP BY product_id
-  `) : { rows: [] as any[] };
+  `) : { rows: [] as Record<string, unknown>[] };
   const toStockMap = new Map<number, number>(
     (toStockRows.rows as Array<{ product_id: number; wh_qty: number }>)
       .map(r => [Number(r.product_id), Number(r.wh_qty ?? 0)])
@@ -552,7 +552,7 @@ router.get("/inventory/count-sessions-enriched", wrap(async (req, res) => {
     ORDER BY s.created_at DESC
   `);
 
-  res.json((rows.rows as any[]).map(r => ({
+  res.json((rows.rows as Record<string, unknown>[]).map(r => ({
     id:                Number(r.id),
     warehouse_id:      Number(r.warehouse_id),
     status:            String(r.status),
@@ -595,7 +595,7 @@ router.get("/inventory/transfers-enriched", wrap(async (req, res) => {
     ORDER BY t.created_at DESC
   `);
 
-  res.json((rows.rows as any[]).map(r => ({
+  res.json((rows.rows as Record<string, unknown>[]).map(r => ({
     id:                Number(r.id),
     from_warehouse_id: Number(r.from_warehouse_id),
     to_warehouse_id:   Number(r.to_warehouse_id),

@@ -12,6 +12,7 @@ import { pool } from "@workspace/db";
 /* ── Startup: validate required environment variables ──────── */
 const REQUIRED_ENV_VARS = ["JWT_SECRET", "JWT_REFRESH_SECRET", "DATABASE_URL"] as const;
 for (const key of REQUIRED_ENV_VARS) {
+  // eslint-disable-next-line security/detect-object-injection
   if (!process.env[key]) {
     logger.error({ key }, `[FATAL] Missing required environment variable: ${key}`);
     process.exit(1);

@@ -1010,7 +1010,7 @@ router.post("/super/announcements", ...superOnly, wrap(async (req, res) => {
     title: title.trim(),
     body: body.trim(),
     type,
-    target: company_id ? String(company_id) : "all",
+    target: target ?? (company_id ? String(company_id) : "all"),
     company_id: company_id ?? null,
     is_active: true,
     created_by: (req.user as any)?.username ?? "super_admin",

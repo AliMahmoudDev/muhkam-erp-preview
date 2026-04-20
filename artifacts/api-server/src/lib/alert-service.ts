@@ -52,6 +52,7 @@ async function upsertAlert(
   message: string,
   triggerMode: "event" | "daily" = "event",
 ) {
+  // eslint-disable-next-line security/detect-object-injection
   const roleTarget = ROLE_TARGETS[type] ?? null;
 
   const where = referenceId

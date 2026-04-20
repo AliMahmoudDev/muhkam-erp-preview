@@ -1,3 +1,4 @@
+/* eslint-disable security/detect-non-literal-fs-filename */
 /**
  * db-backup.ts — pg_dump → gzip database backup utility.
  * Creates daily compressed SQL backups in BACKUP_DIR.

@@ -93,7 +93,7 @@ router.get("/expense-reports", wrap(async (req, res) => {
     ORDER BY e.created_at DESC
   `);
 
-  const result = (rows.rows as any[]).map(r => ({
+  const result = (rows.rows as Record<string, unknown>[]).map(r => ({
     id:          r.id,
     category:    r.category,
     amount:      Math.round(Number(r.amount) * 100) / 100,

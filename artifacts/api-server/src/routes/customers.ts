@@ -69,7 +69,7 @@ router.get("/customers", wrap(async (req, res) => {
     ORDER BY c.customer_code
     LIMIT ${limitC}
   `);
-  const customers = (rows.rows as any[]).map(r => ({
+  const customers = (rows.rows as Record<string, unknown>[]).map(r => ({
     id: r.id,
     name: r.name,
     customer_code: r.customer_code,
@@ -106,15 +106,15 @@ router.post("/customers", wrap(async (req, res) => {
 
   // تحقق من تكرار الاسم
   const existingName = await db.execute(sql`SELECT id, name FROM customers WHERE normalized_name = ${normalized} AND company_id = ${companyIdPost} LIMIT 1`);
-  if ((existingName.rows as any[]).length > 0) {
-    const dup = (existingName.rows as any[])[0];
+  if ((existingName.rows as Record<string, unknown>[]).length > 0) {
+    const dup = (existingName.rows as Record<string, unknown>[])[0];
     res.status(400).json({ error: `يوجد عميل بنفس الاسم بالفعل: "${dup.name}"` }); return;
   }
 
   // تحقق من تكرار رقم الهاتف
   const existingPhone = await db.execute(sql`SELECT id, name FROM customers WHERE phone = ${phonePost} AND company_id = ${companyIdPost} LIMIT 1`);
-  if ((existingPhone.rows as any[]).length > 0) {
-    const dup = (existingPhone.rows as any[])[0];
+  if ((existingPhone.rows as Record<string, unknown>[]).length > 0) {
+    const dup = (existingPhone.rows as Record<string, unknown>[])[0];
     res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${dup.name}"` }); return;
   }
 
@@ -229,15 +229,15 @@ router.put("/customers/:id", wrap(async (req, res) => {
 
   // تحقق من تكرار الاسم (باستثناء نفس العميل)
   const dupNameRows = await db.execute(sql`SELECT id, name FROM customers WHERE normalized_name = ${normalized} AND company_id = ${companyIdPut} AND id != ${params.data.id} LIMIT 1`);
-  if ((dupNameRows.rows as any[]).length > 0) {
-    const dup = (dupNameRows.rows as any[])[0];
+  if ((dupNameRows.rows as Record<string, unknown>[]).length > 0) {
+    const dup = (dupNameRows.rows as Record<string, unknown>[])[0];
     res.status(400).json({ error: `يوجد عميل بنفس الاسم بالفعل: "${dup.name}"` }); return;
   }
 
   // تحقق من تكرار رقم الهاتف (باستثناء نفس العميل)
   const dupPhoneRows = await db.execute(sql`SELECT id, name FROM customers WHERE phone = ${phonePut} AND company_id = ${companyIdPut} AND id != ${params.data.id} LIMIT 1`);
-  if ((dupPhoneRows.rows as any[]).length > 0) {
-    const dup = (dupPhoneRows.rows as any[])[0];
+  if ((dupPhoneRows.rows as Record<string, unknown>[]).length > 0) {
+    const dup = (dupPhoneRows.rows as Record<string, unknown>[])[0];
     res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${dup.name}"` }); return;
   }
 
@@ -537,7 +537,7 @@ router.post("/customer-classifications", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   // تحقق من تكرار اسم التصنيف
   const dupClass = await db.execute(sql`SELECT id FROM customer_classifications WHERE LOWER(name) = LOWER(${name}) AND company_id = ${companyId} LIMIT 1`);
-  if ((dupClass.rows as any[]).length > 0) {
+  if ((dupClass.rows as Record<string, unknown>[]).length > 0) {
     res.status(400).json({ error: `التصنيف "${name}" موجود بالفعل` }); return;
   }
   const [created] = await db
@@ -625,7 +625,7 @@ router.get("/customer-reports", wrap(async (req, res) => {
     ORDER BY c.customer_code
   `);
 
-  const result = (rows.rows as any[]).map(r => ({
+  const result = (rows.rows as Record<string, unknown>[]).map(r => ({
     id: r.id,
     name: r.name,
     customer_code: r.customer_code,

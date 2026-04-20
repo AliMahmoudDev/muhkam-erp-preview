@@ -12,7 +12,7 @@ router.get("/safe-transfers", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_treasury")) {
     res.status(403).json({ error: "ليس لديك صلاحية عرض الخزينة" }); return;
   }
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
   const safeLimit = Math.min(2000, Math.max(1, parseInt(String(req.query["limit"] ?? "500"), 10)));
   const items = await db.select().from(safeTransfersTable)
     .where(eq(safeTransfersTable.company_id, companyId))
@@ -47,7 +47,7 @@ router.post("/safe-transfers", wrap(async (req, res) => {
   const transferRef = `TRF-${Date.now()}`;
   const txDate = date ?? new Date().toISOString().split("T")[0];
 
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
   const fromId = parseInt(from_safe_id);
   const toId   = parseInt(to_safe_id);
   if (Number.isNaN(fromId) || Number.isNaN(toId)) {

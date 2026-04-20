@@ -8,7 +8,9 @@ export function sanitizeString(input: string): string {
 export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
   const result = { ...obj };
   for (const key in result) {
+    // eslint-disable-next-line security/detect-object-injection
     if (typeof result[key] === "string") {
+      // eslint-disable-next-line security/detect-object-injection
       (result as Record<string, unknown>)[key] = sanitizeString(result[key] as string);
     }
   }

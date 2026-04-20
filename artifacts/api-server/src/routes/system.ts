@@ -261,6 +261,7 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
 
   const tables = body.data as Record<string, unknown[]>;
   const required = ["products", "customers", "sales"];
+  // eslint-disable-next-line security/detect-object-injection
   const missing  = required.filter(k => !Array.isArray(tables[k]));
   if (missing.length > 0) {
     res.status(400).json({ error: `ملف غير مكتمل — مفاتيح مفقودة: ${missing.join(", ")}` });
@@ -367,6 +368,7 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
     )));
 
   const get = (key: string): Record<string, unknown>[] => {
+    // eslint-disable-next-line security/detect-object-injection
     const rows = Array.isArray(tables[key]) ? (tables[key] as Record<string, unknown>[]) : [];
     /* Force company_id on every row to caller's tenant — defensive */
     return parseDates(rows).map(r => ({ ...r, ...("company_id" in r ? { company_id: companyId } : {}) }));

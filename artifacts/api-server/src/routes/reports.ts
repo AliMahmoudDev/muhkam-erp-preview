@@ -120,7 +120,7 @@ function wfSql(alias: string, warehouseId?: string | number | null) {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/product-profit", wrap(async (req, res) => {
   const { date_from, date_to, warehouse_id } = req.query as Record<string, string | undefined>;
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
 
   const rows = await db.execute(sql`
     SELECT
@@ -154,7 +154,7 @@ router.get("/reports/product-profit", wrap(async (req, res) => {
   `);
 
   const retMap = new Map<number, { ret_qty: number; ret_revenue: number; ret_cogs: number }>();
-  for (const r of retRows.rows as any[]) {
+  for (const r of retRows.rows as Record<string, unknown>[]) {
     retMap.set(Number(r.product_id), {
       ret_qty:     Number(r.ret_qty),
       ret_revenue: Number(r.ret_revenue),
@@ -162,7 +162,7 @@ router.get("/reports/product-profit", wrap(async (req, res) => {
     });
   }
 
-  const products = (rows.rows as any[]).map(r => {
+  const products = (rows.rows as Record<string, unknown>[]).map(r => {
     const pid = Number(r.product_id);
     const ret = retMap.get(pid) ?? { ret_qty: 0, ret_revenue: 0, ret_cogs: 0 };
     const qty     = Number(r.qty_sold)  - ret.ret_qty;
@@ -211,7 +211,7 @@ router.get("/reports/product-profit", wrap(async (req, res) => {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/daily-profit", wrap(async (req, res) => {
   const { date_from, date_to } = req.query as Record<string, string | undefined>;
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
   const sfrom = safeDate(date_from);
   const sto   = safeDate(date_to);
 
@@ -262,7 +262,7 @@ router.get("/reports/daily-profit", wrap(async (req, res) => {
     return dayMap.get(day)!;
   };
 
-  for (const r of salesRows.rows as any[]) { const d = ensure(r.day); d.sales_revenue += Number(r.sales_revenue); d.sales_cogs += Number(r.sales_cogs); }
+  for (const r of salesRows.rows as Record<string, unknown>[]) { const d = ensure(r.day); d.sales_revenue += Number(r.sales_revenue); d.sales_cogs += Number(r.sales_cogs); }
   for (const r of retRows.rows  as any[]) { const d = ensure(r.day); d.ret_revenue  += Number(r.ret_revenue);  d.ret_cogs   += Number(r.ret_cogs);   }
   for (const r of expRows.rows  as any[]) { const d = ensure(r.day); d.expenses     += Number(r.total_expenses); }
 
@@ -340,7 +340,7 @@ router.get("/reports/daily-profit", wrap(async (req, res) => {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/sales-analysis", wrap(async (req, res) => {
   const { date_from, date_to, warehouse_id } = req.query as Record<string, string | undefined>;
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
 
   const byProduct = await db.execute(sql`
     SELECT
@@ -375,7 +375,7 @@ router.get("/reports/sales-analysis", wrap(async (req, res) => {
   `);
 
   res.json({
-    by_product: (byProduct.rows as any[]).map(r => ({
+    by_product: (byProduct.rows as Record<string, unknown>[]).map(r => ({
       product_id:     Number(r.product_id),
       product_name:   String(r.product_name),
       total_qty:      Math.round(Number(r.total_qty) * 1000) / 1000,
@@ -383,7 +383,7 @@ router.get("/reports/sales-analysis", wrap(async (req, res) => {
       avg_price:      Number(r.total_qty) > 0 ? Math.round((Number(r.total_revenue) / Number(r.total_qty)) * 100) / 100 : 0,
       invoice_count:  Number(r.invoice_count),
     })),
-    by_customer: (byCustomer.rows as any[]).map(r => ({
+    by_customer: (byCustomer.rows as Record<string, unknown>[]).map(r => ({
       customer_id:   r.customer_id ? Number(r.customer_id) : null,
       customer_name: String(r.customer_name),
       total_revenue: Math.round(Number(r.total_revenue) * 100) / 100,
@@ -401,7 +401,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
   if (!customer_id) { res.status(400).json({ error: "يجب تحديد العميل" }); return; }
   const custId = parseInt(customer_id);
   if (isNaN(custId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
 
   const custRow = await db.execute(sql`
     SELECT c.id, c.name, c.customer_code,
@@ -426,7 +426,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
       AND customer_id = ${custId}
       ${cfSimpleSql(companyId)}
   `);
-  for (const r of openRows.rows as any[]) {
+  for (const r of openRows.rows as Record<string, unknown>[]) {
     rows.push({ date: r.date ?? "1900-01-01", type: "opening_balance", description: r.description ?? "رصيد أول المدة", debit: 0, credit: Number(r.amount) });
   }
 
@@ -437,7 +437,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
       AND posting_status = 'posted'
       ${cfSimpleSql(companyId)}
   `);
-  for (const r of salesRows.rows as any[]) {
+  for (const r of salesRows.rows as Record<string, unknown>[]) {
     rows.push({ date: r.date, type: "sale", description: `فاتورة مبيعات ${r.invoice_no}`, debit: Number(r.total_amount), credit: 0, reference_no: r.invoice_no });
   }
 
@@ -448,7 +448,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
       AND posting_status = 'posted'
       ${cfSimpleSql(companyId)}
   `);
-  for (const r of rvRows.rows as any[]) {
+  for (const r of rvRows.rows as Record<string, unknown>[]) {
     rows.push({ date: r.date, type: "receipt", description: `سند قبض ${r.voucher_no}`, debit: 0, credit: Number(r.amount), reference_no: r.voucher_no });
   }
 
@@ -458,7 +458,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
     WHERE customer_id = ${custId}
       ${cfSimpleSql(companyId)}
   `);
-  for (const r of retRows.rows as any[]) {
+  for (const r of retRows.rows as Record<string, unknown>[]) {
     rows.push({ date: r.date, type: "sale_return", description: `مرتجع مبيعات ${r.return_no}`, debit: 0, credit: Number(r.total_amount), reference_no: r.return_no });
   }
 
@@ -521,7 +521,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
   if (!rawId) { res.status(400).json({ error: "يجب تحديد المورد" }); return; }
   const sid = parseInt(rawId);
   if (isNaN(sid)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
 
   const custRow = await db.execute(sql`
     SELECT id, name, CAST(balance AS FLOAT8) AS balance
@@ -541,7 +541,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       AND reference_id = ${sid}
       ${cfSimpleSql(companyId)}
   `);
-  for (const r of openRows.rows as any[]) {
+  for (const r of openRows.rows as Record<string, unknown>[]) {
     rows.push({ date: r.date ?? "1900-01-01", type: "opening_balance", description: "رصيد أول المدة", debit: 0, credit: Number(r.amount) });
   }
 
@@ -552,7 +552,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       AND posting_status = 'posted'
       ${cfSimpleSql(companyId)}
   `);
-  for (const r of purRows.rows as any[]) {
+  for (const r of purRows.rows as Record<string, unknown>[]) {
     rows.push({ date: r.date, type: "purchase", description: `فاتورة شراء ${r.invoice_no}`, debit: 0, credit: Number(r.total_amount), reference_no: r.invoice_no });
   }
 
@@ -562,7 +562,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
     WHERE customer_id = ${sid}
       ${cfSimpleSql(companyId)}
   `);
-  for (const r of retRows.rows as any[]) {
+  for (const r of retRows.rows as Record<string, unknown>[]) {
     rows.push({ date: r.date, type: "purchase_return", description: `مرتجع مشتريات ${r.return_no}`, debit: Number(r.total_amount), credit: 0, reference_no: r.return_no });
   }
 
@@ -573,7 +573,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       AND posting_status = 'posted'
       ${cfSimpleSql(companyId)}
   `);
-  for (const r of pvRows.rows as any[]) {
+  for (const r of pvRows.rows as Record<string, unknown>[]) {
     rows.push({ date: r.date, type: "payment", description: `سند دفع ${r.voucher_no}`, debit: Number(r.amount), credit: 0, reference_no: r.voucher_no });
   }
 
@@ -584,7 +584,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       AND reference_id = ${sid}
       ${cfSimpleSql(companyId)}
   `);
-  for (const r of spRows.rows as any[]) {
+  for (const r of spRows.rows as Record<string, unknown>[]) {
     rows.push({ date: r.date ?? "1900-01-01", type: "supplier_payment", description: r.description ?? "سداد للمورد", debit: Number(r.amount), credit: 0 });
   }
 
@@ -636,7 +636,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/cash-flow", wrap(async (req, res) => {
   const { date_from, date_to } = req.query as Record<string, string | undefined>;
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
   const sfrom = safeDate(date_from);
   const sto   = safeDate(date_to);
 
@@ -693,7 +693,7 @@ router.get("/reports/cash-flow", wrap(async (req, res) => {
     ORDER BY date
   `);
 
-  const days = (cfRows.rows as any[]).map(r => {
+  const days = (cfRows.rows as Record<string, unknown>[]).map(r => {
     const receipts_in  = r2(Number(r.receipts_in));
     const deposits_in  = r2(Number(r.deposits_in));
     const cash_sales   = r2(Number(r.cash_sales));
@@ -766,7 +766,7 @@ router.get("/reports/cash-flow", wrap(async (req, res) => {
 router.get("/reports/top", wrap(async (req, res) => {
   const { date_from, date_to, limit: lim } = req.query as Record<string, string | undefined>;
   const LIMIT = Math.min(parseInt(lim ?? "10"), 50);
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
 
   const topProducts = await db.execute(sql`
     SELECT si.product_id, si.product_name,
@@ -810,20 +810,20 @@ router.get("/reports/top", wrap(async (req, res) => {
   `);
 
   res.json({
-    top_products: (topProducts.rows as any[]).map(r => ({
+    top_products: (topProducts.rows as Record<string, unknown>[]).map(r => ({
       product_id:    Number(r.product_id),
       product_name:  String(r.product_name),
       total_qty:     Math.round(Number(r.total_qty) * 1000) / 1000,
       total_revenue: Math.round(Number(r.total_revenue) * 100) / 100,
       total_profit:  Math.round((Number(r.total_revenue) - Number(r.total_cogs)) * 100) / 100,
     })),
-    top_customers: (topCustomers.rows as any[]).map(r => ({
+    top_customers: (topCustomers.rows as Record<string, unknown>[]).map(r => ({
       customer_id:   r.customer_id ? Number(r.customer_id) : null,
       customer_name: String(r.customer_name),
       total_revenue: Math.round(Number(r.total_revenue) * 100) / 100,
       invoice_count: Number(r.invoice_count),
     })),
-    top_suppliers: (topSuppliers.rows as any[]).map(r => ({
+    top_suppliers: (topSuppliers.rows as Record<string, unknown>[]).map(r => ({
       supplier_id:     r.supplier_id ? Number(r.supplier_id) : null,
       supplier_name:   String(r.supplier_name),
       total_purchases: Math.round(Number(r.total_purchases) * 100) / 100,
@@ -837,7 +837,7 @@ router.get("/reports/top", wrap(async (req, res) => {
  * GET /api/reports/health-check
  * ─────────────────────────────────────────────────────────────────────────*/
 router.get("/reports/health-check", wrap(async (req, res) => {
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
 
   const TOL      = 0.02;
   const WARN_AMT = 100;
@@ -975,7 +975,7 @@ router.get("/reports/health-check", wrap(async (req, res) => {
   ]);
 
   /* ── معالجة نتائج العملاء ── */
-  for (const r of custRows.rows as any[]) {
+  for (const r of custRows.rows as Record<string, unknown>[]) {
     const arLedger      = r2(Number(r.system_balance));
     const invoiceComputed = r2(Number(r.ledger_balance));
     const diff = Math.abs(arLedger - invoiceComputed);
@@ -1004,12 +1004,12 @@ router.get("/reports/health-check", wrap(async (req, res) => {
       severity: "OK", color: "green",
       message:  "رصيد AR في دفتر الأستاذ متطابق مع جميع الفواتير المرحّلة",
       action:   "لا يلزم أي إجراء",
-      details:  { checked: (custRows.rows as any[]).length },
+      details:  { checked: (custRows.rows as Record<string, unknown>[]).length },
     });
   }
 
   /* ── معالجة نتائج الموردين ── */
-  for (const r of supRows.rows as any[]) {
+  for (const r of supRows.rows as Record<string, unknown>[]) {
     const totalPurchases = r2(Number(r.total_purchases));
     const totalPayments  = r2(Number(r.total_payments));
     const totalReturns   = r2(Number(r.total_returns));
@@ -1037,13 +1037,13 @@ router.get("/reports/health-check", wrap(async (req, res) => {
       severity: "OK", color: "green",
       message:  "جميع أرصدة الموردين (عملاء-موردين) متوازنة",
       action:   "لا يلزم أي إجراء",
-      details:  { checked: (supRows.rows as any[]).length },
+      details:  { checked: (supRows.rows as Record<string, unknown>[]).length },
     });
   }
 
   /* ── فحص المخزون ── */
   let invOk = true;
-  for (const r of invRows.rows as any[]) {
+  for (const r of invRows.rows as Record<string, unknown>[]) {
     const actual     = r2(Number(r.actual_qty));
     const calculated = r2(Number(r.calculated_qty));
     const qtyDiff    = r2(actual - calculated);
@@ -1074,7 +1074,7 @@ router.get("/reports/health-check", wrap(async (req, res) => {
       severity: "OK", color: "green",
       message:  "جميع كميات المخزون متطابقة مع حركات المخزون",
       action:   "لا يلزم أي إجراء",
-      details:  { checked: (invRows.rows as any[]).length },
+      details:  { checked: (invRows.rows as Record<string, unknown>[]).length },
     });
   }
 
@@ -1170,7 +1170,7 @@ router.get("/reports/health-check", wrap(async (req, res) => {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/manager-sales", wrap(async (req, res) => {
   const { date_from, date_to } = req.query as Record<string, string | undefined>;
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
 
   const byWarehouse = await db.execute(sql`
     SELECT
@@ -1282,7 +1282,7 @@ router.get("/reports/manager-sales", wrap(async (req, res) => {
  * GET /api/reports/balance-sheet
  * ─────────────────────────────────────────────────────────────────────────*/
 router.get("/reports/balance-sheet", wrap(async (req, res) => {
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
 
   const [accountRows, inventoryRow, capitalRow] = await Promise.all([
 
@@ -1320,7 +1320,7 @@ router.get("/reports/balance-sheet", wrap(async (req, res) => {
   let totalExpenses    = 0;
   let totalCogs        = 0;
 
-  for (const row of accountRows.rows as any[]) {
+  for (const row of accountRows.rows as Record<string, unknown>[]) {
     const code = String(row.code);
     const bal  = Number(row.bal);
     const typ  = String(row.type);
@@ -1440,7 +1440,7 @@ router.get("/reports/trial-balance", wrap(async (req, res) => {
     ORDER BY a.code
   `);
 
-  const accounts = (rawRows.rows as any[]).map((r: any) => ({
+  const accounts = (rawRows.rows as Record<string, unknown>[]).map((r: any) => ({
     account_id:    r.account_id,
     account_code:  r.account_code,
     account_name:  r.account_name,
@@ -1525,8 +1525,8 @@ router.get("/reports/vat-report", wrap(async (req, res) => {
       ${purchaseDateFilter}
   `);
 
-  const sv = (salesVatRaw.rows as any[])[0] ?? {};
-  const pv = (purchasesVatRaw.rows as any[])[0] ?? {};
+  const sv = (salesVatRaw.rows as Record<string, unknown>[])[0] ?? {};
+  const pv = (purchasesVatRaw.rows as Record<string, unknown>[])[0] ?? {};
 
   const outputVat = Number(sv.total_tax ?? 0);
   const inputVat  = Number(pv.total_tax ?? 0);
@@ -1555,7 +1555,7 @@ router.get("/reports/vat-report", wrap(async (req, res) => {
  * GET /api/reports/aging?type=customers|suppliers&as_of=YYYY-MM-DD
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/aging", wrap(async (req, res) => {
-  const companyId = (req as any).user?.company_id ?? null;
+  const companyId = req.user?.company_id ?? null;
   const { type = "customers", as_of } = req.query as Record<string, string | undefined>;
   const asOfDate = as_of ? new Date(as_of) : new Date();
   const asOfStr  = asOfDate.toISOString().split("T")[0];
@@ -1576,7 +1576,7 @@ router.get("/reports/aging", wrap(async (req, res) => {
         ${condSales}
       ORDER BY s.date ASC
     `);
-    rows = (r.rows as any[]).map(x => ({
+    rows = (r.rows as Record<string, unknown>[]).map(x => ({
       id: x.id,
       name: String(x.name ?? ""),
       date: String(x.date ?? ""),
@@ -1593,7 +1593,7 @@ router.get("/reports/aging", wrap(async (req, res) => {
         ${condPurch}
       ORDER BY p.date ASC
     `);
-    rows = (r.rows as any[]).map(x => ({
+    rows = (r.rows as Record<string, unknown>[]).map(x => ({
       id: x.id,
       name: String(x.name ?? ""),
       date: String(x.date ?? ""),

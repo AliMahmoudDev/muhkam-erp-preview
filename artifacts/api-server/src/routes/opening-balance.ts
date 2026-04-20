@@ -18,7 +18,7 @@ const router: IRouter = Router();
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get("/opening-balance/product", wrap(async (req, res) => {
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
   const movements = await db
     .select()
     .from(stockMovementsTable)
@@ -63,7 +63,7 @@ router.post("/inventory/opening-balance", wrap(async (req, res) => {
   const queryWarehouseId = req.query.warehouse_id ? parseInt(String(req.query.warehouse_id), 10) : null;
   const effectiveWarehouseId = (role === "admin" || role === "manager") ? queryWarehouseId : (req.user?.warehouse_id ?? null);
 
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
 
   const tenantWarehouseId = await resolveTenantWarehouseId(effectiveWarehouseId, companyId);
 
@@ -141,7 +141,7 @@ router.post("/inventory/opening-balance", wrap(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get("/opening-balance/treasury", wrap(async (req, res) => {
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
   const txns = await db
     .select()
     .from(transactionsTable)
@@ -160,7 +160,7 @@ router.get("/opening-balance/treasury", wrap(async (req, res) => {
 
 router.post("/opening-balance/treasury", wrap(async (req, res) => {
   const { safe_id, amount, date, notes } = req.body;
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
 
   if (!safe_id || amount === undefined) {
     res.status(400).json({ error: "الخزينة والمبلغ مطلوبان" });
@@ -210,7 +210,7 @@ router.post("/opening-balance/treasury", wrap(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get("/opening-balance/customer", wrap(async (req, res) => {
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
   const txns = await db
     .select()
     .from(transactionsTable)
@@ -229,7 +229,7 @@ router.get("/opening-balance/customer", wrap(async (req, res) => {
 
 router.post("/opening-balance/customer", wrap(async (req, res) => {
   const { customer_id, amount, date, notes } = req.body;
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
 
   if (!customer_id || amount === undefined) {
     res.status(400).json({ error: "العميل والمبلغ مطلوبان" });
@@ -280,7 +280,7 @@ router.post("/opening-balance/customer", wrap(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get("/opening-balance/supplier", wrap(async (req, res) => {
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
   const txns = await db
     .select()
     .from(transactionsTable)
@@ -300,7 +300,7 @@ router.get("/opening-balance/supplier", wrap(async (req, res) => {
 router.post("/opening-balance/supplier", wrap(async (req, res) => {
   const { supplier_id, customer_id: qCustId, amount, date, notes } = req.body;
   const rawId = supplier_id ?? qCustId;
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
 
   if (!rawId || amount === undefined) {
     res.status(400).json({ error: "المورد والمبلغ مطلوبان" });

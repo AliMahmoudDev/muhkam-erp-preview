@@ -317,7 +317,7 @@ router.get("/inventory/warehouse-summary", wrap(async (req, res) => {
     ORDER BY w.id
   `);
 
-  const data = (rows.rows as any[]).map(r => ({
+  const data = (rows.rows as Record<string, unknown>[]).map(r => ({
     warehouse_id:   Number(r.warehouse_id),
     warehouse_name: String(r.warehouse_name),
     item_count:     Number(r.item_count ?? 0),
@@ -370,7 +370,7 @@ router.get("/inventory/low-stock", wrap(async (req, res) => {
     ORDER BY w.name, p.name
   `);
 
-  const lowItems = (lowRows.rows as any[]).map(r => ({
+  const lowItems = (lowRows.rows as Record<string, unknown>[]).map(r => ({
     product_id:    Number(r.product_id),
     product_name:  String(r.product_name),
     sku:           r.sku   ? String(r.sku)      : null,
@@ -408,7 +408,7 @@ router.get("/inventory/low-stock", wrap(async (req, res) => {
 
   /* Map product_id → [{warehouse_id, warehouse_name, qty}] */
   const byProduct = new Map<number, { warehouse_id: number; warehouse_name: string; qty: number }[]>();
-  for (const r of whRows.rows as any[]) {
+  for (const r of whRows.rows as Record<string, unknown>[]) {
     const pid = Number(r.product_id);
     if (!byProduct.has(pid)) byProduct.set(pid, []);
     byProduct.get(pid)!.push({

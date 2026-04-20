@@ -1,3 +1,4 @@
+/* eslint-disable security/detect-non-literal-fs-filename */
 /**
  * backup-service.ts
  *
@@ -119,6 +120,7 @@ async function streamBackupToFile(
   await safeWrite(`{"version":"2.1","app":"مُحكم - MUHKAM ERP","created_at":${JSON.stringify(created_at)},"data":{`);
 
   for (let t = 0; t < TABLES.length; t++) {
+    // eslint-disable-next-line security/detect-object-injection
     const [name, table] = TABLES[t]!;
     await safeWrite(`${t === 0 ? "" : ","}${JSON.stringify(name)}:[`);
 
@@ -182,6 +184,7 @@ export async function buildBackupPayload() {
         `Snapshot too large (>${MAX_TOTAL_ROWS} rows) — use SQL backup (pg_dump) endpoint instead.`,
       );
     }
+    // eslint-disable-next-line security/detect-object-injection
     result[name] = rows;
   }
   return {

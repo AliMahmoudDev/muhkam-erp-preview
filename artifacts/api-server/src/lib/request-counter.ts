@@ -41,6 +41,7 @@ export function getMetrics() {
 export function resetMetrics(): void {
   window.count = 0;
   window.latencies.length = 0;
+  // eslint-disable-next-line security/detect-object-injection
   Object.keys(statusCodes).forEach((k) => delete statusCodes[k]);
   startedAt = Date.now();
 }

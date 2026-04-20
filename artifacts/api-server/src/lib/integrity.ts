@@ -61,7 +61,7 @@ export async function checkJournalEntryBalance(): Promise<IntegrityCheck> {
       ) > ${TOLERANCE}
   `));
 
-  const items: DriftItem[] = (rows.rows as any[]).map(r => ({
+  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map(r => ({
     id:       r.id,
     name:     String(r.name),
     stored:   r2(Number(r.hdr_debit)),
@@ -109,7 +109,7 @@ export async function checkAccountBalanceDrift(): Promise<IntegrityCheck> {
     ) > ${TOLERANCE}
   `));
 
-  const items: DriftItem[] = (rows.rows as any[]).map(r => ({
+  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map(r => ({
     id:       r.id,
     name:     String(r.name),
     code:     String(r.code),
@@ -154,7 +154,7 @@ export async function checkCustomerBalanceDrift(): Promise<IntegrityCheck> {
     ) > ${TOLERANCE}
   `));
 
-  const items: DriftItem[] = (rows.rows as any[]).map(r => ({
+  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map(r => ({
     id:       r.id,
     name:     String(r.name),
     stored:   r2(Number(r.stored)),
@@ -195,7 +195,7 @@ export async function checkInventoryDrift(): Promise<IntegrityCheck> {
     ) > ${TOLERANCE}
   `));
 
-  const items: DriftItem[] = (rows.rows as any[]).map(r => ({
+  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map(r => ({
     id:       r.id,
     name:     String(r.name),
     stored:   r2(Number(r.stored)),

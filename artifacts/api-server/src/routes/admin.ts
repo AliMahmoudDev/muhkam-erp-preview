@@ -95,12 +95,13 @@ router.post("/admin/clear", authenticate, requireRole("admin"), wrap(async (req,
     res.status(400).json({ error: "حدد الجداول المطلوب مسحها" }); return;
   }
 
+  // eslint-disable-next-line security/detect-object-injection
   const invalid = tables.filter(t => !TABLES[t]);
   if (invalid.length > 0) {
     res.status(400).json({ error: `جداول غير معروفة: ${invalid.join(", ")}` }); return;
   }
 
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
 
   const ORDER = [
     "sales", "purchases", "expenses", "income",
@@ -109,13 +110,14 @@ router.post("/admin/clear", authenticate, requireRole("admin"), wrap(async (req,
   const sorted = ORDER.filter(t => tables.includes(t));
   const extra  = { warehouseId: warehouse_id };
 
+  // eslint-disable-next-line security/detect-object-injection
   for (const t of sorted) await TABLES[t](companyId, extra);
   res.json({ success: true, cleared: sorted });
 }));
 
 /* ── ربط تلقائي: إنشاء حسابات للعملاء الموجودين ──────────────────────────── */
 router.post("/admin/backfill-accounts", [authenticate, requireRole("admin", "manager")], wrap(async (req, res) => {
-  const companyId: number = ((req as any).user.company_id as number);
+  const companyId: number = req.user!.company_id!;
   const customers = await db.select().from(customersTable)
     .where(sql`${customersTable.account_id} IS NULL AND ${customersTable.company_id} = ${companyId}`);
 

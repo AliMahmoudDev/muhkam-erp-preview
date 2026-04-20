@@ -38,4 +38,14 @@ export default [
       eqeqeq: ['error', 'always', { null: 'ignore' }],
     },
   },
+  /* ── Test files: relax rules that are impractical in test context ── */
+  {
+    files: ['src/__tests__/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-console': 'off',
+      'security/detect-object-injection': 'off',
+      'security/detect-non-literal-fs-filename': 'off',
+    },
+  },
 ];

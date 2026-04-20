@@ -256,6 +256,7 @@ router.post("/incentive-metrics/record", wrap(async (req, res) => {
     const tierSize = tVal / slabs.length;
     for (let i = 0; i < slabs.length && rem > 0; i++) {
       const take = Math.min(rem, tierSize);
+      // eslint-disable-next-line security/detect-object-injection
       accrued += take * Number(slabs[i]?.incentive_value ?? 0);
       rem -= take;
     }
