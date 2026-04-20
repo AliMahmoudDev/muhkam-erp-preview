@@ -163,6 +163,70 @@ function AddUserModal({
   );
 }
 
+// ── Edit Safe Modal ────────────────────────────────────────────────────────────
+
+function EditSafeModal({
+  visible, initialName, onClose, onSubmit, loading,
+}: {
+  visible: boolean;
+  initialName: string;
+  onClose: () => void;
+  onSubmit: (name: string) => void;
+  loading: boolean;
+}) {
+  const c = useColors();
+  const [name, setName] = useState(initialName);
+
+  useEffect(() => { setName(initialName); }, [initialName]);
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
+      Alert.alert("تنبيه", "اسم الخزينة مطلوب");
+      return;
+    }
+    onSubmit(name.trim());
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
+          <View style={[styles.modalCard, { backgroundColor: c.card, borderColor: "rgba(245,158,11,0.3)" }]}>
+            <View style={styles.modalTopLine} />
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={onClose}>
+                <Feather name="x" size={22} color={c.mutedForeground} />
+              </TouchableOpacity>
+              <Text style={[styles.modalTitle, { color: c.text }]}>تعديل الخزينة</Text>
+            </View>
+            <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>اسم الخزينة</Text>
+            <View style={[styles.fieldInput, { backgroundColor: c.background, borderColor: c.border, marginBottom: 16 }]}>
+              <TextInput
+                style={[styles.fieldText, { color: c.text }]}
+                placeholder="اسم الخزينة"
+                placeholderTextColor={c.mutedForeground}
+                value={name}
+                onChangeText={setName}
+                textAlign="right"
+                autoFocus
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.modalSubmit, { opacity: loading ? 0.6 : 1 }]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading
+                ? <ActivityIndicator color="#0a0500" />
+                : <Text style={styles.modalSubmitText}>حفظ التعديلات</Text>}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+}
+
 // ── Add Simple Modal ──────────────────────────────────────────────────────────
 
 function AddSimpleModal({
@@ -234,6 +298,7 @@ export default function SettingsScreen() {
 
   const [tab, setTab] = useState<Tab>("warehouses");
   const [modal, setModal] = useState<"warehouse" | "safe" | "user" | null>(null);
+  const [editSafeTarget, setEditSafeTarget] = useState<{ id: number; name: string } | null>(null);
 
   const { data: warehouses, isLoading: whLoading } = useQuery({
     queryKey: ["warehouses"],
@@ -283,6 +348,17 @@ export default function SettingsScreen() {
   const { mutate: deleteSafe } = useMutation({
     mutationFn: (id: number) => apiFetch(`/api/settings/safes/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["safes"] }),
+    onError: (e: any) => Alert.alert("خطأ", e.message),
+  });
+
+  const { mutate: updateSafe, isPending: updatingSf } = useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) =>
+      apiFetch(`/api/settings/safes/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["safes"] });
+      setEditSafeTarget(null);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
     onError: (e: any) => Alert.alert("خطأ", e.message),
   });
 
@@ -425,9 +501,14 @@ export default function SettingsScreen() {
               renderItem={({ item: s }) => (
                 <View style={[styles.listCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
                   {isAdmin && (
-                    <TouchableOpacity onPress={() => confirmDelete(s.name, () => deleteSafe(s.id))} style={styles.deleteBtn}>
-                      <Feather name="trash-2" size={16} color="#EF4444" />
-                    </TouchableOpacity>
+                    <View style={styles.actionBtns}>
+                      <TouchableOpacity onPress={() => confirmDelete(s.name, () => deleteSafe(s.id))} style={styles.deleteBtn}>
+                        <Feather name="trash-2" size={16} color="#EF4444" />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => setEditSafeTarget({ id: s.id, name: s.name })} style={styles.editBtn}>
+                        <Feather name="edit-2" size={16} color={AMBER} />
+                      </TouchableOpacity>
+                    </View>
                   )}
                   <View style={styles.listCardInfo}>
                     <Text style={[styles.listCardName, { color: c.text }]}>{s.name}</Text>
