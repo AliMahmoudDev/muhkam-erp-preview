@@ -559,8 +559,8 @@ router.get("/inventory/count-sessions-enriched", wrap(async (req, res) => {
     notes:             r.notes ? String(r.notes) : null,
     company_id:        Number(r.company_id),
     created_by:        r.created_by ? Number(r.created_by) : null,
-    created_at:        new Date(r.created_at).toISOString(),
-    applied_at:        r.applied_at ? new Date(r.applied_at).toISOString() : null,
+    created_at:        new Date(String(r.created_at)).toISOString(),
+    applied_at:        r.applied_at ? new Date(String(r.applied_at)).toISOString() : null,
     items_count:       Number(r.items_count ?? 0),
     adjustments_count: Number(r.adjustments_count ?? 0),
   })));
@@ -603,7 +603,7 @@ router.get("/inventory/transfers-enriched", wrap(async (req, res) => {
     notes:             r.notes ? String(r.notes) : null,
     company_id:        Number(r.company_id),
     created_by:        r.created_by ? Number(r.created_by) : null,
-    created_at:        new Date(r.created_at).toISOString(),
+    created_at:        new Date(String(r.created_at)).toISOString(),
     items_count:       Number(r.items_count ?? 0),
     total_qty:         Math.round(Number(r.total_qty ?? 0) * 1000) / 1000,
   })));

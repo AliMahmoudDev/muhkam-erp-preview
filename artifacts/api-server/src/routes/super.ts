@@ -114,7 +114,6 @@ import { hashPin } from "../lib/hash";
 import { createCompanySchema, validate } from "../lib/schemas";
 import { createDatabaseBackup, listBackups } from "../lib/db-backup";
 import { writeAuditLog } from "../lib/audit-log";
-import fs from "fs";
 
 const router = Router();
 
@@ -397,7 +396,7 @@ router.post("/super/companies", ...superOnly, wrap(async (req, res) => {
   });
 
   await writeAuditLog({
-    action: "CREATE", record_type: "company", record_id: result.company.id,
+    action: "create", record_type: "company", record_id: result.company.id,
     old_value: null, new_value: { name, plan_type, admin: result.admin.username },
     user: req.user, company_id: null,
     note: `إنشاء شركة جديدة مع مستخدم مدير: ${result.admin.username}`,
@@ -1017,7 +1016,7 @@ router.post("/super/announcements", ...superOnly, wrap(async (req, res) => {
     expires_at: expires_at ? new Date(expires_at) : null,
   }).returning();
   void writeAuditLog({
-    action: "CREATE", record_type: "announcement", record_id: row.id,
+    action: "create", record_type: "announcement", record_id: row.id,
     user: req.user, company_id: null, note: `إشعار جديد: ${title}`,
   });
   res.status(201).json(row);
@@ -1042,7 +1041,7 @@ router.delete("/super/announcements/:id", ...superOnly, wrap(async (req, res) =>
   const id = Number(req.params.id);
   await db.delete(announcementsTable).where(eq(announcementsTable.id, id));
   void writeAuditLog({
-    action: "DELETE", record_type: "announcement", record_id: id,
+    action: "delete", record_type: "announcement", record_id: id,
     user: req.user, company_id: null, note: `حذف إشعار رقم ${id}`,
   });
   res.json({ ok: true });

@@ -64,7 +64,9 @@ export type AuditRecordType =
   | "salary_advance"          // salary advance lifecycle
   | "fiscal_year"             // fiscal year open/close
   | "erp_user"               // user account management (password reset, etc.)
-  | "system";                 // tenant-level system actions (restore, etc.)
+  | "system"                 // tenant-level system actions (restore, etc.)
+  | "announcement"           // super-admin announcements
+  | "warranty";              // warranty records
 
 interface AuditUser {
   id?: number;

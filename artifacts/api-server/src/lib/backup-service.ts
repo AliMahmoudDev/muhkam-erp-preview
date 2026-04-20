@@ -254,7 +254,7 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
         /* Fail-closed: when an encryption key is configured, refuse to keep the
            plaintext file on disk. Delete the unencrypted snapshot and abort. */
         logger.error({ trigger, err: encErr }, "Backup encryption failed — deleting plaintext snapshot (fail-closed)");
-        try { fs.unlinkSync(filepath); } catch { /* ignore */ }
+        try { fs.unlinkSync(plainPath); } catch { /* ignore */ }
         throw new Error(
           `Backup encryption failed and BACKUP_ENCRYPTION_KEY is set. ` +
           `Refusing to retain plaintext snapshot. Cause: ${encErr instanceof Error ? encErr.message : String(encErr)}`

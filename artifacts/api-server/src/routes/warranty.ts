@@ -9,6 +9,8 @@ const router = Router();
 /* ── إحصائيات الضمان (قبل /:id لتجنب التعارض) ───────────────────── */
 router.get("/warranty/stats", wrap(async (req, res) => {
   const companyId = req.user?.company_id;
+  if (!companyId) throw httpError(401, "غير مصرح");
+
   const today = new Date().toISOString().split("T")[0];
   const soon = new Date();
   soon.setDate(soon.getDate() + 30);
@@ -30,6 +32,8 @@ router.get("/warranty/stats", wrap(async (req, res) => {
 /* ── جلب كل سجلات الضمان ─────────────────────────────────────────── */
 router.get("/warranty", wrap(async (req, res) => {
   const companyId = req.user?.company_id;
+  if (!companyId) throw httpError(401, "غير مصرح");
+
   const { search } = req.query as Record<string, string | undefined>;
 
   const rows = await db.select().from(warrantyTable)
@@ -58,13 +62,15 @@ router.get("/warranty", wrap(async (req, res) => {
 /* ── إنشاء سجل ضمان جديد ─────────────────────────────────────────── */
 router.post("/warranty", wrap(async (req, res) => {
   const companyId = req.user?.company_id;
+  if (!companyId) throw httpError(401, "غير مصرح");
+
   const {
     sale_id, product_id, product_name, customer_id, customer_name, customer_phone,
     serial_number, device_model, warranty_months, warranty_start, notes,
   } = req.body;
 
-  if (!product_name) return httpError(res, 400, "اسم المنتج/الخدمة مطلوب");
-  if (!warranty_start) return httpError(res, 400, "تاريخ بدء الضمان مطلوب");
+  if (!product_name) throw httpError(400, "اسم المنتج/الخدمة مطلوب");
+  if (!warranty_start) throw httpError(400, "تاريخ بدء الضمان مطلوب");
 
   const months = parseInt(warranty_months ?? "3") || 3;
   const startDate = new Date(warranty_start);
@@ -88,11 +94,13 @@ router.post("/warranty", wrap(async (req, res) => {
     notes:           notes ?? null,
   }).returning();
 
-  await writeAuditLog({
-    companyId, userId: req.user?.id,
-    action: "warranty.create",
-    entityType: "warranty", entityId: record.id,
-    newData: record,
+  void writeAuditLog({
+    action: "create",
+    record_type: "warranty",
+    record_id: record.id,
+    new_value: record,
+    user: req.user,
+    company_id: companyId,
   });
 
   res.status(201).json(record);
@@ -101,12 +109,14 @@ router.post("/warranty", wrap(async (req, res) => {
 /* ── تحديث حالة الضمان ───────────────────────────────────────────── */
 router.patch("/warranty/:id", wrap(async (req, res) => {
   const companyId = req.user?.company_id;
+  if (!companyId) throw httpError(401, "غير مصرح");
+
   const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return httpError(res, 400, "معرّف غير صالح");
+  if (isNaN(id)) throw httpError(400, "معرّف غير صالح");
 
   const [existing] = await db.select().from(warrantyTable)
     .where(and(eq(warrantyTable.id, id), eq(warrantyTable.company_id, companyId)));
-  if (!existing) return httpError(res, 404, "غير موجود");
+  if (!existing) throw httpError(404, "غير موجود");
 
   const { status, notes, serial_number, device_model } = req.body;
   const updates: Partial<typeof warrantyTable.$inferInsert> = {};
@@ -125,8 +135,10 @@ router.patch("/warranty/:id", wrap(async (req, res) => {
 /* ── حذف سجل ضمان ────────────────────────────────────────────────── */
 router.delete("/warranty/:id", wrap(async (req, res) => {
   const companyId = req.user?.company_id;
+  if (!companyId) throw httpError(401, "غير مصرح");
+
   const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return httpError(res, 400, "معرّف غير صالح");
+  if (isNaN(id)) throw httpError(400, "معرّف غير صالح");
 
   await db.delete(warrantyTable)
     .where(and(eq(warrantyTable.id, id), eq(warrantyTable.company_id, companyId)));

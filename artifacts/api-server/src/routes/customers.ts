@@ -80,7 +80,7 @@ router.get("/customers", wrap(async (req, res) => {
     account_id: r.account_id,
     classification_id: r.classification_id ?? null,
     normalized_name: r.normalized_name,
-    created_at: new Date(r.created_at).toISOString(),
+    created_at: new Date(String(r.created_at)).toISOString(),
   }));
   res.json(customers);
 }));
@@ -197,7 +197,7 @@ router.get("/customers/:id", wrap(async (req, res) => {
     balance: Math.round(Number(r.ledger_balance) * 100) / 100,
     is_customer: r.is_customer ?? true,
     is_supplier: r.is_supplier ?? false,
-    created_at: new Date(r.created_at).toISOString(),
+    created_at: new Date(String(r.created_at)).toISOString(),
   });
 }));
 

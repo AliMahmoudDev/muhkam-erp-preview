@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { db, purchasesTable, purchaseItemsTable, warehousesTable } from "@workspace/db";
+import { db, purchasesTable, warehousesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 
 const router: IRouter = Router();
@@ -8,7 +8,7 @@ const router: IRouter = Router();
 /* ─── تقرير الائتمان الكامل ─────────────────────────────── */
 router.get("/consignment/report", wrap(async (req, res) => {
   const companyId = req.user?.company_id;
-  if (!companyId) return res.status(400).json({ error: "company_id مطلوب" });
+  if (!companyId) { res.status(400).json({ error: "company_id مطلوب" }); return; }
 
   /* 1) كل فواتير الائتمان */
   const purchases = await db
@@ -32,10 +32,11 @@ router.get("/consignment/report", wrap(async (req, res) => {
     .orderBy(desc(purchasesTable.date));
 
   if (purchases.length === 0) {
-    return res.json({
+    res.json({
       suppliers: [],
       summary: { total_suppliers: 0, total_purchases: 0, grand_total_received: 0, grand_total_owed: 0 },
     });
+    return;
   }
 
   const purchaseIds = purchases.map(p => p.id);
@@ -155,7 +156,7 @@ router.get("/consignment/report", wrap(async (req, res) => {
 /* ─── قائمة مخازن الائتمان ───────────────────────── */
 router.get("/consignment/warehouses", wrap(async (req, res) => {
   const companyId = req.user?.company_id;
-  if (!companyId) return res.status(400).json({ error: "company_id مطلوب" });
+  if (!companyId) { res.status(400).json({ error: "company_id مطلوب" }); return; }
 
   const rows = await db
     .select()
@@ -171,10 +172,10 @@ router.get("/consignment/warehouses", wrap(async (req, res) => {
 /* ─── إنشاء أو إيجاد مخزن ائتمان لمورد ─────────── */
 router.post("/consignment/warehouses/ensure", wrap(async (req, res) => {
   const companyId = req.user?.company_id;
-  if (!companyId) return res.status(400).json({ error: "company_id مطلوب" });
+  if (!companyId) { res.status(400).json({ error: "company_id مطلوب" }); return; }
 
   const { supplier_name, supplier_id } = req.body as { supplier_name: string; supplier_id?: number };
-  if (!supplier_name) return res.status(400).json({ error: "supplier_name مطلوب" });
+  if (!supplier_name) { res.status(400).json({ error: "supplier_name مطلوب" }); return; }
 
   const warehouseName = `ائتمان — ${supplier_name}`;
 
@@ -187,7 +188,7 @@ router.post("/consignment/warehouses/ensure", wrap(async (req, res) => {
     ))
     .limit(1);
 
-  if (existing.length > 0) return res.json(existing[0]);
+  if (existing.length > 0) { res.json(existing[0]); return; }
 
   const [created] = await db.insert(warehousesTable).values({
     name: warehouseName,

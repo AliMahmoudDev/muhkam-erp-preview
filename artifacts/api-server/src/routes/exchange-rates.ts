@@ -79,7 +79,7 @@ router.post("/exchange-rates", wrap(async (req, res) => {
       .set({ rate: String(rate), notes: notes ?? null })
       .where(eq(exchangeRatesTable.id, existing[0].id))
       .returning();
-    return res.json({ ...updated, rate: Number(updated.rate) });
+    res.json({ ...updated, rate: Number(updated.rate) }); return;
   }
 
   const [inserted] = await db.insert(exchangeRatesTable).values({

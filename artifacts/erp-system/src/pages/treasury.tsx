@@ -214,7 +214,7 @@ export default function Treasury() {
               <button
                 onClick={() => {
                   setShowAddSafe(false);
-                  setAddForm({ name: '', balance: '' });
+                  setAddForm({ name: '', balance: '', branch_id: '' });
                 }}
                 className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors"
               >
@@ -297,7 +297,7 @@ export default function Treasury() {
               <button
                 onClick={() => {
                   setShowAddSafe(false);
-                  setAddForm({ name: '', balance: '' });
+                  setAddForm({ name: '', balance: '', branch_id: '' });
                 }}
                 className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold text-sm rounded-xl py-2.5 transition-colors border border-white/8"
               >

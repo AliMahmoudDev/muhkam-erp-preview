@@ -262,7 +262,7 @@ router.get("/reports/daily-profit", wrap(async (req, res) => {
     return dayMap.get(day)!;
   };
 
-  for (const r of salesRows.rows as Record<string, unknown>[]) { const d = ensure(r.day); d.sales_revenue += Number(r.sales_revenue); d.sales_cogs += Number(r.sales_cogs); }
+  for (const r of salesRows.rows as Record<string, unknown>[]) { const d = ensure(String(r.day)); d.sales_revenue += Number(r.sales_revenue); d.sales_cogs += Number(r.sales_cogs); }
   for (const r of retRows.rows  as any[]) { const d = ensure(r.day); d.ret_revenue  += Number(r.ret_revenue);  d.ret_cogs   += Number(r.ret_cogs);   }
   for (const r of expRows.rows  as any[]) { const d = ensure(r.day); d.expenses     += Number(r.total_expenses); }
 
@@ -427,7 +427,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   for (const r of openRows.rows as Record<string, unknown>[]) {
-    rows.push({ date: r.date ?? "1900-01-01", type: "opening_balance", description: r.description ?? "رصيد أول المدة", debit: 0, credit: Number(r.amount) });
+    rows.push({ date: String(r.date ?? "1900-01-01"), type: "opening_balance", description: String(r.description ?? "رصيد أول المدة"), debit: 0, credit: Number(r.amount) });
   }
 
   const salesRows = await db.execute(sql`
@@ -438,7 +438,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   for (const r of salesRows.rows as Record<string, unknown>[]) {
-    rows.push({ date: r.date, type: "sale", description: `فاتورة مبيعات ${r.invoice_no}`, debit: Number(r.total_amount), credit: 0, reference_no: r.invoice_no });
+    rows.push({ date: String(r.date), type: "sale", description: `فاتورة مبيعات ${r.invoice_no}`, debit: Number(r.total_amount), credit: 0, reference_no: r.invoice_no ? String(r.invoice_no) : undefined });
   }
 
   const rvRows = await db.execute(sql`
@@ -449,7 +449,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   for (const r of rvRows.rows as Record<string, unknown>[]) {
-    rows.push({ date: r.date, type: "receipt", description: `سند قبض ${r.voucher_no}`, debit: 0, credit: Number(r.amount), reference_no: r.voucher_no });
+    rows.push({ date: String(r.date), type: "receipt", description: `سند قبض ${r.voucher_no}`, debit: 0, credit: Number(r.amount), reference_no: r.voucher_no ? String(r.voucher_no) : undefined });
   }
 
   const retRows = await db.execute(sql`
@@ -459,7 +459,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   for (const r of retRows.rows as Record<string, unknown>[]) {
-    rows.push({ date: r.date, type: "sale_return", description: `مرتجع مبيعات ${r.return_no}`, debit: 0, credit: Number(r.total_amount), reference_no: r.return_no });
+    rows.push({ date: String(r.date), type: "sale_return", description: `مرتجع مبيعات ${r.return_no}`, debit: 0, credit: Number(r.total_amount), reference_no: r.return_no ? String(r.return_no) : undefined });
   }
 
   rows.sort((a, b) => a.date.localeCompare(b.date));
@@ -542,7 +542,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   for (const r of openRows.rows as Record<string, unknown>[]) {
-    rows.push({ date: r.date ?? "1900-01-01", type: "opening_balance", description: "رصيد أول المدة", debit: 0, credit: Number(r.amount) });
+    rows.push({ date: String(r.date ?? "1900-01-01"), type: "opening_balance", description: "رصيد أول المدة", debit: 0, credit: Number(r.amount) });
   }
 
   const purRows = await db.execute(sql`
@@ -553,7 +553,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   for (const r of purRows.rows as Record<string, unknown>[]) {
-    rows.push({ date: r.date, type: "purchase", description: `فاتورة شراء ${r.invoice_no}`, debit: 0, credit: Number(r.total_amount), reference_no: r.invoice_no });
+    rows.push({ date: String(r.date), type: "purchase", description: `فاتورة شراء ${r.invoice_no}`, debit: 0, credit: Number(r.total_amount), reference_no: r.invoice_no ? String(r.invoice_no) : undefined });
   }
 
   const retRows = await db.execute(sql`
@@ -563,7 +563,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   for (const r of retRows.rows as Record<string, unknown>[]) {
-    rows.push({ date: r.date, type: "purchase_return", description: `مرتجع مشتريات ${r.return_no}`, debit: Number(r.total_amount), credit: 0, reference_no: r.return_no });
+    rows.push({ date: String(r.date), type: "purchase_return", description: `مرتجع مشتريات ${r.return_no}`, debit: Number(r.total_amount), credit: 0, reference_no: r.return_no ? String(r.return_no) : undefined });
   }
 
   const pvRows = await db.execute(sql`
@@ -574,7 +574,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   for (const r of pvRows.rows as Record<string, unknown>[]) {
-    rows.push({ date: r.date, type: "payment", description: `سند دفع ${r.voucher_no}`, debit: Number(r.amount), credit: 0, reference_no: r.voucher_no });
+    rows.push({ date: String(r.date), type: "payment", description: `سند دفع ${r.voucher_no}`, debit: Number(r.amount), credit: 0, reference_no: r.voucher_no ? String(r.voucher_no) : undefined });
   }
 
   const spRows = await db.execute(sql`
@@ -585,7 +585,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   for (const r of spRows.rows as Record<string, unknown>[]) {
-    rows.push({ date: r.date ?? "1900-01-01", type: "supplier_payment", description: r.description ?? "سداد للمورد", debit: Number(r.amount), credit: 0 });
+    rows.push({ date: String(r.date ?? "1900-01-01"), type: "supplier_payment", description: String(r.description ?? "سداد للمورد"), debit: Number(r.amount), credit: 0 });
   }
 
   rows.sort((a, b) => a.date.localeCompare(b.date));
@@ -1577,7 +1577,7 @@ router.get("/reports/aging", wrap(async (req, res) => {
       ORDER BY s.date ASC
     `);
     rows = (r.rows as Record<string, unknown>[]).map(x => ({
-      id: x.id,
+      id: Number(x.id),
       name: String(x.name ?? ""),
       date: String(x.date ?? ""),
       remaining: Number(x.remaining ?? 0),
@@ -1594,7 +1594,7 @@ router.get("/reports/aging", wrap(async (req, res) => {
       ORDER BY p.date ASC
     `);
     rows = (r.rows as Record<string, unknown>[]).map(x => ({
-      id: x.id,
+      id: Number(x.id),
       name: String(x.name ?? ""),
       date: String(x.date ?? ""),
       remaining: Number(x.remaining ?? 0),
@@ -1641,7 +1641,7 @@ router.get("/reports/aging", wrap(async (req, res) => {
    التدفق النقدي - الطريقة غير المباشرة
    ───────────────────────────────────────────────────────────────── */
 router.get("/reports/cash-flow-indirect", wrap(async (req, res) => {
-  const companyId = getTenant(req);
+  const companyId = req.user?.company_id;
   const { date_from, date_to } = req.query as Record<string, string>;
   if (!date_from || !date_to) { res.status(400).json({ error: "date_from و date_to مطلوبان" }); return; }
 
