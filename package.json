@@ -17,11 +17,11 @@
   },
   "lint-staged": {
     "artifacts/api-server/src/**/*.ts": [
-      "eslint --fix",
+      "pnpm --filter @workspace/api-server exec eslint --fix",
       "prettier --write"
     ],
     "artifacts/erp-system/src/**/*.{ts,tsx}": [
-      "eslint --fix",
+      "pnpm --filter @workspace/erp-system exec eslint --fix",
       "prettier --write"
     ],
     "**/*.{json,css}": [

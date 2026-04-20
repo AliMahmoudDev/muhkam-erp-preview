@@ -21,9 +21,6 @@ import {
   AlertTriangle,
   Zap,
   X,
-  CreditCard,
-  Banknote,
-  Clock,
   Store,
   Vault,
   CheckCircle2,
@@ -445,7 +442,7 @@ function POSBody({
   canEditPrice,
   canCash,
   canCredit,
-  canPartial,
+  canPartial: _canPartial,
   canReturnSale,
   isAdmin,
   onResetSetup,
@@ -831,34 +828,49 @@ function POSBody({
   }, [cart, toast]);
 
   /* ── handleSplitConfirm — called by modal with payment breakdown ── */
-  const handleSplitConfirm = useCallback((payments: SplitPaymentEntry[]) => {
-    const totalCash = payments.filter(p => p.type === 'cash').reduce((s, p) => s + p.amount, 0);
-    const totalCredit = payments.filter(p => p.type === 'credit').reduce((s, p) => s + p.amount, 0);
-    const pt: 'cash' | 'credit' | 'partial' =
-      totalCredit === 0 ? 'cash' : totalCash === 0 ? 'credit' : 'partial';
-    const primarySafe = payments.find(p => p.type === 'cash')?.safe_id ?? safeId;
+  const handleSplitConfirm = useCallback(
+    (payments: SplitPaymentEntry[]) => {
+      const totalCash = payments.filter((p) => p.type === 'cash').reduce((s, p) => s + p.amount, 0);
+      const totalCredit = payments
+        .filter((p) => p.type === 'credit')
+        .reduce((s, p) => s + p.amount, 0);
+      const pt: 'cash' | 'credit' | 'partial' =
+        totalCredit === 0 ? 'cash' : totalCash === 0 ? 'credit' : 'partial';
+      const primarySafe = payments.find((p) => p.type === 'cash')?.safe_id ?? safeId;
 
-    checkoutMutation.mutate({
-      payment_type: pt,
-      total_amount: cartTotal,
-      paid_amount: totalCash,
-      customer_id: selectedCustomer?.id ?? null,
-      customer_name: selectedCustomer?.name ?? null,
-      safe_id: primarySafe,
-      warehouse_id: warehouseId,
-      salesperson_id: user?.id ?? null,
-      discount_percent: parseFloat(discountPct) || 0,
-      discount_amount: discountAmt,
-      items: cart.map((i) => ({
-        product_id: i.product_id,
-        product_name: i.product_name,
-        quantity: i.quantity,
-        unit_price: i.unit_price,
-        total_price: i.total_price,
-      })),
-      payments,
-    });
-  }, [cart, cartTotal, selectedCustomer, safeId, warehouseId, user, discountPct, discountAmt, checkoutMutation]);
+      checkoutMutation.mutate({
+        payment_type: pt,
+        total_amount: cartTotal,
+        paid_amount: totalCash,
+        customer_id: selectedCustomer?.id ?? null,
+        customer_name: selectedCustomer?.name ?? null,
+        safe_id: primarySafe,
+        warehouse_id: warehouseId,
+        salesperson_id: user?.id ?? null,
+        discount_percent: parseFloat(discountPct) || 0,
+        discount_amount: discountAmt,
+        items: cart.map((i) => ({
+          product_id: i.product_id,
+          product_name: i.product_name,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+          total_price: i.total_price,
+        })),
+        payments,
+      });
+    },
+    [
+      cart,
+      cartTotal,
+      selectedCustomer,
+      safeId,
+      warehouseId,
+      user,
+      discountPct,
+      discountAmt,
+      checkoutMutation,
+    ]
+  );
 
   /* keep ref current */
   checkoutRef.current = handleCheckout;
@@ -1762,9 +1774,7 @@ function POSBody({
                 onClick={handleCheckout}
                 disabled={cart.length === 0}
                 className={`w-full rounded-2xl font-black flex items-center justify-center gap-3 transition-all ${
-                  cart.length === 0
-                    ? 'erp-btn-disabled'
-                    : 'erp-btn-primary'
+                  cart.length === 0 ? 'erp-btn-disabled' : 'erp-btn-primary'
                 }`}
                 style={{
                   paddingTop: cm ? '1.125rem' : '0.875rem',
@@ -1808,7 +1818,10 @@ function POSBody({
           hasCustomer={!!customerId}
           isPending={checkoutMutation.isPending}
           onConfirm={handleSplitConfirm}
-          onClose={() => { setShowSplitPayment(false); setCheckoutError(null); }}
+          onClose={() => {
+            setShowSplitPayment(false);
+            setCheckoutError(null);
+          }}
         />
       )}
 

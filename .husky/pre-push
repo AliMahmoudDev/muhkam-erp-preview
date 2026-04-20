@@ -1,15 +1,43 @@
-echo "🧪 Running tests before push..."
+echo "🔍 Checking lint (backend)..."
+pnpm --filter @workspace/api-server lint
+if [ $? -ne 0 ]; then
+  echo "❌ Backend lint failed — push rejected! Run: pnpm --filter @workspace/api-server lint:fix"
+  exit 1
+fi
 
+echo "🔍 Checking lint (frontend)..."
+pnpm --filter @workspace/erp-system lint
+if [ $? -ne 0 ]; then
+  echo "❌ Frontend lint failed — push rejected! Run: pnpm --filter @workspace/erp-system lint:fix"
+  exit 1
+fi
+
+echo "🔎 Type checking (backend)..."
+pnpm --filter @workspace/api-server type-check
+if [ $? -ne 0 ]; then
+  echo "❌ Backend type check failed — push rejected!"
+  exit 1
+fi
+
+echo "🔎 Type checking (frontend)..."
+pnpm --filter @workspace/erp-system type-check
+if [ $? -ne 0 ]; then
+  echo "❌ Frontend type check failed — push rejected!"
+  exit 1
+fi
+
+echo "🧪 Running tests (backend)..."
 pnpm --filter @workspace/api-server test
 if [ $? -ne 0 ]; then
   echo "❌ Backend tests failed — push rejected!"
   exit 1
 fi
 
+echo "🧪 Running tests (frontend)..."
 pnpm --filter @workspace/erp-system test
 if [ $? -ne 0 ]; then
   echo "❌ Frontend tests failed — push rejected!"
   exit 1
 fi
 
-echo "✅ All tests passed — pushing!"
+echo "✅ All checks passed — pushing!"
