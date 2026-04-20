@@ -5,8 +5,7 @@ import { useGetSaleById, useGetProducts, useGetCustomers, useGetSettingsSafes, u
 import { ProductFormModal, ProductFormData } from "@/components/product-form-modal";
 import { useWarehouse } from "@/contexts/warehouse";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { Search, Plus, Minus, Trash2, X, Printer, ShoppingCart, User, Package, Receipt, RotateCcw, Percent, Vault, Lock, CheckCircle, XCircle, ClipboardList, Banknote } from "lucide-react";
-import { SplitPaymentModal, type SplitPaymentEntry } from "@/components/SplitPaymentModal";
+import { Search, Plus, Minus, Trash2, X, Printer, ShoppingCart, User, Package, Receipt, RotateCcw, Percent, Vault, Lock, CheckCircle, XCircle, ClipboardList, Banknote, Coins, Clock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
@@ -927,6 +926,8 @@ function WhatsAppSuccessModal({ invoice, onClose }: { invoice: SuccessInvoice; o
   );
 }
 
+type PayRow = { id: string; type: 'cash'|'credit'; safe_id: number|null; amount: number };
+
 function NewSalePanel({ onDone }: { onDone: () => void }) {
   const { user: currentUser } = useAuth();
   const canEditPrice = hasPermission(currentUser, "can_edit_price") === true;
@@ -959,7 +960,13 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [discountPct, setDiscountPct] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
-  const [showSplitPayment, setShowSplitPayment] = useState(false);
+  const [payRows, setPayRows] = useState<PayRow[]>([]);
+  const [payType, setPayType] = useState<'cash'|'credit'>('cash');
+  const [paySafe, setPaySafe] = useState<number|null>(null);
+  const [payAmount, setPayAmount] = useState('');
+  const [payShake, setPayShake] = useState(false);
+  const [payRowKey, setPayRowKey] = useState(0);
+  const payAmountRef = useRef<HTMLInputElement>(null);
 
   const isRestricted = currentUser?.role === "cashier" || currentUser?.role === "salesperson";
 
@@ -996,7 +1003,7 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/settings/safes"] });
       setCheckoutError(null);
-      setShowSplitPayment(false);
+      setPayRows([]); setPayAmount(''); setPayRowKey(k => k+1);
       setSuccessInvoice({
         invoice_no: data.invoice_no,
         total_amount: data.total_amount,
@@ -1081,34 +1088,64 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     [customers]
   );
 
+  const payPaidSoFar = payRows.reduce((s, r) => s + r.amount, 0);
+  const payRemaining = Math.round((cartTotal - payPaidSoFar) * 100) / 100;
+  const payPct = Math.min(100, cartTotal > 0 ? (payPaidSoFar / cartTotal) * 100 : 0);
+  const payIsDone = Math.abs(payRemaining) < 0.05 && payRows.length > 0;
+  const payCreditWarn = payRows.some(r => r.type === 'credit') && !customerId;
+  const canCheckout = cart.length > 0 && payIsDone && !checkoutMutation.isPending && !payCreditWarn;
+
+  const triggerPayShake = () => { setPayShake(true); setTimeout(() => setPayShake(false), 400); };
+
+  const confirmPayRow = () => {
+    const amt = parseFloat(payAmount);
+    if (!amt || amt <= 0 || amt > payRemaining + 0.05) { triggerPayShake(); return; }
+    const firstSafeId = effectiveSafeId ?? (safes.length > 0 ? safes[0].id : null);
+    setPayRows(prev => [...prev, {
+      id: `${Date.now()}-${Math.random()}`,
+      type: payType,
+      safe_id: payType === 'cash' ? (paySafe ?? firstSafeId) : null,
+      amount: Math.min(amt, payRemaining),
+    }]);
+    setPayAmount('');
+    setPaySafe(effectiveSafeId ?? (safes.length > 0 ? safes[0].id : null));
+    setPayType('cash');
+    setPayRowKey(k => k + 1);
+  };
+
+  const fillPayRemaining = () => setPayAmount(payRemaining.toFixed(0));
+
+  useEffect(() => {
+    const firstSafeId = effectiveSafeId ?? (safes.length > 0 ? safes[0].id : null);
+    setPaySafe(firstSafeId);
+  }, [safes.length, effectiveSafeId]);
+
+  useEffect(() => {
+    if (payRows.length > 0) { setPayRows([]); setPayAmount(''); }
+  }, [cartTotal]);
+
+  useEffect(() => {
+    if (payRowKey > 0) setTimeout(() => payAmountRef.current?.focus(), 60);
+  }, [payRowKey]);
+
   const handleCheckout = () => {
-    if (cart.length === 0) { toast({ title: "السلة فارغة", variant: "destructive" }); return; }
+    if (!canCheckout) return;
     if (!effectiveWarehouseId) {
       toast({ title: "المخزن غير محدد — يرجى مراجعة المدير لإعداد حسابك", variant: "destructive" }); return;
     }
-    setShowSplitPayment(true);
-  };
-
-  const handleSplitConfirm = (payments: SplitPaymentEntry[]) => {
-    const totalCash = payments.filter(p => p.type === "cash").reduce((s, p) => s + p.amount, 0);
-    const totalCredit = payments.filter(p => p.type === "credit").reduce((s, p) => s + p.amount, 0);
-    const pt: "cash" | "credit" | "partial" =
-      totalCredit === 0 ? "cash" : totalCash === 0 ? "credit" : "partial";
-    const primarySafe = payments.find(p => p.type === "cash")?.safe_id ?? null;
-
+    const totalCash = payRows.filter(p => p.type === "cash").reduce((s, p) => s + p.amount, 0);
+    const totalCredit = payRows.filter(p => p.type === "credit").reduce((s, p) => s + p.amount, 0);
+    const pt: "cash"|"credit"|"partial" = totalCredit === 0 ? "cash" : totalCash === 0 ? "credit" : "partial";
+    const primarySafe = payRows.find(p => p.type === "cash")?.safe_id ?? null;
     checkoutMutation.mutate({
-      payment_type: pt,
-      total_amount: cartTotal,
-      paid_amount: totalCash,
-      customer_id: selectedCustomer?.id ?? null,
-      customer_name: selectedCustomer?.name ?? null,
+      payment_type: pt, total_amount: cartTotal, paid_amount: totalCash,
+      customer_id: selectedCustomer?.id ?? null, customer_name: selectedCustomer?.name ?? null,
       safe_id: primarySafe,
       warehouse_id: effectiveWarehouseId ? parseInt(effectiveWarehouseId) : null,
       salesperson_id: salespersonId ? parseInt(salespersonId) : null,
-      discount_percent: parseFloat(discountPct) || 0,
-      discount_amount: discountAmount,
+      discount_percent: parseFloat(discountPct) || 0, discount_amount: discountAmount,
       items: cart,
-      payments,
+      payments: payRows.map(r => ({ type: r.type, safe_id: r.safe_id, amount: r.amount })),
     });
   };
 
@@ -1158,10 +1195,8 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
   );
 
   const _handleNewSale = () => {
-    setCart([]);
-    setCustomerId("");
-    setSearch("");
-    setDiscountPct("");
+    setCart([]); setCustomerId(""); setSearch(""); setDiscountPct("");
+    setPayRows([]); setPayAmount(''); setPayRowKey(k => k + 1);
     setTimeout(() => searchInputRef.current?.focus(), 0);
   };
 
@@ -1169,20 +1204,6 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     <>
       {successInvoice && (
         <WhatsAppSuccessModal invoice={successInvoice} onClose={() => { setSuccessInvoice(null); onDone(); }} />
-      )}
-      {showSplitPayment && (
-        <SplitPaymentModal
-          total={cartTotal}
-          safes={(safes as { id: number; name: string }[])}
-          defaultSafeId={effectiveSafeId}
-          isRestricted={isRestricted}
-          canCash={true}
-          canCredit={true}
-          hasCustomer={!!customerId}
-          isPending={checkoutMutation.isPending}
-          onConfirm={handleSplitConfirm}
-          onClose={() => { setShowSplitPayment(false); setCheckoutError(null); }}
-        />
       )}
       {showCreateProduct && (
         <ProductFormModal
@@ -1437,28 +1458,143 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
               </div>
             </div>
 
-            {checkoutError && (
-              <div className="bg-red-500/10 border border-red-500/25 rounded-xl px-3 py-2 flex items-start gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-red-400 text-xs font-bold leading-tight">❌ فشل التسجيل</p>
-                  <p className="text-red-300/70 text-xs mt-0.5 leading-tight">{checkoutError}</p>
+            {/* ── قسم الدفع المدمج ── */}
+            {cart.length > 0 && (
+              <div className="rounded-2xl border border-amber-500/20 overflow-hidden" style={{ background: 'rgba(245,158,11,0.04)' }}>
+                {/* شريط التقدم */}
+                <div className="px-3 pt-2.5 pb-2">
+                  <div className="flex justify-between items-center text-xs mb-1.5">
+                    <span className="font-bold tabular-nums transition-colors" style={{ color: payIsDone ? '#10B981' : '#F59E0B' }}>
+                      {payIsDone ? '✓ مكتمل' : payPaidSoFar > 0 ? `متبقي: ${formatCurrency(payRemaining)}` : 'أدخل طريقة الدفع'}
+                    </span>
+                    <span className="text-white/30">{Math.round(payPct)}%</span>
+                  </div>
+                  <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${payPct}%`, background: payIsDone ? 'linear-gradient(90deg,#10B981,#34D399)' : 'linear-gradient(90deg,#F59E0B,#FBBF24)' }} />
+                  </div>
                 </div>
-                <button onClick={() => setShowSplitPayment(true)}
-                  className="shrink-0 text-xs text-white font-bold px-3 py-1.5 rounded-lg bg-red-500/30 hover:bg-red-500/50 border border-red-500/40 transition-colors">
-                  إعادة المحاولة
-                </button>
+
+                {/* الصفوف المؤكدة */}
+                {payRows.length > 0 && (
+                  <div className="px-2 pb-2 space-y-1">
+                    {payRows.map(row => (
+                      <div key={row.id} className="flex items-center gap-1.5 rounded-xl px-2 py-1.5"
+                        style={{
+                          background: row.type === 'credit' ? 'rgba(99,102,241,0.08)' : 'rgba(16,185,129,0.07)',
+                          border: `1px solid ${row.type === 'credit' ? 'rgba(99,102,241,0.20)' : 'rgba(16,185,129,0.15)'}`,
+                        }}>
+                        <button onClick={() => setPayRows(prev => prev.filter(r => r.id !== row.id))}
+                          className="w-5 h-5 rounded flex items-center justify-center shrink-0 text-red-400/60 hover:text-red-400 transition-colors"
+                          style={{ background: 'rgba(239,68,68,0.08)' }}>
+                          <X className="w-3 h-3" />
+                        </button>
+                        <span className="text-xs shrink-0 flex items-center gap-1"
+                          style={{ color: row.type === 'credit' ? '#818CF8' : '#34D399' }}>
+                          {row.type === 'cash' ? <Coins className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                          {row.type === 'cash' ? (safes.find(s => s.id === row.safe_id)?.name ?? '—') : 'ائتمان'}
+                        </span>
+                        <span className="font-black text-white text-sm tabular-nums mr-auto">{formatCurrency(row.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* حقل الإدخال النشط */}
+                {!payIsDone && (
+                  <div className={`px-2 pb-2.5 ${payShake ? 'erp-shake' : ''}`}>
+                    {/* نوع الدفع */}
+                    <div className="flex gap-1 mb-2">
+                      <button onClick={() => setPayType('cash')}
+                        className="flex-1 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all"
+                        style={{
+                          background: payType === 'cash' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${payType === 'cash' ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                          color: payType === 'cash' ? '#34D399' : 'rgba(255,255,255,0.35)',
+                        }}>
+                        <Coins className="w-3 h-3" /> نقدي
+                      </button>
+                      <button onClick={() => setPayType('credit')}
+                        className="flex-1 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all"
+                        style={{
+                          background: payType === 'credit' ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${payType === 'credit' ? 'rgba(99,102,241,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                          color: payType === 'credit' ? '#818CF8' : 'rgba(255,255,255,0.35)',
+                        }}>
+                        <Clock className="w-3 h-3" /> آجل
+                      </button>
+                    </div>
+                    {/* خزينة + مبلغ */}
+                    <div className="flex gap-1.5 items-stretch mb-1.5">
+                      {payType === 'cash' ? (
+                        <select value={paySafe ?? ''} onChange={e => setPaySafe(parseInt(e.target.value) || null)}
+                          disabled={isRestricted}
+                          className="flex-1 min-w-0 rounded-xl text-xs outline-none appearance-none"
+                          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#fff', padding: '8px 10px', direction: 'rtl', cursor: isRestricted ? 'not-allowed' : 'pointer' }}>
+                          {safes.map(s => <option key={s.id} value={s.id} style={{ background: '#0f0f19', color: '#fff' }}>{s.name}</option>)}
+                        </select>
+                      ) : (
+                        <div className="flex-1 rounded-xl px-3 flex items-center justify-end text-xs"
+                          style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.18)', color: '#818CF8' }}>
+                          ائتمان العميل
+                        </div>
+                      )}
+                      <div className="relative shrink-0" style={{ width: 100 }}>
+                        <input key={payRowKey} ref={payAmountRef} type="number" min="0" step="any"
+                          value={payAmount} onChange={e => setPayAmount(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); confirmPayRow(); } }}
+                          onFocus={e => e.target.select()}
+                          placeholder={payRemaining.toFixed(0)}
+                          className="w-full rounded-xl text-center text-xs font-bold outline-none"
+                          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(245,158,11,0.30)', color: '#fff', padding: '8px 22px 8px 6px' }} dir="ltr" />
+                        <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none" style={{ color: 'rgba(255,255,255,0.25)' }}>ج.م</span>
+                      </div>
+                    </div>
+                    {/* أزرار التأكيد والملء */}
+                    <div className="flex gap-1.5">
+                      <button onClick={confirmPayRow}
+                        className="px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 shrink-0"
+                        style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', color: '#0a0500', boxShadow: '0 2px 8px rgba(245,158,11,0.25)' }}>
+                        ↵ تأكيد
+                      </button>
+                      <button onClick={fillPayRemaining}
+                        className="flex-1 text-xs px-2 py-1.5 rounded-xl text-center transition-all hover:opacity-80 truncate"
+                        style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', color: '#F59E0B' }}>
+                        كل المتبقي ({formatCurrency(payRemaining)})
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* تحذير الائتمان بدون عميل */}
+                {payCreditWarn && (
+                  <div className="mx-2 mb-2 px-2 py-1.5 rounded-xl text-xs font-bold"
+                    style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)', color: '#F59E0B' }}>
+                    ⚠ اختر العميل أولاً للبيع الآجل
+                  </div>
+                )}
               </div>
             )}
-            <button onClick={handleCheckout} disabled={cart.length === 0}
-              className="w-full py-3.5 rounded-xl font-black text-sm disabled:opacity-40 transition-all active:scale-97 flex items-center justify-center gap-2 relative overflow-hidden"
+
+            {checkoutError && (
+              <div className="bg-red-500/10 border border-red-500/25 rounded-xl px-3 py-2">
+                <p className="text-red-400 text-xs font-bold leading-tight">❌ فشل التسجيل</p>
+                <p className="text-red-300/70 text-xs mt-0.5 leading-tight">{checkoutError}</p>
+              </div>
+            )}
+            <button onClick={handleCheckout} disabled={!canCheckout}
+              className="w-full py-3.5 rounded-xl font-black text-sm disabled:opacity-40 transition-all active:scale-97 flex items-center justify-center gap-2"
               style={{
-                background: cart.length > 0 ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" : undefined,
-                color: cart.length > 0 ? "#000" : undefined,
-                boxShadow: cart.length > 0 ? "0 6px 22px rgba(245,158,11,0.40), 0 1px 3px rgba(0,0,0,0.2)" : "none",
+                background: canCheckout ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" : undefined,
+                color: canCheckout ? "#000" : undefined,
+                boxShadow: canCheckout ? "0 6px 22px rgba(245,158,11,0.40), 0 1px 3px rgba(0,0,0,0.2)" : "none",
+                border: canCheckout ? 'none' : '1px solid rgba(255,255,255,0.08)',
               }}>
-              <Banknote className="w-4 h-4" />
-              إتمام البيع
-              <kbd className="text-[10px] font-bold opacity-60 bg-black/10 px-1.5 py-0.5 rounded">F9</kbd>
+              {checkoutMutation.isPending ? (
+                <><div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> جارٍ التسجيل...</>
+              ) : (
+                <><Banknote className="w-4 h-4" /> إتمام البيع <kbd className="text-[10px] font-bold opacity-60 bg-black/10 px-1.5 py-0.5 rounded">F9</kbd></>
+              )}
             </button>
 
             <div className="flex items-center justify-center gap-4 text-xs text-white/20 pb-1">
@@ -1466,6 +1602,10 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
               <span>·</span>
               <span>Enter إضافة</span>
             </div>
+            <style>{`
+              @keyframes erp-shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+              .erp-shake { animation: erp-shake 0.35s ease; }
+            `}</style>
           </div>
         </div>
       </div>
