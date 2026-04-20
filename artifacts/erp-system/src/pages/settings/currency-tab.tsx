@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAppSettings } from "@/contexts/app-settings";
 import { formatCurrencyPreview } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
+import { authFetch } from "@/lib/auth-fetch";
 import { Check, Save, CheckCircle2, DollarSign, AlignLeft, CaseSensitive, Sun, TrendingUp, Loader2 } from "lucide-react";
 import { PageHeader } from "./_shared";
 import type { CurrencyCode, NumberFormat, FontFamily, LightVariant } from "@/contexts/app-settings";
@@ -60,7 +61,7 @@ function ExchangeRatesSection() {
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
-    fetch("/api/exchange-rates/latest")
+    authFetch("/api/exchange-rates/latest")
       .then(r => r.json())
       .then((data: Record<string, number>) => {
         const mapped: Record<string, string> = {};
@@ -80,9 +81,8 @@ function ExchangeRatesSection() {
     }
     setSaving(s => ({ ...s, [code]: true }));
     try {
-      const res = await fetch("/api/exchange-rates", {
+      const res = await authFetch("/api/exchange-rates", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currency: code, rate: rateVal, date: today }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -107,9 +107,8 @@ function ExchangeRatesSection() {
     });
     try {
       await Promise.all(toSave.map(c =>
-        fetch("/api/exchange-rates", {
+        authFetch("/api/exchange-rates", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ currency: c.code, rate: parseFloat(rates[c.code]), date: today }),
         })
       ));
