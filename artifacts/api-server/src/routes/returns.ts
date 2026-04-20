@@ -204,6 +204,7 @@ router.post("/sales-returns", wrap(async (req, res) => {
 
     for (const item of items) {
       const retQty = Number(item.quantity);
+      if (retQty <= 0) throw httpError(400, `كمية المرتجع للصنف "${item.product_name}" يجب أن تكون أكبر من صفر`);
       const origSaleItemId: number | null = item.original_sale_item_id
         ? parseInt(item.original_sale_item_id)
         : null;
@@ -751,6 +752,7 @@ router.post("/purchase-returns", wrap(async (req, res) => {
     // ── بنود المرتجع: التحقق + المخزون + WAC ────────────────────────────────
     for (const item of items) {
       const retQty    = Number(item.quantity);
+      if (retQty <= 0) throw httpError(400, `كمية المرتجع للصنف "${item.product_name}" يجب أن تكون أكبر من صفر`);
       const origPurchaseItemId: number | null = item.original_purchase_item_id
         ? parseInt(item.original_purchase_item_id)
         : null;

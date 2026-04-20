@@ -132,6 +132,7 @@ router.post("/expenses", wrap(async (req, res) => {
 
   const safe_id: number | undefined = req.body.safe_id ? parseInt(req.body.safe_id) : undefined;
   const amt = parsed.data.amount;
+  if (amt <= 0) throw httpError(400, "المبلغ يجب أن يكون أكبر من صفر");
 
   const result = await db.transaction(async (tx) => {
     let safe: typeof safesTable.$inferSelect | null = null;

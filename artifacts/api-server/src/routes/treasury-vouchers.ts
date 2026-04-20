@@ -45,13 +45,20 @@ router.post("/treasury-vouchers", wrap(async (req, res) => {
   if (!type || !safe_id || !amount || !description) {
     res.status(400).json({ error: "البيانات غير مكتملة" }); return;
   }
+  if (!["receipt", "payment"].includes(type)) {
+    res.status(400).json({ error: "نوع السند غير صحيح" }); return;
+  }
+  const amt = Number(amount);
+  if (!isFinite(amt) || amt <= 0) {
+    res.status(400).json({ error: "المبلغ يجب أن يكون أكبر من صفر" }); return;
+  }
+
   const [safe] = await db.select().from(safesTable).where(and(
     eq(safesTable.id, parseInt(safe_id)),
     eq(safesTable.company_id, cid),
   ));
   if (!safe) { res.status(404).json({ error: "الخزانة غير موجودة" }); return; }
 
-  const amt = Number(amount);
   const voucher_no = `${type === "receipt" ? "RV" : "PV"}-${Date.now()}`;
 
   const voucher = await db.transaction(async (tx) => {

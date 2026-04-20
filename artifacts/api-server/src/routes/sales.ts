@@ -170,6 +170,15 @@ router.post("/sales", wrap(async (req, res) => {
     discount_percent, discount_amount, payments: paymentsInput,
   } = parsed.data;
 
+  // ── Business logic validation ──────────────────────────────────────────
+  if (total_amount <= 0) throw httpError(400, "إجمالي الفاتورة يجب أن يكون أكبر من صفر");
+  if (paid_amount < 0) throw httpError(400, "المبلغ المدفوع لا يمكن أن يكون سالباً");
+  if (!items || items.length === 0) throw httpError(400, "الفاتورة يجب أن تحتوي على صنف واحد على الأقل");
+  for (const item of items) {
+    if (item.quantity <= 0) throw httpError(400, `كمية الصنف "${item.product_name}" يجب أن تكون أكبر من صفر`);
+    if (item.unit_price < 0) throw httpError(400, `سعر الصنف "${item.product_name}" لا يمكن أن يكون سالباً`);
+  }
+
   // ── Scope enforcement: warehouse + safe ──────────────────────────────
   const role = req.user?.role ?? "cashier";
   const bodyWarehouseId = warehouse_id ? Number(warehouse_id) : null;

@@ -94,6 +94,15 @@ router.post("/purchases", wrap(async (req, res) => {
     consignment_warehouse_id,
   } = parsed.data;
 
+  // ── Business logic validation ──────────────────────────────────────────
+  if (total_amount <= 0) throw httpError(400, "إجمالي الفاتورة يجب أن يكون أكبر من صفر");
+  if (paid_amount < 0) throw httpError(400, "المبلغ المدفوع لا يمكن أن يكون سالباً");
+  if (!items || items.length === 0) throw httpError(400, "الفاتورة يجب أن تحتوي على صنف واحد على الأقل");
+  for (const item of items) {
+    if (item.quantity <= 0) throw httpError(400, `كمية الصنف "${item.product_name}" يجب أن تكون أكبر من صفر`);
+    if (item.unit_price < 0) throw httpError(400, `سعر الصنف "${item.product_name}" لا يمكن أن يكون سالباً`);
+  }
+
   const remaining = total_amount - paid_amount;
 
   await assertPeriodOpen(date, req);

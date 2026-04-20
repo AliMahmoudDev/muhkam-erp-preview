@@ -72,6 +72,11 @@ router.post("/bank-accounts/:id/lines", wrap(async (req, res) => {
 
   const lines = Array.isArray(req.body) ? req.body : [req.body];
   if (lines.length === 0) throw httpError(400, "لا توجد سطور للإضافة");
+  for (const l of lines) {
+    if (!["credit", "debit"].includes(l.type)) throw httpError(400, `نوع السطر "${l.type}" غير صحيح — يجب أن يكون credit أو debit`);
+    if (!isFinite(Number(l.amount)) || Number(l.amount) <= 0) throw httpError(400, "مبلغ كل سطر يجب أن يكون أكبر من صفر");
+    if (!l.date || !l.description) throw httpError(400, "التاريخ والوصف مطلوبان لكل سطر");
+  }
 
   const inserted = await db.insert(bankStatementLinesTable).values(
     lines.map((l: { date: string; description: string; amount: number; type: string; reference?: string }) => ({
