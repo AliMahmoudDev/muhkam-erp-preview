@@ -1504,7 +1504,7 @@ function CountTab({
     countMode === 'full'
       ? allProducts
       : countMode === 'positive'
-        ? allProducts.filter((p) => p.actual_qty > 0)
+        ? allProducts.filter((p) => p.calculated_qty > 0)
         : allProducts.filter((p) => selectedProductIds.has(p.id));
 
   const enteredProducts = allProducts.filter(
