@@ -15,6 +15,16 @@ import { hasPermission } from "@/lib/permissions";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const api = (p: string) => `${BASE}${p}`;
 
+type PurchaseCurrency = "EGP" | "USD" | "CNY" | "EUR" | "SAR" | "AED";
+
+const CURRENCY_SYMBOLS: Record<PurchaseCurrency, string> = {
+  EGP: "ج.م", USD: "$", CNY: "¥", EUR: "€", SAR: "ر.س", AED: "د.إ",
+};
+
+const CURRENCY_LABELS: Record<PurchaseCurrency, string> = {
+  EGP: "جنيه مصري", USD: "دولار أمريكي", CNY: "يوان صيني", EUR: "يورو", SAR: "ريال سعودي", AED: "درهم إماراتي",
+};
+
 interface CartItem {
   product_id: number;
   product_name: string;
@@ -63,6 +73,8 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [showCreateProduct, setShowCreateProduct] = useState(false);
+  const [currency, setCurrency] = useState<PurchaseCurrency>("EGP");
+  const [exchangeRate, setExchangeRate] = useState<string>("1");
 
   // Auto-set warehouse (scoped to user's warehouse for cashier/salesperson)
   useEffect(() => {
@@ -74,6 +86,17 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
     if (isScopedRole && user?.safe_id && !safeId) setSafeId(String(user.safe_id));
   }, [isScopedRole, user?.safe_id, safeId]);
 
+  // Auto-fetch latest exchange rate when currency changes
+  useEffect(() => {
+    if (currency === "EGP") { setExchangeRate("1"); return; }
+    authFetch(api(`/api/exchange-rates/latest?currency=${currency}`))
+      .then(r => r.ok ? r.json() : null)
+      .then((data: Record<string, number> | null) => {
+        if (data && data[currency]) setExchangeRate(String(data[currency]));
+      })
+      .catch(() => {});
+  }, [currency]);
+
   const filteredProducts = products.filter(p => {
     const matchS = p.name.toLowerCase().includes(search.toLowerCase()) || (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()));
     const matchC = !categoryFilter || p.category_name === categoryFilter || p.category === categoryFilter;
@@ -81,6 +104,9 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
   });
 
   const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.total_price, 0), [cart]);
+  const rate = parseFloat(exchangeRate) || 1;
+  const egpTotal = useMemo(() => (currency === "EGP" ? cartTotal : cartTotal * rate), [cartTotal, currency, rate]);
+  const currSym = CURRENCY_SYMBOLS[currency];
 
   const partyItems = useMemo(() => {
     return suppliers.map(s => ({
@@ -111,9 +137,9 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
     const cid = selectedParty?.type === "customer" ? selectedParty.id : parseInt(customerId);
     if (!cid) return 0;
     if (paymentType === "cash") return 0;
-    if (paymentType === "credit") return -cartTotal;
-    return -(cartTotal - (parseFloat(paidAmount) || 0));
-  }, [selectedParty, customerId, paymentType, paidAmount, cartTotal]);
+    if (paymentType === "credit") return -egpTotal;
+    return -(egpTotal - (parseFloat(paidAmount) || 0));
+  }, [selectedParty, customerId, paymentType, paidAmount, egpTotal]);
 
   const addToCart = (product: typeof products[0]) => {
     setCart(prev => {
@@ -141,7 +167,8 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
     if ((paymentType === "cash" || paymentType === "partial") && !safeId) {
       toast({ title: "يجب اختيار الخزينة للدفع النقدي", variant: "destructive" }); return;
     }
-    const actualPaid = paymentType === "cash" ? cartTotal : paymentType === "credit" ? 0 : parseFloat(paidAmount) || 0;
+
+    const actualPaid = paymentType === "cash" ? egpTotal : paymentType === "credit" ? 0 : parseFloat(paidAmount) || 0;
 
     let finalCustomerId: number | null = null;
     let finalCustomerName: string | null = null;
@@ -150,6 +177,15 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
       finalCustomerName = selectedParty.name;
     }
 
+    const convertedItems = cart.map(item => ({
+      product_id: item.product_id,
+      product_name: item.product_name,
+      quantity: item.quantity,
+      unit_price: currency === "EGP" ? item.unit_price : parseFloat((item.unit_price * rate).toFixed(4)),
+      total_price: currency === "EGP" ? item.total_price : parseFloat((item.total_price * rate).toFixed(4)),
+      unit_price_foreign: currency !== "EGP" ? item.unit_price : undefined,
+    }));
+
     createMutation.mutate({
       data: {
         customer_id: finalCustomerId,
@@ -157,9 +193,11 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
         safe_id: safeId ? parseInt(safeId) : null,
         warehouse_id: warehouseId ? parseInt(warehouseId) : null,
         payment_type: paymentType,
-        total_amount: cartTotal,
+        total_amount: egpTotal,
         paid_amount: actualPaid,
-        items: cart,
+        currency,
+        exchange_rate: rate,
+        items: convertedItems,
       }
     }, {
       onSuccess: () => {
@@ -169,6 +207,11 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
         queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
         queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
         queryClient.invalidateQueries({ queryKey: ["/api/settings/safes"] });
+        authFetch(api("/api/exchange-rates"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currency, rate, date: new Date().toISOString().split("T")[0] }),
+        }).catch(() => {});
         setCart([]); setPaidAmount(""); setPartyKey(""); setCustomerId(""); setSafeId(""); setPaymentType("cash");
         onDone();
       },
@@ -286,6 +329,32 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
               </h3>
               <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-xs font-bold">{cart.length} صنف</span>
             </div>
+
+            {/* اختيار العملة */}
+            <div className="flex gap-1 mb-2 flex-wrap">
+              {(Object.keys(CURRENCY_SYMBOLS) as PurchaseCurrency[]).map(cur => (
+                <button key={cur} onClick={() => setCurrency(cur)}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-all ${currency === cur ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}`}>
+                  {CURRENCY_SYMBOLS[cur]} {cur}
+                </button>
+              ))}
+            </div>
+
+            {/* سعر الصرف */}
+            {currency !== "EGP" && (
+              <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 mb-2">
+                <span className="text-blue-300 text-xs font-bold shrink-0">سعر الصرف:</span>
+                <span className="text-blue-200/60 text-xs shrink-0">1 {currency} =</span>
+                <input
+                  type="number" step="0.01" min="0.01"
+                  value={exchangeRate}
+                  onChange={e => setExchangeRate(e.target.value)}
+                  className="bg-transparent text-blue-200 outline-none text-xs font-bold w-20 text-right"
+                />
+                <span className="text-blue-200/60 text-xs shrink-0">ج.م</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-1.5 text-xs">
               {selectRow("المخزن", <Vault className="w-3.5 h-3.5" />,
                 <select className="bg-transparent text-white outline-none w-full appearance-none text-xs" value={warehouseId} onChange={e => setWarehouseId(e.target.value)}>
@@ -322,8 +391,12 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
                       onChange={e => updatePrice(item.product_id, parseFloat(e.target.value) || 0)}
                       className="bg-white/10 border border-white/10 rounded-lg px-2 py-1 text-xs text-white outline-none w-full text-right"
                     />
+                    <span className="text-white/30 text-xs shrink-0">{currSym}</span>
                   </div>
-                  <span className="font-bold text-blue-400 text-sm shrink-0">{formatCurrency(item.total_price)}</span>
+                  <div className="text-right shrink-0">
+                    <div className="font-bold text-blue-400 text-sm">{currSym} {item.total_price.toFixed(2)}</div>
+                    {currency !== "EGP" && <div className="text-xs text-white/30">{formatCurrency(item.total_price * rate)}</div>}
+                  </div>
                 </div>
               </div>
             ))}
@@ -371,14 +444,22 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
             )}
 
             <div className="bg-white/5 rounded-xl p-3 border border-white/10 space-y-1.5">
+              {currency !== "EGP" && (
+                <div className="flex justify-between text-xs border-b border-white/10 pb-1.5">
+                  <span className="text-blue-300/80">الإجمالي بـ {CURRENCY_LABELS[currency]}</span>
+                  <span className="font-bold text-blue-300">{currSym} {cartTotal.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
-                <span className="text-white/70 text-sm font-semibold">إجمالي الفاتورة</span>
-                <span className="font-black text-white text-lg">{formatCurrency(cartTotal)}</span>
+                <span className="text-white/70 text-sm font-semibold">
+                  {currency !== "EGP" ? `المعادل بالجنيه (× ${rate})` : "إجمالي الفاتورة"}
+                </span>
+                <span className="font-black text-white text-lg">{formatCurrency(egpTotal)}</span>
               </div>
               {paymentType === "cash" && (
                 <div className="flex justify-between text-xs border-t border-white/10 pt-1.5">
                   <span className="text-white/60">يُخصم من الخزينة</span>
-                  <span className="text-red-400 font-bold">− {formatCurrency(cartTotal)}</span>
+                  <span className="text-red-400 font-bold">− {formatCurrency(egpTotal)}</span>
                 </div>
               )}
               {paymentType === "partial" && paidAmount && (
@@ -389,7 +470,7 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-white/60">على حساب العميل</span>
-                    <span className="text-orange-400 font-bold">− {formatCurrency(cartTotal - (parseFloat(paidAmount) || 0))}</span>
+                    <span className="text-orange-400 font-bold">− {formatCurrency(egpTotal - (parseFloat(paidAmount) || 0))}</span>
                   </div>
                 </>
               )}
@@ -424,6 +505,7 @@ interface PurchaseRecord {
   supplier_name: string | null; payment_type: string;
   total_amount: number; paid_amount: number; remaining_amount: number;
   posting_status: string; status: string;
+  currency?: string; exchange_rate?: number;
 }
 
 function PostingBadge({ status }: { status: string }) {
@@ -487,7 +569,12 @@ function PurchaseHistoryPanel() {
                 <tr key={p.id} className="border-b border-white/5 erp-table-row">
                   <td className="p-3 font-mono text-amber-400">{p.invoice_no}</td>
                   <td className="p-3 font-bold text-white">{p.supplier_name || '—'}</td>
-                  <td className="p-3 font-bold text-blue-400">{formatCurrency(p.total_amount)}</td>
+                  <td className="p-3 font-bold text-blue-400">
+                    {formatCurrency(p.total_amount)}
+                    {p.currency && p.currency !== "EGP" && (
+                      <span className="mr-1 text-xs text-blue-300/60 font-normal">({p.currency} × {p.exchange_rate?.toFixed(2)})</span>
+                    )}
+                  </td>
                   <td className="p-3 text-white/60">{p.payment_type === "cash" ? "نقدي" : p.payment_type === "credit" ? "آجل" : "جزئي"}</td>
                   <td className="p-3"><PostingBadge status={p.posting_status} /></td>
                   <td className="p-3 text-white/50">{p.date || '—'}</td>

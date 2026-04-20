@@ -30,6 +30,8 @@ function formatPurchase(p: typeof purchasesTable.$inferSelect) {
     total_amount: Number(p.total_amount),
     paid_amount: Number(p.paid_amount),
     remaining_amount: Number(p.remaining_amount),
+    exchange_rate: Number((p as any).exchange_rate ?? 1),
+    currency: (p as any).currency ?? "EGP",
     created_at: p.created_at.toISOString(),
   };
 }
@@ -86,6 +88,8 @@ router.post("/purchases", wrap(async (req, res) => {
     safe_id,
     notes,
     date,
+    currency,
+    exchange_rate,
   } = parsed.data;
 
   const remaining = total_amount - paid_amount;
@@ -143,6 +147,8 @@ router.post("/purchases", wrap(async (req, res) => {
       status,
       date: today,
       notes: notes ?? null,
+      currency: currency ?? "EGP",
+      exchange_rate: String(exchange_rate ?? 1),
       company_id: req.user?.company_id ?? undefined,
     }).returning();
 

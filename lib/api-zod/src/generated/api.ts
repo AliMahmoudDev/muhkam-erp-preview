@@ -405,6 +405,8 @@ export const CreatePurchaseBody = zod.object({
   warehouse_id: zod.number().nullish(),
   date: zod.string().nullish(),
   notes: zod.string().nullish(),
+  currency: zod.enum(["EGP", "USD", "CNY", "EUR", "SAR", "AED"]).nullish(),
+  exchange_rate: zod.number().nullish(),
   items: zod.array(
     zod.object({
       product_id: zod.number(),
@@ -412,6 +414,7 @@ export const CreatePurchaseBody = zod.object({
       quantity: zod.number(),
       unit_price: zod.number(),
       total_price: zod.number(),
+      unit_price_foreign: zod.number().nullish(),
     }),
   ),
 });
