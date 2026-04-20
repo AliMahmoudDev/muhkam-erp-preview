@@ -9,6 +9,7 @@ import {
   Package,
   AlertTriangle,
   TrendingDown,
+  TrendingUp,
   Search,
   X,
   RefreshCw,
@@ -878,6 +879,7 @@ function ReviewTab({
   const [adjustNotes, setAdjustNotes] = useState('');
   const [showZeroOnly, setShowZeroOnly] = useState(false);
   const [showLowOnly, setShowLowOnly] = useState(false);
+  const [showPositiveOnly, setShowPositiveOnly] = useState(false);
 
   useEffect(() => {
     if (!quickFilter || quickFilter === 'all') return;
@@ -952,6 +954,7 @@ function ReviewTab({
         (p.category ?? '').toLowerCase().includes(search.toLowerCase())
     )
     .filter((p) => !showZeroOnly || p.actual_qty <= 0)
+    .filter((p) => !showPositiveOnly || p.actual_qty > 0)
     .filter(
       (p) =>
         !showLowOnly || (p.low_stock_threshold !== null && p.actual_qty <= p.low_stock_threshold)
@@ -1032,6 +1035,7 @@ function ReviewTab({
           onClick={() => {
             setShowZeroOnly((p) => !p);
             setShowLowOnly(false);
+            setShowPositiveOnly(false);
           }}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors border ${
             showZeroOnly
@@ -1043,8 +1047,23 @@ function ReviewTab({
         </button>
         <button
           onClick={() => {
+            setShowPositiveOnly((p) => !p);
+            setShowZeroOnly(false);
+            setShowLowOnly(false);
+          }}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors border ${
+            showPositiveOnly
+              ? 'bg-green-500/20 border-green-500/30 text-green-300'
+              : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5" /> منتجات موجبة
+        </button>
+        <button
+          onClick={() => {
             setShowLowOnly((p) => !p);
             setShowZeroOnly(false);
+            setShowPositiveOnly(false);
           }}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors border ${
             showLowOnly
@@ -1193,11 +1212,13 @@ function ReviewTab({
                     <p className="text-white/40 font-bold mb-1">
                       {showZeroOnly
                         ? 'لا توجد منتجات نافدة'
-                        : showLowOnly
-                          ? 'لا توجد منتجات تحت حد الطلب'
-                          : 'لا توجد منتجات في هذا المخزن'}
+                        : showPositiveOnly
+                          ? 'لا توجد منتجات بكميات موجبة'
+                          : showLowOnly
+                            ? 'لا توجد منتجات تحت حد الطلب'
+                            : 'لا توجد منتجات في هذا المخزن'}
                     </p>
-                    {!showZeroOnly && !showLowOnly && (
+                    {!showZeroOnly && !showLowOnly && !showPositiveOnly && (
                       <p className="text-white/25 text-xs">
                         أضف منتجات من قسم <span className="text-violet-300">المنتجات</span> لتظهر
                         هنا
