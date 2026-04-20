@@ -33,7 +33,8 @@ import {
 const AMBER = "#F59E0B";
 
 interface Warehouse { id: number; name: string; }
-interface Safe { id: number; name: string; balance: string; }
+interface Safe { id: number; name: string; balance: string; branch_id?: number | null; }
+interface Branch { id: number; name: string; }
 interface SystemUser { id: number; name: string; username: string; role: string; }
 
 const ROLE_OPTIONS = [
@@ -166,25 +167,31 @@ function AddUserModal({
 // ── Edit Safe Modal ────────────────────────────────────────────────────────────
 
 function EditSafeModal({
-  visible, initialName, onClose, onSubmit, loading,
+  visible, initialName, initialBranchId, branches, onClose, onSubmit, loading,
 }: {
   visible: boolean;
   initialName: string;
+  initialBranchId?: number | null;
+  branches: Branch[];
   onClose: () => void;
-  onSubmit: (name: string) => void;
+  onSubmit: (name: string, branchId: number | null) => void;
   loading: boolean;
 }) {
   const c = useColors();
   const [name, setName] = useState(initialName);
+  const [branchId, setBranchId] = useState<number | null>(initialBranchId ?? null);
 
-  useEffect(() => { setName(initialName); }, [initialName]);
+  useEffect(() => {
+    setName(initialName);
+    setBranchId(initialBranchId ?? null);
+  }, [initialName, initialBranchId]);
 
   const handleSubmit = () => {
     if (!name.trim()) {
       Alert.alert("تنبيه", "اسم الخزينة مطلوب");
       return;
     }
-    onSubmit(name.trim());
+    onSubmit(name.trim(), branchId);
   };
 
   return (
@@ -200,7 +207,7 @@ function EditSafeModal({
               <Text style={[styles.modalTitle, { color: c.text }]}>تعديل الخزينة</Text>
             </View>
             <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>اسم الخزينة</Text>
-            <View style={[styles.fieldInput, { backgroundColor: c.background, borderColor: c.border, marginBottom: 16 }]}>
+            <View style={[styles.fieldInput, { backgroundColor: c.background, borderColor: c.border, marginBottom: 14 }]}>
               <TextInput
                 style={[styles.fieldText, { color: c.text }]}
                 placeholder="اسم الخزينة"
@@ -211,6 +218,28 @@ function EditSafeModal({
                 autoFocus
               />
             </View>
+            {branches.length > 0 && (
+              <>
+                <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>الفرع (اختياري)</Text>
+                <View style={[styles.fieldInput, { backgroundColor: c.background, borderColor: c.border, marginBottom: 16, paddingVertical: 4 }]}>
+                  {[{ id: null as null, name: "بدون فرع" }, ...branches].map(b => (
+                    <TouchableOpacity
+                      key={b.id ?? "none"}
+                      onPress={() => setBranchId(b.id)}
+                      style={{ flexDirection: "row-reverse", alignItems: "center", gap: 8, paddingVertical: 8, paddingHorizontal: 4 }}
+                    >
+                      <View style={{
+                        width: 18, height: 18, borderRadius: 9,
+                        borderWidth: 2, borderColor: AMBER,
+                        backgroundColor: branchId === b.id ? AMBER : "transparent",
+                        justifyContent: "center", alignItems: "center",
+                      }} />
+                      <Text style={{ color: c.text, fontSize: 14, fontFamily: "Tajawal_400Regular" }}>{b.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
             <TouchableOpacity
               style={[styles.modalSubmit, { opacity: loading ? 0.6 : 1 }]}
               onPress={handleSubmit}
@@ -298,7 +327,7 @@ export default function SettingsScreen() {
 
   const [tab, setTab] = useState<Tab>("warehouses");
   const [modal, setModal] = useState<"warehouse" | "safe" | "user" | null>(null);
-  const [editSafeTarget, setEditSafeTarget] = useState<{ id: number; name: string } | null>(null);
+  const [editSafeTarget, setEditSafeTarget] = useState<{ id: number; name: string; branch_id?: number | null } | null>(null);
 
   const { data: warehouses, isLoading: whLoading } = useQuery({
     queryKey: ["warehouses"],
@@ -315,6 +344,12 @@ export default function SettingsScreen() {
   const { data: users, isLoading: usLoading } = useQuery({
     queryKey: ["settings-users"],
     queryFn: () => apiFetch<SystemUser[]>("/api/settings/users"),
+    staleTime: 60_000,
+  });
+
+  const { data: branches = [] } = useQuery({
+    queryKey: ["branches"],
+    queryFn: () => apiFetch<Branch[]>("/api/branches"),
     staleTime: 60_000,
   });
 
@@ -352,8 +387,8 @@ export default function SettingsScreen() {
   });
 
   const { mutate: updateSafe, isPending: updatingSf } = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) =>
-      apiFetch(`/api/settings/safes/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+    mutationFn: ({ id, name, branch_id }: { id: number; name: string; branch_id: number | null }) =>
+      apiFetch(`/api/settings/safes/${id}`, { method: "PUT", body: JSON.stringify({ name, branch_id }) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["safes"] });
       setEditSafeTarget(null);
@@ -505,7 +540,7 @@ export default function SettingsScreen() {
                       <TouchableOpacity onPress={() => confirmDelete(s.name, () => deleteSafe(s.id))} style={styles.deleteBtn}>
                         <Feather name="trash-2" size={16} color="#EF4444" />
                       </TouchableOpacity>
-                      <TouchableOpacity onPress={() => setEditSafeTarget({ id: s.id, name: s.name })} style={styles.editBtn}>
+                      <TouchableOpacity onPress={() => setEditSafeTarget({ id: s.id, name: s.name, branch_id: s.branch_id })} style={styles.editBtn}>
                         <Feather name="edit-2" size={16} color={AMBER} />
                       </TouchableOpacity>
                     </View>
@@ -571,6 +606,17 @@ export default function SettingsScreen() {
         </View>
       )}
 
+      <EditSafeModal
+        visible={!!editSafeTarget}
+        initialName={editSafeTarget?.name ?? ""}
+        initialBranchId={editSafeTarget?.branch_id}
+        branches={branches}
+        onClose={() => setEditSafeTarget(null)}
+        onSubmit={(name, branch_id) => {
+          if (editSafeTarget) updateSafe({ id: editSafeTarget.id, name, branch_id });
+        }}
+        loading={updatingSf}
+      />
       <AddSimpleModal
         visible={modal === "warehouse"}
         title="إضافة مخزن جديد"
@@ -619,6 +665,8 @@ const styles = StyleSheet.create({
   listCardName: { fontSize: 15, fontFamily: "Tajawal_700Bold" },
   listCardSub: { fontSize: 13, fontFamily: "Tajawal_400Regular", marginTop: 2 },
   deleteBtn: { padding: 8 },
+  editBtn: { padding: 8 },
+  actionBtns: { flexDirection: "row-reverse", gap: 2 },
   roleBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
   roleBadgeText: { fontSize: 11, fontFamily: "Tajawal_700Bold" },
   userAvatar: { width: 44, height: 44, borderRadius: 22, justifyContent: "center", alignItems: "center" },

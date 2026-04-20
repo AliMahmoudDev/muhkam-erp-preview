@@ -225,7 +225,7 @@ router.post("/sales", wrap(async (req, res) => {
   const remaining = effectiveCreditAmount;
 
   // حساب status بعد معرفة قيم الدفعات الفعلية
-  status = effectivePaidAmount === 0 && effectiveCreditAmount > 0 ? "unpaid"
+  const status = effectivePaidAmount === 0 && effectiveCreditAmount > 0 ? "unpaid"
     : effectiveCreditAmount > 0 ? "partial"
     : "paid";
 
@@ -253,10 +253,6 @@ router.post("/sales", wrap(async (req, res) => {
   }
 
   await assertPeriodOpen(date, req);
-
-  let status = "paid";
-  // status يُحسب بعد بناء effectivePayments — نؤجل الحساب هنا مؤقتاً
-  // القيمة الحقيقية تُعاد الحساب بعد تحديد cashPayments / creditPayments أدناه
 
   const invoiceNo = `INV-${Date.now()}`;
 
