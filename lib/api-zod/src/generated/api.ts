@@ -331,6 +331,13 @@ export const CreateSaleBody = zod.object({
       total_price: zod.number(),
     }),
   ),
+  payments: zod.array(
+    zod.object({
+      type: zod.enum(["cash", "credit"]),
+      safe_id: zod.number().nullish(),
+      amount: zod.number(),
+    }),
+  ).nullish(),
 });
 
 /**

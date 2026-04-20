@@ -167,9 +167,8 @@ router.post("/sales", wrap(async (req, res) => {
   const {
     payment_type, total_amount, paid_amount, items, customer_name, customer_id,
     notes, date, safe_id, warehouse_id, salesperson_id,
-    discount_percent, discount_amount,
+    discount_percent, discount_amount, payments: paymentsInput,
   } = parsed.data;
-  const remaining = total_amount - paid_amount;
 
   // ── Scope enforcement: warehouse + safe ──────────────────────────────
   const role = req.user?.role ?? "cashier";
@@ -185,40 +184,94 @@ router.post("/sales", wrap(async (req, res) => {
     req.user!.company_id!,
   );
 
-  // Enforce safe_id scope for cashier / salesperson
-  let effectiveSafeId: number | null = safe_id ?? null;
+  // ── Build effective payments list ─────────────────────────────────────
+  // If a `payments` array is provided (split payment), use it.
+  // Otherwise fall back to legacy single-payment fields.
+  type PaymentEntry = { type: "cash" | "credit"; safe_id: number | null; amount: number };
+  let effectivePayments: PaymentEntry[];
+
+  if (paymentsInput && paymentsInput.length > 0) {
+    effectivePayments = paymentsInput.map(p => ({
+      type: p.type,
+      safe_id: p.safe_id ?? null,
+      amount: p.amount,
+    }));
+    const totalAllocated = effectivePayments.reduce((s, p) => s + p.amount, 0);
+    if (Math.abs(totalAllocated - total_amount) > 0.05) {
+      return res.status(400).json({ error: `مجموع الدفعات (${totalAllocated.toFixed(2)}) لا يساوي إجمالي الفاتورة (${total_amount.toFixed(2)})` });
+    }
+  } else {
+    if (payment_type === "credit") {
+      effectivePayments = [{ type: "credit", safe_id: null, amount: total_amount }];
+    } else if (payment_type === "cash") {
+      effectivePayments = [{ type: "cash", safe_id: safe_id ?? null, amount: total_amount }];
+    } else {
+      effectivePayments = [];
+      if (paid_amount > 0) effectivePayments.push({ type: "cash", safe_id: safe_id ?? null, amount: paid_amount });
+      const rem = total_amount - paid_amount;
+      if (rem > 0) effectivePayments.push({ type: "credit", safe_id: null, amount: rem });
+    }
+  }
+
+  const cashPayments = effectivePayments.filter(p => p.type === "cash" && p.amount > 0);
+  const creditPayments = effectivePayments.filter(p => p.type === "credit" && p.amount > 0);
+  const effectivePaidAmount = cashPayments.reduce((s, p) => s + p.amount, 0);
+  const effectiveCreditAmount = creditPayments.reduce((s, p) => s + p.amount, 0);
+  const computedPaymentType: "cash" | "credit" | "partial" =
+    effectiveCreditAmount === 0 ? "cash" :
+    effectivePaidAmount === 0 ? "credit" :
+    "partial";
+  const primarySafeId = cashPayments.length > 0 ? cashPayments[0].safe_id : null;
+  const remaining = effectiveCreditAmount;
+
+  // حساب status بعد معرفة قيم الدفعات الفعلية
+  status = effectivePaidAmount === 0 && effectiveCreditAmount > 0 ? "unpaid"
+    : effectiveCreditAmount > 0 ? "partial"
+    : "paid";
+
+  // Enforce safe scope for cashier / salesperson
+  const userSafeId = req.user?.safe_id ?? null;
   if (role === "cashier" || role === "salesperson") {
-    const userSafeId = req.user?.safe_id ?? null;
-    if (!userSafeId) {
+    if (!userSafeId && cashPayments.length > 0) {
       res.status(403).json({ error: "المستخدم غير مرتبط بخزينة — راجع الإعدادات" }); return;
     }
-    if (safe_id && safe_id !== userSafeId) {
-      res.status(403).json({ error: "لا يمكنك استخدام خزنة غير المخصصة لك" }); return;
+    for (const p of cashPayments) {
+      if (p.safe_id && p.safe_id !== userSafeId) {
+        res.status(403).json({ error: "لا يمكنك استخدام خزنة غير المخصصة لك" }); return;
+      }
+      if (!p.safe_id) p.safe_id = userSafeId;
     }
+  }
+
+  let effectiveSafeId: number | null = primarySafeId;
+  if (!effectiveSafeId && (role === "cashier" || role === "salesperson") && cashPayments.length > 0) {
     effectiveSafeId = userSafeId;
   }
 
-  if ((payment_type === "cash" || payment_type === "partial") && paid_amount > 0 && !effectiveSafeId) {
-    return res.status(400).json({ error: "يجب اختيار الخزينة للمبيعات النقدية" });
+  if (cashPayments.length > 0 && cashPayments.some(p => !p.safe_id)) {
+    return res.status(400).json({ error: "يجب تحديد الخزينة للمدفوعات النقدية" });
   }
 
   await assertPeriodOpen(date, req);
 
   let status = "paid";
-  if (payment_type === "credit") status = "unpaid";
-  else if (remaining > 0) status = "partial";
+  // status يُحسب بعد بناء effectivePayments — نؤجل الحساب هنا مؤقتاً
+  // القيمة الحقيقية تُعاد الحساب بعد تحديد cashPayments / creditPayments أدناه
 
   const invoiceNo = `INV-${Date.now()}`;
 
   const cidSale = req.user!.company_id!;
   const sale = await db.transaction(async (tx) => {
-      // 1. جلب بيانات الخزينة
-      let safe: typeof safesTable.$inferSelect | null = null;
-      if (effectiveSafeId && paid_amount > 0) {
-        const [s] = await tx.select().from(safesTable).where(and(eq(safesTable.id, effectiveSafeId), eq(safesTable.company_id, cidSale)));
-        if (!s) throw httpError(400, "الخزينة غير موجودة");
-        safe = s;
+      // 1. جلب بيانات الخزن المطلوبة والتحقق من وجودها
+      const safeRecords: Map<number, typeof safesTable.$inferSelect> = new Map();
+      for (const p of cashPayments) {
+        if (!p.safe_id) continue;
+        if (safeRecords.has(p.safe_id)) continue;
+        const [s] = await tx.select().from(safesTable).where(and(eq(safesTable.id, p.safe_id), eq(safesTable.company_id, cidSale)));
+        if (!s) throw httpError(400, `الخزينة رقم ${p.safe_id} غير موجودة`);
+        safeRecords.set(p.safe_id, s);
       }
+      const primarySafe = primarySafeId ? safeRecords.get(primarySafeId) ?? null : null;
 
       let warehouseName: string | null = null;
       if (warehouse_id) {
@@ -244,13 +297,13 @@ router.post("/sales", wrap(async (req, res) => {
         invoice_no: invoiceNo,
         customer_name: customer_name ?? null,
         customer_id: customer_id ?? null,
-        payment_type,
+        payment_type: computedPaymentType,
         total_amount: String(total_amount),
-        paid_amount: String(paid_amount),
-        remaining_amount: String(payment_type === "credit" ? total_amount : remaining),
+        paid_amount: String(effectivePaidAmount),
+        remaining_amount: String(remaining),
         status,
-        safe_id: safe?.id ?? null,
-        safe_name: safe?.name ?? null,
+        safe_id: primarySafe?.id ?? null,
+        safe_name: primarySafe?.name ?? null,
         warehouse_id: warehouse_id ?? null,
         warehouse_name: warehouseName,
         salesperson_id: salesperson_id ?? null,
@@ -337,23 +390,27 @@ router.post("/sales", wrap(async (req, res) => {
         }).where(eq(salesTable.id, newSale.id));
       }
 
-      // 4. تحديث رصيد العميل
-      const debtAmount = payment_type === "credit" ? total_amount : (remaining > 0 ? remaining : 0);
-      if (debtAmount > 0 && customer_id) {
+      // 4. تحديث رصيد العميل (الدين الآجل فقط)
+      if (effectiveCreditAmount > 0 && customer_id) {
         const [cust] = await tx.select().from(customersTable).where(and(eq(customersTable.id, customer_id), eq(customersTable.company_id, cidSale)));
         if (cust) {
           await tx.update(customersTable)
-            .set({ balance: String(Number(cust.balance) + debtAmount) })
+            .set({ balance: String(Number(cust.balance) + effectiveCreditAmount) })
             .where(and(eq(customersTable.id, customer_id), eq(customersTable.company_id, cidSale)));
         }
       }
 
-      // 5. تحديث رصيد الخزينة
-      if (safe && paid_amount > 0) {
-        const newBalance = Number(safe.balance) + paid_amount;
+      // 5. تحديث رصيد كل خزينة من المدفوعات النقدية
+      for (const p of cashPayments) {
+        if (!p.safe_id || p.amount <= 0) continue;
+        const safeRec = safeRecords.get(p.safe_id);
+        if (!safeRec) continue;
+        const newBal = Number(safeRec.balance) + p.amount;
         await tx.update(safesTable)
-          .set({ balance: String(newBalance) })
-          .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cidSale)));
+          .set({ balance: String(newBal) })
+          .where(and(eq(safesTable.id, p.safe_id), eq(safesTable.company_id, cidSale)));
+        // تحديث الرصيد المحلي للاستخدام اللاحق في نفس الـ loop إذا لزم
+        safeRecords.set(p.safe_id, { ...safeRec, balance: String(newBal) });
       }
 
       // 6. دفتر أستاذ العميل — تسجيل فوري بصرف النظر عن الترحيل
@@ -372,12 +429,12 @@ router.post("/sales", wrap(async (req, res) => {
             company_id: cidSale,
           });
         }
-        // ب. الدفعة الفورية (نقدي / جزئي) → تُقلّل الدين
-        if (paid_amount > 0) {
+        // ب. الدفعة الفورية (نقدي) → تُقلّل الدين
+        if (effectivePaidAmount > 0) {
           await tx.insert(customerLedgerTable).values({
             customer_id,
             type: "payment",
-            amount: String(-paid_amount),
+            amount: String(-effectivePaidAmount),
             reference_type: "sale",
             reference_id: newSale.id,
             reference_no: invoiceNo,
@@ -388,22 +445,47 @@ router.post("/sales", wrap(async (req, res) => {
         }
       }
 
-      // 7. الحركة المالية المركزية
-      const txType = payment_type === "credit" ? "sale_credit" : payment_type === "partial" ? "sale_partial" : "sale_cash";
-      await tx.insert(transactionsTable).values({
-        type: txType,
-        reference_type: "sale",
+      // 7. الحركات المالية المركزية — سجل لكل خزينة + سجل للآجل
+      const txBase = {
+        reference_type: "sale" as const,
         reference_id: newSale.id,
-        safe_id: safe?.id ?? null,
-        safe_name: safe?.name ?? null,
         customer_id: customer_id ?? null,
         customer_name: customer_name ?? null,
-        amount: String(paid_amount > 0 ? paid_amount : total_amount),
-        direction: paid_amount > 0 ? "in" : "none",
         description: `فاتورة مبيعات ${invoiceNo}`,
         date: new Date().toISOString().split("T")[0],
         company_id: cidSale,
-      });
+      };
+      for (const p of cashPayments) {
+        const safeRec = p.safe_id ? safeRecords.get(p.safe_id) : null;
+        await tx.insert(transactionsTable).values({
+          ...txBase,
+          type: "sale_cash",
+          safe_id: p.safe_id ?? null,
+          safe_name: safeRec?.name ?? null,
+          amount: String(p.amount),
+          direction: "in",
+        });
+      }
+      if (effectiveCreditAmount > 0) {
+        await tx.insert(transactionsTable).values({
+          ...txBase,
+          type: "sale_credit",
+          safe_id: null,
+          safe_name: null,
+          amount: String(effectiveCreditAmount),
+          direction: "none",
+        });
+      }
+      if (cashPayments.length === 0 && effectiveCreditAmount === 0) {
+        await tx.insert(transactionsTable).values({
+          ...txBase,
+          type: "sale_cash",
+          safe_id: null,
+          safe_name: null,
+          amount: String(total_amount),
+          direction: "none",
+        });
+      }
 
       return newSale;
   });
@@ -416,7 +498,7 @@ router.post("/sales", wrap(async (req, res) => {
     new_value: {
       invoice_no: sale.invoice_no,
       total_amount: total_amount,
-      payment_type,
+      payment_type: computedPaymentType,
       customer_name: customer_name ?? null,
       customer_id: customer_id ?? null,
       role,

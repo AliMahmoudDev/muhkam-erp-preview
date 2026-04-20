@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/format';
 import { SearchableSelect } from '@/components/searchable-select';
+import { SplitPaymentModal, type SplitPaymentEntry } from '@/components/SplitPaymentModal';
 import {
   ShoppingCart,
   Search,
@@ -506,12 +507,9 @@ function POSBody({
   /* ── State ── */
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [payType, setPayType] = useState<'cash' | 'credit' | 'partial'>(() =>
-    canCash ? 'cash' : canCredit ? 'credit' : 'partial'
-  );
   const [customerId, setCustomerId] = useState('');
-  const [paidAmount, setPaidAmount] = useState('');
   const [discountPct, setDiscountPct] = useState('');
+  const [showSplitPayment, setShowSplitPayment] = useState(false);
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
   const [editingPriceVal, setEditingPriceVal] = useState('');
   const [successInvoice, setSuccessInvoice] = useState<SuccessInvoice | null>(null);
@@ -680,12 +678,13 @@ function POSBody({
       /* fire-and-forget backup after each sale */
       authFetch(api('/api/system/backup'), { method: 'POST' }).catch(() => {});
       setCheckoutError(null);
+      setShowSplitPayment(false);
       setSuccessInvoice({
         invoice_no: data.invoice_no,
         total_amount: data.total_amount,
         customer_name: selectedCustomer?.name ?? null,
         customer_phone: selectedCustomer?.phone ?? null,
-        payment_type: payType,
+        payment_type: data.payment_type ?? 'cash',
         items: [...cart],
         warehouseName: warehouses.find((w) => w.id === warehouseId)?.name,
         safeName: safes.find((s) => s.id === safeId)?.name,
@@ -693,10 +692,8 @@ function POSBody({
       });
       /* Reset */
       setCart([]);
-      setPaidAmount('');
       setCustomerId('');
       setDiscountPct('');
-      setPayType(canCash ? 'cash' : canCredit ? 'credit' : 'partial');
       setTimeout(() => searchRef.current?.focus(), 100);
     },
     onError: (e: Error) => {
@@ -824,26 +821,30 @@ function POSBody({
     });
   }, [returnSale, returnItems, returnReason, returnRefundType, safeId, returnMutation, toast]);
 
-  /* ── handleCheckout ── */
+  /* ── handleCheckout — opens the split payment modal ── */
   const handleCheckout = useCallback(() => {
     if (cart.length === 0) {
       toast({ title: 'السلة فارغة', variant: 'destructive' });
       return;
     }
-    if ((payType === 'credit' || payType === 'partial') && !customerId) {
-      toast({ title: 'يجب اختيار عميل للآجل أو الجزئي', variant: 'destructive' });
-      return;
-    }
-    const actualPaid =
-      payType === 'cash' ? cartTotal : payType === 'credit' ? 0 : parseFloat(paidAmount) || 0;
+    setShowSplitPayment(true);
+  }, [cart, toast]);
+
+  /* ── handleSplitConfirm — called by modal with payment breakdown ── */
+  const handleSplitConfirm = useCallback((payments: SplitPaymentEntry[]) => {
+    const totalCash = payments.filter(p => p.type === 'cash').reduce((s, p) => s + p.amount, 0);
+    const totalCredit = payments.filter(p => p.type === 'credit').reduce((s, p) => s + p.amount, 0);
+    const pt: 'cash' | 'credit' | 'partial' =
+      totalCredit === 0 ? 'cash' : totalCash === 0 ? 'credit' : 'partial';
+    const primarySafe = payments.find(p => p.type === 'cash')?.safe_id ?? safeId;
 
     checkoutMutation.mutate({
-      payment_type: payType,
+      payment_type: pt,
       total_amount: cartTotal,
-      paid_amount: actualPaid,
+      paid_amount: totalCash,
       customer_id: selectedCustomer?.id ?? null,
       customer_name: selectedCustomer?.name ?? null,
-      safe_id: safeId,
+      safe_id: primarySafe,
       warehouse_id: warehouseId,
       salesperson_id: user?.id ?? null,
       discount_percent: parseFloat(discountPct) || 0,
@@ -855,22 +856,9 @@ function POSBody({
         unit_price: i.unit_price,
         total_price: i.total_price,
       })),
+      payments,
     });
-  }, [
-    cart,
-    payType,
-    customerId,
-    cartTotal,
-    paidAmount,
-    selectedCustomer,
-    safeId,
-    warehouseId,
-    user,
-    discountPct,
-    discountAmt,
-    checkoutMutation,
-    toast,
-  ]);
+  }, [cart, cartTotal, selectedCustomer, safeId, warehouseId, user, discountPct, discountAmt, checkoutMutation]);
 
   /* keep ref current */
   checkoutRef.current = handleCheckout;
@@ -948,33 +936,6 @@ function POSBody({
     showExitConfirm,
     navigate,
   ]);
-
-  /* ── Payment options ── */
-  const payOptions = [
-    {
-      v: 'cash' as const,
-      l: 'نقدي',
-      icon: Banknote,
-      allow: canCash,
-      active: 'bg-emerald-500 border-emerald-500 text-white',
-    },
-    {
-      v: 'credit' as const,
-      l: 'آجل',
-      icon: Clock,
-      allow: canCredit,
-      active: 'bg-blue-500 border-blue-500 text-white',
-    },
-    {
-      v: 'partial' as const,
-      l: 'جزئي',
-      icon: CreditCard,
-      allow: canPartial,
-      active: 'bg-amber-500 border-amber-500 text-black',
-    },
-  ].filter((o) => o.allow);
-
-  const needsCustomer = payType === 'credit' || payType === 'partial';
 
   /* ── Stock badge ── */
   const stockClass = (qty: number) =>
@@ -1735,83 +1696,21 @@ function POSBody({
                 )}
               </div>
 
-              {/* Payment type */}
-              {payOptions.length > 0 ? (
-                <div
-                  className="grid gap-1.5"
-                  style={{ gridTemplateColumns: `repeat(${payOptions.length}, 1fr)` }}
-                >
-                  {payOptions.map((o) => {
-                    const Icon = o.icon;
-                    const isActive = payType === o.v;
-                    return (
-                      <button
-                        key={o.v}
-                        onClick={() => setPayType(o.v)}
-                        className={`flex flex-col items-center justify-center gap-1 rounded-xl border font-bold transition-all
-                        ${isActive ? o.active : 'erp-btn-secondary'}
-                      `}
-                        style={{
-                          paddingTop: cm ? '0.875rem' : '0.625rem',
-                          paddingBottom: cm ? '0.875rem' : '0.625rem',
-                          fontSize: cm ? '0.8125rem' : '0.75rem',
-                          boxShadow: isActive
-                            ? `0 4px 12px color-mix(in srgb, currentColor 25%, transparent)`
-                            : undefined,
-                        }}
-                      >
-                        <Icon className={cm ? 'w-5 h-5' : 'w-4 h-4'} />
-                        {o.l}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div
-                  className="text-center py-2 rounded-xl text-xs"
-                  style={{
-                    color: '#ef4444',
-                    background: 'rgba(239,68,68,0.10)',
-                    border: '1px solid rgba(239,68,68,0.20)',
-                  }}
-                >
-                  ⚠ لا توجد صلاحية لأي نوع دفع
-                </div>
-              )}
-
-              {/* Customer select */}
-              {needsCustomer && (
-                <div
-                  className="erp-card flex items-center gap-2 px-3 py-1.5"
-                  style={{ borderRadius: '0.75rem' }}
-                >
-                  <span className="erp-label shrink-0">العميل</span>
-                  <SearchableSelect
-                    items={customerItems}
-                    value={customerId}
-                    onChange={setCustomerId}
-                    placeholder="ابحث عن عميل..."
-                    emptyLabel="-- اختر عميلاً --"
-                    className="flex-1"
-                  />
-                </div>
-              )}
-
-              {/* Partial amount */}
-              {payType === 'partial' && (
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="المبلغ المدفوع..."
-                  value={paidAmount}
-                  onChange={(e) => setPaidAmount(e.target.value)}
-                  className="erp-input text-center"
-                  style={{
-                    borderColor: 'rgba(245,158,11,0.4)',
-                    fontSize: cm ? '1rem' : '0.875rem',
-                  }}
+              {/* Customer select — always visible for convenience */}
+              <div
+                className="erp-card flex items-center gap-2 px-3 py-1.5"
+                style={{ borderRadius: '0.75rem' }}
+              >
+                <span className="erp-label shrink-0 text-xs">العميل</span>
+                <SearchableSelect
+                  items={customerItems}
+                  value={customerId}
+                  onChange={setCustomerId}
+                  placeholder="عميل نقدي / اختر..."
+                  emptyLabel="عميل نقدي"
+                  className="flex-1"
                 />
-              )}
+              </div>
 
               {/* Totals */}
               <div
@@ -1841,14 +1740,6 @@ function POSBody({
                     {formatCurrency(cartTotal)}
                   </span>
                 </div>
-                {payType === 'partial' && (
-                  <div className="flex justify-between items-center">
-                    <span className="erp-label">المتبقي</span>
-                    <span className="text-amber-500 font-bold text-sm">
-                      {formatCurrency(Math.max(0, cartTotal - (parseFloat(paidAmount) || 0)))}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* Error */}
@@ -1869,11 +1760,9 @@ function POSBody({
               {/* CHECKOUT BUTTON */}
               <button
                 onClick={handleCheckout}
-                disabled={
-                  checkoutMutation.isPending || cart.length === 0 || payOptions.length === 0
-                }
+                disabled={cart.length === 0}
                 className={`w-full rounded-2xl font-black flex items-center justify-center gap-3 transition-all ${
-                  checkoutMutation.isPending || cart.length === 0 || payOptions.length === 0
+                  cart.length === 0
                     ? 'erp-btn-disabled'
                     : 'erp-btn-primary'
                 }`}
@@ -1906,6 +1795,22 @@ function POSBody({
           </div>
         )}
       </div>
+
+      {/* ════ SPLIT PAYMENT MODAL ════ */}
+      {showSplitPayment && (
+        <SplitPaymentModal
+          total={cartTotal}
+          safes={safes as { id: number; name: string }[]}
+          defaultSafeId={safeId}
+          isRestricted={!isAdmin}
+          canCash={canCash}
+          canCredit={canCredit}
+          hasCustomer={!!customerId}
+          isPending={checkoutMutation.isPending}
+          onConfirm={handleSplitConfirm}
+          onClose={() => { setShowSplitPayment(false); setCheckoutError(null); }}
+        />
+      )}
 
       {/* ════ SUCCESS MODAL ════ */}
       {successInvoice && (

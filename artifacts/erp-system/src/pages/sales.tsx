@@ -5,7 +5,8 @@ import { useGetSaleById, useGetProducts, useGetCustomers, useGetSettingsSafes, u
 import { ProductFormModal, ProductFormData } from "@/components/product-form-modal";
 import { useWarehouse } from "@/contexts/warehouse";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { Search, Plus, Minus, Trash2, X, Printer, ShoppingCart, User, Package, Receipt, RotateCcw, Percent, Vault, Lock, CheckCircle, XCircle, ClipboardList } from "lucide-react";
+import { Search, Plus, Minus, Trash2, X, Printer, ShoppingCart, User, Package, Receipt, RotateCcw, Percent, Vault, Lock, CheckCircle, XCircle, ClipboardList, Banknote } from "lucide-react";
+import { SplitPaymentModal, type SplitPaymentEntry } from "@/components/SplitPaymentModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
@@ -954,13 +955,11 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [paymentType, setPaymentType] = useState<"cash" | "credit" | "partial">("cash");
-  const [paidAmount, setPaidAmount] = useState<string>("");
   const [customerId, setCustomerId] = useState<string>("");
-  const [safeId, setSafeId] = useState<string>("");
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [discountPct, setDiscountPct] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [showSplitPayment, setShowSplitPayment] = useState(false);
 
   const isRestricted = currentUser?.role === "cashier" || currentUser?.role === "salesperson";
 
@@ -969,11 +968,10 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     ? (currentUser?.warehouse_id ? String(currentUser.warehouse_id) : "")
     : warehouseId;
   const effectiveSafeId = isRestricted
-    ? (currentUser?.safe_id ? String(currentUser.safe_id) : "")
-    : safeId;
+    ? (currentUser?.safe_id ?? null)
+    : null;
 
   const effectiveWarehouseName = warehouses.find(w => String(w.id) === effectiveWarehouseId)?.name ?? "—";
-  const effectiveSafeName = (safes as {id:number;name:string;balance:string|number}[]).find(s => String(s.id) === effectiveSafeId)?.name ?? "—";
 
   // اختيار المخزن الأول تلقائياً للمدير فقط
   useEffect(() => {
@@ -998,16 +996,16 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/settings/safes"] });
       setCheckoutError(null);
+      setShowSplitPayment(false);
       setSuccessInvoice({
         invoice_no: data.invoice_no,
         total_amount: data.total_amount,
         customer_name: selectedCustomer?.name ?? null,
         customer_phone: selectedCustomer?.phone ?? null,
-        payment_type: paymentType,
+        payment_type: data.payment_type ?? "cash",
         items: [...cart],
       });
-      setCart([]); setPaidAmount(""); setCustomerId(""); setSafeId("");
-      setDiscountPct(""); setPaymentType("cash");
+      setCart([]); setCustomerId(""); setDiscountPct("");
     },
     onError: (e: Error) => {
       setCheckoutError(e.message);
@@ -1085,29 +1083,32 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
 
   const handleCheckout = () => {
     if (cart.length === 0) { toast({ title: "السلة فارغة", variant: "destructive" }); return; }
-    if ((paymentType === "credit" || paymentType === "partial") && !customerId) {
-      toast({ title: "يجب اختيار عميل للآجل أو الجزئي", variant: "destructive" }); return;
-    }
     if (!effectiveWarehouseId) {
       toast({ title: "المخزن غير محدد — يرجى مراجعة المدير لإعداد حسابك", variant: "destructive" }); return;
     }
-    if (paymentType !== "credit" && !effectiveSafeId) {
-      toast({ title: "الخزنة غير محددة — اختر خزنة أو تواصل مع المدير", variant: "destructive" }); return;
-    }
-    const actualPaid = paymentType === "cash" ? cartTotal : paymentType === "credit" ? 0 : parseFloat(paidAmount) || 0;
+    setShowSplitPayment(true);
+  };
+
+  const handleSplitConfirm = (payments: SplitPaymentEntry[]) => {
+    const totalCash = payments.filter(p => p.type === "cash").reduce((s, p) => s + p.amount, 0);
+    const totalCredit = payments.filter(p => p.type === "credit").reduce((s, p) => s + p.amount, 0);
+    const pt: "cash" | "credit" | "partial" =
+      totalCredit === 0 ? "cash" : totalCash === 0 ? "credit" : "partial";
+    const primarySafe = payments.find(p => p.type === "cash")?.safe_id ?? null;
 
     checkoutMutation.mutate({
-      payment_type: paymentType,
+      payment_type: pt,
       total_amount: cartTotal,
-      paid_amount: actualPaid,
+      paid_amount: totalCash,
       customer_id: selectedCustomer?.id ?? null,
       customer_name: selectedCustomer?.name ?? null,
-      safe_id: effectiveSafeId ? parseInt(effectiveSafeId) : null,
+      safe_id: primarySafe,
       warehouse_id: effectiveWarehouseId ? parseInt(effectiveWarehouseId) : null,
       salesperson_id: salespersonId ? parseInt(salespersonId) : null,
       discount_percent: parseFloat(discountPct) || 0,
       discount_amount: discountAmount,
       items: cart,
+      payments,
     });
   };
 
@@ -1160,8 +1161,6 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     setCart([]);
     setCustomerId("");
     setSearch("");
-    setPaymentType("cash");
-    setPaidAmount("");
     setDiscountPct("");
     setTimeout(() => searchInputRef.current?.focus(), 0);
   };
@@ -1170,6 +1169,20 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     <>
       {successInvoice && (
         <WhatsAppSuccessModal invoice={successInvoice} onClose={() => { setSuccessInvoice(null); onDone(); }} />
+      )}
+      {showSplitPayment && (
+        <SplitPaymentModal
+          total={cartTotal}
+          safes={(safes as { id: number; name: string }[])}
+          defaultSafeId={effectiveSafeId}
+          isRestricted={isRestricted}
+          canCash={true}
+          canCredit={true}
+          hasCustomer={!!customerId}
+          isPending={checkoutMutation.isPending}
+          onConfirm={handleSplitConfirm}
+          onClose={() => { setShowSplitPayment(false); setCheckoutError(null); }}
+        />
       )}
       {showCreateProduct && (
         <ProductFormModal
@@ -1400,39 +1413,15 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
                   {selectedCustomer.phone} — سيُرسل الفاتورة للواتساب بعد التسجيل
                 </div>
               )}
-              {isRestricted ? (
-                <div className="flex items-center gap-2 bg-white/5 border border-amber-500/15 rounded-xl px-3 py-2">
-                  <span className="text-amber-400/60 shrink-0"><Vault className="w-3.5 h-3.5" /></span>
-                  <span className="text-white/40 text-xs shrink-0">الخزنة</span>
-                  <span className="text-amber-300 text-xs font-bold truncate">{effectiveSafeName}</span>
-                </div>
-              ) : selectRow("الخزينة", <Vault className="w-3.5 h-3.5 text-amber-400/70" />,
-                <select className="bg-transparent text-white outline-none w-full appearance-none text-xs" value={safeId} onChange={e => setSafeId(e.target.value)}>
-                  <option value="" className="bg-slate-900">-- اختر الخزينة --</option>
-                  {safes.map(s => <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>)}
-                </select>
-              )}
             </div>
 
-            {/* طريقة الدفع والخصم */}
-            <div className="flex gap-1.5 items-center">
-              <div className="flex gap-1 flex-1">
-                {[{ v: "cash", l: "نقدي" }, { v: "credit", l: "آجل" }, { v: "partial", l: "جزئي" }].map(opt => (
-                  <button key={opt.v} onClick={() => setPaymentType(opt.v as "cash" | "credit" | "partial")}
-                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${paymentType === opt.v ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}>
-                    {opt.l}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl px-2 py-1.5 w-24">
-                <Percent className="w-3 h-3 text-white/30 shrink-0" />
-                <input type="number" min="0" max="100" step="1" placeholder="خصم" className="bg-transparent text-white outline-none w-full text-xs placeholder:text-white/20" value={discountPct} onChange={e => setDiscountPct(e.target.value)} />
-              </div>
+            {/* خصم */}
+            <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
+              <Percent className="w-3 h-3 text-white/30 shrink-0" />
+              <span className="text-white/40 text-xs shrink-0">خصم %</span>
+              <input type="number" min="0" max="100" step="1" placeholder="0" className="bg-transparent text-white outline-none flex-1 text-xs placeholder:text-white/20" value={discountPct} onChange={e => setDiscountPct(e.target.value)} />
+              {discountAmount > 0 && <span className="text-red-400 text-xs font-bold shrink-0">-{formatCurrency(discountAmount)}</span>}
             </div>
-
-            {paymentType === "partial" && (
-              <input type="number" step="0.01" placeholder="المبلغ المدفوع جزئياً..." className="glass-input text-xs py-2" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />
-            )}
 
             {/* ── صندوق الإجماليات ── */}
             <div className="rounded-2xl border border-white/12 overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(255,255,255,0.02))" }}>
@@ -1446,32 +1435,6 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
                 <span className="text-white/55 text-xs font-bold uppercase tracking-wide">إجمالي الفاتورة</span>
                 <span className="font-black text-white tabular-nums" style={{ fontSize: "1.55rem", letterSpacing: "-0.5px", lineHeight: 1 }}>{formatCurrency(cartTotal)}</span>
               </div>
-              <div className="grid grid-cols-2">
-                <div className="px-3 py-2.5 border-l border-white/10">
-                  <p className="text-white/35 text-xs mb-1">المدفوع</p>
-                  <p className="font-black text-emerald-400 text-sm tabular-nums">
-                    {paymentType === "cash"
-                      ? formatCurrency(cartTotal)
-                      : paymentType === "credit"
-                      ? <span className="text-yellow-400 text-xs font-bold">آجل على العميل</span>
-                      : formatCurrency(parseFloat(paidAmount) || 0)}
-                  </p>
-                </div>
-                <div className="px-3 py-2.5">
-                  <p className="text-white/35 text-xs mb-1">المتبقي</p>
-                  <p className={`font-black text-sm tabular-nums ${
-                    paymentType === "cash" ? "text-white/20" :
-                    paymentType === "credit" ? "text-red-400" :
-                    cartTotal - (parseFloat(paidAmount) || 0) > 0 ? "text-red-400" : "text-white/20"
-                  }`}>
-                    {paymentType === "cash"
-                      ? "—"
-                      : paymentType === "credit"
-                      ? formatCurrency(cartTotal)
-                      : formatCurrency(Math.max(0, cartTotal - (parseFloat(paidAmount) || 0)))}
-                  </p>
-                </div>
-              </div>
             </div>
 
             {checkoutError && (
@@ -1480,21 +1443,22 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
                   <p className="text-red-400 text-xs font-bold leading-tight">❌ فشل التسجيل</p>
                   <p className="text-red-300/70 text-xs mt-0.5 leading-tight">{checkoutError}</p>
                 </div>
-                <button
-                  onClick={handleCheckout}
+                <button onClick={() => setShowSplitPayment(true)}
                   className="shrink-0 text-xs text-white font-bold px-3 py-1.5 rounded-lg bg-red-500/30 hover:bg-red-500/50 border border-red-500/40 transition-colors">
                   إعادة المحاولة
                 </button>
               </div>
             )}
-            <button onClick={handleCheckout} disabled={checkoutMutation.isPending || cart.length === 0}
-              className="w-full py-3 rounded-xl font-black text-sm disabled:opacity-40 transition-all active:scale-97 relative overflow-hidden"
+            <button onClick={handleCheckout} disabled={cart.length === 0}
+              className="w-full py-3.5 rounded-xl font-black text-sm disabled:opacity-40 transition-all active:scale-97 flex items-center justify-center gap-2 relative overflow-hidden"
               style={{
-                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                color: "#000",
+                background: cart.length > 0 ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" : undefined,
+                color: cart.length > 0 ? "#000" : undefined,
                 boxShadow: cart.length > 0 ? "0 6px 22px rgba(245,158,11,0.40), 0 1px 3px rgba(0,0,0,0.2)" : "none",
               }}>
-              {checkoutMutation.isPending ? "⏳ جاري التسجيل..." : "✦ إتمام البيع"}
+              <Banknote className="w-4 h-4" />
+              إتمام البيع
+              <kbd className="text-[10px] font-bold opacity-60 bg-black/10 px-1.5 py-0.5 rounded">F9</kbd>
             </button>
 
             <div className="flex items-center justify-center gap-4 text-xs text-white/20 pb-1">
