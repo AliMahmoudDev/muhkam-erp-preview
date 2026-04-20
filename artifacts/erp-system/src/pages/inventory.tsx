@@ -22,7 +22,9 @@ import { useState } from 'react';
   Bell,
   LayoutDashboard,
   ArrowRight,
+  Shield,
   } from 'lucide-react';
+  import { Link } from 'wouter';
   import { useToast } from '@/hooks/use-toast';
   import { safeArray } from '@/lib/safe-data';
   import {
@@ -192,6 +194,16 @@ export default function Inventory() {
                     : 'bg-white/5 border-white/5'
                 }
               />
+            </div>
+          )}
+          {isAdmin && (
+            <div className="flex justify-end">
+              <Link
+                href={`${BASE}/audit-log`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+              >
+                <Shield className="w-3.5 h-3.5" /> سجل المراجعات الكامل
+              </Link>
             </div>
           )}
           {gs && (gs.low_stock_count > 0 || gs.zero_stock_count > 0) && (

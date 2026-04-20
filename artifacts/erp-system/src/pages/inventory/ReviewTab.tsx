@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
 import { formatCurrency } from '@/lib/format';
-import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, X, RefreshCw, ChevronUp, ChevronDown, Edit3 } from 'lucide-react';
+import { useDebouncedValue } from '@/hooks/use-debounce';
+import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
+import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, X, RefreshCw, ChevronUp, ChevronDown, Edit3, FileSpreadsheet, FileText } from 'lucide-react';
 import { api, movementTypeLabel } from './_shared';
 import type {
   AuditProduct,
@@ -28,6 +31,7 @@ function ReviewTab({
   onFilterApplied?: () => void;
 }) {
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 200);
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [sortKey, setSortKey] = useState<keyof AuditProduct>('name');
   const [sortAsc, setSortAsc] = useState(true);
@@ -103,11 +107,13 @@ function ReviewTab({
   const products = auditData?.products ?? [];
   const _summary = auditData?.summary;
 
+  const q = debouncedSearch.toLowerCase();
   const searched = products.filter(
     (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.sku ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (p.category ?? '').toLowerCase().includes(search.toLowerCase())
+      !q ||
+      p.name.toLowerCase().includes(q) ||
+      (p.sku ?? '').toLowerCase().includes(q) ||
+      (p.category ?? '').toLowerCase().includes(q)
   );
 
   const zeroCount = searched.filter((p) => p.actual_qty <= 0).length;
@@ -139,6 +145,52 @@ function ReviewTab({
     }
   }
 
+  const ROWS_PER_CHUNK = 200;
+  const [chunkLimit, setChunkLimit] = useState(ROWS_PER_CHUNK);
+  useEffect(() => {
+    setChunkLimit(ROWS_PER_CHUNK);
+  }, [debouncedSearch, showZeroOnly, showLowOnly, showPositiveOnly]);
+  const visibleRows = filtered.slice(0, chunkLimit);
+
+  function handleExportExcel() {
+    void exportToExcel({
+      filename: `inventory-review-${new Date().toISOString().slice(0, 10)}`,
+      sheetName: 'مراجعة المخزون',
+      title: `تقرير مراجعة المخزون — ${filtered.length} صنف`,
+      columns: [
+        { header: 'المنتج', key: 'name', width: 30 },
+        { header: 'SKU', key: 'sku', width: 14 },
+        { header: 'التصنيف', key: 'category', width: 16 },
+        { header: 'افتتاحي', key: 'opening_qty', width: 10 },
+        { header: 'وارد', key: 'purchased_qty', width: 10 },
+        { header: 'مرتجع مبيعات', key: 'sale_return_qty', width: 13 },
+        { header: 'صادر', key: 'sold_qty', width: 10 },
+        { header: 'مرتجع مشتريات', key: 'purchase_return_qty', width: 14 },
+        { header: 'محسوب', key: 'calculated_qty', width: 11 },
+        { header: 'فعلي', key: 'actual_qty', width: 11 },
+        { header: 'فرق', key: 'discrepancy', width: 11 },
+        { header: 'تكلفة', key: 'cost_price', width: 12 },
+        { header: 'قيمة المخزون', key: 'total_value', width: 14 },
+      ],
+      rows: filtered,
+    });
+  }
+  function handleExportPDF() {
+    exportToPDF({
+      filename: 'inventory-review',
+      title: `تقرير مراجعة المخزون — ${filtered.length} صنف`,
+      columns: [
+        { header: 'المنتج', key: 'name' },
+        { header: 'SKU', key: 'sku' },
+        { header: 'محسوب', key: 'calculated_qty', format: (r) => r.calculated_qty.toFixed(2) },
+        { header: 'فعلي', key: 'actual_qty', format: (r) => r.actual_qty.toFixed(2) },
+        { header: 'فرق', key: 'discrepancy', format: (r) => r.discrepancy.toFixed(2) },
+        { header: 'القيمة', key: 'total_value', format: (r) => formatCurrency(r.total_value) },
+      ],
+      rows: filtered,
+    });
+  }
+
   const SortIcon = ({ k }: { k: keyof AuditProduct }) =>
     sortKey === k ? (
       sortAsc ? (
@@ -168,12 +220,30 @@ function ReviewTab({
             </span>
           ))}
         </div>
-        <button
-          onClick={() => refetch()}
-          className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-xl transition-colors"
-        >
-          <RefreshCw className="w-3.5 h-3.5" /> تحديث
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportExcel}
+            disabled={filtered.length === 0}
+            className="flex items-center gap-2 px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-40 text-emerald-300 text-sm rounded-xl transition-colors"
+            title="تصدير Excel"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
+          </button>
+          <button
+            onClick={handleExportPDF}
+            disabled={filtered.length === 0}
+            className="flex items-center gap-2 px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 disabled:opacity-40 text-rose-300 text-sm rounded-xl transition-colors"
+            title="تصدير PDF"
+          >
+            <FileText className="w-3.5 h-3.5" /> PDF
+          </button>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-xl transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> تحديث
+          </button>
+        </div>
       </div>
 
       {/* بحث + فلاتر سريعة */}
@@ -284,7 +354,7 @@ function ReviewTab({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => {
+              {visibleRows.map((p) => {
                 const isLow =
                   p.low_stock_threshold !== null && p.actual_qty <= p.low_stock_threshold;
                 const isZero = p.actual_qty <= 0;
@@ -372,6 +442,18 @@ function ReviewTab({
                   </tr>
                 );
               })}
+              {filtered.length > chunkLimit && (
+                <tr>
+                  <td colSpan={12} className="py-3 text-center bg-white/[0.03]">
+                    <button
+                      onClick={() => setChunkLimit((c) => c + ROWS_PER_CHUNK)}
+                      className="px-4 py-1.5 text-xs bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg transition-colors"
+                    >
+                      عرض المزيد ({filtered.length - chunkLimit} متبقي)
+                    </button>
+                  </td>
+                </tr>
+              )}
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={12} className="py-16 text-center">
@@ -471,44 +553,7 @@ function ReviewTab({
               {productDetail.movements.length === 0 && (
                 <p className="text-white/30 text-sm text-center py-4">لا توجد حركات مسجّلة</p>
               )}
-              {productDetail.movements.map((m) => {
-                const mt = movementTypeLabel[m.movement_type] ?? {
-                  label: m.movement_type,
-                  color: 'bg-white/10 text-white/60',
-                };
-                const qtyNum = Number(m.quantity);
-                const isIn = qtyNum > 0;
-                return (
-                  <div key={m.id} className="flex items-start gap-3 bg-white/5 rounded-xl p-3">
-                    <div
-                      className={`shrink-0 px-2 py-0.5 rounded-lg text-xs font-medium ${mt.color}`}
-                    >
-                      {mt.label}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={`font-bold font-mono text-sm ${isIn ? 'text-emerald-400' : 'text-red-400'}`}
-                        >
-                          {isIn ? '+' : ''}
-                          {qtyNum.toFixed(3)}
-                        </span>
-                        <span className="text-white/30 text-xs font-mono">
-                          {m.quantity_before.toFixed(2)} → {m.quantity_after.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="text-white/50 text-xs mt-0.5 flex gap-3">
-                        {m.reference_no && <span className="font-mono">{m.reference_no}</span>}
-                        {m.date && <span>{m.date}</span>}
-                        {m.notes && <span className="truncate">{m.notes}</span>}
-                      </div>
-                    </div>
-                    <div className="text-white/30 text-xs shrink-0">
-                      {formatCurrency(Number(m.unit_cost))}/وحدة
-                    </div>
-                  </div>
-                );
-              })}
+              <MovementsVirtualList movements={productDetail.movements} />
             </div>
           </div>
         </div>
@@ -588,6 +633,70 @@ function ReviewTab({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function MovementsVirtualList({ movements }: { movements: import('./_shared').StockMovement[] }) {
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const virt = useVirtualizer({
+    count: movements.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 64,
+    overscan: 8,
+  });
+  const items = virt.getVirtualItems();
+  return (
+    <div
+      ref={parentRef}
+      className="max-h-[420px] overflow-y-auto"
+      style={{ contain: 'strict' }}
+    >
+      <div style={{ height: virt.getTotalSize(), position: 'relative', width: '100%' }}>
+        {items.map((vi) => {
+          const m = movements[vi.index];
+          const mt = movementTypeLabel[m.movement_type] ?? {
+            label: m.movement_type,
+            color: 'bg-white/10 text-white/60',
+          };
+          const qtyNum = Number(m.quantity);
+          const isIn = qtyNum > 0;
+          return (
+            <div
+              key={m.id}
+              ref={virt.measureElement}
+              data-index={vi.index}
+              style={{ position: 'absolute', top: 0, insetInlineStart: 0, width: '100%', transform: `translateY(${vi.start}px)` }}
+              className="px-1 pb-2"
+            >
+              <div className="flex items-start gap-3 bg-white/5 rounded-xl p-3">
+                <div className={`shrink-0 px-2 py-0.5 rounded-lg text-xs font-medium ${mt.color}`}>
+                  {mt.label}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className={`font-bold font-mono text-sm ${isIn ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {isIn ? '+' : ''}
+                      {qtyNum.toFixed(3)}
+                    </span>
+                    <span className="text-white/30 text-xs font-mono">
+                      {m.quantity_before.toFixed(2)} → {m.quantity_after.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-white/50 text-xs mt-0.5 flex gap-3">
+                    {m.reference_no && <span className="font-mono">{m.reference_no}</span>}
+                    {m.date && <span>{m.date}</span>}
+                    {m.notes && <span className="truncate">{m.notes}</span>}
+                  </div>
+                </div>
+                <div className="text-white/30 text-xs shrink-0">
+                  {formatCurrency(Number(m.unit_cost))}/وحدة
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

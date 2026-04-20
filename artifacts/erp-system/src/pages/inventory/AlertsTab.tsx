@@ -1,12 +1,31 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
-import { AlertTriangle, TrendingDown, RefreshCw, CheckCircle, Filter, Bell, ArrowRightLeft } from 'lucide-react';
+import { AlertTriangle, TrendingDown, RefreshCw, CheckCircle, Filter, Bell, ArrowRightLeft, FileSpreadsheet, FileText, ShoppingCart, TrendingUp } from 'lucide-react';
+import { formatCurrency } from '@/lib/format';
+import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
 import { api } from './_shared';
 import type {
   LowStockItem,
   TransferPrefill,
 } from './_shared';
+
+interface ReorderSuggestion {
+  product_id: number;
+  product_name: string;
+  sku: string | null;
+  category: string | null;
+  cost_price: number;
+  min_stock: number | null;
+  current_qty: number;
+  sold_qty_30d: number;
+  daily_velocity: number;
+  coverage_days: number | null;
+  suggested_qty: number;
+  suggested_cost: number;
+  reason: string | null;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+}
 
 function AlertsTab({
   warehouses: _warehouses,
@@ -19,6 +38,7 @@ function AlertsTab({
 }) {
   const [filterWH, setFilterWH] = useState<number | 'all'>('all');
   const [showZeroOnly, setShowZeroOnly] = useState(false);
+  const [showReorder, setShowReorder] = useState(false);
 
   const { data, isLoading, refetch } = useQuery<{
     items: LowStockItem[];
@@ -29,6 +49,71 @@ function AlertsTab({
     queryFn: () => authFetch(api('/api/inventory/low-stock')).then((r) => r.json()),
     staleTime: 30_000,
   });
+
+  const { data: reorderData, isLoading: loadingReorder, refetch: refetchReorder } = useQuery<{
+    suggestions: ReorderSuggestion[];
+    total_cost: number;
+    days_analyzed: number;
+    cover_days: number;
+  }>({
+    queryKey: ['inventory-reorder-suggestions'],
+    queryFn: () =>
+      authFetch(api('/api/inventory/reorder-suggestions')).then((r) => r.json()),
+    enabled: showReorder,
+    staleTime: 60_000,
+  });
+
+  function handleExportExcel() {
+    void exportToExcel({
+      filename: `inventory-alerts-${new Date().toISOString().slice(0, 10)}`,
+      sheetName: 'تنبيهات المخزون',
+      title: `تنبيهات المخزون — ${filtered.length} صنف`,
+      columns: [
+        { header: 'المنتج', key: 'product_name', width: 30 },
+        { header: 'SKU', key: 'sku', width: 14 },
+        { header: 'المخزن', key: 'warehouse_name', width: 18 },
+        { header: 'الكمية الحالية', key: 'current_qty', width: 14 },
+        { header: 'الحد الأدنى', key: 'min_stock', width: 12 },
+        { header: 'العجز', key: 'shortage', width: 12 },
+        { header: 'مقترح الطلب', key: 'suggested_qty', width: 14 },
+      ],
+      rows: filtered,
+    });
+  }
+  function handleExportPDF() {
+    exportToPDF({
+      filename: 'inventory-alerts',
+      title: `تنبيهات المخزون — ${filtered.length} صنف`,
+      columns: [
+        { header: 'المنتج', key: 'product_name' },
+        { header: 'المخزن', key: 'warehouse_name' },
+        { header: 'الحالي', key: 'current_qty', format: (r) => r.current_qty.toFixed(2) },
+        { header: 'الحد', key: 'min_stock' },
+        { header: 'مقترح', key: 'suggested_qty' },
+      ],
+      rows: filtered,
+    });
+  }
+  function handleExportReorderExcel() {
+    if (!reorderData) return;
+    void exportToExcel({
+      filename: `reorder-suggestions-${new Date().toISOString().slice(0, 10)}`,
+      sheetName: 'مقترحات التوريد',
+      title: `مقترحات إعادة الطلب — ${reorderData.suggestions.length} صنف — ${formatCurrency(reorderData.total_cost)}`,
+      columns: [
+        { header: 'المنتج', key: 'product_name', width: 30 },
+        { header: 'SKU', key: 'sku', width: 14 },
+        { header: 'الكمية الحالية', key: 'current_qty', width: 12, format: (r) => r.current_qty.toFixed(2) },
+        { header: 'مبيعات 30 يوم', key: 'sold_qty_30d', width: 14, format: (r) => r.sold_qty_30d.toFixed(2) },
+        { header: 'تغطية (يوم)', key: 'coverage_days', width: 12, format: (r) => r.coverage_days?.toFixed(1) ?? '∞' },
+        { header: 'مقترح الكمية', key: 'suggested_qty', width: 14 },
+        { header: 'تكلفة مقدّرة', key: 'suggested_cost', width: 14, format: (r) => r.suggested_cost.toFixed(2) },
+        { header: 'الأولوية', key: 'priority', width: 10 },
+        { header: 'السبب', key: 'reason', width: 30 },
+      ],
+      rows: reorderData.suggestions,
+    });
+  }
 
   const allItems = data?.items ?? [];
   const zeroCount = data?.zero_count ?? 0;
@@ -153,12 +238,154 @@ function AlertsTab({
             </button>
             <div className="flex-1" />
             <button
+              onClick={() => setShowReorder((p) => !p)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
+                showReorder
+                  ? 'bg-violet-500/20 border-violet-500/30 text-violet-300'
+                  : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
+              }`}
+            >
+              <ShoppingCart className="w-3 h-3" /> مقترحات التوريد
+            </button>
+            <button
+              onClick={handleExportExcel}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 disabled:opacity-40 text-emerald-300 text-xs rounded-xl transition-colors border border-emerald-500/20"
+            >
+              <FileSpreadsheet className="w-3 h-3" /> Excel
+            </button>
+            <button
+              onClick={handleExportPDF}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 disabled:opacity-40 text-rose-300 text-xs rounded-xl transition-colors border border-rose-500/20"
+            >
+              <FileText className="w-3 h-3" /> PDF
+            </button>
+            <button
               onClick={() => refetch()}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 text-xs rounded-xl transition-colors border border-white/10"
             >
               <RefreshCw className="w-3 h-3" /> تحديث
             </button>
           </div>
+
+          {/* لوحة مقترحات إعادة الطلب */}
+          {showReorder && (
+            <div className="bg-[#111827] border border-violet-500/20 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                    <ShoppingCart className="w-4 h-4 text-violet-300" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-sm">مقترحات إعادة الطلب</h3>
+                    <p className="text-white/40 text-xs">
+                      حسب سرعة المبيعات في آخر {reorderData?.days_analyzed ?? 30} يوم — تغطية {reorderData?.cover_days ?? 30} يوم
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {reorderData && reorderData.suggestions.length > 0 && (
+                    <>
+                      <span className="px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-bold">
+                        إجمالي مقدّر: {formatCurrency(reorderData.total_cost)}
+                      </span>
+                      <button
+                        onClick={handleExportReorderExcel}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 text-xs rounded-xl border border-emerald-500/20"
+                      >
+                        <FileSpreadsheet className="w-3 h-3" /> Excel
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => refetchReorder()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 text-xs rounded-xl border border-white/10"
+                  >
+                    <RefreshCw className="w-3 h-3" /> تحديث
+                  </button>
+                </div>
+              </div>
+              {loadingReorder ? (
+                <div className="text-center py-8 text-white/40 text-sm">جاري التحليل...</div>
+              ) : !reorderData || reorderData.suggestions.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-10 h-10 text-emerald-500/30 mx-auto mb-2" />
+                  <p className="text-white/40 text-sm">لا توجد مقترحات توريد حالياً</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-white/8">
+                  <table className="w-full text-sm min-w-[800px]">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/5">
+                        <th className="p-2.5 text-right text-white/60 font-medium text-xs">الأولوية</th>
+                        <th className="p-2.5 text-right text-white/60 font-medium text-xs">المنتج</th>
+                        <th className="p-2.5 text-right text-white/60 font-medium text-xs">الحالي</th>
+                        <th className="p-2.5 text-right text-white/60 font-medium text-xs">سرعة (يوم)</th>
+                        <th className="p-2.5 text-right text-white/60 font-medium text-xs">التغطية</th>
+                        <th className="p-2.5 text-right text-white/60 font-medium text-xs">مقترح</th>
+                        <th className="p-2.5 text-right text-white/60 font-medium text-xs">تكلفة مقدّرة</th>
+                        <th className="p-2.5 text-right text-white/60 font-medium text-xs">السبب</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reorderData.suggestions.slice(0, 50).map((s) => {
+                        const colors: Record<string, string> = {
+                          critical: 'bg-red-500/20 text-red-300',
+                          high: 'bg-amber-500/20 text-amber-300',
+                          medium: 'bg-violet-500/20 text-violet-300',
+                          low: 'bg-white/10 text-white/60',
+                        };
+                        const labels: Record<string, string> = {
+                          critical: 'حرج',
+                          high: 'عالٍ',
+                          medium: 'متوسط',
+                          low: 'منخفض',
+                        };
+                        return (
+                          <tr key={s.product_id} className="border-b border-white/5 erp-table-row">
+                            <td className="p-2.5">
+                              <span className={`px-2 py-0.5 rounded-lg text-xs font-bold ${colors[s.priority]}`}>
+                                {labels[s.priority]}
+                              </span>
+                            </td>
+                            <td className="p-2.5">
+                              <div className="text-white text-sm font-medium">{s.product_name}</div>
+                              {s.sku && <div className="text-white/40 text-xs font-mono">{s.sku}</div>}
+                            </td>
+                            <td className="p-2.5 font-mono text-white/70 text-sm">{s.current_qty.toFixed(2)}</td>
+                            <td className="p-2.5 font-mono text-white/70 text-xs">
+                              <TrendingUp className="w-3 h-3 inline me-1 text-emerald-400" />
+                              {s.daily_velocity.toFixed(2)}
+                            </td>
+                            <td className="p-2.5 font-mono text-xs">
+                              <span className={s.coverage_days !== null && s.coverage_days <= 7 ? 'text-red-400 font-bold' : 'text-white/60'}>
+                                {s.coverage_days !== null ? `${s.coverage_days.toFixed(1)} يوم` : '∞'}
+                              </span>
+                            </td>
+                            <td className="p-2.5">
+                              <span className="px-2 py-1 rounded-lg bg-violet-500/10 text-violet-300 font-bold font-mono text-sm">
+                                {s.suggested_qty}
+                              </span>
+                            </td>
+                            <td className="p-2.5 font-mono text-emerald-300 text-xs">
+                              {formatCurrency(s.suggested_cost)}
+                            </td>
+                            <td className="p-2.5 text-white/50 text-xs">{s.reason}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {reorderData.suggestions.length > 50 && (
+                    <div className="p-2 text-center text-white/30 text-xs bg-white/[0.02]">
+                      عُرضت أعلى 50 من {reorderData.suggestions.length} — حمّل Excel لرؤية الكل
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* جدول التنبيهات */}
           <div className="overflow-x-auto rounded-2xl border border-white/10">

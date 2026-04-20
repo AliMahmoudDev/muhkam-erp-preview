@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
 import { safeArray } from '@/lib/safe-data';
-import { TrendingUp, Search, X, ClipboardList, Plus, CheckCircle, Warehouse, Loader2, Filter } from 'lucide-react';
+import { useDebouncedValue } from '@/hooks/use-debounce';
+import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
+import { TrendingUp, Search, X, ClipboardList, Plus, CheckCircle, Warehouse, Loader2, Filter, Camera, FileSpreadsheet, FileText } from 'lucide-react';
 import { api, today, nowTime } from './_shared';
 import type {
   AuditProduct,
@@ -35,6 +38,7 @@ function CountTab({
   const [countMode, setCountMode] = useState<'full' | 'partial' | 'positive'>('full');
 
   const [partialSearch, setPartialSearch] = useState('');
+  const debouncedPartialSearch = useDebouncedValue(partialSearch, 200);
   const [partialCategory, setPartialCategory] = useState('all');
   const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(new Set());
 
@@ -42,6 +46,10 @@ function CountTab({
   const [itemNotes, setItemNotes] = useState<Record<number, string>>({});
   const [sessionView, setSessionView] = useState<'new' | 'history'>('new');
   const [applyingId, setApplyingId] = useState<number | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [lastScanned, setLastScanned] = useState<string | null>(null);
+  const lastScanRef = useRef<{ code: string; at: number }>({ code: '', at: 0 });
+  const SCAN_DEDUPE_MS = 1200;
 
   useEffect(() => {
     setPhysicalQtys({});
@@ -75,11 +83,12 @@ function CountTab({
     new Set(allProducts.map((p) => p.category).filter(Boolean) as string[])
   ).sort((a, b) => a.localeCompare(b, 'ar'));
 
+  const ps = debouncedPartialSearch.toLowerCase();
   const filteredForSelector = allProducts.filter((p) => {
     const matchSearch =
-      !partialSearch ||
-      p.name.toLowerCase().includes(partialSearch.toLowerCase()) ||
-      (p.sku ?? '').toLowerCase().includes(partialSearch.toLowerCase());
+      !ps ||
+      p.name.toLowerCase().includes(ps) ||
+      (p.sku ?? '').toLowerCase().includes(ps);
     const matchCat = partialCategory === 'all' || p.category === partialCategory;
     return matchSearch && matchCat;
   });
@@ -200,6 +209,104 @@ function CountTab({
   });
 
   const sessions = safeArray(enrichedSessions) as CountSessionEnriched[];
+
+  const ROWS_PER_CHUNK = 200;
+  const [chunkLimit, setChunkLimit] = useState(ROWS_PER_CHUNK);
+  useEffect(() => {
+    setChunkLimit(ROWS_PER_CHUNK);
+  }, [countMode, selectedWarehouse, selectedProductIds]);
+  const visibleCountRows = countTableProducts.slice(0, chunkLimit);
+
+  const handleBarcode = useCallback(
+    (code: string) => {
+      const trimmed = code.trim();
+      if (!trimmed) return;
+      // Dedupe rapid duplicate emissions from ZXing (same code in <1.2s window)
+      const now = Date.now();
+      if (
+        lastScanRef.current.code === trimmed &&
+        now - lastScanRef.current.at < SCAN_DEDUPE_MS
+      ) {
+        return;
+      }
+      lastScanRef.current = { code: trimmed, at: now };
+      const found = allProducts.find(
+        (p) => (p.sku ?? '').toLowerCase() === trimmed.toLowerCase()
+      );
+      if (!found) {
+        setLastScanned(trimmed);
+        toast({ title: `لم يُعثر على منتج بالباركود ${trimmed}`, variant: 'destructive' });
+        return;
+      }
+      setLastScanned(trimmed);
+      // optimistic increment
+      setPhysicalQtys((prev) => {
+        const cur = parseFloat(prev[found.id] ?? '0') || 0;
+        return { ...prev, [found.id]: String(cur + 1) };
+      });
+      toast({ title: `${found.name} +1` });
+      setTimeout(() => {
+        const el = document.querySelector<HTMLInputElement>(
+          `input[data-qty-input="${found.id}"]`
+        );
+        if (el) {
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          el.focus();
+          el.select();
+        }
+      }, 50);
+    },
+    [allProducts, toast]
+  );
+
+  function handleExportSession() {
+    void exportToExcel({
+      filename: `count-session-${selectedWarehouse}-${new Date().toISOString().slice(0, 10)}`,
+      sheetName: 'جلسة جرد',
+      title: `جلسة جرد — ${countDate} ${countTime} — ${enteredProducts.length} منتج`,
+      columns: [
+        { header: 'المنتج', key: 'name', width: 30 },
+        { header: 'SKU', key: 'sku', width: 14 },
+        { header: 'النظام', key: 'calculated_qty', width: 12, format: (r) => r.calculated_qty.toFixed(2) },
+        {
+          header: 'الفعلي',
+          key: 'physical',
+          width: 12,
+          format: (r) => parseFloat(physicalQtys[r.id] ?? '0'),
+        },
+        {
+          header: 'الفرق',
+          key: 'diff',
+          width: 12,
+          format: (r) => (parseFloat(physicalQtys[r.id] ?? '0') - r.calculated_qty).toFixed(2),
+        },
+        { header: 'سبب الفرق', key: 'note', width: 30, format: (r) => itemNotes[r.id] ?? '' },
+      ],
+      rows: enteredProducts,
+    });
+  }
+  function handleExportSessionPDF() {
+    exportToPDF({
+      filename: 'count-session',
+      title: `جلسة جرد ${countDate} ${countTime}`,
+      columns: [
+        { header: 'المنتج', key: 'name' },
+        { header: 'SKU', key: 'sku' },
+        { header: 'النظام', key: 'calculated_qty', format: (r) => r.calculated_qty.toFixed(2) },
+        {
+          header: 'الفعلي',
+          key: 'physical',
+          format: (r) => parseFloat(physicalQtys[r.id] ?? '0').toFixed(2),
+        },
+        {
+          header: 'الفرق',
+          key: 'diff',
+          format: (r) => (parseFloat(physicalQtys[r.id] ?? '0') - r.calculated_qty).toFixed(2),
+        },
+      ],
+      rows: enteredProducts,
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -462,19 +569,35 @@ function CountTab({
                     </p>
                   )}
                 </div>
-                <div className="shrink-0 flex items-center gap-2">
+                <div className="shrink-0 flex items-center gap-2 flex-wrap">
                   {enteredProducts.length > 0 && (
-                    <button
-                      onClick={() => {
-                        if (confirm(`هل تريد مسح ${enteredProducts.length} كمية مدخلة؟`)) {
-                          setPhysicalQtys({});
-                          setItemNotes({});
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 rounded-xl text-xs font-bold transition-colors whitespace-nowrap"
-                    >
-                      <X className="w-3.5 h-3.5" /> مسح الكميات
-                    </button>
+                    <>
+                      <button
+                        onClick={handleExportSession}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs font-bold transition-colors"
+                        title="تصدير Excel"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
+                      </button>
+                      <button
+                        onClick={handleExportSessionPDF}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-bold transition-colors"
+                        title="تصدير PDF"
+                      >
+                        <FileText className="w-3.5 h-3.5" /> PDF
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`هل تريد مسح ${enteredProducts.length} كمية مدخلة؟`)) {
+                            setPhysicalQtys({});
+                            setItemNotes({});
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 rounded-xl text-xs font-bold transition-colors whitespace-nowrap"
+                      >
+                        <X className="w-3.5 h-3.5" /> مسح الكميات
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => createAndApplyMutation.mutate()}
@@ -493,6 +616,25 @@ function CountTab({
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* شريط أدوات الجرد — باركود */}
+          {selectedWarehouse > 0 && countMode !== 'partial' && (
+            <div className="flex items-center justify-between gap-3 bg-white/3 border border-white/8 rounded-xl px-4 py-2.5">
+              <div className="flex items-center gap-2 text-xs text-white/50">
+                <Camera className="w-3.5 h-3.5 text-violet-400" />
+                <span>استخدم الماسح الضوئي لإضافة الكميات بسرعة</span>
+                {lastScanned && (
+                  <span className="font-mono text-violet-300">آخر مسح: {lastScanned}</span>
+                )}
+              </div>
+              <button
+                onClick={() => setScannerOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-xs font-bold transition-colors"
+              >
+                <Camera className="w-3.5 h-3.5" /> فتح ماسح الباركود
+              </button>
             </div>
           )}
 
@@ -529,7 +671,7 @@ function CountTab({
                   </tr>
                 </thead>
                 <tbody>
-                  {countTableProducts.map((p) => {
+                  {visibleCountRows.map((p) => {
                     const rawPhys = physicalQtys[p.id];
                     const physQty =
                       rawPhys !== undefined && rawPhys !== '' ? parseFloat(rawPhys) : null;
@@ -623,6 +765,18 @@ function CountTab({
                       </tr>
                     );
                   })}
+                  {countTableProducts.length > chunkLimit && (
+                    <tr>
+                      <td colSpan={5} className="py-3 text-center bg-white/[0.03]">
+                        <button
+                          onClick={() => setChunkLimit((c) => c + ROWS_PER_CHUNK)}
+                          className="px-4 py-1.5 text-xs bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg transition-colors"
+                        >
+                          عرض المزيد ({countTableProducts.length - chunkLimit} متبقي)
+                        </button>
+                      </td>
+                    </tr>
+                  )}
                   {countTableProducts.length === 0 && (
                     <tr>
                       <td colSpan={5} className="text-center text-white/40 py-12">
@@ -734,6 +888,11 @@ function CountTab({
           })}
         </div>
       )}
+      <BarcodeScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onDetected={handleBarcode}
+      />
     </div>
   );
 }
