@@ -1114,7 +1114,22 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     setPayRowKey(k => k + 1);
   };
 
-  const fillPayRemaining = () => setPayAmount(payRemaining.toFixed(0));
+  // "كل المتبقي" — يُضيف سطر الدفع فوراً بدون المرور بالحقل النصي
+  // لا يُنفّذ البيع — إتمام البيع يظل محمياً بالـ modal منفصلاً
+  const fillPayRemaining = () => {
+    if (payRemaining <= 0) return;
+    const firstSafeId = effectiveSafeId ?? (safes.length > 0 ? safes[0].id : null);
+    setPayRows(prev => [...prev, {
+      id: `${Date.now()}-${Math.random()}`,
+      type: payType,
+      safe_id: payType === 'cash' ? (paySafe ?? firstSafeId) : null,
+      amount: payRemaining,
+    }]);
+    setPayAmount('');
+    setPaySafe(effectiveSafeId ?? (safes.length > 0 ? safes[0].id : null));
+    setPayType('cash');
+    // لا نُحدّث payRowKey لتجنّب إعادة تركيز الحقل (يمنع الإرسال العرضي)
+  };
 
   useEffect(() => {
     const firstSafeId = effectiveSafeId ?? (safes.length > 0 ? safes[0].id : null);
