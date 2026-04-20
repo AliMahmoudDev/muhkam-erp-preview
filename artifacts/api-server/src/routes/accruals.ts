@@ -20,7 +20,7 @@ function fmt(a: typeof accrualsTable.$inferSelect) {
 }
 
 /* ─── الحسابات المحاسبية حسب النوع ─── */
-async function getAccrualAccounts(type: string, category: string, description: string, cid: number) {
+async function getAccrualAccounts(type: string, category: string, _description: string, cid: number) {
   if (type === "prepayment" && category === "expense") {
     const prepaid = await getOrCreateAccount({ code: "ASSET-PREPAID-EXP", name: "مصروفات مدفوعة مقدماً", type: "asset" }, cid);
     const expense = await getOrCreateAccount({ code: "EXP-GENERAL", name: "مصروفات عمومية وإدارية", type: "expense" }, cid);

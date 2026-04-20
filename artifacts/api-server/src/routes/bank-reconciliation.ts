@@ -2,8 +2,8 @@
  * /api/bank-accounts & /api/bank-statement-lines — المطابقة البنكية
  */
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql, count } from "drizzle-orm";
-import { db, bankAccountsTable, bankStatementLinesTable, journalEntriesTable, journalEntryLinesTable, safesTable } from "@workspace/db";
+import { eq, and, desc } from "drizzle-orm";
+import { db, bankAccountsTable, bankStatementLinesTable, journalEntriesTable, safesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 
 const router: IRouter = Router();

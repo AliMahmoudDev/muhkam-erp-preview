@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,7 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Plus, CheckCircle2, XCircle, Upload, AlertTriangle, CheckCheck, Landmark } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/format';
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+const api = (p: string) => `${BASE}${p}`;
 
 interface BankAccount { id: number; name: string; bank_name: string; account_number?: string; opening_balance: number; currency: string; }
 interface StatementLine { id: number; date: string; description: string; amount: number; type: 'credit' | 'debit'; reference?: string; status: 'matched' | 'unmatched'; matched_entry_id?: number; }
@@ -30,53 +33,82 @@ export default function BankReconciliationPage() {
 
   const { data: banks = [] } = useQuery<BankAccount[]>({
     queryKey: ['bank-accounts'],
-    queryFn: () => api.get('/api/bank-accounts').then(r => r.data),
+    queryFn: () => authFetch(api('/api/bank-accounts')).then(async r => {
+      if (!r.ok) throw new Error('خطأ في جلب الحسابات');
+      return r.json();
+    }),
   });
 
   const { data: lines = [], isLoading: linesLoading } = useQuery<StatementLine[]>({
     queryKey: ['bank-lines', selectedBank],
-    queryFn: () => selectedBank ? api.get(`/api/bank-accounts/${selectedBank}/lines`).then(r => r.data) : Promise.resolve([]),
+    queryFn: () => {
+      if (!selectedBank) return Promise.resolve([]);
+      return authFetch(api(`/api/bank-accounts/${selectedBank}/lines`)).then(async r => {
+        if (!r.ok) throw new Error('خطأ في جلب السطور');
+        return r.json();
+      });
+    },
     enabled: !!selectedBank,
   });
 
   const { data: reconciliation } = useQuery<Reconciliation>({
     queryKey: ['bank-reconciliation', selectedBank],
-    queryFn: () => selectedBank ? api.get(`/api/bank-accounts/${selectedBank}/reconciliation`).then(r => r.data) : Promise.resolve(null),
+    queryFn: () => {
+      if (!selectedBank) return Promise.resolve(null as unknown as Reconciliation);
+      return authFetch(api(`/api/bank-accounts/${selectedBank}/reconciliation`)).then(async r => {
+        if (!r.ok) throw new Error('خطأ في جلب المطابقة');
+        return r.json();
+      });
+    },
     enabled: !!selectedBank,
   });
 
   const addBankMutation = useMutation({
-    mutationFn: (data: typeof bankForm) => api.post('/api/bank-accounts', data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bank-accounts'] }); setShowAddBank(false); toast({ title: 'تم إضافة الحساب البنكي' }); },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error, variant: 'destructive' }),
+    mutationFn: (data: typeof bankForm) =>
+      authFetch(api('/api/bank-accounts'), { method: 'POST', body: JSON.stringify(data) })
+        .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? 'فشل الإضافة'); return d; }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['bank-accounts'] });
+      setShowAddBank(false);
+      toast({ title: 'تم إضافة الحساب البنكي' });
+    },
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   const importMutation = useMutation({
-    mutationFn: (lines: object[]) => api.post(`/api/bank-accounts/${selectedBank}/lines`, lines),
+    mutationFn: (rows: object[]) =>
+      authFetch(api(`/api/bank-accounts/${selectedBank}/lines`), { method: 'POST', body: JSON.stringify(rows) })
+        .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? 'فشل الاستيراد'); return d; }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['bank-lines', selectedBank] });
-      qc.invalidateQueries({ queryKey: ['bank-reconciliation', selectedBank] });
-      setShowImport(false); setImportText('');
+      void qc.invalidateQueries({ queryKey: ['bank-lines', selectedBank] });
+      void qc.invalidateQueries({ queryKey: ['bank-reconciliation', selectedBank] });
+      setShowImport(false);
+      setImportText('');
       toast({ title: 'تم استيراد كشف الحساب' });
     },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   const matchMutation = useMutation({
-    mutationFn: (id: number) => api.patch(`/api/bank-statement-lines/${id}/match`, {}),
+    mutationFn: (id: number) =>
+      authFetch(api(`/api/bank-statement-lines/${id}/match`), { method: 'PATCH', body: JSON.stringify({}) })
+        .then(async r => { if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? 'فشلت المطابقة'); } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['bank-lines', selectedBank] });
-      qc.invalidateQueries({ queryKey: ['bank-reconciliation', selectedBank] });
+      void qc.invalidateQueries({ queryKey: ['bank-lines', selectedBank] });
+      void qc.invalidateQueries({ queryKey: ['bank-reconciliation', selectedBank] });
     },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   const unmatchMutation = useMutation({
-    mutationFn: (id: number) => api.patch(`/api/bank-statement-lines/${id}/unmatch`, {}),
+    mutationFn: (id: number) =>
+      authFetch(api(`/api/bank-statement-lines/${id}/unmatch`), { method: 'PATCH', body: JSON.stringify({}) })
+        .then(async r => { if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? 'فشل إلغاء المطابقة'); } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['bank-lines', selectedBank] });
-      qc.invalidateQueries({ queryKey: ['bank-reconciliation', selectedBank] });
+      void qc.invalidateQueries({ queryKey: ['bank-lines', selectedBank] });
+      void qc.invalidateQueries({ queryKey: ['bank-reconciliation', selectedBank] });
     },
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   function handleImport() {
@@ -104,7 +136,7 @@ export default function BankReconciliationPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {banks.map(bank => (
           <button key={bank.id} onClick={() => setSelectedBank(bank.id)}
-            className={`p-4 rounded-xl border text-right transition-all ${selectedBank === bank.id ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-white/5 hover:bg-white/8'}`}>
+            className={`p-4 rounded-xl border text-right transition-all ${selectedBank === bank.id ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-white/5 hover:bg-white/[0.08]'}`}>
             <div className="flex items-center gap-2 mb-2">
               <Landmark className="h-4 w-4 text-blue-400" />
               <span className="text-xs text-white/50">{bank.currency}</span>
@@ -126,8 +158,16 @@ export default function BankReconciliationPage() {
             {[
               { label: 'الرصيد البنكي', value: formatCurrency(reconciliation.bank_balance), color: 'text-blue-400' },
               { label: 'رصيد الخزينة', value: reconciliation.safe_balance !== null ? formatCurrency(reconciliation.safe_balance) : 'غير مرتبط', color: 'text-purple-400' },
-              { label: 'الفرق', value: reconciliation.difference !== null ? formatCurrency(Math.abs(reconciliation.difference)) : '—', color: Math.abs(reconciliation.difference ?? 1) < 0.01 ? 'text-green-400' : 'text-red-400' },
-              { label: 'نسبة المطابقة', value: reconciliation.total_lines > 0 ? `${Math.round((reconciliation.matched_count / reconciliation.total_lines) * 100)}%` : '0%', color: 'text-amber-400' },
+              {
+                label: 'الفرق',
+                value: reconciliation.difference !== null ? formatCurrency(Math.abs(reconciliation.difference)) : '—',
+                color: Math.abs(reconciliation.difference ?? 1) < 0.01 ? 'text-green-400' : 'text-red-400',
+              },
+              {
+                label: 'نسبة المطابقة',
+                value: reconciliation.total_lines > 0 ? `${Math.round((reconciliation.matched_count / reconciliation.total_lines) * 100)}%` : '0%',
+                color: 'text-amber-400',
+              },
             ].map(card => (
               <div key={card.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
                 <p className="text-white/50 text-sm">{card.label}</p>
@@ -146,7 +186,9 @@ export default function BankReconciliationPage() {
           {reconciliation.unmatched_count > 0 && (
             <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-amber-400">
               <AlertTriangle className="h-5 w-5" />
-              <span>{reconciliation.unmatched_count} سطر غير مطابق — إيداعات {formatCurrency(reconciliation.unmatched_credits)} | سحوبات {formatCurrency(reconciliation.unmatched_debits)}</span>
+              <span>
+                {reconciliation.unmatched_count} سطر غير مطابق — إيداعات {formatCurrency(reconciliation.unmatched_credits)} | سحوبات {formatCurrency(reconciliation.unmatched_debits)}
+              </span>
             </div>
           )}
 
@@ -227,7 +269,8 @@ export default function BankReconciliationPage() {
               <div key={key} className="space-y-2">
                 <Label>{label}</Label>
                 <Input className="bg-white/5 border-white/10" placeholder={placeholder}
-                  value={(bankForm as any)[key]} onChange={e => setBankForm(f => ({ ...f, [key]: e.target.value }))} />
+                  value={(bankForm as Record<string, string>)[key]}
+                  onChange={e => setBankForm(f => ({ ...f, [key]: e.target.value }))} />
               </div>
             ))}
             <div className="grid grid-cols-2 gap-4">
@@ -243,7 +286,8 @@ export default function BankReconciliationPage() {
               <div className="space-y-2">
                 <Label>الرصيد الافتتاحي</Label>
                 <Input type="number" className="bg-white/5 border-white/10"
-                  value={bankForm.opening_balance} onChange={e => setBankForm(f => ({ ...f, opening_balance: e.target.value }))} />
+                  value={bankForm.opening_balance}
+                  onChange={e => setBankForm(f => ({ ...f, opening_balance: e.target.value }))} />
               </div>
             </div>
             <Button className="w-full bg-blue-600 hover:bg-blue-700" disabled={addBankMutation.isPending}
@@ -262,9 +306,9 @@ export default function BankReconciliationPage() {
             <div className="rounded-lg bg-white/5 p-3 text-xs text-white/60 space-y-1">
               <p className="font-medium text-white/80">تنسيق البيانات (كل سطر: تاريخ TAB بيان TAB مبلغ TAB نوع)</p>
               <p>مثال:</p>
-              <code className="block bg-black/30 p-2 rounded text-green-300 mt-1">
-                2024-01-15 &nbsp;&nbsp; تحصيل فاتورة &nbsp;&nbsp; 5000 &nbsp;&nbsp; credit<br/>
-                2024-01-16 &nbsp;&nbsp; دفع مستلزمات &nbsp;&nbsp; 1200 &nbsp;&nbsp; debit
+              <code className="block bg-black/30 p-2 rounded text-green-300 mt-1 font-mono">
+                {'2024-01-15\tتحصيل فاتورة\t5000\tcredit'}<br />
+                {'2024-01-16\tدفع مستلزمات\t1200\tdebit'}
               </code>
             </div>
             <div className="space-y-2">

@@ -3,7 +3,7 @@
  */
 import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { db, budgetsTable, budgetLinesTable, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
+import { db, budgetsTable, budgetLinesTable, accountsTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 
 const router: IRouter = Router();

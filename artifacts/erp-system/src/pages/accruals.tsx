@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,7 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Plus, RefreshCw, Trash2, CheckCircle2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/format';
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+const api = (p: string) => `${BASE}${p}`;
 
 interface Accrual {
   id: number;
@@ -44,30 +47,42 @@ export default function AccrualsPage() {
 
   const { data: accruals = [], isLoading } = useQuery<Accrual[]>({
     queryKey: ['accruals'],
-    queryFn: () => api.get('/api/accruals').then(r => r.data),
+    queryFn: () => authFetch(api('/api/accruals')).then(async r => {
+      if (!r.ok) throw new Error('خطأ في جلب البيانات');
+      return r.json();
+    }),
   });
 
   const addMutation = useMutation({
-    mutationFn: (data: typeof form) => api.post('/api/accruals', data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['accruals'] }); setShowAdd(false); toast({ title: 'تم إنشاء السجل بنجاح' }); },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error || 'فشل الإنشاء', variant: 'destructive' }),
+    mutationFn: (data: typeof form) =>
+      authFetch(api('/api/accruals'), { method: 'POST', body: JSON.stringify(data) })
+        .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? 'فشل الإنشاء'); return d; }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['accruals'] });
+      setShowAdd(false);
+      toast({ title: 'تم إنشاء السجل بنجاح' });
+    },
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   const recognizeMutation = useMutation({
     mutationFn: ({ id, period }: { id: number; period: string }) =>
-      api.post(`/api/accruals/${id}/recognize`, { period }),
+      authFetch(api(`/api/accruals/${id}/recognize`), { method: 'POST', body: JSON.stringify({ period }) })
+        .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? 'فشل التسجيل'); return d; }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['accruals'] });
+      void qc.invalidateQueries({ queryKey: ['accruals'] });
       setShowRecognize(null);
       toast({ title: 'تم تسجيل الاستحقاق وإنشاء القيد المحاسبي' });
     },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error || 'فشل التسجيل', variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/api/accruals/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['accruals'] }); toast({ title: 'تم الحذف' }); },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error, variant: 'destructive' }),
+    mutationFn: (id: number) =>
+      authFetch(api(`/api/accruals/${id}`), { method: 'DELETE' })
+        .then(async r => { if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? 'فشل الحذف'); } }),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['accruals'] }); toast({ title: 'تم الحذف' }); },
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   return (
@@ -122,12 +137,14 @@ export default function AccrualsPage() {
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         {a.status === 'active' && (
-                          <Button size="sm" variant="outline" className="h-7 px-2 text-xs border-green-500/30 text-green-400 hover:bg-green-500/10"
+                          <Button size="sm" variant="outline"
+                            className="h-7 px-2 text-xs border-green-500/30 text-green-400 hover:bg-green-500/10"
                             onClick={() => setShowRecognize(a)}>
                             <CheckCircle2 className="h-3 w-3 ml-1" /> تسجيل
                           </Button>
                         )}
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        <Button size="sm" variant="ghost"
+                          className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                           onClick={() => { if (confirm('تأكيد الحذف؟')) deleteMutation.mutate(a.id); }}>
                           <Trash2 className="h-3 w-3" />
                         </Button>

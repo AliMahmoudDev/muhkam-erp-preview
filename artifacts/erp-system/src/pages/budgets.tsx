@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,10 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, BarChart3, Trash2, TrendingUp, TrendingDown, ChevronLeft } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/format';
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+const api = (p: string) => `${BASE}${p}`;
 
 interface Budget { id: number; name: string; fiscal_year: number; date_from: string; date_to: string; status: string; notes?: string; }
-interface BudgetLine { account_id: number; account_code: string; account_name: string; account_type: string; period: string; budgeted_amount: number; }
 interface ComparisonRow { account_code: string; account_name: string; account_type: string; period: string; budgeted_amount: number; actual_amount: number; variance: number; variance_pct: number | null; }
 interface BudgetDetail { budget: Budget; comparison: ComparisonRow[]; summary: { total_budgeted: number; total_actual: number; total_variance: number }; }
 
@@ -29,29 +31,62 @@ export default function BudgetsPage() {
 
   const { data: budgets = [], isLoading } = useQuery<Budget[]>({
     queryKey: ['budgets'],
-    queryFn: () => api.get('/api/budgets').then(r => r.data),
+    queryFn: () => authFetch(api('/api/budgets')).then(async r => {
+      if (!r.ok) throw new Error('خطأ في جلب الميزانيات');
+      return r.json();
+    }),
   });
 
   const { data: detail, isLoading: detailLoading } = useQuery<BudgetDetail>({
     queryKey: ['budget-detail', selected?.id],
-    queryFn: () => selected ? api.get(`/api/budgets/${selected.id}/actual-vs-budget`).then(r => r.data) : Promise.resolve(null),
+    queryFn: () => {
+      if (!selected) return Promise.resolve(null as unknown as BudgetDetail);
+      return authFetch(api(`/api/budgets/${selected.id}/actual-vs-budget`)).then(async r => {
+        if (!r.ok) throw new Error('خطأ في تحميل تفاصيل الميزانية');
+        return r.json();
+      });
+    },
     enabled: !!selected,
   });
 
   const addMutation = useMutation({
-    mutationFn: (data: typeof form) => api.post('/api/budgets', data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['budgets'] }); setShowAdd(false); toast({ title: 'تم إنشاء الميزانية' }); },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error, variant: 'destructive' }),
+    mutationFn: (data: typeof form) =>
+      authFetch(api('/api/budgets'), { method: 'POST', body: JSON.stringify(data) })
+        .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? 'فشل الإنشاء'); return d; }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['budgets'] });
+      setShowAdd(false);
+      toast({ title: 'تم إنشاء الميزانية' });
+    },
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/api/budgets/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['budgets'] }); setSelected(null); toast({ title: 'تم الحذف' }); },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error, variant: 'destructive' }),
+    mutationFn: (id: number) =>
+      authFetch(api(`/api/budgets/${id}`), { method: 'DELETE' })
+        .then(async r => { if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? 'فشل الحذف'); } }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['budgets'] });
+      setSelected(null);
+      toast({ title: 'تم الحذف' });
+    },
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
-  if (selected && detail) {
-    const comp = detail.comparison;
+  /* ── Detail View ─────────────────────────────────────────────── */
+  if (selected) {
+    if (detailLoading) {
+      return (
+        <div className="flex items-center justify-center h-64 text-white/50">
+          <div className="text-center">
+            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-30 animate-pulse" />
+            <p>جاري تحميل الميزانية...</p>
+          </div>
+        </div>
+      );
+    }
+
+    const comp = detail?.comparison ?? [];
     const revenues = comp.filter(r => r.account_type === 'revenue');
     const expenses = comp.filter(r => r.account_type === 'expense');
 
@@ -61,8 +96,8 @@ export default function BudgetsPage() {
           <Button size="sm" variant="ghost" className="gap-1 text-white/60 hover:text-white" onClick={() => setSelected(null)}>
             <ChevronLeft className="h-4 w-4" /> عودة
           </Button>
-          <h1 className="text-xl font-bold text-white">{detail.budget.name}</h1>
-          <span className="text-white/50 text-sm">{detail.budget.date_from} — {detail.budget.date_to}</span>
+          <h1 className="text-xl font-bold text-white">{detail?.budget.name ?? selected.name}</h1>
+          <span className="text-white/50 text-sm">{selected.date_from} — {selected.date_to}</span>
           <Button size="sm" variant="ghost" className="mr-auto text-red-400 hover:bg-red-500/10"
             onClick={() => { if (confirm('حذف الميزانية؟')) deleteMutation.mutate(selected.id); }}>
             <Trash2 className="h-4 w-4" />
@@ -70,18 +105,20 @@ export default function BudgetsPage() {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: 'إجمالي الميزانية', value: detail.summary.total_budgeted, color: 'text-blue-400' },
-            { label: 'إجمالي الفعلي', value: detail.summary.total_actual, color: 'text-green-400' },
-            { label: 'الانحراف الإجمالي', value: detail.summary.total_variance, color: detail.summary.total_variance >= 0 ? 'text-green-400' : 'text-red-400' },
-          ].map(c => (
-            <div key={c.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <p className="text-white/50 text-sm">{c.label}</p>
-              <p className={`text-xl font-bold font-mono mt-1 ${c.color}`}>{formatCurrency(c.value)}</p>
-            </div>
-          ))}
-        </div>
+        {detail && (
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: 'إجمالي الميزانية', value: detail.summary.total_budgeted, color: 'text-blue-400' },
+              { label: 'إجمالي الفعلي', value: detail.summary.total_actual, color: 'text-green-400' },
+              { label: 'الانحراف الإجمالي', value: detail.summary.total_variance, color: detail.summary.total_variance >= 0 ? 'text-green-400' : 'text-red-400' },
+            ].map(c => (
+              <div key={c.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-white/50 text-sm">{c.label}</p>
+                <p className={`text-xl font-bold font-mono mt-1 ${c.color}`}>{formatCurrency(c.value)}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {comp.length === 0 ? (
           <div className="text-center text-white/50 py-12">
@@ -91,7 +128,10 @@ export default function BudgetsPage() {
           </div>
         ) : (
           <>
-            {[{ title: 'الإيرادات', rows: revenues, icon: TrendingUp }, { title: 'المصروفات', rows: expenses, icon: TrendingDown }].map(({ title, rows, icon: Icon }) => rows.length > 0 && (
+            {[
+              { title: 'الإيرادات', rows: revenues, icon: TrendingUp },
+              { title: 'المصروفات', rows: expenses, icon: TrendingDown },
+            ].map(({ title, rows, icon: Icon }) => rows.length > 0 && (
               <div key={title}>
                 <h2 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
                   <Icon className="h-4 w-4" /> {title}
@@ -107,7 +147,7 @@ export default function BudgetsPage() {
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {rows.map((r, i) => {
-                        const good = (r.account_type === 'revenue' ? r.variance >= 0 : r.variance <= 0);
+                        const good = r.account_type === 'revenue' ? r.variance >= 0 : r.variance <= 0;
                         return (
                           <tr key={i} className="hover:bg-white/[0.02]">
                             <td className="px-4 py-2.5">
@@ -139,6 +179,7 @@ export default function BudgetsPage() {
     );
   }
 
+  /* ── List View ───────────────────────────────────────────────── */
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -163,7 +204,7 @@ export default function BudgetsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {budgets.map(budget => (
             <button key={budget.id} onClick={() => setSelected(budget)}
-              className="p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/8 hover:border-blue-500/30 text-right transition-all group">
+              className="p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/[0.08] hover:border-blue-500/30 text-right transition-all group">
               <div className="flex items-center justify-between mb-3">
                 <BarChart3 className="h-5 w-5 text-blue-400" />
                 <Badge className="bg-blue-500/15 text-blue-400 text-xs">سنة {budget.fiscal_year}</Badge>

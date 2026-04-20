@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,7 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Target, BarChart3, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/format';
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+const api = (p: string) => `${BASE}${p}`;
 
 interface CostCenter { id: number; code: string; name: string; description?: string; is_active: boolean; }
 interface CCReport {
@@ -28,27 +31,47 @@ export default function CostCentersPage() {
 
   const { data: centers = [], isLoading } = useQuery<CostCenter[]>({
     queryKey: ['cost-centers'],
-    queryFn: () => api.get('/api/cost-centers').then(r => r.data),
+    queryFn: () => authFetch(api('/api/cost-centers')).then(async r => {
+      if (!r.ok) throw new Error('خطأ في جلب البيانات');
+      return r.json();
+    }),
   });
 
   const { data: report, isLoading: reportLoading } = useQuery<CCReport>({
     queryKey: ['cc-report', selected?.id, dateFrom, dateTo],
-    queryFn: () => selected
-      ? api.get(`/api/cost-centers/${selected.id}/report`, { params: { date_from: dateFrom, date_to: dateTo } }).then(r => r.data)
-      : Promise.resolve(null),
+    queryFn: () => {
+      if (!selected) return Promise.resolve(null as unknown as CCReport);
+      const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
+      return authFetch(api(`/api/cost-centers/${selected.id}/report?${params}`)).then(async r => {
+        if (!r.ok) throw new Error('خطأ في تحميل التقرير');
+        return r.json();
+      });
+    },
     enabled: !!selected,
   });
 
   const addMutation = useMutation({
-    mutationFn: (data: typeof form) => api.post('/api/cost-centers', data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['cost-centers'] }); setShowAdd(false); toast({ title: 'تم إنشاء مركز التكلفة' }); },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error, variant: 'destructive' }),
+    mutationFn: (data: typeof form) =>
+      authFetch(api('/api/cost-centers'), { method: 'POST', body: JSON.stringify(data) })
+        .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? 'فشل الإنشاء'); return d; }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['cost-centers'] });
+      setShowAdd(false);
+      toast({ title: 'تم إنشاء مركز التكلفة' });
+    },
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/api/cost-centers/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['cost-centers'] }); setSelected(null); toast({ title: 'تم الحذف' }); },
-    onError: (e: any) => toast({ title: 'خطأ', description: e.response?.data?.error, variant: 'destructive' }),
+    mutationFn: (id: number) =>
+      authFetch(api(`/api/cost-centers/${id}`), { method: 'DELETE' })
+        .then(async r => { if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? 'فشل الحذف'); } }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['cost-centers'] });
+      setSelected(null);
+      toast({ title: 'تم الحذف' });
+    },
+    onError: (e: Error) => toast({ title: 'خطأ', description: e.message, variant: 'destructive' }),
   });
 
   return (
@@ -73,7 +96,7 @@ export default function CostCentersPage() {
             <div className="text-center text-white/50 py-8">لا توجد مراكز تكلفة بعد</div>
           ) : centers.map(cc => (
             <button key={cc.id} onClick={() => setSelected(cc)}
-              className={`w-full text-right p-4 rounded-xl border transition-all ${selected?.id === cc.id ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-white/5 hover:bg-white/8'}`}>
+              className={`w-full text-right p-4 rounded-xl border transition-all ${selected?.id === cc.id ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-white/5 hover:bg-white/[0.08]'}`}>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-blue-400" />

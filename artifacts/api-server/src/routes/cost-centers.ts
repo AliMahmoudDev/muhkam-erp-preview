@@ -2,8 +2,8 @@
  * /api/cost-centers — مراكز التكلفة
  */
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql } from "drizzle-orm";
-import { db, costCentersTable, journalEntriesTable, journalEntryLinesTable, accountsTable } from "@workspace/db";
+import { eq, and, sql } from "drizzle-orm";
+import { db, costCentersTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 
 const router: IRouter = Router();
