@@ -386,22 +386,18 @@ export function AppLayout({ children }: LayoutProps) {
                 <span style={{ fontSize: 11, color: textMuted, fontWeight: 600 }}>{translateRole(user.role)}</span>
               </div>
             </div>
-            <button onClick={logout} title="تسجيل الخروج" className="erp-icon-btn"
-              style={{ width: 28, height: 28, borderRadius: 7, border: 'none', background: 'transparent', color: textMuted }}
-            >
-              <LogOut style={{ width: 13, height: 13 }} />
-            </button>
           </div>
         )}
 
         {/* User avatar only when collapsed */}
         {user && sidebarCollapsed && (
           <div className="flex justify-center mt-3" style={{ flexShrink: 0 }}>
-            <button onClick={logout} title={`${user.name} — تسجيل الخروج`}
-              style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#000', fontSize: 12, fontWeight: 900, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            <div
+              title={user.name}
+              style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#000', fontSize: 12, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               {getInitials(user.name)}
-            </button>
+            </div>
           </div>
         )}
 
@@ -569,6 +565,16 @@ export function AppLayout({ children }: LayoutProps) {
           <div className="flex items-center gap-3 flex-1 justify-end">
             <AlertBell />
             <ThemeToggle />
+            {user && (
+              <button
+                onClick={logout}
+                title="تسجيل الخروج"
+                className="erp-icon-btn"
+                style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)'}`, background: 'transparent', color: textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+              >
+                <LogOut style={{ width: 15, height: 15 }} />
+              </button>
+            )}
             {user && (
               <>
                 <div
