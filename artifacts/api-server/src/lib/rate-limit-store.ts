@@ -18,9 +18,9 @@ import { logger } from "./logger";
 let redis: import("ioredis").Redis | null = null;
 
 if (process.env.NODE_ENV === "production" && !process.env.REDIS_URL) {
-  throw new Error(
-    "[FATAL] REDIS_URL is required in production. Rate limiting cannot be " +
-    "safely served from in-memory store across multiple instances.",
+  logger.warn(
+    "[RateLimit] REDIS_URL not set in production — using in-memory store. " +
+    "Safe for single-instance deployments; rate limits will reset on server restart.",
   );
 }
 
