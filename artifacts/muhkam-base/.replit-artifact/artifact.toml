@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/muhkam-base/"
+title = "MUHKAM BASE"
+version = "1.0.0"
+id = "artifacts/muhkam-base"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/muhkam-base/" ]
+localPort = 19990
+
+[services.development]
+run = "pnpm --filter @workspace/muhkam-base run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/muhkam-base", "run", "build" ]
+publicDir = "artifacts/muhkam-base/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19990"
+BASE_PATH = "/muhkam-base/"
