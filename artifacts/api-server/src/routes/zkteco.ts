@@ -35,10 +35,6 @@ function nowTime() {
   const n = new Date();
   return `${n.getHours().toString().padStart(2, "0")}:${n.getMinutes().toString().padStart(2, "0")}`;
 }
-function fmtTime(t: Date | null | undefined) {
-  if (!t || !(t instanceof Date)) return null;
-  return t.toISOString();
-}
 
 async function processAttendancePunch(
   companyId: number,
