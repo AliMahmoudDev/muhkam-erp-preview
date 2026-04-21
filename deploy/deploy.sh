@@ -34,7 +34,7 @@ PORT=3000 BASE_PATH=/ NODE_ENV=production \
 
 echo "=== [6/7] بناء MUHKAM ADVANCED (النسخة المبسطة) ==="
 cd "$APP_DIR"
-PORT=3000 BASE_PATH=/muhkam-base/ NODE_ENV=production \
+PORT=3000 BASE_PATH=/muhkam-advanced/ NODE_ENV=production \
   pnpm --filter @workspace/muhkam-base run build
 
 echo "=== [7/7] إعادة تشغيل الـ Backend ==="
@@ -56,6 +56,6 @@ done
 echo ""
 echo "✅ النشر اكتمل بنجاح!"
 echo "   ULTIMATE : https://$(grep ALLOWED_ORIGINS .env | cut -d= -f2 | sed 's|https://||')/"
-echo "   ADVANCED : https://$(grep ALLOWED_ORIGINS .env | cut -d= -f2 | sed 's|https://||')/muhkam-base/"
+echo "   ADVANCED : https://$(grep ALLOWED_ORIGINS .env | cut -d= -f2 | sed 's|https://||')/muhkam-advanced/"
 echo ""
 pm2 status

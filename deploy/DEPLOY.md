@@ -19,7 +19,7 @@
 
 ```
 halaltec.com/             → MUHKAM ULTIMATE  (نظام كامل)
-halaltec.com/muhkam-base/ → MUHKAM ADVANCED  (نظام مبسط)
+halaltec.com/muhkam-advanced/ → MUHKAM ADVANCED  (نظام مبسط)
 halaltec.com/api/         → Express API      (مشترك بين النسختين)
 ```
 
@@ -85,15 +85,15 @@ pnpm --filter @workspace/api-server run build
 PORT=3000 BASE_PATH=/ NODE_ENV=production \
   pnpm --filter @workspace/erp-system run build
 
-# 3. بناء MUHKAM ADVANCED (مسار /muhkam-base/)
-PORT=3000 BASE_PATH=/muhkam-base/ NODE_ENV=production \
+# 3. بناء MUHKAM ADVANCED (مسار /muhkam-advanced/)
+PORT=3000 BASE_PATH=/muhkam-advanced/ NODE_ENV=production \
   pnpm --filter @workspace/muhkam-base run build
 ```
 
 تحقق من الملفات:
 ```bash
 ls artifacts/erp-system/dist/public/     # ULTIMATE
-ls artifacts/muhkam-base/dist/public/    # ADVANCED
+ls artifacts/muhkam-advanced/dist/public/    # ADVANCED
 ```
 
 ---
@@ -111,7 +111,7 @@ env_production: {
   ALLOWED_ORIGINS: "https://halaltec.com",
   // مسارات اختيارية — تُضبط تلقائياً نسبةً لموقع dist/index.mjs
   // FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
-  // ADVANCED_DIST:  "/var/www/muhkam-erp/artifacts/muhkam-base/dist/public",
+  // ADVANCED_DIST:  "/var/www/muhkam-erp/artifacts/muhkam-advanced/dist/public",
 }
 ```
 
@@ -129,7 +129,7 @@ pm2 logs halaltech-api --lines 20
 
 يجب أن ترى في اللوجز:
 ```
-Serving ADVANCED frontend at /muhkam-base/
+Serving ADVANCED frontend at /muhkam-advanced/
 Serving ULTIMATE frontend at /
 Backend started on port 3000
 ```
@@ -174,7 +174,7 @@ curl -I https://halaltec.com/
 # يجب أن يرجع: HTTP/2 200
 
 # تحقق من ADVANCED
-curl -I https://halaltec.com/muhkam-base/
+curl -I https://halaltec.com/muhkam-advanced/
 # يجب أن يرجع: HTTP/2 200
 
 # تحقق من API
@@ -200,7 +200,7 @@ source .env && pnpm --filter @workspace/db run db:push
 pnpm --filter @workspace/api-server run build
 PORT=3000 BASE_PATH=/ NODE_ENV=production \
   pnpm --filter @workspace/erp-system run build
-PORT=3000 BASE_PATH=/muhkam-base/ NODE_ENV=production \
+PORT=3000 BASE_PATH=/muhkam-advanced/ NODE_ENV=production \
   pnpm --filter @workspace/muhkam-base run build
 
 # إعادة تشغيل الـ backend

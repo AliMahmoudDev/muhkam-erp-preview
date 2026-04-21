@@ -137,7 +137,7 @@ export default function Login() {
       if (authedUser.company_id) {
         localStorage.setItem("erp_company_id", String(authedUser.company_id));
       }
-      /* ── Edition redirect: if company is on ADVANCED, send to muhkam-base ── */
+      /* ── Edition redirect: if company is on ADVANCED, send to muhkam-advanced ── */
       if (authedUser.role !== "super_admin" && authedUser.company_id) {
         try {
           const subRes = await fetch(api("/api/subscription/status"), {
@@ -147,7 +147,7 @@ export default function Login() {
             const sub = await subRes.json() as { edition?: string };
             if (sub.edition === "advanced") {
               login(authedUser, token);
-              window.location.href = "/muhkam-base/";
+              window.location.href = "/muhkam-advanced/";
               return;
             }
           }
@@ -192,7 +192,7 @@ export default function Login() {
             const sub = await subRes.json() as { edition?: string };
             if (sub.edition === "advanced") {
               login(data.user as Parameters<typeof login>[0], data.token);
-              window.location.href = "/muhkam-base/";
+              window.location.href = "/muhkam-advanced/";
               return;
             }
           }

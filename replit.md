@@ -750,7 +750,7 @@ Standalone iOS & Android mobile companion app at `artifacts/erp-mobile/`. Built 
 
 ## MUHKAM ADVANCED (artifacts/muhkam-base)
 - **Artifact:** MUHKAM ADVANCED — exact copy of the main MUHKAM ERP system (artifacts/erp-system)
-- **Path:** /muhkam-base/ (port 19990)
+- **Path:** /muhkam-advanced/ (port 19990)
 - **Source:** Complete mirror of artifacts/erp-system/src — same UI, same design, same colors, same features
 - **Purpose:** Tier 2 of the 3-tier strategy (BASE / ADVANCED / ULTIMATE)
 - **Backend:** Reuses the same API server on port 8080

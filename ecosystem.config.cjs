@@ -8,7 +8,7 @@
  *
  * الـ Backend يخدم كلا النسختين:
  *   /             → MUHKAM ULTIMATE  (artifacts/erp-system/dist/public)
- *   /muhkam-base/ → MUHKAM ADVANCED  (artifacts/muhkam-base/dist/public)
+ *   /muhkam-advanced/ → MUHKAM ADVANCED  (artifacts/muhkam-advanced/dist/public)
  *   /api/         → REST API (مشترك)
  */
 module.exports = {
@@ -33,7 +33,7 @@ module.exports = {
         PORT: 3000,
         // DATABASE_URL, JWT_SECRET, ALLOWED_ORIGINS — حمّلها من .env أو أضفها هنا
         // FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
-        // ADVANCED_DIST:  "/var/www/muhkam-erp/artifacts/muhkam-base/dist/public",
+        // ADVANCED_DIST:  "/var/www/muhkam-erp/artifacts/muhkam-advanced/dist/public",
       },
       error_file: "/var/log/pm2/halaltech-error.log",
       out_file: "/var/log/pm2/halaltech-out.log",

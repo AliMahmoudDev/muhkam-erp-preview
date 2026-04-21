@@ -172,13 +172,13 @@ app.use("/api", router);
 
 /* ── Production: serve React frontend static files ─────────────────────────
    Two editions are served from the same Express backend:
-   • MUHKAM ADVANCED  → /muhkam-base/*  (artifacts/muhkam-base/dist/public)
+   • MUHKAM ADVANCED  → /muhkam-advanced/*  (artifacts/muhkam-base/dist/public)
    • MUHKAM ULTIMATE  → /*              (artifacts/erp-system/dist/public)
    ────────────────────────────────────────────────────────────────────────── */
 if (process.env.NODE_ENV === "production") {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
-  /* ── ADVANCED edition at /muhkam-base/ ── */
+  /* ── ADVANCED edition at /muhkam-advanced/ ── */
   const advancedDist =
     process.env.ADVANCED_DIST ||
     path.resolve(currentDir, "../../muhkam-base/dist/public");
@@ -194,12 +194,12 @@ if (process.env.NODE_ENV === "production") {
     },
   };
 
-  app.use("/muhkam-base", express.static(advancedDist, staticOpts));
+  app.use("/muhkam-advanced", express.static(advancedDist, staticOpts));
   /* SPA fallback for ADVANCED */
-  app.use("/muhkam-base", (_req: express.Request, res: express.Response) => {
+  app.use("/muhkam-advanced", (_req: express.Request, res: express.Response) => {
     res.sendFile(path.join(advancedDist, "index.html"));
   });
-  logger.info({ advancedDist }, "Serving ADVANCED frontend at /muhkam-base/");
+  logger.info({ advancedDist }, "Serving ADVANCED frontend at /muhkam-advanced/");
 
   /* ── ULTIMATE edition at / ── */
   const ultimateDist =

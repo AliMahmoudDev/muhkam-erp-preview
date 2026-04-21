@@ -2,7 +2,7 @@ version: '3.9'
 
 # MUHKAM ERP — Docker Compose
 # ULTIMATE: halaltec.com/
-# ADVANCED: halaltec.com/muhkam-base/
+# ADVANCED: halaltec.com/muhkam-advanced/
 # API:      halaltec.com/api/
 
 services:
@@ -45,7 +45,7 @@ services:
       # ULTIMATE frontend static files
       - ./artifacts/erp-system/dist/public:/app/erp-system/dist/public:ro
       # ADVANCED frontend static files
-      - ./artifacts/muhkam-base/dist/public:/app/muhkam-base/dist/public:ro
+      - ./artifacts/muhkam-advanced/dist/public:/app/muhkam-advanced/dist/public:ro
     ports:
       - "3000:3000"
     healthcheck:
