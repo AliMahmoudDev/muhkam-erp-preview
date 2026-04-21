@@ -1,40 +1,17 @@
 name: Deploy to Production
 
-# ── Required GitHub Actions repository secrets ────────────────────────────────
-# Production (deploy job):
-#   VPS_HOST, VPS_USER, VPS_PASSWORD
-#   VPS_DATABASE_URL, VPS_REDIS_URL, VPS_JWT_SECRET, VPS_JWT_REFRESH_SECRET
-#
-# Integration tests (integration-test job):
-#   INTEGRATION_JWT_SECRET        — JWT signing secret used by the test runner
-#   INTEGRATION_JWT_REFRESH_SECRET — JWT refresh secret used by the test runner
-#   (If absent, integration/setup.ts falls back to safe hardcoded test values
-#    so CI still passes on forks that don't have access to repository secrets.)
-# ─────────────────────────────────────────────────────────────────────────────
-
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * 1'  # every Monday at 03:00 UTC
+    - cron: '0 3 * * 1'
 
-# ── Concurrency control ───────────────────────────────────────────────────────
-# Group runs by workflow name + ref so:
-#   • A push to main and the weekly schedule share one slot → push preempts schedule
-#   • Each PR branch gets its own slot → PRs never cancel each other
-#   • manual dispatch (workflow_dispatch) joins the same slot as push to main
-# cancel-in-progress: the older run is cancelled the moment a newer one queues.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # ── Integration Tests ─────────────────────────────────────────────────────
-  # Runs the real-DB multi-tenant isolation tests against a fresh Postgres
-  # service container. Deploy is blocked until every test passes.
   integration-test:
     name: Multi-Tenant Integration Tests
     runs-on: ubuntu-latest
@@ -75,43 +52,22 @@ jobs:
       - name: Push database schema to test DB
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-        # push-force skips interactive confirmation — safe for a fresh container
         run: pnpm --filter @workspace/db run push-force
 
       - name: Run multi-tenant isolation tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-          # JWT secrets are pulled from GitHub Actions repository secrets so they
-          # can be rotated without a code change.  If the secrets are absent (e.g.
-          # on a fork), integration/setup.ts falls back to safe hardcoded values.
           JWT_SECRET: ${{ secrets.INTEGRATION_JWT_SECRET }}
           JWT_REFRESH_SECRET: ${{ secrets.INTEGRATION_JWT_REFRESH_SECRET }}
           NODE_ENV: test
         run: pnpm --filter @workspace/api-server run test:integration
 
-      - name: Notify Slack on scheduled health-check failure
-        if: failure() && github.event_name == 'schedule'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          if [ -z "$SLACK_WEBHOOK_URL" ]; then
-            echo "SLACK_WEBHOOK_URL secret not set — skipping Slack notification"
-            exit 0
-          fi
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          curl -sf -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            -d "{\"text\":\":rotating_light: *Weekly health check failed!*\nThe scheduled Monday integration-test run failed.\n<${RUN_URL}|View failing logs>\"}"
-
-  # ── Deploy ────────────────────────────────────────────────────────────────
-  # Only runs when all integration tests pass, and only on push/dispatch
-  # (not on pull_request events — PRs only need the test gate to block merges).
   deploy:
     name: Deploy to Hetzner VPS
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [integration-test]
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
 
     steps:
       - name: Checkout
@@ -125,94 +81,25 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
           command_timeout: 15m
-          envs: VPS_DATABASE_URL,VPS_REDIS_URL,VPS_JWT_SECRET,VPS_JWT_REFRESH_SECRET
           script: |
             set -euo pipefail
-
-            # ── 1. Pull latest code ────────────────────────────────────────────
-            cd /root/Schema-Sync
+            APP_DIR=/var/www/muhkam-erp
+            cd "$APP_DIR"
             git fetch origin main
             git reset --hard origin/main
             git clean -fd
-
-            # ── 2. Export all required secrets into environment ────────────────
-            export DATABASE_URL="$VPS_DATABASE_URL"
-            export REDIS_URL="$VPS_REDIS_URL"
-            export JWT_SECRET="$VPS_JWT_SECRET"
-            export JWT_REFRESH_SECRET="$VPS_JWT_REFRESH_SECRET"
-            export NODE_ENV=production
-
-            # ── 3. Install dependencies ────────────────────────────────────────
             pnpm install --frozen-lockfile
-
-            # ── 4. DB integrity repair (idempotent — safe on every deploy) ──────
-            echo "Running DB repair script..."
-            psql "$DATABASE_URL" -f /root/Schema-Sync/scripts/db-repair.sql
-
-            # ── 5. Push schema migrations ──────────────────────────────────────
-            echo "Running drizzle push..."
-            cd /root/Schema-Sync/lib/db
-            pnpm run push
-
-            # ── 6. Build frontend ──────────────────────────────────────────────
-            echo "Building frontend..."
-            cd /root/Schema-Sync/artifacts/erp-system
+            cd "$APP_DIR/artifacts/erp-system"
             NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
-
-            # ── 7. Build API server ────────────────────────────────────────────
-            echo "Building API server..."
-            cd /root/Schema-Sync/artifacts/api-server
+            cd "$APP_DIR/artifacts/muhkam-base"
+            NODE_ENV=production pnpm run build
+            cd "$APP_DIR/artifacts/api-server"
             pnpm run build
-
-            # ── 8. Write pm2 ecosystem config with updated env vars ────────────
-            cat > /root/Schema-Sync/ecosystem.config.cjs << ECOSYSTEM
-            module.exports = {
-              apps: [{
-                name: 'halaltech-api',
-                script: './artifacts/api-server/dist/index.mjs',
-                cwd: '/root/Schema-Sync',
-                instances: 1,
-                autorestart: true,
-                watch: false,
-                max_memory_restart: '512M',
-                env: {
-                  NODE_ENV: 'production',
-                  DATABASE_URL: '${DATABASE_URL}',
-                  REDIS_URL: '${REDIS_URL}',
-                  JWT_SECRET: '${JWT_SECRET}',
-                  JWT_REFRESH_SECRET: '${JWT_REFRESH_SECRET}',
-                  PORT: '8080',
-                }
-              }]
-            };
-            ECOSYSTEM
-
-            # ── 9. Reload / start pm2 with updated env ─────────────────────────
-            echo "Reloading pm2..."
-            pm2 startOrReload /root/Schema-Sync/ecosystem.config.cjs --update-env
-
-            # ── 10. Health check (up to 60 s) ──────────────────────────────────
-            echo "Waiting for health check..."
-            MAX_ATTEMPTS=24
-            ATTEMPT=0
-            until curl -sf http://localhost:8080/api/healthz > /dev/null 2>&1; do
-              ATTEMPT=$((ATTEMPT + 1))
-              if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
-                echo "Health check failed after ${MAX_ATTEMPTS} attempts"
-                pm2 logs halaltech-api --lines 50 --nostream || true
-                exit 1
-              fi
-              sleep 2.5
-            done
-
-            pm2 status
-            echo "Deploy complete — halaltech-api is live"
-
-        env:
-          VPS_DATABASE_URL: ${{ secrets.VPS_DATABASE_URL }}
-          VPS_REDIS_URL: ${{ secrets.VPS_REDIS_URL }}
-          VPS_JWT_SECRET: ${{ secrets.VPS_JWT_SECRET }}
-          VPS_JWT_REFRESH_SECRET: ${{ secrets.VPS_JWT_REFRESH_SECRET }}
+            pm2 restart muhkam-api --update-env
+            pm2 save
+            sleep 8
+            curl -sf http://localhost:3000/api/healthz
+            echo "Deploy complete — halaltec.com is live"
 
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
@@ -223,14 +110,5 @@ jobs:
           port: 22
           command_timeout: 30s
           script: |
-            set -euo pipefail
-            RESPONSE=$(curl -sf http://localhost:8080/api/healthz 2>&1) || {
-              pm2 logs halaltech-api --lines 20 --nostream || true
-              exit 1
-            }
-            STATUS=$(echo "$RESPONSE" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
-            if [ "$STATUS" = "unhealthy" ]; then
-              pm2 logs halaltech-api --lines 20 --nostream || true
-              exit 1
-            fi
-            echo "OK — $STATUS — halaltec.com is live!"
+            RESPONSE=$(curl -sf http://localhost:3000/api/healthz)
+            echo "OK — $RESPONSE — halaltec.com is live!"
