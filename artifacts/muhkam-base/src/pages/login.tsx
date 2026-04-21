@@ -14,10 +14,13 @@ interface ErpUser {
 }
 
 const FEATURES = [
-  { icon: "⚡", label: "مبيعات فورية", desc: "وحماية منكاملة" },
-  { icon: "📊", label: "تحليلات ذكية", desc: "ونوقعات دقيقة"  },
-  { icon: "🔑", label: "أمان متطور",   desc: "وصلاحيات مخصصة" },
-  { icon: "📦", label: "إدارة المخزون", desc: "والخدمات اللوجستية" },
+  { icon: "🏢", label: "تعدد الفروع",      desc: "إدارة سلسلة فروع من مكان واحد" },
+  { icon: "👥", label: "الموظفون والصلاحيات", desc: "هيكل أدوار متكامل وآمن"       },
+  { icon: "📊", label: "تقارير متقدمة",    desc: "مخططات بيانية وتحليلات عميقة"  },
+  { icon: "🚢", label: "الشحن والاستيراد", desc: "تتبع الطلبات والشحنات لحظياً"   },
+  { icon: "💳", label: "المدفوعات والديون", desc: "حسابات متكاملة مع الموردين"     },
+  { icon: "📋", label: "طلبات الشراء",     desc: "دورة موافقات احترافية"           },
+  { icon: "🏦", label: "المحاسبة الأساسية", desc: "قيود ومركز تكلفة وميزانية"      },
 ];
 
 export default function Login() {
@@ -267,16 +270,32 @@ export default function Login() {
 
           {/* Subtitle */}
           <p style={{
-            fontSize: "14px", color: "rgba(212,175,55,0.75)",
-            marginBottom: "38px", lineHeight: 1.7, fontWeight: 500,
+            fontSize: "13px", color: "rgba(212,175,55,0.75)",
+            marginBottom: "8px", lineHeight: 1.6, fontWeight: 500,
           }}>
-            {settings.companySlogan || "نظام إدارة مُحكم، لمستقبل أحكم"}
+            {settings.companySlogan || "للشركات المتوسطة — سلسلة فروع أو موزّع"}
           </p>
 
-          {/* Feature 2×2 grid */}
+          {/* Tier badge */}
           <div style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr",
-            gap: "12px", width: "100%",
+            display: "inline-block",
+            background: "linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.08))",
+            border: "1px solid rgba(212,175,55,0.45)",
+            borderRadius: "100px",
+            padding: "4px 16px",
+            fontSize: "11px",
+            fontWeight: 800,
+            color: "#f5e09a",
+            letterSpacing: "0.12em",
+            marginBottom: "28px",
+          }}>
+            ✦ ADVANCED EDITION ✦
+          </div>
+
+          {/* Feature grid — 3 columns */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+            gap: "8px", width: "100%",
           }}>
             {FEATURES.map((f) => (
               <div
@@ -284,12 +303,12 @@ export default function Login() {
                 style={{
                   display: "flex", flexDirection: "column",
                   alignItems: "center", justifyContent: "center",
-                  gap: "8px",
+                  gap: "5px",
                   background: "rgba(255,255,255,0.05)",
                   backdropFilter: "blur(20px)",
                   border: "1px solid rgba(212,175,55,0.2)",
-                  borderRadius: "18px",
-                  padding: "18px 12px",
+                  borderRadius: "14px",
+                  padding: "12px 6px",
                   textAlign: "center",
                   transition: "background 0.25s, border-color 0.25s, transform 0.25s",
                   cursor: "default",
@@ -306,15 +325,15 @@ export default function Login() {
                 }}
               >
                 <span style={{
-                  fontSize: "28px",
+                  fontSize: "22px",
                   filter: "drop-shadow(0 4px 10px rgba(212,175,55,0.6))",
                   display: "block",
                 }}>
                   {f.icon}
                 </span>
                 <div>
-                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#f5e09a", lineHeight: 1.3 }}>{f.label}</div>
-                  <div style={{ fontSize: "11px", color: "rgba(212,175,55,0.6)", marginTop: "3px" }}>{f.desc}</div>
+                  <div style={{ fontSize: "10.5px", fontWeight: 800, color: "#f5e09a", lineHeight: 1.3 }}>{f.label}</div>
+                  <div style={{ fontSize: "9px", color: "rgba(212,175,55,0.55)", marginTop: "2px", lineHeight: 1.3 }}>{f.desc}</div>
                 </div>
               </div>
             ))}
@@ -327,7 +346,7 @@ export default function Login() {
           fontSize: "11px", color: "rgba(212,175,55,0.4)",
           letterSpacing: "0.18em", fontWeight: 600,
         }}>
-          MUHKAM ERP v2.0 &nbsp;|&nbsp; Cairo, Egypt
+          MUHKAM ADVANCED &nbsp;|&nbsp; Cairo, Egypt
         </div>
       </div>
       {/* ════════════════════════════════════════════════════
