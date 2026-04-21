@@ -17,17 +17,29 @@ import { AlertBell } from '@/components/alert-bell';
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const api = (p: string) => `${BASE}${p}`;
 
+/* ── MUHKAM ADVANCED: Hidden complex-accounting pages ────────
+   These pages exist in the router but are NOT shown in the nav.
+   Users of this tier don't need double-entry / chart-of-accounts. */
+const ADVANCED_HIDDEN: Set<string> = new Set([
+  '/accounts',
+  '/journal-entries',
+  '/fiscal-years',
+  '/audit-log',
+  '/fixed-assets',
+  '/accruals',
+  '/bank-reconciliation',
+  '/budgets',
+  '/cost-centers',
+  '/consignment',
+]);
+
 /* ── Nav sections ───────────────────────────────── */
 const NAV_SECTIONS = [
-  { label: 'الرئيسية', hrefs: ['/', '/treasury'] },
-  {
-    label: 'التجارة',
-    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/warranty', '/consignment'],
-  },
-  { label: 'المالية', hrefs: ['/income', '/expenses', '/reports'] },
-  { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/fixed-assets', '/accruals', '/bank-reconciliation', '/budgets', '/cost-centers'] },
-  { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
-  { label: 'النظام', hrefs: ['/settings', '/branches'] },
+  { label: 'الرئيسية',         hrefs: ['/', '/treasury'] },
+  { label: 'التجارة',           hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/warranty'] },
+  { label: 'المالية',           hrefs: ['/income', '/expenses', '/vouchers', '/reports'] },
+  { label: 'الموارد البشرية',  hrefs: ['/employees', '/attendance'] },
+  { label: 'النظام',            hrefs: ['/settings', '/branches'] },
 ];
 
 interface LayoutProps {
@@ -203,6 +215,7 @@ export function AppLayout({ children }: LayoutProps) {
   }, [warehouses, canSelectWarehouse, currentWarehouseId, setWarehouseId]);
 
   const visibleNav = NAV_ITEMS.filter((item) => {
+    if (ADVANCED_HIDDEN.has(item.href)) return false;   // MUHKAM ADVANCED: hide complex pages
     if (!canAccess(role, item.href)) return false;
     if (item.href === '/sales' && !hasPermission(user, 'can_view_sales')) return false;
     if (item.href === '/inventory' && !hasPermission(user, 'can_view_inventory')) return false;
@@ -491,7 +504,7 @@ export function AppLayout({ children }: LayoutProps) {
           className="flex items-center justify-between px-4"
           style={{ height: 40, borderTop: sidebarBdr, flexShrink: 0 }}
         >
-          <span style={{ fontSize: 10, color: textMuted }}>MUHKAM ERP</span>
+          <span style={{ fontSize: 10, color: textMuted }}>MUHKAM ADVANCED</span>
           <div className="glow-dot" />
         </div>
       </aside>

@@ -159,16 +159,17 @@ function Router() {
         <Route path="/profits">{() => <Redirect to="/reports" />}</Route>
         <Route path="/reports">{() => <Guard path="/reports" component={Reports} />}</Route>
         <Route path="/settings">{() => <Guard path="/settings" component={Settings} />}</Route>
-        <Route path="/accounts">{() => <Guard path="/accounts" component={Accounts} />}</Route>
-        <Route path="/journal-entries">
-          {() => <Guard path="/journal-entries" component={JournalEntries} />}
-        </Route>
-        <Route path="/fiscal-years">
-          {() => <Guard path="/fiscal-years" component={FiscalYears} />}
-        </Route>
-        <Route path="/audit-log">
-          {() => <Guard path="/audit-log" component={AuditLog} />}
-        </Route>
+        {/* MUHKAM ADVANCED: complex accounting pages → redirect to dashboard */}
+        <Route path="/accounts">{() => <Redirect to="/" />}</Route>
+        <Route path="/journal-entries">{() => <Redirect to="/" />}</Route>
+        <Route path="/fiscal-years">{() => <Redirect to="/" />}</Route>
+        <Route path="/audit-log">{() => <Redirect to="/" />}</Route>
+        <Route path="/fixed-assets">{() => <Redirect to="/" />}</Route>
+        <Route path="/accruals">{() => <Redirect to="/" />}</Route>
+        <Route path="/bank-reconciliation">{() => <Redirect to="/" />}</Route>
+        <Route path="/budgets">{() => <Redirect to="/" />}</Route>
+        <Route path="/cost-centers">{() => <Redirect to="/" />}</Route>
+        <Route path="/consignment">{() => <Redirect to="/" />}</Route>
         <Route path="/branches">{() => <Guard path="/branches" component={Branches} />}</Route>
         <Route path="/employees">{() => <Guard path="/employees" component={Employees} />}</Route>
         <Route path="/payroll">{() => <Redirect to="/employees" />}</Route>
@@ -184,11 +185,6 @@ function Router() {
         <Route path="/payment-vouchers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/safe-transfers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/financial-transactions">{() => <Redirect to="/reports" />}</Route>
-        <Route path="/fixed-assets">{() => <Guard path="/fixed-assets" component={FixedAssets} />}</Route>
-        <Route path="/accruals">{() => <Guard path="/accruals" component={Accruals} />}</Route>
-        <Route path="/bank-reconciliation">{() => <Guard path="/bank-reconciliation" component={BankReconciliation} />}</Route>
-        <Route path="/budgets">{() => <Guard path="/budgets" component={Budgets} />}</Route>
-        <Route path="/cost-centers">{() => <Guard path="/cost-centers" component={CostCenters} />}</Route>
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
