@@ -365,41 +365,6 @@ export function AppLayout({ children }: LayoutProps) {
           </button>
         </div>
 
-        {/* User chip */}
-        {user && !sidebarCollapsed && (
-          <div
-            className="mx-3 mt-3 flex items-center gap-2.5 rounded-xl px-3"
-            style={{ height: 44, background: chipBg, border: chipBdr, flexShrink: 0 }}
-          >
-            <div
-              className="flex items-center justify-center shrink-0 text-xs font-black"
-              style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#000', fontSize: 11 }}
-            >
-              {getInitials(user.name)}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 12.5, fontWeight: 700, color: textPrimary, lineHeight: 1.2 }} className="truncate">
-                {user.name}
-              </p>
-              <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: ROLE_DOT[user.role] ?? '#94a3b8', flexShrink: 0 }} />
-                <span style={{ fontSize: 11, color: textMuted, fontWeight: 600 }}>{translateRole(user.role)}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* User avatar only when collapsed */}
-        {user && sidebarCollapsed && (
-          <div className="flex justify-center mt-3" style={{ flexShrink: 0 }}>
-            <div
-              title={user.name}
-              style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#000', fontSize: 12, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              {getInitials(user.name)}
-            </div>
-          </div>
-        )}
 
         {/* Warehouse selector */}
         {warehouses.length > 0 && canSelectWarehouse && !sidebarCollapsed && (
@@ -566,74 +531,34 @@ export function AppLayout({ children }: LayoutProps) {
             <AlertBell />
             <ThemeToggle />
             {user && (
-              <button
-                onClick={logout}
-                title="تسجيل الخروج"
-                className="erp-icon-btn"
-                style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)'}`, background: 'transparent', color: textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+              <div
+                className="hidden md:flex items-center gap-2 rounded-xl px-2.5 py-1.5"
+                style={{ background: chipBg, border: chipBdr, flexShrink: 0 }}
               >
-                <LogOut style={{ width: 15, height: 15 }} />
-              </button>
-            )}
-            {user && (
-              <>
                 <div
-                  style={{
-                    width: 1,
-                    height: 22,
-                    background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
-                    flexShrink: 0,
-                  }}
-                />
-                <div
-                  className="hidden md:flex items-center gap-2 rounded-xl px-2.5 py-1.5"
-                  style={{ background: chipBg, border: chipBdr, cursor: 'default', flexShrink: 0 }}
+                  className="flex items-center justify-center shrink-0 font-black"
+                  style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#000', fontSize: 10 }}
                 >
-                  <div
-                    className="flex items-center justify-center shrink-0 font-black"
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 8,
-                      background: 'linear-gradient(135deg,#f59e0b,#d97706)',
-                      color: '#000',
-                      fontSize: 10,
-                    }}
-                  >
-                    {getInitials(user.name)}
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: textPrimary,
-                        lineHeight: 1.2,
-                        maxWidth: 100,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {user.name}
-                    </p>
-                    <div className="flex items-center gap-1" style={{ marginTop: 1 }}>
-                      <div
-                        style={{
-                          width: 5,
-                          height: 5,
-                          borderRadius: '50%',
-                          background: ROLE_DOT[user.role] ?? '#94a3b8',
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span style={{ fontSize: 10, color: textMuted, fontWeight: 600 }}>
-                        {translateRole(user.role)}
-                      </span>
-                    </div>
+                  {getInitials(user.name)}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: textPrimary, lineHeight: 1.2, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user.name}
+                  </p>
+                  <div className="flex items-center gap-1" style={{ marginTop: 1 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: ROLE_DOT[user.role] ?? '#94a3b8', flexShrink: 0 }} />
+                    <span style={{ fontSize: 10, color: textMuted, fontWeight: 600 }}>{translateRole(user.role)}</span>
                   </div>
                 </div>
-              </>
+                <div style={{ width: 1, height: 22, background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)', flexShrink: 0, margin: '0 2px' }} />
+                <button
+                  onClick={logout}
+                  title="تسجيل الخروج"
+                  style={{ width: 26, height: 26, borderRadius: 7, border: 'none', background: 'transparent', color: textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                >
+                  <LogOut style={{ width: 14, height: 14 }} />
+                </button>
+              </div>
             )}
           </div>
         </header>
