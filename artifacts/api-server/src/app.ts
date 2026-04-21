@@ -170,28 +170,49 @@ app.use("/api", perTenantRateLimit);
 
 app.use("/api", router);
 
-/* ── Production: serve React frontend static files ─────────── */
+/* ── Production: serve React frontend static files ─────────────────────────
+   Two editions are served from the same Express backend:
+   • MUHKAM ADVANCED  → /muhkam-base/*  (artifacts/muhkam-base/dist/public)
+   • MUHKAM ULTIMATE  → /*              (artifacts/erp-system/dist/public)
+   ────────────────────────────────────────────────────────────────────────── */
 if (process.env.NODE_ENV === "production") {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
-  const frontendDist =
-    process.env.FRONTEND_DIST ||
-    path.resolve(currentDir, "../../erp-system/dist/public");
-  app.use(express.static(frontendDist, {
+
+  /* ── ADVANCED edition at /muhkam-base/ ── */
+  const advancedDist =
+    process.env.ADVANCED_DIST ||
+    path.resolve(currentDir, "../../muhkam-base/dist/public");
+
+  const staticOpts = {
     maxAge: "7d",
     etag: true,
     lastModified: true,
-    setHeaders: (res, filePath) => {
+    setHeaders: (res: import("http").ServerResponse, filePath: string) => {
       if (filePath.endsWith("index.html")) {
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
       }
     },
-  }));
-  /* SPA fallback: serve index.html for any non-API path */
-  app.use((req, res, next) => {
-    if (req.path.startsWith("/api")) return next();
-    res.sendFile(path.join(frontendDist, "index.html"));
+  };
+
+  app.use("/muhkam-base", express.static(advancedDist, staticOpts));
+  /* SPA fallback for ADVANCED */
+  app.use("/muhkam-base", (_req: express.Request, res: express.Response) => {
+    res.sendFile(path.join(advancedDist, "index.html"));
   });
-  logger.info({ frontendDist }, "Serving frontend static files");
+  logger.info({ advancedDist }, "Serving ADVANCED frontend at /muhkam-base/");
+
+  /* ── ULTIMATE edition at / ── */
+  const ultimateDist =
+    process.env.FRONTEND_DIST ||
+    path.resolve(currentDir, "../../erp-system/dist/public");
+
+  app.use(express.static(ultimateDist, staticOpts));
+  /* SPA fallback for ULTIMATE */
+  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (req.path.startsWith("/api")) return next();
+    res.sendFile(path.join(ultimateDist, "index.html"));
+  });
+  logger.info({ ultimateDist }, "Serving ULTIMATE frontend at /");
 }
 
 /* ── Global error handler — no stack traces in responses ───── */
