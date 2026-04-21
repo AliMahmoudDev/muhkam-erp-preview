@@ -19,12 +19,12 @@ const api = (p: string) => `${BASE}${p}`;
 
 /* ── Nav sections ───────────────────────────────── */
 const NAV_SECTIONS = [
-  { label: 'الرئيسية', hrefs: ['/', '/treasury'] },
+  { label: 'القائمة', hrefs: ['/'] },
   {
     label: 'التجارة',
     hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/warranty', '/consignment'],
   },
-  { label: 'المالية', hrefs: ['/income', '/expenses', '/reports'] },
+  { label: 'المالية', hrefs: ['/treasury', '/vouchers', '/expenses', '/income', '/reports'] },
   { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/fixed-assets', '/accruals', '/bank-reconciliation', '/budgets', '/cost-centers'] },
   { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
   { label: 'النظام', hrefs: ['/settings', '/branches'] },
