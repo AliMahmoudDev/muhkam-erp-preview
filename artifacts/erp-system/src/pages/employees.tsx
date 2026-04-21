@@ -1245,7 +1245,8 @@ export default function Employees() {
               const baseSalary = Number(selected.salary ?? 0);
               const totalBonuses = bonuses.reduce((s, b) => s + Number(b.amount ?? 0), 0);
               const totalIncome = baseSalary + totalBonuses;
-              const netAmount = totalIncome - totalDeducted;
+              const totalDeductionsAll = totalDeducted + remainingLoans;
+              const netAmount = totalIncome - totalDeductionsAll;
               return (
                 <div className="space-y-3">
                   {/* Net Summary */}
@@ -1265,7 +1266,7 @@ export default function Employees() {
                       {fmt(netAmount)} {selected.currency}
                     </div>
                     <div className="text-[10px] text-white/40 mt-1">
-                      = دخل ({fmt(totalIncome)}) − خصومات ({fmt(totalDeducted)})
+                      = دخل ({fmt(totalIncome)}) − خصومات ({fmt(totalDeductionsAll)})
                     </div>
                   </div>
 
@@ -1329,10 +1330,22 @@ export default function Employees() {
                           </div>
                         );
                       })}
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/60">
+                          السلف ({loans.length})
+                        </span>
+                        <span
+                          className={`font-mono font-semibold ${
+                            remainingLoans > 0 ? 'text-amber-300' : 'text-white/30'
+                          }`}
+                        >
+                          {fmt(remainingLoans)}
+                        </span>
+                      </div>
                       <div className="flex justify-between text-xs pt-1.5 border-t border-red-500/20">
                         <span className="text-red-300 font-bold">الإجمالي</span>
                         <span className="font-mono font-bold text-red-300">
-                          {fmt(totalDeducted)}
+                          {fmt(totalDeductionsAll)}
                         </span>
                       </div>
                     </div>
