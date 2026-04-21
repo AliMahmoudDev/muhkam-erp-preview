@@ -86,12 +86,17 @@ export const employeeDeductionsTable = pgTable("employee_deductions", {
   deduction_date:  text("deduction_date").notNull(),
   currency:        text("currency").notNull().default("EGP"),
   created_by:      integer("created_by"),
+  /** ربط الخصم بسجل حضور (لمنع التكرار في الاحتساب الشهري) */
+  attendance_record_id: integer("attendance_record_id"),
+  /** نوع توليد الخصم: manual = يدوي، auto_late = تأخير تلقائي، auto_early = انصراف مبكر تلقائي، auto_absence = غياب تلقائي */
+  source:          text("source").notNull().default("manual"),
   created_at:      timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   deleted_at:      timestamp("deleted_at", { withTimezone: true }),
 }, t => [
   index("emp_deduct_company_idx").on(t.company_id),
   index("emp_deduct_employee_idx").on(t.employee_id),
   index("emp_deduct_type_idx").on(t.company_id, t.deduction_type),
+  index("emp_deduct_att_rec_idx").on(t.attendance_record_id, t.source),
 ]);
 
 export type EmployeeDeduction = typeof employeeDeductionsTable.$inferSelect;

@@ -99,6 +99,47 @@ export const publicHolidaysTable = pgTable("public_holidays", {
 export const insertPublicHolidaySchema = createInsertSchema(publicHolidaysTable).omit({ id: true, created_at: true });
 export type PublicHoliday = typeof publicHolidaysTable.$inferSelect;
 
+/* ── Attendance Deduction Settings (إعدادات خصومات الحضور) ───── */
+export const attendanceDeductionSettingsTable = pgTable("attendance_deduction_settings", {
+  id:                          serial("id").primaryKey(),
+  company_id:                  integer("company_id").notNull().unique().references(() => companiesTable.id),
+  /** فترة السماح بالدقائق قبل بدء احتساب الخصم */
+  grace_minutes:               integer("grace_minutes").notNull().default(10),
+  /** أيام الإجازة الأسبوعية مفصولة بفاصلة (0=أحد..6=سبت). افتراضي الجمعة */
+  weekly_off_days:             text("weekly_off_days").notNull().default("5"),
+  /** خصم يوم غياب كامل */
+  absence_full_day_amount:     numeric("absence_full_day_amount", { precision: 14, scale: 2 }).notNull().default("0"),
+  /** خصم نصف يوم غياب */
+  absence_half_day_amount:     numeric("absence_half_day_amount", { precision: 14, scale: 2 }).notNull().default("0"),
+  /** تطبيق نفس شرائح التأخير على الانصراف المبكر */
+  apply_early_leave:           boolean("apply_early_leave").notNull().default(true),
+  updated_at:                  timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("att_ded_settings_company_idx").on(t.company_id),
+]);
+
+export type AttendanceDeductionSettings = typeof attendanceDeductionSettingsTable.$inferSelect;
+
+/* ── Attendance Deduction Tiers (شرائح خصم التأخير/الانصراف) ─── */
+export const attendanceDeductionTiersTable = pgTable("attendance_deduction_tiers", {
+  id:           serial("id").primaryKey(),
+  company_id:   integer("company_id").notNull().references(() => companiesTable.id),
+  /** late = تأخير عن الحضور | early = انصراف مبكر */
+  applies_to:   text("applies_to").notNull().default("late"),
+  min_minutes:  integer("min_minutes").notNull(),
+  /** null = لا يوجد حد أعلى (شريحة مفتوحة) */
+  max_minutes:  integer("max_minutes"),
+  amount:       numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  is_active:    boolean("is_active").notNull().default(true),
+  sort_order:   integer("sort_order").notNull().default(0),
+  created_at:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("att_ded_tiers_company_idx").on(t.company_id),
+  index("att_ded_tiers_type_idx").on(t.company_id, t.applies_to),
+]);
+
+export type AttendanceDeductionTier = typeof attendanceDeductionTiersTable.$inferSelect;
+
 /* ── Attendance Summary ──────────────────────────────────────── */
 export const attendanceSummaryTable = pgTable("attendance_summary", {
   id:                      serial("id").primaryKey(),
