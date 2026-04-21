@@ -5,14 +5,15 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const rawPort = process.env.PORT;
+const isProduction = process.env.NODE_ENV === "production";
 
-if (!rawPort) {
+if (!rawPort && !isProduction) {
   throw new Error(
     "PORT environment variable is required but was not provided.",
   );
 }
 
-const port = Number(rawPort);
+const port = rawPort ? Number(rawPort) : 5000;
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
@@ -31,7 +32,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
+    ...(process.env.NODE_ENV !== "production" ? [runtimeErrorOverlay()] : []),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
@@ -57,20 +58,38 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react":  ["react", "react-dom", "wouter"],
+          "vendor-ui":     [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-select",
+            "@radix-ui/react-toast",
+          ],
+          "vendor-query":  ["@tanstack/react-query"],
+          "vendor-charts": ["recharts"],
+          "vendor-pdf":    ["jspdf", "jspdf-autotable"],
+          "vendor-utils":  ["date-fns", "clsx", "tailwind-merge"],
+        },
+      },
+    },
   },
   server: {
     port,
-    strictPort: true,
     host: "0.0.0.0",
     allowedHosts: true,
     fs: {
       strict: true,
+      deny: ["**/.*"],
     },
     proxy: {
       "/api": {
         target: "http://localhost:8080",
         changeOrigin: true,
-        rewrite: (path) => path,
       },
     },
   },

@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/muhkam-base/"
-title = "MUHKAM BASE"
+title = "MUHKAM ADVANCED"
 version = "1.0.0"
 id = "artifacts/muhkam-base"
 router = "path"

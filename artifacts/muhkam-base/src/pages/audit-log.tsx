@@ -1,0 +1,313 @@
+/**
+ * AuditLog — سجل التدقيق والمراجعة الشامل
+ * عرض كامل لجميع العمليات الحساسة بالنظام مع فلترة متقدمة.
+ */
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Shield, Search, Filter, RefreshCw, ChevronDown, ChevronUp, User, Clock } from "lucide-react";
+import { authFetch } from "@/lib/auth-fetch";
+import { useAuth } from "@/contexts/auth";
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+const api = (p: string) => `${BASE}${p}`;
+
+interface AuditLogEntry {
+  id: number;
+  action: string;
+  record_type: string;
+  record_id: number;
+  old_value: object | null;
+  new_value: object | null;
+  user_id: number | null;
+  username: string | null;
+  company_id: number | null;
+  created_at: string;
+}
+
+/* ── Arabic labels ─────────────────────────────────────────────── */
+const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+  create:  { label: "إنشاء",   color: "text-emerald-400" },
+  update:  { label: "تعديل",   color: "text-amber-400"   },
+  delete:  { label: "حذف",     color: "text-red-400"     },
+  view:    { label: "عرض",     color: "text-blue-400"    },
+  login:   { label: "دخول",    color: "text-violet-400"  },
+  logout:  { label: "خروج",    color: "text-white/40"    },
+  approve: { label: "موافقة",  color: "text-emerald-400" },
+  reject:  { label: "رفض",     color: "text-red-400"     },
+  lock:    { label: "قفل",     color: "text-orange-400"  },
+  unlock:  { label: "فتح",     color: "text-emerald-400" },
+  post:    { label: "ترحيل",   color: "text-blue-400"    },
+  cancel:  { label: "إلغاء",   color: "text-red-400"     },
+  restore: { label: "استعادة", color: "text-violet-400"  },
+  export:  { label: "تصدير",   color: "text-cyan-400"    },
+  reset:   { label: "إعادة تعيين", color: "text-red-500" },
+  close:   { label: "إقفال",   color: "text-orange-400"  },
+  reopen:  { label: "إعادة فتح", color: "text-emerald-400" },
+};
+
+const RECORD_LABELS: Record<string, string> = {
+  customer:         "عميل",
+  supplier:         "مورد",
+  sale:             "فاتورة بيع",
+  sale_return:      "مرتجع مبيعات",
+  purchase:         "فاتورة شراء",
+  purchase_return:  "مرتجع مشتريات",
+  product:          "منتج",
+  financial_lock:   "قفل مالي",
+  expense:          "مصروف",
+  safe_transfer:    "تحويل خزينة",
+  receipt_voucher:  "سند قبض",
+  payment_voucher:  "سند صرف",
+  deposit_voucher:  "إيداع",
+  treasury_voucher: "سند خزينة",
+  user:             "مستخدم",
+  account_balances: "أرصدة الحسابات",
+  customer_balances:"أرصدة العملاء",
+  employee:         "موظف",
+  company:          "شركة",
+  subscription:     "اشتراك",
+  payroll_period:   "دورة رواتب",
+  salary_advance:   "سلفة راتب",
+  fiscal_year:      "سنة مالية",
+  system:           "النظام",
+};
+
+const ALL_RECORD_TYPES = Object.keys(RECORD_LABELS);
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("ar-EG", { day: "2-digit", month: "2-digit", year: "numeric" }) +
+    " " + d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+}
+
+function JsonDiff({ label, data }: { label: string; data: object | null }) {
+  const [open, setOpen] = useState(false);
+  if (!data) return null;
+  return (
+    <div className="mt-1">
+      <button onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors">
+        {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        {label}
+      </button>
+      {open && (
+        <pre className="mt-1 text-xs bg-white/5 border border-white/8 rounded-xl p-3 overflow-x-auto max-h-40 text-white/60 font-mono leading-relaxed">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+export default function AuditLog() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterAction, setFilterAction] = useState("");
+  const [filterUser, setFilterUser] = useState("");
+  const [limit, setLimit] = useState(200);
+
+  const { data: logs = [], isLoading, refetch } = useQuery<AuditLogEntry[]>({
+    queryKey: ["audit-logs", limit],
+    queryFn: () =>
+      authFetch(api(`/api/settings/audit-logs?limit=${limit}`))
+        .then(async r => { if (!r.ok) throw new Error(); return r.json(); }),
+    refetchInterval: 30_000,
+  });
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <Shield className="w-14 h-14 text-red-400/40 mb-4" />
+        <p className="text-white/60 font-bold text-lg">غير مصرح</p>
+        <p className="text-white/30 text-sm mt-1">هذه الصفحة للمديرين فقط</p>
+      </div>
+    );
+  }
+
+  const filtered = logs.filter(log => {
+    if (filterType && log.record_type !== filterType) return false;
+    if (filterAction && log.action !== filterAction) return false;
+    if (filterUser && !log.username?.toLowerCase().includes(filterUser.toLowerCase())) return false;
+    if (search) {
+      const s = search.toLowerCase();
+      const label = RECORD_LABELS[log.record_type] ?? log.record_type;
+      if (!log.username?.toLowerCase().includes(s) &&
+          !label.toLowerCase().includes(s) &&
+          !String(log.record_id).includes(s) &&
+          !log.action.includes(s)) return false;
+    }
+    return true;
+  });
+
+  const uniqueActions = [...new Set(logs.map(l => l.action))].sort();
+  const uniqueUsers  = [...new Set(logs.map(l => l.username).filter(Boolean))].sort();
+
+  return (
+    <div className="space-y-4" dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <Shield className="w-5 h-5 text-amber-400" />
+            سجل التدقيق والمراجعة
+          </h1>
+          <p className="text-sm text-white/40 mt-0.5">
+            سجل شامل لجميع العمليات الحساسة — {filtered.length} من {logs.length} سجل
+          </p>
+        </div>
+        <button onClick={() => void refetch()}
+          className="flex items-center gap-2 px-3 py-2 bg-white/8 hover:bg-white/12 rounded-xl text-sm text-white/60 border border-white/10 transition-all">
+          <RefreshCw className="w-4 h-4" />
+          تحديث
+        </button>
+      </div>
+
+      {/* Filters Bar */}
+      <div className="flex flex-wrap gap-3 bg-white/3 border border-white/8 rounded-2xl p-4">
+        {/* Search */}
+        <div className="relative flex-1 min-w-40">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="بحث في السجل..."
+            className="w-full bg-white/8 border border-white/15 rounded-xl pr-9 pl-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/50"
+          />
+        </div>
+
+        {/* Record Type Filter */}
+        <select value={filterType} onChange={e => setFilterType(e.target.value)}
+          className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none">
+          <option value="">كل السجلات</option>
+          {ALL_RECORD_TYPES.map(t => (
+            <option key={t} value={t}>{RECORD_LABELS[t] ?? t}</option>
+          ))}
+        </select>
+
+        {/* Action Filter */}
+        <select value={filterAction} onChange={e => setFilterAction(e.target.value)}
+          className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none">
+          <option value="">كل الإجراءات</option>
+          {uniqueActions.map(a => (
+            <option key={a} value={a}>{ACTION_LABELS[a]?.label ?? a}</option>
+          ))}
+        </select>
+
+        {/* User Filter */}
+        <select value={filterUser} onChange={e => setFilterUser(e.target.value)}
+          className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none">
+          <option value="">كل المستخدمين</option>
+          {uniqueUsers.map(u => (
+            <option key={u!} value={u!}>{u}</option>
+          ))}
+        </select>
+
+        {/* Limit */}
+        <select value={limit} onChange={e => setLimit(Number(e.target.value))}
+          className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none">
+          <option value={100}>آخر 100</option>
+          <option value={200}>آخر 200</option>
+          <option value={500}>آخر 500</option>
+        </select>
+
+        <div className="flex items-center gap-1 text-xs text-white/30">
+          <Filter className="w-3 h-3" />
+          {filtered.length} نتيجة
+        </div>
+      </div>
+
+      {/* Log Table */}
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1,2,3,4,5].map(i => <div key={i} className="skeleton-shimmer h-14 rounded-xl" />)}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-white/30">
+          <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="font-bold">لا توجد سجلات تطابق البحث</p>
+        </div>
+      ) : (
+        <div className="bg-white/3 border border-white/8 rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-white/5 text-white/40 text-xs">
+                <th className="p-3 text-right font-semibold w-32">الوقت</th>
+                <th className="p-3 text-right font-semibold">الإجراء</th>
+                <th className="p-3 text-right font-semibold">النوع</th>
+                <th className="p-3 text-right font-semibold w-16">المعرف</th>
+                <th className="p-3 text-right font-semibold">المستخدم</th>
+                <th className="p-3 text-right font-semibold">التفاصيل</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((log, idx) => {
+                const actionMeta = ACTION_LABELS[log.action] ?? { label: log.action, color: "text-white/60" };
+                const recordLabel = RECORD_LABELS[log.record_type] ?? log.record_type;
+                return (
+                  <tr key={log.id} className={`border-t border-white/5 hover:bg-white/3 transition-colors ${idx % 2 === 0 ? "" : "bg-white/1"}`}>
+                    <td className="p-3">
+                      <div className="flex items-center gap-1 text-white/40 text-xs">
+                        <Clock className="w-3 h-3 shrink-0" />
+                        <span className="font-mono">{formatDate(log.created_at)}</span>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className={`text-xs font-bold ${actionMeta.color}`}>
+                        {actionMeta.label}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className="text-xs bg-white/8 text-white/70 px-2 py-0.5 rounded-lg">
+                        {recordLabel}
+                      </span>
+                    </td>
+                    <td className="p-3 font-mono text-xs text-white/40">
+                      #{log.record_id}
+                    </td>
+                    <td className="p-3">
+                      {log.username ? (
+                        <div className="flex items-center gap-1.5">
+                          <User className="w-3 h-3 text-white/30 shrink-0" />
+                          <span className="text-xs text-white/70">{log.username}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-white/25">نظام</span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <JsonDiff label="القيمة القديمة" data={log.old_value} />
+                      <JsonDiff label="القيمة الجديدة" data={log.new_value} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Stats */}
+      {logs.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Object.entries(
+            logs.reduce<Record<string, number>>((acc, l) => {
+              acc[l.action] = (acc[l.action] ?? 0) + 1;
+              return acc;
+            }, {})
+          ).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([action, count]) => {
+            const meta = ACTION_LABELS[action] ?? { label: action, color: "text-white/50" };
+            return (
+              <div key={action} className="bg-white/3 border border-white/8 rounded-2xl p-4 text-center">
+                <div className={`text-2xl font-bold ${meta.color}`}>{count}</div>
+                <div className="text-xs text-white/40 mt-1">{meta.label}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
