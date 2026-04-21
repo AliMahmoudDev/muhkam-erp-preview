@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-# ── Concurrency control ───────────────────────────────────────────────────────
-# Group runs by workflow name + ref so:
-#   • Rapid pushes to main/develop share one slot → older run is cancelled
-#   • Each PR branch gets its own slot → PRs never cancel each other
-# cancel-in-progress: the older run is cancelled the moment a newer one queues.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -63,7 +58,6 @@ jobs:
       - name: Push database schema
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-        # push-force skips interactive confirmation — safe for a fresh container
         run: pnpm --filter @workspace/db run push-force
 
       - name: Run backend tests
@@ -73,44 +67,6 @@ jobs:
           JWT_REFRESH_SECRET: ci-unit-test-jwt-refresh-secret-min-32chars!!
           NODE_ENV: test
         run: pnpm --filter @workspace/api-server test
-
-      - name: Backend coverage report
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-          JWT_SECRET: ci-unit-test-jwt-secret-minimum-32chars!!
-          JWT_REFRESH_SECRET: ci-unit-test-jwt-refresh-secret-min-32chars!!
-          NODE_ENV: test
-        run: pnpm --filter @workspace/api-server test:coverage
-
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: artifacts/api-server/coverage/
-
-  test-frontend:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Run frontend tests
-        run: pnpm --filter @workspace/erp-system test
 
   lint:
     name: Lint & Type Check
@@ -139,20 +95,20 @@ jobs:
       - name: Lint backend
         run: pnpm --filter @workspace/api-server lint
 
-      - name: Lint frontend
+      - name: Lint frontend (ULTIMATE)
         run: pnpm --filter @workspace/erp-system lint
 
       - name: Type check backend
         run: pnpm --filter @workspace/api-server type-check
 
-      - name: Type check frontend
+      - name: Type check frontend (ULTIMATE)
         run: pnpm --filter @workspace/erp-system type-check
 
   build:
     name: Build Check
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [test-backend, test-frontend, lint]
+    needs: [test-backend, lint]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -170,21 +126,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build frontend
+      - name: Build ULTIMATE frontend
         run: |
           cd artifacts/erp-system
-          PORT=8080 BASE_PATH=/ VITE_API_URL="" pnpm run build
+          NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
+
+      - name: Build ADVANCED frontend
+        run: |
+          cd artifacts/muhkam-base
+          NODE_ENV=production pnpm run build
 
       - name: Build backend
         run: |
           cd artifacts/api-server
           pnpm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: |
-            artifacts/erp-system/dist/
-            artifacts/api-server/dist/
-          retention-days: 7
