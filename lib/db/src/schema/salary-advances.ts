@@ -32,7 +32,7 @@ export const salaryAdvancesTable = pgTable("salary_advances", {
   approved_amount:  numeric("approved_amount", { precision: 14, scale: 2 }),
   advance_type:     text("advance_type").notNull().default("personal"),
   // emergency | personal | medical | educational | other
-  reason:           text("reason").notNull(),
+  reason:           text("reason"),
   status:           text("status").notNull().default("pending"),
   // pending | approved | rejected | active | completed | cancelled
   approver_id:      integer("approver_id"),
