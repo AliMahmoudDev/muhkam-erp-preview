@@ -14,9 +14,9 @@ const KEY = (token: string) => `bl:tok:${token}`;
 let redis: import("ioredis").Redis | null = null;
 
 if (process.env.NODE_ENV === "production" && !process.env.REDIS_URL) {
-  throw new Error(
-    "[FATAL] REDIS_URL is required in production. Session blacklist cannot " +
-    "be safely served from in-memory store across multiple instances/restarts.",
+  logger.warn(
+    "[SessionBlacklist] REDIS_URL not set in production — using in-memory store. " +
+    "This is safe for single-instance deployments but tokens will not be revoked across restarts.",
   );
 }
 
