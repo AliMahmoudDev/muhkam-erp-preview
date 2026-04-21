@@ -87,6 +87,15 @@ export default defineConfig({
       deny: ["**/.*"],
     },
     proxy: {
+      /* muhkam-base is served at /muhkam-base/ so API calls arrive as
+         /muhkam-base/api/... — strip the base prefix before forwarding. */
+      [`${basePath}api`]: {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path: string) =>
+          path.replace(new RegExp(`^${basePath}api`), "/api"),
+      },
+      /* Fallback for any direct /api/... calls */
       "/api": {
         target: "http://localhost:8080",
         changeOrigin: true,
