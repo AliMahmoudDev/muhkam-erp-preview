@@ -33,6 +33,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
         <Label>التقارير</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="attendance">
+        <Icon sf={{ default: "clock", selected: "clock.fill" }} />
+        <Label>الحضور</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="more">
         <Icon sf={{ default: "ellipsis.circle", selected: "ellipsis.circle.fill" }} />
         <Label>المزيد</Label>
@@ -52,6 +56,7 @@ function ClassicTabLayout() {
     { name: "inventory", label: "المخزون", iosIcon: "shippingbox", androidIcon: "package" as const },
     { name: "customers", label: "العملاء", iosIcon: "person.2", androidIcon: "users" as const },
     { name: "reports", label: "التقارير", iosIcon: "chart.bar", androidIcon: "bar-chart-2" as const },
+    { name: "attendance", label: "الحضور", iosIcon: "clock", androidIcon: "clock" as const },
     { name: "more", label: "المزيد", iosIcon: "ellipsis.circle", androidIcon: "more-horizontal" as const },
   ];
 

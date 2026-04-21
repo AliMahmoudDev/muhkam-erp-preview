@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { authenticate, requireTenant } from "../middleware/auth";
 import { tenantGuard } from "../middleware/tenant-guard";
 import healthRouter from "./health";
+import zktecoRouter from "./zkteco";
 import productsRouter from "./products";
 import customersRouter from "./customers";
 import salesRouter from "./sales";
@@ -59,6 +60,7 @@ const router: IRouter = Router();
 /* ── Public routes — no auth required ─────────────────────────── */
 router.use(authRouter);   // /auth/users  /auth/login  /auth/me
 router.use(healthRouter); // /health
+router.use(zktecoRouter); // /iclock/cdata  /iclock/getrequest  /api/attendance/zkteco
 
 /* ── Global auth guard — all routes below require valid JWT ────── */
 router.use(authenticate);

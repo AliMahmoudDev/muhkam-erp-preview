@@ -129,6 +129,8 @@ app.use("/api/system/restore", express.raw({ type: "*/*", limit: "60mb" }));
 /* ── Body parsing with 10mb limit ──────────────────────────── */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+/* ── ZKTeco ADMS pushes plain-text attendance logs ─────────── */
+app.use("/iclock", express.text({ type: "*/*", limit: "1mb" }));
 
 /* ── XSS sanitization on all request bodies ────────────────── */
 app.use(sanitizeBody);
