@@ -64,7 +64,7 @@ export default function Login() {
               type="password"
               value={form.pin}
               onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value }))}
-              placeholder="123456"
+              placeholder="أدخل الرقم السري"
               required
               className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
