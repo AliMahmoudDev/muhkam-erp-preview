@@ -1407,11 +1407,11 @@ export default function Employees() {
                       <Printer size={14} /> طباعة
                     </button>
                     <button
-                      onClick={() => openReport(true)}
+                      onClick={() => openReport(false)}
                       className="erp-btn flex items-center gap-1.5 text-xs px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-amber-300"
-                      title="حفظ كملف PDF — اختر حفظ كـ PDF من نافذة الطباعة"
+                      title="معاينة التقرير — استخدم Ctrl+P ثم (حفظ كـ PDF) من نافذة الطباعة"
                     >
-                      <Download size={14} /> حفظ PDF
+                      <Download size={14} /> معاينة / PDF
                     </button>
                   </div>
 
