@@ -4,7 +4,7 @@ import { api, setToken } from "../api/client";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({ username: "", pin: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -13,7 +13,7 @@ export default function Login() {
     setLoading(true);
     setError("");
     try {
-      const r = await api.post<{ token: string }>("/auth/login", form);
+      const r = await api.post<{ token: string }>("/auth/login", { username: form.username, pin: form.pin });
       setToken(r.token);
       setLocation("/");
     } catch (err: unknown) {
@@ -58,13 +58,13 @@ export default function Login() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              كلمة المرور
+              الرقم السري (PIN)
             </label>
             <input
               type="password"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              placeholder="••••••••"
+              value={form.pin}
+              onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value }))}
+              placeholder="123456"
               required
               className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
