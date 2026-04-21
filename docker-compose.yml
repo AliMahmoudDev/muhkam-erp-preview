@@ -1,9 +1,14 @@
 version: '3.9'
 
+# MUHKAM ERP — Docker Compose
+# ULTIMATE: halaltec.com/
+# ADVANCED: halaltec.com/muhkam-base/
+# API:      halaltec.com/api/
+
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: halaltech-db
+    container_name: muhkam-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: erpuser
@@ -23,7 +28,7 @@ services:
     build:
       context: .
       dockerfile: artifacts/api-server/Dockerfile
-    container_name: halaltech-api
+    container_name: muhkam-api
     restart: unless-stopped
     depends_on:
       postgres:
@@ -31,22 +36,27 @@ services:
     environment:
       DATABASE_URL: postgresql://erpuser:${DB_PASSWORD:-localpassword}@postgres:5432/erp
       JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
-      PORT: 8080
+      PORT: 3000
       NODE_ENV: production
+      ALLOWED_ORIGINS: https://halaltec.com
       BACKUP_DIR: /app/backups
     volumes:
       - api_backups:/app/backups
+      # ULTIMATE frontend static files
+      - ./artifacts/erp-system/dist/public:/app/erp-system/dist/public:ro
+      # ADVANCED frontend static files
+      - ./artifacts/muhkam-base/dist/public:/app/muhkam-base/dist/public:ro
     ports:
-      - "8080:8080"
+      - "3000:3000"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
 
   nginx:
     image: nginx:alpine
-    container_name: halaltech-nginx
+    container_name: muhkam-nginx
     restart: unless-stopped
     depends_on:
       - api
@@ -54,8 +64,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./artifacts/erp-system/dist/public:/usr/share/nginx/html:ro
+      - ./deploy/nginx.conf:/etc/nginx/sites-available/muhkam:ro
       - nginx_certs:/etc/letsencrypt:ro
 
 volumes:

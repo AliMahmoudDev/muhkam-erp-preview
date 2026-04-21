@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-APP_DIR="/var/www/muhkam"
+APP_DIR="/var/www/muhkam-erp"
 cd "$APP_DIR"
 
 # تحميل متغيرات البيئة

@@ -18,9 +18,9 @@
 ## البنية النهائية على الخادم
 
 ```
-yourdomain.com/             → MUHKAM ULTIMATE  (نظام كامل)
-yourdomain.com/muhkam-base/ → MUHKAM ADVANCED  (نظام مبسط)
-yourdomain.com/api/         → Express API      (مشترك بين النسختين)
+halaltec.com/             → MUHKAM ULTIMATE  (نظام كامل)
+halaltec.com/muhkam-base/ → MUHKAM ADVANCED  (نظام مبسط)
+halaltec.com/api/         → Express API      (مشترك بين النسختين)
 ```
 
 كلا النسختين تعملان من نفس الـ Express backend على port 3000.
@@ -31,8 +31,8 @@ yourdomain.com/api/         → Express API      (مشترك بين النسخت
 ## الخطوة 1 — استنساخ الكود
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git /var/www/muhkam
-cd /var/www/muhkam
+git clone https://github.com/m4elmelegy-hub/MUHKAM-ERP.git /var/www/muhkam-erp
+cd /var/www/muhkam-erp
 pnpm install
 ```
 
@@ -52,7 +52,7 @@ DATABASE_URL=postgresql://erpuser:YOUR_STRONG_PASSWORD@localhost:5432/erp
 JWT_SECRET=GENERATE_64_CHAR_HEX_HERE
 NODE_ENV=production
 PORT=3000
-ALLOWED_ORIGINS=https://yourdomain.com
+ALLOWED_ORIGINS=https://halaltec.com
 ```
 
 لتوليد `JWT_SECRET`:
@@ -108,10 +108,10 @@ env_production: {
   PORT: 3000,
   DATABASE_URL: "postgresql://erpuser:YOUR_PASS@localhost:5432/erp",
   JWT_SECRET: "YOUR_64_CHAR_SECRET",
-  ALLOWED_ORIGINS: "https://yourdomain.com",
+  ALLOWED_ORIGINS: "https://halaltec.com",
   // مسارات اختيارية — تُضبط تلقائياً نسبةً لموقع dist/index.mjs
-  // FRONTEND_DIST: "/var/www/muhkam/artifacts/erp-system/dist/public",
-  // ADVANCED_DIST:  "/var/www/muhkam/artifacts/muhkam-base/dist/public",
+  // FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
+  // ADVANCED_DIST:  "/var/www/muhkam-erp/artifacts/muhkam-base/dist/public",
 }
 ```
 
@@ -140,9 +140,9 @@ Backend started on port 3000
 
 ```bash
 # انسخ الـ config
-sudo cp /var/www/muhkam/deploy/nginx.conf /etc/nginx/sites-available/muhkam
+sudo cp /var/www/muhkam-erp/deploy/nginx.conf /etc/nginx/sites-available/muhkam
 
-# عدّل اسم النطاق (استبدل yourdomain.com بنطاقك الفعلي)
+# عدّل اسم النطاق (استبدل halaltec.com بنطاقك الفعلي)
 sudo nano /etc/nginx/sites-available/muhkam
 
 # فعّل الموقع
@@ -161,7 +161,7 @@ sudo nginx -t && sudo nginx -s reload
 
 ```bash
 sudo apt install certbot python3-certbot-nginx -y
-sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+sudo certbot --nginx -d halaltec.com -d www.halaltec.com
 ```
 
 ---
@@ -170,15 +170,15 @@ sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 
 ```bash
 # تحقق من ULTIMATE
-curl -I https://yourdomain.com/
+curl -I https://halaltec.com/
 # يجب أن يرجع: HTTP/2 200
 
 # تحقق من ADVANCED
-curl -I https://yourdomain.com/muhkam-base/
+curl -I https://halaltec.com/muhkam-base/
 # يجب أن يرجع: HTTP/2 200
 
 # تحقق من API
-curl https://yourdomain.com/api/healthz
+curl https://halaltec.com/api/healthz
 # يجب أن يرجع: {"status":"ok"}
 ```
 
@@ -187,7 +187,7 @@ curl https://yourdomain.com/api/healthz
 ## التحديث من GitHub (سحب تغييرات جديدة)
 
 ```bash
-cd /var/www/muhkam
+cd /var/www/muhkam-erp
 git pull
 
 # تثبيت حزم جديدة إن وجدت
@@ -220,7 +220,7 @@ sudo nginx -s reload
 | `JWT_SECRET` | **نعم** | مفتاح JWT (64 حرف hex على الأقل) |
 | `PORT` | نعم | port الـ backend (3000 في الإنتاج) |
 | `NODE_ENV` | نعم | `production` |
-| `ALLOWED_ORIGINS` | مستحسن | `https://yourdomain.com` |
+| `ALLOWED_ORIGINS` | مستحسن | `https://halaltec.com` |
 | `FRONTEND_DIST` | اختياري | مسار ULTIMATE (يُضبط تلقائياً) |
 | `ADVANCED_DIST` | اختياري | مسار ADVANCED (يُضبط تلقائياً) |
 
@@ -228,7 +228,7 @@ sudo nginx -s reload
 
 ## كيفية تحديد نسخة كل عميل
 
-1. ادخل على `https://yourdomain.com` بحساب **superadmin**
+1. ادخل على `https://halaltec.com` بحساب **superadmin**
 2. اذهب لـ **لوحة المدير العام** (Super Admin)
 3. اضغط على اسم الشركة
 4. في قسم التفاصيل ستجد **🏷️ النسخة** — اختر:
@@ -236,7 +236,7 @@ sudo nginx -s reload
    - 🚀 ADVANCED — النسخة المبسطة (شركات متوسطة)
 5. التغيير فوري — في المرة القادمة يدخل المستخدم على أي رابط، سيُحوَّل تلقائياً للنسخة المخصصة لشركته
 
-**الرابط الموحّد للعملاء:** يمكنك إعطاء جميع العملاء رابطاً واحداً: `https://yourdomain.com`  
+**الرابط الموحّد للعملاء:** يمكنك إعطاء جميع العملاء رابطاً واحداً: `https://halaltec.com`  
 النظام سيحول كل مستخدم للنسخة الصحيحة تلقائياً بعد الدخول.
 
 ---

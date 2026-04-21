@@ -27,13 +27,13 @@
 
 ```bash
 # خطوة 4 — إصلاح قاعدة البيانات
-psql "$DATABASE_URL" -f /root/Schema-Sync/scripts/db-repair.sql
+psql "$DATABASE_URL" -f /var/www/muhkam-erp/scripts/db-repair.sql
 
 # خطوة 5 — push schema migrations
-cd /root/Schema-Sync/lib/db && pnpm run push
+cd /var/www/muhkam-erp/lib/db && pnpm run push
 
 # خطوة 8 — توليد ecosystem.config.cjs لـ pm2
-cat > /root/Schema-Sync/ecosystem.config.cjs << ECOSYSTEM
+cat > /var/www/muhkam-erp/ecosystem.config.cjs << ECOSYSTEM
   DATABASE_URL: '${DATABASE_URL}',
   REDIS_URL: '${REDIS_URL}',
   ...
