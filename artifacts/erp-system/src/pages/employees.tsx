@@ -1449,12 +1449,12 @@ export default function Employees() {
                     {/* ═══ INCOME SECTION ═══ */}
                     <div className="px-3 py-1.5 bg-emerald-500/10 text-[10px] font-bold text-emerald-300 flex items-center justify-between gap-1 sticky top-0 z-10">
                       <span className="flex items-center gap-1"><Plus size={10} /> الدخل</span>
-                      {(bonuses.length + (canViewSalary && baseSalary > 0 ? 1 : 0) + ((selected.commission_rate ?? 0) > 0 ? 1 : 0)) > 6 && (
+                      {(bonuses.length + (canViewSalary && baseSalary > 0 ? 1 : 0) + ((selected.commission_rate ?? 0) > 0 ? 1 : 0)) > 5 && (
                         <span className="text-[9px] text-emerald-300/60 font-normal">↕ مرّر للأسفل</span>
                       )}
                     </div>
 
-                    <div className="max-h-[240px] overflow-y-auto thin-scroll">
+                    <div className="max-h-[200px] overflow-y-auto thin-scroll">
                     {canViewSalary && baseSalary > 0 && (
                       <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
                         <div className="text-white/70">الراتب الأساسي</div>
@@ -1513,12 +1513,12 @@ export default function Employees() {
                     {/* ═══ DEDUCTIONS SECTION ═══ */}
                     <div className="px-3 py-1.5 bg-red-500/10 text-[10px] font-bold text-red-300 flex items-center justify-between gap-1">
                       <span className="flex items-center gap-1"><MinusCircle size={10} /> الصرف / الخصومات</span>
-                      {(deductions.length + loans.filter((l) => Number(l.remaining_balance ?? 0) > 0).length) > 6 && (
+                      {(deductions.length + loans.filter((l) => Number(l.remaining_balance ?? 0) > 0).length) > 5 && (
                         <span className="text-[9px] text-red-300/60 font-normal">↕ مرّر للأسفل</span>
                       )}
                     </div>
 
-                    <div className="max-h-[240px] overflow-y-auto thin-scroll">
+                    <div className="max-h-[200px] overflow-y-auto thin-scroll">
                     {/* Each deduction as a line */}
                     {deductions.map((d) => {
                       const info = dedLabel(String(d.deduction_type ?? 'other'));

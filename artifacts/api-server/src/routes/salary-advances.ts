@@ -122,9 +122,13 @@ router.post("/salary-advances", wrap(async (req, res) => {
   const empSalary  = Number(emp.salary ?? 0);
   const reqAmt     = Number(requested_amount);
 
-  if (empSalary < minSalary) { res.status(422).json({ error: `الراتب أقل من الحد الأدنى المطلوب للسلفة (${minSalary} ${emp.currency})` }); return; }
-  const maxAllowed = empSalary * maxPct / 100;
-  if (reqAmt > maxAllowed) { res.status(400).json({ error: `المبلغ المطلوب يتجاوز الحد الأقصى (${maxAllowed.toFixed(2)} ${emp.currency})` }); return; }
+  // Commission-only employees (no fixed salary) bypass the minimum salary check
+  const isCommissionOnly = empSalary === 0 && Number(emp.commission_rate ?? 0) > 0;
+  if (!isCommissionOnly && empSalary < minSalary) { res.status(422).json({ error: `الراتب أقل من الحد الأدنى المطلوب للسلفة (${minSalary} ${emp.currency})` }); return; }
+  if (!isCommissionOnly) {
+    const maxAllowed = empSalary * maxPct / 100;
+    if (reqAmt > maxAllowed) { res.status(400).json({ error: `المبلغ المطلوب يتجاوز الحد الأقصى (${maxAllowed.toFixed(2)} ${emp.currency})` }); return; }
+  }
 
   // Check concurrent advances
   const activeAdvances = await db.select({ count: sql<number>`COUNT(*)::int` }).from(salaryAdvancesTable)
