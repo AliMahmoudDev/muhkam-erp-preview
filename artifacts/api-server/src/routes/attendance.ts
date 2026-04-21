@@ -140,8 +140,12 @@ router.post("/attendance/check-in", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const { employee_id, attendance_date, check_in_time, notes } = req.body as Record<string, unknown>;
-  const empId = employee_id ? Number(employee_id) : userId;
-  if (!empId) { res.status(400).json({ error: "معرّف الموظف مطلوب" }); return; }
+
+  // Resolve employee: explicit id → linked employee_id on user → error
+  const empId = employee_id
+    ? Number(employee_id)
+    : (req.user?.employee_id ?? null);
+  if (!empId) { res.status(400).json({ error: "الحساب غير مرتبط بموظف — يرجى مراجعة المدير لربط حسابك بسجل الموظف" }); return; }
 
   // Verify employee belongs to company
   const [emp] = await db.select({ id: employeesTable.id }).from(employeesTable)
@@ -191,7 +195,10 @@ router.post("/attendance/check-out", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const { employee_id, attendance_date, check_out_time } = req.body as Record<string, unknown>;
-  const empId = employee_id ? Number(employee_id) : userId;
+  const empId = employee_id
+    ? Number(employee_id)
+    : (req.user?.employee_id ?? null);
+  if (!empId) { res.status(400).json({ error: "الحساب غير مرتبط بموظف — يرجى مراجعة المدير" }); return; }
   const date = String(attendance_date ?? new Date().toISOString().split("T")[0]);
   const time = String(check_out_time ?? new Date().toTimeString().substring(0, 5));
 

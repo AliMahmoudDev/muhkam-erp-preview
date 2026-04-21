@@ -90,7 +90,7 @@ router.post("/settings/users", authenticate, requireRole("admin"), wrap(async (r
   const v = validate(createUserSchema, req.body);
   if (!v.success) { res.status(400).json({ error: "بيانات غير صحيحة", details: v.errors }); return; }
 
-  const { name, username, pin, role, permissions, warehouse_id, safe_id, active } = v.data;
+  const { name, username, pin, role, permissions, warehouse_id, safe_id, active, employee_id } = v.data;
   const companyId = req.user!.company_id ?? undefined;
 
   if ((role as string) === "super_admin") {
@@ -107,6 +107,7 @@ router.post("/settings/users", authenticate, requireRole("admin"), wrap(async (r
     permissions: permissions || "{}",
     warehouse_id: warehouse_id ? Number(warehouse_id) : null,
     safe_id: safe_id ? Number(safe_id) : null,
+    employee_id: employee_id ? Number(employee_id) : null,
     active: active !== undefined ? Boolean(active) : true,
     company_id: companyId,
   }).returning();
@@ -129,7 +130,7 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
   const id = Number(req.params.id);
   const requesterId = req.user!.id;
   const companyId = req.user!.company_id;
-  const { name, username, pin, role, permissions, active, warehouse_id, safe_id } = v.data;
+  const { name, username, pin, role, permissions, active, warehouse_id, safe_id, employee_id } = v.data;
 
   if ((role as string) === "super_admin") {
     res.status(403).json({ error: "لا يمكن تعيين دور المسؤول العام من هنا" }); return;
@@ -161,6 +162,7 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
       role, permissions, active,
       warehouse_id: warehouse_id !== undefined ? (warehouse_id ? Number(warehouse_id) : null) : undefined,
       safe_id: safe_id !== undefined ? (safe_id ? Number(safe_id) : null) : undefined,
+      employee_id: employee_id !== undefined ? (employee_id ? Number(employee_id) : null) : undefined,
     })
     .where(companyId !== null
       ? and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId))

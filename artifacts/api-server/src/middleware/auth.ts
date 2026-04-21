@@ -67,6 +67,7 @@ export interface AuthUser {
   warehouse_id: number | null;
   safe_id: number | null;
   company_id: number | null;
+  employee_id: number | null;
 }
 
 /* Extend Express Request */

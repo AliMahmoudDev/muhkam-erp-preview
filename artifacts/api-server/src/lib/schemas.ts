@@ -43,6 +43,7 @@ export const createUserSchema = z.object({
   safe_id: z.number().int().positive().optional().nullable(),
   active: z.boolean().optional().default(true),
   permissions: z.string().optional(),
+  employee_id: z.number().int().positive().optional().nullable(),
 });
 
 export const updateUserSchema = createUserSchema

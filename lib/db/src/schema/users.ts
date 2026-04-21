@@ -13,6 +13,7 @@ export const erpUsersTable = pgTable("erp_users", {
   company_id:      integer("company_id").references(() => companiesTable.id),
   warehouse_id:    integer("warehouse_id"),
   safe_id:         integer("safe_id"),
+  employee_id:     integer("employee_id"),
   login_attempts:  integer("login_attempts").notNull().default(0),
   last_login:      timestamp("last_login", { withTimezone: true }),
   created_at:      timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

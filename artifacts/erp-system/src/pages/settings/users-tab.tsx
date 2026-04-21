@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { safeArray } from "@/lib/safe-data";
+import { authFetch } from "@/lib/auth-fetch";
 import {
   useGetSettingsUsers, useCreateSettingsUser, useUpdateSettingsUser, useDeleteSettingsUser,
   useGetSettingsSafes, useGetSettingsWarehouses,
 } from "@workspace/api-client-react";
+
 import { useToast } from "@/hooks/use-toast";
 import {
   Users, Plus, Trash2, Edit2, Eye, EyeOff, Save, Loader2, Search, RotateCcw,
@@ -17,6 +19,8 @@ import {
 import {
   ROLES, PERMISSION_GROUPS, PERMISSION_TEMPLATES, TEMPLATE_LABELS,
 } from "./_constants";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function getInitials(name: string) {
   const p = name.trim().split(" ");
@@ -46,6 +50,14 @@ export default function UsersTab() {
   const warehouses = safeArray(warehousesRaw);
   const { data: safesRaw } = useGetSettingsSafes();
   const safes = safeArray(safesRaw);
+  const { data: empRaw } = useQuery({
+    queryKey: ["emp-for-users"],
+    queryFn: async () => {
+      const r = await authFetch(`${BASE}/api/employees?limit=500`);
+      return r.ok ? r.json() : [];
+    },
+  });
+  const empOptions = safeArray(empRaw);
   const createUser = useCreateSettingsUser();
   const updateUser = useUpdateSettingsUser();
   const deleteUser = useDeleteSettingsUser();
@@ -63,11 +75,12 @@ export default function UsersTab() {
     permissions: {} as Record<string, boolean>,
     warehouse_id: "" as string,
     safe_id: "" as string,
+    employee_id: "" as string,
     active: true,
   });
 
   const resetForm = () => {
-    setForm({ name: "", username: "", pin: "0000", role: "cashier", permissions: {}, warehouse_id: "", safe_id: "", active: true });
+    setForm({ name: "", username: "", pin: "0000", role: "cashier", permissions: {}, warehouse_id: "", safe_id: "", employee_id: "", active: true });
     setEditId(null); setShowForm(false); setShowPin(false); setPermSearch("");
   };
 
@@ -86,6 +99,7 @@ export default function UsersTab() {
       role: form.role, permissions: JSON.stringify(form.permissions),
       warehouse_id: form.warehouse_id ? Number(form.warehouse_id) : null,
       safe_id: form.safe_id ? Number(form.safe_id) : null,
+      employee_id: form.employee_id ? Number(form.employee_id) : null,
       active: form.active,
     };
     if (editId) {
@@ -108,6 +122,7 @@ export default function UsersTab() {
       name: u.name, username: u.username, pin: u.pin || "0000", role: u.role, permissions: perms,
       warehouse_id: u.warehouse_id ? String(u.warehouse_id) : "",
       safe_id: u.safe_id ? String(u.safe_id) : "",
+      employee_id: u.employee_id ? String(u.employee_id) : "",
       active: u.active !== false,
     });
     setEditId(u.id); setShowForm(true);
@@ -302,6 +317,19 @@ export default function UsersTab() {
                   {safes.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </SSelect>
               </div>
+            </div>
+
+            {/* Employee linkage */}
+            <div>
+              <FieldLabel>ربط بملف موظف <span className="text-white/30 text-[10px] font-normal">(مطلوب لتسجيل الحضور من الموبايل)</span></FieldLabel>
+              <SSelect value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))}>
+                <option value="">— غير مرتبط —</option>
+                {empOptions.map((e: any) => (
+                  <option key={e.id} value={e.id}>
+                    {String(e.first_name_ar)} {String(e.last_name_ar)} [{String(e.employee_code)}]
+                  </option>
+                ))}
+              </SSelect>
             </div>
 
             <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-3">

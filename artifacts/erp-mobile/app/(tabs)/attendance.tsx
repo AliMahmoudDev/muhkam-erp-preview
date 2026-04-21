@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -36,7 +36,7 @@ function statusLabel(s: string) {
   if (s === "late")    return "متأخر";
   if (s === "absent")  return "غائب";
   if (s === "holiday") return "إجازة رسمية";
-  if (s === "leave")   return "إجازة";
+  if (s === "on_leave")return "إجازة";
   return s;
 }
 
@@ -63,24 +63,52 @@ function fmtHours(h: number | null) {
   return mins > 0 ? `${hrs}س ${mins}د` : `${hrs} ساعة`;
 }
 
+function pad(n: number) { return n.toString().padStart(2, "0"); }
+
+function getLast7Days(): string[] {
+  const days: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().split("T")[0]);
+  }
+  return days;
+}
+
+const DAY_NAMES = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+const MONTH_NAMES = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
 export default function AttendanceScreen() {
   const c      = useColors();
   const insets = useSafeAreaInsets();
   const qc     = useQueryClient();
   const [locLoading, setLocLoading] = useState(false);
 
-  const today = new Date().toISOString().split("T")[0];
+  // Live clock
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const today   = now.toISOString().split("T")[0];
+  const nowStr  = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  const dateLabel = `${DAY_NAMES[now.getDay()]}، ${now.getDate()} ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+
+  // Last 7 days range
+  const days7 = getLast7Days();
+  const fromDate = days7[days7.length - 1];
 
   const { data: records = [], isLoading, refetch } = useQuery<AttendanceRecord[]>({
-    queryKey: ["attendance-my", today],
+    queryKey: ["attendance-my", fromDate, today],
     queryFn: () =>
       apiFetch<AttendanceRecord[]>(
-        `/api/attendance/records?from=${today}&to=${today}`
+        `/api/attendance/records?from=${fromDate}&to=${today}`
       ),
     retry: 1,
   });
 
-  const todayRecord: AttendanceRecord | undefined = records[0];
+  const todayRecord: AttendanceRecord | undefined = records.find(r => r.attendance_date === today);
 
   const checkedIn  = !!todayRecord?.check_in_time;
   const checkedOut = !!todayRecord?.check_out_time;
@@ -91,14 +119,14 @@ export default function AttendanceScreen() {
         method: "POST",
         body: JSON.stringify({ notes }),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["attendance-my", today] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["attendance-my"] }),
     onError: (e: Error) => Alert.alert("خطأ", e.message),
   });
 
   const checkOutMut = useMutation({
     mutationFn: () =>
       apiFetch("/api/attendance/check-out", { method: "POST", body: JSON.stringify({}) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["attendance-my", today] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["attendance-my"] }),
     onError: (e: Error) => Alert.alert("خطأ", e.message),
   });
 
@@ -123,18 +151,19 @@ export default function AttendanceScreen() {
     ]);
   }
 
-  const now    = new Date();
-  const nowStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-  const dayNames = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-  const monthNames = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
-  const dateLabel = `${dayNames[now.getDay()]}، ${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-
   const isBusy = checkInMut.isPending || checkOutMut.isPending || locLoading;
-
   const btnDisabled = isBusy || (checkedIn && checkedOut);
   const btnColor    = !checkedIn ? GREEN : checkedOut ? "#475569" : RED;
   const btnLabel    = !checkedIn ? "تسجيل الحضور" : checkedOut ? "تم التسجيل" : "تسجيل الانصراف";
   const btnIcon     = !checkedIn ? "log-in" : checkedOut ? "check-circle" : "log-out";
+
+  // Past 6 days (excluding today)
+  const historyRecords = days7.slice(1).map(date => ({
+    date,
+    record: records.find(r => r.attendance_date === date) ?? null,
+    dayName: DAY_NAMES[new Date(date + "T12:00:00").getDay()],
+    dayNum: new Date(date + "T12:00:00").getDate(),
+  }));
 
   return (
     <ScrollView
@@ -146,19 +175,19 @@ export default function AttendanceScreen() {
       <Text style={[styles.title, { color: c.foreground }]}>الحضور والانصراف</Text>
       <Text style={[styles.dateText, { color: c.mutedForeground }]}>{dateLabel}</Text>
 
-      {/* Clock card */}
+      {/* Live Clock card */}
       <View style={[styles.clockCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
         <Text style={[styles.clock, { color: c.foreground }]}>{nowStr}</Text>
         <Text style={[styles.clockSub, { color: c.mutedForeground }]}>الوقت الحالي</Text>
       </View>
 
-      {/* Status card */}
+      {/* Today Status */}
       {todayRecord ? (
         <View style={[styles.statusCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
           <View style={styles.statusRow}>
             <View style={[styles.statusDot, { backgroundColor: statusColor(todayRecord.status) }]} />
             <Text style={[styles.statusLabel, { color: c.foreground }]}>{statusLabel(todayRecord.status)}</Text>
-            {todayRecord.late_minutes && todayRecord.late_minutes > 0 ? (
+            {(todayRecord.late_minutes ?? 0) > 0 ? (
               <Text style={[styles.lateBadge, { backgroundColor: AMBER + "20", color: AMBER }]}>
                 تأخر {todayRecord.late_minutes} د
               </Text>
@@ -211,20 +240,55 @@ export default function AttendanceScreen() {
       </TouchableOpacity>
 
       {locLoading && (
-        <Text style={[styles.gpsNote, { color: c.mutedForeground }]}>
-          جاري تحديد الموقع الجغرافي...
-        </Text>
+        <Text style={[styles.gpsNote, { color: c.mutedForeground }]}>جاري تحديد الموقع الجغرافي...</Text>
       )}
-
-      {/* GPS note */}
-      {!checkedIn && (
+      {!checkedIn && !locLoading && (
         <View style={styles.gpsInfoRow}>
           <Feather name="map-pin" size={12} color={c.mutedForeground} />
-          <Text style={[styles.gpsInfoText, { color: c.mutedForeground }]}>
-            سيتم تسجيل موقعك الجغرافي عند الحضور
-          </Text>
+          <Text style={[styles.gpsInfoText, { color: c.mutedForeground }]}>سيتم تسجيل موقعك الجغرافي عند الحضور</Text>
         </View>
       )}
+
+      {/* ── آخر 7 أيام ── */}
+      <Text style={[styles.sectionTitle, { color: c.foreground }]}>آخر 7 أيام</Text>
+      <View style={[styles.historyCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
+        {historyRecords.map((item, idx) => (
+          <View key={item.date}>
+            <View style={styles.historyRow}>
+              {/* Day info */}
+              <View style={styles.historyDayCol}>
+                <Text style={[styles.historyDayNum, { color: c.foreground }]}>{item.dayNum}</Text>
+                <Text style={[styles.historyDayName, { color: c.mutedForeground }]}>{item.dayName}</Text>
+              </View>
+
+              {/* Dot */}
+              <View style={[styles.historyDot, { backgroundColor: item.record ? statusColor(item.record.status) : c.border }]} />
+
+              {/* Info */}
+              <View style={styles.historyInfo}>
+                {item.record ? (
+                  <>
+                    <View style={styles.historyTimesRow}>
+                      <Text style={[styles.historyTime, { color: GREEN }]}>{fmtTime(item.record.check_in_time)}</Text>
+                      <Text style={{ color: c.mutedForeground, fontSize: 11, marginHorizontal: 4 }}>—</Text>
+                      <Text style={[styles.historyTime, { color: RED }]}>{fmtTime(item.record.check_out_time)}</Text>
+                    </View>
+                    <Text style={[styles.historyStatus, { color: statusColor(item.record.status) }]}>
+                      {statusLabel(item.record.status)}
+                      {item.record.working_hours ? `  •  ${fmtHours(item.record.working_hours)}` : ""}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={[styles.historyStatus, { color: c.mutedForeground }]}>لا يوجد سجل</Text>
+                )}
+              </View>
+            </View>
+            {idx < historyRecords.length - 1 && (
+              <View style={[styles.historyDivider, { backgroundColor: c.border }]} />
+            )}
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -237,7 +301,7 @@ const styles = StyleSheet.create({
     borderRadius: 16, borderWidth: 1, padding: 24,
     alignItems: "center", marginBottom: 16,
   },
-  clock: { fontSize: 48, fontFamily: "Tajawal_700Bold", letterSpacing: 2 },
+  clock: { fontSize: 44, fontFamily: "Tajawal_700Bold", letterSpacing: 2 },
   clockSub: { fontSize: 12, fontFamily: "Tajawal_400Regular", marginTop: 4 },
   statusCard: {
     borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 20,
@@ -258,6 +322,19 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { color: "#fff", fontSize: 17, fontFamily: "Tajawal_700Bold" },
   gpsNote: { textAlign: "center", fontSize: 12, fontFamily: "Tajawal_400Regular", marginBottom: 8 },
-  gpsInfoRow: { flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center" },
+  gpsInfoRow: { flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center", marginBottom: 24 },
   gpsInfoText: { fontSize: 12, fontFamily: "Tajawal_400Regular" },
+
+  sectionTitle: { fontSize: 16, fontFamily: "Tajawal_700Bold", marginBottom: 12, textAlign: "right" },
+  historyCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+  historyRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
+  historyDayCol: { alignItems: "center", width: 36 },
+  historyDayNum: { fontSize: 16, fontFamily: "Tajawal_700Bold" },
+  historyDayName: { fontSize: 10, fontFamily: "Tajawal_400Regular", marginTop: 1 },
+  historyDot: { width: 8, height: 8, borderRadius: 4 },
+  historyInfo: { flex: 1, alignItems: "flex-end" },
+  historyTimesRow: { flexDirection: "row", alignItems: "center" },
+  historyTime: { fontSize: 13, fontFamily: "Tajawal_700Bold" },
+  historyStatus: { fontSize: 11, fontFamily: "Tajawal_400Regular", marginTop: 2 },
+  historyDivider: { height: 1, marginHorizontal: 16 },
 });
