@@ -106,7 +106,7 @@ router.post("/salary-advances", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const { employee_id, requested_amount, advance_type, reason, deduct_from, safe_id } = req.body as Record<string, unknown>;
-  if (!employee_id || !requested_amount || !advance_type || !reason) { res.status(400).json({ error: "جميع بيانات السلفة مطلوبة" }); return; }
+  if (!employee_id || !requested_amount || !advance_type) { res.status(400).json({ error: "الموظف والمبلغ ونوع السلفة مطلوبون" }); return; }
   const df = String(deduct_from ?? "fixed");
   if (!["fixed", "commission", "both"].includes(df)) { res.status(400).json({ error: "قيمة الخصم غير صحيحة" }); return; }
 
@@ -136,7 +136,7 @@ router.post("/salary-advances", wrap(async (req, res) => {
     company_id: companyId,
     employee_id: Number(employee_id), requested_date: new Date().toISOString().split("T")[0],
     requested_amount: String(reqAmt), advance_type: String(advance_type),
-    reason: String(reason), deduct_from: df, status: requiresApproval ? "pending" : "approved",
+    reason: reason ? String(reason) : null, deduct_from: df, status: requiresApproval ? "pending" : "approved",
     safe_id: safe_id != null && safe_id !== "" ? Number(safe_id) : null,
     currency: emp.currency ?? "EGP",
     approved_amount: !requiresApproval ? String(reqAmt) : null,
