@@ -2398,7 +2398,7 @@ export default function Employees() {
                   ))}
                 </select>
               </Field>
-              <Field label="السبب *">
+              <Field label="السبب (اختياري)">
                 <input
                   value={loanForm.reason}
                   onChange={(e) => setLoanForm((p) => ({ ...p, reason: e.target.value }))}
@@ -2455,7 +2455,7 @@ export default function Employees() {
                   })
                 }
                 disabled={
-                  !loanForm.requested_amount || !loanForm.reason.trim() || createLoan.isPending
+                  !loanForm.requested_amount || createLoan.isPending
                 }
                 className="erp-btn erp-btn-primary flex-1"
               >

@@ -29,6 +29,8 @@ import {
   Award,
   Package,
   CheckCircle,
+  Printer,
+  Download,
 } from 'lucide-react';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -1247,8 +1249,172 @@ export default function Employees() {
               const totalIncome = baseSalary + totalBonuses;
               const totalDeductionsAll = totalDeducted + remainingLoans;
               const netAmount = totalIncome - totalDeductionsAll;
+
+              const fmtMoneyPrint = (n: number) =>
+                `${Number(n ?? 0).toFixed(2)} ${selected.currency ?? ''}`;
+              const todayStr = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+                year: 'numeric', month: 'long', day: 'numeric',
+              });
+              const buildReportHTML = () => {
+                const incomeRows: string[] = [];
+                if (canViewSalary && baseSalary > 0) {
+                  incomeRows.push(
+                    `<tr><td>الراتب الأساسي</td><td class="num green">${fmtMoneyPrint(baseSalary)}</td></tr>`
+                  );
+                }
+                if ((selected.commission_rate ?? 0) > 0) {
+                  incomeRows.push(
+                    `<tr><td>نسبة العمولة (${selected.commission_rate}%)</td><td class="num muted">—</td></tr>`
+                  );
+                }
+                bonuses.forEach((b) => {
+                  const reason = b.reason ? ` — ${String(b.reason)}` : '';
+                  incomeRows.push(
+                    `<tr><td>حافز${reason}<div class="sub">${String(b.granted_date ?? '')}</div></td><td class="num green">${fmtMoneyPrint(Number(b.amount ?? 0))}</td></tr>`
+                  );
+                });
+
+                const dedRows: string[] = [];
+                deductions.forEach((d) => {
+                  const info = dedLabel(String(d.deduction_type ?? 'other'));
+                  const reason = d.reason ? ` — ${String(d.reason)}` : '';
+                  dedRows.push(
+                    `<tr><td><span class="badge">${info.label}</span>${reason}<div class="sub">${String(d.deduction_date ?? '')}</div></td><td class="num red">${fmtMoneyPrint(Number(d.amount ?? 0))}</td></tr>`
+                  );
+                });
+                loans
+                  .filter((l) => Number(l.remaining_balance ?? 0) > 0)
+                  .forEach((l) => {
+                    const reason = l.reason ? ` — ${String(l.reason)}` : '';
+                    dedRows.push(
+                      `<tr><td><span class="badge amber">سلفة</span>${reason}<div class="sub">متبقي من أصل ${fmtMoneyPrint(Number(l.requested_amount ?? 0))}</div></td><td class="num red">${fmtMoneyPrint(Number(l.remaining_balance ?? 0))}</td></tr>`
+                    );
+                  });
+
+                return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>كشف حساب — ${selected.first_name_ar} ${selected.last_name_ar}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Cairo','Tajawal','Arial',sans-serif; direction: rtl; background: #fff; color: #111827; font-size: 13px; padding: 24px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 2px solid #d97706; margin-bottom: 20px; }
+  .h-title { font-size: 20px; font-weight: 900; color: #111; }
+  .h-sub { font-size: 12px; color: #6b7280; margin-top: 4px; }
+  .h-meta { text-align: left; font-size: 11px; color: #6b7280; }
+  .h-meta .big { font-size: 14px; color: #d97706; font-weight: 800; margin-bottom: 2px; }
+  .info { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .info .cell { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; background: #fafafa; }
+  .info .label { font-size: 10px; color: #6b7280; margin-bottom: 3px; }
+  .info .val { font-size: 13px; font-weight: 700; color: #111; }
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .summary .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; }
+  .summary .card .l { font-size: 10px; color: #6b7280; margin-bottom: 4px; }
+  .summary .card .v { font-size: 16px; font-weight: 900; }
+  .summary .green { background: #ecfdf5; border-color: #a7f3d0; } .summary .green .v { color: #047857; }
+  .summary .red   { background: #fef2f2; border-color: #fecaca; } .summary .red .v   { color: #b91c1c; }
+  .summary .net   { background: #fffbeb; border-color: #fde68a; } .summary .net .v   { color: ${netAmount >= 0 ? '#059669' : '#b91c1c'}; }
+  .section-title { font-size: 13px; font-weight: 800; padding: 6px 12px; margin-top: 14px; color: #92400e; background: #fef3c7; border-right: 4px solid #d97706; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 12px; }
+  th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid #f3f4f6; }
+  th { background: #f9fafb; font-weight: 700; color: #374151; font-size: 11px; }
+  td.num { font-family: 'Courier New', monospace; font-weight: 700; text-align: left; width: 30%; }
+  td.num.green { color: #047857; } td.num.red { color: #b91c1c; } td.num.muted { color: #9ca3af; }
+  td .sub { font-size: 10px; color: #9ca3af; margin-top: 2px; font-family: 'Courier New', monospace; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #fee2e2; color: #991b1b; font-size: 10px; font-weight: 700; margin-left: 6px; }
+  .badge.amber { background: #fef3c7; color: #92400e; }
+  tfoot td { background: #f3f4f6; font-weight: 800; border-top: 2px solid #d1d5db; }
+  .net-row td { background: ${netAmount >= 0 ? '#d1fae5' : '#fee2e2'}; color: ${netAmount >= 0 ? '#065f46' : '#991b1b'}; font-size: 14px; padding: 10px 12px; }
+  .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 10px; color: #9ca3af; }
+  .empty { padding: 14px; color: #9ca3af; text-align: center; font-size: 12px; }
+  @media print { body { padding: 16px; } .no-print { display: none !important; } @page { margin: 16mm; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="h-title">كشف حساب الموظف</div>
+      <div class="h-sub">${selected.first_name_ar} ${selected.last_name_ar} — كود ${selected.employee_code}</div>
+    </div>
+    <div class="h-meta">
+      <div class="big">MUHKAM ERP</div>
+      <div>تاريخ الإصدار: ${todayStr}</div>
+    </div>
+  </div>
+
+  <div class="info">
+    <div class="cell"><div class="label">القسم</div><div class="val">${selected.department_name ?? '—'}</div></div>
+    <div class="cell"><div class="label">الوظيفة</div><div class="val">${selected.job_title_name ?? '—'}</div></div>
+    <div class="cell"><div class="label">تاريخ التعيين</div><div class="val">${selected.hire_date ?? '—'}</div></div>
+    <div class="cell"><div class="label">الحالة</div><div class="val">${selected.employment_status === 'active' ? 'نشط' : selected.employment_status}</div></div>
+  </div>
+
+  <div class="summary">
+    <div class="card green"><div class="l">إجمالي الدخل</div><div class="v">${fmtMoneyPrint(totalIncome)}</div></div>
+    <div class="card red"><div class="l">إجمالي الخصومات</div><div class="v">${fmtMoneyPrint(totalDeductionsAll)}</div></div>
+    <div class="card net"><div class="l">الصافي المستحق</div><div class="v">${fmtMoneyPrint(netAmount)}</div></div>
+  </div>
+
+  <div class="section-title">بنود الدخل</div>
+  <table>
+    <thead><tr><th>البند</th><th style="text-align:left">المبلغ</th></tr></thead>
+    <tbody>${incomeRows.length ? incomeRows.join('') : '<tr><td colspan="2" class="empty">لا توجد بنود دخل</td></tr>'}</tbody>
+    <tfoot><tr><td>إجمالي الدخل</td><td class="num green">${fmtMoneyPrint(totalIncome)}</td></tr></tfoot>
+  </table>
+
+  <div class="section-title">الخصومات والسلف</div>
+  <table>
+    <thead><tr><th>البند</th><th style="text-align:left">المبلغ</th></tr></thead>
+    <tbody>${dedRows.length ? dedRows.join('') : '<tr><td colspan="2" class="empty">لا توجد خصومات أو سلف</td></tr>'}</tbody>
+    <tfoot><tr><td>إجمالي الخصومات</td><td class="num red">${fmtMoneyPrint(totalDeductionsAll)}</td></tr></tfoot>
+  </table>
+
+  <table style="margin-top:6px">
+    <tr class="net-row"><td>الصافي المستحق</td><td class="num" style="text-align:left">${fmtMoneyPrint(netAmount)}</td></tr>
+  </table>
+
+  <div class="footer">تم إصدار هذا الكشف من نظام MUHKAM ERP — ${todayStr}</div>
+</body>
+</html>`;
+              };
+
+              const openReport = (autoPrint: boolean) => {
+                const w = window.open('', '_blank', 'width=900,height=700');
+                if (!w) {
+                  toast({ title: 'فضلاً اسمح بالنوافذ المنبثقة لطباعة التقرير', variant: 'destructive' });
+                  return;
+                }
+                w.document.open();
+                w.document.write(buildReportHTML());
+                w.document.close();
+                if (autoPrint) {
+                  w.onload = () => { w.focus(); w.print(); };
+                  // Fallback for browsers that don't fire onload after document.write
+                  setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
+                }
+              };
+
               return (
                 <div className="space-y-3">
+                  {/* Print / PDF actions */}
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => openReport(true)}
+                      className="erp-btn flex items-center gap-1.5 text-xs px-3 py-2 bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg text-white"
+                      title="طباعة التقرير"
+                    >
+                      <Printer size={14} /> طباعة
+                    </button>
+                    <button
+                      onClick={() => openReport(true)}
+                      className="erp-btn flex items-center gap-1.5 text-xs px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-amber-300"
+                      title="حفظ كملف PDF — اختر حفظ كـ PDF من نافذة الطباعة"
+                    >
+                      <Download size={14} /> حفظ PDF
+                    </button>
+                  </div>
+
                   {/* Net Summary */}
                   <div
                     className={`rounded-xl p-4 border-2 ${
@@ -1280,10 +1446,14 @@ export default function Employees() {
                     </div>
 
                     {/* ═══ INCOME SECTION ═══ */}
-                    <div className="px-3 py-1.5 bg-emerald-500/10 text-[10px] font-bold text-emerald-300 flex items-center gap-1">
-                      <Plus size={10} /> الدخل
+                    <div className="px-3 py-1.5 bg-emerald-500/10 text-[10px] font-bold text-emerald-300 flex items-center justify-between gap-1 sticky top-0 z-10">
+                      <span className="flex items-center gap-1"><Plus size={10} /> الدخل</span>
+                      {(bonuses.length + (canViewSalary && baseSalary > 0 ? 1 : 0) + ((selected.commission_rate ?? 0) > 0 ? 1 : 0)) > 6 && (
+                        <span className="text-[9px] text-emerald-300/60 font-normal">↕ مرّر للأسفل</span>
+                      )}
                     </div>
 
+                    <div className="max-h-[240px] overflow-y-auto thin-scroll">
                     {canViewSalary && baseSalary > 0 && (
                       <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
                         <div className="text-white/70">الراتب الأساسي</div>
@@ -1328,6 +1498,8 @@ export default function Employees() {
                       </div>
                     ))}
 
+                    </div>
+
                     {/* Income subtotal */}
                     <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-emerald-500/5 border-b border-white/10 text-xs font-bold">
                       <div className="text-emerald-300">إجمالي الدخل</div>
@@ -1338,10 +1510,14 @@ export default function Employees() {
                     </div>
 
                     {/* ═══ DEDUCTIONS SECTION ═══ */}
-                    <div className="px-3 py-1.5 bg-red-500/10 text-[10px] font-bold text-red-300 flex items-center gap-1">
-                      <MinusCircle size={10} /> الصرف / الخصومات
+                    <div className="px-3 py-1.5 bg-red-500/10 text-[10px] font-bold text-red-300 flex items-center justify-between gap-1">
+                      <span className="flex items-center gap-1"><MinusCircle size={10} /> الصرف / الخصومات</span>
+                      {(deductions.length + loans.filter((l) => Number(l.remaining_balance ?? 0) > 0).length) > 6 && (
+                        <span className="text-[9px] text-red-300/60 font-normal">↕ مرّر للأسفل</span>
+                      )}
                     </div>
 
+                    <div className="max-h-[240px] overflow-y-auto thin-scroll">
                     {/* Each deduction as a line */}
                     {deductions.map((d) => {
                       const info = dedLabel(String(d.deduction_type ?? 'other'));
@@ -1373,7 +1549,7 @@ export default function Employees() {
 
                     {/* Each active loan as a line */}
                     {loans
-                      .filter((l) => Number(l.remaining_amount ?? 0) > 0)
+                      .filter((l) => Number(l.remaining_balance ?? 0) > 0)
                       .map((l) => (
                         <div
                           key={`loan-${l.id}`}
@@ -1392,7 +1568,7 @@ export default function Employees() {
                           </div>
                           <div className="w-20"></div>
                           <div className="font-mono font-semibold text-amber-300 w-20 text-center">
-                            {fmt(l.remaining_amount)}
+                            {fmt(l.remaining_balance)}
                           </div>
                         </div>
                       ))}
@@ -1402,6 +1578,7 @@ export default function Employees() {
                         لا توجد خصومات أو سلف
                       </div>
                     )}
+                    </div>
 
                     {/* Deductions subtotal */}
                     <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-red-500/5 border-b border-white/10 text-xs font-bold">
@@ -2221,12 +2398,12 @@ export default function Employees() {
                   ))}
                 </select>
               </Field>
-              <Field label="السبب *">
+              <Field label="السبب (اختياري)">
                 <input
                   value={loanForm.reason}
                   onChange={(e) => setLoanForm((p) => ({ ...p, reason: e.target.value }))}
                   className="erp-input w-full"
-                  placeholder="اكتب سبب السلفة..."
+                  placeholder="اكتب سبب السلفة (اختياري)..."
                 />
               </Field>
               <Field label="خصم السلفة من">
@@ -2277,9 +2454,7 @@ export default function Employees() {
                     requested_amount: Number(loanForm.requested_amount),
                   })
                 }
-                disabled={
-                  !loanForm.requested_amount || !loanForm.reason.trim() || createLoan.isPending
-                }
+                disabled={!loanForm.requested_amount || createLoan.isPending}
                 className="erp-btn erp-btn-primary flex-1"
               >
                 {createLoan.isPending ? 'جاري التقديم...' : 'تقديم السلفة'}

@@ -689,10 +689,11 @@ function DeductionSettingsModal({
       <input type="number" min="0" step="0.01" className="erp-input text-xs" placeholder="قيمة الخصم"
         value={String(t["amount"] ?? "")}
         onChange={e => updTier(editTiers.indexOf(t), "amount", e.target.value === "" ? 0 : Number(e.target.value))} />
-      <label className="flex items-center gap-1 text-[10px] text-white/60">
+      <label className="flex items-center gap-1.5 text-[10px] text-white/60 cursor-pointer">
         <input type="checkbox" checked={t["is_active"] !== false}
-          onChange={e => updTier(editTiers.indexOf(t), "is_active", e.target.checked)} />
-        نشط
+          onChange={e => updTier(editTiers.indexOf(t), "is_active", e.target.checked)}
+          className="w-4 h-4 accent-emerald-500 cursor-pointer" />
+        <span className={t["is_active"] !== false ? "text-emerald-400 font-bold" : ""}>نشط</span>
       </label>
       <button onClick={() => delTier(editTiers.indexOf(t))} className="text-red-400 hover:text-red-300 p-1"
         title="حذف"><Trash2 size={14} /></button>
@@ -701,7 +702,7 @@ function DeductionSettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto p-4" dir="rtl">
-      <div className="bg-slate-900 border border-white/10 rounded-xl max-w-3xl w-full my-4">
+      <div className="erp-modal rounded-xl max-w-3xl w-full my-4">
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             <Settings size={18} className="text-amber-300" /> إعدادات خصومات الحضور
@@ -848,7 +849,7 @@ function DeductionCalcModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto p-4" dir="rtl">
-      <div className="bg-slate-900 border border-white/10 rounded-xl max-w-5xl w-full my-4">
+      <div className="erp-modal rounded-xl max-w-5xl w-full my-4">
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             <Calculator size={18} className="text-amber-300" /> احتساب خصومات الشهر تلقائياً

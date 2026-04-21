@@ -11,6 +11,7 @@ import {
   HardDrive,
   Cpu,
   Percent,
+  Banknote,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
@@ -23,6 +24,7 @@ const AlertsTab = lazy(() => import('./alerts-tab'));
 const InvoiceTab = lazy(() => import('./invoice-tab'));
 const SystemTab = lazy(() => import('./system-tab'));
 const VatTab = lazy(() => import('./vat-tab'));
+const SalaryAdvanceTab = lazy(() => import('./salary-advance-tab'));
 
 /* ─── Tab types ─── */
 type Tab =
@@ -34,6 +36,7 @@ type Tab =
   | 'alerts'
   | 'invoice'
   | 'vat'
+  | 'salary-advance'
   | 'system';
 
 /* ─── Section config ─── */
@@ -53,6 +56,7 @@ const TAB_SECTIONS: {
     tabs: [
       { id: 'opening-balance', label: 'أول المدة', icon: BookOpen },
       { id: 'financial-lock', label: 'إغلاق الفترات', icon: Lock },
+      { id: 'salary-advance', label: 'السلف', icon: Banknote },
     ],
   },
   {
@@ -215,6 +219,7 @@ export default function SettingsPage() {
             {activeTab === 'vat' && <VatTab />}
             {activeTab === 'alerts' && <AlertsTab />}
             {activeTab === 'invoice' && <InvoiceTab />}
+            {activeTab === 'salary-advance' && <SalaryAdvanceTab />}
             {activeTab === 'system' && <SystemTab />}
           </Suspense>
         </div>
