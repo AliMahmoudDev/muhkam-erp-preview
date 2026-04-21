@@ -72,17 +72,15 @@ export default function Layout({ user, children }: Props) {
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = location === href;
             return (
-              <Link key={href} href={href}>
-                <a
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
-                  }`}
-                >
-                  <Icon size={18} className={active ? "text-blue-600" : "text-slate-400"} />
-                  {sidebarOpen && <span>{label}</span>}
-                </a>
+              <Link key={href} href={href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                }`}
+              >
+                <Icon size={18} className={active ? "text-blue-600" : "text-slate-400"} />
+                {sidebarOpen && <span>{label}</span>}
               </Link>
             );
           })}

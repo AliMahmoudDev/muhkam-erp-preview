@@ -36,10 +36,8 @@ export default function Purchases() {
     <div className="space-y-5" dir="rtl">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-800">المشتريات</h1>
-        <Link href="/purchases/new">
-          <a className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-            <Plus size={16} /> فاتورة شراء جديدة
-          </a>
+        <Link href="/purchases/new" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <Plus size={16} /> فاتورة شراء جديدة
         </Link>
       </div>
 
