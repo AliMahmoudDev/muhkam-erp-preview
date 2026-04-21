@@ -68,3 +68,30 @@ export const employeeCustodyLinesTable = pgTable("employee_custody_lines", {
 ]);
 
 export type EmployeeCustodyLine = typeof employeeCustodyLinesTable.$inferSelect;
+
+/* ── Employee Deductions (الخصومات) ───────────────────────────────
+ * خصومات مستقلة لا تحتاج سلفة:
+ *   late      — تأخير
+ *   absence   — غياب
+ *   damage    — تلف قطعة غيار / مخزون
+ *   other     — أخرى
+ */
+export const employeeDeductionsTable = pgTable("employee_deductions", {
+  id:              serial("id").primaryKey(),
+  company_id:      integer("company_id").notNull().references(() => companiesTable.id),
+  employee_id:     integer("employee_id").notNull().references(() => employeesTable.id),
+  deduction_type:  text("deduction_type").notNull().default("other"), // late | absence | damage | other
+  amount:          numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  reason:          text("reason"),
+  deduction_date:  text("deduction_date").notNull(),
+  currency:        text("currency").notNull().default("EGP"),
+  created_by:      integer("created_by"),
+  created_at:      timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  deleted_at:      timestamp("deleted_at", { withTimezone: true }),
+}, t => [
+  index("emp_deduct_company_idx").on(t.company_id),
+  index("emp_deduct_employee_idx").on(t.employee_id),
+  index("emp_deduct_type_idx").on(t.company_id, t.deduction_type),
+]);
+
+export type EmployeeDeduction = typeof employeeDeductionsTable.$inferSelect;

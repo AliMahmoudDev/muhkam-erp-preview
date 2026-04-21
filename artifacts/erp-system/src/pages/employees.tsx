@@ -279,6 +279,7 @@ export default function Employees() {
   const [deductForm, setDeductForm] = useState({
     amount: '',
     reason: '',
+    deduction_type: 'late' as 'late' | 'absence' | 'damage' | 'other',
     deduction_date: new Date().toISOString().split('T')[0],
   });
 
@@ -408,19 +409,16 @@ export default function Employees() {
   });
   const loans: AnyRec[] = safeArray(loansRaw);
 
-  /* Deductions ledger (from salary-advances ledger filtered by type) */
-  const { data: ledgerRaw, isLoading: ledgerLoading } = useQuery({
-    queryKey: ['/api/salary-advances', selected?.id, 'ledger'],
+  /* Standalone deductions (no loan required) — categorized: late/absence/damage/other */
+  const { data: deductionsRaw, isLoading: ledgerLoading } = useQuery({
+    queryKey: ['/api/employee-deductions', selected?.id],
     queryFn: () =>
       selected
-        ? authFetch(api(`/api/salary-advances/${selected.id}/ledger`)).then((r) => r.json())
+        ? authFetch(api(`/api/employee-deductions?employee_id=${selected.id}`)).then((r) => r.json())
         : Promise.resolve([]),
     enabled: !!selected && (detailTab === 'deductions' || detailTab === 'reports'),
   });
-  const ledger: AnyRec[] = safeArray(ledgerRaw);
-  const deductions = ledger.filter(
-    (l) => String(l.ledger_type) === 'deduction' || String(l.ledger_type) === 'manual_payment'
-  );
+  const deductions: AnyRec[] = safeArray(deductionsRaw);
 
   /* ── Employee mutations ───────────────────────────────────── */
   const createEmp = useMutation({
@@ -700,8 +698,63 @@ export default function Employees() {
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
-  /* ── Deduction: apply against active loan ─────────────────── */
+  /* ── Standalone deduction mutations ───────────────────────── */
+  const createDeduction = useMutation({
+    mutationFn: (payload: {
+      amount: number;
+      reason: string;
+      deduction_type: string;
+      deduction_date: string;
+    }) =>
+      authFetch(api('/api/employee-deductions'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, employee_id: selected?.id }),
+      }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error ?? 'فشل تسجيل الخصم');
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employee-deductions', selected?.id] });
+      setShowDeductForm(false);
+      setDeductForm({
+        amount: '',
+        reason: '',
+        deduction_type: 'late',
+        deduction_date: new Date().toISOString().split('T')[0],
+      });
+      toast({ title: 'تم تسجيل الخصم' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+  });
+  const deleteDeduction = useMutation({
+    mutationFn: (id: number) =>
+      authFetch(api(`/api/employee-deductions/${id}`), { method: 'DELETE' }).then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error ?? 'فشل الحذف');
+        return d;
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/employee-deductions', selected?.id] });
+      toast({ title: 'تم حذف الخصم' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+  });
+
+  /* ── Deduction: legacy active loan helper (for manual payment modal) ─── */
   const activeLoans = loans.filter((l) => ['active', 'approved'].includes(String(l.status)));
+
+  /* ── Deduction type labels / colors ──────────────────────── */
+  const DEDUCTION_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
+    late:    { label: 'تأخير',         color: 'text-amber-300',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
+    absence: { label: 'غياب',          color: 'text-red-300',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
+    damage:  { label: 'تلف/خسائر',     color: 'text-rose-300',    bg: 'bg-rose-500/10',    border: 'border-rose-500/20' },
+    other:   { label: 'أخرى',          color: 'text-white/70',    bg: 'bg-white/5',        border: 'border-white/10' },
+  };
+  const dedLabel = (t: string) => DEDUCTION_LABELS[t] ?? DEDUCTION_LABELS['other'];
+  const deductionsByType = (t: string) =>
+    deductions.filter((d) => String(d.deduction_type) === t).reduce((s, d) => s + Number(d.amount ?? 0), 0);
 
   /* ── Filtered employees ───────────────────────────────────── */
   const filtered = useMemo(
@@ -1108,6 +1161,28 @@ export default function Employees() {
                     <Plus size={12} /> إضافة خصم
                   </button>
                 )}
+
+                {/* Summary by category */}
+                {deductions.length > 0 && (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {(['late', 'absence', 'damage', 'other'] as const).map((t) => {
+                      const info = dedLabel(t);
+                      const total = deductionsByType(t);
+                      return (
+                        <div
+                          key={t}
+                          className={`${info.bg} border ${info.border} rounded-lg p-2 text-center`}
+                        >
+                          <div className={`text-[10px] ${info.color} opacity-80`}>{info.label}</div>
+                          <div className={`text-xs font-bold ${info.color} font-mono mt-0.5`}>
+                            {fmt(total)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {ledgerLoading ? (
                   <TableSkeleton />
                 ) : deductions.length === 0 ? (
@@ -1117,24 +1192,45 @@ export default function Employees() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {deductions.map((d) => (
-                      <div
-                        key={String(d.id)}
-                        className="bg-red-500/5 border border-red-500/10 rounded-lg p-3"
-                      >
-                        <div className="flex justify-between">
-                          <span className="text-sm font-bold text-red-400 font-mono">
-                            - {fmt(d.amount)}
-                          </span>
-                          <span className="text-xs text-white/30 font-mono">
-                            {String(d.ledger_date ?? '')}
-                          </span>
+                    {deductions.map((d) => {
+                      const info = dedLabel(String(d.deduction_type ?? 'other'));
+                      return (
+                        <div
+                          key={String(d.id)}
+                          className={`${info.bg} border ${info.border} rounded-lg p-3`}
+                        >
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded-full border ${info.border} ${info.color} ${info.bg} font-semibold`}
+                                >
+                                  {info.label}
+                                </span>
+                                <span className={`text-sm font-bold ${info.color} font-mono`}>
+                                  - {fmt(d.amount)}
+                                </span>
+                              </div>
+                              {!!d.reason && (
+                                <div className="text-xs text-white/60 mt-1">{String(d.reason)}</div>
+                              )}
+                              <div className="text-[10px] text-white/30 font-mono mt-1">
+                                {String(d.deduction_date ?? '')}
+                              </div>
+                            </div>
+                            {canManage && (
+                              <button
+                                onClick={() => deleteDeduction.mutate(Number(d.id))}
+                                className="text-red-400/60 hover:text-red-400 shrink-0"
+                                title="حذف"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        {!!d.notes && (
-                          <div className="text-xs text-white/50 mt-1">{String(d.notes)}</div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                     <div className="bg-white/5 rounded-lg p-2 text-xs text-center">
                       إجمالي الخصومات:{' '}
                       <span className="text-red-400 font-bold font-mono">{fmt(totalDeducted)}</span>
@@ -1144,73 +1240,145 @@ export default function Employees() {
               </div>
             )}
 
-            {/* ── Reports Tab ────────────────────────────────── */}
-            {detailTab === 'reports' && (
-              <div className="space-y-3">
-                {/* Salary card */}
-                {canViewSalary && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 space-y-1">
-                    {(selected.salary ?? 0) > 0 && (
-                      <div>
-                        <div className="text-xs text-white/40 mb-1">الراتب الأساسي</div>
-                        <div className="text-lg font-bold text-emerald-300 font-mono">
-                          {fmt(selected.salary)} {selected.currency}
-                        </div>
+            {/* ── Reports Tab — Income & Deductions Statement ─ */}
+            {detailTab === 'reports' && (() => {
+              const baseSalary = Number(selected.salary ?? 0);
+              const totalBonuses = bonuses.reduce((s, b) => s + Number(b.amount ?? 0), 0);
+              const totalIncome = baseSalary + totalBonuses;
+              const netAmount = totalIncome - totalDeducted;
+              return (
+                <div className="space-y-3">
+                  {/* Net Summary */}
+                  <div
+                    className={`rounded-xl p-4 border-2 ${
+                      netAmount >= 0
+                        ? 'bg-emerald-500/10 border-emerald-500/30'
+                        : 'bg-red-500/10 border-red-500/30'
+                    }`}
+                  >
+                    <div className="text-xs text-white/50 mb-1">الصافي المستحق</div>
+                    <div
+                      className={`text-2xl font-bold font-mono ${
+                        netAmount >= 0 ? 'text-emerald-300' : 'text-red-300'
+                      }`}
+                    >
+                      {fmt(netAmount)} {selected.currency}
+                    </div>
+                    <div className="text-[10px] text-white/40 mt-1">
+                      = دخل ({fmt(totalIncome)}) − خصومات ({fmt(totalDeducted)})
+                    </div>
+                  </div>
+
+                  {/* Two columns: Income vs Deductions */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* INCOME COLUMN */}
+                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3 space-y-2">
+                      <div className="text-xs font-bold text-emerald-300 flex items-center gap-1 border-b border-emerald-500/20 pb-1.5">
+                        <Plus size={12} /> الدخل
                       </div>
-                    )}
-                    {(selected.commission_rate ?? 0) > 0 && (
-                      <div>
-                        <div className="text-xs text-white/40 mb-1">نسبة العمولة</div>
-                        <div className="text-lg font-bold text-purple-300">
-                          {selected.commission_rate}%
+                      {canViewSalary && baseSalary > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-white/60">الراتب الأساسي</span>
+                          <span className="font-mono font-semibold text-emerald-200">
+                            {fmt(baseSalary)}
+                          </span>
                         </div>
+                      )}
+                      {(selected.commission_rate ?? 0) > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-white/60">نسبة العمولة</span>
+                          <span className="font-mono font-semibold text-purple-200">
+                            {selected.commission_rate}%
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/60">
+                          الحوافز ({bonuses.length})
+                        </span>
+                        <span className="font-mono font-semibold text-emerald-200">
+                          {fmt(totalBonuses)}
+                        </span>
                       </div>
-                    )}
-                    {(selected.salary ?? 0) === 0 && !selected.commission_rate && (
-                      <div className="text-sm text-white/50">لم يتم تحديد الراتب بعد</div>
-                    )}
-                  </div>
-                )}
-                {/* Loans summary */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white/5 rounded-lg p-3 text-center">
-                    <div className="text-base font-bold text-amber-300 font-mono">
-                      {fmt(totalLoans)}
+                      <div className="flex justify-between text-xs pt-1.5 border-t border-emerald-500/20">
+                        <span className="text-emerald-300 font-bold">الإجمالي</span>
+                        <span className="font-mono font-bold text-emerald-300">
+                          {fmt(totalIncome)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-xs text-white/40 mt-0.5">إجمالي السلف</div>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-3 text-center">
-                    <div className="text-base font-bold text-red-400 font-mono">
-                      {fmt(remainingLoans)}
+
+                    {/* DEDUCTIONS COLUMN */}
+                    <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-3 space-y-2">
+                      <div className="text-xs font-bold text-red-300 flex items-center gap-1 border-b border-red-500/20 pb-1.5">
+                        <MinusCircle size={12} /> الصرف / الخصومات
+                      </div>
+                      {(['late', 'absence', 'damage', 'other'] as const).map((t) => {
+                        const info = dedLabel(t);
+                        const total = deductionsByType(t);
+                        return (
+                          <div key={t} className="flex justify-between text-xs">
+                            <span className="text-white/60">{info.label}</span>
+                            <span
+                              className={`font-mono font-semibold ${
+                                total > 0 ? info.color : 'text-white/30'
+                              }`}
+                            >
+                              {fmt(total)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      <div className="flex justify-between text-xs pt-1.5 border-t border-red-500/20">
+                        <span className="text-red-300 font-bold">الإجمالي</span>
+                        <span className="font-mono font-bold text-red-300">
+                          {fmt(totalDeducted)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-xs text-white/40 mt-0.5">رصيد متبقي</div>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-3 text-center">
-                    <div className="text-base font-bold text-orange-400 font-mono">
-                      {fmt(totalDeducted)}
+
+                  {/* Loans summary */}
+                  <div className="bg-white/5 rounded-lg p-3 space-y-2">
+                    <div className="text-xs font-semibold text-white/70 border-b border-white/10 pb-1.5">
+                      السلف
                     </div>
-                    <div className="text-xs text-white/40 mt-0.5">إجمالي الخصومات</div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <div className="text-sm font-bold text-white/70">{loans.length}</div>
+                        <div className="text-[10px] text-white/40 mt-0.5">العدد</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-amber-300 font-mono">
+                          {fmt(totalLoans)}
+                        </div>
+                        <div className="text-[10px] text-white/40 mt-0.5">إجمالي</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-red-400 font-mono">
+                          {fmt(remainingLoans)}
+                        </div>
+                        <div className="text-[10px] text-white/40 mt-0.5">متبقي</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-3 text-center">
-                    <div className="text-base font-bold text-white/70">{loans.length}</div>
-                    <div className="text-xs text-white/40 mt-0.5">عدد السلف</div>
-                  </div>
-                </div>
-                {/* Info summary */}
-                <div className="bg-white/5 rounded-lg p-3 space-y-2 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-white/40">تاريخ التعيين</span>
-                    <span className="font-mono text-white/70">{selected.hire_date}</span>
-                  </div>
-                  {selected.national_id && (
+
+                  {/* Info summary */}
+                  <div className="bg-white/5 rounded-lg p-3 space-y-2 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-white/40">رقم البطاقة</span>
-                      <span className="font-mono text-white/70">{selected.national_id}</span>
+                      <span className="text-white/40">تاريخ التعيين</span>
+                      <span className="font-mono text-white/70">{selected.hire_date}</span>
                     </div>
-                  )}
+                    {selected.national_id && (
+                      <div className="flex justify-between">
+                        <span className="text-white/40">رقم البطاقة</span>
+                        <span className="font-mono text-white/70">{selected.national_id}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* ── Documents Tab ──────────────────────────────── */}
             {detailTab === 'docs' && (
@@ -2086,75 +2254,88 @@ export default function Employees() {
               </button>
             </div>
             <div className="p-5 space-y-3">
-              {activeLoans.length > 0 ? (
-                <>
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-300">
-                    سيتم خصم المبلغ من السلفة النشطة الأولى
-                  </div>
-                  <Field label="المبلغ المطلوب خصمه *">
-                    <input
-                      type="number"
-                      value={deductForm.amount}
-                      onChange={(e) => setDeductForm((p) => ({ ...p, amount: e.target.value }))}
-                      className="erp-input w-full"
-                      min={0}
-                    />
-                  </Field>
-                  <Field label="سبب الخصم">
-                    <input
-                      value={deductForm.reason}
-                      onChange={(e) => setDeductForm((p) => ({ ...p, reason: e.target.value }))}
-                      className="erp-input w-full"
-                      placeholder="مثال: خصم غياب، جزاء..."
-                    />
-                  </Field>
-                  <Field label="تاريخ الخصم">
-                    <input
-                      type="date"
-                      value={deductForm.deduction_date}
-                      onChange={(e) =>
-                        setDeductForm((p) => ({ ...p, deduction_date: e.target.value }))
-                      }
-                      className="erp-input w-full"
-                    />
-                  </Field>
-                </>
-              ) : (
-                <div className="text-center py-4 text-white/40 text-sm">
-                  <MinusCircle size={32} className="mx-auto mb-2 opacity-30" />
-                  <p>لا توجد سلف نشطة لتطبيق الخصم عليها</p>
-                  <p className="text-xs mt-1">أضف سلفة أولاً ثم طبّق الخصم عليها</p>
+              <Field label="نوع الخصم *">
+                <div className="grid grid-cols-4 gap-1.5">
+                  {(['late', 'absence', 'damage', 'other'] as const).map((t) => {
+                    const info = dedLabel(t);
+                    const active = deductForm.deduction_type === t;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setDeductForm((p) => ({ ...p, deduction_type: t }))}
+                        className={`p-2 rounded-lg border text-xs font-semibold transition-all ${
+                          active
+                            ? `${info.bg} ${info.border} ${info.color} ring-1 ring-white/20`
+                            : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
+                        }`}
+                      >
+                        {info.label}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-            {activeLoans.length > 0 && (
-              <div className="flex gap-2 p-5 border-t border-white/10">
-                <button
-                  onClick={() => {
-                    const firstActive = activeLoans[0];
-                    manualPay.mutate({
-                      id: firstActive.id as number,
-                      amount: Number(deductForm.amount),
-                    });
-                    setShowDeductForm(false);
-                    setDeductForm({
-                      amount: '',
-                      reason: '',
-                      deduction_date: new Date().toISOString().split('T')[0],
-                    });
-                  }}
-                  disabled={
-                    !deductForm.amount || Number(deductForm.amount) <= 0 || manualPay.isPending
+              </Field>
+              <Field label="المبلغ *">
+                <input
+                  type="number"
+                  value={deductForm.amount}
+                  onChange={(e) => setDeductForm((p) => ({ ...p, amount: e.target.value }))}
+                  className="erp-input w-full"
+                  min={0}
+                  placeholder="0.00"
+                />
+              </Field>
+              <Field label="السبب / التفاصيل">
+                <input
+                  value={deductForm.reason}
+                  onChange={(e) => setDeductForm((p) => ({ ...p, reason: e.target.value }))}
+                  className="erp-input w-full"
+                  placeholder={
+                    deductForm.deduction_type === 'late'
+                      ? 'مثال: تأخير 30 دقيقة يوم الأحد'
+                      : deductForm.deduction_type === 'absence'
+                      ? 'مثال: غياب يوم كامل'
+                      : deductForm.deduction_type === 'damage'
+                      ? 'مثال: تلف قطعة غيار X'
+                      : 'تفاصيل الخصم'
                   }
-                  className="erp-btn flex-1 bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
-                >
-                  {manualPay.isPending ? 'جاري...' : 'تنفيذ الخصم'}
-                </button>
-                <button onClick={() => setShowDeductForm(false)} className="erp-btn erp-btn-ghost">
-                  إلغاء
-                </button>
-              </div>
-            )}
+                />
+              </Field>
+              <Field label="تاريخ الخصم">
+                <input
+                  type="date"
+                  value={deductForm.deduction_date}
+                  onChange={(e) =>
+                    setDeductForm((p) => ({ ...p, deduction_date: e.target.value }))
+                  }
+                  className="erp-input w-full"
+                />
+              </Field>
+            </div>
+            <div className="flex gap-2 p-5 border-t border-white/10">
+              <button
+                onClick={() =>
+                  createDeduction.mutate({
+                    amount: Number(deductForm.amount),
+                    reason: deductForm.reason,
+                    deduction_type: deductForm.deduction_type,
+                    deduction_date: deductForm.deduction_date,
+                  })
+                }
+                disabled={
+                  !deductForm.amount ||
+                  Number(deductForm.amount) <= 0 ||
+                  createDeduction.isPending
+                }
+                className="erp-btn flex-1 bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
+              >
+                {createDeduction.isPending ? 'جاري...' : 'تسجيل الخصم'}
+              </button>
+              <button onClick={() => setShowDeductForm(false)} className="erp-btn erp-btn-ghost">
+                إلغاء
+              </button>
+            </div>
           </div>
         </div>
       )}

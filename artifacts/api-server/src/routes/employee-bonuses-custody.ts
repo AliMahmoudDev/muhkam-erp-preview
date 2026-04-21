@@ -6,8 +6,10 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
 import {
   db, employeeBonusesTable, employeeCustodyTable, employeeCustodyLinesTable,
+  employeeDeductionsTable,
   employeesTable, safesTable, transactionsTable, expensesTable,
 } from "@workspace/db";
+import { isNull } from "drizzle-orm";
 import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { assertPeriodOpen } from "../lib/period-lock";
@@ -61,6 +63,65 @@ router.delete("/employee-bonuses/:id", wrap(async (req, res) => {
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(employeeBonusesTable)
     .where(and(eq(employeeBonusesTable.id, id), eq(employeeBonusesTable.company_id, companyId)));
+  res.json({ ok: true });
+}));
+
+/* ═══════════════════════════════════════════════════════════════
+   DEDUCTIONS (الخصومات: تأخير / غياب / تلف / أخرى)
+══════════════════════════════════════════════════════════════════ */
+
+const DEDUCTION_TYPES = new Set(["late", "absence", "damage", "other"]);
+
+router.get("/employee-deductions", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
+  const empId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
+  const type = req.query["deduction_type"] ? String(req.query["deduction_type"]) : null;
+  const conditions = [
+    eq(employeeDeductionsTable.company_id, companyId),
+    isNull(employeeDeductionsTable.deleted_at),
+  ];
+  if (empId) conditions.push(eq(employeeDeductionsTable.employee_id, empId));
+  if (type && DEDUCTION_TYPES.has(type)) conditions.push(eq(employeeDeductionsTable.deduction_type, type));
+  const rows = await db.select().from(employeeDeductionsTable)
+    .where(and(...conditions))
+    .orderBy(desc(employeeDeductionsTable.deduction_date), desc(employeeDeductionsTable.id));
+  res.json(rows.map(r => ({ ...r, amount: n(r.amount), created_at: fmtTs(r.created_at) })));
+}));
+
+router.post("/employee-deductions", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
+  const userId = req.user?.id ?? null;
+  const { employee_id, amount, reason, deduction_date, deduction_type, currency } = req.body as Record<string, unknown>;
+  if (!employee_id || amount == null || Number(amount) <= 0) {
+    res.status(400).json({ error: "بيانات الخصم غير مكتملة" }); return;
+  }
+  const dtype = String(deduction_type ?? "other");
+  if (!DEDUCTION_TYPES.has(dtype)) { res.status(400).json({ error: "نوع الخصم غير صحيح" }); return; }
+  const [emp] = await db.select().from(employeesTable)
+    .where(and(eq(employeesTable.id, Number(employee_id)), eq(employeesTable.company_id, companyId)));
+  if (!emp) { res.status(404).json({ error: "الموظف غير موجود" }); return; }
+  const [row] = await db.insert(employeeDeductionsTable).values({
+    company_id: companyId,
+    employee_id: Number(employee_id),
+    deduction_type: dtype,
+    amount: String(Number(amount)),
+    reason: (reason as string) ?? null,
+    deduction_date: String(deduction_date ?? new Date().toISOString().split("T")[0]),
+    currency: String(currency ?? emp.currency ?? "EGP"),
+    created_by: userId,
+  }).returning();
+  res.status(201).json({ ...row, amount: n(row.amount), created_at: fmtTs(row.created_at) });
+}));
+
+router.delete("/employee-deductions/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
+  const id = parseInt(String(req.params["id"]), 10);
+  await db.update(employeeDeductionsTable)
+    .set({ deleted_at: new Date() })
+    .where(and(eq(employeeDeductionsTable.id, id), eq(employeeDeductionsTable.company_id, companyId)));
   res.json({ ok: true });
 }));
 
