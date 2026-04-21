@@ -1270,83 +1270,164 @@ export default function Employees() {
                     </div>
                   </div>
 
-                  {/* Two columns: Income vs Deductions */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* INCOME COLUMN */}
-                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3 space-y-2">
-                      <div className="text-xs font-bold text-emerald-300 flex items-center gap-1 border-b border-emerald-500/20 pb-1.5">
-                        <Plus size={12} /> الدخل
+                  {/* Unified Balance Sheet — All items in one list */}
+                  <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                    {/* Header */}
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-white/5 border-b border-white/10 text-[10px] font-bold text-white/50 uppercase">
+                      <div>البند</div>
+                      <div className="text-center w-20">دخل</div>
+                      <div className="text-center w-20">صرف</div>
+                    </div>
+
+                    {/* ═══ INCOME SECTION ═══ */}
+                    <div className="px-3 py-1.5 bg-emerald-500/10 text-[10px] font-bold text-emerald-300 flex items-center gap-1">
+                      <Plus size={10} /> الدخل
+                    </div>
+
+                    {canViewSalary && baseSalary > 0 && (
+                      <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                        <div className="text-white/70">الراتب الأساسي</div>
+                        <div className="font-mono font-semibold text-emerald-300 w-20 text-center">
+                          {fmt(baseSalary)}
+                        </div>
+                        <div className="w-20"></div>
                       </div>
-                      {canViewSalary && baseSalary > 0 && (
-                        <div className="flex justify-between text-xs">
-                          <span className="text-white/60">الراتب الأساسي</span>
-                          <span className="font-mono font-semibold text-emerald-200">
-                            {fmt(baseSalary)}
+                    )}
+
+                    {(selected.commission_rate ?? 0) > 0 && (
+                      <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                        <div className="text-white/70">
+                          نسبة العمولة{' '}
+                          <span className="text-purple-300 font-mono">
+                            ({selected.commission_rate}%)
                           </span>
                         </div>
-                      )}
-                      {(selected.commission_rate ?? 0) > 0 && (
-                        <div className="flex justify-between text-xs">
-                          <span className="text-white/60">نسبة العمولة</span>
-                          <span className="font-mono font-semibold text-purple-200">
-                            {selected.commission_rate}%
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-xs">
-                        <span className="text-white/60">
-                          الحوافز ({bonuses.length})
-                        </span>
-                        <span className="font-mono font-semibold text-emerald-200">
-                          {fmt(totalBonuses)}
-                        </span>
+                        <div className="font-mono text-white/30 w-20 text-center">—</div>
+                        <div className="w-20"></div>
                       </div>
-                      <div className="flex justify-between text-xs pt-1.5 border-t border-emerald-500/20">
-                        <span className="text-emerald-300 font-bold">الإجمالي</span>
-                        <span className="font-mono font-bold text-emerald-300">
-                          {fmt(totalIncome)}
-                        </span>
+                    )}
+
+                    {/* Each bonus as a line */}
+                    {bonuses.map((b) => (
+                      <div
+                        key={`bonus-${b.id}`}
+                        className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-white/70 truncate">
+                            حافز{b.reason ? ` — ${String(b.reason)}` : ''}
+                          </div>
+                          <div className="text-[10px] text-white/30 font-mono">
+                            {String(b.granted_date ?? '')}
+                          </div>
+                        </div>
+                        <div className="font-mono font-semibold text-emerald-300 w-20 text-center">
+                          {fmt(b.amount)}
+                        </div>
+                        <div className="w-20"></div>
+                      </div>
+                    ))}
+
+                    {/* Income subtotal */}
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-emerald-500/5 border-b border-white/10 text-xs font-bold">
+                      <div className="text-emerald-300">إجمالي الدخل</div>
+                      <div className="font-mono text-emerald-300 w-20 text-center">
+                        {fmt(totalIncome)}
+                      </div>
+                      <div className="w-20"></div>
+                    </div>
+
+                    {/* ═══ DEDUCTIONS SECTION ═══ */}
+                    <div className="px-3 py-1.5 bg-red-500/10 text-[10px] font-bold text-red-300 flex items-center gap-1">
+                      <MinusCircle size={10} /> الصرف / الخصومات
+                    </div>
+
+                    {/* Each deduction as a line */}
+                    {deductions.map((d) => {
+                      const info = dedLabel(String(d.deduction_type ?? 'other'));
+                      return (
+                        <div
+                          key={`ded-${d.id}`}
+                          className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-white/70 truncate flex items-center gap-1.5">
+                              <span
+                                className={`text-[9px] px-1.5 py-0.5 rounded-full border ${info.border} ${info.color} ${info.bg}`}
+                              >
+                                {info.label}
+                              </span>
+                              {d.reason ? <span className="truncate">{String(d.reason)}</span> : null}
+                            </div>
+                            <div className="text-[10px] text-white/30 font-mono">
+                              {String(d.deduction_date ?? '')}
+                            </div>
+                          </div>
+                          <div className="w-20"></div>
+                          <div className="font-mono font-semibold text-red-300 w-20 text-center">
+                            {fmt(d.amount)}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Each active loan as a line */}
+                    {loans
+                      .filter((l) => Number(l.remaining_amount ?? 0) > 0)
+                      .map((l) => (
+                        <div
+                          key={`loan-${l.id}`}
+                          className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-white/70 truncate flex items-center gap-1.5">
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full border border-amber-500/30 text-amber-300 bg-amber-500/10">
+                                سلفة
+                              </span>
+                              {l.reason ? <span className="truncate">{String(l.reason)}</span> : null}
+                            </div>
+                            <div className="text-[10px] text-white/30 font-mono">
+                              متبقي من أصل {fmt(l.requested_amount)}
+                            </div>
+                          </div>
+                          <div className="w-20"></div>
+                          <div className="font-mono font-semibold text-amber-300 w-20 text-center">
+                            {fmt(l.remaining_amount)}
+                          </div>
+                        </div>
+                      ))}
+
+                    {deductions.length === 0 && remainingLoans === 0 && (
+                      <div className="px-3 py-3 text-center text-[11px] text-white/30">
+                        لا توجد خصومات أو سلف
+                      </div>
+                    )}
+
+                    {/* Deductions subtotal */}
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-red-500/5 border-b border-white/10 text-xs font-bold">
+                      <div className="text-red-300">إجمالي الصرف</div>
+                      <div className="w-20"></div>
+                      <div className="font-mono text-red-300 w-20 text-center">
+                        {fmt(totalDeductionsAll)}
                       </div>
                     </div>
 
-                    {/* DEDUCTIONS COLUMN */}
-                    <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-3 space-y-2">
-                      <div className="text-xs font-bold text-red-300 flex items-center gap-1 border-b border-red-500/20 pb-1.5">
-                        <MinusCircle size={12} /> الصرف / الخصومات
+                    {/* ═══ NET ═══ */}
+                    <div
+                      className={`grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-3 text-sm font-bold ${
+                        netAmount >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'
+                      }`}
+                    >
+                      <div className={netAmount >= 0 ? 'text-emerald-200' : 'text-red-200'}>
+                        الصافي المستحق
                       </div>
-                      {(['late', 'absence', 'damage', 'other'] as const).map((t) => {
-                        const info = dedLabel(t);
-                        const total = deductionsByType(t);
-                        return (
-                          <div key={t} className="flex justify-between text-xs">
-                            <span className="text-white/60">{info.label}</span>
-                            <span
-                              className={`font-mono font-semibold ${
-                                total > 0 ? info.color : 'text-white/30'
-                              }`}
-                            >
-                              {fmt(total)}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      <div className="flex justify-between text-xs">
-                        <span className="text-white/60">
-                          السلف ({loans.length})
-                        </span>
-                        <span
-                          className={`font-mono font-semibold ${
-                            remainingLoans > 0 ? 'text-amber-300' : 'text-white/30'
-                          }`}
-                        >
-                          {fmt(remainingLoans)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-xs pt-1.5 border-t border-red-500/20">
-                        <span className="text-red-300 font-bold">الإجمالي</span>
-                        <span className="font-mono font-bold text-red-300">
-                          {fmt(totalDeductionsAll)}
-                        </span>
+                      <div className="w-20"></div>
+                      <div
+                        className={`font-mono w-20 text-center ${
+                          netAmount >= 0 ? 'text-emerald-200' : 'text-red-200'
+                        }`}
+                      >
+                        {fmt(netAmount)}
                       </div>
                     </div>
                   </div>
