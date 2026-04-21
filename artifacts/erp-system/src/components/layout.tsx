@@ -25,8 +25,8 @@ const NAV_SECTIONS = [
     hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/warranty', '/consignment'],
   },
   { label: 'المالية', hrefs: ['/treasury', '/vouchers', '/expenses', '/income', '/reports'] },
-  { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/fixed-assets', '/accruals', '/bank-reconciliation', '/budgets', '/cost-centers'] },
   { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
+  { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/fixed-assets', '/accruals', '/bank-reconciliation', '/budgets', '/cost-centers'] },
   { label: 'النظام', hrefs: ['/settings', '/branches'] },
 ];
 
