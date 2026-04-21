@@ -2293,7 +2293,7 @@ html.light .stat-card-violet {
   padding: 0 10px;
   border-radius: 9px;
   font-size: 13px; font-weight: 500;
-  color: rgba(255,255,255,0.42) !important;
+  color: rgba(255,255,255,0.65) !important;
   cursor: pointer; margin-bottom: 2px;
   transition: color 0.15s ease, background 0.15s ease !important;
 }
