@@ -92,7 +92,7 @@ jobs:
             cd "$APP_DIR/artifacts/erp-system"
             NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
             cd "$APP_DIR/artifacts/muhkam-base"
-            NODE_ENV=production pnpm run build
+            NODE_ENV=production BASE_PATH=/muhkam-advanced/ pnpm run build
             cd "$APP_DIR/artifacts/api-server"
             pnpm run build
             pm2 restart muhkam-api --update-env
