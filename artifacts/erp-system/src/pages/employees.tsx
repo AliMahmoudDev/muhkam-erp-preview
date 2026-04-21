@@ -2174,11 +2174,11 @@ export default function Employees() {
                   {(
                     [
                       { v: 'fixed', label: 'راتب ثابت', icon: Wallet, color: 'emerald' },
-                      { v: 'commission', label: 'نسبة عمولة', icon: Percent, color: 'purple' },
+                      { v: 'commission', label: 'عمولة', icon: Percent, color: 'purple' },
                       {
                         v: 'fixed_plus_commission',
-                        label: 'راتب + عمولة',
-                        icon: Plus,
+                        label: 'راتب وعمولة',
+                        icon: Wallet,
                         color: 'amber',
                       },
                     ] as const
