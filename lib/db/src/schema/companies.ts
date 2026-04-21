@@ -3,7 +3,8 @@ import { pgTable, serial, text, boolean, timestamp, date } from "drizzle-orm/pg-
 export const companiesTable = pgTable("companies", {
   id:         serial("id").primaryKey(),
   name:       text("name").notNull(),
-  plan_type:  text("plan_type").notNull().default("trial"), // trial | basic | pro
+  plan_type:  text("plan_type").notNull().default("trial"), // trial | basic | pro | paid | professional
+  edition:    text("edition").notNull().default("ultimate"),  // advanced | ultimate
   start_date: date("start_date").notNull(),
   end_date:   date("end_date").notNull(),
   is_active:   boolean("is_active").notNull().default(true),

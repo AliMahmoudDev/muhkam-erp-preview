@@ -516,6 +516,7 @@ export default function SuperAdmin() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newPlan, setNewPlan] = useState('trial');
+  const [newEdition, setNewEdition] = useState<'advanced' | 'ultimate'>('ultimate');
   const [newDays, setNewDays] = useState(14);
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminUsername, setNewAdminUsername] = useState('');
@@ -2590,6 +2591,32 @@ export default function SuperAdmin() {
                         <option value="paid">مدفوع</option>
                       </select>
                     </div>
+
+                    {/* Edition (ADVANCED / ULTIMATE) */}
+                    <div style={{ flex: '1 1 150px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
+                        🏷️ نسخة النظام
+                      </label>
+                      <select
+                        value={newEdition}
+                        onChange={(e) => setNewEdition(e.target.value as 'advanced' | 'ultimate')}
+                        style={{
+                          width: '100%',
+                          border: `1.5px solid ${newEdition === 'ultimate' ? '#6366f1' : '#f59e0b'}`,
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          fontSize: '14px',
+                          background: C.bg,
+                          color: newEdition === 'ultimate' ? '#a5b4fc' : '#fcd34d',
+                          fontFamily: FONT,
+                          fontWeight: 700,
+                        }}
+                      >
+                        <option value="ultimate">⭐ MUHKAM ULTIMATE (كاملة)</option>
+                        <option value="advanced">🚀 MUHKAM ADVANCED (متوسطة)</option>
+                      </select>
+                    </div>
+
                     <div style={{ flex: '1 1 110px' }}>
                       <label
                         style={{
@@ -2679,6 +2706,7 @@ export default function SuperAdmin() {
                             body: {
                               name: newName.trim(),
                               plan_type: newPlan,
+                              edition: newEdition,
                               duration_days: newDays,
                               admin_name: newAdminName.trim(),
                               admin_username: newAdminUsername.trim() || undefined,
@@ -2687,7 +2715,7 @@ export default function SuperAdmin() {
                           {
                             onSuccess: (data: any) => {
                               setShowCreate(false);
-                              setNewName(''); setNewPlan('trial'); setNewDays(14);
+                              setNewName(''); setNewPlan('trial'); setNewEdition('ultimate'); setNewDays(14);
                               setNewAdminName(''); setNewAdminUsername('');
                               setCreateResult({
                                 company_name: data.company?.name ?? newName,
@@ -2854,15 +2882,23 @@ export default function SuperAdmin() {
                             </div>
                             <div style={{ fontSize: '10px', color: C.muted }}>مستخدم</div>
                           </div>
-                          <div
-                            style={{
-                              textAlign: 'center',
-                              fontSize: '11px',
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 700, color: C.muted }}>
+                              {translatePlan(co.plan_type)}
+                            </div>
+                            <span style={{
+                              display: 'inline-block',
+                              marginTop: '3px',
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              fontSize: '10px',
                               fontWeight: 700,
-                              color: C.muted,
-                            }}
-                          >
-                            {translatePlan(co.plan_type)}
+                              background: (co as any).edition === 'advanced' ? 'rgba(245,158,11,0.15)' : 'rgba(99,102,241,0.15)',
+                              color: (co as any).edition === 'advanced' ? '#fcd34d' : '#a5b4fc',
+                              border: `1px solid ${(co as any).edition === 'advanced' ? 'rgba(245,158,11,0.3)' : 'rgba(99,102,241,0.3)'}`,
+                            }}>
+                              {(co as any).edition === 'advanced' ? '🚀 ADVANCED' : '⭐ ULTIMATE'}
+                            </span>
                           </div>
                           <div
                             style={{
@@ -2967,6 +3003,38 @@ export default function SuperAdmin() {
                                   })
                                 }
                               />
+
+                              {/* Edition switcher */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: '10px', padding: '6px 12px' }}>
+                                <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>🏷️ النسخة:</span>
+                                <select
+                                  value={(co as any).edition ?? 'ultimate'}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    coMutate.mutate({
+                                      url: `/api/super/companies/${co.id}`,
+                                      method: 'PUT',
+                                      body: { edition: e.target.value },
+                                    });
+                                  }}
+                                  style={{
+                                    border: `1.5px solid ${(co as any).edition === 'advanced' ? '#f59e0b' : '#6366f1'}`,
+                                    borderRadius: '8px',
+                                    padding: '5px 10px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    background: C.bg,
+                                    color: (co as any).edition === 'advanced' ? '#fcd34d' : '#a5b4fc',
+                                    fontFamily: FONT,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <option value="ultimate">⭐ ULTIMATE (كاملة)</option>
+                                  <option value="advanced">🚀 ADVANCED (متوسطة)</option>
+                                </select>
+                              </div>
+
                               <ActionBtn
                                 label="🔑 إعادة تعيين كلمة المرور"
                                 icon=""

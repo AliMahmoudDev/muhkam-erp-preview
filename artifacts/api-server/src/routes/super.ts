@@ -228,8 +228,8 @@ router.get("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
 /* ── PUT /super/companies/:id — update plan / expiry / active ── */
 router.put("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const { name, plan_type, end_date, is_active } = req.body as {
-    name?: string; plan_type?: string; end_date?: string; is_active?: boolean;
+  const { name, plan_type, edition, end_date, is_active } = req.body as {
+    name?: string; plan_type?: string; edition?: string; end_date?: string; is_active?: boolean;
   };
 
   const [before] = await db.select().from(companiesTable).where(eq(companiesTable.id, id));
@@ -238,6 +238,7 @@ router.put("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
   const updates: Partial<typeof companiesTable.$inferInsert> = {};
   if (name      !== undefined) updates.name      = name.trim();
   if (plan_type !== undefined) updates.plan_type = plan_type;
+  if (edition   !== undefined && ["advanced","ultimate"].includes(edition)) updates.edition = edition;
   if (end_date  !== undefined) updates.end_date  = end_date;
   if (is_active !== undefined) updates.is_active = is_active;
 
@@ -331,7 +332,7 @@ router.post("/super/companies", ...superOnly, wrap(async (req, res) => {
   const v = validate(createCompanySchema, req.body);
   if (!v.success) { res.status(400).json({ error: "بيانات غير صحيحة", details: v.errors }); return; }
 
-  const { name, plan_type, duration_days, admin_email, admin_name, admin_username } = v.data;
+  const { name, plan_type, edition = "ultimate", duration_days, admin_email, admin_name, admin_username } = v.data;
   const today = new Date();
   const end   = new Date(today);
   end.setDate(end.getDate() + (duration_days ?? 30));
@@ -346,6 +347,7 @@ router.post("/super/companies", ...superOnly, wrap(async (req, res) => {
     const [co] = await tx.insert(companiesTable).values({
       name:        name.trim(),
       plan_type,
+      edition,
       start_date:  today.toISOString().slice(0, 10),
       end_date:    end.toISOString().slice(0, 10),
       is_active:   true,

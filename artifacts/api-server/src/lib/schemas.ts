@@ -60,6 +60,9 @@ export const createCompanySchema = z.object({
   plan_type: z.enum(["trial", "basic", "pro", "paid", "professional"], {
     errorMap: () => ({ message: "نوع الخطة غير صحيح" }),
   }).default("trial"),
+  edition: z.enum(["advanced", "ultimate"], {
+    errorMap: () => ({ message: "النسخة يجب أن تكون advanced أو ultimate" }),
+  }).default("ultimate"),
   duration_days: z.number()
     .int("عدد الأيام يجب أن يكون عدداً صحيحاً")
     .min(1, "يجب أن يكون يوم واحد على الأقل")
