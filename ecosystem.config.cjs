@@ -8,9 +8,25 @@
  *
  * الـ Backend يخدم كلا النسختين:
  *   /             → MUHKAM ULTIMATE  (artifacts/erp-system/dist/public)
- *   /muhkam-advanced/ → MUHKAM ADVANCED  (artifacts/muhkam-advanced/dist/public)
+ *   /muhkam-advanced/ → MUHKAM ADVANCED  (artifacts/muhkam-base/dist/public)
  *   /api/         → REST API (مشترك)
  */
+
+/* تحميل متغيرات البيئة من ملف .env بدون حزمة خارجية */
+const fs = require("fs");
+const path = require("path");
+
+const envFile = path.join("/var/www/muhkam-erp", ".env");
+const env = {};
+if (fs.existsSync(envFile)) {
+  fs.readFileSync(envFile, "utf8")
+    .split("\n")
+    .forEach((line) => {
+      const m = line.match(/^\s*([^#\s=]+)\s*=\s*(.*)\s*$/);
+      if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+    });
+}
+
 module.exports = {
   apps: [
     {
@@ -31,9 +47,12 @@ module.exports = {
       env_production: {
         NODE_ENV: "production",
         PORT: 3000,
-        // DATABASE_URL, JWT_SECRET, ALLOWED_ORIGINS — حمّلها من .env أو أضفها هنا
-        // FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
-        // ADVANCED_DIST:  "/var/www/muhkam-erp/artifacts/muhkam-advanced/dist/public",
+        DATABASE_URL: env.DATABASE_URL,
+        JWT_SECRET: env.JWT_SECRET,
+        JWT_REFRESH_SECRET: env.JWT_REFRESH_SECRET || env.JWT_SECRET,
+        ALLOWED_ORIGINS: env.ALLOWED_ORIGINS,
+        FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
+        ADVANCED_DIST: "/var/www/muhkam-erp/artifacts/muhkam-base/dist/public",
       },
       error_file: "/var/log/pm2/halaltech-error.log",
       out_file: "/var/log/pm2/halaltech-out.log",
