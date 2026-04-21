@@ -849,7 +849,7 @@ export default function Employees() {
         <div className="xl:col-span-2 space-y-3">
           {/* Search & Filters */}
           <div className="flex flex-wrap gap-2 items-center">
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative flex-[2] min-w-[200px]">
               <Search
                 size={14}
                 className="absolute top-1/2 -translate-y-1/2 right-3 text-white/40"
@@ -858,13 +858,13 @@ export default function Employees() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="بحث بالاسم أو الكود أو الرقم القومي..."
-                className="erp-input w-full text-sm pl-[20px] pr-[20px]"
+                className="erp-input w-full text-sm pl-[20px] pr-[32px]"
               />
             </div>
             <select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value === '' ? '' : Number(e.target.value))}
-              className="erp-input text-sm pl-[8px] pr-[8px] ml-[250px] mr-[250px]"
+              className="erp-input text-sm flex-1 min-w-[120px]"
             >
               <option value="">كل الأقسام</option>
               {departments.map((d) => (
