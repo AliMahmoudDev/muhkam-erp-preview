@@ -70,7 +70,7 @@ export const ROUTE_ROLES: Record<string, AppRole[]> = {
 /* ── Nav items with role visibility + icons ─────────────── */
 export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: AppRole[] }[] = [
   {
-    name: 'لوحة القيادة',
+    name: 'الرئيسية',
     href: '/',
     icon: LayoutDashboard,
     roles: ['admin', 'manager', 'cashier', 'salesperson'],

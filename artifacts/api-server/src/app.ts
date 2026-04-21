@@ -167,10 +167,20 @@ app.use("/api/auth/login/email", authLimiter);
 app.use("/api/auth/refresh", authLimiter);
 app.use("/api/auth/2fa/login", authLimiter);
 
+/* Same limits for the ADVANCED frontend prefix (/muhkam-advanced/api/...) */
+app.use("/muhkam-advanced/api/auth/login", authLimiter);
+app.use("/muhkam-advanced/api/auth/register", authLimiter);
+app.use("/muhkam-advanced/api/auth/login/email", authLimiter);
+app.use("/muhkam-advanced/api/auth/refresh", authLimiter);
+app.use("/muhkam-advanced/api/auth/2fa/login", authLimiter);
+
 /* ── Per-tenant rate limiting (after auth routes) ─────────── */
 app.use("/api", perTenantRateLimit);
+app.use("/muhkam-advanced/api", perTenantRateLimit);
 
 app.use("/api", router);
+/* ── Mirror router for ADVANCED frontend (sends requests to /muhkam-advanced/api/…) ── */
+app.use("/muhkam-advanced/api", router);
 
 /* ── Production: serve React frontend static files ─────────────────────────
    Two editions are served from the same Express backend:
