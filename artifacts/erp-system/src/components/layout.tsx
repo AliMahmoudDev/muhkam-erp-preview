@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { NAV_ITEMS, canAccess, type UserRole } from '@/lib/rbac';
 import { hasPermission } from '@/lib/permissions';
 import { translateRole } from '@/lib/roles';
-import { LogOut, Warehouse, Search, X } from 'lucide-react';
+import { LogOut, Warehouse, Search, X, ChevronDown } from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 
@@ -179,6 +179,8 @@ export function AppLayout({ children }: LayoutProps) {
   const isDark = (settings.theme ?? 'dark') === 'dark';
 
   const { currentWarehouseId, setWarehouseId } = useWarehouse();
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   const { data: warehousesRaw } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['/api/settings/warehouses'],
@@ -454,33 +456,64 @@ export function AppLayout({ children }: LayoutProps) {
           {NAV_SECTIONS.map((section, si) => {
             const items = visibleNav.filter((i) => section.hrefs.includes(i.href));
             if (!items.length) return null;
+            const sectionActive = items.some((i) => i.href === location);
+            const isOpen = openSections[section.label] ?? sectionActive;
             return (
               <div key={section.label}>
-                <div
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenSections((prev) => ({
+                      ...prev,
+                      [section.label]: !(prev[section.label] ?? sectionActive),
+                    }))
+                  }
                   className="erp-divider-label"
-                  style={{ paddingTop: si === 0 ? 10 : 16, paddingBottom: 4 }}
+                  style={{
+                    paddingTop: si === 0 ? 10 : 16,
+                    paddingBottom: 4,
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    textAlign: 'right',
+                  }}
                 >
-                  {section.label}
-                </div>
-                {items.map((item) => {
-                  const active = location === item.href;
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <div className={`nav-item ${active ? 'active' : ''}`}>
-                        <item.icon
-                          style={{
-                            width: 16,
-                            height: 16,
-                            flexShrink: 0,
-                            opacity: active ? 1 : 0.55,
-                            color: active ? '#f59e0b' : 'inherit',
-                          }}
-                        />
-                        <span style={{ flex: 1 }}>{item.name}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
+                  <span>{section.label}</span>
+                  <ChevronDown
+                    style={{
+                      width: 12,
+                      height: 12,
+                      opacity: 0.55,
+                      transition: 'transform 0.2s ease',
+                      transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                    }}
+                  />
+                </button>
+                {isOpen &&
+                  items.map((item) => {
+                    const active = location === item.href;
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <div className={`nav-item ${active ? 'active' : ''}`}>
+                          <item.icon
+                            style={{
+                              width: 16,
+                              height: 16,
+                              flexShrink: 0,
+                              opacity: active ? 1 : 0.55,
+                              color: active ? '#f59e0b' : 'inherit',
+                            }}
+                          />
+                          <span style={{ flex: 1 }}>{item.name}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
               </div>
             );
           })}
