@@ -1194,7 +1194,7 @@ export default function Employees() {
                     <p>لا توجد خصومات</p>
                   </div>
                 ) : (
-                  <div className={`space-y-2 ${deductions.length > 5 ? 'max-h-[340px] overflow-y-auto pr-1 thin-scroll' : ''}`}>
+                  <div className={`space-y-2 ${deductions.length > 5 ? 'max-h-[260px] overflow-y-auto pr-1 thin-scroll' : ''}`}>
                     {deductions.map((d) => {
                       const info = dedLabel(String(d.deduction_type ?? 'other'));
                       return (
@@ -1709,7 +1709,7 @@ export default function Employees() {
                     <p>لا توجد حوافز لهذا الموظف</p>
                   </div>
                 ) : (
-                  <div className={`space-y-2 ${bonuses.length > 5 ? 'max-h-[340px] overflow-y-auto pr-1 thin-scroll' : ''}`}>
+                  <div className={`space-y-2 ${bonuses.length > 5 ? 'max-h-[260px] overflow-y-auto pr-1 thin-scroll' : ''}`}>
                     {bonuses.map((b) => (
                       <div
                         key={String(b.id)}
