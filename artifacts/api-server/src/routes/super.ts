@@ -51,6 +51,13 @@ async function cascadeDeleteCompany(id: number): Promise<void> {
     await tx.execute(sql`DELETE FROM stock_transfer_items WHERE transfer_id IN (SELECT id FROM stock_transfers WHERE company_id = ${cid})`);
     await tx.execute(sql`DELETE FROM leave_requests WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
     await tx.execute(sql`DELETE FROM payroll_records    WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    /* ── newly added tables (accounting, banking, HR extras) ── */
+    await tx.execute(sql`DELETE FROM accrual_runs              WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM bank_statement_lines      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM depreciation_runs         WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM budget_lines              WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM employee_deductions       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM warranty_records          WHERE company_id = ${cid}`);
 
     /* ── Level 2: tables with direct company_id ── */
     await tx.execute(sql`DELETE FROM journal_entries       WHERE company_id = ${cid}`);
@@ -102,6 +109,17 @@ async function cascadeDeleteCompany(id: number): Promise<void> {
     await tx.execute(sql`DELETE FROM system_settings       WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM idempotency_keys      WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM audit_logs            WHERE company_id = ${cid}`);
+    /* ── additional tables added after initial cascade was written ── */
+    await tx.execute(sql`DELETE FROM accruals                       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM bank_accounts                  WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM budgets                        WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM fixed_assets                   WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM cost_centers                   WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM exchange_rates                 WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM announcements                  WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM notifications                  WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM attendance_deduction_tiers     WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM attendance_deduction_settings  WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM erp_users             WHERE company_id = ${cid}`);
 
     /* ── Level 1: the company itself ── */
