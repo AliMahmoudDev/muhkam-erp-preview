@@ -15,7 +15,7 @@ export function TableSkeleton({ cols = 5, rows = 6 }: TableSkeletonProps) {
               <Skeleton
                 className="h-4 rounded-lg"
                 style={{
-                  width: j === 0 ? "70%" : j === cols - 1 ? "40%" : `${55 + Math.random() * 30}%`,
+                  width: j === 0 ? "70%" : j === cols - 1 ? "40%" : `${55 + (i * 7 + j * 13) % 30}%`,
                   background: "rgba(255,255,255,0.06)",
                   animationDuration: `${1.2 + i * 0.1}s`,
                 }}
