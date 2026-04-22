@@ -5,9 +5,11 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Inbox, RefreshCw, Check } from 'lucide-react';
+import { Inbox, RefreshCw, Check, X } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAppSettings } from '@/contexts/app-settings';
+import { useAuth } from '@/contexts/auth';
+import { hasPermission } from '@/lib/permissions';
 
 interface AppNotification {
   id: number;
@@ -66,7 +68,10 @@ export function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
   const { settings } = useAppSettings();
+  const { user } = useAuth();
   const isDark = (settings.theme ?? 'dark') === 'dark';
+  const canApproveAdvances = hasPermission(user, 'can_manage_payroll');
+  const [actingId, setActingId] = useState<number | null>(null);
 
   const fetchCount = useCallback(async () => {
     try {
@@ -128,6 +133,47 @@ export function NotificationBell() {
       setOpen(false);
       navigate(n.link);
     }
+  }
+
+  async function approveAdvance(n: AppNotification) {
+    if (!n.reference_id || actingId) return;
+    setActingId(n.id);
+    try {
+      const r = await authFetch(`${BASE}/api/salary-advances/${n.reference_id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (r.ok) {
+        setItems(prev => prev.filter(x => x.id !== n.id));
+        if (!n.is_read) setUnreadCount(c => Math.max(0, c - 1));
+        try { await authFetch(`${BASE}/api/notifications/${n.id}`, { method: 'DELETE' }); } catch { /* silent */ }
+      } else {
+        const j = await r.json().catch(() => ({}));
+        alert(j?.error || 'تعذر اعتماد الطلب');
+      }
+    } finally { setActingId(null); }
+  }
+
+  async function rejectAdvance(n: AppNotification) {
+    if (!n.reference_id || actingId) return;
+    const reason = window.prompt('سبب الرفض (اختياري):', '') ?? '';
+    setActingId(n.id);
+    try {
+      const r = await authFetch(`${BASE}/api/salary-advances/${n.reference_id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rejection_reason: reason }),
+      });
+      if (r.ok) {
+        setItems(prev => prev.filter(x => x.id !== n.id));
+        if (!n.is_read) setUnreadCount(c => Math.max(0, c - 1));
+        try { await authFetch(`${BASE}/api/notifications/${n.id}`, { method: 'DELETE' }); } catch { /* silent */ }
+      } else {
+        const j = await r.json().catch(() => ({}));
+        alert(j?.error || 'تعذر رفض الطلب');
+      }
+    } finally { setActingId(null); }
   }
 
   /* ── Styles ── */
@@ -267,6 +313,40 @@ export function NotificationBell() {
                         display: 'inline-block', marginTop: 4,
                         fontSize: 9, color: '#f59e0b', fontWeight: 700,
                       }}>● جديد</span>
+                    )}
+                    {n.type === 'advance_pending' && canApproveAdvances && n.reference_id && (
+                      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); approveAdvance(n); }}
+                          disabled={actingId === n.id}
+                          style={{
+                            flex: 1, padding: '5px 8px', borderRadius: 6,
+                            border: 'none', cursor: 'pointer',
+                            background: '#22c55e', color: '#fff',
+                            fontSize: 11, fontWeight: 700,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                            opacity: actingId === n.id ? 0.6 : 1,
+                          }}
+                        >
+                          <Check style={{ width: 12, height: 12 }} />
+                          {actingId === n.id ? 'جارٍ…' : 'اعتماد'}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); rejectAdvance(n); }}
+                          disabled={actingId === n.id}
+                          style={{
+                            flex: 1, padding: '5px 8px', borderRadius: 6,
+                            border: 'none', cursor: 'pointer',
+                            background: '#ef4444', color: '#fff',
+                            fontSize: 11, fontWeight: 700,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                            opacity: actingId === n.id ? 0.6 : 1,
+                          }}
+                        >
+                          <X style={{ width: 12, height: 12 }} />
+                          رفض
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
