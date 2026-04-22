@@ -9,6 +9,7 @@ export interface AuthUser {
   active?: boolean;
   warehouse_id?: number | null;
   safe_id?: number | null;
+  employee_id?: number | null;
 }
 
 interface AuthContextType {

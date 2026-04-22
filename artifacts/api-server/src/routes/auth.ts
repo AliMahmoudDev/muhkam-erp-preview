@@ -251,6 +251,7 @@ router.post('/auth/login', async (req, res) => {
         permissions: parsedPerms,
         active: user.active ?? true,
         warehouse_id: user.warehouse_id ?? null,
+        employee_id: user.employee_id ?? null,
         safe_id: user.safe_id ?? null,
         company_id: user.company_id ?? null,
       },
@@ -567,6 +568,7 @@ router.get('/auth/me', authenticate, (req, res) => {
     permissions: parsedPerms,
     active: u.active ?? true,
     warehouse_id: u.warehouse_id ?? null,
+    employee_id: u.employee_id ?? null,
     safe_id: u.safe_id ?? null,
   });
 });
@@ -767,6 +769,7 @@ router.post('/auth/login/email', async (req, res) => {
         permissions: parsedPerms,
         active: user.active ?? true,
         warehouse_id: user.warehouse_id ?? null,
+        employee_id: user.employee_id ?? null,
         safe_id: user.safe_id ?? null,
         company_id: user.company_id ?? null,
       },

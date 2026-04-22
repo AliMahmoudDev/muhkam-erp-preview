@@ -16,6 +16,7 @@ import {
 } from '@workspace/db';
 import { wrap } from '../lib/async-handler';
 import { hasPermission } from '../lib/permissions';
+import { selfEmployeeId, isSelfServiceUser } from '../lib/employee-self';
 import { writeAuditLog } from '../lib/audit-log';
 import { z } from 'zod';
 
@@ -314,6 +315,9 @@ router.get(
       eq(employeesTable.company_id, companyId),
       isNull(employeesTable.deleted_at),
     ];
+    // Self-service: restrict list to the caller's own employee record
+    const selfId = selfEmployeeId(req);
+    if (selfId !== null) conditions.push(eq(employeesTable.id, selfId));
     if (deptId) conditions.push(eq(employeesTable.department_id, deptId));
     if (status) conditions.push(eq(employeesTable.employment_status, status));
     if (search) {
@@ -501,6 +505,12 @@ router.get(
     }
     const companyId = req.user!.company_id!;
     const id = parseInt(String(req.params['id']), 10);
+    // Self-service: employee can only view own record
+    const selfId = selfEmployeeId(req);
+    if (selfId !== null && id !== selfId) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
 
     const rows = await db
       .select({

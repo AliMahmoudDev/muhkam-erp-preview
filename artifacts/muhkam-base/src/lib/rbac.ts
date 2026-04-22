@@ -32,7 +32,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type AppRole = 'admin' | 'manager' | 'cashier' | 'salesperson';
+export type AppRole = 'admin' | 'manager' | 'cashier' | 'salesperson' | 'employee';
 export type UserRole = AppRole;
 
 /* ── Which roles can access each route ─────────────────── */
@@ -63,7 +63,7 @@ export const ROUTE_ROLES: Record<string, AppRole[]> = {
   '/vouchers': ['admin', 'manager'],
   '/branches': ['admin', 'manager'],
   '/settings': ['admin'],
-  '/employees': ['admin', 'manager'],
+  '/employees': ['admin', 'manager', 'employee'],
   '/attendance': ['admin', 'manager'],
 };
 
@@ -125,7 +125,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   { name: 'السندات', href: '/vouchers', icon: HandCoins, roles: ['admin', 'manager'] },
   { name: 'الفروع', href: '/branches', icon: GitBranch, roles: ['admin', 'manager'] },
   { name: 'الإعدادات', href: '/settings', icon: Settings, roles: ['admin'] },
-  { name: 'الموظفون', href: '/employees', icon: UserCheck, roles: ['admin', 'manager'] },
+  { name: 'الموظفون', href: '/employees', icon: UserCheck, roles: ['admin', 'manager', 'employee'] },
   { name: 'الحضور والانصراف', href: '/attendance', icon: Clock, roles: ['admin', 'manager'] },
 ];
 

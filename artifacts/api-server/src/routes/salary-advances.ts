@@ -12,6 +12,7 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { writeAuditLog } from "../lib/audit-log";
 
 const router: IRouter = Router();
@@ -74,8 +75,11 @@ router.put("/salary-advances/settings", wrap(async (req, res) => {
 router.get("/salary-advances", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
-  const empId  = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
+  const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
   const status = String(req.query["status"] ?? "");
+  // Self-service: force-filter to the caller's own employee record
+  const selfId = selfEmployeeId(req);
+  const empId = selfId !== null ? selfId : queryEmpId;
 
   const conditions = [eq(employeesTable.company_id, companyId)];
   if (empId)  conditions.push(eq(salaryAdvancesTable.employee_id, empId));
@@ -103,6 +107,7 @@ router.get("/salary-advances", wrap(async (req, res) => {
 }));
 
 router.post("/salary-advances", wrap(async (req, res) => {
+  if (isSelfServiceUser(req)) { res.status(403).json({ error: "غير مصرح بإنشاء سلفة من حساب الموظف" }); return; }
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const { employee_id, requested_amount, advance_type, reason, deduct_from, safe_id } = req.body as Record<string, unknown>;
