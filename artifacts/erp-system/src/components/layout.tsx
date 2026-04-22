@@ -439,7 +439,7 @@ export function AppLayout({ children }: LayoutProps) {
           className="flex items-center justify-between px-4"
           style={{ height: 40, borderTop: sidebarBdr, flexShrink: 0 }}
         >
-          {!sidebarCollapsed && <span style={{ fontSize: 10, color: textMuted }}>MUHKAM ERP</span>}
+          {!sidebarCollapsed && <span style={{ fontSize: 10, color: textMuted }}>MuhKam Advanced</span>}
           <div className="glow-dot" style={sidebarCollapsed ? { margin: '0 auto' } : {}} />
         </div>
       </aside>
