@@ -1,6 +1,6 @@
 kind = "web"
   previewPath = "/muhkam-advanced/"
-  title = "MUHKAM ADVANCED"
+  title = "Muhkam-Pro"
   version = "1.0.0"
   id = "artifacts/muhkam-base"
   router = "path"
@@ -29,4 +29,3 @@ kind = "web"
   [services.env]
   PORT = "19990"
   BASE_PATH = "/muhkam-advanced/"
-  
