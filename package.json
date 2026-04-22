@@ -7,12 +7,12 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
-    "lint": "pnpm --filter @workspace/api-server lint && pnpm --filter @workspace/erp-system lint && pnpm --filter @workspace/scripts check-repair-coverage",
-    "lint:fix": "pnpm --filter @workspace/api-server lint:fix && pnpm --filter @workspace/erp-system lint:fix",
+    "lint": "pnpm --filter @workspace/api-server lint && pnpm --filter @workspace/muhkam-advanced lint && pnpm --filter @workspace/scripts check-repair-coverage",
+    "lint:fix": "pnpm --filter @workspace/api-server lint:fix && pnpm --filter @workspace/muhkam-advanced lint:fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:all": "pnpm --filter @workspace/api-server test && pnpm --filter @workspace/erp-system test",
-    "type-check": "pnpm --filter @workspace/api-server type-check && pnpm --filter @workspace/erp-system type-check",
+    "test:all": "pnpm --filter @workspace/api-server test && pnpm --filter @workspace/muhkam-advanced test",
+    "type-check": "pnpm --filter @workspace/api-server type-check && pnpm --filter @workspace/muhkam-advanced type-check",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -21,7 +21,7 @@
       "prettier --write"
     ],
     "artifacts/erp-system/src/**/*.{ts,tsx}": [
-      "pnpm --filter @workspace/erp-system exec eslint --fix",
+      "pnpm --filter @workspace/muhkam-advanced exec eslint --fix",
       "prettier --write"
     ],
     "**/*.{json,css}": [
