@@ -77,6 +77,12 @@
 | `ReceiptModal.tsx` / `PaymentModal.tsx` | Typed filter callbacks |
 | `employees.tsx` | `catch (err: unknown)` + `(err as Error)?.message` |
 
+### Page Sync Script (Session 9)
+- Created `scripts/src/sync-pages.ts` — syncs all shared pages from `erp-system → muhkam-base`
+- Pages that exist in BOTH versions get copied from erp-system; pages only in erp-system are skipped
+- Run via: `pnpm run sync-pages` from workspace root
+- Added `"sync-pages"` to both `scripts/package.json` and root `package.json`
+
 ### Session 9 Completion — Zero `as any` in Production Pages
 - Fixed both remaining `as any` usages by extending the type definitions:
   - `lib/api-spec/openapi.yaml` → added `currency`, `exchange_rate`, `is_consignment`, `consignment_warehouse_id` to `CreatePurchaseInput`

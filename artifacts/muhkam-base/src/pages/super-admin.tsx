@@ -518,8 +518,8 @@ export default function SuperAdmin() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newPlan, setNewPlan] = useState('trial');
-  const [newDays, setNewDays] = useState(14);
   const [newEdition, setNewEdition] = useState<'advanced' | 'ultimate'>('ultimate');
+  const [newDays, setNewDays] = useState(14);
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminUsername, setNewAdminUsername] = useState('');
   const [createResult, setCreateResult] = useState<{
@@ -826,9 +826,9 @@ export default function SuperAdmin() {
   async function savePlan(plan: PlanSetting) {
     setPlanSaving(true);
     try {
-      const res = await fetch(`/api/super/plan-settings/${plan.key}`, {
+      const res = await fetch(api('/api/super/plan-settings/' + plan.key), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(token ?? ''), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name_ar: plan.name_ar,
           description: plan.description,
@@ -2900,6 +2900,32 @@ export default function SuperAdmin() {
                         <option value="paid">مدفوع</option>
                       </select>
                     </div>
+
+                    {/* Edition (ADVANCED / ULTIMATE) */}
+                    <div style={{ flex: '1 1 150px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
+                        🏷️ نسخة النظام
+                      </label>
+                      <select
+                        value={newEdition}
+                        onChange={(e) => setNewEdition(e.target.value as 'advanced' | 'ultimate')}
+                        style={{
+                          width: '100%',
+                          border: `1.5px solid ${newEdition === 'ultimate' ? '#6366f1' : '#f59e0b'}`,
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          fontSize: '14px',
+                          background: C.bg,
+                          color: newEdition === 'ultimate' ? '#a5b4fc' : '#fcd34d',
+                          fontFamily: FONT,
+                          fontWeight: 700,
+                        }}
+                      >
+                        <option value="ultimate">⭐ MUHKAM ULTIMATE (كاملة)</option>
+                        <option value="advanced">🚀 MUHKAM ADVANCED (متوسطة)</option>
+                      </select>
+                    </div>
+
                     <div style={{ flex: '1 1 110px' }}>
                       <label
                         style={{
@@ -2933,32 +2959,6 @@ export default function SuperAdmin() {
                         ))}
                       </select>
                     </div>
-
-                    {/* Edition (ADVANCED / ULTIMATE) */}
-                    <div style={{ flex: '1 1 150px' }}>
-                      <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
-                        🏷️ نسخة النظام
-                      </label>
-                      <select
-                        value={newEdition}
-                        onChange={(e) => setNewEdition(e.target.value as 'advanced' | 'ultimate')}
-                        style={{
-                          width: '100%',
-                          border: `1.5px solid ${newEdition === 'ultimate' ? '#6366f1' : '#f59e0b'}`,
-                          borderRadius: '10px',
-                          padding: '10px 12px',
-                          fontSize: '14px',
-                          background: C.bg,
-                          color: newEdition === 'ultimate' ? '#a5b4fc' : '#fcd34d',
-                          fontFamily: FONT,
-                          fontWeight: 700,
-                        }}
-                      >
-                        <option value="ultimate">⭐ MUHKAM ULTIMATE (كاملة)</option>
-                        <option value="advanced">🚀 MUHKAM ADVANCED (متوسطة)</option>
-                      </select>
-                    </div>
-
                     {/* Admin name */}
                     <div style={{ flex: '1 1 160px' }}>
                       <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
@@ -3015,8 +3015,8 @@ export default function SuperAdmin() {
                             body: {
                               name: newName.trim(),
                               plan_type: newPlan,
-                              duration_days: newDays,
                               edition: newEdition,
+                              duration_days: newDays,
                               admin_name: newAdminName.trim(),
                               admin_username: newAdminUsername.trim() || undefined,
                             },
@@ -3301,6 +3301,19 @@ export default function SuperAdmin() {
                                   }
                                 />
                               </div>
+                              <ActionBtn
+                                label="⭐ ترقية إلى مدفوع"
+                                icon=""
+                                color={C.orange}
+                                onClick={() =>
+                                  coMutate.mutate({
+                                    url: `/api/super/companies/${co.id}`,
+                                    method: 'PUT',
+                                    body: { plan_type: 'paid' },
+                                  })
+                                }
+                              />
+
                               {/* Edition switcher */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: '10px', padding: '6px 12px' }}>
                                 <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>🏷️ النسخة:</span>
@@ -3332,18 +3345,6 @@ export default function SuperAdmin() {
                                 </select>
                               </div>
 
-                              <ActionBtn
-                                label="⭐ ترقية إلى مدفوع"
-                                icon=""
-                                color={C.orange}
-                                onClick={() =>
-                                  coMutate.mutate({
-                                    url: `/api/super/companies/${co.id}`,
-                                    method: 'PUT',
-                                    body: { plan_type: 'paid' },
-                                  })
-                                }
-                              />
                               <ActionBtn
                                 label="🔑 إعادة تعيين كلمة المرور"
                                 icon=""
@@ -5350,8 +5351,7 @@ export default function SuperAdmin() {
                           />
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <input
-                            type="checkbox" id={`mobile-${plan.key}`}
+                          <input type="checkbox" id={`mobile-${plan.key}`}
                             checked={ep.includes_mobile}
                             onChange={e => setEditingPlan({ ...ep, includes_mobile: e.target.checked })}
                           />
@@ -5360,8 +5360,7 @@ export default function SuperAdmin() {
                           </label>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <input
-                            type="checkbox" id={`active-${plan.key}`}
+                          <input type="checkbox" id={`active-${plan.key}`}
                             checked={ep.is_active}
                             onChange={e => setEditingPlan({ ...ep, is_active: e.target.checked })}
                           />

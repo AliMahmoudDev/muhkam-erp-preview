@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "test:all": "pnpm --filter @workspace/api-server test && pnpm --filter @workspace/erp-system test",
     "type-check": "pnpm --filter @workspace/api-server type-check && pnpm --filter @workspace/erp-system type-check",
+    "sync-pages": "pnpm --filter @workspace/scripts sync-pages",
     "prepare": "husky"
   },
   "lint-staged": {
