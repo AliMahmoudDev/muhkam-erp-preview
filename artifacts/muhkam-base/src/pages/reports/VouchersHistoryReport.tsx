@@ -82,10 +82,10 @@ export default function VouchersHistoryReport() {
   const { toast } = useToast();
   const { data:safes=[] } = useGetSettingsSafes();
 
-  const { data:receiptsRaw,  isLoading:l1 } = useQuery<RV[]>({ queryKey:["/api/receipt-vouchers"],  queryFn:()=>authFetch(api("/api/receipt-vouchers")).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }) });
-  const { data:depositsRaw,  isLoading:l2 } = useQuery<DV[]>({ queryKey:["/api/deposit-vouchers"],  queryFn:()=>authFetch(api("/api/deposit-vouchers")).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }) });
-  const { data:paymentsRaw,  isLoading:l3 } = useQuery<PV[]>({ queryKey:["/api/payment-vouchers"],  queryFn:()=>authFetch(api("/api/payment-vouchers")).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }) });
-  const { data:transfersRaw, isLoading:l4 } = useQuery<ST[]>({ queryKey:["/api/safe-transfers"],    queryFn:()=>authFetch(api("/api/safe-transfers")).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }) });
+  const { data:receiptsRaw,  isLoading:l1 } = useQuery<RV[]>({ queryKey: ["/api/receipt-vouchers"],  queryFn:()=>authFetch(api("/api/receipt-vouchers")).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }) });
+  const { data:depositsRaw,  isLoading:l2 } = useQuery<DV[]>({ queryKey: ["/api/deposit-vouchers"],  queryFn:()=>authFetch(api("/api/deposit-vouchers")).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }) });
+  const { data:paymentsRaw,  isLoading:l3 } = useQuery<PV[]>({ queryKey: ["/api/payment-vouchers"],  queryFn:()=>authFetch(api("/api/payment-vouchers")).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }) });
+  const { data:transfersRaw, isLoading:l4 } = useQuery<ST[]>({ queryKey: ["/api/safe-transfers"],    queryFn:()=>authFetch(api("/api/safe-transfers")).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }) });
   const receipts  = safeArray<RV>(receiptsRaw);
   const deposits  = safeArray<DV>(depositsRaw);
   const payments  = safeArray<PV>(paymentsRaw);
@@ -129,10 +129,10 @@ export default function VouchersHistoryReport() {
   const netFlow       = totalReceipt - totalPayment;
 
   /* ── Mutations: post/cancel (no delete in reports) ── */
-  const postDeposit   = useMutation({ mutationFn:(id:number)=>authFetch(api(`/api/deposit-vouchers/${id}/post`),{method:"POST"}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.error||"فشل");}return r.json();}), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/deposit-vouchers"]});toast({title:"✅ تم الترحيل"});}, onError:(e:Error)=>toast({title:e.message,variant:"destructive"}) });
-  const cancelDeposit = useMutation({ mutationFn:(id:number)=>authFetch(api(`/api/deposit-vouchers/${id}/cancel`),{method:"POST"}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.error||"فشل");}return r.json();}), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/deposit-vouchers"]});toast({title:"تم الإلغاء"});}, onError:(e:Error)=>toast({title:e.message,variant:"destructive"}) });
-  const postPayment   = useMutation({ mutationFn:(id:number)=>authFetch(api(`/api/payment-vouchers/${id}/post`),{method:"POST"}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.error||"فشل");}return r.json();}), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/payment-vouchers"]});toast({title:"✅ تم الترحيل"});}, onError:(e:Error)=>toast({title:e.message,variant:"destructive"}) });
-  const cancelPayment = useMutation({ mutationFn:(id:number)=>authFetch(api(`/api/payment-vouchers/${id}/cancel`),{method:"POST"}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.error||"فشل");}return r.json();}), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/payment-vouchers"]});toast({title:"تم الإلغاء"});}, onError:(e:Error)=>toast({title:e.message,variant:"destructive"}) });
+  const postDeposit   = useMutation({ mutationFn:(id:number)=>authFetch(api(`/api/deposit-vouchers/${id}/post`),{method:"POST"}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.error||"فشل");}return r.json();}), onSuccess:()=>{qc.invalidateQueries({queryKey: ["/api/deposit-vouchers"]});toast({title:"✅ تم الترحيل"});}, onError:(e:Error)=>toast({title:e.message,variant:"destructive"}) });
+  const cancelDeposit = useMutation({ mutationFn:(id:number)=>authFetch(api(`/api/deposit-vouchers/${id}/cancel`),{method:"POST"}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.error||"فشل");}return r.json();}), onSuccess:()=>{qc.invalidateQueries({queryKey: ["/api/deposit-vouchers"]});toast({title:"تم الإلغاء"});}, onError:(e:Error)=>toast({title:e.message,variant:"destructive"}) });
+  const postPayment   = useMutation({ mutationFn:(id:number)=>authFetch(api(`/api/payment-vouchers/${id}/post`),{method:"POST"}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.error||"فشل");}return r.json();}), onSuccess:()=>{qc.invalidateQueries({queryKey: ["/api/payment-vouchers"]});toast({title:"✅ تم الترحيل"});}, onError:(e:Error)=>toast({title:e.message,variant:"destructive"}) });
+  const cancelPayment = useMutation({ mutationFn:(id:number)=>authFetch(api(`/api/payment-vouchers/${id}/cancel`),{method:"POST"}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.error||"فشل");}return r.json();}), onSuccess:()=>{qc.invalidateQueries({queryKey: ["/api/payment-vouchers"]});toast({title:"تم الإلغاء"});}, onError:(e:Error)=>toast({title:e.message,variant:"destructive"}) });
 
   return (
     <div className="space-y-5" dir="rtl" style={{ fontFamily:"'Tajawal','Cairo',sans-serif" }}>

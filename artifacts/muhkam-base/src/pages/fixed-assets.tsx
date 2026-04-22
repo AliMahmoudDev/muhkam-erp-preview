@@ -387,7 +387,11 @@ function AssetDetailModal({ assetId, onClose }: { assetId: number; onClose: () =
 
           <div className="overflow-y-auto p-6 space-y-5">
             {isLoading ? (
-              <TableSkeleton />
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-14 rounded-2xl" style={{ background: 'rgba(255,255,255,0.06)', animation: `pulse ${1.2 + i * 0.1}s infinite` }} />
+                ))}
+              </div>
             ) : !asset ? null : (
               <>
                 {/* Summary cards */}
@@ -779,7 +783,9 @@ export default function FixedAssetsPage() {
       {/* Table */}
       <div className="glass-panel rounded-3xl border border-white/10 overflow-hidden">
         {isLoading ? (
-          <TableSkeleton />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm"><tbody><TableSkeleton /></tbody></table>
+          </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Building2 className="w-14 h-14 text-white/10 mb-4" />

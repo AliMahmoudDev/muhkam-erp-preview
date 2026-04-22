@@ -76,7 +76,7 @@ export default function ConsignmentPage() {
         <h1 className="text-2xl font-black text-white mb-1">تقرير الائتمان</h1>
         <p className="text-white/40 text-sm">جاري التحميل...</p>
       </div>
-      <TableSkeleton />
+      <table className="w-full"><tbody><TableSkeleton /></tbody></table>
     </div>
   );
 

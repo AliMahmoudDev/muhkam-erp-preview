@@ -19,7 +19,7 @@ export default function ProductProfitReport({ warehouseId }: { warehouseId?: num
   const wParam = warehouseId ? `&warehouse_id=${warehouseId}` : "";
 
   const { data, isLoading } = useQuery<ProductProfitData>({
-    queryKey:["/api/reports/product-profit",dateFrom,dateTo,warehouseId],
+    queryKey: ["/api/reports/product-profit",dateFrom,dateTo,warehouseId],
     queryFn:()=>authFetch(api(`/api/reports/product-profit?date_from=${dateFrom}&date_to=${dateTo}${wParam}`)).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }),
     staleTime:60_000,
   });

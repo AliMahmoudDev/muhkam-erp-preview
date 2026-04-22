@@ -19,7 +19,7 @@ export default function SalesAnalysisReport({ warehouseId }: { warehouseId?: num
   const wParam = warehouseId ? `&warehouse_id=${warehouseId}` : "";
 
   const { data, isLoading } = useQuery<SalesAnalysisData>({
-    queryKey:["/api/reports/sales-analysis",dateFrom,dateTo,warehouseId],
+    queryKey: ["/api/reports/sales-analysis",dateFrom,dateTo,warehouseId],
     queryFn:()=>authFetch(api(`/api/reports/sales-analysis?date_from=${dateFrom}&date_to=${dateTo}${wParam}`)).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }),
     staleTime:60_000,
   });

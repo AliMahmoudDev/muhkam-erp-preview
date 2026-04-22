@@ -16,7 +16,7 @@ export default function TopReportsTab() {
   const [dateFrom,dateTo]          = getDateRange(mode,customFrom,customTo);
 
   const { data, isLoading } = useQuery<TopData>({
-    queryKey:["/api/reports/top",dateFrom,dateTo],
+    queryKey: ["/api/reports/top",dateFrom,dateTo],
     queryFn:()=>authFetch(api(`/api/reports/top?date_from=${dateFrom}&date_to=${dateTo}&limit=10`)).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }),
     staleTime:60_000,
   });
