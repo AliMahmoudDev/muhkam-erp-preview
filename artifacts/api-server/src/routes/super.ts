@@ -5,7 +5,7 @@
  */
 import { Router } from "express";
 import { eq, desc, sql } from "drizzle-orm";
-import { db, companiesTable, erpUsersTable } from "@workspace/db";
+import { db, companiesTable, erpUsersTable, planSettingsTable } from "@workspace/db";
 import fs from "fs";
 import path from "path";
 
@@ -766,33 +766,92 @@ router.get("/super/backup/download/:filename", ...superOnly, wrap(async (req, re
 }));
 
 /* ══════════════════════════════════════════════════════════════════
+   PLAN SETTINGS — GET & PUT (prices editable from super-admin UI)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Default seed plans — inserted once if the table is empty */
+const DEFAULT_PLANS = [
+  { key: "trial",        name_ar: "تجريبية",           description: "فترة تجريبية مجانية",                   price: 0,    includes_mobile: false },
+  { key: "basic",        name_ar: "أساسية",             description: "النظام الأساسي بدون تطبيق الموبايل",   price: 299,  includes_mobile: false },
+  { key: "basic_mobile", name_ar: "أساسية + موبايل",   description: "النظام الأساسي مع تطبيق الموبايل",     price: 449,  includes_mobile: true  },
+  { key: "advanced",     name_ar: "كاملة (Advanced)",   description: "النسخة الكاملة بجميع الميزات",         price: 699,  includes_mobile: true  },
+];
+
+async function getPlanPricesMap(): Promise<Record<string, number>> {
+  const rows = await db.select().from(planSettingsTable);
+  if (rows.length === 0) {
+    /* seed defaults */
+    await db.insert(planSettingsTable).values(DEFAULT_PLANS).onConflictDoNothing();
+    return Object.fromEntries(DEFAULT_PLANS.map(p => [p.key, p.price]));
+  }
+  return Object.fromEntries(rows.map(r => [r.key, r.price]));
+}
+
+router.get("/super/plan-settings", ...superOnly, wrap(async (_req, res) => {
+  let rows = await db.select().from(planSettingsTable).orderBy(planSettingsTable.id);
+  if (rows.length === 0) {
+    await db.insert(planSettingsTable).values(DEFAULT_PLANS).onConflictDoNothing();
+    rows = await db.select().from(planSettingsTable).orderBy(planSettingsTable.id);
+  }
+  res.json(rows);
+}));
+
+router.put("/super/plan-settings/:key", ...superOnly, wrap(async (req, res) => {
+  const { key } = req.params;
+  const { name_ar, description, price, includes_mobile, is_active } = req.body as {
+    name_ar?: string; description?: string; price?: number;
+    includes_mobile?: boolean; is_active?: boolean;
+  };
+
+  if (price !== undefined && (typeof price !== "number" || price < 0)) {
+    res.status(400).json({ error: "السعر يجب أن يكون رقماً موجباً" }); return;
+  }
+
+  const updates: Partial<typeof planSettingsTable.$inferInsert> = { updated_at: new Date() };
+  if (name_ar        !== undefined) updates.name_ar        = name_ar;
+  if (description    !== undefined) updates.description    = description;
+  if (price          !== undefined) updates.price          = price;
+  if (includes_mobile !== undefined) updates.includes_mobile = includes_mobile;
+  if (is_active      !== undefined) updates.is_active      = is_active;
+
+  const existing = await db.select().from(planSettingsTable).where(eq(planSettingsTable.key, key));
+  let row;
+  if (existing.length === 0) {
+    [row] = await db.insert(planSettingsTable)
+      .values({ key, name_ar: name_ar ?? key, price: price ?? 0, ...updates })
+      .returning();
+  } else {
+    [row] = await db.update(planSettingsTable).set(updates)
+      .where(eq(planSettingsTable.key, key)).returning();
+  }
+
+  res.json(row);
+}));
+
+/* ══════════════════════════════════════════════════════════════════
    FEATURE 1 — Revenue Dashboard
    GET /super/revenue — MRR, plan breakdown, monthly revenue trends
    ══════════════════════════════════════════════════════════════════ */
-const PLAN_PRICES: Record<string, number> = {
-  trial:        0,
-  basic:        299,
-  pro:          599,
-  paid:         399,
-  professional: 799,
-};
 
 router.get("/super/revenue", ...superOnly, wrap(async (_req, res) => {
-  const companies = await db.select().from(companiesTable);
+  const [companies, planPrices] = await Promise.all([
+    db.select().from(companiesTable),
+    getPlanPricesMap(),
+  ]);
   const now = new Date();
   const nowStr = now.toISOString().slice(0, 10);
 
   const activeCompanies = companies.filter(c => c.is_active && c.end_date >= nowStr);
 
-  /* MRR = sum of prices for all currently active, non-trial companies */
-  const mrr = activeCompanies.reduce((sum, c) => sum + (PLAN_PRICES[c.plan_type] ?? 0), 0);
+  /* MRR = sum of prices for all currently active companies */
+  const mrr = activeCompanies.reduce((sum, c) => sum + (planPrices[c.plan_type] ?? 0), 0);
   const arr  = mrr * 12;
 
   /* Plan breakdown */
-  const planBreakdown = Object.entries(PLAN_PRICES).map(([plan, price]) => ({
+  const planBreakdown = Object.entries(planPrices).map(([plan, price]) => ({
     plan,
     price,
-    count: activeCompanies.filter(c => c.plan_type === plan).length,
+    count:   activeCompanies.filter(c => c.plan_type === plan).length,
     revenue: activeCompanies.filter(c => c.plan_type === plan).length * price,
   }));
 
@@ -811,7 +870,7 @@ router.get("/super/revenue", ...superOnly, wrap(async (_req, res) => {
       const monthEnd   = new Date(y, m + 1, 0);
       return c.is_active && start <= monthEnd && end >= monthStart;
     });
-    const revenue = activeInMonth.reduce((sum, c) => sum + (PLAN_PRICES[c.plan_type] ?? 0), 0);
+    const revenue = activeInMonth.reduce((sum, c) => sum + (planPrices[c.plan_type] ?? 0), 0);
     monthlyRevenue.push({ month: label, revenue, count: activeInMonth.length });
   }
 
@@ -944,7 +1003,10 @@ router.get("/super/alerts", ...superOnly, wrap(async (_req, res) => {
    GET /super/export/companies — download companies list as CSV
    ══════════════════════════════════════════════════════════════════ */
 router.get("/super/export/companies", ...superOnly, wrap(async (_req, res) => {
-  const companies = await db.select().from(companiesTable);
+  const [companies, planPricesEx] = await Promise.all([
+    db.select().from(companiesTable),
+    getPlanPricesMap(),
+  ]);
   const users = await db
     .select({ id: erpUsersTable.id, company_id: erpUsersTable.company_id })
     .from(erpUsersTable)
@@ -960,7 +1022,7 @@ router.get("/super/export/companies", ...superOnly, wrap(async (_req, res) => {
   const header = "الرقم,اسم الشركة,نوع الخطة,تاريخ البداية,تاريخ الانتهاء,الحالة,عدد المستخدمين,الإيراد الشهري (ج.م.),تاريخ التسجيل";
   const rows = companies.map(c => {
     const status = !c.is_active ? "موقوف" : c.end_date < nowStr ? "منتهي" : c.plan_type === "trial" ? "تجريبي" : "نشط";
-    const revenue = PLAN_PRICES[c.plan_type] ?? 0;
+    const revenue = planPricesEx[c.plan_type] ?? 0;
     const userCount = userCountByCompany[c.id] ?? 0;
     return [
       c.id,
