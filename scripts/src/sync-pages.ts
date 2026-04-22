@@ -3,7 +3,22 @@ import { join, relative } from "path";
 
 const ROOT = join(import.meta.dirname, "..", "..");
 const SOURCE_DIR = join(ROOT, "artifacts", "erp-system", "src", "pages");
-const TARGET_DIR = join(ROOT, "artifacts", "muhkam-base", "src", "pages");
+const TARGET_DIR = join(ROOT, "artifacts", "muhkam-pro", "src", "pages");
+
+/**
+ * صفحات قسم المحاسبة — لا تُزامَن مع muhkam-pro
+ * هذه الصفحات خاصة بـ Muhkam-Advanced فقط
+ */
+const ACCOUNTING_PAGES = new Set([
+  "accounts.tsx",
+  "accruals.tsx",
+  "bank-reconciliation.tsx",
+  "budgets.tsx",
+  "cost-centers.tsx",
+  "fiscal-years.tsx",
+  "fixed-assets.tsx",
+  "journal-entries.tsx",
+]);
 
 function getAllFiles(dir: string, base = dir): string[] {
   const result: string[] = [];
@@ -23,14 +38,26 @@ const targetFilesSet = new Set(getAllFiles(TARGET_DIR));
 
 let synced = 0;
 let unchanged = 0;
-let skipped = 0;
+let skippedMissing = 0;
+let skippedAccounting = 0;
 
-console.log("🔄 مزامنة الصفحات: erp-system → muhkam-pro\n");
+console.log("🔄 مزامنة الصفحات: erp-system (Muhkam-Advanced) → muhkam-pro\n");
+console.log("📌 القاعدة: كل الصفحات تتزامن ماعدا صفحات قسم المحاسبة\n");
 
 for (const file of sourceFiles) {
+  const fileName = file.split("/").pop() ?? file;
+
+  // تجاهل صفحات المحاسبة — خاصة بـ Advanced فقط
+  if (ACCOUNTING_PAGES.has(fileName)) {
+    console.log(`📊 محاسبة (متجاهل):  ${file}`);
+    skippedAccounting++;
+    continue;
+  }
+
+  // تجاهل الملفات غير الموجودة في muhkam-pro
   if (!targetFilesSet.has(file)) {
-    console.log(`⏭  تجاهل (غير موجود في الأساسي): ${file}`);
-    skipped++;
+    console.log(`⏭  غير موجود في Pro: ${file}`);
+    skippedMissing++;
     continue;
   }
 
@@ -45,15 +72,16 @@ for (const file of sourceFiles) {
   }
 
   writeFileSync(dstPath, srcContent, "utf-8");
-  console.log(`✅ تمت المزامنة: ${file}`);
+  console.log(`✅ تمت المزامنة:     ${file}`);
   synced++;
 }
 
-console.log(`\n──────────────────────────────────`);
-console.log(`✅ تمت مزامنة  : ${synced} ملف`);
-console.log(`🟰 بدون تغيير  : ${unchanged} ملف`);
-console.log(`⏭  تم التجاهل  : ${skipped} ملف (غير موجود في الأساسي)`);
-console.log(`──────────────────────────────────`);
+console.log(`\n──────────────────────────────────────────`);
+console.log(`✅ تمت مزامنة      : ${synced} ملف`);
+console.log(`🟰 بدون تغيير      : ${unchanged} ملف`);
+console.log(`📊 محاسبة (متجاهل) : ${skippedAccounting} ملف`);
+console.log(`⏭  غير موجود في Pro: ${skippedMissing} ملف`);
+console.log(`──────────────────────────────────────────`);
 
 if (synced === 0) {
   console.log("\n✨ كل الصفحات المشتركة محدّثة بالفعل.");

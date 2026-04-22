@@ -78,10 +78,15 @@
 | `employees.tsx` | `catch (err: unknown)` + `(err as Error)?.message` |
 
 ### Page Sync Script (Session 9)
-- Created `scripts/src/sync-pages.ts` — syncs all shared pages from `erp-system → muhkam-base`
-- Pages that exist in BOTH versions get copied from erp-system; pages only in erp-system are skipped
+- Created `scripts/src/sync-pages.ts` — syncs shared pages from `erp-system (Muhkam-Advanced) → muhkam-pro`
 - Run via: `pnpm run sync-pages` from workspace root
-- Added `"sync-pages"` to both `scripts/package.json` and root `package.json`
+
+### Sync Rules (قواعد المزامنة)
+**ALWAYS apply changes to BOTH systems** (`erp-system` + `muhkam-pro`) EXCEPT:
+- **Accounting pages** → Muhkam-Advanced (erp-system) ONLY — do NOT apply to muhkam-pro
+- Accounting pages list: `accounts.tsx`, `accruals.tsx`, `bank-reconciliation.tsx`, `budgets.tsx`, `cost-centers.tsx`, `fiscal-years.tsx`, `fixed-assets.tsx`, `journal-entries.tsx`
+- Files unique to muhkam-pro (extra UI components) — stay in muhkam-pro only
+- Files that differ by design (`App.tsx`, `layout.tsx`, `index.css`, `rbac.ts`, `login.tsx`, `attendance.tsx`) — edit each separately
 
 ### Session 9 Completion — Zero `as any` in Production Pages
 - Fixed both remaining `as any` usages by extending the type definitions:
