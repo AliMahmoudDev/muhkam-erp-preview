@@ -16,7 +16,7 @@ import {
 } from '@workspace/db';
 import { wrap } from '../lib/async-handler';
 import { hasPermission } from '../lib/permissions';
-import { selfEmployeeId, isSelfServiceUser } from '../lib/employee-self';
+import { selfEmployeeId } from '../lib/employee-self';
 import { writeAuditLog } from '../lib/audit-log';
 import { z } from 'zod';
 

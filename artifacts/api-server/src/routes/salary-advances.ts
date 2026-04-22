@@ -114,7 +114,8 @@ router.post("/salary-advances", wrap(async (req, res) => {
   const selfId    = selfEmployeeId(req);
   const body      = req.body as Record<string, unknown>;
   // Self-service: force employee_id to caller's own, ignore safe_id, force pending.
-  let { employee_id, requested_amount, advance_type, reason, deduct_from, safe_id } = body;
+  let { employee_id, safe_id } = body;
+  const { requested_amount, advance_type, reason, deduct_from } = body;
   if (isSelf) {
     if (selfId == null) { res.status(403).json({ error: "حساب الموظف غير مرتبط بسجل" }); return; }
     employee_id = selfId;

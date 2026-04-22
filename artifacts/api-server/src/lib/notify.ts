@@ -3,7 +3,7 @@
  * Notifications are stored per user_id. We resolve employee_id → user_id when needed.
  * All errors are swallowed so business operations never fail because of a notification.
  */
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db, notificationsTable, erpUsersTable } from "@workspace/db";
 
 export interface NotifyPayload {
