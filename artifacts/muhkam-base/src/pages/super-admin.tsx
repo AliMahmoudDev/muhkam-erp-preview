@@ -4553,11 +4553,50 @@ export default function SuperAdmin() {
               ) : (
                 <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
                   {auditData.rows.map(row => {
-                    const actionColors: Record<string, string> = {
-                      CREATE: '#34D399', UPDATE: '#60A5FA', DELETE: '#EF4444',
-                      ACTIVATE: '#A78BFA', SUSPEND: '#F59E0B', EXTEND: '#FB923C',
+                    const ACTION_AR: Record<string, { label: string; color: string }> = {
+                      create:             { label: 'إنشاء',                color: '#34D399' },
+                      update:             { label: 'تعديل',                color: '#60A5FA' },
+                      delete:             { label: 'حذف',                  color: '#EF4444' },
+                      cancel:             { label: 'إلغاء',                color: '#EF4444' },
+                      price_override:     { label: 'تجاوز سعر',           color: '#FBBF24' },
+                      lock_period:        { label: 'إغلاق فترة',           color: '#F87171' },
+                      unlock_period:      { label: 'فتح فترة',             color: '#34D399' },
+                      lock_blocked:       { label: 'محاولة إغلاق مرفوضة', color: '#FB923C' },
+                      reversal_created:   { label: 'سند عكسي',             color: '#60A5FA' },
+                      correction_created: { label: 'سند تصحيحي',           color: '#A78BFA' },
+                      INTEGRITY_REPAIR:        { label: 'إصلاح محاسبي',      color: '#FB7185' },
+                      INVENTORY_ADJUSTMENT:    { label: 'تسوية مخزون',       color: '#22D3EE' },
+                      INVENTORY_COUNT_APPLIED: { label: 'تطبيق جرد مخزون',  color: '#22D3EE' },
+                      INVENTORY_TRANSFER:      { label: 'تحويل مخزون',       color: '#38BDF8' },
+                      PERIOD_OVERRIDE:         { label: 'تجاوز إغلاق مالي', color: '#FB923C' },
+                      COMPANY_ACTIVATED:    { label: 'تفعيل شركة',        color: '#34D399' },
+                      COMPANY_SUSPENDED:    { label: 'إيقاف شركة',        color: '#F59E0B' },
+                      COMPANY_EXTENDED:     { label: 'تمديد اشتراك',      color: '#38BDF8' },
+                      COMPANY_DELETED:      { label: 'حذف شركة',          color: '#EF4444' },
+                      ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: '#A78BFA' },
+                      RESTORE_STARTED:      { label: 'بدء استعادة',       color: '#A78BFA' },
+                      RESTORE_REJECTED:     { label: 'رفض استعادة',       color: '#EF4444' },
+                      RESTORE_FAILED:       { label: 'فشل استعادة',       color: '#EF4444' },
+                      RESTORE_COMPLETED:    { label: 'اكتمال استعادة',    color: '#34D399' },
+                      SUPER_ADMIN_ACCESS:    { label: 'وصول مدير عام',      color: '#818CF8' },
+                      SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: '#818CF8' },
                     };
-                    const col = actionColors[row.action] ?? '#94A3B8';
+                    const RECORD_AR: Record<string, string> = {
+                      customer: 'عميل', supplier: 'مورد', sale: 'فاتورة بيع',
+                      sale_return: 'مرتجع مبيعات', purchase: 'فاتورة شراء',
+                      purchase_return: 'مرتجع مشتريات', product: 'منتج',
+                      financial_lock: 'قفل مالي', expense: 'مصروف',
+                      safe_transfer: 'تحويل خزينة', receipt_voucher: 'سند قبض',
+                      payment_voucher: 'سند صرف', deposit_voucher: 'سند إيداع',
+                      treasury_voucher: 'سند خزينة', user: 'مستخدم',
+                      erp_user: 'حساب مستخدم', account_balances: 'أرصدة الحسابات',
+                      customer_balances: 'أرصدة العملاء', employee: 'موظف',
+                      company: 'شركة', subscription: 'اشتراك',
+                      payroll_period: 'دورة رواتب', salary_advance: 'سلفة راتب',
+                      fiscal_year: 'سنة مالية', system: 'النظام',
+                      announcement: 'إعلان', warranty: 'ضمان',
+                    };
+                    const actionMeta = ACTION_AR[row.action] ?? { label: row.action, color: '#94A3B8' };
                     return (
                       <div key={row.id} style={{
                         display: 'grid',
@@ -4566,8 +4605,8 @@ export default function SuperAdmin() {
                         borderBottom: `1px solid rgba(255,255,255,0.04)`,
                         fontSize: '12px', alignItems: 'center',
                       }}>
-                        <span style={{ color: col, fontWeight: 700 }}>{row.action}</span>
-                        <span style={{ color: C.muted }}>{row.record_type}</span>
+                        <span style={{ color: actionMeta.color, fontWeight: 700 }}>{actionMeta.label}</span>
+                        <span style={{ color: C.muted }}>{RECORD_AR[row.record_type] ?? row.record_type}</span>
                         <span style={{ color: C.muted, textAlign: 'center' }}>#{row.record_id}</span>
                         <span style={{ color: C.text, fontSize: '11px', lineHeight: 1.4 }}>{row.note ?? '—'}</span>
                         <span style={{ color: C.muted, fontSize: '11px', direction: 'ltr', textAlign: 'right' }}>
