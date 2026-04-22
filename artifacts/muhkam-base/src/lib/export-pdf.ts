@@ -886,61 +886,13 @@ export function printPLReport(data: PLReportData): void {
   const grossMargin = data.total_revenue > 0 ? (data.gross_profit / data.total_revenue) * 100 : 0;
   const netMargin = data.total_revenue > 0 ? (data.net_profit / data.total_revenue) * 100 : 0;
 
-  /* ── Top products ── */
-  const topProducts = [...data.by_product].sort((a, b) => b.profit - a.profit).slice(0, 10);
-  const _productRows = topProducts
-    .map((p, i) => {
-      const margin = p.revenue > 0 ? (p.profit / p.revenue) * 100 : 0;
-      const barW = Math.max(0, Math.min(100, margin));
-      return `<tr>
-      <td>${i + 1}</td>
-      <td style="font-weight:700">${p.product_name}</td>
-      <td>${p.qty_sold}</td>
-      <td class="num green">${m(p.revenue)}</td>
-      <td class="num red">${m(p.cost)}</td>
-      <td class="num ${p.profit >= 0 ? 'green' : 'red'}" style="font-weight:900">${m(p.profit)}</td>
-      <td>
-        <div style="font-size:11px;font-weight:700;color:${margin >= 30 ? '#059669' : margin >= 15 ? '#d97706' : '#dc2626'}">${pct(margin)}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${barW}%;background:${margin >= 30 ? '#059669' : margin >= 15 ? '#d97706' : '#dc2626'}"></div></div>
-      </td>
-    </tr>`;
-    })
-    .join('');
-
   /* ── Branch table ── */
   const branches = (data.by_warehouse ?? []).filter((w) => w.revenue > 0);
-  const maxRev = Math.max(...branches.map((b) => b.revenue), 1);
-  const _branchRows = branches
-    .map((w) => {
-      const mg = w.revenue > 0 ? (w.gross_profit / w.revenue) * 100 : 0;
-      const barW = Math.round((w.revenue / maxRev) * 100);
-      return `<tr>
-      <td style="font-weight:700">${w.warehouse_name}</td>
-      <td class="num">${m(w.revenue)}</td>
-      <td class="num red">${m(w.cost)}</td>
-      <td class="num ${w.gross_profit >= 0 ? 'green' : 'red'}" style="font-weight:900">${m(w.gross_profit)}</td>
-      <td style="font-weight:700;color:${mg >= 30 ? '#059669' : mg >= 15 ? '#d97706' : '#dc2626'}">${pct(mg)}</td>
-      <td>${w.invoice_count}</td>
-      <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${barW}%"></div></div></td>
-    </tr>`;
-    })
-    .join('');
 
   /* ── Expense table ── */
   const expenses = data.by_expense_category ?? [];
-  const _expRows = expenses
-    .map((e) => {
-      const pctE = data.total_expenses > 0 ? (e.total / data.total_expenses) * 100 : 0;
-      return `<tr><td style="font-weight:600">${e.category}</td><td class="num">${m(e.total)}</td><td style="color:#6b7280">${pctE.toFixed(1)}%</td></tr>`;
-    })
-    .join('');
 
-  /* ── Payment breakdown ── */
-  const cashS = data.cash_sales ?? 0;
-  const creditS = data.credit_sales ?? 0;
-  const partialS = data.partial_sales ?? 0;
   const retAmt = data.return_amount ?? 0;
-  const _hasPayBreakdown = cashS + creditS + partialS + retAmt > 0;
 
   /* ── Build expense lines for statement ── */
   const expLines = expenses

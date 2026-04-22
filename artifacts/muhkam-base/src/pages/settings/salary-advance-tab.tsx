@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
-import { Banknote, Save, Percent, Users, DollarSign, CalendarDays, ShieldCheck, Loader2 } from 'lucide-react';
+import { Save, Percent, Users, DollarSign, CalendarDays, ShieldCheck, Loader2 } from 'lucide-react';
 import { PageHeader } from './_shared';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');

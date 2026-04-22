@@ -106,7 +106,6 @@ function ReviewTab({
   });
 
   const products = auditData?.products ?? [];
-  const _summary = auditData?.summary;
 
   const q = debouncedSearch.toLowerCase();
   const searched = products.filter(

@@ -281,7 +281,6 @@ export default function HealthCheckReport() {
             : hasWarnings
               ? 'WARNING'
               : 'OK';
-          const _gc = SEV_CFG[groupStatus];
           const isOpen = expandedGroups[groupKey] ?? true;
           return (
             <div

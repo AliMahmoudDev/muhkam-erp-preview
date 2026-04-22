@@ -802,3 +802,26 @@ Standalone iOS & Android mobile companion app at `artifacts/erp-mobile/`. Built 
 - **Purpose:** Tier 2 of the 3-tier strategy (BASE / ADVANCED / ULTIMATE)
 - **Backend:** Reuses the same API server on port 8080
 
+---
+
+## Code Quality Standards (enforced)
+
+### TypeScript
+- `strict: true`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns` — all enabled in both frontends
+- `noUnusedLocals: true` — **enabled** in both erp-system and muhkam-pro (April 2026 cleanup)
+- api-server has 0 TypeScript errors at all times
+
+### UI Components (shadcn/ui)
+- 39 unused components deleted from each frontend (kept only: button, badge, card, dialog, input, label, select, separator, sheet, skeleton, spinner, textarea, toast, toaster, toggle, tooltip)
+
+### Dead Code Policy
+- No unused local variables, imports, or exports permitted
+- `_prefixed` variables are not used to bypass noUnusedLocals — they must be removed
+
+### Sync Script
+- `pnpm run sync-pages` — syncs shared pages from erp-system → muhkam-pro (for files that exist in both)
+
+### muhkam-pro Specifics
+- `ADVANCED_HIDDEN` set in layout.tsx controls which nav items are hidden (accounting pages)
+- App.tsx lazy imports only pages that have actual rendered routes (not redirects)
+

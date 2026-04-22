@@ -759,9 +759,6 @@ export default function Employees() {
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
-  /* ── Deduction: legacy active loan helper (for manual payment modal) ─── */
-  const activeLoans = loans.filter((l) => ['active', 'approved'].includes(String(l.status)));
-
   /* ── Deduction type labels / colors ──────────────────────── */
   const DEDUCTION_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
     late:    { label: 'تأخير',         color: 'text-amber-300',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },

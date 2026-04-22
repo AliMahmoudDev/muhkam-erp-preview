@@ -27,10 +27,6 @@ const Expenses = lazy(() => import('@/pages/expenses'));
 const Income = lazy(() => import('@/pages/income'));
 const Reports = lazy(() => import('@/pages/reports'));
 const Settings = lazy(() => import('@/pages/settings'));
-const Accounts = lazy(() => import('@/pages/accounts'));
-const JournalEntries = lazy(() => import('@/pages/journal-entries'));
-const FiscalYears = lazy(() => import('@/pages/fiscal-years'));
-const AuditLog = lazy(() => import('@/pages/audit-log'));
 const Treasury = lazy(() => import('@/pages/treasury'));
 const Products = lazy(() => import('@/pages/products'));
 const Inventory = lazy(() => import('@/pages/inventory'));
@@ -43,11 +39,6 @@ const Attendance = lazy(() => import('@/pages/attendance'));
 const Returns = lazy(() => import('@/pages/returns'));
 const Warranty = lazy(() => import('@/pages/warranty'));
 const Consignment = lazy(() => import('@/pages/consignment'));
-const FixedAssets = lazy(() => import('@/pages/fixed-assets'));
-const Accruals = lazy(() => import('@/pages/accruals'));
-const BankReconciliation = lazy(() => import('@/pages/bank-reconciliation'));
-const Budgets = lazy(() => import('@/pages/budgets'));
-const CostCenters = lazy(() => import('@/pages/cost-centers'));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({

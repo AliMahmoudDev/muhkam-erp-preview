@@ -125,7 +125,6 @@ export default function Accounts() {
   });
 
   const roots = accounts.filter(a => a.parent_id === null);
-  const _filteredRoots = filter ? accounts.filter(a => TYPE_LABELS[a.type] === filter || a.type === filter) : roots;
 
   // حساب المجاميع
   const totals = useMemo(() => {
