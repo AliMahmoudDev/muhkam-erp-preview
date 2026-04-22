@@ -71,7 +71,6 @@ export default defineConfig({
           ],
           "vendor-query":  ["@tanstack/react-query"],
           "vendor-charts": ["recharts"],
-          "vendor-pdf":    ["jspdf", "jspdf-autotable"],
           "vendor-utils":  ["date-fns", "clsx", "tailwind-merge"],
         },
       },
