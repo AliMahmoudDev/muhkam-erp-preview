@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Arabic ERP System"
+title = "Muhkam-Advanced"
 version = "1.0.0"
 id = "artifacts/erp-system"
 router = "path"
