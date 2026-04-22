@@ -127,7 +127,6 @@ async function streamBackupToFile(
     let offset = 0;
     let firstRow = true;
     /* paginate to avoid loading the whole table into memory */
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const rows = await db
         .select()

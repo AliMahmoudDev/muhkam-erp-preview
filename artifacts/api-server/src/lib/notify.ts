@@ -28,6 +28,7 @@ export async function notifyUser(companyId: number, userId: number, p: NotifyPay
     });
   } catch (e) {
     // Silent — notifications are best-effort
+    // eslint-disable-next-line no-console
     console.warn("[notify] failed for user", userId, e);
   }
 }
@@ -50,6 +51,7 @@ export async function notifyEmployee(companyId: number, employeeId: number, p: N
       })),
     );
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.warn("[notify] failed for employee", employeeId, e);
   }
 }
@@ -84,6 +86,7 @@ export async function notifyManagers(companyId: number, permissionKey: string, p
       })),
     );
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.warn("[notify] failed for managers", e);
   }
 }

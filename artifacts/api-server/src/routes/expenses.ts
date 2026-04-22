@@ -191,6 +191,7 @@ router.post("/expenses", wrap(async (req, res) => {
         companyId: cidExp,
       });
     } catch (jeErr) {
+      // eslint-disable-next-line no-console
       console.error("Failed to create journal entry for expense:", jeErr);
     }
   }
@@ -248,6 +249,7 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
         companyId: cidDel,
       });
     } catch (jeErr) {
+      // eslint-disable-next-line no-console
       console.error("Failed to create reversal JE for deleted expense:", jeErr);
     }
   }

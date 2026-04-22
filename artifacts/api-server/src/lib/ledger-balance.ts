@@ -10,6 +10,9 @@
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
+type BalanceRow = { balance?: string | number | null };
+type TotalRow = { total?: string | number | null };
+
 function r2(n: number) { return Math.round(n * 100) / 100; }
 
 /* ── رصيد عميل واحد (AR) ──────────────────────────────────────────────────── */
@@ -23,7 +26,7 @@ export async function getCustomerLedgerBalance(accountId: number | null | undefi
     JOIN journal_entries je ON je.id = jel.entry_id AND je.status = 'posted'
     WHERE jel.account_id = ${accountId}
   `);
-  return r2(Number((result.rows[0] as any)?.balance ?? 0));
+  return r2(Number((result.rows[0] as BalanceRow | undefined)?.balance ?? 0));
 }
 
 /* ── رصيد مورد واحد (AP) ──────────────────────────────────────────────────── */
@@ -37,7 +40,7 @@ export async function getSupplierLedgerBalance(accountId: number | null | undefi
     JOIN journal_entries je ON je.id = jel.entry_id AND je.status = 'posted'
     WHERE jel.account_id = ${accountId}
   `);
-  return r2(Number((result.rows[0] as any)?.balance ?? 0));
+  return r2(Number((result.rows[0] as BalanceRow | undefined)?.balance ?? 0));
 }
 
 /* ── إجمالي ذمم جميع العملاء لشركة محددة (AR) ───────────────────────────── */
@@ -50,7 +53,7 @@ export async function getTotalCustomerLedgerBalance(companyId: number): Promise<
     JOIN journal_entries je ON je.id = jel.entry_id AND je.status = 'posted'
     JOIN accounts a ON a.id = jel.account_id AND a.code LIKE 'AR-%' AND a.company_id = ${companyId}
   `);
-  return r2(Number((result.rows[0] as any)?.total ?? 0));
+  return r2(Number((result.rows[0] as TotalRow | undefined)?.total ?? 0));
 }
 
 /* ── إجمالي ذمم جميع الموردين لشركة محددة (AP) ──────────────────────────── */
@@ -63,5 +66,5 @@ export async function getTotalSupplierLedgerBalance(companyId: number): Promise<
     JOIN journal_entries je ON je.id = jel.entry_id AND je.status = 'posted'
     JOIN accounts a ON a.id = jel.account_id AND a.code LIKE 'AP-%' AND a.company_id = ${companyId}
   `);
-  return r2(Number((result.rows[0] as any)?.total ?? 0));
+  return r2(Number((result.rows[0] as TotalRow | undefined)?.total ?? 0));
 }

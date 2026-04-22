@@ -152,7 +152,6 @@ export function hasPermission(
   if (perms[permission] === false) return false;
 
   // Fall back to role defaults
-  // eslint-disable-next-line security/detect-object-injection
   const roleDefaults = ROLE_DEFAULTS[user.role] ?? {};
   // eslint-disable-next-line security/detect-object-injection
   if (roleDefaults[permission] === true)  return true;
