@@ -3005,52 +3005,34 @@ export default function SuperAdmin() {
                               />
 
                               {/* Edition switcher */}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: '12px', padding: '10px 14px' }}>
-                                <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>🏷️ نسخة المنتج</span>
-                                <div style={{ display: 'flex', gap: '6px' }}>
-                                  {([
-                                    { value: 'ultimate', icon: '⭐', label: 'MuhKam Pro', sub: 'نسخة أساسية', activeColor: '#6366f1', activeBg: 'rgba(99,102,241,0.15)', activeBorder: 'rgba(99,102,241,0.55)' },
-                                    { value: 'advanced', icon: '🚀', label: 'MuhKam Advanced', sub: 'نسخة متكاملة', activeColor: '#f59e0b', activeBg: 'rgba(245,158,11,0.15)', activeBorder: 'rgba(245,158,11,0.55)' },
-                                  ] as const).map((opt) => {
-                                    const isActive = ((co as any).edition ?? 'ultimate') === opt.value;
-                                    return (
-                                      <button
-                                        key={opt.value}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (!isActive) coMutate.mutate({
-                                            url: `/api/super/companies/${co.id}`,
-                                            method: 'PUT',
-                                            body: { edition: opt.value },
-                                          });
-                                        }}
-                                        style={{
-                                          flex: 1, padding: '8px 10px', borderRadius: '10px',
-                                          cursor: isActive ? 'default' : 'pointer',
-                                          border: `2px solid ${isActive ? opt.activeBorder : C.border}`,
-                                          background: isActive ? opt.activeBg : 'transparent',
-                                          display: 'flex', flexDirection: 'column', gap: '2px',
-                                          alignItems: 'flex-start', fontFamily: FONT, textAlign: 'right',
-                                          transition: 'all 0.15s',
-                                        }}
-                                      >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', width: '100%' }}>
-                                          <span style={{ fontSize: '13px' }}>{opt.icon}</span>
-                                          <span style={{ fontSize: '11px', fontWeight: 700, color: isActive ? opt.activeColor : C.muted }}>{opt.label}</span>
-                                          {isActive && (
-                                            <span style={{
-                                              marginRight: 'auto', fontSize: '10px', fontWeight: 700,
-                                              color: opt.activeColor, padding: '1px 6px', borderRadius: '6px',
-                                              background: isActive ? opt.activeBg : 'transparent',
-                                              border: `1px solid ${opt.activeBorder}`,
-                                            }}>✓ الحالي</span>
-                                          )}
-                                        </div>
-                                        <span style={{ fontSize: '10px', color: C.muted }}>{opt.sub}</span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: '10px', padding: '6px 12px' }}>
+                                <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>🏷️ النسخة:</span>
+                                <select
+                                  value={(co as any).edition ?? 'ultimate'}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    coMutate.mutate({
+                                      url: `/api/super/companies/${co.id}`,
+                                      method: 'PUT',
+                                      body: { edition: e.target.value },
+                                    });
+                                  }}
+                                  style={{
+                                    border: `1.5px solid ${(co as any).edition === 'advanced' ? '#f59e0b' : '#6366f1'}`,
+                                    borderRadius: '8px',
+                                    padding: '5px 10px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    background: C.bg,
+                                    color: (co as any).edition === 'advanced' ? '#fcd34d' : '#a5b4fc',
+                                    fontFamily: FONT,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <option value="ultimate">⭐ MuhKam Pro</option>
+                                  <option value="advanced">🚀 MuhKam Advanced</option>
+                                </select>
                               </div>
 
                               <ActionBtn
