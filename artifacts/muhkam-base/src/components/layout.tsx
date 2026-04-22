@@ -13,6 +13,7 @@ import { translateRole } from '@/lib/roles';
 import { LogOut, Warehouse, Search, X } from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
+import { NotificationBell } from '@/components/notification-bell';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const api = (p: string) => `${BASE}${p}`;
@@ -594,6 +595,7 @@ export function AppLayout({ children }: LayoutProps) {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-3 flex-1 justify-end">
+            <NotificationBell />
             <AlertBell />
             <ThemeToggle />
             {user && (

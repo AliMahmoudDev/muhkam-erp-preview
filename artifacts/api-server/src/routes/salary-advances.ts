@@ -14,6 +14,7 @@ import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { writeAuditLog } from "../lib/audit-log";
+import { notifyEmployee, notifyManagers } from "../lib/notify";
 
 const router: IRouter = Router();
 function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOString() : (v ?? null); }
@@ -107,10 +108,18 @@ router.get("/salary-advances", wrap(async (req, res) => {
 }));
 
 router.post("/salary-advances", wrap(async (req, res) => {
-  if (isSelfServiceUser(req)) { res.status(403).json({ error: "غير مصرح بإنشاء سلفة من حساب الموظف" }); return; }
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
-  const { employee_id, requested_amount, advance_type, reason, deduct_from, safe_id } = req.body as Record<string, unknown>;
+  const isSelf    = isSelfServiceUser(req);
+  const selfId    = selfEmployeeId(req);
+  const body      = req.body as Record<string, unknown>;
+  // Self-service: force employee_id to caller's own, ignore safe_id, force pending.
+  let { employee_id, requested_amount, advance_type, reason, deduct_from, safe_id } = body;
+  if (isSelf) {
+    if (selfId == null) { res.status(403).json({ error: "حساب الموظف غير مرتبط بسجل" }); return; }
+    employee_id = selfId;
+    safe_id = null;
+  }
   if (!employee_id || !requested_amount || !advance_type) { res.status(400).json({ error: "الموظف والمبلغ ونوع السلفة مطلوبون" }); return; }
   const df = String(deduct_from ?? "fixed");
   if (!["fixed", "commission", "both"].includes(df)) { res.status(400).json({ error: "قيمة الخصم غير صحيحة" }); return; }
@@ -140,7 +149,8 @@ router.post("/salary-advances", wrap(async (req, res) => {
     .where(and(eq(salaryAdvancesTable.employee_id, Number(employee_id)), sql`status IN ('pending','approved','active')`));
   if ((activeAdvances[0]?.count ?? 0) >= maxConcurrent) { res.status(409).json({ error: `وصلت إلى الحد الأقصى للسلف المتزامنة (${maxConcurrent})` }); return; }
 
-  const requiresApproval = settings?.requires_approval !== false;
+  // Self-service requests always require approval, regardless of company setting.
+  const requiresApproval = isSelf ? true : (settings?.requires_approval !== false);
   const [advance] = await db.insert(salaryAdvancesTable).values({
     company_id: companyId,
     employee_id: Number(employee_id), requested_date: new Date().toISOString().split("T")[0],
@@ -154,13 +164,25 @@ router.post("/salary-advances", wrap(async (req, res) => {
     approver_id: !requiresApproval ? userId : null,
   }).returning();
 
-  await logHistory(advance.id, null, advance.status, userId, "طلب سلفة جديدة");
+  await logHistory(advance.id, null, advance.status, userId, isSelf ? "طلب سلفة من الموظف (خدمة ذاتية)" : "طلب سلفة جديدة");
 
   if (!requiresApproval) {
     await db.insert(salaryAdvanceLedgerTable).values({
       employee_id: Number(employee_id), advance_id: advance.id,
       ledger_type: "advance_granted", amount: String(reqAmt), balance: String(reqAmt),
       ledger_date: new Date().toISOString().split("T")[0],
+    });
+  }
+
+  // Notify managers about a new pending request (self-service or otherwise).
+  if (advance.status === "pending") {
+    const empName = `${emp.first_name_ar ?? ""} ${emp.last_name_ar ?? ""}`.trim() || `#${emp.id}`;
+    await notifyManagers(companyId, "can_manage_payroll", {
+      type: "advance_pending",
+      title: "طلب سلفة جديد بانتظار الاعتماد",
+      message: `طلب ${empName} سلفة بمبلغ ${reqAmt.toFixed(2)} ${emp.currency ?? "EGP"}`,
+      link: "/employees",
+      reference_id: advance.id,
     });
   }
 
@@ -237,6 +259,16 @@ router.post("/salary-advances/:id/approve", wrap(async (req, res) => {
   });
 
   await writeAuditLog({ action: "update", record_type: "salary_advance", record_id: id, new_value: { status: "active", amount }, user: { id: userId ?? undefined, username: req.user?.username } });
+
+  // Notify the employee that their advance was approved.
+  await notifyEmployee(companyId, advance.employee_id, {
+    type: "advance_approved",
+    title: "تم اعتماد طلب السلفة",
+    message: `تم اعتماد سلفتك بمبلغ ${Number(amount).toFixed(2)} ${advance.currency ?? "EGP"}`,
+    link: "/employees",
+    reference_id: id,
+  });
+
   res.json({ ok: true, approved_amount: amount, remaining_balance: n(row.remaining_balance) });
 }));
 
@@ -252,6 +284,16 @@ router.post("/salary-advances/:id/reject", wrap(async (req, res) => {
   if (advance.status !== "pending") { res.status(409).json({ error: "لا يمكن رفض سلفة غير معلّقة" }); return; }
   await db.update(salaryAdvancesTable).set({ status: "rejected", rejection_reason: reason ?? "مرفوض", updated_at: new Date() }).where(eq(salaryAdvancesTable.id, id));
   await logHistory(id, "pending", "rejected", userId, reason);
+
+  // Notify the employee about the rejection.
+  await notifyEmployee(companyId, advance.employee_id, {
+    type: "advance_rejected",
+    title: "تم رفض طلب السلفة",
+    message: reason ? `سبب الرفض: ${reason}` : "تم رفض طلب السلفة الخاص بك",
+    link: "/employees",
+    reference_id: id,
+  });
+
   res.json({ ok: true });
 }));
 

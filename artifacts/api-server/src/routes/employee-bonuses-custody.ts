@@ -14,6 +14,7 @@ import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { assertPeriodOpen } from "../lib/period-lock";
+import { notifyEmployee } from "../lib/notify";
 
 const router: IRouter = Router();
 const fmtTs = (v: Date | null | undefined) => (v instanceof Date ? v.toISOString() : (v ?? null));
@@ -58,6 +59,15 @@ router.post("/employee-bonuses", wrap(async (req, res) => {
     granted_by: userId,
     currency: String(currency ?? emp.currency ?? "EGP"),
   }).returning();
+
+  await notifyEmployee(companyId, Number(employee_id), {
+    type: "bonus_granted",
+    title: "تم منحك حافزاً جديداً",
+    message: `بمبلغ ${Number(amount).toFixed(2)} ${row.currency ?? "EGP"}${reason ? ` — ${String(reason)}` : ""}`,
+    link: "/employees",
+    reference_id: row.id,
+  });
+
   res.status(201).json({ ...row, amount: n(row.amount), created_at: fmtTs(row.created_at) });
 }));
 
@@ -411,6 +421,14 @@ router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
       .returning();
     if (!updated) throw httpError(409, "العهدة مغلقة بالفعل");
     return updated;
+  });
+
+  await notifyEmployee(companyId, result.employee_id, {
+    type: "custody_settled",
+    title: "تمت تسوية العهدة",
+    message: `تم إغلاق عهدتك رقم #${result.id} بتاريخ ${settledDate}`,
+    link: "/employees",
+    reference_id: result.id,
   });
 
   res.json({

@@ -1130,12 +1130,13 @@ export default function Employees() {
             {/* ── Loans Tab ──────────────────────────────────── */}
             {detailTab === 'loans' && (
               <div className="space-y-2">
-                {canManage && (
+                {(canManage || isSelfService) && (
                   <button
                     onClick={() => setShowLoanForm(true)}
                     className="erp-btn erp-btn-primary w-full text-xs flex items-center justify-center gap-1"
                   >
-                    <Plus size={12} /> طلب سلفة جديدة
+                    <Plus size={12} />
+                    {isSelfService ? 'تقديم طلب سلفة' : 'طلب سلفة جديدة'}
                   </button>
                 )}
                 {loansLoading ? (
@@ -2473,28 +2474,35 @@ export default function Employees() {
                   <option value="both">من الراتب الثابت والعمولة معاً</option>
                 </select>
               </Field>
-              <Field label="الخزينة (اختياري)">
-                <select
-                  value={loanForm.safe_id}
-                  onChange={(e) => setLoanForm((p) => ({ ...p, safe_id: e.target.value }))}
-                  className="erp-input w-full"
-                >
-                  <option value="">— بدون خزينة —</option>
-                  {safesForEmployee(selected).map((s) => (
-                    <option key={String(s.id)} value={String(s.id)}>
-                      {String(s.name)}
-                      {s.balance != null
-                        ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})`
-                        : ''}
-                    </option>
-                  ))}
-                </select>
-                {selected?.branch_id && safesForEmployee(selected).length === 0 && (
-                  <div className="text-xs text-amber-300/70 mt-1">
-                    لا توجد خزائن متاحة لهذا الفرع
-                  </div>
-                )}
-              </Field>
+              {!isSelfService && (
+                <Field label="الخزينة (اختياري)">
+                  <select
+                    value={loanForm.safe_id}
+                    onChange={(e) => setLoanForm((p) => ({ ...p, safe_id: e.target.value }))}
+                    className="erp-input w-full"
+                  >
+                    <option value="">— بدون خزينة —</option>
+                    {safesForEmployee(selected).map((s) => (
+                      <option key={String(s.id)} value={String(s.id)}>
+                        {String(s.name)}
+                        {s.balance != null
+                          ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})`
+                          : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {selected?.branch_id && safesForEmployee(selected).length === 0 && (
+                    <div className="text-xs text-amber-300/70 mt-1">
+                      لا توجد خزائن متاحة لهذا الفرع
+                    </div>
+                  )}
+                </Field>
+              )}
+              {isSelfService && (
+                <div className="text-xs text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5">
+                  سيتم إرسال طلبك إلى المدير للاعتماد. ستصلك رسالة عند الرد.
+                </div>
+              )}
             </div>
             <div className="flex gap-2 p-5 border-t border-white/10">
               <button
@@ -2508,7 +2516,7 @@ export default function Employees() {
                 disabled={!loanForm.requested_amount || createLoan.isPending}
                 className="erp-btn erp-btn-primary flex-1"
               >
-                {createLoan.isPending ? 'جاري التقديم...' : 'تقديم السلفة'}
+                {createLoan.isPending ? 'جاري الإرسال...' : (isSelfService ? 'إرسال طلب السلفة' : 'تقديم السلفة')}
               </button>
               <button onClick={() => setShowLoanForm(false)} className="erp-btn erp-btn-ghost">
                 إلغاء
