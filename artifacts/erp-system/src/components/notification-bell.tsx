@@ -315,35 +315,35 @@ export function NotificationBell() {
                       }}>● جديد</span>
                     )}
                     {n.type === 'advance_pending' && canApproveAdvances && n.reference_id && (
-                      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
                         <button
                           onClick={(e) => { e.stopPropagation(); approveAdvance(n); }}
                           disabled={actingId === n.id}
                           style={{
-                            flex: 1, padding: '5px 8px', borderRadius: 6,
+                            padding: '2px 6px', borderRadius: 4,
                             border: 'none', cursor: 'pointer',
                             background: '#22c55e', color: '#fff',
-                            fontSize: 11, fontWeight: 700,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                            fontSize: 9, fontWeight: 700,
+                            display: 'inline-flex', alignItems: 'center', gap: 2,
                             opacity: actingId === n.id ? 0.6 : 1,
                           }}
                         >
-                          <Check style={{ width: 12, height: 12 }} />
+                          <Check style={{ width: 9, height: 9 }} />
                           {actingId === n.id ? 'جارٍ…' : 'اعتماد'}
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); rejectAdvance(n); }}
                           disabled={actingId === n.id}
                           style={{
-                            flex: 1, padding: '5px 8px', borderRadius: 6,
+                            padding: '2px 6px', borderRadius: 4,
                             border: 'none', cursor: 'pointer',
                             background: '#ef4444', color: '#fff',
-                            fontSize: 11, fontWeight: 700,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                            fontSize: 9, fontWeight: 700,
+                            display: 'inline-flex', alignItems: 'center', gap: 2,
                             opacity: actingId === n.id ? 0.6 : 1,
                           }}
                         >
-                          <X style={{ width: 12, height: 12 }} />
+                          <X style={{ width: 9, height: 9 }} />
                           رفض
                         </button>
                       </div>
