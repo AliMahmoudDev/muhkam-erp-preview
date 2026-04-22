@@ -167,33 +167,28 @@ app.use("/api/auth/login/email", authLimiter);
 app.use("/api/auth/refresh", authLimiter);
 app.use("/api/auth/2fa/login", authLimiter);
 
-/* Same limits for the ADVANCED frontend prefix (/muhkam-advanced/api/...) */
-app.use("/muhkam-advanced/api/auth/login", authLimiter);
-app.use("/muhkam-advanced/api/auth/register", authLimiter);
-app.use("/muhkam-advanced/api/auth/login/email", authLimiter);
-app.use("/muhkam-advanced/api/auth/refresh", authLimiter);
-app.use("/muhkam-advanced/api/auth/2fa/login", authLimiter);
+/* Same limits for the ADVANCED frontend prefix (/advanced/api/...) */
+app.use("/advanced/api/auth/login", authLimiter);
+app.use("/advanced/api/auth/register", authLimiter);
+app.use("/advanced/api/auth/login/email", authLimiter);
+app.use("/advanced/api/auth/refresh", authLimiter);
+app.use("/advanced/api/auth/2fa/login", authLimiter);
 
 /* ── Per-tenant rate limiting (after auth routes) ─────────── */
 app.use("/api", perTenantRateLimit);
-app.use("/muhkam-advanced/api", perTenantRateLimit);
+app.use("/advanced/api", perTenantRateLimit);
 
 app.use("/api", router);
-/* ── Mirror router for ADVANCED frontend (sends requests to /muhkam-advanced/api/…) ── */
-app.use("/muhkam-advanced/api", router);
+/* ── Mirror router for ADVANCED frontend (/advanced/api/…) ── */
+app.use("/advanced/api", router);
 
 /* ── Production: serve React frontend static files ─────────────────────────
    Two editions are served from the same Express backend:
-   • MUHKAM ADVANCED  → /muhkam-advanced/*  (artifacts/muhkam-base/dist/public)
-   • MUHKAM ULTIMATE  → /*              (artifacts/erp-system/dist/public)
+   • MuhKam          → /*          (artifacts/muhkam-base/dist/public)
+   • MuhKam Advanced → /advanced/* (artifacts/erp-system/dist/public)
    ────────────────────────────────────────────────────────────────────────── */
 if (process.env.NODE_ENV === "production") {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
-
-  /* ── ADVANCED edition at /muhkam-advanced/ ── */
-  const advancedDist =
-    process.env.ADVANCED_DIST ||
-    path.resolve(currentDir, "../../muhkam-base/dist/public");
 
   const staticOpts = {
     maxAge: "7d",
@@ -206,25 +201,30 @@ if (process.env.NODE_ENV === "production") {
     },
   };
 
-  app.use("/muhkam-advanced", express.static(advancedDist, staticOpts));
-  /* SPA fallback for ADVANCED */
-  app.use("/muhkam-advanced", (_req: express.Request, res: express.Response) => {
-    res.sendFile(path.join(advancedDist, "index.html"));
-  });
-  logger.info({ advancedDist }, "Serving ADVANCED frontend at /muhkam-advanced/");
-
-  /* ── ULTIMATE edition at / ── */
-  const ultimateDist =
-    process.env.FRONTEND_DIST ||
+  /* ── MuhKam Advanced at /advanced/ (erp-system) ── */
+  const advancedDist =
+    process.env.ADVANCED_DIST ||
     path.resolve(currentDir, "../../erp-system/dist/public");
 
-  app.use(express.static(ultimateDist, staticOpts));
-  /* SPA fallback for ULTIMATE */
+  app.use("/advanced", express.static(advancedDist, staticOpts));
+  /* SPA fallback for MuhKam Advanced */
+  app.use("/advanced", (_req: express.Request, res: express.Response) => {
+    res.sendFile(path.join(advancedDist, "index.html"));
+  });
+  logger.info({ advancedDist }, "Serving MuhKam Advanced frontend at /advanced/");
+
+  /* ── MuhKam at / (muhkam-base) ── */
+  const rootDist =
+    process.env.FRONTEND_DIST ||
+    path.resolve(currentDir, "../../muhkam-base/dist/public");
+
+  app.use(express.static(rootDist, staticOpts));
+  /* SPA fallback for MuhKam */
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path.startsWith("/api")) return next();
-    res.sendFile(path.join(ultimateDist, "index.html"));
+    res.sendFile(path.join(rootDist, "index.html"));
   });
-  logger.info({ ultimateDist }, "Serving ULTIMATE frontend at /");
+  logger.info({ rootDist }, "Serving MuhKam frontend at /");
 }
 
 /* ── Global error handler — no stack traces in responses ───── */

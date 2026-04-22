@@ -147,7 +147,7 @@ export default function Login() {
             const sub = await subRes.json() as { edition?: string };
             if (sub.edition === "advanced") {
               login(authedUser, token);
-              window.location.href = "/muhkam-advanced/";
+              window.location.href = "/advanced/";
               return;
             }
           }
@@ -192,7 +192,7 @@ export default function Login() {
             const sub = await subRes.json() as { edition?: string };
             if (sub.edition === "advanced") {
               login(data.user as Parameters<typeof login>[0], data.token);
-              window.location.href = "/muhkam-advanced/";
+              window.location.href = "/advanced/";
               return;
             }
           }
