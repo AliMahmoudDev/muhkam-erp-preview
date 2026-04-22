@@ -88,8 +88,13 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             git clean -fd
+            # Rename muhkam-base → muhkam-pro (canonical production name)
+            if [ -d "$APP_DIR/artifacts/muhkam-base" ]; then
+              rm -rf "$APP_DIR/artifacts/muhkam-pro" 2>/dev/null || true
+              mv "$APP_DIR/artifacts/muhkam-base" "$APP_DIR/artifacts/muhkam-pro"
+            fi
             pnpm install --frozen-lockfile
-            cd "$APP_DIR/artifacts/muhkam-base"
+            cd "$APP_DIR/artifacts/muhkam-pro"
             NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
             cd "$APP_DIR/artifacts/erp-system"
             NODE_ENV=production BASE_PATH=/advanced/ pnpm run build
