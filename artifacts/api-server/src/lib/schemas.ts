@@ -23,7 +23,7 @@ export const loginSchema = z.object({
 );
 
 /* ─── Users ──────────────────────────────────────────────────────────────── */
-const ALLOWED_ROLES = ["admin", "manager", "cashier", "salesperson"] as const;
+const ALLOWED_ROLES = ["admin", "manager", "cashier", "salesperson", "employee"] as const;
 
 export const createUserSchema = z.object({
   name: z.string({ required_error: "الاسم مطلوب" })
