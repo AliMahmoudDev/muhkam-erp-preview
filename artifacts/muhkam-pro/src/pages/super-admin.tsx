@@ -3881,7 +3881,7 @@ export default function SuperAdmin() {
                 </h2>
                 <p style={{ fontSize: '12px', color: C.muted, margin: 0 }}>
                   النسخ التلقائي يعمل يومياً الساعة 3:00 صباحاً •{' '}
-                  {backupData ? `${backupData.total} نسخة متوفرة` : 'جاري التحميل...'}
+                  {backupData ? `${backupData!.total} نسخة متوفرة` : 'جاري التحميل...'}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -3960,7 +3960,7 @@ export default function SuperAdmin() {
                 <div style={{ padding: '48px', textAlign: 'center', color: C.muted }}>
                   جاري التحميل...
                 </div>
-              ) : backupData.backups.length === 0 ? (
+              ) : backupData!.backups.length === 0 ? (
                 <div style={{ padding: '48px', textAlign: 'center', color: C.muted }}>
                   <div style={{ fontSize: '32px', marginBottom: '12px' }}>💾</div>
                   <div>لا توجد نسخ احتياطية بعد</div>
@@ -3969,7 +3969,7 @@ export default function SuperAdmin() {
                   </div>
                 </div>
               ) : (
-                backupData.backups.map((b, idx) => {
+                backupData!.backups.map((b, idx) => {
                   const isEnc = b.filename.endsWith('.enc');
                   const isDownloading = downloadingFile === b.filename;
                   return (
@@ -3978,7 +3978,7 @@ export default function SuperAdmin() {
                       style={{
                         display: 'grid', gridTemplateColumns: '1fr 90px 160px 110px',
                         gap: '8px', padding: '12px 20px', alignItems: 'center',
-                        borderBottom: idx < backupData.backups.length - 1 ? `1px solid ${C.border}` : 'none',
+                        borderBottom: idx < backupData!.backups.length - 1 ? `1px solid ${C.border}` : 'none',
                         background: idx % 2 === 1 ? 'rgba(15,23,42,0.4)' : 'transparent',
                       }}
                     >
@@ -4286,12 +4286,12 @@ export default function SuperAdmin() {
                       marginBottom: '16px',
                       fontSize: '13px',
                       fontWeight: 700,
-                      background: secMsg.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                      color: secMsg.ok ? C.success : '#EF4444',
-                      border: `1px solid ${secMsg.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                      background: secMsg!.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                      color: secMsg!.ok ? C.success : '#EF4444',
+                      border: `1px solid ${secMsg!.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
                     }}
                   >
-                    {secMsg.text}
+                    {secMsg!.text}
                   </div>
                 )}
 
@@ -4331,7 +4331,7 @@ export default function SuperAdmin() {
                       style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}
                     >
                       <img
-                        src={totpSetupData.qr_code}
+                        src={totpSetupData!.qr_code}
                         alt="QR Code"
                         style={{
                           width: '200px',
@@ -4353,7 +4353,7 @@ export default function SuperAdmin() {
                       }}
                     >
                       <span style={{ color: C.orange, fontWeight: 700 }}>إدخال يدوي: </span>
-                      {totpSetupData.secret}
+                      {totpSetupData!.secret}
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <input
@@ -5408,7 +5408,7 @@ export default function SuperAdmin() {
                 <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>لا توجد سجلات</div>
               ) : (
                 <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
-                  {auditData.rows.map(row => {
+                  {auditData!.rows.map(row => {
                     const ACTION_AR: Record<string, { label: string; color: string }> = {
                       create:             { label: 'إنشاء',                color: '#34D399' },
                       update:             { label: 'تعديل',                color: '#60A5FA' },
@@ -5475,7 +5475,7 @@ export default function SuperAdmin() {
               )}
               {auditData && (
                 <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.border}`, fontSize: '12px', color: C.muted }}>
-                  إجمالي السجلات المعروضة: {auditData.count}
+                  إجمالي السجلات المعروضة: {auditData!.count}
                 </div>
               )}
             </div>
