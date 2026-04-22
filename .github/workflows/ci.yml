@@ -95,14 +95,14 @@ jobs:
       - name: Lint backend
         run: pnpm --filter @workspace/api-server lint
 
-      - name: Lint frontend (MuhKam Advanced)
-        run: pnpm --filter @workspace/muhkam-advanced lint
+      - name: Lint frontend (erp-system)
+        run: pnpm --filter @workspace/erp-system lint
 
       - name: Type check backend
         run: pnpm --filter @workspace/api-server type-check
 
-      - name: Type check frontend (MuhKam Advanced)
-        run: pnpm --filter @workspace/muhkam-advanced type-check
+      - name: Type check frontend (erp-system)
+        run: pnpm --filter @workspace/erp-system type-check
 
   build:
     name: Build Check
@@ -126,12 +126,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build MuhKam frontend
+      - name: Build MuhKam frontend (muhkam-pro)
         run: |
-          cd artifacts/muhkam-base
+          cd artifacts/muhkam-pro
           NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
 
-      - name: Build MuhKam Advanced frontend
+      - name: Build MuhKam Advanced frontend (erp-system)
         run: |
           cd artifacts/erp-system
           NODE_ENV=production BASE_PATH=/advanced/ pnpm run build
