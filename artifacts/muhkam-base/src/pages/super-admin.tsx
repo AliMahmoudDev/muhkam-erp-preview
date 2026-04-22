@@ -5296,7 +5296,7 @@ export default function SuperAdmin() {
           {planSettingsLoading ? (
             <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>جارٍ التحميل…</div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
               {(planSettings ?? []).map(plan => {
                 const isEditing = editingPlan?.key === plan.key;
                 const ep = isEditing ? editingPlan! : plan;
