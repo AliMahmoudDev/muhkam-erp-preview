@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { NAV_ITEMS, canAccess, type UserRole } from '@/lib/rbac';
 import { hasPermission } from '@/lib/permissions';
 import { translateRole } from '@/lib/roles';
-import { LogOut, Warehouse, Search, X, ChevronDown } from 'lucide-react';
+import { LogOut, Warehouse, Search, X } from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 import { NotificationBell } from '@/components/notification-bell';
@@ -180,9 +180,6 @@ export function AppLayout({ children }: LayoutProps) {
 
   const { currentWarehouseId, setWarehouseId } = useWarehouse();
 
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   const { data: warehousesRaw } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['/api/settings/warehouses'],
     queryFn: () =>
@@ -260,29 +257,19 @@ export function AppLayout({ children }: LayoutProps) {
       <aside
         className="hidden lg:flex flex-col shrink-0 z-20"
         style={{
-          width: sidebarCollapsed ? '60px' : '228px',
+          width: '228px',
           height: '100vh',
           position: 'sticky',
           top: 0,
           background: sidebarBg,
           borderLeft: sidebarBdr,
           backdropFilter: 'blur(24px)',
-          transition: 'width 0.25s ease',
-          overflow: 'hidden',
         }}
       >
-        {/* Logo strip + toggle */}
+        {/* Logo strip */}
         <div
-          className="flex items-center"
-          style={{
-            height: '56px',
-            borderBottom: sidebarBdr,
-            flexShrink: 0,
-            padding: sidebarCollapsed ? '0 13px' : '0 16px',
-            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-            gap: 10,
-            position: 'relative',
-          }}
+          className="flex items-center gap-3 px-4"
+          style={{ height: '56px', borderBottom: sidebarBdr, flexShrink: 0 }}
         >
           <div
             className="flex items-center justify-center shrink-0"
@@ -304,116 +291,115 @@ export function AppLayout({ children }: LayoutProps) {
               }}
             />
           </div>
-          {!sidebarCollapsed && (
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p
-                style={{ fontSize: 13, fontWeight: 900, color: isDark ? '#f59e0b' : '#b45309', lineHeight: 1.2 }}
-                className="truncate"
-              >
-                {settings.companyName}
-              </p>
-              <p style={{ fontSize: 10.5, color: textMuted, lineHeight: 1.2 }} className="truncate">
-                {settings.companySlogan}
-              </p>
-            </div>
-          )}
-          {/* Toggle button */}
-          <button
-            onClick={() => setSidebarCollapsed((v) => !v)}
-            title={sidebarCollapsed ? 'توسيع القائمة' : 'طي القائمة'}
-            style={{
-              position: sidebarCollapsed ? 'static' : 'absolute',
-              left: sidebarCollapsed ? 'auto' : 8,
-              top: sidebarCollapsed ? 'auto' : '50%',
-              transform: sidebarCollapsed ? 'none' : 'translateY(-50%)',
-              width: 22,
-              height: 22,
-              borderRadius: 6,
-              border: `1px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)'}`,
-              background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
-              color: textMuted,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              transition: 'opacity 0.2s',
-            }}
-          >
-            <ChevronDown
-              style={{
-                width: 13,
-                height: 13,
-                transform: sidebarCollapsed ? 'rotate(90deg)' : 'rotate(-90deg)',
-                transition: 'transform 0.25s ease',
-              }}
-            />
-          </button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p
+              style={{ fontSize: 13, fontWeight: 900, color: isDark ? '#f59e0b' : '#b45309', lineHeight: 1.2 }}
+              className="truncate"
+            >
+              {settings.companyName}
+            </p>
+            <p style={{ fontSize: 10.5, color: textMuted, lineHeight: 1.2 }} className="truncate">
+              {settings.companySlogan}
+            </p>
+          </div>
         </div>
 
-
         {/* Warehouse selector */}
-        {warehouses.length > 0 && canSelectWarehouse && !sidebarCollapsed && (
-          <div className="mx-3 mt-2 rounded-lg px-3"
-            style={{ flexShrink: 0, paddingTop: 8, paddingBottom: 8, background: isDark ? 'rgba(245,158,11,0.05)' : 'rgba(180,83,9,0.05)', border: isDark ? '1px solid rgba(245,158,11,0.12)' : '1px solid rgba(180,83,9,0.11)' }}
+        {warehouses.length > 0 && canSelectWarehouse && (
+          <div
+            className="mx-3 mt-2 rounded-lg px-3"
+            style={{
+              flexShrink: 0,
+              paddingTop: 8,
+              paddingBottom: 8,
+              background: isDark ? 'rgba(245,158,11,0.05)' : 'rgba(180,83,9,0.05)',
+              border: isDark ? '1px solid rgba(245,158,11,0.12)' : '1px solid rgba(180,83,9,0.11)',
+            }}
           >
             <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
-              <Warehouse style={{ width: 11, height: 11, color: isDark ? 'rgba(245,158,11,0.50)' : 'rgba(180,83,9,0.50)' }} />
-              <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: textMuted }}>المخزن</span>
+              <Warehouse
+                style={{
+                  width: 11,
+                  height: 11,
+                  color: isDark ? 'rgba(245,158,11,0.50)' : 'rgba(180,83,9,0.50)',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 9.5,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: textMuted,
+                }}
+              >
+                المخزن
+              </span>
             </div>
-            <select value={currentWarehouseId} onChange={(e) => setWarehouseId(e.target.value)}
-              style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontSize: 12.5, fontWeight: 600, color: textPrimary, cursor: 'pointer', fontFamily: 'inherit', appearance: 'none' }}
+            <select
+              value={currentWarehouseId}
+              onChange={(e) => setWarehouseId(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: textPrimary,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                appearance: 'none',
+              }}
             >
-              <option value="" style={{ background: isDark ? '#111827' : '#fff' }}>كل المخازن</option>
+              <option value="" style={{ background: isDark ? '#111827' : '#fff' }}>
+                كل المخازن
+              </option>
               {warehouses.map((w) => (
-                <option key={w.id} value={String(w.id)} style={{ background: isDark ? '#111827' : '#fff' }}>{w.name}</option>
+                <option
+                  key={w.id}
+                  value={String(w.id)}
+                  style={{ background: isDark ? '#111827' : '#fff' }}
+                >
+                  {w.name}
+                </option>
               ))}
             </select>
           </div>
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto pb-4 mt-1" style={{ scrollbarWidth: 'none', padding: sidebarCollapsed ? '4px 8px' : '0 12px' }}>
+        <nav className="flex-1 overflow-y-auto px-3 pb-4 mt-1" style={{ scrollbarWidth: 'none' }}>
           {NAV_SECTIONS.map((section, si) => {
             const items = visibleNav.filter((i) => section.hrefs.includes(i.href));
             if (!items.length) return null;
-            const sectionActive = items.some((i) => i.href === location);
-            const isOpen = openSections[section.label] ?? sectionActive;
             return (
               <div key={section.label}>
-                {/* Section label — hidden when collapsed */}
-                {!sidebarCollapsed && (
-                  <button
-                    type="button"
-                    onClick={() => setOpenSections((prev) => ({ ...prev, [section.label]: !(prev[section.label] ?? sectionActive) }))}
-                    className="erp-divider-label"
-                    style={{ paddingTop: si === 0 ? 10 : 16, paddingBottom: 4, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'right' }}
-                  >
-                    <span>{section.label}</span>
-                    <ChevronDown style={{ width: 12, height: 12, opacity: 0.55, transition: 'transform 0.2s ease', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
-                  </button>
-                )}
-                {/* Divider line when collapsed */}
-                {sidebarCollapsed && si > 0 && (
-                  <div style={{ height: 1, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', margin: '8px 0' }} />
-                )}
-                {/* Nav items */}
-                {(sidebarCollapsed || isOpen) &&
-                  items.map((item) => {
-                    const active = location === item.href;
-                    return (
-                      <Link key={item.href} href={item.href}>
-                        <div
-                          className={`nav-item ${active ? 'active' : ''}`}
-                          title={sidebarCollapsed ? item.name : undefined}
-                          style={sidebarCollapsed ? { justifyContent: 'center', paddingRight: 0, paddingLeft: 0 } : {}}
-                        >
-                          <item.icon style={{ width: 16, height: 16, flexShrink: 0, opacity: active ? 1 : 0.55, color: active ? '#f59e0b' : 'inherit' }} />
-                          {!sidebarCollapsed && <span style={{ flex: 1 }}>{item.name}</span>}
-                        </div>
-                      </Link>
-                    );
-                  })}
+                <div
+                  className="erp-divider-label"
+                  style={{ paddingTop: si === 0 ? 10 : 16, paddingBottom: 4 }}
+                >
+                  {section.label}
+                </div>
+                {items.map((item) => {
+                  const active = location === item.href;
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <div className={`nav-item ${active ? 'active' : ''}`}>
+                        <item.icon
+                          style={{
+                            width: 16,
+                            height: 16,
+                            flexShrink: 0,
+                            opacity: active ? 1 : 0.55,
+                            color: active ? '#f59e0b' : 'inherit',
+                          }}
+                        />
+                        <span style={{ flex: 1 }}>{item.name}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             );
           })}
@@ -424,8 +410,8 @@ export function AppLayout({ children }: LayoutProps) {
           className="flex items-center justify-between px-4"
           style={{ height: 40, borderTop: sidebarBdr, flexShrink: 0 }}
         >
-          {!sidebarCollapsed && <span style={{ fontSize: 10, color: textMuted }}>MuhKam</span>}
-          <div className="glow-dot" style={sidebarCollapsed ? { margin: '0 auto' } : {}} />
+          <span style={{ fontSize: 10, color: textMuted }}>MuhKam</span>
+          <div className="glow-dot" />
         </div>
       </aside>
 
