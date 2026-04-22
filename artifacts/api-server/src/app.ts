@@ -1,26 +1,26 @@
-import express, { type Express, type ErrorRequestHandler } from "express";
-import compression from "compression";
-import cors from "cors";
-import helmet from "helmet";
-import hpp from "hpp";
-import rateLimit from "express-rate-limit";
-import pinoHttp from "pino-http";
-import path from "path";
-import { fileURLToPath } from "url";
-import swaggerUi from "swagger-ui-express";
-import router from "./routes";
-import { swaggerSpec } from "./lib/swagger-spec";
-import { logger } from "./lib/logger";
-import { sanitizeBody } from "./middleware/auth";
-import { makeRateLimitStore } from "./lib/rate-limit-store";
-import { recordRequest } from "./lib/request-counter";
-import { requestTimeout } from "./middleware/request-timeout";
-import { perTenantRateLimit } from "./middleware/per-tenant-rate-limit";
+import express, { type Express, type ErrorRequestHandler } from 'express';
+import compression from 'compression';
+import cors from 'cors';
+import helmet from 'helmet';
+import hpp from 'hpp';
+import rateLimit from 'express-rate-limit';
+import pinoHttp from 'pino-http';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import swaggerUi from 'swagger-ui-express';
+import router from './routes';
+import { swaggerSpec } from './lib/swagger-spec';
+import { logger } from './lib/logger';
+import { sanitizeBody } from './middleware/auth';
+import { makeRateLimitStore } from './lib/rate-limit-store';
+import { recordRequest } from './lib/request-counter';
+import { requestTimeout } from './middleware/request-timeout';
+import { perTenantRateLimit } from './middleware/per-tenant-rate-limit';
 
 const app: Express = express();
 
 /* ── Trust proxy (Replit runs behind a reverse proxy) ───────── */
-app.set("trust proxy", 1);
+app.set('trust proxy', 1);
 
 /* ── Security headers ──────────────────────────────────────── */
 app.use(
@@ -30,35 +30,35 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "blob:"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'blob:'],
         connectSrc: ["'self'"],
       },
     },
     hsts: { maxAge: 31536000, includeSubDomains: true },
-    frameguard: { action: "deny" },
+    frameguard: { action: 'deny' },
     noSniff: true,
-  }),
+  })
 );
 
 /* ── Additional security headers ────────────────────────────── */
 app.use((_req, res, next) => {
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  res.removeHeader("X-Powered-By");
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.removeHeader('X-Powered-By');
   next();
 });
 
 /* ── CORS — allow same-origin / configured domain only ────── */
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
   : [];
 
-if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
+if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
   logger.warn(
-    "[SECURITY] ALLOWED_ORIGINS is not set in production — all origins are allowed. " +
-    "Set ALLOWED_ORIGINS to your domain(s) for tighter security.",
+    '[SECURITY] ALLOWED_ORIGINS is not set in production — all origins are allowed. ' +
+      'Set ALLOWED_ORIGINS to your domain(s) for tighter security.'
   );
 }
 
@@ -69,33 +69,33 @@ app.use(
       if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
         cb(null, true);
       } else {
-        logger.warn({ origin }, "[CORS] Blocked request from disallowed origin");
+        logger.warn({ origin }, '[CORS] Blocked request from disallowed origin');
         cb(null, false);
       }
     },
     credentials: true,
-  }),
+  })
 );
 
 /* ── General rate limiter: 100 req/min per IP ─────────────── */
-const LOAD_TEST_MODE = process.env.LOAD_TEST_MODE === "1" && process.env.NODE_ENV !== "production";
+const LOAD_TEST_MODE = process.env.LOAD_TEST_MODE === '1' && process.env.NODE_ENV !== 'production';
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: LOAD_TEST_MODE ? 1_000_000 : 100,
-  standardHeaders: "draft-7",
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
-  store: makeRateLimitStore("rl:gen:"),
-  message: { error: "تجاوزت حد الطلبات، حاول مجدداً بعد دقيقة" },
+  store: makeRateLimitStore('rl:gen:'),
+  message: { error: 'تجاوزت حد الطلبات، حاول مجدداً بعد دقيقة' },
 });
 
 /* ── Auth rate limiter: 10 req/min per IP ──────────────────── */
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: LOAD_TEST_MODE ? 1_000_000 : 10,
-  standardHeaders: "draft-7",
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
-  store: makeRateLimitStore("rl:auth:"),
-  message: { error: "تجاوزت محاولات تسجيل الدخول، حاول مجدداً بعد دقيقة" },
+  store: makeRateLimitStore('rl:auth:'),
+  message: { error: 'تجاوزت محاولات تسجيل الدخول، حاول مجدداً بعد دقيقة' },
 });
 
 /* ── Compression: gzip responses > 1kb ─────────────────────── */
@@ -109,7 +109,7 @@ app.use(
         return {
           id: req.id,
           method: req.method,
-          url: req.url?.split("?")[0],
+          url: req.url?.split('?')[0],
         };
       },
       res(res) {
@@ -118,19 +118,19 @@ app.use(
         };
       },
     },
-  }),
+  })
 );
 
 /* ── Larger body limit for system restore (must come BEFORE the global parser) ── */
 /* Restore accepts EITHER plaintext JSON OR encrypted binary (MUHKAM-encrypted
    backup). Use raw byte parser; route handler will detect format and parse. */
-app.use("/api/system/restore", express.raw({ type: "*/*", limit: "60mb" }));
+app.use('/api/system/restore', express.raw({ type: '*/*', limit: '60mb' }));
 
 /* ── Body parsing with 10mb limit ──────────────────────────── */
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 /* ── ZKTeco ADMS pushes plain-text attendance logs ─────────── */
-app.use("/iclock", express.text({ type: "*/*", limit: "1mb" }));
+app.use('/iclock', express.text({ type: '*/*', limit: '1mb' }));
 
 /* ── XSS sanitization on all request bodies ────────────────── */
 app.use(sanitizeBody);
@@ -144,124 +144,125 @@ app.use(requestTimeout);
 /* ── Request metrics collector ──────────────────────────────── */
 app.use((_req, res, next) => {
   const start = Date.now();
-  res.on("finish", () => recordRequest(res.statusCode, Date.now() - start));
+  res.on('finish', () => recordRequest(res.statusCode, Date.now() - start));
   next();
 });
 
 /* Apply general limiter to all API routes */
-app.use("/api", generalLimiter);
+app.use('/api', generalLimiter);
 
 /* ── Swagger UI — accessible at /api/docs ────────────────────── */
-app.use("/api/docs", swaggerUi.serve);
-app.get("/api/docs", swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: "مُحكم - MUHKAM ERP — API Docs",
-  customCss: ".swagger-ui .topbar { display: none }",
-  swaggerOptions: { persistAuthorization: true, docExpansion: "none" },
-}));
-app.get("/api/docs/spec.json", (_req, res) => res.json(swaggerSpec));
+app.use('/api/docs', swaggerUi.serve);
+app.get(
+  '/api/docs',
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'مُحكم - MUHKAM ERP — API Docs',
+    customCss: '.swagger-ui .topbar { display: none }',
+    swaggerOptions: { persistAuthorization: true, docExpansion: 'none' },
+  })
+);
+app.get('/api/docs/spec.json', (_req, res) => res.json(swaggerSpec));
 
 /* Apply stricter limiter to auth routes */
-app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/register", authLimiter);
-app.use("/api/auth/login/email", authLimiter);
-app.use("/api/auth/refresh", authLimiter);
-app.use("/api/auth/2fa/login", authLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/login/email', authLimiter);
+app.use('/api/auth/refresh', authLimiter);
+app.use('/api/auth/2fa/login', authLimiter);
 
-/* Same limits for the ADVANCED frontend prefix (/muhkam-advanced/api/...) */
-app.use("/muhkam-advanced/api/auth/login", authLimiter);
-app.use("/muhkam-advanced/api/auth/register", authLimiter);
-app.use("/muhkam-advanced/api/auth/login/email", authLimiter);
-app.use("/muhkam-advanced/api/auth/refresh", authLimiter);
-app.use("/muhkam-advanced/api/auth/2fa/login", authLimiter);
+/* Same limits for the ADVANCED frontend prefix (/advanced/api/...) */
+app.use('/advanced/api/auth/login', authLimiter);
+app.use('/advanced/api/auth/register', authLimiter);
+app.use('/advanced/api/auth/login/email', authLimiter);
+app.use('/advanced/api/auth/refresh', authLimiter);
+app.use('/advanced/api/auth/2fa/login', authLimiter);
 
 /* ── Per-tenant rate limiting (after auth routes) ─────────── */
-app.use("/api", perTenantRateLimit);
-app.use("/muhkam-advanced/api", perTenantRateLimit);
+app.use('/api', perTenantRateLimit);
+app.use('/advanced/api', perTenantRateLimit);
 
-app.use("/api", router);
-/* ── Mirror router for ADVANCED frontend (sends requests to /muhkam-advanced/api/…) ── */
-app.use("/muhkam-advanced/api", router);
+app.use('/api', router);
+/* ── Mirror router for ADVANCED frontend (sends requests to /advanced/api/…) ── */
+app.use('/advanced/api', router);
 
 /* ── Production: serve React frontend static files ─────────────────────────
    Two editions are served from the same Express backend:
    • MUHKAM ADVANCED  → /muhkam-advanced/*  (artifacts/muhkam-base/dist/public)
    • MUHKAM ULTIMATE  → /*              (artifacts/erp-system/dist/public)
    ────────────────────────────────────────────────────────────────────────── */
-if (process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV === 'production') {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
   /* ── ADVANCED edition at /muhkam-advanced/ ── */
   const advancedDist =
-    process.env.ADVANCED_DIST ||
-    path.resolve(currentDir, "../../muhkam-base/dist/public");
+    process.env.ADVANCED_DIST || path.resolve(currentDir, '../../erp-system/dist/public');
 
   const staticOpts = {
-    maxAge: "7d",
+    maxAge: '7d',
     etag: true,
     lastModified: true,
-    setHeaders: (res: import("http").ServerResponse, filePath: string) => {
-      if (filePath.endsWith("index.html")) {
-        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    setHeaders: (res: import('http').ServerResponse, filePath: string) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       }
     },
   };
 
-  app.use("/muhkam-advanced", express.static(advancedDist, staticOpts));
+  app.use('/advanced', express.static(advancedDist, staticOpts));
   /* SPA fallback for ADVANCED */
-  app.use("/muhkam-advanced", (_req: express.Request, res: express.Response) => {
-    res.sendFile(path.join(advancedDist, "index.html"));
+  app.use('/advanced', (_req: express.Request, res: express.Response) => {
+    res.sendFile(path.join(advancedDist, 'index.html'));
   });
-  logger.info({ advancedDist }, "Serving ADVANCED frontend at /muhkam-advanced/");
+  logger.info({ advancedDist }, 'Serving MuhKam Advanced frontend at /advanced/');
 
   /* ── ULTIMATE edition at / ── */
-  const ultimateDist =
-    process.env.FRONTEND_DIST ||
-    path.resolve(currentDir, "../../erp-system/dist/public");
+  const rootDist =
+    process.env.FRONTEND_DIST || path.resolve(currentDir, '../../muhkam-pro/dist/public');
 
-  app.use(express.static(ultimateDist, staticOpts));
+  app.use(express.static(rootDist, staticOpts));
   /* SPA fallback for ULTIMATE */
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.path.startsWith("/api")) return next();
-    res.sendFile(path.join(ultimateDist, "index.html"));
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(rootDist, 'index.html'));
   });
-  logger.info({ ultimateDist }, "Serving ULTIMATE frontend at /");
+  logger.info({ rootDist }, 'Serving MuhKam frontend at /');
 }
 
 /* ── Global error handler — no stack traces in responses ───── */
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  logger.error({ err }, "Unhandled route error");
+  logger.error({ err }, 'Unhandled route error');
 
   /* Zod validation errors (thrown via schema.parse()) */
-  if (err?.name === "ZodError") {
+  if (err?.name === 'ZodError') {
     res.status(400).json({
-      error:   "بيانات غير صحيحة",
+      error: 'بيانات غير صحيحة',
       details: (err.errors as Array<{ message: string }>).map((e) => e.message),
     });
     return;
   }
 
   /* JWT errors */
-  if (err?.name === "JsonWebTokenError" || err?.name === "TokenExpiredError") {
-    res.status(401).json({ error: "الجلسة منتهية، يرجى تسجيل الدخول مجدداً" });
+  if (err?.name === 'JsonWebTokenError' || err?.name === 'TokenExpiredError') {
+    res.status(401).json({ error: 'الجلسة منتهية، يرجى تسجيل الدخول مجدداً' });
     return;
   }
 
   /* PostgreSQL unique-constraint / FK violation */
-  if (typeof err?.code === "string" && err.code.startsWith("23")) {
-    res.status(409).json({ error: "البيانات موجودة مسبقاً أو يوجد تعارض في البيانات" });
+  if (typeof err?.code === 'string' && err.code.startsWith('23')) {
+    res.status(409).json({ error: 'البيانات موجودة مسبقاً أو يوجد تعارض في البيانات' });
     return;
   }
 
   /* Fallback: generic error — hide internals in production */
   const status: number =
-    typeof (err as Record<string, unknown>).status === "number"
+    typeof (err as Record<string, unknown>).status === 'number'
       ? ((err as Record<string, unknown>).status as number)
-      : typeof (err as Record<string, unknown>).statusCode === "number"
+      : typeof (err as Record<string, unknown>).statusCode === 'number'
         ? ((err as Record<string, unknown>).statusCode as number)
         : 500;
-  const isDev = process.env.NODE_ENV !== "production";
+  const isDev = process.env.NODE_ENV !== 'production';
   const message: string =
-    status < 500 && err instanceof Error ? err.message : "خطأ داخلي في الخادم";
+    status < 500 && err instanceof Error ? err.message : 'خطأ داخلي في الخادم';
   res.status(status).json({
     error: message,
     ...(isDev && status >= 500 && err instanceof Error ? { details: err.message } : {}),
