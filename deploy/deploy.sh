@@ -27,15 +27,15 @@ echo "=== [4/7] بناء الـ Backend ==="
 cd "$APP_DIR"
 pnpm --filter @workspace/api-server run build
 
-echo "=== [5/7] بناء MUHKAM ULTIMATE (النسخة الكاملة) ==="
+echo "=== [5/7] بناء MUHKAM ULTIMATE (erp-system - النسخة الكاملة) ==="
 cd "$APP_DIR"
-PORT=3000 BASE_PATH=/ NODE_ENV=production \
+NODE_ENV=production BASE_PATH=/advanced/ \
   pnpm --filter @workspace/erp-system run build
 
-echo "=== [6/7] بناء MUHKAM ADVANCED (النسخة المبسطة) ==="
+echo "=== [6/7] بناء MUHKAM (muhkam-pro - النسخة الرئيسية) ==="
 cd "$APP_DIR"
-PORT=3000 BASE_PATH=/muhkam-advanced/ NODE_ENV=production \
-  pnpm --filter @workspace/muhkam-base run build
+NODE_ENV=production BASE_PATH=/ VITE_API_URL="" \
+  pnpm --filter @workspace/muhkam-pro run build
 
 echo "=== [7/7] إعادة تشغيل الـ Backend ==="
 pm2 restart halaltech-api --update-env
@@ -55,7 +55,7 @@ done
 
 echo ""
 echo "✅ النشر اكتمل بنجاح!"
-echo "   ULTIMATE : https://$(grep ALLOWED_ORIGINS .env | cut -d= -f2 | sed 's|https://||')/"
-echo "   ADVANCED : https://$(grep ALLOWED_ORIGINS .env | cut -d= -f2 | sed 's|https://||')/muhkam-advanced/"
+echo "   MUHKAM        : https://$(grep ALLOWED_ORIGINS .env | cut -d= -f2 | sed 's|https://||')/"
+echo "   MUHKAM ULTIMATE: https://$(grep ALLOWED_ORIGINS .env | cut -d= -f2 | sed 's|https://||')/advanced/"
 echo ""
 pm2 status
