@@ -81,36 +81,50 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
           command_timeout: 15m
+          envs: DEPLOY_TOKEN
           script: |
             set -euo pipefail
             APP_DIR=/var/www/muhkam-erp
             cd "$APP_DIR"
+
+            # Authenticate git with token (GitHub no longer accepts passwords)
+            git remote set-url origin "https://x-access-token:${DEPLOY_TOKEN}@github.com/m4elmelegy-hub/MUHKAM-ERP.git"
             git fetch origin main
             git reset --hard origin/main
             git clean -fd
-            # Rename muhkam-base → muhkam-pro (canonical production name)
-            if [ -d "$APP_DIR/artifacts/muhkam-base" ]; then
-              rm -rf "$APP_DIR/artifacts/muhkam-pro" 2>/dev/null || true
-              mv "$APP_DIR/artifacts/muhkam-base" "$APP_DIR/artifacts/muhkam-pro"
-            fi
+            # Remove token from remote URL after pull (security hygiene)
+            git remote set-url origin "https://github.com/m4elmelegy-hub/MUHKAM-ERP.git"
+
             pnpm install --frozen-lockfile
+
+            # Push any new DB migrations
+            cd "$APP_DIR/lib/db"
+            pnpm run push
+
             cd "$APP_DIR/artifacts/muhkam-pro"
             NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
+
             cd "$APP_DIR/artifacts/erp-system"
             NODE_ENV=production BASE_PATH=/advanced/ pnpm run build
+
             cd "$APP_DIR/artifacts/api-server"
             pnpm run build
+
             if pm2 describe halaltech-api > /dev/null 2>&1; then
               pm2 restart halaltech-api --update-env
             else
               pm2 start dist/index.mjs --name halaltech-api --cwd "$APP_DIR/artifacts/api-server" --update-env
             fi
             pm2 save
+
             sudo cp "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/muhkam
             sudo nginx -t && sudo nginx -s reload
+
             sleep 8
             curl -sf http://localhost:3000/api/healthz
             echo "Deploy complete — halaltec.com is live"
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
 
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
