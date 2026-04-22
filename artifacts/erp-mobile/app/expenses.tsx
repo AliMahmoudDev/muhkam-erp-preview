@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EmptyState } from "@/components/EmptyState";
-import { ModalHeader } from "@/components/ModalHeader";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch, formatCurrency, formatDate } from "@/lib/api";
 

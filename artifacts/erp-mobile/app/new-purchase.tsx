@@ -140,10 +140,6 @@ export default function NewPurchaseScreen() {
     else setCart((prev) => prev.map((i) => i.product.id === productId ? { ...i, qty } : i));
   };
 
-  const updatePrice = (productId: number, price: string) => {
-    setCart((prev) => prev.map((i) => i.product.id === productId ? { ...i, unitPrice: Number(price) || 0 } : i));
-  };
-
   const { mutate: submitPurchase, isPending } = useMutation({
     mutationFn: async () => {
       const paid = paymentType === "cash" ? cartTotal :

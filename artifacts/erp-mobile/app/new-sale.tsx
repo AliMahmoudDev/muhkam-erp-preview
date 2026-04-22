@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -154,10 +153,6 @@ export default function NewSaleScreen() {
   const updateQty = (productId: number, qty: number) => {
     if (qty <= 0) setCart((prev) => prev.filter((i) => i.product.id !== productId));
     else setCart((prev) => prev.map((i) => i.product.id === productId ? { ...i, qty } : i));
-  };
-
-  const updatePrice = (productId: number, price: string) => {
-    setCart((prev) => prev.map((i) => i.product.id === productId ? { ...i, unitPrice: Number(price) || 0 } : i));
   };
 
   // Submit mutation

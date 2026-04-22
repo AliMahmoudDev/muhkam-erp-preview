@@ -19,8 +19,6 @@ import { ModalHeader } from "@/components/ModalHeader";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch, formatCurrency } from "@/lib/api";
 
-const AMBER = "#F59E0B";
-
 interface Safe { id: number; name: string; balance: string; }
 
 export default function PaymentScreen() {
