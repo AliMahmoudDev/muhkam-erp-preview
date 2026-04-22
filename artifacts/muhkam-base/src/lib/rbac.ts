@@ -140,12 +140,6 @@ export function canAccess(role: string | undefined, route: string): boolean {
 export function isAdmin(role?: string) {
   return role === 'admin';
 }
-export function isManager(role?: string) {
-  return role === 'admin' || role === 'manager';
-}
-
-export { translateRole as ROLE_LABELS_FN } from './roles';
-
 export const ROLE_LABELS: Record<string, string> = {
   super_admin: 'المسؤول العام',
   company_admin: 'مدير الشركة',
