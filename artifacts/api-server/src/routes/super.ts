@@ -797,7 +797,7 @@ router.get("/super/plan-settings", ...superOnly, wrap(async (_req, res) => {
 }));
 
 router.put("/super/plan-settings/:key", ...superOnly, wrap(async (req, res) => {
-  const { key } = req.params;
+  const key = String(req.params['key']);
   const { name_ar, description, price, includes_mobile, is_active } = req.body as {
     name_ar?: string; description?: string; price?: number;
     includes_mobile?: boolean; is_active?: boolean;

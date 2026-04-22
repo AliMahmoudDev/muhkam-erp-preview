@@ -2,7 +2,7 @@
  * Reports — Analytics-only module
  * Financial health, P&L, cash flow, balance sheet, product profitability, sales analysis
  */
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, AlertTriangle } from "lucide-react";

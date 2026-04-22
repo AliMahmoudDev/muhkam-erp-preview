@@ -2,7 +2,7 @@
  * Reports — Shared types, helpers, hooks, and small components.
  * Single source of truth for all report utilities, charts, and date helpers.
  */
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Printer, Loader2 } from "lucide-react";

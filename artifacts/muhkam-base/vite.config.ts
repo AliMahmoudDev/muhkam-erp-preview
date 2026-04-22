@@ -66,7 +66,6 @@ export default defineConfig({
           "vendor-react":  ["react", "react-dom", "wouter"],
           "vendor-ui":     [
             "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
             "@radix-ui/react-select",
             "@radix-ui/react-toast",
           ],

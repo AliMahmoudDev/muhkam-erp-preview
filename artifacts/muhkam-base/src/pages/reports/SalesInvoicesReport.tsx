@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useGetSales } from "@workspace/api-client-react";
 import { Search, FileDown, Printer } from "lucide-react";
 import { formatCurrency, formatDate, TableSkeleton, PaymentBadge, StatusBadge, InvoicePdfButton } from "./shared";

@@ -2,7 +2,7 @@
  * VatReport — تقرير ضريبة القيمة المضافة (VAT)
  * ضريبة المخرجات (المبيعات) — ضريبة المدخلات (المشتريات) — الصافي المستحق
  */
-import React, { useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Receipt, ArrowUpCircle, ArrowDownCircle, Scale, RefreshCw, Download } from "lucide-react";
 import { api, authFetch, formatCurrency } from "./shared";

@@ -2,7 +2,7 @@
  * VouchersHistoryReport — سجل السندات المحسّن
  * Features: date filter, search, pagination, type filter, read-focused (no delete), post/cancel
  */
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useGetSettingsSafes } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
