@@ -12,19 +12,23 @@ import {
   Cpu,
   Percent,
   Banknote,
+  Shield,
+  Headphones,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
-const UsersTab = lazy(() => import('./users-tab'));
+const UsersTab          = lazy(() => import('./users-tab'));
 const OpeningBalanceTab = lazy(() => import('./opening-balance-tab'));
-const FinancialLockTab = lazy(() => import('./financial-lock-tab'));
-const CurrencyTab = lazy(() => import('./currency-tab'));
-const CompanyTab = lazy(() => import('./company-tab'));
-const AlertsTab = lazy(() => import('./alerts-tab'));
-const InvoiceTab = lazy(() => import('./invoice-tab'));
-const SystemTab = lazy(() => import('./system-tab'));
-const VatTab = lazy(() => import('./vat-tab'));
-const SalaryAdvanceTab = lazy(() => import('./salary-advance-tab'));
+const FinancialLockTab  = lazy(() => import('./financial-lock-tab'));
+const CurrencyTab       = lazy(() => import('./currency-tab'));
+const CompanyTab        = lazy(() => import('./company-tab'));
+const AlertsTab         = lazy(() => import('./alerts-tab'));
+const InvoiceTab        = lazy(() => import('./invoice-tab'));
+const SystemTab         = lazy(() => import('./system-tab'));
+const VatTab            = lazy(() => import('./vat-tab'));
+const SalaryAdvanceTab  = lazy(() => import('./salary-advance-tab'));
+const AuditTab          = lazy(() => import('./audit-tab'));
+const SupportTab        = lazy(() => import('./support-tab'));
 
 /* ─── Tab types ─── */
 type Tab =
@@ -37,7 +41,9 @@ type Tab =
   | 'invoice'
   | 'vat'
   | 'salary-advance'
-  | 'system';
+  | 'system'
+  | 'audit'
+  | 'support';
 
 /* ─── Section config ─── */
 const TAB_SECTIONS: {
@@ -47,30 +53,34 @@ const TAB_SECTIONS: {
   {
     section: 'الإدارة',
     tabs: [
-      { id: 'users', label: 'المستخدمون', icon: Users },
+      { id: 'users',   label: 'المستخدمون',  icon: Users    },
       { id: 'company', label: 'بيانات الشركة', icon: Building2 },
     ],
   },
   {
     section: 'المالية',
     tabs: [
-      { id: 'opening-balance', label: 'أول المدة', icon: BookOpen },
-      { id: 'financial-lock', label: 'إغلاق الفترات', icon: Lock },
-      { id: 'salary-advance', label: 'السلف', icon: Banknote },
+      { id: 'opening-balance', label: 'أول المدة',       icon: BookOpen  },
+      { id: 'financial-lock',  label: 'إغلاق الفترات',   icon: Lock      },
+      { id: 'salary-advance',  label: 'السلف',           icon: Banknote  },
     ],
   },
   {
     section: 'التخصيص',
     tabs: [
-      { id: 'currency', label: 'إعدادات المتجر', icon: Store },
-      { id: 'vat', label: 'ضريبة القيمة المضافة', icon: Percent },
-      { id: 'alerts', label: 'التنبيهات', icon: Bell },
-      { id: 'invoice', label: 'الفاتورة', icon: FileText },
+      { id: 'currency', label: 'إعدادات المتجر',        icon: Store     },
+      { id: 'vat',      label: 'ضريبة القيمة المضافة',  icon: Percent   },
+      { id: 'alerts',   label: 'التنبيهات',              icon: Bell      },
+      { id: 'invoice',  label: 'الفاتورة',               icon: FileText  },
     ],
   },
   {
-    section: 'النظام',
-    tabs: [{ id: 'system', label: 'النسخ والبيانات', icon: HardDrive }],
+    section: 'الأمان والنظام',
+    tabs: [
+      { id: 'system',  label: 'النسخ والأمان',   icon: HardDrive },
+      { id: 'audit',   label: 'سجل التدقيق',     icon: Shield    },
+      { id: 'support', label: 'الدعم الفني',     icon: Headphones },
+    ],
   },
 ];
 
@@ -94,9 +104,7 @@ function SystemInfoCard() {
     <div className="mx-3 mb-4 rounded-xl border border-white/6 bg-white/[0.02] overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
         <Cpu className="w-3 h-3 text-white/20" />
-        <p className="text-white/20 text-[10px] font-bold uppercase tracking-wider">
-          معلومات النظام
-        </p>
+        <p className="text-white/20 text-[10px] font-bold uppercase tracking-wider">معلومات النظام</p>
       </div>
       <div className="px-3 py-2.5 space-y-1.5">
         <div className="flex items-center justify-between">
@@ -171,7 +179,6 @@ export default function SettingsPage() {
           ))}
         </nav>
 
-        {/* ─── System info card ─── */}
         <SystemInfoCard />
       </aside>
 
@@ -200,7 +207,6 @@ export default function SettingsPage() {
 
       {/* ─────────── Main Content ─────────── */}
       <main className="flex-1 overflow-y-auto pb-24 lg:pb-8">
-        {/* Mobile header */}
         <div
           className="lg:hidden sticky top-0 z-30 px-4 py-3 border-b border-white/8 flex items-center gap-2"
           style={{ background: 'var(--erp-bg-main, #0D1424)' }}
@@ -211,16 +217,18 @@ export default function SettingsPage() {
 
         <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
           <Suspense fallback={<TabSkeleton />}>
-            {activeTab === 'users' && <UsersTab />}
-            {activeTab === 'company' && <CompanyTab />}
+            {activeTab === 'users'           && <UsersTab />}
+            {activeTab === 'company'         && <CompanyTab />}
             {activeTab === 'opening-balance' && <OpeningBalanceTab />}
-            {activeTab === 'financial-lock' && <FinancialLockTab />}
-            {activeTab === 'currency' && <CurrencyTab />}
-            {activeTab === 'vat' && <VatTab />}
-            {activeTab === 'alerts' && <AlertsTab />}
-            {activeTab === 'invoice' && <InvoiceTab />}
-            {activeTab === 'salary-advance' && <SalaryAdvanceTab />}
-            {activeTab === 'system' && <SystemTab />}
+            {activeTab === 'financial-lock'  && <FinancialLockTab />}
+            {activeTab === 'currency'        && <CurrencyTab />}
+            {activeTab === 'vat'             && <VatTab />}
+            {activeTab === 'alerts'          && <AlertsTab />}
+            {activeTab === 'invoice'         && <InvoiceTab />}
+            {activeTab === 'salary-advance'  && <SalaryAdvanceTab />}
+            {activeTab === 'system'          && <SystemTab />}
+            {activeTab === 'audit'           && <AuditTab />}
+            {activeTab === 'support'         && <SupportTab />}
           </Suspense>
         </div>
       </main>
