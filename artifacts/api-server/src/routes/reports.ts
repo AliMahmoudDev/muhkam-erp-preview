@@ -18,7 +18,12 @@ import { hasPermission } from "../lib/permissions";
 
 const router: IRouter = Router();
 
+// Scope the permission check to /reports/* paths only, otherwise this middleware
+// runs for EVERY request passing through the parent router (since the parent
+// mounts reportsRouter without a path prefix), incorrectly blocking unrelated
+// endpoints for any role that lacks can_view_reports (e.g. self-service employee).
 router.use((req, res, next) => {
+  if (!req.path.startsWith("/reports")) { next(); return; }
   if (!hasPermission(req.user, "can_view_reports")) {
     res.status(403).json({ error: "غير مصرح بعرض التقارير" }); return;
   }
