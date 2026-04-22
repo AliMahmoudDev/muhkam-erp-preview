@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { NAV_ITEMS, canAccess, type UserRole } from '@/lib/rbac';
 import { hasPermission } from '@/lib/permissions';
 import { translateRole } from '@/lib/roles';
-import { LogOut, Warehouse, Search, X } from 'lucide-react';
+import { LogOut, Warehouse, Search, X, ChevronDown } from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 import { NotificationBell } from '@/components/notification-bell';
@@ -18,29 +18,16 @@ import { NotificationBell } from '@/components/notification-bell';
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const api = (p: string) => `${BASE}${p}`;
 
-/* ── MUHKAM ADVANCED: Hidden complex-accounting pages ────────
-   These pages exist in the router but are NOT shown in the nav.
-   Users of this tier don't need double-entry / chart-of-accounts. */
-const ADVANCED_HIDDEN: Set<string> = new Set([
-  '/accounts',
-  '/journal-entries',
-  '/fiscal-years',
-  '/audit-log',
-  '/fixed-assets',
-  '/accruals',
-  '/bank-reconciliation',
-  '/budgets',
-  '/cost-centers',
-  '/consignment',
-]);
-
 /* ── Nav sections ───────────────────────────────── */
 const NAV_SECTIONS = [
-  { label: 'الرئيسية',         hrefs: ['/', '/treasury'] },
-  { label: 'التجارة',           hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/warranty'] },
-  { label: 'المالية',           hrefs: ['/income', '/expenses', '/vouchers', '/reports'] },
-  { label: 'الموارد البشرية',  hrefs: ['/employees', '/attendance'] },
-  { label: 'النظام',            hrefs: ['/settings', '/branches'] },
+  { label: 'القائمة', hrefs: ['/'] },
+  {
+    label: 'التجارة',
+    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/warranty', '/consignment'],
+  },
+  { label: 'المالية', hrefs: ['/treasury', '/vouchers', '/expenses', '/income', '/reports'] },
+  { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
+  { label: 'النظام', hrefs: ['/settings', '/branches'] },
 ];
 
 interface LayoutProps {
@@ -193,6 +180,9 @@ export function AppLayout({ children }: LayoutProps) {
 
   const { currentWarehouseId, setWarehouseId } = useWarehouse();
 
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const { data: warehousesRaw } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['/api/settings/warehouses'],
     queryFn: () =>
@@ -216,7 +206,6 @@ export function AppLayout({ children }: LayoutProps) {
   }, [warehouses, canSelectWarehouse, currentWarehouseId, setWarehouseId]);
 
   const visibleNav = NAV_ITEMS.filter((item) => {
-    if (ADVANCED_HIDDEN.has(item.href)) return false;   // MUHKAM ADVANCED: hide complex pages
     if (!canAccess(role, item.href)) return false;
     if (item.href === '/sales' && !hasPermission(user, 'can_view_sales')) return false;
     if (item.href === '/inventory' && !hasPermission(user, 'can_view_inventory')) return false;
@@ -251,21 +240,7 @@ export function AppLayout({ children }: LayoutProps) {
                 ? 'سندات الصرف'
                 : location === '/safe-transfers'
                   ? 'تحويل الخزائن'
-                  : location === '/accounts'
-                    ? 'شجرة الحسابات'
-                    : location === '/journal-entries'
-                      ? 'القيود اليومية'
-                      : location === '/fixed-assets'
-                        ? 'الأصول الثابتة'
-                        : location === '/accruals'
-                          ? 'الاستحقاقات والمدفوعات المقدمة'
-                          : location === '/bank-reconciliation'
-                            ? 'المطابقة البنكية'
-                            : location === '/budgets'
-                              ? 'الميزانية التقديرية'
-                              : location === '/cost-centers'
-                                ? 'مراكز التكلفة'
-                                : 'مرحباً بك');
+                  : 'مرحباً بك');
 
   /* ── Colors ── */
   const sidebarBg = isDark ? 'hsla(225,28%,6.5%,0.98)' : 'rgba(255,255,255,0.99)';
@@ -285,19 +260,29 @@ export function AppLayout({ children }: LayoutProps) {
       <aside
         className="hidden lg:flex flex-col shrink-0 z-20"
         style={{
-          width: '228px',
+          width: sidebarCollapsed ? '60px' : '228px',
           height: '100vh',
           position: 'sticky',
           top: 0,
           background: sidebarBg,
           borderLeft: sidebarBdr,
           backdropFilter: 'blur(24px)',
+          transition: 'width 0.25s ease',
+          overflow: 'hidden',
         }}
       >
-        {/* Logo strip */}
+        {/* Logo strip + toggle */}
         <div
-          className="flex items-center gap-3 px-4"
-          style={{ height: '56px', borderBottom: sidebarBdr, flexShrink: 0 }}
+          className="flex items-center"
+          style={{
+            height: '56px',
+            borderBottom: sidebarBdr,
+            flexShrink: 0,
+            padding: sidebarCollapsed ? '0 13px' : '0 16px',
+            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+            gap: 10,
+            position: 'relative',
+          }}
         >
           <div
             className="flex items-center justify-center shrink-0"
@@ -319,182 +304,116 @@ export function AppLayout({ children }: LayoutProps) {
               }}
             />
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p
-              style={{
-                fontSize: 13,
-                fontWeight: 900,
-                color: isDark ? '#f59e0b' : '#b45309',
-                lineHeight: 1.2,
-              }}
-              className="truncate"
-            >
-              {settings.companyName}
-            </p>
-            <p style={{ fontSize: 10.5, color: textMuted, lineHeight: 1.2 }} className="truncate">
-              {settings.companySlogan}
-            </p>
-          </div>
-        </div>
-
-        {/* User chip */}
-        {user && (
-          <div
-            className="mx-3 mt-3 flex items-center gap-2.5 rounded-xl px-3"
-            style={{ height: 44, background: chipBg, border: chipBdr, flexShrink: 0 }}
-          >
-            {/* Avatar */}
-            <div
-              className="flex items-center justify-center shrink-0 text-xs font-black"
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: 'linear-gradient(135deg,#f59e0b,#d97706)',
-                color: '#000',
-                fontSize: 11,
-              }}
-            >
-              {getInitials(user.name)}
-            </div>
-            {/* Name + role */}
+          {!sidebarCollapsed && (
             <div style={{ flex: 1, minWidth: 0 }}>
               <p
-                style={{ fontSize: 12.5, fontWeight: 700, color: textPrimary, lineHeight: 1.2 }}
+                style={{ fontSize: 13, fontWeight: 900, color: isDark ? '#f59e0b' : '#b45309', lineHeight: 1.2 }}
                 className="truncate"
               >
-                {user.name}
+                {settings.companyName}
               </p>
-              <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
-                <div
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: ROLE_DOT[user.role] ?? '#94a3b8',
-                    flexShrink: 0,
-                  }}
-                />
-                <span style={{ fontSize: 11, color: textMuted, fontWeight: 600 }}>
-                  {translateRole(user.role)}
-                </span>
-              </div>
+              <p style={{ fontSize: 10.5, color: textMuted, lineHeight: 1.2 }} className="truncate">
+                {settings.companySlogan}
+              </p>
             </div>
-            {/* Logout */}
-            <button
-              onClick={logout}
-              title="تسجيل الخروج"
-              className="erp-icon-btn"
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 7,
-                border: 'none',
-                background: 'transparent',
-                color: textMuted,
-              }}
-            >
-              <LogOut style={{ width: 13, height: 13 }} />
-            </button>
-          </div>
-        )}
-
-        {/* Warehouse selector */}
-        {warehouses.length > 0 && canSelectWarehouse && (
-          <div
-            className="mx-3 mt-2 rounded-lg px-3"
+          )}
+          {/* Toggle button */}
+          <button
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            title={sidebarCollapsed ? 'توسيع القائمة' : 'طي القائمة'}
             style={{
+              position: sidebarCollapsed ? 'static' : 'absolute',
+              left: sidebarCollapsed ? 'auto' : 8,
+              top: sidebarCollapsed ? 'auto' : '50%',
+              transform: sidebarCollapsed ? 'none' : 'translateY(-50%)',
+              width: 22,
+              height: 22,
+              borderRadius: 6,
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)'}`,
+              background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+              color: textMuted,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               flexShrink: 0,
-              paddingTop: 8,
-              paddingBottom: 8,
-              background: isDark ? 'rgba(245,158,11,0.05)' : 'rgba(180,83,9,0.05)',
-              border: isDark ? '1px solid rgba(245,158,11,0.12)' : '1px solid rgba(180,83,9,0.11)',
+              transition: 'opacity 0.2s',
             }}
           >
-            <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
-              <Warehouse
-                style={{
-                  width: 11,
-                  height: 11,
-                  color: isDark ? 'rgba(245,158,11,0.50)' : 'rgba(180,83,9,0.50)',
-                }}
-              />
-              <span
-                style={{
-                  fontSize: 9.5,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: textMuted,
-                }}
-              >
-                المخزن
-              </span>
-            </div>
-            <select
-              value={currentWarehouseId}
-              onChange={(e) => setWarehouseId(e.target.value)}
+            <ChevronDown
               style={{
-                width: '100%',
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: textPrimary,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                appearance: 'none',
+                width: 13,
+                height: 13,
+                transform: sidebarCollapsed ? 'rotate(90deg)' : 'rotate(-90deg)',
+                transition: 'transform 0.25s ease',
               }}
+            />
+          </button>
+        </div>
+
+
+        {/* Warehouse selector */}
+        {warehouses.length > 0 && canSelectWarehouse && !sidebarCollapsed && (
+          <div className="mx-3 mt-2 rounded-lg px-3"
+            style={{ flexShrink: 0, paddingTop: 8, paddingBottom: 8, background: isDark ? 'rgba(245,158,11,0.05)' : 'rgba(180,83,9,0.05)', border: isDark ? '1px solid rgba(245,158,11,0.12)' : '1px solid rgba(180,83,9,0.11)' }}
+          >
+            <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
+              <Warehouse style={{ width: 11, height: 11, color: isDark ? 'rgba(245,158,11,0.50)' : 'rgba(180,83,9,0.50)' }} />
+              <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: textMuted }}>المخزن</span>
+            </div>
+            <select value={currentWarehouseId} onChange={(e) => setWarehouseId(e.target.value)}
+              style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontSize: 12.5, fontWeight: 600, color: textPrimary, cursor: 'pointer', fontFamily: 'inherit', appearance: 'none' }}
             >
-              <option value="" style={{ background: isDark ? '#111827' : '#fff' }}>
-                كل المخازن
-              </option>
+              <option value="" style={{ background: isDark ? '#111827' : '#fff' }}>كل المخازن</option>
               {warehouses.map((w) => (
-                <option
-                  key={w.id}
-                  value={String(w.id)}
-                  style={{ background: isDark ? '#111827' : '#fff' }}
-                >
-                  {w.name}
-                </option>
+                <option key={w.id} value={String(w.id)} style={{ background: isDark ? '#111827' : '#fff' }}>{w.name}</option>
               ))}
             </select>
           </div>
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 pb-4 mt-1" style={{ scrollbarWidth: 'none' }}>
+        <nav className="flex-1 overflow-y-auto pb-4 mt-1" style={{ scrollbarWidth: 'none', padding: sidebarCollapsed ? '4px 8px' : '0 12px' }}>
           {NAV_SECTIONS.map((section, si) => {
             const items = visibleNav.filter((i) => section.hrefs.includes(i.href));
             if (!items.length) return null;
+            const sectionActive = items.some((i) => i.href === location);
+            const isOpen = openSections[section.label] ?? sectionActive;
             return (
               <div key={section.label}>
-                <div
-                  className="erp-divider-label"
-                  style={{ paddingTop: si === 0 ? 10 : 16, paddingBottom: 4 }}
-                >
-                  {section.label}
-                </div>
-                {items.map((item) => {
-                  const active = location === item.href;
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <div className={`nav-item ${active ? 'active' : ''}`}>
-                        <item.icon
-                          style={{
-                            width: 16,
-                            height: 16,
-                            flexShrink: 0,
-                            opacity: active ? 1 : 0.55,
-                            color: active ? '#f59e0b' : 'inherit',
-                          }}
-                        />
-                        <span style={{ flex: 1 }}>{item.name}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
+                {/* Section label — hidden when collapsed */}
+                {!sidebarCollapsed && (
+                  <button
+                    type="button"
+                    onClick={() => setOpenSections((prev) => ({ ...prev, [section.label]: !(prev[section.label] ?? sectionActive) }))}
+                    className="erp-divider-label"
+                    style={{ paddingTop: si === 0 ? 10 : 16, paddingBottom: 4, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'right' }}
+                  >
+                    <span>{section.label}</span>
+                    <ChevronDown style={{ width: 12, height: 12, opacity: 0.55, transition: 'transform 0.2s ease', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+                  </button>
+                )}
+                {/* Divider line when collapsed */}
+                {sidebarCollapsed && si > 0 && (
+                  <div style={{ height: 1, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', margin: '8px 0' }} />
+                )}
+                {/* Nav items */}
+                {(sidebarCollapsed || isOpen) &&
+                  items.map((item) => {
+                    const active = location === item.href;
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <div
+                          className={`nav-item ${active ? 'active' : ''}`}
+                          title={sidebarCollapsed ? item.name : undefined}
+                          style={sidebarCollapsed ? { justifyContent: 'center', paddingRight: 0, paddingLeft: 0 } : {}}
+                        >
+                          <item.icon style={{ width: 16, height: 16, flexShrink: 0, opacity: active ? 1 : 0.55, color: active ? '#f59e0b' : 'inherit' }} />
+                          {!sidebarCollapsed && <span style={{ flex: 1 }}>{item.name}</span>}
+                        </div>
+                      </Link>
+                    );
+                  })}
               </div>
             );
           })}
@@ -505,8 +424,8 @@ export function AppLayout({ children }: LayoutProps) {
           className="flex items-center justify-between px-4"
           style={{ height: 40, borderTop: sidebarBdr, flexShrink: 0 }}
         >
-          <span style={{ fontSize: 10, color: textMuted }}>MuhKam</span>
-          <div className="glow-dot" />
+          {!sidebarCollapsed && <span style={{ fontSize: 10, color: textMuted }}>MuhKam</span>}
+          <div className="glow-dot" style={sidebarCollapsed ? { margin: '0 auto' } : {}} />
         </div>
       </aside>
 
@@ -599,64 +518,34 @@ export function AppLayout({ children }: LayoutProps) {
             <AlertBell />
             <ThemeToggle />
             {user && (
-              <>
+              <div
+                className="hidden md:flex items-center gap-2 rounded-xl px-2.5 py-1.5"
+                style={{ background: chipBg, border: chipBdr, flexShrink: 0 }}
+              >
                 <div
-                  style={{
-                    width: 1,
-                    height: 22,
-                    background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
-                    flexShrink: 0,
-                  }}
-                />
-                <div
-                  className="hidden md:flex items-center gap-2 rounded-xl px-2.5 py-1.5"
-                  style={{ background: chipBg, border: chipBdr, cursor: 'default', flexShrink: 0 }}
+                  className="flex items-center justify-center shrink-0 font-black"
+                  style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#000', fontSize: 10 }}
                 >
-                  <div
-                    className="flex items-center justify-center shrink-0 font-black"
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 8,
-                      background: 'linear-gradient(135deg,#f59e0b,#d97706)',
-                      color: '#000',
-                      fontSize: 10,
-                    }}
-                  >
-                    {getInitials(user.name)}
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: textPrimary,
-                        lineHeight: 1.2,
-                        maxWidth: 100,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {user.name}
-                    </p>
-                    <div className="flex items-center gap-1" style={{ marginTop: 1 }}>
-                      <div
-                        style={{
-                          width: 5,
-                          height: 5,
-                          borderRadius: '50%',
-                          background: ROLE_DOT[user.role] ?? '#94a3b8',
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span style={{ fontSize: 10, color: textMuted, fontWeight: 600 }}>
-                        {translateRole(user.role)}
-                      </span>
-                    </div>
+                  {getInitials(user.name)}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: textPrimary, lineHeight: 1.2, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user.name}
+                  </p>
+                  <div className="flex items-center gap-1" style={{ marginTop: 1 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: ROLE_DOT[user.role] ?? '#94a3b8', flexShrink: 0 }} />
+                    <span style={{ fontSize: 10, color: textMuted, fontWeight: 600 }}>{translateRole(user.role)}</span>
                   </div>
                 </div>
-              </>
+                <div style={{ width: 1, height: 22, background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)', flexShrink: 0, margin: '0 2px' }} />
+                <button
+                  onClick={logout}
+                  title="تسجيل الخروج"
+                  style={{ width: 26, height: 26, borderRadius: 7, border: 'none', background: 'transparent', color: textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                >
+                  <LogOut style={{ width: 14, height: 14 }} />
+                </button>
+              </div>
             )}
           </div>
         </header>

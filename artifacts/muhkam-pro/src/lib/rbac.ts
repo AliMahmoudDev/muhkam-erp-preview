@@ -150,4 +150,5 @@ export const ROLE_LABELS: Record<string, string> = {
   salesperson: 'مندوب مبيعات',
   agent: 'موظف مبيعات',
   client: 'عميل',
+  employee: 'موظف (بياناتي)',
 };
