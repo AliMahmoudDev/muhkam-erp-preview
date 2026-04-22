@@ -184,7 +184,7 @@ app.use("/advanced/api", router);
 
 /* ── Production: serve React frontend static files ─────────────────────────
    Two editions are served from the same Express backend:
-   • MuhKam          → /*          (artifacts/muhkam-base/dist/public)
+   • MuhKam          → /*          (artifacts/muhkam-pro/dist/public)
    • MuhKam Advanced → /advanced/* (artifacts/erp-system/dist/public)
    ────────────────────────────────────────────────────────────────────────── */
 if (process.env.NODE_ENV === "production") {
@@ -213,10 +213,10 @@ if (process.env.NODE_ENV === "production") {
   });
   logger.info({ advancedDist }, "Serving MuhKam Advanced frontend at /advanced/");
 
-  /* ── MuhKam at / (muhkam-base) ── */
+  /* ── MuhKam at / (muhkam-pro) ── */
   const rootDist =
     process.env.FRONTEND_DIST ||
-    path.resolve(currentDir, "../../muhkam-base/dist/public");
+    path.resolve(currentDir, "../../muhkam-pro/dist/public");
 
   app.use(express.static(rootDist, staticOpts));
   /* SPA fallback for MuhKam */

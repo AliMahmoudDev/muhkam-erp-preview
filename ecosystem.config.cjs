@@ -7,8 +7,8 @@
  *   pm2 startup
  *
  * الـ Backend يخدم كلا النسختين:
- *   /             → MUHKAM ULTIMATE  (artifacts/erp-system/dist/public)
- *   /muhkam-advanced/ → MUHKAM ADVANCED  (artifacts/muhkam-base/dist/public)
+ *   /             → MuhKam          (artifacts/muhkam-pro/dist/public)
+ *   /advanced/    → MuhKam Advanced (artifacts/erp-system/dist/public)
  *   /api/         → REST API (مشترك)
  */
 
@@ -51,8 +51,8 @@ module.exports = {
         JWT_SECRET: env.JWT_SECRET,
         JWT_REFRESH_SECRET: env.JWT_REFRESH_SECRET || env.JWT_SECRET,
         ALLOWED_ORIGINS: env.ALLOWED_ORIGINS,
-        FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
-        ADVANCED_DIST: "/var/www/muhkam-erp/artifacts/muhkam-base/dist/public",
+        FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/muhkam-pro/dist/public",
+        ADVANCED_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
       },
       error_file: "/var/log/pm2/halaltech-error.log",
       out_file: "/var/log/pm2/halaltech-out.log",
