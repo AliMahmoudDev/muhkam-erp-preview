@@ -10,6 +10,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { useAppSettings } from '@/contexts/app-settings';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppNotification {
   id: number;
@@ -69,9 +70,12 @@ export function NotificationBell() {
   const [, navigate] = useLocation();
   const { settings } = useAppSettings();
   const { user } = useAuth();
+  const { toast } = useToast();
   const isDark = (settings.theme ?? 'dark') === 'dark';
   const canApproveAdvances = hasPermission(user, 'can_manage_payroll');
   const [actingId, setActingId] = useState<number | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<AppNotification | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const fetchCount = useCallback(async () => {
     try {
@@ -96,17 +100,14 @@ export function NotificationBell() {
     } finally { setLoading(false); }
   }, []);
 
-  // Initial fetch + poll for unread count
   useEffect(() => {
     fetchCount();
     const t = setInterval(fetchCount, POLL_MS);
     return () => clearInterval(t);
   }, [fetchCount]);
 
-  // Refetch full list whenever dropdown opens
   useEffect(() => { if (open) fetchList(); }, [open, fetchList]);
 
-  // Close on outside click
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpen(false);
@@ -135,6 +136,12 @@ export function NotificationBell() {
     }
   }
 
+  function removeNotification(n: AppNotification) {
+    setItems(prev => prev.filter(x => x.id !== n.id));
+    if (!n.is_read) setUnreadCount(c => Math.max(0, c - 1));
+    authFetch(`${BASE}/api/notifications/${n.id}`, { method: 'DELETE' }).catch(() => {});
+  }
+
   async function approveAdvance(n: AppNotification) {
     if (!n.reference_id || actingId) return;
     setActingId(n.id);
@@ -145,35 +152,37 @@ export function NotificationBell() {
         body: JSON.stringify({}),
       });
       if (r.ok) {
-        setItems(prev => prev.filter(x => x.id !== n.id));
-        if (!n.is_read) setUnreadCount(c => Math.max(0, c - 1));
-        try { await authFetch(`${BASE}/api/notifications/${n.id}`, { method: 'DELETE' }); } catch { /* silent */ }
+        removeNotification(n);
+        toast({ title: 'تم الاعتماد', description: 'تم اعتماد طلب السلفة بنجاح' });
       } else {
         const j = await r.json().catch(() => ({}));
-        alert(j?.error || 'تعذر اعتماد الطلب');
+        toast({ title: 'خطأ', description: j?.error || 'تعذر اعتماد الطلب', variant: 'destructive' });
       }
     } finally { setActingId(null); }
   }
 
-  async function rejectAdvance(n: AppNotification) {
-    if (!n.reference_id || actingId) return;
-    const reason = window.prompt('سبب الرفض (اختياري):', '') ?? '';
+  async function confirmReject() {
+    const n = rejectTarget;
+    if (!n || !n.reference_id) return;
     setActingId(n.id);
     try {
       const r = await authFetch(`${BASE}/api/salary-advances/${n.reference_id}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rejection_reason: reason }),
+        body: JSON.stringify({ rejection_reason: rejectReason }),
       });
       if (r.ok) {
-        setItems(prev => prev.filter(x => x.id !== n.id));
-        if (!n.is_read) setUnreadCount(c => Math.max(0, c - 1));
-        try { await authFetch(`${BASE}/api/notifications/${n.id}`, { method: 'DELETE' }); } catch { /* silent */ }
+        removeNotification(n);
+        toast({ title: 'تم الرفض', description: 'تم رفض طلب السلفة' });
       } else {
         const j = await r.json().catch(() => ({}));
-        alert(j?.error || 'تعذر رفض الطلب');
+        toast({ title: 'خطأ', description: j?.error || 'تعذر رفض الطلب', variant: 'destructive' });
       }
-    } finally { setActingId(null); }
+    } finally {
+      setActingId(null);
+      setRejectTarget(null);
+      setRejectReason('');
+    }
   }
 
   /* ── Styles ── */
@@ -275,20 +284,21 @@ export function NotificationBell() {
               </div>
             ) : items.map(n => {
               const color = TYPE_COLOR[n.type] ?? '#94a3b8';
+              const isRejectOpen = rejectTarget?.id === n.id;
               return (
                 <div
                   key={n.id}
-                  onClick={() => handleClick(n)}
+                  onClick={() => !isRejectOpen && handleClick(n)}
                   style={{
                     padding: '10px 14px',
                     borderBottom: `1px solid ${border}`,
                     background: n.is_read ? 'transparent' : (isDark ? 'rgba(245,158,11,0.05)' : 'rgba(245,158,11,0.05)'),
                     display: 'flex', gap: 10, alignItems: 'flex-start',
-                    cursor: 'pointer',
+                    cursor: isRejectOpen ? 'default' : 'pointer',
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = rowHover; }}
+                  onMouseEnter={(e) => { if (!isRejectOpen) (e.currentTarget as HTMLDivElement).style.background = rowHover; }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.background = n.is_read ? 'transparent' : (isDark ? 'rgba(245,158,11,0.05)' : 'rgba(245,158,11,0.05)');
+                    if (!isRejectOpen) (e.currentTarget as HTMLDivElement).style.background = n.is_read ? 'transparent' : (isDark ? 'rgba(245,158,11,0.05)' : 'rgba(245,158,11,0.05)');
                   }}
                 >
                   <div style={{
@@ -308,13 +318,15 @@ export function NotificationBell() {
                       fontSize: 11.5, color: textSub, marginTop: 2, lineHeight: 1.4,
                       wordBreak: 'break-word',
                     }}>{n.message}</div>
-                    {!n.is_read && (
+                    {!n.is_read && !isRejectOpen && (
                       <span style={{
                         display: 'inline-block', marginTop: 4,
                         fontSize: 9, color: '#f59e0b', fontWeight: 700,
                       }}>● جديد</span>
                     )}
-                    {n.type === 'advance_pending' && canApproveAdvances && n.reference_id && (
+
+                    {/* Inline approve/reject for advance_pending */}
+                    {n.type === 'advance_pending' && canApproveAdvances && n.reference_id && !isRejectOpen && (
                       <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
                         <button
                           onClick={(e) => { e.stopPropagation(); approveAdvance(n); }}
@@ -332,7 +344,7 @@ export function NotificationBell() {
                           {actingId === n.id ? 'جارٍ…' : 'اعتماد'}
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); rejectAdvance(n); }}
+                          onClick={(e) => { e.stopPropagation(); setRejectTarget(n); setRejectReason(''); }}
                           disabled={actingId === n.id}
                           style={{
                             padding: '2px 6px', borderRadius: 4,
@@ -346,6 +358,56 @@ export function NotificationBell() {
                           <X style={{ width: 9, height: 9 }} />
                           رفض
                         </button>
+                      </div>
+                    )}
+
+                    {/* Inline reject reason form */}
+                    {isRejectOpen && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ marginTop: 8 }}
+                      >
+                        <textarea
+                          autoFocus
+                          placeholder="سبب الرفض (اختياري)"
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          rows={2}
+                          style={{
+                            width: '100%', borderRadius: 6, padding: '5px 8px',
+                            fontSize: 11, resize: 'none',
+                            background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                            border: `1px solid ${border}`,
+                            color: textMain, outline: 'none', direction: 'rtl',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                          <button
+                            onClick={confirmReject}
+                            disabled={actingId === n.id}
+                            style={{
+                              flex: 1, padding: '3px 8px', borderRadius: 4,
+                              border: 'none', cursor: 'pointer',
+                              background: '#ef4444', color: '#fff',
+                              fontSize: 10, fontWeight: 700,
+                              opacity: actingId === n.id ? 0.6 : 1,
+                            }}
+                          >
+                            {actingId === n.id ? 'جارٍ…' : 'تأكيد الرفض'}
+                          </button>
+                          <button
+                            onClick={() => { setRejectTarget(null); setRejectReason(''); }}
+                            style={{
+                              padding: '3px 8px', borderRadius: 4,
+                              border: `1px solid ${border}`, cursor: 'pointer',
+                              background: 'transparent', color: textSub,
+                              fontSize: 10,
+                            }}
+                          >
+                            إلغاء
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
