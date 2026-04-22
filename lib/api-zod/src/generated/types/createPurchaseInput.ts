@@ -17,6 +17,10 @@ export interface CreatePurchaseInput {
   paid_amount: number;
   safe_id?: number | null;
   warehouse_id?: number | null;
+  currency?: string | null;
+  exchange_rate?: number | null;
+  is_consignment?: boolean | null;
+  consignment_warehouse_id?: number | null;
   date?: string | null;
   notes?: string | null;
   items: CreatePurchaseItemInput[];

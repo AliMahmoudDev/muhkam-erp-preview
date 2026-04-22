@@ -980,6 +980,18 @@ components:
         warehouse_id:
           type: integer
           nullable: true
+        currency:
+          type: string
+          nullable: true
+        exchange_rate:
+          type: number
+          nullable: true
+        is_consignment:
+          type: boolean
+          nullable: true
+        consignment_warehouse_id:
+          type: integer
+          nullable: true
         date:
           type: string
           nullable: true

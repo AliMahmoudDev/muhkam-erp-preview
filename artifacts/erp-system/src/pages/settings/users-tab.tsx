@@ -131,7 +131,7 @@ export default function UsersTab() {
         onError: (e: unknown) => toast({ title: (e as Error)?.message || "فشل التعديل", variant: "destructive" }),
       });
     } else {
-      createUser.mutate(payload as any, {
+      createUser.mutate(payload, {
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/settings/users"] }); toast({ title: "تم إضافة المستخدم" }); resetForm(); },
         onError: (e: unknown) => toast({ title: (e as Error)?.message || "فشل الإضافة", variant: "destructive" }),
       });

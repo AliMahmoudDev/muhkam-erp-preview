@@ -77,9 +77,15 @@
 | `ReceiptModal.tsx` / `PaymentModal.tsx` | Typed filter callbacks |
 | `employees.tsx` | `catch (err: unknown)` + `(err as Error)?.message` |
 
-### Remaining `as any` (2 per frontend — API client type limitations)
-- `purchases.tsx:249` — mutation body with `is_consignment` extra fields not in generated types
-- `users-tab.tsx:134` — `createUser.mutate(payload as any)` due to API client type mismatch
+### Session 9 Completion — Zero `as any` in Production Pages
+- Fixed both remaining `as any` usages by extending the type definitions:
+  - `lib/api-spec/openapi.yaml` → added `currency`, `exchange_rate`, `is_consignment`, `consignment_warehouse_id` to `CreatePurchaseInput`
+  - `lib/api-zod/src/generated/types/createPurchaseInput.ts` → same fields added
+  - `lib/api-client-react/src/generated/api.schemas.ts` + `dist/generated/api.schemas.d.ts` → same `CreatePurchaseInput` fields + `warehouse_id`, `safe_id`, `employee_id` added to `ErpUser`
+  - `purchases.tsx:249` — `} as any` removed (type now correct)
+  - `users-tab.tsx:134` — `payload as any` removed (type now correct)
+- **Both frontends pass `pnpm run type-check` with zero errors and ZERO `as any` in production pages**
+- Only remaining `as any` usages are in `__tests__/SubscriptionBanner.test.tsx` (vi.mocked test mocks — acceptable)
 
 ---
 

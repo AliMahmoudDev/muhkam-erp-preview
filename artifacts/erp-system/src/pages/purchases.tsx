@@ -246,7 +246,7 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
         is_consignment: isConsignment,
         consignment_warehouse_id: isConsignment ? finalConsignmentWarehouseId : null,
         items: convertedItems,
-      } as any
+      }
     }, {
       onSuccess: () => {
         const msg = isConsignment

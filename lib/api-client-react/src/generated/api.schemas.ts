@@ -313,6 +313,10 @@ export interface CreatePurchaseInput {
   date?: string | null;
   discount_percent?: number | null;
   discount_amount?: number | null;
+  currency?: string | null;
+  exchange_rate?: number | null;
+  is_consignment?: boolean | null;
+  consignment_warehouse_id?: number | null;
 }
 
 export interface Expense {
@@ -392,6 +396,9 @@ export interface ErpUser {
   role: string;
   permissions?: string | null;
   active?: boolean | null;
+  warehouse_id?: number | null;
+  safe_id?: number | null;
+  employee_id?: number | null;
   created_at: string;
 }
 
