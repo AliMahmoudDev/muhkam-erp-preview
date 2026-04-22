@@ -95,7 +95,11 @@ jobs:
             NODE_ENV=production BASE_PATH=/muhkam-advanced/ pnpm run build
             cd "$APP_DIR/artifacts/api-server"
             pnpm run build
-            pm2 restart muhkam-api --update-env
+            if pm2 describe muhkam-api > /dev/null 2>&1; then
+              pm2 restart muhkam-api --update-env
+            else
+              pm2 start dist/index.mjs --name muhkam-api --cwd "$APP_DIR/artifacts/api-server" --update-env
+            fi
             pm2 save
             sleep 8
             curl -sf http://localhost:3000/api/healthz
