@@ -87,6 +87,13 @@ jobs:
             APP_DIR=/var/www/muhkam-erp
             cd "$APP_DIR"
 
+            # Load environment variables (DATABASE_URL, JWT_SECRET, etc.)
+            if [ -f "$APP_DIR/.env" ]; then
+              set -a
+              source "$APP_DIR/.env"
+              set +a
+            fi
+
             # Authenticate git with token (GitHub no longer accepts passwords)
             git remote set-url origin "https://x-access-token:${DEPLOY_TOKEN}@github.com/m4elmelegy-hub/MUHKAM-ERP.git"
             git fetch origin main
