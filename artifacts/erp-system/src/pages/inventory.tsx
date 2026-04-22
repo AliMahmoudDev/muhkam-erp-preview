@@ -671,8 +671,8 @@ export default function Inventory() {
                     toast({ title: 'تم إضافة المخزن بنجاح' });
                     setWhForm({ name: '', address: '', branch_id: '' });
                     setShowAddWH(false);
-                  } catch (e: any) {
-                    toast({ title: e?.message ?? 'فشل الإضافة', variant: 'destructive' });
+                  } catch (e: unknown) {
+                    toast({ title: (e as Error)?.message ?? 'فشل الإضافة', variant: 'destructive' });
                   }
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
@@ -726,8 +726,8 @@ export default function Inventory() {
                       toast({ title: 'تم حذف المخزن' });
                       setDeleteWHTarget(null);
                     },
-                    onError: (e: any) => {
-                      toast({ title: e?.message ?? 'فشل الحذف', variant: 'destructive' });
+                    onError: (e: unknown) => {
+                      toast({ title: (e as Error)?.message ?? 'فشل الحذف', variant: 'destructive' });
                       setDeleteWHTarget(null);
                     },
                   })

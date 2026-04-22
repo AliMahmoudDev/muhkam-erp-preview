@@ -23,6 +23,10 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 /* ─── Types ─── */
 type OBSubTab = 'treasury' | 'products' | 'customers' | 'suppliers';
 
+interface SafeItem      { id: number; name: string; balance?: number | string }
+interface ProductItem   { id: number; name: string; sku?: string | null; cost_price?: number | string; quantity?: number | string }
+interface CustomerItem  { id: number; name: string; is_supplier?: boolean }
+
 interface OBEntry {
   id: number;
   amount?: number;
@@ -158,7 +162,7 @@ function OBTreasuryTab() {
               onChange={(e) => setForm((f) => ({ ...f, safe_id: e.target.value }))}
             >
               <option value="">— اختر الخزينة —</option>
-              {(safes as any[]).map((s: any) => (
+              {safeArray<SafeItem>(safes).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} (رصيد: {Number(s.balance).toLocaleString('ar-EG-u-nu-latn')} ج.م)
                 </option>
@@ -256,16 +260,16 @@ function OBProductsTab() {
   const [saving, setSaving] = useState(false);
 
   const registeredProductIds = new Set(entries.map((e) => e.id));
-  const filteredProducts = (products as any[]).filter(
-    (p: any) =>
+  const filteredProducts = safeArray<ProductItem>(products).filter(
+    (p) =>
       !registeredProductIds.has(p.id) && (p.name.includes(search) || (p.sku ?? '').includes(search))
   );
 
-  const handleSelectProduct = (p: any) => {
+  const handleSelectProduct = (p: ProductItem) => {
     setForm((f) => ({ ...f, product_id: String(p.id), cost_price: String(Number(p.cost_price)) }));
     setSearch(p.name);
   };
-  const selectedProduct = (products as any[]).find((p: any) => String(p.id) === form.product_id);
+  const selectedProduct = safeArray<ProductItem>(products).find((p) => String(p.id) === form.product_id);
 
   const handleSubmit = async () => {
     if (!form.product_id || !form.quantity || !form.cost_price) {
@@ -314,7 +318,7 @@ function OBProductsTab() {
             />
             {search && !form.product_id && filteredProducts.length > 0 && (
               <div className="absolute top-full mt-1 right-0 left-0 z-20 bg-[#111827] border border-white/10 rounded-xl max-h-48 overflow-y-auto shadow-2xl">
-                {filteredProducts.slice(0, 12).map((p: any) => (
+                {filteredProducts.slice(0, 12).map((p) => (
                   <button
                     key={p.id}
                     onClick={() => handleSelectProduct(p)}
@@ -455,11 +459,11 @@ function OBCustomersTab() {
   const [saving, setSaving] = useState(false);
 
   const registeredIds = new Set(entries.map((e) => e.id));
-  const filteredCustomers = (customers as any[]).filter(
-    (c: any) => !registeredIds.has(c.id) && c.name.includes(search)
+  const filteredCustomers = safeArray<CustomerItem>(customers).filter(
+    (c) => !registeredIds.has(c.id) && c.name.includes(search)
   );
-  const selectedCustomer = (customers as any[]).find((c: any) => String(c.id) === form.customer_id);
-  const handleSelect = (c: any) => {
+  const selectedCustomer = safeArray<CustomerItem>(customers).find((c) => String(c.id) === form.customer_id);
+  const handleSelect = (c: CustomerItem) => {
     setForm((f) => ({ ...f, customer_id: String(c.id) }));
     setSearch(c.name);
   };
@@ -510,7 +514,7 @@ function OBCustomersTab() {
             />
             {search && !form.customer_id && filteredCustomers.length > 0 && (
               <div className="absolute top-full mt-1 right-0 left-0 z-20 bg-[#111827] border border-white/10 rounded-xl max-h-48 overflow-y-auto shadow-2xl">
-                {filteredCustomers.slice(0, 10).map((c: any) => (
+                {filteredCustomers.slice(0, 10).map((c) => (
                   <button
                     key={c.id}
                     onClick={() => handleSelect(c)}
@@ -604,7 +608,7 @@ function OBSuppliersTab() {
   const { data: entries = [], isLoading } = useOBQuery('/opening-balance/supplier');
   const { data: allCustomersRaw } = useGetCustomers();
   const allCustomers = safeArray(allCustomersRaw);
-  const suppliers = allCustomers.filter((c: any) => c.is_supplier);
+  const suppliers = allCustomers.filter((c) => c.is_supplier);
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({
@@ -617,10 +621,10 @@ function OBSuppliersTab() {
 
   const registeredIds = new Set(entries.map((e) => e.id));
   const filteredSuppliers = suppliers.filter(
-    (s: any) => !registeredIds.has(s.id) && s.name.includes(search)
+    (s) => !registeredIds.has(s.id) && s.name.includes(search)
   );
-  const selectedSupplier = suppliers.find((s: any) => String(s.id) === form.supplier_id);
-  const handleSelect = (s: any) => {
+  const selectedSupplier = suppliers.find((s) => String(s.id) === form.supplier_id);
+  const handleSelect = (s: CustomerItem) => {
     setForm((f) => ({ ...f, supplier_id: String(s.id) }));
     setSearch(s.name);
   };
@@ -647,7 +651,7 @@ function OBSuppliersTab() {
       return;
     }
     toast({
-      title: `✅ تم تسجيل رصيد أول المدة لـ ${(selectedSupplier as any)?.name ?? 'العميل'}`,
+      title: `✅ تم تسجيل رصيد أول المدة لـ ${selectedSupplier?.name ?? 'العميل'}`,
     });
     setForm((f) => ({ ...f, supplier_id: '', amount: '', notes: '' }));
     setSearch('');
@@ -673,7 +677,7 @@ function OBSuppliersTab() {
             />
             {search && !form.supplier_id && filteredSuppliers.length > 0 && (
               <div className="absolute top-full mt-1 right-0 left-0 z-20 bg-[#111827] border border-white/10 rounded-xl max-h-48 overflow-y-auto shadow-2xl">
-                {filteredSuppliers.slice(0, 10).map((s: any) => (
+                {filteredSuppliers.slice(0, 10).map((s) => (
                   <button
                     key={s.id}
                     onClick={() => handleSelect(s)}
@@ -685,7 +689,7 @@ function OBSuppliersTab() {
               </div>
             )}
             {selectedSupplier && (
-              <p className="mt-1 text-emerald-400 text-xs">✓ {(selectedSupplier as any).name}</p>
+              <p className="mt-1 text-emerald-400 text-xs">✓ {selectedSupplier?.name}</p>
             )}
           </div>
           <div>

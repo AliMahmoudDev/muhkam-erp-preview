@@ -2859,14 +2859,14 @@ export default function Customers() {
                                 phone: customer.phone || '',
                                 is_customer: customer.is_customer ?? true,
                                 is_supplier: customer.is_supplier ?? false,
-                                classification_id: (customer as any).classification_id ?? null,
+                                classification_id: (customer as { classification_id?: number | null }).classification_id ?? null,
                               });
                               setEditFormData({
                                 name: customer.name,
                                 phone: customer.phone || '',
                                 is_customer: customer.is_customer ?? true,
                                 is_supplier: customer.is_supplier ?? false,
-                                classification_id: (customer as any).classification_id ?? null,
+                                classification_id: (customer as { classification_id?: number | null }).classification_id ?? null,
                               });
                             }}
                             className="p-1.5 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80 transition-colors border border-white/10"
@@ -3003,7 +3003,7 @@ export default function Customers() {
                           : '',
                         dateFrom: reportFilters.dateFrom,
                         dateTo: reportFilters.dateTo,
-                        companyName: (user as any)?.company_name ?? 'مُحكم - MUHKAM ERP',
+                        companyName: (user as { company_name?: string } | null)?.company_name ?? 'مُحكم - MUHKAM ERP',
                       })
                     }
                     className="px-6 py-2 text-sm flex items-center gap-2 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 border border-violet-500/30 font-bold transition-colors"

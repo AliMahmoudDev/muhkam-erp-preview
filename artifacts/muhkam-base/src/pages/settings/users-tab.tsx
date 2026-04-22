@@ -22,6 +22,29 @@ import {
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+interface UserItem {
+  id:            number;
+  name:          string;
+  username:      string;
+  pin?:          string;
+  role:          string;
+  permissions?:  string;
+  warehouse_id?: number | null;
+  safe_id?:      number | null;
+  employee_id?:  number | null;
+  last_login?:   string | null;
+  active?:       boolean;
+}
+interface WarehouseItem { id: number; name: string }
+interface SafeItem      { id: number; name: string }
+interface EmployeeItem  {
+  id:               number;
+  name:             string;
+  first_name_ar?:   string | null;
+  last_name_ar?:    string | null;
+  employee_code?:   string | null;
+}
+
 function getInitials(name: string) {
   const p = name.trim().split(" ");
   if (p.length >= 2) return p[0][0] + p[1][0];
@@ -45,11 +68,11 @@ function formatLastLogin(dateStr?: string): { label: string; online: boolean } {
 
 export default function UsersTab() {
   const { data: usersRaw, isLoading } = useGetSettingsUsers();
-  const users = safeArray(usersRaw);
+  const users = safeArray<UserItem>(usersRaw);
   const { data: warehousesRaw } = useGetSettingsWarehouses();
-  const warehouses = safeArray(warehousesRaw);
+  const warehouses = safeArray<WarehouseItem>(warehousesRaw);
   const { data: safesRaw } = useGetSettingsSafes();
-  const safes = safeArray(safesRaw);
+  const safes = safeArray<SafeItem>(safesRaw);
   const { data: empRaw } = useQuery({
     queryKey: ["emp-for-users"],
     queryFn: async () => {
@@ -57,7 +80,7 @@ export default function UsersTab() {
       return r.ok ? r.json() : [];
     },
   });
-  const empOptions = safeArray(empRaw);
+  const empOptions = safeArray<EmployeeItem>(empRaw);
   const createUser = useCreateSettingsUser();
   const updateUser = useUpdateSettingsUser();
   const deleteUser = useDeleteSettingsUser();
@@ -105,17 +128,17 @@ export default function UsersTab() {
     if (editId) {
       updateUser.mutate({ id: editId, body: payload }, {
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/settings/users"] }); toast({ title: "تم تعديل المستخدم" }); resetForm(); },
-        onError: (e: any) => toast({ title: e?.message || "فشل التعديل", variant: "destructive" }),
+        onError: (e: unknown) => toast({ title: (e as Error)?.message || "فشل التعديل", variant: "destructive" }),
       });
     } else {
       createUser.mutate(payload as any, {
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/settings/users"] }); toast({ title: "تم إضافة المستخدم" }); resetForm(); },
-        onError: (e: any) => toast({ title: e?.message || "فشل الإضافة", variant: "destructive" }),
+        onError: (e: unknown) => toast({ title: (e as Error)?.message || "فشل الإضافة", variant: "destructive" }),
       });
     }
   };
 
-  const handleEdit = (u: any) => {
+  const handleEdit = (u: UserItem) => {
     let perms: Record<string, boolean> = {};
     try { perms = JSON.parse(u.permissions || "{}"); } catch {}
     setForm({
@@ -171,9 +194,9 @@ export default function UsersTab() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {users.map((u: any) => {
+          {users.map((u) => {
             const role       = ROLES[u.role] ?? ROLES.cashier;
-            const lastLogin  = formatLastLogin(u.last_login);
+            const lastLogin  = formatLastLogin(u.last_login ?? undefined);
             let perms: Record<string, boolean> = {};
             try { perms = JSON.parse(u.permissions || "{}"); } catch {}
             const permCount = Object.values(perms).filter(Boolean).length;
@@ -305,7 +328,7 @@ export default function UsersTab() {
                 </FieldLabel>
                 <SSelect value={form.warehouse_id} onChange={e => setForm(f => ({ ...f, warehouse_id: e.target.value }))}>
                   <option value="">اختر المخزن</option>
-                  {warehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </SSelect>
               </div>
               <div>
@@ -314,7 +337,7 @@ export default function UsersTab() {
                 </FieldLabel>
                 <SSelect value={form.safe_id} onChange={e => setForm(f => ({ ...f, safe_id: e.target.value }))}>
                   <option value="">اختر الخزنة</option>
-                  {safes.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {safes.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </SSelect>
               </div>
             </div>
@@ -324,7 +347,7 @@ export default function UsersTab() {
               <FieldLabel>ربط بملف موظف <span className="text-white/30 text-[10px] font-normal">(مطلوب لتسجيل الحضور من الموبايل)</span></FieldLabel>
               <SSelect value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))}>
                 <option value="">— غير مرتبط —</option>
-                {empOptions.map((e: any) => (
+                {empOptions.map((e) => (
                   <option key={e.id} value={e.id}>
                     {String(e.first_name_ar)} {String(e.last_name_ar)} [{String(e.employee_code)}]
                   </option>

@@ -1,5 +1,6 @@
 /**
- * Reports — Shared types, helpers, hooks, and small components
+ * Reports — Shared types, helpers, hooks, and small components.
+ * Single source of truth for all report utilities, charts, and date helpers.
  */
 import React, { useState, useEffect } from "react";
 import { authFetch } from "@/lib/auth-fetch";
@@ -7,6 +8,8 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { Printer, Loader2 } from "lucide-react";
 import { TableSkeleton } from "@/components/skeletons";
 import { useAppSettings } from "@/contexts/app-settings";
+import type { TooltipProps } from "recharts";
+import type { ValueType, NameType } from "recharts/types/component/DefaultTooltipContent";
 
 export { formatCurrency, formatDate };
 export { TableSkeleton };
@@ -171,7 +174,7 @@ export function DateFilterBar({
 }
 
 /* ── Custom recharts tooltip ─────────────────────────────────────────────── */
-export const ChartTooltip = ({ active, payload, label }: any) => {
+export const ChartTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   const { settings } = useAppSettings();
   const isDark = settings.theme !== "light";
   if (!active || !payload?.length) return null;
@@ -182,11 +185,11 @@ export const ChartTooltip = ({ active, payload, label }: any) => {
       backdropFilter: "blur(10px)",
     }}>
       <p className="font-bold mb-2" style={{ color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)" }}>{label}</p>
-      {payload.map((p: any) => (
-        <div key={p.dataKey} className="flex items-center gap-2 mb-1">
-          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
-          <span style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)" }}>{p.dataKey}:</span>
-          <span className="font-bold" style={{ color: p.color }}>{formatCurrency(Number(p.value))}</span>
+      {payload.map((entry) => (
+        <div key={String(entry.dataKey)} className="flex items-center gap-2 mb-1">
+          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: entry.color }} />
+          <span style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)" }}>{entry.dataKey}:</span>
+          <span className="font-bold" style={{ color: entry.color }}>{formatCurrency(Number(entry.value))}</span>
         </div>
       ))}
     </div>

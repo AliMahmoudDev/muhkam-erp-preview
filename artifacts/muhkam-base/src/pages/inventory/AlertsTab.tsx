@@ -28,9 +28,10 @@ interface ReorderSuggestion {
 }
 
 interface Supplier {
-  id: number;
-  name: string;
-  phone: string | null;
+  id:          number;
+  name:        string;
+  phone:       string | null;
+  is_supplier?: boolean;
 }
 
 function POModal({
@@ -46,8 +47,8 @@ function POModal({
     queryKey: ['customers-suppliers'],
     queryFn: () =>
       authFetch(api('/api/customers')).then((r) => r.json()).then((d) => {
-        const arr = Array.isArray(d) ? d : (d.customers ?? []);
-        return arr.filter((c: any) => c.is_supplier);
+        const arr: Supplier[] = Array.isArray(d) ? d : (d.customers ?? []);
+        return arr.filter((c) => c.is_supplier);
       }),
     staleTime: 60_000,
   });

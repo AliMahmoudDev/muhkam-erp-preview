@@ -144,7 +144,7 @@ function TransferTab({
           product_name: prod?.name ?? '',
         };
       } else {
-        (updated[idx] as any)[field] = value;
+        updated[idx] = { ...updated[idx], [field]: value };
       }
       return updated;
     });

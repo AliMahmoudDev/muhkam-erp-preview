@@ -48,6 +48,41 @@
 
 ---
 
+## Code Quality Review — Comprehensive TypeScript Cleanup (April 2026 — Session 8)
+
+### Changes Applied to Both Frontends (`erp-system` + `muhkam-base`)
+- Reduced `as any` / `: any` usages from **77 → 2** (both are unavoidable API-client type limitations)
+- Both frontends now pass `pnpm run type-check` with **zero errors**
+
+### Specific Fixes
+| File | Fix Applied |
+|------|-------------|
+| `reports/shared.tsx` | `ChartTooltip` typed with `TooltipProps<ValueType, NameType>` from recharts |
+| `inventory/TransferTab.tsx` | Computed property spread `[field]: value` instead of `as any` |
+| `inventory/CountTab.tsx` | `(err as { error?: string })` cast |
+| `inventory/AlertsTab.tsx` | Added `is_supplier` to `Supplier` interface |
+| `audit-log.tsx` | Removed duplicate local `formatDate`, imports from `@/lib/format` |
+| `subscription-expired.tsx` | Local `formatDate` renamed to `formatExpiryDate` (no longer shadows import) |
+| `purchases.tsx` | Added `Safe`/`Warehouse`/`Customer` interfaces; all `as any` in filters/maps removed |
+| `PurchasesInvoicesReport.tsx` | `rows: any[]` → `PurchaseRow` interface |
+| `SalesInvoicesReport.tsx` | `rows: any[]` → `SaleRow` interface |
+| `super-admin.tsx` | Added `edition` field to `Company` interface; `C.surface` color token added; `(data: unknown)` |
+| `sales.tsx` | `SaleExtras` interface added; `sale as any` removed throughout; `catch (e: unknown)` |
+| `customers.tsx` | Typed cast for `classification_id` and `company_name` |
+| `opening-balance-tab.tsx` | `SafeItem`/`ProductItem`/`CustomerItem` interfaces; all `as any[]` → `safeArray<T>()` |
+| `users-tab.tsx` | `UserItem`/`WarehouseItem`/`SafeItem`/`EmployeeItem` interfaces; all map callbacks typed |
+| `data-tab.tsx` | `ProductRow` typed array for exports; warehouse maps typed |
+| `treasury.tsx` / `inventory.tsx` | `catch (e: unknown)` + `(e as Error)?.message` |
+| `expenses.tsx` | `(user as { company_name?: string })` cast |
+| `ReceiptModal.tsx` / `PaymentModal.tsx` | Typed filter callbacks |
+| `employees.tsx` | `catch (err: unknown)` + `(err as Error)?.message` |
+
+### Remaining `as any` (2 per frontend — API client type limitations)
+- `purchases.tsx:249` — mutation body with `is_consignment` extra fields not in generated types
+- `users-tab.tsx:134` — `createUser.mutate(payload as any)` due to API client type mismatch
+
+---
+
 ## Features Added (April 2026 — Session 4)
 
 ### 1. فلتر الفرع/المستودع في التقارير (Branch Filter in Reports)

@@ -156,8 +156,8 @@ function CountTab({
         body: JSON.stringify({ warehouse_id: selectedWarehouse, notes: notesWithDateTime, items }),
       });
       if (!createRes.ok) {
-        const err = await createRes.json().catch(() => ({}));
-        throw new Error((err as any).error ?? 'خطأ في إنشاء الجلسة');
+        const err = await createRes.json().catch(() => ({} as { error?: string }));
+        throw new Error((err as { error?: string }).error ?? 'خطأ في إنشاء الجلسة');
       }
       const { session_id } = await createRes.json();
 
@@ -165,8 +165,8 @@ function CountTab({
         method: 'POST',
       });
       if (!applyRes.ok) {
-        const err = await applyRes.json().catch(() => ({}));
-        throw new Error((err as any).error ?? 'خطأ في تطبيق الجرد');
+        const err = await applyRes.json().catch(() => ({} as { error?: string }));
+        throw new Error((err as { error?: string }).error ?? 'خطأ في تطبيق الجرد');
       }
       return applyRes.json();
     },

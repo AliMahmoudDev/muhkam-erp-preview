@@ -25,6 +25,17 @@ const CURRENCY_LABELS: Record<PurchaseCurrency, string> = {
   EGP: "جنيه مصري", USD: "دولار أمريكي", CNY: "يوان صيني", EUR: "يورو", SAR: "ريال سعودي", AED: "درهم إماراتي",
 };
 
+/* ─── Minimal shape types for settings lists ─── */
+interface Safe      { id: number; name: string; balance?: number | string }
+interface Warehouse { id: number; name: string }
+interface Customer  {
+  id:            number;
+  name:          string;
+  customer_code?: string | null;
+  balance?:      number | string | null;
+  is_supplier?:  boolean;
+}
+
 interface CartItem {
   product_id: number;
   product_name: string;
@@ -41,12 +52,12 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
   const { data: productsRaw } = useGetProducts();
   const products = safeArray(productsRaw);
   const { data: customersRaw } = useGetCustomers();
-  const customers = safeArray(customersRaw);
+  const customers = safeArray<Customer>(customersRaw);
   const suppliers = customers.filter(c => c.is_supplier);
   const { data: safesRaw } = useGetSettingsSafes();
-  const safes = safeArray(safesRaw);
+  const safes = safeArray<Safe>(safesRaw);
   const { data: warehousesRaw } = useGetSettingsWarehouses();
-  const warehouses = safeArray(warehousesRaw);
+  const warehouses = safeArray<Warehouse>(warehousesRaw);
   const createMutation = useCreatePurchase();
   const createProductMutation = useCreateProduct();
   const queryClient = useQueryClient();
@@ -57,10 +68,10 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
   // Scope: filter safes/warehouses for cashier/salesperson
   const isScopedRole = user?.role === "cashier" || user?.role === "salesperson";
   const filteredSafes = isScopedRole && user?.safe_id
-    ? safes.filter((s: any) => s.id === user.safe_id)
+    ? safes.filter((s) => s.id === user.safe_id)
     : safes;
   const filteredWarehouses = isScopedRole && user?.warehouse_id
-    ? warehouses.filter((w: any) => w.id === user.warehouse_id)
+    ? warehouses.filter((w) => w.id === user.warehouse_id)
     : warehouses;
 
   const [search, setSearch] = useState("");
@@ -264,13 +275,14 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
 
   const handleCreateProduct = (data: ProductFormData) => {
     createProductMutation.mutate({ data }, {
-      onSuccess: (newProduct: any) => {
+      onSuccess: (newProduct: unknown) => {
         toast({ title: "✅ تم إضافة المنتج بنجاح" });
         queryClient.invalidateQueries({ queryKey: ["/api/products"] });
         setShowCreateProduct(false);
         setSearch("");
-        if (newProduct?.id) {
-          addToCart({ ...newProduct, cost_price: Number(newProduct.cost_price), sale_price: Number(newProduct.sale_price), quantity: Number(newProduct.quantity) });
+        const created = newProduct as { id?: number; cost_price?: unknown; sale_price?: unknown; quantity?: unknown } | null;
+        if (created?.id) {
+          addToCart({ ...created, cost_price: Number(created.cost_price), sale_price: Number(created.sale_price), quantity: Number(created.quantity) });
         }
       },
       onError: () => toast({ title: "حدث خطأ أثناء إضافة المنتج", variant: "destructive" }),
@@ -467,7 +479,7 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
                 selectRow("الخزينة", <Vault className="w-3.5 h-3.5 text-amber-400/70" />,
                   <select className="bg-transparent text-white outline-none w-full appearance-none text-xs" value={safeId} onChange={e => setSafeId(e.target.value)}>
                     <option value="" className="bg-slate-900">-- اختر الخزينة --</option>
-                    {filteredSafes.map((s: any) => <option key={s.id} value={s.id} className="bg-slate-900">{s.name} ({formatCurrency(Number(s.balance))})</option>)}
+                    {filteredSafes.map((s) => <option key={s.id} value={s.id} className="bg-slate-900">{s.name} ({formatCurrency(Number(s.balance))})</option>)}
                   </select>
                 )
               )}

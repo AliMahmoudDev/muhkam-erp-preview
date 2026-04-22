@@ -281,8 +281,8 @@ export default function Treasury() {
                     toast({ title: 'تم إضافة الخزينة بنجاح' });
                     setAddForm({ name: '', balance: '', branch_id: '' });
                     setShowAddSafe(false);
-                  } catch (e: any) {
-                    toast({ title: e?.message ?? 'فشل إضافة الخزينة', variant: 'destructive' });
+                  } catch (e: unknown) {
+                    toast({ title: (e as Error)?.message ?? 'فشل إضافة الخزينة', variant: 'destructive' });
                   }
                 }}
                 className="flex-1 flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white font-bold text-sm rounded-xl py-2.5 transition-colors"
@@ -339,8 +339,8 @@ export default function Treasury() {
                       toast({ title: 'تم حذف الخزينة بنجاح' });
                       setDeleteTarget(null);
                     },
-                    onError: (e: any) => {
-                      const msg = e?.response?.data?.error || e?.message || 'فشل حذف الخزينة';
+                    onError: (e: unknown) => {
+                      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error || (e as Error)?.message || 'فشل حذف الخزينة';
                       toast({ title: msg, variant: 'destructive' });
                       setDeleteTarget(null);
                     },
@@ -436,8 +436,8 @@ export default function Treasury() {
                     queryClient.invalidateQueries({ queryKey: ['/api/branches'] });
                     toast({ title: 'تم تعديل الخزينة بنجاح' });
                     setEditTarget(null);
-                  } catch (e: any) {
-                    toast({ title: e?.message ?? 'فشل تعديل الخزينة', variant: 'destructive' });
+                  } catch (e: unknown) {
+                    toast({ title: (e as Error)?.message ?? 'فشل تعديل الخزينة', variant: 'destructive' });
                   } finally {
                     setEditSaving(false);
                   }

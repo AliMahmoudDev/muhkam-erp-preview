@@ -1080,8 +1080,18 @@ function PaymentBadge({ type }: { type: string }) {
   );
 }
 
+interface SaleExtras {
+  warehouse_name?:   string | null;
+  salesperson_name?: string | null;
+  discount_amount?:  number | null;
+  discount_percent?: number | null;
+  tax_rate?:         number | null;
+  tax_amount?:       number | null;
+}
+
 function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => void }) {
-  const { data: sale, isLoading } = useGetSaleById(saleId);
+  const { data: saleRaw, isLoading } = useGetSaleById(saleId);
+  const sale = saleRaw as (typeof saleRaw & SaleExtras) | undefined;
   const { data: vatSettings } = useVatSettings();
   const vatEnabled = vatSettings?.vatEnabled ?? false;
 
@@ -1098,11 +1108,11 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
   const handlePrint = () => {
     if (!sale) return;
     const payLabel: Record<string, string> = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
-    const s = sale as any;
+    const s = sale;
     const itemsHtml = (sale.items || [])
       .map(
         (item, i) =>
-          `<tr><td>${i + 1}</td><td><strong>${escHtml(item.product_name)}</strong></td><td>${Number(item.quantity)}</td><td>${Number(item.unit_price).toFixed(2)} ج.م</td>${vatEnabled ? `<td>${(s as any)?.tax_rate != null ? `${Number((s as any).tax_rate).toFixed(0)}%` : '—'}</td>` : ''}<td><strong>${Number(item.total_price).toFixed(2)} ج.م</strong></td></tr>`
+          `<tr><td>${i + 1}</td><td><strong>${escHtml(item.product_name)}</strong></td><td>${Number(item.quantity)}</td><td>${Number(item.unit_price).toFixed(2)} ج.م</td>${vatEnabled ? `<td>${s?.tax_rate != null ? `${Number(s.tax_rate).toFixed(0)}%` : '—'}</td>` : ''}<td><strong>${Number(item.total_price).toFixed(2)} ج.م</strong></td></tr>`
       )
       .join('');
     const taxAmount = Number(s.tax_amount ?? 0);
@@ -1246,16 +1256,16 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
                   <p className="text-white/50 text-sm">طريقة الدفع</p>
                   <PaymentBadge type={sale.payment_type} />
                 </div>
-                {(sale as any).warehouse_name && (
+                {sale.warehouse_name && (
                   <div>
                     <p className="text-white/50 text-sm">المخزن</p>
-                    <p className="text-white">{(sale as any).warehouse_name}</p>
+                    <p className="text-white">{sale.warehouse_name}</p>
                   </div>
                 )}
-                {(sale as any).salesperson_name && (
+                {sale.salesperson_name && (
                   <div>
                     <p className="text-white/50 text-sm">المندوب</p>
-                    <p className="text-amber-300 font-semibold">{(sale as any).salesperson_name}</p>
+                    <p className="text-amber-300 font-semibold">{sale.salesperson_name}</p>
                   </div>
                 )}
               </div>
@@ -1287,20 +1297,20 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
                 </div>
               </div>
               <div className="p-5 bg-white/5 rounded-2xl border border-white/5 space-y-3">
-                {(sale as any).discount_amount > 0 && (
+                {(sale.discount_amount ?? 0) > 0 && (
                   <>
                     <div className="flex justify-between">
                       <span className="text-white/60">الإجمالي قبل الخصم</span>
                       <span className="text-white">
-                        {formatCurrency(sale.total_amount + (sale as any).discount_amount)}
+                        {formatCurrency(sale.total_amount + (sale.discount_amount ?? 0))}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-white/60">
-                        الخصم ({(sale as any).discount_percent}%)
+                        الخصم ({sale.discount_percent}%)
                       </span>
                       <span className="text-red-400">
-                        - {formatCurrency((sale as any).discount_amount)}
+                        - {formatCurrency(sale.discount_amount ?? 0)}
                       </span>
                     </div>
                   </>
@@ -1666,17 +1676,18 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     createProductMutation.mutate(
       { data },
       {
-        onSuccess: (newProduct: any) => {
+        onSuccess: (newProduct: unknown) => {
           toast({ title: '✅ تم إضافة المنتج وإضافته للفاتورة' });
           queryClient.invalidateQueries({ queryKey: ['/api/products'] });
           setShowCreateProduct(false);
           setSearch('');
-          if (newProduct?.id) {
+          const created = newProduct as { id?: number; sale_price?: unknown; cost_price?: unknown; quantity?: unknown } | null;
+          if (created?.id) {
             addToCart({
-              ...newProduct,
-              sale_price: Number(newProduct.sale_price),
-              cost_price: Number(newProduct.cost_price),
-              quantity: Number(newProduct.quantity),
+              ...created,
+              sale_price: Number(created.sale_price),
+              cost_price: Number(created.cost_price),
+              quantity: Number(created.quantity),
             });
           }
         },
@@ -1962,8 +1973,9 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
       setQuickCustName('');
       setQuickCustPhone('');
       toast({ title: `✅ تم إضافة العميل "${quickCustName.trim()}"` });
-    } catch (e: any) {
-      toast({ title: `❌ ${e.message}`, variant: 'destructive' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'حدث خطأ';
+      toast({ title: `❌ ${msg}`, variant: 'destructive' });
     } finally {
       setQuickCustLoading(false);
     }

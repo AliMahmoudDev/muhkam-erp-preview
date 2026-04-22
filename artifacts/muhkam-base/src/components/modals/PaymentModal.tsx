@@ -27,7 +27,7 @@ export default function PaymentModal({ onClose }: Props) {
   const allSafes = safeArray(safesRaw);
   const isScopedRole = user?.role === "cashier" || user?.role === "salesperson";
   const safes = isScopedRole && user?.safe_id
-    ? allSafes.filter((s: any) => s.id === user.safe_id)
+    ? allSafes.filter((s: Record<string, unknown>) => s["id"] === user.safe_id)
     : allSafes;
   const { data: customersRaw } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
@@ -66,7 +66,7 @@ export default function PaymentModal({ onClose }: Props) {
       toast({ title: "✅ تم حفظ سند الصرف" });
       onClose();
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: (e as Error).message, variant: "destructive" }),
   });
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -20,6 +20,7 @@ interface Company {
   id: number;
   name: string;
   plan_type: string;
+  edition?: 'advanced' | 'ultimate' | null;
   start_date: string;
   end_date: string;
   is_active: boolean;
@@ -96,6 +97,7 @@ function authHeaders(token: string) {
 const C = {
   bg: '#0F172A',
   card: '#1E293B',
+  surface: '#172033',
   border: '#334155',
   orange: '#F97316',
   orangeDim: 'rgba(249,115,22,0.15)',
@@ -3020,15 +3022,16 @@ export default function SuperAdmin() {
                             },
                           },
                           {
-                            onSuccess: (data: any) => {
+                            onSuccess: (data: unknown) => {
                               setShowCreate(false);
                               setNewName(''); setNewPlan('trial'); setNewEdition('ultimate'); setNewDays(14);
                               setNewAdminName(''); setNewAdminUsername('');
+                              const d = data as { company?: { name?: string }; admin?: { username?: string; name?: string; temp_password?: string } } | null;
                               setCreateResult({
-                                company_name: data.company?.name ?? newName,
-                                username:     data.admin?.username ?? '',
-                                admin_name:   data.admin?.name    ?? newAdminName,
-                                temp_password: data.admin?.temp_password ?? '',
+                                company_name: d?.company?.name ?? newName,
+                                username:     d?.admin?.username ?? '',
+                                admin_name:   d?.admin?.name    ?? newAdminName,
+                                temp_password: d?.admin?.temp_password ?? '',
                               });
                             },
                           }
@@ -3200,11 +3203,11 @@ export default function SuperAdmin() {
                               borderRadius: '10px',
                               fontSize: '10px',
                               fontWeight: 700,
-                              background: (co as any).edition === 'advanced' ? 'rgba(245,158,11,0.15)' : 'rgba(99,102,241,0.15)',
-                              color: (co as any).edition === 'advanced' ? '#fcd34d' : '#a5b4fc',
-                              border: `1px solid ${(co as any).edition === 'advanced' ? 'rgba(245,158,11,0.3)' : 'rgba(99,102,241,0.3)'}`,
+                              background: co.edition === 'advanced' ? 'rgba(245,158,11,0.15)' : 'rgba(99,102,241,0.15)',
+                              color: co.edition === 'advanced' ? '#fcd34d' : '#a5b4fc',
+                              border: `1px solid ${co.edition === 'advanced' ? 'rgba(245,158,11,0.3)' : 'rgba(99,102,241,0.3)'}`,
                             }}>
-                              {(co as any).edition === 'advanced' ? '🚀 MuhKam Advanced' : '⭐ MuhKam Pro'}
+                              {co.edition === 'advanced' ? '🚀 MuhKam Advanced' : '⭐ MuhKam Pro'}
                             </span>
                           </div>
                           <div
@@ -3302,7 +3305,7 @@ export default function SuperAdmin() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: '10px', padding: '6px 12px' }}>
                                 <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>🏷️ النسخة:</span>
                                 <select
-                                  value={(co as any).edition ?? 'ultimate'}
+                                  value={co.edition ?? 'ultimate'}
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={(e) => {
                                     e.stopPropagation();
@@ -3313,13 +3316,13 @@ export default function SuperAdmin() {
                                     });
                                   }}
                                   style={{
-                                    border: `1.5px solid ${(co as any).edition === 'advanced' ? '#f59e0b' : '#6366f1'}`,
+                                    border: `1.5px solid ${co.edition === 'advanced' ? '#f59e0b' : '#6366f1'}`,
                                     borderRadius: '8px',
                                     padding: '5px 10px',
                                     fontSize: '12px',
                                     fontWeight: 700,
                                     background: C.bg,
-                                    color: (co as any).edition === 'advanced' ? '#fcd34d' : '#a5b4fc',
+                                    color: co.edition === 'advanced' ? '#fcd34d' : '#a5b4fc',
                                     fontFamily: FONT,
                                     cursor: 'pointer',
                                   }}

@@ -3188,8 +3188,8 @@ export default function Employees() {
                     }
                     toast({ title: 'تم إنشاء الحساب', description: `يمكن للموظف الآن الدخول باسم ${loginForm.username}` });
                     setShowCreateLogin(false);
-                  } catch (err: any) {
-                    toast({ title: 'خطأ', description: err.message || 'فشل إنشاء الحساب', variant: 'destructive' });
+                  } catch (err: unknown) {
+                    toast({ title: 'خطأ', description: (err as Error)?.message || 'فشل إنشاء الحساب', variant: 'destructive' });
                   }
                 }}
                 className="erp-btn erp-btn-primary"

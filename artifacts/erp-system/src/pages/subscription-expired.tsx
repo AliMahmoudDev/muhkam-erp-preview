@@ -23,7 +23,8 @@ function planLabel(p?: string) {
   return p ?? '—';
 }
 
-function formatDate(d?: string) {
+/** Formats a date string as Arabic long date (day/month/year) without time — used for subscription expiry display. */
+function formatExpiryDate(d?: string) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('ar-EG-u-nu-latn', {
     day: 'numeric',
@@ -119,7 +120,7 @@ export default function SubscriptionExpired() {
             {sub?.end_date && (
               <>
                 {' '}
-                في <strong style={{ color: '#CBD5E1' }}>{formatDate(sub.end_date)}</strong>
+                في <strong style={{ color: '#CBD5E1' }}>{formatExpiryDate(sub.end_date)}</strong>
               </>
             )}
             {sub?.plan_type && <> (خطة {planLabel(sub.plan_type)})</>}.

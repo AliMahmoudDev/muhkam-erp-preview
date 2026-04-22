@@ -206,7 +206,7 @@ export default function DataTab() {
   const handleProductsExport = async () => {
     setProdExporting(true);
     try {
-      const prods = (await authFetch(api('/api/products')).then((r) => r.json())) as any[];
+      const prods = (await authFetch(api('/api/products')).then((r) => r.json())) as { id: number; name: string; sku?: string; category?: string; quantity?: number | string; cost_price?: number | string; sale_price?: number | string; low_stock_threshold?: number | string }[];
       const columns = [
         { header: 'اسم الصنف', key: 'name', width: 25 },
         { header: 'كود الصنف (SKU)', key: 'sku', width: 15 },
@@ -216,7 +216,7 @@ export default function DataTab() {
         { header: 'سعر البيع', key: 'sale_price', width: 14 },
         { header: 'حد التنبيه', key: 'low_stock_threshold', width: 12 },
       ];
-      const rows = prods.map((p: any) => ({
+      const rows = prods.map((p) => ({
         name: p.name,
         sku: p.sku || '',
         category: p.category || '',
@@ -334,7 +334,7 @@ export default function DataTab() {
     setPurRows([]);
     setPurResult(null);
     try {
-      const products: any[] = await authFetch(api('/api/products')).then((r) =>
+      const products: { id: number; name: string; sku?: string }[] = await authFetch(api('/api/products')).then((r) =>
         r.ok ? r.json() : []
       );
       const skuMap = new Map<string, { id: number; name: string }>();
@@ -436,8 +436,8 @@ export default function DataTab() {
       });
       refreshLog();
       toast({ title: msg });
-    } catch (err: any) {
-      toast({ title: err.message || 'فشل', variant: 'destructive' });
+    } catch (err: unknown) {
+      toast({ title: (err as Error)?.message || 'فشل', variant: 'destructive' });
     } finally {
       setPurConfirming(false);
     }
@@ -547,8 +547,8 @@ export default function DataTab() {
           setResetText('');
           qc.invalidateQueries();
         },
-        onError: (e: any) =>
-          toast({ title: e?.message ?? 'فشلت إعادة التعيين', variant: 'destructive' }),
+        onError: (e: unknown) =>
+          toast({ title: (e as Error)?.message ?? 'فشلت إعادة التعيين', variant: 'destructive' }),
       }
     );
   };
@@ -1018,7 +1018,7 @@ export default function DataTab() {
                       }
                     >
                       <option value="">— كل المخازن —</option>
-                      {warehousesList.map((w: any) => (
+                      {warehousesList.map((w) => (
                         <option key={w.id} value={w.id}>
                           {w.name}
                         </option>
@@ -1026,7 +1026,7 @@ export default function DataTab() {
                     </SSelect>
                     <p className="text-white/25 text-[10px]">
                       {selectedWarehouseId
-                        ? `سيتم تفريغ حركات المخزن "${warehousesList.find((w: any) => w.id === selectedWarehouseId)?.name ?? ''}" فقط`
+                        ? `سيتم تفريغ حركات المخزن "${warehousesList.find((w) => w.id === selectedWarehouseId)?.name ?? ''}" فقط`
                         : 'سيتم تفريغ حركات جميع المخازن وتصفير الكميات'}
                     </p>
                   </div>

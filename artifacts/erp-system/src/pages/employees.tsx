@@ -244,7 +244,6 @@ export default function Employees() {
   // Self-service portal: when role==='employee', auto-show only own profile
   const isSelfService = user?.role === 'employee';
   const selfEmpId = user?.employee_id ?? null;
-  // "إنشاء حساب دخول" modal state (admin → for selected employee)
   const [showCreateLogin, setShowCreateLogin] = useState(false);
   const [loginForm, setLoginForm] = useState<{ username: string; pin: string }>({ username: '', pin: '' });
 
@@ -337,17 +336,11 @@ export default function Employees() {
   });
   const employees: Employee[] = safeArray(empsRaw);
 
-  /* Self-service: auto-select the user's own employee record once loaded */
+  // Self-service: auto-select own employee record once data arrives
   useEffect(() => {
-    if (!isSelfService) return;
-    if (selected) return;
-    if (employees.length === 0) return;
-    const own = selfEmpId
-      ? employees.find((e) => e.id === selfEmpId)
-      : employees[0]; // backend already filters to self
-    if (own) {
-      setSelected(own);
-      setDetailTab('info');
+    if (isSelfService && selfEmpId && employees.length > 0 && !selected) {
+      const own = employees.find((e) => e.id === selfEmpId);
+      if (own) setSelected(own);
     }
   }, [isSelfService, selfEmpId, employees, selected]);
 
@@ -429,7 +422,7 @@ export default function Employees() {
       selected
         ? authFetch(api(`/api/salary-advances?employee_id=${selected.id}`)).then((r) => r.json())
         : Promise.resolve([]),
-    enabled: !!selected && detailTab === 'loans',
+    enabled: !!selected && (detailTab === 'loans' || detailTab === 'reports'),
   });
   const loans: AnyRec[] = safeArray(loansRaw);
 
@@ -861,12 +854,8 @@ export default function Employees() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <UserCheck size={22} className="text-amber-400" />
-          <h1 className="text-xl font-bold text-white">
-            {isSelfService ? 'بياناتي' : 'إدارة الموظفين'}
-          </h1>
-          {!isSelfService && (
-            <span className="erp-badge erp-badge-info">{totalActive} نشط</span>
-          )}
+          <h1 className="text-xl font-bold text-white">إدارة الموظفين</h1>
+          <span className="erp-badge erp-badge-info">{totalActive} نشط</span>
         </div>
       </div>
       {/* Main grid */}
@@ -876,7 +865,7 @@ export default function Employees() {
         <div className="xl:col-span-2 space-y-3">
           {/* Search & Filters */}
           <div className="flex flex-wrap gap-2 items-center">
-            <div className="relative flex-[2] min-w-[200px]">
+            <div className="relative flex-1 min-w-[200px]">
               <Search
                 size={14}
                 className="absolute top-1/2 -translate-y-1/2 right-3 text-white/40"
@@ -885,14 +874,13 @@ export default function Employees() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="بحث بالاسم أو الكود أو الرقم القومي..."
-                className="erp-input w-full text-sm"
-                style={{ paddingRight: '2.5rem', paddingLeft: '0.75rem' }}
+                className="erp-input w-full text-sm pl-[20px] pr-[20px]"
               />
             </div>
             <select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value === '' ? '' : Number(e.target.value))}
-              className="erp-input text-sm flex-1 min-w-[120px]"
+              className="erp-input text-sm pl-[8px] pr-[8px] ml-[250px] mr-[250px]"
             >
               <option value="">كل الأقسام</option>
               {departments.map((d) => (
@@ -1016,7 +1004,7 @@ export default function Employees() {
 
         {/* ── Right: Detail Panel ──────────────────────────────── */}
         {selected && (
-          <div className="erp-card space-y-3">
+          <div className={`erp-card space-y-3 ${isSelfService ? 'xl:col-span-3' : ''}`}>
             <div className="flex items-start justify-between">
               <div>
                 <div className="text-lg font-bold text-white">
@@ -1025,22 +1013,17 @@ export default function Employees() {
                 <div className="text-xs text-amber-300 font-mono">{selected.employee_code}</div>
               </div>
               <div className="flex items-center gap-2">
-                {!isSelfService && canManage && selected && (
+                {canManage && !isSelfService && (
                   <button
                     onClick={() => {
-                      setLoginForm({
-                        username:
-                          (selected.first_name_en || selected.first_name_ar || 'emp')
-                            .toLowerCase()
-                            .replace(/\s+/g, '.') + (selected.employee_code ? '.' + selected.employee_code : ''),
-                        pin: '',
-                      });
+                      setLoginForm({ username: '', pin: '' });
                       setShowCreateLogin(true);
                     }}
-                    className="erp-btn erp-btn-ghost flex items-center gap-1 text-xs text-cyan-300"
-                    title="إنشاء حساب دخول للموظف (وضع الخدمة الذاتية)"
+                    className="erp-btn erp-btn-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
+                    title="إنشاء حساب دخول لهذا الموظف"
                   >
-                    <UserPlus size={13} /> إنشاء حساب دخول
+                    <UserPlus size={14} />
+                    <span className="text-xs">إنشاء حساب دخول</span>
                   </button>
                 )}
                 {!isSelfService && (
@@ -2225,11 +2208,11 @@ export default function Employees() {
                   {(
                     [
                       { v: 'fixed', label: 'راتب ثابت', icon: Wallet, color: 'emerald' },
-                      { v: 'commission', label: 'عمولة', icon: Percent, color: 'purple' },
+                      { v: 'commission', label: 'نسبة عمولة', icon: Percent, color: 'purple' },
                       {
                         v: 'fixed_plus_commission',
-                        label: 'راتب وعمولة',
-                        icon: Wallet,
+                        label: 'راتب + عمولة',
+                        icon: Plus,
                         color: 'amber',
                       },
                     ] as const
@@ -2455,7 +2438,7 @@ export default function Employees() {
                   value={loanForm.reason}
                   onChange={(e) => setLoanForm((p) => ({ ...p, reason: e.target.value }))}
                   className="erp-input w-full"
-                  placeholder="اكتب سبب السلفة (اختياري)..."
+                  placeholder="اكتب سبب السلفة..."
                 />
               </Field>
               <Field label="خصم السلفة من">
@@ -2513,7 +2496,9 @@ export default function Employees() {
                     requested_amount: Number(loanForm.requested_amount),
                   })
                 }
-                disabled={!loanForm.requested_amount || createLoan.isPending}
+                disabled={
+                  !loanForm.requested_amount || createLoan.isPending
+                }
                 className="erp-btn erp-btn-primary flex-1"
               >
                 {createLoan.isPending ? 'جاري الإرسال...' : (isSelfService ? 'إرسال طلب السلفة' : 'تقديم السلفة')}
@@ -3141,78 +3126,73 @@ export default function Employees() {
         );
       })()}
 
-      {/* ── Create Login Account Modal (admin) ──────────────── */}
+      {/* ── Create Login Account Modal ─────────────────────────── */}
       {showCreateLogin && selected && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowCreateLogin(false)}>
-          <div className="erp-card w-full max-w-sm space-y-3" onClick={(e) => e.stopPropagation()} dir="rtl">
-            <div className="flex items-center gap-2">
-              <UserPlus size={18} className="text-cyan-400" />
-              <h3 className="text-base font-bold text-white">إنشاء حساب دخول</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="erp-card w-full max-w-md space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <KeyRound size={18} className="text-emerald-400" />
+                <h3 className="text-base font-bold text-white">إنشاء حساب دخول</h3>
+              </div>
+              <button onClick={() => setShowCreateLogin(false)} className="text-white/40 hover:text-white">
+                <X size={16} />
+              </button>
             </div>
             <div className="text-xs text-white/60">
               للموظف: <span className="text-amber-300">{selected.first_name_ar} {selected.last_name_ar}</span>
             </div>
             <div className="space-y-2">
-              <div>
-                <label className="text-xs text-white/70 block mb-1">اسم المستخدم</label>
-                <input
-                  value={loginForm.username}
-                  onChange={(e) => setLoginForm((p) => ({ ...p, username: e.target.value }))}
-                  className="erp-input w-full text-sm"
-                  placeholder="username"
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/70 block mb-1">رقم سرّي (PIN) — 4 أرقام على الأقل</label>
-                <div className="relative">
-                  <KeyRound size={13} className="absolute top-1/2 -translate-y-1/2 right-3 text-white/40" />
-                  <input
-                    value={loginForm.pin}
-                    onChange={(e) => setLoginForm((p) => ({ ...p, pin: e.target.value.replace(/\D/g, '').slice(0, 8) }))}
-                    type="password"
-                    inputMode="numeric"
-                    className="erp-input w-full text-sm font-mono"
-                    style={{ paddingRight: '2rem' }}
-                    placeholder="••••"
-                    autoComplete="new-password"
-                  />
-                </div>
-              </div>
-              <div className="text-[11px] text-cyan-300/80 bg-cyan-500/10 border border-cyan-500/20 rounded p-2">
-                سيتم إنشاء حساب بدور «موظف» يرى بياناته فقط (سلف، خصومات، حوافز، عهدة).
-                يمكنك تخصيص الصلاحيات لاحقاً من الإعدادات → المستخدمون.
-              </div>
+              <label className="block text-xs text-white/70">اسم المستخدم</label>
+              <input
+                type="text"
+                value={loginForm.username}
+                onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                className="erp-input w-full"
+                placeholder="مثال: ahmad"
+                autoFocus
+              />
+              <label className="block text-xs text-white/70">رمز PIN (4-8 أرقام)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={loginForm.pin}
+                onChange={(e) => setLoginForm({ ...loginForm, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })}
+                className="erp-input w-full font-mono"
+                placeholder="••••"
+              />
             </div>
-            <div className="flex gap-2 pt-2">
+            <div className="flex justify-end gap-2 pt-2">
               <button
-                disabled={!loginForm.username.trim() || loginForm.pin.length < 4}
                 onClick={async () => {
+                  if (!loginForm.username.trim() || loginForm.pin.length < 4) {
+                    toast({ title: 'تحقق من البيانات', description: 'اسم المستخدم ورمز PIN (4 أرقام على الأقل) مطلوبان', variant: 'destructive' });
+                    return;
+                  }
                   try {
                     const res = await authFetch(api('/api/settings/users'), {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        name: `${selected.first_name_ar} ${selected.last_name_ar}`.trim(),
                         username: loginForm.username.trim(),
                         pin: loginForm.pin,
                         role: 'employee',
-                        permissions: '{}',
                         employee_id: selected.id,
                         active: true,
                       }),
                     });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'فشل إنشاء الحساب');
-                    toast({ title: 'تم إنشاء حساب الموظف بنجاح ✓' });
+                    if (!res.ok) {
+                      const j = await res.json().catch(() => ({}));
+                      throw new Error(j.message || j.error || 'فشل إنشاء الحساب');
+                    }
+                    toast({ title: 'تم إنشاء الحساب', description: `يمكن للموظف الآن الدخول باسم ${loginForm.username}` });
                     setShowCreateLogin(false);
-                    setLoginForm({ username: '', pin: '' });
-                    qc.invalidateQueries({ queryKey: ['/api/settings/users'] });
-                  } catch (err) {
-                    toast({ title: (err as Error).message, variant: 'destructive' });
+                  } catch (err: unknown) {
+                    toast({ title: 'خطأ', description: (err as Error)?.message || 'فشل إنشاء الحساب', variant: 'destructive' });
                   }
                 }}
-                className="erp-btn erp-btn-primary flex-1 disabled:opacity-50"
+                className="erp-btn erp-btn-primary"
               >
                 إنشاء الحساب
               </button>

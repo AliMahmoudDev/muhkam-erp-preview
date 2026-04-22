@@ -196,7 +196,7 @@ export default function Expenses() {
   const canView = hasPermission(user, 'can_view_expenses') === true;
   const canAdd  = hasPermission(user, 'can_add_expense') === true;
   const isCashier = user?.role === 'cashier';
-  const companyName = (user as any)?.company_name ?? 'مُحكم - MUHKAM ERP';
+  const companyName = (user as { company_name?: string })?.company_name ?? 'مُحكم - MUHKAM ERP';
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -300,7 +300,7 @@ export default function Expenses() {
       setShowAdd(false);
       setFormData({ category: '', amount: '', description: '', safe_id: '' });
     },
-    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: (e as Error).message, variant: 'destructive' }),
   });
 
   /* ─── Category handlers ─── */
@@ -354,7 +354,7 @@ export default function Expenses() {
         queryClient.invalidateQueries({ queryKey: ['/api/settings/safes'] });
         setConfirmDeleteId(null);
       },
-      onError: (e: Error) => { toast({ title: e.message, variant: 'destructive' }); setConfirmDeleteId(null); },
+      onError: (e: Error) => { toast({ title: (e as Error).message, variant: 'destructive' }); setConfirmDeleteId(null); },
     });
   };
 

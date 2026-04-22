@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Shield, Search, Filter, RefreshCw, ChevronDown, ChevronUp, User, Clock } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { useAuth } from "@/contexts/auth";
+import { formatDate } from "@/lib/format";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 const api = (p: string) => `${BASE}${p}`;
@@ -104,12 +105,6 @@ const RECORD_LABELS: Record<string, string> = {
 };
 
 const ALL_RECORD_TYPES = Object.keys(RECORD_LABELS);
-
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("ar-EG", { day: "2-digit", month: "2-digit", year: "numeric" }) +
-    " " + d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
-}
 
 function JsonDiff({ label, data }: { label: string; data: object | null }) {
   const [open, setOpen] = useState(false);
