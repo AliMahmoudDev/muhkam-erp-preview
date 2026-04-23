@@ -534,11 +534,14 @@ export default function SuperAdmin() {
   const [deleteCoErr, setDeleteCoErr] = useState('');
   /* Subscription management modal */
   const [subModal, setSubModal] = useState<Company | null>(null);
+  type SubFeatures = { accounting: boolean; hr: boolean; pos: boolean; warranty: boolean; consignment: boolean; fixed_assets: boolean; maintenance: boolean; budgets: boolean; bank_reconciliation: boolean };
+  const DEFAULT_FEATS_ULTIMATE: SubFeatures = { accounting: false, hr: true, pos: true, warranty: true, consignment: true, fixed_assets: false, maintenance: false, budgets: false, bank_reconciliation: false };
+  const DEFAULT_FEATS_ADVANCED: SubFeatures = { accounting: true, hr: true, pos: true, warranty: true, consignment: true, fixed_assets: true, maintenance: false, budgets: true, bank_reconciliation: true };
   const [subForm, setSubForm] = useState<{
     plan_type: string; edition: 'advanced' | 'ultimate';
     extend_mode: 'days' | 'date'; extend_days: number;
-    end_date: string; is_active: boolean;
-  }>({ plan_type: 'trial', edition: 'ultimate', extend_mode: 'days', extend_days: 30, end_date: '', is_active: true });
+    end_date: string; is_active: boolean; features: SubFeatures;
+  }>({ plan_type: 'trial', edition: 'ultimate', extend_mode: 'days', extend_days: 30, end_date: '', is_active: true, features: DEFAULT_FEATS_ULTIMATE });
   const [subSaving, setSubSaving] = useState(false);
   /* Confirm-code delete flow */
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
@@ -1133,12 +1136,12 @@ export default function SuperAdmin() {
         });
         await fetch(api(`/api/super/companies/${subModal.id}`), {
           method: 'PUT', headers: h,
-          body: JSON.stringify({ edition: subForm.edition, is_active: subForm.is_active }),
+          body: JSON.stringify({ edition: subForm.edition, is_active: subForm.is_active, features: subForm.features }),
         });
       } else {
         await fetch(api(`/api/super/companies/${subModal.id}`), {
           method: 'PUT', headers: h,
-          body: JSON.stringify({ plan_type: subForm.plan_type, edition: subForm.edition, end_date: subForm.end_date, is_active: subForm.is_active }),
+          body: JSON.stringify({ plan_type: subForm.plan_type, edition: subForm.edition, end_date: subForm.end_date, is_active: subForm.is_active, features: subForm.features }),
         });
       }
       qc.invalidateQueries({ queryKey: ['/api/super/companies'] });
@@ -3301,14 +3304,19 @@ export default function SuperAdmin() {
                                 icon="📋"
                                 color={C.orange}
                                 onClick={() => {
+                                  const ed = (co.edition ?? 'ultimate') as 'advanced' | 'ultimate';
+                                  const defaultFeats = ed === 'advanced' ? DEFAULT_FEATS_ADVANCED : DEFAULT_FEATS_ULTIMATE;
+                                  const coFeats = (co as { features?: Record<string, boolean> }).features;
+                                  const feats = coFeats ? { ...defaultFeats, ...coFeats } as typeof DEFAULT_FEATS_ULTIMATE : defaultFeats;
                                   setSubModal(co);
                                   setSubForm({
                                     plan_type: co.plan_type,
-                                    edition: (co.edition ?? 'ultimate') as 'advanced' | 'ultimate',
+                                    edition: ed,
                                     extend_mode: 'days',
                                     extend_days: 30,
                                     end_date: co.end_date?.slice(0, 10) ?? '',
                                     is_active: co.is_active,
+                                    features: feats,
                                   });
                                 }}
                               />
@@ -6047,7 +6055,11 @@ export default function SuperAdmin() {
                   ].map(({ val, label, color, desc }) => (
                     <button
                       key={val}
-                      onClick={() => setSubForm(f => ({ ...f, edition: val }))}
+                      onClick={() => setSubForm(f => ({
+                        ...f,
+                        edition: val,
+                        features: val === 'advanced' ? { ...DEFAULT_FEATS_ADVANCED } : { ...DEFAULT_FEATS_ULTIMATE },
+                      }))}
                       style={{
                         flex: 1, padding: '10px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, textAlign: 'center', transition: 'all 0.15s',
                         background: subForm.edition === val ? (val === 'advanced' ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)') : 'rgba(255,255,255,0.04)',
@@ -6058,6 +6070,58 @@ export default function SuperAdmin() {
                       <div>{label}</div>
                       <div style={{ fontSize: '10px', fontWeight: 400, marginTop: '2px', opacity: 0.7 }}>{desc}</div>
                     </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Module Feature Control */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>⚙️ التحكم في الوحدات</label>
+                <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                  {([
+                    { key: 'accounting' as const, label: 'المحاسبة الكاملة', icon: '📊', desc: 'شجرة الحسابات، القيود، الميزانية' },
+                    { key: 'hr' as const, label: 'الموارد البشرية', icon: '👥', desc: 'الموظفون والحضور والانصراف' },
+                    { key: 'pos' as const, label: 'نقطة البيع (POS)', icon: '🖥️', desc: 'واجهة البيع المباشرة' },
+                    { key: 'warranty' as const, label: 'الضمان', icon: '🛡️', desc: 'إدارة ضمانات المنتجات' },
+                    { key: 'consignment' as const, label: 'الأمانات', icon: '📦', desc: 'بيع وإدارة بضاعة الأمانة' },
+                    { key: 'fixed_assets' as const, label: 'الأصول الثابتة', icon: '🏗️', desc: 'تتبع وإهلاك الأصول' },
+                    { key: 'budgets' as const, label: 'الموازنات ومراكز التكلفة', icon: '💹', desc: 'ميزانيات ومراكز التكلفة' },
+                    { key: 'bank_reconciliation' as const, label: 'المطابقة البنكية', icon: '🏦', desc: 'مطابقة كشوف البنك' },
+                    { key: 'maintenance' as const, label: 'الصيانة', icon: '🔧', desc: 'وحدة الصيانة (قريباً)' },
+                  ] as { key: keyof SubFeatures; label: string; icon: string; desc: string }[]).map(({ key, label, icon, desc }, i) => (
+                    <div
+                      key={key}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 16px',
+                        borderBottom: i < 8 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                        background: subForm.features[key] ? 'rgba(52,211,153,0.03)' : 'transparent',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '18px' }}>{icon}</span>
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: subForm.features[key] ? '#e2e8f0' : '#64748b' }}>{label}</div>
+                          <div style={{ fontSize: '10px', color: '#475569', marginTop: '1px' }}>{desc}</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSubForm(f => ({ ...f, features: { ...f.features, [key]: !f.features[key] } }))}
+                        style={{
+                          width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                          background: subForm.features[key] ? 'linear-gradient(135deg,#34d399,#059669)' : 'rgba(255,255,255,0.12)',
+                          position: 'relative', transition: 'all 0.2s', flexShrink: 0,
+                        }}
+                      >
+                        <span style={{
+                          position: 'absolute', top: '3px',
+                          right: subForm.features[key] ? '3px' : 'auto',
+                          left: subForm.features[key] ? 'auto' : '3px',
+                          width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
+                          transition: 'all 0.2s', display: 'block',
+                        }} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
