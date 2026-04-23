@@ -225,18 +225,29 @@ router.get("/repair-jobs", wrap(async (req, res) => {
 
   let filtered = jobs;
   if (search?.trim()) {
-    const s = search.trim().toLowerCase();
-    filtered = jobs.filter(j =>
-      j.customer_name.toLowerCase().includes(s) ||
-      j.device_model.toLowerCase().includes(s) ||
-      j.device_brand.toLowerCase().includes(s) ||
-      j.job_no.toLowerCase().includes(s) ||
-      (j.imei && j.imei.toLowerCase().includes(s)) ||
-      (j.serial_no && j.serial_no.toLowerCase().includes(s)) ||
-      (j.customer_phone && j.customer_phone.includes(s)) ||
-      (j.technician_name && j.technician_name.toLowerCase().includes(s)) ||
-      (j.technician_2_name && j.technician_2_name.toLowerCase().includes(s))
-    );
+    const s = search.trim();
+    const sl = s.toLowerCase();
+
+    if (/^\d+$/.test(s)) {
+      // Numeric-only → exact match on job number suffix
+      filtered = jobs.filter(j =>
+        j.job_no.endsWith(`-${s}`) ||
+        j.job_no.endsWith(`-${s.padStart(4, "0")}`)
+      );
+    } else {
+      // General: name, model, brand, IMEI, serial, phone, technician
+      filtered = jobs.filter(j =>
+        j.customer_name.toLowerCase().includes(sl) ||
+        j.device_model.toLowerCase().includes(sl) ||
+        j.device_brand.toLowerCase().includes(sl) ||
+        j.job_no.toLowerCase().includes(sl) ||
+        (j.imei && j.imei.toLowerCase().includes(sl)) ||
+        (j.serial_no && j.serial_no.toLowerCase().includes(sl)) ||
+        (j.customer_phone && j.customer_phone.includes(s)) ||
+        (j.technician_name && j.technician_name.toLowerCase().includes(sl)) ||
+        (j.technician_2_name && j.technician_2_name.toLowerCase().includes(sl))
+      );
+    }
   }
   return res.json(filtered);
 }));

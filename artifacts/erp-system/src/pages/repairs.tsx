@@ -499,21 +499,21 @@ export default function Repairs() {
           ))}
         </div>
 
-        {/* Search row */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
+        {/* Search row — two equal columns */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="relative">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="رقم الطلب / اسم / هاتف / IMEI / موديل..."
-              className="erp-input w-full pr-8 text-xs" />
+              placeholder="رقم / اسم / هاتف / IMEI..."
+              className="erp-input w-full pr-8 text-sm" />
           </div>
           <select
             value={techFilter}
             onChange={(e) => setTechFilter(e.target.value)}
-            className="erp-input text-xs w-32 shrink-0">
-            <option value="">كل الفنيين</option>
+            className="erp-input text-sm w-full">
+            <option value="">— كل الفنيين —</option>
             {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
         </div>
@@ -957,59 +957,68 @@ type ChecklistRow = { id: number; label_ar: string; sort_order: number; category
 function RepairSettings({ onClose }: { onClose: () => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [newLabel, setNewLabel]           = useState("");
-  const [editingId, setEditingId]         = useState<number | null>(null);
-  const [editLabel, setEditLabel]         = useState("");
-  const [activeCat, setActiveCat]         = useState("عام");
-  const [addingCat, setAddingCat]         = useState(false);
-  const [newCatName, setNewCatName]       = useState("");
-  const [reordering, setReordering]       = useState(false);
-  const [dragOver, setDragOver]           = useState<number | null>(null);
-  const dragIdx                           = useRef<number | null>(null);
+  const [newLabel, setNewLabel]         = useState("");
+  const [editingId, setEditingId]       = useState<number | null>(null);
+  const [editLabel, setEditLabel]       = useState("");
+  const [activeCat, setActiveCat]       = useState("عام");
+  const [newCatName, setNewCatName]     = useState("");
+  const [showAddCat, setShowAddCat]     = useState(false);
+  const [reordering, setReordering]     = useState(false);
+  const [dragOver, setDragOver]         = useState<number | null>(null);
+  const dragIdx                         = useRef<number | null>(null);
 
-  const { data: items = [], isLoading } = useQuery<ChecklistRow[]>({
+  const { data: rawItems, isLoading, isError } = useQuery<ChecklistRow[]>({
     queryKey: ["/api/repair-checklist-items"],
-    queryFn: () => authFetch(api("/api/repair-checklist-items")).then((r) => r.json()),
+    queryFn: async () => {
+      const r = await authFetch(api("/api/repair-checklist-items"));
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    },
+    staleTime: 0,
   });
+
+  /* Normalise: ensure category field is always a string */
+  const items: ChecklistRow[] = useMemo(
+    () => (rawItems ?? []).map(i => ({ ...i, category: i.category ?? "عام" })),
+    [rawItems],
+  );
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/repair-checklist-items"] });
 
-  /* Derived categories (preserve order of first appearance) */
-  const allCategories = useMemo(() => {
-    const seen = new Set<string>();
-    const cats: string[] = [];
+  /* ── Derived categories ── */
+  const allCategories: string[] = useMemo(() => {
+    const order: string[] = ["عام"];
+    const seen = new Set<string>(["عام"]);
     for (const item of items) {
-      const c = item.category ?? "عام";
-      if (!seen.has(c)) { seen.add(c); cats.push(c); }
+      const c = item.category;
+      if (!seen.has(c)) { seen.add(c); order.push(c); }
     }
-    if (!seen.has("عام")) cats.unshift("عام");
-    return cats;
+    return order;
   }, [items]);
 
-  /* Ensure activeCat is always valid */
+  /* Ensure activeCat always exists in allCategories */
   useEffect(() => {
-    if (allCategories.length && !allCategories.includes(activeCat)) {
-      setActiveCat(allCategories[0]);
-    }
+    if (!allCategories.includes(activeCat)) setActiveCat(allCategories[0] ?? "عام");
   }, [allCategories, activeCat]);
 
-  const catItems = useMemo(
-    () => items.filter(i => (i.category ?? "عام") === activeCat)
-              .sort((a, b) => a.sort_order - b.sort_order),
+  /* Items for active category, sorted */
+  const catItems: ChecklistRow[] = useMemo(
+    () => items.filter(i => i.category === activeCat).sort((a, b) => a.sort_order - b.sort_order),
     [items, activeCat],
   );
 
+  /* ── Handlers ── */
   const addItem = async () => {
-    if (!newLabel.trim()) return;
+    const label = newLabel.trim();
+    if (!label) return;
     const r = await authFetch(api("/api/repair-checklist-items"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label_ar: newLabel.trim(), category: activeCat }),
+      body: JSON.stringify({ label_ar: label, category: activeCat }),
     });
     if (!r.ok) { toast({ title: "خطأ في الإضافة", variant: "destructive" }); return; }
     setNewLabel("");
     invalidate();
-    toast({ title: "✅ تم إضافة البند" });
   };
 
   const saveEdit = async (id: number) => {
@@ -1025,39 +1034,11 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
   };
 
   const deleteItem = async (id: number) => {
-    const r = await authFetch(api(`/api/repair-checklist-items/${id}`), { method: "DELETE" });
-    if (!r.ok) { toast({ title: "خطأ في الحذف", variant: "destructive" }); return; }
-    invalidate();
-    toast({ title: "تم الحذف" });
-  };
-
-  const moveItem = async (idx: number, dir: -1 | 1) => {
-    const newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= catItems.length) return;
-    const a = catItems[idx];
-    const b = catItems[newIdx];
-    setReordering(true);
-    await authFetch(api("/api/repair-checklist-items/reorder"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify([
-        { id: a.id, sort_order: b.sort_order },
-        { id: b.id, sort_order: a.sort_order },
-      ]),
-    });
-    setReordering(false);
+    await authFetch(api(`/api/repair-checklist-items/${id}`), { method: "DELETE" });
     invalidate();
   };
 
-  const dropItem = async (toIdx: number) => {
-    const fromIdx = dragIdx.current;
-    setDragOver(null);
-    dragIdx.current = null;
-    if (fromIdx === null || fromIdx === toIdx) return;
-    const reordered = [...catItems];
-    const [moved] = reordered.splice(fromIdx, 1);
-    reordered.splice(toIdx, 0, moved);
-    const payload = reordered.map((item, i) => ({ id: item.id, sort_order: i + 1 }));
+  const reorder = async (payload: { id: number; sort_order: number }[]) => {
     setReordering(true);
     await authFetch(api("/api/repair-checklist-items/reorder"), {
       method: "POST",
@@ -1068,161 +1049,233 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
     invalidate();
   };
 
-  const addCategory = () => {
-    const name = newCatName.trim();
-    if (!name || allCategories.includes(name)) { setAddingCat(false); return; }
-    setActiveCat(name);
-    setAddingCat(false);
-    setNewCatName("");
-    toast({ title: `تم إنشاء تصنيف "${name}" — أضف بنوداً له` });
+  const moveItem = (idx: number, dir: -1 | 1) => {
+    const ni = idx + dir;
+    if (ni < 0 || ni >= catItems.length) return;
+    reorder([
+      { id: catItems[idx].id, sort_order: catItems[ni].sort_order },
+      { id: catItems[ni].id, sort_order: catItems[idx].sort_order },
+    ]);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 bg-black/70 backdrop-blur-sm" dir="rtl">
-      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-lg mx-4 overflow-hidden flex flex-col max-h-[80vh]">
+  const dropItem = (toIdx: number) => {
+    const fromIdx = dragIdx.current;
+    setDragOver(null);
+    dragIdx.current = null;
+    if (fromIdx === null || fromIdx === toIdx) return;
+    const reordered = [...catItems];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+    reorder(reordered.map((item, i) => ({ id: item.id, sort_order: i + 1 })));
+  };
 
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0">
+  const addCategory = () => {
+    const name = newCatName.trim();
+    if (!name) return;
+    if (!allCategories.includes(name)) {
+      setActiveCat(name);
+    }
+    setShowAddCat(false);
+    setNewCatName("");
+    toast({ title: `تصنيف "${name}" جاهز — أضف بنوداً له الآن` });
+  };
+
+  /* ══════════════════ JSX ══════════════════ */
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 bg-black/70 backdrop-blur-sm" dir="rtl">
+      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-lg mx-4 overflow-hidden flex flex-col"
+        style={{ maxHeight: "85vh" }}>
+
+        {/* ═══ HEADER ═══ */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0 bg-white/3">
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4 text-violet-400" />
             <span className="font-bold text-white text-sm">إعدادات بنود الفحص</span>
+            <span className="text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full">
+              {items.length} بند
+            </span>
           </div>
           <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
             <XCircle className="w-4 h-4" />
           </button>
         </div>
 
-        {/* ── Category tabs ── */}
-        <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/5 shrink-0 flex-wrap">
-          {allCategories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => { setActiveCat(cat); setEditingId(null); setNewLabel(""); }}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                activeCat === cat
-                  ? "bg-violet-500/30 border border-violet-500/50 text-violet-300"
-                  : "bg-white/5 border border-white/10 text-white/50 hover:text-white/80"
-              }`}>
-              {cat}
-            </button>
-          ))}
-          {addingCat ? (
-            <div className="flex items-center gap-1">
+        {/* ═══ CATEGORIES SECTION ═══ */}
+        <div className="px-5 py-3 border-b border-white/10 shrink-0 bg-violet-500/3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-bold text-violet-400 uppercase tracking-widest">التصنيفات</span>
+            <div className="flex-1 h-px bg-violet-500/10" />
+            {!showAddCat && (
+              <button
+                onClick={() => setShowAddCat(true)}
+                className="flex items-center gap-1 text-[11px] text-violet-400/60 hover:text-violet-300 transition-colors">
+                <Plus className="w-3 h-3" /> تصنيف جديد
+              </button>
+            )}
+          </div>
+
+          {/* Category buttons */}
+          <div className="flex flex-wrap gap-1.5">
+            {allCategories.map((cat) => {
+              const count = items.filter(i => i.category === cat).length;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => { setActiveCat(cat); setEditingId(null); setNewLabel(""); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                    activeCat === cat
+                      ? "bg-violet-500/25 border-violet-500/60 text-violet-200 shadow-sm"
+                      : "bg-white/5 border-white/10 text-white/50 hover:text-white hover:border-white/25"
+                  }`}>
+                  {cat}
+                  <span className={`text-[10px] px-1 rounded-full ${
+                    activeCat === cat ? "bg-violet-500/30 text-violet-300" : "bg-white/5 text-white/30"
+                  }`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Add category inline */}
+          {showAddCat && (
+            <div className="flex items-center gap-2 mt-2">
               <input
                 autoFocus
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") addCategory(); if (e.key === "Escape") { setAddingCat(false); setNewCatName(""); } }}
-                placeholder="اسم التصنيف..."
-                className="erp-input text-xs py-0.5 w-28"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addCategory();
+                  if (e.key === "Escape") { setShowAddCat(false); setNewCatName(""); }
+                }}
+                placeholder="اسم التصنيف الجديد..."
+                className="erp-input flex-1 text-xs py-1"
               />
-              <button onClick={addCategory} className="text-emerald-400 hover:text-emerald-300 p-0.5">
-                <CheckCircle2 className="w-3.5 h-3.5" />
+              <button onClick={addCategory} className="text-emerald-400 hover:text-emerald-300 p-1 transition-colors">
+                <CheckCircle2 className="w-4 h-4" />
               </button>
-              <button onClick={() => { setAddingCat(false); setNewCatName(""); }} className="text-white/30 p-0.5">
-                <XCircle className="w-3.5 h-3.5" />
+              <button onClick={() => { setShowAddCat(false); setNewCatName(""); }} className="text-white/30 hover:text-white/60 p-1">
+                <XCircle className="w-4 h-4" />
               </button>
             </div>
-          ) : (
-            <button
-              onClick={() => setAddingCat(true)}
-              className="px-2 py-1 rounded-full text-xs border border-dashed border-white/20 text-white/30 hover:text-white/60 hover:border-white/40 transition-all flex items-center gap-1">
-              <Plus className="w-3 h-3" /> تصنيف
-            </button>
           )}
         </div>
 
-        {/* ── Items list (scrollable, drag-to-reorder) ── */}
-        <div className="overflow-y-auto flex-1 p-4 space-y-1">
-          {isLoading && <p className="text-center text-white/30 text-sm py-4">جاري التحميل...</p>}
-          {catItems.map((item, idx) => (
-            <div
-              key={item.id}
-              draggable
-              onDragStart={() => { dragIdx.current = idx; }}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(idx); }}
-              onDragLeave={() => setDragOver(null)}
-              onDrop={() => dropItem(idx)}
-              onDragEnd={() => { dragIdx.current = null; setDragOver(null); }}
-              className={`flex items-center gap-1.5 py-1.5 px-2 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
-                dragOver === idx ? "border-violet-500/40 bg-violet-500/5" : "border-white/5 hover:border-white/10"
-              }`}>
-              {/* Drag handle + arrows */}
-              <div className="flex flex-col shrink-0 items-center">
-                <div className="text-white/15 hover:text-violet-400/60 cursor-grab px-0.5 pb-0.5 transition-colors">
-                  <div className="w-2 flex flex-col gap-0.5">
-                    <div className="h-[1.5px] bg-current rounded" />
-                    <div className="h-[1.5px] bg-current rounded" />
-                    <div className="h-[1.5px] bg-current rounded" />
+        {/* ═══ ITEMS LIST ═══ */}
+        <div className="overflow-y-auto flex-1 p-4">
+          {/* Section label */}
+          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2">
+            بنود الفحص — {activeCat}
+          </p>
+
+          {isLoading && (
+            <p className="text-center text-white/30 text-sm py-8">جاري تحميل البنود...</p>
+          )}
+          {isError && (
+            <p className="text-center text-red-400/70 text-sm py-8">
+              خطأ في تحميل البيانات — تحقق من اتصال الخادم
+            </p>
+          )}
+
+          <div className="space-y-1">
+            {catItems.map((item, idx) => (
+              <div
+                key={item.id}
+                draggable
+                onDragStart={() => { dragIdx.current = idx; }}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(idx); }}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={() => dropItem(idx)}
+                onDragEnd={() => { dragIdx.current = null; setDragOver(null); }}
+                className={`flex items-center gap-2 py-2 px-2 rounded-xl border transition-all ${
+                  dragOver === idx
+                    ? "border-violet-400/60 bg-violet-500/10"
+                    : "border-white/5 hover:border-white/15 bg-white/2"
+                }`}>
+
+                {/* Drag + arrows */}
+                <div className="flex flex-col items-center gap-0 shrink-0 cursor-grab">
+                  <div className="text-white/20 px-0.5 mb-0.5">
+                    <div className="w-2 flex flex-col gap-[3px]">
+                      <div className="h-[1.5px] bg-current rounded opacity-60" />
+                      <div className="h-[1.5px] bg-current rounded opacity-60" />
+                      <div className="h-[1.5px] bg-current rounded opacity-60" />
+                    </div>
                   </div>
+                  <button onClick={(e) => { e.stopPropagation(); moveItem(idx, -1); }}
+                    disabled={idx === 0 || reordering}
+                    className="text-white/20 hover:text-violet-400 disabled:opacity-10 transition-colors p-0">
+                    <ChevronUp className="w-3 h-3" />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); moveItem(idx, 1); }}
+                    disabled={idx === catItems.length - 1 || reordering}
+                    className="text-white/20 hover:text-violet-400 disabled:opacity-10 transition-colors p-0">
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
                 </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); moveItem(idx, -1); }}
-                  disabled={idx === 0 || reordering}
-                  className="text-white/15 hover:text-violet-400 disabled:opacity-10 transition-colors leading-none">
-                  <ChevronUp className="w-2.5 h-2.5" />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); moveItem(idx, 1); }}
-                  disabled={idx === catItems.length - 1 || reordering}
-                  className="text-white/15 hover:text-violet-400 disabled:opacity-10 transition-colors leading-none">
-                  <ChevronDown className="w-2.5 h-2.5" />
-                </button>
+
+                {/* Number */}
+                <span className="text-[10px] text-white/20 w-4 text-center shrink-0">{idx + 1}</span>
+
+                {/* Label / edit */}
+                {editingId === item.id ? (
+                  <>
+                    <input
+                      autoFocus
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveEdit(item.id);
+                        if (e.key === "Escape") setEditingId(null);
+                      }}
+                      className="erp-input flex-1 text-sm py-0.5"
+                    />
+                    <button onClick={() => saveEdit(item.id)} className="text-emerald-400 hover:text-emerald-300 p-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="text-white/30 p-1">
+                      <XCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex-1 text-sm text-white/80">{item.label_ar}</span>
+                    <button onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); }}
+                      className="text-white/20 hover:text-violet-400 p-1 transition-colors">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => deleteItem(item.id)}
+                      className="text-white/15 hover:text-red-400 p-1 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
               </div>
-              {/* Label / edit */}
-              {editingId === item.id ? (
-                <>
-                  <input
-                    autoFocus
-                    value={editLabel}
-                    onChange={(e) => setEditLabel(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") saveEdit(item.id); if (e.key === "Escape") setEditingId(null); }}
-                    className="erp-input flex-1 text-xs py-0.5"
-                  />
-                  <button onClick={() => saveEdit(item.id)} className="text-emerald-400 hover:text-emerald-300 p-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => setEditingId(null)} className="text-white/30 hover:text-white/60 p-1">
-                    <XCircle className="w-3.5 h-3.5" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="flex-1 text-xs text-white/75">{item.label_ar}</span>
-                  <button
-                    onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); }}
-                    className="text-white/25 hover:text-violet-400 p-1 transition-colors">
-                    <MessageSquare className="w-3 h-3" />
-                  </button>
-                  <button
-                    onClick={() => deleteItem(item.id)}
-                    className="text-white/15 hover:text-red-400 p-1 transition-colors">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </>
-              )}
+            ))}
+          </div>
+
+          {!isLoading && !isError && catItems.length === 0 && (
+            <div className="text-center py-8 space-y-1">
+              <p className="text-white/25 text-sm">لا توجد بنود في تصنيف «{activeCat}»</p>
+              <p className="text-white/15 text-xs">أضف البند الأول من الحقل أدناه</p>
             </div>
-          ))}
-          {!isLoading && catItems.length === 0 && (
-            <p className="text-center text-white/25 text-xs py-6">لا توجد بنود في هذا التصنيف — أضف البند الأول أدناه</p>
           )}
         </div>
 
-        {/* ── Add item footer ── */}
-        <div className="px-4 pb-4 pt-2 border-t border-white/5 shrink-0">
+        {/* ═══ ADD ITEM FOOTER ═══ */}
+        <div className="px-4 py-3 border-t border-white/10 shrink-0 bg-white/2">
           <div className="flex gap-2">
             <input
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addItem()}
-              placeholder={`بند جديد في "${activeCat}"...`}
-              className="erp-input flex-1 text-xs"
+              placeholder={`بند جديد في «${activeCat}»...`}
+              className="erp-input flex-1 text-sm"
             />
             <button
               onClick={addItem}
-              disabled={!newLabel.trim()}
-              className="px-3 py-1.5 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs font-bold hover:bg-violet-500/30 transition-all disabled:opacity-40">
-              <Plus className="w-3.5 h-3.5" />
+              disabled={!newLabel.trim() || reordering}
+              className="px-4 py-1.5 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs font-bold hover:bg-violet-500/30 transition-all disabled:opacity-40 flex items-center gap-1">
+              <Plus className="w-3.5 h-3.5" /> إضافة
             </button>
           </div>
         </div>
