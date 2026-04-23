@@ -138,18 +138,6 @@ export const COLOR_MAP: Record<string, { header: string; badge: string; toggleOn
   red:    { header: "border-red-500/20",     badge: "bg-red-500/15 text-red-300 border-red-500/30",       toggleOn: "#ef4444" },
 };
 
-export const ACTION_LABELS: Record<string, { label: string; color: string }> = {
-  lock_period:        { label: "إغلاق فترة",    color: "text-red-400 bg-red-500/10 border-red-500/20" },
-  unlock_period:      { label: "فتح فترة",      color: "text-green-400 bg-green-500/10 border-green-500/20" },
-  lock_blocked:       { label: "محاولة مرفوضة", color: "text-orange-400 bg-orange-500/10 border-orange-500/20" },
-  reversal_created:   { label: "سند عكسي",      color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
-  correction_created: { label: "سند تصحيحي",    color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
-  create:             { label: "إنشاء",         color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
-  update:             { label: "تعديل",         color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
-  delete:             { label: "حذف",           color: "text-red-400 bg-red-500/10 border-red-500/20" },
-  INVENTORY_TRANSFER: { label: "تحويل مخزون",   color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
-};
-
 export const BACKUP_MODULES_LIST = [
   { key: "sales",     label: "المبيعات",         sub: "الفواتير، العملاء، المرتجعات",      url: "/api/sales" },
   { key: "purchases", label: "المشتريات",         sub: "فواتير المشتريات، المرتجعات",        url: "/api/purchases" },
