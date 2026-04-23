@@ -533,6 +533,14 @@ export default function SuperAdmin() {
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Company | null>(null);
   const [deleteCoErr, setDeleteCoErr] = useState('');
+  /* Subscription management modal */
+  const [subModal, setSubModal] = useState<Company | null>(null);
+  const [subForm, setSubForm] = useState<{
+    plan_type: string; edition: 'advanced' | 'ultimate';
+    extend_mode: 'days' | 'date'; extend_days: number;
+    end_date: string; is_active: boolean;
+  }>({ plan_type: 'trial', edition: 'ultimate', extend_mode: 'days', extend_days: 30, end_date: '', is_active: true });
+  const [subSaving, setSubSaving] = useState(false);
   /* Confirm-code delete flow */
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
   const [generatedCode, setGeneratedCode] = useState('');
@@ -1113,6 +1121,37 @@ export default function SuperAdmin() {
       qc.invalidateQueries({ queryKey: ['/api/super/stats'] });
     },
   });
+
+  async function saveSubscription() {
+    if (!subModal) return;
+    setSubSaving(true);
+    try {
+      const h = { ...authHeaders(token ?? ''), 'Content-Type': 'application/json' };
+      if (subForm.extend_mode === 'days') {
+        await fetch(api(`/api/super/companies/${subModal.id}/extend`), {
+          method: 'POST', headers: h,
+          body: JSON.stringify({ days: subForm.extend_days, plan_type: subForm.plan_type }),
+        });
+        await fetch(api(`/api/super/companies/${subModal.id}`), {
+          method: 'PUT', headers: h,
+          body: JSON.stringify({ edition: subForm.edition, is_active: subForm.is_active }),
+        });
+      } else {
+        await fetch(api(`/api/super/companies/${subModal.id}`), {
+          method: 'PUT', headers: h,
+          body: JSON.stringify({ plan_type: subForm.plan_type, edition: subForm.edition, end_date: subForm.end_date, is_active: subForm.is_active }),
+        });
+      }
+      qc.invalidateQueries({ queryKey: ['/api/super/companies'] });
+      qc.invalidateQueries({ queryKey: ['/api/super/stats'] });
+      showToast('✅ تم تحديث الاشتراك بنجاح');
+      setSubModal(null);
+    } catch {
+      showToast('حدث خطأ أثناء الحفظ');
+    } finally {
+      setSubSaving(false);
+    }
+  }
 
   const coDelete = useMutation({
     mutationFn: ({
@@ -3258,55 +3297,21 @@ export default function SuperAdmin() {
                                   }
                                 />
                               )}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <select
-                                  value={extendDays[co.id] ?? 7}
-                                  onChange={(e) =>
-                                    setExtendDays((prev) => ({
-                                      ...prev,
-                                      [co.id]: Number(e.target.value),
-                                    }))
-                                  }
-                                  onClick={(e) => e.stopPropagation()}
-                                  style={{
-                                    border: `1px solid ${C.border}`,
-                                    borderRadius: '8px',
-                                    padding: '7px 10px',
-                                    fontSize: '13px',
-                                    background: C.card,
-                                    color: C.text,
-                                    fontFamily: FONT,
-                                  }}
-                                >
-                                  {[7, 14, 30, 90, 365].map((d) => (
-                                    <option key={d} value={d}>
-                                      {d} يوم
-                                    </option>
-                                  ))}
-                                </select>
-                                <ActionBtn
-                                  label="تمديد"
-                                  icon="⏳"
-                                  color={C.warning}
-                                  onClick={() =>
-                                    coMutate.mutate({
-                                      url: `/api/super/companies/${co.id}/extend`,
-                                      body: { days: extendDays[co.id] ?? 7, plan_type: 'paid' },
-                                    })
-                                  }
-                                />
-                              </div>
                               <ActionBtn
-                                label="⭐ ترقية إلى مدفوع"
-                                icon=""
+                                label="إدارة الاشتراك"
+                                icon="📋"
                                 color={C.orange}
-                                onClick={() =>
-                                  coMutate.mutate({
-                                    url: `/api/super/companies/${co.id}`,
-                                    method: 'PUT',
-                                    body: { plan_type: 'paid' },
-                                  })
-                                }
+                                onClick={() => {
+                                  setSubModal(co);
+                                  setSubForm({
+                                    plan_type: co.plan_type,
+                                    edition: (co.edition ?? 'ultimate') as 'advanced' | 'ultimate',
+                                    extend_mode: 'days',
+                                    extend_days: 30,
+                                    end_date: co.end_date?.slice(0, 10) ?? '',
+                                    is_active: co.is_active,
+                                  });
+                                }}
                               />
 
                               {/* Edition switcher */}
@@ -5970,6 +5975,170 @@ export default function SuperAdmin() {
       )}
 
       </div>{/* end maxWidth container */}
+
+      {/* ── Subscription Management Modal ─────────────────────────────────── */}
+      {subModal && (
+        <div
+          onClick={() => setSubModal(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#0f172a', border: '1px solid rgba(99,102,241,0.35)', borderRadius: '18px', width: '100%', maxWidth: '540px', maxHeight: '90vh', overflowY: 'auto', fontFamily: FONT, direction: 'rtl' }}
+          >
+            {/* Header */}
+            <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '17px', fontWeight: 800, color: '#e2e8f0' }}>📋 إدارة الاشتراك</div>
+                <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '2px' }}>{subModal.name}</div>
+              </div>
+              <button onClick={() => setSubModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
+            </div>
+
+            {/* Current Status */}
+            <div style={{ margin: '16px 24px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              {[
+                { label: 'الخطة الحالية', value: translatePlan(subModal.plan_type), color: C.orange },
+                { label: 'النسخة', value: subModal.edition === 'advanced' ? '🚀 Advanced' : '⭐ Pro', color: subModal.edition === 'advanced' ? '#fcd34d' : '#a5b4fc' },
+                { label: 'الحالة', value: subModal.status === 'active' ? '✅ نشط' : subModal.status === 'trial' ? '🔵 تجريبي' : subModal.status === 'expired' ? '❌ منتهي' : '⛔ موقوف', color: subModal.status === 'active' || subModal.status === 'trial' ? C.success : C.danger },
+                { label: 'الأيام المتبقية', value: subModal.daysRemaining < 0 ? 'منتهي' : `${subModal.daysRemaining} يوم`, color: subModal.daysRemaining < 0 ? C.danger : subModal.daysRemaining <= 7 ? C.warning : C.success },
+                { label: 'تاريخ الانتهاء', value: new Date(subModal.end_date).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }), color: '#e2e8f0' },
+                { label: 'عدد المستخدمين', value: `${subModal.userCount} مستخدم`, color: '#e2e8f0' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
+                  <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '3px' }}>{label}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+              {/* Plan */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>📦 الخطة</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { val: 'trial', label: 'تجريبي', color: '#64748b' },
+                    { val: 'basic', label: 'أساسي', color: '#3b82f6' },
+                    { val: 'professional', label: 'احترافي', color: '#8b5cf6' },
+                    { val: 'paid', label: 'مدفوع', color: C.orange },
+                  ].map(({ val, label, color }) => (
+                    <button
+                      key={val}
+                      onClick={() => setSubForm(f => ({ ...f, plan_type: val }))}
+                      style={{
+                        padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
+                        background: subForm.plan_type === val ? color : 'rgba(255,255,255,0.05)',
+                        border: `2px solid ${subForm.plan_type === val ? color : 'rgba(255,255,255,0.12)'}`,
+                        color: subForm.plan_type === val ? '#fff' : '#94a3b8',
+                      }}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Edition */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>🏷️ النسخة</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[
+                    { val: 'ultimate' as const, label: '⭐ MuhKam Pro', color: '#6366f1', desc: 'بدون محاسبة' },
+                    { val: 'advanced' as const, label: '🚀 MuhKam Advanced', color: '#f59e0b', desc: 'مع محاسبة كاملة' },
+                  ].map(({ val, label, color, desc }) => (
+                    <button
+                      key={val}
+                      onClick={() => setSubForm(f => ({ ...f, edition: val }))}
+                      style={{
+                        flex: 1, padding: '10px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, textAlign: 'center', transition: 'all 0.15s',
+                        background: subForm.edition === val ? (val === 'advanced' ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)') : 'rgba(255,255,255,0.04)',
+                        border: `2px solid ${subForm.edition === val ? color : 'rgba(255,255,255,0.1)'}`,
+                        color: subForm.edition === val ? color : '#64748b',
+                      }}
+                    >
+                      <div>{label}</div>
+                      <div style={{ fontSize: '10px', fontWeight: 400, marginTop: '2px', opacity: 0.7 }}>{desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date control */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>📅 تجديد الاشتراك</label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                  {[
+                    { val: 'days' as const, label: '⏳ تمديد بأيام' },
+                    { val: 'date' as const, label: '📆 تحديد تاريخ' },
+                  ].map(({ val, label }) => (
+                    <button
+                      key={val}
+                      onClick={() => setSubForm(f => ({ ...f, extend_mode: val }))}
+                      style={{
+                        flex: 1, padding: '8px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
+                        background: subForm.extend_mode === val ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
+                        border: `2px solid ${subForm.extend_mode === val ? '#6366f1' : 'rgba(255,255,255,0.1)'}`,
+                        color: subForm.extend_mode === val ? '#a5b4fc' : '#64748b',
+                      }}
+                    >{label}</button>
+                  ))}
+                </div>
+                {subForm.extend_mode === 'days' ? (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {[7, 14, 30, 60, 90, 180, 365].map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => setSubForm(f => ({ ...f, extend_days: d }))}
+                        style={{
+                          padding: '7px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                          background: subForm.extend_days === d ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.05)',
+                          border: `2px solid ${subForm.extend_days === d ? C.orange : 'rgba(255,255,255,0.1)'}`,
+                          color: subForm.extend_days === d ? C.orange : '#94a3b8',
+                        }}
+                      >{d === 365 ? 'سنة' : `${d} يوم`}</button>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    type="date"
+                    value={subForm.end_date}
+                    onChange={(e) => setSubForm(f => ({ ...f, end_date: e.target.value }))}
+                    min={new Date().toISOString().slice(0, 10)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '2px solid rgba(99,102,241,0.4)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontSize: '14px', fontFamily: FONT, boxSizing: 'border-box' }}
+                  />
+                )}
+              </div>
+
+              {/* Status toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '14px 16px', border: `1px solid ${subForm.is_active ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#e2e8f0' }}>حالة الشركة</div>
+                  <div style={{ fontSize: '11px', color: subForm.is_active ? C.success : C.danger, marginTop: '2px' }}>{subForm.is_active ? '✅ نشطة ويمكن تسجيل الدخول' : '⛔ موقوفة ولا يمكن تسجيل الدخول'}</div>
+                </div>
+                <button
+                  onClick={() => setSubForm(f => ({ ...f, is_active: !f.is_active }))}
+                  style={{
+                    padding: '8px 18px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, border: 'none', transition: 'all 0.2s',
+                    background: subForm.is_active ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)',
+                    color: subForm.is_active ? C.success : C.danger,
+                  }}
+                >{subForm.is_active ? '✅ نشط' : '⛔ موقوف'}</button>
+              </div>
+
+              {/* Save button */}
+              <button
+                onClick={() => void saveSubscription()}
+                disabled={subSaving || (subForm.extend_mode === 'date' && !subForm.end_date)}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 800, cursor: subSaving ? 'wait' : 'pointer', fontFamily: FONT, border: 'none', transition: 'all 0.2s',
+                  background: subSaving ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg,#6366f1,#4f46e5)',
+                  color: '#fff', opacity: (subSaving || (subForm.extend_mode === 'date' && !subForm.end_date)) ? 0.6 : 1,
+                }}
+              >{subSaving ? '⏳ جاري الحفظ...' : '💾 حفظ التغييرات'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes sa-fade-in { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
