@@ -56,7 +56,8 @@ router.get("/subscription/status", authenticate, wrap(async (req, res) => {
     companyName: company.name,
     planType: company.plan_type,
     planLabel: PLAN_LABELS[company.plan_type] ?? company.plan_type,
-    edition: company.edition ?? "ultimate",    // "advanced" | "ultimate"
+    edition: company.edition ?? "ultimate",
+    features: company.features ?? null,
     endDate: company.end_date,
     daysRemaining: daysRemaining(company.end_date),
     isActive: company.is_active,
