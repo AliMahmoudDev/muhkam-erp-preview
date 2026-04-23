@@ -9,221 +9,194 @@ import {
   Bell,
   FileText,
   HardDrive,
-  Cpu,
   Percent,
   Banknote,
+  ChevronDown,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
-const UsersTab = lazy(() => import('./users-tab'));
+const UsersTab          = lazy(() => import('./users-tab'));
 const OpeningBalanceTab = lazy(() => import('./opening-balance-tab'));
-const FinancialLockTab = lazy(() => import('./financial-lock-tab'));
-const CurrencyTab = lazy(() => import('./currency-tab'));
-const CompanyTab = lazy(() => import('./company-tab'));
-const AlertsTab = lazy(() => import('./alerts-tab'));
-const InvoiceTab = lazy(() => import('./invoice-tab'));
-const SystemTab = lazy(() => import('./system-tab'));
-const VatTab = lazy(() => import('./vat-tab'));
-const SalaryAdvanceTab = lazy(() => import('./salary-advance-tab'));
+const FinancialLockTab  = lazy(() => import('./financial-lock-tab'));
+const CurrencyTab       = lazy(() => import('./currency-tab'));
+const CompanyTab        = lazy(() => import('./company-tab'));
+const AlertsTab         = lazy(() => import('./alerts-tab'));
+const InvoiceTab        = lazy(() => import('./invoice-tab'));
+const SystemTab         = lazy(() => import('./system-tab'));
+const VatTab            = lazy(() => import('./vat-tab'));
+const SalaryAdvanceTab  = lazy(() => import('./salary-advance-tab'));
 
-/* ─── Tab types ─── */
 type Tab =
-  | 'users'
-  | 'opening-balance'
-  | 'financial-lock'
-  | 'currency'
-  | 'company'
-  | 'alerts'
-  | 'invoice'
-  | 'vat'
-  | 'salary-advance'
-  | 'system';
+  | 'users' | 'opening-balance' | 'financial-lock' | 'currency'
+  | 'company' | 'alerts' | 'invoice' | 'vat' | 'salary-advance' | 'system';
 
-/* ─── Section config ─── */
-const TAB_SECTIONS: {
-  section: string;
-  tabs: { id: Tab; label: string; icon: React.FC<{ className?: string }> }[];
+/* ─── Cards config ─── */
+const CARDS: {
+  id: Tab;
+  label: string;
+  desc: string;
+  icon: React.FC<{ style?: React.CSSProperties }>;
+  color: string;
+  glow: string;
 }[] = [
-  {
-    section: 'الإدارة',
-    tabs: [
-      { id: 'users', label: 'المستخدمون', icon: Users },
-      { id: 'company', label: 'بيانات الشركة', icon: Building2 },
-    ],
-  },
-  {
-    section: 'المالية',
-    tabs: [
-      { id: 'opening-balance', label: 'أول المدة', icon: BookOpen },
-      { id: 'financial-lock', label: 'إغلاق الفترات', icon: Lock },
-      { id: 'salary-advance', label: 'السلف', icon: Banknote },
-    ],
-  },
-  {
-    section: 'التخصيص',
-    tabs: [
-      { id: 'currency', label: 'إعدادات المتجر', icon: Store },
-      { id: 'vat', label: 'ضريبة القيمة المضافة', icon: Percent },
-      { id: 'alerts', label: 'التنبيهات', icon: Bell },
-      { id: 'invoice', label: 'الفاتورة', icon: FileText },
-    ],
-  },
-  {
-    section: 'النظام',
-    tabs: [{ id: 'system', label: 'النسخ والبيانات', icon: HardDrive }],
-  },
+  { id: 'company',          label: 'بيانات الشركة',         desc: 'الاسم والشعار والمعلومات الأساسية', icon: Building2, color: '#f59e0b', glow: 'rgba(245,158,11,0.18)' },
+  { id: 'users',            label: 'المستخدمون',              desc: 'إدارة الحسابات والصلاحيات',         icon: Users,     color: '#6366f1', glow: 'rgba(99,102,241,0.18)'  },
+  { id: 'currency',         label: 'إعدادات المتجر',          desc: 'العملة والمظهر والتفضيلات',         icon: Store,     color: '#10b981', glow: 'rgba(16,185,129,0.18)'  },
+  { id: 'invoice',          label: 'الفاتورة',               desc: 'نموذج الطباعة والبيانات المطبوعة',  icon: FileText,  color: '#3b82f6', glow: 'rgba(59,130,246,0.18)'  },
+  { id: 'vat',              label: 'ضريبة القيمة المضافة',    desc: 'نسبة الضريبة وطريقة احتسابها',      icon: Percent,   color: '#ec4899', glow: 'rgba(236,72,153,0.18)'  },
+  { id: 'alerts',           label: 'التنبيهات',               desc: 'تنبيهات المخزون والمدفوعات',        icon: Bell,      color: '#f97316', glow: 'rgba(249,115,22,0.18)'  },
+  { id: 'opening-balance',  label: 'أرصدة أول المدة',        desc: 'الأرصدة الافتتاحية للحسابات',       icon: BookOpen,  color: '#8b5cf6', glow: 'rgba(139,92,246,0.18)'  },
+  { id: 'financial-lock',   label: 'إغلاق الفترات المالية',  desc: 'تأمين الفترات المحاسبية المنتهية',  icon: Lock,      color: '#ef4444', glow: 'rgba(239,68,68,0.18)'   },
+  { id: 'salary-advance',   label: 'السلف والاقتطاعات',      desc: 'سياسة السلف للموظفين',              icon: Banknote,  color: '#14b8a6', glow: 'rgba(20,184,166,0.18)'  },
+  { id: 'system',           label: 'النسخ الاحتياطي والبيانات', desc: 'تصدير واستيراد وحذف البيانات',   icon: HardDrive, color: '#64748b', glow: 'rgba(100,116,139,0.18)' },
 ];
 
 function TabSkeleton() {
   return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-8 w-48 bg-white/5 rounded-xl" />
-      <div className="h-4 w-64 bg-white/3 rounded-lg" />
-      <div className="grid grid-cols-2 gap-4 mt-6">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 bg-white/3 rounded-2xl" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─── System Info Card (sidebar bottom) ─── */
-function SystemInfoCard() {
-  return (
-    <div className="mx-3 mb-4 rounded-xl border border-white/6 bg-white/[0.02] overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
-        <Cpu className="w-3 h-3 text-white/20" />
-        <p className="text-white/20 text-[10px] font-bold uppercase tracking-wider">
-          معلومات النظام
-        </p>
-      </div>
-      <div className="px-3 py-2.5 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-white/25 text-[10px]">الإصدار</span>
-          <span className="text-white/50 text-[10px] font-mono font-bold">v2.1.0</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-white/25 text-[10px]">المنصة</span>
-          <span className="text-white/50 text-[10px] font-bold">MUHKAM ERP</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-white/25 text-[10px]">الدعم</span>
-          <span className="text-emerald-400/70 text-[10px] font-bold">نشط</span>
-        </div>
-      </div>
+    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {[1, 2, 3].map((i) => (
+        <div key={i} style={{ height: '60px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', animation: 'pulse 1.5s infinite' }} />
+      ))}
     </div>
   );
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('users');
+  const [activeTab, setActiveTab] = useState<Tab | null>(null);
 
-  const allTabs = TAB_SECTIONS.flatMap((s) => s.tabs);
-  const activeLabel = allTabs.find((t) => t.id === activeTab)?.label ?? '';
+  const active = CARDS.find((c) => c.id === activeTab);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden" dir="rtl">
-      {/* ─────────── Sidebar ─────────── */}
-      <aside
-        className="hidden lg:flex flex-col w-56 shrink-0 border-l border-white/8 overflow-y-auto"
-        style={{ background: 'var(--erp-bg-sidebar, #0B1120)' }}
-      >
-        <div className="px-4 pt-6 pb-2 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
-            <Settings className="w-3.5 h-3.5 text-amber-400" />
-          </div>
-          <p className="text-white/60 text-xs font-black uppercase tracking-widest">الإعدادات</p>
+    <div dir="rtl" style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--erp-bg-main, #0D1424)', padding: '28px 24px 60px' }}>
+
+      {/* ── Page header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
+        <div style={{ width: 38, height: 38, borderRadius: '11px', background: 'rgba(245,158,11,0.15)', border: '1.5px solid rgba(245,158,11,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Settings style={{ width: 18, height: 18, color: '#f59e0b' }} />
         </div>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#f1f5f9' }}>الإعدادات</h1>
+          <p style={{ margin: 0, fontSize: '12px', color: '#64748b', marginTop: '2px' }}>اختر القسم الذي تريد تعديله</p>
+        </div>
+      </div>
 
-        <nav className="flex-1 px-3 pb-3 space-y-5 mt-3 overflow-y-auto">
-          {TAB_SECTIONS.map((section) => (
-            <div key={section.section}>
-              <p className="text-white/25 text-[10px] font-black uppercase tracking-widest px-2 mb-1.5">
-                {section.section}
-              </p>
-              <div className="space-y-0.5">
-                {section.tabs.map((tab) => {
-                  const active = activeTab === tab.id;
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-right ${
-                        active
-                          ? 'bg-amber-500/15 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
-                          : 'text-white/40 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      <Icon
-                        className={`w-4 h-4 shrink-0 ${active ? 'text-amber-400' : 'text-white/30'}`}
-                      />
-                      <span className="truncate">{tab.label}</span>
-                      {active && (
-                        <div className="mr-auto w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        {/* ─── System info card ─── */}
-        <SystemInfoCard />
-      </aside>
-
-      {/* ─────────── Mobile Tab Bar ─────────── */}
-      <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/8 px-2 py-1 flex gap-1 overflow-x-auto"
-        style={{ background: 'var(--erp-bg-sidebar, #0B1120)' }}
-      >
-        {allTabs.map((tab) => {
-          const active = activeTab === tab.id;
-          const Icon = tab.icon;
+      {/* ── Cards grid ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
+        gap: '14px',
+        marginBottom: activeTab ? '28px' : '0',
+      }}>
+        {CARDS.map((card) => {
+          const isActive = activeTab === card.id;
+          const Icon = card.icon;
           return (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all shrink-0 ${
-                active ? 'text-amber-400' : 'text-white/30 hover:text-white/60'
-              }`}
+              key={card.id}
+              onClick={() => setActiveTab(isActive ? null : card.id)}
+              style={{
+                background: isActive ? card.glow : 'rgba(255,255,255,0.03)',
+                border: `2px solid ${isActive ? card.color : 'rgba(255,255,255,0.08)'}`,
+                borderRadius: '16px',
+                padding: '18px 16px',
+                cursor: 'pointer',
+                textAlign: 'right',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                transition: 'all 0.2s ease',
+                position: 'relative',
+                boxShadow: isActive ? `0 0 20px ${card.glow}` : 'none',
+                outline: 'none',
+                fontFamily: 'inherit',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = card.color + '55';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                }
+              }}
             >
-              <Icon className="w-4 h-4" />
-              <span className="text-[9px] font-bold">{tab.label}</span>
+              {/* Active indicator */}
+              {isActive && (
+                <div style={{ position: 'absolute', top: '10px', left: '10px', width: '8px', height: '8px', borderRadius: '50%', background: card.color, boxShadow: `0 0 8px ${card.color}` }} />
+              )}
+
+              {/* Icon */}
+              <div style={{ width: 40, height: 40, borderRadius: '11px', background: isActive ? card.color + '30' : 'rgba(255,255,255,0.06)', border: `1.5px solid ${isActive ? card.color + '60' : 'rgba(255,255,255,0.08)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon style={{ width: 18, height: 18, color: isActive ? card.color : '#94a3b8' }} />
+              </div>
+
+              {/* Text */}
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: isActive ? card.color : '#e2e8f0', marginBottom: '3px', lineHeight: 1.3 }}>{card.label}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.4 }}>{card.desc}</div>
+              </div>
+
+              {/* Arrow indicator */}
+              <ChevronDown style={{ position: 'absolute', bottom: '12px', left: '12px', width: 14, height: 14, color: isActive ? card.color : '#475569', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
             </button>
           );
         })}
       </div>
 
-      {/* ─────────── Main Content ─────────── */}
-      <main className="flex-1 overflow-y-auto pb-24 lg:pb-8">
-        {/* Mobile header */}
-        <div
-          className="lg:hidden sticky top-0 z-30 px-4 py-3 border-b border-white/8 flex items-center gap-2"
-          style={{ background: 'var(--erp-bg-main, #0D1424)' }}
-        >
-          <Settings className="w-4 h-4 text-amber-400" />
-          <p className="text-white font-bold text-sm">{activeLabel}</p>
-        </div>
+      {/* ── Content panel ── */}
+      {activeTab && active && (
+        <div style={{
+          background: 'rgba(255,255,255,0.025)',
+          border: `1.5px solid ${active.color}33`,
+          borderRadius: '20px',
+          overflow: 'hidden',
+          boxShadow: `0 0 30px ${active.glow}`,
+          animation: 'settings-fade-in 0.2s ease',
+        }}>
+          {/* Panel header */}
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: active.glow }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: 32, height: 32, borderRadius: '9px', background: active.color + '25', border: `1.5px solid ${active.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <active.icon style={{ width: 15, height: 15, color: active.color }} />
+              </div>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#f1f5f9' }}>{active.label}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>{active.desc}</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab(null)}
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#64748b', width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontFamily: 'inherit' }}
+            >✕</button>
+          </div>
 
-        <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-          <Suspense fallback={<TabSkeleton />}>
-            {activeTab === 'users' && <UsersTab />}
-            {activeTab === 'company' && <CompanyTab />}
-            {activeTab === 'opening-balance' && <OpeningBalanceTab />}
-            {activeTab === 'financial-lock' && <FinancialLockTab />}
-            {activeTab === 'currency' && <CurrencyTab />}
-            {activeTab === 'vat' && <VatTab />}
-            {activeTab === 'alerts' && <AlertsTab />}
-            {activeTab === 'invoice' && <InvoiceTab />}
-            {activeTab === 'salary-advance' && <SalaryAdvanceTab />}
-            {activeTab === 'system' && <SystemTab />}
-          </Suspense>
+          {/* Tab content */}
+          <div style={{ padding: '24px' }}>
+            <Suspense fallback={<TabSkeleton />}>
+              {activeTab === 'users'           && <UsersTab />}
+              {activeTab === 'company'         && <CompanyTab />}
+              {activeTab === 'opening-balance' && <OpeningBalanceTab />}
+              {activeTab === 'financial-lock'  && <FinancialLockTab />}
+              {activeTab === 'currency'        && <CurrencyTab />}
+              {activeTab === 'vat'             && <VatTab />}
+              {activeTab === 'alerts'          && <AlertsTab />}
+              {activeTab === 'invoice'         && <InvoiceTab />}
+              {activeTab === 'salary-advance'  && <SalaryAdvanceTab />}
+              {activeTab === 'system'          && <SystemTab />}
+            </Suspense>
+          </div>
         </div>
-      </main>
+      )}
+
+      <style>{`
+        @keyframes settings-fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
