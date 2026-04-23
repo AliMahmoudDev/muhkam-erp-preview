@@ -188,24 +188,6 @@ export default function Login() {
         if (authedUser.company_id) {
           localStorage.setItem('erp_company_id', String(authedUser.company_id));
         }
-        /* ── Edition redirect: if company is on ADVANCED, send to muhkam-advanced ── */
-        if (authedUser.role !== 'super_admin' && authedUser.company_id) {
-          try {
-            const subRes = await fetch(api('/api/subscription/status'), {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (subRes.ok) {
-              const sub = (await subRes.json()) as { edition?: string };
-              if (sub.edition === 'advanced') {
-                login(authedUser, token);
-                window.location.href = '/advanced/';
-                return;
-              }
-            }
-          } catch {
-            /* non-fatal — fall through to normal redirect */
-          }
-        }
         login(authedUser, token);
         setLocation('/');
       } catch {
@@ -248,24 +230,6 @@ export default function Login() {
           setError(data.error ?? 'رمز التحقق غير صحيح');
           setTotpCode('');
           return;
-        }
-        /* Edition redirect for 2FA users too */
-        if (data.user.role !== 'super_admin' && data.user.company_id) {
-          try {
-            const subRes = await fetch(api('/api/subscription/status'), {
-              headers: { Authorization: `Bearer ${data.token}` },
-            });
-            if (subRes.ok) {
-              const sub = (await subRes.json()) as { edition?: string };
-              if (sub.edition === 'advanced') {
-                login(data.user as Parameters<typeof login>[0], data.token);
-                window.location.href = '/advanced/';
-                return;
-              }
-            }
-          } catch {
-            /* non-fatal */
-          }
         }
         login(data.user as Parameters<typeof login>[0], data.token);
         setLocation('/');
