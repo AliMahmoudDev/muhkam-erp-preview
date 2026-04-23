@@ -139,13 +139,26 @@ export const COLOR_MAP: Record<string, { header: string; badge: string; toggleOn
 };
 
 export const BACKUP_MODULES_LIST = [
-  { key: "sales",     label: "المبيعات",         sub: "الفواتير، العملاء، المرتجعات",      url: "/api/sales" },
-  { key: "purchases", label: "المشتريات",         sub: "فواتير المشتريات، المرتجعات",        url: "/api/purchases" },
-  { key: "products",  label: "المخزن",            sub: "الأصناف، الكميات، الحركات",         url: "/api/products" },
-  { key: "treasury",  label: "الخزينة",           sub: "الإيرادات، المصروفات، السندات",     url: "/api/financial-transactions" },
-  { key: "customers", label: "العملاء",            sub: "الأرصدة والبيانات",                 url: "/api/customers" },
-  { key: "settings",  label: "الإعدادات",         sub: "العملة والتفضيلات",                 url: null },
-  { key: "reports",   label: "التقارير المحفوظة", sub: "الإحصائيات والبيانات التاريخية",    url: null },
+  { key: "sales",            label: "المبيعات",         sub: "الفواتير، العملاء، المرتجعات",      url: "/api/sales"                   },
+  { key: "purchases",        label: "المشتريات",         sub: "فواتير المشتريات، المرتجعات",        url: "/api/purchases"               },
+  { key: "products",         label: "المخزن",            sub: "الأصناف، الكميات، الحركات",         url: "/api/products"                },
+  { key: "customers",        label: "العملاء",            sub: "الأرصدة والبيانات",                 url: "/api/customers"               },
+  { key: "treasury",         label: "الخزينة",           sub: "الإيرادات، المصروفات، السندات",     url: "/api/financial-transactions"  },
+  { key: "expenses",         label: "المصروفات",          sub: "جميع سجلات المصروفات",             url: "/api/expenses"                },
+  { key: "income",           label: "الإيرادات",          sub: "جميع سجلات الإيرادات",             url: "/api/income"                  },
+  { key: "employees",        label: "الموظفون",           sub: "بيانات الموظفين والرواتب",          url: "/api/employees"               },
+  { key: "salary_advances",  label: "سلف الموظفين",      sub: "طلبات السلف والأقساط",              url: "/api/salary-advances"         },
+  { key: "settings",         label: "الإعدادات",         sub: "العملة والتفضيلات",                 url: null                          },
+] as const;
+
+export const RESTORE_MODULE_GROUPS = [
+  { key: "products",        label: "الأصناف والمخزون",    icon: "📦", note: "الأصناف وحركات المخزون"        },
+  { key: "customers",       label: "العملاء",              icon: "👥", note: "بيانات العملاء وأرصدتهم"      },
+  { key: "sales",           label: "المبيعات",             icon: "🛍️", note: "الفواتير والمرتجعات"           },
+  { key: "purchases",       label: "المشتريات",            icon: "🛒", note: "فواتير الشراء والمرتجعات"     },
+  { key: "finance",         label: "الخزينة والحسابات",    icon: "💰", note: "المصروفات والسندات والدفتر"   },
+  { key: "infrastructure",  label: "الخزن والمستودعات",   icon: "🏦", note: "تعريفات الخزن والمخازن"       },
+  { key: "alerts",          label: "التنبيهات",            icon: "🔔", note: "إعدادات التنبيهات"            },
 ] as const;
 
 export const DATA_GROUPS = [
