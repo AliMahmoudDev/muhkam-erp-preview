@@ -4,8 +4,7 @@ import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
   MinusCircle, Trash2, Save, ChevronLeft, Send, ClipboardList,
   Package, AlertCircle, Clock, CheckCheck, Truck, Ban,
-  Star, Zap, Cpu, Wifi, Camera, Volume2, Mic, Battery,
-  Fingerprint, Shield, Power, Globe, Bluetooth,
+  Star, Settings, MessageSquare, ChevronRight, RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
@@ -60,7 +59,8 @@ interface Stats {
 interface ChecklistItem {
   id: string;
   label: string;
-  status: "pass" | "fail" | "na" | null;
+  status: "pass" | "fail" | "partial" | "untestable" | null;
+  notes?: string;
 }
 
 /* ── Constants ──────────────────────────────────────────────── */
@@ -80,13 +80,6 @@ const DEFAULT_CHECKLIST: ChecklistItem[] = [
   { id: "biometric",    label: "البصمة / Face ID",    status: null },
   { id: "body",         label: "الجسم الخارجي",       status: null },
 ];
-
-const CHECKLIST_ICONS: Record<string, React.FC<{ className?: string }>> = {
-  screen: Smartphone, touch: Zap, battery: Battery, front_camera: Camera,
-  rear_camera: Camera, speaker: Volume2, microphone: Mic, wifi: Wifi,
-  bluetooth: Bluetooth, network: Globe, port: Power, buttons: Cpu,
-  biometric: Fingerprint, body: Shield,
-};
 
 /* ── Device Catalog: Brand → Category → Models ───────────────── */
 const DEVICE_CATALOG: Record<string, Record<string, string[]>> = {
@@ -275,6 +268,14 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
   cancelled:   { label: "ملغي",        color: "text-red-400",     bg: "bg-red-500/15 border-red-500/30",       icon: Ban },
 };
 
+/* ── Score Helpers ──────────────────────────────────────────── */
+function computeScore(items: ChecklistItem[]): number {
+  const relevant = items.filter((c) => c.status === "pass" || c.status === "fail" || c.status === "partial");
+  if (!relevant.length) return 0;
+  const points = relevant.reduce((acc, c) => acc + (c.status === "pass" ? 1 : c.status === "partial" ? 0.5 : 0), 0);
+  return Math.round((points / relevant.length) * 100);
+}
+
 /* ── Score Component ────────────────────────────────────────── */
 function ScoreRing({ score }: { score: number }) {
   const color = score >= 80 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444";
@@ -316,6 +317,7 @@ export default function Repairs() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<RepairJob | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   /* ── helper ── */
   async function apiFetch<T>(url: string): Promise<T> {
@@ -383,22 +385,25 @@ export default function Repairs() {
     try {
       const v = detail?.checklist ? JSON.parse(detail.checklist) : null;
       if (!Array.isArray(v)) return templateChecklist;
-      // Merge saved statuses with current template (in case admin added/removed items)
-      const savedMap: Record<string, ChecklistItem["status"]> = {};
-      v.forEach((c: { id?: string | number; item_id?: string | number; status: ChecklistItem["status"] }) => {
+      // Merge saved statuses + notes with current template
+      const savedMap: Record<string, { status: ChecklistItem["status"]; notes?: string }> = {};
+      v.forEach((c: { id?: string | number; item_id?: string | number; status: string; notes?: string }) => {
         const k = String(c.id ?? c.item_id ?? "");
-        if (k) savedMap[k] = c.status;
+        if (!k) return;
+        // Migrate old "na" → "untestable"
+        const status = c.status === "na" ? "untestable" : c.status as ChecklistItem["status"];
+        savedMap[k] = { status, notes: c.notes };
       });
-      return templateChecklist.map((t) => ({ ...t, status: savedMap[t.id] ?? null }));
+      return templateChecklist.map((t) => ({
+        ...t,
+        status: savedMap[t.id]?.status ?? null,
+        notes: savedMap[t.id]?.notes,
+      }));
     } catch { return templateChecklist; }
   }, [detail?.checklist, templateChecklist]);
   const checklist: ChecklistItem[] = parsedChecklist;
 
-  const score = useMemo(() => {
-    const tested = checklist.filter((c) => c.status === "pass" || c.status === "fail");
-    if (!tested.length) return 0;
-    return Math.round((checklist.filter((c) => c.status === "pass").length / tested.length) * 100);
-  }, [checklist]);
+  const score = useMemo(() => computeScore(checklist), [checklist]);
 
   /* ── Mutations ── */
   const patchJob = useMutation({
@@ -441,17 +446,12 @@ export default function Repairs() {
   });
 
   /* ── Checklist update ── */
-  const toggleCheck = (itemId: string, newStatus: "pass" | "fail" | "na") => {
+  const toggleCheck = (itemId: string, newStatus: ChecklistItem["status"], notes = "") => {
     if (!detail) return;
     const updated = checklist.map((c) =>
-      c.id === itemId ? { ...c, status: c.status === newStatus ? null : newStatus } : c
+      c.id === itemId ? { ...c, status: newStatus, notes: notes || c.notes } : c
     );
-    const newScore = (() => {
-      const tested = updated.filter((c) => c.status === "pass" || c.status === "fail");
-      if (!tested.length) return 0;
-      return Math.round((updated.filter((c) => c.status === "pass").length / tested.length) * 100);
-    })();
-    patchJob.mutate({ id: detail.id, data: { checklist: updated, device_score: newScore } });
+    patchJob.mutate({ id: detail.id, data: { checklist: updated, device_score: computeScore(updated) } });
   };
 
   /* ── WhatsApp ── */
@@ -482,12 +482,22 @@ export default function Repairs() {
             <Wrench className="w-5 h-5 text-violet-400" />
             بطاقات الصيانة
           </h1>
-          <button
-            onClick={() => { setShowNewForm(true); setSelectedJob(null); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 text-xs font-bold transition-all">
-            <Plus className="w-3.5 h-3.5" /> بطاقة جديدة
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setShowSettings(true)}
+              title="إعدادات بنود الفحص"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white/70 text-xs transition-all">
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => { setShowNewForm(true); setSelectedJob(null); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 text-xs font-bold transition-all">
+              <Plus className="w-3.5 h-3.5" /> بطاقة جديدة
+            </button>
+          </div>
         </div>
+        {/* Settings modal */}
+        {showSettings && <RepairSettings onClose={() => setShowSettings(false)} />}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
@@ -588,7 +598,7 @@ export default function Repairs() {
                 onDelete={() => deleteJob.mutate(detail!.id)}
                 onAddPart={(data) => addPart.mutate({ jobId: detail!.id, data })}
                 onDeletePart={(partId) => deletePart.mutate({ jobId: detail!.id, partId })}
-                onToggleCheck={toggleCheck}
+                onSaveCheckItem={toggleCheck}
                 onWhatsApp={sendWhatsApp}
                 whatsAppReady={whatsAppReady}
                 whatsAppProgress={whatsAppProgress}
@@ -614,11 +624,319 @@ export default function Repairs() {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   CHECKLIST WIZARD — one item at a time
+══════════════════════════════════════════════════════════════ */
+function ChecklistWizard({
+  checklist,
+  onSaveItem,
+}: {
+  checklist: ChecklistItem[];
+  onSaveItem: (id: string, status: ChecklistItem["status"], notes: string) => void;
+}) {
+  const total = checklist.length;
+  const doneCount = checklist.filter((c) => c.status).length;
+
+  const [wizardIdx, setWizardIdx] = useState<number>(() => {
+    const first = checklist.findIndex((c) => !c.status);
+    return first === -1 ? total : first;
+  });
+  const [awaitingNotes, setAwaitingNotes] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<ChecklistItem["status"]>(null);
+  const [pendingNotes, setPendingNotes] = useState("");
+
+  const allDone = wizardIdx >= total;
+  const currentItem = allDone ? null : checklist[wizardIdx];
+
+  const advance = (fromIdx: number) => {
+    const next = checklist.findIndex((c, i) => i > fromIdx && !c.status);
+    setWizardIdx(next === -1 ? total : next);
+  };
+
+  const handleStatus = (status: ChecklistItem["status"]) => {
+    if (!currentItem) return;
+    if (status === "partial" || status === "untestable") {
+      setPendingStatus(status);
+      setAwaitingNotes(true);
+      setPendingNotes("");
+    } else {
+      onSaveItem(currentItem.id, status, "");
+      advance(wizardIdx);
+    }
+  };
+
+  const handleSaveWithNotes = () => {
+    if (!currentItem || !pendingStatus) return;
+    onSaveItem(currentItem.id, pendingStatus, pendingNotes);
+    setAwaitingNotes(false);
+    setPendingStatus(null);
+    setPendingNotes("");
+    advance(wizardIdx);
+  };
+
+  const statusBadge = (s: ChecklistItem["status"]) => {
+    switch (s) {
+      case "pass":        return { label: "يعمل",             cls: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" };
+      case "fail":        return { label: "لا يعمل",          cls: "text-red-400 bg-red-500/10 border-red-500/20" };
+      case "partial":     return { label: "يعمل جزئياً",       cls: "text-amber-400 bg-amber-500/10 border-amber-500/20" };
+      case "untestable":  return { label: "لا يمكن تجربته",   cls: "text-white/50 bg-white/5 border-white/10" };
+      default:            return { label: "—",                cls: "text-white/20" };
+    }
+  };
+
+  return (
+    <div className="glass-panel rounded-2xl p-3 border border-white/5">
+      {/* Header + progress */}
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] text-white/40 font-bold flex items-center gap-1">
+          <ClipboardList className="w-3 h-3" /> فحص الجهاز
+        </p>
+        <span className="text-[10px] text-white/30">{doneCount} / {total}</span>
+      </div>
+      <div className="w-full bg-white/5 rounded-full h-1 mb-4">
+        <div className="h-1 rounded-full bg-violet-500 transition-all duration-500"
+          style={{ width: total ? `${(doneCount / total) * 100}%` : "0%" }} />
+      </div>
+
+      {allDone ? (
+        /* ── Completion ── */
+        <div className="text-center py-3 space-y-2">
+          <div className="text-3xl">✅</div>
+          <p className="text-sm font-bold text-emerald-400">اكتمل الفحص</p>
+          <p className="text-[11px] text-white/40">جميع بنود التشخيص مسجلة</p>
+          <button
+            onClick={() => { setWizardIdx(0); setAwaitingNotes(false); }}
+            className="flex items-center gap-1 mx-auto text-[11px] text-white/40 hover:text-white/60 border border-white/10 rounded-lg px-3 py-1.5 transition-all">
+            <RotateCcw className="w-3 h-3" /> إعادة المراجعة
+          </button>
+        </div>
+      ) : currentItem ? (
+        /* ── Active wizard ── */
+        <div className="space-y-3">
+          {/* Current item card */}
+          <div className="bg-white/3 border border-white/8 rounded-xl p-4 text-center">
+            <p className="text-white font-bold text-base">{currentItem.label}</p>
+            <p className="text-[10px] text-white/30 mt-1">البند {wizardIdx + 1} من {total}</p>
+          </div>
+
+          {awaitingNotes ? (
+            /* Notes input */
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+                <p className="text-xs text-amber-400/80">
+                  {pendingStatus === "partial" ? "يعمل جزئياً — أضف ملاحظة (اختياري):" : "لا يمكن تجربته — أضف سبباً (اختياري):"}
+                </p>
+              </div>
+              <textarea
+                value={pendingNotes}
+                onChange={(e) => setPendingNotes(e.target.value)}
+                rows={2}
+                placeholder="ملاحظة اختيارية..."
+                className="erp-input w-full text-xs resize-none"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveWithNotes}
+                  className="flex-1 py-2 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs font-bold hover:bg-violet-500/30 transition-all flex items-center justify-center gap-1">
+                  حفظ والتالي <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setAwaitingNotes(false)}
+                  className="px-3 py-2 rounded-xl border border-white/10 text-white/40 text-xs hover:text-white/60 transition-all">
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* 4 action buttons */
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => handleStatus("pass")}
+                className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all">
+                <CheckCircle2 className="w-6 h-6" />
+                <span className="text-xs font-bold">يعمل</span>
+              </button>
+              <button onClick={() => handleStatus("fail")}
+                className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 hover:bg-red-500/20 active:scale-95 transition-all">
+                <XCircle className="w-6 h-6" />
+                <span className="text-xs font-bold">لا يعمل</span>
+              </button>
+              <button onClick={() => handleStatus("partial")}
+                className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 hover:bg-amber-500/20 active:scale-95 transition-all">
+                <AlertCircle className="w-6 h-6" />
+                <span className="text-xs font-bold">لا يعمل بشكل جيد</span>
+              </button>
+              <button onClick={() => handleStatus("untestable")}
+                className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:bg-white/8 hover:text-white/60 active:scale-95 transition-all">
+                <MinusCircle className="w-6 h-6" />
+                <span className="text-xs font-bold">لا يمكن تجربته</span>
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {/* Summary of answered items */}
+      {doneCount > 0 && (
+        <div className="mt-3 space-y-0.5 border-t border-white/5 pt-3">
+          <p className="text-[10px] text-white/25 mb-1.5">النتائج المسجلة — اضغط لتعديل</p>
+          {checklist.filter((c) => c.status).map((item) => {
+            const { label, cls } = statusBadge(item.status);
+            const realIdx = checklist.indexOf(item);
+            return (
+              <button key={item.id}
+                onClick={() => { setWizardIdx(realIdx); setAwaitingNotes(false); }}
+                className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-white/3 transition-all text-right">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[10px] text-white/25 w-4 shrink-0 text-center">{realIdx + 1}</span>
+                  <span className="text-xs text-white/60 truncate">{item.label}</span>
+                  {item.notes && <span className="text-[10px] text-white/30 truncate max-w-[80px]">({item.notes})</span>}
+                </div>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 mr-2 ${cls}`}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   REPAIR SETTINGS — manage checklist items
+══════════════════════════════════════════════════════════════ */
+function RepairSettings({ onClose }: { onClose: () => void }) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [newLabel, setNewLabel] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+
+  const { data: items = [], isLoading } = useQuery<{ id: number; label_ar: string; sort_order: number }[]>({
+    queryKey: ["/api/repair-checklist-items"],
+    queryFn: () => authFetch(api("/api/repair-checklist-items")).then((r) => r.json()),
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/repair-checklist-items"] });
+
+  const addItem = async () => {
+    if (!newLabel.trim()) return;
+    const nextOrder = items.length ? Math.max(...items.map((i) => i.sort_order)) + 1 : 1;
+    const r = await authFetch(api("/api/repair-checklist-items"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label_ar: newLabel.trim(), sort_order: nextOrder }),
+    });
+    if (!r.ok) { toast({ title: "خطأ في الإضافة", variant: "destructive" }); return; }
+    setNewLabel("");
+    invalidate();
+    toast({ title: "✅ تم إضافة البند" });
+  };
+
+  const saveEdit = async (id: number) => {
+    if (!editLabel.trim()) return;
+    const r = await authFetch(api(`/api/repair-checklist-items/${id}`), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label_ar: editLabel.trim() }),
+    });
+    if (!r.ok) { toast({ title: "خطأ في التعديل", variant: "destructive" }); return; }
+    setEditingId(null);
+    invalidate();
+  };
+
+  const deleteItem = async (id: number) => {
+    const r = await authFetch(api(`/api/repair-checklist-items/${id}`), { method: "DELETE" });
+    if (!r.ok) { toast({ title: "خطأ في الحذف", variant: "destructive" }); return; }
+    invalidate();
+    toast({ title: "تم الحذف" });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 bg-black/70 backdrop-blur-sm" dir="rtl">
+      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-md mx-4 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-violet-400" />
+            <span className="font-bold text-white text-sm">إعدادات بنود الفحص</span>
+          </div>
+          <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
+            <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+          {/* Add new item */}
+          <div className="flex gap-2">
+            <input
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addItem()}
+              placeholder="اسم البند الجديد (بالعربية)..."
+              className="erp-input flex-1 text-xs"
+            />
+            <button
+              onClick={addItem}
+              disabled={!newLabel.trim()}
+              className="px-3 py-1.5 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs font-bold hover:bg-violet-500/30 transition-all disabled:opacity-40">
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Items list */}
+          {isLoading && <p className="text-center text-white/30 text-sm py-4">جاري التحميل...</p>}
+          <div className="space-y-1">
+            {items.map((item, i) => (
+              <div key={item.id} className="flex items-center gap-2 py-1.5 px-2 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+                <span className="text-[10px] text-white/25 w-4 text-center shrink-0">{i + 1}</span>
+                {editingId === item.id ? (
+                  <>
+                    <input
+                      autoFocus
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") saveEdit(item.id); if (e.key === "Escape") setEditingId(null); }}
+                      className="erp-input flex-1 text-xs py-0.5"
+                    />
+                    <button onClick={() => saveEdit(item.id)} className="text-emerald-400 hover:text-emerald-300 p-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="text-white/30 hover:text-white/60 p-1">
+                      <XCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex-1 text-xs text-white/70">{item.label_ar}</span>
+                    <button onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); }}
+                      className="text-white/30 hover:text-violet-400 p-1 transition-colors">
+                      <MessageSquare className="w-3 h-3" />
+                    </button>
+                    <button onClick={() => deleteItem(item.id)}
+                      className="text-white/20 hover:text-red-400 p-1 transition-colors">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+          {!isLoading && items.length === 0 && (
+            <p className="text-center text-white/30 text-xs py-4">لا توجد بنود — أضف البند الأول</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    JOB DETAIL PANEL
 ══════════════════════════════════════════════════════════════ */
 function JobDetail({
   job, checklist, score, products, users,
-  onClose, onPatch, onDelete, onAddPart, onDeletePart, onToggleCheck,
+  onClose, onPatch, onDelete, onAddPart, onDeletePart, onSaveCheckItem,
   onWhatsApp, whatsAppReady, whatsAppProgress,
 }: {
   job: RepairJob;
@@ -631,7 +949,7 @@ function JobDetail({
   onDelete: () => void;
   onAddPart: (data: Record<string, unknown>) => void;
   onDeletePart: (partId: number) => void;
-  onToggleCheck: (id: string, status: "pass" | "fail" | "na") => void;
+  onSaveCheckItem: (id: string, status: ChecklistItem["status"], notes: string) => void;
   onWhatsApp: (job: RepairJob, msg: string) => void;
   whatsAppReady: (job: RepairJob) => string;
   whatsAppProgress: (job: RepairJob) => string;
@@ -761,14 +1079,11 @@ function JobDetail({
           {/* Score */}
           <div className="glass-panel rounded-2xl p-3 border border-white/5 flex flex-col items-center justify-center gap-2">
             <ScoreRing score={score} />
-            <div className="text-center">
-              <div className="text-[10px] text-white/30">
-                {checklist.filter((c) => c.status === "pass").length} تعمل /
-                {" "}{checklist.filter((c) => c.status === "fail").length} لا تعمل
-              </div>
-              <div className="text-[10px] text-white/20 mt-0.5">
-                {checklist.filter((c) => !c.status).length} لم يُفحص
-              </div>
+            <div className="text-center space-y-0.5">
+              <div className="text-[10px] text-emerald-400/70">{checklist.filter((c) => c.status === "pass").length} تعمل</div>
+              <div className="text-[10px] text-red-400/70">{checklist.filter((c) => c.status === "fail").length} لا تعمل</div>
+              <div className="text-[10px] text-amber-400/70">{checklist.filter((c) => c.status === "partial").length} جزئي</div>
+              <div className="text-[10px] text-white/25">{checklist.filter((c) => !c.status).length} لم يُفحص</div>
             </div>
           </div>
         </div>
@@ -810,47 +1125,8 @@ function JobDetail({
           </div>
         </div>
 
-        {/* Diagnostic Checklist */}
-        <div className="glass-panel rounded-2xl p-3 border border-white/5">
-          <p className="text-[10px] text-white/40 font-bold mb-3 flex items-center gap-1">
-            <ClipboardList className="w-3 h-3" /> تشخيص الجهاز — اضغط لتسجيل الحالة
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            {checklist.map((item) => {
-              const Icon = CHECKLIST_ICONS[item.id] ?? Cpu;
-              return (
-                <div key={item.id} className={`flex items-center justify-between rounded-xl p-2 border transition-all ${
-                  item.status === "pass" ? "bg-emerald-500/10 border-emerald-500/25" :
-                  item.status === "fail" ? "bg-red-500/10 border-red-500/25" :
-                  item.status === "na"   ? "bg-white/5 border-white/10 opacity-50" :
-                  "border-white/5 bg-white/2"
-                }`}>
-                  <div className="flex items-center gap-2">
-                    <Icon className={`w-3.5 h-3.5 ${item.status === "pass" ? "text-emerald-400" : item.status === "fail" ? "text-red-400" : "text-white/30"}`} />
-                    <span className="text-xs text-white/70">{item.label}</span>
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => onToggleCheck(item.id, "pass")}
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${item.status === "pass" ? "bg-emerald-500 text-white" : "bg-white/5 text-white/30 hover:bg-emerald-500/30 hover:text-emerald-400"}`}
-                      title="يعمل">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => onToggleCheck(item.id, "fail")}
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${item.status === "fail" ? "bg-red-500 text-white" : "bg-white/5 text-white/30 hover:bg-red-500/30 hover:text-red-400"}`}
-                      title="لا يعمل">
-                      <XCircle className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => onToggleCheck(item.id, "na")}
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${item.status === "na" ? "bg-white/20 text-white" : "bg-white/5 text-white/30 hover:bg-white/10"}`}
-                      title="غير قابل للتطبيق">
-                      <MinusCircle className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        {/* Diagnostic Checklist — Wizard */}
+        <ChecklistWizard checklist={checklist} onSaveItem={onSaveCheckItem} />
 
         {/* Parts Section */}
         <div className="glass-panel rounded-2xl p-3 border border-white/5">
@@ -934,7 +1210,10 @@ function JobDetail({
 درجة الجهاز: ${score}%
 
 نتائج الفحص:
-${checklist.filter((c) => c.status).map((c) => `  ${c.status === "pass" ? "✓" : c.status === "fail" ? "✗" : "—"} ${c.label}`).join("\n") || "  لم يُنجز الفحص بعد"}
+${checklist.filter((c) => c.status).map((c) => {
+  const sym = c.status === "pass" ? "✓" : c.status === "fail" ? "✗" : c.status === "partial" ? "~" : "○";
+  return `  ${sym} ${c.label}${c.notes ? ` (${c.notes})` : ""}`;
+}).join("\n") || "  لم يُنجز الفحص بعد"}
 
 المشكلة: ${job.problem_description ?? "—"}
 الملاحظات: ${editNotes || "—"}
