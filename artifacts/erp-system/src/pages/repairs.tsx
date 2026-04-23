@@ -163,8 +163,8 @@ export default function Repairs() {
   });
 
   const { data: users = [] } = useQuery<{ id: number; name: string }[]>({
-    queryKey: ["/api/users"],
-    queryFn: () => authFetch(api("/api/users")).then((r) => r.json()),
+    queryKey: ["/api/repair-jobs/technicians"],
+    queryFn: () => authFetch(api("/api/repair-jobs/technicians")).then((r) => r.json()),
   });
 
   const { data: customers = [] } = useQuery<{ id: number; name: string; phone?: string }[]>({

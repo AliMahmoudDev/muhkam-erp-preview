@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, like, or, sql } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { db, repairJobsTable, repairJobPartsTable, erpUsersTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 
@@ -8,9 +8,6 @@ const router: IRouter = Router();
 /* ── helpers ───────────────────────────────────────────────── */
 function cid(req: Express.Request) {
   return (req as unknown as { user: { company_id: number } }).user.company_id;
-}
-function uid(req: Express.Request) {
-  return (req as unknown as { user: { id: number; name: string } }).user;
 }
 
 async function nextJobNo(companyId: number): Promise<string> {
