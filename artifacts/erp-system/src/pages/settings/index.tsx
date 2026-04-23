@@ -9,150 +9,221 @@ import {
   Bell,
   FileText,
   HardDrive,
+  Cpu,
   Percent,
   Banknote,
 } from 'lucide-react';
 
-const UsersTab          = lazy(() => import('./users-tab'));
+/* ─── Lazy-load each tab ─── */
+const UsersTab = lazy(() => import('./users-tab'));
 const OpeningBalanceTab = lazy(() => import('./opening-balance-tab'));
-const FinancialLockTab  = lazy(() => import('./financial-lock-tab'));
-const CurrencyTab       = lazy(() => import('./currency-tab'));
-const CompanyTab        = lazy(() => import('./company-tab'));
-const AlertsTab         = lazy(() => import('./alerts-tab'));
-const InvoiceTab        = lazy(() => import('./invoice-tab'));
-const SystemTab         = lazy(() => import('./system-tab'));
-const VatTab            = lazy(() => import('./vat-tab'));
-const SalaryAdvanceTab  = lazy(() => import('./salary-advance-tab'));
+const FinancialLockTab = lazy(() => import('./financial-lock-tab'));
+const CurrencyTab = lazy(() => import('./currency-tab'));
+const CompanyTab = lazy(() => import('./company-tab'));
+const AlertsTab = lazy(() => import('./alerts-tab'));
+const InvoiceTab = lazy(() => import('./invoice-tab'));
+const SystemTab = lazy(() => import('./system-tab'));
+const VatTab = lazy(() => import('./vat-tab'));
+const SalaryAdvanceTab = lazy(() => import('./salary-advance-tab'));
 
+/* ─── Tab types ─── */
 type Tab =
-  | 'users' | 'opening-balance' | 'financial-lock' | 'currency'
-  | 'company' | 'alerts' | 'invoice' | 'vat' | 'salary-advance' | 'system';
+  | 'users'
+  | 'opening-balance'
+  | 'financial-lock'
+  | 'currency'
+  | 'company'
+  | 'alerts'
+  | 'invoice'
+  | 'vat'
+  | 'salary-advance'
+  | 'system';
 
-const TABS: {
-  id: Tab;
-  label: string;
-  icon: React.FC<{ size?: number; color?: string }>;
-  color: string;
+/* ─── Section config ─── */
+const TAB_SECTIONS: {
+  section: string;
+  tabs: { id: Tab; label: string; icon: React.FC<{ className?: string }> }[];
 }[] = [
-  { id: 'company',         label: 'بيانات الشركة',          icon: Building2, color: '#f59e0b' },
-  { id: 'users',           label: 'المستخدمون',               icon: Users,     color: '#6366f1' },
-  { id: 'currency',        label: 'إعدادات المتجر',           icon: Store,     color: '#10b981' },
-  { id: 'invoice',         label: 'الفاتورة',                icon: FileText,  color: '#3b82f6' },
-  { id: 'vat',             label: 'ضريبة القيمة المضافة',     icon: Percent,   color: '#ec4899' },
-  { id: 'alerts',          label: 'التنبيهات',                icon: Bell,      color: '#f97316' },
-  { id: 'opening-balance', label: 'أرصدة أول المدة',         icon: BookOpen,  color: '#8b5cf6' },
-  { id: 'financial-lock',  label: 'إغلاق الفترات المالية',   icon: Lock,      color: '#ef4444' },
-  { id: 'salary-advance',  label: 'السلف والاقتطاعات',       icon: Banknote,  color: '#14b8a6' },
-  { id: 'system',          label: 'النسخ الاحتياطي',         icon: HardDrive, color: '#64748b' },
+  {
+    section: 'الإدارة',
+    tabs: [
+      { id: 'users', label: 'المستخدمون', icon: Users },
+      { id: 'company', label: 'بيانات الشركة', icon: Building2 },
+    ],
+  },
+  {
+    section: 'المالية',
+    tabs: [
+      { id: 'opening-balance', label: 'أول المدة', icon: BookOpen },
+      { id: 'financial-lock', label: 'إغلاق الفترات', icon: Lock },
+      { id: 'salary-advance', label: 'السلف', icon: Banknote },
+    ],
+  },
+  {
+    section: 'التخصيص',
+    tabs: [
+      { id: 'currency', label: 'إعدادات المتجر', icon: Store },
+      { id: 'vat', label: 'ضريبة القيمة المضافة', icon: Percent },
+      { id: 'alerts', label: 'التنبيهات', icon: Bell },
+      { id: 'invoice', label: 'الفاتورة', icon: FileText },
+    ],
+  },
+  {
+    section: 'النظام',
+    tabs: [{ id: 'system', label: 'النسخ والبيانات', icon: HardDrive }],
+  },
 ];
 
 function TabSkeleton() {
   return (
-    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {[1, 2, 3].map((i) => (
-        <div key={i} style={{ height: '60px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px' }} />
-      ))}
+    <div className="space-y-4 animate-pulse">
+      <div className="h-8 w-48 bg-white/5 rounded-xl" />
+      <div className="h-4 w-64 bg-white/3 rounded-lg" />
+      <div className="grid grid-cols-2 gap-4 mt-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-24 bg-white/3 rounded-2xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── System Info Card (sidebar bottom) ─── */
+function SystemInfoCard() {
+  return (
+    <div className="mx-3 mb-4 rounded-xl border border-white/6 bg-white/[0.02] overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
+        <Cpu className="w-3 h-3 text-white/20" />
+        <p className="text-white/20 text-[10px] font-bold uppercase tracking-wider">
+          معلومات النظام
+        </p>
+      </div>
+      <div className="px-3 py-2.5 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-white/25 text-[10px]">الإصدار</span>
+          <span className="text-white/50 text-[10px] font-mono font-bold">v2.1.0</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-white/25 text-[10px]">المنصة</span>
+          <span className="text-white/50 text-[10px] font-bold">MUHKAM ERP</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-white/25 text-[10px]">الدعم</span>
+          <span className="text-emerald-400/70 text-[10px] font-bold">نشط</span>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('company');
-  const active = TABS.find((t) => t.id === activeTab)!;
+  const [activeTab, setActiveTab] = useState<Tab>('users');
+
+  const allTabs = TAB_SECTIONS.flatMap((s) => s.tabs);
+  const activeLabel = allTabs.find((t) => t.id === activeTab)?.label ?? '';
 
   return (
-    <div dir="rtl" style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--erp-bg-main, #0D1424)', display: 'flex', flexDirection: 'column' }}>
-
-      {/* ── Page header ── */}
-      <div style={{ padding: '24px 24px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'rgba(245,158,11,0.15)', border: '1.5px solid rgba(245,158,11,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Settings size={17} color="#f59e0b" />
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden" dir="rtl">
+      {/* ─────────── Sidebar ─────────── */}
+      <aside
+        className="hidden lg:flex flex-col w-56 shrink-0 border-l border-white/8 overflow-y-auto"
+        style={{ background: 'var(--erp-bg-sidebar, #0B1120)' }}
+      >
+        <div className="px-4 pt-6 pb-2 flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
+            <Settings className="w-3.5 h-3.5 text-amber-400" />
+          </div>
+          <p className="text-white/60 text-xs font-black uppercase tracking-widest">الإعدادات</p>
         </div>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '17px', fontWeight: 900, color: '#f1f5f9' }}>الإعدادات</h1>
-          <p style={{ margin: 0, fontSize: '12px', color: '#64748b', marginTop: '1px' }}>{active.label}</p>
-        </div>
-      </div>
 
-      {/* ── Tab bar ── */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'stretch',
-        gap: '2px',
-        overflowX: 'auto',
-        padding: '16px 24px 0',
-        scrollbarWidth: 'none',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-      }}>
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
+        <nav className="flex-1 px-3 pb-3 space-y-5 mt-3 overflow-y-auto">
+          {TAB_SECTIONS.map((section) => (
+            <div key={section.section}>
+              <p className="text-white/25 text-[10px] font-black uppercase tracking-widest px-2 mb-1.5">
+                {section.section}
+              </p>
+              <div className="space-y-0.5">
+                {section.tabs.map((tab) => {
+                  const active = activeTab === tab.id;
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-right ${
+                        active
+                          ? 'bg-amber-500/15 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+                          : 'text-white/40 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon
+                        className={`w-4 h-4 shrink-0 ${active ? 'text-amber-400' : 'text-white/30'}`}
+                      />
+                      <span className="truncate">{tab.label}</span>
+                      {active && (
+                        <div className="mr-auto w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {/* ─── System info card ─── */}
+        <SystemInfoCard />
+      </aside>
+
+      {/* ─────────── Mobile Tab Bar ─────────── */}
+      <div
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/8 px-2 py-1 flex gap-1 overflow-x-auto"
+        style={{ background: 'var(--erp-bg-sidebar, #0B1120)' }}
+      >
+        {allTabs.map((tab) => {
+          const active = activeTab === tab.id;
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '7px',
-                padding: '9px 14px 10px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: `2.5px solid ${isActive ? tab.color : 'transparent'}`,
-                color: isActive ? tab.color : '#64748b',
-                fontSize: '13px',
-                fontWeight: isActive ? 800 : 500,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                fontFamily: 'inherit',
-                transition: 'all 0.15s ease',
-                outline: 'none',
-                borderRadius: '0',
-                marginBottom: '-1px',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8';
-                  (e.currentTarget as HTMLButtonElement).style.borderBottomColor = 'rgba(255,255,255,0.15)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  (e.currentTarget as HTMLButtonElement).style.color = '#64748b';
-                  (e.currentTarget as HTMLButtonElement).style.borderBottomColor = 'transparent';
-                }
-              }}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all shrink-0 ${
+                active ? 'text-amber-400' : 'text-white/30 hover:text-white/60'
+              }`}
             >
-              <Icon size={15} color={isActive ? tab.color : undefined} />
-              {tab.label}
+              <Icon className="w-4 h-4" />
+              <span className="text-[9px] font-bold">{tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* ── Content ── */}
-      <div style={{ flex: 1, padding: '28px 24px 60px', animation: 'settings-fade-in 0.18s ease' }} key={activeTab}>
-        <Suspense fallback={<TabSkeleton />}>
-          {activeTab === 'company'         && <CompanyTab />}
-          {activeTab === 'users'           && <UsersTab />}
-          {activeTab === 'currency'        && <CurrencyTab />}
-          {activeTab === 'invoice'         && <InvoiceTab />}
-          {activeTab === 'vat'             && <VatTab />}
-          {activeTab === 'alerts'          && <AlertsTab />}
-          {activeTab === 'opening-balance' && <OpeningBalanceTab />}
-          {activeTab === 'financial-lock'  && <FinancialLockTab />}
-          {activeTab === 'salary-advance'  && <SalaryAdvanceTab />}
-          {activeTab === 'system'          && <SystemTab />}
-        </Suspense>
-      </div>
+      {/* ─────────── Main Content ─────────── */}
+      <main className="flex-1 overflow-y-auto pb-24 lg:pb-8">
+        {/* Mobile header */}
+        <div
+          className="lg:hidden sticky top-0 z-30 px-4 py-3 border-b border-white/8 flex items-center gap-2"
+          style={{ background: 'var(--erp-bg-main, #0D1424)' }}
+        >
+          <Settings className="w-4 h-4 text-amber-400" />
+          <p className="text-white font-bold text-sm">{activeLabel}</p>
+        </div>
 
-      <style>{`
-        @keyframes settings-fade-in {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        div[dir="rtl"] button::-webkit-scrollbar { display: none; }
-      `}</style>
+        <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+          <Suspense fallback={<TabSkeleton />}>
+            {activeTab === 'users' && <UsersTab />}
+            {activeTab === 'company' && <CompanyTab />}
+            {activeTab === 'opening-balance' && <OpeningBalanceTab />}
+            {activeTab === 'financial-lock' && <FinancialLockTab />}
+            {activeTab === 'currency' && <CurrencyTab />}
+            {activeTab === 'vat' && <VatTab />}
+            {activeTab === 'alerts' && <AlertsTab />}
+            {activeTab === 'invoice' && <InvoiceTab />}
+            {activeTab === 'salary-advance' && <SalaryAdvanceTab />}
+            {activeTab === 'system' && <SystemTab />}
+          </Suspense>
+        </div>
+      </main>
     </div>
   );
 }
