@@ -3,6 +3,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { authFetch } from '@/lib/auth-fetch';
+import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
 import {
   Loader2,
@@ -75,6 +76,8 @@ const MODULE_ICONS: Record<string, string> = {
 
 export default function BackupTab() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin';
 
   /* ── نوع التبويب ── */
   const [bkMode, setBkMode] = useState<'local' | 'server'>('local');
@@ -159,9 +162,11 @@ export default function BackupTab() {
   }, []);
 
   useEffect(() => {
-    void loadSettings();
-    void loadList();
-  }, [loadSettings, loadList]);
+    if (isSuperAdmin) {
+      void loadSettings();
+      void loadList();
+    }
+  }, [loadSettings, loadList, isSuperAdmin]);
 
   /* ── نسخة محلية انتقائية ── */
   const toggleModule = (key: string) =>
@@ -500,10 +505,10 @@ export default function BackupTab() {
         <div className="flex border-b border-white/8">
           {(
             [
-              ['local', '💾 نسخة محلية', 'تنزيل + استعادة'],
-              ['server', '☁️ نسخة الخادم', 'جدولة + حفظ + سجل'],
-            ] as const
-          ).map(([id, label, sub]) => (
+              { id: 'local'  as const, label: '💾 نسخة محلية',  sub: 'تنزيل + استعادة'       },
+              { id: 'server' as const, label: '☁️ نسخة الخادم', sub: 'جدولة + حفظ + سجل', superOnly: true },
+            ].filter(t => !t.superOnly || isSuperAdmin)
+          ).map(({ id, label, sub }) => (
             <button
               key={id}
               onClick={() => setBkMode(id)}
