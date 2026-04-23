@@ -215,7 +215,8 @@ export function requireRole(...roles: string[]) {
 
 /* ── XSS body sanitizer ─────────────────────────────────── */
 export function sanitizeBody(req: Request, _res: Response, next: NextFunction): void {
-  if (req.body && typeof req.body === "object") {
+  /* Skip Buffers (e.g. /api/system/restore uses express.raw() — body is a Buffer) */
+  if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
     req.body = sanitizeObject(req.body as Record<string, unknown>);
   }
   next();
