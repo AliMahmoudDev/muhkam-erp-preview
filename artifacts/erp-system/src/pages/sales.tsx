@@ -1355,6 +1355,7 @@ interface SuccessInvoice {
   customer_phone: string | null;
   payment_type: string;
   items: CartItem[];
+  payments?: { label: string; amount: number }[];
 }
 
 function WhatsAppSuccessModal({
@@ -1367,7 +1368,7 @@ function WhatsAppSuccessModal({
   const paymentLabel: Record<string, string> = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
 
   const buildWhatsAppMsg = () => {
-    const lines = [
+    const lines: string[] = [
       `🧾 *فاتورة مبيعات - مُحكم - MUHKAM*`,
       `رقم الفاتورة: ${invoice.invoice_no}`,
       ``,
@@ -1377,10 +1378,18 @@ function WhatsAppSuccessModal({
       ),
       ``,
       `*الإجمالي: ${invoice.total_amount.toFixed(2)} ج.م*`,
-      `طريقة الدفع: ${paymentLabel[invoice.payment_type] || invoice.payment_type}`,
-      ``,
-      `شكراً لتعاملكم معنا 🙏`,
     ];
+
+    if (invoice.payments && invoice.payments.length > 1) {
+      lines.push(``, `*تفاصيل الدفع:*`);
+      invoice.payments.forEach((p) =>
+        lines.push(`• ${p.label}: ${p.amount.toFixed(2)} ج.م`)
+      );
+    } else {
+      lines.push(`طريقة الدفع: ${paymentLabel[invoice.payment_type] || invoice.payment_type}`);
+    }
+
+    lines.push(``, `شكراً لتعاملكم معنا 🙏`);
     return encodeURIComponent(lines.join('\n'));
   };
 
@@ -1551,6 +1560,12 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
         customer_phone: selectedCustomer?.phone ?? null,
         payment_type: data.payment_type ?? 'cash',
         items: [...cart],
+        payments: payRows.map((r) => ({
+          label: r.type === 'credit'
+            ? 'آجل'
+            : (safes.find((s) => s.id === r.safe_id)?.name ?? 'نقدي'),
+          amount: r.amount,
+        })),
       });
       setCart([]);
       setCustomerId('');
@@ -2944,13 +2959,25 @@ function SalesPostingBadge({ status }: { status: string }) {
 }
 
 function buildSaleWhatsAppUrl(s: SaleRecord): string {
-  const paymentLabel: Record<string, string> = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
+  const paid      = Number(s.paid_amount);
+  const remaining = Number(s.remaining_amount);
+  const total     = Number(s.total_amount);
+
+  let payLine: string;
+  if (s.payment_type === 'credit') {
+    payLine = `طريقة الدفع: آجل — مديونية: ${total.toFixed(2)} ج.م`;
+  } else if (s.payment_type === 'partial') {
+    payLine = `طريقة الدفع: جزئي — مدفوع: ${paid.toFixed(2)} ج.م / متبقي: ${remaining.toFixed(2)} ج.م`;
+  } else {
+    payLine = `طريقة الدفع: نقدي — مدفوع بالكامل`;
+  }
+
   const lines = [
     `🧾 *فاتورة مبيعات - مُحكم - MUHKAM*`,
     `رقم الفاتورة: ${s.invoice_no}`,
     s.customer_name ? `العميل: ${s.customer_name}` : '',
-    `الإجمالي: ${Number(s.total_amount).toFixed(2)} ج.م`,
-    `طريقة الدفع: ${paymentLabel[s.payment_type] || s.payment_type}`,
+    `الإجمالي: ${total.toFixed(2)} ج.م`,
+    payLine,
     ``,
     `شكراً لتعاملكم معنا 🙏`,
   ].filter(Boolean);
