@@ -116,7 +116,6 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   { name: 'الصيانة', href: '/repairs', icon: Wrench, roles: ['admin', 'manager', 'cashier'] },
   { name: 'لوحة الصيانة', href: '/repair-board', icon: Wrench, roles: ['admin', 'manager', 'cashier'] },
   { name: 'مخزن التوالف', href: '/scrap-inventory', icon: Wrench, roles: ['admin', 'manager'] },
-  { name: 'الديون المعدومة', href: '/bad-debts', icon: Wrench, roles: ['admin', 'manager'] },
   { name: 'الضمانات', href: '/warranty', icon: ShieldCheck, roles: ['admin', 'manager', 'cashier'] },
   { name: 'الائتمان', href: '/consignment', icon: Archive, roles: ['admin', 'manager'] },
   { name: 'الإيرادات', href: '/income', icon: TrendingUp, roles: ['admin', 'manager'] },

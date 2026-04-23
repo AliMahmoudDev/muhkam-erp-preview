@@ -334,6 +334,11 @@ router.post("/repair-jobs", wrap(async (req, res) => {
     notes:                b.notes ? String(b.notes) : null,
     checklist:            b.checklist ? JSON.stringify(b.checklist) : null,
     alert_days_threshold: b.alert_days_threshold ? Number(b.alert_days_threshold) : null,
+    external_workshop:        Boolean(b.external_workshop),
+    external_workshop_name:   b.external_workshop_name ? String(b.external_workshop_name) : null,
+    external_workshop_cost:   b.external_workshop_cost ? String(b.external_workshop_cost) : "0",
+    broker_name:              b.broker_name ? String(b.broker_name) : null,
+    broker_commission:        b.broker_commission ? String(b.broker_commission) : "0",
   }).returning();
 
   /* History entry */

@@ -182,7 +182,12 @@ export default function Repairs() {
     if (detail?.checklist) {
       try {
         const parsed = JSON.parse(detail.checklist);
-        if (Array.isArray(parsed)) parsed.forEach((c: ChecklistItem) => { saved[c.id] = c.status; });
+        if (Array.isArray(parsed)) {
+          parsed.forEach((c: { id?: string | number; item_id?: number; status: ChecklistItem["status"] }) => {
+            const key = String(c.id ?? c.item_id ?? "");
+            if (key) saved[key] = c.status;
+          });
+        }
       } catch { /* ignore */ }
     }
     return checklistTemplate.map(t => ({
@@ -197,7 +202,12 @@ export default function Repairs() {
     if (detail?.qa_checklist) {
       try {
         const parsed = JSON.parse(detail.qa_checklist);
-        if (Array.isArray(parsed)) parsed.forEach((c: ChecklistItem) => { saved[c.id] = c.status; });
+        if (Array.isArray(parsed)) {
+          parsed.forEach((c: { id?: string | number; item_id?: number; status: ChecklistItem["status"] }) => {
+            const key = String(c.id ?? c.item_id ?? "");
+            if (key) saved[key] = c.status;
+          });
+        }
       } catch { /* ignore */ }
     }
     return checklistTemplate.map(t => ({
@@ -449,6 +459,7 @@ export default function Repairs() {
             <NewJobForm
               customers={customers}
               users={users}
+              checklistTemplate={checklistTemplate}
               onClose={() => setShowNewForm(false)}
               onCreated={(job) => {
                 qc.invalidateQueries({ queryKey: ["/api/repair-jobs"] });
@@ -1055,10 +1066,11 @@ function CheckBtn({
    NEW JOB FORM
    ══════════════════════════════════════════════════════════════ */
 function NewJobForm({
-  customers, users, onClose, onCreated,
+  customers, users, checklistTemplate, onClose, onCreated,
 }: {
   customers: { id: number; name: string; phone?: string }[];
   users: { id: number; name: string }[];
+  checklistTemplate: ChecklistTemplate[];
   onClose: () => void;
   onCreated: (job: RepairJob) => void;
 }) {
@@ -1075,13 +1087,48 @@ function NewJobForm({
   const [storage, setStorage] = useState("");
   const [problem, setProblem] = useState("");
   const [techId, setTechId] = useState("");
-  const [tech2Id, setTech2Id] = useState("");
-  const [tech2Section, setTech2Section] = useState("");
   const [estimated, setEstimated] = useState("");
   const [deposit, setDeposit] = useState("");
   const [receivedAt, setReceivedAt] = useState(new Date().toISOString().split("T")[0]);
   const [estimatedDelivery, setEstimatedDelivery] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  /* Checklist (التشخيص) */
+  type CheckState = "pass" | "fail" | "partial" | "untestable" | null;
+  const [checklist, setChecklist] = useState<{ item_id: number; label_ar: string; status: CheckState; notes: string }[]>([]);
+  useEffect(() => {
+    setChecklist(
+      checklistTemplate
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map((t) => ({ item_id: t.id, label_ar: t.label_ar, status: null, notes: "" })),
+    );
+  }, [checklistTemplate]);
+
+  /* Advanced options (hidden by default) */
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [tech2Id, setTech2Id] = useState("");
+  const [tech2Section, setTech2Section] = useState("");
+  const [alertDays, setAlertDays] = useState("");
+  const [extWS, setExtWS] = useState(false);
+  const [extWSName, setExtWSName] = useState("");
+  const [extWSCost, setExtWSCost] = useState("");
+  const [brokerName, setBrokerName] = useState("");
+  const [brokerCommission, setBrokerCommission] = useState("");
+
+  const setCheck = (idx: number, status: CheckState) =>
+    setChecklist((arr) => arr.map((c, i) => (i === idx ? { ...c, status } : c)));
+  const setCheckNote = (idx: number, notes: string) =>
+    setChecklist((arr) => arr.map((c, i) => (i === idx ? { ...c, notes } : c)));
+
+  const checkStats = useMemo(() => {
+    const pass = checklist.filter((c) => c.status === "pass").length;
+    const fail = checklist.filter((c) => c.status === "fail").length;
+    const partial = checklist.filter((c) => c.status === "partial").length;
+    const untestable = checklist.filter((c) => c.status === "untestable").length;
+    const tested = pass + fail + partial;
+    return { pass, fail, partial, untestable, tested, total: checklist.length };
+  }, [checklist]);
 
   const filteredCust = customers.filter(c =>
     c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
@@ -1115,6 +1162,13 @@ function NewJobForm({
           deposit_paid: deposit || "0",
           received_at: receivedAt,
           estimated_delivery: estimatedDelivery || null,
+          alert_days_threshold: alertDays ? Number(alertDays) : null,
+          external_workshop: extWS,
+          external_workshop_name: extWS ? (extWSName || null) : null,
+          external_workshop_cost: extWS ? (extWSCost || "0") : "0",
+          broker_name: brokerName || null,
+          broker_commission: brokerCommission || "0",
+          checklist: checklist.filter((c) => c.status !== null),
         }),
       });
       const job = await res.json();
@@ -1202,30 +1256,11 @@ function NewJobForm({
         </div>
 
         <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
-          <p className="text-[10px] text-white/40 font-bold">الفنيون</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[10px] text-white/40 mb-1 block">الفني الأساسي</label>
-              <select value={techId} onChange={(e) => setTechId(e.target.value)} className="erp-input w-full text-sm">
-                <option value="">— اختر —</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] text-white/40 mb-1 block">الفني الثاني</label>
-              <select value={tech2Id} onChange={(e) => setTech2Id(e.target.value)} className="erp-input w-full text-sm">
-                <option value="">— لا يوجد —</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-            </div>
-            {tech2Id && (
-              <div className="col-span-2">
-                <label className="text-[10px] text-white/40 mb-1 block">قسم الفني الثاني</label>
-                <input value={tech2Section} onChange={(e) => setTech2Section(e.target.value)}
-                  placeholder="مثل: شاشات، لوحة..." className="erp-input w-full text-sm" />
-              </div>
-            )}
-          </div>
+          <p className="text-[10px] text-white/40 font-bold">الفني الأساسي</p>
+          <select value={techId} onChange={(e) => setTechId(e.target.value)} className="erp-input w-full text-sm">
+            <option value="">— اختر الفني —</option>
+            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
         </div>
 
         <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
@@ -1249,6 +1284,108 @@ function NewJobForm({
             </div>
           </div>
         </div>
+
+        {/* ─── التشخيص (Checklist) ─── */}
+        <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-white/40 font-bold flex items-center gap-1">
+              <Settings className="w-3 h-3" /> التشخيص الأولي ({checkStats.tested}/{checkStats.total})
+            </p>
+            {checkStats.tested > 0 && (
+              <div className="flex items-center gap-1 text-[10px] font-bold">
+                {checkStats.pass > 0 && <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300">{checkStats.pass} ✓</span>}
+                {checkStats.fail > 0 && <span className="px-1.5 py-0.5 rounded bg-red-500/15 text-red-300">{checkStats.fail} ✗</span>}
+                {checkStats.partial > 0 && <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300">{checkStats.partial} ◐</span>}
+                {checkStats.untestable > 0 && <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/50">{checkStats.untestable} ?</span>}
+              </div>
+            )}
+          </div>
+          {checklist.length === 0 && (
+            <p className="text-[11px] text-white/30 text-center py-3">
+              لا توجد بنود تشخيص — أضفها من الإعدادات
+            </p>
+          )}
+          {checklist.map((c, idx) => (
+            <div key={c.item_id} className="bg-white/5 rounded-xl p-2.5 border border-white/5 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-white/80 font-bold">{c.label_ar}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  {([
+                    { v: "pass" as const, label: "✓", cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" },
+                    { v: "fail" as const, label: "✗", cls: "bg-red-500/20 text-red-300 border-red-500/40" },
+                    { v: "partial" as const, label: "◐", cls: "bg-amber-500/20 text-amber-300 border-amber-500/40" },
+                    { v: "untestable" as const, label: "?", cls: "bg-white/10 text-white/60 border-white/20" },
+                  ]).map(opt => (
+                    <button key={opt.v} type="button" onClick={() => setCheck(idx, c.status === opt.v ? null : opt.v)}
+                      className={`w-7 h-7 rounded-lg text-xs font-black border ${c.status === opt.v ? opt.cls : "bg-white/[0.02] text-white/30 border-white/5 hover:bg-white/5"}`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {(c.status === "fail" || c.status === "partial") && (
+                <input value={c.notes} onChange={(e) => setCheckNote(idx, e.target.value)}
+                  placeholder="ملاحظة..." className="erp-input w-full text-xs py-1" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ─── خيارات متقدمة (Advanced — collapsed by default) ─── */}
+        <button type="button" onClick={() => setShowAdvanced(s => !s)}
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/5 text-xs font-bold text-white/60">
+          <span className="flex items-center gap-2">
+            <Settings className="w-3.5 h-3.5" /> خيارات متقدمة
+          </span>
+          <span className={`transition-transform ${showAdvanced ? "rotate-180" : ""}`}>▼</span>
+        </button>
+
+        {showAdvanced && (
+          <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-3 animate-in slide-in-from-top-1">
+            <div>
+              <label className="text-[10px] text-white/40 mb-1 block">الفني الثاني</label>
+              <div className="grid grid-cols-2 gap-2">
+                <select value={tech2Id} onChange={(e) => setTech2Id(e.target.value)} className="erp-input w-full text-sm">
+                  <option value="">— لا يوجد —</option>
+                  {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+                <input value={tech2Section} onChange={(e) => setTech2Section(e.target.value)}
+                  placeholder="القسم: شاشات، لوحة..." className="erp-input w-full text-sm" disabled={!tech2Id} />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] text-white/40 mb-1 block">حد التنبيه (أيام بدون تحديث)</label>
+              <input type="number" value={alertDays} onChange={(e) => setAlertDays(e.target.value)}
+                placeholder="مثل: 3" className="erp-input w-full text-sm" />
+            </div>
+
+            <div className="border-t border-white/5 pt-3 space-y-2">
+              <label className="flex items-center gap-2 text-xs text-white/70 font-bold cursor-pointer">
+                <input type="checkbox" checked={extWS} onChange={(e) => setExtWS(e.target.checked)} className="accent-violet-500" />
+                تم إرساله لورشة خارجية
+              </label>
+              {extWS && (
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={extWSName} onChange={(e) => setExtWSName(e.target.value)}
+                    placeholder="اسم الورشة" className="erp-input w-full text-sm" />
+                  <input type="number" value={extWSCost} onChange={(e) => setExtWSCost(e.target.value)}
+                    placeholder="تكلفة الورشة" className="erp-input w-full text-sm" />
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-white/5 pt-3">
+              <label className="text-[10px] text-white/40 mb-1 block">السمسار / الديليفري</label>
+              <div className="grid grid-cols-2 gap-2">
+                <input value={brokerName} onChange={(e) => setBrokerName(e.target.value)}
+                  placeholder="اسم السمسار" className="erp-input w-full text-sm" />
+                <input type="number" value={brokerCommission} onChange={(e) => setBrokerCommission(e.target.value)}
+                  placeholder="العمولة" className="erp-input w-full text-sm" />
+              </div>
+            </div>
+          </div>
+        )}
 
         <button onClick={handleSubmit} disabled={submitting}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold disabled:opacity-50">

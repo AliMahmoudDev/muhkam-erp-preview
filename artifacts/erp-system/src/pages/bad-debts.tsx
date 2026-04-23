@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Ban, Plus, XCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +19,13 @@ interface BadDebt {
   created_at: string;
 }
 
-export default function BadDebts() {
+/**
+ * BadDebts panel — can be rendered either as a full page
+ * or embedded inside another page (e.g., the Expenses tabs).
+ * When `embedded` is true the page-level header is hidden so the host
+ * page can provide its own header / "Add" button.
+ */
+export default function BadDebts({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [showNew, setShowNew] = useState(false);
@@ -27,6 +33,14 @@ export default function BadDebts() {
   const [newName, setNewName] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newReason, setNewReason] = useState("");
+
+  // Allow a parent page to trigger the "add" modal from its own button
+  useEffect(() => {
+    if (!embedded) return;
+    const w = window as unknown as { __openBadDebtForm?: () => void };
+    w.__openBadDebtForm = () => setShowNew(true);
+    return () => { delete w.__openBadDebtForm; };
+  }, [embedded]);
 
   const { data: items = [], isLoading } = useQuery<BadDebt[]>({
     queryKey: ["/api/bad-debts", filter],
@@ -65,16 +79,18 @@ export default function BadDebts() {
   const statusLabel: Record<string, string> = { open: "متعثر", written_off: "مشطوب", recovered: "مُسترد" };
 
   return (
-    <div className="p-4 space-y-4 h-full overflow-y-auto" dir="rtl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-black text-white flex items-center gap-2">
-          <Ban className="w-5 h-5 text-red-400" /> الديون المعدومة / المتعثرة
-        </h1>
-        <button onClick={() => setShowNew(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-xs font-bold">
-          <Plus className="w-3.5 h-3.5" /> إضافة
-        </button>
-      </div>
+    <div className={embedded ? "space-y-4" : "p-4 space-y-4 h-full overflow-y-auto"} dir="rtl">
+      {!embedded && (
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-black text-white flex items-center gap-2">
+            <Ban className="w-5 h-5 text-red-400" /> الديون المعدومة / المتعثرة
+          </h1>
+          <button onClick={() => setShowNew(true)}
+            className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm">
+            <Plus className="w-4 h-4" /> إضافة دين
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-3">
         <div className="glass-panel rounded-xl p-3 border border-amber-500/20">

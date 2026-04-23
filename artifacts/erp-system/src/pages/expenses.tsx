@@ -6,8 +6,9 @@ import { useDeleteExpense, useGetSettingsSafes } from '@workspace/api-client-rea
 import { formatCurrency, formatDate } from '@/lib/format';
 import {
   Plus, Trash2, ShieldOff, BarChart2, X, Printer, Search, Tag,
-  Eye, TrendingDown, AlertCircle, Calendar,
+  Eye, TrendingDown, AlertCircle, Calendar, Ban,
 } from 'lucide-react';
+import BadDebts from './bad-debts';
 import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
@@ -220,6 +221,7 @@ export default function Expenses() {
   const deleteMutation = useDeleteExpense();
 
   /* ─── States ─── */
+  const [activeTab, setActiveTab] = useState<'expenses' | 'debts'>('expenses');
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('');
@@ -389,19 +391,55 @@ export default function Expenses() {
 
       {/* ─── Header ─── */}
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-xl font-bold text-white flex-shrink-0">إدارة المصروفات</h2>
+        <h2 className="text-xl font-bold text-white flex-shrink-0">
+          {activeTab === 'expenses' ? 'إدارة المصروفات' : 'الديون المعدومة / المتعثرة'}
+        </h2>
         <div className="flex-1" />
-        <button onClick={() => { setShowReports(true); setReportData(null); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-violet-500/15 text-violet-300 border border-violet-500/30 hover:bg-violet-500/25 transition-colors">
-          <BarChart2 className="w-4 h-4" /> تقارير المصروفات
-        </button>
-        {canAdd && (
+        {activeTab === 'expenses' && (
+          <button onClick={() => { setShowReports(true); setReportData(null); }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-violet-500/15 text-violet-300 border border-violet-500/30 hover:bg-violet-500/25 transition-colors">
+            <BarChart2 className="w-4 h-4" /> تقارير المصروفات
+          </button>
+        )}
+        {canAdd && activeTab === 'expenses' && (
           <button onClick={() => setShowAdd(true)}
             className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm">
             <Plus className="w-4 h-4" /> إضافة مصروف
           </button>
         )}
+        {canAdd && activeTab === 'debts' && (
+          <button onClick={() => {
+            const fn = (window as unknown as { __openBadDebtForm?: () => void }).__openBadDebtForm;
+            if (fn) fn();
+          }}
+            className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm">
+            <Plus className="w-4 h-4" /> إضافة دين
+          </button>
+        )}
       </div>
+
+      {/* ─── Tabs ─── */}
+      <div className="flex items-center gap-1.5 border-b border-white/8 -mt-1">
+        <button onClick={() => setActiveTab('expenses')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
+            activeTab === 'expenses'
+              ? 'border-violet-400 text-white'
+              : 'border-transparent text-white/40 hover:text-white/70'
+          }`}>
+          <TrendingDown className="w-4 h-4" /> المصروفات
+        </button>
+        <button onClick={() => setActiveTab('debts')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
+            activeTab === 'debts'
+              ? 'border-violet-400 text-white'
+              : 'border-transparent text-white/40 hover:text-white/70'
+          }`}>
+          <Ban className="w-4 h-4" /> الديون المعدومة
+        </button>
+      </div>
+
+      {activeTab === 'debts' && <BadDebts embedded />}
+      {activeTab === 'expenses' && (<>
 
       {/* ─── Summary Cards ─── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -799,6 +837,7 @@ export default function Expenses() {
           </div>
         </div>
       )}
+      </>)}
     </div>
   );
 }
