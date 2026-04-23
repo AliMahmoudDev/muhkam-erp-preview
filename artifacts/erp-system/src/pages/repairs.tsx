@@ -140,10 +140,17 @@ export default function Repairs() {
   const [selectedJob, setSelectedJob] = useState<RepairJob | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
 
+  /* ── helper ── */
+  async function apiFetch<T>(url: string): Promise<T> {
+    const r = await authFetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json() as Promise<T>;
+  }
+
   /* ── Queries ── */
   const { data: stats } = useQuery<Stats>({
     queryKey: ["/api/repair-jobs/stats"],
-    queryFn: () => authFetch(api("/api/repair-jobs/stats")).then((r) => r.json()),
+    queryFn: () => apiFetch<Stats>(api("/api/repair-jobs/stats")),
     refetchInterval: 30000,
   });
 
@@ -153,34 +160,40 @@ export default function Repairs() {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (search) params.set("search", search);
-      return authFetch(api(`/api/repair-jobs?${params}`)).then((r) => r.json());
+      return apiFetch<RepairJob[]>(api(`/api/repair-jobs?${params}`));
     },
   });
 
   const { data: products = [] } = useQuery<{ id: number; name: string; sale_price: string }[]>({
     queryKey: ["/api/products"],
-    queryFn: () => authFetch(api("/api/products")).then((r) => r.json()),
+    queryFn: () => apiFetch<{ id: number; name: string; sale_price: string }[]>(api("/api/products")),
   });
 
   const { data: users = [] } = useQuery<{ id: number; name: string }[]>({
     queryKey: ["/api/repair-jobs/technicians"],
-    queryFn: () => authFetch(api("/api/repair-jobs/technicians")).then((r) => r.json()),
+    queryFn: () => apiFetch<{ id: number; name: string }[]>(api("/api/repair-jobs/technicians")),
   });
 
   const { data: customers = [] } = useQuery<{ id: number; name: string; phone?: string }[]>({
     queryKey: ["/api/customers"],
-    queryFn: () => authFetch(api("/api/customers")).then((r) => r.json()),
+    queryFn: () => apiFetch<{ id: number; name: string; phone?: string }[]>(api("/api/customers")),
   });
 
   /* ── Detail query when job is selected ── */
   const { data: jobDetail } = useQuery<RepairJob>({
     queryKey: ["/api/repair-jobs", selectedJob?.id],
-    queryFn: () => authFetch(api(`/api/repair-jobs/${selectedJob!.id}`)).then((r) => r.json()),
+    queryFn: () => apiFetch<RepairJob>(api(`/api/repair-jobs/${selectedJob!.id}`)),
     enabled: !!selectedJob?.id,
   });
 
   const detail = jobDetail ?? selectedJob;
-  const checklist: ChecklistItem[] = detail?.checklist ? JSON.parse(detail.checklist) : DEFAULT_CHECKLIST;
+  const parsedChecklist = (() => {
+    try {
+      const v = detail?.checklist ? JSON.parse(detail.checklist) : null;
+      return Array.isArray(v) ? v : DEFAULT_CHECKLIST;
+    } catch { return DEFAULT_CHECKLIST; }
+  })();
+  const checklist: ChecklistItem[] = parsedChecklist;
 
   const score = useMemo(() => {
     const tested = checklist.filter((c) => c.status === "pass" || c.status === "fail");
@@ -244,7 +257,7 @@ export default function Repairs() {
 
   /* ── WhatsApp ── */
   const sendWhatsApp = (job: RepairJob, msg: string) => {
-    if (!job.customer_phone) return toast({ title: "لا يوجد رقم هاتف", variant: "destructive" });
+    if (!job.customer_phone) { toast({ title: "لا يوجد رقم هاتف", variant: "destructive" }); return; }
     const phone = job.customer_phone.replace(/\D/g, "");
     const fullPhone = phone.startsWith("0") ? "2" + phone : phone;
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
@@ -285,7 +298,7 @@ export default function Repairs() {
             { key: "done",        label: "منتهية",      color: "text-emerald-400" },
           ].map((s) => (
             <div key={s.key} className="glass-panel rounded-xl p-2 border border-white/5 text-center">
-              <div className={`text-xl font-black ${s.color}`}>{(stats as Record<string, number>)?.[s.key] ?? 0}</div>
+              <div className={`text-xl font-black ${s.color}`}>{(stats as unknown as Record<string, number>)?.[s.key] ?? 0}</div>
               <div className="text-[10px] text-white/40">{s.label}</div>
             </div>
           ))}
@@ -327,7 +340,6 @@ export default function Repairs() {
             </div>
           )}
           {jobs.map((job) => {
-            const st = STATUS_MAP[job.status];
             const isActive = selectedJob?.id === job.id;
             return (
               <div key={job.id} onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
@@ -451,7 +463,7 @@ function JobDetail({
   };
 
   const handleAddPart = () => {
-    if (!partName.trim()) return toast({ title: "اسم القطعة مطلوب", variant: "destructive" });
+    if (!partName.trim()) { toast({ title: "اسم القطعة مطلوب", variant: "destructive" }); return; }
     const matchProd = products.find((p) => p.name === partName);
     onAddPart({ product_id: matchProd?.id ?? null, product_name: partName, quantity: partQty, unit_price: partPrice || "0" });
     setPartSearch(""); setPartName(""); setPartQty("1"); setPartPrice("");
@@ -801,9 +813,9 @@ function NewJobForm({
   };
 
   const handleSubmit = async () => {
-    if (!customerName.trim()) return toast({ title: "اسم العميل مطلوب", variant: "destructive" });
-    if (!brand.trim()) return toast({ title: "الماركة مطلوبة", variant: "destructive" });
-    if (!model.trim()) return toast({ title: "الموديل مطلوب", variant: "destructive" });
+    if (!customerName.trim()) { toast({ title: "اسم العميل مطلوب", variant: "destructive" }); return; }
+    if (!brand.trim()) { toast({ title: "الماركة مطلوبة", variant: "destructive" }); return; }
+    if (!model.trim()) { toast({ title: "الموديل مطلوب", variant: "destructive" }); return; }
 
     setSubmitting(true);
     try {
