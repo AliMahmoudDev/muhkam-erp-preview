@@ -339,6 +339,7 @@ router.post("/repair-jobs", wrap(async (req, res) => {
     external_workshop_cost:   b.external_workshop_cost ? String(b.external_workshop_cost) : "0",
     broker_name:              b.broker_name ? String(b.broker_name) : null,
     broker_commission:        b.broker_commission ? String(b.broker_commission) : "0",
+    device_pin:               b.device_pin ? String(b.device_pin) : null,
   }).returning();
 
   /* History entry */
@@ -544,6 +545,57 @@ router.post("/repair-jobs/:id/parts/:partId/return", wrap(async (req, res) => {
   }
 
   return res.json({ ok: true });
+}));
+
+/* ══════════════════════════════════════════════════════════════
+   QUICK CUSTOMER CREATION (from repair form)
+   Creates a customer tagged source='repair'. No can_manage_customers
+   permission required — anyone who can create repair jobs can add
+   a walk-in repair customer.
+══════════════════════════════════════════════════════════════ */
+router.get("/repair-customers/lookup", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const phone = String(req.query.phone ?? "").trim();
+  if (!phone) return res.json(null);
+  const rows = await db.execute(sql`
+    SELECT id, name, phone FROM customers
+    WHERE company_id = ${company_id} AND phone = ${phone}
+    LIMIT 1
+  `);
+  const row = (rows.rows as Record<string, unknown>[])[0];
+  return res.json(row ?? null);
+}));
+
+router.post("/repair-customers", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const b = req.body as Record<string, unknown>;
+  const name  = String(b.name  ?? "").trim();
+  const phone = String(b.phone ?? "").trim();
+  if (!name)  return res.status(400).json({ error: "اسم العميل مطلوب" });
+  if (!phone) return res.status(400).json({ error: "رقم الهاتف مطلوب" });
+
+  /* Duplicate phone check */
+  const dup = await db.execute(sql`
+    SELECT id, name FROM customers WHERE company_id = ${company_id} AND phone = ${phone} LIMIT 1
+  `);
+  if ((dup.rows as unknown[]).length > 0) {
+    const d = (dup.rows as Record<string, unknown>[])[0];
+    return res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${d.name}"`, existing: d });
+  }
+
+  /* Next customer code */
+  const codeRows = await db.execute(sql`
+    SELECT COALESCE(MAX(customer_code), 1000) + 1 AS next_code FROM customers WHERE company_id = ${company_id}
+  `);
+  const nextCode = Number((codeRows.rows as Record<string, unknown>[])[0]?.next_code ?? 1001);
+
+  const result = await db.execute(sql`
+    INSERT INTO customers (name, customer_code, phone, balance, is_customer, is_supplier, source, company_id)
+    VALUES (${name}, ${nextCode}, ${phone}, 0, true, false, 'repair', ${company_id})
+    RETURNING id, name, phone, customer_code
+  `);
+  const row = (result.rows as Record<string, unknown>[])[0];
+  return res.status(201).json(row);
 }));
 
 export default router;

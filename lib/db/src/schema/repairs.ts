@@ -39,6 +39,7 @@ export const repairJobsTable = pgTable("repair_jobs", {
   received_at:              date("received_at").notNull(),
   estimated_delivery:       date("estimated_delivery"),
   delivered_at:             date("delivered_at"),
+  device_pin:               text("device_pin"),
   notes:                    text("notes"),
   created_at:               timestamp("created_at").defaultNow().notNull(),
   updated_at:               timestamp("updated_at").defaultNow().notNull(),

@@ -58,14 +58,14 @@ router.get("/customers", wrap(async (req, res) => {
     SELECT
       c.id, c.name, c.customer_code, c.phone,
       c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at,
-      c.classification_id,
+      c.classification_id, c.source,
       COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS ledger_balance
     FROM customers c
     LEFT JOIN customer_ledger cl ON cl.customer_id = c.id
     ${companyFilter}
     GROUP BY c.id, c.name, c.customer_code, c.phone,
              c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at,
-             c.classification_id
+             c.classification_id, c.source
     ORDER BY c.customer_code
     LIMIT ${limitC}
   `);
@@ -79,6 +79,7 @@ router.get("/customers", wrap(async (req, res) => {
     is_supplier: r.is_supplier ?? false,
     account_id: r.account_id,
     classification_id: r.classification_id ?? null,
+    source: r.source ?? null,
     normalized_name: r.normalized_name,
     created_at: new Date(String(r.created_at)).toISOString(),
   }));
@@ -122,6 +123,8 @@ router.post("/customers", wrap(async (req, res) => {
     ? parseInt(String(req.body.classification_id), 10) || null
     : null;
 
+  const sourceVal = req.body.source ? String(req.body.source) : null;
+
   const [customer] = await db.insert(customersTable).values({
     name: parsed.data.name.trim(),
     customer_code: newCode,
@@ -131,6 +134,7 @@ router.post("/customers", wrap(async (req, res) => {
     is_customer: parsed.data.is_customer ?? true,
     is_supplier: parsed.data.is_supplier ?? false,
     classification_id: newClassificationId,
+    source: sourceVal,
     company_id: req.user?.company_id ?? undefined,
   }).returning();
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
@@ -24,6 +24,7 @@ interface RepairJob {
   device_brand: string;
   device_model: string;
   imei?: string;
+  device_pin?: string;
   color?: string;
   storage?: string;
   problem_description?: string;
@@ -87,8 +88,184 @@ const CHECKLIST_ICONS: Record<string, React.FC<{ className?: string }>> = {
   biometric: Fingerprint, body: Shield,
 };
 
-const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "Oppo", "Vivo", "Realme", "OnePlus", "Nokia", "أخرى"];
-const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB"];
+/* ── Device Catalog: Brand → Category → Models ───────────────── */
+const DEVICE_CATALOG: Record<string, Record<string, string[]>> = {
+  "Apple": {
+    "iPhone": [
+      "iPhone 6","iPhone 6s","iPhone 6s Plus","iPhone SE (الجيل الأول)",
+      "iPhone 7","iPhone 7 Plus","iPhone 8","iPhone 8 Plus","iPhone X",
+      "iPhone XS","iPhone XS Max","iPhone XR",
+      "iPhone 11","iPhone 11 Pro","iPhone 11 Pro Max",
+      "iPhone SE (الجيل الثاني)","iPhone 12","iPhone 12 mini",
+      "iPhone 12 Pro","iPhone 12 Pro Max",
+      "iPhone 13","iPhone 13 mini","iPhone 13 Pro","iPhone 13 Pro Max",
+      "iPhone SE (الجيل الثالث)","iPhone 14","iPhone 14 Plus","iPhone 14 Pro","iPhone 14 Pro Max",
+      "iPhone 15","iPhone 15 Plus","iPhone 15 Pro","iPhone 15 Pro Max",
+      "iPhone 16","iPhone 16 Plus","iPhone 16 Pro","iPhone 16 Pro Max",
+    ],
+    "iPad": [
+      "iPad mini 4","iPad mini 5","iPad mini 6","iPad mini 7",
+      "iPad Air 3","iPad Air 4","iPad Air 5","iPad Air M2",
+      "iPad (الجيل السابع)","iPad (الجيل الثامن)","iPad (الجيل التاسع)","iPad (الجيل العاشر)",
+      "iPad Pro 11\" (الجيل الأول)","iPad Pro 11\" (الجيل الثاني)","iPad Pro 11\" (الجيل الثالث)","iPad Pro 11\" M4",
+      "iPad Pro 12.9\" (الجيل الثالث)","iPad Pro 12.9\" (الجيل الرابع)","iPad Pro 12.9\" (الجيل الخامس)","iPad Pro 12.9\" M2",
+      "iPad Pro 13\" M4",
+    ],
+    "Apple Watch": [
+      "Apple Watch Series 4","Apple Watch Series 5","Apple Watch SE (الجيل الأول)",
+      "Apple Watch Series 6","Apple Watch Series 7","Apple Watch Series 8",
+      "Apple Watch SE (الجيل الثاني)","Apple Watch Ultra","Apple Watch Series 9","Apple Watch Ultra 2",
+    ],
+    "AirPods": [
+      "AirPods (الجيل الثاني)","AirPods (الجيل الثالث)",
+      "AirPods Pro (الجيل الأول)","AirPods Pro (الجيل الثاني)","AirPods Max",
+    ],
+    "Mac": [
+      "MacBook Air M1","MacBook Air M2","MacBook Air M3",
+      "MacBook Pro 13\" M1","MacBook Pro 13\" M2",
+      "MacBook Pro 14\" M1 Pro","MacBook Pro 14\" M2 Pro","MacBook Pro 14\" M3 Pro",
+      "MacBook Pro 16\" M1 Pro","MacBook Pro 16\" M2 Pro","MacBook Pro 16\" M3 Pro",
+      "iMac M1","iMac M3",
+    ],
+  },
+  "Samsung": {
+    "Galaxy S": [
+      "Galaxy S20","Galaxy S20+","Galaxy S20 Ultra","Galaxy S20 FE",
+      "Galaxy S21","Galaxy S21+","Galaxy S21 Ultra","Galaxy S21 FE",
+      "Galaxy S22","Galaxy S22+","Galaxy S22 Ultra",
+      "Galaxy S23","Galaxy S23+","Galaxy S23 Ultra","Galaxy S23 FE",
+      "Galaxy S24","Galaxy S24+","Galaxy S24 Ultra","Galaxy S24 FE",
+      "Galaxy S25","Galaxy S25+","Galaxy S25 Ultra",
+    ],
+    "Galaxy A": [
+      "Galaxy A03s","Galaxy A04s","Galaxy A05s",
+      "Galaxy A12","Galaxy A13","Galaxy A14","Galaxy A15","Galaxy A16",
+      "Galaxy A22","Galaxy A23","Galaxy A24","Galaxy A25","Galaxy A26",
+      "Galaxy A32","Galaxy A33","Galaxy A34","Galaxy A35","Galaxy A36",
+      "Galaxy A52","Galaxy A52s","Galaxy A53","Galaxy A54","Galaxy A55","Galaxy A56",
+      "Galaxy A72","Galaxy A73","Galaxy A74",
+    ],
+    "Galaxy M": [
+      "Galaxy M12","Galaxy M13","Galaxy M14","Galaxy M15",
+      "Galaxy M23","Galaxy M33","Galaxy M34","Galaxy M35",
+      "Galaxy M53","Galaxy M54","Galaxy M55",
+    ],
+    "Galaxy Z": [
+      "Galaxy Z Fold 3","Galaxy Z Fold 4","Galaxy Z Fold 5","Galaxy Z Fold 6",
+      "Galaxy Z Flip 3","Galaxy Z Flip 4","Galaxy Z Flip 5","Galaxy Z Flip 6",
+    ],
+    "Galaxy Tab": [
+      "Galaxy Tab A7","Galaxy Tab A7 Lite","Galaxy Tab A8",
+      "Galaxy Tab S6 Lite","Galaxy Tab S7","Galaxy Tab S7+","Galaxy Tab S7 FE",
+      "Galaxy Tab S8","Galaxy Tab S8+","Galaxy Tab S8 Ultra",
+      "Galaxy Tab S9","Galaxy Tab S9+","Galaxy Tab S9 Ultra","Galaxy Tab S9 FE",
+    ],
+  },
+  "Xiaomi": {
+    "Redmi": [
+      "Redmi 9","Redmi 9A","Redmi 9C","Redmi 10","Redmi 10A","Redmi 10C",
+      "Redmi 12","Redmi 12C","Redmi 13","Redmi 13C",
+      "Redmi Note 10","Redmi Note 10 Pro","Redmi Note 10S",
+      "Redmi Note 11","Redmi Note 11 Pro","Redmi Note 11S",
+      "Redmi Note 12","Redmi Note 12 Pro","Redmi Note 12S",
+      "Redmi Note 13","Redmi Note 13 Pro","Redmi Note 13 Pro+",
+    ],
+    "Xiaomi": [
+      "Xiaomi 12","Xiaomi 12 Pro","Xiaomi 12 Lite",
+      "Xiaomi 13","Xiaomi 13 Pro","Xiaomi 13 Lite",
+      "Xiaomi 14","Xiaomi 14 Pro","Xiaomi 14 Ultra",
+    ],
+    "POCO": [
+      "POCO X3 NFC","POCO X3 Pro","POCO X4 Pro","POCO X5 Pro","POCO X6 Pro",
+      "POCO M4 Pro","POCO M5","POCO M5s","POCO M6 Pro",
+      "POCO F3","POCO F4","POCO F5","POCO F6",
+    ],
+    "Xiaomi Pad": [
+      "Xiaomi Pad 5","Xiaomi Pad 5 Pro","Xiaomi Pad 6","Xiaomi Pad 6 Pro",
+    ],
+  },
+  "Huawei": {
+    "P Series": [
+      "P30","P30 Pro","P40","P40 Pro","P40 Lite",
+      "P50","P50 Pro","P50 Pocket","P60","P60 Pro","P60 Art",
+    ],
+    "Mate Series": [
+      "Mate 20","Mate 20 Pro","Mate 30","Mate 30 Pro",
+      "Mate 40","Mate 40 Pro","Mate 50","Mate 50 Pro","Mate 60 Pro",
+    ],
+    "Nova Series": [
+      "Nova 7i","Nova 8","Nova 8i","Nova 9","Nova 9 Pro",
+      "Nova 10","Nova 10 Pro","Nova 11","Nova 11 Pro",
+    ],
+    "Y Series": [
+      "Y6p","Y7a","Y8p","Y8s","Y9a","Y90",
+    ],
+    "MatePad": [
+      "MatePad 10.4","MatePad 11","MatePad Pro 11","MatePad Pro 12.6",
+    ],
+  },
+  "Oppo": {
+    "A Series": [
+      "A15","A16","A17","A18","A54","A55","A57","A57s","A58","A74","A77","A78","A79","A96","A98",
+    ],
+    "Reno": [
+      "Reno 6","Reno 6 Pro","Reno 7","Reno 7 Pro","Reno 8","Reno 8 Pro",
+      "Reno 10","Reno 10 Pro","Reno 11","Reno 11 Pro","Reno 12 Pro",
+    ],
+    "Find X": [
+      "Find X3 Pro","Find X5 Pro","Find X6 Pro","Find X7 Ultra",
+    ],
+    "F Series": [
+      "F19","F19 Pro","F21 Pro","F23","F25 Pro",
+    ],
+  },
+  "Vivo": {
+    "Y Series": [
+      "Y15s","Y16","Y17s","Y21","Y21s","Y22","Y22s","Y27","Y27s","Y28",
+      "Y33s","Y35","Y36","Y55","Y55s","Y72","Y73","Y75","Y76","Y78",
+    ],
+    "V Series": [
+      "V21","V21e","V23","V23e","V25","V25 Pro","V27","V27 Pro","V29","V29 Pro","V40",
+    ],
+    "X Series": [
+      "X80","X80 Pro","X90","X90 Pro","X100","X100 Pro",
+    ],
+  },
+  "Realme": {
+    "C Series": [
+      "C21","C21Y","C25","C25s","C25Y","C30","C31","C33","C35","C55","C67",
+    ],
+    "Number Series": [
+      "Realme 9","Realme 9i","Realme 9 Pro","Realme 9 Pro+",
+      "Realme 10","Realme 10 Pro","Realme 10 Pro+",
+      "Realme 11","Realme 11 Pro","Realme 11 Pro+",
+      "Realme 12 Pro","Realme 12 Pro+",
+    ],
+    "GT Series": [
+      "Realme GT Neo 2","Realme GT Neo 3","Realme GT Neo 5","Realme GT 5",
+    ],
+    "Narzo": [
+      "Narzo 50","Narzo 50A","Narzo 60","Narzo 70",
+    ],
+  },
+  "Nokia": {
+    "G Series": ["Nokia G10","Nokia G20","Nokia G21","Nokia G22","Nokia G42"],
+    "C Series": ["Nokia C20","Nokia C21","Nokia C30","Nokia C31","Nokia C32"],
+    "X Series": ["Nokia X10","Nokia X20","Nokia X30"],
+  },
+  "OnePlus": {
+    "OnePlus": [
+      "OnePlus 9","OnePlus 9 Pro","OnePlus 10 Pro","OnePlus 10T",
+      "OnePlus 11","OnePlus 11R","OnePlus 12","OnePlus 12R",
+    ],
+    "Nord": [
+      "Nord 2","Nord 2T","Nord 3","Nord CE 2","Nord CE 3","Nord CE 4",
+    ],
+  },
+  "أخرى": {
+    "جهاز آخر": [],
+  },
+};
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string; icon: React.FC<{ className?: string }> }> = {
   pending:     { label: "انتظار",      color: "text-amber-400",   bg: "bg-amber-500/15 border-amber-500/30",   icon: Clock },
@@ -807,48 +984,114 @@ function NewJobForm({
   onCreated: (job: RepairJob) => void;
 }) {
   const { toast } = useToast();
-  const [customerSearch, setCustomerSearch]     = useState("");
-  const [customerId, setCustomerId]             = useState<number | null>(null);
-  const [customerName, setCustomerName]         = useState("");
-  const [customerPhone, setCustomerPhone]       = useState("");
-  const [brand, setBrand]                       = useState("");
-  const [model, setModel]                       = useState("");
-  const [imei, setImei]                         = useState("");
-  const [color, setColor]                       = useState("");
-  const [storage, setStorage]                   = useState("");
-  const [problem, setProblem]                   = useState("");
-  const [techId, setTechId]                     = useState("");
+
+  /* ── Customer state ── */
+  const [phone, setPhone]               = useState("");
+  const [customerId, setCustomerId]     = useState<number | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [showAddCust, setShowAddCust]   = useState(false);
+  const [newCustName, setNewCustName]   = useState("");
+  const [addingCust, setAddingCust]     = useState(false);
+
+  /* ── Device state ── */
+  const [brand, setBrand]       = useState("");
+  const [category, setCategory] = useState("");
+  const [model, setModel]       = useState("");
+  const [customModel, setCustomModel] = useState("");
+  const [imei, setImei]         = useState("");
+  const [devicePin, setDevicePin] = useState("");
+  const [problem, setProblem]   = useState("");
+  const [techId, setTechId]     = useState("");
+
+  /* ── Financial/Date state ── */
   const [estimated, setEstimated]               = useState("");
   const [deposit, setDeposit]                   = useState("");
   const [receivedAt, setReceivedAt]             = useState(new Date().toISOString().split("T")[0]);
   const [estimatedDelivery, setEstimatedDelivery] = useState("");
   const [submitting, setSubmitting]             = useState(false);
 
-  const filteredCust = customers.filter((c) =>
-    c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    (c.phone && c.phone.includes(customerSearch))
-  ).slice(0, 6);
+  /* ── Derived device options ── */
+  const brandNames   = Object.keys(DEVICE_CATALOG);
+  const categories   = brand && DEVICE_CATALOG[brand] ? Object.keys(DEVICE_CATALOG[brand]) : [];
+  const models       = brand && category && DEVICE_CATALOG[brand]?.[category] ? DEVICE_CATALOG[brand][category] : [];
+  const isOtherBrand = brand === "أخرى";
+  const isOtherCat   = brand !== "أخرى" && categories.length > 0 && category === "جهاز آخر";
 
-  const selectCustomer = (c: { id: number; name: string; phone?: string }) => {
-    setCustomerId(c.id);
-    setCustomerName(c.name);
-    setCustomerPhone(c.phone ?? "");
-    setCustomerSearch(c.name);
+  /* ── Phone lookup ── */
+  const phoneDigits = phone.replace(/\D/g, "");
+  const isComplete  = phoneDigits.length === 11;
+
+  // Auto-match from already-loaded customers list
+  useEffect(() => {
+    if (!isComplete) { setCustomerId(null); setCustomerName(""); setShowAddCust(false); return; }
+    const found = customers.find((c) => (c.phone ?? "").replace(/\D/g, "") === phoneDigits);
+    if (found) {
+      setCustomerId(found.id);
+      setCustomerName(found.name);
+      setShowAddCust(false);
+    } else {
+      setCustomerId(null);
+      setCustomerName("");
+      setShowAddCust(true);
+    }
+  }, [phoneDigits, isComplete, customers]);
+
+  const handleAddCustomer = async () => {
+    if (!newCustName.trim()) { toast({ title: "أدخل اسم العميل", variant: "destructive" }); return; }
+    setAddingCust(true);
+    try {
+      const res = await authFetch(api("/api/repair-customers"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newCustName.trim(), phone: phoneDigits }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        // If phone already exists with another name, use that customer
+        if (data.existing) {
+          setCustomerId(Number(data.existing.id));
+          setCustomerName(String(data.existing.name));
+          setShowAddCust(false);
+          toast({ title: `تم تحديد العميل الموجود: ${data.existing.name}` });
+          return;
+        }
+        throw new Error(data.error ?? "خطأ في إضافة العميل");
+      }
+      setCustomerId(Number(data.id));
+      setCustomerName(String(data.name));
+      setShowAddCust(false);
+      toast({ title: `✅ تمت إضافة العميل: ${data.name}` });
+    } catch (e: unknown) {
+      toast({ title: (e as Error).message, variant: "destructive" });
+    } finally {
+      setAddingCust(false);
+    }
   };
 
+  /* ── Submit ── */
+  const finalModel = isOtherBrand || isOtherCat ? customModel : model;
+
   const handleSubmit = async () => {
-    if (!customerName.trim()) { toast({ title: "اسم العميل مطلوب", variant: "destructive" }); return; }
-    if (!brand.trim()) { toast({ title: "الماركة مطلوبة", variant: "destructive" }); return; }
-    if (!model.trim()) { toast({ title: "الموديل مطلوب", variant: "destructive" }); return; }
+    if (!customerName.trim()) { toast({ title: "يرجى تحديد العميل أولاً", variant: "destructive" }); return; }
+    if (!brand.trim())       { toast({ title: "الماركة مطلوبة", variant: "destructive" }); return; }
+    if (!finalModel.trim())  { toast({ title: "الموديل مطلوب", variant: "destructive" }); return; }
 
     setSubmitting(true);
     try {
+      const deviceBrand = isOtherBrand ? customModel : brand;
+      const deviceModel = isOtherBrand ? customModel : (isOtherCat ? customModel : `${category} ${model}`.trim());
+
       const res = await authFetch(api("/api/repair-jobs"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customer_id: customerId, customer_name: customerName, customer_phone: customerPhone,
-          device_brand: brand, device_model: model, imei, color, storage,
+          customer_id: customerId,
+          customer_name: customerName,
+          customer_phone: phoneDigits,
+          device_brand: deviceBrand,
+          device_model: deviceModel,
+          imei,
+          device_pin: devicePin || null,
           problem_description: problem,
           technician_id: techId ? Number(techId) : null,
           technician_name: users.find((u) => u.id.toString() === techId)?.name ?? null,
@@ -881,75 +1124,176 @@ function NewJobForm({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Customer */}
+
+        {/* ── 1. Customer by Phone ── */}
         <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
-          <p className="text-[10px] text-white/40 font-bold flex items-center gap-1"><Phone className="w-3 h-3" /> بيانات العميل</p>
+          <p className="text-[10px] text-white/40 font-bold flex items-center gap-1">
+            <Phone className="w-3 h-3" /> بيانات العميل
+          </p>
+
+          {/* Phone input — always first */}
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
-            <input value={customerSearch} onChange={(e) => { setCustomerSearch(e.target.value); setCustomerName(e.target.value); setCustomerId(null); }}
-              placeholder="ابحث عن عميل أو أدخل اسماً جديداً..." className="erp-input w-full pr-8 text-sm" />
-            {customerSearch && !customerId && filteredCust.length > 0 && (
-              <div className="absolute top-full mt-1 right-0 left-0 z-20 glass-panel rounded-xl border border-white/10 max-h-36 overflow-y-auto">
-                {filteredCust.map((c) => (
-                  <button key={c.id} onClick={() => selectCustomer(c)}
-                    className="w-full text-right px-3 py-2 text-sm text-white/70 hover:bg-white/5 flex justify-between">
-                    <span>{c.name}</span>
-                    {c.phone && <span className="text-white/30 text-xs">{c.phone}</span>}
-                  </button>
-                ))}
-              </div>
+            <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+              placeholder="رقم الهاتف (11 رقم) *"
+              className="erp-input w-full pr-8 text-sm font-mono tracking-widest"
+              inputMode="numeric"
+              maxLength={11}
+            />
+            {phoneDigits.length > 0 && phoneDigits.length < 11 && (
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-white/30">
+                {11 - phoneDigits.length} رقم متبقي
+              </span>
             )}
           </div>
-          <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
-            placeholder="رقم الهاتف" className="erp-input w-full text-sm" />
+
+          {/* Found customer */}
+          {isComplete && customerId && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div>
+                <p className="text-emerald-300 text-sm font-bold">{customerName}</p>
+                <p className="text-[10px] text-emerald-400/60">عميل موجود</p>
+              </div>
+            </div>
+          )}
+
+          {/* Not found — add new */}
+          {isComplete && showAddCust && (
+            <div className="space-y-2 p-2 rounded-xl bg-amber-500/5 border border-amber-500/20">
+              <p className="text-[10px] text-amber-400 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> الرقم غير موجود — أضف عميل جديد لقسم الصيانة
+              </p>
+              <input
+                value={newCustName}
+                onChange={(e) => setNewCustName(e.target.value)}
+                placeholder="اسم العميل *"
+                className="erp-input w-full text-sm"
+              />
+              <button
+                onClick={handleAddCustomer}
+                disabled={addingCust}
+                className="w-full py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold transition-all disabled:opacity-50"
+              >
+                {addingCust ? "جاري الإضافة..." : "➕ إضافة العميل"}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Device */}
+        {/* ── 2. Device Data ── */}
         <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
-          <p className="text-[10px] text-white/40 font-bold flex items-center gap-1"><Smartphone className="w-3 h-3" /> بيانات الجهاز</p>
-          <div className="grid grid-cols-2 gap-2">
+          <p className="text-[10px] text-white/40 font-bold flex items-center gap-1">
+            <Smartphone className="w-3 h-3" /> بيانات الجهاز
+          </p>
+
+          {/* Row 1: Brand */}
+          <div>
+            <label className="text-[10px] text-white/40 mb-1 block">الماركة *</label>
+            <select
+              value={brand}
+              onChange={(e) => { setBrand(e.target.value); setCategory(""); setModel(""); setCustomModel(""); }}
+              className="erp-input w-full text-sm"
+            >
+              <option value="">— اختر الماركة —</option>
+              {brandNames.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </div>
+
+          {/* Row 2: Category (only when brand selected and not "أخرى") */}
+          {brand && !isOtherBrand && categories.length > 0 && (
             <div>
-              <label className="text-[10px] text-white/40 mb-1 block">الماركة *</label>
-              <select value={brand} onChange={(e) => setBrand(e.target.value)} className="erp-input w-full text-sm">
-                <option value="">— اختر —</option>
-                {BRANDS.map((b) => <option key={b} value={b}>{b}</option>)}
+              <label className="text-[10px] text-white/40 mb-1 block">التصنيف *</label>
+              <select
+                value={category}
+                onChange={(e) => { setCategory(e.target.value); setModel(""); setCustomModel(""); }}
+                className="erp-input w-full text-sm"
+              >
+                <option value="">— اختر التصنيف —</option>
+                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
+          )}
+
+          {/* Row 3: Model dropdown (when category has models) or text input */}
+          {brand && !isOtherBrand && category && !isOtherCat && models.length > 0 && (
             <div>
               <label className="text-[10px] text-white/40 mb-1 block">الموديل *</label>
-              <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="مثال: iPhone 15 Pro" className="erp-input w-full text-sm" />
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="erp-input w-full text-sm"
+              >
+                <option value="">— اختر الموديل —</option>
+                {models.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
             </div>
+          )}
+
+          {/* Free text model for: "أخرى" brand / "جهاز آخر" category / empty models list */}
+          {(isOtherBrand || isOtherCat || (brand && category && models.length === 0)) && (
+            <div>
+              <label className="text-[10px] text-white/40 mb-1 block">
+                {isOtherBrand ? "الماركة والموديل *" : "الموديل *"}
+              </label>
+              <input
+                value={customModel}
+                onChange={(e) => setCustomModel(e.target.value)}
+                placeholder={isOtherBrand ? "مثال: Tecno Spark 20" : "أدخل الموديل"}
+                className="erp-input w-full text-sm"
+              />
+            </div>
+          )}
+
+          {/* Row 4: IMEI + Device PIN side by side */}
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[10px] text-white/40 mb-1 block">رقم IMEI</label>
-              <input value={imei} onChange={(e) => setImei(e.target.value)} placeholder="15 رقم" className="erp-input w-full text-sm font-mono" maxLength={15} />
+              <input
+                value={imei}
+                onChange={(e) => setImei(e.target.value)}
+                placeholder="15 رقم"
+                className="erp-input w-full text-sm font-mono"
+                maxLength={15}
+                inputMode="numeric"
+              />
             </div>
             <div>
-              <label className="text-[10px] text-white/40 mb-1 block">اللون</label>
-              <input value={color} onChange={(e) => setColor(e.target.value)} placeholder="مثال: أسود، أبيض..." className="erp-input w-full text-sm" />
-            </div>
-            <div>
-              <label className="text-[10px] text-white/40 mb-1 block">التخزين</label>
-              <select value={storage} onChange={(e) => setStorage(e.target.value)} className="erp-input w-full text-sm">
-                <option value="">— اختر —</option>
-                {STORAGE_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] text-white/40 mb-1 block">الفني المسؤول</label>
-              <select value={techId} onChange={(e) => setTechId(e.target.value)} className="erp-input w-full text-sm">
-                <option value="">— اختر الفني —</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
+              <label className="text-[10px] text-white/40 mb-1 block">الرقم السري للجهاز</label>
+              <input
+                value={devicePin}
+                onChange={(e) => setDevicePin(e.target.value)}
+                placeholder="PIN / كلمة المرور"
+                className="erp-input w-full text-sm font-mono"
+              />
             </div>
           </div>
+
+          {/* Technician */}
+          <div>
+            <label className="text-[10px] text-white/40 mb-1 block">الفني المسؤول</label>
+            <select value={techId} onChange={(e) => setTechId(e.target.value)} className="erp-input w-full text-sm">
+              <option value="">— اختر الفني —</option>
+              {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          </div>
+
+          {/* Problem */}
           <div>
             <label className="text-[10px] text-white/40 mb-1 block">وصف المشكلة</label>
-            <textarea value={problem} onChange={(e) => setProblem(e.target.value)} rows={2}
-              placeholder="ما الشكوى التي أبلغ عنها العميل؟" className="erp-input w-full text-sm resize-none" />
+            <textarea
+              value={problem}
+              onChange={(e) => setProblem(e.target.value)}
+              rows={2}
+              placeholder="ما الشكوى التي أبلغ عنها العميل؟"
+              className="erp-input w-full text-sm resize-none"
+            />
           </div>
         </div>
 
-        {/* Financials & Dates */}
+        {/* ── 3. Financials & Dates ── */}
         <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
           <p className="text-[10px] text-white/40 font-bold">التكلفة والتواريخ</p>
           <div className="grid grid-cols-2 gap-2">
@@ -972,8 +1316,11 @@ function NewJobForm({
           </div>
         </div>
 
-        <button onClick={handleSubmit} disabled={submitting}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold transition-all disabled:opacity-50">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting || !customerId}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold transition-all disabled:opacity-50"
+        >
           {submitting ? "جاري الإنشاء..." : <><Plus className="w-4 h-4" /> إنشاء البطاقة</>}
         </button>
       </div>
