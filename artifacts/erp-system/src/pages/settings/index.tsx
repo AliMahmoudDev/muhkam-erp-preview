@@ -13,6 +13,7 @@ import {
   Percent,
   Banknote,
   CreditCard,
+  Target,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
@@ -26,7 +27,8 @@ const InvoiceTab        = lazy(() => import('./invoice-tab'));
 const SystemTab         = lazy(() => import('./system-tab'));
 const VatTab            = lazy(() => import('./vat-tab'));
 const SalaryAdvanceTab  = lazy(() => import('./salary-advance-tab'));
-const PaymentMethodsTab = lazy(() => import('./payment-methods-tab'));
+const PaymentMethodsTab  = lazy(() => import('./payment-methods-tab'));
+const SalesTargetsTab   = lazy(() => import('./sales-targets-tab'));
 
 /* ─── Tab types ─── */
 type Tab =
@@ -40,6 +42,7 @@ type Tab =
   | 'vat'
   | 'salary-advance'
   | 'payment-methods'
+  | 'sales-targets'
   | 'system';
 
 /* ─── Section config ─── */
@@ -52,6 +55,7 @@ const TAB_SECTIONS: {
     tabs: [
       { id: 'users', label: 'المستخدمون', icon: Users },
       { id: 'company', label: 'بيانات الشركة', icon: Building2 },
+      { id: 'sales-targets', label: 'أهداف المبيعات', icon: Target },
     ],
   },
   {
@@ -225,6 +229,7 @@ export default function SettingsPage() {
             {activeTab === 'invoice' && <InvoiceTab />}
             {activeTab === 'salary-advance' && <SalaryAdvanceTab />}
             {activeTab === 'payment-methods' && <PaymentMethodsTab />}
+            {activeTab === 'sales-targets' && <SalesTargetsTab />}
             {activeTab === 'system' && <SystemTab />}
           </Suspense>
         </div>

@@ -56,6 +56,7 @@ import accrualsRouter from "./accruals";
 import bankReconciliationRouter from "./bank-reconciliation";
 import budgetsRouter from "./budgets";
 import costCentersRouter from "./cost-centers";
+import salesTargetsRouter from "./sales-targets";
 
 const router: IRouter = Router();
 
@@ -117,6 +118,7 @@ router.use(attendanceRouter);
 router.use(leavesRouter);
 router.use(incentivesRouter);
 router.use(salaryAdvancesRouter);
+router.use(salesTargetsRouter);
 router.use(employeeBonusesCustodyRouter);
 router.use(attendanceDeductionsRouter);
 router.use(fiscalYearsRouter);
