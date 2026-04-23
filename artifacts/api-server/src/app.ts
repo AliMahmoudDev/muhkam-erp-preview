@@ -170,32 +170,21 @@ app.use('/api/auth/login/email', authLimiter);
 app.use('/api/auth/refresh', authLimiter);
 app.use('/api/auth/2fa/login', authLimiter);
 
-/* Same limits for the ADVANCED frontend prefix (/advanced/api/...) */
-app.use('/advanced/api/auth/login', authLimiter);
-app.use('/advanced/api/auth/register', authLimiter);
-app.use('/advanced/api/auth/login/email', authLimiter);
-app.use('/advanced/api/auth/refresh', authLimiter);
-app.use('/advanced/api/auth/2fa/login', authLimiter);
-
 /* ── Per-tenant rate limiting (after auth routes) ─────────── */
 app.use('/api', perTenantRateLimit);
-app.use('/advanced/api', perTenantRateLimit);
 
 app.use('/api', router);
-/* ── Mirror router for ADVANCED frontend (sends requests to /advanced/api/…) ── */
-app.use('/advanced/api', router);
 
 /* ── Production: serve React frontend static files ─────────────────────────
-   Two editions are served from the same Express backend:
-   • MuhKam          → /*          (artifacts/muhkam-pro/dist/public)
-   • MuhKam Advanced → /advanced/* (artifacts/erp-system/dist/public)
+   Single unified frontend served from Express backend:
+   • MuhKam ERP → /* (artifacts/erp-system/dist/public)
+   Features (accounting, etc.) are controlled per-company via edition field.
    ────────────────────────────────────────────────────────────────────────── */
 if (process.env.NODE_ENV === 'production') {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
-  /* ── MuhKam Advanced at /advanced/ (erp-system) ── */
-  const advancedDist =
-    process.env.ADVANCED_DIST || path.resolve(currentDir, '../../erp-system/dist/public');
+  const frontendDist =
+    process.env.FRONTEND_DIST || path.resolve(currentDir, '../../erp-system/dist/public');
 
   const staticOpts = {
     maxAge: '7d',
@@ -208,24 +197,13 @@ if (process.env.NODE_ENV === 'production') {
     },
   };
 
-  app.use('/advanced', express.static(advancedDist, staticOpts));
-  /* SPA fallback for MuhKam Advanced */
-  app.use('/advanced', (_req: express.Request, res: express.Response) => {
-    res.sendFile(path.join(advancedDist, 'index.html'));
-  });
-  logger.info({ advancedDist }, 'Serving MuhKam Advanced frontend at /advanced/');
-
-  /* ── MuhKam at / (muhkam-pro) ── */
-  const rootDist =
-    process.env.FRONTEND_DIST || path.resolve(currentDir, '../../muhkam-pro/dist/public');
-
-  app.use(express.static(rootDist, staticOpts));
-  /* SPA fallback for MuhKam */
+  app.use(express.static(frontendDist, staticOpts));
+  /* SPA fallback */
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path.startsWith('/api')) return next();
-    res.sendFile(path.join(rootDist, 'index.html'));
+    res.sendFile(path.join(frontendDist, 'index.html'));
   });
-  logger.info({ rootDist }, 'Serving MuhKam frontend at /');
+  logger.info({ frontendDist }, 'Serving MuhKam ERP frontend at /');
 }
 
 /* ── Global error handler — no stack traces in responses ───── */
