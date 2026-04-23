@@ -1324,17 +1324,21 @@ function NewJobForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newCustName.trim(), phone: phoneDigits }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data: Record<string, unknown> = {};
+      try { data = JSON.parse(text); } catch {
+        throw new Error(res.ok ? "استجابة غير صحيحة من الخادم" : `خطأ في الخادم (${res.status})`);
+      }
       if (!res.ok) {
         // If phone already exists with another name, use that customer
         if (data.existing) {
-          setCustomerId(Number(data.existing.id));
-          setCustomerName(String(data.existing.name));
+          setCustomerId(Number((data.existing as Record<string, unknown>).id));
+          setCustomerName(String((data.existing as Record<string, unknown>).name));
           setShowAddCust(false);
-          toast({ title: `تم تحديد العميل الموجود: ${data.existing.name}` });
+          toast({ title: `تم تحديد العميل الموجود: ${(data.existing as Record<string, unknown>).name}` });
           return;
         }
-        throw new Error(data.error ?? "خطأ في إضافة العميل");
+        throw new Error(String(data.error ?? "خطأ في إضافة العميل"));
       }
       setCustomerId(Number(data.id));
       setCustomerName(String(data.name));

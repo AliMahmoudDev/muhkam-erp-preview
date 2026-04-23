@@ -1558,7 +1558,7 @@ export default function Customers() {
   const { toast } = useToast();
 
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'customers' | 'suppliers' | 'debtors' | 'creditors'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'customers' | 'suppliers' | 'debtors' | 'creditors' | 'repair'>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [showReceipt, setShowReceipt] = useState<{
     id: number;
@@ -1713,6 +1713,7 @@ export default function Customers() {
     if (typeFilter === 'suppliers') return !!c.is_supplier;
     if (typeFilter === 'debtors')  return bal > 0.001;           // عليه — ذمم مدينة
     if (typeFilter === 'creditors') return bal < -0.001;          // له — ذمم دائنة
+    if (typeFilter === 'repair') return (c as unknown as { source?: string }).source === 'repair';
     return true;
   });
 
@@ -2031,6 +2032,7 @@ export default function Customers() {
           { key: 'suppliers', label: 'موردون فقط' },
           { key: 'debtors',   label: 'عليهم رصيد (AR)' },
           { key: 'creditors', label: 'لهم رصيد (AP)' },
+          { key: 'repair',    label: 'عملاء صيانة' },
         ] as const).map(f => (
           <button
             key={f.key}
@@ -2781,11 +2783,16 @@ export default function Customers() {
                       </span>
                     </td>
                     <td className="p-4 font-bold text-white">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {customer.name}
                         {customer.is_supplier && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0">
                             يتم الشراء منه
+                          </span>
+                        )}
+                        {(customer as unknown as { source?: string }).source === 'repair' && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-violet-500/15 text-violet-400 border border-violet-500/25 shrink-0">
+                            🔧 صيانة
                           </span>
                         )}
                       </div>
