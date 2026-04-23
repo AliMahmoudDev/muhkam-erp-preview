@@ -572,6 +572,9 @@ export default function SuperAdmin() {
   const [supportEmail, setSupportEmail] = useState('');
   const [settingSaving, setSettingSaving] = useState(false);
 
+  /* ── Settings active card ─── */
+  const [settingsActiveCard, setSettingsActiveCard] = useState<'support' | 'audit' | 'backup' | 'security' | null>(null);
+
   /* ── Password Reset ─── */
   const [resetPassResult, setResetPassResult] = useState<{
     company_name: string;
@@ -4543,7 +4546,7 @@ export default function SuperAdmin() {
             TAB: SETTINGS  (support + audit + backups + security)
             ══════════════════════════════ */}
         {activeTab === 'settings' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
             {/* Hidden restore file input */}
             <input
@@ -4611,542 +4614,587 @@ export default function SuperAdmin() {
               </div>
             )}
 
-            {/* ═══ كارت الدعم الفني ═══ */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '18px' }}>⚙️</span>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: C.text }}>معلومات التواصل للدعم</h3>
-              </div>
-              <div style={{
-                background: C.card, borderRadius: '16px',
-                border: `1px solid ${C.border}`, padding: '24px 28px',
-              }}>
-                <p style={{ fontSize: '12px', color: C.muted, margin: '0 0 20px' }}>
-                  تُستخدم هذه المعلومات في صفحة انتهاء الاشتراك وفي شريط التنبيه للمستخدمين
-                </p>
-                <DarkInput
-                  label="رقم واتساب للدعم"
-                  value={supportWa}
-                  onChange={setSupportWa}
-                  placeholder="مثال: 966501234567"
-                  hint="أدخل الرقم كاملاً مع رمز الدولة بدون + أو مسافات"
-                />
-                <DarkInput
-                  label="البريد الإلكتروني للدعم"
-                  value={supportEmail}
-                  onChange={setSupportEmail}
-                  placeholder="support@example.com"
-                  type="email"
-                />
-                <button
-                  onClick={() => { void saveSupportSettings(); }}
-                  disabled={settingSaving}
-                  style={{
-                    width: '100%', padding: '12px', borderRadius: '10px', border: 'none',
-                    background: settingSaving ? C.border : C.orange,
-                    color: '#fff', fontSize: '14px', fontWeight: 800,
-                    cursor: settingSaving ? 'not-allowed' : 'pointer',
-                    fontFamily: FONT, transition: 'filter 0.15s', marginTop: '4px',
-                  }}
-                >
-                  {settingSaving ? 'جاري الحفظ...' : '💾 حفظ الإعدادات'}
-                </button>
-              </div>
-            </div>
-
-            {/* ═══ سجل التدقيق ═══ */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '18px' }}>📋</span>
-                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: C.text }}>سجل التدقيق الجنائي</h3>
-                  <span style={{ fontSize: '12px', color: C.muted }}>كل إجراء قام به المدير العام</span>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <select
-                    value={auditAction}
-                    onChange={e => setAuditAction(e.target.value)}
+            {/* ═══ كروت التنقل ═══ */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '14px' }}>
+              {([
+                { key: 'support',  icon: '⚙️', label: 'معلومات التواصل',   desc: 'واتساب وبريد الدعم الفني',        color: '#F97316' },
+                { key: 'audit',    icon: '📋', label: 'سجل التدقيق',        desc: 'كل إجراءات المدير العام',          color: '#60A5FA' },
+                { key: 'backup',   icon: '💾', label: 'النسخ الاحتياطية',   desc: 'إنشاء / استعادة / تشفير',          color: '#34D399' },
+                { key: 'security', icon: '🔐', label: 'الأمان',              desc: 'المصادقة الثنائية وقيود IP',       color: '#A78BFA' },
+              ] as { key: 'support'|'audit'|'backup'|'security'; icon: string; label: string; desc: string; color: string }[]).map(card => {
+                const isActive = settingsActiveCard === card.key;
+                return (
+                  <div
+                    key={card.key}
+                    onClick={() => setSettingsActiveCard(isActive ? null : card.key)}
                     style={{
-                      padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`,
-                      background: C.card, color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer',
+                      background: isActive ? `${card.color}18` : C.card,
+                      border: `1.5px solid ${isActive ? card.color : C.border}`,
+                      borderRadius: '16px', padding: '20px 18px',
+                      cursor: 'pointer', transition: 'all 0.18s',
+                      display: 'flex', flexDirection: 'column', gap: '8px',
                     }}
                   >
-                    <option value="">كل الإجراءات</option>
-                    <option value="SUPER_ADMIN_LIST_VIEW">عرض الشركات</option>
-                    <option value="CREATE">إنشاء</option>
-                    <option value="UPDATE">تحديث</option>
-                    <option value="DELETE">حذف</option>
-                    <option value="ACTIVATE">تفعيل</option>
-                    <option value="SUSPEND">تعليق</option>
-                    <option value="EXTEND">تمديد</option>
-                    <option value="BACKUP_CREATED">نسخة احتياطية</option>
-                    <option value="RESTORE_STARTED">استعادة</option>
-                  </select>
-                  <select
-                    value={auditLimit}
-                    onChange={e => setAuditLimit(Number(e.target.value))}
-                    style={{
-                      padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`,
-                      background: C.card, color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer',
-                    }}
-                  >
-                    {[25, 50, 100, 200, 500].map(n => <option key={n} value={n}>{n} سجل</option>)}
-                  </select>
-                  <button onClick={() => void refetchAudit()} style={{
-                    padding: '8px 16px', borderRadius: '10px', border: `1px solid ${C.border}`,
-                    background: 'transparent', color: C.muted, fontSize: '13px',
-                    fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
-                  }}>🔄 تحديث</button>
-                </div>
-              </div>
-              {auditLoading ? (
-                <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>⏳ جارٍ التحميل...</div>
-              ) : (
-                <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                  <div style={{
-                    display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
-                    padding: '12px 20px', background: 'rgba(255,255,255,0.03)',
-                    borderBottom: `1px solid ${C.border}`,
-                    fontSize: '11px', fontWeight: 800, color: C.muted, gap: '12px',
-                  }}>
-                    <span>الإجراء</span><span>النوع</span><span>رقم السجل</span><span>الملاحظة</span><span>التاريخ</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '26px' }}>{card.icon}</span>
+                      {isActive && <span style={{ color: card.color, fontSize: '16px', fontWeight: 900 }}>✕</span>}
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: isActive ? card.color : C.text }}>{card.label}</div>
+                    <div style={{ fontSize: '12px', color: C.muted, lineHeight: 1.5 }}>{card.desc}</div>
                   </div>
-                  {!auditData?.rows.length ? (
-                    <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>لا توجد سجلات</div>
-                  ) : (
-                    <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                      {auditData.rows.map(row => {
-                        const ACTION_AR: Record<string, { label: string; color: string }> = {
-                          create:             { label: 'إنشاء',                color: '#34D399' },
-                          update:             { label: 'تعديل',                color: '#60A5FA' },
-                          delete:             { label: 'حذف',                  color: '#EF4444' },
-                          cancel:             { label: 'إلغاء',                color: '#EF4444' },
-                          price_override:     { label: 'تجاوز سعر',           color: '#FBBF24' },
-                          lock_period:        { label: 'إغلاق فترة',           color: '#F87171' },
-                          unlock_period:      { label: 'فتح فترة',             color: '#34D399' },
-                          COMPANY_ACTIVATED:    { label: 'تفعيل شركة',        color: '#34D399' },
-                          COMPANY_SUSPENDED:    { label: 'إيقاف شركة',        color: '#F59E0B' },
-                          COMPANY_EXTENDED:     { label: 'تمديد اشتراك',      color: '#38BDF8' },
-                          COMPANY_DELETED:      { label: 'حذف شركة',          color: '#EF4444' },
-                          ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: '#A78BFA' },
-                          RESTORE_STARTED:      { label: 'بدء استعادة',       color: '#A78BFA' },
-                          RESTORE_COMPLETED:    { label: 'اكتمال استعادة',    color: '#34D399' },
-                          RESTORE_FAILED:       { label: 'فشل استعادة',       color: '#EF4444' },
-                          SUPER_ADMIN_ACCESS:    { label: 'وصول مدير عام',     color: '#818CF8' },
-                          SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: '#818CF8' },
-                        };
-                        const RECORD_AR: Record<string, string> = {
-                          customer: 'عميل', supplier: 'مورد', sale: 'فاتورة بيع',
-                          purchase: 'فاتورة شراء', product: 'منتج',
-                          financial_lock: 'قفل مالي', expense: 'مصروف',
-                          user: 'مستخدم', company: 'شركة', subscription: 'اشتراك',
-                          fiscal_year: 'سنة مالية', system: 'النظام', announcement: 'إعلان',
-                        };
-                        const actionMeta = ACTION_AR[row.action] ?? { label: row.action, color: '#94A3B8' };
-                        return (
-                          <div key={row.id} style={{
-                            display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
-                            padding: '12px 20px', gap: '12px',
-                            borderBottom: `1px solid rgba(255,255,255,0.04)`,
-                            fontSize: '12px', alignItems: 'center',
-                          }}>
-                            <span style={{ color: actionMeta.color, fontWeight: 700 }}>{actionMeta.label}</span>
-                            <span style={{ color: C.muted }}>{RECORD_AR[row.record_type] ?? row.record_type}</span>
-                            <span style={{ color: C.muted, textAlign: 'center' }}>#{row.record_id}</span>
-                            <span style={{ color: C.text, fontSize: '11px', lineHeight: 1.4 }}>{row.note ?? '—'}</span>
-                            <span style={{ color: C.muted, fontSize: '11px', direction: 'ltr', textAlign: 'right' }}>
-                              {new Date(row.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {auditData && (
-                    <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.border}`, fontSize: '12px', color: C.muted }}>
-                      إجمالي السجلات المعروضة: {auditData.count}
-                    </div>
-                  )}
-                </div>
-              )}
+                );
+              })}
             </div>
 
-            {/* ═══ النسخ الاحتياطية ═══ */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '18px' }}>💾</span>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: C.text }}>النسخ الاحتياطية للقاعدة</h3>
-              </div>
-              {/* Header card */}
+            {/* ═══ لوحة المحتوى ═══ */}
+            {settingsActiveCard && (
               <div style={{
-                background: C.card, borderRadius: '16px',
-                border: `1px solid ${C.border}`, padding: '20px 24px',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
-                marginBottom: '12px',
+                background: C.card, borderRadius: '18px',
+                border: `1px solid ${C.border}`, overflow: 'hidden',
               }}>
-                <p style={{ fontSize: '12px', color: C.muted, margin: 0 }}>
-                  النسخ التلقائي يعمل يومياً الساعة 3:00 صباحاً •{' '}
-                  {backupData ? `${backupData.total} نسخة متوفرة` : 'جاري التحميل...'}
-                </p>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => { void triggerBackup(); }}
-                    disabled={creatingBackup}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '10px 18px', borderRadius: '10px', border: 'none',
-                      background: creatingBackup ? C.border : C.orange,
-                      color: '#fff', fontSize: '13px', fontWeight: 800,
-                      cursor: creatingBackup ? 'not-allowed' : 'pointer', fontFamily: FONT,
-                    }}
-                  >
-                    💾 {creatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة الآن'}
-                  </button>
-                  <button
-                    onClick={openRestorePicker}
-                    disabled={restoring}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '10px 18px', borderRadius: '10px',
-                      border: '1px solid rgba(139,92,246,0.4)',
-                      background: 'rgba(139,92,246,0.1)',
-                      color: '#A78BFA', fontSize: '13px', fontWeight: 800,
-                      cursor: restoring ? 'not-allowed' : 'pointer', fontFamily: FONT,
-                    }}
-                  >
-                    {restoring ? '⏳ جاري الاستعادة...' : '📥 استعادة من ملف'}
-                  </button>
-                </div>
-              </div>
-              {restoreOk && (
+                {/* رأس اللوحة */}
                 <div style={{
-                  padding: '14px 18px', borderRadius: '12px', marginBottom: '12px',
-                  background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
-                  color: '#22C55E', fontSize: '13px', fontWeight: 700,
-                }}>✅ {restoreOk}</div>
-              )}
-              {restoreErr && (
-                <div style={{
-                  padding: '14px 18px', borderRadius: '12px', marginBottom: '12px',
-                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-                  color: '#EF4444', fontSize: '13px',
-                }}>❌ {restoreErr}</div>
-              )}
-              {/* Backups table */}
-              <div style={{ background: C.card, borderRadius: '16px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                <div style={{
-                  display: 'grid', gridTemplateColumns: '1fr 90px 160px 110px',
-                  gap: '8px', padding: '10px 20px',
-                  background: 'rgba(249,115,22,0.08)',
-                  borderBottom: `1px solid ${C.border}`,
-                  fontSize: '11px', fontWeight: 700, color: C.orange,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '16px 24px', borderBottom: `1px solid ${C.border}`,
+                  background: 'rgba(255,255,255,0.02)',
                 }}>
-                  <div>اسم الملف</div>
-                  <div style={{ textAlign: 'center' }}>الحجم</div>
-                  <div style={{ textAlign: 'center' }}>التاريخ</div>
-                  <div style={{ textAlign: 'center' }}>تنزيل</div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: C.text }}>
+                    {settingsActiveCard === 'support'  && '⚙️ معلومات التواصل للدعم'}
+                    {settingsActiveCard === 'audit'    && '📋 سجل التدقيق الجنائي'}
+                    {settingsActiveCard === 'backup'   && '💾 النسخ الاحتياطية'}
+                    {settingsActiveCard === 'security' && '🔐 الأمان'}
+                  </h3>
+                  <button
+                    onClick={() => setSettingsActiveCard(null)}
+                    style={{
+                      background: 'transparent', border: 'none', color: C.muted,
+                      fontSize: '20px', cursor: 'pointer', lineHeight: 1, padding: '2px 6px',
+                    }}
+                  >✕</button>
                 </div>
-                {!backupData ? (
-                  <div style={{ padding: '48px', textAlign: 'center', color: C.muted }}>جاري التحميل...</div>
-                ) : backupData.backups.length === 0 ? (
-                  <div style={{ padding: '48px', textAlign: 'center', color: C.muted }}>
-                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>💾</div>
-                    <div>لا توجد نسخ احتياطية بعد</div>
-                    <div style={{ fontSize: '12px', marginTop: '6px' }}>اضغط "إنشاء نسخة الآن" للبدء</div>
-                  </div>
-                ) : (
-                  backupData.backups.map((b, idx) => {
-                    const isEnc = b.filename.endsWith('.enc');
-                    const isDownloading = downloadingFile === b.filename;
-                    return (
-                      <div
-                        key={b.filename}
-                        style={{
-                          display: 'grid', gridTemplateColumns: '1fr 90px 160px 110px',
-                          gap: '8px', padding: '12px 20px', alignItems: 'center',
-                          borderBottom: idx < backupData.backups.length - 1 ? `1px solid ${C.border}` : 'none',
-                          background: idx % 2 === 1 ? 'rgba(15,23,42,0.4)' : 'transparent',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                          <span style={{ fontSize: '14px' }}>{isEnc ? '🔒' : '📄'}</span>
-                          <span style={{
-                            fontSize: '12px', color: C.text, fontFamily: 'monospace',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          }}>{b.filename}</span>
-                          {isEnc && (
-                            <span style={{
-                              fontSize: '9px', padding: '1px 5px', borderRadius: '4px',
-                              background: 'rgba(139,92,246,0.2)', color: '#A78BFA',
-                              border: '1px solid rgba(139,92,246,0.3)', whiteSpace: 'nowrap',
-                            }}>مشفّر</span>
-                          )}
-                        </div>
-                        <div style={{ textAlign: 'center', fontSize: '12px', color: C.muted }}>{b.size_mb} MB</div>
-                        <div style={{ textAlign: 'center', fontSize: '11px', color: C.muted, direction: 'ltr' }}>
-                          {new Date(b.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <button
-                            onClick={() => { void downloadBackup(b.filename); }}
-                            disabled={isDownloading}
-                            style={{
-                              padding: '6px 12px', borderRadius: '8px',
-                              border: '1px solid rgba(34,197,94,0.3)',
-                              background: 'rgba(34,197,94,0.1)',
-                              color: '#22C55E', fontSize: '12px', fontWeight: 700,
-                              cursor: isDownloading ? 'not-allowed' : 'pointer', fontFamily: FONT,
-                            }}
-                          >
-                            {isDownloading ? '⏳' : '⬇️ تنزيل'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
 
-              {/* Encryption Key section */}
-              <div style={{
-                background: C.card, borderRadius: '16px',
-                border: `1px solid ${C.border}`, padding: '20px 24px', marginTop: '12px',
-              }}>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: C.text, marginBottom: '8px' }}>
-                  🔑 مفتاح تشفير النسخ
-                </div>
-                <div style={{ fontSize: '12px', color: C.muted, marginBottom: '14px', lineHeight: 1.6 }}>
-                  {encEnabled
-                    ? 'النسخ الاحتياطية مشفّرة — احتفظ بهذا المفتاح في مكان آمن.'
-                    : 'التشفير غير مفعّل — عيّن متغير BACKUP_ENCRYPTION_KEY في ملف .env لتفعيله.'}
-                </div>
-                {encEnabled && (
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {/* ── Support ── */}
+                {settingsActiveCard === 'support' && (
+                  <div style={{ padding: '24px' }}>
+                    <p style={{ fontSize: '12px', color: C.muted, margin: '0 0 20px' }}>
+                      تُستخدم هذه المعلومات في صفحة انتهاء الاشتراك وفي شريط التنبيه للمستخدمين
+                    </p>
+                    <DarkInput
+                      label="رقم واتساب للدعم"
+                      value={supportWa}
+                      onChange={setSupportWa}
+                      placeholder="مثال: 966501234567"
+                      hint="أدخل الرقم كاملاً مع رمز الدولة بدون + أو مسافات"
+                    />
+                    <DarkInput
+                      label="البريد الإلكتروني للدعم"
+                      value={supportEmail}
+                      onChange={setSupportEmail}
+                      placeholder="support@example.com"
+                      type="email"
+                    />
                     <button
-                      onClick={() => void loadEncKey()}
-                      disabled={encKeyLoading}
+                      onClick={() => { void saveSupportSettings(); }}
+                      disabled={settingSaving}
                       style={{
-                        padding: '8px 16px', borderRadius: '10px',
-                        border: `1px solid ${C.border}`,
-                        background: 'transparent', color: C.muted, fontSize: '13px',
-                        fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                        width: '100%', padding: '12px', borderRadius: '10px', border: 'none',
+                        background: settingSaving ? C.border : C.orange,
+                        color: '#fff', fontSize: '14px', fontWeight: 800,
+                        cursor: settingSaving ? 'not-allowed' : 'pointer',
+                        fontFamily: FONT, transition: 'filter 0.15s', marginTop: '4px',
                       }}
                     >
-                      {encKeyLoading ? '⏳ ...' : encKeyVisible ? '🙈 إخفاء' : '👁 عرض المفتاح'}
+                      {settingSaving ? 'جاري الحفظ...' : '💾 حفظ الإعدادات'}
                     </button>
-                    {encKeyVisible && encKey && (
-                      <>
-                        <button onClick={copyEncKey} style={{
-                          padding: '8px 16px', borderRadius: '10px',
-                          border: '1px solid rgba(34,197,94,0.3)',
-                          background: 'rgba(34,197,94,0.1)',
-                          color: '#22C55E', fontSize: '13px', fontWeight: 700,
-                          cursor: 'pointer', fontFamily: FONT,
+                  </div>
+                )}
+
+                {/* ── Audit ── */}
+                {settingsActiveCard === 'audit' && (
+                  <div style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '12px', color: C.muted }}>كل إجراء قام به المدير العام</span>
+                      <div style={{ marginRight: 'auto', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <select
+                        value={auditAction}
+                        onChange={e => setAuditAction(e.target.value)}
+                        style={{
+                          padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`,
+                          background: 'rgba(15,23,42,0.6)', color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer',
+                        }}
+                      >
+                        <option value="">كل الإجراءات</option>
+                        <option value="SUPER_ADMIN_LIST_VIEW">عرض الشركات</option>
+                        <option value="CREATE">إنشاء</option>
+                        <option value="UPDATE">تحديث</option>
+                        <option value="DELETE">حذف</option>
+                        <option value="ACTIVATE">تفعيل</option>
+                        <option value="SUSPEND">تعليق</option>
+                        <option value="EXTEND">تمديد</option>
+                        <option value="BACKUP_CREATED">نسخة احتياطية</option>
+                        <option value="RESTORE_STARTED">استعادة</option>
+                      </select>
+                      <select
+                        value={auditLimit}
+                        onChange={e => setAuditLimit(Number(e.target.value))}
+                        style={{
+                          padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`,
+                          background: 'rgba(15,23,42,0.6)', color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer',
+                        }}
+                      >
+                        {[25, 50, 100, 200, 500].map(n => <option key={n} value={n}>{n} سجل</option>)}
+                      </select>
+                      <button onClick={() => void refetchAudit()} style={{
+                        padding: '8px 16px', borderRadius: '10px', border: `1px solid ${C.border}`,
+                        background: 'transparent', color: C.muted, fontSize: '13px',
+                        fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                      }}>🔄 تحديث</button>
+                      </div>
+                    </div>
+                    {auditLoading ? (
+                      <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>⏳ جارٍ التحميل...</div>
+                    ) : (
+                      <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: '14px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+                        <div style={{
+                          display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
+                          padding: '12px 20px', background: 'rgba(255,255,255,0.03)',
+                          borderBottom: `1px solid ${C.border}`,
+                          fontSize: '11px', fontWeight: 800, color: C.muted, gap: '12px',
                         }}>
-                          {encKeyCopied ? '✅ تم النسخ' : '📋 نسخ'}
-                        </button>
-                        <button onClick={emailEncKey} style={{
-                          padding: '8px 16px', borderRadius: '10px',
-                          border: '1px solid rgba(59,130,246,0.3)',
-                          background: 'rgba(59,130,246,0.1)',
-                          color: '#60A5FA', fontSize: '13px', fontWeight: 700,
-                          cursor: 'pointer', fontFamily: FONT,
-                        }}>
-                          📧 إرسال بالبريد
-                        </button>
-                      </>
+                          <span>الإجراء</span><span>النوع</span><span>رقم السجل</span><span>الملاحظة</span><span>التاريخ</span>
+                        </div>
+                        {!auditData?.rows.length ? (
+                          <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>لا توجد سجلات</div>
+                        ) : (
+                          <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                            {auditData.rows.map(row => {
+                              const ACTION_AR: Record<string, { label: string; color: string }> = {
+                                create:             { label: 'إنشاء',                color: '#34D399' },
+                                update:             { label: 'تعديل',                color: '#60A5FA' },
+                                delete:             { label: 'حذف',                  color: '#EF4444' },
+                                cancel:             { label: 'إلغاء',                color: '#EF4444' },
+                                price_override:     { label: 'تجاوز سعر',           color: '#FBBF24' },
+                                lock_period:        { label: 'إغلاق فترة',           color: '#F87171' },
+                                unlock_period:      { label: 'فتح فترة',             color: '#34D399' },
+                                COMPANY_ACTIVATED:    { label: 'تفعيل شركة',        color: '#34D399' },
+                                COMPANY_SUSPENDED:    { label: 'إيقاف شركة',        color: '#F59E0B' },
+                                COMPANY_EXTENDED:     { label: 'تمديد اشتراك',      color: '#38BDF8' },
+                                COMPANY_DELETED:      { label: 'حذف شركة',          color: '#EF4444' },
+                                ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: '#A78BFA' },
+                                RESTORE_STARTED:      { label: 'بدء استعادة',       color: '#A78BFA' },
+                                RESTORE_COMPLETED:    { label: 'اكتمال استعادة',    color: '#34D399' },
+                                RESTORE_FAILED:       { label: 'فشل استعادة',       color: '#EF4444' },
+                                SUPER_ADMIN_ACCESS:    { label: 'وصول مدير عام',     color: '#818CF8' },
+                                SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: '#818CF8' },
+                              };
+                              const RECORD_AR: Record<string, string> = {
+                                customer: 'عميل', supplier: 'مورد', sale: 'فاتورة بيع',
+                                purchase: 'فاتورة شراء', product: 'منتج',
+                                financial_lock: 'قفل مالي', expense: 'مصروف',
+                                user: 'مستخدم', company: 'شركة', subscription: 'اشتراك',
+                                fiscal_year: 'سنة مالية', system: 'النظام', announcement: 'إعلان',
+                              };
+                              const actionMeta = ACTION_AR[row.action] ?? { label: row.action, color: '#94A3B8' };
+                              return (
+                                <div key={row.id} style={{
+                                  display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
+                                  padding: '12px 20px', gap: '12px',
+                                  borderBottom: `1px solid rgba(255,255,255,0.04)`,
+                                  fontSize: '12px', alignItems: 'center',
+                                }}>
+                                  <span style={{ color: actionMeta.color, fontWeight: 700 }}>{actionMeta.label}</span>
+                                  <span style={{ color: C.muted }}>{RECORD_AR[row.record_type] ?? row.record_type}</span>
+                                  <span style={{ color: C.muted, textAlign: 'center' }}>#{row.record_id}</span>
+                                  <span style={{ color: C.text, fontSize: '11px', lineHeight: 1.4 }}>{row.note ?? '—'}</span>
+                                  <span style={{ color: C.muted, fontSize: '11px', direction: 'ltr', textAlign: 'right' }}>
+                                    {new Date(row.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {auditData && (
+                          <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.border}`, fontSize: '12px', color: C.muted }}>
+                            إجمالي السجلات المعروضة: {auditData.count}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
-                {encKeyVisible && encKey && (
-                  <div style={{
-                    marginTop: '12px', padding: '10px 14px', borderRadius: '10px',
-                    background: 'rgba(15,23,42,0.6)', border: `1px solid ${C.border}`,
-                    fontSize: '12px', color: '#A78BFA', fontFamily: 'monospace',
-                    wordBreak: 'break-all',
-                  }}>{encKey}</div>
-                )}
-              </div>
-            </div>
 
-            {/* ═══ الأمان ═══ */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '18px' }}>🔐</span>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: C.text }}>الأمان</h3>
-              </div>
-              {/* 2FA Card */}
-              <div style={{
-                background: C.card, borderRadius: '16px',
-                border: `1px solid ${C.border}`, overflow: 'hidden', marginBottom: '16px',
-              }}>
-                <div style={{
-                  padding: '20px 24px', borderBottom: `1px solid ${C.border}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '12px', flexWrap: 'wrap',
-                }}>
-                  <div>
-                    <div style={{ fontSize: '15px', fontWeight: 800, color: C.text, marginBottom: '4px' }}>
-                      المصادقة الثنائية (2FA)
-                    </div>
-                    <div style={{ fontSize: '12px', color: C.muted }}>
-                      تضيف طبقة أمان إضافية — يتطلب Google Authenticator أو Authy
-                    </div>
-                  </div>
-                  {totpStatus?.totp_enabled ? (
-                    <span style={{
-                      padding: '6px 14px', borderRadius: '999px',
-                      background: 'rgba(34,197,94,0.15)', color: C.success,
-                      fontSize: '12px', fontWeight: 700, border: '1px solid rgba(34,197,94,0.3)',
-                    }}>✅ مفعلة</span>
-                  ) : (
-                    <span style={{
-                      padding: '6px 14px', borderRadius: '999px',
-                      background: 'rgba(148,163,184,0.1)', color: C.muted,
-                      fontSize: '12px', fontWeight: 700, border: `1px solid ${C.border}`,
-                    }}>غير مفعلة</span>
-                  )}
-                </div>
-                <div style={{ padding: '24px' }}>
-                  {secMsg && (
+                {/* ── Backup ── */}
+                {settingsActiveCard === 'backup' && (
+                  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {/* Header actions */}
                     <div style={{
-                      padding: '10px 14px', borderRadius: '10px', marginBottom: '16px',
-                      fontSize: '13px', fontWeight: 700,
-                      background: secMsg.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                      color: secMsg.ok ? C.success : '#EF4444',
-                      border: `1px solid ${secMsg.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                    }}>{secMsg.text}</div>
-                  )}
-                  {!totpStatus?.totp_enabled && !totpSetupData && (
-                    <button
-                      onClick={() => { void startTotpSetup(); }}
-                      disabled={secLoading}
-                      style={{
-                        padding: '11px 22px', borderRadius: '10px', border: 'none',
-                        background: secLoading ? C.border : C.orange,
-                        color: '#fff', fontSize: '14px', fontWeight: 800,
-                        cursor: secLoading ? 'not-allowed' : 'pointer', fontFamily: FONT,
-                      }}
-                    >
-                      {secLoading ? 'جاري الإعداد...' : '🔐 تفعيل المصادقة الثنائية'}
-                    </button>
-                  )}
-                  {!totpStatus?.totp_enabled && totpSetupData && (
-                    <div>
-                      <p style={{ fontSize: '13px', color: C.muted, marginBottom: '16px' }}>
-                        امسح الكود بتطبيق <strong style={{ color: C.text }}>Google Authenticator</strong> أو{' '}
-                        <strong style={{ color: C.text }}>Authy</strong>، ثم أدخل الرمز:
+                      display: 'flex', alignItems: 'center',
+                      justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
+                    }}>
+                      <p style={{ fontSize: '12px', color: C.muted, margin: 0 }}>
+                        النسخ التلقائي يعمل يومياً الساعة 3:00 صباحاً •{' '}
+                        {backupData ? `${backupData.total} نسخة متوفرة` : 'جاري التحميل...'}
                       </p>
-                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-                        <img src={totpSetupData.qr_code} alt="QR Code" style={{ width: '200px', height: '200px', borderRadius: '12px', border: `2px solid ${C.border}` }} />
-                      </div>
-                      <div style={{ background: 'rgba(15,23,42,0.6)', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '11px', color: C.muted, wordBreak: 'break-all' }}>
-                        <span style={{ color: C.orange, fontWeight: 700 }}>إدخال يدوي: </span>{totpSetupData.secret}
-                      </div>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <input
-                          value={totpInput}
-                          onChange={(e) => setTotpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="أدخل الرمز (6 أرقام)"
-                          style={{
-                            flex: 1, padding: '10px 14px', borderRadius: '10px',
-                            border: `1px solid ${C.border}`, background: 'rgba(15,23,42,0.5)',
-                            color: C.text, fontSize: '18px', letterSpacing: '6px',
-                            textAlign: 'center', fontFamily: 'monospace', outline: 'none',
-                          }}
-                          maxLength={6}
-                        />
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         <button
-                          onClick={() => { void confirmTotpSetup(); }}
-                          disabled={secLoading || totpInput.length !== 6}
+                          onClick={() => { void triggerBackup(); }}
+                          disabled={creatingBackup}
                           style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
                             padding: '10px 18px', borderRadius: '10px', border: 'none',
-                            background: totpInput.length === 6 ? C.orange : C.border,
-                            color: '#fff', fontSize: '14px', fontWeight: 800,
-                            cursor: totpInput.length !== 6 ? 'not-allowed' : 'pointer', fontFamily: FONT,
+                            background: creatingBackup ? C.border : C.orange,
+                            color: '#fff', fontSize: '13px', fontWeight: 800,
+                            cursor: creatingBackup ? 'not-allowed' : 'pointer', fontFamily: FONT,
                           }}
-                        >{secLoading ? '...' : 'تأكيد'}</button>
+                        >
+                          💾 {creatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة الآن'}
+                        </button>
+                        <button
+                          onClick={openRestorePicker}
+                          disabled={restoring}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            padding: '10px 18px', borderRadius: '10px',
+                            border: '1px solid rgba(139,92,246,0.4)',
+                            background: 'rgba(139,92,246,0.1)',
+                            color: '#A78BFA', fontSize: '13px', fontWeight: 800,
+                            cursor: restoring ? 'not-allowed' : 'pointer', fontFamily: FONT,
+                          }}
+                        >
+                          {restoring ? '⏳ جاري الاستعادة...' : '📥 استعادة من ملف'}
+                        </button>
                       </div>
                     </div>
-                  )}
-                  {totpStatus?.totp_enabled && (
-                    <div>
-                      {!showDisable ? (
-                        <button
-                          onClick={() => { setShowDisable(true); setSecMsg(null); }}
-                          style={{
-                            padding: '11px 22px', borderRadius: '10px',
-                            border: '1px solid rgba(239,68,68,0.4)',
-                            background: 'rgba(239,68,68,0.1)',
-                            color: '#EF4444', fontSize: '14px', fontWeight: 800,
-                            cursor: 'pointer', fontFamily: FONT,
-                          }}
-                        >🚫 إيقاف المصادقة الثنائية</button>
-                      ) : (
-                        <div>
-                          <p style={{ fontSize: '13px', color: C.muted, marginBottom: '12px' }}>أدخل رمز التحقق من التطبيق للتأكيد:</p>
-                          <div style={{ display: 'flex', gap: '10px' }}>
-                            <input
-                              value={disableTotpInput}
-                              onChange={(e) => setDisableTotpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                              placeholder="6 أرقام"
-                              style={{
-                                flex: 1, padding: '10px 14px', borderRadius: '10px',
-                                border: '1px solid rgba(239,68,68,0.4)',
-                                background: 'rgba(239,68,68,0.05)',
-                                color: C.text, fontSize: '18px', letterSpacing: '6px',
-                                textAlign: 'center', fontFamily: 'monospace', outline: 'none',
-                              }}
-                              maxLength={6}
-                            />
-                            <button
-                              onClick={() => { void confirmDisableTotp(); }}
-                              disabled={secLoading || disableTotpInput.length !== 6}
-                              style={{
-                                padding: '10px 18px', borderRadius: '10px', border: 'none',
-                                background: disableTotpInput.length === 6 ? '#EF4444' : C.border,
-                                color: '#fff', fontSize: '14px', fontWeight: 800,
-                                cursor: disableTotpInput.length !== 6 ? 'not-allowed' : 'pointer', fontFamily: FONT,
-                              }}
-                            >{secLoading ? '...' : 'إيقاف'}</button>
-                            <button
-                              onClick={() => { setShowDisable(false); setDisableTotpInput(''); setSecMsg(null); }}
-                              style={{
-                                padding: '10px 14px', borderRadius: '10px',
-                                border: `1px solid ${C.border}`, background: 'transparent',
-                                color: C.muted, fontSize: '14px', cursor: 'pointer', fontFamily: FONT,
-                              }}
-                            >إلغاء</button>
-                          </div>
+                    {restoreOk && (
+                      <div style={{
+                        padding: '14px 18px', borderRadius: '12px',
+                        background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+                        color: '#22C55E', fontSize: '13px', fontWeight: 700,
+                      }}>✅ {restoreOk}</div>
+                    )}
+                    {restoreErr && (
+                      <div style={{
+                        padding: '14px 18px', borderRadius: '12px',
+                        background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                        color: '#EF4444', fontSize: '13px',
+                      }}>❌ {restoreErr}</div>
+                    )}
+                    {/* Backups table */}
+                    <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: '14px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+                      <div style={{
+                        display: 'grid', gridTemplateColumns: '1fr 90px 160px 110px',
+                        gap: '8px', padding: '10px 20px',
+                        background: 'rgba(249,115,22,0.08)',
+                        borderBottom: `1px solid ${C.border}`,
+                        fontSize: '11px', fontWeight: 700, color: C.orange,
+                      }}>
+                        <div>اسم الملف</div>
+                        <div style={{ textAlign: 'center' }}>الحجم</div>
+                        <div style={{ textAlign: 'center' }}>التاريخ</div>
+                        <div style={{ textAlign: 'center' }}>تنزيل</div>
+                      </div>
+                      {!backupData ? (
+                        <div style={{ padding: '48px', textAlign: 'center', color: C.muted }}>جاري التحميل...</div>
+                      ) : backupData.backups.length === 0 ? (
+                        <div style={{ padding: '48px', textAlign: 'center', color: C.muted }}>
+                          <div style={{ fontSize: '32px', marginBottom: '12px' }}>💾</div>
+                          <div>لا توجد نسخ احتياطية بعد</div>
+                          <div style={{ fontSize: '12px', marginTop: '6px' }}>اضغط "إنشاء نسخة الآن" للبدء</div>
                         </div>
+                      ) : (
+                        backupData.backups.map((b, idx) => {
+                          const isEnc = b.filename.endsWith('.enc');
+                          const isDownloading = downloadingFile === b.filename;
+                          return (
+                            <div
+                              key={b.filename}
+                              style={{
+                                display: 'grid', gridTemplateColumns: '1fr 90px 160px 110px',
+                                gap: '8px', padding: '12px 20px', alignItems: 'center',
+                                borderBottom: idx < backupData.backups.length - 1 ? `1px solid ${C.border}` : 'none',
+                                background: idx % 2 === 1 ? 'rgba(15,23,42,0.4)' : 'transparent',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                <span style={{ fontSize: '14px' }}>{isEnc ? '🔒' : '📄'}</span>
+                                <span style={{
+                                  fontSize: '12px', color: C.text, fontFamily: 'monospace',
+                                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                }}>{b.filename}</span>
+                                {isEnc && (
+                                  <span style={{
+                                    fontSize: '9px', padding: '1px 5px', borderRadius: '4px',
+                                    background: 'rgba(139,92,246,0.2)', color: '#A78BFA',
+                                    border: '1px solid rgba(139,92,246,0.3)', whiteSpace: 'nowrap',
+                                  }}>مشفّر</span>
+                                )}
+                              </div>
+                              <div style={{ textAlign: 'center', fontSize: '12px', color: C.muted }}>{b.size_mb} MB</div>
+                              <div style={{ textAlign: 'center', fontSize: '11px', color: C.muted, direction: 'ltr' }}>
+                                {new Date(b.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                              <div style={{ textAlign: 'center' }}>
+                                <button
+                                  onClick={() => { void downloadBackup(b.filename); }}
+                                  disabled={isDownloading}
+                                  style={{
+                                    padding: '6px 12px', borderRadius: '8px',
+                                    border: '1px solid rgba(34,197,94,0.3)',
+                                    background: 'rgba(34,197,94,0.1)',
+                                    color: '#22C55E', fontSize: '12px', fontWeight: 700,
+                                    cursor: isDownloading ? 'not-allowed' : 'pointer', fontFamily: FONT,
+                                  }}
+                                >
+                                  {isDownloading ? '⏳' : '⬇️ تنزيل'}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
                       )}
                     </div>
-                  )}
-                </div>
+                    {/* Encryption Key */}
+                    <div style={{
+                      background: 'rgba(15,23,42,0.4)', borderRadius: '14px',
+                      border: `1px solid ${C.border}`, padding: '20px 24px',
+                    }}>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: C.text, marginBottom: '8px' }}>
+                        🔑 مفتاح تشفير النسخ
+                      </div>
+                      <div style={{ fontSize: '12px', color: C.muted, marginBottom: '14px', lineHeight: 1.6 }}>
+                        {encEnabled
+                          ? 'النسخ الاحتياطية مشفّرة — احتفظ بهذا المفتاح في مكان آمن.'
+                          : 'التشفير غير مفعّل — عيّن متغير BACKUP_ENCRYPTION_KEY في ملف .env لتفعيله.'}
+                      </div>
+                      {encEnabled && (
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => void loadEncKey()}
+                            disabled={encKeyLoading}
+                            style={{
+                              padding: '8px 16px', borderRadius: '10px',
+                              border: `1px solid ${C.border}`,
+                              background: 'transparent', color: C.muted, fontSize: '13px',
+                              fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                            }}
+                          >
+                            {encKeyLoading ? '⏳ ...' : encKeyVisible ? '🙈 إخفاء' : '👁 عرض المفتاح'}
+                          </button>
+                          {encKeyVisible && encKey && (
+                            <>
+                              <button onClick={copyEncKey} style={{
+                                padding: '8px 16px', borderRadius: '10px',
+                                border: '1px solid rgba(34,197,94,0.3)',
+                                background: 'rgba(34,197,94,0.1)',
+                                color: '#22C55E', fontSize: '13px', fontWeight: 700,
+                                cursor: 'pointer', fontFamily: FONT,
+                              }}>
+                                {encKeyCopied ? '✅ تم النسخ' : '📋 نسخ'}
+                              </button>
+                              <button onClick={emailEncKey} style={{
+                                padding: '8px 16px', borderRadius: '10px',
+                                border: '1px solid rgba(59,130,246,0.3)',
+                                background: 'rgba(59,130,246,0.1)',
+                                color: '#60A5FA', fontSize: '13px', fontWeight: 700,
+                                cursor: 'pointer', fontFamily: FONT,
+                              }}>
+                                📧 إرسال بالبريد
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      {encKeyVisible && encKey && (
+                        <div style={{
+                          marginTop: '12px', padding: '10px 14px', borderRadius: '10px',
+                          background: 'rgba(15,23,42,0.6)', border: `1px solid ${C.border}`,
+                          fontSize: '12px', color: '#A78BFA', fontFamily: 'monospace',
+                          wordBreak: 'break-all',
+                        }}>{encKey}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Security ── */}
+                {settingsActiveCard === 'security' && (
+                  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {/* 2FA */}
+                    <div style={{
+                      background: 'rgba(15,23,42,0.4)', borderRadius: '14px',
+                      border: `1px solid ${C.border}`, overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        padding: '20px 24px', borderBottom: `1px solid ${C.border}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        gap: '12px', flexWrap: 'wrap',
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '15px', fontWeight: 800, color: C.text, marginBottom: '4px' }}>
+                            المصادقة الثنائية (2FA)
+                          </div>
+                          <div style={{ fontSize: '12px', color: C.muted }}>
+                            تضيف طبقة أمان إضافية — يتطلب Google Authenticator أو Authy
+                          </div>
+                        </div>
+                        {totpStatus?.totp_enabled ? (
+                          <span style={{
+                            padding: '6px 14px', borderRadius: '999px',
+                            background: 'rgba(34,197,94,0.15)', color: C.success,
+                            fontSize: '12px', fontWeight: 700, border: '1px solid rgba(34,197,94,0.3)',
+                          }}>✅ مفعلة</span>
+                        ) : (
+                          <span style={{
+                            padding: '6px 14px', borderRadius: '999px',
+                            background: 'rgba(148,163,184,0.1)', color: C.muted,
+                            fontSize: '12px', fontWeight: 700, border: `1px solid ${C.border}`,
+                          }}>غير مفعلة</span>
+                        )}
+                      </div>
+                      <div style={{ padding: '24px' }}>
+                        {secMsg && (
+                          <div style={{
+                            padding: '10px 14px', borderRadius: '10px', marginBottom: '16px',
+                            fontSize: '13px', fontWeight: 700,
+                            background: secMsg.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                            color: secMsg.ok ? C.success : '#EF4444',
+                            border: `1px solid ${secMsg.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                          }}>{secMsg.text}</div>
+                        )}
+                        {!totpStatus?.totp_enabled && !totpSetupData && (
+                          <button
+                            onClick={() => { void startTotpSetup(); }}
+                            disabled={secLoading}
+                            style={{
+                              padding: '11px 22px', borderRadius: '10px', border: 'none',
+                              background: secLoading ? C.border : C.orange,
+                              color: '#fff', fontSize: '14px', fontWeight: 800,
+                              cursor: secLoading ? 'not-allowed' : 'pointer', fontFamily: FONT,
+                            }}
+                          >
+                            {secLoading ? 'جاري الإعداد...' : '🔐 تفعيل المصادقة الثنائية'}
+                          </button>
+                        )}
+                        {!totpStatus?.totp_enabled && totpSetupData && (
+                          <div>
+                            <p style={{ fontSize: '13px', color: C.muted, marginBottom: '16px' }}>
+                              امسح الكود بتطبيق <strong style={{ color: C.text }}>Google Authenticator</strong> أو{' '}
+                              <strong style={{ color: C.text }}>Authy</strong>، ثم أدخل الرمز:
+                            </p>
+                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                              <img src={totpSetupData.qr_code} alt="QR Code" style={{ width: '200px', height: '200px', borderRadius: '12px', border: `2px solid ${C.border}` }} />
+                            </div>
+                            <div style={{ background: 'rgba(15,23,42,0.6)', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '11px', color: C.muted, wordBreak: 'break-all' }}>
+                              <span style={{ color: C.orange, fontWeight: 700 }}>إدخال يدوي: </span>{totpSetupData.secret}
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              <input
+                                value={totpInput}
+                                onChange={(e) => setTotpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                placeholder="أدخل الرمز (6 أرقام)"
+                                style={{
+                                  flex: 1, padding: '10px 14px', borderRadius: '10px',
+                                  border: `1px solid ${C.border}`, background: 'rgba(15,23,42,0.5)',
+                                  color: C.text, fontSize: '18px', letterSpacing: '6px',
+                                  textAlign: 'center', fontFamily: 'monospace', outline: 'none',
+                                }}
+                                maxLength={6}
+                              />
+                              <button
+                                onClick={() => { void confirmTotpSetup(); }}
+                                disabled={secLoading || totpInput.length !== 6}
+                                style={{
+                                  padding: '10px 18px', borderRadius: '10px', border: 'none',
+                                  background: totpInput.length === 6 ? C.orange : C.border,
+                                  color: '#fff', fontSize: '14px', fontWeight: 800,
+                                  cursor: totpInput.length !== 6 ? 'not-allowed' : 'pointer', fontFamily: FONT,
+                                }}
+                              >{secLoading ? '...' : 'تأكيد'}</button>
+                            </div>
+                          </div>
+                        )}
+                        {totpStatus?.totp_enabled && (
+                          <div>
+                            {!showDisable ? (
+                              <button
+                                onClick={() => { setShowDisable(true); setSecMsg(null); }}
+                                style={{
+                                  padding: '11px 22px', borderRadius: '10px',
+                                  border: '1px solid rgba(239,68,68,0.4)',
+                                  background: 'rgba(239,68,68,0.1)',
+                                  color: '#EF4444', fontSize: '14px', fontWeight: 800,
+                                  cursor: 'pointer', fontFamily: FONT,
+                                }}
+                              >🚫 إيقاف المصادقة الثنائية</button>
+                            ) : (
+                              <div>
+                                <p style={{ fontSize: '13px', color: C.muted, marginBottom: '12px' }}>أدخل رمز التحقق من التطبيق للتأكيد:</p>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                  <input
+                                    value={disableTotpInput}
+                                    onChange={(e) => setDisableTotpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    placeholder="6 أرقام"
+                                    style={{
+                                      flex: 1, padding: '10px 14px', borderRadius: '10px',
+                                      border: '1px solid rgba(239,68,68,0.4)',
+                                      background: 'rgba(239,68,68,0.05)',
+                                      color: C.text, fontSize: '18px', letterSpacing: '6px',
+                                      textAlign: 'center', fontFamily: 'monospace', outline: 'none',
+                                    }}
+                                    maxLength={6}
+                                  />
+                                  <button
+                                    onClick={() => { void confirmDisableTotp(); }}
+                                    disabled={secLoading || disableTotpInput.length !== 6}
+                                    style={{
+                                      padding: '10px 18px', borderRadius: '10px', border: 'none',
+                                      background: disableTotpInput.length === 6 ? '#EF4444' : C.border,
+                                      color: '#fff', fontSize: '14px', fontWeight: 800,
+                                      cursor: disableTotpInput.length !== 6 ? 'not-allowed' : 'pointer', fontFamily: FONT,
+                                    }}
+                                  >{secLoading ? '...' : 'إيقاف'}</button>
+                                  <button
+                                    onClick={() => { setShowDisable(false); setDisableTotpInput(''); setSecMsg(null); }}
+                                    style={{
+                                      padding: '10px 14px', borderRadius: '10px',
+                                      border: `1px solid ${C.border}`, background: 'transparent',
+                                      color: C.muted, fontSize: '14px', cursor: 'pointer', fontFamily: FONT,
+                                    }}
+                                  >إلغاء</button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* IP Restriction */}
+                    <div style={{
+                      background: 'rgba(15,23,42,0.4)', borderRadius: '14px',
+                      border: `1px solid ${C.border}`, padding: '20px 24px',
+                    }}>
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: C.text, marginBottom: '8px' }}>
+                        قيود عنوان IP
+                      </div>
+                      <div style={{ fontSize: '12px', color: C.muted, lineHeight: 1.8 }}>
+                        لتقييد الوصول لعناوين IP محددة، أضف المتغير التالي في ملف{' '}
+                        <code style={{ color: C.orange }}>.env</code> على السيرفر:
+                        <br />
+                        <code style={{ color: C.success, fontSize: '12px' }}>
+                          SUPER_ADMIN_IPS=197.60.235.65,89.167.85.156
+                        </code>
+                        <br />
+                        <span style={{ color: C.warning }}>
+                          ⚠️ اتركه فارغاً للسماح لجميع الـ IPs (وضع التطوير)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
-              {/* IP Restriction */}
-              <div style={{
-                background: C.card, borderRadius: '16px',
-                border: `1px solid ${C.border}`, padding: '20px 24px',
-              }}>
-                <div style={{ fontSize: '15px', fontWeight: 800, color: C.text, marginBottom: '8px' }}>
-                  قيود عنوان IP
-                </div>
-                <div style={{ fontSize: '12px', color: C.muted, lineHeight: 1.8 }}>
-                  لتقييد الوصول لعناوين IP محددة، أضف المتغير التالي في ملف{' '}
-                  <code style={{ color: C.orange }}>.env</code> على السيرفر:
-                  <br />
-                  <code style={{ color: C.success, fontSize: '12px' }}>
-                    SUPER_ADMIN_IPS=197.60.235.65,89.167.85.156
-                  </code>
-                  <br />
-                  <span style={{ color: C.warning }}>
-                    ⚠️ اتركه فارغاً للسماح لجميع الـ IPs (وضع التطوير)
-                  </span>
-                </div>
-              </div>
-            </div>
+            )}
 
           </div>
         )}
