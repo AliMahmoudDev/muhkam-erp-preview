@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
+import { useSubscription } from '@/contexts/subscription';
 import { useAppSettings } from '@/contexts/app-settings';
 import { useWarehouse } from '@/contexts/warehouse';
 import { authFetch } from '@/lib/auth-fetch';
@@ -176,6 +177,7 @@ function TopbarSearch({ navItems, isDark }: { navItems: typeof NAV_ITEMS; isDark
 export function AppLayout({ children }: LayoutProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { hasFeature } = useSubscription();
   const { settings } = useAppSettings();
   const isDark = (settings.theme ?? 'dark') === 'dark';
 
@@ -206,6 +208,16 @@ export function AppLayout({ children }: LayoutProps) {
     }
   }, [warehouses, canSelectWarehouse, currentWarehouseId, setWarehouseId]);
 
+  const ACCOUNTING_PATHS = new Set([
+    '/accounts', '/journal-entries', '/fiscal-years',
+    '/fixed-assets', '/accruals', '/bank-reconciliation',
+    '/budgets', '/cost-centers',
+  ]);
+  const HR_PATHS         = new Set(['/employees', '/attendance']);
+  const POS_PATHS        = new Set(['/pos']);
+  const WARRANTY_PATHS   = new Set(['/warranty']);
+  const CONSIGNMENT_PATHS = new Set(['/consignment']);
+
   const visibleNav = NAV_ITEMS.filter((item) => {
     if (!canAccess(role, item.href)) return false;
     if (item.href === '/sales' && !hasPermission(user, 'can_view_sales')) return false;
@@ -220,6 +232,11 @@ export function AppLayout({ children }: LayoutProps) {
       return false;
     if (item.href === '/treasury' && !hasPermission(user, 'can_view_treasury')) return false;
     if (item.href === '/purchases' && !hasPermission(user, 'can_view_purchases')) return false;
+    if (ACCOUNTING_PATHS.has(item.href) && !hasFeature('accounting')) return false;
+    if (HR_PATHS.has(item.href) && !hasFeature('hr')) return false;
+    if (POS_PATHS.has(item.href) && !hasFeature('pos')) return false;
+    if (WARRANTY_PATHS.has(item.href) && !hasFeature('warranty')) return false;
+    if (CONSIGNMENT_PATHS.has(item.href) && !hasFeature('consignment')) return false;
     return true;
   });
 
