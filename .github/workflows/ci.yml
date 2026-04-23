@@ -128,15 +128,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build MuhKam frontend (muhkam-pro)
-        run: |
-          cd artifacts/muhkam-pro
-          NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
-
-      - name: Build MuhKam Advanced frontend (erp-system)
+      - name: Build MuhKam ERP frontend (erp-system)
         run: |
           cd artifacts/erp-system
-          NODE_ENV=production BASE_PATH=/advanced/ pnpm run build
+          NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
 
       - name: Build backend
         run: |
