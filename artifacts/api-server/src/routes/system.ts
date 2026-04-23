@@ -260,6 +260,14 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
   }
 
   const tables = body.data as Record<string, unknown[]>;
+
+  /* ── restore_modules: optional array for selective restore ── */
+  const restoreModules: string[] | null = Array.isArray(body.restore_modules)
+    ? (body.restore_modules as string[])
+    : null;
+  const shouldRestore = (mod: string) => !restoreModules || restoreModules.includes(mod);
+
+  /* Required base keys must exist in the file (even for selective restore) */
   const required = ["products", "customers", "sales"];
   // eslint-disable-next-line security/detect-object-injection
   const missing  = required.filter(k => !Array.isArray(tables[k]));
@@ -398,67 +406,108 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
       const tenantJeIds = (await tx.select({ id: journalEntriesTable.id }).from(journalEntriesTable)
         .where(eq(journalEntriesTable.company_id, companyId))).map(r => r.id);
 
-      /* Delete child rows scoped via parent IDs (children have no company_id) */
-      if (tenantJeIds.length)       await tx.delete(journalEntryLinesTable).where(inArray(journalEntryLinesTable.entry_id, tenantJeIds));
-      if (tenantSrIds.length)       await tx.delete(saleReturnItemsTable).where(inArray(saleReturnItemsTable.return_id, tenantSrIds));
-      if (tenantPrIds.length)       await tx.delete(purchaseReturnItemsTable).where(inArray(purchaseReturnItemsTable.return_id, tenantPrIds));
-      if (tenantSaleIds.length)     await tx.delete(saleItemsTable).where(inArray(saleItemsTable.sale_id, tenantSaleIds));
-      if (tenantPurchaseIds.length) await tx.delete(purchaseItemsTable).where(inArray(purchaseItemsTable.purchase_id, tenantPurchaseIds));
-
-      /* Delete tenant-scoped parent rows */
       const tenantOnly = (col: any) => eq(col, companyId);
-      await tx.delete(journalEntriesTable).where(tenantOnly(journalEntriesTable.company_id));
-      await tx.delete(salesReturnsTable).where(tenantOnly(salesReturnsTable.company_id));
-      await tx.delete(purchaseReturnsTable).where(tenantOnly(purchaseReturnsTable.company_id));
-      await tx.delete(salesTable).where(tenantOnly(salesTable.company_id));
-      await tx.delete(purchasesTable).where(tenantOnly(purchasesTable.company_id));
-      await tx.delete(expensesTable).where(tenantOnly(expensesTable.company_id));
-      await tx.delete(incomeTable).where(tenantOnly(incomeTable.company_id));
-      await tx.delete(receiptVouchersTable).where(tenantOnly(receiptVouchersTable.company_id));
-      await tx.delete(depositVouchersTable).where(tenantOnly(depositVouchersTable.company_id));
-      await tx.delete(paymentVouchersTable).where(tenantOnly(paymentVouchersTable.company_id));
-      await tx.delete(treasuryVouchersTable).where(tenantOnly(treasuryVouchersTable.company_id));
-      await tx.delete(safeTransfersTable).where(tenantOnly(safeTransfersTable.company_id));
-      await tx.delete(transactionsTable).where(tenantOnly(transactionsTable.company_id));
-      await tx.delete(stockMovementsTable).where(tenantOnly(stockMovementsTable.company_id));
-      await tx.delete(alertsTable).where(tenantOnly(alertsTable.company_id));
-      /* audit_logs intentionally NOT deleted — immutable forensic trail. */
-      await tx.delete(accountsTable).where(tenantOnly(accountsTable.company_id));
-      await tx.delete(productsTable).where(tenantOnly(productsTable.company_id));
-      await tx.delete(customersTable).where(tenantOnly(customersTable.company_id));
-      await tx.delete(safesTable).where(tenantOnly(safesTable.company_id));
-      await tx.delete(warehousesTable).where(tenantOnly(warehousesTable.company_id));
-
-      /* Re-insert (parents first). All rows force-tagged with our tenant id. */
       const ins = async <T>(tbl: Parameters<typeof tx.insert>[0], rows: T[]) => {
         if (rows.length > 0) await tx.insert(tbl).values(rows as any);
       };
 
-      await ins(safesTable,                get("safes"));
-      await ins(warehousesTable,           get("warehouses"));
-      await ins(productsTable,             get("products"));
-      await ins(customersTable,            get("customers"));
-      await ins(accountsTable,             get("accounts"));
-      await ins(salesTable,                get("sales"));
-      await ins(saleItemsTable,            get("sale_items"));
-      await ins(purchasesTable,            get("purchases"));
-      await ins(purchaseItemsTable,        get("purchase_items"));
-      await ins(salesReturnsTable,         get("sales_returns"));
-      await ins(saleReturnItemsTable,      get("sale_return_items"));
-      await ins(purchaseReturnsTable,      get("purchase_returns"));
-      await ins(purchaseReturnItemsTable,  get("purchase_return_items"));
-      await ins(expensesTable,             get("expenses"));
-      await ins(incomeTable,               get("income"));
-      await ins(transactionsTable,         get("transactions"));
-      await ins(receiptVouchersTable,      get("receipt_vouchers"));
-      await ins(depositVouchersTable,      get("deposit_vouchers"));
-      await ins(paymentVouchersTable,      get("payment_vouchers"));
-      await ins(treasuryVouchersTable,     get("treasury_vouchers"));
-      await ins(safeTransfersTable,        get("safe_transfers"));
-      await ins(stockMovementsTable,       get("stock_movements"));
-      await ins(journalEntriesTable,       get("journal_entries"));
-      await ins(journalEntryLinesTable,    get("journal_entry_lines"));
-      await ins(alertsTable,               get("alerts"));
+      /* ── Module: sales ── */
+      if (shouldRestore("sales")) {
+        if (tenantSrIds.length)   await tx.delete(saleReturnItemsTable).where(inArray(saleReturnItemsTable.return_id, tenantSrIds));
+        if (tenantSaleIds.length) await tx.delete(saleItemsTable).where(inArray(saleItemsTable.sale_id, tenantSaleIds));
+        await tx.delete(salesReturnsTable).where(tenantOnly(salesReturnsTable.company_id));
+        await tx.delete(salesTable).where(tenantOnly(salesTable.company_id));
+      }
+
+      /* ── Module: purchases ── */
+      if (shouldRestore("purchases")) {
+        if (tenantPrIds.length)       await tx.delete(purchaseReturnItemsTable).where(inArray(purchaseReturnItemsTable.return_id, tenantPrIds));
+        if (tenantPurchaseIds.length) await tx.delete(purchaseItemsTable).where(inArray(purchaseItemsTable.purchase_id, tenantPurchaseIds));
+        await tx.delete(purchaseReturnsTable).where(tenantOnly(purchaseReturnsTable.company_id));
+        await tx.delete(purchasesTable).where(tenantOnly(purchasesTable.company_id));
+      }
+
+      /* ── Module: finance ── */
+      if (shouldRestore("finance")) {
+        if (tenantJeIds.length) await tx.delete(journalEntryLinesTable).where(inArray(journalEntryLinesTable.entry_id, tenantJeIds));
+        await tx.delete(journalEntriesTable).where(tenantOnly(journalEntriesTable.company_id));
+        await tx.delete(expensesTable).where(tenantOnly(expensesTable.company_id));
+        await tx.delete(incomeTable).where(tenantOnly(incomeTable.company_id));
+        await tx.delete(receiptVouchersTable).where(tenantOnly(receiptVouchersTable.company_id));
+        await tx.delete(depositVouchersTable).where(tenantOnly(depositVouchersTable.company_id));
+        await tx.delete(paymentVouchersTable).where(tenantOnly(paymentVouchersTable.company_id));
+        await tx.delete(treasuryVouchersTable).where(tenantOnly(treasuryVouchersTable.company_id));
+        await tx.delete(safeTransfersTable).where(tenantOnly(safeTransfersTable.company_id));
+        await tx.delete(transactionsTable).where(tenantOnly(transactionsTable.company_id));
+        await tx.delete(accountsTable).where(tenantOnly(accountsTable.company_id));
+      }
+
+      /* ── Module: products ── */
+      if (shouldRestore("products")) {
+        await tx.delete(stockMovementsTable).where(tenantOnly(stockMovementsTable.company_id));
+        await tx.delete(productsTable).where(tenantOnly(productsTable.company_id));
+      }
+
+      /* ── Module: customers ── */
+      if (shouldRestore("customers")) {
+        await tx.delete(customersTable).where(tenantOnly(customersTable.company_id));
+      }
+
+      /* ── Module: infrastructure ── */
+      if (shouldRestore("infrastructure")) {
+        await tx.delete(safesTable).where(tenantOnly(safesTable.company_id));
+        await tx.delete(warehousesTable).where(tenantOnly(warehousesTable.company_id));
+      }
+
+      /* ── Module: alerts ── */
+      if (shouldRestore("alerts")) {
+        await tx.delete(alertsTable).where(tenantOnly(alertsTable.company_id));
+      }
+
+      /* audit_logs intentionally NOT deleted — immutable forensic trail. */
+
+      /* ── Re-insert (parents first) ── */
+      if (shouldRestore("infrastructure")) {
+        await ins(safesTable,     get("safes"));
+        await ins(warehousesTable, get("warehouses"));
+      }
+      if (shouldRestore("products")) {
+        await ins(productsTable,  get("products"));
+      }
+      if (shouldRestore("customers")) {
+        await ins(customersTable, get("customers"));
+      }
+      if (shouldRestore("finance")) {
+        await ins(accountsTable,          get("accounts"));
+        await ins(expensesTable,          get("expenses"));
+        await ins(incomeTable,            get("income"));
+        await ins(transactionsTable,      get("transactions"));
+        await ins(receiptVouchersTable,   get("receipt_vouchers"));
+        await ins(depositVouchersTable,   get("deposit_vouchers"));
+        await ins(paymentVouchersTable,   get("payment_vouchers"));
+        await ins(treasuryVouchersTable,  get("treasury_vouchers"));
+        await ins(safeTransfersTable,     get("safe_transfers"));
+        await ins(journalEntriesTable,    get("journal_entries"));
+        await ins(journalEntryLinesTable, get("journal_entry_lines"));
+      }
+      if (shouldRestore("sales")) {
+        await ins(salesTable,              get("sales"));
+        await ins(saleItemsTable,          get("sale_items"));
+        await ins(salesReturnsTable,       get("sales_returns"));
+        await ins(saleReturnItemsTable,    get("sale_return_items"));
+      }
+      if (shouldRestore("purchases")) {
+        await ins(purchasesTable,           get("purchases"));
+        await ins(purchaseItemsTable,       get("purchase_items"));
+        await ins(purchaseReturnsTable,     get("purchase_returns"));
+        await ins(purchaseReturnItemsTable, get("purchase_return_items"));
+      }
+      if (shouldRestore("products")) {
+        await ins(stockMovementsTable,      get("stock_movements"));
+      }
+      if (shouldRestore("alerts")) {
+        await ins(alertsTable,              get("alerts"));
+      }
       /* audit_logs are NOT restored — they are an immutable forensic trail
          maintained by the running system, not part of restorable state. */
     });
