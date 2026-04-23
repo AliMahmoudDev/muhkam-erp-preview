@@ -4,7 +4,7 @@ import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
   MinusCircle, Trash2, Save, ChevronLeft, Send, ClipboardList,
   AlertCircle, Clock, CheckCheck, Truck, Ban,
-  Star, Settings, MessageSquare, ChevronRight, RotateCcw,
+  Star, Settings, MessageSquare, ChevronRight, ChevronUp, ChevronDown, RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
@@ -59,6 +59,7 @@ interface Stats {
 interface ChecklistItem {
   id: string;
   label: string;
+  category?: string;
   status: "pass" | "fail" | "partial" | "untestable" | null;
   notes?: string;
 }
@@ -354,9 +355,9 @@ export default function Repairs() {
   });
 
   /* ── Configurable checklist items from server (fallback to built-in) ── */
-  const { data: checklistTemplate = [] } = useQuery<{ id: number; label_ar: string; sort_order: number }[]>({
+  const { data: checklistTemplate = [] } = useQuery<{ id: number; label_ar: string; sort_order: number; category: string }[]>({
     queryKey: ["/api/repair-checklist-items"],
-    queryFn: () => apiFetch<{ id: number; label_ar: string; sort_order: number }[]>(api("/api/repair-checklist-items")),
+    queryFn: () => apiFetch<{ id: number; label_ar: string; sort_order: number; category: string }[]>(api("/api/repair-checklist-items")),
   });
 
   const templateChecklist: ChecklistItem[] = useMemo(() => {
@@ -364,6 +365,7 @@ export default function Repairs() {
     return checklistTemplate.map((t) => ({
       id: String(t.id),
       label: t.label_ar,
+      category: t.category ?? "عام",
       status: null,
     }));
   }, [checklistTemplate]);
@@ -796,29 +798,59 @@ function ChecklistWizard({
 }
 
 /* ══════════════════════════════════════════════════════════════
-   REPAIR SETTINGS — manage checklist items
+   REPAIR SETTINGS — manage checklist items with categories
 ══════════════════════════════════════════════════════════════ */
+type ChecklistRow = { id: number; label_ar: string; sort_order: number; category: string };
+
 function RepairSettings({ onClose }: { onClose: () => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [newLabel, setNewLabel] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editLabel, setEditLabel] = useState("");
+  const [newLabel, setNewLabel]           = useState("");
+  const [editingId, setEditingId]         = useState<number | null>(null);
+  const [editLabel, setEditLabel]         = useState("");
+  const [activeCat, setActiveCat]         = useState("عام");
+  const [addingCat, setAddingCat]         = useState(false);
+  const [newCatName, setNewCatName]       = useState("");
+  const [reordering, setReordering]       = useState(false);
 
-  const { data: items = [], isLoading } = useQuery<{ id: number; label_ar: string; sort_order: number }[]>({
+  const { data: items = [], isLoading } = useQuery<ChecklistRow[]>({
     queryKey: ["/api/repair-checklist-items"],
     queryFn: () => authFetch(api("/api/repair-checklist-items")).then((r) => r.json()),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/repair-checklist-items"] });
 
+  /* Derived categories (preserve order of first appearance) */
+  const allCategories = useMemo(() => {
+    const seen = new Set<string>();
+    const cats: string[] = [];
+    for (const item of items) {
+      const c = item.category ?? "عام";
+      if (!seen.has(c)) { seen.add(c); cats.push(c); }
+    }
+    if (!seen.has("عام")) cats.unshift("عام");
+    return cats;
+  }, [items]);
+
+  /* Ensure activeCat is always valid */
+  useEffect(() => {
+    if (allCategories.length && !allCategories.includes(activeCat)) {
+      setActiveCat(allCategories[0]);
+    }
+  }, [allCategories, activeCat]);
+
+  const catItems = useMemo(
+    () => items.filter(i => (i.category ?? "عام") === activeCat)
+              .sort((a, b) => a.sort_order - b.sort_order),
+    [items, activeCat],
+  );
+
   const addItem = async () => {
     if (!newLabel.trim()) return;
-    const nextOrder = items.length ? Math.max(...items.map((i) => i.sort_order)) + 1 : 1;
     const r = await authFetch(api("/api/repair-checklist-items"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label_ar: newLabel.trim(), sort_order: nextOrder }),
+      body: JSON.stringify({ label_ar: newLabel.trim(), category: activeCat }),
     });
     if (!r.ok) { toast({ title: "خطأ في الإضافة", variant: "destructive" }); return; }
     setNewLabel("");
@@ -845,11 +877,39 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
     toast({ title: "تم الحذف" });
   };
 
+  const moveItem = async (idx: number, dir: -1 | 1) => {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= catItems.length) return;
+    const a = catItems[idx];
+    const b = catItems[newIdx];
+    setReordering(true);
+    await authFetch(api("/api/repair-checklist-items/reorder"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([
+        { id: a.id, sort_order: b.sort_order },
+        { id: b.id, sort_order: a.sort_order },
+      ]),
+    });
+    setReordering(false);
+    invalidate();
+  };
+
+  const addCategory = () => {
+    const name = newCatName.trim();
+    if (!name || allCategories.includes(name)) { setAddingCat(false); return; }
+    setActiveCat(name);
+    setAddingCat(false);
+    setNewCatName("");
+    toast({ title: `تم إنشاء تصنيف "${name}" — أضف بنوداً له` });
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 bg-black/70 backdrop-blur-sm" dir="rtl">
-      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-md mx-4 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 bg-black/70 backdrop-blur-sm" dir="rtl">
+      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-lg mx-4 overflow-hidden flex flex-col max-h-[80vh]">
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4 text-violet-400" />
             <span className="font-bold text-white text-sm">إعدادات بنود الفحص</span>
@@ -859,14 +919,113 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
-          {/* Add new item */}
+        {/* ── Category tabs ── */}
+        <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/5 shrink-0 flex-wrap">
+          {allCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => { setActiveCat(cat); setEditingId(null); setNewLabel(""); }}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                activeCat === cat
+                  ? "bg-violet-500/30 border border-violet-500/50 text-violet-300"
+                  : "bg-white/5 border border-white/10 text-white/50 hover:text-white/80"
+              }`}>
+              {cat}
+            </button>
+          ))}
+          {addingCat ? (
+            <div className="flex items-center gap-1">
+              <input
+                autoFocus
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") addCategory(); if (e.key === "Escape") { setAddingCat(false); setNewCatName(""); } }}
+                placeholder="اسم التصنيف..."
+                className="erp-input text-xs py-0.5 w-28"
+              />
+              <button onClick={addCategory} className="text-emerald-400 hover:text-emerald-300 p-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => { setAddingCat(false); setNewCatName(""); }} className="text-white/30 p-0.5">
+                <XCircle className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAddingCat(true)}
+              className="px-2 py-1 rounded-full text-xs border border-dashed border-white/20 text-white/30 hover:text-white/60 hover:border-white/40 transition-all flex items-center gap-1">
+              <Plus className="w-3 h-3" /> تصنيف
+            </button>
+          )}
+        </div>
+
+        {/* ── Items list (scrollable) ── */}
+        <div className="overflow-y-auto flex-1 p-4 space-y-1">
+          {isLoading && <p className="text-center text-white/30 text-sm py-4">جاري التحميل...</p>}
+          {catItems.map((item, idx) => (
+            <div key={item.id} className="flex items-center gap-1.5 py-1.5 px-2 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+              {/* Reorder arrows */}
+              <div className="flex flex-col shrink-0">
+                <button
+                  onClick={() => moveItem(idx, -1)}
+                  disabled={idx === 0 || reordering}
+                  className="text-white/20 hover:text-violet-400 disabled:opacity-20 p-0.5 transition-colors">
+                  <ChevronUp className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => moveItem(idx, 1)}
+                  disabled={idx === catItems.length - 1 || reordering}
+                  className="text-white/20 hover:text-violet-400 disabled:opacity-20 p-0.5 transition-colors">
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </div>
+              {/* Label / edit */}
+              {editingId === item.id ? (
+                <>
+                  <input
+                    autoFocus
+                    value={editLabel}
+                    onChange={(e) => setEditLabel(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveEdit(item.id); if (e.key === "Escape") setEditingId(null); }}
+                    className="erp-input flex-1 text-xs py-0.5"
+                  />
+                  <button onClick={() => saveEdit(item.id)} className="text-emerald-400 hover:text-emerald-300 p-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => setEditingId(null)} className="text-white/30 hover:text-white/60 p-1">
+                    <XCircle className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 text-xs text-white/75">{item.label_ar}</span>
+                  <button
+                    onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); }}
+                    className="text-white/25 hover:text-violet-400 p-1 transition-colors">
+                    <MessageSquare className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => deleteItem(item.id)}
+                    className="text-white/15 hover:text-red-400 p-1 transition-colors">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+          {!isLoading && catItems.length === 0 && (
+            <p className="text-center text-white/25 text-xs py-6">لا توجد بنود في هذا التصنيف — أضف البند الأول أدناه</p>
+          )}
+        </div>
+
+        {/* ── Add item footer ── */}
+        <div className="px-4 pb-4 pt-2 border-t border-white/5 shrink-0">
           <div className="flex gap-2">
             <input
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addItem()}
-              placeholder="اسم البند الجديد (بالعربية)..."
+              placeholder={`بند جديد في "${activeCat}"...`}
               className="erp-input flex-1 text-xs"
             />
             <button
@@ -876,49 +1035,8 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          {/* Items list */}
-          {isLoading && <p className="text-center text-white/30 text-sm py-4">جاري التحميل...</p>}
-          <div className="space-y-1">
-            {items.map((item, i) => (
-              <div key={item.id} className="flex items-center gap-2 py-1.5 px-2 rounded-xl border border-white/5 hover:border-white/10 transition-all">
-                <span className="text-[10px] text-white/25 w-4 text-center shrink-0">{i + 1}</span>
-                {editingId === item.id ? (
-                  <>
-                    <input
-                      autoFocus
-                      value={editLabel}
-                      onChange={(e) => setEditLabel(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") saveEdit(item.id); if (e.key === "Escape") setEditingId(null); }}
-                      className="erp-input flex-1 text-xs py-0.5"
-                    />
-                    <button onClick={() => saveEdit(item.id)} className="text-emerald-400 hover:text-emerald-300 p-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => setEditingId(null)} className="text-white/30 hover:text-white/60 p-1">
-                      <XCircle className="w-3.5 h-3.5" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span className="flex-1 text-xs text-white/70">{item.label_ar}</span>
-                    <button onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); }}
-                      className="text-white/30 hover:text-violet-400 p-1 transition-colors">
-                      <MessageSquare className="w-3 h-3" />
-                    </button>
-                    <button onClick={() => deleteItem(item.id)}
-                      className="text-white/20 hover:text-red-400 p-1 transition-colors">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-          {!isLoading && items.length === 0 && (
-            <p className="text-center text-white/30 text-xs py-4">لا توجد بنود — أضف البند الأول</p>
-          )}
         </div>
+
       </div>
     </div>
   );
@@ -1199,6 +1317,23 @@ function NewJobForm({
   /* ── Power check + local checklist ── */
   const [devicePowers, setDevicePowers]       = useState<null | "on" | "off">(null);
   const [localChecklist, setLocalChecklist]   = useState<ChecklistItem[]>(checklistTemplate);
+
+  /* Re-filter checklist when device category changes */
+  useEffect(() => {
+    if (!checklistTemplate.length) return;
+    const cats = [...new Set(checklistTemplate.map(c => c.category ?? "عام"))];
+    const hasMatch = category && cats.includes(category);
+    const filtered = hasMatch
+      ? checklistTemplate.filter(c => {
+          const cat = c.category ?? "عام";
+          return cat === category || cat === "عام";
+        })
+      : checklistTemplate;
+    setLocalChecklist(filtered.map(c => ({ ...c, status: null, notes: undefined })));
+    setDevicePowers(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
+
   const checklistComplete = localChecklist.every((c) => c.status !== null);
 
   /* ── Derived device options ── */

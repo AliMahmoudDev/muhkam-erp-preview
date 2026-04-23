@@ -148,10 +148,22 @@ router.post("/repair-checklist-items", wrap(async (req, res) => {
   const b = req.body as Record<string, unknown>;
   const label = String(b.label_ar ?? "").trim();
   if (!label) return res.status(400).json({ error: "الاسم مطلوب" });
+  const category = String(b.category ?? "عام").trim() || "عام";
+  // Max sort_order in same category
+  const existing = await db.select({ s: repairChecklistItemsTable.sort_order })
+    .from(repairChecklistItemsTable)
+    .where(and(
+      eq(repairChecklistItemsTable.company_id, company_id),
+      eq(repairChecklistItemsTable.category, category),
+    ))
+    .orderBy(desc(repairChecklistItemsTable.sort_order))
+    .limit(1);
+  const nextOrder = (existing[0]?.s ?? 0) + 1;
   const [row] = await db.insert(repairChecklistItemsTable).values({
     company_id,
     label_ar: label,
-    sort_order: Number(b.sort_order ?? 99),
+    category,
+    sort_order: nextOrder,
     is_system: false,
   }).returning();
   return res.status(201).json(row);
@@ -162,13 +174,27 @@ router.patch("/repair-checklist-items/:id", wrap(async (req, res) => {
   const id = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
   const updates: Record<string, unknown> = {};
-  if ("label_ar" in b)   updates.label_ar = String(b.label_ar);
-  if ("sort_order" in b) updates.sort_order = Number(b.sort_order);
+  if ("label_ar" in b)   updates.label_ar   = String(b.label_ar);
+  if ("sort_order" in b) updates.sort_order  = Number(b.sort_order);
+  if ("category" in b)   updates.category    = String(b.category).trim() || "عام";
   const [row] = await db.update(repairChecklistItemsTable).set(updates)
     .where(and(eq(repairChecklistItemsTable.id, id), eq(repairChecklistItemsTable.company_id, company_id)))
     .returning();
   if (!row) return res.status(404).json({ error: "غير موجود" });
   return res.json(row);
+}));
+
+/* Bulk reorder: [{ id, sort_order }] */
+router.post("/repair-checklist-items/reorder", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const items = req.body as { id: number; sort_order: number }[];
+  if (!Array.isArray(items)) return res.status(400).json({ error: "invalid" });
+  await Promise.all(items.map(({ id, sort_order }) =>
+    db.update(repairChecklistItemsTable)
+      .set({ sort_order })
+      .where(and(eq(repairChecklistItemsTable.id, id), eq(repairChecklistItemsTable.company_id, company_id)))
+  ));
+  return res.json({ ok: true });
 }));
 
 router.delete("/repair-checklist-items/:id", wrap(async (req, res) => {
