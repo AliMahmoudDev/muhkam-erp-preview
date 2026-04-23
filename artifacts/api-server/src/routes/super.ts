@@ -6,6 +6,7 @@
 import { Router } from "express";
 import { eq, desc, sql } from "drizzle-orm";
 import { db, companiesTable, erpUsersTable, planSettingsTable } from "@workspace/db";
+import type { CompanyFeatures } from "@workspace/db";
 import fs from "fs";
 import path from "path";
 
@@ -246,8 +247,9 @@ router.get("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
 /* ── PUT /super/companies/:id — update plan / expiry / active ── */
 router.put("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const { name, plan_type, edition, end_date, is_active } = req.body as {
+  const { name, plan_type, edition, end_date, is_active, features } = req.body as {
     name?: string; plan_type?: string; edition?: string; end_date?: string; is_active?: boolean;
+    features?: Record<string, boolean>;
   };
 
   const [before] = await db.select().from(companiesTable).where(eq(companiesTable.id, id));
@@ -259,6 +261,7 @@ router.put("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
   if (edition   !== undefined && ["advanced","ultimate"].includes(edition)) updates.edition = edition;
   if (end_date  !== undefined) updates.end_date  = end_date;
   if (is_active !== undefined) updates.is_active = is_active;
+  if (features  !== undefined) updates.features  = features as CompanyFeatures;
 
   const [updated] = await db
     .update(companiesTable).set(updates)
