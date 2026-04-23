@@ -1,17 +1,21 @@
 # مُحكم - MUHKAM ERP Workspace
 
+## Architecture (Post-Consolidation — April 2026)
+- **Single frontend:** `artifacts/erp-system` only — served at `/` (BASE_PATH=/)
+- **muhkam-pro REMOVED:** Archived to GitHub branch `archive/muhkam-pro`, deleted from codebase
+- **Edition control:** Company `edition` field (`ultimate` / `advanced`) controls feature visibility from Super Admin panel
+- **Production domain:** halaltec.com (Hetzner VPS 89.167.85.156) — served at root `/`, no `/advanced/` prefix
+
 ## Replit Environment
 - **Backend:** Express API server running on port 8080 via `Start Backend` workflow
-- **Frontend:** React/Vite ERP system running on port 5000 via `Start Frontend` workflow
+- **Frontend:** `erp-system` React/Vite running on port 5000 — single unified frontend at `BASE_PATH=/`
 - **Database:** PostgreSQL provisioned via Replit (heliumdb), schema pushed via Drizzle ORM
 - **Packages:** Managed via pnpm workspaces
-- **Workflows:** Both `Start Backend` and `Start Frontend` are configured and running
-- **Frontend env vars:** `PORT=5000 BASE_PATH=/` set directly in workflow command (required by vite.config.ts)
 - **Default super admin:** username: `superadmin`, PIN from `SUPER_ADMIN_PIN` env var
 
 ## CI/CD Status
-- **Deploy pipeline:** ✅ Working (GitHub Actions deploy.yml runs on push to main, deploys to VPS at 89.167.85.156)
-- **CI pipeline:** ✅ PASSING as of CI #70 (all 4 jobs: Backend Tests, Frontend Tests, Lint & Type Check, Build Check)
+- **Deploy pipeline:** ✅ Working — GitHub Actions deploy.yml builds erp-system at BASE_PATH=/ and deploys to VPS
+- **CI pipeline:** ✅ Passing — builds erp-system only, muhkam-pro build step removed
 
 ### CI Fixes Applied (history)
 - Removed project `references` from `artifacts/api-server/tsconfig.json` (not needed with moduleResolution: bundler)
