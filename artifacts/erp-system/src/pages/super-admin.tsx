@@ -514,7 +514,6 @@ export default function SuperAdmin() {
 
   /* ── Companies state ─── */
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [extendDays, setExtendDays] = useState<Record<number, number>>({});
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newPlan, setNewPlan] = useState('trial');
