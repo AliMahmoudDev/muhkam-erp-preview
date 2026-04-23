@@ -30,8 +30,53 @@ import { BACKUP_MODULES_LIST, RESTORE_MODULE_GROUPS } from './_constants';
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const api = (p: string) => `${BASE}${p}`;
 
+/* TypeScript shim for File System Access API */
+declare global {
+  interface Window {
+    showSaveFilePicker?: (opts?: {
+      suggestedName?: string;
+      types?: { description?: string; accept?: Record<string, string[]> }[];
+    }) => Promise<{ createWritable: () => Promise<{ write: (d: unknown) => Promise<void>; close: () => Promise<void> }> }>;
+  }
+}
+
 const LAST_BK_KEY   = 'halal_erp_last_backup';
 const AUTO_BK_KEY   = 'halal_erp_auto_backup';
+
+/**
+ * saveFile — يحاول فتح حوار "حفظ باسم" (Chrome/Edge) وإلا يستخدم تنزيل مباشر.
+ * @param blob  محتوى الملف
+ * @param fname اسم الملف المقترح
+ * @param silent إذا true لا يفتح حوار الاختيار (للنسخ التلقائية)
+ */
+async function saveFile(blob: Blob, fname: string, silent = false): Promise<void> {
+  // استخدم File System Access API فقط إذا لم تكن صامتة
+  if (!silent && typeof window.showSaveFilePicker === 'function') {
+    try {
+      const ext  = fname.split('.').pop() ?? 'json';
+      const mime = blob.type || 'application/json';
+      const handle = await window.showSaveFilePicker({
+        suggestedName: fname,
+        types: [{ description: 'ملف النسخة الاحتياطية', accept: { [mime]: [`.${ext}`] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (e) {
+      // المستخدم ألغى الحوار
+      if (e instanceof Error && e.name === 'AbortError') throw e;
+      // المتصفح لا يدعم أو خطأ آخر — نرجع للتنزيل العادي
+    }
+  }
+  // fallback: تنزيل مباشر إلى مجلد التنزيلات
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = fname;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 type AutoSettings = { on_login?: boolean; on_logout?: boolean; daily?: boolean };
 
@@ -157,7 +202,7 @@ export default function BackupTab() {
   }, [autoSettings]);
 
   /* ── النسخة الشاملة (POST /api/system/backup → تنزيل) ── */
-  const handleComprehensiveBackup = useCallback(async () => {
+  const handleComprehensiveBackup = useCallback(async (silent = false) => {
     setCompBusy(true);
     setCompResult(null);
     try {
@@ -167,17 +212,14 @@ export default function BackupTab() {
       const match = disp.match(/filename="([^"]+)"/);
       const fname = match?.[1] ?? `backup_comprehensive_${new Date().toISOString().slice(0,10)}.json`;
       const blob = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = fname;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      await saveFile(blob, fname, silent);
       const now = new Date().toISOString();
       localStorage.setItem(LAST_BK_KEY, now);
       setLastBackup(now);
       setCompResult(fname);
       toast({ title: `✅ نسخة شاملة محفوظة — ${fname}` });
     } catch (e: unknown) {
+      if (e instanceof Error && e.name === 'AbortError') return; // المستخدم ألغى حوار الحفظ
       const msg = e instanceof Error ? e.message : String(e);
       toast({ title: 'فشل إنشاء النسخة الشاملة', description: msg, variant: 'destructive' });
     } finally {
@@ -193,16 +235,16 @@ export default function BackupTab() {
 
     if (loginFlag) {
       localStorage.removeItem('halal_erp_login_flag');
-      if (auto.on_login) setTimeout(() => void handleComprehensiveBackup(), 1500);
+      if (auto.on_login) setTimeout(() => void handleComprehensiveBackup(true), 1500);
     }
     if (logoutFlag) {
       localStorage.removeItem('halal_erp_logout_flag');
-      if (auto.on_logout) setTimeout(() => void handleComprehensiveBackup(), 500);
+      if (auto.on_logout) setTimeout(() => void handleComprehensiveBackup(true), 500);
     }
     if (auto.daily) {
       const last = localStorage.getItem(LAST_BK_KEY);
       const stale = !last || Date.now() - new Date(last).getTime() > 86_400_000;
-      if (stale) setTimeout(() => void handleComprehensiveBackup(), 3000);
+      if (stale) setTimeout(() => void handleComprehensiveBackup(true), 3000);
     }
   }, [handleComprehensiveBackup]);
 
@@ -311,11 +353,7 @@ export default function BackupTab() {
       const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
       const dt = new Date().toISOString().replace('T', '_').replace(/:/g, '-').slice(0, 19);
       const fname = `backup_${dt}.json`;
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = fname;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      await saveFile(blob, fname);
       setBkResult({
         name: fname,
         size: `${(blob.size / 1024).toFixed(1)} KB`,
@@ -344,11 +382,7 @@ export default function BackupTab() {
       const cd = r.headers.get('Content-Disposition') ?? '';
       const m = cd.match(/filename="([^"]+)"/);
       const fname = m?.[1] ?? `halal-tech-backup_${new Date().toISOString().slice(0, 10)}.json`;
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = fname;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      await saveFile(blob, fname);
       const now = new Date().toISOString();
       localStorage.setItem(LAST_BK_KEY, now);
       setLastBackup(now);
@@ -503,7 +537,12 @@ export default function BackupTab() {
         setSelectedRestoreMods(new Set(found));
         setShowModSelect(true);
       } else {
-        setModal(true);
+        /* ملف v1.0 (تصدير محلي) — لا يدعم الاستعادة الكاملة */
+        toast({
+          title: '⚠️ هذا الملف للتصدير فقط',
+          description: 'ملفات النسخ المحلية (v1.0) لا يمكن استعادتها. استخدم "النسخة الشاملة" التي تنزّلها بالزر الأخضر.',
+          variant: 'destructive',
+        });
       }
     } catch {
       toast({ title: 'ملف JSON غير صالح', variant: 'destructive' });
@@ -756,6 +795,13 @@ export default function BackupTab() {
                   <p className="text-white/30 text-xs">يبدأ التنزيل التلقائي عند تحقق الشروط</p>
                 </div>
               </div>
+              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/15 text-xs text-blue-300/70">
+                <span className="shrink-0 mt-0.5">📂</span>
+                <span>
+                  النسخ التلقائية تُحفَظ دائماً في مجلد <strong className="text-blue-300">التنزيلات</strong> بجهازك.
+                  أما النسخ اليدوية (بالزر الأخضر) فيظهر حوار <strong className="text-blue-300">اختيار المسار</strong> على Chrome/Edge.
+                </span>
+              </div>
               <div className="space-y-2">
                 {[
                   { key: 'on_login' as const,  Icon: LogIn,  label: 'عند تسجيل الدخول',  color: 'emerald' },
@@ -790,7 +836,7 @@ export default function BackupTab() {
                 <div>
                   <p className="font-bold text-white text-sm">استعادة نسخة احتياطية</p>
                   <p className="text-white/30 text-xs">
-                    ارفع ملف JSON — يتم التنفيذ داخل معاملة آمنة
+                    ارفع ملف <strong className="text-emerald-400">النسخة الشاملة</strong> فقط (الزر الأخضر أعلاه)
                   </p>
                 </div>
               </div>
