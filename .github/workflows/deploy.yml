@@ -108,11 +108,8 @@ jobs:
             cd "$APP_DIR/lib/db"
             pnpm run push
 
-            cd "$APP_DIR/artifacts/muhkam-pro"
-            NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
-
             cd "$APP_DIR/artifacts/erp-system"
-            NODE_ENV=production BASE_PATH=/advanced/ pnpm run build
+            NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
 
             cd "$APP_DIR/artifacts/api-server"
             pnpm run build
