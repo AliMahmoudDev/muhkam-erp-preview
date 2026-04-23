@@ -58,6 +58,8 @@ import budgetsRouter from "./budgets";
 import costCentersRouter from "./cost-centers";
 import salesTargetsRouter from "./sales-targets";
 import repairsRouter from "./repairs";
+import scrapItemsRouter from "./scrap-items";
+import badDebtsRouter from "./bad-debts";
 
 const router: IRouter = Router();
 
@@ -121,6 +123,8 @@ router.use(incentivesRouter);
 router.use(salaryAdvancesRouter);
 router.use(salesTargetsRouter);
 router.use(repairsRouter);
+router.use(scrapItemsRouter);
+router.use(badDebtsRouter);
 router.use(employeeBonusesCustodyRouter);
 router.use(attendanceDeductionsRouter);
 router.use(fiscalYearsRouter);
