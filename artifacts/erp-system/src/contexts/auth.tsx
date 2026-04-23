@@ -77,12 +77,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (u: AuthUser, t: string) => {
     localStorage.setItem(USER_KEY, JSON.stringify(u));
     localStorage.setItem(TOKEN_KEY, t);
+    localStorage.setItem("halal_erp_login_flag", "1");
     setUser(u);
     setToken(t);
     setSubscriptionExpired(false);
   };
 
   const logout = () => {
+    localStorage.setItem("halal_erp_logout_flag", "1");
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
