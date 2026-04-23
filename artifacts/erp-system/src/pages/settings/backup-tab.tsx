@@ -22,14 +22,22 @@ import {
   Clock,
   LogIn,
   LogOut,
+  Shield,
 } from 'lucide-react';
 import { PageHeader, PrimaryBtn } from './_shared';
-import { BACKUP_MODULES_LIST } from './_constants';
+import { BACKUP_MODULES_LIST, RESTORE_MODULE_GROUPS } from './_constants';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const api = (p: string) => `${BASE}${p}`;
 
-const LAST_BK_KEY = 'halal_erp_last_backup';
+const LAST_BK_KEY   = 'halal_erp_last_backup';
+const AUTO_BK_KEY   = 'halal_erp_auto_backup';
+
+type AutoSettings = { on_login?: boolean; on_logout?: boolean; daily?: boolean };
+
+function loadAutoSettings(): AutoSettings {
+  try { return JSON.parse(localStorage.getItem(AUTO_BK_KEY) || '{}'); } catch { return {}; }
+}
 
 type BackupRecord = {
   id: number;
@@ -128,6 +136,75 @@ export default function BackupTab() {
     date: string | null;
     tableCount: number;
   } | null>(null);
+
+  /* ── اختيار وحدات الاستعادة ── */
+  const [showModSelect, setShowModSelect] = useState(false);
+  const [availMods, setAvailMods] = useState<string[]>([]);
+  const [selectedRestoreMods, setSelectedRestoreMods] = useState<Set<string>>(new Set());
+  const [isStructuredBackup, setIsStructuredBackup] = useState(false);
+
+  /* ── النسخة الشاملة ── */
+  const [compBusy, setCompBusy] = useState(false);
+  const [compResult, setCompResult] = useState<string | null>(null);
+
+  /* ── الجدولة التلقائية ── */
+  const [autoSettings, setAutoSettings] = useState<AutoSettings>(loadAutoSettings);
+
+  const saveAutoSettings = useCallback((patch: Partial<AutoSettings>) => {
+    const next = { ...autoSettings, ...patch };
+    localStorage.setItem(AUTO_BK_KEY, JSON.stringify(next));
+    setAutoSettings(next);
+  }, [autoSettings]);
+
+  /* ── النسخة الشاملة (POST /api/system/backup → تنزيل) ── */
+  const handleComprehensiveBackup = useCallback(async () => {
+    setCompBusy(true);
+    setCompResult(null);
+    try {
+      const r = await authFetch(api('/api/system/backup'), { method: 'POST' });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? 'فشل الطلب');
+      const disp = r.headers.get('Content-Disposition') ?? '';
+      const match = disp.match(/filename="([^"]+)"/);
+      const fname = match?.[1] ?? `backup_comprehensive_${new Date().toISOString().slice(0,10)}.json`;
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fname;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      const now = new Date().toISOString();
+      localStorage.setItem(LAST_BK_KEY, now);
+      setLastBackup(now);
+      setCompResult(fname);
+      toast({ title: `✅ نسخة شاملة محفوظة — ${fname}` });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'فشل إنشاء النسخة الشاملة', description: msg, variant: 'destructive' });
+    } finally {
+      setCompBusy(false);
+    }
+  }, [toast]);
+
+  /* ── التحقق من التشغيل التلقائي عند التحميل ── */
+  useEffect(() => {
+    const auto = loadAutoSettings();
+    const loginFlag  = localStorage.getItem('halal_erp_login_flag');
+    const logoutFlag = localStorage.getItem('halal_erp_logout_flag');
+
+    if (loginFlag) {
+      localStorage.removeItem('halal_erp_login_flag');
+      if (auto.on_login) setTimeout(() => void handleComprehensiveBackup(), 1500);
+    }
+    if (logoutFlag) {
+      localStorage.removeItem('halal_erp_logout_flag');
+      if (auto.on_logout) setTimeout(() => void handleComprehensiveBackup(), 500);
+    }
+    if (auto.daily) {
+      const last = localStorage.getItem(LAST_BK_KEY);
+      const stale = !last || Date.now() - new Date(last).getTime() > 86_400_000;
+      if (stale) setTimeout(() => void handleComprehensiveBackup(), 3000);
+    }
+  }, [handleComprehensiveBackup]);
 
   /* ── تحميل الإعدادات ── */
   const loadSettings = useCallback(async () => {
@@ -393,16 +470,41 @@ export default function BackupTab() {
     try {
       const parsed = JSON.parse(await file.text()) as Record<string, unknown>;
       const dataSection = (parsed.data ?? parsed.tables ?? parsed) as Record<string, unknown>;
+      const tableCount  = Object.values(dataSection).filter(Array.isArray).length;
+      const structured  = typeof parsed.data === 'object' && parsed.data !== null;
+
       setPending({
         fileName: file.name,
         parsed,
         version: typeof parsed.version === 'string' ? parsed.version : null,
         date: typeof parsed.created_at === 'string' ? parsed.created_at : null,
-        tableCount: Object.values(dataSection).filter(Array.isArray).length,
+        tableCount,
       });
+      setIsStructuredBackup(structured);
       setModalText('');
       setUnderstood(false);
-      setModal(true);
+
+      if (structured) {
+        /* اكتشاف الوحدات المتاحة في الملف */
+        const data = parsed.data as Record<string, unknown[]>;
+        const MODULE_TABLE_MAP: Record<string, string[]> = {
+          products:       ['products', 'stock_movements'],
+          customers:      ['customers'],
+          sales:          ['sales', 'sale_items', 'sales_returns', 'sale_return_items'],
+          purchases:      ['purchases', 'purchase_items', 'purchase_returns', 'purchase_return_items'],
+          finance:        ['expenses', 'income', 'transactions', 'accounts', 'journal_entries', 'receipt_vouchers', 'payment_vouchers'],
+          infrastructure: ['safes', 'warehouses'],
+          alerts:         ['alerts'],
+        };
+        const found = RESTORE_MODULE_GROUPS
+          .map(g => g.key)
+          .filter(k => (MODULE_TABLE_MAP[k] ?? []).some(t => Array.isArray(data[t])));
+        setAvailMods(found);
+        setSelectedRestoreMods(new Set(found));
+        setShowModSelect(true);
+      } else {
+        setModal(true);
+      }
     } catch {
       toast({ title: 'ملف JSON غير صالح', variant: 'destructive' });
     }
@@ -424,12 +526,17 @@ export default function BackupTab() {
         contentType = 'application/octet-stream';
         (pendingEncFileRef as React.MutableRefObject<File | null>).current = null;
       } else {
-        body = JSON.stringify(pending.parsed);
+        /* For structured backups with module selection, inject restore_modules */
+        const payload = isStructuredBackup && selectedRestoreMods.size > 0
+          ? { ...(pending.parsed as object), restore_modules: Array.from(selectedRestoreMods) }
+          : pending.parsed;
+        body = JSON.stringify(payload);
         contentType = 'application/json';
       }
+      const idemKey = `restore-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
       const r = await authFetch(api('/api/system/restore'), {
         method: 'POST',
-        headers: { 'Content-Type': contentType },
+        headers: { 'Content-Type': contentType, 'Idempotency-Key': idemKey },
         body,
       });
       const data = await r.json();
@@ -607,6 +714,70 @@ export default function BackupTab() {
                   ? `جاري الإنشاء... ${bkProgress}%`
                   : `تنزيل نسخة (${bkModules.size} وحدات)`}
               </PrimaryBtn>
+            </div>
+
+            {/* ── فاصل + النسخة الشاملة ── */}
+            <div className="h-px bg-white/5" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">نسخة شاملة (كل البيانات)</p>
+                  <p className="text-white/30 text-xs">تُصدِّر جميع بيانات شركتك في ملف JSON واحد</p>
+                </div>
+              </div>
+              {compResult && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="text-emerald-400 font-bold flex-1 truncate">{compResult}</span>
+                </div>
+              )}
+              <button
+                onClick={handleComprehensiveBackup}
+                disabled={compBusy}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-all"
+              >
+                {compBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+                {compBusy ? 'جاري التصدير...' : 'تنزيل النسخة الشاملة'}
+              </button>
+            </div>
+
+            {/* ── فاصل + الإعدادات التلقائية ── */}
+            <div className="h-px bg-white/5" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Clock className="w-3.5 h-3.5 text-blue-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">تشغيل تلقائي للنسخة الشاملة</p>
+                  <p className="text-white/30 text-xs">يبدأ التنزيل التلقائي عند تحقق الشروط</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {[
+                  { key: 'on_login' as const,  Icon: LogIn,  label: 'عند تسجيل الدخول',  color: 'emerald' },
+                  { key: 'on_logout' as const, Icon: LogOut, label: 'عند تسجيل الخروج', color: 'amber'   },
+                  { key: 'daily' as const,     Icon: Clock,  label: 'مرة يومياً (إذا مرّ 24 ساعة)',  color: 'blue'    },
+                ].map(({ key, Icon, label, color }) => {
+                  const on = !!autoSettings[key];
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => saveAutoSettings({ [key]: !on })}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${on ? `bg-${color}-500/8 border-${color}-500/20` : 'bg-white/3 border-white/8 hover:border-white/15'}`}
+                    >
+                      <Icon className={`w-4 h-4 shrink-0 ${on ? `text-${color}-400` : 'text-white/30'}`} />
+                      <p className={`flex-1 text-right text-sm font-semibold ${on ? `text-${color}-300` : 'text-white/50'}`}>{label}</p>
+                      <div className={`w-9 h-5 rounded-full relative transition-all ${on ? `bg-${color}-500` : 'bg-white/10'}`}>
+                        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${on ? 'right-0.5' : 'left-0.5'}`} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* ── فاصل + قسم الاستعادة (داخل المحلي) ── */}
@@ -883,6 +1054,85 @@ export default function BackupTab() {
           </div>
         )}
       </div>
+
+      {/* ═══ Modal اختيار وحدات الاستعادة ═══ */}
+      {showModSelect && pending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowModSelect(false)} />
+          <div className="relative w-full max-w-md bg-[#0F1623] border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-amber-500/20 bg-amber-500/5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                  <Database className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-amber-400 text-sm">اختر وحدات الاستعادة</p>
+                  <p className="text-white/30 text-xs">{pending.fileName}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowModSelect(false)} className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/8">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-white/50 text-xs">الوحدات المتاحة في هذا الملف</p>
+                <button
+                  onClick={() => setSelectedRestoreMods(
+                    selectedRestoreMods.size === availMods.length ? new Set() : new Set(availMods)
+                  )}
+                  className="text-xs text-amber-400 hover:text-amber-300 font-semibold"
+                >
+                  {selectedRestoreMods.size === availMods.length ? 'إلغاء الكل' : 'تحديد الكل'}
+                </button>
+              </div>
+              <div className="space-y-2">
+                {RESTORE_MODULE_GROUPS.filter(g => availMods.includes(g.key)).map(g => {
+                  const on = selectedRestoreMods.has(g.key);
+                  return (
+                    <button
+                      key={g.key}
+                      onClick={() => setSelectedRestoreMods(prev => {
+                        const s = new Set(prev);
+                        if (s.has(g.key)) s.delete(g.key); else s.add(g.key);
+                        return s;
+                      })}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${on ? 'bg-amber-500/10 border-amber-500/25' : 'bg-white/3 border-white/8 hover:border-amber-500/15'}`}
+                    >
+                      <span className="text-xl shrink-0">{g.icon}</span>
+                      <div className="flex-1">
+                        <p className={`text-sm font-bold ${on ? 'text-amber-300' : 'text-white/60'}`}>{g.label}</p>
+                        <p className="text-white/25 text-xs">{g.note}</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${on ? 'bg-amber-500 border-amber-500' : 'border-white/20'}`}>
+                        {on && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedRestoreMods.size === 0 && (
+                <p className="text-center text-red-400 text-xs">اختر وحدة واحدة على الأقل</p>
+              )}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => setShowModSelect(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm font-bold hover:text-white transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={() => { setShowModSelect(false); setModal(true); }}
+                  disabled={selectedRestoreMods.size === 0}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  متابعة ({selectedRestoreMods.size} وحدات)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ Modal تأكيد الاستعادة ═══ */}
       {modal && pending && (
