@@ -827,18 +827,25 @@ function POSBody({
   /* ── handleSplitConfirm — called by modal with payment breakdown ── */
   const handleSplitConfirm = useCallback(
     (payments: SplitPaymentEntry[]) => {
-      const totalCash = payments.filter((p) => p.type === 'cash').reduce((s, p) => s + p.amount, 0);
+      /* أنواع الدفع الفورية (غير آجل): نقدي + شبكة + تحويل + تقسيط */
+      const immediatePaid = payments
+        .filter((p) => p.type !== 'credit')
+        .reduce((s, p) => s + p.amount, 0);
       const totalCredit = payments
         .filter((p) => p.type === 'credit')
         .reduce((s, p) => s + p.amount, 0);
       const pt: 'cash' | 'credit' | 'partial' =
-        totalCredit === 0 ? 'cash' : totalCash === 0 ? 'credit' : 'partial';
-      const primarySafe = payments.find((p) => p.type === 'cash')?.safe_id ?? safeId;
+        totalCredit === 0 ? 'cash' : immediatePaid === 0 ? 'credit' : 'partial';
+      /* الخزينة الأساسية: أول دفعة نقدية ثم أي دفعة أخرى */
+      const primarySafe =
+        payments.find((p) => p.type === 'cash')?.safe_id ??
+        payments.find((p) => p.safe_id)?.safe_id ??
+        safeId;
 
       checkoutMutation.mutate({
         payment_type: pt,
         total_amount: cartTotal,
-        paid_amount: totalCash,
+        paid_amount: immediatePaid,
         customer_id: selectedCustomer?.id ?? null,
         customer_name: selectedCustomer?.name ?? null,
         safe_id: primarySafe,

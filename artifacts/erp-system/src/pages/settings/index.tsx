@@ -12,19 +12,21 @@ import {
   Cpu,
   Percent,
   Banknote,
+  CreditCard,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
-const UsersTab = lazy(() => import('./users-tab'));
+const UsersTab          = lazy(() => import('./users-tab'));
 const OpeningBalanceTab = lazy(() => import('./opening-balance-tab'));
-const FinancialLockTab = lazy(() => import('./financial-lock-tab'));
-const CurrencyTab = lazy(() => import('./currency-tab'));
-const CompanyTab = lazy(() => import('./company-tab'));
-const AlertsTab = lazy(() => import('./alerts-tab'));
-const InvoiceTab = lazy(() => import('./invoice-tab'));
-const SystemTab = lazy(() => import('./system-tab'));
-const VatTab = lazy(() => import('./vat-tab'));
-const SalaryAdvanceTab = lazy(() => import('./salary-advance-tab'));
+const FinancialLockTab  = lazy(() => import('./financial-lock-tab'));
+const CurrencyTab       = lazy(() => import('./currency-tab'));
+const CompanyTab        = lazy(() => import('./company-tab'));
+const AlertsTab         = lazy(() => import('./alerts-tab'));
+const InvoiceTab        = lazy(() => import('./invoice-tab'));
+const SystemTab         = lazy(() => import('./system-tab'));
+const VatTab            = lazy(() => import('./vat-tab'));
+const SalaryAdvanceTab  = lazy(() => import('./salary-advance-tab'));
+const PaymentMethodsTab = lazy(() => import('./payment-methods-tab'));
 
 /* ─── Tab types ─── */
 type Tab =
@@ -37,6 +39,7 @@ type Tab =
   | 'invoice'
   | 'vat'
   | 'salary-advance'
+  | 'payment-methods'
   | 'system';
 
 /* ─── Section config ─── */
@@ -66,6 +69,7 @@ const TAB_SECTIONS: {
       { id: 'vat', label: 'ضريبة القيمة المضافة', icon: Percent },
       { id: 'alerts', label: 'التنبيهات', icon: Bell },
       { id: 'invoice', label: 'الفاتورة', icon: FileText },
+      { id: 'payment-methods', label: 'طرق الدفع', icon: CreditCard },
     ],
   },
   {
@@ -220,6 +224,7 @@ export default function SettingsPage() {
             {activeTab === 'alerts' && <AlertsTab />}
             {activeTab === 'invoice' && <InvoiceTab />}
             {activeTab === 'salary-advance' && <SalaryAdvanceTab />}
+            {activeTab === 'payment-methods' && <PaymentMethodsTab />}
             {activeTab === 'system' && <SystemTab />}
           </Suspense>
         </div>
