@@ -53,6 +53,9 @@ const EXCHANGE_CURRENCIES = [
   { code: "AED", flag: "🇦🇪", label: "درهم إماراتي",   symbol: "د.إ" },
 ] as const;
 
+const BASE_XRATE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const xrateApi = (p: string) => `${BASE_XRATE}${p}`;
+
 function ExchangeRatesSection() {
   const { toast } = useToast();
   const [rates, setRates] = useState<Record<string, string>>({});
@@ -61,7 +64,7 @@ function ExchangeRatesSection() {
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
-    authFetch("/api/exchange-rates/latest")
+    authFetch(xrateApi("/api/exchange-rates/latest"))
       .then(r => r.json())
       .then((data: Record<string, number>) => {
         const mapped: Record<string, string> = {};
@@ -81,7 +84,7 @@ function ExchangeRatesSection() {
     }
     setSaving(s => ({ ...s, [code]: true }));
     try {
-      const res = await authFetch("/api/exchange-rates", {
+      const res = await authFetch(xrateApi("/api/exchange-rates"), {
         method: "POST",
         body: JSON.stringify({ currency: code, rate: rateVal, date: today }),
       });
@@ -107,7 +110,7 @@ function ExchangeRatesSection() {
     });
     try {
       await Promise.all(toSave.map(c =>
-        authFetch("/api/exchange-rates", {
+        authFetch(xrateApi("/api/exchange-rates"), {
           method: "POST",
           body: JSON.stringify({ currency: c.code, rate: parseFloat(rates[c.code]), date: today }),
         })
