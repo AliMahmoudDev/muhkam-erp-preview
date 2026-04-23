@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
@@ -315,6 +315,7 @@ export default function Repairs() {
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [techFilter, setTechFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<RepairJob | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
@@ -335,11 +336,12 @@ export default function Repairs() {
   });
 
   const { data: jobs = [], isLoading } = useQuery<RepairJob[]>({
-    queryKey: ["/api/repair-jobs", statusFilter, search],
+    queryKey: ["/api/repair-jobs", statusFilter, search, techFilter],
     queryFn: () => {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (search) params.set("search", search);
+      if (techFilter) params.set("technician_id", techFilter);
       return apiFetch<RepairJob[]>(api(`/api/repair-jobs?${params}`));
     },
   });
@@ -497,14 +499,23 @@ export default function Repairs() {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث بالاسم / موديل / IMEI..."
-            className="erp-input w-full pr-8 text-sm" />
+        {/* Search row */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="رقم الطلب / اسم / هاتف / IMEI / موديل..."
+              className="erp-input w-full pr-8 text-xs" />
+          </div>
+          <select
+            value={techFilter}
+            onChange={(e) => setTechFilter(e.target.value)}
+            className="erp-input text-xs w-32 shrink-0">
+            <option value="">كل الفنيين</option>
+            {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
         </div>
 
         {/* Status Filters */}
@@ -798,6 +809,147 @@ function ChecklistWizard({
 }
 
 /* ══════════════════════════════════════════════════════════════
+   JOB CHECKLIST — inline editable (used in JobDetail)
+══════════════════════════════════════════════════════════════ */
+function JobChecklist({
+  checklist,
+  onSaveItem,
+}: {
+  checklist: ChecklistItem[];
+  onSaveItem: (id: string, status: ChecklistItem["status"], notes: string) => void;
+}) {
+  const [editingNotes, setEditingNotes]     = useState<string | null>(null);
+  const [pendingStatus, setPendingStatus]   = useState<ChecklistItem["status"]>(null);
+  const [notesText, setNotesText]           = useState("");
+
+  /* Power-off sentinel */
+  if (checklist.length === 1 && checklist[0].id === "__power_off__") {
+    return (
+      <div className="glass-panel rounded-2xl p-4 border border-red-500/20 bg-red-500/5 flex items-center gap-3">
+        <XCircle className="w-7 h-7 text-red-400 shrink-0" />
+        <div>
+          <p className="text-sm font-bold text-red-300">الجهاز لا يفتح</p>
+          <p className="text-[11px] text-red-400/60 mt-0.5">تم تسجيل الطلب بدون فحص — الجهاز لا يشتغل</p>
+        </div>
+      </div>
+    );
+  }
+
+  const pass        = checklist.filter(c => c.status === "pass").length;
+  const fail        = checklist.filter(c => c.status === "fail").length;
+  const partial     = checklist.filter(c => c.status === "partial").length;
+  const untestable  = checklist.filter(c => c.status === "untestable").length;
+  const unanswered  = checklist.filter(c => !c.status).length;
+  const total       = checklist.length;
+  const doneCount   = total - unanswered;
+
+  const STATUS_OPTS: { key: ChecklistItem["status"]; label: string; cls: string; activeCls: string }[] = [
+    { key: "pass",       label: "✓",         cls: "border-white/10 text-white/30 hover:border-emerald-500/40 hover:text-emerald-400", activeCls: "border-emerald-500/50 bg-emerald-500/15 text-emerald-300" },
+    { key: "fail",       label: "✗",         cls: "border-white/10 text-white/30 hover:border-red-500/40 hover:text-red-400",          activeCls: "border-red-500/50 bg-red-500/15 text-red-300" },
+    { key: "partial",    label: "~",         cls: "border-white/10 text-white/30 hover:border-amber-500/40 hover:text-amber-400",      activeCls: "border-amber-500/50 bg-amber-500/15 text-amber-300" },
+    { key: "untestable", label: "—",         cls: "border-white/10 text-white/20 hover:border-white/20 hover:text-white/50",           activeCls: "border-white/20 bg-white/5 text-white/50" },
+  ];
+
+  const handleClick = (item: ChecklistItem, key: ChecklistItem["status"]) => {
+    if (key === "partial" || key === "untestable") {
+      setEditingNotes(item.id);
+      setPendingStatus(key);
+      setNotesText(item.notes ?? "");
+    } else {
+      onSaveItem(item.id, key, "");
+      if (editingNotes === item.id) setEditingNotes(null);
+    }
+  };
+
+  const confirmNotes = (itemId: string) => {
+    onSaveItem(itemId, pendingStatus, notesText);
+    setEditingNotes(null);
+    setPendingStatus(null);
+    setNotesText("");
+  };
+
+  return (
+    <div className="glass-panel rounded-2xl p-3 border border-white/5">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] text-white/40 font-bold flex items-center gap-1">
+          <ClipboardList className="w-3 h-3" /> فحص الجهاز
+        </p>
+        <div className="flex items-center gap-2 text-[10px]">
+          {pass > 0        && <span className="text-emerald-400">{pass} يعمل</span>}
+          {fail > 0        && <span className="text-red-400">{fail} لا يعمل</span>}
+          {partial > 0     && <span className="text-amber-400">{partial} جزئي</span>}
+          {unanswered > 0  && <span className="text-white/30">{unanswered} لم يُفحص</span>}
+        </div>
+      </div>
+      {/* Progress bar */}
+      <div className="w-full bg-white/5 rounded-full h-1 mb-3">
+        <div className="h-1 rounded-full bg-violet-500 transition-all duration-500"
+          style={{ width: total ? `${(doneCount / total) * 100}%` : "0%" }} />
+      </div>
+      {/* Items */}
+      <div className="space-y-1">
+        {checklist.map((item) => (
+          <div key={item.id}>
+            <div className="flex items-center gap-2 py-1 px-1 rounded-lg hover:bg-white/3 transition-all group">
+              {/* Status indicator */}
+              <div className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
+                item.status === "pass"       ? "bg-emerald-400" :
+                item.status === "fail"       ? "bg-red-400" :
+                item.status === "partial"    ? "bg-amber-400" :
+                item.status === "untestable" ? "bg-white/20" : "bg-white/10"
+              }`} />
+              {/* Label */}
+              <span className={`flex-1 text-xs transition-colors ${item.status ? "text-white/70" : "text-white/50"}`}>
+                {item.label}
+              </span>
+              {/* Status buttons */}
+              <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                {STATUS_OPTS.map(({ key, label, cls, activeCls }) => (
+                  <button
+                    key={key}
+                    onClick={() => handleClick(item, key)}
+                    className={`w-6 h-6 rounded-md border text-[11px] font-bold transition-all ${
+                      item.status === key ? activeCls : cls
+                    }`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Notes inline for partial/untestable */}
+            {editingNotes === item.id && (
+              <div className="flex gap-2 mt-1 mb-2 px-4">
+                <input
+                  autoFocus
+                  value={notesText}
+                  onChange={(e) => setNotesText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") confirmNotes(item.id);
+                    if (e.key === "Escape") { setEditingNotes(null); setPendingStatus(null); }
+                  }}
+                  placeholder="ملاحظة (اختياري)..."
+                  className="erp-input flex-1 text-xs py-0.5"
+                />
+                <button onClick={() => confirmNotes(item.id)} className="text-emerald-400 p-1 hover:text-emerald-300">
+                  <CheckCircle2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {item.notes && editingNotes !== item.id && (
+              <p className="text-[10px] text-white/30 px-5 pb-0.5 italic">{item.notes}</p>
+            )}
+          </div>
+        ))}
+      </div>
+      {unanswered === 0 && (
+        <p className="text-center text-[10px] text-emerald-400/60 mt-3">✓ اكتمل الفحص</p>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    REPAIR SETTINGS — manage checklist items with categories
 ══════════════════════════════════════════════════════════════ */
 type ChecklistRow = { id: number; label_ar: string; sort_order: number; category: string };
@@ -812,6 +964,8 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
   const [addingCat, setAddingCat]         = useState(false);
   const [newCatName, setNewCatName]       = useState("");
   const [reordering, setReordering]       = useState(false);
+  const [dragOver, setDragOver]           = useState<number | null>(null);
+  const dragIdx                           = useRef<number | null>(null);
 
   const { data: items = [], isLoading } = useQuery<ChecklistRow[]>({
     queryKey: ["/api/repair-checklist-items"],
@@ -895,6 +1049,25 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
     invalidate();
   };
 
+  const dropItem = async (toIdx: number) => {
+    const fromIdx = dragIdx.current;
+    setDragOver(null);
+    dragIdx.current = null;
+    if (fromIdx === null || fromIdx === toIdx) return;
+    const reordered = [...catItems];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+    const payload = reordered.map((item, i) => ({ id: item.id, sort_order: i + 1 }));
+    setReordering(true);
+    await authFetch(api("/api/repair-checklist-items/reorder"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    setReordering(false);
+    invalidate();
+  };
+
   const addCategory = () => {
     const name = newCatName.trim();
     if (!name || allCategories.includes(name)) { setAddingCat(false); return; }
@@ -959,24 +1132,41 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        {/* ── Items list (scrollable) ── */}
+        {/* ── Items list (scrollable, drag-to-reorder) ── */}
         <div className="overflow-y-auto flex-1 p-4 space-y-1">
           {isLoading && <p className="text-center text-white/30 text-sm py-4">جاري التحميل...</p>}
           {catItems.map((item, idx) => (
-            <div key={item.id} className="flex items-center gap-1.5 py-1.5 px-2 rounded-xl border border-white/5 hover:border-white/10 transition-all">
-              {/* Reorder arrows */}
-              <div className="flex flex-col shrink-0">
+            <div
+              key={item.id}
+              draggable
+              onDragStart={() => { dragIdx.current = idx; }}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(idx); }}
+              onDragLeave={() => setDragOver(null)}
+              onDrop={() => dropItem(idx)}
+              onDragEnd={() => { dragIdx.current = null; setDragOver(null); }}
+              className={`flex items-center gap-1.5 py-1.5 px-2 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
+                dragOver === idx ? "border-violet-500/40 bg-violet-500/5" : "border-white/5 hover:border-white/10"
+              }`}>
+              {/* Drag handle + arrows */}
+              <div className="flex flex-col shrink-0 items-center">
+                <div className="text-white/15 hover:text-violet-400/60 cursor-grab px-0.5 pb-0.5 transition-colors">
+                  <div className="w-2 flex flex-col gap-0.5">
+                    <div className="h-[1.5px] bg-current rounded" />
+                    <div className="h-[1.5px] bg-current rounded" />
+                    <div className="h-[1.5px] bg-current rounded" />
+                  </div>
+                </div>
                 <button
-                  onClick={() => moveItem(idx, -1)}
+                  onClick={(e) => { e.stopPropagation(); moveItem(idx, -1); }}
                   disabled={idx === 0 || reordering}
-                  className="text-white/20 hover:text-violet-400 disabled:opacity-20 p-0.5 transition-colors">
-                  <ChevronUp className="w-3 h-3" />
+                  className="text-white/15 hover:text-violet-400 disabled:opacity-10 transition-colors leading-none">
+                  <ChevronUp className="w-2.5 h-2.5" />
                 </button>
                 <button
-                  onClick={() => moveItem(idx, 1)}
+                  onClick={(e) => { e.stopPropagation(); moveItem(idx, 1); }}
                   disabled={idx === catItems.length - 1 || reordering}
-                  className="text-white/20 hover:text-violet-400 disabled:opacity-20 p-0.5 transition-colors">
-                  <ChevronDown className="w-3 h-3" />
+                  className="text-white/15 hover:text-violet-400 disabled:opacity-10 transition-colors leading-none">
+                  <ChevronDown className="w-2.5 h-2.5" />
                 </button>
               </div>
               {/* Label / edit */}
@@ -1139,9 +1329,10 @@ function JobDetail({
             <div className="grid grid-cols-2 gap-2 text-xs">
               <InfoRow label="الماركة" value={job.device_brand} />
               <InfoRow label="الموديل" value={job.device_model} />
-              {job.imei     && <InfoRow label="IMEI" value={job.imei} mono />}
-              {job.color    && <InfoRow label="اللون" value={job.color} />}
-              {job.storage  && <InfoRow label="التخزين" value={job.storage} />}
+              {job.imei       && <InfoRow label="IMEI" value={job.imei} mono />}
+              {job.device_pin && <InfoRow label="الرقم السري" value={job.device_pin} mono />}
+              {job.color      && <InfoRow label="اللون" value={job.color} />}
+              {job.storage    && <InfoRow label="التخزين" value={job.storage} />}
             </div>
             <div className="border-t border-white/5 pt-2">
               <p className="text-[10px] text-white/40 font-bold flex items-center gap-1"><Phone className="w-3 h-3" /> العميل</p>
@@ -1170,8 +1361,8 @@ function JobDetail({
           </div>
         </div>
 
-        {/* Diagnostic Checklist — Wizard */}
-        <ChecklistWizard checklist={checklist} onSaveItem={onSaveCheckItem} />
+        {/* Diagnostic Checklist — Inline editable */}
+        <JobChecklist checklist={checklist} onSaveItem={onSaveCheckItem} />
 
         {/* Diagnostic Report Text — collapsible */}
         <div className="glass-panel rounded-2xl border border-violet-500/10 bg-violet-500/3 overflow-hidden">
