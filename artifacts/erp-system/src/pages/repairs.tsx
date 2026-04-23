@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
   MinusCircle, Trash2, Save, ChevronLeft, Send, ClipboardList,
-  Package, AlertCircle, Clock, CheckCheck, Truck, Ban,
+  AlertCircle, Clock, CheckCheck, Truck, Ban,
   Star, Settings, MessageSquare, ChevronRight, RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -343,11 +343,6 @@ export default function Repairs() {
     },
   });
 
-  const { data: products = [] } = useQuery<{ id: number; name: string; sale_price: string }[]>({
-    queryKey: ["/api/products"],
-    queryFn: () => apiFetch<{ id: number; name: string; sale_price: string }[]>(api("/api/products")),
-  });
-
   const { data: users = [] } = useQuery<{ id: number; name: string }[]>({
     queryKey: ["/api/repair-jobs/technicians"],
     queryFn: () => apiFetch<{ id: number; name: string }[]>(api("/api/repair-jobs/technicians")),
@@ -385,6 +380,10 @@ export default function Repairs() {
     try {
       const v = detail?.checklist ? JSON.parse(detail.checklist) : null;
       if (!Array.isArray(v)) return templateChecklist;
+      // Power-off sentinel: return as-is without merging with template
+      if (v.length === 1 && v[0].id === "__power_off__") {
+        return [{ id: "__power_off__", label: "الجهاز لا يفتح ولا يشتغل", status: "fail" as const }];
+      }
       // Merge saved statuses + notes with current template
       const savedMap: Record<string, { status: ChecklistItem["status"]; notes?: string }> = {};
       v.forEach((c: { id?: string | number; item_id?: string | number; status: string; notes?: string }) => {
@@ -425,23 +424,6 @@ export default function Repairs() {
       setSelectedJob(null);
       toast({ title: "✅ تم الحذف" });
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
-  });
-
-  const addPart = useMutation({
-    mutationFn: ({ jobId, data }: { jobId: number; data: Record<string, unknown> }) =>
-      authFetch(api(`/api/repair-jobs/${jobId}/parts`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/repair-jobs", selectedJob?.id] });
-      toast({ title: "✅ تم إضافة القطعة" });
-    },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
-  });
-
-  const deletePart = useMutation({
-    mutationFn: ({ jobId, partId }: { jobId: number; partId: number }) =>
-      authFetch(api(`/api/repair-jobs/${jobId}/parts/${partId}`), { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/repair-jobs", selectedJob?.id] }),
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
 
@@ -591,13 +573,10 @@ export default function Repairs() {
                 job={detail!}
                 checklist={checklist}
                 score={score}
-                products={products}
                 users={users}
                 onClose={() => setSelectedJob(null)}
                 onPatch={(data) => patchJob.mutate({ id: detail!.id, data })}
                 onDelete={() => deleteJob.mutate(detail!.id)}
-                onAddPart={(data) => addPart.mutate({ jobId: detail!.id, data })}
-                onDeletePart={(partId) => deletePart.mutate({ jobId: detail!.id, partId })}
                 onSaveCheckItem={toggleCheck}
                 onWhatsApp={sendWhatsApp}
                 whatsAppReady={whatsAppReady}
@@ -682,6 +661,20 @@ function ChecklistWizard({
       default:            return { label: "—",                cls: "text-white/20" };
     }
   };
+
+  /* ── Power-off sentinel ── */
+  const isPoweredOff = checklist.length === 1 && checklist[0].id === "__power_off__";
+  if (isPoweredOff) {
+    return (
+      <div className="glass-panel rounded-2xl p-4 border border-red-500/20 bg-red-500/5 flex items-center gap-3">
+        <XCircle className="w-7 h-7 text-red-400 shrink-0" />
+        <div>
+          <p className="text-sm font-bold text-red-300">الجهاز لا يفتح</p>
+          <p className="text-[11px] text-red-400/60 mt-0.5">تم تسجيل الطلب بدون فحص — الجهاز لا يشتغل</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="glass-panel rounded-2xl p-3 border border-white/5">
@@ -935,61 +928,32 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
    JOB DETAIL PANEL
 ══════════════════════════════════════════════════════════════ */
 function JobDetail({
-  job, checklist, score, products, users,
-  onClose, onPatch, onDelete, onAddPart, onDeletePart, onSaveCheckItem,
+  job, checklist, score, users,
+  onClose, onPatch, onDelete, onSaveCheckItem,
   onWhatsApp, whatsAppReady, whatsAppProgress,
 }: {
   job: RepairJob;
   checklist: ChecklistItem[];
   score: number;
-  products: { id: number; name: string; sale_price: string }[];
   users: { id: number; name: string }[];
   onClose: () => void;
   onPatch: (data: Record<string, unknown>) => void;
   onDelete: () => void;
-  onAddPart: (data: Record<string, unknown>) => void;
-  onDeletePart: (partId: number) => void;
   onSaveCheckItem: (id: string, status: ChecklistItem["status"], notes: string) => void;
   onWhatsApp: (job: RepairJob, msg: string) => void;
   whatsAppReady: (job: RepairJob) => string;
   whatsAppProgress: (job: RepairJob) => string;
 }) {
-  const { toast } = useToast();
-  const [editNotes, setEditNotes] = useState(job.notes ?? "");
-  const [editEst, setEditEst]   = useState(job.estimated_cost ?? "0");
-  const [editFinal, setEditFinal] = useState(job.final_cost ?? "0");
+  const [editEst, setEditEst]       = useState(job.estimated_cost ?? "0");
+  const [editFinal, setEditFinal]   = useState(job.final_cost ?? "0");
   const [editDeposit, setEditDeposit] = useState(job.deposit_paid ?? "0");
   const [editDelivery, setEditDelivery] = useState(job.estimated_delivery ?? "");
-  const [editTech, setEditTech] = useState(job.technician_id?.toString() ?? "");
-  const [partSearch, setPartSearch] = useState("");
-  const [partQty, setPartQty]   = useState("1");
-  const [partPrice, setPartPrice] = useState("");
-  const [partName, setPartName] = useState("");
+  const [editTech, setEditTech]     = useState(job.technician_id?.toString() ?? "");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const parts = job.parts ?? [];
-  const partsTotal = parts.reduce((s, p) => s + Number(p.quantity) * Number(p.unit_price), 0);
-
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(partSearch.toLowerCase())
-  ).slice(0, 8);
-
-  const selectProduct = (p: { id: number; name: string; sale_price: string }) => {
-    setPartName(p.name);
-    setPartPrice(p.sale_price);
-    setPartSearch(p.name);
-  };
-
-  const handleAddPart = () => {
-    if (!partName.trim()) { toast({ title: "اسم القطعة مطلوب", variant: "destructive" }); return; }
-    const matchProd = products.find((p) => p.name === partName);
-    onAddPart({ product_id: matchProd?.id ?? null, product_name: partName, quantity: partQty, unit_price: partPrice || "0" });
-    setPartSearch(""); setPartName(""); setPartQty("1"); setPartPrice("");
-  };
+  const [reportOpen, setReportOpen] = useState(false);
 
   const handleSave = () => {
     onPatch({
-      notes: editNotes,
       estimated_cost: editEst,
       final_cost: editFinal,
       deposit_paid: editDeposit,
@@ -1088,7 +1052,50 @@ function JobDetail({
           </div>
         </div>
 
-        {/* Technician & Financials */}
+        {/* Diagnostic Checklist — Wizard */}
+        <ChecklistWizard checklist={checklist} onSaveItem={onSaveCheckItem} />
+
+        {/* Diagnostic Report Text — collapsible */}
+        <div className="glass-panel rounded-2xl border border-violet-500/10 bg-violet-500/3 overflow-hidden">
+          <button
+            onClick={() => setReportOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-white/3 transition-all"
+          >
+            <p className="text-[10px] text-violet-400/70 font-bold flex items-center gap-1.5">
+              <Star className="w-3 h-3" /> تقرير التشخيص النصي
+            </p>
+            <ChevronRight
+              className={`w-4 h-4 text-violet-400/50 transition-transform duration-200 ${reportOpen ? "-rotate-90" : "rotate-90"}`}
+            />
+          </button>
+          {reportOpen && (
+            <div className="px-4 pb-4">
+              <div className="text-[11px] text-white/50 leading-6 font-mono whitespace-pre-wrap bg-black/20 rounded-xl p-3">
+{`بطاقة صيانة: ${job.job_no}
+العميل: ${job.customer_name}${job.customer_phone ? " | " + job.customer_phone : ""}
+الجهاز: ${job.device_brand} ${job.device_model}${job.imei ? " | IMEI: " + job.imei : ""}
+تاريخ الاستلام: ${job.received_at}${job.estimated_delivery ? " | موعد التسليم: " + job.estimated_delivery : ""}
+الفني: ${job.technician_name ?? "—"}
+الحالة: ${STATUS_MAP[job.status]?.label ?? job.status}
+درجة الجهاز: ${score}%
+
+نتائج الفحص:
+${checklist.filter((c) => c.status && c.id !== "__power_off__").map((c) => {
+  const sym = c.status === "pass" ? "✓" : c.status === "fail" ? "✗" : c.status === "partial" ? "~" : "○";
+  return `  ${sym} ${c.label}${c.notes ? ` (${c.notes})` : ""}`;
+}).join("\n") || "  الجهاز لا يفتح — لم يُجرَ الفحص"}
+
+المشكلة: ${job.problem_description ?? "—"}
+التكلفة التقديرية: ${formatCurrency(Number(editEst))}
+التكلفة النهائية: ${formatCurrency(Number(editFinal))}
+العربون: ${formatCurrency(Number(editDeposit))}
+المتبقي: ${formatCurrency(Math.max(0, Number(editFinal || editEst) - Number(editDeposit)))}`}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Technician & Financials — moved to bottom */}
         <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-3">
           <p className="text-[10px] text-white/40 font-bold">الفني والتكلفة</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -1122,106 +1129,6 @@ function JobDetail({
                 المتبقي: <span className="font-black text-amber-400">{formatCurrency(Math.max(0, Number(editFinal || editEst) - Number(editDeposit)))}</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Diagnostic Checklist — Wizard */}
-        <ChecklistWizard checklist={checklist} onSaveItem={onSaveCheckItem} />
-
-        {/* Parts Section */}
-        <div className="glass-panel rounded-2xl p-3 border border-white/5">
-          <p className="text-[10px] text-white/40 font-bold mb-3 flex items-center gap-1">
-            <Package className="w-3 h-3" /> قطع الغيار المستخدمة
-          </p>
-
-          {/* Add Part */}
-          <div className="flex gap-1.5 mb-3 relative">
-            <div className="flex-1 relative">
-              <input
-                value={partSearch}
-                onChange={(e) => { setPartSearch(e.target.value); setPartName(e.target.value); setPartPrice(""); }}
-                placeholder="اسم القطعة أو ابحث في المنتجات..."
-                className="erp-input w-full text-xs" />
-              {partSearch && products.length > 0 && !products.find((p) => p.name === partName) && (
-                <div className="absolute top-full mt-1 right-0 left-0 z-20 glass-panel rounded-xl border border-white/10 max-h-36 overflow-y-auto">
-                  {filteredProducts.map((p) => (
-                    <button key={p.id} onClick={() => selectProduct(p)}
-                      className="w-full text-right px-3 py-1.5 text-xs text-white/70 hover:bg-white/5 flex justify-between">
-                      <span>{p.name}</span>
-                      <span className="text-violet-300">{formatCurrency(Number(p.sale_price))}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <input type="number" value={partQty} onChange={(e) => setPartQty(e.target.value)}
-              placeholder="كمية" className="erp-input w-14 text-xs text-center" min="0.1" />
-            <input type="number" value={partPrice} onChange={(e) => setPartPrice(e.target.value)}
-              placeholder="سعر" className="erp-input w-20 text-xs text-center" />
-            <button onClick={handleAddPart} className="btn-icon text-violet-300 hover:bg-violet-500/20">
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Parts List */}
-          {parts.length === 0 ? (
-            <p className="text-[11px] text-white/20 text-center py-2">لا توجد قطع مضافة</p>
-          ) : (
-            <div className="space-y-1">
-              {parts.map((part) => (
-                <div key={part.id} className="flex items-center gap-2 py-1.5 border-b border-white/5 last:border-0">
-                  <span className="flex-1 text-xs text-white/70">{part.product_name}</span>
-                  <span className="text-xs text-white/40 w-8 text-center">{Number(part.quantity).toFixed(0)}×</span>
-                  <span className="text-xs text-violet-300 w-20 text-left">{formatCurrency(Number(part.unit_price))}</span>
-                  <button onClick={() => onDeletePart(part.id)} className="btn-icon text-red-400/40 hover:text-red-400 w-5 h-5">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              <div className="flex justify-between pt-1.5 text-xs font-bold">
-                <span className="text-white/40">إجمالي القطع</span>
-                <span className="text-violet-300">{formatCurrency(partsTotal)}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Notes */}
-        <div className="glass-panel rounded-2xl p-3 border border-white/5">
-          <label className="text-[10px] text-white/40 mb-2 block">ملاحظات الفني</label>
-          <textarea
-            value={editNotes}
-            onChange={(e) => setEditNotes(e.target.value)}
-            rows={3}
-            placeholder="ملاحظات إضافية، إرشادات الصيانة..."
-            className="erp-input w-full text-xs resize-none" />
-        </div>
-
-        {/* Diagnostic Report Text */}
-        <div className="glass-panel rounded-2xl p-3 border border-violet-500/10 bg-violet-500/3">
-          <p className="text-[10px] text-violet-400/70 font-bold mb-2 flex items-center gap-1"><Star className="w-3 h-3" /> تقرير التشخيص النصي</p>
-          <div className="text-[11px] text-white/50 leading-6 font-mono whitespace-pre-wrap bg-black/20 rounded-xl p-3">
-{`بطاقة صيانة: ${job.job_no}
-العميل: ${job.customer_name}${job.customer_phone ? " | " + job.customer_phone : ""}
-الجهاز: ${job.device_brand} ${job.device_model}${job.imei ? " | IMEI: " + job.imei : ""}
-تاريخ الاستلام: ${job.received_at}${job.estimated_delivery ? " | موعد التسليم: " + job.estimated_delivery : ""}
-الفني: ${job.technician_name ?? "—"}
-الحالة: ${STATUS_MAP[job.status]?.label ?? job.status}
-درجة الجهاز: ${score}%
-
-نتائج الفحص:
-${checklist.filter((c) => c.status).map((c) => {
-  const sym = c.status === "pass" ? "✓" : c.status === "fail" ? "✗" : c.status === "partial" ? "~" : "○";
-  return `  ${sym} ${c.label}${c.notes ? ` (${c.notes})` : ""}`;
-}).join("\n") || "  لم يُنجز الفحص بعد"}
-
-المشكلة: ${job.problem_description ?? "—"}
-الملاحظات: ${editNotes || "—"}
-
-التكلفة التقديرية: ${formatCurrency(Number(editEst))}
-التكلفة النهائية: ${formatCurrency(Number(editFinal))}
-العربون: ${formatCurrency(Number(editDeposit))}
-المتبقي: ${formatCurrency(Math.max(0, Number(editFinal || editEst) - Number(editDeposit)))}`}
           </div>
         </div>
 
@@ -1288,6 +1195,11 @@ function NewJobForm({
   const [receivedAt, setReceivedAt]             = useState(new Date().toISOString().split("T")[0]);
   const [estimatedDelivery, setEstimatedDelivery] = useState("");
   const [submitting, setSubmitting]             = useState(false);
+
+  /* ── Power check + local checklist ── */
+  const [devicePowers, setDevicePowers]       = useState<null | "on" | "off">(null);
+  const [localChecklist, setLocalChecklist]   = useState<ChecklistItem[]>(checklistTemplate);
+  const checklistComplete = localChecklist.every((c) => c.status !== null);
 
   /* ── Derived device options ── */
   const brandNames   = Object.keys(DEVICE_CATALOG);
@@ -1356,13 +1268,18 @@ function NewJobForm({
 
   const handleSubmit = async () => {
     if (!customerName.trim()) { toast({ title: "يرجى تحديد العميل أولاً", variant: "destructive" }); return; }
-    if (!brand.trim())       { toast({ title: "الماركة مطلوبة", variant: "destructive" }); return; }
-    if (!finalModel.trim())  { toast({ title: "الموديل مطلوب", variant: "destructive" }); return; }
+    if (!brand.trim())        { toast({ title: "الماركة مطلوبة", variant: "destructive" }); return; }
+    if (!finalModel.trim())   { toast({ title: "الموديل مطلوب", variant: "destructive" }); return; }
+    if (devicePowers === null) { toast({ title: "حدد هل الجهاز يعمل أم لا", variant: "destructive" }); return; }
 
     setSubmitting(true);
     try {
       const deviceBrand = isOtherBrand ? customModel : brand;
       const deviceModel = isOtherBrand ? customModel : (isOtherCat ? customModel : `${category} ${model}`.trim());
+
+      const sentChecklist = devicePowers === "off"
+        ? [{ id: "__power_off__", label: "الجهاز لا يفتح ولا يشتغل", status: "fail" as const }]
+        : localChecklist;
 
       const res = await authFetch(api("/api/repair-jobs"), {
         method: "POST",
@@ -1382,7 +1299,7 @@ function NewJobForm({
           deposit_paid: deposit || "0",
           received_at: receivedAt,
           estimated_delivery: estimatedDelivery || null,
-          checklist: checklistTemplate,
+          checklist: sentChecklist,
         }),
       });
       const job = await res.json();
@@ -1576,7 +1493,67 @@ function NewJobForm({
           </div>
         </div>
 
-        {/* ── 3. Financials & Dates ── */}
+        {/* ── 3. Device Power Check ── */}
+        <div className={`glass-panel rounded-2xl p-4 border transition-all ${
+          devicePowers === "on"  ? "border-emerald-500/30 bg-emerald-500/5" :
+          devicePowers === "off" ? "border-red-500/30 bg-red-500/5" :
+          "border-white/5"
+        }`}>
+          <p className="text-[10px] text-white/40 font-bold mb-3 flex items-center gap-1">
+            <Smartphone className="w-3 h-3" /> هل الجهاز يفتح ويشتغل؟
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => { setDevicePowers("on"); }}
+              className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all active:scale-95 ${
+                devicePowers === "on"
+                  ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-300"
+                  : "border-white/10 text-white/40 hover:border-emerald-500/30 hover:text-emerald-400/70"
+              }`}
+            >
+              <CheckCircle2 className="w-8 h-8" />
+              <span className="text-sm font-bold">يعمل</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setDevicePowers("off"); }}
+              className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all active:scale-95 ${
+                devicePowers === "off"
+                  ? "border-red-500/60 bg-red-500/15 text-red-300"
+                  : "border-white/10 text-white/40 hover:border-red-500/30 hover:text-red-400/70"
+              }`}
+            >
+              <XCircle className="w-8 h-8" />
+              <span className="text-sm font-bold">لا يعمل</span>
+            </button>
+          </div>
+
+          {devicePowers === "off" && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20">
+              <Ban className="w-4 h-4 text-red-400 shrink-0" />
+              <p className="text-xs text-red-300">سيتم حفظ الطلب مباشرةً بدون فحص</p>
+            </div>
+          )}
+
+          {devicePowers === "on" && (
+            <div className="mt-4">
+              <p className="text-[10px] text-emerald-400/70 mb-2 font-bold">
+                أكمل فحص الجهاز قبل الحفظ — {localChecklist.filter(c => c.status).length} / {localChecklist.length}
+              </p>
+              <ChecklistWizard
+                checklist={localChecklist}
+                onSaveItem={(id, status, notes) =>
+                  setLocalChecklist((prev) =>
+                    prev.map((c) => c.id === id ? { ...c, status, notes: notes || c.notes } : c)
+                  )
+                }
+              />
+            </div>
+          )}
+        </div>
+
+        {/* ── 4. Financials & Dates ── */}
         <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
           <p className="text-[10px] text-white/40 font-bold">التكلفة والتواريخ</p>
           <div className="grid grid-cols-2 gap-2">
@@ -1599,9 +1576,20 @@ function NewJobForm({
           </div>
         </div>
 
+        {/* Submit — disabled until power check done; if "on" also requires complete checklist */}
+        {devicePowers === "on" && !checklistComplete && (
+          <p className="text-center text-[11px] text-amber-400/70 -mt-2">
+            أكمل جميع بنود الفحص لتتمكن من الحفظ ({localChecklist.filter(c => !c.status).length} متبقي)
+          </p>
+        )}
         <button
           onClick={handleSubmit}
-          disabled={submitting || !customerId}
+          disabled={
+            submitting ||
+            !customerId ||
+            devicePowers === null ||
+            (devicePowers === "on" && !checklistComplete)
+          }
           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold transition-all disabled:opacity-50"
         >
           {submitting ? "جاري الإنشاء..." : <><Plus className="w-4 h-4" /> إنشاء البطاقة</>}
