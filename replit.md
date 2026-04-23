@@ -124,6 +124,29 @@
 - Click opens a modal showing `QRCodeSVG` with product ID, name, and SKU encoded as `MUHKAM-PRODUCT|id:...|name:...|sku:...`
 - QR code is high error-correction (level H) at 180x180 px on white background
 
+### 5. نظام الصيانة والإصلاح (Repair Job Cards) — أبريل 2026
+- **DB schema:** `lib/db/src/schema/repairs.ts` → `repair_jobs` + `repair_job_parts` tables (created via SQL)
+- **Backend routes:** `artifacts/api-server/src/routes/repairs.ts` — full CRUD + parts management + stats
+  - `GET /api/repair-jobs` (list with status/search filters)
+  - `GET /api/repair-jobs/stats` (count by status)
+  - `GET /api/repair-jobs/:id` (detail with parts)
+  - `POST /api/repair-jobs` (create with auto job_no: REP-YYYY-NNNN)
+  - `PATCH /api/repair-jobs/:id` (update status, checklist, financials)
+  - `DELETE /api/repair-jobs/:id`
+  - `POST/DELETE /api/repair-jobs/:id/parts`
+- **Frontend:** `artifacts/erp-system/src/pages/repairs.tsx`
+  - Split-panel layout: job list (right) + detail/form (left)
+  - Status workflow: pending → in_progress → done → delivered → cancelled
+  - 14-item technician diagnostic checklist (pass/fail/na toggles)
+  - Dynamic device score (SVG ring, color-coded)
+  - Parts section linked to products inventory
+  - Financial tracking: estimated / final cost / deposit / remaining
+  - Auto-generated diagnostic text report
+  - WhatsApp notifications (progress update + ready for pickup)
+  - New job form: customer search, IMEI, brand/model, storage/color
+- **Routing:** `/repairs` in App.tsx + rbac.ts (admin/manager/cashier, Wrench icon)
+- **Navigation:** added to "التجارة" section in layout.tsx sidebar
+
 ### 4. نظام متابعة الضمانات (Warranty Tracking System)
 - **DB schema:** `lib/db/src/schema/warranty.ts` → `warranty_records` table (pushed to DB)
 - **Backend routes:** `artifacts/api-server/src/routes/warranty.ts` — CRUD (GET list, POST create, PATCH update, DELETE, GET stats)

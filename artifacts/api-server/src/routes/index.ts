@@ -57,6 +57,7 @@ import bankReconciliationRouter from "./bank-reconciliation";
 import budgetsRouter from "./budgets";
 import costCentersRouter from "./cost-centers";
 import salesTargetsRouter from "./sales-targets";
+import repairsRouter from "./repairs";
 
 const router: IRouter = Router();
 
@@ -119,6 +120,7 @@ router.use(leavesRouter);
 router.use(incentivesRouter);
 router.use(salaryAdvancesRouter);
 router.use(salesTargetsRouter);
+router.use(repairsRouter);
 router.use(employeeBonusesCustodyRouter);
 router.use(attendanceDeductionsRouter);
 router.use(fiscalYearsRouter);

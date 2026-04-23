@@ -24,7 +24,7 @@ const NAV_SECTIONS = [
   { label: 'القائمة', hrefs: ['/'] },
   {
     label: 'التجارة',
-    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/warranty', '/consignment'],
+    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/repairs', '/warranty', '/consignment'],
   },
   { label: 'المالية', hrefs: ['/treasury', '/vouchers', '/expenses', '/income', '/reports'] },
   { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
