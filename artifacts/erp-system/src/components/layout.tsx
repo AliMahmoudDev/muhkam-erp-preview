@@ -410,20 +410,35 @@ export function AppLayout({ children }: LayoutProps) {
             const items = visibleNav.filter((i) => section.hrefs.includes(i.href));
             if (!items.length) return null;
             const sectionActive = items.some((i) => i.href === location);
-            const isOpen = openSections[section.label] ?? sectionActive;
+            const isAccounting = section.label === 'المحاسبة';
+            /* Accounting: toggle-able; all others: always open */
+            const isOpen = isAccounting
+              ? (openSections[section.label] ?? sectionActive)
+              : true;
             return (
               <div key={section.label}>
                 {/* Section label — hidden when collapsed */}
                 {!sidebarCollapsed && (
-                  <button
-                    type="button"
-                    onClick={() => setOpenSections((prev) => ({ ...prev, [section.label]: !(prev[section.label] ?? sectionActive) }))}
-                    className="erp-divider-label"
-                    style={{ paddingTop: si === 0 ? 10 : 16, paddingBottom: 4, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'right' }}
-                  >
-                    <span>{section.label}</span>
-                    <ChevronDown style={{ width: 12, height: 12, opacity: 0.55, transition: 'transform 0.2s ease', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
-                  </button>
+                  isAccounting ? (
+                    /* Accounting: clickable with arrow */
+                    <button
+                      type="button"
+                      onClick={() => setOpenSections((prev) => ({ ...prev, [section.label]: !(prev[section.label] ?? sectionActive) }))}
+                      className="erp-divider-label"
+                      style={{ paddingTop: si === 0 ? 10 : 16, paddingBottom: 4, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'right' }}
+                    >
+                      <span>{section.label}</span>
+                      <ChevronDown style={{ width: 12, height: 12, opacity: 0.55, transition: 'transform 0.2s ease', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+                    </button>
+                  ) : (
+                    /* Other sections: plain label, no arrow, always open */
+                    <div
+                      className="erp-divider-label"
+                      style={{ paddingTop: si === 0 ? 10 : 16, paddingBottom: 4 }}
+                    >
+                      <span>{section.label}</span>
+                    </div>
+                  )
                 )}
                 {/* Divider line when collapsed */}
                 {sidebarCollapsed && si > 0 && (
