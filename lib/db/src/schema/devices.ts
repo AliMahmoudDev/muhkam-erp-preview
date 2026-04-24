@@ -44,6 +44,10 @@ export const devicesTable = pgTable("devices", {
 
   added_by_user_id:         integer("added_by_user_id"),
   added_by_user_name:       text("added_by_user_name"),
+
+  supplier_phone:           text("supplier_phone"),
+  id_card_data:             text("id_card_data"),
+
   created_at:               timestamp("created_at").defaultNow(),
   updated_at:               timestamp("updated_at").defaultNow(),
 });

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { devicesTable } from "@workspace/db";
+import { devicesTable, customersTable } from "@workspace/db";
 import { eq, and, desc, or, ilike, sql } from "drizzle-orm";
 import { wrap } from "../lib/async-handler";
 import type Express from "express";
@@ -122,7 +122,27 @@ router.get("/devices/:id", wrap(async (req, res) => {
   return res.json(row);
 }));
 
-/* ─── CREATE ─── */
+/* ─── CUSTOMER PHONE LOOKUP ─── */
+router.get("/devices/customer-lookup", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const phone = (req.query.phone as string ?? "").trim();
+  if (!phone) return res.json({ found: false });
+  const rows = await db.select({
+    id: customersTable.id,
+    name: customersTable.name,
+    phone: customersTable.phone,
+  })
+    .from(customersTable)
+    .where(and(
+      eq(customersTable.company_id, company_id),
+      ilike(customersTable.phone, `%${phone}%`),
+    ))
+    .limit(1);
+  if (!rows.length) return res.json({ found: false });
+  return res.json({ found: true, customer: rows[0] });
+}));
+
+/* ─── CREATE DEVICE ─── */
 router.post("/devices", wrap(async (req, res) => {
   const { company_id, user_id, user_name } = ctx(req);
   const device_no = await nextDeviceNo(company_id);

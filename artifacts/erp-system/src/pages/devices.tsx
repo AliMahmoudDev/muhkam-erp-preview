@@ -34,6 +34,7 @@ type Device = {
   sold_by_user_name?: string; sold_price?: string;
   warranty_months?: number; payment_method?: string; payment_status?: string;
   added_by_user_name?: string; created_at: string;
+  supplier_phone?: string; id_card_data?: string;
 };
 
 type Stats = {
@@ -588,9 +589,11 @@ function StatusBadge({ status }: { status: DeviceStatus }) {
 ════════════════════════════════════════════════════════ */
 function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { toast } = useToast();
-  const { user } = useAuth();
 
-  /* ── 4 cascade selectors ── */
+  /* ── wizard step ── */
+  const [step, setStep] = useState<1 | 2>(1);
+
+  /* ── cascade selectors ── */
   const [brandSel,    setBrandSel]    = useState("");
   const [catSel,      setCatSel]      = useState("");
   const [modelSel,    setModelSel]    = useState("");
@@ -601,38 +604,32 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   const [storageCustom, setStorageCustom] = useState("");
   const [storageModeOther, setStorageModeOther] = useState(false);
 
+  /* ── device form fields (step 1) ── */
+  const [form, setForm] = useState({ storage: "128GB", imei: "", battery_health: "", grade: "B" });
+  const f = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
+
+  /* ── step 2 fields ── */
+  const [supplierPhone, setSupplierPhone] = useState("");
+  const [foundCustomer, setFoundCustomer] = useState<{ id: number; name: string } | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [idCardFile, setIdCardFile] = useState<File | null>(null);
+  const [idCardPreview, setIdCardPreview] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  /* cascade derived data */
   const isOtherBrand   = brandSel === OTHER;
   const isOtherModel   = modelSel === OTHER;
   const isOtherColor   = colorSel === OTHER;
   const isOtherStorage = storageModeOther;
-
-  /* derived data from catalog */
-  const categories   = brandSel && !isOtherBrand ? Object.keys(CATALOG[brandSel] ?? {}) : [];
-  const modelSpecs   = catSel && !isOtherBrand   ? CATALOG[brandSel]?.[catSel] ?? {}    : {};
-  const modelNames   = Object.keys(modelSpecs);
+  const categories  = brandSel && !isOtherBrand ? Object.keys(CATALOG[brandSel] ?? {}) : [];
+  const modelSpecs  = catSel && !isOtherBrand   ? CATALOG[brandSel]?.[catSel] ?? {}    : {};
+  const modelNames  = Object.keys(modelSpecs);
   const currentSpec: ModelSpec | null = (modelSel && !isOtherModel) ? modelSpecs[modelSel] ?? null : null;
-  const availColors  = currentSpec && currentSpec.colors.length ? [...currentSpec.colors, OTHER] : [...DEFAULT_COLORS, OTHER];
-  const availStorages= currentSpec && currentSpec.storages.length ? [...currentSpec.storages, OTHER] : [...DEFAULT_STORAGES, OTHER];
-
-  /* effective values to store */
+  const availColors   = currentSpec && currentSpec.colors.length ? [...currentSpec.colors, OTHER] : [...DEFAULT_COLORS, OTHER];
+  const availStorages = currentSpec && currentSpec.storages.length ? [...currentSpec.storages, OTHER] : [...DEFAULT_STORAGES, OTHER];
   const effectiveBrand = isOtherBrand ? brandCustom : brandSel;
   const effectiveModel = isOtherModel ? modelCustom : modelSel;
   const effectiveColor = isOtherColor ? colorCustom : colorSel;
-
-  const [form, setForm] = useState({
-    storage: "128GB",
-    imei: "", serial_no: "",
-    battery_health: "", grade: "B",
-    condition_notes: "",
-    purchase_price: "", sale_price: "",
-    supplier_name: "",
-    dual_sim: false, with_box: false,
-    icloud_locked: false, network_locked: false, previously_opened: false, mdm_locked: false,
-    inspector_name: (user as { name?: string })?.name ?? "",
-  });
-  const [saving, setSaving] = useState(false);
-
-  const f = (k: string, v: string | boolean) => setForm(p => ({ ...p, [k]: v }));
 
   /* cascade resets */
   const resetStorageOther = () => { setStorageModeOther(false); setStorageCustom(""); };
@@ -647,11 +644,9 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     setForm(p => ({ ...p, storage: "" }));
   };
   const handleModelChange = (v: string) => {
-    setModelSel(v);
-    setColorSel(""); setColorCustom(""); setModelCustom(""); resetStorageOther();
+    setModelSel(v); setColorSel(""); setColorCustom(""); setModelCustom(""); resetStorageOther();
     const spec = catSel && brandSel ? CATALOG[brandSel]?.[catSel]?.[v] : undefined;
-    const defaultStorage = spec && spec.storages.length ? spec.storages[0] : "128GB";
-    setForm(p => ({ ...p, storage: defaultStorage }));
+    setForm(p => ({ ...p, storage: spec && spec.storages.length ? spec.storages[0] : "128GB" }));
     if (spec && spec.colors.length === 1) setColorSel(spec.colors[0]);
   };
   const handleStorageChange = (v: string) => {
@@ -659,236 +654,366 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     else { setStorageModeOther(false); setStorageCustom(""); setForm(p => ({ ...p, storage: v })); }
   };
 
+  /* phone lookup with debounce */
+  useEffect(() => {
+    if (supplierPhone.length < 7) { setFoundCustomer(null); return; }
+    const t = setTimeout(async () => {
+      setLookingUp(true);
+      try {
+        const data = await apiFetch<{ found: boolean; customer?: { id: number; name: string } }>(
+          api(`/api/devices/customer-lookup?phone=${encodeURIComponent(supplierPhone)}`)
+        );
+        setFoundCustomer(data.found && data.customer ? data.customer : null);
+      } catch { setFoundCustomer(null); }
+      finally { setLookingUp(false); }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [supplierPhone]);
+
+  /* ID card file handler */
+  const handleIdFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "حجم الملف يتجاوز 2MB", variant: "destructive" });
+      e.target.value = "";
+      return;
+    }
+    setIdCardFile(file);
+    const reader = new FileReader();
+    reader.onload = ev => setIdCardPreview(ev.target?.result as string ?? "");
+    reader.readAsDataURL(file);
+  };
+
+  /* Step 1 validation → go to step 2 */
+  const handleNext = () => {
+    if (!effectiveBrand.trim()) { toast({ title: "اختر الشركة المصنعة", variant: "destructive" }); return; }
+    if (!catSel.trim() && !isOtherBrand) { toast({ title: "اختر فئة المنتج", variant: "destructive" }); return; }
+    if (!effectiveModel.trim()) { toast({ title: "اختر الموديل", variant: "destructive" }); return; }
+    setStep(2);
+  };
+
+  /* Final save */
   const handleSave = async () => {
-    if (!effectiveBrand.trim() || !effectiveModel.trim()) {
-      toast({ title: "اختر الشركة المصنعة والموديل على الأقل", variant: "destructive" }); return;
-    }
-    if (!form.purchase_price) {
-      toast({ title: "أدخل سعر الشراء", variant: "destructive" }); return;
-    }
+    if (!supplierPhone.trim()) { toast({ title: "أدخل رقم المورد / العميل", variant: "destructive" }); return; }
     const finalStorage = storageCustom.trim() || form.storage;
     setSaving(true);
     try {
+      let idCardData: string | undefined;
+      if (idCardFile) {
+        idCardData = await new Promise<string>((res, rej) => {
+          const r = new FileReader();
+          r.onload = ev => res(ev.target?.result as string);
+          r.onerror = rej;
+          r.readAsDataURL(idCardFile);
+        });
+      }
       await apPost("/api/devices", {
-        ...form,
-        storage: finalStorage,
         brand: effectiveBrand,
         model: effectiveModel,
         color: effectiveColor || undefined,
-        battery_health: form.battery_health ? parseInt(form.battery_health) : null,
-        purchase_price: parseFloat(form.purchase_price) || 0,
-        sale_price: parseFloat(form.sale_price) || 0,
+        storage: finalStorage,
+        grade: form.grade,
+        imei: form.imei || undefined,
+        battery_health: form.battery_health ? Math.min(100, parseInt(form.battery_health)) : null,
+        supplier_phone: supplierPhone.trim(),
+        supplier_name: foundCustomer ? foundCustomer.name : undefined,
+        id_card_data: idCardData,
+        purchase_price: 0,
+        sale_price: 0,
       });
       toast({ title: "✅ تم إضافة الجهاز بنجاح" });
-      onSaved();
-      onClose();
+      onSaved(); onClose();
     } catch {
       toast({ title: "خطأ في الحفظ", variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
-  const inputCls  = "erp-input w-full text-sm";
-  const labelCls  = "text-[11px] text-white/40 mb-1 block text-right";
-  const selectCls = "erp-input w-full text-sm";
-  const disabledSelectCls = `${selectCls} opacity-40 cursor-not-allowed`;
+  const iCls = "erp-input w-full text-sm";
+  const lCls = "text-[11px] text-white/40 mb-1.5 block text-right";
+  const sCls = "erp-input w-full text-sm";
+  const dCls = `${sCls} opacity-40 cursor-not-allowed`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 bg-black/70 backdrop-blur-sm" dir="rtl">
-      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-xl mx-4 overflow-hidden flex flex-col" style={{ maxHeight: "90vh" }}>
+      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-xl mx-4 overflow-hidden flex flex-col" style={{ maxHeight: "92vh" }}>
 
-        {/* Header */}
+        {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 shrink-0">
-          <div className="flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-violet-400" />
-            <span className="font-bold text-white">إضافة جهاز جديد</span>
-          </div>
-          <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
-            <XCircle className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="overflow-y-auto flex-1 p-5 space-y-4">
-
-          {/* ── Row 1: Brand + Category ── */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>الشركة المصنعة *</label>
-              <select value={brandSel} onChange={e => handleBrandChange(e.target.value)} className={selectCls}>
-                <option value="">— اختر الشركة —</option>
-                {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-              {isOtherBrand && (
-                <input value={brandCustom} onChange={e => setBrandCustom(e.target.value)}
-                  placeholder="اسم الشركة المصنعة" className={`${inputCls} mt-1.5`} />
-              )}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+              <Smartphone className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <label className={labelCls}>فئة المنتج *</label>
-              {isOtherBrand ? (
-                <input placeholder="مثال: iPhone" className={inputCls}
-                  onChange={e => setCatSel(e.target.value)} value={catSel} />
-              ) : (
-                <select value={catSel} onChange={e => handleCatChange(e.target.value)}
-                  className={brandSel ? selectCls : disabledSelectCls} disabled={!brandSel}>
-                  <option value="">— اختر الفئة —</option>
-                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              )}
+              <span className="font-bold text-white text-sm">إضافة جهاز جديد</span>
+              <p className="text-[10px] text-white/30 mt-0.5">
+                الخطوة {step} من 2 — {step === 1 ? "بيانات الجهاز" : "بيانات المورد"}
+              </p>
             </div>
           </div>
-
-          {/* ── Row 2: Model ── */}
-          <div>
-            <label className={labelCls}>الموديل *</label>
-            {isOtherBrand || (catSel && modelNames.length === 0) ? (
-              <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
-                placeholder="اكتب الموديل مباشرة" className={inputCls} />
-            ) : (
-              <>
-                <select value={modelSel} onChange={e => handleModelChange(e.target.value)}
-                  className={catSel ? selectCls : disabledSelectCls} disabled={!catSel}>
-                  <option value="">— اختر الموديل —</option>
-                  {modelNames.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-                {isOtherModel && (
-                  <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
-                    placeholder="اكتب الموديل" className={`${inputCls} mt-1.5`} />
-                )}
-              </>
-            )}
-          </div>
-
-          {/* ── Row 3: Color + Storage + Grade ── */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className={labelCls}>اللون</label>
-              <select value={colorSel} onChange={e => setColorSel(e.target.value)}
-                className={(modelSel || isOtherBrand) ? selectCls : disabledSelectCls}
-                disabled={!modelSel && !isOtherBrand}>
-                <option value="">— اللون —</option>
-                {availColors.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              {isOtherColor && (
-                <input value={colorCustom} onChange={e => setColorCustom(e.target.value)}
-                  placeholder="اكتب اللون" className={`${inputCls} mt-1.5`} />
-              )}
-            </div>
-            <div>
-              <label className={labelCls}>السعة / الحجم</label>
-              <select value={isOtherStorage ? OTHER : form.storage}
-                onChange={e => handleStorageChange(e.target.value)}
-                className={(modelSel || isOtherBrand) ? selectCls : disabledSelectCls}
-                disabled={!modelSel && !isOtherBrand}>
-                <option value="">— السعة —</option>
-                {availStorages.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              {isOtherStorage && (
-                <input value={storageCustom} onChange={e => setStorageCustom(e.target.value)}
-                  placeholder="مثال: 256GB" className={`${inputCls} mt-1.5`} />
-              )}
-            </div>
-            <div>
-              <label className={labelCls}>الدرجة</label>
-              <select value={form.grade} onChange={e => f("grade", e.target.value)} className={inputCls}>
-                {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* IMEI + Battery */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>IMEI / SN</label>
-              <input value={form.imei} onChange={e => f("imei", e.target.value)}
-                placeholder="123456789012345" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>نسبة البطارية %</label>
-              <input type="number" min="1" max="100"
-                value={form.battery_health} onChange={e => f("battery_health", e.target.value)}
-                placeholder="85" className={inputCls} />
-            </div>
-          </div>
-
-          {/* Purchase + Sale price */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>سعر الشراء *</label>
-              <input type="number" value={form.purchase_price}
-                onChange={e => f("purchase_price", e.target.value)}
-                placeholder="0.00" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>سعر البيع</label>
-              <input type="number" value={form.sale_price}
-                onChange={e => f("sale_price", e.target.value)}
-                placeholder="0.00" className={inputCls} />
-            </div>
-          </div>
-
-          {/* Supplier */}
-          <div>
-            <label className={labelCls}>المورد / مصدر الجهاز</label>
-            <input value={form.supplier_name} onChange={e => f("supplier_name", e.target.value)}
-              placeholder="اسم المورد أو العميل الذي اشترينا منه..." className={inputCls} />
-          </div>
-
-          {/* Inspector + Notes */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>الفاحص</label>
-              <input value={form.inspector_name} onChange={e => f("inspector_name", e.target.value)}
-                className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>ملاحظات الحالة</label>
-              <input value={form.condition_notes} onChange={e => f("condition_notes", e.target.value)}
-                placeholder="خدوش خفيفة..." className={inputCls} />
-            </div>
-          </div>
-
-          {/* Flags */}
-          <div className="bg-white/3 rounded-xl border border-white/5 p-3">
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2.5">حالة الجهاز</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                ["dual_sim",         "شريحتين"],
-                ["with_box",         "بالعلبة"],
-                ["previously_opened","مفتوح من قبل"],
-                ["icloud_locked",    "مقفول iCloud"],
-                ["network_locked",   "مقفول شبكة"],
-                ["mdm_locked",       "مقفول MDM"],
-              ] as [string, string][]).map(([key, label]) => (
-                <button key={key}
-                  onClick={() => f(key, !(form as Record<string, unknown>)[key] as boolean)}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-xs transition-all ${
-                    (form as Record<string, unknown>)[key]
-                      ? "border-violet-500/40 bg-violet-500/15 text-violet-300"
-                      : "border-white/8 bg-white/3 text-white/35 hover:border-white/20"
-                  }`}>
-                  {(form as Record<string, unknown>)[key]
-                    ? <CheckCircle2 className="w-3 h-3" />
-                    : <div className="w-3 h-3 rounded-full border border-white/20" />}
-                  {label}
-                </button>
+          <div className="flex items-center gap-3">
+            {/* progress dots */}
+            <div className="flex gap-1.5">
+              {[1, 2].map(s => (
+                <div key={s} className={`w-6 h-1.5 rounded-full transition-all ${s <= step ? "bg-violet-500" : "bg-white/10"}`} />
               ))}
             </div>
+            <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
+              <XCircle className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-5 py-3.5 border-t border-white/10 shrink-0 flex gap-2 justify-end">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80 transition-all">
-            إلغاء
-          </button>
-          <button onClick={handleSave} disabled={saving}
-            className="px-5 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all disabled:opacity-40 flex items-center gap-2">
-            {saving ? <div className="w-3.5 h-3.5 border-2 border-violet-400/40 border-t-violet-400 rounded-full animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-            حفظ الجهاز
-          </button>
+        {/* ── Body ── */}
+        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+
+          {/* ══════════ STEP 1: Device Info ══════════ */}
+          {step === 1 && (
+            <>
+              {/* Row 1: Brand | Category | Model */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className={lCls}>الشركة المصنعة *</label>
+                  <select value={brandSel} onChange={e => handleBrandChange(e.target.value)} className={sCls}>
+                    <option value="">— اختر الشركة —</option>
+                    {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                  {isOtherBrand && (
+                    <input value={brandCustom} onChange={e => setBrandCustom(e.target.value)}
+                      placeholder="اسم الشركة" className={`${iCls} mt-1.5`} />
+                  )}
+                </div>
+                <div>
+                  <label className={lCls}>فئة المنتج *</label>
+                  {isOtherBrand ? (
+                    <input value={catSel} onChange={e => setCatSel(e.target.value)}
+                      placeholder="مثال: iPhone" className={iCls} />
+                  ) : (
+                    <select value={catSel} onChange={e => handleCatChange(e.target.value)}
+                      className={brandSel ? sCls : dCls} disabled={!brandSel}>
+                      <option value="">— اختر الفئة —</option>
+                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  )}
+                </div>
+                <div>
+                  <label className={lCls}>الموديل *</label>
+                  {isOtherBrand || (catSel && modelNames.length === 0) ? (
+                    <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
+                      placeholder="اكتب الموديل" className={iCls} />
+                  ) : (
+                    <>
+                      <select value={modelSel} onChange={e => handleModelChange(e.target.value)}
+                        className={catSel ? sCls : dCls} disabled={!catSel}>
+                        <option value="">— اختر الموديل —</option>
+                        {modelNames.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                      {isOtherModel && (
+                        <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
+                          placeholder="اكتب الموديل" className={`${iCls} mt-1.5`} />
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Row 2: Color | Storage | Grade */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className={lCls}>اللون</label>
+                  <select value={colorSel} onChange={e => setColorSel(e.target.value)}
+                    className={(modelSel || isOtherBrand) ? sCls : dCls}
+                    disabled={!modelSel && !isOtherBrand}>
+                    <option value="">— اللون —</option>
+                    {availColors.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  {isOtherColor && (
+                    <input value={colorCustom} onChange={e => setColorCustom(e.target.value)}
+                      placeholder="اكتب اللون" className={`${iCls} mt-1.5`} />
+                  )}
+                </div>
+                <div>
+                  <label className={lCls}>السعة / الحجم</label>
+                  <select value={isOtherStorage ? OTHER : form.storage}
+                    onChange={e => handleStorageChange(e.target.value)}
+                    className={(modelSel || isOtherBrand) ? sCls : dCls}
+                    disabled={!modelSel && !isOtherBrand}>
+                    <option value="">— السعة —</option>
+                    {availStorages.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  {isOtherStorage && (
+                    <input value={storageCustom} onChange={e => setStorageCustom(e.target.value)}
+                      placeholder="مثال: 256GB" className={`${iCls} mt-1.5`} />
+                  )}
+                </div>
+                <div>
+                  <label className={lCls}>الدرجة</label>
+                  <select value={form.grade} onChange={e => f("grade", e.target.value)} className={iCls}>
+                    {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 3: IMEI/SN | Battery */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={lCls}>IMEI / SN</label>
+                  <input value={form.imei} onChange={e => f("imei", e.target.value)}
+                    placeholder="123456789012345" className={iCls}
+                    inputMode="numeric" maxLength={20} />
+                </div>
+                <div>
+                  <label className={lCls}>نسبة البطارية %</label>
+                  <input type="number" min={1} max={100}
+                    value={form.battery_health}
+                    onChange={e => f("battery_health", String(Math.min(100, Math.max(1, parseInt(e.target.value) || 0))))}
+                    placeholder="85" className={iCls} />
+                  {form.battery_health && (
+                    <div className="mt-1.5 h-1 rounded-full bg-white/8 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${
+                        parseInt(form.battery_health) >= 85 ? "bg-emerald-400" :
+                        parseInt(form.battery_health) >= 70 ? "bg-amber-400" : "bg-red-400"
+                      }`} style={{ width: `${form.battery_health}%` }} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ══════════ STEP 2: Supplier Info ══════════ */}
+          {step === 2 && (
+            <>
+              {/* Device summary pill */}
+              <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/6 mb-1">
+                <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                  <Smartphone className="w-4 h-4 text-violet-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-white text-sm">{effectiveBrand} {effectiveModel}</p>
+                  <p className="text-[11px] text-white/30">
+                    {form.storage && <span className="ml-2">{storageCustom || form.storage}</span>}
+                    {effectiveColor && <span className="ml-2">· {effectiveColor}</span>}
+                    {form.imei && <span className="ml-2 font-mono">· {maskImei(form.imei)}</span>}
+                  </p>
+                </div>
+                <button onClick={() => setStep(1)} className="text-[10px] text-violet-400/70 hover:text-violet-300 flex items-center gap-1 px-2 py-1 rounded-lg border border-violet-500/20 hover:border-violet-500/40 transition-all">
+                  تعديل
+                </button>
+              </div>
+
+              {/* Phone number */}
+              <div>
+                <label className={lCls}>رقم العميل / المورد *</label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    value={supplierPhone}
+                    onChange={e => setSupplierPhone(e.target.value)}
+                    placeholder="01xxxxxxxxx"
+                    className={`${iCls} pl-10`}
+                    inputMode="tel"
+                    maxLength={15}
+                    dir="ltr"
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                    {lookingUp
+                      ? <div className="w-3.5 h-3.5 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
+                      : foundCustomer
+                        ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        : supplierPhone.length >= 7
+                          ? <XCircle className="w-3.5 h-3.5 text-white/20" />
+                          : <User className="w-3.5 h-3.5 text-white/20" />}
+                  </div>
+                </div>
+                {/* Customer found card */}
+                {foundCustomer && (
+                  <div className="mt-2 flex items-center gap-2.5 px-3 py-2 bg-emerald-500/8 border border-emerald-500/20 rounded-xl">
+                    <div className="w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                      <User className="w-3.5 h-3.5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-emerald-300 text-sm font-bold">{foundCustomer.name}</p>
+                      <p className="text-emerald-400/50 text-[10px]">موجود في قاعدة البيانات</p>
+                    </div>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 mr-auto" />
+                  </div>
+                )}
+                {supplierPhone.length >= 7 && !lookingUp && !foundCustomer && (
+                  <p className="text-[11px] text-white/30 mt-1.5 flex items-center gap-1">
+                    <Info className="w-3 h-3" /> رقم جديد — سيُحفظ مع الجهاز
+                  </p>
+                )}
+              </div>
+
+              {/* ID card upload */}
+              <div>
+                <label className={lCls}>البطاقة الشخصية <span className="text-white/25">(حتى 2MB)</span></label>
+                {!idCardPreview ? (
+                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-white/10 rounded-xl p-6 cursor-pointer hover:border-violet-500/30 hover:bg-violet-500/4 transition-all group">
+                    <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-violet-500/10 flex items-center justify-center transition-colors">
+                      <FileText className="w-5 h-5 text-white/25 group-hover:text-violet-400 transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-white/40 text-sm">انقر لرفع صورة البطاقة</p>
+                      <p className="text-white/20 text-[11px] mt-0.5">JPG, PNG, PDF — الحد الأقصى 2MB</p>
+                    </div>
+                    <input type="file" accept="image/*,application/pdf" onChange={handleIdFile} className="hidden" />
+                  </label>
+                ) : (
+                  <div className="relative rounded-xl overflow-hidden border border-white/10 bg-white/3">
+                    {idCardPreview.startsWith("data:image") ? (
+                      <img src={idCardPreview} alt="بطاقة شخصية" className="w-full h-40 object-cover" />
+                    ) : (
+                      <div className="flex items-center gap-3 p-4">
+                        <FileText className="w-8 h-8 text-violet-400" />
+                        <div>
+                          <p className="text-white/70 text-sm font-medium">{idCardFile?.name}</p>
+                          <p className="text-white/30 text-xs">{((idCardFile?.size ?? 0) / 1024).toFixed(0)} KB</p>
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => { setIdCardPreview(""); setIdCardFile(null); }}
+                      className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center hover:bg-red-500/60 transition-colors">
+                      <X className="w-3.5 h-3.5 text-white" />
+                    </button>
+                    <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-[10px] text-emerald-300 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> تم الرفع
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ── Footer ── */}
+        <div className="px-5 py-3.5 border-t border-white/10 shrink-0 flex gap-2 justify-between">
+          {step === 2 ? (
+            <button onClick={() => setStep(1)}
+              className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80 transition-all flex items-center gap-1.5">
+              ← السابق
+            </button>
+          ) : (
+            <button onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80 transition-all">
+              إلغاء
+            </button>
+          )}
+
+          {step === 1 ? (
+            <button onClick={handleNext}
+              className="px-6 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all flex items-center gap-2">
+              التالي ←
+            </button>
+          ) : (
+            <button onClick={handleSave} disabled={saving}
+              className="px-6 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all disabled:opacity-40 flex items-center gap-2">
+              {saving ? <div className="w-3.5 h-3.5 border-2 border-violet-400/40 border-t-violet-400 rounded-full animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              حفظ الجهاز
+            </button>
+          )}
         </div>
       </div>
     </div>
