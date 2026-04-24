@@ -2160,18 +2160,37 @@ function RowMenu({ device, onDetail, onRefresh }: {
 }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [showSell, setShowSell] = useState(false);
   const [confirming, setConfirming] = useState<"delete" | "maintenance" | "available" | "return" | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
+    const onMouse = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const onScroll = () => setOpen(false);
+    document.addEventListener("mousedown", onMouse);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", onMouse);
+      window.removeEventListener("scroll", onScroll, true);
+    };
   }, [open]);
+
+  const handleOpenMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setOpen(v => !v);
+  };
 
   const doAction = async (action: "delete" | "maintenance" | "available") => {
     try {
@@ -2217,13 +2236,17 @@ function RowMenu({ device, onDetail, onRefresh }: {
       </button>
 
       {/* Three-dot */}
-      <button onClick={(e) => { e.stopPropagation(); setOpen(v => !v); }}
+      <button ref={btnRef} onClick={handleOpenMenu}
         className="p-1.5 rounded-lg text-white/25 hover:text-white/70 hover:bg-white/8 transition-all">
         <MoreVertical className="w-3.5 h-3.5" />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-40 w-44 glass-panel rounded-xl border border-white/10 py-1 shadow-2xl" dir="rtl">
+        <div
+          ref={ref}
+          style={{ position: "fixed", top: menuPos.top, right: menuPos.right, zIndex: 9999 }}
+          className="w-44 glass-panel rounded-xl border border-white/10 py-1 shadow-2xl"
+          dir="rtl">
           {menuItems.map(({ label, icon: Icon, action, cls }) => (
             <button key={label} onClick={(e) => { e.stopPropagation(); action(); }}
               className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium hover:bg-white/5 transition-colors text-right ${cls}`}>
