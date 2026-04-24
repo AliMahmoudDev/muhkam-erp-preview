@@ -4,7 +4,7 @@ import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
   MinusCircle, Trash2, Save, ChevronLeft, Send, ClipboardList,
   AlertCircle, Clock, CheckCheck, Truck, Ban,
-  Star, Settings, MessageSquare, ChevronRight, RotateCcw,
+  Star, Settings, MessageSquare, ChevronRight, ChevronDown, RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
@@ -970,6 +970,10 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
   const [showNewCat, setShowNewCat]         = useState(false);
   const [newCatInput, setNewCatInput]       = useState("");
   const [seeding, setSeeding]               = useState(false);
+  /* local pending categories (before first item is saved to DB) */
+  const [localCats, setLocalCats]           = useState<string[]>([]);
+  /* which categories are expanded */
+  const [expandedCats, setExpandedCats]     = useState<Set<string>>(new Set());
 
   const qKey = ["/api/repair-checklist-items", activePlatform];
 
@@ -988,7 +992,8 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
     [rawItems, activePlatform],
   );
 
-  const allCategories: string[] = useMemo(() => {
+  /* categories from DB, preserving insertion order */
+  const dbCategories: string[] = useMemo(() => {
     const seen = new Set<string>();
     const order: string[] = [];
     for (const item of items) {
@@ -997,13 +1002,42 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
     return order;
   }, [items]);
 
+  /* merge DB categories + local pending categories */
+  const allCategories: string[] = useMemo(() => {
+    const result = [...dbCategories];
+    for (const lc of localCats) {
+      if (!result.includes(lc)) result.push(lc);
+    }
+    return result;
+  }, [dbCategories, localCats]);
+
   const invalidate = () => qc.invalidateQueries({ queryKey: qKey });
 
+  /* auto-expand all newly loaded categories */
+  useEffect(() => {
+    if (dbCategories.length === 0) return;
+    setExpandedCats(prev => {
+      const next = new Set(prev);
+      dbCategories.forEach(c => next.add(c));
+      return next;
+    });
+  }, [dbCategories.join(",")]);
+
+  /* reset on platform switch */
   useEffect(() => {
     setEditingId(null);
     setAddingToCat(null);
     setNewItemLabel("");
+    setLocalCats([]);
+    setExpandedCats(new Set());
   }, [activePlatform]);
+
+  const toggleCat = (cat: string) =>
+    setExpandedCats(prev => {
+      const next = new Set(prev);
+      next.has(cat) ? next.delete(cat) : next.add(cat);
+      return next;
+    });
 
   /* ── Handlers ── */
   const seedPlatform = async () => {
@@ -1032,6 +1066,8 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
     if (!r.ok) { toast({ title: "خطأ في الإضافة", variant: "destructive" }); return; }
     setNewItemLabel("");
     setAddingToCat(null);
+    /* once saved to DB, remove from localCats — DB will return it */
+    setLocalCats(prev => prev.filter(c => c !== cat));
     invalidate();
   };
 
@@ -1053,14 +1089,35 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
   };
 
   const openAddToCat = (cat: string) => {
+    /* if brand-new category (not in DB yet), track it locally */
+    if (!dbCategories.includes(cat)) {
+      setLocalCats(prev => prev.includes(cat) ? prev : [...prev, cat]);
+    }
+    /* expand it so the input is visible */
+    setExpandedCats(prev => { const n = new Set(prev); n.add(cat); return n; });
     setAddingToCat(cat);
     setNewItemLabel("");
     setEditingId(null);
+    setShowNewCat(false);
   };
 
   /* ══════════════════ JSX ══════════════════ */
-  const isEmpty = !isLoading && !isError && items.length === 0;
+  const isEmpty = !isLoading && !isError && items.length === 0 && localCats.length === 0;
   const isApple = activePlatform === "apple";
+
+  /* colour aliases */
+  const accent     = isApple ? "text-white"        : "text-emerald-300";
+  const accentDim  = isApple ? "text-white/55"     : "text-emerald-400/70";
+  const accentBg   = isApple ? "bg-white/10"       : "bg-emerald-500/12";
+  const accentBdr  = isApple ? "border-white/20"   : "border-emerald-500/25";
+  const badgeCls   = isApple ? "bg-white/8 text-white/40" : "bg-emerald-500/10 text-emerald-500/60";
+
+  const confirmAddCat = () => {
+    const name = newCatInput.trim();
+    if (!name || allCategories.includes(name)) return;
+    openAddToCat(name);
+    setNewCatInput("");
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-5 bg-black/70 backdrop-blur-sm" dir="rtl">
@@ -1073,21 +1130,18 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
             const meta = PLATFORM_META[p];
             const isActive = activePlatform === p;
             return (
-              <button
-                key={p}
-                onClick={() => setActivePlatform(p)}
+              <button key={p} onClick={() => setActivePlatform(p)}
                 className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-bold transition-all border-b-2 ${
                   isActive
-                    ? p === "apple"
-                      ? "border-white/70 text-white bg-white/5"
-                      : "border-emerald-400 text-emerald-300 bg-emerald-500/8"
+                    ? p === "apple" ? "border-white/70 text-white bg-white/5"
+                                    : "border-emerald-400 text-emerald-300 bg-emerald-500/8"
                     : "border-transparent text-white/30 hover:text-white/55 hover:bg-white/3"
                 }`}>
                 <span className="text-lg leading-none">{meta.icon}</span>
                 <span>{meta.label}</span>
                 {isActive && items.length > 0 && (
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                    p === "apple" ? "bg-white/15 text-white/60" : "bg-emerald-500/20 text-emerald-400/80"
+                    p === "apple" ? "bg-white/15 text-white/55" : "bg-emerald-500/20 text-emerald-400/70"
                   }`}>{items.length}</span>
                 )}
               </button>
@@ -1100,169 +1154,183 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Loading / Error */}
-        {isLoading && <p className="text-center text-white/30 text-sm py-12">جاري تحميل البنود...</p>}
-        {isError   && <p className="text-center text-red-400/70 text-sm py-12">خطأ في تحميل البيانات</p>}
+        {/* ── Loading ── */}
+        {isLoading && (
+          <div className="flex-1 flex items-center justify-center py-16">
+            <p className="text-white/30 text-sm">جاري تحميل البنود...</p>
+          </div>
+        )}
+
+        {/* ── Error ── */}
+        {isError && (
+          <div className="flex-1 flex items-center justify-center py-16">
+            <p className="text-red-400/70 text-sm">خطأ في تحميل البيانات</p>
+          </div>
+        )}
 
         {/* ═══ EMPTY STATE ═══ */}
-        {isEmpty && (
+        {!isLoading && !isError && isEmpty && (
           <div className="flex flex-col items-center justify-center py-14 gap-4 flex-1 px-8">
-            <span className="text-5xl opacity-60">{PLATFORM_META[activePlatform].icon}</span>
-            <p className="text-white/50 text-sm font-medium text-center">
+            <span className="text-5xl opacity-55">{PLATFORM_META[activePlatform].icon}</span>
+            <p className={`text-sm font-semibold text-center ${accentDim}`}>
               لا توجد بنود فحص لـ {PLATFORM_META[activePlatform].label}
             </p>
-            <p className="text-white/25 text-xs text-center">
+            <p className="text-white/25 text-xs text-center leading-relaxed">
               {PLATFORM_META[activePlatform].seedDesc}
             </p>
-            <button
-              onClick={seedPlatform}
-              disabled={seeding}
-              className={`mt-2 px-7 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all disabled:opacity-50 ${
-                isApple
-                  ? "bg-white/10 border-white/30 text-white hover:bg-white/16"
-                  : "bg-emerald-500/12 border-emerald-400/35 text-emerald-300 hover:bg-emerald-500/20"
-              }`}>
+            <button onClick={seedPlatform} disabled={seeding}
+              className={`mt-2 flex items-center gap-2 px-7 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all disabled:opacity-50 ${accentBg} ${accentBdr} ${accent}`}>
               {seeding ? "جاري التحميل..." : `⚡ تحميل بنود ${PLATFORM_META[activePlatform].label}`}
+            </button>
+            <button onClick={() => setShowNewCat(true)}
+              className="flex items-center gap-1.5 text-[12px] text-white/25 hover:text-white/50 transition-colors mt-1">
+              <Plus className="w-3.5 h-3.5" /> أو أضف تصنيفاً يدوياً
             </button>
           </div>
         )}
 
-        {/* ═══ CATEGORIES + ITEMS ═══ */}
-        {!isEmpty && !isLoading && !isError && (
-          <div className="overflow-y-auto flex-1">
+        {/* ═══ ACCORDION BODY ═══ */}
+        {!isLoading && !isError && !isEmpty && (
+          <div className="overflow-y-auto flex-1 pb-2">
 
             {allCategories.map((cat) => {
-              const catItems = items.filter(i => i.category === cat).sort((a, b) => a.sort_order - b.sort_order);
-              const catAccent = isApple ? "text-white/70" : "text-emerald-400/80";
-              const catBadge  = isApple ? "bg-white/8 text-white/40" : "bg-emerald-500/12 text-emerald-500/70";
-              const addBtnCls = isApple
-                ? "text-white/25 hover:text-white/60 hover:bg-white/8"
-                : "text-emerald-500/40 hover:text-emerald-400 hover:bg-emerald-500/10";
+              const catItems = items
+                .filter(i => i.category === cat)
+                .sort((a, b) => a.sort_order - b.sort_order);
+              const isExpanded = expandedCats.has(cat);
+              const isLocal    = !dbCategories.includes(cat); /* no DB items yet */
 
               return (
                 <div key={cat} className="border-b border-white/6 last:border-b-0">
 
-                  {/* Category header */}
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-white/2">
-                    <span className={`text-xs font-bold tracking-wide ${catAccent}`}>{cat}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${catBadge}`}>{catItems.length}</span>
-                    <div className="flex-1" />
-                    <button
-                      onClick={() => addingToCat === cat ? setAddingToCat(null) : openAddToCat(cat)}
-                      className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg transition-colors ${addBtnCls}`}>
-                      <Plus className="w-3 h-3" /> إضافة
-                    </button>
-                  </div>
+                  {/* ── Category header ── */}
+                  <button
+                    onClick={() => toggleCat(cat)}
+                    className="w-full flex items-center gap-2.5 px-4 py-3 bg-white/[0.025] hover:bg-white/[0.04] transition-colors text-right">
 
-                  {/* Items */}
-                  <div className="px-3 pb-1">
-                    {catItems.map((item, idx) => (
-                      <div key={item.id}
-                        className="flex items-center gap-2 py-2 px-2 rounded-xl border border-transparent hover:border-white/8 hover:bg-white/2 transition-all group">
+                    {/* collapse arrow */}
+                    <span className={`transition-transform duration-200 shrink-0 ${isExpanded ? "rotate-0" : "-rotate-90"}`}>
+                      <ChevronDown className={`w-3.5 h-3.5 ${accentDim}`} />
+                    </span>
 
-                        <span className="text-[10px] text-white/15 w-5 text-center shrink-0 group-hover:text-white/30 transition-colors">{idx + 1}</span>
+                    <span className={`text-[13px] font-bold tracking-wide flex-1 text-right ${accentDim}`}>
+                      {cat}
+                      {isLocal && <span className="text-[10px] text-white/30 font-normal mr-1.5">جديد</span>}
+                    </span>
 
-                        {editingId === item.id ? (
-                          <>
-                            <input
-                              autoFocus
-                              value={editLabel}
-                              onChange={(e) => setEditLabel(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") saveEdit(item.id);
-                                if (e.key === "Escape") setEditingId(null);
-                              }}
-                              className="erp-input flex-1 text-sm py-0.5"
-                            />
-                            <button onClick={() => saveEdit(item.id)} className="text-emerald-400 hover:text-emerald-300 p-1 shrink-0">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => setEditingId(null)} className="text-white/30 p-1 shrink-0">
-                              <XCircle className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <span className="flex-1 text-sm text-white/75">{item.label_ar}</span>
-                            <button
-                              onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); setAddingToCat(null); }}
-                              className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-violet-400 p-1 transition-all shrink-0">
-                              <MessageSquare className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => deleteItem(item.id)}
-                              className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 p-1 transition-all shrink-0">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Inline add-item input */}
-                    {addingToCat === cat && (
-                      <div className="flex items-center gap-2 py-1.5 px-2 mt-1">
-                        <input
-                          autoFocus
-                          value={newItemLabel}
-                          onChange={(e) => setNewItemLabel(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") addItemToCat(cat);
-                            if (e.key === "Escape") { setAddingToCat(null); setNewItemLabel(""); }
-                          }}
-                          placeholder={`بند جديد في «${cat}»...`}
-                          className="erp-input flex-1 text-sm py-1"
-                        />
-                        <button onClick={() => addItemToCat(cat)} disabled={!newItemLabel.trim()}
-                          className="text-emerald-400 hover:text-emerald-300 p-1 disabled:opacity-30 transition-colors shrink-0">
-                          <CheckCircle2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => { setAddingToCat(null); setNewItemLabel(""); }}
-                          className="text-white/25 hover:text-white/60 p-1 transition-colors shrink-0">
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      </div>
+                    {!isLocal && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${badgeCls}`}>
+                        {catItems.length}
+                      </span>
                     )}
-                  </div>
+
+                    {/* add-item button — stop propagation so it doesn't toggle */}
+                    <span
+                      onClick={(e) => { e.stopPropagation(); openAddToCat(cat); }}
+                      className={`flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-lg border transition-colors shrink-0 ${
+                        addingToCat === cat
+                          ? `${accentBg} ${accentBdr} ${accent}`
+                          : `border-transparent text-white/25 hover:${accentBg} hover:${accentBdr} hover:${accent}`
+                      }`}>
+                      <Plus className="w-3 h-3" /> بند
+                    </span>
+                  </button>
+
+                  {/* ── Items (shown when expanded) ── */}
+                  {isExpanded && (
+                    <div className="px-2 pt-0.5 pb-2 space-y-0.5">
+
+                      {catItems.length === 0 && addingToCat !== cat && (
+                        <p className="text-center text-white/20 text-xs py-3">
+                          لا توجد بنود — اضغط «بند» لإضافة الأول
+                        </p>
+                      )}
+
+                      {catItems.map((item, idx) => (
+                        <div key={item.id}
+                          className="flex items-center gap-2 py-2 px-3 rounded-xl border border-transparent hover:border-white/8 hover:bg-white/2 transition-all group">
+
+                          <span className="text-[10px] text-white/15 w-5 text-left shrink-0 group-hover:text-white/35 tabular-nums">
+                            {idx + 1}
+                          </span>
+
+                          {editingId === item.id ? (
+                            <>
+                              <input autoFocus value={editLabel}
+                                onChange={(e) => setEditLabel(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter")  saveEdit(item.id);
+                                  if (e.key === "Escape") setEditingId(null);
+                                }}
+                                className="erp-input flex-1 text-sm py-0.5" />
+                              <button onClick={() => saveEdit(item.id)}
+                                className="text-emerald-400 hover:text-emerald-300 p-1 shrink-0">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => setEditingId(null)}
+                                className="text-white/30 p-1 shrink-0">
+                                <XCircle className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="flex-1 text-sm text-white/78">{item.label_ar}</span>
+                              <button
+                                onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); setAddingToCat(null); }}
+                                className="opacity-0 group-hover:opacity-100 text-white/25 hover:text-violet-400 p-1 transition-all shrink-0">
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => deleteItem(item.id)}
+                                className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 p-1 transition-all shrink-0">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* inline add-item row */}
+                      {addingToCat === cat && (
+                        <div className="flex items-center gap-2 py-1.5 px-3 mt-0.5 rounded-xl border border-white/8 bg-white/2">
+                          <input autoFocus value={newItemLabel}
+                            onChange={(e) => setNewItemLabel(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter")  addItemToCat(cat);
+                              if (e.key === "Escape") { setAddingToCat(null); setNewItemLabel(""); }
+                            }}
+                            placeholder={`بند جديد في «${cat}»...`}
+                            className="erp-input flex-1 text-sm py-0.5" />
+                          <button onClick={() => addItemToCat(cat)} disabled={!newItemLabel.trim()}
+                            className="text-emerald-400 hover:text-emerald-300 p-1 disabled:opacity-30 shrink-0">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => { setAddingToCat(null); setNewItemLabel(""); }}
+                            className="text-white/25 hover:text-white/60 p-1 shrink-0">
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+
+                    </div>
+                  )}
 
                 </div>
               );
             })}
 
-            {/* ── Add new category ── */}
-            <div className="px-4 py-3 border-t border-white/8 mt-1">
+            {/* ── Add new category footer ── */}
+            <div className="px-4 py-3">
               {showNewCat ? (
                 <div className="flex items-center gap-2">
-                  <input
-                    autoFocus
-                    value={newCatInput}
+                  <input autoFocus value={newCatInput}
                     onChange={(e) => setNewCatInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const name = newCatInput.trim();
-                        if (name && !allCategories.includes(name)) {
-                          openAddToCat(name);
-                          toast({ title: `تصنيف "${name}" جاهز` });
-                        }
-                        setShowNewCat(false);
-                        setNewCatInput("");
-                      }
+                      if (e.key === "Enter")  confirmAddCat();
                       if (e.key === "Escape") { setShowNewCat(false); setNewCatInput(""); }
                     }}
                     placeholder="اسم التصنيف الجديد..."
-                    className="erp-input flex-1 text-sm"
-                  />
-                  <button
-                    onClick={() => {
-                      const name = newCatInput.trim();
-                      if (name && !allCategories.includes(name)) {
-                        openAddToCat(name);
-                        toast({ title: `تصنيف "${name}" جاهز` });
-                      }
-                      setShowNewCat(false);
-                      setNewCatInput("");
-                    }}
-                    disabled={!newCatInput.trim()}
+                    className="erp-input flex-1 text-sm" />
+                  <button onClick={confirmAddCat} disabled={!newCatInput.trim()}
                     className="text-emerald-400 hover:text-emerald-300 p-1 disabled:opacity-30 shrink-0">
                     <CheckCircle2 className="w-4 h-4" />
                   </button>
@@ -1272,14 +1340,37 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => setShowNewCat(true)}
+                <button onClick={() => setShowNewCat(true)}
                   className="flex items-center gap-1.5 text-[12px] text-white/25 hover:text-white/50 transition-colors">
                   <Plus className="w-3.5 h-3.5" /> تصنيف جديد
                 </button>
               )}
             </div>
 
+          </div>
+        )}
+
+        {/* new-cat input shown even in empty state */}
+        {!isLoading && !isError && isEmpty && showNewCat && (
+          <div className="px-4 py-3 border-t border-white/8 shrink-0">
+            <div className="flex items-center gap-2">
+              <input autoFocus value={newCatInput}
+                onChange={(e) => setNewCatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter")  confirmAddCat();
+                  if (e.key === "Escape") { setShowNewCat(false); setNewCatInput(""); }
+                }}
+                placeholder="اسم التصنيف الجديد..."
+                className="erp-input flex-1 text-sm" />
+              <button onClick={confirmAddCat} disabled={!newCatInput.trim()}
+                className="text-emerald-400 hover:text-emerald-300 p-1 disabled:opacity-30 shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </button>
+              <button onClick={() => { setShowNewCat(false); setNewCatInput(""); }}
+                className="text-white/25 hover:text-white/60 p-1 shrink-0">
+                <XCircle className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
