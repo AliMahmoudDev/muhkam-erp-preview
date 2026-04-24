@@ -844,7 +844,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
         id_card_data:   idCardData,
         /* inspection */
         inspection_data:        JSON.stringify(inspResults),
-        inspector_employee_id:  inspEmployeeId ? parseInt(inspEmployeeId) : undefined,
+        inspector_employee_id:  inspEmployeeId || undefined,
         /* supplier / customer */
         customer_id:        foundCustomer ? foundCustomer.id : undefined,
         new_customer_name:  isNewSupplier && supplierName.trim() ? supplierName.trim() : undefined,
@@ -1113,22 +1113,33 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                 )}
               </div>
 
-              {/* ─ Employee selector ─ */}
+              {/* ─ Inspector selector (users + employees) ─ */}
               <div>
-                <label className={`${lReq} ${errors.employee ? "text-red-400" : ""}`}>الموظف الفاحص *</label>
+                <label className={`${lReq} ${errors.employee ? "text-red-400" : ""}`}>الفاحص (مستخدم أو موظف) *</label>
                 <select
                   value={inspEmployeeId}
                   onChange={e => setInspEmployeeId(e.target.value)}
                   className={sCls("employee")}
                 >
-                  <option value="">— اختر الموظف —</option>
-                  {employees.map(em => (
-                    <option key={em.id} value={em.id}>{em.name}</option>
-                  ))}
+                  <option value="">— اختر الفاحص —</option>
+                  {employees.filter(em => em.id.startsWith("u_")).length > 0 && (
+                    <optgroup label="مستخدمو النظام">
+                      {employees.filter(em => em.id.startsWith("u_")).map(em => (
+                        <option key={em.id} value={em.id}>{em.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {employees.filter(em => em.id.startsWith("e_")).length > 0 && (
+                    <optgroup label="الموظفون">
+                      {employees.filter(em => em.id.startsWith("e_")).map(em => (
+                        <option key={em.id} value={em.id}>{em.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
                 {employees.length === 0 && (
                   <p className="text-[10px] text-amber-400/60 mt-1 flex items-center gap-1">
-                    <Info className="w-3 h-3" /> لا يوجد موظفون نشطون في النظام
+                    <Info className="w-3 h-3" /> لا يوجد مستخدمون أو موظفون نشطون في النظام
                   </p>
                 )}
               </div>

@@ -4,7 +4,7 @@ import {
   devicesTable, customersTable, productsTable, safesTable,
   warehousesTable, purchasesTable, purchaseItemsTable,
   stockMovementsTable, transactionsTable, customerLedgerTable,
-  employeesTable,
+  employeesTable, erpUsersTable,
 } from "@workspace/db";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { wrap, httpError } from "../lib/async-handler";
@@ -135,20 +135,36 @@ router.get("/devices/customer-lookup", wrap(async (req, res) => {
   return res.json({ found: true, customer: rows[0] });
 }));
 
-/* ─── LIST ACTIVE EMPLOYEES (for inspector dropdown) ─── */
+/* ─── LIST ACTIVE INSPECTORS: system users + active employees ─── */
 router.get("/devices/employees", wrap(async (req, res) => {
   const { company_id } = ctx(req);
-  const rows = await db.select({
-    id: employeesTable.id,
+
+  /* System users (active) */
+  const users = await db.select({
+    id:   sql<string>`'u_' || ${erpUsersTable.id}`,
+    name: erpUsersTable.name,
+  })
+    .from(erpUsersTable)
+    .where(and(
+      eq(erpUsersTable.company_id, company_id),
+      eq(erpUsersTable.active, true),
+    ))
+    .orderBy(erpUsersTable.name);
+
+  /* Active employees */
+  const emps = await db.select({
+    id:   sql<string>`'e_' || ${employeesTable.id}`,
     name: sql<string>`${employeesTable.first_name_ar} || ' ' || ${employeesTable.last_name_ar}`,
   })
     .from(employeesTable)
     .where(and(
       eq(employeesTable.company_id, company_id),
       eq(employeesTable.employment_status, "active"),
+      sql`${employeesTable.deleted_at} IS NULL`,
     ))
     .orderBy(employeesTable.first_name_ar);
-  return res.json(rows);
+
+  return res.json([...users, ...emps]);
 }));
 
 /* ─── LIST ─── */
@@ -234,7 +250,7 @@ router.post("/devices/purchase", wrap(async (req, res) => {
     new_customer_name,
     /* inspection */
     inspection_data,
-    inspector_employee_id: rawInspectorEmployeeId,
+    inspector_employee_id: rawInspectorId,
     /* financial */
     purchase_price: rawPurchase,
     sale_price: rawSale,
@@ -248,11 +264,32 @@ router.post("/devices/purchase", wrap(async (req, res) => {
     supplier_phone?: string; id_card_data?: string;
     customer_id?: number; new_customer_name?: string;
     inspection_data?: string;
-    inspector_employee_id?: number;
+    inspector_employee_id?: string;
     purchase_price: number; sale_price?: number;
     payment_type: "cash" | "credit" | "partial";
     safe_id?: number; warehouse_id?: number; paid_amount?: number;
   };
+
+  /* Resolve inspector: format is "u_<id>" (user) or "e_<id>" (employee) */
+  let inspector_employee_id: number | null = null;
+  let inspector_name: string | null = null;
+  if (rawInspectorId) {
+    const [prefix, numStr] = rawInspectorId.split("_");
+    const numId = parseInt(numStr ?? "", 10);
+    if (!isNaN(numId)) {
+      if (prefix === "e") {
+        inspector_employee_id = numId;
+        const [emp] = await db.select({
+          name: sql<string>`${employeesTable.first_name_ar} || ' ' || ${employeesTable.last_name_ar}`,
+        }).from(employeesTable).where(eq(employeesTable.id, numId));
+        inspector_name = emp?.name ?? null;
+      } else if (prefix === "u") {
+        const [usr] = await db.select({ name: erpUsersTable.name })
+          .from(erpUsersTable).where(eq(erpUsersTable.id, numId));
+        inspector_name = usr?.name ?? null;
+      }
+    }
+  }
 
   /* ── Validation ── */
   if (!brand || !model) throw httpError(400, "الشركة المصنعة والموديل مطلوبان");
@@ -313,7 +350,6 @@ router.post("/devices/purchase", wrap(async (req, res) => {
     } as typeof productsTable.$inferInsert).returning();
 
     /* ── 3. Create device record ── */
-    const inspector_employee_id = rawInspectorEmployeeId ? Number(rawInspectorEmployeeId) : null;
     const [device] = await tx.insert(devicesTable).values({
       company_id,
       device_no,
@@ -331,6 +367,7 @@ router.post("/devices/purchase", wrap(async (req, res) => {
       id_card_data: id_card_data ?? null,
       inspection_data: inspection_data ?? null,
       inspector_employee_id,
+      inspector_name: inspector_name ?? null,
       status: "available",
       product_id: newProduct.id,
       added_by_user_id: user_id,
