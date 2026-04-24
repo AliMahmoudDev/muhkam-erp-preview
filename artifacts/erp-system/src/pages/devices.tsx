@@ -2160,18 +2160,20 @@ function RowMenu({ device, onDetail, onRefresh }: {
 }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [showSell, setShowSell] = useState(false);
   const [confirming, setConfirming] = useState<"delete" | "maintenance" | "available" | "return" | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
+  const wrapperRef  = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const btnRef      = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const onMouse = (e: MouseEvent) => {
-      const inDropdown = ref.current?.contains(e.target as Node);
-      const inButton  = btnRef.current?.contains(e.target as Node);
-      if (!inDropdown && !inButton) setOpen(false);
+      const t = e.target as Node;
+      const inWrapper  = wrapperRef.current?.contains(t);
+      const inDropdown = dropdownRef.current?.contains(t);
+      if (!inWrapper && !inDropdown) setOpen(false);
     };
     const onScroll = () => setOpen(false);
     document.addEventListener("mousedown", onMouse);
@@ -2186,10 +2188,10 @@ function RowMenu({ device, onDetail, onRefresh }: {
     e.stopPropagation();
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      setMenuPos({
-        top: rect.bottom + 4,
-        right: window.innerWidth - rect.right,
-      });
+      const dropdownWidth = 176; // w-44 = 11rem = 176px
+      // Align dropdown's right edge with button's right edge, clamped to viewport
+      const leftPos = Math.max(4, Math.min(rect.right - dropdownWidth, window.innerWidth - dropdownWidth - 4));
+      setMenuPos({ top: rect.bottom + 4, left: leftPos });
     }
     setOpen(v => !v);
   };
@@ -2229,7 +2231,7 @@ function RowMenu({ device, onDetail, onRefresh }: {
         ];
 
   return (
-    <div ref={ref} className="relative flex items-center gap-1">
+    <div ref={wrapperRef} className="relative flex items-center gap-1">
       {/* Eye icon */}
       <button onClick={(e) => { e.stopPropagation(); onDetail(); }}
         title="تفاصيل الجهاز"
@@ -2245,8 +2247,8 @@ function RowMenu({ device, onDetail, onRefresh }: {
 
       {open && (
         <div
-          ref={ref}
-          style={{ position: "fixed", top: menuPos.top, right: menuPos.right, zIndex: 9999 }}
+          ref={dropdownRef}
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
           className="w-44 glass-panel rounded-xl border border-white/10 py-1 shadow-2xl"
           dir="rtl">
           {menuItems.map(({ label, icon: Icon, action, cls }) => (
