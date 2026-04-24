@@ -26,6 +26,7 @@ export const devicesTable = pgTable("devices", {
   icloud_locked:            boolean("icloud_locked").default(false),
   network_locked:           boolean("network_locked").default(false),
   previously_opened:        boolean("previously_opened").default(false),
+  mdm_locked:               boolean("mdm_locked").default(false),
 
   supplier_name:            text("supplier_name"),
   purchase_invoice_no:      text("purchase_invoice_no"),

@@ -1,10 +1,11 @@
-import { useState, type ElementType } from "react";
+import { useState, useRef, useEffect, type ElementType } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Smartphone, Plus, Search, X, CheckCircle2, XCircle,
   ShoppingCart, Wrench, BadgeCheck, Info,
   Trash2, RotateCcw, AlertTriangle, Battery, Package,
   Tag, User, TrendingUp, Banknote, Printer,
+  MoreVertical, Eye, LayoutGrid, List, Copy, Calendar, FileText, Percent,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
@@ -27,7 +28,7 @@ type Device = {
   purchase_price: string; sale_price: string;
   status: DeviceStatus;
   dual_sim: boolean; with_box: boolean;
-  icloud_locked: boolean; network_locked: boolean; previously_opened: boolean;
+  icloud_locked: boolean; network_locked: boolean; previously_opened: boolean; mdm_locked: boolean;
   supplier_name?: string; purchase_invoice_no?: string; inspector_name?: string;
   sold_to_customer_name?: string; sold_at?: string;
   sold_by_user_name?: string; sold_price?: string;
@@ -626,7 +627,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     purchase_price: "", sale_price: "",
     supplier_name: "",
     dual_sim: false, with_box: false,
-    icloud_locked: false, network_locked: false, previously_opened: false,
+    icloud_locked: false, network_locked: false, previously_opened: false, mdm_locked: false,
     inspector_name: (user as { name?: string })?.name ?? "",
   });
   const [saving, setSaving] = useState(false);
@@ -858,7 +859,8 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                 ["with_box",         "بالعلبة"],
                 ["previously_opened","مفتوح من قبل"],
                 ["icloud_locked",    "مقفول iCloud"],
-                ["network_locked",   "مقفول على شبكة"],
+                ["network_locked",   "مقفول شبكة"],
+                ["mdm_locked",       "مقفول MDM"],
               ] as [string, string][]).map(([key, label]) => (
                 <button key={key}
                   onClick={() => f(key, !(form as Record<string, unknown>)[key] as boolean)}
@@ -900,11 +902,18 @@ function SellModal({ device, onClose, onDone }: { device: Device; onClose: () =>
   const { toast } = useToast();
   const { user } = useAuth();
   const [customerName, setCustomerName] = useState("");
-  const [soldPrice, setSoldPrice] = useState(device.sale_price ?? "");
+  const [basePrice, setBasePrice] = useState(parseFloat(device.sale_price ?? "0"));
+  const [discountType, setDiscountType] = useState<"none" | "percent" | "fixed">("none");
+  const [discountVal, setDiscountVal] = useState(0);
   const [payMethod, setPayMethod] = useState<PaymentMethod>("cash");
   const [payStatus, setPayStatus] = useState<PaymentStatus>("paid");
   const [warrantyMonths, setWarrantyMonths] = useState(3);
   const [saving, setSaving] = useState(false);
+
+  const discountAmount = discountType === "percent"
+    ? Math.round(basePrice * discountVal / 100)
+    : discountType === "fixed" ? discountVal : 0;
+  const finalPrice = Math.max(0, basePrice - discountAmount);
 
   const handleSell = async () => {
     if (!customerName.trim()) { toast({ title: "أدخل اسم العميل", variant: "destructive" }); return; }
@@ -912,7 +921,7 @@ function SellModal({ device, onClose, onDone }: { device: Device; onClose: () =>
     try {
       await apPost(`/api/devices/${device.id}/sell`, {
         customer_name: customerName.trim(),
-        sold_price: parseFloat(soldPrice as string) || 0,
+        sold_price: finalPrice,
         payment_method: payMethod,
         payment_status: payStatus,
         warranty_months: warrantyMonths,
@@ -926,18 +935,20 @@ function SellModal({ device, onClose, onDone }: { device: Device; onClose: () =>
     } finally { setSaving(false); }
   };
 
-  const inputCls = "erp-input w-full text-sm";
-  const labelCls = "text-[11px] text-white/40 mb-1 block text-right";
+  const lCls = "text-[11px] text-white/40 mb-1 block text-right";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 bg-black/70 backdrop-blur-sm" dir="rtl">
-      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-sm mx-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 bg-black/70 backdrop-blur-sm overflow-y-auto" dir="rtl">
+      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-sm mx-4 my-4">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10">
           <div className="flex items-center gap-2">
             <ShoppingCart className="w-4 h-4 text-emerald-400" />
-            <span className="font-bold text-white">بيع الجهاز</span>
+            <div>
+              <span className="font-bold text-white text-sm">بيع الجهاز</span>
+              <p className="text-[10px] text-white/30">{device.brand} {device.model}</p>
+            </div>
           </div>
           <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
             <XCircle className="w-4 h-4" />
@@ -945,36 +956,77 @@ function SellModal({ device, onClose, onDone }: { device: Device; onClose: () =>
         </div>
 
         {/* Device summary */}
-        <div className="mx-4 mt-4 p-3 bg-white/4 rounded-xl border border-white/8">
-          <p className="font-bold text-white text-sm">{device.brand} {device.model}</p>
-          <p className="text-white/40 text-xs mt-0.5">
-            {device.storage} {device.color && `· ${device.color}`}
-            {device.imei && ` · IMEI: ...${device.imei.slice(-4)}`}
-          </p>
+        <div className="mx-4 mt-4 flex items-center gap-3 p-3 bg-white/4 rounded-xl border border-white/8">
+          <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+            <Smartphone className="w-5 h-5 text-violet-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-white text-sm truncate">{device.brand} {device.model}</p>
+            <p className="text-white/40 text-xs mt-0.5">
+              {device.storage && <span className="ml-2">{device.storage}</span>}
+              {device.color && <span className="ml-2">· {device.color}</span>}
+              {device.imei && <span className="ml-2 font-mono">· IMEI: ···{device.imei.slice(-4)}</span>}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-emerald-400 font-bold text-sm">{finalPrice.toLocaleString()} ج.م</p>
+            <p className="text-white/25 text-[10px]">سعر البيع</p>
+          </div>
         </div>
 
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3.5">
           {/* Customer */}
           <div>
-            <label className={labelCls}>اسم العميل *</label>
+            <label className={lCls}>العميل *</label>
             <input value={customerName} onChange={e => setCustomerName(e.target.value)}
-              placeholder="ابحث عن عميل أو أدخل الاسم..." className={inputCls} />
+              placeholder="ابحث عن عميل أو أدخل الاسم..." className="erp-input w-full text-sm" />
           </div>
 
-          {/* Sold price */}
+          {/* Base price */}
           <div>
-            <label className={labelCls}>سعر البيع</label>
-            <input type="number" value={soldPrice} onChange={e => setSoldPrice(e.target.value)}
-              className={inputCls} />
+            <label className={lCls}>سعر البيع الأساسي</label>
+            <input type="number" value={basePrice}
+              onChange={e => setBasePrice(parseFloat(e.target.value) || 0)}
+              className="erp-input w-full text-sm" />
           </div>
+
+          {/* Discount */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={lCls}>نوع الخصم</label>
+              <select value={discountType} onChange={e => { setDiscountType(e.target.value as "none"|"percent"|"fixed"); setDiscountVal(0); }}
+                className="erp-input w-full text-sm">
+                <option value="none">بدون خصم</option>
+                <option value="percent">نسبة %</option>
+                <option value="fixed">مبلغ ثابت</option>
+              </select>
+            </div>
+            <div>
+              <label className={lCls}>قيمة الخصم</label>
+              <div className="relative">
+                <input type="number" min={0} value={discountVal} onChange={e => setDiscountVal(parseFloat(e.target.value) || 0)}
+                  disabled={discountType === "none"}
+                  className="erp-input w-full text-sm disabled:opacity-40 disabled:cursor-not-allowed" />
+                {discountType === "percent" && (
+                  <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/30 pointer-events-none" />
+                )}
+              </div>
+            </div>
+          </div>
+          {discountType !== "none" && discountAmount > 0 && (
+            <div className="flex items-center justify-between bg-amber-500/8 border border-amber-500/20 rounded-lg px-3 py-2 text-xs">
+              <span className="text-white/50">الخصم: {discountAmount.toLocaleString()} ج.م</span>
+              <span className="text-emerald-400 font-bold">الإجمالي بعد الخصم: {finalPrice.toLocaleString()} ج.م</span>
+            </div>
+          )}
 
           {/* Payment method */}
           <div>
-            <label className={labelCls}>طريقة الدفع</label>
+            <label className={lCls}>طريقة الدفع</label>
             <div className="grid grid-cols-4 gap-1.5">
               {PAY_METHODS.map(({ v, l }) => (
                 <button key={v} onClick={() => setPayMethod(v)}
-                  className={`py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                  className={`py-2 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-0.5 ${
                     payMethod === v
                       ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
                       : "border-white/10 bg-white/3 text-white/40 hover:text-white/70"
@@ -985,36 +1037,42 @@ function SellModal({ device, onClose, onDone }: { device: Device; onClose: () =>
 
           {/* Payment status */}
           <div>
-            <label className={labelCls}>حالة الدفع</label>
+            <label className={lCls}>حالة الدفع</label>
             <div className="grid grid-cols-3 gap-1.5">
               {([
-                ["paid", "مدفوع بالكامل", "text-emerald-300 bg-emerald-500/15 border-emerald-500/50"],
-                ["partial", "دفع جزئي",   "text-amber-300 bg-amber-500/15 border-amber-500/50"],
-                ["unpaid", "غير مدفوع",   "text-red-300 bg-red-500/15 border-red-500/50"],
+                ["paid",    "مدفوع بالكامل", "text-emerald-300 bg-emerald-500/15 border-emerald-500/50"],
+                ["partial", "دفع جزئي",      "text-amber-300 bg-amber-500/15 border-amber-500/50"],
+                ["unpaid",  "غير مدفوع",     "text-red-300 bg-red-500/15 border-red-500/50"],
               ] as [PaymentStatus, string, string][]).map(([v, l, cls]) => (
                 <button key={v} onClick={() => setPayStatus(v)}
-                  className={`py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                  className={`py-2 rounded-xl border text-xs font-bold transition-all ${
                     payStatus === v ? cls : "border-white/10 bg-white/3 text-white/40 hover:text-white/70"
                   }`}>{l}</button>
               ))}
             </div>
           </div>
 
-          {/* Warranty */}
-          <div>
-            <label className={labelCls}>فترة الضمان</label>
-            <select value={warrantyMonths}
-              onChange={e => setWarrantyMonths(parseInt(e.target.value))}
-              className={inputCls}>
-              {WARRANTY_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+          {/* Warranty + Seller */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={lCls}>فترة الضمان</label>
+              <select value={warrantyMonths} onChange={e => setWarrantyMonths(parseInt(e.target.value))} className="erp-input w-full text-sm">
+                {WARRANTY_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={lCls}>البائع</label>
+              <div className="erp-input w-full text-sm text-white/50 flex items-center gap-1.5">
+                <User className="w-3 h-3 shrink-0" />
+                <span className="truncate">{(user as { name?: string })?.name ?? "—"}</span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="px-4 pb-4 flex gap-2">
-          <button onClick={onClose}
-            className="flex-1 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80">
+          <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80">
             إلغاء
           </button>
           <button onClick={handleSell} disabled={saving}
@@ -1133,10 +1191,11 @@ function ReturnModal({ device, onClose, onDone }: { device: Device; onClose: () 
 }
 
 /* ════════════════════════════════════════════════════════
-   DEVICE DETAIL PANEL
+   DEVICE DETAIL PANEL — 4 TABS
 ════════════════════════════════════════════════════════ */
 function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose: () => void; onRefresh: () => void }) {
   const { toast } = useToast();
+  const [tab, setTab] = useState<1 | 2 | 3 | 4>(1);
   const [showSell, setShowSell] = useState(false);
   const [showReturn, setShowReturn] = useState(false);
   const [confirming, setConfirming] = useState<"delete" | "maintenance" | "available" | null>(null);
@@ -1158,14 +1217,25 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
     setConfirming(null);
   };
 
-  const InfoCard = ({ icon: Icon, label, value, color = "text-white/70" }: { icon: ElementType; label: string; value: string | number | undefined; color?: string }) => (
-    <div className="bg-white/3 rounded-xl border border-white/6 p-2.5 flex flex-col gap-0.5">
-      <div className="flex items-center gap-1.5 text-white/30 text-[10px]">
-        <Icon className="w-3 h-3" /> {label}
+  const InfoCard = ({ icon: Icon, label, value, color = "text-white/70", copyable = false }: {
+    icon: ElementType; label: string; value: string | number | undefined; color?: string; copyable?: boolean;
+  }) => {
+    const { toast: t } = useToast();
+    return (
+      <div className="bg-white/3 rounded-xl border border-white/6 p-2.5 flex flex-col gap-0.5 group">
+        <div className="flex items-center justify-between text-white/30 text-[10px]">
+          <div className="flex items-center gap-1.5"><Icon className="w-3 h-3" /> {label}</div>
+          {copyable && value && (
+            <button onClick={() => { navigator.clipboard.writeText(String(value)); t({ title: "تم النسخ" }); }}
+              className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <Copy className="w-3 h-3 hover:text-white/60" />
+            </button>
+          )}
+        </div>
+        <span className={`font-bold text-sm ${color}`}>{value ?? "—"}</span>
       </div>
-      <span className={`font-bold text-sm ${color}`}>{value ?? "—"}</span>
-    </div>
-  );
+    );
+  };
 
   const FlagChip = ({ label, val, warn = false }: { label: string; val: boolean; warn?: boolean }) => (
     <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium ${
@@ -1175,29 +1245,46 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
           : "border-emerald-500/20 bg-emerald-500/8 text-emerald-400"
         : "border-white/6 bg-white/3 text-white/25"
     }`}>
-      {val
-        ? warn ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />
-        : <XCircle className="w-3 h-3" />}
+      {val ? warn ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
       {label}
     </div>
   );
 
   const profit = device.sold_price
-    ? (parseFloat(device.sold_price) - parseFloat(device.purchase_price)).toFixed(2)
-    : device.status === "available"
-      ? (parseFloat(device.sale_price) - parseFloat(device.purchase_price)).toFixed(2)
-      : null;
+    ? parseFloat(device.sold_price) - parseFloat(device.purchase_price)
+    : parseFloat(device.sale_price) - parseFloat(device.purchase_price);
+
+  const TABS = [
+    { id: 1 as const, label: "بيانات الجهاز" },
+    { id: 2 as const, label: "المصدر" },
+    { id: 3 as const, label: "السجل" },
+    { id: 4 as const, label: "سجل المبيعات" },
+  ];
+
+  const PAY_LABELS: Record<string, string> = { cash: "نقداً", card: "بطاقة", instapay: "InstaPay", transfer: "تحويل بنكي" };
+  const STATUS_LABELS: Record<string, string> = { paid: "مدفوع بالكامل", partial: "دفع جزئي", unpaid: "غير مدفوع" };
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 bg-black/70 backdrop-blur-sm" dir="rtl">
-        <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-lg mx-4 overflow-hidden flex flex-col" style={{ maxHeight: "92vh" }}>
+      <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 bg-black/70 backdrop-blur-sm" dir="rtl">
+        <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-lg mx-4 overflow-hidden flex flex-col" style={{ maxHeight: "94vh" }}>
 
-          {/* Header */}
+          {/* ── Header ── */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 shrink-0">
-            <div>
-              <p className="font-bold text-white">{device.brand} {device.model}</p>
-              <p className="text-[11px] text-white/30 mt-0.5">{device.device_no}</p>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                <Smartphone className="w-4.5 h-4.5 text-violet-400" />
+              </div>
+              <div>
+                <p className="font-bold text-white text-sm">{device.brand} {device.model}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[11px] text-white/30 font-mono">{device.device_no}</span>
+                  <button onClick={() => { navigator.clipboard.writeText(device.device_no); }}
+                    className="text-white/20 hover:text-white/50 transition-colors">
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge status={device.status} />
@@ -1207,88 +1294,245 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
             </div>
           </div>
 
-          {/* Body */}
+          {/* ── Tabs ── */}
+          <div className="flex border-b border-white/8 shrink-0 px-1">
+            {TABS.map(({ id, label }) => (
+              <button key={id} onClick={() => setTab(id)}
+                className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${
+                  tab === id
+                    ? "border-violet-500 text-violet-300"
+                    : "border-transparent text-white/30 hover:text-white/60"
+                }`}>
+                <span>{id}</span>
+                <span className="mr-1">{label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* ── Tab Body ── */}
           <div className="overflow-y-auto flex-1 p-4 space-y-4">
 
-            {/* Specs grid */}
-            <div className="grid grid-cols-3 gap-2">
-              <InfoCard icon={Package} label="السعة"    value={device.storage} />
-              <InfoCard icon={Battery}  label="البطارية" value={device.battery_health ? `${device.battery_health}%` : undefined}
-                color={device.battery_health && device.battery_health < 80 ? "text-amber-300" : "text-white/70"} />
-              <div className="bg-white/3 rounded-xl border border-white/6 p-2.5 flex flex-col gap-0.5">
-                <div className="flex items-center gap-1.5 text-white/30 text-[10px]">
-                  <BadgeCheck className="w-3 h-3" /> الدرجة
+            {/* ══ TAB 1: Device Data ══ */}
+            {tab === 1 && (
+              <>
+                {/* Specs grid 3-col */}
+                <div className="grid grid-cols-3 gap-2">
+                  <InfoCard icon={Package}   label="السعة"     value={device.storage} />
+                  <InfoCard icon={Battery}   label="البطارية"  value={device.battery_health ? `${device.battery_health}%` : undefined}
+                    color={device.battery_health && device.battery_health < 80 ? "text-amber-300" : "text-white/70"} />
+                  <div className="bg-white/3 rounded-xl border border-white/6 p-2.5 flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5 text-white/30 text-[10px]"><BadgeCheck className="w-3 h-3" /> الدرجة</div>
+                    <GradeBadge grade={device.grade} />
+                  </div>
                 </div>
-                <GradeBadge grade={device.grade} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {device.color && <InfoCard icon={Tag}  label="اللون"   value={device.color} />}
-              {device.imei  && <InfoCard icon={Info} label="IMEI/SN" value={device.imei} />}
-            </div>
-
-            {/* Flags */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest">حالة الجهاز</p>
-              <div className="flex flex-wrap gap-1.5">
-                <FlagChip label="شريحتين"       val={device.dual_sim} />
-                <FlagChip label="بالعلبة"        val={device.with_box} />
-                <FlagChip label="الضريبة مدفوعة" val={true} />
-                <FlagChip label="مفتوح من قبل"   val={device.previously_opened} warn />
-                <FlagChip label="مقفول iCloud"   val={device.icloud_locked} warn />
-                <FlagChip label="مقفول شبكة"     val={device.network_locked} warn />
-              </div>
-            </div>
-
-            {/* Pricing */}
-            <div className="bg-white/3 rounded-xl border border-white/6 p-3">
-              <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest mb-2">التسعير</p>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-[10px] text-white/30">سعر الشراء</p>
-                  <p className="font-bold text-white/60 text-sm">{parseFloat(device.purchase_price).toLocaleString()}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {device.color && <InfoCard icon={Tag}  label="اللون"  value={device.color} />}
+                  {device.imei  && <InfoCard icon={Info} label="IMEI / SN" value={device.imei} copyable />}
                 </div>
-                <div>
-                  <p className="text-[10px] text-white/30">{device.status === "sold" ? "بيع بـ" : "سعر البيع"}</p>
-                  <p className="font-bold text-white text-sm">
-                    {parseFloat(device.status === "sold" ? (device.sold_price ?? device.sale_price) : device.sale_price).toLocaleString()}
+
+                {/* Flags */}
+                <div className="bg-white/2 rounded-xl border border-white/6 p-3">
+                  <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
+                    <BadgeCheck className="w-3 h-3" /> حالة الجهاز
                   </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <FlagChip label="شريحتين"       val={device.dual_sim} />
+                    <FlagChip label="بالعلبة"        val={device.with_box} />
+                    <FlagChip label="الضريبة مدفوعة" val={true} />
+                    <FlagChip label="مفتوح من قبل"   val={device.previously_opened} warn />
+                    <FlagChip label="مقفول iCloud"   val={device.icloud_locked} warn />
+                    <FlagChip label="مقفول شبكة"     val={device.network_locked} warn />
+                    <FlagChip label="مقفول MDM"      val={device.mdm_locked} warn />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-white/30">الربح</p>
-                  <p className={`font-bold text-sm ${profit && parseFloat(profit) > 0 ? "text-emerald-400" : "text-red-400"}`}>
-                    {profit ? parseFloat(profit).toLocaleString() : "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            {/* Sold info */}
-            {device.status === "sold" && (
-              <div className="bg-blue-500/5 rounded-xl border border-blue-500/15 p-3 space-y-1.5">
-                <p className="text-[10px] font-bold text-blue-400/60 uppercase tracking-widest">بيانات البيع</p>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-white/30 text-xs">العميل: </span><span className="text-white/80">{device.sold_to_customer_name ?? "—"}</span></div>
-                  <div><span className="text-white/30 text-xs">البائع: </span><span className="text-white/80">{device.sold_by_user_name ?? "—"}</span></div>
-                  <div><span className="text-white/30 text-xs">الدفع: </span><span className="text-white/80">{device.payment_method ?? "—"}</span></div>
-                  <div><span className="text-white/30 text-xs">الضمان: </span><span className="text-white/80">{device.warranty_months ? `${device.warranty_months} شهر` : "بدون"}</span></div>
-                  {device.sold_at && <div className="col-span-2"><span className="text-white/30 text-xs">تاريخ البيع: </span><span className="text-white/60 text-xs">{new Date(device.sold_at).toLocaleDateString("ar-EG")}</span></div>}
+                {/* Pricing */}
+                <div className="bg-white/3 rounded-xl border border-white/6 p-3">
+                  <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Banknote className="w-3 h-3" /> التسعير
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-white/3 rounded-lg p-2">
+                      <p className="text-[10px] text-white/30 mb-1">سعر الشراء</p>
+                      <p className="font-bold text-white/60 text-sm">{parseFloat(device.purchase_price).toLocaleString()}</p>
+                      <p className="text-[10px] text-white/20">ج.م</p>
+                    </div>
+                    <div className="bg-white/3 rounded-lg p-2">
+                      <p className="text-[10px] text-white/30 mb-1">{device.status === "sold" ? "بيع بـ" : "سعر البيع"}</p>
+                      <p className="font-bold text-white text-sm">
+                        {parseFloat(device.status === "sold" ? (device.sold_price ?? device.sale_price) : device.sale_price).toLocaleString()}
+                      </p>
+                      <p className="text-[10px] text-white/20">ج.م</p>
+                    </div>
+                    <div className="bg-white/3 rounded-lg p-2">
+                      <p className="text-[10px] text-white/30 mb-1">الربح</p>
+                      <p className={`font-bold text-sm ${profit > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {profit >= 0 ? "+" : ""}{profit.toLocaleString()}
+                      </p>
+                      <p className={`text-[10px] ${profit > 0 ? "text-emerald-400/40" : "text-red-400/40"}`}>
+                        {parseFloat(device.purchase_price) > 0
+                          ? `${Math.round((profit / parseFloat(device.purchase_price)) * 100)}%`
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
+              </>
+            )}
+
+            {/* ══ TAB 2: Source & Notes ══ */}
+            {tab === 2 && (
+              <div className="space-y-3">
+                <div className="bg-white/3 rounded-xl border border-white/6 p-3 space-y-3">
+                  <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest flex items-center gap-1.5">
+                    <User className="w-3 h-3" /> بيانات المصدر
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-[10px] text-white/30 mb-0.5">المورد / البائع</p>
+                      <p className="text-white/80 font-medium">{device.supplier_name || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-white/30 mb-0.5">فاتورة الشراء</p>
+                      <p className="text-white/80 font-mono text-xs">{device.purchase_invoice_no || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-white/30 mb-0.5">الفاحص</p>
+                      <p className="text-white/80 font-medium">{device.inspector_name || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-white/30 mb-0.5">مسجل بواسطة</p>
+                      <p className="text-white/80 font-medium">{device.added_by_user_name || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="border-t border-white/6 pt-2.5 flex items-center gap-1.5 text-xs text-white/30">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>تاريخ الإضافة:</span>
+                    <span className="text-white/50">{new Date(device.created_at).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" })}</span>
+                  </div>
+                </div>
+
+                {device.condition_notes && (
+                  <div className="bg-white/2 rounded-xl border border-white/6 p-3">
+                    <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <FileText className="w-3 h-3" /> ملاحظات الحالة
+                    </p>
+                    <p className="text-sm text-white/60 leading-relaxed">{device.condition_notes}</p>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Source */}
-            {device.supplier_name && (
-              <div className="flex items-center gap-2 text-xs text-white/30">
-                <User className="w-3 h-3" /> المورد: <span className="text-white/50">{device.supplier_name}</span>
+            {/* ══ TAB 3: Maintenance Log ══ */}
+            {tab === 3 && (
+              <div>
+                {device.status === "maintenance" || (device.condition_notes && device.condition_notes.includes("صيانة")) ? (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <Wrench className="w-3 h-3" /> سجل الصيانة
+                    </p>
+                    {device.status === "maintenance" && (
+                      <div className="flex items-start gap-3 p-3 bg-amber-500/8 border border-amber-500/20 rounded-xl">
+                        <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                        <div>
+                          <p className="text-sm text-amber-300 font-semibold">الجهاز حالياً في الصيانة</p>
+                          <p className="text-[11px] text-white/30 mt-0.5">{new Date(device.created_at).toLocaleDateString("ar-EG")}</p>
+                        </div>
+                      </div>
+                    )}
+                    {device.condition_notes && (
+                      <div className="flex items-start gap-3 p-3 bg-white/3 border border-white/6 rounded-xl">
+                        <div className="w-2 h-2 rounded-full bg-white/30 mt-1.5 shrink-0" />
+                        <div>
+                          <p className="text-sm text-white/70">{device.condition_notes}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                      <Wrench className="w-5 h-5 text-white/20" />
+                    </div>
+                    <p className="text-white/40 font-medium">لا يوجد سجل صيانة</p>
+                    <p className="text-white/20 text-xs mt-1">هذا الجهاز لم يتم إرساله للصيانة من قبل</p>
+                  </div>
+                )}
               </div>
             )}
-            {device.condition_notes && (
-              <div className="text-xs text-white/30">ملاحظات: <span className="text-white/50">{device.condition_notes}</span></div>
+
+            {/* ══ TAB 4: Sales Log ══ */}
+            {tab === 4 && (
+              <div>
+                {device.status === "sold" && device.sold_to_customer_name ? (
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest flex items-center gap-1.5">
+                      <ShoppingCart className="w-3 h-3" /> بيانات البيع
+                    </p>
+
+                    {/* Customer card */}
+                    <div className="flex items-center gap-3 p-3 bg-blue-500/8 border border-blue-500/15 rounded-xl">
+                      <div className="w-9 h-9 rounded-full bg-blue-500/15 border border-blue-500/20 flex items-center justify-center">
+                        <User className="w-4 h-4 text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white text-sm">{device.sold_to_customer_name}</p>
+                        <p className="text-[11px] text-white/30">العميل</p>
+                      </div>
+                    </div>
+
+                    {/* Sale details grid */}
+                    <div className="bg-white/3 rounded-xl border border-white/6 p-3 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-[10px] text-white/30 mb-0.5">تاريخ البيع</p>
+                        <p className="text-white/80">{device.sold_at ? new Date(device.sold_at).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" }) : "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-white/30 mb-0.5">البائع</p>
+                        <p className="text-white/80">{device.sold_by_user_name || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-white/30 mb-0.5">سعر البيع</p>
+                        <p className="text-emerald-400 font-bold">{parseFloat(device.sold_price ?? "0").toLocaleString()} ج.م</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-white/30 mb-0.5">صافي الربح</p>
+                        <p className={`font-bold ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                          {profit >= 0 ? "+" : ""}{profit.toLocaleString()} ج.م
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-white/30 mb-0.5">طريقة الدفع</p>
+                        <p className="text-white/70">{PAY_LABELS[device.payment_method ?? ""] ?? device.payment_method ?? "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-white/30 mb-0.5">حالة الدفع</p>
+                        <p className={`font-medium text-xs ${device.payment_status === "paid" ? "text-emerald-400" : device.payment_status === "partial" ? "text-amber-400" : "text-red-400"}`}>
+                          {STATUS_LABELS[device.payment_status ?? ""] ?? device.payment_status ?? "—"}
+                        </p>
+                      </div>
+                      {device.warranty_months && (
+                        <div className="col-span-2">
+                          <p className="text-[10px] text-white/30 mb-0.5">فترة الضمان</p>
+                          <p className="text-blue-300 font-medium">{device.warranty_months} شهر</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                      <ShoppingCart className="w-5 h-5 text-white/20" />
+                    </div>
+                    <p className="text-white/40 font-medium">لم يُباع بعد</p>
+                    <p className="text-white/20 text-xs mt-1">هذا الجهاز لم يتم بيعه بعد</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Actions footer */}
+          {/* ── Actions footer ── */}
           <div className="px-4 py-3.5 border-t border-white/10 shrink-0">
             {confirming ? (
               <div className="flex items-center justify-between">
@@ -1304,14 +1548,14 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
                 </div>
               </div>
             ) : (
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2">
                 {device.status === "available" && (
                   <>
                     <button onClick={() => setShowSell(true)}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-sm font-bold hover:bg-emerald-500/30 transition-all">
                       <ShoppingCart className="w-3.5 h-3.5" /> بيع الجهاز
                     </button>
-                    <button onClick={() => setConfirming("maintenance")}
+                    <button onClick={() => setConfirming("maintenance")} title="إرسال للصيانة"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 text-sm hover:bg-amber-500/20 transition-all">
                       <Wrench className="w-3.5 h-3.5" />
                     </button>
@@ -1323,7 +1567,7 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-bold hover:bg-violet-500/25 transition-all">
                       <Printer className="w-3.5 h-3.5" /> طباعة الفاتورة
                     </button>
-                    <button onClick={() => setShowReturn(true)}
+                    <button onClick={() => setShowReturn(true)} title="إرجاع من العميل"
                       className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm hover:bg-amber-500/20 transition-all">
                       <RotateCcw className="w-3.5 h-3.5" />
                     </button>
@@ -1335,7 +1579,7 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
                     <RotateCcw className="w-3.5 h-3.5" /> إرجاع كمتاح
                   </button>
                 )}
-                <button onClick={() => setConfirming("delete")}
+                <button onClick={() => setConfirming("delete")} title="حذف الجهاز"
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm hover:bg-red-500/20 transition-all">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -1358,12 +1602,131 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
 /* ════════════════════════════════════════════════════════
    MAIN DEVICES PAGE
 ════════════════════════════════════════════════════════ */
+
+/** Mask IMEI: first 6 + ••••• + last 3 */
+function maskImei(imei: string): string {
+  if (!imei || imei.length < 9) return imei;
+  return `${imei.slice(0, 6)}•••••${imei.slice(-3)}`;
+}
+
+/** Row action menu (three-dot) */
+function RowMenu({ device, onDetail, onRefresh }: {
+  device: Device; onDetail: () => void; onRefresh: () => void;
+}) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [showSell, setShowSell] = useState(false);
+  const [confirming, setConfirming] = useState<"delete" | "maintenance" | "available" | "return" | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const doAction = async (action: "delete" | "maintenance" | "available") => {
+    try {
+      if (action === "delete") {
+        const r = await authFetch(api(`/api/devices/${device.id}`), { method: "DELETE" });
+        if (!r.ok) throw new Error();
+        toast({ title: "تم حذف الجهاز" });
+      } else {
+        await apPost(`/api/devices/${device.id}/${action}`, {});
+        toast({ title: action === "maintenance" ? "أُرسل للصيانة" : "أُرجع كمتاح" });
+      }
+      onRefresh();
+    } catch {
+      toast({ title: "خطأ في العملية", variant: "destructive" });
+    }
+    setConfirming(null); setOpen(false);
+  };
+
+  const menuItems = device.status === "available"
+    ? [
+        { label: "بيع الجهاز",     icon: ShoppingCart, action: () => { setOpen(false); setShowSell(true); }, cls: "text-emerald-300" },
+        { label: "إرسال للصيانة",  icon: Wrench,       action: () => { setOpen(false); setConfirming("maintenance"); }, cls: "text-amber-300" },
+        { label: "حذف الجهاز",     icon: Trash2,       action: () => { setOpen(false); setConfirming("delete"); }, cls: "text-red-400" },
+      ]
+    : device.status === "sold"
+      ? [
+          { label: "طباعة الفاتورة", icon: Printer,   action: () => { setOpen(false); printSaleReceipt(device); }, cls: "text-violet-300" },
+          { label: "إرجاع من العميل",icon: RotateCcw, action: () => { setOpen(false); setConfirming("return"); }, cls: "text-amber-300" },
+          { label: "حذف الجهاز",    icon: Trash2,     action: () => { setOpen(false); setConfirming("delete"); }, cls: "text-red-400" },
+        ]
+      : [
+          { label: "إرجاع كمتاح",  icon: RotateCcw, action: () => { setOpen(false); setConfirming("available"); }, cls: "text-emerald-300" },
+          { label: "حذف الجهاز",   icon: Trash2,    action: () => { setOpen(false); setConfirming("delete"); }, cls: "text-red-400" },
+        ];
+
+  return (
+    <div ref={ref} className="relative flex items-center gap-1">
+      {/* Eye icon */}
+      <button onClick={(e) => { e.stopPropagation(); onDetail(); }}
+        title="تفاصيل الجهاز"
+        className="p-1.5 rounded-lg text-white/25 hover:text-violet-300 hover:bg-violet-500/10 transition-all">
+        <Eye className="w-3.5 h-3.5" />
+      </button>
+
+      {/* Three-dot */}
+      <button onClick={(e) => { e.stopPropagation(); setOpen(v => !v); }}
+        className="p-1.5 rounded-lg text-white/25 hover:text-white/70 hover:bg-white/8 transition-all">
+        <MoreVertical className="w-3.5 h-3.5" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-40 w-44 glass-panel rounded-xl border border-white/10 py-1 shadow-2xl" dir="rtl">
+          {menuItems.map(({ label, icon: Icon, action, cls }) => (
+            <button key={label} onClick={(e) => { e.stopPropagation(); action(); }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium hover:bg-white/5 transition-colors text-right ${cls}`}>
+              <Icon className="w-3.5 h-3.5 shrink-0" />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Confirm dialog */}
+      {confirming && confirming !== "return" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" dir="rtl"
+          onClick={e => e.stopPropagation()}>
+          <div className="glass-panel rounded-2xl border border-white/10 p-5 w-72 space-y-4">
+            <p className="font-bold text-white text-center">
+              {confirming === "delete" ? "حذف الجهاز؟" : confirming === "maintenance" ? "إرسال للصيانة؟" : "إرجاع كمتاح؟"}
+            </p>
+            <p className="text-white/40 text-xs text-center">{device.brand} {device.model}</p>
+            <div className="flex gap-2">
+              <button onClick={(e) => { e.stopPropagation(); setConfirming(null); }}
+                className="flex-1 py-2 rounded-xl border border-white/10 text-white/50 text-sm">إلغاء</button>
+              <button onClick={(e) => { e.stopPropagation(); doAction(confirming as "delete" | "maintenance" | "available"); }}
+                className={`flex-1 py-2 rounded-xl border text-sm font-bold ${
+                  confirming === "delete" ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-amber-500/40 bg-amber-500/15 text-amber-300"
+                }`}>تأكيد</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSell && (
+        <SellModal device={device} onClose={() => setShowSell(false)} onDone={onRefresh} />
+      )}
+      {confirming === "return" && (
+        <ReturnModal device={device} onClose={() => setConfirming(null)} onDone={() => { onRefresh(); setConfirming(null); }} />
+      )}
+    </div>
+  );
+}
+
 export default function Devices() {
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<"all" | DeviceStatus>("all");
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [selected, setSelected] = useState<Device | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["/api/devices"] });
@@ -1388,10 +1751,10 @@ export default function Devices() {
   });
 
   const FILTERS: { v: "all" | DeviceStatus; l: string; count: number }[] = [
-    { v: "all",        l: "الكل",    count: stats?.total ?? 0 },
-    { v: "available",  l: "متاح",    count: stats?.available ?? 0 },
-    { v: "maintenance",l: "صيانة",   count: stats?.maintenance ?? 0 },
-    { v: "sold",       l: "مباع",    count: stats?.sold ?? 0 },
+    { v: "all",        l: "الكل",   count: stats?.total ?? 0 },
+    { v: "available",  l: "متاح",   count: stats?.available ?? 0 },
+    { v: "maintenance",l: "صيانة",  count: stats?.maintenance ?? 0 },
+    { v: "sold",       l: "مباع",   count: stats?.sold ?? 0 },
   ];
 
   return (
@@ -1456,9 +1819,7 @@ export default function Devices() {
             {(stats?.stock_profit_potential ?? 0).toLocaleString("ar-EG")}
             <span className="text-[10px] font-normal text-white/25 mr-1">ج.م</span>
           </p>
-          <p className="text-[10px] text-white/20 mt-0.5">
-            هامش متوقع على الأجهزة المتاحة
-          </p>
+          <p className="text-[10px] text-white/20 mt-0.5">هامش متوقع على الأجهزة المتاحة</p>
         </div>
         <div className="glass-panel rounded-xl border border-blue-500/15 p-3">
           <div className="flex items-center justify-between mb-1">
@@ -1475,7 +1836,7 @@ export default function Devices() {
         </div>
       </div>
 
-      {/* ── Filters + Search ── */}
+      {/* ── Filters + Search + View toggle ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {/* Status tabs */}
         <div className="flex gap-1">
@@ -1506,43 +1867,59 @@ export default function Devices() {
             </button>
           )}
         </div>
+
+        {/* View toggle */}
+        <div className="flex gap-0.5 bg-white/4 rounded-xl border border-white/8 p-0.5">
+          <button onClick={() => setViewMode("list")}
+            title="عرض قائمة"
+            className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
+            <List className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={() => setViewMode("grid")}
+            title="عرض شبكة"
+            className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
+            <LayoutGrid className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
-      {/* ── Device List ── */}
-      <div className="glass-panel rounded-xl border border-white/8 overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-          </div>
-        ) : allDevices.length === 0 ? (
-          <div className="text-center py-16 space-y-2">
-            <Smartphone className="w-10 h-10 text-white/10 mx-auto" />
-            <p className="text-white/30 text-sm">لا توجد أجهزة</p>
-            <p className="text-white/15 text-xs">اضغط "إضافة جهاز" لتسجيل أول جهاز</p>
-          </div>
-        ) : (
+      {/* ── Device List / Grid ── */}
+      {isLoading ? (
+        <div className="glass-panel rounded-xl border border-white/8 flex items-center justify-center py-16">
+          <div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+        </div>
+      ) : allDevices.length === 0 ? (
+        <div className="glass-panel rounded-xl border border-white/8 text-center py-16 space-y-2">
+          <Smartphone className="w-10 h-10 text-white/10 mx-auto" />
+          <p className="text-white/30 text-sm">لا توجد أجهزة</p>
+          <p className="text-white/15 text-xs">اضغط "إضافة جهاز" لتسجيل أول جهاز</p>
+        </div>
+      ) : viewMode === "list" ? (
+        /* ── LIST VIEW ── */
+        <div className="glass-panel rounded-xl border border-white/8 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/5">
                 <th className="text-right text-[11px] font-bold text-white/25 px-4 py-2.5">الجهاز</th>
                 <th className="text-right text-[11px] font-bold text-white/25 px-3 py-2.5 hidden sm:table-cell">المواصفات</th>
+                <th className="text-right text-[11px] font-bold text-white/25 px-3 py-2.5 hidden sm:table-cell">IMEI</th>
                 <th className="text-right text-[11px] font-bold text-white/25 px-3 py-2.5">الأسعار</th>
                 <th className="text-center text-[11px] font-bold text-white/25 px-3 py-2.5">الحالة</th>
                 <th className="text-right text-[11px] font-bold text-white/25 px-3 py-2.5 hidden md:table-cell">المورد / العميل</th>
+                <th className="text-center text-[11px] font-bold text-white/25 px-3 py-2.5 w-16">إجراءات</th>
               </tr>
             </thead>
             <tbody>
               {allDevices.map((d, idx) => (
                 <tr key={d.id}
-                  onClick={() => setSelected(d)}
-                  className={`border-b border-white/4 cursor-pointer hover:bg-white/3 transition-colors ${idx % 2 === 0 ? "" : "bg-white/1"}`}>
+                  className={`border-b border-white/4 hover:bg-white/3 transition-colors group ${idx % 2 === 0 ? "" : "bg-white/1"}`}>
                   {/* Device */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 cursor-pointer" onClick={() => setSelected(d)}>
                     <p className="font-semibold text-white/90 text-sm">{d.brand} {d.model}</p>
-                    <p className="text-[11px] text-white/30">{d.device_no}</p>
+                    <p className="text-[11px] text-white/30 font-mono">{d.device_no}</p>
                   </td>
                   {/* Specs */}
-                  <td className="px-3 py-3 hidden sm:table-cell">
+                  <td className="px-3 py-3 hidden sm:table-cell cursor-pointer" onClick={() => setSelected(d)}>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {d.storage && <span className="text-[11px] text-white/50 bg-white/5 px-1.5 py-0.5 rounded">{d.storage}</span>}
                       {d.color  && <span className="text-[11px] text-white/40">{d.color}</span>}
@@ -1554,41 +1931,109 @@ export default function Devices() {
                     </div>
                     <GradeBadge grade={d.grade} />
                   </td>
+                  {/* IMEI masked */}
+                  <td className="px-3 py-3 hidden sm:table-cell cursor-pointer" onClick={() => setSelected(d)}>
+                    {d.imei
+                      ? <span className="text-[11px] text-white/35 font-mono tracking-wide">{maskImei(d.imei)}</span>
+                      : <span className="text-[11px] text-white/15">—</span>}
+                  </td>
                   {/* Prices + Profit */}
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-3 cursor-pointer" onClick={() => setSelected(d)}>
                     <p className="text-white/80 font-semibold">
                       {parseFloat(d.status === "sold" && d.sold_price ? d.sold_price : d.sale_price).toLocaleString()}
                       <span className="text-[10px] text-white/25 mr-0.5">ج.م</span>
                     </p>
-                    <p className="text-[11px] text-white/25">شراء: {parseFloat(d.purchase_price).toLocaleString()}</p>
                     {(() => {
                       const sellP = parseFloat(d.status === "sold" && d.sold_price ? d.sold_price : d.sale_price);
                       const buyP  = parseFloat(d.purchase_price);
-                      const profit = sellP - buyP;
-                      const pct = buyP > 0 ? Math.round((profit / buyP) * 100) : 0;
+                      const prof  = sellP - buyP;
+                      const pct   = buyP > 0 ? Math.round((prof / buyP) * 100) : 0;
                       return (
-                        <span className={`text-[10px] font-bold ${profit >= 0 ? "text-emerald-400/80" : "text-red-400/80"}`}>
-                          {profit >= 0 ? "+" : ""}{profit.toLocaleString()} ج.م ({pct}%)
+                        <span className={`text-[10px] font-bold ${prof >= 0 ? "text-emerald-400/80" : "text-red-400/80"}`}>
+                          {prof >= 0 ? "+" : ""}{prof.toLocaleString()} ({pct}%)
                         </span>
                       );
                     })()}
                   </td>
                   {/* Status */}
-                  <td className="px-3 py-3 text-center">
+                  <td className="px-3 py-3 text-center cursor-pointer" onClick={() => setSelected(d)}>
                     <StatusBadge status={d.status} />
                   </td>
                   {/* Source/customer */}
-                  <td className="px-3 py-3 hidden md:table-cell">
+                  <td className="px-3 py-3 hidden md:table-cell cursor-pointer" onClick={() => setSelected(d)}>
                     <p className="text-[11px] text-white/40">
                       {d.status === "sold" ? d.sold_to_customer_name : d.supplier_name ?? "—"}
                     </p>
+                  </td>
+                  {/* Actions */}
+                  <td className="px-3 py-3 text-center">
+                    <div className="flex items-center justify-center">
+                      <RowMenu device={d} onDetail={() => setSelected(d)} onRefresh={refresh} />
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      ) : (
+        /* ── GRID VIEW ── */
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {allDevices.map(d => {
+            const sellP = parseFloat(d.status === "sold" && d.sold_price ? d.sold_price : d.sale_price);
+            const buyP  = parseFloat(d.purchase_price);
+            const prof  = sellP - buyP;
+            return (
+              <div key={d.id}
+                className="glass-panel rounded-xl border border-white/8 hover:border-violet-500/25 transition-all group overflow-hidden">
+                {/* Card top */}
+                <div className="p-3 cursor-pointer" onClick={() => setSelected(d)}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                      <Smartphone className="w-5 h-5 text-violet-400" />
+                    </div>
+                    <StatusBadge status={d.status} />
+                  </div>
+                  <p className="font-bold text-white text-sm leading-tight">{d.brand} {d.model}</p>
+                  <p className="text-[10px] text-white/25 font-mono mt-0.5">{d.device_no}</p>
+
+                  <div className="mt-2.5 flex flex-wrap gap-1">
+                    {d.storage && <span className="text-[10px] text-white/45 bg-white/5 px-1.5 py-0.5 rounded">{d.storage}</span>}
+                    {d.color   && <span className="text-[10px] text-white/35">{d.color}</span>}
+                    {d.battery_health && (
+                      <span className={`text-[10px] flex items-center gap-0.5 ${d.battery_health < 80 ? "text-amber-400/70" : "text-white/30"}`}>
+                        <Battery className="w-2.5 h-2.5" />{d.battery_health}%
+                      </span>
+                    )}
+                  </div>
+
+                  {d.imei && (
+                    <p className="text-[10px] text-white/25 font-mono mt-1.5 tracking-wide">{maskImei(d.imei)}</p>
+                  )}
+
+                  <div className="mt-3 pt-2.5 border-t border-white/6 flex items-end justify-between">
+                    <div>
+                      <p className="text-emerald-300 font-bold text-sm">{sellP.toLocaleString()} ج.م</p>
+                      <p className={`text-[10px] font-semibold ${prof >= 0 ? "text-emerald-400/60" : "text-red-400/60"}`}>
+                        {prof >= 0 ? "+" : ""}{prof.toLocaleString()} ج.م
+                      </p>
+                    </div>
+                    {d.grade && <GradeBadge grade={d.grade} />}
+                  </div>
+                </div>
+
+                {/* Card bottom — actions */}
+                <div className="px-3 pb-3 flex items-center justify-between">
+                  <p className="text-[10px] text-white/25 truncate flex-1">
+                    {d.status === "sold" ? d.sold_to_customer_name : d.supplier_name ?? ""}
+                  </p>
+                  <RowMenu device={d} onDetail={() => setSelected(d)} onRefresh={refresh} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* ── Modals ── */}
       {showAdd && <AddDeviceModal onClose={() => setShowAdd(false)} onSaved={refresh} />}
