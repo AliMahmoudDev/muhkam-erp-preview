@@ -320,7 +320,7 @@ router.post("/devices/purchase", wrap(async (req, res) => {
 
   const result = await db.transaction(async (tx) => {
     /* ── 1. Create new customer if needed ── */
-    let customer_id: number | null = rawCustomerId ? Number(rawCustomerId) : null;
+    const customer_id: number | null = rawCustomerId ? Number(rawCustomerId) : null;
     let customer_name: string | null = null;
 
     if (customer_id) {
