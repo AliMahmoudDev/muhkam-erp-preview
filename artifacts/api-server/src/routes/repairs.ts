@@ -188,20 +188,6 @@ async function ensureCompanyDefaults(companyId: number) {
       SYSTEM_STATUSES.map(s => ({ ...s, company_id: companyId, is_system: true }))
     );
   }
-  const existingChecklist = await db.select({ id: repairChecklistItemsTable.id })
-    .from(repairChecklistItemsTable)
-    .where(eq(repairChecklistItemsTable.company_id, companyId))
-    .limit(1);
-  if (existingChecklist.length === 0) {
-    await db.insert(repairChecklistItemsTable).values(
-      SYSTEM_CHECKLIST.map((label, i) => ({
-        company_id: companyId,
-        label_ar: label,
-        sort_order: i + 1,
-        is_system: true,
-      }))
-    );
-  }
 }
 
 /* ══════════════════════════════════════════════════════════════
