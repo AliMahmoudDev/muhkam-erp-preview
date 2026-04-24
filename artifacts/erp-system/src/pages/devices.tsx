@@ -719,7 +719,8 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     if (!finalStorage.trim()) e.storage = true;
     if (!form.imei.trim()) e.imei = true;
     if (!form.battery_health) e.battery = true;
-    if (!supplierPhone.trim()) e.phone = true;
+    const cleanPhone = supplierPhone.replace(/\D/g, '');
+    if (cleanPhone.length !== 11) e.phone = true;
     if (isNewSupplier && !supplierName.trim()) e.supplierName = true;
     setErrors(e);
     if (Object.keys(e).length > 0) {
@@ -956,17 +957,18 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
 
               {/* ─ Supplier Phone lookup ─ */}
               <div>
-                <label className={lReq}>رقم هاتف المورد *</label>
+                <label className={lReq}>رقم هاتف المورد * <span className="text-white/25">(11 رقم)</span></label>
                 <div className="relative">
-                  <input type="tel" value={supplierPhone} onChange={e => setSupplierPhone(e.target.value)}
+                  <input type="tel" value={supplierPhone}
+                    onChange={e => setSupplierPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
                     placeholder="01xxxxxxxxx" className={`${iCls("phone")} pl-10`}
-                    inputMode="tel" maxLength={15} dir="ltr" />
+                    inputMode="numeric" maxLength={11} dir="ltr" />
                   <div className="absolute left-3 top-1/2 -translate-y-1/2">
                     {lookingUp
                       ? <div className="w-3.5 h-3.5 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
                       : foundCustomer
                         ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        : supplierPhone.length >= 7
+                        : supplierPhone.length > 0
                           ? <XCircle className="w-3.5 h-3.5 text-amber-400/60" />
                           : <User className="w-3.5 h-3.5 text-white/20" />}
                   </div>
@@ -986,11 +988,11 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                   </div>
                 )}
 
-                {/* New supplier: name field required */}
+                {/* New supplier: name field — temporary, not added to customers list */}
                 {isNewSupplier && (
                   <div className="mt-2 space-y-2">
                     <div className="flex items-center gap-1.5 text-[11px] text-amber-400/70">
-                      <Info className="w-3 h-3" /> رقم جديد — أدخل الاسم للحفظ (نقدي فقط)
+                      <Info className="w-3 h-3" /> مورد مؤقت — لن يُضاف لقائمة العملاء (نقدي فقط)
                     </div>
                     <input value={supplierName} onChange={e => setSupplierName(e.target.value)}
                       placeholder="اسم المورد *" className={iCls("supplierName")} />
@@ -1128,7 +1130,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                 </div>
                 {isNewSupplier && (
                   <p className="text-[10px] text-amber-400/50 mt-1.5 flex items-center gap-1">
-                    <Info className="w-3 h-3" /> المورد الجديد — نقدي فقط
+                    <Info className="w-3 h-3" /> مورد مؤقت غير مسجّل — نقدي فقط
                   </p>
                 )}
               </div>

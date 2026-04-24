@@ -271,14 +271,9 @@ router.post("/devices/purchase", wrap(async (req, res) => {
       if (!c) throw httpError(400, "العميل/المورد غير موجود");
       customer_name = c.name;
     } else if (new_customer_name?.trim()) {
-      const [newCust] = await tx.insert(customersTable).values({
-        company_id,
-        name: new_customer_name.trim(),
-        phone: supplier_phone ?? null,
-        is_customer: true,
-      } as typeof customersTable.$inferInsert).returning({ id: customersTable.id, name: customersTable.name });
-      customer_id = newCust.id;
-      customer_name = newCust.name;
+      /* مورد مؤقت — يُحفظ اسمه نصاً في الجهاز فقط، لا يُضاف لقائمة العملاء */
+      customer_name = new_customer_name.trim();
+      /* customer_id يبقى null */
     }
 
     /* ── 2. Find or create product ── */
