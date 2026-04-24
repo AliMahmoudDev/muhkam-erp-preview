@@ -61,18 +61,7 @@ async function apPost<T>(url: string, body: unknown): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-async function apPatch<T>(url: string, body: unknown): Promise<T> {
-  const r = await authFetch(url, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) { const e = await r.text(); throw new Error(e || `HTTP ${r.status}`); }
-  return r.json() as Promise<T>;
-}
-
 const GRADES = ["A+", "A", "B", "C", "D"];
-const STORAGES = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB"];
 
 /* ── Print Sale Receipt ── */
 function printSaleReceipt(d: Device) {
@@ -652,10 +641,6 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
 
   /* new customer (phone entered but not found in DB) */
   const isNewSupplier = supplierPhone.length >= 7 && !lookingUp && !foundCustomer;
-
-  /* payment type restriction */
-  const allowedPaymentTypes: Array<"cash" | "credit" | "partial"> =
-    isNewSupplier ? ["cash"] : ["cash", "credit", "partial"];
 
   /* if new supplier and currently credit/partial → reset to cash */
   useEffect(() => {

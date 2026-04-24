@@ -125,7 +125,7 @@ router.delete("/sales-targets/:id", wrap(async (req, res) => {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
   const companyId = req.user!.company_id!;
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
 
   await db.delete(salesTargetsTable).where(and(
     eq(salesTargetsTable.id, id),

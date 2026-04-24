@@ -835,11 +835,10 @@ function JobChecklist({
     );
   }
 
-  const pass        = checklist.filter(c => c.status === "pass").length;
-  const fail        = checklist.filter(c => c.status === "fail").length;
-  const partial     = checklist.filter(c => c.status === "partial").length;
-  const _untestable = checklist.filter(c => c.status === "untestable").length;
-  const unanswered  = checklist.filter(c => !c.status).length;
+  const pass       = checklist.filter(c => c.status === "pass").length;
+  const fail       = checklist.filter(c => c.status === "fail").length;
+  const partial    = checklist.filter(c => c.status === "partial").length;
+  const unanswered = checklist.filter(c => !c.status).length;
   const total       = checklist.length;
   const doneCount   = total - unanswered;
 

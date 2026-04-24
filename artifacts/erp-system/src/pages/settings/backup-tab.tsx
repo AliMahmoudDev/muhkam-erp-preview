@@ -345,8 +345,6 @@ export default function BackupTab() {
           }
         } else if (mod.key === 'settings') {
           bundle[mod.key] = JSON.parse(localStorage.getItem('halal_erp_settings') || '{}');
-        } else {
-          bundle[mod.key] = null;
         }
       }
       setBkProgress(90);
@@ -774,7 +772,7 @@ export default function BackupTab() {
                 </div>
               )}
               <button
-                onClick={handleComprehensiveBackup}
+                onClick={() => handleComprehensiveBackup()}
                 disabled={compBusy}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-all"
               >

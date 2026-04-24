@@ -5,7 +5,7 @@ import {
   warehousesTable, purchasesTable, purchaseItemsTable,
   stockMovementsTable, transactionsTable, customerLedgerTable,
 } from "@workspace/db";
-import { eq, and, desc, or, ilike, sql } from "drizzle-orm";
+import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { wrap, httpError } from "../lib/async-handler";
 import type Express from "express";
 
