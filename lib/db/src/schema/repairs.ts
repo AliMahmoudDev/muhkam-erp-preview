@@ -86,6 +86,7 @@ export const repairChecklistItemsTable = pgTable("repair_checklist_items", {
   company_id:   integer("company_id").notNull(),
   label_ar:     text("label_ar").notNull(),
   category:     text("category").default("عام"),
+  device_type:  text("device_type").default("general"),
   sort_order:   integer("sort_order").default(0),
   is_system:    boolean("is_system").default(false),
   created_at:   timestamp("created_at").defaultNow().notNull(),
