@@ -68,183 +68,365 @@ async function apPatch<T>(url: string, body: unknown): Promise<T> {
 const GRADES = ["A+", "A", "B", "C", "D"];
 const STORAGES = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB"];
 
-/* ── Device Catalog ── */
-const OTHER_OPTION = "أخرى (كتابة يدوي)";
+/* ══════════════════════════════════════════════════════════
+   DEVICE CATALOG — 4-level: Brand → Category → Model → {colors,storages}
+══════════════════════════════════════════════════════════ */
+const OTHER = "أخرى";
 
-const DEVICE_CATALOG: Record<string, string[]> = {
-  "Apple": [
-    /* ─ iPhone ─ */
-    "iPhone 6", "iPhone 6s", "iPhone 6s Plus",
-    "iPhone 7", "iPhone 7 Plus",
-    "iPhone 8", "iPhone 8 Plus",
-    "iPhone X", "iPhone XR", "iPhone XS", "iPhone XS Max",
-    "iPhone 11", "iPhone 11 Pro", "iPhone 11 Pro Max",
-    "iPhone 12", "iPhone 12 mini", "iPhone 12 Pro", "iPhone 12 Pro Max",
-    "iPhone 13", "iPhone 13 mini", "iPhone 13 Pro", "iPhone 13 Pro Max",
-    "iPhone 14", "iPhone 14 Plus", "iPhone 14 Pro", "iPhone 14 Pro Max",
-    "iPhone 15", "iPhone 15 Plus", "iPhone 15 Pro", "iPhone 15 Pro Max",
-    "iPhone 16", "iPhone 16 Plus", "iPhone 16 Pro", "iPhone 16 Pro Max",
-    /* ─ iPad ─ */
-    "iPad (9th Gen)", "iPad (10th Gen)",
-    "iPad Air 4", "iPad Air 5", "iPad Air M2",
-    "iPad mini 5", "iPad mini 6",
-    "iPad Pro 11\" M1", "iPad Pro 11\" M2", "iPad Pro 11\" M4",
-    "iPad Pro 12.9\" M1", "iPad Pro 12.9\" M2", "iPad Pro 13\" M4",
-    /* ─ MacBook ─ */
-    "MacBook Air M1", "MacBook Air M2", "MacBook Air M3",
-    "MacBook Pro 14\" M1", "MacBook Pro 14\" M2", "MacBook Pro 14\" M3",
-    "MacBook Pro 16\" M1", "MacBook Pro 16\" M2", "MacBook Pro 16\" M3",
-    /* ─ Apple Watch ─ */
-    "Apple Watch Series 7", "Apple Watch Series 8", "Apple Watch Series 9",
-    "Apple Watch Ultra", "Apple Watch Ultra 2",
-    "Apple Watch SE 2",
-    /* ─ AirPods ─ */
-    "AirPods 2nd Gen", "AirPods 3rd Gen",
-    "AirPods Pro 1st Gen", "AirPods Pro 2nd Gen",
-    "AirPods Max",
-    OTHER_OPTION,
-  ],
-  "Samsung": [
-    /* ─ Galaxy S ─ */
-    "Galaxy S21", "Galaxy S21+", "Galaxy S21 Ultra",
-    "Galaxy S21 FE",
-    "Galaxy S22", "Galaxy S22+", "Galaxy S22 Ultra",
-    "Galaxy S23", "Galaxy S23+", "Galaxy S23 Ultra",
-    "Galaxy S23 FE",
-    "Galaxy S24", "Galaxy S24+", "Galaxy S24 Ultra",
-    "Galaxy S24 FE",
-    "Galaxy S25", "Galaxy S25+", "Galaxy S25 Ultra",
-    /* ─ Galaxy A ─ */
-    "Galaxy A03", "Galaxy A03s",
-    "Galaxy A12", "Galaxy A13", "Galaxy A14", "Galaxy A15",
-    "Galaxy A23", "Galaxy A24", "Galaxy A25",
-    "Galaxy A33", "Galaxy A34", "Galaxy A35",
-    "Galaxy A53", "Galaxy A54", "Galaxy A55",
-    "Galaxy A73",
-    /* ─ Galaxy Z ─ */
-    "Galaxy Z Fold 4", "Galaxy Z Fold 5", "Galaxy Z Fold 6",
-    "Galaxy Z Flip 4", "Galaxy Z Flip 5", "Galaxy Z Flip 6",
-    /* ─ Galaxy Tab ─ */
-    "Galaxy Tab A7", "Galaxy Tab A7 Lite", "Galaxy Tab A8",
-    "Galaxy Tab S7", "Galaxy Tab S7+",
-    "Galaxy Tab S8", "Galaxy Tab S8+", "Galaxy Tab S8 Ultra",
-    "Galaxy Tab S9", "Galaxy Tab S9+", "Galaxy Tab S9 Ultra",
-    "Galaxy Tab S9 FE",
-    OTHER_OPTION,
-  ],
-  "Xiaomi": [
-    "Xiaomi 11", "Xiaomi 11T", "Xiaomi 11T Pro",
-    "Xiaomi 12", "Xiaomi 12 Pro", "Xiaomi 12X",
-    "Xiaomi 13", "Xiaomi 13 Pro", "Xiaomi 13T", "Xiaomi 13T Pro",
-    "Xiaomi 14", "Xiaomi 14 Pro", "Xiaomi 14T", "Xiaomi 14T Pro",
-    "Redmi 9", "Redmi 9A", "Redmi 9C",
-    "Redmi 10", "Redmi 10A", "Redmi 10C",
-    "Redmi 12", "Redmi 12C",
-    "Redmi 13", "Redmi 13C",
-    "Redmi Note 10", "Redmi Note 10 Pro", "Redmi Note 10s",
-    "Redmi Note 11", "Redmi Note 11 Pro", "Redmi Note 11s",
-    "Redmi Note 12", "Redmi Note 12 Pro", "Redmi Note 12s",
-    "Redmi Note 13", "Redmi Note 13 Pro", "Redmi Note 13 Pro+",
-    "Redmi Note 14", "Redmi Note 14 Pro", "Redmi Note 14 Pro+",
-    "POCO X3", "POCO X3 Pro", "POCO X4 Pro", "POCO X5 Pro",
-    "POCO M3", "POCO M4", "POCO M5",
-    OTHER_OPTION,
-  ],
-  "Huawei": [
-    "Huawei P30", "Huawei P30 Pro",
-    "Huawei P40", "Huawei P40 Pro", "Huawei P40 Lite",
-    "Huawei P50", "Huawei P50 Pro",
-    "Huawei P60", "Huawei P60 Pro",
-    "Huawei Mate 30 Pro",
-    "Huawei Mate 40 Pro",
-    "Huawei Mate 50 Pro",
-    "Huawei Nova 5T", "Huawei Nova 7", "Huawei Nova 9", "Huawei Nova 11",
-    "Huawei MatePad Pro", "Huawei MatePad 11",
-    OTHER_OPTION,
-  ],
-  "OPPO": [
-    "OPPO Reno 5", "OPPO Reno 6", "OPPO Reno 7", "OPPO Reno 8",
-    "OPPO Reno 10", "OPPO Reno 10 Pro",
-    "OPPO A54", "OPPO A55", "OPPO A74", "OPPO A76", "OPPO A77",
-    "OPPO A96", "OPPO A98",
-    "OPPO Find X5", "OPPO Find X5 Pro", "OPPO Find X6 Pro",
-    OTHER_OPTION,
-  ],
-  "Vivo": [
-    "Vivo Y21", "Vivo Y22", "Vivo Y33s", "Vivo Y35", "Vivo Y36",
-    "Vivo V23", "Vivo V25", "Vivo V27", "Vivo V29",
-    "Vivo X80 Pro", "Vivo X90 Pro",
-    OTHER_OPTION,
-  ],
-  "OnePlus": [
-    "OnePlus 9", "OnePlus 9 Pro",
-    "OnePlus 10 Pro", "OnePlus 10T",
-    "OnePlus 11", "OnePlus 11R",
-    "OnePlus 12", "OnePlus 12R",
-    "OnePlus Nord", "OnePlus Nord 2", "OnePlus Nord CE", "OnePlus Nord CE 2",
-    "OnePlus Nord N10", "OnePlus Nord N20",
-    OTHER_OPTION,
-  ],
-  "Honor": [
-    "Honor 10X", "Honor 50", "Honor 70", "Honor 80", "Honor 90",
-    "Honor Magic 4", "Honor Magic 5", "Honor Magic 6",
-    "Honor X8", "Honor X9", "Honor X9a",
-    OTHER_OPTION,
-  ],
-  "realme": [
-    "realme 8", "realme 8 Pro", "realme 9", "realme 9 Pro",
-    "realme 10", "realme 10 Pro", "realme 11", "realme 11 Pro",
-    "realme C30", "realme C31", "realme C33", "realme C35", "realme C51",
-    "realme GT 2 Pro", "realme GT Neo 3",
-    OTHER_OPTION,
-  ],
-  "Tecno": [
-    "Tecno Spark 8", "Tecno Spark 9", "Tecno Spark 10", "Tecno Spark 20",
-    "Tecno Camon 19", "Tecno Camon 20", "Tecno Camon 30",
-    "Tecno Phantom X2",
-    OTHER_OPTION,
-  ],
-  "Infinix": [
-    "Infinix Hot 11", "Infinix Hot 12", "Infinix Hot 20", "Infinix Hot 30",
-    "Infinix Note 12", "Infinix Note 30", "Infinix Note 40",
-    "Infinix Zero 30",
-    OTHER_OPTION,
-  ],
-  "Nokia": [
-    "Nokia G21", "Nokia G22", "Nokia G42",
-    "Nokia X30", "Nokia X71",
-    "Nokia C31", "Nokia C32",
-    OTHER_OPTION,
-  ],
-  [OTHER_OPTION]: [OTHER_OPTION],
+type ModelSpec = { colors: string[]; storages: string[] };
+type FullCatalog = Record<string, Record<string, Record<string, ModelSpec>>>;
+
+const CATALOG: FullCatalog = {
+  "Apple": {
+    "iPhone": {
+      "iPhone 16 Pro Max":  { colors: ["أسود تيتانيوم","أبيض تيتانيوم","صحراوي تيتانيوم","تيتانيوم طبيعي"], storages: ["256GB","512GB","1TB"] },
+      "iPhone 16 Pro":      { colors: ["أسود تيتانيوم","أبيض تيتانيوم","صحراوي تيتانيوم","تيتانيوم طبيعي"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 16 Plus":     { colors: ["أسود","أبيض","وردي","تيل","إنديجو"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 16":          { colors: ["أسود","أبيض","وردي","تيل","إنديجو"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 15 Pro Max":  { colors: ["أسود تيتانيوم","أبيض تيتانيوم","أزرق تيتانيوم","تيتانيوم طبيعي"], storages: ["256GB","512GB","1TB"] },
+      "iPhone 15 Pro":      { colors: ["أسود تيتانيوم","أبيض تيتانيوم","أزرق تيتانيوم","تيتانيوم طبيعي"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 15 Plus":     { colors: ["أسود","أزرق","أخضر","أصفر","وردي"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 15":          { colors: ["أسود","أزرق","أخضر","أصفر","وردي"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 14 Pro Max":  { colors: ["بنفسجي عميق","ذهبي","فضي","أسود فضائي"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 14 Pro":      { colors: ["بنفسجي عميق","ذهبي","فضي","أسود فضائي"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 14 Plus":     { colors: ["منتصف الليل","ضوء النجوم","أزرق","بنفسجي","أصفر","أحمر"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 14":          { colors: ["منتصف الليل","ضوء النجوم","أزرق","بنفسجي","أصفر","أحمر"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 13 Pro Max":  { colors: ["أزرق سييرا","فضي","ذهبي","أخضر ألباين","جرافيت"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 13 Pro":      { colors: ["أزرق سييرا","فضي","ذهبي","أخضر ألباين","جرافيت"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 13 mini":     { colors: ["منتصف الليل","ضوء النجوم","أزرق","وردي","أخضر","أحمر"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 13":          { colors: ["منتصف الليل","ضوء النجوم","أزرق","وردي","أخضر","أحمر"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 12 Pro Max":  { colors: ["أزرق باسيفيك","ذهبي","فضي","جرافيت"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 12 Pro":      { colors: ["أزرق باسيفيك","ذهبي","فضي","جرافيت"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 12 mini":     { colors: ["أسود","أبيض","أحمر","أزرق","أخضر","بنفسجي"], storages: ["64GB","128GB","256GB"] },
+      "iPhone 12":          { colors: ["أسود","أبيض","أحمر","أزرق","أخضر","بنفسجي"], storages: ["64GB","128GB","256GB"] },
+      "iPhone 11 Pro Max":  { colors: ["أخضر ليلي","ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB","512GB"] },
+      "iPhone 11 Pro":      { colors: ["أخضر ليلي","ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB","512GB"] },
+      "iPhone 11":          { colors: ["أسود","أبيض","أصفر","بنفسجي","أخضر","أحمر"], storages: ["64GB","128GB","256GB"] },
+      "iPhone XS Max":      { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB","512GB"] },
+      "iPhone XS":          { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB","512GB"] },
+      "iPhone XR":          { colors: ["أسود","أبيض","أزرق","أصفر","مرجاني","أحمر"], storages: ["64GB","128GB","256GB"] },
+      "iPhone X":           { colors: ["فضي","رمادي فضائي"], storages: ["64GB","256GB"] },
+      "iPhone 8 Plus":      { colors: ["ذهبي","فضي","رمادي فضائي","أحمر"], storages: ["64GB","128GB","256GB"] },
+      "iPhone 8":           { colors: ["ذهبي","فضي","رمادي فضائي","أحمر"], storages: ["64GB","128GB","256GB"] },
+      "iPhone 7 Plus":      { colors: ["أسود لامع","أسود مطفي","ذهبي","فضي","وردي ذهبي","أحمر"], storages: ["32GB","128GB","256GB"] },
+      "iPhone 7":           { colors: ["أسود لامع","أسود مطفي","ذهبي","فضي","وردي ذهبي","أحمر"], storages: ["32GB","128GB","256GB"] },
+      "iPhone 6s Plus":     { colors: ["ذهبي","فضي","رمادي فضائي","وردي ذهبي"], storages: ["16GB","32GB","64GB","128GB"] },
+      "iPhone 6s":          { colors: ["ذهبي","فضي","رمادي فضائي","وردي ذهبي"], storages: ["16GB","32GB","64GB","128GB"] },
+      "iPhone 6 Plus":      { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["16GB","64GB","128GB"] },
+      "iPhone 6":           { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["16GB","64GB","128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "iPad": {
+      "iPad Pro 13\" M4":    { colors: ["فضي","أسود فضائي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "iPad Pro 11\" M4":    { colors: ["فضي","أسود فضائي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "iPad Pro 12.9\" M2":  { colors: ["فضي","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
+      "iPad Pro 11\" M2":    { colors: ["فضي","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
+      "iPad Pro 12.9\" M1":  { colors: ["فضي","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
+      "iPad Pro 11\" M1":    { colors: ["فضي","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
+      "iPad Air M2 13\"":    { colors: ["أزرق","بنفسجي","ضوء النجوم","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPad Air M2 11\"":    { colors: ["أزرق","بنفسجي","ضوء النجوم","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPad Air 5":          { colors: ["أزرق","بنفسجي","ضوء النجوم","وردي","رمادي فضائي"], storages: ["64GB","256GB"] },
+      "iPad Air 4":          { colors: ["رمادي فضائي","فضي","وردي ذهبي","أخضر","سماوي"], storages: ["64GB","256GB"] },
+      "iPad (10th Gen)":     { colors: ["أزرق","وردي","فضي","أصفر"], storages: ["64GB","256GB"] },
+      "iPad (9th Gen)":      { colors: ["فضي","رمادي فضائي"], storages: ["64GB","256GB"] },
+      "iPad mini 6":         { colors: ["بنفسجي","ضوء النجوم","وردي","رمادي فضائي"], storages: ["64GB","256GB"] },
+      "iPad mini 5":         { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "Apple Watch": {
+      "Apple Watch Ultra 2":  { colors: ["تيتانيوم طبيعي","تيتانيوم أسود"], storages: ["49mm"] },
+      "Apple Watch Ultra":    { colors: ["تيتانيوم طبيعي"], storages: ["49mm"] },
+      "Apple Watch Series 9": { colors: ["منتصف الليل","ضوء النجوم","فضي","وردي","أحمر","ذهبي"], storages: ["41mm","45mm"] },
+      "Apple Watch Series 8": { colors: ["منتصف الليل","ضوء النجوم","فضي","أحمر"], storages: ["41mm","45mm"] },
+      "Apple Watch Series 7": { colors: ["منتصف الليل","ضوء النجوم","أخضر","أزرق","أحمر"], storages: ["41mm","45mm"] },
+      "Apple Watch Series 6": { colors: ["أزرق","أحمر","رمادي فضائي","فضي","ذهبي","ذهبي وردي"], storages: ["40mm","44mm"] },
+      "Apple Watch SE 2":     { colors: ["منتصف الليل","ضوء النجوم","فضي"], storages: ["40mm","44mm"] },
+      "Apple Watch SE":       { colors: ["رمادي فضائي","فضي","ذهبي"], storages: ["40mm","44mm"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "MacBook": {
+      "MacBook Air 15\" M3": { colors: ["منتصف الليل","ضوء النجوم","رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Air 13\" M3": { colors: ["منتصف الليل","ضوء النجوم","رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Air 13\" M2": { colors: ["منتصف الليل","ضوء النجوم","رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Air 13\" M1": { colors: ["رمادي فضائي","فضي","ذهبي","ذهبي وردي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Pro 16\" M3": { colors: ["أسود فضائي","فضي"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 14\" M3": { colors: ["أسود فضائي","فضي"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 16\" M2": { colors: ["رمادي فضائي","فضي"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 14\" M2": { colors: ["رمادي فضائي","فضي"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 13\" M2": { colors: ["رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Pro 13\" M1": { colors: ["رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "AirPods": {
+      "AirPods 4":            { colors: ["أبيض"], storages: [] },
+      "AirPods 3rd Gen":      { colors: ["أبيض"], storages: [] },
+      "AirPods 2nd Gen":      { colors: ["أبيض"], storages: [] },
+      "AirPods Pro 2nd Gen":  { colors: ["أبيض"], storages: [] },
+      "AirPods Pro 1st Gen":  { colors: ["أبيض"], storages: [] },
+      "AirPods Max":          { colors: ["منتصف الليل","ضوء النجوم","أزرق","بنفسجي","برتقالي"], storages: [] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "iMac": {
+      "iMac 24\" M3": { colors: ["فضي","أزرق","أخضر","وردي","أصفر","برتقالي","بنفسجي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "iMac 24\" M1": { colors: ["فضي","أزرق","أخضر","وردي","أصفر","برتقالي","بنفسجي"], storages: ["256GB","512GB","1TB","2TB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "Samsung": {
+    "Galaxy S": {
+      "Galaxy S25 Ultra":  { colors: ["تيتانيوم أزرق فضي","تيتانيوم أسود","تيتانيوم أبيض","تيتانيوم رمادي"], storages: ["256GB","512GB","1TB"] },
+      "Galaxy S25+":       { colors: ["أزرق جليدي","نعناعي","كحلي","ظل فضي"], storages: ["256GB","512GB"] },
+      "Galaxy S25":        { colors: ["أزرق جليدي","نعناعي","كحلي","ظل فضي"], storages: ["128GB","256GB","512GB"] },
+      "Galaxy S24 Ultra":  { colors: ["تيتانيوم أسود","تيتانيوم رمادي","تيتانيوم بنفسجي","تيتانيوم أصفر"], storages: ["256GB","512GB","1TB"] },
+      "Galaxy S24+":       { colors: ["بنفسجي كوبالت","أخضر زمردي","أسود أونيكس","برتقالي رملي"], storages: ["256GB","512GB"] },
+      "Galaxy S24":        { colors: ["بنفسجي كوبالت","أخضر زمردي","أسود أونيكس","رمادي رخامي"], storages: ["128GB","256GB","512GB"] },
+      "Galaxy S24 FE":     { colors: ["أزرق","رمادي","أخضر","أصفر"], storages: ["128GB","256GB"] },
+      "Galaxy S23 Ultra":  { colors: ["أسود فانتوم","كريم","أخضر","لافندر"], storages: ["256GB","512GB"] },
+      "Galaxy S23+":       { colors: ["أسود فانتوم","كريم","أخضر","لافندر"], storages: ["256GB","512GB"] },
+      "Galaxy S23":        { colors: ["أسود فانتوم","كريم","أخضر","لافندر"], storages: ["128GB","256GB","512GB"] },
+      "Galaxy S23 FE":     { colors: ["جرافيت","أخضر","كريم","بنفسجي"], storages: ["128GB","256GB"] },
+      "Galaxy S22 Ultra":  { colors: ["بورجندي","أخضر","أسود فانتوم","أبيض فانتوم"], storages: ["128GB","256GB","512GB","1TB"] },
+      "Galaxy S22+":       { colors: ["أخضر","أسود فانتوم","أبيض فانتوم","بنفسجي"], storages: ["128GB","256GB"] },
+      "Galaxy S22":        { colors: ["أخضر","أسود فانتوم","أبيض فانتوم","وردي ذهبي"], storages: ["128GB","256GB"] },
+      "Galaxy S21 Ultra":  { colors: ["أسود فانتوم","فضي فانتوم","تيتانيوم","قهوة"], storages: ["128GB","256GB","512GB"] },
+      "Galaxy S21+":       { colors: ["أسود فانتوم","فضي فانتوم","بنفسجي","ذهبي وردي"], storages: ["128GB","256GB"] },
+      "Galaxy S21":        { colors: ["أسود فانتوم","رمادي فانتوم","أبيض فانتوم","بنفسجي","ذهبي وردي"], storages: ["128GB","256GB"] },
+      "Galaxy S21 FE":     { colors: ["أبيض","أسود","أخضر","لافندر","وردي"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "Galaxy A": {
+      "Galaxy A55":  { colors: ["أزرق جليدي","ليلكي","كحلي"], storages: ["128GB","256GB"] },
+      "Galaxy A54":  { colors: ["أبيض مذهل","أسود مذهل","أخضر مذهل","بنفسجي مذهل"], storages: ["128GB","256GB"] },
+      "Galaxy A35":  { colors: ["أزرق جليدي","ليلكي","كحلي"], storages: ["128GB","256GB"] },
+      "Galaxy A34":  { colors: ["لايم","فضي","بنفسجي","أسود"], storages: ["128GB","256GB"] },
+      "Galaxy A25":  { colors: ["أسود مذهل","أزرق مذهل","أصفر مذهل"], storages: ["128GB","256GB"] },
+      "Galaxy A24":  { colors: ["أسود","أخضر فاتح","وردي فاتح"], storages: ["128GB","256GB"] },
+      "Galaxy A15":  { colors: ["أسود","أزرق","أصفر","أزرق فاتح"], storages: ["128GB"] },
+      "Galaxy A14":  { colors: ["أسود","أخضر فاتح","فضي"], storages: ["64GB","128GB"] },
+      "Galaxy A13":  { colors: ["أسود","أبيض","أزرق","وردي"], storages: ["32GB","64GB","128GB"] },
+      "Galaxy A12":  { colors: ["أسود","أبيض","أزرق","أحمر"], storages: ["32GB","64GB","128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "Galaxy Z": {
+      "Galaxy Z Fold 6":  { colors: ["أزرق","وردي","ظل فضي","أبيض"], storages: ["256GB","512GB","1TB"] },
+      "Galaxy Z Fold 5":  { colors: ["كريم","أيس نيلي","فانتوم أسود"], storages: ["256GB","512GB","1TB"] },
+      "Galaxy Z Fold 4":  { colors: ["أخضر مطفي","بيج","فانتوم أسود","بورجندي"], storages: ["256GB","512GB","1TB"] },
+      "Galaxy Z Flip 6":  { colors: ["أزرق","أصفر","فضي","نعناعي"], storages: ["256GB","512GB"] },
+      "Galaxy Z Flip 5":  { colors: ["كريم","جرافيت","لافندر","نعناعي"], storages: ["256GB","512GB"] },
+      "Galaxy Z Flip 4":  { colors: ["بنفسجي","أزرق","ذهبي","جرافيت","وردي ذهبي"], storages: ["128GB","256GB","512GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "Galaxy Tab": {
+      "Galaxy Tab S9 Ultra": { colors: ["بيج","جرافيت"], storages: ["128GB","256GB","512GB","1TB"] },
+      "Galaxy Tab S9+":      { colors: ["بيج","جرافيت"], storages: ["128GB","256GB","512GB"] },
+      "Galaxy Tab S9":       { colors: ["بيج","جرافيت"], storages: ["128GB","256GB"] },
+      "Galaxy Tab S9 FE":    { colors: ["أخضر","لافندر","رمادي","أبيض"], storages: ["128GB","256GB"] },
+      "Galaxy Tab S8 Ultra": { colors: ["جرافيت"], storages: ["128GB","256GB","512GB"] },
+      "Galaxy Tab S8+":      { colors: ["فضي","جرافيت"], storages: ["128GB","256GB"] },
+      "Galaxy Tab S8":       { colors: ["فضي","جرافيت","وردي ذهبي"], storages: ["128GB","256GB"] },
+      "Galaxy Tab A8":       { colors: ["فضي","رمادي","وردي ذهبي"], storages: ["32GB","64GB","128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "Xiaomi": {
+    "Xiaomi": {
+      "Xiaomi 14 Ultra":  { colors: ["أبيض","أسود","تيتانيوم"], storages: ["256GB","512GB","1TB"] },
+      "Xiaomi 14 Pro":    { colors: ["أسود","أبيض","أخضر","بنفسجي"], storages: ["256GB","512GB","1TB"] },
+      "Xiaomi 14":        { colors: ["أسود","أبيض","أخضر","أزرق"], storages: ["256GB","512GB"] },
+      "Xiaomi 14T Pro":   { colors: ["أسود ألباين","أبيض ألباين","سماوي"], storages: ["256GB","512GB","1TB"] },
+      "Xiaomi 14T":       { colors: ["أسود ألباين","أبيض ألباين","سماوي"], storages: ["256GB","512GB"] },
+      "Xiaomi 13 Pro":    { colors: ["أسود سيراميك","أبيض سيراميك","أخضر زيتوني"], storages: ["256GB","512GB"] },
+      "Xiaomi 13":        { colors: ["أسود","أبيض","أخضر"], storages: ["128GB","256GB"] },
+      "Xiaomi 12 Pro":    { colors: ["رمادي","أزرق","بنفسجي","أبيض"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "Redmi": {
+      "Redmi Note 14 Pro+": { colors: ["أسود","أخضر","بنفسجي"], storages: ["256GB","512GB"] },
+      "Redmi Note 14 Pro":  { colors: ["أسود","أخضر","بنفسجي"], storages: ["128GB","256GB"] },
+      "Redmi Note 14":      { colors: ["أسود","أخضر","أزرق"], storages: ["128GB","256GB"] },
+      "Redmi Note 13 Pro+": { colors: ["أسود","أبيض","أخضر","بنفسجي"], storages: ["256GB","512GB"] },
+      "Redmi Note 13 Pro":  { colors: ["أسود","أبيض","أخضر","بنفسجي"], storages: ["128GB","256GB","512GB"] },
+      "Redmi Note 13":      { colors: ["أسود","أخضر","أزرق","وردي"], storages: ["128GB","256GB"] },
+      "Redmi Note 12 Pro":  { colors: ["أبيض","أسود","أزرق"], storages: ["128GB","256GB"] },
+      "Redmi Note 12":      { colors: ["أبيض","أسود","أزرق","وردي"], storages: ["64GB","128GB","256GB"] },
+      "Redmi 13C":          { colors: ["أسود","أخضر","أزرق"], storages: ["64GB","128GB"] },
+      "Redmi 12":           { colors: ["أسود","أزرق","ذهبي","فضي"], storages: ["64GB","128GB","256GB"] },
+      "Redmi 10C":          { colors: ["أسود","رمادي","أزرق","وردي"], storages: ["32GB","64GB","128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "POCO": {
+      "POCO F6 Pro":  { colors: ["أسود","أبيض","رمادي"], storages: ["256GB","512GB","1TB"] },
+      "POCO X6 Pro":  { colors: ["أسود","أبيض","أصفر"], storages: ["256GB","512GB"] },
+      "POCO X5 Pro":  { colors: ["أسود","أصفر","أزرق"], storages: ["128GB","256GB"] },
+      "POCO M6 Pro":  { colors: ["أسود","أبيض","بنفسجي"], storages: ["128GB","256GB","512GB"] },
+      "POCO M5":      { colors: ["أسود","أصفر","أخضر"], storages: ["64GB","128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "Huawei": {
+    "سلسلة P": {
+      "Huawei P60 Pro": { colors: ["أسود","رمادي لؤلؤي","أبيض"], storages: ["128GB","256GB","512GB"] },
+      "Huawei P50 Pro": { colors: ["أسود","ذهبي","أبيض","أخضر"], storages: ["128GB","256GB","512GB"] },
+      "Huawei P40 Pro": { colors: ["أسود","فضي جليدي","أخضر أعماق","سماوي"], storages: ["128GB","256GB","512GB"] },
+      "Huawei P40":     { colors: ["أسود","فضي جليدي","أزرق"], storages: ["128GB","256GB"] },
+      "Huawei P30 Pro": { colors: ["أسود","أبيض","تدرج الفجر","تدرج المحيط","أصفر"], storages: ["128GB","256GB","512GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "سلسلة Mate": {
+      "Huawei Mate 50 Pro": { colors: ["أسود","أبيض","برتقالي"], storages: ["256GB","512GB"] },
+      "Huawei Mate 40 Pro": { colors: ["أسود","فضي","ذهبي"], storages: ["128GB","256GB","512GB"] },
+      "Huawei Mate 30 Pro": { colors: ["رمادي فضائي","أسود","بنفسجي فضائي","أخضر زمردي"], storages: ["128GB","256GB","512GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "سلسلة Nova": {
+      "Huawei Nova 11": { colors: ["أسود","أخضر","ذهبي"], storages: ["128GB","256GB"] },
+      "Huawei Nova 9":  { colors: ["أسود","أبيض","أزرق"], storages: ["128GB","256GB"] },
+      "Huawei Nova 7":  { colors: ["أسود","فضي","أزرق سماوي","وردي"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "MatePad": {
+      "Huawei MatePad Pro 13.2\"": { colors: ["أسود","فضي"], storages: ["128GB","256GB","512GB"] },
+      "Huawei MatePad 11\"":       { colors: ["أبيض","رمادي","أخضر"], storages: ["64GB","128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "OPPO": {
+    "Reno": {
+      "OPPO Reno 12 Pro": { colors: ["بني ناعم","أخضر ناعم","رمادي"], storages: ["256GB","512GB"] },
+      "OPPO Reno 11":     { colors: ["أسود","أخضر","وردي"], storages: ["128GB","256GB"] },
+      "OPPO Reno 10 Pro": { colors: ["أبيض لامع","رمادي","بنفسجي"], storages: ["256GB"] },
+      "OPPO Reno 10":     { colors: ["أبيض لامع","رمادي","بنفسجي"], storages: ["128GB","256GB"] },
+      "OPPO Reno 8":      { colors: ["أسود لامع","أخضر لامع","أبيض"], storages: ["128GB","256GB"] },
+      "OPPO Reno 7":      { colors: ["أسود","أزرق","ذهبي","وردي"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "Find X": {
+      "OPPO Find X7 Pro": { colors: ["أسود","بني مرمري","أخضر فارسي"], storages: ["256GB","512GB","1TB"] },
+      "OPPO Find X6 Pro": { colors: ["أسود","بني","أبيض"], storages: ["256GB","512GB"] },
+      "OPPO Find X5 Pro": { colors: ["أسود","أبيض"], storages: ["256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "A Series": {
+      "OPPO A98": { colors: ["أسود","ذهبي","أزرق"], storages: ["128GB","256GB"] },
+      "OPPO A78": { colors: ["أسود","أخضر","وردي"], storages: ["128GB"] },
+      "OPPO A58": { colors: ["أسود","أخضر"], storages: ["128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "OnePlus": {
+    "الرئيسية": {
+      "OnePlus 12":     { colors: ["أسود سيليكاي","أخضر زمردي"], storages: ["256GB","512GB"] },
+      "OnePlus 12R":    { colors: ["أسود","أخضر"], storages: ["128GB","256GB"] },
+      "OnePlus 11":     { colors: ["أخضر زمردي","أسود تيتانيوم"], storages: ["128GB","256GB"] },
+      "OnePlus 10 Pro": { colors: ["أسود ألكانتارا","أسود فولكانو","أخضر إمرالد"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "Nord": {
+      "OnePlus Nord 4":    { colors: ["أسود","أخضر","فضي","برتقالي"], storages: ["128GB","256GB","512GB"] },
+      "OnePlus Nord CE 4": { colors: ["أسود","فضي رمادي","أصفر"], storages: ["128GB","256GB"] },
+      "OnePlus Nord 3":    { colors: ["أخضر دودج","رمادي تمبست"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "realme": {
+    "GT": {
+      "realme GT 6":     { colors: ["أسود","أبيض"], storages: ["256GB","512GB","1TB"] },
+      "realme GT 5 Pro": { colors: ["أسود","أبيض","أزرق","برتقالي"], storages: ["256GB","512GB","1TB"] },
+      "realme GT 2 Pro": { colors: ["أبيض ورقي","أسود ورقي","أزرق ستيل"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "C Series": {
+      "realme C67": { colors: ["أسود","أخضر","أزرق"], storages: ["128GB","256GB"] },
+      "realme C55": { colors: ["أسود","أخضر","أبيض"], storages: ["64GB","128GB","256GB"] },
+      "realme C35": { colors: ["أسود","أبيض","أخضر"], storages: ["64GB","128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "Vivo": {
+    "X Series": {
+      "Vivo X100 Pro": { colors: ["أسود","أبيض","برتقالي"], storages: ["256GB","512GB","1TB"] },
+      "Vivo X90 Pro":  { colors: ["أسود","أحمر أنتيك","أبيض"], storages: ["256GB","512GB"] },
+      "Vivo X80 Pro":  { colors: ["أسود","أبيض"], storages: ["256GB","512GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "V Series": {
+      "Vivo V30 Pro": { colors: ["أسود","ذهبي","وردي"], storages: ["256GB","512GB"] },
+      "Vivo V27":     { colors: ["أسود الكون","أخضر لمس الأمطار","وردي"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "Y Series": {
+      "Vivo Y38": { colors: ["أسود","أخضر","ذهبي"], storages: ["128GB","256GB"] },
+      "Vivo Y36": { colors: ["أسود","أخضر","ذهبي"], storages: ["128GB"] },
+      "Vivo Y35": { colors: ["أسود","ذهبي","أبيض"], storages: ["128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "Honor": {
+    "Magic": {
+      "Honor Magic 6 Pro": { colors: ["أسود","أخضر","برتقالي"], storages: ["256GB","512GB","1TB"] },
+      "Honor Magic 5 Pro": { colors: ["أسود","أخضر","أزرق سماوي"], storages: ["256GB","512GB"] },
+      "Honor Magic 4 Pro": { colors: ["أسود","أخضر","ذهبي"], storages: ["256GB","512GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "الرئيسية": {
+      "Honor 90 Pro": { colors: ["أسود","أخضر","وردي"], storages: ["256GB","512GB"] },
+      "Honor 90":     { colors: ["أسود","أخضر","وردي","فضي"], storages: ["256GB","512GB"] },
+      "Honor 70":     { colors: ["أسود","فضي","أخضر"], storages: ["128GB","256GB"] },
+      "Honor X9a":    { colors: ["أسود","أخضر","فضي"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "Tecno": {
+    "CAMON": {
+      "Tecno CAMON 30 Pro": { colors: ["أسود","أخضر","أبيض"], storages: ["256GB","512GB"] },
+      "Tecno CAMON 20 Pro": { colors: ["أسود","أخضر","أبيض"], storages: ["256GB"] },
+      "Tecno CAMON 19 Pro": { colors: ["أسود","أبيض","أخضر"], storages: ["256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "SPARK": {
+      "Tecno SPARK 20 Pro": { colors: ["أسود","أبيض","أزرق"], storages: ["128GB","256GB"] },
+      "Tecno SPARK 10 Pro": { colors: ["أسود","أبيض","أزرق"], storages: ["128GB","256GB"] },
+      "Tecno SPARK 20":     { colors: ["أسود","أبيض","أزرق","أخضر"], storages: ["64GB","128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "Phantom": {
+      "Tecno Phantom X2 Pro": { colors: ["مارتيان ستينهيم","ستيلث بلاك"], storages: ["256GB","512GB"] },
+      "Tecno Phantom X2":     { colors: ["مارتيان ستينهيم","ستيلث بلاك"], storages: ["256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "Infinix": {
+    "NOTE": {
+      "Infinix NOTE 40 Pro": { colors: ["أسود","أخضر","رمادي"], storages: ["256GB","512GB"] },
+      "Infinix NOTE 30":     { colors: ["أسود","أخضر","رمادي","أبيض"], storages: ["128GB","256GB"] },
+      "Infinix NOTE 12":     { colors: ["أسود","أزرق","أبيض"], storages: ["128GB","256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "HOT": {
+      "Infinix HOT 40 Pro": { colors: ["أسود","أبيض","أخضر","أحمر"], storages: ["128GB","256GB"] },
+      "Infinix HOT 30":     { colors: ["أسود","أبيض","أخضر","برتقالي"], storages: ["64GB","128GB","256GB"] },
+      "Infinix HOT 20":     { colors: ["أسود","أبيض","أخضر","ذهبي"], storages: ["64GB","128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+    "ZERO": {
+      "Infinix ZERO 30 5G": { colors: ["أسود","أخضر","ذهبي"], storages: ["256GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
+  "Nokia": {
+    "الرئيسية": {
+      "Nokia G42":  { colors: ["بنفسجي مطفي","رمادي","أخضر"], storages: ["128GB","256GB"] },
+      "Nokia X30":  { colors: ["أزرق جليدي","رمادي أنثراسايت"], storages: ["128GB","256GB"] },
+      "Nokia G21":  { colors: ["أزرق نورديك","رمادي نورديك"], storages: ["64GB","128GB"] },
+      "Nokia C32":  { colors: ["أسود","أخضر","أبيض"], storages: ["64GB","128GB"] },
+      [OTHER]: { colors: [], storages: [] },
+    },
+  },
 };
 
-const BRANDS = Object.keys(DEVICE_CATALOG);
-
-const BRAND_COLORS: Record<string, string[]> = {
-  "Apple": [
-    "أسود", "أبيض", "فضي", "ذهبي",
-    "أحمر (Product RED)", "أزرق", "أخضر", "بنفسجي", "وردي", "أصفر",
-    "أسود تيتانيوم", "أبيض تيتانيوم", "أزرق تيتانيوم", "تيتانيوم طبيعي",
-    "أسود فضائي", "ذهبي شامبيا", "رمادي فضائي",
-    "ديب بيربل", "نايت بلاك", "ألباين جرين",
-  ],
-  "Samsung": [
-    "أسود فانتوم", "أبيض فانتوم", "رمادي", "فضي",
-    "أخضر", "أزرق", "بيج", "كريم", "وردي",
-    "بنفسجي", "أصفر", "أحمر", "بورجاندي",
-    "جرافيت", "جرين", "ليفندر",
-  ],
-  "default": [
-    "أسود", "أبيض", "فضي", "رمادي", "ذهبي",
-    "أزرق", "أحمر", "أخضر", "بنفسجي", "وردي",
-    "بيج", "برتقالي", "أصفر", "نيلي",
-  ],
-};
-
-function getColors(brand: string): string[] {
-  return [...(BRAND_COLORS[brand] ?? BRAND_COLORS["default"]), OTHER_OPTION];
-}
+const BRANDS = [...Object.keys(CATALOG), OTHER];
+const DEFAULT_STORAGES = ["16GB","32GB","64GB","128GB","256GB","512GB","1TB"];
+const DEFAULT_COLORS   = ["أسود","أبيض","فضي","رمادي","ذهبي","أزرق","أحمر","أخضر","بنفسجي","وردي","بيج","برتقالي","أصفر"];
 
 const WARRANTY_OPTS = [
   { label: "بدون ضمان", value: 0 },
@@ -293,35 +475,40 @@ function StatusBadge({ status }: { status: DeviceStatus }) {
 }
 
 /* ════════════════════════════════════════════════════════
-   ADD DEVICE MODAL
+   ADD DEVICE MODAL  — 4-level cascade: Brand → Category → Model → Color/Storage
 ════════════════════════════════════════════════════════ */
 function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  /* ── dropdown selections (separate from the final typed values) ── */
-  const [brandSel, setBrandSel] = useState("");
-  const [modelSel, setModelSel] = useState("");
-  const [colorSel, setColorSel] = useState("");
-  const [brandCustom, setBrandCustom] = useState("");
-  const [modelCustom, setModelCustom] = useState("");
-  const [colorCustom, setColorCustom] = useState("");
+  /* ── 4 cascade selectors ── */
+  const [brandSel,    setBrandSel]    = useState("");
+  const [catSel,      setCatSel]      = useState("");
+  const [modelSel,    setModelSel]    = useState("");
+  const [colorSel,    setColorSel]    = useState("");
+  const [brandCustom,   setBrandCustom]   = useState("");
+  const [modelCustom,   setModelCustom]   = useState("");
+  const [colorCustom,   setColorCustom]   = useState("");
+  const [storageCustom, setStorageCustom] = useState("");
+  const [storageModeOther, setStorageModeOther] = useState(false);
 
-  const effectiveBrand = brandSel === OTHER_OPTION ? brandCustom : brandSel;
-  const effectiveModel = modelSel === OTHER_OPTION ? modelCustom : modelSel;
-  const effectiveColor = colorSel === OTHER_OPTION ? colorCustom : colorSel;
+  const isOtherBrand   = brandSel === OTHER;
+  const isOtherModel   = modelSel === OTHER;
+  const isOtherColor   = colorSel === OTHER;
+  const isOtherStorage = storageModeOther;
 
-  const availableModels = brandSel && brandSel !== OTHER_OPTION ? DEVICE_CATALOG[brandSel] ?? [] : [];
-  const availableColors = brandSel && brandSel !== OTHER_OPTION ? getColors(brandSel) : getColors("default");
+  /* derived data from catalog */
+  const categories   = brandSel && !isOtherBrand ? Object.keys(CATALOG[brandSel] ?? {}) : [];
+  const modelSpecs   = catSel && !isOtherBrand   ? CATALOG[brandSel]?.[catSel] ?? {}    : {};
+  const modelNames   = Object.keys(modelSpecs);
+  const currentSpec: ModelSpec | null = (modelSel && !isOtherModel) ? modelSpecs[modelSel] ?? null : null;
+  const availColors  = currentSpec && currentSpec.colors.length ? [...currentSpec.colors, OTHER] : [...DEFAULT_COLORS, OTHER];
+  const availStorages= currentSpec && currentSpec.storages.length ? [...currentSpec.storages, OTHER] : [...DEFAULT_STORAGES, OTHER];
 
-  /* reset model + color when brand changes */
-  const handleBrandChange = (v: string) => {
-    setBrandSel(v);
-    setModelSel("");
-    setModelCustom("");
-    setColorSel("");
-    setColorCustom("");
-  };
+  /* effective values to store */
+  const effectiveBrand = isOtherBrand ? brandCustom : brandSel;
+  const effectiveModel = isOtherModel ? modelCustom : modelSel;
+  const effectiveColor = isOtherColor ? colorCustom : colorSel;
 
   const [form, setForm] = useState({
     storage: "128GB",
@@ -338,6 +525,31 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
 
   const f = (k: string, v: string | boolean) => setForm(p => ({ ...p, [k]: v }));
 
+  /* cascade resets */
+  const resetStorageOther = () => { setStorageModeOther(false); setStorageCustom(""); };
+  const handleBrandChange = (v: string) => {
+    setBrandSel(v); setCatSel(""); setModelSel(""); setColorSel("");
+    setColorCustom(""); setBrandCustom(""); setModelCustom(""); resetStorageOther();
+    setForm(p => ({ ...p, storage: "" }));
+  };
+  const handleCatChange = (v: string) => {
+    setCatSel(v); setModelSel(""); setColorSel("");
+    setColorCustom(""); setModelCustom(""); resetStorageOther();
+    setForm(p => ({ ...p, storage: "" }));
+  };
+  const handleModelChange = (v: string) => {
+    setModelSel(v);
+    setColorSel(""); setColorCustom(""); setModelCustom(""); resetStorageOther();
+    const spec = catSel && brandSel ? CATALOG[brandSel]?.[catSel]?.[v] : undefined;
+    const defaultStorage = spec && spec.storages.length ? spec.storages[0] : "128GB";
+    setForm(p => ({ ...p, storage: defaultStorage }));
+    if (spec && spec.colors.length === 1) setColorSel(spec.colors[0]);
+  };
+  const handleStorageChange = (v: string) => {
+    if (v === OTHER) { setStorageModeOther(true); setStorageCustom(""); }
+    else { setStorageModeOther(false); setStorageCustom(""); setForm(p => ({ ...p, storage: v })); }
+  };
+
   const handleSave = async () => {
     if (!effectiveBrand.trim() || !effectiveModel.trim()) {
       toast({ title: "اختر الشركة المصنعة والموديل على الأقل", variant: "destructive" }); return;
@@ -345,10 +557,12 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     if (!form.purchase_price) {
       toast({ title: "أدخل سعر الشراء", variant: "destructive" }); return;
     }
+    const finalStorage = storageCustom.trim() || form.storage;
     setSaving(true);
     try {
       await apPost("/api/devices", {
         ...form,
+        storage: finalStorage,
         brand: effectiveBrand,
         model: effectiveModel,
         color: effectiveColor || undefined,
@@ -366,9 +580,10 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     }
   };
 
-  const inputCls = "erp-input w-full text-sm";
-  const labelCls = "text-[11px] text-white/40 mb-1 block text-right";
+  const inputCls  = "erp-input w-full text-sm";
+  const labelCls  = "text-[11px] text-white/40 mb-1 block text-right";
   const selectCls = "erp-input w-full text-sm";
+  const disabledSelectCls = `${selectCls} opacity-40 cursor-not-allowed`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 bg-black/70 backdrop-blur-sm" dir="rtl">
@@ -388,7 +603,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
         {/* Body */}
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
 
-          {/* Brand dropdown */}
+          {/* ── Row 1: Brand + Category ── */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>الشركة المصنعة *</label>
@@ -396,51 +611,75 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                 <option value="">— اختر الشركة —</option>
                 {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
-              {brandSel === OTHER_OPTION && (
+              {isOtherBrand && (
                 <input value={brandCustom} onChange={e => setBrandCustom(e.target.value)}
                   placeholder="اسم الشركة المصنعة" className={`${inputCls} mt-1.5`} />
               )}
             </div>
-
-            {/* Model dropdown */}
             <div>
-              <label className={labelCls}>الموديل *</label>
-              {brandSel && brandSel !== OTHER_OPTION ? (
-                <>
-                  <select value={modelSel} onChange={e => setModelSel(e.target.value)} className={selectCls}>
-                    <option value="">— اختر الموديل —</option>
-                    {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                  {modelSel === OTHER_OPTION && (
-                    <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
-                      placeholder="اكتب الموديل" className={`${inputCls} mt-1.5`} />
-                  )}
-                </>
+              <label className={labelCls}>فئة المنتج *</label>
+              {isOtherBrand ? (
+                <input placeholder="مثال: iPhone" className={inputCls}
+                  onChange={e => setCatSel(e.target.value)} value={catSel} />
               ) : (
-                <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
-                  placeholder="اكتب الموديل مباشرة" className={inputCls} />
+                <select value={catSel} onChange={e => handleCatChange(e.target.value)}
+                  className={brandSel ? selectCls : disabledSelectCls} disabled={!brandSel}>
+                  <option value="">— اختر الفئة —</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               )}
             </div>
           </div>
 
-          {/* Color + Storage + Grade */}
+          {/* ── Row 2: Model ── */}
+          <div>
+            <label className={labelCls}>الموديل *</label>
+            {isOtherBrand || (catSel && modelNames.length === 0) ? (
+              <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
+                placeholder="اكتب الموديل مباشرة" className={inputCls} />
+            ) : (
+              <>
+                <select value={modelSel} onChange={e => handleModelChange(e.target.value)}
+                  className={catSel ? selectCls : disabledSelectCls} disabled={!catSel}>
+                  <option value="">— اختر الموديل —</option>
+                  {modelNames.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                {isOtherModel && (
+                  <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
+                    placeholder="اكتب الموديل" className={`${inputCls} mt-1.5`} />
+                )}
+              </>
+            )}
+          </div>
+
+          {/* ── Row 3: Color + Storage + Grade ── */}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className={labelCls}>اللون</label>
-              <select value={colorSel} onChange={e => setColorSel(e.target.value)} className={selectCls}>
-                <option value="">— اختر اللون —</option>
-                {availableColors.map(c => <option key={c} value={c}>{c}</option>)}
+              <select value={colorSel} onChange={e => setColorSel(e.target.value)}
+                className={(modelSel || isOtherBrand) ? selectCls : disabledSelectCls}
+                disabled={!modelSel && !isOtherBrand}>
+                <option value="">— اللون —</option>
+                {availColors.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              {colorSel === OTHER_OPTION && (
+              {isOtherColor && (
                 <input value={colorCustom} onChange={e => setColorCustom(e.target.value)}
                   placeholder="اكتب اللون" className={`${inputCls} mt-1.5`} />
               )}
             </div>
             <div>
-              <label className={labelCls}>السعة</label>
-              <select value={form.storage} onChange={e => f("storage", e.target.value)} className={inputCls}>
-                {STORAGES.map(s => <option key={s} value={s}>{s}</option>)}
+              <label className={labelCls}>السعة / الحجم</label>
+              <select value={isOtherStorage ? OTHER : form.storage}
+                onChange={e => handleStorageChange(e.target.value)}
+                className={(modelSel || isOtherBrand) ? selectCls : disabledSelectCls}
+                disabled={!modelSel && !isOtherBrand}>
+                <option value="">— السعة —</option>
+                {availStorages.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
+              {isOtherStorage && (
+                <input value={storageCustom} onChange={e => setStorageCustom(e.target.value)}
+                  placeholder="مثال: 256GB" className={`${inputCls} mt-1.5`} />
+              )}
             </div>
             <div>
               <label className={labelCls}>الدرجة</label>
