@@ -580,20 +580,7 @@ function StatusBadge({ status }: { status: DeviceStatus }) {
 type InspectionStatus = "pending" | "ok" | "fail";
 type InspectionResult = { id: string; label: string; status: InspectionStatus; note: string };
 
-const INSPECTION_ITEMS: { id: string; label: string }[] = [
-  { id: "screen",    label: "الشاشة (اللمس والعرض)" },
-  { id: "front_cam", label: "الكاميرا الأمامية" },
-  { id: "back_cam",  label: "الكاميرا الخلفية" },
-  { id: "earpiece",  label: "سماعة المكالمات" },
-  { id: "speaker",   label: "مكبّر الصوت" },
-  { id: "mic",       label: "الميكروفون" },
-  { id: "charging",  label: "منفذ الشحن" },
-  { id: "biometric", label: "البصمة / Face ID" },
-  { id: "bluetooth", label: "البلوتوث" },
-  { id: "wifi",      label: "الواي فاي" },
-  { id: "network",   label: "الشبكة والإشارة" },
-  { id: "buttons",   label: "الأزرار (صوت + تشغيل)" },
-];
+const INSPECTION_ITEMS: { id: string; label: string }[] = [];
 
 function initInspection(): InspectionResult[] {
   return INSPECTION_ITEMS.map(item => ({ ...item, status: "pending", note: "" }));

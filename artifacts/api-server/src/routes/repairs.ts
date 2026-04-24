@@ -42,12 +42,6 @@ const SYSTEM_STATUSES = [
   { key: "cancelled",     label_ar: "ملغي",             color: "#ef4444", sort_order: 8 },
 ];
 
-const SYSTEM_CHECKLIST = [
-  "الشاشة", "البطارية", "الكاميرا الأمامية", "الكاميرا الخلفية",
-  "السماعة", "الميكروفون", "زر الباور", "زر الصوت",
-  "البصمة / Face ID", "الواي فاي", "البلوتوث", "الشاحن / منفذ USB",
-  "الهيكل الخارجي", "الشريحة / SIM",
-];
 
 /* ── Platform seed templates ─────────────────────────────────── */
 type SeedItem = { label_ar: string; category: string };
