@@ -2169,7 +2169,9 @@ function RowMenu({ device, onDetail, onRefresh }: {
   useEffect(() => {
     if (!open) return;
     const onMouse = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const inDropdown = ref.current?.contains(e.target as Node);
+      const inButton  = btnRef.current?.contains(e.target as Node);
+      if (!inDropdown && !inButton) setOpen(false);
     };
     const onScroll = () => setOpen(false);
     document.addEventListener("mousedown", onMouse);
