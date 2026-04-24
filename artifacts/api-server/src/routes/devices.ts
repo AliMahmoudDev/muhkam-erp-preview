@@ -4,6 +4,7 @@ import {
   devicesTable, customersTable, productsTable, safesTable,
   warehousesTable, purchasesTable, purchaseItemsTable,
   stockMovementsTable, transactionsTable, customerLedgerTable,
+  employeesTable,
 } from "@workspace/db";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { wrap, httpError } from "../lib/async-handler";
@@ -134,6 +135,22 @@ router.get("/devices/customer-lookup", wrap(async (req, res) => {
   return res.json({ found: true, customer: rows[0] });
 }));
 
+/* ─── LIST ACTIVE EMPLOYEES (for inspector dropdown) ─── */
+router.get("/devices/employees", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const rows = await db.select({
+    id: employeesTable.id,
+    name: sql<string>`${employeesTable.first_name_ar} || ' ' || ${employeesTable.last_name_ar}`,
+  })
+    .from(employeesTable)
+    .where(and(
+      eq(employeesTable.company_id, company_id),
+      eq(employeesTable.employment_status, "active"),
+    ))
+    .orderBy(employeesTable.first_name_ar);
+  return res.json(rows);
+}));
+
 /* ─── LIST ─── */
 router.get("/devices", wrap(async (req, res) => {
   const { company_id } = ctx(req);
@@ -215,6 +232,9 @@ router.post("/devices/purchase", wrap(async (req, res) => {
     /* supplier */
     customer_id: rawCustomerId,
     new_customer_name,
+    /* inspection */
+    inspection_data,
+    inspector_employee_id: rawInspectorEmployeeId,
     /* financial */
     purchase_price: rawPurchase,
     sale_price: rawSale,
@@ -227,6 +247,8 @@ router.post("/devices/purchase", wrap(async (req, res) => {
     grade?: string; imei?: string; battery_health?: number;
     supplier_phone?: string; id_card_data?: string;
     customer_id?: number; new_customer_name?: string;
+    inspection_data?: string;
+    inspector_employee_id?: number;
     purchase_price: number; sale_price?: number;
     payment_type: "cash" | "credit" | "partial";
     safe_id?: number; warehouse_id?: number; paid_amount?: number;
@@ -291,6 +313,7 @@ router.post("/devices/purchase", wrap(async (req, res) => {
     } as typeof productsTable.$inferInsert).returning();
 
     /* ── 3. Create device record ── */
+    const inspector_employee_id = rawInspectorEmployeeId ? Number(rawInspectorEmployeeId) : null;
     const [device] = await tx.insert(devicesTable).values({
       company_id,
       device_no,
@@ -306,6 +329,8 @@ router.post("/devices/purchase", wrap(async (req, res) => {
       supplier_name: customer_name ?? null,
       supplier_phone: supplier_phone ?? null,
       id_card_data: id_card_data ?? null,
+      inspection_data: inspection_data ?? null,
+      inspector_employee_id,
       status: "available",
       product_id: newProduct.id,
       added_by_user_id: user_id,

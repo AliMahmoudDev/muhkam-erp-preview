@@ -52,6 +52,9 @@ export const devicesTable = pgTable("devices", {
   purchase_id:              integer("purchase_id"),
   purchase_invoice_ref:     text("purchase_invoice_ref"),
 
+  inspection_data:          text("inspection_data"),        /* JSON: InspectionResult[] */
+  inspector_employee_id:    integer("inspector_employee_id"), /* FK → employees.id */
+
   created_at:               timestamp("created_at").defaultNow(),
   updated_at:               timestamp("updated_at").defaultNow(),
 });

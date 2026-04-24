@@ -574,6 +574,31 @@ function StatusBadge({ status }: { status: DeviceStatus }) {
 }
 
 /* ════════════════════════════════════════════════════════
+   INSPECTION TYPES & ITEMS
+════════════════════════════════════════════════════════ */
+type InspectionStatus = "pending" | "ok" | "fail";
+type InspectionResult = { id: string; label: string; status: InspectionStatus; note: string };
+
+const INSPECTION_ITEMS: { id: string; label: string }[] = [
+  { id: "screen",    label: "الشاشة (اللمس والعرض)" },
+  { id: "front_cam", label: "الكاميرا الأمامية" },
+  { id: "back_cam",  label: "الكاميرا الخلفية" },
+  { id: "earpiece",  label: "سماعة المكالمات" },
+  { id: "speaker",   label: "مكبّر الصوت" },
+  { id: "mic",       label: "الميكروفون" },
+  { id: "charging",  label: "منفذ الشحن" },
+  { id: "biometric", label: "البصمة / Face ID" },
+  { id: "bluetooth", label: "البلوتوث" },
+  { id: "wifi",      label: "الواي فاي" },
+  { id: "network",   label: "الشبكة والإشارة" },
+  { id: "buttons",   label: "الأزرار (صوت + تشغيل)" },
+];
+
+function initInspection(): InspectionResult[] {
+  return INSPECTION_ITEMS.map(item => ({ ...item, status: "pending", note: "" }));
+}
+
+/* ════════════════════════════════════════════════════════
    ADD DEVICE MODAL  — 4-level cascade: Brand → Category → Model → Color/Storage
 ════════════════════════════════════════════════════════ */
 function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
@@ -622,6 +647,18 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   const [safes,      setSafes]      = useState<{ id: number; name: string; balance: string }[]>([]);
   const [warehouses, setWarehouses] = useState<{ id: number; name: string }[]>([]);
   const [saving,     setSaving]     = useState(false);
+
+  /* ── employees ── */
+  const [employees,          setEmployees]         = useState<{ id: number; name: string }[]>([]);
+  const [inspEmployeeId,     setInspEmployeeId]    = useState<string>("");
+
+  /* ── inspection wizard ── */
+  const [inspResults,        setInspResults]       = useState<InspectionResult[]>(initInspection);
+  const [inspIdx,            setInspIdx]           = useState(0);
+  const [inspStarted,        setInspStarted]       = useState(false);
+  const [inspDone,           setInspDone]          = useState(false);
+  const [awaitingFailNote,   setAwaitingFailNote]  = useState(false);
+  const [failNote,           setFailNote]          = useState("");
 
   /* cascade derived */
   const isOtherBrand   = brandSel === OTHER;
@@ -686,6 +723,12 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     return () => clearTimeout(t);
   }, [supplierPhone]);
 
+  /* Load employees once on mount */
+  useEffect(() => {
+    apiFetch<{ id: number; name: string }[]>(api("/api/devices/employees"))
+      .then(setEmployees).catch(() => setEmployees([]));
+  }, []);
+
   /* Load safes + warehouses when entering step 2 */
   useEffect(() => {
     if (step !== 2) return;
@@ -694,6 +737,31 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     apiFetch<{ id: number; name: string }[]>(api("/api/devices/warehouses"))
       .then(setWarehouses).catch(() => setWarehouses([]));
   }, [step]);
+
+  /* ── Inspection Handlers ── */
+  const handleInspPass = () => {
+    const updated = inspResults.map((r, i) => i === inspIdx ? { ...r, status: "ok" as InspectionStatus } : r);
+    setInspResults(updated);
+    setFailNote("");
+    setAwaitingFailNote(false);
+    if (inspIdx + 1 >= INSPECTION_ITEMS.length) { setInspDone(true); }
+    else { setInspIdx(inspIdx + 1); }
+  };
+
+  const handleInspFail = () => {
+    setAwaitingFailNote(true);
+  };
+
+  const handleInspFailConfirm = () => {
+    const updated = inspResults.map((r, i) =>
+      i === inspIdx ? { ...r, status: "fail" as InspectionStatus, note: failNote.trim() } : r
+    );
+    setInspResults(updated);
+    setFailNote("");
+    setAwaitingFailNote(false);
+    if (inspIdx + 1 >= INSPECTION_ITEMS.length) { setInspDone(true); }
+    else { setInspIdx(inspIdx + 1); }
+  };
 
   /* ID card file handler */
   const handleIdFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -722,9 +790,13 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     const cleanPhone = supplierPhone.replace(/\D/g, '');
     if (cleanPhone.length !== 11) e.phone = true;
     if (isNewSupplier && !supplierName.trim()) e.supplierName = true;
+    if (!inspEmployeeId) e.employee = true;
+    if (!inspDone) e.inspection = true;
     setErrors(e);
     if (Object.keys(e).length > 0) {
-      toast({ title: "يرجى تعبئة الحقول المطلوبة", variant: "destructive" });
+      const inspMsg = !inspDone ? " — أكمل الفحص أولاً" : "";
+      const empMsg  = !inspEmployeeId ? " — اختر الموظف الفاحص" : "";
+      toast({ title: `يرجى تعبئة الحقول المطلوبة${empMsg}${inspMsg}`, variant: "destructive" });
       return;
     }
     setStep(2);
@@ -770,6 +842,9 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
         battery_health: form.battery_health ? Math.min(100, parseInt(form.battery_health)) : null,
         supplier_phone: supplierPhone.trim() || undefined,
         id_card_data:   idCardData,
+        /* inspection */
+        inspection_data:        JSON.stringify(inspResults),
+        inspector_employee_id:  inspEmployeeId ? parseInt(inspEmployeeId) : undefined,
         /* supplier / customer */
         customer_id:        foundCustomer ? foundCustomer.id : undefined,
         new_customer_name:  isNewSupplier && supplierName.trim() ? supplierName.trim() : undefined,
@@ -1034,6 +1109,134 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                     <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-[10px] text-emerald-300 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> تم الرفع
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ─ Employee selector ─ */}
+              <div>
+                <label className={`${lReq} ${errors.employee ? "text-red-400" : ""}`}>الموظف الفاحص *</label>
+                <select
+                  value={inspEmployeeId}
+                  onChange={e => setInspEmployeeId(e.target.value)}
+                  className={sCls("employee")}
+                >
+                  <option value="">— اختر الموظف —</option>
+                  {employees.map(em => (
+                    <option key={em.id} value={em.id}>{em.name}</option>
+                  ))}
+                </select>
+                {employees.length === 0 && (
+                  <p className="text-[10px] text-amber-400/60 mt-1 flex items-center gap-1">
+                    <Info className="w-3 h-3" /> لا يوجد موظفون نشطون في النظام
+                  </p>
+                )}
+              </div>
+
+              {/* ─ Inspection Wizard ─ */}
+              <div className={`rounded-xl border p-4 space-y-3 transition-all ${
+                errors.inspection
+                  ? "border-red-500/40 bg-red-500/5"
+                  : inspDone
+                  ? "border-emerald-500/30 bg-emerald-500/5"
+                  : "border-white/10 bg-white/3"
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-semibold text-white/80">فحص الجهاز</span>
+                  {inspDone ? (
+                    <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> مكتمل
+                    </span>
+                  ) : inspStarted ? (
+                    <span className="text-[11px] text-white/40">{inspIdx + 1} / {INSPECTION_ITEMS.length}</span>
+                  ) : (
+                    <span className="text-[10px] text-white/30">{INSPECTION_ITEMS.length} عناصر</span>
+                  )}
+                </div>
+
+                {!inspStarted && !inspDone && (
+                  <button
+                    onClick={() => setInspStarted(true)}
+                    disabled={!inspEmployeeId}
+                    className="w-full py-2 rounded-lg text-sm font-medium bg-violet-500/15 border border-violet-500/25 text-violet-300 hover:bg-violet-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    ابدأ الفحص
+                  </button>
+                )}
+
+                {inspStarted && !inspDone && (
+                  <div className="space-y-3">
+                    {/* Progress bar */}
+                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-violet-500 rounded-full transition-all"
+                        style={{ width: `${(inspIdx / INSPECTION_ITEMS.length) * 100}%` }}
+                      />
+                    </div>
+
+                    {/* Current item */}
+                    <div className="text-center py-2">
+                      <p className="text-white/50 text-[10px] mb-1">العنصر {inspIdx + 1}</p>
+                      <p className="text-white font-semibold text-base">{INSPECTION_ITEMS[inspIdx].label}</p>
+                    </div>
+
+                    {!awaitingFailNote ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={handleInspPass}
+                          className="py-2 rounded-lg text-sm font-medium bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 transition-all"
+                        >
+                          ✓ يعمل
+                        </button>
+                        <button
+                          onClick={handleInspFail}
+                          className="py-2 rounded-lg text-sm font-medium bg-red-500/15 border border-red-500/30 text-red-300 hover:bg-red-500/25 transition-all"
+                        >
+                          ✕ لا يعمل
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-[11px] text-red-300/70">وصف العطل (اختياري)</p>
+                        <textarea
+                          value={failNote}
+                          onChange={e => setFailNote(e.target.value)}
+                          placeholder="اكتب ملاحظة..."
+                          rows={2}
+                          className="erp-input w-full text-sm resize-none"
+                        />
+                        <button
+                          onClick={handleInspFailConfirm}
+                          className="w-full py-2 rounded-lg text-sm font-medium bg-white/8 border border-white/10 text-white/70 hover:bg-white/12 transition-all"
+                        >
+                          التالي
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {inspDone && (
+                  <div className="space-y-1.5">
+                    {inspResults.map(r => (
+                      <div key={r.id} className="flex items-center justify-between text-[11px]">
+                        <span className="text-white/60">{r.label}</span>
+                        {r.status === "ok" ? (
+                          <span className="text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> يعمل</span>
+                        ) : (
+                          <span className="text-red-400 flex items-center gap-1">
+                            <XCircle className="w-3 h-3" />
+                            {r.note ? `${r.note}` : "لا يعمل"}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => { setInspDone(false); setInspStarted(false); setInspIdx(0); setInspResults(initInspection()); setAwaitingFailNote(false); setFailNote(""); }}
+                      className="mt-2 text-[10px] text-violet-400/60 hover:text-violet-300 transition-colors"
+                    >
+                      إعادة الفحص
+                    </button>
                   </div>
                 )}
               </div>
