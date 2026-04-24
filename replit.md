@@ -124,6 +124,35 @@
 - Click opens a modal showing `QRCodeSVG` with product ID, name, and SKU encoded as `MUHKAM-PRODUCT|id:...|name:...|sku:...`
 - QR code is high error-correction (level H) at 180x180 px on white background
 
+### 6. وحدة الموبايلات المستعملة (Used Devices) — أبريل 2026
+- **DB schema:** `lib/db/src/schema/devices.ts` → `devices` table (created via SQL)
+  - Fields: brand/model/color/storage/imei/serial_no/battery_health/grade/condition_notes
+  - Pricing: purchase_price/sale_price/sold_price
+  - Flags: dual_sim/with_box/icloud_locked/network_locked/previously_opened
+  - Status lifecycle: available → sold | maintenance → available
+  - Full sell-flow fields: sold_to_customer, sold_at, sold_by, payment_method, warranty_months
+- **Backend routes:** `artifacts/api-server/src/routes/devices.ts`
+  - `GET /api/devices` (list with status/search filters)
+  - `GET /api/devices/stats` (count by status)
+  - `GET /api/devices/:id` (detail)
+  - `POST /api/devices` (create with auto device_no: DEV-YYYY-NNNN)
+  - `PATCH /api/devices/:id` (update)
+  - `DELETE /api/devices/:id`
+  - `POST /api/devices/:id/sell` (marks sold, records customer/payment/warranty)
+  - `POST /api/devices/:id/maintenance` (marks in maintenance)
+  - `POST /api/devices/:id/available` (returns to available)
+- **Frontend:** `artifacts/erp-system/src/pages/devices.tsx`
+  - Stats bar: total / available / maintenance / sold
+  - Filter tabs + search bar
+  - Device table with grade badge, battery %, status badge
+  - AddDevice modal: brand/model/storage/color/grade/IMEI/battery/prices/flags/supplier
+  - DeviceDetail panel: specs, flags, pricing/profit calc, sell info, actions
+  - SellModal: customer name, sold price, payment method/status, warranty
+  - Action buttons: sell / send to maintenance / return to available / delete (with confirmation)
+- **RLS:** `devices` added to `rls-init.ts` RLS_TABLES (tenant isolation)
+- **Routing:** `/devices` in App.tsx + rbac.ts (admin/manager/cashier, Smartphone icon)
+- **Navigation:** "الموبايلات" in التجارة section of layout.tsx sidebar
+
 ### 5. نظام الصيانة والإصلاح (Repair Job Cards) — أبريل 2026
 - **DB schema:** `lib/db/src/schema/repairs.ts` → `repair_jobs` + `repair_job_parts` tables (created via SQL)
 - **Backend routes:** `artifacts/api-server/src/routes/repairs.ts` — full CRUD + parts management + stats

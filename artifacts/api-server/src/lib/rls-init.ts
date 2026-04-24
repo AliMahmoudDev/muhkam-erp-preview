@@ -61,6 +61,7 @@ const RLS_TABLES = [
   "budgets",
   "budget_lines",
   "cost_centers",
+  "devices",
 ] as const;
 
 const POLICY_NAME = "muhkam_tenant_isolation";

@@ -30,6 +30,7 @@ import {
   Target,
   PiggyBank,
   Wrench,
+  Smartphone,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -48,6 +49,7 @@ export const ROUTE_ROLES: Record<string, AppRole[]> = {
   '/customers': ['admin', 'manager', 'cashier', 'salesperson'],
   '/returns': ['admin', 'manager'],
   '/warranty': ['admin', 'manager', 'cashier'],
+  '/devices': ['admin', 'manager', 'cashier'],
   '/repairs': ['admin', 'manager', 'cashier'],
   '/repair-board': ['admin', 'manager', 'cashier'],
   '/scrap-inventory': ['admin', 'manager'],
@@ -113,6 +115,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
     roles: ['admin', 'manager', 'cashier', 'salesperson'],
   },
   { name: 'المرتجعات', href: '/returns', icon: RotateCcw, roles: ['admin', 'manager'] },
+  { name: 'الموبايلات', href: '/devices', icon: Smartphone, roles: ['admin', 'manager', 'cashier'] },
   { name: 'الصيانة', href: '/repairs', icon: Wrench, roles: ['admin', 'manager', 'cashier'] },
   { name: 'لوحة الصيانة', href: '/repair-board', icon: Wrench, roles: ['admin', 'manager', 'cashier'] },
   { name: 'مخزن التوالف', href: '/scrap-inventory', icon: Wrench, roles: ['admin', 'manager'] },
