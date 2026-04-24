@@ -33,7 +33,8 @@ async function nextDeviceNo(company_id: number): Promise<string> {
 /* ─── STATS ─── */
 router.get("/devices/stats", wrap(async (req, res) => {
   const { company_id } = ctx(req);
-  const rows = await db.select({
+
+  const countRows = await db.select({
     status: devicesTable.status,
     count: sql<number>`count(*)::int`,
   })
@@ -42,13 +43,44 @@ router.get("/devices/stats", wrap(async (req, res) => {
     .groupBy(devicesTable.status);
 
   const map: Record<string, number> = {};
-  rows.forEach(r => { map[r.status] = r.count; });
+  countRows.forEach(r => { map[r.status] = r.count; });
+
+  const finRows = await db.select({
+    status: devicesTable.status,
+    purchase_sum: sql<string>`COALESCE(SUM(purchase_price::numeric), 0)`,
+    sale_sum:     sql<string>`COALESCE(SUM(sale_price::numeric), 0)`,
+    sold_sum:     sql<string>`COALESCE(SUM(CASE WHEN sold_price IS NOT NULL THEN sold_price::numeric ELSE 0 END), 0)`,
+  })
+    .from(devicesTable)
+    .where(eq(devicesTable.company_id, company_id))
+    .groupBy(devicesTable.status);
+
+  let stock_purchase_value = 0;
+  let stock_sale_value = 0;
+  let sold_revenue = 0;
+  let sold_cost = 0;
+
+  finRows.forEach(r => {
+    if (r.status === "available" || r.status === "maintenance") {
+      stock_purchase_value += parseFloat(r.purchase_sum);
+      stock_sale_value     += parseFloat(r.sale_sum);
+    }
+    if (r.status === "sold") {
+      sold_revenue += parseFloat(r.sold_sum);
+      sold_cost    += parseFloat(r.purchase_sum);
+    }
+  });
 
   return res.json({
-    total:       (map.available ?? 0) + (map.sold ?? 0) + (map.maintenance ?? 0),
-    available:   map.available ?? 0,
-    sold:        map.sold ?? 0,
-    maintenance: map.maintenance ?? 0,
+    total:                (map.available ?? 0) + (map.sold ?? 0) + (map.maintenance ?? 0),
+    available:            map.available  ?? 0,
+    sold:                 map.sold       ?? 0,
+    maintenance:          map.maintenance ?? 0,
+    stock_purchase_value: Math.round(stock_purchase_value),
+    stock_sale_value:     Math.round(stock_sale_value),
+    stock_profit_potential: Math.round(stock_sale_value - stock_purchase_value),
+    sold_revenue:         Math.round(sold_revenue),
+    sold_profit:          Math.round(sold_revenue - sold_cost),
   });
 }));
 

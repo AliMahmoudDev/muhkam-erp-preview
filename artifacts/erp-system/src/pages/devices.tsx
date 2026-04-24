@@ -4,7 +4,7 @@ import {
   Smartphone, Plus, Search, X, CheckCircle2, XCircle,
   ShoppingCart, Wrench, BadgeCheck, Info,
   Trash2, RotateCcw, AlertTriangle, Battery, Package,
-  Tag, User,
+  Tag, User, TrendingUp, Banknote, Printer,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
@@ -35,7 +35,11 @@ type Device = {
   added_by_user_name?: string; created_at: string;
 };
 
-type Stats = { total: number; available: number; sold: number; maintenance: number };
+type Stats = {
+  total: number; available: number; sold: number; maintenance: number;
+  stock_purchase_value: number; stock_sale_value: number; stock_profit_potential: number;
+  sold_revenue: number; sold_profit: number;
+};
 
 /* ── Helpers ── */
 function apiFetch<T>(url: string): Promise<T> {
@@ -67,6 +71,97 @@ async function apPatch<T>(url: string, body: unknown): Promise<T> {
 
 const GRADES = ["A+", "A", "B", "C", "D"];
 const STORAGES = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB"];
+
+/* ── Print Sale Receipt ── */
+function printSaleReceipt(d: Device) {
+  const price = parseFloat(d.sold_price ?? d.sale_price ?? "0").toLocaleString("ar-EG");
+  const profit = parseFloat(d.sold_price ?? "0") - parseFloat(d.purchase_price ?? "0");
+  const date = d.sold_at ? new Date(d.sold_at).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" }) : new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+  const payMethods: Record<string, string> = { cash: "نقداً", card: "بطاقة", instapay: "InstaPay", transfer: "تحويل" };
+  const payStatuses: Record<string, string> = { paid: "مدفوع بالكامل", partial: "مدفوع جزئياً", unpaid: "غير مدفوع" };
+
+  const win = window.open("", "_blank", "width=420,height=680");
+  if (!win) return;
+  win.document.write(`<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>فاتورة بيع — ${d.brand} ${d.model}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #fff; color: #111; padding: 20px; font-size: 13px; }
+  .header { text-align: center; border-bottom: 2px solid #7c3aed; padding-bottom: 12px; margin-bottom: 16px; }
+  .header h1 { font-size: 22px; font-weight: 900; color: #7c3aed; letter-spacing: 1px; }
+  .header p { color: #666; font-size: 11px; margin-top: 2px; }
+  .badge { display: inline-block; background: #7c3aed; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 999px; margin-top: 6px; }
+  .section { margin-bottom: 12px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+  .section-title { background: #f3f4f6; padding: 6px 12px; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+  .row { display: flex; justify-content: space-between; padding: 7px 12px; border-top: 1px solid #f3f4f6; }
+  .row:first-of-type { border-top: none; }
+  .label { color: #6b7280; font-size: 12px; }
+  .value { font-weight: 600; color: #111; font-size: 12px; }
+  .price-box { background: #f0fdf4; border: 1.5px solid #16a34a; border-radius: 8px; padding: 10px 16px; text-align: center; margin: 12px 0; }
+  .price-box .amount { font-size: 26px; font-weight: 900; color: #15803d; }
+  .price-box .label2 { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .footer { text-align: center; margin-top: 20px; border-top: 1px dashed #d1d5db; padding-top: 12px; color: #9ca3af; font-size: 10px; }
+  .warranty { background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 8px 12px; text-align: center; margin: 8px 0; }
+  .warranty strong { color: #1d4ed8; }
+  .stamp { border: 2px dashed #7c3aed; border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; margin: 10px auto; color: #7c3aed; font-weight: 900; font-size: 11px; text-align: center; }
+  @media print { body { padding: 8px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>MUHKAM | مُحكم</h1>
+  <p>نظام إدارة الموبايلات المستعملة</p>
+  <span class="badge">فاتورة بيع رسمية</span>
+</div>
+
+<div class="price-box">
+  <div class="amount">${price} ج.م</div>
+  <div class="label2">إجمالي مبلغ الفاتورة</div>
+</div>
+
+<div class="section">
+  <div class="section-title">بيانات الجهاز</div>
+  <div class="row"><span class="label">الماركة والموديل</span><span class="value">${d.brand} ${d.model}</span></div>
+  ${d.color ? `<div class="row"><span class="label">اللون</span><span class="value">${d.color}</span></div>` : ""}
+  ${d.storage ? `<div class="row"><span class="label">السعة التخزينية</span><span class="value">${d.storage}</span></div>` : ""}
+  ${d.imei ? `<div class="row"><span class="label">رقم IMEI</span><span class="value" style="direction:ltr;text-align:right">${d.imei}</span></div>` : ""}
+  ${d.serial_no ? `<div class="row"><span class="label">الرقم التسلسلي</span><span class="value" style="direction:ltr;text-align:right">${d.serial_no}</span></div>` : ""}
+  ${d.grade ? `<div class="row"><span class="label">الدرجة</span><span class="value">${d.grade}</span></div>` : ""}
+  ${d.battery_health ? `<div class="row"><span class="label">صحة البطارية</span><span class="value">${d.battery_health}%</span></div>` : ""}
+  <div class="row"><span class="label">رقم الجهاز</span><span class="value" style="direction:ltr;text-align:right">${d.device_no}</span></div>
+</div>
+
+<div class="section">
+  <div class="section-title">بيانات البيع</div>
+  <div class="row"><span class="label">اسم العميل</span><span class="value">${d.sold_to_customer_name ?? "—"}</span></div>
+  <div class="row"><span class="label">تاريخ البيع</span><span class="value">${date}</span></div>
+  <div class="row"><span class="label">طريقة الدفع</span><span class="value">${payMethods[d.payment_method ?? ""] ?? d.payment_method ?? "—"}</span></div>
+  <div class="row"><span class="label">حالة الدفع</span><span class="value">${payStatuses[d.payment_status ?? ""] ?? d.payment_status ?? "—"}</span></div>
+  ${d.sold_by_user_name ? `<div class="row"><span class="label">البائع</span><span class="value">${d.sold_by_user_name}</span></div>` : ""}
+</div>
+
+${d.warranty_months ? `
+<div class="warranty">
+  <strong>ضمان ${d.warranty_months} شهر</strong> — يسري من تاريخ الشراء
+</div>
+` : ""}
+
+<div class="stamp">مُحكم<br/>ERP</div>
+
+<div class="footer">
+  <p>شكراً لثقتك بنا — MUHKAM Enterprise Solutions</p>
+  <p style="margin-top:4px">هذه الفاتورة صادرة إلكترونياً وتُعدّ وثيقة رسمية</p>
+  <p style="margin-top:4px; color:#bbb;">الربح الصافي من هذه الصفقة: ${profit.toLocaleString("ar-EG")} ج.م</p>
+</div>
+
+<script>window.onload = () => { window.print(); }</script>
+</body>
+</html>`);
+  win.document.close();
+}
 
 /* ══════════════════════════════════════════════════════════
    DEVICE CATALOG — 4-level: Brand → Category → Model → {colors,storages}
@@ -1223,10 +1318,16 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
                   </>
                 )}
                 {device.status === "sold" && (
-                  <button onClick={() => setShowReturn(true)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm font-bold hover:bg-amber-500/20 transition-all">
-                    <RotateCcw className="w-3.5 h-3.5" /> إرجاع من العميل
-                  </button>
+                  <>
+                    <button onClick={() => printSaleReceipt(device)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-bold hover:bg-violet-500/25 transition-all">
+                      <Printer className="w-3.5 h-3.5" /> طباعة الفاتورة
+                    </button>
+                    <button onClick={() => setShowReturn(true)}
+                      className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm hover:bg-amber-500/20 transition-all">
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  </>
                 )}
                 {device.status === "maintenance" && (
                   <button onClick={() => setConfirming("available")}
@@ -1313,13 +1414,13 @@ export default function Devices() {
         </button>
       </div>
 
-      {/* ── Stats cards ── */}
+      {/* ── Stats cards — Row 1: Counts ── */}
       <div className="grid grid-cols-4 gap-2">
         {[
-          { label: "إجمالي الأجهزة", value: stats?.total ?? 0,       color: "text-white",        icon: Smartphone },
-          { label: "متاح للبيع",     value: stats?.available ?? 0,    color: "text-emerald-400",  icon: CheckCircle2 },
-          { label: "في الصيانة",     value: stats?.maintenance ?? 0,  color: "text-amber-400",    icon: Wrench },
-          { label: "إجمالي المباع",  value: stats?.sold ?? 0,         color: "text-blue-400",     icon: ShoppingCart },
+          { label: "إجمالي الأجهزة", value: stats?.total ?? 0,        color: "text-white",       icon: Smartphone },
+          { label: "متاح للبيع",     value: stats?.available ?? 0,     color: "text-emerald-400", icon: CheckCircle2 },
+          { label: "في الصيانة",     value: stats?.maintenance ?? 0,   color: "text-amber-400",   icon: Wrench },
+          { label: "إجمالي المباع",  value: stats?.sold ?? 0,          color: "text-blue-400",    icon: ShoppingCart },
         ].map(({ label, value, color, icon: Icon }) => (
           <div key={label} className="glass-panel rounded-xl border border-white/8 p-3">
             <div className="flex items-center justify-between mb-1">
@@ -1329,6 +1430,49 @@ export default function Devices() {
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
           </div>
         ))}
+      </div>
+
+      {/* ── Stats cards — Row 2: Financial ── */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="glass-panel rounded-xl border border-violet-500/15 p-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] text-white/30">قيمة المخزون (شراء)</span>
+            <Package className="w-3.5 h-3.5 text-violet-400/60" />
+          </div>
+          <p className="text-lg font-bold text-violet-300">
+            {(stats?.stock_purchase_value ?? 0).toLocaleString("ar-EG")}
+            <span className="text-[10px] font-normal text-white/25 mr-1">ج.م</span>
+          </p>
+          <p className="text-[10px] text-white/20 mt-0.5">
+            سعر بيع متوقع: {(stats?.stock_sale_value ?? 0).toLocaleString("ar-EG")} ج.م
+          </p>
+        </div>
+        <div className="glass-panel rounded-xl border border-emerald-500/15 p-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] text-white/30">ربح متوقع من المخزون</span>
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-400/60" />
+          </div>
+          <p className="text-lg font-bold text-emerald-300">
+            {(stats?.stock_profit_potential ?? 0).toLocaleString("ar-EG")}
+            <span className="text-[10px] font-normal text-white/25 mr-1">ج.م</span>
+          </p>
+          <p className="text-[10px] text-white/20 mt-0.5">
+            هامش متوقع على الأجهزة المتاحة
+          </p>
+        </div>
+        <div className="glass-panel rounded-xl border border-blue-500/15 p-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] text-white/30">إيراد المبيعات الفعلي</span>
+            <Banknote className="w-3.5 h-3.5 text-blue-400/60" />
+          </div>
+          <p className="text-lg font-bold text-blue-300">
+            {(stats?.sold_revenue ?? 0).toLocaleString("ar-EG")}
+            <span className="text-[10px] font-normal text-white/25 mr-1">ج.م</span>
+          </p>
+          <p className={`text-[10px] mt-0.5 font-semibold ${(stats?.sold_profit ?? 0) >= 0 ? "text-emerald-400/70" : "text-red-400/70"}`}>
+            صافي الربح: {(stats?.sold_profit ?? 0).toLocaleString("ar-EG")} ج.م
+          </p>
+        </div>
       </div>
 
       {/* ── Filters + Search ── */}
@@ -1410,10 +1554,24 @@ export default function Devices() {
                     </div>
                     <GradeBadge grade={d.grade} />
                   </td>
-                  {/* Prices */}
+                  {/* Prices + Profit */}
                   <td className="px-3 py-3">
-                    <p className="text-white/80 font-semibold">{parseFloat(d.sale_price).toLocaleString()}</p>
+                    <p className="text-white/80 font-semibold">
+                      {parseFloat(d.status === "sold" && d.sold_price ? d.sold_price : d.sale_price).toLocaleString()}
+                      <span className="text-[10px] text-white/25 mr-0.5">ج.م</span>
+                    </p>
                     <p className="text-[11px] text-white/25">شراء: {parseFloat(d.purchase_price).toLocaleString()}</p>
+                    {(() => {
+                      const sellP = parseFloat(d.status === "sold" && d.sold_price ? d.sold_price : d.sale_price);
+                      const buyP  = parseFloat(d.purchase_price);
+                      const profit = sellP - buyP;
+                      const pct = buyP > 0 ? Math.round((profit / buyP) * 100) : 0;
+                      return (
+                        <span className={`text-[10px] font-bold ${profit >= 0 ? "text-emerald-400/80" : "text-red-400/80"}`}>
+                          {profit >= 0 ? "+" : ""}{profit.toLocaleString()} ج.م ({pct}%)
+                        </span>
+                      );
+                    })()}
                   </td>
                   {/* Status */}
                   <td className="px-3 py-3 text-center">
