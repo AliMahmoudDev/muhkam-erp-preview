@@ -48,6 +48,10 @@ export const devicesTable = pgTable("devices", {
   supplier_phone:           text("supplier_phone"),
   id_card_data:             text("id_card_data"),
 
+  product_id:               integer("product_id"),
+  purchase_id:              integer("purchase_id"),
+  purchase_invoice_ref:     text("purchase_invoice_ref"),
+
   created_at:               timestamp("created_at").defaultNow(),
   updated_at:               timestamp("updated_at").defaultNow(),
 });

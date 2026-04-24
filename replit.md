@@ -131,21 +131,30 @@
   - Flags: dual_sim/with_box/icloud_locked/network_locked/previously_opened
   - Status lifecycle: available → sold | maintenance → available
   - Full sell-flow fields: sold_to_customer, sold_at, sold_by, payment_method, warranty_months
+- **DB columns added:** `product_id`, `purchase_id`, `purchase_invoice_ref` (link device → purchase invoice + product)
+  - Also: `supplier_phone`, `id_card_data` (supplier identity)
 - **Backend routes:** `artifacts/api-server/src/routes/devices.ts`
   - `GET /api/devices` (list with status/search filters)
   - `GET /api/devices/stats` (count by status)
+  - `GET /api/devices/safes` (list safes for purchase form)
+  - `GET /api/devices/warehouses` (list warehouses for purchase form)
+  - `GET /api/devices/customer-lookup?phone=` (lookup supplier in customers table)
   - `GET /api/devices/:id` (detail)
-  - `POST /api/devices` (create with auto device_no: DEV-YYYY-NNNN)
+  - `POST /api/devices` (create simple, no purchase — legacy)
+  - `POST /api/devices/purchase` (full system integration: creates product + purchase invoice + stock movement + safe balance + customer ledger — all in one DB transaction)
   - `PATCH /api/devices/:id` (update)
   - `DELETE /api/devices/:id`
   - `POST /api/devices/:id/sell` (marks sold, records customer/payment/warranty)
   - `POST /api/devices/:id/maintenance` (marks in maintenance)
   - `POST /api/devices/:id/available` (returns to available)
+  - `POST /api/devices/:id/return` (sold → available with return reason)
 - **Frontend:** `artifacts/erp-system/src/pages/devices.tsx`
   - Stats bar: total / available / maintenance / sold
   - Filter tabs + search bar
-  - Device table with grade badge, battery %, status badge
-  - AddDevice modal: brand/model/storage/color/grade/IMEI/battery/prices/flags/supplier
+  - Device table with grade badge, battery %, status badge (grid + list toggle)
+  - AddDevice wizard (2 steps):
+    - Step 1: Brand/Category/Model/Color/Storage/Grade/IMEI/Battery (ALL required, red border on error) + Supplier phone lookup (existing customer shown; new supplier → name field required + cash-only restriction) + ID card upload
+    - Step 2: Purchase price* + Sale price + Warehouse* + Payment type (نقدي/آجل/جزئي) + Safe* + Paid amount (if partial) → "حفظ وشراء" (calls POST /api/devices/purchase)
   - DeviceDetail panel: specs, flags, pricing/profit calc, sell info, actions
   - SellModal: customer name, sold price, payment method/status, warranty
   - Action buttons: sell / send to maintenance / return to available / delete (with confirmation)

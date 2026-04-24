@@ -1,15 +1,19 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { devicesTable, customersTable } from "@workspace/db";
+import {
+  devicesTable, customersTable, productsTable, safesTable,
+  warehousesTable, purchasesTable, purchaseItemsTable,
+  stockMovementsTable, transactionsTable, customerLedgerTable,
+} from "@workspace/db";
 import { eq, and, desc, or, ilike, sql } from "drizzle-orm";
-import { wrap } from "../lib/async-handler";
+import { wrap, httpError } from "../lib/async-handler";
 import type Express from "express";
 
 const router = Router();
 
 function ctx(req: Express.Request) {
-  const u = (req as unknown as { user: { company_id: number; id: number; name: string } }).user;
-  return { company_id: u.company_id, user_id: u.id, user_name: u.name };
+  const u = (req as unknown as { user: { company_id: number; id: number; name: string; role?: string; warehouse_id?: number } }).user;
+  return { company_id: u.company_id, user_id: u.id, user_name: u.name, role: u.role ?? "cashier", warehouse_id: u.warehouse_id ?? null };
 }
 
 /* Auto-generate device number: DEV-YYYY-XXXX */
@@ -28,6 +32,11 @@ async function nextDeviceNo(company_id: number): Promise<string> {
   const last = rows[0].no;
   const seq = parseInt(last.split("-").pop() ?? "0", 10);
   return `${prefix}${String(seq + 1).padStart(4, "0")}`;
+}
+
+/* Auto-generate purchase invoice no */
+function nextInvoiceNo(): string {
+  return `DEV-PUR-${Date.now()}`;
 }
 
 /* ─── STATS ─── */
@@ -84,6 +93,47 @@ router.get("/devices/stats", wrap(async (req, res) => {
   });
 }));
 
+/* ─── LIST SAFES (for purchase form) ─── */
+router.get("/devices/safes", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const rows = await db.select({ id: safesTable.id, name: safesTable.name, balance: safesTable.balance })
+    .from(safesTable)
+    .where(eq(safesTable.company_id, company_id))
+    .orderBy(safesTable.name);
+  return res.json(rows);
+}));
+
+/* ─── LIST WAREHOUSES (for purchase form) ─── */
+router.get("/devices/warehouses", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const rows = await db.select({ id: warehousesTable.id, name: warehousesTable.name })
+    .from(warehousesTable)
+    .where(eq(warehousesTable.company_id, company_id))
+    .orderBy(warehousesTable.name);
+  return res.json(rows);
+}));
+
+/* ─── CUSTOMER PHONE LOOKUP ─── */
+router.get("/devices/customer-lookup", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const phone = (req.query.phone as string ?? "").trim();
+  if (!phone) return res.json({ found: false });
+  const rows = await db.select({
+    id: customersTable.id,
+    name: customersTable.name,
+    phone: customersTable.phone,
+    balance: customersTable.balance,
+  })
+    .from(customersTable)
+    .where(and(
+      eq(customersTable.company_id, company_id),
+      ilike(customersTable.phone, `%${phone}%`),
+    ))
+    .limit(1);
+  if (!rows.length) return res.json({ found: false });
+  return res.json({ found: true, customer: rows[0] });
+}));
+
 /* ─── LIST ─── */
 router.get("/devices", wrap(async (req, res) => {
   const { company_id } = ctx(req);
@@ -122,27 +172,7 @@ router.get("/devices/:id", wrap(async (req, res) => {
   return res.json(row);
 }));
 
-/* ─── CUSTOMER PHONE LOOKUP ─── */
-router.get("/devices/customer-lookup", wrap(async (req, res) => {
-  const { company_id } = ctx(req);
-  const phone = (req.query.phone as string ?? "").trim();
-  if (!phone) return res.json({ found: false });
-  const rows = await db.select({
-    id: customersTable.id,
-    name: customersTable.name,
-    phone: customersTable.phone,
-  })
-    .from(customersTable)
-    .where(and(
-      eq(customersTable.company_id, company_id),
-      ilike(customersTable.phone, `%${phone}%`),
-    ))
-    .limit(1);
-  if (!rows.length) return res.json({ found: false });
-  return res.json({ found: true, customer: rows[0] });
-}));
-
-/* ─── CREATE DEVICE ─── */
+/* ─── CREATE DEVICE (simple, no purchase) ─── */
 router.post("/devices", wrap(async (req, res) => {
   const { company_id, user_id, user_name } = ctx(req);
   const device_no = await nextDeviceNo(company_id);
@@ -156,6 +186,269 @@ router.post("/devices", wrap(async (req, res) => {
     status: "available",
   }).returning();
   return res.json(row);
+}));
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PURCHASE DEVICE — Full system integration
+   Accepts:
+     device fields: brand, model, color, storage, grade, imei, battery_health,
+                    supplier_phone, id_card_data
+     supplier/customer: customer_id (existing) | new_customer_name (new)
+     financial: purchase_price*, sale_price, payment_type*, safe_id, warehouse_id*,
+                paid_amount (for partial)
+   Creates:
+     1. Customer (if new)
+     2. Product entry in products table
+     3. Device record
+     4. Purchase invoice (purchasesTable)
+     5. Stock movement (stockMovementsTable)
+     6. Safe transaction + balance update (if cash/partial)
+     7. Customer ledger entry (if credit/partial + existing customer)
+──────────────────────────────────────────────────────────────────────── */
+router.post("/devices/purchase", wrap(async (req, res) => {
+  const { company_id, user_id, user_name, role, warehouse_id: userWarehouseId } = ctx(req);
+
+  const {
+    /* device */
+    brand, model, color, storage, grade, imei, battery_health,
+    supplier_phone, id_card_data,
+    /* supplier */
+    customer_id: rawCustomerId,
+    new_customer_name,
+    /* financial */
+    purchase_price: rawPurchase,
+    sale_price: rawSale,
+    payment_type,
+    safe_id: rawSafeId,
+    warehouse_id: rawWarehouseId,
+    paid_amount: rawPaid,
+  } = req.body as {
+    brand: string; model: string; color?: string; storage?: string;
+    grade?: string; imei?: string; battery_health?: number;
+    supplier_phone?: string; id_card_data?: string;
+    customer_id?: number; new_customer_name?: string;
+    purchase_price: number; sale_price?: number;
+    payment_type: "cash" | "credit" | "partial";
+    safe_id?: number; warehouse_id?: number; paid_amount?: number;
+  };
+
+  /* ── Validation ── */
+  if (!brand || !model) throw httpError(400, "الشركة المصنعة والموديل مطلوبان");
+  const purchase_price = Number(rawPurchase ?? 0);
+  if (purchase_price <= 0) throw httpError(400, "سعر الشراء مطلوب وأكبر من صفر");
+  if (!payment_type) throw httpError(400, "طريقة الدفع مطلوبة");
+
+  const sale_price  = Number(rawSale ?? 0);
+  const safe_id     = rawSafeId ? Number(rawSafeId) : null;
+  const paid_amount = payment_type === "cash" ? purchase_price
+    : payment_type === "partial" ? Number(rawPaid ?? 0)
+    : 0;
+  const remaining   = purchase_price - paid_amount;
+
+  /* Resolve warehouse */
+  const reqWarehouseId = rawWarehouseId ? Number(rawWarehouseId) : null;
+  const effectiveWarehouseId = (role === "admin" || role === "manager")
+    ? reqWarehouseId
+    : (userWarehouseId ?? reqWarehouseId);
+  if (!effectiveWarehouseId) throw httpError(400, "يجب تحديد المخزن");
+
+  /* Validate safe for cash/partial */
+  if (paid_amount > 0 && !safe_id) throw httpError(400, "يجب اختيار الخزينة للمدفوعات النقدية أو الجزئية");
+
+  const today = new Date().toISOString().split("T")[0];
+  const invoiceNo = nextInvoiceNo();
+  const device_no = await nextDeviceNo(company_id);
+
+  const result = await db.transaction(async (tx) => {
+    /* ── 1. Create new customer if needed ── */
+    let customer_id: number | null = rawCustomerId ? Number(rawCustomerId) : null;
+    let customer_name: string | null = null;
+
+    if (customer_id) {
+      const [c] = await tx.select({ id: customersTable.id, name: customersTable.name })
+        .from(customersTable)
+        .where(and(eq(customersTable.id, customer_id), eq(customersTable.company_id, company_id)));
+      if (!c) throw httpError(400, "العميل/المورد غير موجود");
+      customer_name = c.name;
+    } else if (new_customer_name?.trim()) {
+      const [newCust] = await tx.insert(customersTable).values({
+        company_id,
+        name: new_customer_name.trim(),
+        phone: supplier_phone ?? null,
+        is_customer: true,
+      } as typeof customersTable.$inferInsert).returning({ id: customersTable.id, name: customersTable.name });
+      customer_id = newCust.id;
+      customer_name = newCust.name;
+    }
+
+    /* ── 2. Find or create product ── */
+    const productName = `${brand} ${model}${storage ? " " + storage : ""}${color ? " " + color : ""}`;
+    const productSku = imei ? `IMEI-${imei}` : `DEV-${device_no}`;
+
+    const [newProduct] = await tx.insert(productsTable).values({
+      company_id,
+      name: productName,
+      sku: productSku,
+      category: "موبايلات مستعملة",
+      quantity: "0",
+      cost_price: String(purchase_price),
+      sale_price: String(sale_price),
+    } as typeof productsTable.$inferInsert).returning();
+
+    /* ── 3. Create device record ── */
+    const [device] = await tx.insert(devicesTable).values({
+      company_id,
+      device_no,
+      brand,
+      model,
+      color: color ?? null,
+      storage: storage ?? null,
+      grade: grade ?? "B",
+      imei: imei ?? null,
+      battery_health: battery_health ? Number(battery_health) : null,
+      purchase_price: String(purchase_price),
+      sale_price: String(sale_price),
+      supplier_name: customer_name ?? null,
+      supplier_phone: supplier_phone ?? null,
+      id_card_data: id_card_data ?? null,
+      status: "available",
+      product_id: newProduct.id,
+      added_by_user_id: user_id,
+      added_by_user_name: user_name,
+    } as typeof devicesTable.$inferInsert).returning();
+
+    /* ── 4. Create purchase invoice ── */
+    const status = payment_type === "credit" ? "unpaid"
+      : remaining > 0 ? "partial" : "paid";
+
+    const [purchase] = await tx.insert(purchasesTable).values({
+      invoice_no: invoiceNo,
+      supplier_name: customer_name ?? (supplier_phone ?? "مورد غير مسجل"),
+      customer_id: customer_id ?? null,
+      customer_name: customer_name ?? null,
+      payment_type,
+      total_amount: String(purchase_price),
+      paid_amount: String(paid_amount),
+      remaining_amount: String(payment_type === "credit" ? purchase_price : remaining),
+      status,
+      date: today,
+      notes: `شراء جهاز ${productName} — ${device_no}`,
+      company_id,
+    } as typeof purchasesTable.$inferInsert).returning();
+
+    /* ── 5. Create purchase item ── */
+    await tx.insert(purchaseItemsTable).values({
+      purchase_id: purchase.id,
+      product_id: newProduct.id,
+      product_name: productName,
+      quantity: "1",
+      unit_price: String(purchase_price),
+      total_price: String(purchase_price),
+    } as typeof purchaseItemsTable.$inferInsert);
+
+    /* ── 6. Update product quantity + stock movement ── */
+    await tx.update(productsTable)
+      .set({ quantity: "1", cost_price: String(purchase_price) })
+      .where(and(eq(productsTable.id, newProduct.id), eq(productsTable.company_id, company_id)));
+
+    await tx.insert(stockMovementsTable).values({
+      product_id: newProduct.id,
+      product_name: productName,
+      movement_type: "purchase",
+      quantity: "1",
+      quantity_before: "0",
+      quantity_after: "1",
+      unit_cost: String(purchase_price),
+      reference_type: "purchase",
+      reference_id: purchase.id,
+      reference_no: invoiceNo,
+      notes: `مشتريات من ${customer_name ?? "مورد"} — ${device_no}`,
+      date: today,
+      warehouse_id: effectiveWarehouseId,
+      company_id,
+    } as typeof stockMovementsTable.$inferInsert);
+
+    /* ── 7. Safe balance deduction (cash / partial) ── */
+    if (paid_amount > 0 && safe_id) {
+      const [safe] = await tx.select().from(safesTable)
+        .where(and(eq(safesTable.id, safe_id), eq(safesTable.company_id, company_id)));
+      if (!safe) throw httpError(400, "الخزينة غير موجودة");
+
+      await tx.update(safesTable)
+        .set({ balance: String(Number(safe.balance) - paid_amount) })
+        .where(and(eq(safesTable.id, safe_id), eq(safesTable.company_id, company_id)));
+
+      await tx.insert(transactionsTable).values({
+        type: "purchase_cash",
+        reference_type: "purchase",
+        reference_id: purchase.id,
+        safe_id: safe.id,
+        safe_name: safe.name,
+        customer_id: customer_id ?? null,
+        customer_name: customer_name ?? null,
+        amount: String(paid_amount),
+        direction: "out",
+        description: `دفع نقدي — ${invoiceNo} — ${productName}`,
+        date: today,
+        company_id,
+      } as typeof transactionsTable.$inferInsert);
+    }
+
+    /* ── 8. Customer ledger entry (credit / partial debt) ── */
+    const customerDebt = payment_type === "credit" ? purchase_price
+      : payment_type === "partial" ? remaining : 0;
+
+    if (customerDebt > 0 && customer_id) {
+      const [cust] = await tx.select().from(customersTable)
+        .where(and(eq(customersTable.id, customer_id), eq(customersTable.company_id, company_id)));
+      if (cust) {
+        await tx.update(customersTable)
+          .set({ balance: String(Number(cust.balance ?? "0") - customerDebt) })
+          .where(and(eq(customersTable.id, customer_id), eq(customersTable.company_id, company_id)));
+
+        await tx.insert(transactionsTable).values({
+          type: "purchase_credit",
+          reference_type: "purchase",
+          reference_id: purchase.id,
+          safe_id: null,
+          safe_name: null,
+          customer_id,
+          customer_name,
+          amount: String(customerDebt),
+          direction: "out",
+          description: `مشتريات آجل ${invoiceNo} — ${customer_name}`,
+          date: today,
+          company_id,
+        } as typeof transactionsTable.$inferInsert);
+
+        await tx.insert(customerLedgerTable).values({
+          customer_id,
+          type: "purchase",
+          amount: String(-customerDebt),
+          reference_type: "purchase",
+          reference_id: purchase.id,
+          reference_no: invoiceNo,
+          description: `شراء جهاز ${productName} — مديونية ${invoiceNo}`,
+          date: today,
+          company_id,
+        } as typeof customerLedgerTable.$inferInsert);
+      }
+    }
+
+    /* ── 9. Link device to purchase ── */
+    const [finalDevice] = await tx.update(devicesTable)
+      .set({
+        purchase_id: purchase.id,
+        purchase_invoice_ref: invoiceNo,
+        updated_at: new Date(),
+      })
+      .where(and(eq(devicesTable.id, device.id), eq(devicesTable.company_id, company_id)))
+      .returning();
+
+    return { device: finalDevice, purchase, product: newProduct };
+  });
+
+  return res.status(201).json(result);
 }));
 
 /* ─── UPDATE ─── */
@@ -177,7 +470,7 @@ router.post("/devices/:id/sell", wrap(async (req, res) => {
   const {
     customer_id, customer_name,
     sold_price, payment_method, payment_status,
-    warranty_months, discount_type, discount_value,
+    warranty_months,
   } = req.body;
 
   const [existing] = await db.select().from(devicesTable)

@@ -590,46 +590,77 @@ function StatusBadge({ status }: { status: DeviceStatus }) {
 function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { toast } = useToast();
 
-  /* ── wizard step ── */
+  /* ── wizard step 1 | 2 ── */
   const [step, setStep] = useState<1 | 2>(1);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
 
   /* ── cascade selectors ── */
-  const [brandSel,    setBrandSel]    = useState("");
-  const [catSel,      setCatSel]      = useState("");
-  const [modelSel,    setModelSel]    = useState("");
-  const [colorSel,    setColorSel]    = useState("");
+  const [brandSel,      setBrandSel]      = useState("");
+  const [catSel,        setCatSel]        = useState("");
+  const [modelSel,      setModelSel]      = useState("");
+  const [colorSel,      setColorSel]      = useState("");
   const [brandCustom,   setBrandCustom]   = useState("");
   const [modelCustom,   setModelCustom]   = useState("");
   const [colorCustom,   setColorCustom]   = useState("");
   const [storageCustom, setStorageCustom] = useState("");
   const [storageModeOther, setStorageModeOther] = useState(false);
 
-  /* ── device form fields (step 1) ── */
+  /* ── device form fields ── */
   const [form, setForm] = useState({ storage: "128GB", imei: "", battery_health: "", grade: "B" });
   const f = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
-  /* ── step 2 fields ── */
+  /* ── supplier / customer ── */
   const [supplierPhone, setSupplierPhone] = useState("");
-  const [foundCustomer, setFoundCustomer] = useState<{ id: number; name: string } | null>(null);
-  const [lookingUp, setLookingUp] = useState(false);
-  const [idCardFile, setIdCardFile] = useState<File | null>(null);
-  const [idCardPreview, setIdCardPreview] = useState<string>("");
-  const [saving, setSaving] = useState(false);
+  const [supplierName,  setSupplierName]  = useState("");  // for new (not in DB)
+  const [foundCustomer, setFoundCustomer] = useState<{ id: number; name: string; balance?: string } | null>(null);
+  const [lookingUp,     setLookingUp]     = useState(false);
 
-  /* cascade derived data */
+  /* ── ID card ── */
+  const [idCardFile,    setIdCardFile]    = useState<File | null>(null);
+  const [idCardPreview, setIdCardPreview] = useState<string>("");
+
+  /* ── financial (step 2) ── */
+  const [fin, setFin] = useState({
+    purchase_price: "",
+    sale_price: "",
+    payment_type: "cash" as "cash" | "credit" | "partial",
+    paid_amount: "",
+    safe_id: "",
+    warehouse_id: "",
+  });
+  const fp = (k: string, v: string) => setFin(p => ({ ...p, [k]: v }));
+
+  const [safes,      setSafes]      = useState<{ id: number; name: string; balance: string }[]>([]);
+  const [warehouses, setWarehouses] = useState<{ id: number; name: string }[]>([]);
+  const [saving,     setSaving]     = useState(false);
+
+  /* cascade derived */
   const isOtherBrand   = brandSel === OTHER;
   const isOtherModel   = modelSel === OTHER;
   const isOtherColor   = colorSel === OTHER;
   const isOtherStorage = storageModeOther;
   const categories  = brandSel && !isOtherBrand ? Object.keys(CATALOG[brandSel] ?? {}) : [];
-  const modelSpecs  = catSel && !isOtherBrand   ? CATALOG[brandSel]?.[catSel] ?? {}    : {};
+  const modelSpecs  = catSel  && !isOtherBrand  ? CATALOG[brandSel]?.[catSel] ?? {}    : {};
   const modelNames  = Object.keys(modelSpecs);
   const currentSpec: ModelSpec | null = (modelSel && !isOtherModel) ? modelSpecs[modelSel] ?? null : null;
-  const availColors   = currentSpec && currentSpec.colors.length ? [...currentSpec.colors, OTHER] : [...DEFAULT_COLORS, OTHER];
-  const availStorages = currentSpec && currentSpec.storages.length ? [...currentSpec.storages, OTHER] : [...DEFAULT_STORAGES, OTHER];
-  const effectiveBrand = isOtherBrand ? brandCustom : brandSel;
-  const effectiveModel = isOtherModel ? modelCustom : modelSel;
-  const effectiveColor = isOtherColor ? colorCustom : colorSel;
+  const availColors   = currentSpec?.colors.length ? [...currentSpec.colors, OTHER] : [...DEFAULT_COLORS, OTHER];
+  const availStorages = currentSpec?.storages.length ? [...currentSpec.storages, OTHER] : [...DEFAULT_STORAGES, OTHER];
+  const effectiveBrand   = isOtherBrand   ? brandCustom   : brandSel;
+  const effectiveModel   = isOtherModel   ? modelCustom   : modelSel;
+  const effectiveColor   = isOtherColor   ? colorCustom   : colorSel;
+  const finalStorage     = storageCustom.trim() || form.storage;
+
+  /* new customer (phone entered but not found in DB) */
+  const isNewSupplier = supplierPhone.length >= 7 && !lookingUp && !foundCustomer;
+
+  /* payment type restriction */
+  const allowedPaymentTypes: Array<"cash" | "credit" | "partial"> =
+    isNewSupplier ? ["cash"] : ["cash", "credit", "partial"];
+
+  /* if new supplier and currently credit/partial → reset to cash */
+  useEffect(() => {
+    if (isNewSupplier && fin.payment_type !== "cash") fp("payment_type", "cash");
+  }, [isNewSupplier]);
 
   /* cascade resets */
   const resetStorageOther = () => { setStorageModeOther(false); setStorageCustom(""); };
@@ -646,8 +677,8 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   const handleModelChange = (v: string) => {
     setModelSel(v); setColorSel(""); setColorCustom(""); setModelCustom(""); resetStorageOther();
     const spec = catSel && brandSel ? CATALOG[brandSel]?.[catSel]?.[v] : undefined;
-    setForm(p => ({ ...p, storage: spec && spec.storages.length ? spec.storages[0] : "128GB" }));
-    if (spec && spec.colors.length === 1) setColorSel(spec.colors[0]);
+    setForm(p => ({ ...p, storage: spec?.storages.length ? spec.storages[0] : "128GB" }));
+    if (spec?.colors.length === 1) setColorSel(spec.colors[0]);
   };
   const handleStorageChange = (v: string) => {
     if (v === OTHER) { setStorageModeOther(true); setStorageCustom(""); }
@@ -660,7 +691,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     const t = setTimeout(async () => {
       setLookingUp(true);
       try {
-        const data = await apiFetch<{ found: boolean; customer?: { id: number; name: string } }>(
+        const data = await apiFetch<{ found: boolean; customer?: { id: number; name: string; balance?: string } }>(
           api(`/api/devices/customer-lookup?phone=${encodeURIComponent(supplierPhone)}`)
         );
         setFoundCustomer(data.found && data.customer ? data.customer : null);
@@ -670,14 +701,22 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     return () => clearTimeout(t);
   }, [supplierPhone]);
 
+  /* Load safes + warehouses when entering step 2 */
+  useEffect(() => {
+    if (step !== 2) return;
+    apiFetch<{ id: number; name: string; balance: string }[]>(api("/api/devices/safes"))
+      .then(setSafes).catch(() => setSafes([]));
+    apiFetch<{ id: number; name: string }[]>(api("/api/devices/warehouses"))
+      .then(setWarehouses).catch(() => setWarehouses([]));
+  }, [step]);
+
   /* ID card file handler */
   const handleIdFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
       toast({ title: "حجم الملف يتجاوز 2MB", variant: "destructive" });
-      e.target.value = "";
-      return;
+      e.target.value = ""; return;
     }
     setIdCardFile(file);
     const reader = new FileReader();
@@ -687,16 +726,41 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
 
   /* Step 1 validation → go to step 2 */
   const handleNext = () => {
-    if (!effectiveBrand.trim()) { toast({ title: "اختر الشركة المصنعة", variant: "destructive" }); return; }
-    if (!catSel.trim() && !isOtherBrand) { toast({ title: "اختر فئة المنتج", variant: "destructive" }); return; }
-    if (!effectiveModel.trim()) { toast({ title: "اختر الموديل", variant: "destructive" }); return; }
+    const e: Record<string, boolean> = {};
+    if (!effectiveBrand.trim()) e.brand = true;
+    if (!catSel.trim() && !isOtherBrand) e.cat = true;
+    if (!effectiveModel.trim()) e.model = true;
+    if (!effectiveColor.trim()) e.color = true;
+    if (!finalStorage.trim()) e.storage = true;
+    if (!form.imei.trim()) e.imei = true;
+    if (!form.battery_health) e.battery = true;
+    if (!supplierPhone.trim()) e.phone = true;
+    if (isNewSupplier && !supplierName.trim()) e.supplierName = true;
+    setErrors(e);
+    if (Object.keys(e).length > 0) {
+      toast({ title: "يرجى تعبئة الحقول المطلوبة", variant: "destructive" });
+      return;
+    }
     setStep(2);
   };
 
-  /* Final save */
+  /* Final save — calls POST /api/devices/purchase */
   const handleSave = async () => {
-    if (!supplierPhone.trim()) { toast({ title: "أدخل رقم المورد / العميل", variant: "destructive" }); return; }
-    const finalStorage = storageCustom.trim() || form.storage;
+    const e: Record<string, boolean> = {};
+    const pp = parseFloat(fin.purchase_price);
+    if (!pp || pp <= 0) e.purchase_price = true;
+    if (!fin.warehouse_id) e.warehouse_id = true;
+    if (fin.payment_type !== "credit" && !fin.safe_id) e.safe_id = true;
+    if (fin.payment_type === "partial") {
+      const pa = parseFloat(fin.paid_amount);
+      if (!pa || pa <= 0 || pa >= pp) e.paid_amount = true;
+    }
+    setErrors(e);
+    if (Object.keys(e).length > 0) {
+      toast({ title: "يرجى تعبئة الحقول المطلوبة", variant: "destructive" });
+      return;
+    }
+
     setSaving(true);
     try {
       let idCardData: string | undefined;
@@ -708,35 +772,55 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
           r.readAsDataURL(idCardFile);
         });
       }
-      await apPost("/api/devices", {
-        brand: effectiveBrand,
-        model: effectiveModel,
-        color: effectiveColor || undefined,
-        storage: finalStorage,
-        grade: form.grade,
-        imei: form.imei || undefined,
+
+      await apPost("/api/devices/purchase", {
+        /* device */
+        brand:          effectiveBrand,
+        model:          effectiveModel,
+        color:          effectiveColor  || undefined,
+        storage:        finalStorage    || undefined,
+        grade:          form.grade,
+        imei:           form.imei       || undefined,
         battery_health: form.battery_health ? Math.min(100, parseInt(form.battery_health)) : null,
-        supplier_phone: supplierPhone.trim(),
-        supplier_name: foundCustomer ? foundCustomer.name : undefined,
-        id_card_data: idCardData,
-        purchase_price: 0,
-        sale_price: 0,
+        supplier_phone: supplierPhone.trim() || undefined,
+        id_card_data:   idCardData,
+        /* supplier / customer */
+        customer_id:        foundCustomer ? foundCustomer.id : undefined,
+        new_customer_name:  isNewSupplier && supplierName.trim() ? supplierName.trim() : undefined,
+        /* financial */
+        purchase_price: pp,
+        sale_price:     fin.sale_price ? parseFloat(fin.sale_price) : 0,
+        payment_type:   fin.payment_type,
+        safe_id:        fin.safe_id    ? parseInt(fin.safe_id)    : undefined,
+        warehouse_id:   fin.warehouse_id ? parseInt(fin.warehouse_id) : undefined,
+        paid_amount:    fin.payment_type === "partial" ? parseFloat(fin.paid_amount) : undefined,
       });
-      toast({ title: "✅ تم إضافة الجهاز بنجاح" });
+
+      toast({ title: "✅ تم إضافة الجهاز وتسجيل فاتورة الشراء" });
       onSaved(); onClose();
-    } catch {
-      toast({ title: "خطأ في الحفظ", variant: "destructive" });
+    } catch (err: unknown) {
+      let msg = "خطأ في الحفظ";
+      if (err instanceof Error) {
+        try { const j = JSON.parse(err.message); msg = j.error || err.message; }
+        catch { msg = err.message; }
+      }
+      toast({ title: msg, variant: "destructive" });
     } finally { setSaving(false); }
   };
 
-  const iCls = "erp-input w-full text-sm";
-  const lCls = "text-[11px] text-white/40 mb-1.5 block text-right";
-  const sCls = "erp-input w-full text-sm";
-  const dCls = `${sCls} opacity-40 cursor-not-allowed`;
+  /* helper classes */
+  const errCls  = (k: string) => errors[k] ? "border-red-500/60 bg-red-500/5" : "";
+  const iCls    = (k = "") => `erp-input w-full text-sm ${errCls(k)}`;
+  const sCls    = (k = "") => `erp-input w-full text-sm ${errCls(k)}`;
+  const dCls    = "erp-input w-full text-sm opacity-40 cursor-not-allowed";
+  const lCls    = "text-[11px] text-white/40 mb-1.5 block text-right";
+  const lReq    = "text-[11px] mb-1.5 block text-right text-white/40";
+
+  const PAYMENT_LABELS = { cash: "نقدي", credit: "آجل", partial: "جزئي" };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 bg-black/70 backdrop-blur-sm" dir="rtl">
-      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-xl mx-4 overflow-hidden flex flex-col" style={{ maxHeight: "92vh" }}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 bg-black/70 backdrop-blur-sm" dir="rtl">
+      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-xl mx-4 overflow-hidden flex flex-col" style={{ maxHeight: "94vh" }}>
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 shrink-0">
@@ -745,17 +829,16 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
               <Smartphone className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <span className="font-bold text-white text-sm">إضافة جهاز جديد</span>
+              <span className="font-bold text-white text-sm">إضافة جهاز مستعمل</span>
               <p className="text-[10px] text-white/30 mt-0.5">
-                الخطوة {step} من 2 — {step === 1 ? "بيانات الجهاز" : "بيانات المورد"}
+                الخطوة {step} من 2 — {step === 1 ? "بيانات الجهاز والمورد" : "التسعير وطريقة الدفع"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* progress dots */}
             <div className="flex gap-1.5">
               {[1, 2].map(s => (
-                <div key={s} className={`w-6 h-1.5 rounded-full transition-all ${s <= step ? "bg-violet-500" : "bg-white/10"}`} />
+                <div key={s} className={`h-1.5 rounded-full transition-all ${s <= step ? "bg-violet-500 w-8" : "bg-white/10 w-4"}`} />
               ))}
             </div>
             <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
@@ -767,107 +850,107 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
         {/* ── Body ── */}
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
 
-          {/* ══════════ STEP 1: Device Info ══════════ */}
+          {/* ══════════ STEP 1: Device + Supplier ══════════ */}
           {step === 1 && (
             <>
-              {/* Row 1: Brand | Category | Model */}
+              {/* ─ Brand / Category / Model ─ */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className={lCls}>الشركة المصنعة *</label>
-                  <select value={brandSel} onChange={e => handleBrandChange(e.target.value)} className={sCls}>
-                    <option value="">— اختر الشركة —</option>
+                  <label className={lReq}>الشركة المصنعة *</label>
+                  <select value={brandSel} onChange={e => handleBrandChange(e.target.value)} className={sCls("brand")}>
+                    <option value="">— اختر —</option>
                     {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                   {isOtherBrand && (
                     <input value={brandCustom} onChange={e => setBrandCustom(e.target.value)}
-                      placeholder="اسم الشركة" className={`${iCls} mt-1.5`} />
+                      placeholder="اسم الشركة" className={`${iCls("brand")} mt-1.5`} />
                   )}
                 </div>
                 <div>
-                  <label className={lCls}>فئة المنتج *</label>
+                  <label className={lReq}>الفئة *</label>
                   {isOtherBrand ? (
                     <input value={catSel} onChange={e => setCatSel(e.target.value)}
-                      placeholder="مثال: iPhone" className={iCls} />
+                      placeholder="مثال: iPhone" className={iCls("cat")} />
                   ) : (
                     <select value={catSel} onChange={e => handleCatChange(e.target.value)}
-                      className={brandSel ? sCls : dCls} disabled={!brandSel}>
-                      <option value="">— اختر الفئة —</option>
+                      className={brandSel ? sCls("cat") : dCls} disabled={!brandSel}>
+                      <option value="">— اختر —</option>
                       {categories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   )}
                 </div>
                 <div>
-                  <label className={lCls}>الموديل *</label>
+                  <label className={lReq}>الموديل *</label>
                   {isOtherBrand || (catSel && modelNames.length === 0) ? (
                     <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
-                      placeholder="اكتب الموديل" className={iCls} />
+                      placeholder="اكتب الموديل" className={iCls("model")} />
                   ) : (
                     <>
                       <select value={modelSel} onChange={e => handleModelChange(e.target.value)}
-                        className={catSel ? sCls : dCls} disabled={!catSel}>
-                        <option value="">— اختر الموديل —</option>
+                        className={catSel ? sCls("model") : dCls} disabled={!catSel}>
+                        <option value="">— اختر —</option>
                         {modelNames.map(m => <option key={m} value={m}>{m}</option>)}
                       </select>
                       {isOtherModel && (
                         <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
-                          placeholder="اكتب الموديل" className={`${iCls} mt-1.5`} />
+                          placeholder="اكتب الموديل" className={`${iCls("model")} mt-1.5`} />
                       )}
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Row 2: Color | Storage | Grade */}
+              {/* ─ Color / Storage / Grade ─ */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className={lCls}>اللون</label>
+                  <label className={lReq}>اللون *</label>
                   <select value={colorSel} onChange={e => setColorSel(e.target.value)}
-                    className={(modelSel || isOtherBrand) ? sCls : dCls}
+                    className={(modelSel || isOtherBrand) ? sCls("color") : dCls}
                     disabled={!modelSel && !isOtherBrand}>
                     <option value="">— اللون —</option>
                     {availColors.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                   {isOtherColor && (
                     <input value={colorCustom} onChange={e => setColorCustom(e.target.value)}
-                      placeholder="اكتب اللون" className={`${iCls} mt-1.5`} />
+                      placeholder="اكتب اللون" className={`${iCls("color")} mt-1.5`} />
                   )}
                 </div>
                 <div>
-                  <label className={lCls}>السعة / الحجم</label>
+                  <label className={lReq}>السعة *</label>
                   <select value={isOtherStorage ? OTHER : form.storage}
                     onChange={e => handleStorageChange(e.target.value)}
-                    className={(modelSel || isOtherBrand) ? sCls : dCls}
+                    className={(modelSel || isOtherBrand) ? sCls("storage") : dCls}
                     disabled={!modelSel && !isOtherBrand}>
                     <option value="">— السعة —</option>
                     {availStorages.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                   {isOtherStorage && (
                     <input value={storageCustom} onChange={e => setStorageCustom(e.target.value)}
-                      placeholder="مثال: 256GB" className={`${iCls} mt-1.5`} />
+                      placeholder="مثال: 256GB" className={`${iCls("storage")} mt-1.5`} />
                   )}
                 </div>
                 <div>
                   <label className={lCls}>الدرجة</label>
-                  <select value={form.grade} onChange={e => f("grade", e.target.value)} className={iCls}>
+                  <select value={form.grade} onChange={e => f("grade", e.target.value)} className={iCls()}>
                     {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
               </div>
 
-              {/* Row 3: IMEI/SN | Battery */}
+              {/* ─ IMEI / Battery ─ */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={lCls}>IMEI / SN</label>
+                  <label className={lReq}>IMEI *</label>
                   <input value={form.imei} onChange={e => f("imei", e.target.value)}
-                    placeholder="123456789012345" className={iCls}
+                    placeholder="123456789012345" className={iCls("imei")}
                     inputMode="numeric" maxLength={20} />
                 </div>
                 <div>
-                  <label className={lCls}>نسبة البطارية %</label>
+                  <label className={lReq}>نسبة البطارية % *</label>
                   <input type="number" min={1} max={100}
                     value={form.battery_health}
                     onChange={e => f("battery_health", String(Math.min(100, Math.max(1, parseInt(e.target.value) || 0))))}
-                    placeholder="85" className={iCls} />
+                    placeholder="85" className={iCls("battery")} />
                   {form.battery_health && (
                     <div className="mt-1.5 h-1 rounded-full bg-white/8 overflow-hidden">
                       <div className={`h-full rounded-full transition-all ${
@@ -878,105 +961,88 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                   )}
                 </div>
               </div>
-            </>
-          )}
 
-          {/* ══════════ STEP 2: Supplier Info ══════════ */}
-          {step === 2 && (
-            <>
-              {/* Device summary pill */}
-              <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/6 mb-1">
-                <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
-                  <Smartphone className="w-4 h-4 text-violet-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-white text-sm">{effectiveBrand} {effectiveModel}</p>
-                  <p className="text-[11px] text-white/30">
-                    {form.storage && <span className="ml-2">{storageCustom || form.storage}</span>}
-                    {effectiveColor && <span className="ml-2">· {effectiveColor}</span>}
-                    {form.imei && <span className="ml-2 font-mono">· {maskImei(form.imei)}</span>}
-                  </p>
-                </div>
-                <button onClick={() => setStep(1)} className="text-[10px] text-violet-400/70 hover:text-violet-300 flex items-center gap-1 px-2 py-1 rounded-lg border border-violet-500/20 hover:border-violet-500/40 transition-all">
-                  تعديل
-                </button>
+              {/* ─ Divider ─ */}
+              <div className="flex items-center gap-3 py-0.5">
+                <div className="flex-1 h-px bg-white/6" />
+                <span className="text-[10px] text-white/20">بيانات المورد</span>
+                <div className="flex-1 h-px bg-white/6" />
               </div>
 
-              {/* Phone number */}
+              {/* ─ Supplier Phone lookup ─ */}
               <div>
-                <label className={lCls}>رقم العميل / المورد *</label>
+                <label className={lReq}>رقم هاتف المورد *</label>
                 <div className="relative">
-                  <input
-                    type="tel"
-                    value={supplierPhone}
-                    onChange={e => setSupplierPhone(e.target.value)}
-                    placeholder="01xxxxxxxxx"
-                    className={`${iCls} pl-10`}
-                    inputMode="tel"
-                    maxLength={15}
-                    dir="ltr"
-                  />
+                  <input type="tel" value={supplierPhone} onChange={e => setSupplierPhone(e.target.value)}
+                    placeholder="01xxxxxxxxx" className={`${iCls("phone")} pl-10`}
+                    inputMode="tel" maxLength={15} dir="ltr" />
                   <div className="absolute left-3 top-1/2 -translate-y-1/2">
                     {lookingUp
                       ? <div className="w-3.5 h-3.5 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
                       : foundCustomer
                         ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                         : supplierPhone.length >= 7
-                          ? <XCircle className="w-3.5 h-3.5 text-white/20" />
+                          ? <XCircle className="w-3.5 h-3.5 text-amber-400/60" />
                           : <User className="w-3.5 h-3.5 text-white/20" />}
                   </div>
                 </div>
-                {/* Customer found card */}
+
+                {/* Found: existing customer card */}
                 {foundCustomer && (
-                  <div className="mt-2 flex items-center gap-2.5 px-3 py-2 bg-emerald-500/8 border border-emerald-500/20 rounded-xl">
-                    <div className="w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                      <User className="w-3.5 h-3.5 text-emerald-400" />
+                  <div className="mt-2 flex items-center gap-2.5 px-3 py-2.5 bg-emerald-500/8 border border-emerald-500/20 rounded-xl">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                      <User className="w-4 h-4 text-emerald-400" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-emerald-300 text-sm font-bold">{foundCustomer.name}</p>
-                      <p className="text-emerald-400/50 text-[10px]">موجود في قاعدة البيانات</p>
+                      <p className="text-emerald-400/50 text-[10px]">مسجّل في قاعدة البيانات — سيظهر في كشف حسابه</p>
                     </div>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 mr-auto" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                   </div>
                 )}
-                {supplierPhone.length >= 7 && !lookingUp && !foundCustomer && (
-                  <p className="text-[11px] text-white/30 mt-1.5 flex items-center gap-1">
-                    <Info className="w-3 h-3" /> رقم جديد — سيُحفظ مع الجهاز
-                  </p>
+
+                {/* New supplier: name field required */}
+                {isNewSupplier && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center gap-1.5 text-[11px] text-amber-400/70">
+                      <Info className="w-3 h-3" /> رقم جديد — أدخل الاسم للحفظ (نقدي فقط)
+                    </div>
+                    <input value={supplierName} onChange={e => setSupplierName(e.target.value)}
+                      placeholder="اسم المورد *" className={iCls("supplierName")} />
+                  </div>
                 )}
               </div>
 
-              {/* ID card upload */}
+              {/* ─ ID card upload ─ */}
               <div>
-                <label className={lCls}>البطاقة الشخصية <span className="text-white/25">(حتى 2MB)</span></label>
+                <label className={lCls}>البطاقة الشخصية <span className="text-white/20">(اختياري — حتى 2MB)</span></label>
                 {!idCardPreview ? (
-                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-white/10 rounded-xl p-6 cursor-pointer hover:border-violet-500/30 hover:bg-violet-500/4 transition-all group">
-                    <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-violet-500/10 flex items-center justify-center transition-colors">
-                      <FileText className="w-5 h-5 text-white/25 group-hover:text-violet-400 transition-colors" />
+                  <label className="flex items-center gap-3 p-3 border border-dashed border-white/8 rounded-xl cursor-pointer hover:border-violet-500/30 hover:bg-violet-500/4 transition-all group">
+                    <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-violet-500/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-white/25 group-hover:text-violet-400 transition-colors" />
                     </div>
-                    <div className="text-center">
-                      <p className="text-white/40 text-sm">انقر لرفع صورة البطاقة</p>
-                      <p className="text-white/20 text-[11px] mt-0.5">JPG, PNG, PDF — الحد الأقصى 2MB</p>
+                    <div>
+                      <p className="text-white/35 text-sm">انقر لرفع صورة البطاقة</p>
+                      <p className="text-white/20 text-[10px]">JPG, PNG, PDF</p>
                     </div>
                     <input type="file" accept="image/*,application/pdf" onChange={handleIdFile} className="hidden" />
                   </label>
                 ) : (
                   <div className="relative rounded-xl overflow-hidden border border-white/10 bg-white/3">
                     {idCardPreview.startsWith("data:image") ? (
-                      <img src={idCardPreview} alt="بطاقة شخصية" className="w-full h-40 object-cover" />
+                      <img src={idCardPreview} alt="بطاقة شخصية" className="w-full h-32 object-cover" />
                     ) : (
-                      <div className="flex items-center gap-3 p-4">
-                        <FileText className="w-8 h-8 text-violet-400" />
+                      <div className="flex items-center gap-3 p-3">
+                        <FileText className="w-7 h-7 text-violet-400" />
                         <div>
                           <p className="text-white/70 text-sm font-medium">{idCardFile?.name}</p>
                           <p className="text-white/30 text-xs">{((idCardFile?.size ?? 0) / 1024).toFixed(0)} KB</p>
                         </div>
                       </div>
                     )}
-                    <button
-                      onClick={() => { setIdCardPreview(""); setIdCardFile(null); }}
-                      className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center hover:bg-red-500/60 transition-colors">
-                      <X className="w-3.5 h-3.5 text-white" />
+                    <button onClick={() => { setIdCardPreview(""); setIdCardFile(null); }}
+                      className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-red-500/60 transition-colors">
+                      <X className="w-3 h-3 text-white" />
                     </button>
                     <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-[10px] text-emerald-300 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> تم الرفع
@@ -984,6 +1050,154 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                   </div>
                 )}
               </div>
+            </>
+          )}
+
+          {/* ══════════ STEP 2: Pricing + Payment ══════════ */}
+          {step === 2 && (
+            <>
+              {/* Device summary pill */}
+              <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/6">
+                <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                  <Smartphone className="w-4 h-4 text-violet-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-white text-sm">{effectiveBrand} {effectiveModel}</p>
+                  <p className="text-[11px] text-white/30">
+                    {finalStorage && <span>{finalStorage}</span>}
+                    {effectiveColor && <span> · {effectiveColor}</span>}
+                    {form.imei && <span className="font-mono"> · {maskImei(form.imei)}</span>}
+                    {foundCustomer && <span className="text-emerald-400/70"> · {foundCustomer.name}</span>}
+                    {isNewSupplier && supplierName && <span className="text-amber-400/70"> · {supplierName}</span>}
+                  </p>
+                </div>
+                <button onClick={() => setStep(1)} className="text-[10px] text-violet-400/70 hover:text-violet-300 flex items-center gap-1 px-2 py-1 rounded-lg border border-violet-500/20 hover:border-violet-500/40 transition-all shrink-0">
+                  تعديل
+                </button>
+              </div>
+
+              {/* Prices row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={lReq}>سعر الشراء *</label>
+                  <div className="relative">
+                    <input type="number" min={0} value={fin.purchase_price}
+                      onChange={e => fp("purchase_price", e.target.value)}
+                      placeholder="0" className={`${iCls("purchase_price")} pl-12`} />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-white/30 font-mono">EGP</span>
+                  </div>
+                </div>
+                <div>
+                  <label className={lCls}>سعر البيع المقترح</label>
+                  <div className="relative">
+                    <input type="number" min={0} value={fin.sale_price}
+                      onChange={e => fp("sale_price", e.target.value)}
+                      placeholder="0" className={`${iCls()} pl-12`} />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-white/30 font-mono">EGP</span>
+                  </div>
+                  {fin.purchase_price && fin.sale_price &&
+                    parseFloat(fin.sale_price) > parseFloat(fin.purchase_price) && (
+                    <p className="text-[10px] text-emerald-400/70 mt-1">
+                      هامش ربح: {(parseFloat(fin.sale_price) - parseFloat(fin.purchase_price)).toLocaleString("ar-EG")} ج
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Warehouse */}
+              <div>
+                <label className={lReq}>المخزن *</label>
+                <select value={fin.warehouse_id} onChange={e => fp("warehouse_id", e.target.value)}
+                  className={sCls("warehouse_id")}>
+                  <option value="">— اختر المخزن —</option>
+                  {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
+                {warehouses.length === 0 && (
+                  <p className="text-[10px] text-amber-400/60 mt-1 flex items-center gap-1">
+                    <Info className="w-3 h-3" /> لا يوجد مخزن — أضف مخزناً من إعدادات النظام
+                  </p>
+                )}
+              </div>
+
+              {/* Payment type */}
+              <div>
+                <label className={lCls}>طريقة الدفع</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["cash", "credit", "partial"] as const).map(pt => {
+                    const disabled = isNewSupplier && pt !== "cash";
+                    return (
+                      <button key={pt}
+                        onClick={() => !disabled && fp("payment_type", pt)}
+                        disabled={disabled}
+                        className={`py-2 rounded-xl border text-sm font-bold transition-all ${
+                          fin.payment_type === pt
+                            ? "bg-violet-500/20 border-violet-500/50 text-violet-300"
+                            : disabled
+                              ? "border-white/5 text-white/15 cursor-not-allowed"
+                              : "border-white/10 text-white/40 hover:border-violet-500/30 hover:text-white/70"
+                        }`}>
+                        {PAYMENT_LABELS[pt]}
+                      </button>
+                    );
+                  })}
+                </div>
+                {isNewSupplier && (
+                  <p className="text-[10px] text-amber-400/50 mt-1.5 flex items-center gap-1">
+                    <Info className="w-3 h-3" /> المورد الجديد — نقدي فقط
+                  </p>
+                )}
+              </div>
+
+              {/* Safe selector (not for full credit) */}
+              {fin.payment_type !== "credit" && (
+                <div>
+                  <label className={lReq}>الخزينة *</label>
+                  <select value={fin.safe_id} onChange={e => fp("safe_id", e.target.value)}
+                    className={sCls("safe_id")}>
+                    <option value="">— اختر الخزينة —</option>
+                    {safes.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} — {parseFloat(s.balance).toLocaleString("ar-EG")} ج
+                      </option>
+                    ))}
+                  </select>
+                  {safes.length === 0 && (
+                    <p className="text-[10px] text-amber-400/60 mt-1 flex items-center gap-1">
+                      <Info className="w-3 h-3" /> لا يوجد خزينة — أضف خزينة من إعدادات النظام
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Partial: paid amount */}
+              {fin.payment_type === "partial" && (
+                <div>
+                  <label className={lReq}>المبلغ المدفوع الآن *</label>
+                  <div className="relative">
+                    <input type="number" min={0} value={fin.paid_amount}
+                      onChange={e => fp("paid_amount", e.target.value)}
+                      placeholder="0" className={`${iCls("paid_amount")} pl-12`} />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-white/30 font-mono">EGP</span>
+                  </div>
+                  {fin.purchase_price && fin.paid_amount && (
+                    <p className="text-[10px] text-amber-400/70 mt-1">
+                      المتبقي: {(parseFloat(fin.purchase_price) - parseFloat(fin.paid_amount)).toLocaleString("ar-EG")} ج
+                      {foundCustomer && " — سيُضاف لكشف حساب المورد"}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Credit summary */}
+              {fin.payment_type === "credit" && foundCustomer && (
+                <div className="flex items-start gap-2.5 p-3 bg-amber-500/6 border border-amber-500/20 rounded-xl">
+                  <Info className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                  <div className="text-[11px] text-amber-300/70 leading-relaxed">
+                    سيُضاف المبلغ كاملاً ({fin.purchase_price ? Number(fin.purchase_price).toLocaleString("ar-EG") : 0} ج) إلى ذمة{" "}
+                    <span className="text-amber-300 font-bold">{foundCustomer.name}</span> في كشف الحساب
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1009,9 +1223,11 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
             </button>
           ) : (
             <button onClick={handleSave} disabled={saving}
-              className="px-6 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all disabled:opacity-40 flex items-center gap-2">
-              {saving ? <div className="w-3.5 h-3.5 border-2 border-violet-400/40 border-t-violet-400 rounded-full animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-              حفظ الجهاز
+              className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-violet-600/30 to-violet-500/20 border border-violet-500/50 text-violet-200 text-sm font-bold hover:from-violet-600/40 hover:to-violet-500/30 transition-all disabled:opacity-40 flex items-center gap-2">
+              {saving
+                ? <div className="w-3.5 h-3.5 border-2 border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+                : <ShoppingCart className="w-3.5 h-3.5" />}
+              حفظ وشراء
             </button>
           )}
         </div>
