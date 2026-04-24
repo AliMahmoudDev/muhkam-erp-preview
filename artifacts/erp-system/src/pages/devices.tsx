@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, type ElementType } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Smartphone, Plus, Search, X, CheckCircle2, XCircle,
@@ -2245,20 +2246,32 @@ function RowMenu({ device, onDetail, onRefresh }: {
         <MoreVertical className="w-3.5 h-3.5" />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
           ref={dropdownRef}
-          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
-          className="w-44 glass-panel rounded-xl border border-white/10 py-1 shadow-2xl"
+          onMouseDown={e => e.stopPropagation()}
+          style={{
+            position: "fixed",
+            top: menuPos.top,
+            left: menuPos.left,
+            zIndex: 99999,
+            width: "11rem",
+            background: "hsla(225,25%,10%,0.97)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "0.75rem",
+            padding: "0.25rem 0",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+          }}
           dir="rtl">
           {menuItems.map(({ label, icon: Icon, action, cls }) => (
             <button key={label} onClick={(e) => { e.stopPropagation(); action(); }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium hover:bg-white/5 transition-colors text-right ${cls}`}>
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium hover:bg-white/8 transition-colors text-right ${cls}`}>
               <Icon className="w-3.5 h-3.5 shrink-0" />
               {label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Confirm dialog */}
