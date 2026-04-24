@@ -67,6 +67,185 @@ async function apPatch<T>(url: string, body: unknown): Promise<T> {
 
 const GRADES = ["A+", "A", "B", "C", "D"];
 const STORAGES = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB"];
+
+/* ── Device Catalog ── */
+const OTHER_OPTION = "أخرى (كتابة يدوي)";
+
+const DEVICE_CATALOG: Record<string, string[]> = {
+  "Apple": [
+    /* ─ iPhone ─ */
+    "iPhone 6", "iPhone 6s", "iPhone 6s Plus",
+    "iPhone 7", "iPhone 7 Plus",
+    "iPhone 8", "iPhone 8 Plus",
+    "iPhone X", "iPhone XR", "iPhone XS", "iPhone XS Max",
+    "iPhone 11", "iPhone 11 Pro", "iPhone 11 Pro Max",
+    "iPhone 12", "iPhone 12 mini", "iPhone 12 Pro", "iPhone 12 Pro Max",
+    "iPhone 13", "iPhone 13 mini", "iPhone 13 Pro", "iPhone 13 Pro Max",
+    "iPhone 14", "iPhone 14 Plus", "iPhone 14 Pro", "iPhone 14 Pro Max",
+    "iPhone 15", "iPhone 15 Plus", "iPhone 15 Pro", "iPhone 15 Pro Max",
+    "iPhone 16", "iPhone 16 Plus", "iPhone 16 Pro", "iPhone 16 Pro Max",
+    /* ─ iPad ─ */
+    "iPad (9th Gen)", "iPad (10th Gen)",
+    "iPad Air 4", "iPad Air 5", "iPad Air M2",
+    "iPad mini 5", "iPad mini 6",
+    "iPad Pro 11\" M1", "iPad Pro 11\" M2", "iPad Pro 11\" M4",
+    "iPad Pro 12.9\" M1", "iPad Pro 12.9\" M2", "iPad Pro 13\" M4",
+    /* ─ MacBook ─ */
+    "MacBook Air M1", "MacBook Air M2", "MacBook Air M3",
+    "MacBook Pro 14\" M1", "MacBook Pro 14\" M2", "MacBook Pro 14\" M3",
+    "MacBook Pro 16\" M1", "MacBook Pro 16\" M2", "MacBook Pro 16\" M3",
+    /* ─ Apple Watch ─ */
+    "Apple Watch Series 7", "Apple Watch Series 8", "Apple Watch Series 9",
+    "Apple Watch Ultra", "Apple Watch Ultra 2",
+    "Apple Watch SE 2",
+    /* ─ AirPods ─ */
+    "AirPods 2nd Gen", "AirPods 3rd Gen",
+    "AirPods Pro 1st Gen", "AirPods Pro 2nd Gen",
+    "AirPods Max",
+    OTHER_OPTION,
+  ],
+  "Samsung": [
+    /* ─ Galaxy S ─ */
+    "Galaxy S21", "Galaxy S21+", "Galaxy S21 Ultra",
+    "Galaxy S21 FE",
+    "Galaxy S22", "Galaxy S22+", "Galaxy S22 Ultra",
+    "Galaxy S23", "Galaxy S23+", "Galaxy S23 Ultra",
+    "Galaxy S23 FE",
+    "Galaxy S24", "Galaxy S24+", "Galaxy S24 Ultra",
+    "Galaxy S24 FE",
+    "Galaxy S25", "Galaxy S25+", "Galaxy S25 Ultra",
+    /* ─ Galaxy A ─ */
+    "Galaxy A03", "Galaxy A03s",
+    "Galaxy A12", "Galaxy A13", "Galaxy A14", "Galaxy A15",
+    "Galaxy A23", "Galaxy A24", "Galaxy A25",
+    "Galaxy A33", "Galaxy A34", "Galaxy A35",
+    "Galaxy A53", "Galaxy A54", "Galaxy A55",
+    "Galaxy A73",
+    /* ─ Galaxy Z ─ */
+    "Galaxy Z Fold 4", "Galaxy Z Fold 5", "Galaxy Z Fold 6",
+    "Galaxy Z Flip 4", "Galaxy Z Flip 5", "Galaxy Z Flip 6",
+    /* ─ Galaxy Tab ─ */
+    "Galaxy Tab A7", "Galaxy Tab A7 Lite", "Galaxy Tab A8",
+    "Galaxy Tab S7", "Galaxy Tab S7+",
+    "Galaxy Tab S8", "Galaxy Tab S8+", "Galaxy Tab S8 Ultra",
+    "Galaxy Tab S9", "Galaxy Tab S9+", "Galaxy Tab S9 Ultra",
+    "Galaxy Tab S9 FE",
+    OTHER_OPTION,
+  ],
+  "Xiaomi": [
+    "Xiaomi 11", "Xiaomi 11T", "Xiaomi 11T Pro",
+    "Xiaomi 12", "Xiaomi 12 Pro", "Xiaomi 12X",
+    "Xiaomi 13", "Xiaomi 13 Pro", "Xiaomi 13T", "Xiaomi 13T Pro",
+    "Xiaomi 14", "Xiaomi 14 Pro", "Xiaomi 14T", "Xiaomi 14T Pro",
+    "Redmi 9", "Redmi 9A", "Redmi 9C",
+    "Redmi 10", "Redmi 10A", "Redmi 10C",
+    "Redmi 12", "Redmi 12C",
+    "Redmi 13", "Redmi 13C",
+    "Redmi Note 10", "Redmi Note 10 Pro", "Redmi Note 10s",
+    "Redmi Note 11", "Redmi Note 11 Pro", "Redmi Note 11s",
+    "Redmi Note 12", "Redmi Note 12 Pro", "Redmi Note 12s",
+    "Redmi Note 13", "Redmi Note 13 Pro", "Redmi Note 13 Pro+",
+    "Redmi Note 14", "Redmi Note 14 Pro", "Redmi Note 14 Pro+",
+    "POCO X3", "POCO X3 Pro", "POCO X4 Pro", "POCO X5 Pro",
+    "POCO M3", "POCO M4", "POCO M5",
+    OTHER_OPTION,
+  ],
+  "Huawei": [
+    "Huawei P30", "Huawei P30 Pro",
+    "Huawei P40", "Huawei P40 Pro", "Huawei P40 Lite",
+    "Huawei P50", "Huawei P50 Pro",
+    "Huawei P60", "Huawei P60 Pro",
+    "Huawei Mate 30 Pro",
+    "Huawei Mate 40 Pro",
+    "Huawei Mate 50 Pro",
+    "Huawei Nova 5T", "Huawei Nova 7", "Huawei Nova 9", "Huawei Nova 11",
+    "Huawei MatePad Pro", "Huawei MatePad 11",
+    OTHER_OPTION,
+  ],
+  "OPPO": [
+    "OPPO Reno 5", "OPPO Reno 6", "OPPO Reno 7", "OPPO Reno 8",
+    "OPPO Reno 10", "OPPO Reno 10 Pro",
+    "OPPO A54", "OPPO A55", "OPPO A74", "OPPO A76", "OPPO A77",
+    "OPPO A96", "OPPO A98",
+    "OPPO Find X5", "OPPO Find X5 Pro", "OPPO Find X6 Pro",
+    OTHER_OPTION,
+  ],
+  "Vivo": [
+    "Vivo Y21", "Vivo Y22", "Vivo Y33s", "Vivo Y35", "Vivo Y36",
+    "Vivo V23", "Vivo V25", "Vivo V27", "Vivo V29",
+    "Vivo X80 Pro", "Vivo X90 Pro",
+    OTHER_OPTION,
+  ],
+  "OnePlus": [
+    "OnePlus 9", "OnePlus 9 Pro",
+    "OnePlus 10 Pro", "OnePlus 10T",
+    "OnePlus 11", "OnePlus 11R",
+    "OnePlus 12", "OnePlus 12R",
+    "OnePlus Nord", "OnePlus Nord 2", "OnePlus Nord CE", "OnePlus Nord CE 2",
+    "OnePlus Nord N10", "OnePlus Nord N20",
+    OTHER_OPTION,
+  ],
+  "Honor": [
+    "Honor 10X", "Honor 50", "Honor 70", "Honor 80", "Honor 90",
+    "Honor Magic 4", "Honor Magic 5", "Honor Magic 6",
+    "Honor X8", "Honor X9", "Honor X9a",
+    OTHER_OPTION,
+  ],
+  "realme": [
+    "realme 8", "realme 8 Pro", "realme 9", "realme 9 Pro",
+    "realme 10", "realme 10 Pro", "realme 11", "realme 11 Pro",
+    "realme C30", "realme C31", "realme C33", "realme C35", "realme C51",
+    "realme GT 2 Pro", "realme GT Neo 3",
+    OTHER_OPTION,
+  ],
+  "Tecno": [
+    "Tecno Spark 8", "Tecno Spark 9", "Tecno Spark 10", "Tecno Spark 20",
+    "Tecno Camon 19", "Tecno Camon 20", "Tecno Camon 30",
+    "Tecno Phantom X2",
+    OTHER_OPTION,
+  ],
+  "Infinix": [
+    "Infinix Hot 11", "Infinix Hot 12", "Infinix Hot 20", "Infinix Hot 30",
+    "Infinix Note 12", "Infinix Note 30", "Infinix Note 40",
+    "Infinix Zero 30",
+    OTHER_OPTION,
+  ],
+  "Nokia": [
+    "Nokia G21", "Nokia G22", "Nokia G42",
+    "Nokia X30", "Nokia X71",
+    "Nokia C31", "Nokia C32",
+    OTHER_OPTION,
+  ],
+  [OTHER_OPTION]: [OTHER_OPTION],
+};
+
+const BRANDS = Object.keys(DEVICE_CATALOG);
+
+const BRAND_COLORS: Record<string, string[]> = {
+  "Apple": [
+    "أسود", "أبيض", "فضي", "ذهبي",
+    "أحمر (Product RED)", "أزرق", "أخضر", "بنفسجي", "وردي", "أصفر",
+    "أسود تيتانيوم", "أبيض تيتانيوم", "أزرق تيتانيوم", "تيتانيوم طبيعي",
+    "أسود فضائي", "ذهبي شامبيا", "رمادي فضائي",
+    "ديب بيربل", "نايت بلاك", "ألباين جرين",
+  ],
+  "Samsung": [
+    "أسود فانتوم", "أبيض فانتوم", "رمادي", "فضي",
+    "أخضر", "أزرق", "بيج", "كريم", "وردي",
+    "بنفسجي", "أصفر", "أحمر", "بورجاندي",
+    "جرافيت", "جرين", "ليفندر",
+  ],
+  "default": [
+    "أسود", "أبيض", "فضي", "رمادي", "ذهبي",
+    "أزرق", "أحمر", "أخضر", "بنفسجي", "وردي",
+    "بيج", "برتقالي", "أصفر", "نيلي",
+  ],
+};
+
+function getColors(brand: string): string[] {
+  return [...(BRAND_COLORS[brand] ?? BRAND_COLORS["default"]), OTHER_OPTION];
+}
+
 const WARRANTY_OPTS = [
   { label: "بدون ضمان", value: 0 },
   { label: "شهر", value: 1 },
@@ -119,8 +298,33 @@ function StatusBadge({ status }: { status: DeviceStatus }) {
 function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { toast } = useToast();
   const { user } = useAuth();
+
+  /* ── dropdown selections (separate from the final typed values) ── */
+  const [brandSel, setBrandSel] = useState("");
+  const [modelSel, setModelSel] = useState("");
+  const [colorSel, setColorSel] = useState("");
+  const [brandCustom, setBrandCustom] = useState("");
+  const [modelCustom, setModelCustom] = useState("");
+  const [colorCustom, setColorCustom] = useState("");
+
+  const effectiveBrand = brandSel === OTHER_OPTION ? brandCustom : brandSel;
+  const effectiveModel = modelSel === OTHER_OPTION ? modelCustom : modelSel;
+  const effectiveColor = colorSel === OTHER_OPTION ? colorCustom : colorSel;
+
+  const availableModels = brandSel && brandSel !== OTHER_OPTION ? DEVICE_CATALOG[brandSel] ?? [] : [];
+  const availableColors = brandSel && brandSel !== OTHER_OPTION ? getColors(brandSel) : getColors("default");
+
+  /* reset model + color when brand changes */
+  const handleBrandChange = (v: string) => {
+    setBrandSel(v);
+    setModelSel("");
+    setModelCustom("");
+    setColorSel("");
+    setColorCustom("");
+  };
+
   const [form, setForm] = useState({
-    brand: "", model: "", color: "", storage: "128GB",
+    storage: "128GB",
     imei: "", serial_no: "",
     battery_health: "", grade: "B",
     condition_notes: "",
@@ -135,8 +339,8 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   const f = (k: string, v: string | boolean) => setForm(p => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.brand.trim() || !form.model.trim()) {
-      toast({ title: "أدخل الشركة والموديل على الأقل", variant: "destructive" }); return;
+    if (!effectiveBrand.trim() || !effectiveModel.trim()) {
+      toast({ title: "اختر الشركة المصنعة والموديل على الأقل", variant: "destructive" }); return;
     }
     if (!form.purchase_price) {
       toast({ title: "أدخل سعر الشراء", variant: "destructive" }); return;
@@ -145,6 +349,9 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     try {
       await apPost("/api/devices", {
         ...form,
+        brand: effectiveBrand,
+        model: effectiveModel,
+        color: effectiveColor || undefined,
         battery_health: form.battery_health ? parseInt(form.battery_health) : null,
         purchase_price: parseFloat(form.purchase_price) || 0,
         sale_price: parseFloat(form.sale_price) || 0,
@@ -161,6 +368,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
 
   const inputCls = "erp-input w-full text-sm";
   const labelCls = "text-[11px] text-white/40 mb-1 block text-right";
+  const selectCls = "erp-input w-full text-sm";
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 bg-black/70 backdrop-blur-sm" dir="rtl">
@@ -180,17 +388,38 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
         {/* Body */}
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
 
-          {/* Brand + Model */}
+          {/* Brand dropdown */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>الشركة المصنعة *</label>
-              <input value={form.brand} onChange={e => f("brand", e.target.value)}
-                placeholder="Apple / Samsung ..." className={inputCls} />
+              <select value={brandSel} onChange={e => handleBrandChange(e.target.value)} className={selectCls}>
+                <option value="">— اختر الشركة —</option>
+                {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+              {brandSel === OTHER_OPTION && (
+                <input value={brandCustom} onChange={e => setBrandCustom(e.target.value)}
+                  placeholder="اسم الشركة المصنعة" className={`${inputCls} mt-1.5`} />
+              )}
             </div>
+
+            {/* Model dropdown */}
             <div>
               <label className={labelCls}>الموديل *</label>
-              <input value={form.model} onChange={e => f("model", e.target.value)}
-                placeholder="iPhone 15 Pro Max" className={inputCls} />
+              {brandSel && brandSel !== OTHER_OPTION ? (
+                <>
+                  <select value={modelSel} onChange={e => setModelSel(e.target.value)} className={selectCls}>
+                    <option value="">— اختر الموديل —</option>
+                    {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  {modelSel === OTHER_OPTION && (
+                    <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
+                      placeholder="اكتب الموديل" className={`${inputCls} mt-1.5`} />
+                  )}
+                </>
+              ) : (
+                <input value={modelCustom} onChange={e => setModelCustom(e.target.value)}
+                  placeholder="اكتب الموديل مباشرة" className={inputCls} />
+              )}
             </div>
           </div>
 
@@ -198,8 +427,14 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className={labelCls}>اللون</label>
-              <input value={form.color} onChange={e => f("color", e.target.value)}
-                placeholder="Black" className={inputCls} />
+              <select value={colorSel} onChange={e => setColorSel(e.target.value)} className={selectCls}>
+                <option value="">— اختر اللون —</option>
+                {availableColors.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              {colorSel === OTHER_OPTION && (
+                <input value={colorCustom} onChange={e => setColorCustom(e.target.value)}
+                  placeholder="اكتب اللون" className={`${inputCls} mt-1.5`} />
+              )}
             </div>
             <div>
               <label className={labelCls}>السعة</label>
