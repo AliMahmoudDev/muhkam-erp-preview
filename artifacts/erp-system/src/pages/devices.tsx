@@ -2249,23 +2249,13 @@ function RowMenu({ device, onDetail, onRefresh }: {
       {open && createPortal(
         <div
           ref={dropdownRef}
+          className="row-menu-dropdown"
           onMouseDown={e => e.stopPropagation()}
-          style={{
-            position: "fixed",
-            top: menuPos.top,
-            left: menuPos.left,
-            zIndex: 99999,
-            width: "11rem",
-            background: "hsla(225,25%,10%,0.97)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "0.75rem",
-            padding: "0.25rem 0",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-          }}
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 99999 }}
           dir="rtl">
           {menuItems.map(({ label, icon: Icon, action, cls }) => (
             <button key={label} onClick={(e) => { e.stopPropagation(); action(); }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium hover:bg-white/8 transition-colors text-right ${cls}`}>
+              className={cls}>
               <Icon className="w-3.5 h-3.5 shrink-0" />
               {label}
             </button>

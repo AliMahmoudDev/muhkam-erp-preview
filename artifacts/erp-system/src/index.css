@@ -4301,3 +4301,38 @@ html.light .sale-qty-btn-sm:hover { background: #E2E8F0; }
 html.light .sale-qty-btn-sm-amber { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.22); }
 html.light .sale-qty-btn-sm-amber:hover { background: rgba(245,158,11,0.14); }
 html.light .sale-invoice-subtotal { background: #F8FAFC; }
+
+/* ── Row-menu portal dropdown ─────────────────────────── */
+.row-menu-dropdown {
+  background: hsla(225, 25%, 10%, 0.97);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 0.75rem;
+  padding: 0.25rem 0;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.row-menu-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: right;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.row-menu-dropdown button:hover { background: rgba(255,255,255,0.06); }
+
+html.light .row-menu-dropdown {
+  background: #FFFFFF;
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+}
+html.light .row-menu-dropdown button:hover { background: rgba(0,0,0,0.05); }
+html.light .row-menu-dropdown .text-emerald-300 { color: #059669; }
+html.light .row-menu-dropdown .text-amber-300   { color: #d97706; }
+html.light .row-menu-dropdown .text-red-400     { color: #dc2626; }
+html.light .row-menu-dropdown .text-violet-300  { color: #7c3aed; }
