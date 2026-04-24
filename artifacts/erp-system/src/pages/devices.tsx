@@ -79,96 +79,109 @@ type FullCatalog = Record<string, Record<string, Record<string, ModelSpec>>>;
 const CATALOG: FullCatalog = {
   "Apple": {
     "iPhone": {
-      "iPhone 16 Pro Max":  { colors: ["أسود تيتانيوم","أبيض تيتانيوم","صحراوي تيتانيوم","تيتانيوم طبيعي"], storages: ["256GB","512GB","1TB"] },
-      "iPhone 16 Pro":      { colors: ["أسود تيتانيوم","أبيض تيتانيوم","صحراوي تيتانيوم","تيتانيوم طبيعي"], storages: ["128GB","256GB","512GB","1TB"] },
-      "iPhone 16 Plus":     { colors: ["أسود","أبيض","وردي","تيل","إنديجو"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 16":          { colors: ["أسود","أبيض","وردي","تيل","إنديجو"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 15 Pro Max":  { colors: ["أسود تيتانيوم","أبيض تيتانيوم","أزرق تيتانيوم","تيتانيوم طبيعي"], storages: ["256GB","512GB","1TB"] },
-      "iPhone 15 Pro":      { colors: ["أسود تيتانيوم","أبيض تيتانيوم","أزرق تيتانيوم","تيتانيوم طبيعي"], storages: ["128GB","256GB","512GB","1TB"] },
-      "iPhone 15 Plus":     { colors: ["أسود","أزرق","أخضر","أصفر","وردي"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 15":          { colors: ["أسود","أزرق","أخضر","أصفر","وردي"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 14 Pro Max":  { colors: ["بنفسجي عميق","ذهبي","فضي","أسود فضائي"], storages: ["128GB","256GB","512GB","1TB"] },
-      "iPhone 14 Pro":      { colors: ["بنفسجي عميق","ذهبي","فضي","أسود فضائي"], storages: ["128GB","256GB","512GB","1TB"] },
-      "iPhone 14 Plus":     { colors: ["منتصف الليل","ضوء النجوم","أزرق","بنفسجي","أصفر","أحمر"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 14":          { colors: ["منتصف الليل","ضوء النجوم","أزرق","بنفسجي","أصفر","أحمر"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 13 Pro Max":  { colors: ["أزرق سييرا","فضي","ذهبي","أخضر ألباين","جرافيت"], storages: ["128GB","256GB","512GB","1TB"] },
-      "iPhone 13 Pro":      { colors: ["أزرق سييرا","فضي","ذهبي","أخضر ألباين","جرافيت"], storages: ["128GB","256GB","512GB","1TB"] },
-      "iPhone 13 mini":     { colors: ["منتصف الليل","ضوء النجوم","أزرق","وردي","أخضر","أحمر"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 13":          { colors: ["منتصف الليل","ضوء النجوم","أزرق","وردي","أخضر","أحمر"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 12 Pro Max":  { colors: ["أزرق باسيفيك","ذهبي","فضي","جرافيت"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 12 Pro":      { colors: ["أزرق باسيفيك","ذهبي","فضي","جرافيت"], storages: ["128GB","256GB","512GB"] },
-      "iPhone 12 mini":     { colors: ["أسود","أبيض","أحمر","أزرق","أخضر","بنفسجي"], storages: ["64GB","128GB","256GB"] },
-      "iPhone 12":          { colors: ["أسود","أبيض","أحمر","أزرق","أخضر","بنفسجي"], storages: ["64GB","128GB","256GB"] },
-      "iPhone 11 Pro Max":  { colors: ["أخضر ليلي","ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB","512GB"] },
-      "iPhone 11 Pro":      { colors: ["أخضر ليلي","ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB","512GB"] },
-      "iPhone 11":          { colors: ["أسود","أبيض","أصفر","بنفسجي","أخضر","أحمر"], storages: ["64GB","128GB","256GB"] },
-      "iPhone XS Max":      { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB","512GB"] },
-      "iPhone XS":          { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB","512GB"] },
-      "iPhone XR":          { colors: ["أسود","أبيض","أزرق","أصفر","مرجاني","أحمر"], storages: ["64GB","128GB","256GB"] },
-      "iPhone X":           { colors: ["فضي","رمادي فضائي"], storages: ["64GB","256GB"] },
-      "iPhone 8 Plus":      { colors: ["ذهبي","فضي","رمادي فضائي","أحمر"], storages: ["64GB","128GB","256GB"] },
-      "iPhone 8":           { colors: ["ذهبي","فضي","رمادي فضائي","أحمر"], storages: ["64GB","128GB","256GB"] },
-      "iPhone 7 Plus":      { colors: ["أسود لامع","أسود مطفي","ذهبي","فضي","وردي ذهبي","أحمر"], storages: ["32GB","128GB","256GB"] },
-      "iPhone 7":           { colors: ["أسود لامع","أسود مطفي","ذهبي","فضي","وردي ذهبي","أحمر"], storages: ["32GB","128GB","256GB"] },
-      "iPhone 6s Plus":     { colors: ["ذهبي","فضي","رمادي فضائي","وردي ذهبي"], storages: ["16GB","32GB","64GB","128GB"] },
-      "iPhone 6s":          { colors: ["ذهبي","فضي","رمادي فضائي","وردي ذهبي"], storages: ["16GB","32GB","64GB","128GB"] },
-      "iPhone 6 Plus":      { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["16GB","64GB","128GB"] },
-      "iPhone 6":           { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["16GB","64GB","128GB"] },
+      "iPhone 17 Pro Max":  { colors: ["Desert Titanium","Black Titanium","White Titanium","Natural Titanium"], storages: ["256GB","512GB","1TB"] },
+      "iPhone 17 Pro":      { colors: ["Desert Titanium","Black Titanium","White Titanium","Natural Titanium"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 17 Air":      { colors: ["Sky Blue","Black","White","Ultramarine"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 17":          { colors: ["Black","White","Ultramarine","Teal","Pink"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 16 Pro Max":  { colors: ["Desert Titanium","Black Titanium","White Titanium","Natural Titanium"], storages: ["256GB","512GB","1TB"] },
+      "iPhone 16 Pro":      { colors: ["Desert Titanium","Black Titanium","White Titanium","Natural Titanium"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 16 Plus":     { colors: ["Black","White","Pink","Teal","Ultramarine"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 16":          { colors: ["Black","White","Pink","Teal","Ultramarine"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 15 Pro Max":  { colors: ["Black Titanium","White Titanium","Blue Titanium","Natural Titanium"], storages: ["256GB","512GB","1TB"] },
+      "iPhone 15 Pro":      { colors: ["Black Titanium","White Titanium","Blue Titanium","Natural Titanium"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 15 Plus":     { colors: ["Black","Blue","Green","Yellow","Pink"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 15":          { colors: ["Black","Blue","Green","Yellow","Pink"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 14 Pro Max":  { colors: ["Deep Purple","Gold","Silver","Space Black"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 14 Pro":      { colors: ["Deep Purple","Gold","Silver","Space Black"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 14 Plus":     { colors: ["Midnight","Starlight","Blue","Purple","Yellow","Red"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 14":          { colors: ["Midnight","Starlight","Blue","Purple","Yellow","Red"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 13 Pro Max":  { colors: ["Sierra Blue","Silver","Gold","Alpine Green","Graphite"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 13 Pro":      { colors: ["Sierra Blue","Silver","Gold","Alpine Green","Graphite"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPhone 13 mini":     { colors: ["Midnight","Starlight","Blue","Pink","Green","Red"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 13":          { colors: ["Midnight","Starlight","Blue","Pink","Green","Red"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 12 Pro Max":  { colors: ["Pacific Blue","Gold","Silver","Graphite"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 12 Pro":      { colors: ["Pacific Blue","Gold","Silver","Graphite"], storages: ["128GB","256GB","512GB"] },
+      "iPhone 12 mini":     { colors: ["Black","White","Red","Blue","Green","Purple"], storages: ["64GB","128GB","256GB"] },
+      "iPhone 12":          { colors: ["Black","White","Red","Blue","Green","Purple"], storages: ["64GB","128GB","256GB"] },
+      "iPhone 11 Pro Max":  { colors: ["Midnight Green","Gold","Silver","Space Gray"], storages: ["64GB","256GB","512GB"] },
+      "iPhone 11 Pro":      { colors: ["Midnight Green","Gold","Silver","Space Gray"], storages: ["64GB","256GB","512GB"] },
+      "iPhone 11":          { colors: ["Black","White","Yellow","Purple","Green","Red"], storages: ["64GB","128GB","256GB"] },
+      "iPhone XS Max":      { colors: ["Gold","Silver","Space Gray"], storages: ["64GB","256GB","512GB"] },
+      "iPhone XS":          { colors: ["Gold","Silver","Space Gray"], storages: ["64GB","256GB","512GB"] },
+      "iPhone XR":          { colors: ["Black","White","Blue","Yellow","Coral","Red"], storages: ["64GB","128GB","256GB"] },
+      "iPhone X":           { colors: ["Silver","Space Gray"], storages: ["64GB","256GB"] },
+      "iPhone 8 Plus":      { colors: ["Gold","Silver","Space Gray","Red"], storages: ["64GB","128GB","256GB"] },
+      "iPhone 8":           { colors: ["Gold","Silver","Space Gray","Red"], storages: ["64GB","128GB","256GB"] },
+      "iPhone 7 Plus":      { colors: ["Jet Black","Matte Black","Gold","Silver","Rose Gold","Red"], storages: ["32GB","128GB","256GB"] },
+      "iPhone 7":           { colors: ["Jet Black","Matte Black","Gold","Silver","Rose Gold","Red"], storages: ["32GB","128GB","256GB"] },
+      "iPhone 6s Plus":     { colors: ["Gold","Silver","Space Gray","Rose Gold"], storages: ["16GB","32GB","64GB","128GB"] },
+      "iPhone 6s":          { colors: ["Gold","Silver","Space Gray","Rose Gold"], storages: ["16GB","32GB","64GB","128GB"] },
+      "iPhone 6 Plus":      { colors: ["Gold","Silver","Space Gray"], storages: ["16GB","64GB","128GB"] },
+      "iPhone 6":           { colors: ["Gold","Silver","Space Gray"], storages: ["16GB","64GB","128GB"] },
       [OTHER]: { colors: [], storages: [] },
     },
     "iPad": {
-      "iPad Pro 13\" M4":    { colors: ["فضي","أسود فضائي"], storages: ["256GB","512GB","1TB","2TB"] },
-      "iPad Pro 11\" M4":    { colors: ["فضي","أسود فضائي"], storages: ["256GB","512GB","1TB","2TB"] },
-      "iPad Pro 12.9\" M2":  { colors: ["فضي","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
-      "iPad Pro 11\" M2":    { colors: ["فضي","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
-      "iPad Pro 12.9\" M1":  { colors: ["فضي","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
-      "iPad Pro 11\" M1":    { colors: ["فضي","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
-      "iPad Air M2 13\"":    { colors: ["أزرق","بنفسجي","ضوء النجوم","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB"] },
-      "iPad Air M2 11\"":    { colors: ["أزرق","بنفسجي","ضوء النجوم","رمادي فضائي"], storages: ["128GB","256GB","512GB","1TB"] },
-      "iPad Air 5":          { colors: ["أزرق","بنفسجي","ضوء النجوم","وردي","رمادي فضائي"], storages: ["64GB","256GB"] },
-      "iPad Air 4":          { colors: ["رمادي فضائي","فضي","وردي ذهبي","أخضر","سماوي"], storages: ["64GB","256GB"] },
-      "iPad (10th Gen)":     { colors: ["أزرق","وردي","فضي","أصفر"], storages: ["64GB","256GB"] },
-      "iPad (9th Gen)":      { colors: ["فضي","رمادي فضائي"], storages: ["64GB","256GB"] },
-      "iPad mini 6":         { colors: ["بنفسجي","ضوء النجوم","وردي","رمادي فضائي"], storages: ["64GB","256GB"] },
-      "iPad mini 5":         { colors: ["ذهبي","فضي","رمادي فضائي"], storages: ["64GB","256GB"] },
+      "iPad Pro 13\" M4":    { colors: ["Silver","Space Black"], storages: ["256GB","512GB","1TB","2TB"] },
+      "iPad Pro 11\" M4":    { colors: ["Silver","Space Black"], storages: ["256GB","512GB","1TB","2TB"] },
+      "iPad Air M3 13\"":    { colors: ["Blue","Purple","Starlight","Space Gray"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPad Air M3 11\"":    { colors: ["Blue","Purple","Starlight","Space Gray"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPad Air M2 13\"":    { colors: ["Blue","Purple","Starlight","Space Gray"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPad Air M2 11\"":    { colors: ["Blue","Purple","Starlight","Space Gray"], storages: ["128GB","256GB","512GB","1TB"] },
+      "iPad Pro 12.9\" M2":  { colors: ["Silver","Space Gray"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
+      "iPad Pro 11\" M2":    { colors: ["Silver","Space Gray"], storages: ["128GB","256GB","512GB","1TB","2TB"] },
+      "iPad (10th Gen)":     { colors: ["Blue","Pink","Silver","Yellow"], storages: ["64GB","256GB"] },
+      "iPad (9th Gen)":      { colors: ["Silver","Space Gray"], storages: ["64GB","256GB"] },
+      "iPad mini 7":         { colors: ["Blue","Pink","Starlight","Purple"], storages: ["128GB","512GB"] },
+      "iPad mini 6":         { colors: ["Purple","Starlight","Pink","Space Gray"], storages: ["64GB","256GB"] },
+      "iPad Air 5":          { colors: ["Blue","Purple","Starlight","Pink","Space Gray"], storages: ["64GB","256GB"] },
+      "iPad Air 4":          { colors: ["Space Gray","Silver","Rose Gold","Green","Sky Blue"], storages: ["64GB","256GB"] },
       [OTHER]: { colors: [], storages: [] },
     },
     "Apple Watch": {
-      "Apple Watch Ultra 2":  { colors: ["تيتانيوم طبيعي","تيتانيوم أسود"], storages: ["49mm"] },
-      "Apple Watch Ultra":    { colors: ["تيتانيوم طبيعي"], storages: ["49mm"] },
-      "Apple Watch Series 9": { colors: ["منتصف الليل","ضوء النجوم","فضي","وردي","أحمر","ذهبي"], storages: ["41mm","45mm"] },
-      "Apple Watch Series 8": { colors: ["منتصف الليل","ضوء النجوم","فضي","أحمر"], storages: ["41mm","45mm"] },
-      "Apple Watch Series 7": { colors: ["منتصف الليل","ضوء النجوم","أخضر","أزرق","أحمر"], storages: ["41mm","45mm"] },
-      "Apple Watch Series 6": { colors: ["أزرق","أحمر","رمادي فضائي","فضي","ذهبي","ذهبي وردي"], storages: ["40mm","44mm"] },
-      "Apple Watch SE 2":     { colors: ["منتصف الليل","ضوء النجوم","فضي"], storages: ["40mm","44mm"] },
-      "Apple Watch SE":       { colors: ["رمادي فضائي","فضي","ذهبي"], storages: ["40mm","44mm"] },
+      "Apple Watch Ultra 3":   { colors: ["Natural Titanium","Black Titanium"], storages: ["49mm"] },
+      "Apple Watch Ultra 2":   { colors: ["Natural Titanium","Black Titanium"], storages: ["49mm"] },
+      "Apple Watch Ultra":     { colors: ["Natural Titanium"], storages: ["49mm"] },
+      "Apple Watch Series 10": { colors: ["Jet Black","Rose Gold","Silver","Titanium Natural","Titanium Black","Titanium Gold"], storages: ["42mm","46mm"] },
+      "Apple Watch Series 9":  { colors: ["Midnight","Starlight","Silver","Pink","Red","Gold"], storages: ["41mm","45mm"] },
+      "Apple Watch Series 8":  { colors: ["Midnight","Starlight","Silver","Red"], storages: ["41mm","45mm"] },
+      "Apple Watch Series 7":  { colors: ["Midnight","Starlight","Green","Blue","Red"], storages: ["41mm","45mm"] },
+      "Apple Watch Series 6":  { colors: ["Blue","Red","Space Gray","Silver","Gold","Gold Pink"], storages: ["40mm","44mm"] },
+      "Apple Watch SE 2":      { colors: ["Midnight","Starlight","Silver"], storages: ["40mm","44mm"] },
+      "Apple Watch SE":        { colors: ["Space Gray","Silver","Gold"], storages: ["40mm","44mm"] },
       [OTHER]: { colors: [], storages: [] },
     },
     "MacBook": {
-      "MacBook Air 15\" M3": { colors: ["منتصف الليل","ضوء النجوم","رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
-      "MacBook Air 13\" M3": { colors: ["منتصف الليل","ضوء النجوم","رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
-      "MacBook Air 13\" M2": { colors: ["منتصف الليل","ضوء النجوم","رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
-      "MacBook Air 13\" M1": { colors: ["رمادي فضائي","فضي","ذهبي","ذهبي وردي"], storages: ["256GB","512GB","1TB","2TB"] },
-      "MacBook Pro 16\" M3": { colors: ["أسود فضائي","فضي"], storages: ["512GB","1TB","2TB","4TB"] },
-      "MacBook Pro 14\" M3": { colors: ["أسود فضائي","فضي"], storages: ["512GB","1TB","2TB","4TB"] },
-      "MacBook Pro 16\" M2": { colors: ["رمادي فضائي","فضي"], storages: ["512GB","1TB","2TB","4TB"] },
-      "MacBook Pro 14\" M2": { colors: ["رمادي فضائي","فضي"], storages: ["512GB","1TB","2TB","4TB"] },
-      "MacBook Pro 13\" M2": { colors: ["رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
-      "MacBook Pro 13\" M1": { colors: ["رمادي فضائي","فضي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Air 15\" M4": { colors: ["Sky Blue","Stardust","Midnight","Starlight"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Air 13\" M4": { colors: ["Sky Blue","Stardust","Midnight","Starlight"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Air 15\" M3": { colors: ["Midnight","Starlight","Space Gray","Silver"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Air 13\" M3": { colors: ["Midnight","Starlight","Space Gray","Silver"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Air 13\" M2": { colors: ["Midnight","Starlight","Space Gray","Silver"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Air 13\" M1": { colors: ["Space Gray","Silver","Gold","Rose Gold"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Pro 16\" M4": { colors: ["Space Black","Silver"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 14\" M4": { colors: ["Space Black","Silver"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 16\" M3": { colors: ["Space Black","Silver"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 14\" M3": { colors: ["Space Black","Silver"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 16\" M2": { colors: ["Space Gray","Silver"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 14\" M2": { colors: ["Space Gray","Silver"], storages: ["512GB","1TB","2TB","4TB"] },
+      "MacBook Pro 13\" M2": { colors: ["Space Gray","Silver"], storages: ["256GB","512GB","1TB","2TB"] },
+      "MacBook Pro 13\" M1": { colors: ["Space Gray","Silver"], storages: ["256GB","512GB","1TB","2TB"] },
       [OTHER]: { colors: [], storages: [] },
     },
     "AirPods": {
-      "AirPods 4":            { colors: ["أبيض"], storages: [] },
-      "AirPods 3rd Gen":      { colors: ["أبيض"], storages: [] },
-      "AirPods 2nd Gen":      { colors: ["أبيض"], storages: [] },
-      "AirPods Pro 2nd Gen":  { colors: ["أبيض"], storages: [] },
-      "AirPods Pro 1st Gen":  { colors: ["أبيض"], storages: [] },
-      "AirPods Max":          { colors: ["منتصف الليل","ضوء النجوم","أزرق","بنفسجي","برتقالي"], storages: [] },
+      "AirPods 4 (ANC)":      { colors: ["White"], storages: [] },
+      "AirPods 4":            { colors: ["White"], storages: [] },
+      "AirPods 3rd Gen":      { colors: ["White"], storages: [] },
+      "AirPods 2nd Gen":      { colors: ["White"], storages: [] },
+      "AirPods Pro 2nd Gen":  { colors: ["White"], storages: [] },
+      "AirPods Pro 1st Gen":  { colors: ["White"], storages: [] },
+      "AirPods Max (2024)":   { colors: ["Midnight","Starlight","Blue","Purple","Orange"], storages: [] },
+      "AirPods Max":          { colors: ["Space Gray","Silver","Green","Sky Blue","Pink"], storages: [] },
       [OTHER]: { colors: [], storages: [] },
     },
     "iMac": {
-      "iMac 24\" M3": { colors: ["فضي","أزرق","أخضر","وردي","أصفر","برتقالي","بنفسجي"], storages: ["256GB","512GB","1TB","2TB"] },
-      "iMac 24\" M1": { colors: ["فضي","أزرق","أخضر","وردي","أصفر","برتقالي","بنفسجي"], storages: ["256GB","512GB","1TB","2TB"] },
+      "iMac 24\" M4": { colors: ["Silver","Blue","Green","Pink","Yellow","Orange","Purple"], storages: ["256GB","512GB","1TB","2TB"] },
+      "iMac 24\" M3": { colors: ["Silver","Blue","Green","Pink","Yellow","Orange","Purple"], storages: ["256GB","512GB","1TB","2TB"] },
+      "iMac 24\" M1": { colors: ["Silver","Blue","Green","Pink","Yellow","Orange","Purple"], storages: ["256GB","512GB","1TB","2TB"] },
       [OTHER]: { colors: [], storages: [] },
     },
   },
@@ -921,11 +934,116 @@ function SellModal({ device, onClose, onDone }: { device: Device; onClose: () =>
 }
 
 /* ════════════════════════════════════════════════════════
+   RETURN DEVICE MODAL
+════════════════════════════════════════════════════════ */
+const RETURN_REASONS = [
+  "عيب مصنعي",
+  "الجهاز لا يعمل بشكل صحيح",
+  "لم يعجب العميل",
+  "وجد جهاز آخر",
+  "تغيير رأي العميل",
+  "الجهاز تالف",
+  "خلاف على السعر",
+  "أخرى",
+];
+
+function ReturnModal({ device, onClose, onDone }: { device: Device; onClose: () => void; onDone: () => void }) {
+  const { toast } = useToast();
+  const [reason, setReason] = useState(RETURN_REASONS[0]);
+  const [customReason, setCustomReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleReturn = async () => {
+    setSaving(true);
+    try {
+      await apPost(`/api/devices/${device.id}/return`, {
+        return_reason: reason === "أخرى" ? customReason.trim() || "أخرى" : reason,
+      });
+      toast({ title: "✅ تم إرجاع الجهاز وأصبح متاحاً" });
+      onDone(); onClose();
+    } catch {
+      toast({ title: "خطأ في عملية الإرجاع", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const returnPrice = device.sold_price ?? device.sale_price;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm" dir="rtl">
+      <div className="glass-panel rounded-2xl border border-amber-500/20 w-full max-w-sm mx-4 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="w-4 h-4 text-amber-400" />
+            <span className="font-bold text-white">إرجاع الجهاز من العميل</span>
+          </div>
+          <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
+            <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Device info */}
+          <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3 text-sm space-y-1">
+            <p className="text-white/80 font-bold">{device.brand} {device.model}</p>
+            <p className="text-white/40 text-xs">{device.device_no} — {device.color ?? ""}</p>
+            {device.sold_to_customer_name && (
+              <p className="text-white/50 text-xs">العميل: {device.sold_to_customer_name}</p>
+            )}
+          </div>
+
+          {/* Return price (read-only, equals sale price) */}
+          <div>
+            <label className="text-[11px] text-white/40 mb-1 block text-right">سعر الإرجاع (نفس سعر الفاتورة)</label>
+            <div className="erp-input w-full text-sm flex items-center justify-between opacity-70 cursor-not-allowed">
+              <span className="text-emerald-300 font-bold">
+                {parseFloat(returnPrice ?? "0").toLocaleString("ar-EG")} ج.م
+              </span>
+              <span className="text-white/30 text-xs">غير قابل للتعديل</span>
+            </div>
+          </div>
+
+          {/* Return reason */}
+          <div>
+            <label className="text-[11px] text-white/40 mb-1 block text-right">سبب الإرجاع *</label>
+            <select value={reason} onChange={e => setReason(e.target.value)} className="erp-input w-full text-sm">
+              {RETURN_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            {reason === "أخرى" && (
+              <input value={customReason} onChange={e => setCustomReason(e.target.value)}
+                placeholder="اكتب سبب الإرجاع" className="erp-input w-full text-sm mt-1.5" />
+            )}
+          </div>
+
+          <p className="text-[11px] text-amber-400/70 bg-amber-500/8 border border-amber-500/15 rounded-lg p-2.5">
+            سيتم إرجاع الجهاز لحالة «متاح» وحفظ سبب الإرجاع في ملاحظات الجهاز.
+          </p>
+        </div>
+
+        <div className="px-5 pb-5 flex gap-2">
+          <button onClick={onClose}
+            className="flex-1 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80">
+            إلغاء
+          </button>
+          <button onClick={handleReturn} disabled={saving}
+            className="flex-1 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm font-bold hover:bg-amber-500/30 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+            {saving ? <div className="w-3.5 h-3.5 border-2 border-amber-400/40 border-t-amber-400 rounded-full animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+            تأكيد الإرجاع
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════
    DEVICE DETAIL PANEL
 ════════════════════════════════════════════════════════ */
 function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose: () => void; onRefresh: () => void }) {
   const { toast } = useToast();
   const [showSell, setShowSell] = useState(false);
+  const [showReturn, setShowReturn] = useState(false);
   const [confirming, setConfirming] = useState<"delete" | "maintenance" | "available" | null>(null);
 
   const doAction = async (action: "delete" | "maintenance" | "available") => {
@@ -1104,6 +1222,12 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
                     </button>
                   </>
                 )}
+                {device.status === "sold" && (
+                  <button onClick={() => setShowReturn(true)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm font-bold hover:bg-amber-500/20 transition-all">
+                    <RotateCcw className="w-3.5 h-3.5" /> إرجاع من العميل
+                  </button>
+                )}
                 {device.status === "maintenance" && (
                   <button onClick={() => setConfirming("available")}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm hover:bg-emerald-500/20 transition-all">
@@ -1122,6 +1246,9 @@ function DeviceDetail({ device, onClose, onRefresh }: { device: Device; onClose:
 
       {showSell && (
         <SellModal device={device} onClose={() => setShowSell(false)} onDone={onRefresh} />
+      )}
+      {showReturn && (
+        <ReturnModal device={device} onClose={() => setShowReturn(false)} onDone={() => { onRefresh(); onClose(); }} />
       )}
     </>
   );

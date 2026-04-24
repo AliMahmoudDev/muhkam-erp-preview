@@ -164,7 +164,7 @@ router.post("/devices/:id/maintenance", wrap(async (req, res) => {
   return res.json(row);
 }));
 
-/* ─── RETURN TO AVAILABLE ─── */
+/* ─── RETURN TO AVAILABLE (maintenance → available) ─── */
 router.post("/devices/:id/available", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
@@ -173,6 +173,42 @@ router.post("/devices/:id/available", wrap(async (req, res) => {
     .where(and(eq(devicesTable.id, id), eq(devicesTable.company_id, company_id)))
     .returning();
   if (!row) return res.status(404).json({ error: "not found" });
+  return res.json(row);
+}));
+
+/* ─── CUSTOMER RETURN (sold → available, clear sale data) ─── */
+router.post("/devices/:id/return", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const id = Number(req.params.id);
+  const { return_reason } = req.body as { return_reason?: string };
+
+  const [existing] = await db.select().from(devicesTable)
+    .where(and(eq(devicesTable.id, id), eq(devicesTable.company_id, company_id)));
+  if (!existing) return res.status(404).json({ error: "not found" });
+  if (existing.status !== "sold") return res.status(400).json({ error: "الجهاز ليس في حالة مباع" });
+
+  const note = return_reason
+    ? `[إرجاع من العميل: ${return_reason}]${existing.condition_notes ? " — " + existing.condition_notes : ""}`
+    : existing.condition_notes ?? null;
+
+  const [row] = await db.update(devicesTable)
+    .set({
+      status: "available",
+      sold_to_customer_id:   null,
+      sold_to_customer_name: null,
+      sold_price:            null,
+      sold_at:               null,
+      sold_by_user_id:       null,
+      sold_by_user_name:     null,
+      payment_method:        null,
+      payment_status:        null,
+      warranty_months:       null,
+      condition_notes:       note,
+      updated_at:            new Date(),
+    })
+    .where(and(eq(devicesTable.id, id), eq(devicesTable.company_id, company_id)))
+    .returning();
+
   return res.json(row);
 }));
 
