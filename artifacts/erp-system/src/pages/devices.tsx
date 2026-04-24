@@ -640,7 +640,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   const finalStorage     = storageCustom.trim() || form.storage;
 
   /* new customer (phone entered but not found in DB) */
-  const isNewSupplier = supplierPhone.length >= 7 && !lookingUp && !foundCustomer;
+  const isNewSupplier = supplierPhone.trim().length > 0 && !lookingUp && !foundCustomer;
 
   /* if new supplier and currently credit/partial → reset to cash */
   useEffect(() => {
@@ -1202,8 +1202,11 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
           )}
 
           {step === 1 ? (
-            <button onClick={handleNext}
-              className="px-6 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all flex items-center gap-2">
+            <button onClick={handleNext} disabled={lookingUp}
+              className="px-6 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all flex items-center gap-2 disabled:opacity-40">
+              {lookingUp
+                ? <div className="w-3.5 h-3.5 border-2 border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+                : null}
               التالي ←
             </button>
           ) : (

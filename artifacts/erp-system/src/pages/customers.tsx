@@ -1725,6 +1725,10 @@ export default function Customers() {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name.trim()) {
+      toast({ title: 'أدخل اسم العميل', variant: 'destructive' });
+      return;
+    }
     createMutation.mutate(
       { data: formData as never },
       {
@@ -1742,6 +1746,11 @@ export default function Customers() {
           });
           setShowNewClassification(false);
           setNewClassificationName('');
+        },
+        onError: (e: Error) => {
+          const raw = e.message;
+          const msg = raw.replace(/^HTTP \d+ [^:]+:\s*/, '');
+          toast({ title: msg || 'خطأ في إضافة العميل', variant: 'destructive' });
         },
       }
     );
