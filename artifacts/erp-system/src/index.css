@@ -61,10 +61,15 @@
   /* Brand amber */
   --amber-glow: rgba(245, 158, 11, 0.15);
   --amber-border: rgba(245, 158, 11, 0.25);
+
+  /* Tell the browser: native form controls (select, input, scrollbar) = dark */
+  color-scheme: dark;
 }
 
 @layer base {
   * { box-sizing: border-box; }
+  /* All native form controls inherit color-scheme so browser renders them correctly */
+  input, select, textarea, button { color-scheme: inherit; }
 
   body {
     @apply bg-background text-foreground antialiased font-sans overflow-x-hidden;
@@ -170,6 +175,7 @@
   border: 1px solid rgba(255,255,255,0.08);
   font-size: 0.9rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  color-scheme: inherit;
 }
 .glass-input:focus {
   background: rgba(255,255,255,0.08);
@@ -564,6 +570,39 @@ html.light .text-green-400 { color: #166534 !important; }
 html.light ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
 html.light ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }
 
+/* ── bg-gray-* fix in DARK mode: force dark bg on gray-light classes ── */
+html.dark .bg-gray-50,
+html.dark .bg-gray-100,
+html.dark .bg-slate-50,
+html.dark .bg-slate-100 { background-color: rgba(255,255,255,0.04) !important; }
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-gray-700 { color: rgba(255,255,255,0.88) !important; }
+html.dark .text-gray-600,
+html.dark .text-gray-500 { color: rgba(255,255,255,0.55) !important; }
+
+/* ── bg-gray-* fix in LIGHT mode: gray-900 on options renders white ── */
+html.light .bg-gray-900,
+html.light .bg-gray-800,
+html.light .bg-slate-900,
+html.light .bg-slate-800 { background-color: #ffffff !important; }
+html.light .text-gray-900 { color: #0d1117 !important; }
+html.light .text-gray-800 { color: #1e293b !important; }
+html.light .text-gray-700 { color: #334155 !important; }
+html.light .text-gray-600 { color: #475569 !important; }
+
+/* ── Semantic color classes — ensure correct shading in light mode ── */
+html.light .text-amber-300  { color: #92400e !important; }
+html.light .text-amber-500  { color: #b45309 !important; }
+html.light .text-emerald-300 { color: #065f46 !important; }
+html.light .text-emerald-500 { color: #047857 !important; }
+html.light .text-red-300    { color: #991b1b !important; }
+html.light .text-red-500    { color: #b91c1c !important; }
+html.light .text-blue-300   { color: #1d4ed8 !important; }
+html.light .text-blue-500   { color: #1e40af !important; }
+html.light .text-violet-300 { color: #5b21b6 !important; }
+html.light .text-violet-500 { color: #4c1d95 !important; }
+
 /* ── Light mode typography ─────────────────────────────── */
 html.light label, html.light .label-text { color: #1e293b; font-size: 13px; font-weight: 600; }
 html.light h1 { font-size: 22px; font-weight: 800; color: #0d1117; }
@@ -595,14 +634,48 @@ html.light .font-numeric {
   font-weight: 600;
 }
 
-/* ─────── Select elements ───────────────────────── */
-select, select option {
+/* ─────── Select / Option / Optgroup — DARK (default) ───────────── */
+select {
+  background-color: #14192e;
+  color: #f0f2f8;
+  color-scheme: dark;
+}
+select option {
   background-color: #14192e;
   color: #f0f2f8;
 }
-select option:checked { background-color: #1e2640; }
-html.light select, html.light select option { background-color: #ffffff !important; color: #1e2433 !important; }
-html.light select option:checked { background-color: #f0f4ff !important; color: #1e2433 !important; }
+select optgroup {
+  background-color: #0f1424;
+  color: rgba(255,255,255,0.45);
+  font-weight: 700;
+  font-size: 11px;
+}
+select option:checked,
+select option:hover {
+  background-color: #1e2640;
+  color: #f0f2f8;
+}
+
+/* ─────── Select / Option / Optgroup — LIGHT ────────────────────── */
+html.light select {
+  background-color: #ffffff !important;
+  color: #0d1117 !important;
+  color-scheme: light !important;
+}
+html.light select option {
+  background-color: #ffffff !important;
+  color: #1e2433 !important;
+}
+html.light select optgroup {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  font-weight: 700;
+}
+html.light select option:checked,
+html.light select option:hover {
+  background-color: #f0f4ff !important;
+  color: #1e2433 !important;
+}
 
 /* ─────── Table row hover ───────────────────────── */
 .erp-table-row {
@@ -922,6 +995,7 @@ html.light .erp-table-td { color: #1e293b; }
   padding: 0 12px;
   font-size: 13.5px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  color-scheme: inherit;
 }
 .erp-input::placeholder { color: rgba(255,255,255,0.28); }
 .erp-input:focus-visible {
@@ -1551,6 +1625,7 @@ html.light .erp-section-sub   { color: #64748b; }
   font-family: inherit;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
   width: 100%;
+  color-scheme: inherit;
 }
 .erp-input::placeholder { color: rgba(255,255,255,0.26); }
 .erp-input:focus-visible {
