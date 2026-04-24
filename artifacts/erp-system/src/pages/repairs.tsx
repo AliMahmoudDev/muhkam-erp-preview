@@ -952,97 +952,61 @@ function JobChecklist({
    REPAIR SETTINGS — manage checklist items with categories
 ══════════════════════════════════════════════════════════════ */
 type ChecklistRow = { id: number; label_ar: string; sort_order: number; category: string; device_type: string };
-type Platform = "apple" | "android" | "general";
+type Platform = "apple" | "android";
 
-const PLATFORM_META: Record<Platform, { label: string; icon: string; color: string; activeCls: string; badgeCls: string }> = {
-  apple:   { label: "Apple",   icon: "",  color: "#a3a3a3", activeCls: "bg-white/15 border-white/40 text-white shadow-sm",       badgeCls: "bg-white/15 text-white/80" },
-  android: { label: "Android", icon: "", color: "#3ddc84", activeCls: "bg-emerald-500/20 border-emerald-400/50 text-emerald-200 shadow-sm", badgeCls: "bg-emerald-500/20 text-emerald-300" },
-  general: { label: "عام",     icon: "⚙", color: "#8b5cf6", activeCls: "bg-violet-500/20 border-violet-400/50 text-violet-200 shadow-sm",  badgeCls: "bg-violet-500/20 text-violet-300" },
+const PLATFORM_META: Record<Platform, { label: string; icon: string; seedDesc: string }> = {
+  apple:   { label: "Apple",   icon: "", seedDesc: "57 بنداً موزعة على 8 تصنيفات" },
+  android: { label: "Android", icon: "", seedDesc: "46 بنداً موزعة على 8 تصنيفات" },
 };
 
 function RepairSettings({ onClose }: { onClose: () => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [activePlatform, setActivePlatform] = useState<Platform>("apple");
-  const [newLabel, setNewLabel]         = useState("");
-  const [editingId, setEditingId]       = useState<number | null>(null);
-  const [editLabel, setEditLabel]       = useState("");
-  const [activeCat, setActiveCat]       = useState<string | null>(null);
-  const [newCatName, setNewCatName]     = useState("");
-  const [showAddCat, setShowAddCat]     = useState(false);
-  const [seeding, setSeeding]           = useState(false);
+  const [editingId, setEditingId]           = useState<number | null>(null);
+  const [editLabel, setEditLabel]           = useState("");
+  const [addingToCat, setAddingToCat]       = useState<string | null>(null);
+  const [newItemLabel, setNewItemLabel]     = useState("");
+  const [showNewCat, setShowNewCat]         = useState(false);
+  const [newCatInput, setNewCatInput]       = useState("");
+  const [seeding, setSeeding]               = useState(false);
 
   const qKey = ["/api/repair-checklist-items", activePlatform];
 
   const { data: rawItems, isLoading, isError } = useQuery<ChecklistRow[]>({
     queryKey: qKey,
     queryFn: async () => {
-      const url = activePlatform === "general"
-        ? api("/api/repair-checklist-items")
-        : api(`/api/repair-checklist-items?device_type=${activePlatform}`);
-      const r = await authFetch(url);
+      const r = await authFetch(api(`/api/repair-checklist-items?device_type=${activePlatform}`));
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return r.json();
     },
     staleTime: 0,
   });
 
-  /* Normalise: ensure category field is always a string */
   const items: ChecklistRow[] = useMemo(
-    () => (rawItems ?? []).map(i => ({ ...i, category: i.category ?? "عام", device_type: i.device_type ?? "general" })),
-    [rawItems],
+    () => (rawItems ?? []).map(i => ({ ...i, category: i.category ?? "عام", device_type: i.device_type ?? activePlatform })),
+    [rawItems, activePlatform],
   );
+
+  const allCategories: string[] = useMemo(() => {
+    const seen = new Set<string>();
+    const order: string[] = [];
+    for (const item of items) {
+      if (!seen.has(item.category)) { seen.add(item.category); order.push(item.category); }
+    }
+    return order;
+  }, [items]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: qKey });
 
-  /* ── Derived categories ── */
-  const allCategories: string[] = useMemo(() => {
-    const defaultFirst = activePlatform === "general" ? "عام" : null;
-    const order: string[] = defaultFirst ? [defaultFirst] : [];
-    const seen = new Set<string>(order);
-    for (const item of items) {
-      const c = item.category;
-      if (!seen.has(c)) { seen.add(c); order.push(c); }
-    }
-    return order;
-  }, [items, activePlatform]);
-
-  /* Ensure activeCat always exists in allCategories */
   useEffect(() => {
-    const cat = activeCat ?? allCategories[0];
-    if (!cat || !allCategories.includes(cat)) setActiveCat(allCategories[0] ?? "عام");
-    else if (!activeCat) setActiveCat(allCategories[0] ?? "عام");
-  }, [allCategories, activeCat]);
-
-  /* Reset category and label when switching platform */
-  useEffect(() => {
-    setActiveCat(null);
-    setNewLabel("");
     setEditingId(null);
+    setAddingToCat(null);
+    setNewItemLabel("");
   }, [activePlatform]);
 
-  /* Items for active category, sorted */
-  const catItems: ChecklistRow[] = useMemo(
-    () => items.filter(i => i.category === activeCat).sort((a, b) => a.sort_order - b.sort_order),
-    [items, activeCat],
-  );
-
   /* ── Handlers ── */
-  const addItem = async () => {
-    const label = newLabel.trim();
-    if (!label) return;
-    const r = await authFetch(api("/api/repair-checklist-items"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label_ar: label, category: activeCat ?? "عام", device_type: activePlatform }),
-    });
-    if (!r.ok) { toast({ title: "خطأ في الإضافة", variant: "destructive" }); return; }
-    setNewLabel("");
-    invalidate();
-  };
-
   const seedPlatform = async () => {
-    if (activePlatform === "general") return;
     setSeeding(true);
     const r = await authFetch(api("/api/repair-checklist-items/seed-platform"), {
       method: "POST",
@@ -1053,7 +1017,21 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
     if (r.status === 409) { toast({ title: "البنود محملة مسبقاً" }); return; }
     if (!r.ok) { toast({ title: "خطأ في تحميل البنود", variant: "destructive" }); return; }
     const { count } = await r.json();
-    toast({ title: `✓ تم تحميل ${count} بند لـ ${PLATFORM_META[activePlatform].label}` });
+    toast({ title: `✓ تم تحميل ${count} بند` });
+    invalidate();
+  };
+
+  const addItemToCat = async (cat: string) => {
+    const label = newItemLabel.trim();
+    if (!label) return;
+    const r = await authFetch(api("/api/repair-checklist-items"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label_ar: label, category: cat, device_type: activePlatform }),
+    });
+    if (!r.ok) { toast({ title: "خطأ في الإضافة", variant: "destructive" }); return; }
+    setNewItemLabel("");
+    setAddingToCat(null);
     invalidate();
   };
 
@@ -1074,249 +1052,234 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
     invalidate();
   };
 
-  const addCategory = () => {
-    const name = newCatName.trim();
-    if (!name) return;
-    if (!allCategories.includes(name)) {
-      setActiveCat(name);
-    }
-    setShowAddCat(false);
-    setNewCatName("");
-    toast({ title: `تصنيف "${name}" جاهز — أضف بنوداً له الآن` });
+  const openAddToCat = (cat: string) => {
+    setAddingToCat(cat);
+    setNewItemLabel("");
+    setEditingId(null);
   };
 
   /* ══════════════════ JSX ══════════════════ */
-  const isEmpty = !isLoading && !isError && items.length === 0 && activePlatform !== "general";
-  const catColor = activePlatform === "apple" ? "white" : activePlatform === "android" ? "emerald" : "violet";
+  const isEmpty = !isLoading && !isError && items.length === 0;
+  const isApple = activePlatform === "apple";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 bg-black/70 backdrop-blur-sm" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-5 bg-black/70 backdrop-blur-sm" dir="rtl">
       <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-lg mx-4 overflow-hidden flex flex-col"
-        style={{ maxHeight: "90vh" }}>
+        style={{ maxHeight: "92vh" }}>
 
-        {/* ═══ PLATFORM TABS ═══ */}
+        {/* ═══ PLATFORM TABS + CLOSE ═══ */}
         <div className="flex items-stretch border-b border-white/10 shrink-0">
-          {(["apple", "android", "general"] as Platform[]).map(p => {
+          {(["apple", "android"] as Platform[]).map(p => {
             const meta = PLATFORM_META[p];
             const isActive = activePlatform === p;
-            const borderColor = p === "apple" ? "border-white/60" : p === "android" ? "border-emerald-400" : "border-violet-400";
-            const textColor   = p === "apple" ? "text-white" : p === "android" ? "text-emerald-300" : "text-violet-300";
-            const bgColor     = p === "apple" ? "bg-white/5" : p === "android" ? "bg-emerald-500/8" : "bg-violet-500/8";
             return (
               <button
                 key={p}
                 onClick={() => setActivePlatform(p)}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-xs font-bold transition-all border-b-2 ${
-                  isActive ? `${borderColor} ${textColor} ${bgColor}` : "border-transparent text-white/35 hover:text-white/55 hover:bg-white/3"
+                className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-bold transition-all border-b-2 ${
+                  isActive
+                    ? p === "apple"
+                      ? "border-white/70 text-white bg-white/5"
+                      : "border-emerald-400 text-emerald-300 bg-emerald-500/8"
+                    : "border-transparent text-white/30 hover:text-white/55 hover:bg-white/3"
                 }`}>
-                <span className="text-[17px] leading-none">{meta.icon}</span>
-                <span className="tracking-wide text-[11px]">{meta.label}</span>
+                <span className="text-lg leading-none">{meta.icon}</span>
+                <span>{meta.label}</span>
+                {isActive && items.length > 0 && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                    p === "apple" ? "bg-white/15 text-white/60" : "bg-emerald-500/20 text-emerald-400/80"
+                  }`}>{items.length}</span>
+                )}
               </button>
             );
           })}
           <div className="flex items-center px-3 border-r border-white/10 shrink-0">
-            <button onClick={onClose} className="text-white/30 hover:text-white/70 transition-colors">
+            <button onClick={onClose} className="text-white/30 hover:text-white/70 transition-colors p-1">
               <XCircle className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* ═══ SUB-HEADER ═══ */}
-        <div className="flex items-center justify-between px-5 py-2 border-b border-white/8 shrink-0 bg-white/2">
-          <div className="flex items-center gap-2">
-            <Settings className="w-3.5 h-3.5 text-white/30" />
-            <span className="text-white/50 text-[11px]">
-              بنود فحص
-              <span className={`font-bold ${activePlatform === "apple" ? "text-white/80" : activePlatform === "android" ? "text-emerald-300" : "text-violet-300"}`}>
-                {" "}{PLATFORM_META[activePlatform].label}
-              </span>
-            </span>
-            {items.length > 0 && (
-              <span className="text-[10px] text-white/25 bg-white/5 px-2 py-0.5 rounded-full">{items.length} بند</span>
-            )}
-          </div>
-          {/* Seed button shown when platform list is populated but user wants to re-seed (shouldn't happen → only show when empty, handled below) */}
-        </div>
+        {/* Loading / Error */}
+        {isLoading && <p className="text-center text-white/30 text-sm py-12">جاري تحميل البنود...</p>}
+        {isError   && <p className="text-center text-red-400/70 text-sm py-12">خطأ في تحميل البيانات</p>}
 
         {/* ═══ EMPTY STATE ═══ */}
         {isEmpty && (
-          <div className="flex flex-col items-center justify-center py-14 gap-4 flex-1">
-            <div className="text-5xl opacity-70">{PLATFORM_META[activePlatform].icon}</div>
-            <p className="text-white/50 text-sm font-medium">لا توجد بنود لـ {PLATFORM_META[activePlatform].label}</p>
-            <p className="text-white/25 text-xs text-center px-10">
-              {activePlatform === "apple"
-                ? "حمّل القائمة الكاملة لبنود فحص Apple iPhone — 57 بنداً موزعة على 8 تصنيفات"
-                : "حمّل القائمة الكاملة لبنود فحص Android — 46 بنداً موزعة على 8 تصنيفات"}
+          <div className="flex flex-col items-center justify-center py-14 gap-4 flex-1 px-8">
+            <span className="text-5xl opacity-60">{PLATFORM_META[activePlatform].icon}</span>
+            <p className="text-white/50 text-sm font-medium text-center">
+              لا توجد بنود فحص لـ {PLATFORM_META[activePlatform].label}
+            </p>
+            <p className="text-white/25 text-xs text-center">
+              {PLATFORM_META[activePlatform].seedDesc}
             </p>
             <button
               onClick={seedPlatform}
               disabled={seeding}
-              className={`mt-1 px-7 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all ${
-                activePlatform === "apple"
+              className={`mt-2 px-7 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all disabled:opacity-50 ${
+                isApple
                   ? "bg-white/10 border-white/30 text-white hover:bg-white/16"
-                  : "bg-emerald-500/15 border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/22"
-              } disabled:opacity-50`}>
+                  : "bg-emerald-500/12 border-emerald-400/35 text-emerald-300 hover:bg-emerald-500/20"
+              }`}>
               {seeding ? "جاري التحميل..." : `⚡ تحميل بنود ${PLATFORM_META[activePlatform].label}`}
             </button>
           </div>
         )}
 
-        {/* ═══ CATEGORIES SECTION ═══ */}
-        {!isEmpty && (
-          <div className="px-5 py-3 border-b border-white/10 shrink-0 bg-violet-500/3">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">التصنيفات</span>
-              <div className="flex-1 h-px bg-white/5" />
-              {!showAddCat && (
+        {/* ═══ CATEGORIES + ITEMS ═══ */}
+        {!isEmpty && !isLoading && !isError && (
+          <div className="overflow-y-auto flex-1">
+
+            {allCategories.map((cat) => {
+              const catItems = items.filter(i => i.category === cat).sort((a, b) => a.sort_order - b.sort_order);
+              const catAccent = isApple ? "text-white/70" : "text-emerald-400/80";
+              const catBadge  = isApple ? "bg-white/8 text-white/40" : "bg-emerald-500/12 text-emerald-500/70";
+              const addBtnCls = isApple
+                ? "text-white/25 hover:text-white/60 hover:bg-white/8"
+                : "text-emerald-500/40 hover:text-emerald-400 hover:bg-emerald-500/10";
+
+              return (
+                <div key={cat} className="border-b border-white/6 last:border-b-0">
+
+                  {/* Category header */}
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-white/2">
+                    <span className={`text-xs font-bold tracking-wide ${catAccent}`}>{cat}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${catBadge}`}>{catItems.length}</span>
+                    <div className="flex-1" />
+                    <button
+                      onClick={() => addingToCat === cat ? setAddingToCat(null) : openAddToCat(cat)}
+                      className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg transition-colors ${addBtnCls}`}>
+                      <Plus className="w-3 h-3" /> إضافة
+                    </button>
+                  </div>
+
+                  {/* Items */}
+                  <div className="px-3 pb-1">
+                    {catItems.map((item, idx) => (
+                      <div key={item.id}
+                        className="flex items-center gap-2 py-2 px-2 rounded-xl border border-transparent hover:border-white/8 hover:bg-white/2 transition-all group">
+
+                        <span className="text-[10px] text-white/15 w-5 text-center shrink-0 group-hover:text-white/30 transition-colors">{idx + 1}</span>
+
+                        {editingId === item.id ? (
+                          <>
+                            <input
+                              autoFocus
+                              value={editLabel}
+                              onChange={(e) => setEditLabel(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveEdit(item.id);
+                                if (e.key === "Escape") setEditingId(null);
+                              }}
+                              className="erp-input flex-1 text-sm py-0.5"
+                            />
+                            <button onClick={() => saveEdit(item.id)} className="text-emerald-400 hover:text-emerald-300 p-1 shrink-0">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => setEditingId(null)} className="text-white/30 p-1 shrink-0">
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-sm text-white/75">{item.label_ar}</span>
+                            <button
+                              onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); setAddingToCat(null); }}
+                              className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-violet-400 p-1 transition-all shrink-0">
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => deleteItem(item.id)}
+                              className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 p-1 transition-all shrink-0">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Inline add-item input */}
+                    {addingToCat === cat && (
+                      <div className="flex items-center gap-2 py-1.5 px-2 mt-1">
+                        <input
+                          autoFocus
+                          value={newItemLabel}
+                          onChange={(e) => setNewItemLabel(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") addItemToCat(cat);
+                            if (e.key === "Escape") { setAddingToCat(null); setNewItemLabel(""); }
+                          }}
+                          placeholder={`بند جديد في «${cat}»...`}
+                          className="erp-input flex-1 text-sm py-1"
+                        />
+                        <button onClick={() => addItemToCat(cat)} disabled={!newItemLabel.trim()}
+                          className="text-emerald-400 hover:text-emerald-300 p-1 disabled:opacity-30 transition-colors shrink-0">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => { setAddingToCat(null); setNewItemLabel(""); }}
+                          className="text-white/25 hover:text-white/60 p-1 transition-colors shrink-0">
+                          <XCircle className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              );
+            })}
+
+            {/* ── Add new category ── */}
+            <div className="px-4 py-3 border-t border-white/8 mt-1">
+              {showNewCat ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    value={newCatInput}
+                    onChange={(e) => setNewCatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const name = newCatInput.trim();
+                        if (name && !allCategories.includes(name)) {
+                          openAddToCat(name);
+                          toast({ title: `تصنيف "${name}" جاهز` });
+                        }
+                        setShowNewCat(false);
+                        setNewCatInput("");
+                      }
+                      if (e.key === "Escape") { setShowNewCat(false); setNewCatInput(""); }
+                    }}
+                    placeholder="اسم التصنيف الجديد..."
+                    className="erp-input flex-1 text-sm"
+                  />
+                  <button
+                    onClick={() => {
+                      const name = newCatInput.trim();
+                      if (name && !allCategories.includes(name)) {
+                        openAddToCat(name);
+                        toast({ title: `تصنيف "${name}" جاهز` });
+                      }
+                      setShowNewCat(false);
+                      setNewCatInput("");
+                    }}
+                    disabled={!newCatInput.trim()}
+                    className="text-emerald-400 hover:text-emerald-300 p-1 disabled:opacity-30 shrink-0">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => { setShowNewCat(false); setNewCatInput(""); }}
+                    className="text-white/25 hover:text-white/60 p-1 shrink-0">
+                    <XCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
                 <button
-                  onClick={() => setShowAddCat(true)}
-                  className="flex items-center gap-1 text-[11px] text-white/30 hover:text-white/60 transition-colors">
-                  <Plus className="w-3 h-3" /> تصنيف جديد
+                  onClick={() => setShowNewCat(true)}
+                  className="flex items-center gap-1.5 text-[12px] text-white/25 hover:text-white/50 transition-colors">
+                  <Plus className="w-3.5 h-3.5" /> تصنيف جديد
                 </button>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-1.5">
-              {allCategories.map((cat) => {
-                const count = items.filter(i => i.category === cat).length;
-                const isActiveCat = activeCat === cat;
-                const activeCls = catColor === "apple" || catColor === "white"
-                  ? "bg-white/15 border-white/40 text-white"
-                  : catColor === "android" || catColor === "emerald"
-                    ? "bg-emerald-500/20 border-emerald-400/50 text-emerald-200"
-                    : "bg-violet-500/25 border-violet-500/60 text-violet-200";
-                const countCls = catColor === "apple" || catColor === "white"
-                  ? "bg-white/15 text-white/70"
-                  : catColor === "android" || catColor === "emerald"
-                    ? "bg-emerald-500/20 text-emerald-400"
-                    : "bg-violet-500/30 text-violet-300";
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => { setActiveCat(cat); setEditingId(null); setNewLabel(""); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                      isActiveCat ? activeCls : "bg-white/5 border-white/10 text-white/45 hover:text-white hover:border-white/20"
-                    }`}>
-                    {cat}
-                    <span className={`text-[10px] px-1.5 rounded-full ${isActiveCat ? countCls : "bg-white/5 text-white/25"}`}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {showAddCat && (
-              <div className="flex items-center gap-2 mt-2">
-                <input
-                  autoFocus
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") addCategory();
-                    if (e.key === "Escape") { setShowAddCat(false); setNewCatName(""); }
-                  }}
-                  placeholder="اسم التصنيف الجديد..."
-                  className="erp-input flex-1 text-xs py-1"
-                />
-                <button onClick={addCategory} className="text-emerald-400 hover:text-emerald-300 p-1 transition-colors">
-                  <CheckCircle2 className="w-4 h-4" />
-                </button>
-                <button onClick={() => { setShowAddCat(false); setNewCatName(""); }} className="text-white/30 hover:text-white/60 p-1">
-                  <XCircle className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ ITEMS LIST ═══ */}
-        {!isEmpty && (
-          <div className="overflow-y-auto flex-1 p-4">
-            <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest mb-2">
-              بنود الفحص — {activeCat}
-            </p>
-
-            {isLoading && (
-              <p className="text-center text-white/30 text-sm py-8">جاري تحميل البنود...</p>
-            )}
-            {isError && (
-              <p className="text-center text-red-400/70 text-sm py-8">
-                خطأ في تحميل البيانات — تحقق من اتصال الخادم
-              </p>
-            )}
-
-            <div className="space-y-1">
-              {catItems.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-2 py-2 px-2 rounded-xl border border-white/5 hover:border-white/15 bg-white/2 transition-all">
-
-                  <span className="text-[10px] text-white/20 w-4 text-center shrink-0">{idx + 1}</span>
-
-                  {editingId === item.id ? (
-                    <>
-                      <input
-                        autoFocus
-                        value={editLabel}
-                        onChange={(e) => setEditLabel(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveEdit(item.id);
-                          if (e.key === "Escape") setEditingId(null);
-                        }}
-                        className="erp-input flex-1 text-sm py-0.5"
-                      />
-                      <button onClick={() => saveEdit(item.id)} className="text-emerald-400 hover:text-emerald-300 p-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => setEditingId(null)} className="text-white/30 p-1">
-                        <XCircle className="w-3.5 h-3.5" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="flex-1 text-sm text-white/80">{item.label_ar}</span>
-                      <button onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); }}
-                        className="text-white/20 hover:text-violet-400 p-1 transition-colors">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => deleteItem(item.id)}
-                        className="text-white/15 hover:text-red-400 p-1 transition-colors">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {!isLoading && !isError && catItems.length === 0 && activeCat && (
-              <div className="text-center py-8 space-y-1">
-                <p className="text-white/25 text-sm">لا توجد بنود في تصنيف «{activeCat}»</p>
-                <p className="text-white/15 text-xs">أضف البند الأول من الحقل أدناه</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ ADD ITEM FOOTER ═══ */}
-        {!isEmpty && (
-          <div className="px-4 py-3 border-t border-white/10 shrink-0 bg-white/2">
-            <div className="flex gap-2">
-              <input
-                value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addItem()}
-                placeholder={`بند جديد في «${activeCat ?? "..."}»...`}
-                className="erp-input flex-1 text-sm"
-              />
-              <button
-                onClick={addItem}
-                disabled={!newLabel.trim()}
-                className="px-4 py-1.5 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs font-bold hover:bg-violet-500/30 transition-all disabled:opacity-40 flex items-center gap-1">
-                <Plus className="w-3.5 h-3.5" /> إضافة
-              </button>
-            </div>
           </div>
         )}
 
