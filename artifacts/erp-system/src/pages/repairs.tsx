@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
   MinusCircle, Trash2, Save, ChevronLeft, Send, ClipboardList,
   AlertCircle, Clock, CheckCheck, Truck, Ban,
-  Star, Settings, MessageSquare, ChevronRight, ChevronUp, ChevronDown, RotateCcw,
+  Star, Settings, MessageSquare, ChevronRight, RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
@@ -970,10 +970,7 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
   const [activeCat, setActiveCat]       = useState<string | null>(null);
   const [newCatName, setNewCatName]     = useState("");
   const [showAddCat, setShowAddCat]     = useState(false);
-  const [reordering, setReordering]     = useState(false);
   const [seeding, setSeeding]           = useState(false);
-  const [dragOver, setDragOver]         = useState<number | null>(null);
-  const dragIdx                         = useRef<number | null>(null);
 
   const qKey = ["/api/repair-checklist-items", activePlatform];
 
@@ -1075,37 +1072,6 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
   const deleteItem = async (id: number) => {
     await authFetch(api(`/api/repair-checklist-items/${id}`), { method: "DELETE" });
     invalidate();
-  };
-
-  const reorder = async (payload: { id: number; sort_order: number }[]) => {
-    setReordering(true);
-    await authFetch(api("/api/repair-checklist-items/reorder"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    setReordering(false);
-    invalidate();
-  };
-
-  const moveItem = (idx: number, dir: -1 | 1) => {
-    const ni = idx + dir;
-    if (ni < 0 || ni >= catItems.length) return;
-    reorder([
-      { id: catItems[idx].id, sort_order: catItems[ni].sort_order },
-      { id: catItems[ni].id, sort_order: catItems[idx].sort_order },
-    ]);
-  };
-
-  const dropItem = (toIdx: number) => {
-    const fromIdx = dragIdx.current;
-    setDragOver(null);
-    dragIdx.current = null;
-    if (fromIdx === null || fromIdx === toIdx) return;
-    const reordered = [...catItems];
-    const [moved] = reordered.splice(fromIdx, 1);
-    reordered.splice(toIdx, 0, moved);
-    reorder(reordered.map((item, i) => ({ id: item.id, sort_order: i + 1 })));
   };
 
   const addCategory = () => {
@@ -1284,37 +1250,7 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
               {catItems.map((item, idx) => (
                 <div
                   key={item.id}
-                  draggable
-                  onDragStart={() => { dragIdx.current = idx; }}
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(idx); }}
-                  onDragLeave={() => setDragOver(null)}
-                  onDrop={() => dropItem(idx)}
-                  onDragEnd={() => { dragIdx.current = null; setDragOver(null); }}
-                  className={`flex items-center gap-2 py-2 px-2 rounded-xl border transition-all ${
-                    dragOver === idx
-                      ? "border-violet-400/60 bg-violet-500/10"
-                      : "border-white/5 hover:border-white/15 bg-white/2"
-                  }`}>
-
-                  <div className="flex flex-col items-center gap-0 shrink-0 cursor-grab">
-                    <div className="text-white/20 px-0.5 mb-0.5">
-                      <div className="w-2 flex flex-col gap-[3px]">
-                        <div className="h-[1.5px] bg-current rounded opacity-60" />
-                        <div className="h-[1.5px] bg-current rounded opacity-60" />
-                        <div className="h-[1.5px] bg-current rounded opacity-60" />
-                      </div>
-                    </div>
-                    <button onClick={(e) => { e.stopPropagation(); moveItem(idx, -1); }}
-                      disabled={idx === 0 || reordering}
-                      className="text-white/20 hover:text-violet-400 disabled:opacity-10 transition-colors p-0">
-                      <ChevronUp className="w-3 h-3" />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); moveItem(idx, 1); }}
-                      disabled={idx === catItems.length - 1 || reordering}
-                      className="text-white/20 hover:text-violet-400 disabled:opacity-10 transition-colors p-0">
-                      <ChevronDown className="w-3 h-3" />
-                    </button>
-                  </div>
+                  className="flex items-center gap-2 py-2 px-2 rounded-xl border border-white/5 hover:border-white/15 bg-white/2 transition-all">
 
                   <span className="text-[10px] text-white/20 w-4 text-center shrink-0">{idx + 1}</span>
 
@@ -1376,7 +1312,7 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
               />
               <button
                 onClick={addItem}
-                disabled={!newLabel.trim() || reordering}
+                disabled={!newLabel.trim()}
                 className="px-4 py-1.5 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs font-bold hover:bg-violet-500/30 transition-all disabled:opacity-40 flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5" /> إضافة
               </button>
