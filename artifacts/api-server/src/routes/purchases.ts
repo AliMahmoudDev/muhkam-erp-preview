@@ -13,6 +13,7 @@ import { assertPeriodOpen } from "../lib/period-lock";
 import { runAllChecks } from "../lib/alert-service";
 import { hasPermission } from "../lib/permissions";
 import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
+import { getTenant } from "../middleware/auth";
 import {
   getOrCreateInventoryAccount,
   getOrCreateSafeAccount,
@@ -50,9 +51,9 @@ router.get("/purchases", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_purchases")) {
     res.status(403).json({ error: "غير مصرح بعرض المشتريات" }); return;
   }
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const purchases = await db.select().from(purchasesTable)
-    .where(companyId !== null ? eq(purchasesTable.company_id, companyId) : undefined)
+    .where(eq(purchasesTable.company_id, companyId))
     .orderBy(purchasesTable.created_at);
   res.json(GetPurchasesResponse.parse(purchases.map(formatPurchase)));
 }));

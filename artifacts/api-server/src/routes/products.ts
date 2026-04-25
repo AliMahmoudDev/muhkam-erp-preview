@@ -13,6 +13,7 @@ import {
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -37,7 +38,7 @@ router.get("/products", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_products")) {
     res.status(403).json({ error: "غير مصرح بعرض الأصناف" }); return;
   }
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const warehouseIdParam = req.query.warehouse_id ? parseInt(String(req.query.warehouse_id), 10) : null;
 
   if (warehouseIdParam && !isNaN(warehouseIdParam)) {
@@ -75,7 +76,7 @@ router.get("/products", wrap(async (req, res) => {
       .where(
         and(
           inArray(productsTable.id, productIds),
-          companyId !== null ? eq(productsTable.company_id, companyId) : undefined,
+          eq(productsTable.company_id, companyId),
         )
       )
       .orderBy(productsTable.name);
@@ -108,7 +109,7 @@ router.get("/products", wrap(async (req, res) => {
     })
     .from(productsTable)
     .leftJoin(categoriesTable, eq(categoriesTable.id, productsTable.category_id))
-    .where(companyId !== null ? eq(productsTable.company_id, companyId) : undefined)
+    .where(eq(productsTable.company_id, companyId))
     .orderBy(productsTable.created_at)
     .limit(limitP);
 

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq, desc, or, count, and, ne, inArray } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { authenticate, requireRole, requireTenantStrict } from "../middleware/auth";
+import { authenticate, requireRole, requireTenantStrict, getTenant } from "../middleware/auth";
 import { hashPin } from "../lib/hash";
 import { createUserSchema, updateUserSchema, validate } from "../lib/schemas";
 import { wrap } from "../lib/async-handler";
@@ -43,7 +43,8 @@ const router = Router();
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
-async function upsertSetting(key: string, value: string | null, companyId: number = 1) {
+async function upsertSetting(key: string, value: string | null, companyId: number) {
+  if (!companyId || companyId <= 0) throw Object.assign(new Error("upsertSetting: companyId required"), { status: 403 });
   if (value === null) {
     await db.delete(systemSettingsTable)
       .where(and(eq(systemSettingsTable.key, key), eq(systemSettingsTable.company_id, companyId)));
@@ -57,7 +58,8 @@ async function upsertSetting(key: string, value: string | null, companyId: numbe
   }
 }
 
-async function readSettings(keys: string[], companyId: number = 1): Promise<Record<string, string | null>> {
+async function readSettings(keys: string[], companyId: number): Promise<Record<string, string | null>> {
+  if (!companyId || companyId <= 0) throw Object.assign(new Error("readSettings: companyId required"), { status: 403 });
   const rows = await db.select().from(systemSettingsTable)
     .where(eq(systemSettingsTable.company_id, companyId));
   const map: Record<string, string | null> = {};
@@ -70,13 +72,9 @@ async function readSettings(keys: string[], companyId: number = 1): Promise<Reco
 // ─── USERS ────────────────────────────────────────────────────────────────────
 
 router.get("/settings/users", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const companyId = req.user!.company_id;
+  const companyId = getTenant(req);
   const users = await db.select().from(erpUsersTable)
-    .where(
-      companyId !== null
-        ? and(eq(erpUsersTable.company_id, companyId), ne(erpUsersTable.role, "super_admin"))
-        : ne(erpUsersTable.role, "super_admin")
-    )
+    .where(and(eq(erpUsersTable.company_id, companyId), ne(erpUsersTable.role, "super_admin")))
     .orderBy(erpUsersTable.id);
   const masked = users.map(({ pin, ...u }) => ({
     ...u,
@@ -129,7 +127,7 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
 
   const id = Number(req.params.id);
   const requesterId = req.user!.id;
-  const companyId = req.user!.company_id;
+  const companyId = getTenant(req);
   const { name, username, pin, role, permissions, active, warehouse_id, safe_id, employee_id } = v.data;
 
   if ((role as string) === "super_admin") {
@@ -137,11 +135,7 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
   }
 
   const [target] = await db.select().from(erpUsersTable)
-    .where(
-      companyId !== null
-        ? and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId))
-        : eq(erpUsersTable.id, id)
-    );
+    .where(and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId)));
   if (!target) { res.status(404).json({ error: "المستخدم غير موجود" }); return; }
   if (target.role === "super_admin") {
     res.status(403).json({ error: "لا يمكن تعديل حساب المسؤول العام من هنا" }); return;
@@ -164,37 +158,28 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
       safe_id: safe_id !== undefined ? (safe_id ? Number(safe_id) : null) : undefined,
       employee_id: employee_id !== undefined ? (employee_id ? Number(employee_id) : null) : undefined,
     })
-    .where(companyId !== null
-      ? and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId))
-      : eq(erpUsersTable.id, id))
+    .where(and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId)))
     .returning();
   res.json({ ...user, pin: "****" });
 }));
 
 router.delete("/settings/users/:id", authenticate, requireRole("admin"), wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const companyId = req.user!.company_id;
+  const companyId = getTenant(req);
 
   if (req.user!.id === id) {
     res.status(403).json({ error: "لا يمكنك حذف حسابك الخاص" }); return;
   }
 
   const [target] = await db.select().from(erpUsersTable)
-    .where(
-      companyId !== null
-        ? and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId))
-        : eq(erpUsersTable.id, id)
-    );
+    .where(and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId)));
   if (!target) { res.status(404).json({ error: "المستخدم غير موجود" }); return; }
   if (target.role === "super_admin") {
     res.status(403).json({ error: "لا يمكن حذف حساب المسؤول العام من هنا" }); return;
   }
 
-  await db.delete(erpUsersTable).where(
-    companyId !== null
-      ? and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId))
-      : eq(erpUsersTable.id, id)
-  );
+  await db.delete(erpUsersTable)
+    .where(and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId)));
   await writeAuditLog({
     action: "delete",
     record_type: "user",
@@ -209,9 +194,9 @@ router.delete("/settings/users/:id", authenticate, requireRole("admin"), wrap(as
 // ─── SAFES ────────────────────────────────────────────────────────────────────
 
 router.get("/settings/safes", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const safes = await db.select().from(safesTable)
-    .where(companyId !== null ? eq(safesTable.company_id, companyId) : undefined)
+    .where(eq(safesTable.company_id, companyId))
     .orderBy(safesTable.id);
   res.json(safes);
 }));
@@ -408,9 +393,9 @@ router.get("/settings/safes/:id/statement", authenticate, requireTenantStrict, w
 // ─── WAREHOUSES ───────────────────────────────────────────────────────────────
 
 router.get("/settings/warehouses", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const warehouses = await db.select().from(warehousesTable)
-    .where(companyId !== null ? eq(warehousesTable.company_id, companyId) : undefined)
+    .where(eq(warehousesTable.company_id, companyId))
     .orderBy(warehousesTable.id);
   res.json(warehouses);
 }));
@@ -539,10 +524,10 @@ router.put("/settings/period", authenticate, requireRole("admin"), wrap(async (r
 // ─── AUDIT LOGS ───────────────────────────────────────────────────────────────
 
 router.get("/settings/audit-logs", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const companyId = req.user!.company_id;
+  const companyId = getTenant(req);
   const limit  = Math.min(parseInt(String(req.query.limit ?? "200")), 500);
   const rows   = await db.select().from(auditLogsTable)
-    .where(companyId !== null ? eq(auditLogsTable.company_id, companyId) : undefined)
+    .where(eq(auditLogsTable.company_id, companyId))
     .orderBy(desc(auditLogsTable.created_at))
     .limit(limit);
   const record_type = req.query.record_type as string | undefined;
@@ -608,17 +593,14 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
 
 router.get("/customers/:id/statement", authenticate, wrap(async (req, res) => {
   const customerId = Number(req.params.id as string);
-  const companyId = req.user?.company_id ?? null;
+  const companyId  = req.user!.company_id!;
 
-  const [customer] = await db.select().from(customersTable).where(
-    companyId !== null
-      ? and(eq(customersTable.id, customerId), eq(customersTable.company_id, companyId))
-      : eq(customersTable.id, customerId)
-  );
+  const [customer] = await db.select().from(customersTable)
+    .where(and(eq(customersTable.id, customerId), eq(customersTable.company_id, companyId)));
   if (!customer) { res.status(404).json({ error: "العميل غير موجود" }); return; }
 
   const sales = await db.select().from(salesTable)
-    .where(eq(salesTable.customer_id, customerId))
+    .where(and(eq(salesTable.customer_id, customerId), eq(salesTable.company_id, companyId)))
     .orderBy(desc(salesTable.created_at));
 
   const salesWithItems = await Promise.all(sales.map(async (sale) => {
@@ -627,7 +609,7 @@ router.get("/customers/:id/statement", authenticate, wrap(async (req, res) => {
   }));
 
   const linkedPurchases = await db.select().from(purchasesTable)
-    .where(eq(purchasesTable.customer_id, customerId))
+    .where(and(eq(purchasesTable.customer_id, customerId), eq(purchasesTable.company_id, companyId)))
     .orderBy(desc(purchasesTable.created_at));
 
   const purchasesWithItems = await Promise.all(linkedPurchases.map(async (pur) => {
@@ -636,19 +618,19 @@ router.get("/customers/:id/statement", authenticate, wrap(async (req, res) => {
   }));
 
   const salesReturns = await db.select().from(salesReturnsTable)
-    .where(eq(salesReturnsTable.customer_id, customerId))
+    .where(and(eq(salesReturnsTable.customer_id, customerId), eq(salesReturnsTable.company_id, companyId)))
     .orderBy(desc(salesReturnsTable.created_at));
 
   const receiptVouchers = await db.select().from(receiptVouchersTable)
-    .where(eq(receiptVouchersTable.customer_id, customerId))
+    .where(and(eq(receiptVouchersTable.customer_id, customerId), eq(receiptVouchersTable.company_id, companyId)))
     .orderBy(desc(receiptVouchersTable.created_at));
 
   const depositVouchers = await db.select().from(depositVouchersTable)
-    .where(eq(depositVouchersTable.customer_id, customerId))
+    .where(and(eq(depositVouchersTable.customer_id, customerId), eq(depositVouchersTable.company_id, companyId)))
     .orderBy(desc(depositVouchersTable.created_at));
 
   const paymentVouchers = await db.select().from(paymentVouchersTable)
-    .where(eq(paymentVouchersTable.customer_id, customerId))
+    .where(and(eq(paymentVouchersTable.customer_id, customerId), eq(paymentVouchersTable.company_id, companyId)))
     .orderBy(desc(paymentVouchersTable.created_at));
 
   res.json({

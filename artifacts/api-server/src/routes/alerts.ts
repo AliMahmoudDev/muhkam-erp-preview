@@ -3,6 +3,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { db, alertsTable, systemSettingsTable } from "@workspace/db";
 import { runDailyChecks, runAllChecks, resolveAlert } from "../lib/alert-service";
 import { wrap } from "../lib/async-handler";
+import { getTenant } from "../middleware/auth";
 
 const router = Router();
 
@@ -12,14 +13,14 @@ function isVisibleTo(roleTarget: string | null, userRole: string): boolean {
 }
 
 router.get("/alerts", wrap(async (req, res) => {
+  const companyId = getTenant(req);
   const userRole  = req.user?.role ?? "cashier";
-  const companyId = req.user?.company_id ?? null;
   const includeResolved = req.query.include_resolved === "true";
 
   const rows = await db
     .select()
     .from(alertsTable)
-    .where(companyId !== null ? eq(alertsTable.company_id, companyId) : undefined)
+    .where(eq(alertsTable.company_id, companyId))
     .orderBy(desc(alertsTable.created_at))
     .limit(200);
 
@@ -33,25 +34,15 @@ router.get("/alerts", wrap(async (req, res) => {
 }));
 
 router.get("/alerts/settings", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db
     .select()
     .from(systemSettingsTable)
-    .where(
-      and(
-        eq(systemSettingsTable.company_id, companyId),
-        eq(systemSettingsTable.key, "enable_event_alerts")
-      )
-    );
+    .where(and(eq(systemSettingsTable.company_id, companyId), eq(systemSettingsTable.key, "enable_event_alerts")));
   const rows2 = await db
     .select()
     .from(systemSettingsTable)
-    .where(
-      and(
-        eq(systemSettingsTable.company_id, companyId),
-        eq(systemSettingsTable.key, "enable_daily_alerts")
-      )
-    );
+    .where(and(eq(systemSettingsTable.company_id, companyId), eq(systemSettingsTable.key, "enable_daily_alerts")));
   const map = Object.fromEntries([...rows, ...rows2].map(r => [r.key, r.value]));
   res.json({
     enable_event_alerts: map["enable_event_alerts"] !== "false",
@@ -61,9 +52,9 @@ router.get("/alerts/settings", wrap(async (req, res) => {
 
 router.post("/alerts/settings", wrap(async (req, res) => {
   const body      = req.body as Record<string, boolean>;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
 
-  async function upsertSetting(key: string, value: string) {
+  async function upsertAlertSetting(key: string, value: string) {
     await db
       .insert(systemSettingsTable)
       .values({ key, company_id: companyId, value })
@@ -74,9 +65,9 @@ router.post("/alerts/settings", wrap(async (req, res) => {
   }
 
   if (body.enable_event_alerts !== undefined)
-    await upsertSetting("enable_event_alerts", String(body.enable_event_alerts));
+    await upsertAlertSetting("enable_event_alerts", String(body.enable_event_alerts));
   if (body.enable_daily_alerts !== undefined)
-    await upsertSetting("enable_daily_alerts", String(body.enable_daily_alerts));
+    await upsertAlertSetting("enable_daily_alerts", String(body.enable_daily_alerts));
 
   res.json({ ok: true });
 }));
@@ -92,28 +83,25 @@ router.post("/alerts/run-checks", wrap(async (_req, res) => {
 }));
 
 router.post("/alerts/resolve/:id", wrap(async (req, res) => {
-  const id     = parseInt(String(req.params['id']), 10);
-  const userId = req.user?.id ?? 0;
-  await resolveAlert(id, userId);
+  const id        = parseInt(String(req.params['id']), 10);
+  const userId    = req.user?.id ?? 0;
+  const companyId = getTenant(req);
+  await resolveAlert(id, userId, companyId);
   res.json({ ok: true });
 }));
 
 router.post("/alerts/mark-read/:id", wrap(async (req, res) => {
   const id        = parseInt(String(req.params['id']), 10);
-  const companyId = req.user?.company_id ?? null;
-  const where = companyId !== null
-    ? and(eq(alertsTable.id, id), eq(alertsTable.company_id, companyId))
-    : eq(alertsTable.id, id);
-  await db.update(alertsTable).set({ is_read: true }).where(where);
+  const companyId = getTenant(req);
+  await db.update(alertsTable).set({ is_read: true })
+    .where(and(eq(alertsTable.id, id), eq(alertsTable.company_id, companyId)));
   res.json({ ok: true });
 }));
 
 router.post("/alerts/mark-all-read", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
-  const where = companyId !== null
-    ? and(eq(alertsTable.is_read, false), eq(alertsTable.company_id, companyId))
-    : eq(alertsTable.is_read, false);
-  await db.update(alertsTable).set({ is_read: true }).where(where);
+  const companyId = getTenant(req);
+  await db.update(alertsTable).set({ is_read: true })
+    .where(and(eq(alertsTable.is_read, false), eq(alertsTable.company_id, companyId)));
   res.json({ ok: true });
 }));
 

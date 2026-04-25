@@ -3,6 +3,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { db, stockMovementsTable, productsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { getTenant } from "../middleware/auth";
 import { writeAuditLog } from "../lib/audit-log";
 
 interface AuditRow {
@@ -50,13 +51,11 @@ router.get("/inventory/audit", wrap(async (req, res) => {
     res.status(403).json({ error: "المستخدم غير مرتبط بمخزن" }); return;
   }
 
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const warehouseFilter = effectiveWarehouseId
     ? sql` AND sm.warehouse_id = ${effectiveWarehouseId}`
     : sql``;
-  const companyWhere = companyId !== null
-    ? sql` WHERE p.company_id = ${companyId}`
-    : sql``;
+  const companyWhere = sql` WHERE p.company_id = ${companyId}`;
 
   const rows = await db.execute(sql`
     SELECT
@@ -452,10 +451,7 @@ router.get("/inventory/reorder-suggestions", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_inventory")) {
     res.status(403).json({ error: "ليس لديك صلاحية عرض المخزون" }); return;
   }
-  const companyId = req.user?.company_id ?? null;
-  if (companyId === null) {
-    res.status(403).json({ error: "المستخدم غير مرتبط بشركة" }); return;
-  }
+  const companyId = getTenant(req);
 
   const clamp = (v: unknown, min: number, max: number, def: number) => {
     const n = Number(v);
@@ -575,8 +571,7 @@ router.get("/inventory/movements-chart", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_inventory")) {
     res.status(403).json({ error: "ليس لديك صلاحية" }); return;
   }
-  const companyId = req.user?.company_id ?? null;
-  if (!companyId) { res.status(403).json({ error: "غير مرتبط بشركة" }); return; }
+  const companyId = getTenant(req);
 
   const days = Math.max(7, Math.min(90, Number(req.query.days) || 30));
   const warehouseId = req.query.warehouse_id ? Number(req.query.warehouse_id) : null;

@@ -7,6 +7,7 @@ import {
 import { GetDashboardStatsResponse } from "@workspace/api-zod";
 import { wrap } from "../lib/async-handler";
 import { getTotalCustomerLedgerBalance, getTotalSupplierLedgerBalance } from "../lib/ledger-balance";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -24,12 +25,14 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
   today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split("T")[0];
 
+  // ── company_id مطلوب — يرمي 403 إن لم يكن موجوداً ──────────────────────
+  const companyId = getTenant(req);
+
   // ── مبيعات اليوم ─────────────────────────────────────────────────────────
-  const companyId = req.user?.company_id ?? null;
   const salesDateFilter = and(
     gte(salesTable.date, todayStr),
     effectiveWarehouseId ? eq(salesTable.warehouse_id, effectiveWarehouseId) : undefined,
-    companyId !== null ? eq(salesTable.company_id, companyId) : undefined,
+    eq(salesTable.company_id, companyId),
   );
   const [salesToday] = await db.select({ total: sum(salesTable.total_amount) })
     .from(salesTable).where(salesDateFilter);
@@ -39,7 +42,7 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
   const [expensesToday] = await db.select({ total: sum(expensesTable.amount) })
     .from(expensesTable).where(and(
       gte(expensesTable.created_at, today),
-      companyId !== null ? eq(expensesTable.company_id, companyId) : undefined,
+      eq(expensesTable.company_id, companyId),
     ));
   const total_expenses_today = Number(expensesToday?.total ?? 0);
 
@@ -47,7 +50,7 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
   const [incomeToday] = await db.select({ total: sum(incomeTable.amount) })
     .from(incomeTable).where(and(
       gte(incomeTable.created_at, today),
-      companyId !== null ? eq(incomeTable.company_id, companyId) : undefined,
+      eq(incomeTable.company_id, companyId),
     ));
   const total_income_today = Number(incomeToday?.total ?? 0);
 
@@ -68,8 +71,8 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
 
   // ── ديون العملاء والموردين — من دفتر الأستاذ (AR / AP) ──────────────────
   const [total_customer_debts, total_supplier_debts] = await Promise.all([
-    companyId !== null ? getTotalCustomerLedgerBalance(companyId) : Promise.resolve(0),
-    companyId !== null ? getTotalSupplierLedgerBalance(companyId) : Promise.resolve(0),
+    getTotalCustomerLedgerBalance(companyId),
+    getTotalSupplierLedgerBalance(companyId),
   ]);
 
   // ── منتجات منخفضة المخزون — فقط المنتجات التي تجاوزت الحد الأدنى ────────
@@ -80,7 +83,7 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
     created_at: productsTable.created_at,
   }).from(productsTable)
     .where(and(
-      companyId !== null ? eq(productsTable.company_id, companyId) : undefined,
+      eq(productsTable.company_id, companyId),
       sql`low_stock_threshold IS NOT NULL AND CAST(quantity AS FLOAT8) <= CAST(low_stock_threshold AS FLOAT8)`,
     ))
     .limit(50);
@@ -101,7 +104,7 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
     "safe_adjustment","deposit_voucher",
   ]);
   const recentTxns = await db.select().from(transactionsTable)
-    .where(companyId !== null ? eq(transactionsTable.company_id, companyId) : undefined)
+    .where(eq(transactionsTable.company_id, companyId))
     .orderBy(desc(transactionsTable.created_at)).limit(50);
   const recent_transactions = recentTxns
     .filter(t => ALLOWED_TX_TYPES.has(t.type))

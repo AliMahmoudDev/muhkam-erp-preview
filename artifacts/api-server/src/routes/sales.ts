@@ -15,6 +15,7 @@ import { runAllChecks } from "../lib/alert-service";
 import { writeAuditLog } from "../lib/audit-log";
 import { hasPermission } from "../lib/permissions";
 import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
+import { getTenant } from "../middleware/auth";
 import {
   getOrCreateSalesRevenueAccount,
   getOrCreateSafeAccount,
@@ -62,10 +63,10 @@ router.get("/sales", wrap(async (req, res) => {
   if ((role === "cashier" || role === "salesperson") && effectiveWarehouseId === null) {
     res.status(403).json({ error: "المستخدم غير مرتبط بمخزن" }); return;
   }
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const salesWhere = and(
     effectiveWarehouseId ? eq(salesTable.warehouse_id, effectiveWarehouseId) : undefined,
-    companyId !== null ? eq(salesTable.company_id, companyId) : undefined,
+    eq(salesTable.company_id, companyId),
   );
   /* ── Pagination params ────────────────────────────────────────────────────
      page  = 1-based page number (default: 1)

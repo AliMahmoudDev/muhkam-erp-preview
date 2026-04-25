@@ -180,13 +180,13 @@ export async function checkHealthCritical(hasCritical: boolean) {
   }
 }
 
-/* ── Manual resolve by user ID ──────────────────────────────── */
-export async function resolveAlert(alertId: number, userId: number) {
+/* ── Manual resolve by user ID — scoped to tenant ───────────── */
+export async function resolveAlert(alertId: number, userId: number, companyId: number) {
   await db.update(alertsTable).set({
     is_resolved: true,
     resolved_at: new Date(),
     resolved_by: userId,
-  }).where(eq(alertsTable.id, alertId));
+  }).where(and(eq(alertsTable.id, alertId), eq(alertsTable.company_id, companyId)));
 }
 
 /* ── Event-based checks (scoped, fast) ─────────────────────── */

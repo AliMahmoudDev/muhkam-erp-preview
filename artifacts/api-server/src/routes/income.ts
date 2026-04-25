@@ -8,6 +8,7 @@ import {
   DeleteIncomeResponse,
 } from "@workspace/api-zod";
 import { wrap, httpError } from "../lib/async-handler";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -16,9 +17,9 @@ function formatIncome(i: typeof incomeTable.$inferSelect) {
 }
 
 router.get("/income", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const income = await db.select().from(incomeTable)
-    .where(companyId !== null ? eq(incomeTable.company_id, companyId) : undefined)
+    .where(eq(incomeTable.company_id, companyId))
     .orderBy(incomeTable.created_at);
   res.json(GetIncomeResponse.parse(income.map(formatIncome)));
 }));

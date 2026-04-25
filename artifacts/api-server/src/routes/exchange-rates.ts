@@ -2,21 +2,21 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc, type SQLWrapper } from "drizzle-orm";
 import { db, exchangeRatesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
+import { getTenant } from "../middleware/auth";
 import { z } from "zod/v4";
 
 const router: IRouter = Router();
 
 router.get("/exchange-rates", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const { currency, date } = req.query as { currency?: string; date?: string };
 
-  const conditions: SQLWrapper[] = [];
-  if (companyId !== null) conditions.push(eq(exchangeRatesTable.company_id, companyId));
+  const conditions: SQLWrapper[] = [eq(exchangeRatesTable.company_id, companyId)];
   if (currency) conditions.push(eq(exchangeRatesTable.currency, currency));
   if (date) conditions.push(eq(exchangeRatesTable.date, date));
 
   const rows = await db.select().from(exchangeRatesTable)
-    .where(conditions.length ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(desc(exchangeRatesTable.date), desc(exchangeRatesTable.created_at));
 
   res.json(rows.map(r => ({
@@ -26,19 +26,18 @@ router.get("/exchange-rates", wrap(async (req, res) => {
 }));
 
 router.get("/exchange-rates/latest", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const { currency } = req.query as { currency?: string };
 
   const currencies = currency ? [currency] : ["USD", "CNY", "EUR", "SAR", "AED"];
   const result: Record<string, number> = {};
 
   for (const cur of currencies) {
-    const conditions: any[] = [];
-    if (companyId !== null) conditions.push(eq(exchangeRatesTable.company_id, companyId));
-    conditions.push(eq(exchangeRatesTable.currency, cur));
-
     const [row] = await db.select().from(exchangeRatesTable)
-      .where(and(...conditions))
+      .where(and(
+        eq(exchangeRatesTable.company_id, companyId),
+        eq(exchangeRatesTable.currency, cur),
+      ))
       .orderBy(desc(exchangeRatesTable.date), desc(exchangeRatesTable.created_at))
       .limit(1);
 

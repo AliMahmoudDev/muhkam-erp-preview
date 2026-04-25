@@ -17,6 +17,7 @@ import {
 } from "@workspace/api-zod";
 import { wrap, httpError } from "../lib/async-handler";
 import { getOrCreateCustomerAccount } from "../lib/auto-account";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -50,8 +51,8 @@ router.get("/customers", wrap(async (req, res) => {
   // مصدر الحقيقة الوحيد: جدول customer_ledger
   // الرصيد = SUM(amount) لكل عميل
   // موجب = العميل مدين لنا (عليه) — سالب = نحن مدينون له (له علينا)
-  const companyId = req.user?.company_id ?? null;
-  const companyFilter = companyId !== null ? sql` WHERE c.company_id = ${companyId}` : sql``;
+  const companyId = getTenant(req);
+  const companyFilter = sql` WHERE c.company_id = ${companyId}`;
   const rawLimitC = parseInt(String(req.query.limit ?? "500"), 10);
   const limitC = Math.min(Math.max(isNaN(rawLimitC) ? 500 : rawLimitC, 1), 2000);
   const rows = await db.execute(sql`
@@ -175,8 +176,7 @@ router.get("/customers/:id", wrap(async (req, res) => {
   }
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const companyId = req.user?.company_id ?? null;
-  const companyFilter = companyId !== null ? sql` AND c.company_id = ${companyId}` : sql``;
+  const companyId = getTenant(req);
   const rows = await db.execute(sql`
     SELECT
       c.id, c.name, c.customer_code, c.phone,
@@ -184,8 +184,7 @@ router.get("/customers/:id", wrap(async (req, res) => {
       COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS ledger_balance
     FROM customers c
     LEFT JOIN customer_ledger cl ON cl.customer_id = c.id
-    WHERE c.id = ${id}
-    ${companyFilter}
+    WHERE c.id = ${id} AND c.company_id = ${companyId}
     GROUP BY c.id, c.name, c.customer_code, c.phone,
              c.is_customer, c.is_supplier, c.account_id, c.created_at
   `);

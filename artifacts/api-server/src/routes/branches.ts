@@ -8,14 +8,13 @@
 import { Router } from "express";
 import { eq, and, sql } from "drizzle-orm";
 import { db, branchesTable, warehousesTable, safesTable } from "@workspace/db";
-import { authenticate, requireRole } from "../middleware/auth";
+import { authenticate, requireRole, getTenant } from "../middleware/auth";
 import { wrap } from "../lib/async-handler";
 
 const router = Router();
 
 router.get("/branches", authenticate, wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
-  if (companyId === null) { res.json([]); return; }
+  const companyId = getTenant(req);
 
   const rows = await db
     .select()
@@ -67,8 +66,7 @@ router.get("/branches", authenticate, wrap(async (req, res) => {
 }));
 
 router.post("/branches", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
-  if (companyId === null) { res.status(403).json({ error: "غير مسموح" }); return; }
+  const companyId = getTenant(req);
 
   const { name, address, phone } = req.body;
   if (!name || !String(name).trim()) {
@@ -90,8 +88,7 @@ router.post("/branches", authenticate, requireRole("admin"), wrap(async (req, re
 
 router.patch("/branches/:id", authenticate, requireRole("admin"), wrap(async (req, res) => {
   const id        = parseInt(String(req.params.id), 10);
-  const companyId = req.user?.company_id ?? null;
-  if (companyId === null) { res.status(403).json({ error: "غير مسموح" }); return; }
+  const companyId = getTenant(req);
 
   const { name, address, phone, is_active } = req.body;
   const updates: Record<string, unknown> = {};
@@ -112,8 +109,7 @@ router.patch("/branches/:id", authenticate, requireRole("admin"), wrap(async (re
 
 router.delete("/branches/:id", authenticate, requireRole("admin"), wrap(async (req, res) => {
   const id        = parseInt(String(req.params.id), 10);
-  const companyId = req.user?.company_id ?? null;
-  if (companyId === null) { res.status(403).json({ error: "غير مسموح" }); return; }
+  const companyId = getTenant(req);
 
   const [deleted] = await db
     .delete(branchesTable)

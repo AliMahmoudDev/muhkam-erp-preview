@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-zod";
 import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { getTenant } from "../middleware/auth";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { getOrCreateSafeAccount, getOrCreateGeneralExpenseAccount, createAutoJournalEntry } from "../lib/auto-account";
 
@@ -113,9 +114,9 @@ router.get("/expenses", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_expenses")) {
     res.status(403).json({ error: "غير مصرح بعرض المصروفات" }); return;
   }
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const expenses = await db.select().from(expensesTable)
-    .where(companyId !== null ? eq(expensesTable.company_id, companyId) : undefined)
+    .where(eq(expensesTable.company_id, companyId))
     .orderBy(expensesTable.created_at);
   res.json(GetExpensesResponse.parse(expenses.map(formatExpense)));
 }));

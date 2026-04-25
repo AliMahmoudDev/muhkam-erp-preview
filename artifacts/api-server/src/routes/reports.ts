@@ -15,6 +15,7 @@ import { checkHealthCritical } from "../lib/alert-service";
 import { db } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -125,7 +126,7 @@ function wfSql(alias: string, warehouseId?: string | number | null) {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/product-profit", wrap(async (req, res) => {
   const { date_from, date_to, warehouse_id } = req.query as Record<string, string | undefined>;
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
 
   const rows = await db.execute(sql`
     SELECT
@@ -216,7 +217,7 @@ router.get("/reports/product-profit", wrap(async (req, res) => {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/daily-profit", wrap(async (req, res) => {
   const { date_from, date_to } = req.query as Record<string, string | undefined>;
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const sfrom = safeDate(date_from);
   const sto   = safeDate(date_to);
 
@@ -345,7 +346,7 @@ router.get("/reports/daily-profit", wrap(async (req, res) => {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/sales-analysis", wrap(async (req, res) => {
   const { date_from, date_to, warehouse_id } = req.query as Record<string, string | undefined>;
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
 
   const byProduct = await db.execute(sql`
     SELECT
@@ -406,7 +407,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
   if (!customer_id) { res.status(400).json({ error: "يجب تحديد العميل" }); return; }
   const custId = parseInt(customer_id);
   if (isNaN(custId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
 
   const custRow = await db.execute(sql`
     SELECT c.id, c.name, c.customer_code,
@@ -526,7 +527,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
   if (!rawId) { res.status(400).json({ error: "يجب تحديد المورد" }); return; }
   const sid = parseInt(rawId);
   if (isNaN(sid)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
 
   const custRow = await db.execute(sql`
     SELECT id, name, CAST(balance AS FLOAT8) AS balance
@@ -641,7 +642,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/cash-flow", wrap(async (req, res) => {
   const { date_from, date_to } = req.query as Record<string, string | undefined>;
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const sfrom = safeDate(date_from);
   const sto   = safeDate(date_to);
 
@@ -771,7 +772,7 @@ router.get("/reports/cash-flow", wrap(async (req, res) => {
 router.get("/reports/top", wrap(async (req, res) => {
   const { date_from, date_to, limit: lim } = req.query as Record<string, string | undefined>;
   const LIMIT = Math.min(parseInt(lim ?? "10"), 50);
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
 
   const topProducts = await db.execute(sql`
     SELECT si.product_id, si.product_name,
@@ -842,7 +843,7 @@ router.get("/reports/top", wrap(async (req, res) => {
  * GET /api/reports/health-check
  * ─────────────────────────────────────────────────────────────────────────*/
 router.get("/reports/health-check", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
 
   const TOL      = 0.02;
   const WARN_AMT = 100;
@@ -1175,7 +1176,7 @@ router.get("/reports/health-check", wrap(async (req, res) => {
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/manager-sales", wrap(async (req, res) => {
   const { date_from, date_to } = req.query as Record<string, string | undefined>;
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
 
   const byWarehouse = await db.execute(sql`
     SELECT
@@ -1287,7 +1288,7 @@ router.get("/reports/manager-sales", wrap(async (req, res) => {
  * GET /api/reports/balance-sheet
  * ─────────────────────────────────────────────────────────────────────────*/
 router.get("/reports/balance-sheet", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
 
   const [accountRows, inventoryRow, capitalRow] = await Promise.all([
 
@@ -1411,8 +1412,7 @@ router.get("/reports/balance-sheet", wrap(async (req, res) => {
  * الشرط الأساسي: مجموع المدين = مجموع الدائن
  * ─────────────────────────────────────────────────────────────────────────── */
 router.get("/reports/trial-balance", wrap(async (req, res) => {
-  const companyId = (req as unknown as { user?: { company_id?: number } }).user?.company_id;
-  if (!companyId) { res.status(400).json({ error: "company_id مطلوب" }); return; }
+  const companyId = getTenant(req);
 
   const dateFrom = safeDate(req.query.date_from as string | undefined);
   const dateTo   = safeDate(req.query.date_to   as string | undefined);
@@ -1480,8 +1480,7 @@ router.get("/reports/trial-balance", wrap(async (req, res) => {
  * ضريبة المخرجات (على المبيعات) — ضريبة المدخلات (على المشتريات)
  * ─────────────────────────────────────────────────────────────────────────── */
 router.get("/reports/vat-report", wrap(async (req, res) => {
-  const companyId = (req as unknown as { user?: { company_id?: number } }).user?.company_id;
-  if (!companyId) { res.status(400).json({ error: "company_id مطلوب" }); return; }
+  const companyId = getTenant(req);
 
   const dateFrom    = safeDate(req.query.date_from as string | undefined);
   const dateTo      = safeDate(req.query.date_to   as string | undefined);
@@ -1560,13 +1559,13 @@ router.get("/reports/vat-report", wrap(async (req, res) => {
  * GET /api/reports/aging?type=customers|suppliers&as_of=YYYY-MM-DD
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/aging", wrap(async (req, res) => {
-  const companyId = req.user?.company_id ?? null;
+  const companyId = getTenant(req);
   const { type = "customers", as_of } = req.query as Record<string, string | undefined>;
   const asOfDate = as_of ? new Date(as_of) : new Date();
   const asOfStr  = asOfDate.toISOString().split("T")[0];
 
-  const condSales = companyId ? sql`AND s.company_id = ${companyId}` : sql``;
-  const condPurch = companyId ? sql`AND p.company_id = ${companyId}` : sql``;
+  const condSales = sql`AND s.company_id = ${companyId}`;
+  const condPurch = sql`AND p.company_id = ${companyId}`;
 
   // جلب كل السجلات المعلقة (credit) حسب النوع
   let rows: Array<{ id: number; name: string; date: string; remaining: number; invoice_no: string }> = [];
@@ -1646,7 +1645,7 @@ router.get("/reports/aging", wrap(async (req, res) => {
    التدفق النقدي - الطريقة غير المباشرة
    ───────────────────────────────────────────────────────────────── */
 router.get("/reports/cash-flow-indirect", wrap(async (req, res) => {
-  const companyId = req.user?.company_id;
+  const companyId = getTenant(req);
   const { date_from, date_to } = req.query as Record<string, string>;
   if (!date_from || !date_to) { res.status(400).json({ error: "date_from و date_to مطلوبان" }); return; }
 
