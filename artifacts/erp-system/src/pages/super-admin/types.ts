@@ -5,6 +5,18 @@ export interface BackupFile {
   created_at: string;
 }
 
+export interface CompanyFeatures {
+  accounting: boolean;
+  hr: boolean;
+  pos: boolean;
+  warranty: boolean;
+  consignment: boolean;
+  fixed_assets: boolean;
+  maintenance: boolean;
+  budgets: boolean;
+  bank_reconciliation: boolean;
+}
+
 export interface Company {
   id: number;
   name: string;
@@ -18,6 +30,7 @@ export interface Company {
   status: 'active' | 'trial' | 'expired' | 'suspended';
   userCount: number;
   created_at: string;
+  features?: CompanyFeatures | null;
 }
 
 export interface Stats {

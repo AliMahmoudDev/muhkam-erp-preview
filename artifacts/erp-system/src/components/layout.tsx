@@ -207,14 +207,14 @@ export function AppLayout({ children }: LayoutProps) {
     }
   }, [warehouses, canSelectWarehouse, currentWarehouseId, setWarehouseId]);
 
-  const ACCOUNTING_PATHS = new Set([
-    '/accounts', '/journal-entries', '/fiscal-years',
-    '/fixed-assets', '/accruals', '/bank-reconciliation',
-    '/budgets', '/cost-centers',
-  ]);
-  const HR_PATHS         = new Set(['/employees', '/attendance']);
-  const POS_PATHS        = new Set(['/pos']);
-  const WARRANTY_PATHS   = new Set(['/warranty']);
+  const ACCOUNTING_CORE   = new Set(['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/cost-centers', '/accruals']);
+  const FIXED_ASSETS      = new Set(['/fixed-assets']);
+  const BANK_RECON        = new Set(['/bank-reconciliation']);
+  const BUDGETS           = new Set(['/budgets']);
+  const HR_PATHS          = new Set(['/employees', '/attendance']);
+  const POS_PATHS         = new Set(['/pos']);
+  const WARRANTY_PATHS    = new Set(['/warranty']);
+  const MAINTENANCE_PATHS = new Set(['/repairs', '/devices', '/scrap-inventory']);
   const visibleNav = NAV_ITEMS.filter((item) => {
     if (!canAccess(role, item.href)) return false;
     if (item.href === '/sales' && !hasPermission(user, 'can_view_sales')) return false;
@@ -229,10 +229,14 @@ export function AppLayout({ children }: LayoutProps) {
       return false;
     if (item.href === '/treasury' && !hasPermission(user, 'can_view_treasury')) return false;
     if (item.href === '/purchases' && !hasPermission(user, 'can_view_purchases')) return false;
-    if (ACCOUNTING_PATHS.has(item.href) && !hasFeature('accounting')) return false;
-    if (HR_PATHS.has(item.href) && !hasFeature('hr')) return false;
-    if (POS_PATHS.has(item.href) && !hasFeature('pos')) return false;
-    if (WARRANTY_PATHS.has(item.href) && !hasFeature('warranty')) return false;
+    if (ACCOUNTING_CORE.has(item.href)   && !hasFeature('accounting'))        return false;
+    if (FIXED_ASSETS.has(item.href)      && !hasFeature('fixed_assets'))      return false;
+    if (BANK_RECON.has(item.href)        && !hasFeature('bank_reconciliation')) return false;
+    if (BUDGETS.has(item.href)           && !hasFeature('budgets'))            return false;
+    if (HR_PATHS.has(item.href)          && !hasFeature('hr'))                 return false;
+    if (POS_PATHS.has(item.href)         && !hasFeature('pos'))                return false;
+    if (WARRANTY_PATHS.has(item.href)    && !hasFeature('warranty'))           return false;
+    if (MAINTENANCE_PATHS.has(item.href) && !hasFeature('maintenance'))        return false;
     return true;
   });
 

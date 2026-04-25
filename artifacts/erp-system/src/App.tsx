@@ -7,7 +7,7 @@ import { AppLayout } from '@/components/layout';
 import { SubscriptionBanner } from '@/components/subscription-banner';
 import { AnnouncementBanner } from '@/components/announcement-banner';
 import { AuthProvider, useAuth } from '@/contexts/auth';
-import { SubscriptionProvider } from '@/contexts/subscription';
+import { SubscriptionProvider, useSubscription, type CompanyFeatures } from '@/contexts/subscription';
 import { AppSettingsProvider } from '@/contexts/app-settings';
 import { WarehouseProvider } from '@/contexts/warehouse';
 import { canAccess, type UserRole } from '@/lib/rbac';
@@ -17,6 +17,28 @@ import AccessDenied from '@/pages/access-denied';
 import SubscriptionExpired from '@/pages/subscription-expired';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { OfflineBanner } from '@/components/offline-banner';
+
+/* ── Feature → route mapping ─────────────────────────────
+   Defines which feature flag must be enabled for each route.
+   Routes NOT listed here require no feature flag.           */
+const ROUTE_FEATURES: Partial<Record<string, keyof CompanyFeatures>> = {
+  '/accounts':            'accounting',
+  '/journal-entries':     'accounting',
+  '/fiscal-years':        'accounting',
+  '/audit-log':           'accounting',
+  '/cost-centers':        'accounting',
+  '/accruals':            'accounting',
+  '/fixed-assets':        'fixed_assets',
+  '/bank-reconciliation': 'bank_reconciliation',
+  '/budgets':             'budgets',
+  '/employees':           'hr',
+  '/attendance':          'hr',
+  '/pos':                 'pos',
+  '/warranty':            'warranty',
+  '/repairs':             'maintenance',
+  '/devices':             'maintenance',
+  '/scrap-inventory':     'maintenance',
+};
 
 /* ── Lazy-loaded pages ─────────────────────────────────── */
 const Login = lazy(() => import('@/pages/login'));
@@ -76,8 +98,11 @@ function PageFallback() {
 
 function Guard({ path, component: Component }: { path: string; component: React.ComponentType }) {
   const { user } = useAuth();
+  const { hasFeature } = useSubscription();
   const role = (user?.role ?? 'cashier') as UserRole;
   if (!canAccess(role, path)) return <AccessDenied />;
+  const requiredFeature = ROUTE_FEATURES[path];
+  if (requiredFeature && !hasFeature(requiredFeature)) return <Redirect to="/" />;
   return (
     <Suspense fallback={<PageFallback />}>
       <Component />
@@ -87,6 +112,7 @@ function Guard({ path, component: Component }: { path: string; component: React.
 
 function Router() {
   const { user, subscriptionExpired } = useAuth();
+  const { hasFeature } = useSubscription();
   const [location] = useLocation();
 
   if (!user) {
@@ -120,6 +146,7 @@ function Router() {
   if (location === '/pos') {
     const posRole = (user?.role ?? 'cashier') as UserRole;
     if (!canAccess(posRole, '/pos')) return <AccessDenied />;
+    if (!hasFeature('pos')) return <Redirect to="/" />;
     return (
       <Suspense
         fallback={

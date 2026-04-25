@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/auth';
 import { authFetch } from '@/lib/auth-fetch';
 import { useLocation } from 'wouter';
 import {
-  type BackupFile, type Company, type Stats, type Manager,
+  type BackupFile, type Company, type CompanyFeatures, type Stats, type Manager,
   STATUS, translatePlan, C, PER_PAGE, FONT, authHeaders,
 } from './super-admin/types';
 import {
@@ -57,13 +57,12 @@ export default function SuperAdmin() {
   const [deleteCoErr, setDeleteCoErr] = useState('');
   /* Subscription management modal */
   const [subModal, setSubModal] = useState<Company | null>(null);
-  type SubFeatures = { accounting: boolean; hr: boolean; pos: boolean; warranty: boolean; consignment: boolean; fixed_assets: boolean; maintenance: boolean; budgets: boolean; bank_reconciliation: boolean };
-  const DEFAULT_FEATS_ULTIMATE: SubFeatures = { accounting: false, hr: true, pos: true, warranty: true, consignment: true, fixed_assets: false, maintenance: false, budgets: false, bank_reconciliation: false };
-  const DEFAULT_FEATS_ADVANCED: SubFeatures = { accounting: true, hr: true, pos: true, warranty: true, consignment: true, fixed_assets: true, maintenance: false, budgets: true, bank_reconciliation: true };
+  const DEFAULT_FEATS_ULTIMATE: CompanyFeatures = { accounting: false, hr: true, pos: true, warranty: true, consignment: true, fixed_assets: false, maintenance: false, budgets: false, bank_reconciliation: false };
+  const DEFAULT_FEATS_ADVANCED: CompanyFeatures = { accounting: true, hr: true, pos: true, warranty: true, consignment: true, fixed_assets: true, maintenance: false, budgets: true, bank_reconciliation: true };
   const [subForm, setSubForm] = useState<{
     plan_type: string; edition: 'advanced' | 'ultimate';
     extend_mode: 'days' | 'date'; extend_days: number;
-    end_date: string; is_active: boolean; features: SubFeatures;
+    end_date: string; is_active: boolean; features: CompanyFeatures;
   }>({ plan_type: 'trial', edition: 'ultimate', extend_mode: 'days', extend_days: 30, end_date: '', is_active: true, features: DEFAULT_FEATS_ULTIMATE });
   const [subSaving, setSubSaving] = useState(false);
   /* Confirm-code delete flow */
@@ -2827,8 +2826,9 @@ export default function SuperAdmin() {
                                 onClick={() => {
                                   const ed = (co.edition ?? 'ultimate') as 'advanced' | 'ultimate';
                                   const defaultFeats = ed === 'advanced' ? DEFAULT_FEATS_ADVANCED : DEFAULT_FEATS_ULTIMATE;
-                                  const coFeats = (co as { features?: Record<string, boolean> }).features;
-                                  const feats = coFeats ? { ...defaultFeats, ...coFeats } as typeof DEFAULT_FEATS_ULTIMATE : defaultFeats;
+                                  const feats: CompanyFeatures = co.features
+                                    ? { ...defaultFeats, ...co.features }
+                                    : { ...defaultFeats };
                                   setSubModal(co);
                                   setSubForm({
                                     plan_type: co.plan_type,
@@ -5654,7 +5654,7 @@ export default function SuperAdmin() {
                     { key: 'budgets' as const, label: 'الموازنات ومراكز التكلفة', icon: '💹', desc: 'ميزانيات ومراكز التكلفة' },
                     { key: 'bank_reconciliation' as const, label: 'المطابقة البنكية', icon: '🏦', desc: 'مطابقة كشوف البنك' },
                     { key: 'maintenance' as const, label: 'الصيانة', icon: '🔧', desc: 'وحدة الصيانة (قريباً)' },
-                  ] as { key: keyof SubFeatures; label: string; icon: string; desc: string }[]).map(({ key, label, icon, desc }, i) => (
+                  ] as { key: keyof CompanyFeatures; label: string; icon: string; desc: string }[]).map(({ key, label, icon, desc }, i) => (
                     <div
                       key={key}
                       style={{
