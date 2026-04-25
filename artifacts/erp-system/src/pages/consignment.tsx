@@ -64,6 +64,10 @@ export default function ConsignmentPage() {
     queryKey: ["/api/consignment/report"],
     queryFn: async () => {
       const res = await authFetch(api("/api/consignment/report"));
+      if (res.status === 401) {
+        const err = Object.assign(new Error("غير مصرح"), { status: 401 });
+        throw err;
+      }
       if (!res.ok) throw new Error("فشل تحميل تقرير الائتمان");
       return res.json();
     },
@@ -79,12 +83,15 @@ export default function ConsignmentPage() {
     </div>
   );
 
-  if (error) return (
-    <div className="p-6 flex items-center gap-3 text-red-400">
-      <AlertCircle className="w-5 h-5" />
-      <span>حدث خطأ أثناء تحميل التقرير</span>
-    </div>
-  );
+  if (error) {
+    const is401 = (error as { status?: number }).status === 401;
+    return (
+      <div className="p-6 flex items-center gap-3 text-red-400">
+        <AlertCircle className="w-5 h-5" />
+        <span>{is401 ? "انتهت جلستك — يرجى تسجيل الدخول مجدداً" : "حدث خطأ أثناء تحميل التقرير"}</span>
+      </div>
+    );
+  }
 
   const summary = data?.summary;
   const suppliers = data?.suppliers ?? [];
