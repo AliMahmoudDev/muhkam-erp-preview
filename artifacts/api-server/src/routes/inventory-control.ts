@@ -309,7 +309,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية تحويل المخزون" }); return;
   }
 
-  const { from_warehouse_id, to_warehouse_id, notes, items } = req.body as {
+  const { from_warehouse_id, to_warehouse_id, items } = req.body as {
     from_warehouse_id: number;
     to_warehouse_id:   number;
     notes?:            string;
