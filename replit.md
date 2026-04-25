@@ -104,6 +104,28 @@
 
 ---
 
+## Security Architecture Improvements (April 2026 — Session 11)
+
+### Priority 1: httpOnly Cookie Auth ✅ (completed in prior session)
+- Backend sets `access_token` + `refresh_token` as `httpOnly` cookies on login/2FA/refresh/register
+- Backend clears cookies on logout; middleware reads cookie first, Authorization header as fallback
+- Frontend uses `credentials: 'include'` throughout; token state fully removed from auth context
+
+### Priority 2: Large File Splitting ✅
+- **`super-admin.tsx`** (6259 → 5778 lines) — extracted to subdirectory `src/pages/super-admin/`:
+  - `types.ts` (86 lines) — `BackupFile`, `Company`, `Stats`, `Manager` interfaces + `STATUS`, `translatePlan`, `C`, `PER_PAGE`, `FONT`, `authHeaders` constants
+  - `ui.tsx` (389 lines) — `AnimatedNumber`, `Toast`, `DarkInput`, `Modal`, `ConfirmDeleteModal`, `ActionBtn`, `PageBtn` components
+- **`login.tsx`** (1697 → 1285 lines) — `RegisterForm` extracted to `src/pages/login/RegisterForm.tsx` (185 lines); main file imports it at top + re-exports for module consumers
+
+### Priority 3: CSP Tightening ✅ (`artifacts/api-server/src/app.ts`)
+- Removed `'unsafe-inline'` from `scriptSrc` — API server does not serve inline scripts
+- Added `objectSrc: ["'none'"]` — prevents Flash/plugin exploitation
+- Added `baseUri: ["'self'"]` — prevents base-tag injection
+- Added `formAction: ["'self'"]` — prevents form hijacking to external domains
+- Commit: `fdf558c`
+
+---
+
 ## Features Added (April 2026 — Session 4)
 
 ### 1. فلتر الفرع/المستودع في التقارير (Branch Filter in Reports)
