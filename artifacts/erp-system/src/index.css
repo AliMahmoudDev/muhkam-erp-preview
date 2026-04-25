@@ -90,8 +90,7 @@
   /* 2. Hide number-input spinners (the inner-border artifact) */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+    display: none;
   }
   input[type="number"] { -moz-appearance: textfield; }
 
@@ -127,19 +126,13 @@
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 
-/* ══ Number spinner kill — must be OUTSIDE @layer ══ */
+/* ══ Number spinner kill — display:none is the only reliable cross-browser fix ══ */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  margin: 0 !important;
-  width: 0 !important;
-  opacity: 0 !important;
+  display: none !important;
 }
-input[type=number] {
-  -moz-appearance: textfield !important;
-  appearance: textfield !important;
-}
+/* Firefox */
+input[type=number] { -moz-appearance: textfield; }
 
 /* ── Glass panel ───────────────────────────────── */
 .glass-panel {
