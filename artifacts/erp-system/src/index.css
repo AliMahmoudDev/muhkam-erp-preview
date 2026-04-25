@@ -3856,6 +3856,13 @@ html.light .erp-select {
   box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
 }
 
+.erp-searchable input:focus,
+.erp-searchable input:focus-visible {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .erp-searchable input {
   background: transparent;
   border: none;
@@ -4315,6 +4322,15 @@ input.sale-border:focus, textarea.sale-border:focus { border-color: rgba(245,158
 /* ── Field rows ── */
 .sale-field-row { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
 .sale-field-row:focus-within { border-color: rgba(245,158,11,0.55) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.13) !important; }
+/* Inner inputs inside sale-field-row must NOT show their own ring — container handles it */
+.sale-field-row input:focus,
+.sale-field-row input:focus-visible,
+.sale-field-row select:focus,
+.sale-field-row select:focus-visible {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
 
 /* ── Total box ── */
 .sale-total-box {
