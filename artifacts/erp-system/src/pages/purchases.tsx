@@ -406,10 +406,16 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
 
             <div className="grid grid-cols-1 gap-1.5 text-xs">
               {selectRow("المخزن", <Vault className="w-3.5 h-3.5" />,
-                <select className="bg-transparent text-white outline-none w-full appearance-none text-xs" value={warehouseId} onChange={e => setWarehouseId(e.target.value)}>
-                  <option value="" className="bg-slate-900">-- مخزن --</option>
-                  {warehouses.map(w => <option key={w.id} value={w.id} className="bg-slate-900">{w.name}</option>)}
-                </select>
+                <SearchableSelect
+                  items={filteredWarehouses.map(w => ({ value: String(w.id), label: w.name, searchKeys: [w.name] }))}
+                  value={warehouseId}
+                  onChange={setWarehouseId}
+                  placeholder="-- مخزن --"
+                  emptyLabel="-- مخزن --"
+                  clearable={false}
+                  className="w-full"
+                  inputClassName="w-full"
+                />
               )}
             </div>
           </div>
@@ -471,10 +477,15 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
               )}
               {(paymentType === "cash" || paymentType === "partial") && (
                 selectRow("الخزينة", <Vault className="w-3.5 h-3.5 text-amber-400/70" />,
-                  <select className="bg-transparent text-white outline-none w-full appearance-none text-xs" value={safeId} onChange={e => setSafeId(e.target.value)}>
-                    <option value="" className="bg-slate-900">-- اختر الخزينة --</option>
-                    {filteredSafes.map((s) => <option key={s.id} value={s.id} className="bg-slate-900">{s.name} ({formatCurrency(Number(s.balance))})</option>)}
-                  </select>
+                  <SearchableSelect
+                    items={filteredSafes.map(s => ({ value: String(s.id), label: `${s.name} (${formatCurrency(Number(s.balance))})`, searchKeys: [s.name] }))}
+                    value={safeId}
+                    onChange={setSafeId}
+                    placeholder="-- اختر الخزينة --"
+                    emptyLabel="-- اختر الخزينة --"
+                    className="w-full"
+                    inputClassName="w-full"
+                  />
                 )
               )}
             </div>
