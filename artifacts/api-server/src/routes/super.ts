@@ -1175,6 +1175,96 @@ router.get("/super/health", ...superOnly, wrap(async (_req, res) => {
 }));
 
 /* ═══════════════════════════════════════════════════════════════════════════
+ * TRIAL ABUSE ANALYTICS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * GET /super/trial-abuse-stats
+ *
+ * Returns a snapshot of the trial system for the super admin dashboard:
+ *   • top_ips          — IPs with the most trial registrations (abuse pattern)
+ *   • suspicious       — companies where is_suspicious = true
+ *   • unverified       — trial companies where email is not yet verified
+ *   • expiring_soon    — active trials expiring within 2 days
+ *   • total_trials     — lifetime trial company count
+ *   • conversion_rate  — percentage of trials that converted to paid
+ */
+router.get("/super/trial-abuse-stats", ...superOnly, wrap(async (_req, res) => {
+  const nowStr = new Date().toISOString().slice(0, 10);
+
+  /* All companies ever on trial */
+  const allTrials = await db
+    .select({
+      id:                  companiesTable.id,
+      name:                companiesTable.name,
+      admin_email:         companiesTable.admin_email,
+      signup_ip:           companiesTable.signup_ip,
+      plan_type:           companiesTable.plan_type,
+      is_active:           companiesTable.is_active,
+      is_suspicious:       companiesTable.is_suspicious,
+      trial_score:         companiesTable.trial_score,
+      email_verified:      companiesTable.email_verified,
+      verification_status: companiesTable.verification_status,
+      end_date:            companiesTable.end_date,
+      created_at:          companiesTable.created_at,
+    })
+    .from(companiesTable)
+    .where(eq(companiesTable.has_used_trial, true))
+    .orderBy(desc(companiesTable.created_at));
+
+  /* Top IPs by registration count (non-overridden rows only) */
+  const ipMap = new Map<string, number>();
+  for (const c of allTrials) {
+    if (c.signup_ip) ipMap.set(c.signup_ip, (ipMap.get(c.signup_ip) ?? 0) + 1);
+  }
+  const topIPs = Array.from(ipMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([ip, count]) => ({ ip, count }));
+
+  /* Suspicious companies (score < 50) */
+  const suspicious = allTrials
+    .filter(c => c.is_suspicious)
+    .map(c => ({
+      id: c.id, name: c.name, email: c.admin_email,
+      trial_score: c.trial_score, signup_ip: c.signup_ip,
+      created_at: c.created_at,
+    }));
+
+  /* Unverified trial companies still within or past their window */
+  const unverified = allTrials
+    .filter(c => !c.email_verified && c.verification_status !== "verified")
+    .map(c => ({
+      id: c.id, name: c.name, email: c.admin_email,
+      verification_status: c.verification_status, created_at: c.created_at,
+    }));
+
+  /* Active trials expiring within 2 days */
+  const soon = new Date();
+  soon.setDate(soon.getDate() + 2);
+  const soonStr = soon.toISOString().slice(0, 10);
+  const expiringSoon = allTrials.filter(
+    c => c.plan_type === "trial" && c.is_active && c.end_date >= nowStr && c.end_date <= soonStr
+  ).map(c => ({ id: c.id, name: c.name, email: c.admin_email, end_date: c.end_date }));
+
+  /* Conversion stats */
+  const totalTrials  = allTrials.length;
+  const converted    = allTrials.filter(c => c.plan_type !== "trial").length;
+  const conversionRate = totalTrials > 0 ? Math.round((converted / totalTrials) * 100) : 0;
+
+  res.json({
+    top_ips:         topIPs,
+    suspicious,
+    unverified,
+    expiring_soon:   expiringSoon,
+    total_trials:    totalTrials,
+    converted,
+    conversion_rate: `${conversionRate}%`,
+    generated_at:    new Date().toISOString(),
+  });
+}));
+
+/* ═══════════════════════════════════════════════════════════════════════════
  * TRIAL ABUSE OVERRIDE ROUTES
  * Allow the super admin to unblock legitimate users without deleting history.
  * ═══════════════════════════════════════════════════════════════════════════ */

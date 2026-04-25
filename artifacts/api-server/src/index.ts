@@ -2,6 +2,7 @@ import net from "net";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startBackupScheduler, stopBackupScheduler } from "./lib/backup-scheduler";
+import { startTrialScheduler, stopTrialScheduler } from "./lib/trial-scheduler";
 import { startDbBackupScheduler } from "./lib/db-backup";
 import { startMonitoring } from "./lib/monitor";
 import { seedDefaults } from "./lib/seed-defaults";
@@ -63,6 +64,7 @@ async function main() {
     logger.info(`Backend started on port ${PORT}`);
     startBackupScheduler();
     startDbBackupScheduler();
+    startTrialScheduler();
     startMonitoring();
     /* Purge expired refresh tokens daily */
     void purgeExpiredRefreshTokens();
@@ -72,6 +74,7 @@ async function main() {
   async function cleanup(signal: string) {
     logger.info({ signal }, "Shutdown signal received — closing server");
     stopBackupScheduler();
+    stopTrialScheduler();
     server.close(async () => {
       try {
         await pool.end();

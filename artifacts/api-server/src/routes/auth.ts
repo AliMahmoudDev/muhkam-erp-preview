@@ -15,6 +15,8 @@ import {
   buildVerificationLink,
   logVerificationLink,
 } from '../lib/trial-guard';
+import { scoreTrialCompany } from '../lib/trial-scoring';
+import { invalidateEmailVerifyCache } from '../middleware/email-verify-guard';
 import { authenticate, signToken, signRefreshToken, verifyRefreshToken } from '../middleware/auth';
 import { blacklistToken } from '../lib/session-blacklist';
 import { storeRefreshToken, consumeRefreshToken, revokeUserRefreshTokens } from '../lib/refresh-token-store';
@@ -766,6 +768,9 @@ router.post('/auth/register', async (req, res) => {
       company_id: company.id,
     });
 
+    /* ── Compute initial trial score (fire-and-forget) ────────── */
+    void scoreTrialCompany(company.id);
+
     /* ── Log verification link (no email service configured yet) */
     const verifyLink = buildVerificationLink(verificationToken);
     logVerificationLink(normalEmail, verifyLink);
@@ -851,15 +856,22 @@ router.get('/auth/verify-email', async (req, res) => {
       return;
     }
 
-    /* Mark email as verified, clear token */
+    /* Mark email as verified, clear token, update verification_status */
     await db
       .update(companiesTable)
       .set({
         email_verified:                true,
+        verification_status:           'verified',
         email_verification_token:      null,
         email_verification_expires_at: null,
       })
       .where(eq(companiesTable.id, company.id));
+
+    /* Invalidate email-verify-guard cache so the write-lock is lifted immediately */
+    invalidateEmailVerifyCache(company.id);
+
+    /* Re-score now that email is verified (adds the +30 bonus) — fire-and-forget */
+    void scoreTrialCompany(company.id);
 
     res.send(
       '<h2>✅ تم التحقق من البريد الإلكتروني بنجاح — يمكنك إغلاق هذه الصفحة والعودة للنظام</h2>'

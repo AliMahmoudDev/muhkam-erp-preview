@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { authenticate, requireTenant } from "../middleware/auth";
 import { tenantGuard } from "../middleware/tenant-guard";
+import { emailVerifyGuard } from "../middleware/email-verify-guard";
 import healthRouter from "./health";
 import zktecoRouter from "./zkteco";
 import productsRouter from "./products";
@@ -81,6 +82,9 @@ router.use(requireTenant);
 
 /* ── Subscription guard — blocks expired/inactive companies ────── */
 router.use(tenantGuard);
+
+/* ── Email verification guard — write-locks unverified expired trials ── */
+router.use(emailVerifyGuard);
 
 /* ── Protected routes ─────────────────────────────────────────── */
 router.use(productsRouter);
