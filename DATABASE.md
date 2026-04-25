@@ -145,7 +145,7 @@ Line items for each sale.
 Mirror of `sales` / `sale_items` for customer returns. Reverses stock movements and customer ledger entries.
 
 ### `customers`
-Customer and supplier records (unified table — `is_supplier` flag differentiates).
+Customer records. The `is_supplier` boolean flag means a customer can also act as a supplier in purchases.
 
 | Column | Description |
 |--------|-------------|
@@ -154,11 +154,17 @@ Customer and supplier records (unified table — `is_supplier` flag differentiat
 | `phone` | Contact number |
 | `customer_code` | Unique code within company |
 | `account_id` | FK → `accounts` (linked ledger account) |
-| `is_supplier` | `true` if this customer is also a supplier |
+| `is_supplier` | `true` if this customer is also used as a supplier |
 | `credit_limit` | Maximum allowed credit balance |
+
+### `customer_classifications`
+Customer grouping/tier labels (e.g. "VIP", "Wholesale").
 
 ### `customer_ledger`
 Double-entry ledger for customer balances (debit/credit movements).
+
+### `suppliers`
+Dedicated supplier records. A separate table from `customers`, used when a supplier is not also a customer.
 
 ### `sales_targets`
 Monthly/periodic sales goals per employee.
@@ -212,8 +218,8 @@ Every stock in/out event is recorded here. Provides a full audit trail of invent
 ### `warehouses`
 Physical warehouse locations.
 
-### `stock_transfers`
-Movement of stock between two warehouses. Creates paired `transfer_out` + `transfer_in` stock movements.
+### `stock_transfers` / `stock_transfer_items`
+Movement of stock between two warehouses. Header (`stock_transfers`) + line items (`stock_transfer_items`). Creates paired `transfer_out` + `transfer_in` stock movements.
 
 ### `stock_count_sessions` / `stock_count_items`
 Physical inventory count sessions. When applied, adjusts quantities and creates stock movements.
@@ -269,7 +275,7 @@ Money paid to suppliers (reduces supplier payable).
 Bank deposits.
 
 ### `treasury_vouchers`
-Internal treasury movements.
+Internal treasury movements. Defined in `lib/db/src/schema/returns.ts` alongside the returns tables (historical co-location).
 
 ### `fiscal_years`
 Accounting periods. Transactions in a closed period are blocked unless the admin uses an override.
@@ -302,52 +308,88 @@ Deferred income/expense accruals.
 
 ## Human Resources Tables
 
-### `employees`
-Full employee profiles.
+All HR tables live in `lib/db/src/schema/employees.ts`, `attendance.ts`, `leaves.ts`, `payroll.ts`, `salary-advances.ts`, `incentives.ts`, and `employee-bonuses-custody.ts`.
 
-| Column | Description |
-|--------|-------------|
-| `company_id` | Tenant |
-| `name` | Full name |
-| `employee_code` | Unique code within company |
-| `department_id` | FK → `departments` |
-| `job_title_id` | FK → `job_titles` |
-| `hire_date` | Start date |
-| `base_salary` | Monthly base pay |
-| `status` | `active` / `on_leave` / `terminated` |
+### Employee Master Tables
 
-### `departments` / `job_titles`
-Organization structure.
+| Table | Description |
+|-------|-------------|
+| `employees` | Full employee profiles (name, code, department, hire date, salary, status) |
+| `employee_documents` | Uploaded documents per employee (ID, contracts, certificates) |
+| `employee_contacts` | Emergency contacts per employee |
+| `employee_status_history` | Log of status changes (active → on_leave → terminated) |
+| `departments` | Company departments |
+| `job_titles` | Job titles / positions |
 
-### `attendance_records`
-Daily attendance entries (check-in / check-out).
+### Attendance Tables
 
-### `attendance_summary`
-Monthly attendance aggregation per employee.
+| Table | Description |
+|-------|-------------|
+| `attendance_records` | Daily check-in / check-out entries |
+| `attendance_summary` | Monthly aggregated attendance per employee |
+| `shift_schedules` | Configured work shifts (day, night, etc.) |
+| `employee_shift_assignments` | Maps each employee to a shift |
+| `overtime_records` | Approved overtime hours per employee |
+| `public_holidays` | Non-working public holiday dates |
+| `attendance_deduction_settings` | Thresholds and rules for attendance deductions |
+| `attendance_deduction_tiers` | Tiered deduction amounts (e.g. 1 day absent = X% deduction) |
 
-### `leave_requests` / `leave_approvals`
-Leave request workflow with manager approval.
+### Leave Tables
 
-### `leave_types` / `leave_policies`
-Configurable leave types (annual, sick, etc.) and accrual policies.
+| Table | Description |
+|-------|-------------|
+| `leave_types` | Configurable leave types (annual, sick, unpaid, etc.) |
+| `leave_policies` | Accrual rules per leave type (days per year, carry-over, etc.) |
+| `employee_leave_balances` | Current leave balance per employee per type |
+| `leave_requests` | Employee leave requests |
+| `leave_approvals` | Manager approval/rejection records per request |
+| `leave_accrual_history` | Log of balance accrual events |
+| `leave_blackout_dates` | Dates when leave cannot be taken |
 
-### `payroll_records` / `payroll_line_items`
-Monthly payroll run results. Line items show each salary component (base, allowances, deductions).
+### Payroll Tables
 
-### `payroll_periods`
-Payroll run periods.
+| Table | Description |
+|-------|-------------|
+| `payroll_periods` | Payroll run periods (month/year) |
+| `payroll_records` | One record per employee per payroll period |
+| `payroll_line_items` | Breakdown of each pay component (base, allowances, deductions) |
+| `payroll_adjustments` | Manual one-off adjustments to a payroll record |
+| `salary_structures` | Named salary structure templates |
+| `salary_components` | Components within a structure (e.g. "Housing Allowance") |
+| `tax_brackets` | Progressive income tax bracket definitions |
+| `statutory_contributions` | Social insurance / statutory contribution rates |
+| `salary_history` | Audit trail of salary changes per employee |
 
-### `salary_structures` / `salary_components`
-Configurable salary structure templates.
+### Salary Advance Tables
 
-### `salary_advances` / `salary_advance_deductions`
-Salary advance requests and monthly repayment deductions.
+| Table | Description |
+|-------|-------------|
+| `salary_advances` | Advance requests with amount, purpose, and approval status |
+| `salary_advance_deductions` | Monthly installment deductions tied to a payroll period |
+| `salary_advance_settings` | Company-level advance rules (max amount, max installments) |
+| `salary_advance_history` | Lifecycle log of each advance |
+| `salary_advance_ledger` | Running balance ledger for outstanding advances |
 
-### `incentive_schemes` / `incentive_rules` / `incentive_slabs`
-Sales incentive calculation rules (tiered commissions).
+### Incentive Tables
 
-### `employee_bonuses` / `employee_custody`
-Ad-hoc bonuses and issued custody items (phones, laptops, etc.).
+| Table | Description |
+|-------|-------------|
+| `incentive_schemes` | Named incentive plan definitions |
+| `incentive_rules` | Conditions that trigger an incentive (e.g. sales over X) |
+| `incentive_slabs` | Tiered commission rates within a rule |
+| `employee_incentive_assignments` | Maps employees to incentive schemes |
+| `daily_incentive_accrual` | Daily calculated incentive amounts per employee |
+| `monthly_incentive_summary` | Aggregated monthly totals (fed into payroll) |
+| `incentive_metrics` | Metrics snapshot used to evaluate incentive rules |
+
+### Bonus & Custody Tables
+
+| Table | Description |
+|-------|-------------|
+| `employee_bonuses` | One-off bonus payments |
+| `employee_custody` | Custody item records (company-owned assets issued to employees) |
+| `employee_custody_lines` | Line items per custody record |
+| `employee_deductions` | Non-attendance-based deductions (fines, etc.) |
 
 ---
 

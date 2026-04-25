@@ -244,26 +244,32 @@ pnpm --filter @workspace/erp-system run build
 NODE_ENV=production node artifacts/api-server/dist/index.mjs
 ```
 
-Use Nginx as a reverse proxy in production. See `deploy/` for Nginx configuration.
+Use Nginx as a reverse proxy in production. See `nginx.conf` at the project root.
 
 ---
 
 ## Environment Variables
 
+See `.env.example` at the project root for a template. Variables used by the backend:
+
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `JWT_SECRET` | Yes | Access token signing secret (min 64 chars) |
+| `JWT_SECRET` | Yes | Access token signing secret (min 32 chars, 64 recommended) |
 | `JWT_REFRESH_SECRET` | Yes | Refresh token signing secret (different from JWT_SECRET) |
-| `PORT` | Yes (dev) | Server port (8080 for backend, 5000 for frontend) |
-| `BASE_PATH` | Yes (frontend) | Base URL path for the frontend Vite build |
-| `TOTP_ENCRYPTION_KEY` | Yes | AES key for encrypting TOTP secrets |
-| `SUPER_ADMIN_PIN` | Seed | Default super admin PIN on first boot |
-| `DEFAULT_ADMIN_PIN` | Seed | Default company admin PIN on first boot |
-| `BACKUP_ENCRYPTION_KEY` | Optional | AES-256-GCM key for encrypting database backups |
-| `REDIS_URL` | Optional | Redis for session blacklist and brute-force protection |
-| `SUPER_ADMIN_IPS` | Optional | Comma-separated IP allowlist for super admin routes |
-| `BACKUP_DIR` | Optional | Directory for database backup files |
+| `PORT` | Yes | Backend server port (default: 8080) |
+| `NODE_ENV` | Yes (prod) | Set to `production` in production |
+| `TOTP_ENCRYPTION_KEY` | Yes | Exactly 32 characters — AES-256-CBC key for encrypting TOTP secrets |
+| `ALLOWED_ORIGINS` | Yes (prod) | Comma-separated frontend origins for CORS. Empty = allow all (not recommended) |
+| `SUPER_ADMIN_PIN` | Seed | Force-reset the super admin PIN on next startup. Remove after use |
+| `DEFAULT_ADMIN_PIN` | Seed | Force-reset the default company admin PIN on next startup. Remove after use |
+| `BACKUP_ENCRYPTION_KEY` | Optional | Passphrase for AES-256-GCM backup encryption. Unset = plaintext backups |
+| `REDIS_URL` | Optional | Redis URL for session blacklist and brute-force tracking |
+| `SUPER_ADMIN_IPS` | Optional | Comma-separated IP allowlist for super admin routes. Empty = allow all |
+| `BACKUP_DIR` | Optional | Directory path for backup files (default: `/root/db-backups`) |
+| `LOG_LEVEL` | Optional | Pino log level: `trace` / `debug` / `info` / `warn` / `error` (default: `info`) |
+| `FRONTEND_DIST` | Optional | Override path to built frontend static files |
+| `DB_PASSWORD` | Optional | Separate password field (if not embedded in DATABASE_URL) |
 
 ---
 
@@ -273,16 +279,27 @@ All API routes are prefixed with `/api`.
 
 ### Public Routes (no auth required)
 ```
-POST   /api/auth/login
-POST   /api/auth/refresh
+POST   /api/auth/login             (PIN login)
+POST   /api/auth/login/email       (email login)
+POST   /api/auth/2fa/login         (TOTP second-factor login)
+POST   /api/auth/refresh           (refresh access token)
+POST   /api/auth/register          (register new user — if enabled)
+GET    /api/auth/users             (list usernames for login UI)
 GET    /api/health
-GET    /api/iclock/*        (ZKTeco device sync)
+GET    /api/iclock/*               (ZKTeco device sync — public endpoint for biometric devices)
 ```
 
 ### Super Admin Routes (`role = super_admin` required)
 ```
+# Dashboard & Stats
 GET    /api/super/stats
+GET    /api/super/revenue
+GET    /api/super/alerts
+GET    /api/super/health
+
+# Company Management
 GET    /api/super/companies
+GET    /api/super/companies/:id
 POST   /api/super/companies
 PUT    /api/super/companies/:id
 DELETE /api/super/companies/:id
@@ -290,45 +307,66 @@ POST   /api/super/companies/:id/extend
 POST   /api/super/companies/:id/activate
 POST   /api/super/companies/:id/suspend
 POST   /api/super/companies/:id/reset-admin-password
+GET    /api/super/export/companies         (CSV export)
+
+# Manager Accounts
 GET    /api/super/managers
 POST   /api/super/managers
 PATCH  /api/super/managers/:id
+PATCH  /api/super/managers/:id/toggle      (enable/disable)
 DELETE /api/super/managers/:id
-GET    /api/super/revenue
-GET    /api/super/alerts
-GET    /api/super/health
-GET    /api/super/audit-log
-GET/POST/PATCH/DELETE /api/super/announcements/:id
-GET/PUT /api/super/plan-settings/:key
+
+# Announcements
+GET    /api/super/announcements
+POST   /api/super/announcements
+PATCH  /api/super/announcements/:id
+DELETE /api/super/announcements/:id
+
+# Plan Pricing
+GET    /api/super/plan-settings
+PUT    /api/super/plan-settings/:key
+
+# Backup & Security
 POST   /api/super/backup/create
 GET    /api/super/backup/list
 GET    /api/super/backup/download/:filename
+GET    /api/super/encryption-key           (retrieve backup encryption key)
 POST   /api/system/restore
+
+# Audit Log
+GET    /api/super/audit-log
 ```
 
 ### Tenant Routes (company users)
 All routes below require a valid JWT and an active subscription.
 
 ```
-# Auth
+# Auth (authenticated)
 GET    /api/auth/me
 POST   /api/auth/logout
+GET    /api/auth/subscription
+GET    /api/auth/2fa/setup
+POST   /api/auth/2fa/verify
+POST   /api/auth/2fa/disable
+GET    /api/auth/2fa/status
 
 # Products & Inventory
 GET/POST/PUT/DELETE  /api/products
 GET    /api/inventory
 POST   /api/inventory/adjust
-GET/POST/PUT/DELETE  /api/stock-transfers
+GET/POST             /api/stock-transfers
 GET/POST             /api/stock-count-sessions
 
 # Customers & Sales
 GET/POST/PUT/DELETE  /api/customers
 GET/POST/PUT/DELETE  /api/sales
-GET/POST/PUT/DELETE  /api/sales-returns
+GET/POST/DELETE      /api/sales-returns     (no PUT — returns are immutable once created)
 
 # Purchasing
-GET/POST/PUT/DELETE  /api/purchases
-GET/POST/PUT/DELETE  /api/purchase-returns
+GET/POST             /api/purchases
+POST   /api/purchases/:id/post             (post a draft purchase)
+POST   /api/purchases/:id/cancel           (cancel a purchase)
+GET/POST/DELETE      /api/purchase-returns  (no PUT — returns are immutable once created)
 
 # Financial
 GET/POST/PUT/DELETE  /api/expenses
@@ -347,15 +385,20 @@ GET/POST/PUT/DELETE  /api/payroll
 GET/POST/PUT/DELETE  /api/attendance
 GET/POST/PUT/DELETE  /api/leaves
 GET/POST/PUT/DELETE  /api/salary-advances
+GET/POST/PUT/DELETE  /api/branches
+GET/POST/PUT/DELETE  /api/incentives
 
-# Reports
+# Reports & Analytics
 GET    /api/reports/*
 GET    /api/dashboard
 GET    /api/profits
+GET    /api/metrics
 
-# Settings
+# Settings & Configuration
 GET/POST/PUT         /api/settings
 GET/POST/PUT         /api/fiscal-years
+GET/POST/PUT/DELETE  /api/categories
+GET/POST/PUT/DELETE  /api/exchange-rates
 ```
 
 ---
@@ -376,10 +419,11 @@ GET/POST/PUT         /api/fiscal-years
 
 ## Deployment
 
-The project ships with:
-- `deploy/nginx.conf` — Nginx reverse proxy configuration
+The project ships with these files at the repository root:
+- `nginx.conf` — Nginx reverse proxy configuration
 - `ecosystem.config.cjs` — PM2 process manager configuration
 - `docker-compose.yml` — Docker orchestration
-- `deploy/start.sh` — Production startup script
+- `deploy.sh` — Production startup script
+- `DEPLOY.md` — Detailed deployment guide
 
 In production the Express server serves the static React build from `artifacts/erp-system/dist/public/`, eliminating the need for a separate frontend server.

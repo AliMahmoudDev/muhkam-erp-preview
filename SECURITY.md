@@ -89,7 +89,7 @@ This is acceptable for development but Redis is strongly recommended for product
 Super admin accounts can enable TOTP-based two-factor authentication:
 
 1. `GET /api/auth/2fa/setup` — generates a QR code and TOTP secret
-2. The secret is encrypted with `TOTP_ENCRYPTION_KEY` (AES) before storage in `erp_users.totp_secret`
+2. The secret is encrypted with `TOTP_ENCRYPTION_KEY` (**AES-256-CBC**, must be exactly 32 characters) before storage in `erp_users.totp_secret`
 3. `POST /api/auth/2fa/verify` — verifies the first 6-digit token and enables 2FA
 4. Subsequent logins require the current 6-digit code from the authenticator app
 
