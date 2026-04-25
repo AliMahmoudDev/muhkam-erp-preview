@@ -27,7 +27,7 @@ import { useState } from 'react';
   FileSpreadsheet,
   Eye,
   } from 'lucide-react';
-  import { Link } from 'wouter';
+  import { Link, useLocation } from 'wouter';
   import { useToast } from '@/hooks/use-toast';
   import { safeArray } from '@/lib/safe-data';
   import {
@@ -42,14 +42,12 @@ import { useState } from 'react';
     AuditSummary,
     LowStockItem,
     WarehouseSummaryItem,
-    TransferPrefill,
     Tab,
   } from './inventory/_shared';
   import { TabBtn, TabBtnBadge, StatCard } from './inventory/_components';
   import ReviewTab from './inventory/ReviewTab';
   import CountTab from './inventory/CountTab';
-  import TransferTab from './inventory/TransferTab';
-  import AlertsTab from './inventory/AlertsTab';
+    import AlertsTab from './inventory/AlertsTab';
 
   /* ═══════════════════════════════════════════════════════════════════════════
  * Main Component
@@ -66,8 +64,8 @@ export default function Inventory() {
   const canAdjustInventory = hasPermission(user, 'can_adjust_inventory') === true;
   const isAdmin = user?.role === 'admin';
 
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [transferPrefill, setTransferPrefill] = useState<TransferPrefill | null>(null);
   const [movementsFilter, setMovementsFilter] = useState<'all' | 'zero' | 'low'>('all');
   /* ── warehouse detail modal ── */
   const [warehouseDetailId, setWarehouseDetailId] = useState<number | null>(null);
@@ -215,9 +213,8 @@ export default function Inventory() {
     });
   }
 
-  function handleTransferPrefill(prefill: TransferPrefill) {
-    setTransferPrefill(prefill);
-    setActiveTab('transfer');
+  function handleTransferPrefill() {
+    navigate('/transfers');
   }
 
   if (!canViewInventory) {
@@ -262,13 +259,12 @@ export default function Inventory() {
             />
           )}
           {canAdjustInventory && (
-            <TabBtn
-              id="transfer"
-              label="التحويلات"
-              icon={<Truck className="w-4 h-4" />}
-              active={activeTab}
-              onClick={setActiveTab}
-            />
+            <Link to="/transfers">
+              <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-white/60 hover:text-white hover:border-white/30 transition-colors">
+                <Truck className="w-4 h-4" />
+                التحويلات بين الفروع
+              </button>
+            </Link>
           )}
           <TabBtnBadge
             id="alerts"
@@ -568,15 +564,6 @@ export default function Inventory() {
             currentWarehouseId={currentWarehouseIdNum}
             qc={qc}
             toast={toast}
-          />
-        )}
-        {activeTab === 'transfer' && (
-          <TransferTab
-            warehouses={warehouses}
-            qc={qc}
-            toast={toast}
-            prefill={transferPrefill}
-            onClearPrefill={() => setTransferPrefill(null)}
           />
         )}
         {activeTab === 'alerts' && (

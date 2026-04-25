@@ -348,7 +348,11 @@ export default function Transfers() {
 
   const { data: branches = [] } = useQuery<Branch[]>({
     queryKey: ['branches-list'],
-    queryFn: () => authFetch(api('/api/settings/branches')).then(r => r.json()),
+    queryFn: async () => {
+      const d = await authFetch(api('/api/branches')).then(r => r.json());
+      const arr = Array.isArray(d) ? d : (Array.isArray(d?.branches) ? d.branches : []);
+      return arr;
+    },
   });
 
   const { data: productsData } = useQuery<{ products: Product[] }>({
