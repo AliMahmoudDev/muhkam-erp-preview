@@ -28,25 +28,33 @@ interface AppNotification {
 const POLL_MS = 60_000;
 
 const TYPE_ICON: Record<string, string> = {
-  advance_pending: '⏳',
-  advance_approved: '✅',
-  advance_rejected: '❌',
-  bonus_granted: '🎁',
-  deduction_added: '➖',
-  custody_settled: '📦',
-  custody_assigned: '📤',
-  generic: '🔔',
+  advance_pending:   '⏳',
+  advance_approved:  '✅',
+  advance_rejected:  '❌',
+  bonus_granted:     '🎁',
+  deduction_added:   '➖',
+  custody_settled:   '📦',
+  custody_assigned:  '📤',
+  transfer_request:  '🔄',
+  transfer_approved: '✅',
+  transfer_shipped:  '🚚',
+  transfer_received: '📦',
+  generic:           '🔔',
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  advance_pending: '#f59e0b',
-  advance_approved: '#22c55e',
-  advance_rejected: '#ef4444',
-  bonus_granted: '#22c55e',
-  deduction_added: '#ef4444',
-  custody_settled: '#3b82f6',
-  custody_assigned: '#a78bfa',
-  generic: '#94a3b8',
+  advance_pending:   '#f59e0b',
+  advance_approved:  '#22c55e',
+  advance_rejected:  '#ef4444',
+  bonus_granted:     '#22c55e',
+  deduction_added:   '#ef4444',
+  custody_settled:   '#3b82f6',
+  custody_assigned:  '#a78bfa',
+  transfer_request:  '#a78bfa',
+  transfer_approved: '#3b82f6',
+  transfer_shipped:  '#f59e0b',
+  transfer_received: '#22c55e',
+  generic:           '#94a3b8',
 };
 
 function timeAgo(iso: string): string {

@@ -15,6 +15,7 @@ import {
   db,
   stockTransfersTable,
   stockMovementsTable,
+  notificationsTable,
   productsTable,
   branchesTable,
   warehousesTable,
@@ -22,6 +23,26 @@ import {
 import { wrap, httpError } from "../lib/async-handler";
 import { getTenant } from "../middleware/auth";
 import { hasPermission } from "../lib/permissions";
+
+// ─── مساعد: إشعار صامت (fire-and-forget) ────────────────────────────────────
+function notify(
+  companyId: number,
+  userId: number,
+  type: string,
+  title: string,
+  message: string,
+  referenceId: number,
+) {
+  db.insert(notificationsTable).values({
+    company_id:   companyId,
+    user_id:      userId,
+    type,
+    title,
+    message,
+    link:         "/transfers",
+    reference_id: referenceId,
+  }).catch(() => { /* silent — لا نوقف العملية بسبب إشعار */ });
+}
 
 const router: IRouter = Router();
 
@@ -141,6 +162,13 @@ router.post("/transfers/request", wrap(async (req, res) => {
     notes:             notes ?? null,
   }).returning();
 
+  // إشعار المُنشئ بتأكيد الإنشاء
+  notify(companyId, userId, "transfer_request",
+    "طلب تحويل جديد",
+    `طلب تحويل ${product.name} (${qty} وحدة) من ${fromBranch.name} إلى ${toBranch.name}`,
+    transfer.id,
+  );
+
   res.status(201).json({
     ...formatTransfer(transfer),
     message: "تم إنشاء طلب التحويل بنجاح",
@@ -186,6 +214,15 @@ router.post("/transfers/approve/:id", wrap(async (req, res) => {
     .returning();
 
   if (!updated) throw httpError(409, "فشل الاعتماد — ربما تغيرت الحالة للتو");
+
+  // إشعار المُنشئ بأن طلبه اعتُمد
+  if (updated.created_by) {
+    notify(companyId, updated.created_by, "transfer_approved",
+      "تم اعتماد طلب التحويل ✅",
+      `طلب تحويل ${updated.product_name} (${updated.quantity} وحدة) — اعتُمد وجاهز للشحن`,
+      updated.id,
+    );
+  }
 
   res.json({ ...formatTransfer(updated), message: "تم اعتماد طلب التحويل" });
 }));
@@ -286,6 +323,15 @@ router.post("/transfers/ship/:id", wrap(async (req, res) => {
     return result;
   });
 
+  // إشعار المُنشئ بأن الشحن بدأ
+  if (updated.created_by) {
+    notify(companyId, updated.created_by, "transfer_shipped",
+      "تم شحن التحويل 🚚",
+      `${updated.product_name} (${updated.quantity} وحدة) في الطريق — استخدم رمز التحقق للاستلام`,
+      updated.id,
+    );
+  }
+
   res.json({ ...formatTransfer(updated), message: "تم شحن التحويل وخصم المخزون من فرع الإرسال" });
 }));
 
@@ -383,6 +429,16 @@ router.post("/transfers/confirm/:id", wrap(async (req, res) => {
     if (!result) throw httpError(409, "فشل تحديث الحالة — ربما تغيرت الحالة للتو");
     return result;
   });
+
+  // إشعار الشاحن بأن البضاعة وصلت
+  const notifyId = updated.shipped_by ?? updated.approved_by ?? updated.created_by;
+  if (notifyId) {
+    notify(companyId, notifyId, "transfer_received",
+      "تم استلام التحويل ✅",
+      `${updated.product_name} (${updated.quantity} وحدة) — تم الاستلام بنجاح`,
+      updated.id,
+    );
+  }
 
   res.json({ ...formatTransfer(updated), message: "تم استلام التحويل وإضافة المخزون لفرع الوجهة" });
 }));

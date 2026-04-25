@@ -53,6 +53,7 @@ const Accruals = lazy(() => import('@/pages/accruals'));
 const BankReconciliation = lazy(() => import('@/pages/bank-reconciliation'));
 const Budgets = lazy(() => import('@/pages/budgets'));
 const CostCenters = lazy(() => import('@/pages/cost-centers'));
+const Transfers = lazy(() => import('@/pages/transfers'));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -198,6 +199,7 @@ function Router() {
         <Route path="/bank-reconciliation">{() => <Guard path="/bank-reconciliation" component={BankReconciliation} />}</Route>
         <Route path="/budgets">{() => <Guard path="/budgets" component={Budgets} />}</Route>
         <Route path="/cost-centers">{() => <Guard path="/cost-centers" component={CostCenters} />}</Route>
+        <Route path="/transfers">{() => <Guard path="/transfers" component={Transfers} />}</Route>
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
