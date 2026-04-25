@@ -306,7 +306,7 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
         {/* شبكة المنتجات */}
         <div className="flex-1 flex flex-col min-h-0">
           <div className="glass-panel rounded-2xl p-3 mb-3 shrink-0 flex flex-wrap gap-2 items-center">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="purch-search-wrap flex items-center gap-2 flex-1 min-w-0">
               <Search className="w-4 h-4 text-white/40 shrink-0" />
               <input
                 type="text"
@@ -391,7 +391,7 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
 
             {/* سعر الصرف */}
             {currency !== "EGP" && (
-              <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 mb-2">
+              <div className="purch-exchange-wrap flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 mb-2">
                 <span className="text-blue-300 text-xs font-bold shrink-0">سعر الصرف:</span>
                 <span className="text-blue-200/60 text-xs shrink-0">1 {currency} =</span>
                 <input
