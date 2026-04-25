@@ -1035,7 +1035,7 @@ function RepairSettings({ onClose }: { onClose: () => void }) {
   const toggleCat = (cat: string) =>
     setExpandedCats(prev => {
       const next = new Set(prev);
-      next.has(cat) ? next.delete(cat) : next.add(cat);
+      if (next.has(cat)) { next.delete(cat); } else { next.add(cat); }
       return next;
     });
 
@@ -1669,7 +1669,6 @@ function NewJobForm({
       : checklistTemplate;
     setLocalChecklist(filtered.map(c => ({ ...c, status: null, notes: undefined })));
     setDevicePowers(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
   const checklistComplete = localChecklist.every((c) => c.status !== null);

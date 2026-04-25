@@ -112,8 +112,7 @@ export function SplitPaymentModal({
   /* تحديث النوع الافتراضي بعد تحميل الإعدادات */
   useEffect(() => {
     if (!loadingPM) setActiveType(availableTypes[0]?.key ?? 'cash');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingPM]);
+  }, [loadingPM, availableTypes]);
 
   useEffect(() => { setTimeout(() => amountRef.current?.focus(), 60); }, [rowKey]);
   useEffect(() => {

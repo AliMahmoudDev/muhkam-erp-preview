@@ -752,7 +752,6 @@ function PurchaseReturnsPanel() {
         original_purchase_item_id: i.id,
       })));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [purchaseItemIds]);
 
   const postedPurchases = purchasesRaw.filter(p => p.posting_status === "posted");

@@ -506,6 +506,10 @@ export default function SuperAdmin() {
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
 
+  useEffect(() => {
+    if (user && user.role !== 'super_admin') setLocation('/');
+  }, [user, setLocation]);
+
   /* ── Tab ─── */
   const [activeTab, setActiveTab] = useState<
     'overview' | 'companies' | 'managers' | 'settings' |
@@ -586,11 +590,6 @@ export default function SuperAdmin() {
 
   /* ── Toast ─── */
   const [toast, setToast] = useState<{ msg: string; type?: 'success' | 'error' } | null>(null);
-
-  if (user?.role !== 'super_admin') {
-    setLocation('/');
-    return null;
-  }
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -1493,6 +1492,8 @@ export default function SuperAdmin() {
     month: 'long',
     day: 'numeric',
   });
+
+  if (!user || user.role !== 'super_admin') return null;
 
   return (
     <div
