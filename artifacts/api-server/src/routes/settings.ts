@@ -33,7 +33,6 @@ import {
   systemSettingsTable,
   stockMovementsTable,
   stockCountSessionsTable,
-  stockTransfersTable,
 } from "@workspace/db";
 import { invalidateClosingDateCache } from "../lib/period-lock";
 import { writeAuditLog } from "../lib/audit-log";
@@ -432,12 +431,9 @@ router.delete("/settings/warehouses/:id", authenticate, requireRole("admin"), re
     .where(and(eq(warehousesTable.id, id), eq(warehousesTable.company_id, tenant)));
   if (!wh) { res.status(404).json({ error: "المخزن غير موجود" }); return; }
 
-  const [[movements], [sessions], [transfers]] = await Promise.all([
+  const [[movements], [sessions]] = await Promise.all([
     db.select({ n: count() }).from(stockMovementsTable).where(eq(stockMovementsTable.warehouse_id, id)),
     db.select({ n: count() }).from(stockCountSessionsTable).where(eq(stockCountSessionsTable.warehouse_id, id)),
-    db.select({ n: count() }).from(stockTransfersTable).where(
-      or(eq(stockTransfersTable.from_warehouse_id, id), eq(stockTransfersTable.to_warehouse_id, id))
-    ),
   ]);
 
   if (Number(movements.n) > 0) {
@@ -445,9 +441,6 @@ router.delete("/settings/warehouses/:id", authenticate, requireRole("admin"), re
   }
   if (Number(sessions.n) > 0) {
     res.status(409).json({ error: "لا يمكن حذف مخزن له جلسات جرد مسجّلة" }); return;
-  }
-  if (Number(transfers.n) > 0) {
-    res.status(409).json({ error: "لا يمكن حذف مخزن له عمليات تحويل مسجّلة" }); return;
   }
 
   await db.delete(warehousesTable).where(eq(warehousesTable.id, id));

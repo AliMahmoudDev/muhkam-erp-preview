@@ -19,8 +19,6 @@ import {
   stockMovementsTable,
   stockCountSessionsTable,
   stockCountItemsTable,
-  stockTransfersTable,
-  stockTransferItemsTable,
   warehousesTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
@@ -402,39 +400,20 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
   }
 
   const transferId = await db.transaction(async (tx) => {
-    const [transfer] = await tx.insert(stockTransfersTable).values({
-      from_warehouse_id: Number(from_warehouse_id),
-      to_warehouse_id:   Number(to_warehouse_id),
-      status:    "completed",
-      notes:     notes ?? null,
-      company_id: req.user!.company_id!,
-      created_by: req.user?.id ?? null,
-    }).returning();
-
-    const transferItems = [];
     const today = new Date().toISOString().split("T")[0];
+    // رقم مرجعي مؤقت بناءً على الوقت (سيُستبدل بـ id الفعلي بعد الإدراج)
+    const tempRef = `WH-TRF-${Date.now()}`;
 
     for (const item of aggregatedItems) {
       const product = productMap.get(item.product_id)!;
       const qty = Number(item.quantity);
 
-      // الرصيد الفعلي لهذا المخزن قبل التحويل
       const fromQtyBefore = fromStockMap.get(item.product_id) ?? 0;
       const fromQtyAfter  = fromQtyBefore - qty;
       const toQtyBefore   = toStockMap.get(item.product_id) ?? 0;
       const toQtyAfter    = toQtyBefore + qty;
 
-      const refNo = `TRF-${transfer.id}-${item.product_id}`;
-
-      transferItems.push({
-        transfer_id:  transfer.id,
-        product_id:   item.product_id,
-        product_name: product.name,
-        quantity:     String(qty),
-        unit_cost:    product.cost_price,
-      });
-
-      // حركة خروج من المخزن المصدر — quantity سالبة
+      // حركة خروج من المخزن المصدر
       await tx.insert(stockMovementsTable).values({
         product_id:      item.product_id,
         product_name:    product.name,
@@ -444,15 +423,14 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
         quantity_after:  String(fromQtyAfter),
         unit_cost:       product.cost_price,
         reference_type:  "stock_transfer",
-        reference_id:    transfer.id,
-        reference_no:    refNo,
-        notes: `تحويل خروج → ${toWH.name}`,
+        reference_no:    tempRef,
+        notes: `تحويل مخزن خروج → ${toWH.name}`,
         date:  today,
         warehouse_id:  Number(from_warehouse_id),
         company_id:    req.user!.company_id!,
       });
 
-      // حركة دخول إلى المخزن الهدف — quantity موجبة
+      // حركة دخول إلى المخزن الهدف
       await tx.insert(stockMovementsTable).values({
         product_id:      item.product_id,
         product_name:    product.name,
@@ -462,17 +440,15 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
         quantity_after:  String(toQtyAfter),
         unit_cost:       product.cost_price,
         reference_type:  "stock_transfer",
-        reference_id:    transfer.id,
-        reference_no:    refNo,
-        notes: `تحويل دخول ← ${fromWH.name}`,
+        reference_no:    tempRef,
+        notes: `تحويل مخزن دخول ← ${fromWH.name}`,
         date:  today,
         warehouse_id:  Number(to_warehouse_id),
         company_id:    req.user!.company_id!,
       });
     }
 
-    await tx.insert(stockTransferItemsTable).values(transferItems);
-    return transfer.id;
+    return tempRef;
   });
 
   void writeAuditLog({
@@ -503,20 +479,28 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
 
 /**
  * GET /api/inventory/transfers
- * قائمة عمليات التحويل
+ * تحويلات المخازن — مُؤقتاً يُعيد حركات المخزون من نوع transfer_out
+ * سيُستبدل بـ GET /api/stock-transfers في الخطوة التالية
  */
 router.get("/inventory/transfers", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_inventory")) {
     res.status(403).json({ error: "ليس لديك صلاحية عرض التحويلات" }); return;
   }
-
-  const transfers = await db.select().from(stockTransfersTable)
-    .where(eq(stockTransfersTable.company_id, req.user!.company_id!))
-    .orderBy(stockTransfersTable.created_at);
-
+  const companyId = req.user!.company_id!;
+  const rows = await db
+    .select()
+    .from(stockMovementsTable)
+    .where(
+      eq(stockMovementsTable.company_id, companyId)
+    )
+    .orderBy(stockMovementsTable.created_at);
+  const transfers = rows.filter(r => r.movement_type === "transfer_out" || r.movement_type === "transfer_in");
   res.json(transfers.map(t => ({
     ...t,
-    created_at: t.created_at.toISOString(),
+    quantity:        Number(t.quantity),
+    quantity_before: Number(t.quantity_before ?? 0),
+    quantity_after:  Number(t.quantity_after  ?? 0),
+    created_at:      t.created_at.toISOString(),
   })));
 }));
 
