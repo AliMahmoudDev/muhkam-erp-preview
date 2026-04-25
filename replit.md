@@ -1,5 +1,25 @@
 # مُحكم - MUHKAM ERP Workspace
 
+## Project Documentation
+
+The following documentation files are maintained at the root of the repository:
+
+| File | Contents |
+|------|----------|
+| `README.md` | Full project overview, architecture, feature list, setup instructions, API structure, roles |
+| `DATABASE.md` | All ~48 tables documented, relationships diagram, multi-tenant architecture, RLS explanation |
+| `SECURITY.md` | JWT auth flow, token rotation, role/permission system, tenant isolation, super admin protections, audit logging, production checklist |
+| `CHANGELOG.md` | Version history and roadmap |
+
+Key backend files with inline comments:
+- `artifacts/api-server/src/middleware/auth.ts` — JWT verification, role guards, RLS context setup
+- `artifacts/api-server/src/middleware/tenant-guard.ts` — Subscription enforcement with caching
+- `artifacts/api-server/src/services/safe-transfer.service.ts` — Full transfer business logic with deadlock prevention
+- `artifacts/api-server/src/lib/period-lock.ts` — Financial period lock with admin override
+- `artifacts/api-server/src/lib/audit-log.ts` — Fire-and-forget audit trail helper
+- `artifacts/api-server/src/lib/seed-defaults.ts` — First-boot seeding and PIN migration
+- `artifacts/api-server/src/routes/index.ts` — Middleware chain order (public → auth → super → tenant → subscription → routes)
+
 ## Architecture (Post-Consolidation — April 2026)
 - **Single frontend:** `artifacts/erp-system` only — served at `/` (BASE_PATH=/)
 - **muhkam-pro REMOVED:** Archived to GitHub branch `archive/muhkam-pro`, deleted from codebase

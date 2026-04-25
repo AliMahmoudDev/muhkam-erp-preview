@@ -1,9 +1,42 @@
 /**
  * safe-transfer.service.ts
  *
- * Service layer for safe-to-safe transfers.
- * The route only handles HTTP parsing; all business logic lives here.
- * This keeps the code DRY and makes unit-testing straightforward.
+ * Service layer for safe-to-safe (cash register) transfers.
+ * The route layer (routes/safe-transfers.ts) only handles HTTP parsing and
+ * role checks; all business logic lives here to keep it testable and DRY.
+ *
+ * ── Business Rules ────────────────────────────────────────────────────────
+ *  1. Only admin/manager role can initiate transfers (enforced in the route).
+ *  2. Source and destination safe must belong to the same company (cross-tenant
+ *     safety check performed before the transaction starts).
+ *  3. A transfer cannot be made from a safe to itself.
+ *  4. The source safe must have sufficient balance — the DB update uses a
+ *     conditional WHERE clause so the update returns 0 rows on insufficient
+ *     funds rather than going negative.
+ *  5. Transfers may carry a fee (fixed EGP amount or percentage of the gross).
+ *     The destination safe receives the NET amount (gross − fee).
+ *     The fee is recorded as an expense in the `expenses` table and as an
+ *     outgoing transaction in `transactions`.
+ *  6. All DB mutations happen inside a single PostgreSQL transaction with
+ *     SELECT FOR UPDATE row locks to prevent race conditions and deadlocks.
+ *     Locks are always acquired in ascending safe.id order (smaller id first)
+ *     regardless of transfer direction — this prevents the classic AB/BA
+ *     deadlock pattern.
+ *  7. Three audit log entries are written (fire-and-forget):
+ *     - SAFE_TRANSFER_CREATED  — before the DB transaction starts
+ *     - SAFE_TRANSFER_COMPLETED — after successful commit
+ *     - SAFE_TRANSFER_FEE_APPLIED — if a fee > 0 was charged
+ *
+ * ── Data Flow ─────────────────────────────────────────────────────────────
+ *  POST /api/safe-transfers
+ *    → calculateTransferFee()   (pure, no DB)
+ *    → validateTransferInput()  (pure, no DB)
+ *    → executeSafeTransfer()    (orchestrator)
+ *        → pre-flight safe ownership check (outside tx)
+ *        → db.transaction()
+ *            → applySafeTransfer()       (locks rows, mutates balances, inserts records)
+ *            → createTransferExpense()   (inserts fee expense + fee transaction)
+ *        → audit logs (after commit)
  */
 
 import { and, eq, inArray, sql } from "drizzle-orm";
@@ -20,29 +53,33 @@ import type { AuthUser } from "../middleware/auth";
 
 /* ─── Types ────────────────────────────────────────────────────────────── */
 
+/** Fee calculation method for a transfer */
 export type FeeType = "none" | "fixed" | "percentage";
 
+/** Input required to execute a transfer */
 export interface TransferInput {
   from_safe_id: number;
   to_safe_id:   number;
-  amount:       number;
+  amount:       number;    // Gross amount to debit from source safe
   fee_type:     FeeType;
-  fee_rate:     number;
+  fee_rate:     number;    // EGP amount if "fixed", or percentage (0–100) if "percentage"
   notes?:       string;
-  date:         string;
+  date:         string;    // YYYY-MM-DD — must be within an open fiscal period
   company_id:   number;
   user:         AuthUser;
 }
 
+/** Result of calculateTransferFee() */
 export interface FeeCalculation {
-  fee_amount: number;
-  net_amount: number;
+  fee_amount: number;  // Calculated fee in EGP (0 if fee_type = "none")
+  net_amount: number;  // Amount the destination safe will receive (gross − fee)
 }
 
+/** Response returned to the HTTP client */
 export interface TransferResult {
-  transfer_ref: string;
-  from:         string;
-  to:           string;
+  transfer_ref: string;  // e.g. "TRF-1714044000000"
+  from:         string;  // Source safe name
+  to:           string;  // Destination safe name
   amount:       number;
   fee_type:     FeeType;
   fee_amount:   number;
@@ -51,6 +88,15 @@ export interface TransferResult {
 
 /* ─── 1. Pure fee calculation — no DB, fully testable ──────────────────── */
 
+/**
+ * Calculates fee and net amount for a transfer.
+ * Pure function — safe to call anywhere without side effects.
+ *
+ * @param amount    Gross transfer amount in EGP
+ * @param fee_type  "none" | "fixed" | "percentage"
+ * @param fee_rate  For "fixed": absolute fee in EGP. For "percentage": rate (e.g. 2.5 = 2.5%).
+ * @returns { fee_amount, net_amount } — both rounded to 2 decimal places.
+ */
 export function calculateTransferFee(
   amount:   number,
   fee_type: FeeType,
@@ -59,11 +105,14 @@ export function calculateTransferFee(
   let fee_amount = 0;
 
   if (fee_type === "fixed") {
+    // Fixed fee: deduct a flat EGP amount
     fee_amount = fee_rate;
   } else if (fee_type === "percentage") {
+    // Percentage fee: e.g. fee_rate=2.5 means 2.5% of the gross amount
     fee_amount = (amount * fee_rate) / 100;
   }
 
+  // Round to 2 decimal places and clamp to 0 (fee cannot be negative)
   fee_amount = Math.max(0, Math.round(fee_amount * 100) / 100);
   const net_amount = Math.round((amount - fee_amount) * 100) / 100;
 
@@ -74,6 +123,10 @@ export function calculateTransferFee(
 
 export interface ValidationError { field: string; message: string }
 
+/**
+ * Validates transfer parameters before touching the database.
+ * Returns the first validation error found, or null if valid.
+ */
 export function validateTransferInput(data: {
   amount:       number;
   from_safe_id: number;
@@ -84,6 +137,7 @@ export function validateTransferInput(data: {
   if (!data.from_safe_id || !data.to_safe_id)
     return { field: "safe_id", message: "يجب اختيار الخزينتين" };
 
+  // Cannot transfer a safe to itself
   if (data.from_safe_id === data.to_safe_id)
     return { field: "to_safe_id", message: "لا يمكن التحويل من وإلى نفس الخزينة" };
 
@@ -93,6 +147,7 @@ export function validateTransferInput(data: {
   if (data.fee_rate < 0)
     return { field: "fee_rate", message: "قيمة الرسوم لا يمكن أن تكون سالبة" };
 
+  // Fee cannot exceed the transfer amount (net would go negative)
   if (data.net_amount < 0)
     return { field: "net_amount", message: "الرسوم أكبر من المبلغ — الصافي لا يمكن أن يكون سالباً" };
 
@@ -105,13 +160,28 @@ type AnyTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 interface LockedSafe { id: number; name: string; balance: string }
 
+/**
+ * Performs the actual balance mutations and record insertions within an existing
+ * DB transaction. Called by executeSafeTransfer() — do not call directly.
+ *
+ * Locking strategy:
+ *   Rows are locked with SELECT FOR UPDATE in ascending id order, regardless
+ *   of which is source and which is destination. This prevents the classic
+ *   deadlock where two concurrent transfers swap direction (A→B and B→A both
+ *   try to lock in the same order, so one will wait rather than deadlock).
+ *
+ * Balance check:
+ *   The debit UPDATE includes `WHERE balance >= amount`. If the safe has
+ *   insufficient funds, the update returns 0 rows and we throw a 400 error
+ *   inside the transaction (which rolls back all mutations automatically).
+ */
 export async function applySafeTransfer(
   tx: AnyTx,
   opts: {
     fromId:     number;
     toId:       number;
-    amount:     number;
-    netAmount:  number;
+    amount:     number;   // Gross amount debited from source
+    netAmount:  number;   // Net amount credited to destination (gross − fee)
     feeAmount:  number;
     feeType:    FeeType;
     feeRate:    number;
@@ -124,7 +194,7 @@ export async function applySafeTransfer(
   const { fromId, toId, amount, netAmount, feeAmount, feeType, feeRate,
           notes, txDate, transferRef, companyId } = opts;
 
-  // قفل الصفّين بترتيب الـ id الأصغر أولاً لمنع الـ deadlock
+  // Lock both safe rows in ascending ID order to prevent deadlocks
   const [first, second] = fromId < toId ? [fromId, toId] : [toId, fromId];
   const lockRes = await tx.execute(sql`
     SELECT id, name, balance FROM ${safesTable}
@@ -142,7 +212,9 @@ export async function applySafeTransfer(
   if (!fromSafe) throw httpError(400, "خزينة المصدر غير موجودة أو لا تنتمي لشركتك");
   if (!toSafe)   throw httpError(400, "خزينة الوجهة غير موجودة أو لا تنتمي لشركتك");
 
-  // خصم المبلغ الكامل من المصدر مع شرط كفاية الرصيد
+  // Debit the FULL gross amount from the source safe.
+  // The WHERE balance >= amount prevents overdrafts — if this returns 0 rows,
+  // the safe did not have enough balance and we throw a descriptive error.
   const debited = await tx.update(safesTable)
     .set({ balance: sql`${safesTable.balance} - ${String(amount)}` })
     .where(and(
@@ -159,18 +231,19 @@ export async function applySafeTransfer(
     );
   }
 
-  // إضافة الصافي فقط للوجهة
+  // Credit only the NET amount to the destination safe (gross − fee)
   await tx.update(safesTable)
     .set({ balance: sql`${safesTable.balance} + ${String(netAmount)}` })
     .where(and(eq(safesTable.id, toSafe.id), eq(safesTable.company_id, companyId)));
 
-  // ── تحقق من الاتساق قبل الكتابة ────────────────────────────
+  // Sanity check: confirm net_amount matches our expected calculation
+  // This catches any floating-point drift or logic errors before persisting
   const expectedNet = Math.round((amount - feeAmount) * 100) / 100;
   if (Math.abs(expectedNet - netAmount) > 0.001) {
     throw httpError(500, "خطأ في حساب الرسوم — الصافي لا يتطابق مع المبلغ مطروحاً منه الرسوم");
   }
 
-  // ── سجل التحويل ─────────────────────────────────────────────
+  // Insert the transfer record
   const [transfer] = await tx.insert(safeTransfersTable).values({
     from_safe_id:   fromSafe.id,
     from_safe_name: fromSafe.name,
@@ -187,7 +260,8 @@ export async function applySafeTransfer(
 
   const transferId = transfer.id;
 
-  // ── سجلات المعاملات المالية ─────────────────────────────────
+  // Insert two transaction records: one outgoing (source) and one incoming (destination)
+  // These appear in the cash flow / transaction ledger for each safe
   await tx.insert(transactionsTable).values([
     {
       type:           "transfer_out",
@@ -205,7 +279,7 @@ export async function applySafeTransfer(
       reference_type: "safe_transfer",
       safe_id:        toSafe.id,
       safe_name:      toSafe.name,
-      amount:         String(netAmount),
+      amount:         String(netAmount),  // Net amount (after fee deduction)
       direction:      "in",
       description:    `تحويل ${transferRef} ← ${fromSafe.name}${notes ? ` (${notes})` : ""}`,
       date:           txDate,
@@ -218,6 +292,14 @@ export async function applySafeTransfer(
 
 /* ─── 4. Create transfer fee expense ───────────────────────────────────── */
 
+/**
+ * Records the transfer fee as a company expense (if fee > 0).
+ * Also records an outgoing transaction for the fee so it appears in the
+ * source safe's transaction history.
+ *
+ * Called within the same DB transaction as applySafeTransfer, so both
+ * the balance mutation and the fee expense are atomic.
+ */
 export async function createTransferExpense(
   tx: AnyTx,
   opts: {
@@ -231,11 +313,13 @@ export async function createTransferExpense(
     companyId:   number;
   },
 ): Promise<void> {
+  // No-op if there's no fee — avoids cluttering the expense list with zero-value entries
   if (opts.feeAmount <= 0) return;
 
   const { feeAmount, fromSafeId, fromSafeName, transferId,
           transferRef, toSafeName, txDate, companyId } = opts;
 
+  // Record the fee as an expense (category: "رسوم تحويل" = Transfer Fee)
   await tx.insert(expensesTable).values({
     category:       "رسوم تحويل",
     amount:         String(feeAmount),
@@ -247,7 +331,7 @@ export async function createTransferExpense(
     company_id:     companyId,
   });
 
-  // سجل خروج الرسوم في transactions
+  // Also record it as an outgoing transaction for the source safe's cash flow ledger
   await tx.insert(transactionsTable).values({
     type:           "expense",
     reference_type: "safe_transfer_fee",
@@ -263,13 +347,36 @@ export async function createTransferExpense(
 
 /* ─── 5. Main orchestrator ──────────────────────────────────────────────── */
 
+/**
+ * Main entry point for creating a safe transfer.
+ * This function coordinates validation, the DB transaction, and audit logging.
+ *
+ * Execution order:
+ *  1. Calculate fee and net amount (pure, no DB)
+ *  2. Pre-flight ownership check (outside tx — cheap early rejection)
+ *  3. Write "CREATED" audit log
+ *  4. Begin DB transaction:
+ *     a. Lock both safe rows (prevents concurrent balance corruption)
+ *     b. Debit source safe by gross amount
+ *     c. Credit destination safe by net amount
+ *     d. Insert safe_transfers record
+ *     e. Insert two transactions records (out + in)
+ *     f. Insert expense for the fee (if any)
+ *  5. On commit: write "COMPLETED" and "FEE_APPLIED" audit logs
+ *
+ * If any step inside the transaction fails, PostgreSQL rolls back everything
+ * atomically — no partial balance changes or orphan records.
+ */
 export async function executeSafeTransfer(input: TransferInput): Promise<TransferResult> {
   const { from_safe_id, to_safe_id, amount, fee_type, fee_rate,
           notes, date, company_id, user } = input;
 
+  // Step 1: Calculate fee amounts before any DB work
   const { fee_amount, net_amount } = calculateTransferFee(amount, fee_type, fee_rate);
 
-  // Validate safe ownership (pre-flight, outside transaction)
+  // Step 2: Pre-flight — verify both safes exist and belong to this company
+  // This is done outside the transaction to give a clear error message early,
+  // before acquiring any locks.
   const precheckSafes = await db
     .select({ id: safesTable.id, company_id: safesTable.company_id })
     .from(safesTable)
@@ -282,9 +389,10 @@ export async function executeSafeTransfer(input: TransferInput): Promise<Transfe
   if (!checkTo || checkTo.company_id !== company_id)
     throw httpError(403, "لا يمكن التحويل بين خزائن شركات مختلفة");
 
+  // Step 3: Generate a unique transfer reference (used in descriptions and audit logs)
   const transferRef = `TRF-${Date.now()}`;
 
-  // Audit: transfer initiated
+  // Audit: record transfer initiation before the DB transaction
   void writeAuditLog({
     action:      "SAFE_TRANSFER_CREATED",
     record_type: "safe_transfer",
@@ -295,6 +403,7 @@ export async function executeSafeTransfer(input: TransferInput): Promise<Transfe
     note:        transferRef,
   });
 
+  // Step 4: Execute everything inside a single atomic DB transaction
   const result = await db.transaction(async tx => {
     const { transferId, fromSafe, toSafe } = await applySafeTransfer(tx, {
       fromId:      from_safe_id,
@@ -310,6 +419,7 @@ export async function executeSafeTransfer(input: TransferInput): Promise<Transfe
       companyId:   company_id,
     });
 
+    // Record the fee as an expense (no-op if fee_amount = 0)
     await createTransferExpense(tx, {
       feeAmount:    fee_amount,
       fromSafeId:   fromSafe.id,
@@ -324,7 +434,7 @@ export async function executeSafeTransfer(input: TransferInput): Promise<Transfe
     return { transferId, fromSafe, toSafe };
   });
 
-  // Audit: transfer completed
+  // Step 5: Audit logs written after successful commit (fire-and-forget)
   void writeAuditLog({
     action:      "SAFE_TRANSFER_COMPLETED",
     record_type: "safe_transfer",
@@ -341,7 +451,7 @@ export async function executeSafeTransfer(input: TransferInput): Promise<Transfe
     note:    transferRef,
   });
 
-  // Audit: fee applied (if any)
+  // Separate fee audit entry for easier filtering in the audit log viewer
   if (fee_amount > 0) {
     void writeAuditLog({
       action:      "SAFE_TRANSFER_FEE_APPLIED",
