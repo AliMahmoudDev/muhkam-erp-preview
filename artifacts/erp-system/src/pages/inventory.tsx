@@ -26,6 +26,7 @@ import { useState } from 'react';
   Shield,
   FileSpreadsheet,
   Eye,
+  Archive,
   } from 'lucide-react';
   import { Link, useLocation } from 'wouter';
   import { useToast } from '@/hooks/use-toast';
@@ -36,6 +37,7 @@ import { useState } from 'react';
     useDeleteSettingsWarehouse,
   } from '@workspace/api-client-react';
   import InventoryReport from './reports/InventoryReport';
+import ConsignmentPage from '@/pages/consignment';
 
   import { api } from './inventory/_shared';
   import type {
@@ -265,6 +267,15 @@ export default function Inventory() {
                 التحويلات بين الفروع
               </button>
             </Link>
+          )}
+          {canAdjustInventory && (
+            <TabBtn
+              id="consignment"
+              label="الائتمان"
+              icon={<Archive className="w-4 h-4" />}
+              active={activeTab}
+              onClick={setActiveTab}
+            />
           )}
           <TabBtnBadge
             id="alerts"
@@ -573,6 +584,7 @@ export default function Inventory() {
             onTransferPrefill={handleTransferPrefill}
           />
         )}
+        {activeTab === 'consignment' && <ConsignmentPage />}
         {activeTab === 'reports' && <InventoryReport />}
       </div>
 

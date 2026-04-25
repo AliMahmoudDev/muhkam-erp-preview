@@ -124,7 +124,7 @@ export const movementTypeLabel: Record<string, { label: string; color: string }>
   transfer_in: { label: 'تحويل دخول', color: 'bg-cyan-500/20 text-cyan-300' },
 };
 
-export type Tab = 'overview' | 'movements' | 'count' | 'transfer' | 'alerts' | 'reports';
+export type Tab = 'overview' | 'movements' | 'count' | 'transfer' | 'alerts' | 'reports' | 'consignment';
 
 export function today() {
   return new Date().toISOString().slice(0, 10);

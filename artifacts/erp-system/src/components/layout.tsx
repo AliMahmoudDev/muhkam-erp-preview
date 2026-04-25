@@ -23,7 +23,7 @@ const NAV_SECTIONS = [
   { label: 'القائمة', hrefs: ['/'] },
   {
     label: 'التجارة',
-    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/devices', '/repairs', '/scrap-inventory', '/warranty', '/consignment'],
+    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/devices', '/repairs', '/scrap-inventory', '/warranty'],
   },
   { label: 'المالية', hrefs: ['/treasury', '/vouchers', '/expenses', '/income', '/reports'] },
   { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
@@ -215,8 +215,6 @@ export function AppLayout({ children }: LayoutProps) {
   const HR_PATHS         = new Set(['/employees', '/attendance']);
   const POS_PATHS        = new Set(['/pos']);
   const WARRANTY_PATHS   = new Set(['/warranty']);
-  const CONSIGNMENT_PATHS = new Set(['/consignment']);
-
   const visibleNav = NAV_ITEMS.filter((item) => {
     if (!canAccess(role, item.href)) return false;
     if (item.href === '/sales' && !hasPermission(user, 'can_view_sales')) return false;
@@ -235,7 +233,6 @@ export function AppLayout({ children }: LayoutProps) {
     if (HR_PATHS.has(item.href) && !hasFeature('hr')) return false;
     if (POS_PATHS.has(item.href) && !hasFeature('pos')) return false;
     if (WARRANTY_PATHS.has(item.href) && !hasFeature('warranty')) return false;
-    if (CONSIGNMENT_PATHS.has(item.href) && !hasFeature('consignment')) return false;
     return true;
   });
 
