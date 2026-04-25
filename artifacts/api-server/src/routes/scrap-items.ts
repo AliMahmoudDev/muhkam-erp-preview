@@ -2,8 +2,10 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db, scrapItemsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use("/scrap-items", requireFeature("maintenance"));
 
 function ctx(req: Express.Request) {
   const u = (req as unknown as { user: { company_id: number; id: number; name: string } }).user;

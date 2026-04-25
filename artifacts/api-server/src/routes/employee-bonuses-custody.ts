@@ -15,8 +15,10 @@ import { hasPermission } from "../lib/permissions";
 import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { notifyEmployee } from "../lib/notify";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use(["/employee-bonuses", "/employee-custody", "/employee-deductions"], requireFeature("hr"));
 const fmtTs = (v: Date | null | undefined) => (v instanceof Date ? v.toISOString() : (v ?? null));
 const n = (v: unknown) => (v != null ? Number(v) : 0);
 

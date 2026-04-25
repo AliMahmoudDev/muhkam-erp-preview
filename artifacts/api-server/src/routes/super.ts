@@ -128,6 +128,8 @@ async function cascadeDeleteCompany(id: number): Promise<void> {
   });
 }
 import { authenticate, requireRole, superAdminIPGuard } from "../middleware/auth";
+import { invalidateTenantCache } from "../middleware/tenant-guard";
+import { invalidateFeatureCache } from "../middleware/feature-guard";
 import { wrap } from "../lib/async-handler";
 import { hashPin } from "../lib/hash";
 import { createCompanySchema, validate } from "../lib/schemas";
@@ -271,6 +273,10 @@ router.put("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
     res.status(404).json({ error: "الشركة حُذفت أثناء التحديث" });
     return;
   }
+
+  /* Bust in-process caches so the next request sees the new data immediately */
+  invalidateTenantCache(id);
+  invalidateFeatureCache(id);
 
   await writeAuditLog({
     action: "update", record_type: "company", record_id: id,

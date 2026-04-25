@@ -5,8 +5,10 @@ import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
 import { db, costCentersTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use("/cost-centers", requireFeature("accounting"));
 
 function fmt(c: typeof costCentersTable.$inferSelect) {
   return { ...c, created_at: c.created_at.toISOString() };

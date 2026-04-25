@@ -13,8 +13,10 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use(["/incentive-schemes", "/incentive-slabs", "/incentive-rules", "/incentive-metrics", "/employee-incentive-assignments", "/incentive-tracking", "/daily-accrual", "/monthly-incentive-summary"], requireFeature("hr"));
 function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOString() : (v ?? null); }
 function n(v: unknown) { return v != null ? Number(v) : 0; }
 

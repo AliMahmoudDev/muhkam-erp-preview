@@ -12,8 +12,10 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { notifyUser } from "../lib/notify";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use(["/repair-jobs", "/repair-statuses", "/repair-customers", "/repair-checklist-items", "/scrap-items"], requireFeature("maintenance"));
 
 /* ── helpers ───────────────────────────────────────────────── */
 function ctx(req: Express.Request) {

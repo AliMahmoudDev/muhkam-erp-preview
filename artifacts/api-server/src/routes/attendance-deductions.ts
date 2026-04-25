@@ -15,8 +15,10 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use("/attendance-deductions", requireFeature("hr"));
 const n = (v: unknown) => (v != null ? Number(v) : 0);
 const fmtTs = (v: Date | null | undefined) => (v instanceof Date ? v.toISOString() : (v ?? null));
 

@@ -2,8 +2,10 @@ import { Router, type IRouter, type Request } from "express";
 import { eq, asc, and } from "drizzle-orm";
 import { db, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use("/accounts", requireFeature("accounting"));
 
 function getCid(req: Request): number {
   return req.user!.company_id!;

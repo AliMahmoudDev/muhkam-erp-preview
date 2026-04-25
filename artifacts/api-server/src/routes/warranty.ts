@@ -3,8 +3,10 @@ import { eq, and, desc } from "drizzle-orm";
 import { db, warrantyTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { writeAuditLog } from "../lib/audit-log";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router = Router();
+router.use("/warranty", requireFeature("warranty"));
 
 /* ── إحصائيات الضمان (قبل /:id لتجنب التعارض) ───────────────────── */
 router.get("/warranty/stats", wrap(async (req, res) => {

@@ -15,8 +15,10 @@ import { hasPermission } from "../lib/permissions";
 import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { writeAuditLog } from "../lib/audit-log";
 import { notifyEmployee, notifyManagers } from "../lib/notify";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use("/salary-advances", requireFeature("hr"));
 function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOString() : (v ?? null); }
 function n(v: unknown) { return v != null ? Number(v) : 0; }
 

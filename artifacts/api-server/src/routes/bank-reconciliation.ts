@@ -5,8 +5,10 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { db, bankAccountsTable, bankStatementLinesTable, journalEntriesTable, safesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use(["/bank-accounts", "/bank-statement-lines"], requireFeature("bank_reconciliation"));
 
 function fmtBank(b: typeof bankAccountsTable.$inferSelect) {
   return { ...b, opening_balance: Number(b.opening_balance), created_at: b.created_at.toISOString() };

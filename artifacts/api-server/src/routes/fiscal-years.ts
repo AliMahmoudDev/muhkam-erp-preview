@@ -9,8 +9,10 @@ import { wrap, httpError } from "../lib/async-handler";
 import { requireTenant, getTenant } from "../middleware/auth";
 import { writeAuditLog } from "../lib/audit-log";
 import { getOrCreateAccount } from "../lib/auto-account";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router = Router();
+router.use("/fiscal-years", requireFeature("accounting"));
 
 /* ── GET /fiscal-years ─── */
 router.get("/fiscal-years", requireTenant, wrap(async (req, res) => {

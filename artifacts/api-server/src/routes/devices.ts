@@ -9,8 +9,10 @@ import {
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { wrap, httpError } from "../lib/async-handler";
 import type Express from "express";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router = Router();
+router.use("/devices", requireFeature("maintenance"));
 
 function ctx(req: Express.Request) {
   const u = (req as unknown as { user: { company_id: number; id: number; name: string; role?: string; warehouse_id?: number } }).user;

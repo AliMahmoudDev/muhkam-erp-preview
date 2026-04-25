@@ -12,8 +12,10 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use(["/attendance", "/shifts", "/employee-shifts", "/public-holidays"], requireFeature("hr"));
 function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOString() : (v ?? null); }
 
 /* ═══════════════════════════════════════════════════════════════════

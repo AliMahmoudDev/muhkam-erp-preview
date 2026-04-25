@@ -19,8 +19,10 @@ import { hasPermission } from '../lib/permissions';
 import { selfEmployeeId } from '../lib/employee-self';
 import { writeAuditLog } from '../lib/audit-log';
 import { z } from 'zod';
+import { requireFeature } from '../middleware/feature-guard';
 
 const router: IRouter = Router();
+router.use(["/employees", "/departments", "/job-titles"], requireFeature("hr"));
 
 /* ═══════════════════════════════════════════════════════════════════
    HELPERS

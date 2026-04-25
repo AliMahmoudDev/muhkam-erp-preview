@@ -2,8 +2,10 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db, purchasesTable, warehousesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use("/consignment", requireFeature("consignment"));
 
 /* ─── تقرير الائتمان الكامل ─────────────────────────────── */
 router.get("/consignment/report", wrap(async (req, res) => {

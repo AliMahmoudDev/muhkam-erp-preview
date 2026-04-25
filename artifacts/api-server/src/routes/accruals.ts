@@ -6,8 +6,10 @@ import { eq, and, desc, sql, count } from "drizzle-orm";
 import { db, accrualsTable, accrualRunsTable, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { getOrCreateAccount } from "../lib/auto-account";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use("/accruals", requireFeature("accounting"));
 
 function fmt(a: typeof accrualsTable.$inferSelect) {
   return {

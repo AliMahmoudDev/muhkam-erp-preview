@@ -3,8 +3,10 @@ import { eq, and, count, sql, desc } from "drizzle-orm";
 import { db, fixedAssetsTable, depreciationRunsTable, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { getOrCreateAccount } from "../lib/auto-account";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use("/fixed-assets", requireFeature("fixed_assets"));
 
 type AccountRef = { id: number; code: string; name: string };
 

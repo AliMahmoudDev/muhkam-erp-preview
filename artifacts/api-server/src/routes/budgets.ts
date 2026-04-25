@@ -5,8 +5,10 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db, budgetsTable, budgetLinesTable, accountsTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use("/budgets", requireFeature("budgets"));
 
 function fmtBudget(b: typeof budgetsTable.$inferSelect) {
   return { ...b, created_at: b.created_at.toISOString() };

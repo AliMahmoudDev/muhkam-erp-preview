@@ -18,8 +18,10 @@ import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { writeAuditLog } from "../lib/audit-log";
 import { enqueueJob, getJobStatus } from "../lib/job-queue";
+import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
+router.use(["/payroll", "/salary-structures", "/salary-history", "/statutory-contributions", "/tax-brackets"], requireFeature("hr"));
 
 function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOString() : (v ?? null); }
 function numOrNull(v: string | null | undefined) { return v != null ? Number(v) : null; }
