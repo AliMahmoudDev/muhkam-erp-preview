@@ -20,6 +20,9 @@ export const expensesTable = pgTable("expenses", {
   // الخزينة التي صُرف منها هذا المصروف
   safe_id: integer("safe_id"),
   safe_name: text("safe_name"),
+  // ربط بسجل مرجعي (مثل: تحويل خزينة)
+  reference_type: text("reference_type"),
+  reference_id: integer("reference_id"),
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
   branch_id:  integer("branch_id"),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

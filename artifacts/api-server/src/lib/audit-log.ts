@@ -24,6 +24,10 @@ export type AuditAction =
   | "INVENTORY_COUNT_APPLIED"   // تطبيق جلسة جرد مخزون
   | "INVENTORY_TRANSFER"        // تحويل مخزون بين مخازن
   | "PERIOD_OVERRIDE"           // تجاوز مدير للقفل المالي
+  // ── Safe transfer events ───────────────────────────────────────────────────
+  | "SAFE_TRANSFER_CREATED"     // إنشاء تحويل خزينة
+  | "SAFE_TRANSFER_COMPLETED"   // اكتمال تحويل الخزينة بنجاح
+  | "SAFE_TRANSFER_FEE_APPLIED" // تطبيق رسوم على تحويل خزينة
   // ── SaaS / super-admin events ─────────────────────────────────────────────
   | "COMPANY_ACTIVATED"
   | "COMPANY_SUSPENDED"
