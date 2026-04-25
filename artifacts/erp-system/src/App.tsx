@@ -45,7 +45,6 @@ const Returns = lazy(() => import('@/pages/returns'));
 const Warranty = lazy(() => import('@/pages/warranty'));
 const Repairs  = lazy(() => import('@/pages/repairs'));
 const Devices  = lazy(() => import('@/pages/devices'));
-const RepairBoard = lazy(() => import('@/pages/repair-board'));
 const ScrapInventory = lazy(() => import('@/pages/scrap-inventory'));
 const BadDebts = lazy(() => import('@/pages/bad-debts'));
 const Consignment = lazy(() => import('@/pages/consignment'));
@@ -157,7 +156,6 @@ function Router() {
         <Route path="/warranty">{() => <Guard path="/warranty" component={Warranty} />}</Route>
         <Route path="/devices">{() => <Guard path="/devices" component={Devices} />}</Route>
         <Route path="/repairs">{() => <Guard path="/repairs" component={Repairs} />}</Route>
-        <Route path="/repair-board">{() => <Guard path="/repair-board" component={RepairBoard} />}</Route>
         <Route path="/scrap-inventory">{() => <Guard path="/scrap-inventory" component={ScrapInventory} />}</Route>
         <Route path="/bad-debts">{() => <Guard path="/bad-debts" component={BadDebts} />}</Route>
         <Route path="/products">{() => <Guard path="/products" component={Products} />}</Route>
