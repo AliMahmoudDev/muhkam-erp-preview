@@ -4154,7 +4154,8 @@ input.sale-border:focus, textarea.sale-border:focus { border-color: rgba(245,158
 .sale-cart-item:hover { background: rgba(255,255,255,0.067); }
 
 /* ── Field rows ── */
-.sale-field-row { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); }
+.sale-field-row { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.sale-field-row:focus-within { border-color: rgba(245,158,11,0.55) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.13) !important; }
 
 /* ── Total box ── */
 .sale-total-box {
@@ -4232,6 +4233,7 @@ html.light .sale-empty-icon-bg { background: #F1F5F9; border-color: #E2E8F0; }
 html.light .sale-cart-item { background: #F8FAFC; border-color: #E8ECF0; }
 html.light .sale-cart-item:hover { background: #F1F5F9; }
 html.light .sale-field-row { background: #FFFFFF; border-color: #E2E8F0; }
+html.light .sale-field-row:focus-within { border-color: #D97706 !important; box-shadow: 0 0 0 3px rgba(217,119,6,0.12) !important; }
 
 html.light .sale-total-box { background: linear-gradient(135deg,rgba(245,158,11,0.06),rgba(255,255,255,0.95)); border-color: #E8ECF0; }
 html.light .sale-pay-box { background: rgba(245,158,11,0.03); border-color: rgba(245,158,11,0.22); }
