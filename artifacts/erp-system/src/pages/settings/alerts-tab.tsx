@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * alerts-tab.tsx — إعدادات التنبيهات والإشعارات
  */
@@ -9,8 +10,6 @@ import {
 } from "lucide-react";
 import { PageHeader, FieldLabel, SInput } from "./_shared";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (p: string) => `${BASE}${p}`;
 
 interface AlertSettings {
   alert_low_stock_enabled:  string;

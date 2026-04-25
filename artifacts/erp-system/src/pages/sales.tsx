@@ -48,9 +48,8 @@ import { hasPermission } from '@/lib/permissions';
 import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { SearchableSelect } from '@/components/searchable-select';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 interface SalesReturn {
   id: number;

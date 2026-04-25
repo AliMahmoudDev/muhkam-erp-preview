@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * SubscriptionBanner — warning strip when subscription nears expiry.
  * • 8-14 days  → yellow banner (#FEF3C7)
@@ -11,8 +12,6 @@ import { X } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 import { authFetch } from "@/lib/auth-fetch";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (path: string) => `${BASE}${path}`;
 
 interface SubStatus {
   unlimited?: boolean;

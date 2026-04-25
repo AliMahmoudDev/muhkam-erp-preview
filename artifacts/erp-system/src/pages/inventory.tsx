@@ -37,7 +37,7 @@ import { useState } from 'react';
   } from '@workspace/api-client-react';
   import InventoryReport from './reports/InventoryReport';
 
-  import { BASE, api } from './inventory/_shared';
+  import { api } from './inventory/_shared';
   import type {
     AuditSummary,
     LowStockItem,
@@ -89,7 +89,7 @@ export default function Inventory() {
   const { data: branchesRaw } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['/api/branches'],
     queryFn: async () => {
-      const r = await authFetch(`${BASE}/api/branches`);
+      const r = await authFetch(api("/api/branches"));
       if (!r.ok) return [];
       const j = await r.json();
       return Array.isArray(j) ? j : (j.branches ?? []);
@@ -341,7 +341,7 @@ export default function Inventory() {
           {isAdmin && (
             <div className="flex justify-end">
               <Link
-                href={`${BASE}/audit-log`}
+                href={api("/audit-log")}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
               >
                 <Shield className="w-3.5 h-3.5" /> سجل المراجعات الكامل
@@ -475,7 +475,7 @@ export default function Inventory() {
                           onChange={async (e) => {
                             e.stopPropagation();
                             const bid = e.target.value;
-                            await authFetch(`${BASE}/api/settings/warehouses/${w.id}`, {
+                            await authFetch(api(`/api/settings/warehouses/${w.id}`), {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ branch_id: bid ? Number(bid) : null }),
@@ -656,7 +656,7 @@ export default function Inventory() {
                     return;
                   }
                   try {
-                    const r = await authFetch(`${BASE}/api/settings/warehouses`, {
+                    const r = await authFetch(api("/api/settings/warehouses"), {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({

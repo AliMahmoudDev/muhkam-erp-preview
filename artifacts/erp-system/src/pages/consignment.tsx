@@ -3,9 +3,8 @@ import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency } from "@/lib/format";
 import { TableSkeleton } from "@/components/skeletons";
 import { Package, AlertCircle, Warehouse, TrendingDown, ShoppingCart, Archive } from "lucide-react";
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api = (p: string) => `${BASE}${p}`;
 
 interface SupplierReport {
   supplier_name: string;

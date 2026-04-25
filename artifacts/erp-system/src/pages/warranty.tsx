@@ -4,9 +4,8 @@ import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import { safeArray } from "@/lib/safe-data";
 import { Search, Plus, Shield, ShieldCheck, ShieldX, Clock, Trash2 } from "lucide-react";
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (p: string) => `${BASE}${p}`;
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 interface WarrantyRecord {

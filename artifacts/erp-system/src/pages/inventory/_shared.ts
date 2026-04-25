@@ -1,7 +1,6 @@
 /* shared types, helpers and constants for the inventory module */
 
-export const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-export const api = (p: string) => `${BASE}${p}`;
+export { api, BASE } from '@/lib/api';
 
 export interface AuditProduct {
   id: number;

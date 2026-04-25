@@ -14,9 +14,8 @@ import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 interface Expense {
   id: number;

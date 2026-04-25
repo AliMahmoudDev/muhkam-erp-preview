@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * AuditLog — سجل التدقيق والمراجعة الشامل
  * عرض كامل لجميع العمليات الحساسة بالنظام مع فلترة متقدمة.
@@ -9,8 +10,6 @@ import { authFetch } from "@/lib/auth-fetch";
 import { useAuth } from "@/contexts/auth";
 import { formatDate } from "@/lib/format";
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
-const api = (p: string) => `${BASE}${p}`;
 
 interface AuditLogEntry {
   id: number;

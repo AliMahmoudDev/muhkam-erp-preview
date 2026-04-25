@@ -5,9 +5,8 @@ import { formatCurrency } from "@/lib/format";
 import { Plus, ChevronDown, ChevronLeft, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TableSkeleton } from "@/components/skeletons";
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api = (p: string) => `${BASE}${p}`;
 
 interface Account {
   id: number; code: string; name: string; type: string;

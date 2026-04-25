@@ -10,9 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, CheckCircle2, XCircle, Upload, AlertTriangle, CheckCheck, Landmark } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
-const api = (p: string) => `${BASE}${p}`;
 
 interface BankAccount { id: number; name: string; bank_name: string; account_number?: string; opening_balance: number; currency: string; }
 interface StatementLine { id: number; date: string; description: string; amount: number; type: 'credit' | 'debit'; reference?: string; status: 'matched' | 'unmatched'; matched_entry_id?: number; }

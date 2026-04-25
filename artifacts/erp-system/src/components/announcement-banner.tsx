@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * AnnouncementBanner — shows active system announcements from super admin.
  * • Appears between topbar and page content for all tenant users
@@ -11,8 +12,6 @@ import { X, ChevronRight, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 import { authFetch } from "@/lib/auth-fetch";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (path: string) => `${BASE}${path}`;
 const FONT = "'Cairo', 'Tajawal', sans-serif";
 const STORAGE_KEY = "erp_dismissed_announcements";
 

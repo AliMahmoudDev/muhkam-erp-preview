@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 // ✔ POS UX CLEANED — SINGLE ENTRY POINT
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation } from 'wouter';
@@ -30,8 +31,6 @@ import {
   Settings,
 } from 'lucide-react';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 /* ─────────────────────────────────────────────────────────────
    TYPES

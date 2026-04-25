@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * صفحة المرتجعات — مرتجعات المبيعات والمشتريات
  * مع تفاصيل كل مرتجع وطباعة
@@ -13,8 +14,6 @@ import {
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/skeletons';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 interface SaleReturn {
   id: number; return_no: string; sale_id: number | null;

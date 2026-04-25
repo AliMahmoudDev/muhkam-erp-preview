@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * NotificationBell — per-user in-app notifications.
  * Polls every 60s for unread count, fetches full list when opened.
@@ -24,7 +25,6 @@ interface AppNotification {
   read_at: string | null;
 }
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const POLL_MS = 60_000;
 
 const TYPE_ICON: Record<string, string> = {
@@ -79,7 +79,7 @@ export function NotificationBell() {
 
   const fetchCount = useCallback(async () => {
     try {
-      const r = await authFetch(`${BASE}/api/notifications/unread-count`);
+      const r = await authFetch(api('/api/notifications/unread-count'));
       if (r.ok) {
         const j = await r.json();
         setUnreadCount(Number(j?.count ?? 0));
@@ -90,7 +90,7 @@ export function NotificationBell() {
   const fetchList = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await authFetch(`${BASE}/api/notifications`);
+      const r = await authFetch(api('/api/notifications'));
       if (r.ok) {
         const j = await r.json();
         const list = Array.isArray(j) ? j : [];
@@ -119,13 +119,13 @@ export function NotificationBell() {
   async function markRead(id: number) {
     setItems(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     setUnreadCount(c => Math.max(0, c - 1));
-    try { await authFetch(`${BASE}/api/notifications/${id}/read`, { method: 'POST' }); } catch { /* silent */ }
+    try { await authFetch(api(`/api/notifications/${id}/read`), { method: 'POST' }); } catch { /* silent */ }
   }
 
   async function markAllRead() {
     setItems(prev => prev.map(n => ({ ...n, is_read: true })));
     setUnreadCount(0);
-    try { await authFetch(`${BASE}/api/notifications/mark-all-read`, { method: 'POST' }); } catch { /* silent */ }
+    try { await authFetch(api('/api/notifications/mark-all-read'), { method: 'POST' }); } catch { /* silent */ }
   }
 
   function handleClick(n: AppNotification) {
@@ -139,14 +139,14 @@ export function NotificationBell() {
   function removeNotification(n: AppNotification) {
     setItems(prev => prev.filter(x => x.id !== n.id));
     if (!n.is_read) setUnreadCount(c => Math.max(0, c - 1));
-    authFetch(`${BASE}/api/notifications/${n.id}`, { method: 'DELETE' }).catch(() => {});
+    authFetch(api(`/api/notifications/${n.id}`), { method: 'DELETE' }).catch(() => {});
   }
 
   async function approveAdvance(n: AppNotification) {
     if (!n.reference_id || actingId) return;
     setActingId(n.id);
     try {
-      const r = await authFetch(`${BASE}/api/salary-advances/${n.reference_id}/approve`, {
+      const r = await authFetch(api(`/api/salary-advances/${n.reference_id}/approve`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -166,7 +166,7 @@ export function NotificationBell() {
     if (!n || !n.reference_id) return;
     setActingId(n.id);
     try {
-      const r = await authFetch(`${BASE}/api/salary-advances/${n.reference_id}/reject`, {
+      const r = await authFetch(api(`/api/salary-advances/${n.reference_id}/reject`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rejection_reason: rejectReason }),

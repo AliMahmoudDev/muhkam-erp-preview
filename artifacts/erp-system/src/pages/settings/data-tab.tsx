@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * data-tab.tsx — إدارة البيانات
  * المحتوى: استيراد الأصناف، استيراد المشتريات، سجل العمليات، منطقة الخطر
@@ -25,8 +26,6 @@ import {
 import { PageHeader, FieldLabel, SInput, SSelect, DangerBtn } from './_shared';
 import { DATA_GROUPS } from './_constants';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 const ACTIVITY_KEY = 'halal_erp_activity_log';
 

@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * backup-tab.tsx — النسخ الاحتياطية والاستعادة
  */
@@ -27,8 +28,6 @@ import {
 import { PageHeader, PrimaryBtn } from './_shared';
 import { BACKUP_MODULES_LIST, RESTORE_MODULE_GROUPS } from './_constants';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 /* TypeScript shim for File System Access API */
 declare global {

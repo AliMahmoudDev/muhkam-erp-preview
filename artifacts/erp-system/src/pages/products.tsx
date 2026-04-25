@@ -38,9 +38,8 @@ import {
   emptyProductForm,
 } from '@/components/product-form-modal';
 import { safeArray } from '@/lib/safe-data';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 function AccessDenied({ msg }: { msg: string }) {
   return (

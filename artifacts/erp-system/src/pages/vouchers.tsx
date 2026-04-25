@@ -1,4 +1,5 @@
 import { safeArray } from "@/lib/safe-data";
+import { api } from '@/lib/api';
 /**
  * Vouchers page — READ ONLY
  * Shows unified list of all vouchers with filters and actions (post/cancel/delete)
@@ -19,8 +20,6 @@ import { TableSkeleton } from "@/components/skeletons";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { useLocation } from "wouter";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (p: string) => `${BASE}${p}`;
 
 /* ── interfaces ── */
 interface ReceiptVoucher {

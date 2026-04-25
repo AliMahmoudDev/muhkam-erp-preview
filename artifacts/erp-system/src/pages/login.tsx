@@ -5,9 +5,8 @@ import { useAppSettings } from '@/contexts/app-settings';
 import { useLocation } from 'wouter';
 import { translateRole } from '@/lib/roles';
 import { RegisterForm } from './login/RegisterForm';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 interface ErpUser {
   id: number;

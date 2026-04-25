@@ -33,9 +33,8 @@ import PaymentModal from '@/components/modals/PaymentModal';
 import TransferModal from '@/components/modals/TransferModal';
 import CloseSafeModal from '@/components/modals/CloseSafeModal';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 type ModalType = 'receipt' | 'payment' | 'transfer' | 'safe-closing' | null;
 

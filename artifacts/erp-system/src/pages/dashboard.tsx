@@ -33,9 +33,8 @@ import {
   Bar,
   Cell,
 } from 'recharts';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 /* ── Transaction meta ─────────────────────────────────────── */
 const TX_LABELS: Record<string, string> = {

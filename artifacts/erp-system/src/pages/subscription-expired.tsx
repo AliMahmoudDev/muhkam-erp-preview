@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { authFetch } from '@/lib/auth-fetch';
 import { LogOut, RefreshCw, Phone, Mail } from 'lucide-react';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (path: string) => `${BASE}${path}`;
 const FONT = "'Cairo', 'Tajawal', sans-serif";
 
 interface SubInfo {

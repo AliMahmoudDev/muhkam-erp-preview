@@ -10,9 +10,8 @@ import {
   CheckCircle2, XCircle, Building2, Warehouse, Vault,
   AlertCircle,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 interface Branch {
   id: number;

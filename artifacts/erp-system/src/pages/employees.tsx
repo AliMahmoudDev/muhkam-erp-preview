@@ -34,9 +34,8 @@ import {
   UserPlus,
   KeyRound,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 /* ── Types ────────────────────────────────────────────────────── */
 interface Employee {

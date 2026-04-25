@@ -10,9 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, RefreshCw, Trash2, CheckCircle2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
-const api = (p: string) => `${BASE}${p}`;
 
 interface Accrual {
   id: number;

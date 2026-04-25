@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * company-tab.tsx — إعدادات الشركة والعلامة التجارية
  * يحفظ عبر POST /api/settings/system
@@ -11,8 +12,6 @@ import {
 } from "lucide-react";
 import { PageHeader, FieldLabel, SInput } from "./_shared";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (p: string) => `${BASE}${p}`;
 
 interface CompanySettings {
   company_name:    string;

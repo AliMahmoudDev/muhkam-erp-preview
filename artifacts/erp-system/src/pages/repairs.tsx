@@ -9,9 +9,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency } from "@/lib/format";
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api = (p: string) => `${BASE}${p}`;
 
 /* ── Types ──────────────────────────────────────────────────── */
 interface RepairJob {

@@ -9,9 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Target, BarChart3, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
-const api = (p: string) => `${BASE}${p}`;
 
 interface CostCenter { id: number; code: string; name: string; description?: string; is_active: boolean; }
 interface CCReport {

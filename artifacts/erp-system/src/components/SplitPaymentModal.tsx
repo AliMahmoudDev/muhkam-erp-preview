@@ -7,6 +7,7 @@ import {
   type PaymentMethodsSettings,
   PAYMENT_METHODS_DEFAULTS,
 } from '@/pages/settings/payment-methods-tab';
+import { api } from '@/lib/api';
 
 /* ── شكل إدخال الدفع ── */
 export type SplitPaymentEntry = {
@@ -21,8 +22,7 @@ type Safe = { id: number; name: string };
 /* تحميل إعدادات طرق الدفع من السيرفر أو localStorage */
 async function fetchPaymentSettings(): Promise<PaymentMethodsSettings> {
   try {
-    const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-    const r = await authFetch(`${BASE}/api/settings/system`);
+    const r = await authFetch(api('/api/settings/system'));
     if (!r.ok) return { ...PAYMENT_METHODS_DEFAULTS };
     const data = await r.json() as Record<string, string>;
     const raw  = data['payment_methods'];

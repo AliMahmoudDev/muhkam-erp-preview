@@ -14,10 +14,8 @@ import type { ValueType, NameType } from "recharts/types/component/DefaultToolti
 export { formatCurrency, formatDate };
 export { TableSkeleton };
 export { authFetch };
-
-/* ── Base URL ─────────────────────────────────────────────────────────────── */
-export const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-export const api  = (p: string) => `${BASE}${p}`;
+export { api } from '@/lib/api';
+import { api } from '@/lib/api';
 
 /* ── Count-up animation hook ─────────────────────────────────────────────── */
 export function useCountUp(target: number, duration = 1300): number {

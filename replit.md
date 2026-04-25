@@ -117,6 +117,14 @@
   - `ui.tsx` (389 lines) — `AnimatedNumber`, `Toast`, `DarkInput`, `Modal`, `ConfirmDeleteModal`, `ActionBtn`, `PageBtn` components
 - **`login.tsx`** (1697 → 1285 lines) — `RegisterForm` extracted to `src/pages/login/RegisterForm.tsx` (185 lines); main file imports it at top + re-exports for module consumers
 
+### Priority 4: Shared `api()` Helper — DRY Refactor ✅
+- Created `artifacts/erp-system/src/lib/api.ts` — single source of truth for BASE_URL resolution
+  - `export const BASE` — app base URL without trailing slash
+  - `export const api(path)` — resolves any path against BASE URL
+- Removed the 2-line pattern (`const BASE = ...` + `const api = ...`) from **58 files** (pages, components, contexts, settings tabs, modals)
+- `reports/shared.tsx` and `inventory/_shared.ts` now re-export `{ api, BASE }` from `@/lib/api` for backward compatibility
+- Net effect: **~116 lines deleted**, 1 authoritative definition, zero behavior change
+
 ### Priority 3: CSP Tightening ✅ (`artifacts/api-server/src/app.ts`)
 - Removed `'unsafe-inline'` from `scriptSrc` — API server does not serve inline scripts
 - Added `objectSrc: ["'none'"]` — prevents Flash/plugin exploitation

@@ -6,9 +6,8 @@ import { Plus, X, Trash2, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TableSkeleton } from "@/components/skeletons";
 import { ConfirmModal } from "@/components/confirm-modal";
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api = (p: string) => `${BASE}${p}`;
 
 interface Account { id: number; code: string; name: string; type: string; is_posting: boolean; }
 interface EntryLine { account_id: number; account_name: string; account_code: string; debit: number; credit: number; description: string; }

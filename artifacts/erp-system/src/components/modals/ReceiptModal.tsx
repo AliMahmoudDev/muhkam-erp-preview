@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * ReceiptModal — سند قبض
  * Minimal: customer + safe + amount + date + notes
@@ -13,8 +14,6 @@ import { SearchableSelect } from "@/components/searchable-select";
 import { HandCoins, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (p: string) => `${BASE}${p}`;
 const today = () => new Date().toISOString().split("T")[0];
 
 interface Customer { id: number; name: string; balance: number; customer_code?: number | null; }

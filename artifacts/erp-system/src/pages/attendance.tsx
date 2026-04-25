@@ -22,8 +22,8 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 type AnyRec = Record<string, unknown>;
 
 function statusBadge(s: string) {
@@ -122,7 +122,7 @@ export default function Attendance() {
   const [otForm, setOtForm] = useState({ employee_id: '', date: today, hours: '', reason: '' });
 
   const f = useCallback(async (url: string, opts?: RequestInit) => {
-    const r = await authFetch(`${BASE}${url}`, opts);
+    const r = await authFetch(api(url), opts);
     if (!r.ok) {
       const d = await r.json().catch(() => ({}));
       throw new Error(((d as AnyRec).error as string) || 'خطأ');

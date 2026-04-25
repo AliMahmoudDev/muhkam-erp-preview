@@ -19,8 +19,8 @@ import {
 import {
   ROLES, PERMISSION_GROUPS, PERMISSION_TEMPLATES, TEMPLATE_LABELS,
 } from "./_constants";
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 interface UserItem {
   id:            number;
@@ -76,7 +76,7 @@ export default function UsersTab() {
   const { data: empRaw } = useQuery({
     queryKey: ["emp-for-users"],
     queryFn: async () => {
-      const r = await authFetch(`${BASE}/api/employees?limit=500`);
+      const r = await authFetch(api('/api/employees?limit=500'));
       return r.ok ? r.json() : [];
     },
   });

@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * TransferModal — تحويل بين الخزائن
  * Purple theme | Calls /api/safe-transfers
@@ -11,8 +12,6 @@ import { formatCurrency } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeftRight, X, ArrowRight } from "lucide-react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api  = (p: string) => `${BASE}${p}`;
 const today = () => new Date().toISOString().split("T")[0];
 
 interface Props { onClose: () => void; }

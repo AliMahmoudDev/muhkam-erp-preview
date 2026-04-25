@@ -7,9 +7,8 @@ import {
   Loader2, Lock, LockOpen, AlertOctagon, Info, ExternalLink, Shield,
 } from 'lucide-react';
 import { PageHeader, FieldLabel } from './_shared';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api  = (p: string) => `${BASE}${p}`;
 
 interface PeriodStatus {
   closing_date: string | null;
@@ -222,7 +221,7 @@ export default function FinancialLockTab() {
 
       {/* ── Link to full Audit Log page ── */}
       <a
-        href={`${BASE}/audit-log`}
+        href={api('/audit-log')}
         className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-white/8 hover:border-amber-500/25 hover:bg-amber-500/[0.03] transition-all group"
         style={{ background: 'var(--erp-bg-card)' }}
       >

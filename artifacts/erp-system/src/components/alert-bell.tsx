@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * AlertBell — smart, role-filtered notification center.
  *
@@ -33,7 +34,6 @@ interface Alert {
 
 type FilterTab = 'active' | 'unread' | 'resolved';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const DAILY_CHECK_KEY = 'erp_daily_alert_check';
 
 const TYPE_ICONS: Record<string, string> = {
@@ -72,7 +72,7 @@ export function AlertBell() {
   /* ── Fetch list (includes resolved when on resolved tab) ─ */
   const fetchAlerts = useCallback(async () => {
     try {
-      const res = await authFetch(`${BASE}/api/alerts?include_resolved=true`);
+      const res = await authFetch(api('/api/alerts?include_resolved=true'));
       if (res.ok) setAllAlerts(await res.json());
     } catch {
       /* silent */
@@ -83,7 +83,7 @@ export function AlertBell() {
   const runDailyCheckIfNeeded = useCallback(async () => {
     if (localStorage.getItem(DAILY_CHECK_KEY) === todayStr()) return;
     try {
-      const res = await authFetch(`${BASE}/api/alerts/daily-check`, { method: 'POST' });
+      const res = await authFetch(api('/api/alerts/daily-check'), { method: 'POST' });
       if (res.ok) {
         localStorage.setItem(DAILY_CHECK_KEY, todayStr());
         await fetchAlerts();
@@ -109,14 +109,14 @@ export function AlertBell() {
 
   /* ── Actions ────────────────────────────────────────────── */
   async function markRead(id: number) {
-    await authFetch(`${BASE}/api/alerts/mark-read/${id}`, { method: 'POST' });
+    await authFetch(api(`/api/alerts/mark-read/${id}`), { method: 'POST' });
     setAllAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, is_read: true } : a)));
   }
 
   async function markAllRead() {
     setLoading(true);
     try {
-      await authFetch(`${BASE}/api/alerts/mark-all-read`, { method: 'POST' });
+      await authFetch(api('/api/alerts/mark-all-read'), { method: 'POST' });
       setAllAlerts((prev) => prev.map((a) => ({ ...a, is_read: true })));
     } finally {
       setLoading(false);
@@ -124,7 +124,7 @@ export function AlertBell() {
   }
 
   async function resolveAlert(id: number) {
-    await authFetch(`${BASE}/api/alerts/resolve/${id}`, { method: 'POST' });
+    await authFetch(api(`/api/alerts/resolve/${id}`), { method: 'POST' });
     setAllAlerts((prev) =>
       prev.map((a) =>
         a.id === id ? { ...a, is_resolved: true, resolved_at: new Date().toISOString() } : a
@@ -144,7 +144,7 @@ export function AlertBell() {
   async function forceRunChecks() {
     setLoading(true);
     try {
-      await authFetch(`${BASE}/api/alerts/run-checks`, { method: 'POST' });
+      await authFetch(api('/api/alerts/run-checks'), { method: 'POST' });
       await fetchAlerts();
     } finally {
       setLoading(false);

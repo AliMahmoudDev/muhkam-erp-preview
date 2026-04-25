@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * payment-methods-tab.tsx — إعدادات طرق الدفع المتاحة في النظام
  */
@@ -10,8 +11,6 @@ import {
 } from 'lucide-react';
 import { PageHeader } from './_shared';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api  = (p: string) => `${BASE}${p}`;
 
 /* ── أنواع طرق الدفع ── */
 export type PaymentMethodKey = 'cash' | 'card' | 'bank_transfer' | 'installment';

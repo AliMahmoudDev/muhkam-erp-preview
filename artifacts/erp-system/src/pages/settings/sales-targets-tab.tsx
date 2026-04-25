@@ -3,9 +3,8 @@ import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { Target, Loader2, Save, ChevronRight, ChevronLeft, Trophy, Users } from 'lucide-react';
 import { PageHeader } from './_shared';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api  = (p: string) => `${BASE}${p}`;
 
 interface TargetRow {
   user_id:         number;

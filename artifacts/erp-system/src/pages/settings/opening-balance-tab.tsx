@@ -17,8 +17,8 @@ import {
   Save,
 } from 'lucide-react';
 import { PageHeader, FieldLabel, SInput, SSelect, PrimaryBtn } from './_shared';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 /* ─── Types ─── */
 type OBSubTab = 'treasury' | 'products' | 'customers' | 'suppliers';
@@ -54,7 +54,7 @@ function useOBQuery(path: string) {
   return useQuery<OBEntry[]>({
     queryKey: [`ob${path}`],
     queryFn: async () => {
-      const res = await authFetch(`${BASE}/api${path}`);
+      const res = await authFetch(api(`/api${path}`));
       if (!res.ok) throw new Error('فشل تحميل القيود');
       return res.json();
     },
@@ -128,7 +128,7 @@ function OBTreasuryTab() {
       return;
     }
     setSaving(true);
-    const res = await authFetch(`${BASE}/api/opening-balance/treasury`, {
+    const res = await authFetch(api('/api/opening-balance/treasury'), {
       method: 'POST',
       body: JSON.stringify({
         safe_id: parseInt(form.safe_id),
@@ -277,7 +277,7 @@ function OBProductsTab() {
       return;
     }
     setSaving(true);
-    const res = await authFetch(`${BASE}/api/inventory/opening-balance`, {
+    const res = await authFetch(api('/api/inventory/opening-balance'), {
       method: 'POST',
       body: JSON.stringify({
         product_id: parseInt(form.product_id),
@@ -474,7 +474,7 @@ function OBCustomersTab() {
       return;
     }
     setSaving(true);
-    const res = await authFetch(`${BASE}/api/opening-balance/customer`, {
+    const res = await authFetch(api('/api/opening-balance/customer'), {
       method: 'POST',
       body: JSON.stringify({
         customer_id: parseInt(form.customer_id),
@@ -635,7 +635,7 @@ function OBSuppliersTab() {
       return;
     }
     setSaving(true);
-    const res = await authFetch(`${BASE}/api/opening-balance/supplier`, {
+    const res = await authFetch(api('/api/opening-balance/supplier'), {
       method: 'POST',
       body: JSON.stringify({
         supplier_id: parseInt(form.supplier_id),
@@ -778,7 +778,7 @@ function FiscalYearStartCard() {
 
   useEffect(() => {
     void (async () => {
-      const r = await authFetch(`${BASE}/api/settings/system`);
+      const r = await authFetch(api('/api/settings/system'));
       if (r.ok) {
         const d = await r.json() as Record<string, string>;
         if (d.fiscal_year_start) setDate(d.fiscal_year_start);
@@ -790,7 +790,7 @@ function FiscalYearStartCard() {
     if (!date) { toast({ title: 'اختر تاريخاً أولاً', variant: 'destructive' }); return; }
     setSaving(true);
     try {
-      const r = await authFetch(`${BASE}/api/settings/system`, {
+      const r = await authFetch(api('/api/settings/system'), {
         method: 'POST',
         body: JSON.stringify({ key: 'fiscal_year_start', value: date }),
       });

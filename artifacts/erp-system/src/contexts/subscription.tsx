@@ -1,9 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useAuth } from "@/contexts/auth";
 import { authFetch } from "@/lib/auth-fetch";
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api = (p: string) => `${BASE}${p}`;
 
 export type CompanyFeatures = {
   accounting: boolean;

@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * Super Admin Dashboard — manage all SaaS companies + super_admin accounts
  * Only accessible to users with role = "super_admin"
@@ -15,8 +16,6 @@ import {
   AnimatedNumber, Toast, DarkInput, Modal, ConfirmDeleteModal, ActionBtn, PageBtn,
 } from './super-admin/ui';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 /* ══════════════════════════════════════════════════
    MAIN COMPONENT

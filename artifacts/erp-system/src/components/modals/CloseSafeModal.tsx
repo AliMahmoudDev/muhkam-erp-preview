@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * CloseSafeModal — إقفال الخزينة
  * Gold/amber theme | Reads /api/financial-transactions
@@ -11,8 +12,6 @@ import { formatCurrency } from '@/lib/format';
 import { Lock, Printer, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 const today = () => new Date().toISOString().split('T')[0];
 
 interface Transaction {

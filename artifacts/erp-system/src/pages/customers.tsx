@@ -36,9 +36,8 @@ import { ConfirmModal } from '@/components/confirm-modal';
 import { exportCustomersExcel } from '@/lib/export-excel';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 /* ─── أنواع البيانات ─── */
 interface ReceiptVoucher {

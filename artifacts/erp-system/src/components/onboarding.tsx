@@ -7,9 +7,8 @@ import { Link } from "wouter";
 import { CheckCircle, Package, Store, ShoppingCart, X, ArrowLeft } from "lucide-react";
 import { ProductFormModal, ProductFormData, emptyProductForm } from "@/components/product-form-modal";
 import { useToast } from "@/hooks/use-toast";
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api = (p: string) => `${BASE}${p}`;
 
 export function OnboardingPanel() {
   const { toast } = useToast();
@@ -178,7 +177,7 @@ export function OnboardingPanel() {
 
                   {!step.done && (
                     step.isLink ? (
-                      <Link href={`${BASE}/sales`}>
+                      <Link href={api('/sales')}>
                         <span className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/25 transition-all cursor-pointer">
                           {step.actionLabel} <ArrowLeft className="w-3 h-3" />
                         </span>

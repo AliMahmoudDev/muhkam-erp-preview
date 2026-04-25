@@ -15,9 +15,8 @@ import { LogOut, Warehouse, Search, X, ChevronDown } from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 import { NotificationBell } from '@/components/notification-bell';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (p: string) => `${BASE}${p}`;
 
 /* ── Nav sections ───────────────────────────────── */
 const NAV_SECTIONS = [

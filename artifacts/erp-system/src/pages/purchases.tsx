@@ -11,9 +11,8 @@ import { SearchableSelect } from "@/components/searchable-select";
 import { ProductFormModal, ProductFormData } from "@/components/product-form-modal";
 import { useAuth } from "@/contexts/auth";
 import { hasPermission } from "@/lib/permissions";
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const api = (p: string) => `${BASE}${p}`;
 
 type PurchaseCurrency = "EGP" | "USD" | "CNY" | "EUR" | "SAR" | "AED";
 

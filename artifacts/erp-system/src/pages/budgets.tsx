@@ -9,9 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, BarChart3, Trash2, TrendingUp, TrendingDown, ChevronLeft } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { api } from '@/lib/api';
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
-const api = (p: string) => `${BASE}${p}`;
 
 interface Budget { id: number; name: string; fiscal_year: number; date_from: string; date_to: string; status: string; notes?: string; }
 interface ComparisonRow { account_code: string; account_name: string; account_type: string; period: string; budgeted_amount: number; actual_amount: number; variance: number; variance_pct: number | null; }

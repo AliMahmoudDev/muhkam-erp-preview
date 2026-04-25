@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 /**
  * FiscalYears — إدارة السنوات المالية
  * إنشاء وتعيين وإقفال السنوات المالية للشركة.
@@ -8,8 +9,6 @@ import { Calendar, Lock, Unlock, CheckCircle, Plus, X, BookMarked } from "lucide
 import { authFetch } from "@/lib/auth-fetch";
 import { useAuth } from "@/contexts/auth";
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
-const api = (p: string) => `${BASE}${p}`;
 
 interface FiscalYear {
   id: number;
