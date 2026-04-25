@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import hpp from 'hpp';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
@@ -131,6 +132,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 /* ── ZKTeco ADMS pushes plain-text attendance logs ─────────── */
 app.use('/iclock', express.text({ type: '*/*', limit: '1mb' }));
+
+/* ── Cookie parser ──────────────────────────────────────────── */
+app.use(cookieParser());
 
 /* ── XSS sanitization on all request bodies ────────────────── */
 app.use(sanitizeBody);

@@ -54,10 +54,9 @@ export default function Login() {
         warehouse_id?: number | null;
         safe_id?: number | null;
         permissions?: Record<string, boolean>;
-      },
-      token: string
+      }
     ) => {
-      login(user, token);
+      login(user);
       setLocation('/');
     },
     [login, setLocation]
@@ -124,6 +123,7 @@ export default function Login() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
+          credentials: 'include',
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -147,7 +147,6 @@ export default function Login() {
             permissions?: Record<string, boolean>;
             company_id?: number | null;
           };
-          token?: string;
         };
 
         /* ── 2FA required — switch to TOTP step ─── */
@@ -158,20 +157,7 @@ export default function Login() {
           return;
         }
 
-        const { user: authedUser, token } = responseData as {
-          user: {
-            id: number;
-            name: string;
-            username: string;
-            role: string;
-            active?: boolean;
-            warehouse_id?: number | null;
-            safe_id?: number | null;
-            permissions?: Record<string, boolean>;
-            company_id?: number | null;
-          };
-          token: string;
-        };
+        const authedUser = responseData.user!;
         if (authedUser.role === 'cashier' || authedUser.role === 'salesperson') {
           if (!authedUser.warehouse_id) {
             setError('هذا المستخدم غير مرتبط بمخزن — راجع المدير');
@@ -188,7 +174,7 @@ export default function Login() {
         if (authedUser.company_id) {
           localStorage.setItem('erp_company_id', String(authedUser.company_id));
         }
-        login(authedUser, token);
+        login(authedUser);
         setLocation('/');
       } catch {
         setError('تعذّر الاتصال بالخادم');
@@ -213,10 +199,9 @@ export default function Login() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ temp_token: tempToken, totp_code: totpCode }),
+          credentials: 'include',
         });
         const data = (await res.json()) as {
-          token?: string;
-          refreshToken?: string;
           user?: {
             id: number;
             name: string;
@@ -226,12 +211,12 @@ export default function Login() {
           };
           error?: string;
         };
-        if (!res.ok || !data.token || !data.user) {
+        if (!res.ok || !data.user) {
           setError(data.error ?? 'رمز التحقق غير صحيح');
           setTotpCode('');
           return;
         }
-        login(data.user as Parameters<typeof login>[0], data.token);
+        login(data.user as Parameters<typeof login>[0]);
         setLocation('/');
       } catch {
         setError('تعذّر الاتصال بالخادم');
@@ -1311,8 +1296,7 @@ interface RegisterFormProps {
       warehouse_id?: number | null;
       safe_id?: number | null;
       permissions?: Record<string, boolean>;
-    },
-    token: string
+    }
   ) => void;
   onSwitch: () => void;
 }
@@ -1385,6 +1369,7 @@ function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ company_name: companyName, admin_name: adminName, email, password }),
+        credentials: 'include',
       });
       const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
       if (!res.ok) {
@@ -1393,8 +1378,7 @@ function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
       }
       setSuccess(true);
       setTimeout(() => {
-        const { token, user } = data as {
-          token: string;
+        const { user } = data as {
           user: {
             id: number;
             name: string;
@@ -1406,7 +1390,7 @@ function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
             permissions?: Record<string, boolean>;
           };
         };
-        onSuccess(user, token);
+        onSuccess(user);
       }, 900);
     } catch {
       setError('تعذّر الاتصال بالخادم');

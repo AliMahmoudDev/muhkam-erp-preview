@@ -34,6 +34,31 @@ import {
 
 const JWT_SECRET: string = process.env.JWT_SECRET!;
 
+/* ── Cookie helpers ─────────────────────────────────────────── */
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+function setAuthCookies(res: import('express').Response, accessToken: string, refreshToken: string) {
+  res.cookie('access_token', accessToken, {
+    httpOnly: true,
+    secure: IS_PROD,
+    sameSite: IS_PROD ? 'strict' : 'lax',
+    maxAge: 4 * 60 * 60 * 1000, // 4 hours
+    path: '/',
+  });
+  res.cookie('refresh_token', refreshToken, {
+    httpOnly: true,
+    secure: IS_PROD,
+    sameSite: IS_PROD ? 'strict' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/api/auth/refresh',
+  });
+}
+
+function clearAuthCookies(res: import('express').Response) {
+  res.clearCookie('access_token', { path: '/' });
+  res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
+}
+
 /** Enforce strong password: min 8 chars, uppercase, digit, special char */
 function validatePasswordStrength(password: string): string | null {
   if (password.length < 8)
@@ -239,10 +264,10 @@ router.post('/auth/login', async (req, res) => {
       /* ignore */
     }
 
+    /* Set httpOnly cookies — token never exposed to JS */
+    setAuthCookies(res, token, refreshToken);
 
     res.json({
-      token,
-      refreshToken,
       user: {
         id: user.id,
         name: user.name,
@@ -264,7 +289,10 @@ router.post('/auth/login', async (req, res) => {
 /* ── POST /auth/refresh — rotate refresh token + issue new access token ─ */
 router.post('/auth/refresh', async (req, res) => {
   try {
-    const { refreshToken } = req.body as { refreshToken?: string };
+    /* Read from httpOnly cookie first, fall back to body (backward compat) */
+    const refreshToken: string | undefined =
+      (req.cookies as Record<string, string> | undefined)?.refresh_token
+      ?? (req.body as { refreshToken?: string })?.refreshToken;
     if (!refreshToken) {
       res.status(400).json({ error: 'refresh token مطلوب' });
       return;
@@ -300,7 +328,10 @@ router.post('/auth/refresh', async (req, res) => {
     const newRefreshToken = signRefreshToken(user.id);
     void storeRefreshToken(newRefreshToken, user.id);
 
-    res.json({ token: newToken, refreshToken: newRefreshToken });
+    /* Update cookies with rotated tokens */
+    setAuthCookies(res, newToken, newRefreshToken);
+
+    res.json({ ok: true });
   } catch {
     res.status(500).json({ error: 'فشل تجديد الجلسة' });
   }
@@ -343,15 +374,23 @@ router.get('/auth/subscription', authenticate, async (req, res) => {
 
 /* ── POST /auth/logout — blacklist access token + revoke refresh tokens ─ */
 router.post('/auth/logout', authenticate, async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (token) await blacklistToken(token);
+  /* Blacklist access token — read from cookie first, then Authorization header */
+  const cookieAccess = (req.cookies as Record<string, string> | undefined)?.access_token;
+  const headerAccess = req.headers.authorization?.split(' ')[1];
+  const accessToken = cookieAccess ?? headerAccess;
+  if (accessToken) await blacklistToken(accessToken);
 
-  /* Revoke the supplied refresh token if provided */
-  const { refreshToken } = req.body as { refreshToken?: string };
+  /* Revoke refresh token — read from cookie first, then body */
+  const cookieRefresh = (req.cookies as Record<string, string> | undefined)?.refresh_token;
+  const { refreshToken: bodyRefresh } = req.body as { refreshToken?: string };
+  const refreshToken = cookieRefresh ?? bodyRefresh;
   if (refreshToken) {
     const payload = verifyRefreshToken(refreshToken);
     if (payload) void revokeUserRefreshTokens(payload.userId);
   }
+
+  /* Clear httpOnly cookies */
+  clearAuthCookies(res);
 
   res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
 });
@@ -535,9 +574,11 @@ router.post('/auth/2fa/login', async (req, res) => {
     const token = signToken(user.id, user.role, user.company_id ?? null);
     const refreshToken = signRefreshToken(user.id);
     void storeRefreshToken(refreshToken, user.id);
+
+    /* Set httpOnly cookies */
+    setAuthCookies(res, token, refreshToken);
+
     res.json({
-      token,
-      refreshToken,
       user: {
         id: user.id,
         name: user.name,
@@ -658,9 +699,13 @@ router.post('/auth/register', async (req, res) => {
       .returning();
 
     const token = signToken(user.id, user.role, user.company_id ?? null);
+    const refreshToken = signRefreshToken(user.id);
+    void storeRefreshToken(refreshToken, user.id);
+
+    /* Set httpOnly cookies */
+    setAuthCookies(res, token, refreshToken);
 
     res.status(201).json({
-      token,
       user: {
         id: user.id,
         name: user.name,

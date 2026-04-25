@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
+import { authFetch } from '@/lib/auth-fetch';
 import { LogOut, RefreshCw, Phone, Mail } from 'lucide-react';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -39,18 +40,14 @@ export default function SubscriptionExpired() {
   const [support, setSupport] = useState<SupportInfo>({});
 
   useEffect(() => {
-    const token = localStorage.getItem('erp_auth_token');
-    if (!token) return;
-    const headers = { Authorization: `Bearer ${token}` };
-
-    fetch(api('/api/auth/subscription'), { headers })
+    authFetch(api('/api/auth/subscription'))
       .then((r) => (r.ok ? r.json() : null))
       .then((d: SubInfo | null) => {
         if (d) setSub(d);
       })
       .catch(() => {});
 
-    fetch(api('/api/settings/system'), { headers })
+    authFetch(api('/api/settings/system'))
       .then((r) => (r.ok ? r.json() : null))
       .then((d: Record<string, string> | null) => {
         if (d)

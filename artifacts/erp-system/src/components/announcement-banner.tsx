@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
+import { authFetch } from "@/lib/auth-fetch";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const api  = (path: string) => `${BASE}${path}`;
@@ -53,11 +54,7 @@ export function AnnouncementBanner() {
   /* Fetch once on mount */
   useEffect(() => {
     if (!user || user.role === "super_admin") return;
-    const token = localStorage.getItem("erp_auth_token");
-    if (!token) return;
-    fetch(api("/api/announcements"), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    authFetch(api("/api/announcements"))
       .then(r => r.ok ? r.json() : { announcements: [] })
       .then((data: { announcements: Announcement[] }) => {
         setAnnouncements(data.announcements ?? []);

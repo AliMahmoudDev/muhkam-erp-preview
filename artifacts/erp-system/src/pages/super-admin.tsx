@@ -5,6 +5,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
+import { authFetch } from '@/lib/auth-fetch';
 import { useLocation } from 'wouter';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -90,8 +91,8 @@ const PLAN_LABELS: Record<string, string> = {
 };
 const translatePlan = (p: string) => PLAN_LABELS[p] ?? p;
 
-function authHeaders(token: string) {
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+function authHeaders(_ignored?: string) {
+  return { 'Content-Type': 'application/json' };
 }
 
 const C = {
@@ -502,7 +503,7 @@ function PageBtn({
    MAIN COMPONENT
    ══════════════════════════════════════════════════ */
 export default function SuperAdmin() {
-  const { user, token, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
 
@@ -598,11 +599,11 @@ export default function SuperAdmin() {
 
   const fetcher = useCallback(
     (url: string) =>
-      fetch(api(url), { headers: authHeaders(token ?? '') }).then((r) => {
+      authFetch(api(url)).then((r) => {
         if (!r.ok) throw new Error('فشل جلب البيانات');
         return r.json();
       }),
-    [token]
+    []
   );
 
   /* ── Queries ─── */
@@ -650,8 +651,8 @@ export default function SuperAdmin() {
     if (encKey !== null) { setEncKeyVisible(true); return; }
     setEncKeyLoading(true);
     try {
-      const res = await fetch(api('/api/super/encryption-key'), {
-        headers: authHeaders(token ?? ''),
+      const res = await authFetch(api('/api/super/encryption-key'), {
+        headers: authHeaders(),
       });
       const data: { key: string | null; enabled: boolean } = await res.json();
       setEncEnabled(data.enabled);
@@ -759,9 +760,9 @@ export default function SuperAdmin() {
     if (!annTitle.trim() || !annBody.trim()) { showToast('العنوان والنص مطلوبان', 'error'); return; }
     setAnnSaving(true);
     try {
-      const res = await fetch(api('/api/super/announcements'), {
+      const res = await authFetch(api('/api/super/announcements'), {
         method: 'POST',
-        headers: { ...authHeaders(token ?? ''), 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: annTitle.trim(), body: annBody.trim(),
           type: annType, target: annTarget,
@@ -778,17 +779,17 @@ export default function SuperAdmin() {
   }
 
   async function toggleAnn(id: number, is_active: boolean) {
-    await fetch(api(`/api/super/announcements/${id}`), {
+    await authFetch(api(`/api/super/announcements/${id}`), {
       method: 'PATCH',
-      headers: { ...authHeaders(token ?? ''), 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_active: !is_active }),
     });
     void refetchAnn();
   }
 
   async function deleteAnn(id: number) {
-    await fetch(api(`/api/super/announcements/${id}`), {
-      method: 'DELETE', headers: authHeaders(token ?? ''),
+    await authFetch(api(`/api/super/announcements/${id}`), {
+      method: 'DELETE', headers: authHeaders(),
     });
     void refetchAnn();
   }
@@ -838,9 +839,9 @@ export default function SuperAdmin() {
   async function savePlan(plan: PlanSetting) {
     setPlanSaving(true);
     try {
-      const res = await fetch(api('/api/super/plan-settings/' + plan.key), {
+      const res = await authFetch(api('/api/super/plan-settings/' + plan.key), {
         method: 'PUT',
-        headers: { ...authHeaders(token ?? ''), 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name_ar: plan.name_ar,
           description: plan.description,
@@ -862,8 +863,8 @@ export default function SuperAdmin() {
   /* CSV Export */
   async function exportCompaniesCSV() {
     try {
-      const res = await fetch(api('/api/super/export/companies'), {
-        headers: authHeaders(token ?? ''),
+      const res = await authFetch(api('/api/super/export/companies'), {
+        headers: authHeaders(),
       });
       const blob = await res.blob();
       const a = document.createElement('a');
@@ -888,9 +889,9 @@ export default function SuperAdmin() {
   async function triggerBackup() {
     setCreatingBackup(true);
     try {
-      const res = await fetch(api('/api/super/backup/create'), {
+      const res = await authFetch(api('/api/super/backup/create'), {
         method: 'POST',
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
       });
       const data: {
         success?: boolean;
@@ -915,8 +916,8 @@ export default function SuperAdmin() {
   async function downloadBackup(filename: string) {
     setDownloadingFile(filename);
     try {
-      const res = await fetch(api(`/api/super/backup/download/${encodeURIComponent(filename)}`), {
-        headers: authHeaders(token ?? ''),
+      const res = await authFetch(api(`/api/super/backup/download/${encodeURIComponent(filename)}`), {
+        headers: authHeaders(),
       });
       if (!res.ok) { showToast('فشل التنزيل', 'error'); return; }
       const blob = await res.blob();
@@ -960,7 +961,7 @@ export default function SuperAdmin() {
     try {
       const isEnc = pendingRestoreFile.name.endsWith('.enc');
       let body: BodyInit;
-      let headers: HeadersInit = authHeaders(token ?? '');
+      let headers: HeadersInit = authHeaders();
       if (isEnc) {
         body = await pendingRestoreFile.arrayBuffer();
         headers = { ...headers, 'Content-Type': 'application/octet-stream' };
@@ -969,7 +970,7 @@ export default function SuperAdmin() {
         body = text;
         headers = { ...headers, 'Content-Type': 'application/json' };
       }
-      const res = await fetch(api('/api/system/restore'), {
+      const res = await authFetch(api('/api/system/restore'), {
         method: 'POST',
         headers,
         body,
@@ -1010,9 +1011,7 @@ export default function SuperAdmin() {
     setSecLoading(true);
     setSecMsg(null);
     try {
-      const res = await fetch(api('/api/auth/2fa/setup'), {
-        headers: { Authorization: `Bearer ${token ?? ''}` },
-      });
+      const res = await authFetch(api('/api/auth/2fa/setup'));
       const data: { qr_code?: string; secret?: string; error?: string } = await res.json();
       if (data.qr_code) {
         setTotpSetupData({ qr_code: data.qr_code, secret: data.secret! });
@@ -1032,9 +1031,9 @@ export default function SuperAdmin() {
     setSecLoading(true);
     setSecMsg(null);
     try {
-      const res = await fetch(api('/api/auth/2fa/verify'), {
+      const res = await authFetch(api('/api/auth/2fa/verify'), {
         method: 'POST',
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
         body: JSON.stringify({ token: totpInput }),
       });
       const data: { success?: boolean; message?: string; error?: string } = await res.json();
@@ -1059,9 +1058,9 @@ export default function SuperAdmin() {
     setSecLoading(true);
     setSecMsg(null);
     try {
-      const res = await fetch(api('/api/auth/2fa/disable'), {
+      const res = await authFetch(api('/api/auth/2fa/disable'), {
         method: 'POST',
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
         body: JSON.stringify({ token: disableTotpInput }),
       });
       const data: { success?: boolean; message?: string; error?: string } = await res.json();
@@ -1096,9 +1095,9 @@ export default function SuperAdmin() {
     setSettingSaving(true);
     try {
       const upsert = async (key: string, value: string) => {
-        await fetch(api('/api/settings/system'), {
+        await authFetch(api('/api/settings/system'), {
           method: 'POST',
-          headers: authHeaders(token ?? ''),
+          headers: authHeaders(),
           body: JSON.stringify({ key, value }),
         });
       };
@@ -1117,7 +1116,7 @@ export default function SuperAdmin() {
     mutationFn: ({ url, method = 'POST', body }: { url: string; method?: string; body?: object }) =>
       fetch(api(url), {
         method,
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
         body: body ? JSON.stringify(body) : undefined,
       }).then((r) => r.json()),
     onSuccess: () => {
@@ -1130,18 +1129,18 @@ export default function SuperAdmin() {
     if (!subModal) return;
     setSubSaving(true);
     try {
-      const h = { ...authHeaders(token ?? ''), 'Content-Type': 'application/json' };
+      const h = { ...authHeaders(), 'Content-Type': 'application/json' };
       if (subForm.extend_mode === 'days') {
-        await fetch(api(`/api/super/companies/${subModal.id}/extend`), {
+        await authFetch(api(`/api/super/companies/${subModal.id}/extend`), {
           method: 'POST', headers: h,
           body: JSON.stringify({ days: subForm.extend_days, plan_type: subForm.plan_type }),
         });
-        await fetch(api(`/api/super/companies/${subModal.id}`), {
+        await authFetch(api(`/api/super/companies/${subModal.id}`), {
           method: 'PUT', headers: h,
           body: JSON.stringify({ edition: subForm.edition, is_active: subForm.is_active, features: subForm.features }),
         });
       } else {
-        await fetch(api(`/api/super/companies/${subModal.id}`), {
+        await authFetch(api(`/api/super/companies/${subModal.id}`), {
           method: 'PUT', headers: h,
           body: JSON.stringify({ plan_type: subForm.plan_type, edition: subForm.edition, end_date: subForm.end_date, is_active: subForm.is_active, features: subForm.features }),
         });
@@ -1171,7 +1170,7 @@ export default function SuperAdmin() {
     }) =>
       fetch(api(`/api/super/companies/${id}`), {
         method: 'DELETE',
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
         body: JSON.stringify({ force, confirm_code, expected_code }),
       }).then(async (r) => {
         const d = await r.json();
@@ -1205,7 +1204,7 @@ export default function SuperAdmin() {
     mutationFn: (body: object) =>
       fetch(api('/api/super/managers'), {
         method: 'POST',
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
         body: JSON.stringify(body),
       }).then(async (r) => {
         const d = await r.json();
@@ -1225,7 +1224,7 @@ export default function SuperAdmin() {
     mutationFn: ({ id, body }: { id: number; body: object }) =>
       fetch(api(`/api/super/managers/${id}`), {
         method: 'PATCH',
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
         body: JSON.stringify(body),
       }).then(async (r) => {
         const d = await r.json();
@@ -1245,7 +1244,7 @@ export default function SuperAdmin() {
     mutationFn: (id: number) =>
       fetch(api(`/api/super/managers/${id}/toggle`), {
         method: 'PATCH',
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
       }).then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
@@ -1262,7 +1261,7 @@ export default function SuperAdmin() {
     mutationFn: (id: number) =>
       fetch(api(`/api/super/managers/${id}`), {
         method: 'DELETE',
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
       }).then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
@@ -1282,7 +1281,7 @@ export default function SuperAdmin() {
     mutationFn: ({ id, company_name }: { id: number; company_name: string }) =>
       fetch(api(`/api/super/companies/${id}/reset-admin-password`), {
         method: 'POST',
-        headers: authHeaders(token ?? ''),
+        headers: authHeaders(),
       }).then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error ?? 'خطأ في إعادة التعيين');

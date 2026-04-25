@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
+import { authFetch } from "@/lib/auth-fetch";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const api  = (path: string) => `${BASE}${path}`;
@@ -38,11 +39,7 @@ export function SubscriptionBanner() {
 
   async function fetchStatus() {
     try {
-      const token = localStorage.getItem("erp_auth_token");
-      if (!token) return;
-      const res = await fetch(api("/api/auth/subscription"), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(api("/api/auth/subscription"));
       if (!res.ok) return;
       const data: SubStatus = await res.json();
       setStatus(data);
@@ -51,11 +48,7 @@ export function SubscriptionBanner() {
 
   async function fetchSupport() {
     try {
-      const token = localStorage.getItem("erp_auth_token");
-      if (!token) return;
-      const res = await fetch(api("/api/settings/system"), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(api("/api/settings/system"));
       if (!res.ok) return;
       const data = await res.json() as Record<string, string>;
       setSupport({

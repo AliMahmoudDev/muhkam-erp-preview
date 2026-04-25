@@ -14,24 +14,21 @@ export interface AuthUser {
 
 interface AuthContextType {
   user: AuthUser | null;
-  token: string | null;
   subscriptionExpired: boolean;
-  login: (user: AuthUser, token: string) => void;
+  login: (user: AuthUser) => void;
   logout: () => void;
   clearSubscriptionExpired: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  token: null,
   subscriptionExpired: false,
   login: () => {},
   logout: () => {},
   clearSubscriptionExpired: () => {},
 });
 
-const USER_KEY  = "erp_current_user";
-const TOKEN_KEY = "erp_auth_token";
+const USER_KEY = "erp_current_user";
 
 function isValidForRole(u: AuthUser): boolean {
   if (u.role === "cashier" || u.role === "salesperson") {
@@ -48,7 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const parsed = JSON.parse(s) as AuthUser;
       if (!isValidForRole(parsed)) {
         localStorage.removeItem(USER_KEY);
-        localStorage.removeItem(TOKEN_KEY);
         return null;
       }
       return parsed;
@@ -56,10 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
   });
-
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem(TOKEN_KEY),
-  );
 
   const [subscriptionExpired, setSubscriptionExpired] = useState(false);
 
@@ -74,28 +66,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("subscription:expired", handler);
   }, [user]);
 
-  const login = (u: AuthUser, t: string) => {
+  const login = (u: AuthUser) => {
     localStorage.setItem(USER_KEY, JSON.stringify(u));
-    localStorage.setItem(TOKEN_KEY, t);
     localStorage.setItem("halal_erp_login_flag", "1");
     setUser(u);
-    setToken(t);
     setSubscriptionExpired(false);
   };
 
   const logout = () => {
     localStorage.setItem("halal_erp_logout_flag", "1");
     localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
-    setToken(null);
     setSubscriptionExpired(false);
   };
 
   const clearSubscriptionExpired = () => setSubscriptionExpired(false);
 
   return (
-    <AuthContext.Provider value={{ user, token, subscriptionExpired, login, logout, clearSubscriptionExpired }}>
+    <AuthContext.Provider value={{ user, subscriptionExpired, login, logout, clearSubscriptionExpired }}>
       {children}
     </AuthContext.Provider>
   );

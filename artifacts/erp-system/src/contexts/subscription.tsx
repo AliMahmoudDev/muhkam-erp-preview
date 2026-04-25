@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useAuth } from "@/contexts/auth";
+import { authFetch } from "@/lib/auth-fetch";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const api = (p: string) => `${BASE}${p}`;
@@ -68,18 +69,16 @@ function loadCached(): { edition: "ultimate" | "advanced"; features: CompanyFeat
 }
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   const cached = loadCached();
   const [edition, setEdition] = useState<"ultimate" | "advanced">(cached?.edition ?? "ultimate");
   const [features, setFeatures] = useState<CompanyFeatures>(cached?.features ?? DEFAULT_ULTIMATE);
 
   const fetchStatus = useCallback(async () => {
-    if (!user || user.role === "super_admin" || !token) return;
+    if (!user || user.role === "super_admin") return;
     try {
-      const res = await fetch(api("/api/subscription/status"), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(api("/api/subscription/status"));
       if (!res.ok) return;
       const data = (await res.json()) as {
         edition?: string;
@@ -97,7 +96,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     } catch {
       /* non-fatal */
     }
-  }, [user, token]);
+  }, [user]);
 
   useEffect(() => {
     fetchStatus();

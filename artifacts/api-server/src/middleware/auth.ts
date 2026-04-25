@@ -115,13 +115,15 @@ export async function authenticate(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith("Bearer ")) {
+  /* Primary: httpOnly cookie — Secondary: Authorization header (fallback) */
+  const cookieToken = (req.cookies as Record<string, string> | undefined)?.access_token;
+  const authHeader = req.headers.authorization;
+  const token = cookieToken ?? (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined);
+
+  if (!token) {
     res.status(401).json({ error: "غير مصرح: يلزم تسجيل الدخول أولاً" });
     return;
   }
-
-  const token = auth.slice(7);
 
   /* Check token blacklist (logout / revocation) */
   if (await isTokenBlacklisted(token)) {

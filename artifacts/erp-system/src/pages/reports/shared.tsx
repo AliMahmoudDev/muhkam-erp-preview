@@ -18,7 +18,6 @@ export { authFetch };
 /* ── Base URL ─────────────────────────────────────────────────────────────── */
 export const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 export const api  = (p: string) => `${BASE}${p}`;
-export const getToken = () => localStorage.getItem("erp_auth_token") ?? "";
 
 /* ── Count-up animation hook ─────────────────────────────────────────────── */
 export function useCountUp(target: number, duration = 1300): number {

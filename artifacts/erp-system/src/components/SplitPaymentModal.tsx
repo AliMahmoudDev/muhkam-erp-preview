@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { authFetch } from '@/lib/auth-fetch';
 import { X, CheckCircle2, Coins, Clock, Vault, CreditCard, ArrowLeftRight, CalendarRange } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import {
@@ -21,9 +22,7 @@ type Safe = { id: number; name: string };
 async function fetchPaymentSettings(): Promise<PaymentMethodsSettings> {
   try {
     const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-    const r = await fetch(`${BASE}/api/settings/system`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('erp_auth_token') ?? ''}` },
-    });
+    const r = await authFetch(`${BASE}/api/settings/system`);
     if (!r.ok) return { ...PAYMENT_METHODS_DEFAULTS };
     const data = await r.json() as Record<string, string>;
     const raw  = data['payment_methods'];
