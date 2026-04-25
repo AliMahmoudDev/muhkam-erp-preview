@@ -1,18 +1,20 @@
 import { api } from '@/lib/api';
 /**
- * TransferModal — تحويل بين الخزائن
+ * TransferModal — تحويل بين الخزائن (مع دعم رسوم التحويل)
  * Purple theme | Calls /api/safe-transfers
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { safeArray } from "@/lib/safe-data";
 import { authFetch } from "@/lib/auth-fetch";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useGetSettingsSafes } from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeftRight, X, ArrowRight } from "lucide-react";
+import { ArrowLeftRight, X, ArrowRight, AlertCircle } from "lucide-react";
 
 const today = () => new Date().toISOString().split("T")[0];
+
+type FeeType = "none" | "fixed" | "percentage";
 
 interface Props { onClose: () => void; }
 
@@ -24,10 +26,30 @@ export default function TransferModal({ onClose }: Props) {
 
   const [form, setForm] = useState({
     from_safe_id: "", to_safe_id: "", amount: "", notes: "", date: today(),
+    fee_type: "none" as FeeType, fee_value: "",
   });
 
   const fromSafe = safes.find(s => String(s.id) === form.from_safe_id);
   const toSafe   = safes.find(s => String(s.id) === form.to_safe_id);
+
+  /* ── حساب الرسوم بشكل لحظي ──────────────────────────────── */
+  const calc = useMemo(() => {
+    const amt      = parseFloat(form.amount) || 0;
+    const feeVal   = parseFloat(form.fee_value) || 0;
+    let feeAmt = 0;
+    if (form.fee_type === "fixed")      feeAmt = feeVal;
+    else if (form.fee_type === "percentage") feeAmt = amt * feeVal / 100;
+    feeAmt = Math.max(0, Math.round(feeAmt * 100) / 100);
+    const netAmt = Math.round((amt - feeAmt) * 100) / 100;
+    return { amt, feeAmt, netAmt, invalid: netAmt < 0 && amt > 0 };
+  }, [form.amount, form.fee_type, form.fee_value]);
+
+  const isValid =
+    !!form.from_safe_id &&
+    !!form.to_safe_id &&
+    form.from_safe_id !== form.to_safe_id &&
+    calc.amt > 0 &&
+    !calc.invalid;
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["/api/safe-transfers"] });
@@ -44,28 +66,24 @@ export default function TransferModal({ onClose }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.from_safe_id || !form.to_safe_id) {
-      toast({ title: "اختر خزينتَي التحويل", variant: "destructive" }); return;
-    }
-    if (form.from_safe_id === form.to_safe_id) {
-      toast({ title: "لا يمكن التحويل من وإلى نفس الخزينة", variant: "destructive" }); return;
-    }
-    if (!form.amount) {
-      toast({ title: "أدخل المبلغ", variant: "destructive" }); return;
-    }
+    if (!isValid) return;
     transferMut.mutate({
       from_safe_id: parseInt(form.from_safe_id),
       to_safe_id:   parseInt(form.to_safe_id),
-      amount:       parseFloat(form.amount),
+      amount:       calc.amt,
+      fee_type:     form.fee_type,
+      fee_rate:     parseFloat(form.fee_value) || 0,
       notes:        form.notes || undefined,
       date:         form.date,
     });
   };
 
+  const feeLabel = form.fee_type === "percentage" ? "نسبة الرسوم (%)" : "قيمة الرسوم";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <form onSubmit={handleSubmit}
-        className="relative w-full max-w-md rounded-3xl p-7 space-y-5 shadow-2xl border border-violet-500/30 bg-[var(--erp-bg-card)]">
+        className="relative w-full max-w-md rounded-3xl p-7 space-y-5 shadow-2xl border border-violet-500/30 bg-[var(--erp-bg-card)] max-h-[90vh] overflow-y-auto">
 
         {/* Close */}
         <button type="button" onClick={onClose}
@@ -137,6 +155,59 @@ export default function TransferModal({ onClose }: Props) {
           </div>
         </div>
 
+        {/* Fee Type */}
+        <div>
+          <label className="block text-white/50 text-xs mb-1.5 font-medium">نوع الرسوم</label>
+          <select className="glass-input w-full text-sm" value={form.fee_type}
+            onChange={e => setForm(f => ({ ...f, fee_type: e.target.value as FeeType, fee_value: "" }))}>
+            <option value="none">بدون رسوم</option>
+            <option value="fixed">رسوم ثابتة</option>
+            <option value="percentage">رسوم نسبة</option>
+          </select>
+        </div>
+
+        {/* Fee Value (conditional) */}
+        {form.fee_type !== "none" && (
+          <div>
+            <label className="block text-white/50 text-xs mb-1.5 font-medium">{feeLabel}</label>
+            <input type="number" step="0.01" min="0" className="glass-input w-full text-sm"
+              placeholder="0.00" value={form.fee_value}
+              onChange={e => setForm(f => ({ ...f, fee_value: e.target.value }))} />
+          </div>
+        )}
+
+        {/* Live calculation */}
+        {calc.amt > 0 && (
+          <div className={`rounded-2xl border px-4 py-3 space-y-1.5 text-sm ${
+            calc.invalid
+              ? "bg-red-500/10 border-red-500/30"
+              : "bg-white/5 border-white/10"
+          }`}>
+            <div className="flex justify-between">
+              <span className="text-white/40">المبلغ</span>
+              <span className="text-white font-bold">{formatCurrency(calc.amt)}</span>
+            </div>
+            {calc.feeAmt > 0 && (
+              <div className="flex justify-between">
+                <span className="text-white/40">الرسوم</span>
+                <span className="text-amber-400 font-bold">− {formatCurrency(calc.feeAmt)}</span>
+              </div>
+            )}
+            <div className="flex justify-between border-t border-white/10 pt-1.5">
+              <span className="text-white/60 font-medium">الصافي المستلم</span>
+              <span className={`font-black ${calc.invalid ? "text-red-400" : "text-green-400"}`}>
+                {formatCurrency(calc.netAmt)}
+              </span>
+            </div>
+            {calc.invalid && (
+              <div className="flex items-center gap-2 text-red-400 text-xs pt-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>الرسوم أكبر من المبلغ</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Notes */}
         <div>
           <label className="block text-white/50 text-xs mb-1.5 font-medium">ملاحظات</label>
@@ -144,8 +215,8 @@ export default function TransferModal({ onClose }: Props) {
             value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
         </div>
 
-        <button type="submit" disabled={transferMut.isPending}
-          className="w-full py-3.5 rounded-2xl font-black text-sm transition-all bg-violet-500 text-white hover:bg-violet-400 disabled:opacity-50 shadow-lg shadow-violet-500/20">
+        <button type="submit" disabled={transferMut.isPending || !isValid}
+          className="w-full py-3.5 rounded-2xl font-black text-sm transition-all bg-violet-500 text-white hover:bg-violet-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/20">
           {transferMut.isPending ? "جاري التحويل..." : "تنفيذ التحويل"}
         </button>
       </form>
