@@ -4101,6 +4101,7 @@ html.light .erp-row:hover .erp-td { background: var(--erp-bg-soft) !important; }
 }
 .sale-search-input { color: rgba(255,255,255,0.90); outline: none; }
 .sale-search-input::placeholder { color: rgba(255,255,255,0.20); }
+.sale-search-input:focus { border-color: rgba(245,158,11,0.55) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.13) !important; }
 
 /* ── Category pills ── */
 .sale-cat-pill {
@@ -4143,6 +4144,7 @@ html.light .erp-row:hover .erp-td { background: var(--erp-bg-soft) !important; }
 }
 .sale-cart-header { background: rgba(255,255,255,0.03); }
 .sale-border { border-color: rgba(255,255,255,0.08); }
+input.sale-border:focus, textarea.sale-border:focus { border-color: rgba(245,158,11,0.55) !important; outline: none !important; }
 .sale-cart-footer { background: hsla(225,25%,5%,0.97); border-top: 1px solid rgba(255,255,255,0.07); }
 .sale-badge-empty { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.08); }
 .sale-empty-icon-bg { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
@@ -4174,12 +4176,14 @@ html.light .erp-row:hover .erp-td { background: var(--erp-bg-soft) !important; }
 .sale-pay-row-credit { background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.18); }
 
 /* ── Pay safe select ── */
-.sale-pay-safe { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: #fff; padding: 8px 10px; border-radius: 12px; font-size: 12px; outline: none; appearance: none; direction: rtl; }
+.sale-pay-safe { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: #fff; padding: 8px 10px; border-radius: 12px; font-size: 12px; outline: none; appearance: none; direction: rtl; transition: border-color 0.2s, box-shadow 0.2s; }
+.sale-pay-safe:focus { border-color: rgba(245,158,11,0.55) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.13) !important; }
 .sale-pay-credit-ph { background: rgba(99,102,241,0.07); border: 1px solid rgba(99,102,241,0.18); color: #818CF8; border-radius: 12px; padding: 8px 12px; font-size: 12px; }
 
 /* ── Pay amount input ── */
-.sale-pay-amount { background: rgba(255,255,255,0.07); border: 1px solid rgba(245,158,11,0.28); color: #fff; text-align: center; font-weight: 900; font-size: 12px; border-radius: 12px; padding: 8px 22px 8px 6px; outline: none; width: 100%; }
+.sale-pay-amount { background: rgba(255,255,255,0.07); border: 1px solid rgba(245,158,11,0.28); color: #fff; text-align: center; font-weight: 900; font-size: 12px; border-radius: 12px; padding: 8px 22px 8px 6px; outline: none; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; }
 .sale-pay-amount::placeholder { color: rgba(255,255,255,0.28); }
+.sale-pay-amount:focus { border-color: rgba(245,158,11,0.55) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.13) !important; }
 
 /* ── Pay confirm/fill buttons ── */
 .sale-pay-confirm { background: linear-gradient(135deg,#F59E0B,#FBBF24); color: #0a0500; box-shadow: 0 2px 8px rgba(245,158,11,0.25); border: none; border-radius: 12px; padding: 7px 12px; font-size: 12px; font-weight: 900; cursor: pointer; transition: all 0.15s; }
@@ -4193,7 +4197,8 @@ html.light .erp-row:hover .erp-td { background: var(--erp-bg-soft) !important; }
 .sale-qty-btn:hover { background: rgba(255,255,255,0.13); }
 
 /* ── Price input ── */
-.sale-price-input { background: rgba(255,255,255,0.09); border: 1px solid rgba(245,158,11,0.40); color: rgba(255,255,255,0.92); }
+.sale-price-input { background: rgba(255,255,255,0.09); border: 1px solid rgba(245,158,11,0.40); color: rgba(255,255,255,0.92); transition: border-color 0.2s, box-shadow 0.2s; }
+.sale-price-input:focus { border-color: rgba(245,158,11,0.65) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.13) !important; outline: none !important; }
 
 /* ════ LIGHT MODE overrides ════ */
 html.light .sale-text-primary  { color: #0D1117; }
@@ -4249,6 +4254,10 @@ html.light .sale-pay-fill { background: rgba(245,158,11,0.07); border-color: rgb
 html.light .sale-qty-btn { background: #F1F5F9; border-color: #CBD5E1; }
 html.light .sale-qty-btn:hover { background: #E2E8F0; }
 html.light .sale-price-input { background: #FFFFFF; border-color: rgba(245,158,11,0.38); color: #0D1117; }
+html.light .sale-price-input:focus { border-color: #D97706 !important; box-shadow: 0 0 0 3px rgba(217,119,6,0.12) !important; }
+html.light .sale-pay-safe:focus { border-color: #D97706 !important; box-shadow: 0 0 0 3px rgba(217,119,6,0.12) !important; }
+html.light .sale-pay-amount:focus { border-color: #D97706 !important; box-shadow: 0 0 0 3px rgba(217,119,6,0.12) !important; }
+html.light input.sale-border:focus, html.light textarea.sale-border:focus { border-color: #D97706 !important; }
 
 /* ════════════════════════════════════════════════════
    14. SALES — Compact invoice table (POS-style rows)
