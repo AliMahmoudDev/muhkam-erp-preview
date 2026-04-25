@@ -61,6 +61,7 @@ import repairsRouter from "./repairs";
 import scrapItemsRouter from "./scrap-items";
 import badDebtsRouter from "./bad-debts";
 import devicesRouter from "./devices";
+import stockTransfersRouter from "./stock-transfers";
 
 const router: IRouter = Router();
 
@@ -138,5 +139,6 @@ router.use(bankReconciliationRouter);
 router.use(budgetsRouter);
 router.use(costCentersRouter);
 router.use(devicesRouter);
+router.use(stockTransfersRouter);
 
 export default router;
