@@ -68,7 +68,6 @@
 
 @layer base {
   * { box-sizing: border-box; }
-  /* All native form controls inherit color-scheme so browser renders them correctly */
   input, select, textarea, button { color-scheme: inherit; }
 
   body {
@@ -78,8 +77,47 @@
     background: hsl(225, 25%, 5%);
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
+  h1, h2, h3, h4, h5, h6 { @apply font-bold tracking-tight; }
+
+  /* ── Global input / form normalization ─────────────────────────── */
+
+  /* 1. Kill browser default outline on EVERY interactive element */
+  input, textarea, select, button {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 2. Hide number-input spinners (the inner-border artifact) */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] { -moz-appearance: textfield; }
+
+  /* 3. Remove browser inner-shadow on iOS/Safari */
+  input, textarea, select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  /* Restore select arrow for non-custom selects */
+  select { -webkit-appearance: auto; -moz-appearance: auto; appearance: auto; }
+
+  /* 4. Autofill override — prevent browser yellow background */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.04) inset !important;
+    -webkit-text-fill-color: rgba(255,255,255,0.88) !important;
+    caret-color: rgba(255,255,255,0.88);
+    transition: background-color 5000s ease-in-out 0s;
+  }
+  html.light input:-webkit-autofill,
+  html.light input:-webkit-autofill:hover,
+  html.light input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+    -webkit-text-fill-color: #1e293b !important;
   }
 }
 
@@ -313,6 +351,112 @@
 .page-wrapper {
   width: 100%;
   height: 100%;
+}
+
+/* ══════════════════════════════════════════════════
+   GLOBAL MICRO-INTERACTIONS & POLISH
+   ══════════════════════════════════════════════════ */
+
+/* ── Page entry animation ── */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer-slide {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Apply page-in to main content area ── */
+main, [data-page], .page-content {
+  animation: page-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Modal / dialog entrance ── */
+[role="dialog"] > *, .glass-panel, .erp-modal-inner {
+  animation: scale-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Interactive card lift ── */
+.glass-card, .erp-card, .stat-card {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.18s ease,
+              border-color 0.18s ease !important;
+}
+.glass-card:hover, .erp-card:hover, .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(245,158,11,0.06) !important;
+}
+
+/* ── Universal button transitions ── */
+button:not([disabled]) {
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.14s ease,
+              box-shadow 0.14s ease,
+              background-color 0.14s ease,
+              border-color 0.14s ease !important;
+}
+button:not([disabled]):active {
+  transform: scale(0.96) !important;
+}
+
+/* ── Sidebar nav item transition ── */
+.nav-item, [data-nav-item] {
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
+}
+.nav-item:hover, [data-nav-item]:hover {
+  transform: translateX(-2px);
+}
+
+/* ── Table row hover ── */
+tr { transition: background 0.1s ease !important; }
+
+/* ── Skeleton shimmer improvement ── */
+@keyframes erp-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.erp-skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.09) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 800px 100%;
+  animation: erp-shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+/* ── Focus-ring glow on ALL erp-input and glass-input ── */
+.erp-input, .glass-input {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease !important;
+}
+
+/* ── caret amber ── */
+.erp-input, .glass-input, input, textarea {
+  caret-color: rgba(245,158,11,0.85);
+}
+
+/* ── Input selection highlight ── */
+.erp-input::selection, .glass-input::selection, input::selection, textarea::selection {
+  background: rgba(245,158,11,0.25);
+  color: inherit;
 }
 
 /* ── KPI badge ─────────────────────────────────── */
