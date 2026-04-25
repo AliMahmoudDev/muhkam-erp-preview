@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import {
   ArrowRightLeft, Plus, X, Loader2, CheckCircle2,
-  Clock, Truck, Package, XCircle, ChevronDown,
+  Clock, Truck, Package, XCircle,
 } from 'lucide-react';
 
 // ─── أنواع ────────────────────────────────────────────────────────────────────
