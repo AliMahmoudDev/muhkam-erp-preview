@@ -150,6 +150,31 @@
   box-shadow: none !important;
 }
 
+/* ══ Purchases — selectRow (warehouse / safe native selects) ══ */
+.purch-row {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.purch-row:focus-within {
+  border-color: rgba(245,158,11,0.55) !important;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
+}
+.purch-row select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color-scheme: normal !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.purch-row select:focus,
+.purch-row select:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* ══ Global outline kill — outside @layer so nothing overrides it ══ */
 *,
 *::before,

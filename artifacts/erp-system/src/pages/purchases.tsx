@@ -284,7 +284,7 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
   };
 
   const selectRow = (label: string, icon: React.ReactNode, children: React.ReactNode) => (
-    <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+    <div className="purch-row flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
       <span className="text-white/40 shrink-0">{icon}</span>
       <span className="text-white/40 text-xs w-14 shrink-0">{label}</span>
       {children}
