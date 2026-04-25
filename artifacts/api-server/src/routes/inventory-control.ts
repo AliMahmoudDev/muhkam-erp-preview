@@ -454,7 +454,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
   void writeAuditLog({
     action:      "INVENTORY_TRANSFER",
     record_type: "product",
-    record_id:   transferId,
+    record_id:   0,
     old_value:   { from_warehouse: fromWH.name, from_warehouse_id },
     new_value:   {
       to_warehouse: toWH.name, to_warehouse_id,
