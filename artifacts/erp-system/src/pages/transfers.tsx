@@ -334,14 +334,17 @@ export default function Transfers() {
   const [filterStatus, setFilterStatus] = useState('');
 
   // ── جلب البيانات ──
-  const { data: transfers = [], isLoading } = useQuery<Transfer[]>({
+  const { data: _transfersRaw, isLoading } = useQuery<Transfer[]>({
     queryKey: ['branch-transfers', filterStatus],
-    queryFn: () => {
+    queryFn: async () => {
       const qs = filterStatus ? `?status=${filterStatus}` : '';
-      return authFetch(api(`/api/transfers${qs}`)).then(r => r.json());
+      const r = await authFetch(api(`/api/transfers${qs}`));
+      const d = await r.json();
+      return Array.isArray(d) ? d : [];
     },
     refetchInterval: 15_000,
   });
+  const transfers: Transfer[] = Array.isArray(_transfersRaw) ? _transfersRaw : [];
 
   const { data: branches = [] } = useQuery<Branch[]>({
     queryKey: ['branches-list'],
