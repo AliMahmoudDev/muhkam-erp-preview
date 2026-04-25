@@ -67,8 +67,8 @@
 }
 
 @layer base {
-  * { box-sizing: border-box; }
-  input, select, textarea, button { color-scheme: inherit; }
+  * { box-sizing: border-box; outline: none; }
+  input, select, textarea, button { color-scheme: inherit; outline: none; }
 
   body {
     @apply bg-background text-foreground antialiased font-sans overflow-x-hidden;
@@ -125,6 +125,14 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ══ Global outline kill — outside @layer so nothing overrides it ══ */
+*,
+*::before,
+*::after {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
 
 /* ══ Number spinner kill — display:none is the only reliable cross-browser fix ══ */
 input[type=number]::-webkit-inner-spin-button,
