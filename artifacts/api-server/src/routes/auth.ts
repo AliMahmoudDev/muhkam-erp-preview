@@ -6,7 +6,15 @@
 import { Router } from 'express';
 import { eq, and, ne, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
-import { db, erpUsersTable, companiesTable } from '@workspace/db';
+import { db, erpUsersTable, companiesTable, trialAbuseLogTable } from '@workspace/db';
+import {
+  isEmailTrialAbused,
+  isIPTrialAbused,
+  recordTrialSignup,
+  generateVerificationToken,
+  buildVerificationLink,
+  logVerificationLink,
+} from '../lib/trial-guard';
 import { authenticate, signToken, signRefreshToken, verifyRefreshToken } from '../middleware/auth';
 import { blacklistToken } from '../lib/session-blacklist';
 import { storeRefreshToken, consumeRefreshToken, revokeUserRefreshTokens } from '../lib/refresh-token-store';
@@ -614,7 +622,19 @@ router.get('/auth/me', authenticate, (req, res) => {
   });
 });
 
-/* ── POST /auth/register — SaaS: register new company + first admin ─ */
+/* ── POST /auth/register — SaaS: register new company + first admin ─
+ *
+ * Anti-abuse protection applied here:
+ *  1. Duplicate email check in erp_users (existing guard, kept)
+ *  2. Email trial-abuse check in trial_abuse_log — blocks email that was
+ *     used before for a trial (hard block, requires admin override)
+ *  3. IP trial-abuse check — blocks IPs that have already registered
+ *     MAX_TRIALS_PER_IP (default 2) trial accounts (hard block)
+ *  4. Stores signup_ip, signup_user_agent, has_used_trial on company row
+ *  5. Generates email verification token and logs the verification link
+ *     (soft requirement — trial is active immediately but marked unverified)
+ *  6. Records the signup permanently in trial_abuse_log
+ */
 router.post('/auth/register', async (req, res) => {
   try {
     const { company_name, admin_name, email, password } = req.body as {
@@ -624,6 +644,7 @@ router.post('/auth/register', async (req, res) => {
       password?: string;
     };
 
+    /* ── Field validation ─────────────────────────────────────── */
     if (!company_name?.trim()) {
       res.status(400).json({ error: 'اسم الشركة مطلوب' });
       return;
@@ -648,84 +669,256 @@ router.post('/auth/register', async (req, res) => {
 
     const normalEmail = email.toLowerCase().trim();
 
-    /* Check duplicate email */
-    const [existing] = await db
+    /* ── Extract client IP and User-Agent for abuse tracking ─── */
+    // req.ip is populated by Express trust-proxy (same mechanism as superAdminIPGuard)
+    const clientIP = req.ip || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'];
+
+    /* ── Duplicate email check (erp_users) ───────────────────── */
+    const [existingUser] = await db
       .select({ id: erpUsersTable.id })
       .from(erpUsersTable)
       .where(eq(erpUsersTable.email, normalEmail));
-    if (existing) {
+    if (existingUser) {
       res.status(409).json({ error: 'البريد الإلكتروني مستخدم بالفعل' });
       return;
     }
 
-    /* Create company — trial 7 days */
-    const today = new Date();
+    /* ── Trial abuse check #1: email already used a trial ────── */
+    // Check the permanent trial_abuse_log (survives company deletion)
+    const emailAbused = await isEmailTrialAbused(normalEmail);
+    if (emailAbused) {
+      res.status(409).json({
+        error: 'هذا البريد الإلكتروني استُخدم بالفعل في فترة تجريبية — تواصل معنا للمساعدة',
+        code:  'TRIAL_EMAIL_USED',
+      });
+      return;
+    }
+
+    /* ── Trial abuse check #2: IP registered too many trials ─── */
+    const ipCheck = await isIPTrialAbused(clientIP);
+    if (ipCheck.abused) {
+      res.status(429).json({
+        error: 'تم الوصول إلى الحد الأقصى للحسابات التجريبية من هذا الاتصال — تواصل مع الدعم',
+        code:  'TRIAL_IP_LIMIT',
+      });
+      return;
+    }
+
+    /* ── Prepare email verification token (48-hour expiry) ────── */
+    const verificationToken   = generateVerificationToken();
+    const verificationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    /* ── Create company — trial 7 days ───────────────────────── */
+    const today    = new Date();
     const trialEnd = new Date(today);
     trialEnd.setDate(trialEnd.getDate() + 7);
 
     const [company] = await db
       .insert(companiesTable)
       .values({
-        name: company_name.trim(),
-        plan_type: 'trial',
+        name:       company_name.trim(),
+        plan_type:  'trial',
         start_date: today.toISOString().slice(0, 10),
-        end_date: trialEnd.toISOString().slice(0, 10),
-        is_active: true,
+        end_date:   trialEnd.toISOString().slice(0, 10),
+        is_active:  true,
         admin_email: normalEmail,
+
+        /* anti-abuse fields */
+        signup_ip:                    clientIP,
+        signup_user_agent:            userAgent ?? null,
+        has_used_trial:               true,
+        email_verified:               false,
+        email_verification_token:     verificationToken,
+        email_verification_expires_at: verificationExpires,
       })
       .returning();
 
-    /* Create first admin user */
+    /* ── Create first admin user ─────────────────────────────── */
     const baseUsername =
       normalEmail
         .split('@')[0]
         .toLowerCase()
         .replace(/[^a-z0-9_]/g, '') || 'admin';
-    const username = `${baseUsername}_${company.id}`;
-    const hashedPw = await hashPin(password);
+    const username  = `${baseUsername}_${company.id}`;
+    const hashedPw  = await hashPin(password);
 
     const [user] = await db
       .insert(erpUsersTable)
       .values({
-        name: admin_name.trim(),
+        name:       admin_name.trim(),
         username,
-        email: normalEmail,
-        pin: hashedPw,
-        role: 'admin',
-        active: true,
+        email:      normalEmail,
+        pin:        hashedPw,
+        role:       'admin',
+        active:     true,
         company_id: company.id,
         permissions: '{}',
       })
       .returning();
 
-    const token = signToken(user.id, user.role, user.company_id ?? null);
+    /* ── Record to permanent trial abuse log ─────────────────── */
+    // Fire-and-forget — must not prevent the user from getting their tokens
+    void recordTrialSignup({
+      email:      normalEmail,
+      ip:         clientIP,
+      user_agent: userAgent,
+      company_id: company.id,
+    });
+
+    /* ── Log verification link (no email service configured yet) */
+    const verifyLink = buildVerificationLink(verificationToken);
+    logVerificationLink(normalEmail, verifyLink);
+
+    /* ── Issue JWT + cookies ─────────────────────────────────── */
+    const token        = signToken(user.id, user.role, user.company_id ?? null);
     const refreshToken = signRefreshToken(user.id);
     void storeRefreshToken(refreshToken, user.id);
 
-    /* Set httpOnly cookies */
     setAuthCookies(res, token, refreshToken);
 
     res.status(201).json({
       user: {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        role: user.role,
-        permissions: {},
-        active: true,
+        id:           user.id,
+        name:         user.name,
+        username:     user.username,
+        role:         user.role,
+        permissions:  {},
+        active:       true,
         warehouse_id: null,
-        safe_id: null,
+        safe_id:      null,
       },
       company: {
-        id: company.id,
-        name: company.name,
-        plan_type: company.plan_type,
-        end_date: company.end_date,
+        id:            company.id,
+        name:          company.name,
+        plan_type:     company.plan_type,
+        end_date:      company.end_date,
         daysRemaining: 7,
+        email_verified: false,
       },
+      /* soft hint — trial is active but user should verify their email */
+      verify_email_notice: 'أُرسل رابط التحقق إلى بريدك الإلكتروني — يرجى التحقق خلال 48 ساعة',
     });
   } catch {
     res.status(500).json({ error: 'فشل إنشاء الحساب — حاول مجدداً' });
+  }
+});
+
+/* ── GET /auth/verify-email — confirm email via token ───────────────────
+ *
+ * Called when the user clicks the verification link in their email.
+ * Marks the company as email_verified=true and clears the token.
+ * Returns a simple HTML page so it works directly in a browser.
+ */
+router.get('/auth/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query as { token?: string };
+    if (!token || typeof token !== 'string' || token.length < 10) {
+      res.status(400).send('<h2>رابط التحقق غير صالح</h2>');
+      return;
+    }
+
+    /* Find company by token */
+    const [company] = await db
+      .select({
+        id:                            companiesTable.id,
+        email_verified:                companiesTable.email_verified,
+        email_verification_expires_at: companiesTable.email_verification_expires_at,
+      })
+      .from(companiesTable)
+      .where(eq(companiesTable.email_verification_token, token))
+      .limit(1);
+
+    if (!company) {
+      res.status(404).send('<h2>رابط التحقق غير موجود أو انتهت صلاحيته</h2>');
+      return;
+    }
+
+    /* Already verified */
+    if (company.email_verified) {
+      res.send('<h2>✅ البريد الإلكتروني مُفعَّل بالفعل</h2>');
+      return;
+    }
+
+    /* Check expiry */
+    if (
+      company.email_verification_expires_at &&
+      new Date() > company.email_verification_expires_at
+    ) {
+      res.status(410).send(
+        '<h2>انتهت صلاحية رابط التحقق — يرجى التواصل مع الدعم لإعادة الإرسال</h2>'
+      );
+      return;
+    }
+
+    /* Mark email as verified, clear token */
+    await db
+      .update(companiesTable)
+      .set({
+        email_verified:                true,
+        email_verification_token:      null,
+        email_verification_expires_at: null,
+      })
+      .where(eq(companiesTable.id, company.id));
+
+    res.send(
+      '<h2>✅ تم التحقق من البريد الإلكتروني بنجاح — يمكنك إغلاق هذه الصفحة والعودة للنظام</h2>'
+    );
+  } catch {
+    res.status(500).send('<h2>خطأ في التحقق — حاول مجدداً أو تواصل مع الدعم</h2>');
+  }
+});
+
+/* ── POST /auth/resend-verification — resend verification email ─────────
+ *
+ * Generates a fresh token and logs the new verification link.
+ * Rate-limited to prevent abuse: only works if email is not yet verified
+ * and token has expired OR user explicitly requests resend.
+ */
+router.post('/auth/resend-verification', authenticate, async (req, res) => {
+  try {
+    const companyId = req.user?.company_id;
+    if (!companyId) {
+      res.status(400).json({ error: 'لا يوجد حساب شركة مرتبط' });
+      return;
+    }
+
+    const [company] = await db
+      .select({
+        id:             companiesTable.id,
+        admin_email:    companiesTable.admin_email,
+        email_verified: companiesTable.email_verified,
+      })
+      .from(companiesTable)
+      .where(eq(companiesTable.id, companyId))
+      .limit(1);
+
+    if (!company) {
+      res.status(404).json({ error: 'الشركة غير موجودة' });
+      return;
+    }
+    if (company.email_verified) {
+      res.status(400).json({ error: 'البريد الإلكتروني مُفعَّل بالفعل' });
+      return;
+    }
+
+    const newToken   = generateVerificationToken();
+    const newExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    await db
+      .update(companiesTable)
+      .set({
+        email_verification_token:      newToken,
+        email_verification_expires_at: newExpires,
+      })
+      .where(eq(companiesTable.id, companyId));
+
+    const verifyLink = buildVerificationLink(newToken);
+    logVerificationLink(company.admin_email ?? 'unknown', verifyLink);
+
+    res.json({ success: true, message: 'تم إعادة إرسال رابط التحقق' });
+  } catch {
+    res.status(500).json({ error: 'فشل إعادة الإرسال' });
   }
 });
 

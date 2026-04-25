@@ -4,8 +4,8 @@
  * Super-admin users have no company_id (null) so subscription checks are bypassed.
  */
 import { Router } from "express";
-import { eq, desc, sql } from "drizzle-orm";
-import { db, companiesTable, erpUsersTable, planSettingsTable } from "@workspace/db";
+import { eq, desc, sql, and, isNull, count } from "drizzle-orm";
+import { db, companiesTable, erpUsersTable, planSettingsTable, trialAbuseLogTable } from "@workspace/db";
 import type { CompanyFeatures } from "@workspace/db";
 import fs from "fs";
 import path from "path";
@@ -1172,6 +1172,117 @@ router.get("/super/health", ...superOnly, wrap(async (_req, res) => {
     },
     timestamp: new Date().toISOString(),
   });
+}));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * TRIAL ABUSE OVERRIDE ROUTES
+ * Allow the super admin to unblock legitimate users without deleting history.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── GET /super/trial-abuse — list all trial abuse log entries ──────────── */
+router.get("/super/trial-abuse", ...superOnly, wrap(async (req, res) => {
+  const page  = Math.max(1, Number(req.query.page  ?? 1));
+  const limit = Math.min(100, Math.max(10, Number(req.query.limit ?? 50)));
+  const offset = (page - 1) * limit;
+
+  const rows = await db
+    .select()
+    .from(trialAbuseLogTable)
+    .orderBy(desc(trialAbuseLogTable.created_at))
+    .limit(limit)
+    .offset(offset);
+
+  // Also pull per-IP counts so the admin can see patterns
+  const ipCounts = await db
+    .select({
+      ip:    trialAbuseLogTable.ip,
+      total: count(),
+    })
+    .from(trialAbuseLogTable)
+    .where(isNull(trialAbuseLogTable.override_reason))
+    .groupBy(trialAbuseLogTable.ip)
+    .orderBy(desc(count()));
+
+  res.json({ rows, ip_counts: ipCounts, page, limit });
+}));
+
+/* ── POST /super/trial-abuse/:id/override — grant override for a log row ── */
+router.post("/super/trial-abuse/:id/override", ...superOnly, wrap(async (req, res) => {
+  const id     = parseInt(req.params.id);
+  const { reason } = req.body as { reason?: string };
+
+  if (!id || isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صالح" });
+    return;
+  }
+  if (!reason?.trim()) {
+    res.status(400).json({ error: "سبب التجاوز مطلوب" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(trialAbuseLogTable)
+    .set({
+      override_reason: reason.trim(),
+      overridden_by:   req.user?.username ?? "super_admin",
+    })
+    .where(eq(trialAbuseLogTable.id, id))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "السجل غير موجود" });
+    return;
+  }
+
+  res.json({ success: true, row: updated });
+}));
+
+/* ── DELETE /super/trial-abuse/:id/override — revoke an override ────────── */
+router.delete("/super/trial-abuse/:id/override", ...superOnly, wrap(async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!id || isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صالح" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(trialAbuseLogTable)
+    .set({ override_reason: null, overridden_by: null })
+    .where(eq(trialAbuseLogTable.id, id))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "السجل غير موجود" });
+    return;
+  }
+
+  res.json({ success: true, row: updated });
+}));
+
+/* ── POST /super/companies/:id/verify-email — manually mark email verified ─ */
+router.post("/super/companies/:id/verify-email", ...superOnly, wrap(async (req, res) => {
+  const cid = parseInt(req.params.id);
+  if (!cid || isNaN(cid)) {
+    res.status(400).json({ error: "معرّف غير صالح" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(companiesTable)
+    .set({
+      email_verified:                true,
+      email_verification_token:      null,
+      email_verification_expires_at: null,
+    })
+    .where(eq(companiesTable.id, cid))
+    .returning({ id: companiesTable.id, email_verified: companiesTable.email_verified });
+
+  if (!updated) {
+    res.status(404).json({ error: "الشركة غير موجودة" });
+    return;
+  }
+
+  res.json({ success: true, company: updated });
 }));
 
 export default router;

@@ -447,6 +447,21 @@ Used on write endpoints to prevent duplicate submissions.
 ### `system_settings`
 Key-value store for per-company configuration (support contact, branding, etc.).
 
+### `trial_abuse_log`
+Permanent log of every trial registration attempt. Survives company deletion so the system can permanently track which email addresses and IP addresses have consumed a trial.
+
+| Column | Description |
+|--------|-------------|
+| `email` | Normalized email used at registration |
+| `ip` | Client IP at registration time |
+| `user_agent` | HTTP User-Agent header for device fingerprinting |
+| `company_id` | The created company (nullable) |
+| `flagged` | `true` if the registration was flagged as abuse |
+| `override_reason` | Set by super admin to exempt this row from the abuse count |
+| `overridden_by` | Super admin username who granted the override |
+
+Rows are **never deleted**. Super admins grant per-row overrides without losing the audit history.
+
 ---
 
 ## Table Relationships
