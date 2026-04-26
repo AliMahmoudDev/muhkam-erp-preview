@@ -63,8 +63,11 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
     if (!companyName.trim()) { setError('اسم الشركة مطلوب'); return; }
     if (!adminName.trim())   { setError('اسم المسؤول مطلوب'); return; }
     if (!email.includes('@')){ setError('بريد إلكتروني صحيح مطلوب'); return; }
-    if (password.length < 6) { setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل'); return; }
-    if (password !== confirmPw){ setError('كلمتا المرور غير متطابقتين'); return; }
+    if (password.length < 8)              { setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
+    if (!/[A-Z]/.test(password))          { setError('يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل'); return; }
+    if (!/[0-9]/.test(password))          { setError('يجب أن تحتوي كلمة المرور على رقم واحد على الأقل'); return; }
+    if (!/[^A-Za-z0-9]/.test(password))   { setError('يجب أن تحتوي كلمة المرور على رمز خاص مثل @ # $ !'); return; }
+    if (password !== confirmPw)            { setError('كلمتا المرور غير متطابقتين'); return; }
 
     setLoading(true);
     try {
@@ -165,7 +168,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
               type={showPw ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="6 أحرف على الأقل"
+              placeholder="مثال: MyPass@2024"
               required
               className="lp-input"
               style={{ ...inputStyle(false), paddingRight: '42px', paddingLeft: '44px', direction: 'ltr' }}
