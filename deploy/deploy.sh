@@ -4,6 +4,19 @@ set -e
 APP_DIR="/var/www/muhkam-erp"
 cd "$APP_DIR"
 
+# ── المرحلة الأولى: git pull ثم إعادة تشغيل السكريبت من الملف الجديد ──────
+# هذه الحيلة تضمن أن باقي الخطوات تقرأ من النسخة المحدَّثة وليس من الذاكرة
+if [ "${1}" != "--deployed" ]; then
+  echo "=== [0] سحب آخر تحديثات من GitHub ==="
+  git fetch origin main
+  git reset --hard origin/main
+  git clean -fd
+  echo "=== إعادة تشغيل السكريبت من النسخة الجديدة ==="
+  exec bash "$APP_DIR/deploy/deploy.sh" --deployed
+fi
+
+# ── من هنا يعمل السكريبت الجديد بعد التحديث ───────────────────────────────
+
 # تحميل متغيرات البيئة
 if [ -f "$APP_DIR/.env" ]; then
   set -a
@@ -11,28 +24,23 @@ if [ -f "$APP_DIR/.env" ]; then
   set +a
 fi
 
-echo "=== [1/6] سحب آخر تحديثات من GitHub ==="
-git fetch origin main
-git reset --hard origin/main
-git clean -fd
-
-echo "=== [2/6] تثبيت الحزم ==="
+echo "=== [1/5] تثبيت الحزم ==="
 pnpm install
 
-echo "=== [3/6] رفع تغييرات قاعدة البيانات ==="
+echo "=== [2/5] رفع تغييرات قاعدة البيانات ==="
 cd "$APP_DIR/lib/db"
 pnpm run push-force
 
-echo "=== [4/6] بناء الـ Backend ==="
+echo "=== [3/5] بناء الـ Backend ==="
 cd "$APP_DIR"
 pnpm --filter @workspace/api-server run build
 
-echo "=== [5/6] بناء الـ Frontend (erp-system) ==="
+echo "=== [4/5] بناء الـ Frontend ==="
 cd "$APP_DIR"
 NODE_ENV=production BASE_PATH=/ VITE_API_URL="" \
   pnpm --filter @workspace/erp-system run build
 
-echo "=== [6/6] إعادة تشغيل الـ Backend ==="
+echo "=== [5/5] إعادة تشغيل الـ Backend ==="
 pm2 restart halaltech-api --update-env
 
 echo "--- انتظار تشغيل الـ API (حد أقصى 60 ثانية) ---"
