@@ -39,6 +39,7 @@ import integrityRouter from "./integrity";
 import inventoryControlRouter from "./inventory-control";
 import categoriesRouter from "./categories";
 import superRouter from "./super";
+import debugRouter from "./debug";
 import branchesRouter from "./branches";
 import employeesRouter from "./employees";
 import payrollRouter from "./payroll";
@@ -76,6 +77,7 @@ router.use(authenticate);
 
 /* ── super_admin cross-tenant routes mount BEFORE requireTenant ── */
 router.use(superRouter);
+router.use(debugRouter); // /super/trial-check — diagnostic endpoint (super_admin only)
 
 /* ── Tenant guard — every route below MUST resolve a company_id ── */
 router.use(requireTenant);
