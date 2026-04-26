@@ -3,7 +3,8 @@ import { api } from '@/lib/api';
  * Super Admin Dashboard — manage all SaaS companies + super_admin accounts
  * Only accessible to users with role = "super_admin"
  */
-import { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { authFetch } from '@/lib/auth-fetch';
@@ -32,7 +33,7 @@ export default function SuperAdmin() {
   /* ── Tab ─── */
   const [activeTab, setActiveTab] = useState<
     'overview' | 'companies' | 'managers' | 'settings' |
-    'revenue' | 'alerts' | 'announcements' | 'health' | 'plans' | 'monitoring'
+    'revenue' | 'alerts' | 'announcements' | 'health' | 'plans' | 'monitoring' | 'audit_log'
   >('overview');
 
   /* ── Companies state ─── */
@@ -88,6 +89,25 @@ export default function SuperAdmin() {
   const [ePin, setEPin] = useState('');
   const [ePin2, setEPin2] = useState('');
   const [eErr, setEErr] = useState('');
+
+  /* ── Alerts filter state ─── */
+  const [alertSearch, setAlertSearch] = useState('');
+  const [alertTypeFilter, setAlertTypeFilter] = useState<'all' | 'danger' | 'warning' | 'info' | 'success'>('all');
+
+  /* ── Company snapshot modal ─── */
+  const [snapshotCompany, setSnapshotCompany] = useState<number | null>(null);
+  interface SnapshotData {
+    company: Company;
+    admins: { id: number; name: string; username: string; role: string; active: boolean; last_login: string | null }[];
+    recentAudit: { id: number; action: string; note: string | null; username: string | null; created_at: string }[];
+    stats: { salesCount: number; salesRevenue: number; purchasesCount: number };
+  }
+  const { data: snapshotData, isLoading: snapshotLoading } = useQuery<SnapshotData>({
+    queryKey: ['/api/super/companies', snapshotCompany, 'snapshot'],
+    queryFn: () => authFetch(`/api/super/companies/${snapshotCompany}/snapshot`).then(r => r.json()),
+    enabled: snapshotCompany !== null,
+    staleTime: 30_000,
+  });
 
   /* ── Support settings state ─── */
   const [supportWa, setSupportWa] = useState('');
@@ -257,13 +277,17 @@ export default function SuperAdmin() {
     recent_blocks: { email: string; ip: string; reason: string; created_at: string }[];
   }
   const {
-    data: monData, isLoading: monLoading, refetch: refetchMon,
+    data: monData, isLoading: monLoading, isError: monError, refetch: refetchMon,
   } = useQuery<TrialMonitoringData>({
     queryKey: ['/api/super/trial-monitoring'],
-    queryFn: () => authFetch('/api/super/trial-monitoring').then(r => r.json()),
+    queryFn: () => authFetch('/api/super/trial-monitoring').then(async r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    }),
     enabled: activeTab === 'monitoring',
     staleTime: 15_000,
     refetchInterval: activeTab === 'monitoring' ? 30_000 : false,
+    retry: 1,
   });
 
   /* Audit log */
@@ -277,7 +301,7 @@ export default function SuperAdmin() {
   const { data: auditData, isLoading: auditLoading, refetch: refetchAudit } = useQuery<{ count: number; rows: AuditRow[] }>({
     queryKey: ['/api/super/audit-log', auditLimit, auditAction],
     queryFn: () => fetcher(`/api/super/audit-log?limit=${auditLimit}${auditAction ? `&action=${auditAction}` : ''}`),
-    enabled: activeTab === 'settings',
+    enabled: activeTab === 'audit_log' || activeTab === 'settings',
     staleTime: 30_000,
   });
 
@@ -1806,8 +1830,12 @@ export default function SuperAdmin() {
       </div>
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px' }}>
-        {/* ── Tab bar ─── */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '28px' }}>
+        {/* ── Tab bar (scrollable on mobile) ─── */}
+        <div style={{
+          overflowX: 'auto', marginBottom: '28px', paddingBottom: '6px',
+          msOverflowStyle: 'none', scrollbarWidth: 'none',
+        }}>
+          <div style={{ display: 'flex', gap: '8px', minWidth: 'max-content' }}>
           {(
             [
               { key: 'overview',      label: '🏠 نظرة عامة' },
@@ -1816,8 +1844,9 @@ export default function SuperAdmin() {
               { key: 'alerts',        label: '🔔 التنبيهات' },
               { key: 'announcements', label: '📢 الإعلانات' },
               { key: 'health',        label: '🌡️ صحة السيرفر' },
-              { key: 'plans',         label: '💰 الخطط والأسعار' },
+              { key: 'plans',         label: '💰 الخطط' },
               { key: 'monitoring',    label: '🛡️ مراقبة التجريبي' },
+              { key: 'audit_log',     label: '📋 سجل العمليات' },
               { key: 'managers',      label: '👑 المديرون' },
               { key: 'settings',      label: '⚙️ الإعدادات' },
             ] as const
@@ -1828,13 +1857,14 @@ export default function SuperAdmin() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 style={{
-                  padding: '10px 22px',
+                  padding: '9px 18px',
                   borderRadius: '12px',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: 800,
                   cursor: 'pointer',
                   fontFamily: FONT,
                   transition: 'all 0.18s',
+                  whiteSpace: 'nowrap',
                   border: active ? 'none' : `1.5px solid ${C.border}`,
                   background: active ? C.orange : 'transparent',
                   color: active ? '#fff' : C.muted,
@@ -1845,6 +1875,7 @@ export default function SuperAdmin() {
               </button>
             );
           })}
+          </div>
         </div>
 
         {/* ══════════════════════════════
@@ -4833,57 +4864,78 @@ export default function SuperAdmin() {
                 ))}
               </div>
 
-              {/* Monthly Revenue Chart (CSS bars) */}
+              {/* Monthly Revenue Chart — Recharts AreaChart */}
               <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, padding: '24px' }}>
-                <h3 style={{ margin: '0 0 20px', fontWeight: 800, fontSize: '15px', color: C.text }}>📅 الإيراد الشهري (آخر 12 شهراً)</h3>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '160px', overflowX: 'auto', paddingBottom: '8px' }}>
-                  {revenueData.monthlyRevenue.map((m, i) => {
-                    const maxRev = Math.max(...revenueData.monthlyRevenue.map(x => x.revenue), 1);
-                    const pct = (m.revenue / maxRev) * 100;
-                    const isLast = i === revenueData.monthlyRevenue.length - 1;
-                    return (
-                      <div key={m.month} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1, minWidth: '48px' }}>
-                        {m.revenue > 0 && <span style={{ fontSize: '10px', color: C.muted }}>{m.revenue.toLocaleString('ar-EG')}</span>}
-                        <div style={{
-                          width: '100%', borderRadius: '6px 6px 0 0',
-                          background: isLast ? 'linear-gradient(180deg, #A78BFA, #7C3AED)' : 'rgba(167,139,250,0.3)',
-                          height: `${Math.max(pct, 4)}%`,
-                          border: isLast ? '1px solid rgba(167,139,250,0.5)' : 'none',
-                          transition: 'height 0.5s ease',
-                        }} />
-                        <span style={{ fontSize: '9px', color: C.muted, whiteSpace: 'nowrap', transform: 'rotate(-30deg)', transformOrigin: 'top right' }}>{m.month}</span>
-                      </div>
-                    );
-                  })}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: C.text }}>📅 الإيراد الشهري (آخر 12 شهراً)</h3>
+                  <button
+                    onClick={() => {
+                      const rows = revenueData.monthlyRevenue.map(m => `${m.month},${m.revenue},${m.count}`).join('\n');
+                      const blob = new Blob([`الشهر,الإيراد,عدد الشركات\n${rows}`], { type: 'text/csv' });
+                      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'revenue.csv'; a.click();
+                    }}
+                    style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#86EFAC', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+                  >📥 CSV</button>
                 </div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={revenueData.monthlyRevenue} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#A78BFA" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#A78BFA" stopOpacity={0.02}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                    <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 10, fontFamily: FONT }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#94A3B8', fontSize: 10, fontFamily: FONT }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : String(v)} />
+                    <ReTooltip
+                      contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', fontFamily: FONT, fontSize: '12px' }}
+                      formatter={(v: number) => [`${v.toLocaleString('ar-EG')} ج.م.`, 'الإيراد']}
+                    />
+                    <Area type="monotone" dataKey="revenue" stroke="#A78BFA" strokeWidth={2.5} fill="url(#revenueGrad)" dot={{ r: 3, fill: '#A78BFA', strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
 
-              {/* Plan Breakdown */}
+              {/* Plan Breakdown — Recharts PieChart + table */}
               <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, padding: '24px' }}>
-                <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '15px', color: C.text }}>💳 توزيع الخطط</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {revenueData.planBreakdown.filter(p => p.count > 0 || p.plan === 'trial').map(p => {
-                    const planColors: Record<string, string> = { trial: '#94A3B8', basic: '#60A5FA', pro: '#A78BFA', paid: '#34D399', professional: '#F59E0B' };
-                    const planNames: Record<string, string> = { trial: 'تجريبية', basic: 'أساسية', pro: 'احترافية', paid: 'مدفوعة', professional: 'مميزة' };
-                    const col = planColors[p.plan] ?? '#94A3B8';
-                    const maxCount = Math.max(...revenueData.planBreakdown.map(x => x.count), 1);
-                    return (
-                      <div key={p.plan}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: col }}>{planNames[p.plan] ?? p.plan}</span>
-                          <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: C.muted }}>
-                            <span>{p.count} شركة</span>
-                            <span style={{ color: col, fontWeight: 700 }}>{p.revenue.toLocaleString('ar-EG')} ج.م./شهر</span>
-                            <span>{p.price} ج.م./شركة</span>
-                          </div>
-                        </div>
-                        <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', borderRadius: '4px', background: col, width: `${(p.count / maxCount) * 100}%`, transition: 'width 0.5s ease' }} />
-                        </div>
+                <h3 style={{ margin: '0 0 20px', fontWeight: 800, fontSize: '15px', color: C.text }}>💳 توزيع الخطط</h3>
+                {(() => {
+                  const planColors: Record<string, string> = { trial: '#94A3B8', basic: '#60A5FA', pro: '#A78BFA', paid: '#34D399', professional: '#F59E0B' };
+                  const planNames: Record<string, string>  = { trial: 'تجريبية', basic: 'أساسية', pro: 'احترافية', paid: 'مدفوعة', professional: 'مميزة' };
+                  const pieData = revenueData.planBreakdown.filter(p => p.count > 0).map(p => ({
+                    name: planNames[p.plan] ?? p.plan, value: p.count,
+                    revenue: p.revenue, color: planColors[p.plan] ?? '#94A3B8',
+                  }));
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '24px', alignItems: 'center' }}>
+                      <ResponsiveContainer width="100%" height={180}>
+                        <PieChart>
+                          <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value">
+                            {pieData.map((e, idx) => <Cell key={idx} fill={e.color} />)}
+                          </Pie>
+                          <ReTooltip contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', fontFamily: FONT, fontSize: '12px' }} formatter={(v: number, _n, p) => [`${v} شركة — ${p.payload.revenue.toLocaleString('ar-EG')} ج.م./شهر`, p.payload.name]} />
+                          <Legend wrapperStyle={{ fontSize: '11px', fontFamily: FONT }} formatter={v => v} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {revenueData.planBreakdown.filter(p => p.count > 0 || p.plan === 'trial').map(p => {
+                          const col = planColors[p.plan] ?? '#94A3B8';
+                          return (
+                            <div key={p.plan} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', background: `${col}11`, border: `1px solid ${col}22` }}>
+                              <span style={{ fontSize: '13px', fontWeight: 700, color: col }}>{planNames[p.plan] ?? p.plan}</span>
+                              <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: C.muted, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                <span>{p.count} شركة</span>
+                                <span style={{ color: col, fontWeight: 700 }}>{p.revenue.toLocaleString('ar-EG')} ج.م./شهر</span>
+                                <span>{p.price} ج.م./شركة</span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })()}
               </div>
             </>
           ) : null}
@@ -4907,6 +4959,36 @@ export default function SuperAdmin() {
               background: 'transparent', color: C.muted, fontSize: '13px',
               fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
             }}>🔄 تحديث</button>
+          </div>
+
+          {/* Filter Bar */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <input
+              value={alertSearch}
+              onChange={e => setAlertSearch(e.target.value)}
+              placeholder="🔍 ابحث في التنبيهات..."
+              style={{
+                flex: 1, minWidth: '200px', padding: '10px 16px', borderRadius: '12px',
+                border: `1.5px solid ${C.border}`, background: C.card, color: C.text,
+                fontSize: '13px', fontFamily: FONT, outline: 'none',
+              }}
+            />
+            {(['all', 'danger', 'warning', 'info', 'success'] as const).map(t => {
+              const typeLabels: Record<string, string> = { all: 'الكل', danger: '🚨 حرج', warning: '⚠️ تحذير', info: 'ℹ️ معلومات', success: '✅ إيجابي' };
+              const typeColors: Record<string, string> = { all: C.orange, danger: '#EF4444', warning: '#F59E0B', info: '#60A5FA', success: '#34D399' };
+              const isActive = alertTypeFilter === t;
+              return (
+                <button key={t} onClick={() => setAlertTypeFilter(t)} style={{
+                  padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700,
+                  cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
+                  border: isActive ? 'none' : `1.5px solid ${C.border}`,
+                  background: isActive ? typeColors[t] : 'transparent',
+                  color: isActive ? '#fff' : C.muted,
+                }}>
+                  {typeLabels[t]}
+                </button>
+              );
+            })}
           </div>
 
           {/* Summary Cards */}
@@ -4933,61 +5015,61 @@ export default function SuperAdmin() {
           {/* Alerts List */}
           {alertsLoading ? (
             <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>⏳ جارٍ التحميل...</div>
-          ) : alertsData?.alerts.length === 0 ? (
-            <div style={{
-              textAlign: 'center', padding: '60px', background: C.card,
-              borderRadius: '18px', border: `1px solid ${C.border}`,
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: C.text }}>لا توجد تنبيهات</div>
-              <div style={{ fontSize: '13px', color: C.muted, marginTop: '8px' }}>كل شيء يسير بشكل طبيعي</div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {alertsData?.alerts.map((alert, i) => {
-                const colors: Record<string, { bg: string; border: string; badge: string }> = {
-                  danger:  { bg: 'rgba(239,68,68,0.07)',   border: 'rgba(239,68,68,0.25)',   badge: '#EF4444' },
-                  warning: { bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.25)',  badge: '#F59E0B' },
-                  success: { bg: 'rgba(52,211,153,0.07)',  border: 'rgba(52,211,153,0.25)',  badge: '#34D399' },
-                  info:    { bg: 'rgba(96,165,250,0.07)',  border: 'rgba(96,165,250,0.25)',  badge: '#60A5FA' },
-                };
-                const col = colors[alert.type] ?? colors.info;
-                return (
-                  <div key={i} style={{
-                    background: col.bg, borderRadius: '14px', border: `1px solid ${col.border}`,
-                    padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: '14px',
-                  }}>
-                    <div style={{
-                      width: '8px', height: '8px', borderRadius: '50%',
-                      background: col.badge, flexShrink: 0, marginTop: '6px',
-                    }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 800, fontSize: '14px', color: C.text, marginBottom: '4px' }}>{alert.title}</div>
-                      <div style={{ fontSize: '13px', color: C.muted, lineHeight: 1.5 }}>{alert.body}</div>
+          ) : (() => {
+            const filtered = (alertsData?.alerts ?? []).filter(a =>
+              (alertTypeFilter === 'all' || a.type === alertTypeFilter) &&
+              (!alertSearch || `${a.title} ${a.body} ${a.company_name ?? ''}`.toLowerCase().includes(alertSearch.toLowerCase()))
+            );
+            if (filtered.length === 0 && alertsData) return (
+              <div style={{ textAlign: 'center', padding: '60px', background: C.card, borderRadius: '18px', border: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: C.text }}>
+                  {alertSearch || alertTypeFilter !== 'all' ? 'لا توجد نتائج' : 'لا توجد تنبيهات'}
+                </div>
+                <div style={{ fontSize: '13px', color: C.muted, marginTop: '8px' }}>
+                  {alertSearch || alertTypeFilter !== 'all' ? 'جرب تغيير الفلتر أو مسح البحث' : 'كل شيء يسير بشكل طبيعي'}
+                </div>
+              </div>
+            );
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {filtered.map((alert, i) => {
+                  const colors: Record<string, { bg: string; border: string; badge: string }> = {
+                    danger:  { bg: 'rgba(239,68,68,0.07)',   border: 'rgba(239,68,68,0.25)',   badge: '#EF4444' },
+                    warning: { bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.25)',  badge: '#F59E0B' },
+                    success: { bg: 'rgba(52,211,153,0.07)',  border: 'rgba(52,211,153,0.25)',  badge: '#34D399' },
+                    info:    { bg: 'rgba(96,165,250,0.07)',  border: 'rgba(96,165,250,0.25)',  badge: '#60A5FA' },
+                  };
+                  const col = colors[alert.type] ?? colors.info;
+                  return (
+                    <div key={i} style={{ background: col.bg, borderRadius: '14px', border: `1px solid ${col.border}`, padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.badge, flexShrink: 0, marginTop: '6px' }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 800, fontSize: '14px', color: C.text, marginBottom: '4px' }}>{alert.title}</div>
+                        <div style={{ fontSize: '13px', color: C.muted, lineHeight: 1.5 }}>{alert.body}</div>
+                        {alert.company_name && (
+                          <div style={{ fontSize: '11px', color: C.muted, marginTop: '4px', opacity: 0.7 }}>🏢 {alert.company_name}</div>
+                        )}
+                      </div>
+                      {alert.company_id && (
+                        <button
+                          onClick={() => { setActiveTab('companies'); setSnapshotCompany(alert.company_id!); }}
+                          style={{ flexShrink: 0, padding: '6px 12px', borderRadius: '8px', border: `1px solid ${col.border}`, background: 'transparent', color: col.badge, fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+                        >عرض</button>
+                      )}
                     </div>
-                    {alert.company_id && (
-                      <button
-                        onClick={() => setActiveTab('companies')}
-                        style={{
-                          flexShrink: 0, padding: '6px 12px', borderRadius: '8px',
-                          border: `1px solid ${col.border}`, background: 'transparent',
-                          color: col.badge, fontSize: '11px', fontWeight: 700,
-                          cursor: 'pointer', fontFamily: FONT,
-                        }}
-                      >عرض</button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
       {/* ═══════════════════════════════════════════════
           TAB: AUDIT LOG  📋
           ═══════════════════════════════════════════════ */}
-      {false && (
+      {activeTab === 'audit_log' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
           {/* Header + controls */}
@@ -4996,7 +5078,18 @@ export default function SuperAdmin() {
               <h2 style={{ margin: 0, fontWeight: 900, fontSize: '22px', color: C.text }}>📋 سجل التدقيق الجنائي</h2>
               <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>كل إجراء قام به المدير العام مُسجَّل هنا</p>
             </div>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => {
+                  if (!auditData?.rows.length) return;
+                  const rows = auditData.rows.map(r =>
+                    `${r.action},${r.record_type},${r.record_id},${r.note ?? ''},${r.created_at}`
+                  ).join('\n');
+                  const blob = new Blob([`الإجراء,نوع السجل,رقم السجل,الملاحظة,التاريخ\n${rows}`], { type: 'text/csv' });
+                  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'audit-log.csv'; a.click();
+                }}
+                style={{ padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#86EFAC', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+              >📥 CSV</button>
               <select
                 value={auditAction}
                 onChange={e => setAuditAction(e.target.value)}
@@ -5007,12 +5100,19 @@ export default function SuperAdmin() {
               >
                 <option value="">كل الإجراءات</option>
                 <option value="SUPER_ADMIN_LIST_VIEW">عرض الشركات</option>
-                <option value="CREATE">إنشاء</option>
-                <option value="UPDATE">تحديث</option>
-                <option value="DELETE">حذف</option>
-                <option value="ACTIVATE">تفعيل</option>
-                <option value="SUSPEND">تعليق</option>
-                <option value="EXTEND">تمديد</option>
+                <option value="COMPANY_CREATED">إنشاء شركة</option>
+                <option value="COMPANY_UPDATED">تحديث شركة</option>
+                <option value="COMPANY_ACTIVATED">تفعيل شركة</option>
+                <option value="COMPANY_SUSPENDED">إيقاف شركة</option>
+                <option value="COMPANY_EXTENDED">تمديد اشتراك</option>
+                <option value="COMPANY_DELETED">حذف شركة</option>
+                <option value="COMPANY_SUBSCRIPTION_UPDATED">تحديث اشتراك</option>
+                <option value="ADMIN_PASSWORD_RESET">إعادة كلمة المرور</option>
+                <option value="MANAGER_CREATED">إنشاء مدير</option>
+                <option value="MANAGER_UPDATED">تحديث مدير</option>
+                <option value="MANAGER_TOGGLED">تغيير حالة مدير</option>
+                <option value="MANAGER_DELETED">حذف مدير</option>
+                <option value="PLAN_SETTINGS_UPDATED">تحديث إعدادات الخطة</option>
                 <option value="BACKUP_CREATED">نسخة احتياطية</option>
                 <option value="RESTORE_STARTED">استعادة</option>
               </select>
@@ -5940,6 +6040,37 @@ export default function SuperAdmin() {
               <div style={{ textAlign: 'center', padding: '60px 0', color: C.muted }}>جارٍ التحميل...</div>
             )}
 
+            {monError && !monLoading && (
+              <div style={{
+                background: 'rgba(239,68,68,0.06)', border: '1.5px solid rgba(239,68,68,0.25)',
+                borderRadius: '18px', padding: '36px', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔴</div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#EF4444', marginBottom: '8px' }}>
+                  Redis غير متاح
+                </div>
+                <div style={{ fontSize: '14px', color: C.muted, lineHeight: 1.7, maxWidth: '480px', margin: '0 auto' }}>
+                  خدمة مراقبة التسجيلات تعتمد على Redis. لتفعيل هذه الميزة، قم بتثبيت Redis على السيرفر وتعيين متغير البيئة:
+                </div>
+                <div style={{
+                  margin: '16px auto', padding: '12px 24px', borderRadius: '10px',
+                  background: 'rgba(0,0,0,0.3)', fontFamily: 'monospace', fontSize: '13px',
+                  color: '#86EFAC', display: 'inline-block',
+                }}>
+                  REDIS_URL=redis://127.0.0.1:6379
+                </div>
+                <div style={{ marginTop: '8px', fontSize: '12px', color: C.muted }}>
+                  بدون Redis: التسجيل لا يزال يعمل — فقط المراقبة المتقدمة والـ rate limiting معطلة.
+                </div>
+                <button
+                  onClick={() => void refetchMon()}
+                  style={{ marginTop: '16px', padding: '10px 20px', borderRadius: '10px', border: '1.5px solid rgba(239,68,68,0.3)', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
+                >
+                  🔄 إعادة المحاولة
+                </button>
+              </div>
+            )}
+
             {monData && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
@@ -6139,6 +6270,144 @@ export default function SuperAdmin() {
           </div>
         );
       })()}
+
+      {/* ════════════════════════════════════════
+          COMPANY SNAPSHOT MODAL
+          ════════════════════════════════════════ */}
+      {snapshotCompany !== null && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) setSnapshotCompany(null); }}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+            zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+          }}
+        >
+          <div style={{
+            background: '#0f0f1a', borderRadius: '24px', border: '1.5px solid rgba(255,255,255,0.1)',
+            width: '100%', maxWidth: '720px', maxHeight: '90vh', overflow: 'hidden',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            {/* Modal header */}
+            <div style={{ padding: '20px 28px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0, fontWeight: 900, fontSize: '18px', color: C.text }}>
+                  🏢 {snapshotData?.company.name ?? 'جارٍ التحميل...'}
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: C.muted }}>لقطة سريعة — آخر تحديث الآن</p>
+              </div>
+              <button onClick={() => setSnapshotCompany(null)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: C.muted, lineHeight: 1 }}>✕</button>
+            </div>
+
+            {/* Modal body */}
+            <div style={{ overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+              {snapshotLoading && (
+                <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>⏳ جارٍ التحميل...</div>
+              )}
+
+              {snapshotData && (() => {
+                const c = snapshotData.company;
+                const planColors: Record<string, string> = { trial: '#94A3B8', basic: '#60A5FA', pro: '#A78BFA', paid: '#34D399', professional: '#F59E0B' };
+                const planNames: Record<string, string>  = { trial: 'تجريبية', basic: 'أساسية', pro: 'احترافية', paid: 'مدفوعة', professional: 'مميزة' };
+                const planCol = planColors[c.plan_type] ?? '#94A3B8';
+                const mkBadge = (label: string, color: string, bg: string) => (
+                  <span style={{ fontSize: '11px', fontWeight: 700, color, background: bg, padding: '3px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>{label}</span>
+                );
+                const statusColor = c.status === 'active' ? '#34D399' : c.status === 'trial' ? '#60A5FA' : c.status === 'suspended' ? '#94A3B8' : '#EF4444';
+                const statusBg   = c.status === 'active' ? 'rgba(52,211,153,0.1)' : c.status === 'trial' ? 'rgba(96,165,250,0.1)' : c.status === 'suspended' ? 'rgba(148,163,184,0.1)' : 'rgba(239,68,68,0.1)';
+                const statusAr   = c.status === 'active' ? 'نشط' : c.status === 'trial' ? 'تجريبي' : c.status === 'suspended' ? 'موقوف' : 'منتهي';
+                return (
+                  <>
+                    {/* Stats row */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                      {[
+                        { icon: '🛒', label: 'المبيعات', value: snapshotData.stats.salesCount.toLocaleString('ar-EG'), sub: `${snapshotData.stats.salesRevenue.toLocaleString('ar-EG')} ج.م.` },
+                        { icon: '📦', label: 'المشتريات', value: snapshotData.stats.purchasesCount.toLocaleString('ar-EG'), sub: '—' },
+                        { icon: '👥', label: 'المديرون', value: String(snapshotData.admins.length), sub: `${snapshotData.admins.filter(a => a.active).length} نشط` },
+                      ].map(s => (
+                        <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '14px', padding: '16px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '28px', marginBottom: '6px' }}>{s.icon}</div>
+                          <div style={{ fontWeight: 900, fontSize: '20px', color: C.text }}>{s.value}</div>
+                          <div style={{ fontSize: '12px', color: C.muted }}>{s.label}</div>
+                          <div style={{ fontSize: '11px', color: C.muted, opacity: 0.7 }}>{s.sub}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Company info */}
+                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: `1px solid ${C.border}`, padding: '16px 20px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
+                        {([
+                          { k: '📋 الخطة', v: <span style={{ color: planCol, fontWeight: 700 }}>{planNames[c.plan_type] ?? c.plan_type}</span> },
+                          { k: '📊 الحالة', v: mkBadge(statusAr, statusColor, statusBg) },
+                          { k: '📅 ينتهي', v: c.end_date ? new Date(c.end_date).toLocaleDateString('ar-EG') : '—' },
+                          { k: '📅 أُنشئت', v: new Date(c.created_at).toLocaleDateString('ar-EG') },
+                          { k: '⏳ متبقي', v: `${c.daysRemaining} يوم` },
+                          { k: '👥 المستخدمون', v: `${c.userCount} مستخدم` },
+                        ] as { k: string; v: React.ReactNode }[]).map(({ k, v }) => (
+                          <div key={k} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ color: C.muted, minWidth: '90px' }}>{k}</span>
+                            <span style={{ color: C.text, fontWeight: 600 }}>{v}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Admins */}
+                    {snapshotData.admins.length > 0 && (
+                      <div>
+                        <h4 style={{ margin: '0 0 12px', fontWeight: 800, fontSize: '13px', color: C.muted }}>👤 المديرون</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {snapshotData.admins.map(a => (
+                            <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
+                              <div>
+                                <span style={{ fontWeight: 700, fontSize: '13px', color: C.text }}>{a.name}</span>
+                                <span style={{ fontSize: '11px', color: C.muted, marginRight: '10px' }}>@{a.username}</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                {mkBadge(a.role, '#A78BFA', 'rgba(167,139,250,0.1)')}
+                                {mkBadge(a.active ? 'نشط' : 'موقوف', a.active ? '#34D399' : '#EF4444', a.active ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)')}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recent audit */}
+                    {snapshotData.recentAudit.length > 0 && (
+                      <div>
+                        <h4 style={{ margin: '0 0 12px', fontWeight: 800, fontSize: '13px', color: C.muted }}>📋 آخر العمليات</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {snapshotData.recentAudit.slice(0, 8).map(r => (
+                            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', fontSize: '12px' }}>
+                              <span style={{ color: '#A78BFA', fontWeight: 700 }}>{r.action}</span>
+                              <span style={{ color: C.muted, flex: 1, padding: '0 12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.note ?? '—'}</span>
+                              <span style={{ color: C.muted, direction: 'ltr', flexShrink: 0 }}>{new Date(r.created_at).toLocaleDateString('ar-EG')}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Modal footer */}
+            <div style={{ padding: '16px 28px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => window.print()}
+                style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.08)', color: '#C4B5FD', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+              >🖨️ طباعة</button>
+              <button
+                onClick={() => setSnapshotCompany(null)}
+                style={{ padding: '9px 18px', borderRadius: '10px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+              >إغلاق</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes sa-fade-in { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }

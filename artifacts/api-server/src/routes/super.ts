@@ -548,6 +548,45 @@ router.delete("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
   res.json({ message: "تم حذف الشركة وجميع بياناتها بنجاح" });
 }));
 
+/* ── GET /super/companies/:id/snapshot — rich view of company data ── */
+router.get("/super/companies/:id/snapshot", ...superOnly, wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const [company] = await db.select().from(companiesTable).where(eq(companiesTable.id, id));
+  if (!company) { res.status(404).json({ error: "الشركة غير موجودة" }); return; }
+
+  const [admins, recentAudit] = await Promise.all([
+    db.select({ id: erpUsersTable.id, name: erpUsersTable.name, username: erpUsersTable.username,
+                role: erpUsersTable.role, active: erpUsersTable.active, last_login: erpUsersTable.last_login })
+      .from(erpUsersTable)
+      .where(eq(erpUsersTable.company_id, id))
+      .limit(20),
+    (async () => {
+      const { auditLogsTable: al } = await import("@workspace/db");
+      return db.select().from(al)
+        .where(eq(al.company_id, id))
+        .orderBy(desc(al.created_at))
+        .limit(15);
+    })(),
+  ]);
+
+  const [salesRow, purchasesRow] = await Promise.all([
+    db.execute(sql`SELECT COUNT(*) AS cnt, COALESCE(SUM(total),0)::numeric AS total FROM sales WHERE company_id=${id}`),
+    db.execute(sql`SELECT COUNT(*) AS cnt FROM purchases WHERE company_id=${id}`),
+  ]);
+
+  const salesCount     = Number((salesRow.rows[0] as Record<string, unknown>)?.cnt ?? 0);
+  const salesRevenue   = Number((salesRow.rows[0] as Record<string, unknown>)?.total ?? 0);
+  const purchasesCount = Number((purchasesRow.rows[0] as Record<string, unknown>)?.cnt ?? 0);
+
+  void writeAuditLog({
+    action: "SUPER_ADMIN_ACCESS", record_type: "company", record_id: id,
+    user: req.user, company_id: null,
+    note: `عرض لقطة شركة: ${company.name}`,
+  });
+
+  res.json({ company, admins, recentAudit, stats: { salesCount, salesRevenue, purchasesCount } });
+}));
+
 /* ── GET /super/stats — overall stats (enhanced) ── */
 router.get("/super/stats", ...superOnly, wrap(async (_req, res) => {
   const companies = await db.select().from(companiesTable);
@@ -666,6 +705,12 @@ router.post("/super/managers", ...superOnly, wrap(async (req, res) => {
     username: erpUsersTable.username, active: erpUsersTable.active,
     last_login: erpUsersTable.last_login, created_at: erpUsersTable.created_at,
   });
+  void writeAuditLog({
+    action: "MANAGER_CREATED", record_type: "erp_user", record_id: created.id,
+    new_value: { username: created.username, name: created.name },
+    user: req.user, company_id: null,
+    note: `إنشاء حساب مدير عام جديد: ${created.username}`,
+  });
   res.status(201).json(created);
 }));
 
@@ -697,6 +742,13 @@ router.patch("/super/managers/:id", ...superOnly, wrap(async (req, res) => {
       username: erpUsersTable.username, active: erpUsersTable.active,
       last_login: erpUsersTable.last_login, created_at: erpUsersTable.created_at,
     });
+  void writeAuditLog({
+    action: "MANAGER_UPDATED", record_type: "erp_user", record_id: id,
+    old_value: { username: manager.username, name: manager.name },
+    new_value: { username: updated.username, name: updated.name, pin_changed: !!pin },
+    user: req.user, company_id: null,
+    note: `تعديل بيانات المدير: ${updated.username}`,
+  });
   res.json(updated);
 }));
 
@@ -712,6 +764,13 @@ router.patch("/super/managers/:id/toggle", ...superOnly, wrap(async (req, res) =
     .set({ active: !manager.active })
     .where(eq(erpUsersTable.id, id))
     .returning({ id: erpUsersTable.id, active: erpUsersTable.active });
+  void writeAuditLog({
+    action: "MANAGER_TOGGLED", record_type: "erp_user", record_id: id,
+    old_value: { active: manager.active },
+    new_value: { active: updated.active },
+    user: req.user, company_id: null,
+    note: `${updated.active ? 'تفعيل' : 'تعطيل'} حساب المدير: ${manager.username}`,
+  });
   res.json(updated);
 }));
 
@@ -732,7 +791,15 @@ router.delete("/super/managers/:id", ...superOnly, wrap(async (req, res) => {
     .from(erpUsersTable).where(eq(erpUsersTable.id, id));
   if (!manager) { res.status(404).json({ error: "المدير غير موجود" }); return; }
 
+  const [delManager] = await db.select({ username: erpUsersTable.username, name: erpUsersTable.name })
+    .from(erpUsersTable).where(eq(erpUsersTable.id, id));
   await db.delete(erpUsersTable).where(eq(erpUsersTable.id, id));
+  void writeAuditLog({
+    action: "MANAGER_DELETED", record_type: "erp_user", record_id: id,
+    old_value: delManager ? { username: delManager.username, name: delManager.name } : null,
+    user: req.user, company_id: null,
+    note: `حذف حساب المدير: ${delManager?.username ?? id}`,
+  });
   res.json({ message: "تم حذف المدير بنجاح" });
 }));
 
@@ -857,6 +924,13 @@ router.put("/super/plan-settings/:key", ...superOnly, wrap(async (req, res) => {
       .where(eq(planSettingsTable.key, key)).returning();
   }
 
+  void writeAuditLog({
+    action: "PLAN_SETTINGS_UPDATED", record_type: "system", record_id: 0,
+    old_value: existing[0] ? { key, price: existing[0].price, is_active: existing[0].is_active } : null,
+    new_value: { key, price: row.price, name_ar: row.name_ar, is_active: row.is_active },
+    user: req.user, company_id: null,
+    note: `تحديث إعدادات خطة: ${key} — السعر: ${row.price}`,
+  });
   res.json(row);
 }));
 

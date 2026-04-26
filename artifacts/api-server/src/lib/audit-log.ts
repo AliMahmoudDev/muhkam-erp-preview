@@ -29,11 +29,18 @@ export type AuditAction =
   | "SAFE_TRANSFER_COMPLETED"   // اكتمال تحويل الخزينة بنجاح
   | "SAFE_TRANSFER_FEE_APPLIED" // تطبيق رسوم على تحويل خزينة
   // ── SaaS / super-admin events ─────────────────────────────────────────────
+  | "COMPANY_CREATED"
   | "COMPANY_ACTIVATED"
   | "COMPANY_SUSPENDED"
   | "COMPANY_EXTENDED"
   | "COMPANY_DELETED"
+  | "COMPANY_SUBSCRIPTION_UPDATED"
   | "ADMIN_PASSWORD_RESET"
+  | "MANAGER_CREATED"
+  | "MANAGER_UPDATED"
+  | "MANAGER_TOGGLED"
+  | "MANAGER_DELETED"
+  | "PLAN_SETTINGS_UPDATED"
   // ── Backup / restore lifecycle ────────────────────────────────────────────
   | "RESTORE_STARTED"
   | "RESTORE_REJECTED"
