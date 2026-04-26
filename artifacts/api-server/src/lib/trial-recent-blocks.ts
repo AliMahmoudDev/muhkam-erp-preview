@@ -1,40 +1,44 @@
 /**
  * trial-recent-blocks.ts
  *
- * Lightweight in-memory ring buffer that records the last N blocked
- * trial-registration attempts.  Populated by trial-guard.ts and consumed
- * by the trial-monitoring endpoint.
+ * Redis-backed ring buffer for the last N blocked trial-registration attempts.
+ * Persists across server restarts; shared across all instances.
  *
- * Data is ephemeral (lost on restart) which is intentional — the goal is
- * real-time visibility, not permanent forensics (that is handled by
- * trial_abuse_log + audit_logs in the DB).
+ * Redis key : trial:recent_blocks  (list)
+ * Operations: LPUSH (prepend) + LTRIM (cap at MAX) + LRANGE (read)
+ *
+ * Fail-closed: if Redis is unavailable any operation will throw, which is
+ * caught by the caller (trial-guard) and returned as 503.
  */
 
-export interface BlockedAttempt {
-  email:      string;
-  ip:         string;
-  reason:     string;   // blocked_by value
-  created_at: string;   // ISO timestamp
-}
+import { trialRedis, K } from "./redis";
 
 const MAX_ENTRIES = 100;
 
-class RecentBlocksStore {
-  private buffer: BlockedAttempt[] = [];
-
-  record(entry: BlockedAttempt): void {
-    this.buffer.unshift(entry);           // prepend (newest first)
-    if (this.buffer.length > MAX_ENTRIES) {
-      this.buffer.length = MAX_ENTRIES;   // trim tail
-    }
-  }
-
-  /** Return the most recent N entries (default 20). */
-  recent(n = 20): BlockedAttempt[] {
-    return this.buffer.slice(0, n);
-  }
-
-  size(): number { return this.buffer.length; }
+export interface BlockedAttempt {
+  email:       string;
+  ip:          string;
+  fingerprint?: string;
+  reason:      string;
+  created_at:  string;  // ISO timestamp
 }
 
-export const recentBlocksStore = new RecentBlocksStore();
+export const recentBlocksStore = {
+  /** Prepend a blocked attempt and cap the list at MAX_ENTRIES. */
+  async record(entry: BlockedAttempt): Promise<void> {
+    const pipeline = trialRedis.pipeline();
+    pipeline.lpush(K.RECENT_BLOCKS, JSON.stringify(entry));
+    pipeline.ltrim(K.RECENT_BLOCKS, 0, MAX_ENTRIES - 1);
+    await pipeline.exec();
+  },
+
+  /** Return the most recent n entries (default 20). Newest first. */
+  async recent(n = 20): Promise<BlockedAttempt[]> {
+    const raw = await trialRedis.lrange(K.RECENT_BLOCKS, 0, n - 1);
+    return raw.map(s => JSON.parse(s) as BlockedAttempt);
+  },
+
+  async size(): Promise<number> {
+    return trialRedis.llen(K.RECENT_BLOCKS);
+  },
+};
