@@ -1,0 +1,13 @@
+diff --git a/package.json b/package.json
+index 6795ebfd2f09bd7e1d2d0b0ea940d81df9645b49..b3ad418b61bbd9343afe1cd27c7b0216f2cc7c59 100644
+--- a/package.json
++++ b/package.json
+@@ -53,7 +53,7 @@
+     "jsc-safe-url": "^0.2.4",
+     "lightningcss": "^1.30.1",
+     "minimatch": "^9.0.0",
+-    "postcss": "~8.4.32",
++    "postcss": "^8.5.10",
+     "resolve-from": "^5.0.0"
+   },
+   "peerDependencies": {

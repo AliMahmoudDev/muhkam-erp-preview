@@ -70,6 +70,15 @@ overrides:
   '@xmldom/xmldom': ^0.9.10
   esbuild: ^0.25.0
   uuid: ^14.0.0
+  postcss: ^8.5.10
+  '@expo/metro-config>postcss': ^8.5.10
+
+packageExtensionsChecksum: sha256-kZE3PD7j57/acdxIKi4R6YXfu8dCJOcXzDKys28Jfi0=
+
+patchedDependencies:
+  '@expo/metro-config@54.0.14':
+    hash: 56c3cdd40ba4f2e835f2ae666857a8f8c7f76de6d781fdeb4e87e25fa34bffb4
+    path: patches/@expo__metro-config@54.0.14.patch
 
 importers:
 
@@ -6588,12 +6597,8 @@ packages:
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
-  postcss@8.4.49:
-    resolution: {integrity: sha512-OCVPnIObs4N29kxTjzLfUryOkvZEq+pf8jTF0lg8E7uETuWHA+v7j3c/xJmiqpX450191LlmZfUKkXxkTry7nA==}
-    engines: {node: ^10 || ^12 || >=14}
-
-  postcss@8.5.8:
-    resolution: {integrity: sha512-OW/rX8O/jXnm82Ey1k44pObPtdblfiuWnrd8X7GJ7emImCOstunGbXUpp7HdBrFQX6rJzn3sPT397Wp5aCwCHg==}
+  postcss@8.5.10:
+    resolution: {integrity: sha512-pMMHxBOZKFU6HgAZ4eyGnwXF/EvPGGqUr0MnZ5+99485wwW41kW91A4LOGxSHhgugZmSChL5AlElNdwlNgcnLQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   postgres-array@2.0.0:
@@ -8918,7 +8923,7 @@ snapshots:
       '@expo/image-utils': 0.8.12
       '@expo/json-file': 10.0.13
       '@expo/metro': 54.2.0
-      '@expo/metro-config': 54.0.14(expo@54.0.33)
+      '@expo/metro-config': 54.0.14(patch_hash=56c3cdd40ba4f2e835f2ae666857a8f8c7f76de6d781fdeb4e87e25fa34bffb4)(expo@54.0.33)
       '@expo/osascript': 2.4.2
       '@expo/package-manager': 1.10.4
       '@expo/plist': 0.4.8
@@ -9080,7 +9085,7 @@ snapshots:
       '@babel/code-frame': 7.29.0
       json5: 2.2.3
 
-  '@expo/metro-config@54.0.14(expo@54.0.33)':
+  '@expo/metro-config@54.0.14(patch_hash=56c3cdd40ba4f2e835f2ae666857a8f8c7f76de6d781fdeb4e87e25fa34bffb4)(expo@54.0.33)':
     dependencies:
       '@babel/code-frame': 7.29.0
       '@babel/core': 7.29.0
@@ -9101,7 +9106,7 @@ snapshots:
       jsc-safe-url: 0.2.4
       lightningcss: 1.31.1
       minimatch: 9.0.9
-      postcss: 8.4.49
+      postcss: 8.5.10
       resolve-from: 5.0.0
     optionalDependencies:
       expo: 54.0.33(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(expo-router@6.0.23)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
@@ -12713,7 +12718,7 @@ snapshots:
       '@expo/devtools': 0.1.8(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
       '@expo/fingerprint': 0.15.4
       '@expo/metro': 54.2.0
-      '@expo/metro-config': 54.0.14(expo@54.0.33)
+      '@expo/metro-config': 54.0.14(patch_hash=56c3cdd40ba4f2e835f2ae666857a8f8c7f76de6d781fdeb4e87e25fa34bffb4)(expo@54.0.33)
       '@expo/vector-icons': 15.1.1(expo-font@14.0.11(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
       '@ungap/structured-clone': 1.3.0
       babel-preset-expo: 54.0.10(@babel/core@7.29.0)(@babel/runtime@7.28.6)(expo@54.0.33)(react-refresh@0.14.2)
@@ -14676,13 +14681,7 @@ snapshots:
 
   postcss-value-parser@4.2.0: {}
 
-  postcss@8.4.49:
-    dependencies:
-      nanoid: 3.3.11
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
-
-  postcss@8.5.8:
+  postcss@8.5.10:
     dependencies:
       nanoid: 3.3.11
       picocolors: 1.1.1
@@ -16011,7 +16010,7 @@ snapshots:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.8
+      postcss: 8.5.10
       rollup: 4.59.0
       tinyglobby: 0.2.15
     optionalDependencies:

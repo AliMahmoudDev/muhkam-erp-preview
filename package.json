@@ -36,7 +36,12 @@
       "@types/react-dom": "^19.2.0",
       "@xmldom/xmldom": "^0.9.10",
       "esbuild": "^0.25.0",
-      "uuid": "^14.0.0"
+      "uuid": "^14.0.0",
+      "postcss": "^8.5.10",
+      "@expo/metro-config>postcss": "^8.5.10"
+    },
+    "patchedDependencies": {
+      "@expo/metro-config@54.0.14": "patches/@expo__metro-config@54.0.14.patch"
     }
   },
   "devDependencies": {
