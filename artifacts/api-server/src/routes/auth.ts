@@ -680,7 +680,7 @@ router.post('/auth/register', ipRegistrationLimiter, async (req, res) => {
     const fingerprint = computeDeviceFingerprint(req);
 
     /* ── Fingerprint rate limit (before DB queries) ───────────── */
-    const fpLimit = checkAndRecordFPLimit(fingerprint);
+    const fpLimit = await checkAndRecordFPLimit(fingerprint);
     if (fpLimit.blocked) {
       const retryAfter = Math.ceil((fpLimit.resetMs - Date.now()) / 1000);
       res.setHeader('Retry-After', String(retryAfter));
