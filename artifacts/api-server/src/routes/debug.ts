@@ -1,11 +1,12 @@
 /**
  * debug.ts — Super-admin-only diagnostic endpoints
  *
- * GET /api/super/trial-check?email=...&ip=...
- *   Returns the full trial eligibility decision for a given email + IP.
- *   Useful for diagnosing why a registration was blocked or allowed.
+ * GET /api/super/trial-check?email=...&ip=...&ua=...&fp=...
+ *   Returns the full trial eligibility decision plus cooldown, anomaly,
+ *   and rate-limit state for the given email + IP + device.
+ *   Read-only — no state is modified.
  *
- * Access: super_admin only (never exposed to regular users)
+ * Access: super_admin only (authenticate + requireRole guard)
  */
 
 import { Router } from "express";
@@ -19,6 +20,9 @@ import {
   MAX_TRIALS_PRIVATE_IP,
   MAX_TRIALS_UA_IP,
 } from "../lib/trial-guard";
+import { computeDeviceFingerprint } from "../lib/trial-fingerprint";
+import { cooldownStore } from "../lib/trial-cooldown";
+import { anomalyDetector } from "../lib/trial-anomaly";
 
 const router = Router();
 const superOnly = [authenticate, requireRole("super_admin")] as const;
@@ -26,59 +30,103 @@ const superOnly = [authenticate, requireRole("super_admin")] as const;
 /**
  * GET /api/super/trial-check
  *
- * Query params:
+ * Query params (all optional except email):
  *   email  (required) — email address to check
- *   ip     (optional) — override IP to check (defaults to caller's IP)
- *   ua     (optional) — override user-agent to check
+ *   ip     (optional) — override IP (defaults to caller's IP)
+ *   ua     (optional) — override User-Agent
+ *   fp     (optional) — override fingerprint (hex string)
  *
- * Returns the full TrialCheckResult plus metadata about current limits.
- * Does NOT modify any state — read-only diagnostic.
+ * Returns:
+ *   - input          : resolved email / IP / UA / fingerprint used
+ *   - ip_metadata    : is_private, limit_applied
+ *   - limits         : current configured thresholds
+ *   - cooldown       : IP and fingerprint cooldown state
+ *   - anomaly        : global + per-key window counts, pause state
+ *   - decision       : full TrialCheckResult (all 7 checks)
+ *   - check_error    : error message if DB was unreachable
  */
 router.get(
   "/super/trial-check",
   ...superOnly,
   wrap(async (req, res) => {
-    const email = (req.query["email"] as string | undefined)?.trim();
-    const ipOverride = (req.query["ip"] as string | undefined)?.trim();
-    const uaOverride = (req.query["ua"] as string | undefined)?.trim();
+    const email      = (req.query["email"] as string | undefined)?.trim();
+    const ipOverride = (req.query["ip"]    as string | undefined)?.trim();
+    const uaOverride = (req.query["ua"]    as string | undefined)?.trim();
+    const fpOverride = (req.query["fp"]    as string | undefined)?.trim();
 
     if (!email || !email.includes("@")) {
-      res.status(400).json({ error: "email query param is required and must be valid" });
+      res.status(400).json({ error: "email query param is required and must contain @" });
       return;
     }
 
-    const ip        = ipOverride ?? extractClientIP(req);
-    const userAgent = uaOverride ?? (req.headers["user-agent"] as string | undefined);
+    const ip          = ipOverride ?? extractClientIP(req);
+    const userAgent   = uaOverride ?? (req.headers["user-agent"] as string | undefined);
+    const fingerprint = fpOverride ?? computeDeviceFingerprint(req);
 
-    let decision;
+    /* ── Cooldown state ─────────────────────────────────────────────────── */
+    const ipCooldown = cooldownStore.check(ip);
+    const fpCooldown = cooldownStore.check(`fp:${fingerprint}`);
+
+    /* ── Anomaly state ──────────────────────────────────────────────────── */
+    const globalCount = anomalyDetector.countGlobal();
+    const ipAnomalyCount = anomalyDetector.countKey(ip);
+    const fpAnomalyCount = anomalyDetector.countKey(`fp:${fingerprint}`);
+    const paused = anomalyDetector.isPaused();
+    const pausedUntil = anomalyDetector.pausedUntilDate();
+
+    /* ── Run full trial check ───────────────────────────────────────────── */
+    let decision = null;
     let check_error: string | null = null;
 
     try {
-      decision = await checkTrialEligibility(email, ip, userAgent);
+      decision = await checkTrialEligibility(email, ip, userAgent, fingerprint);
     } catch (err) {
       check_error = err instanceof Error ? err.message : String(err);
-      decision = null;
     }
 
     res.json({
       input: {
-        email:      email.toLowerCase().trim(),
+        email:       email.toLowerCase().trim(),
         ip,
-        user_agent: userAgent ?? null,
+        user_agent:  userAgent ?? null,
+        fingerprint: `${fingerprint.slice(0, 8)}…${fingerprint.slice(-4)}`, // truncated for safety
       },
       ip_metadata: {
-        is_private:           isPrivateOrLoopbackIP(ip),
-        limit_applied:        isPrivateOrLoopbackIP(ip) ? MAX_TRIALS_PRIVATE_IP : MAX_TRIALS_PUBLIC_IP,
+        is_private:    isPrivateOrLoopbackIP(ip),
+        limit_applied: isPrivateOrLoopbackIP(ip) ? MAX_TRIALS_PRIVATE_IP : MAX_TRIALS_PUBLIC_IP,
       },
       limits: {
         MAX_TRIALS_PUBLIC_IP,
         MAX_TRIALS_PRIVATE_IP,
         MAX_TRIALS_UA_IP,
+        FINGERPRINT_LIMIT: MAX_TRIALS_UA_IP, // same limit reused for fingerprint
+      },
+      cooldown: {
+        ip: {
+          blocked: ipCooldown.blocked,
+          until:   ipCooldown.until ?? null,
+          level:   ipCooldown.level ?? null,
+          reason:  ipCooldown.reason ?? null,
+        },
+        fingerprint: {
+          blocked: fpCooldown.blocked,
+          until:   fpCooldown.until ?? null,
+          level:   fpCooldown.level ?? null,
+          reason:  fpCooldown.reason ?? null,
+        },
+        store_size: cooldownStore.size(),
+      },
+      anomaly: {
+        registrations_paused: paused,
+        paused_until:         pausedUntil,
+        global_count_5min:    globalCount,
+        ip_count_5min:        ipAnomalyCount,
+        fp_count_5min:        fpAnomalyCount,
       },
       decision,
       check_error,
       note: check_error
-        ? "DB error occurred — registration would be BLOCKED (fail-closed)"
+        ? "DB error — registration would be BLOCKED (fail-closed)"
         : undefined,
     });
   }),
