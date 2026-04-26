@@ -728,20 +728,12 @@ router.post('/auth/register', async (req, res) => {
       const [newCompany] = await tx
         .insert(companiesTable)
         .values({
-          name:       company_name.trim(),
-          plan_type:  'trial',
-          start_date: today.toISOString().slice(0, 10),
-          end_date:   trialEnd.toISOString().slice(0, 10),
-          is_active:  true,
+          name:        company_name.trim(),
+          plan_type:   'trial',
+          start_date:  today.toISOString().slice(0, 10),
+          end_date:    trialEnd.toISOString().slice(0, 10),
+          is_active:   true,
           admin_email: normalEmail,
-
-          /* anti-abuse fields */
-          signup_ip:                    clientIP,
-          signup_user_agent:            userAgent ?? null,
-          has_used_trial:               true,
-          email_verified:               false,
-          email_verification_token:     verificationToken,
-          email_verification_expires_at: verificationExpires,
         })
         .returning();
 
@@ -750,19 +742,35 @@ router.post('/auth/register', async (req, res) => {
       const [newUser] = await tx
         .insert(erpUsersTable)
         .values({
-          name:       admin_name.trim(),
+          name:        admin_name.trim(),
           username,
-          email:      normalEmail,
-          pin:        hashedPw,
-          role:       'admin',
-          active:     true,
-          company_id: newCompany.id,
+          email:       normalEmail,
+          pin:         hashedPw,
+          role:        'admin',
+          active:      true,
+          company_id:  newCompany.id,
           permissions: '{}',
         })
         .returning();
 
       return { company: newCompany, user: newUser };
     });
+
+    /* ── Set anti-abuse fields (fire-and-forget, fails gracefully if columns missing) */
+    db.update(companiesTable)
+      .set({
+        signup_ip:                     clientIP,
+        signup_user_agent:             userAgent ?? null,
+        has_used_trial:                true,
+        email_verified:                false,
+        email_verification_token:      verificationToken,
+        email_verification_expires_at: verificationExpires,
+        verification_status:           'pending',
+      })
+      .where(eq(companiesTable.id, company.id))
+      .catch((err: unknown) => {
+        logger.warn({ err, companyId: company.id }, '[register] Failed to set anti-abuse fields — schema migration may be pending');
+      });
 
     /* ── Record to permanent trial abuse log ─────────────────── */
     // Fire-and-forget — must not prevent the user from getting their tokens

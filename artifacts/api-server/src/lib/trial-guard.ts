@@ -71,18 +71,24 @@ export const MAX_TRIALS_PER_IP: number =
  * super admin panel before the user can register again.
  */
 export async function isEmailTrialAbused(email: string): Promise<boolean> {
-  const rows = await db
-    .select({ id: trialAbuseLogTable.id })
-    .from(trialAbuseLogTable)
-    .where(
-      and(
-        eq(trialAbuseLogTable.email, email.toLowerCase().trim()),
-        isNull(trialAbuseLogTable.override_reason), // overridden rows don't count
+  try {
+    const rows = await db
+      .select({ id: trialAbuseLogTable.id })
+      .from(trialAbuseLogTable)
+      .where(
+        and(
+          eq(trialAbuseLogTable.email, email.toLowerCase().trim()),
+          isNull(trialAbuseLogTable.override_reason),
+        )
       )
-    )
-    .limit(1);
+      .limit(1);
 
-  return rows.length > 0;
+    return rows.length > 0;
+  } catch (err) {
+    // fail-open: if the table doesn't exist yet (pending migration), allow registration
+    logger.warn({ err }, "[trial-guard] isEmailTrialAbused query failed — allowing registration (fail-open)");
+    return false;
+  }
 }
 
 /* ─── IP abuse check ────────────────────────────────────────────────────── */
@@ -97,18 +103,24 @@ export async function isIPTrialAbused(ip: string): Promise<{ abused: boolean; co
   // (development, NAT, internal load-balancers, etc.).
   if (isPrivateOrLoopbackIP(ip)) return { abused: false, count: 0 };
 
-  const [result] = await db
-    .select({ total: count() })
-    .from(trialAbuseLogTable)
-    .where(
-      and(
-        eq(trialAbuseLogTable.ip, ip),
-        isNull(trialAbuseLogTable.override_reason), // only count non-overridden rows
-      )
-    );
+  try {
+    const [result] = await db
+      .select({ total: count() })
+      .from(trialAbuseLogTable)
+      .where(
+        and(
+          eq(trialAbuseLogTable.ip, ip),
+          isNull(trialAbuseLogTable.override_reason),
+        )
+      );
 
-  const total = Number(result?.total ?? 0);
-  return { abused: total >= MAX_TRIALS_PER_IP, count: total };
+    const total = Number(result?.total ?? 0);
+    return { abused: total >= MAX_TRIALS_PER_IP, count: total };
+  } catch (err) {
+    // fail-open: if the table doesn't exist yet (pending migration), allow registration
+    logger.warn({ err }, "[trial-guard] isIPTrialAbused query failed — allowing registration (fail-open)");
+    return { abused: false, count: 0 };
+  }
 }
 
 /* ─── Record a trial signup ─────────────────────────────────────────────── */

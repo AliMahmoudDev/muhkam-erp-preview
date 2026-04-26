@@ -170,12 +170,16 @@ export async function initRLS(): Promise<{ enabled: number; skipped: number }> {
       await db.execute(sql.raw(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`));
       await db.execute(sql.raw(`ALTER TABLE "${table}" FORCE ROW LEVEL SECURITY`));
 
-      /* Recreate policy idempotently */
-      await db.execute(sql.raw(`DROP POLICY IF EXISTS "${POLICY_NAME}" ON "${table}"`));
+      /* Recreate policy idempotently inside a single DO block to avoid race conditions */
       await db.execute(sql.raw(
-        `CREATE POLICY "${POLICY_NAME}" ON "${table}"
-         USING ${POLICY_EXPR}
-         WITH CHECK ${POLICY_EXPR}`,
+        `DO $$
+         BEGIN
+           DROP POLICY IF EXISTS "${POLICY_NAME}" ON "${table}";
+           CREATE POLICY "${POLICY_NAME}" ON "${table}"
+             USING ${POLICY_EXPR}
+             WITH CHECK ${POLICY_EXPR};
+         END;
+         $$`,
       ));
 
       enabled++;

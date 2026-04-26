@@ -21,7 +21,7 @@ pnpm install
 
 echo "=== [3/7] رفع تغييرات قاعدة البيانات ==="
 cd "$APP_DIR/lib/db"
-pnpm run push
+pnpm run push-force
 
 echo "=== [4/7] بناء الـ Backend ==="
 cd "$APP_DIR"
