@@ -2142,11 +2142,11 @@ export default function SuperAdmin() {
             ══════════════════════════════ */}
         {activeTab === 'companies' && (
           <>
-            {/* Stats cards — 8 in one row */}
+            {/* Stats cards — responsive wrap */}
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(8, minmax(0, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
                 gap: '12px',
                 marginBottom: '28px',
               }}
