@@ -11,33 +11,28 @@ if [ -f "$APP_DIR/.env" ]; then
   set +a
 fi
 
-echo "=== [1/7] سحب آخر تحديثات من GitHub ==="
+echo "=== [1/6] سحب آخر تحديثات من GitHub ==="
 git fetch origin main
 git reset --hard origin/main
 git clean -fd
 
-echo "=== [2/7] تثبيت الحزم ==="
+echo "=== [2/6] تثبيت الحزم ==="
 pnpm install
 
-echo "=== [3/7] رفع تغييرات قاعدة البيانات ==="
+echo "=== [3/6] رفع تغييرات قاعدة البيانات ==="
 cd "$APP_DIR/lib/db"
 pnpm run push-force
 
-echo "=== [4/7] بناء الـ Backend ==="
+echo "=== [4/6] بناء الـ Backend ==="
 cd "$APP_DIR"
 pnpm --filter @workspace/api-server run build
 
-echo "=== [5/7] بناء MUHKAM ULTIMATE (erp-system - النسخة الكاملة) ==="
-cd "$APP_DIR"
-NODE_ENV=production BASE_PATH=/advanced/ \
-  pnpm --filter @workspace/erp-system run build
-
-echo "=== [6/7] بناء MUHKAM (muhkam-pro - النسخة الرئيسية) ==="
+echo "=== [5/6] بناء الـ Frontend (erp-system) ==="
 cd "$APP_DIR"
 NODE_ENV=production BASE_PATH=/ VITE_API_URL="" \
-  pnpm --filter @workspace/muhkam-pro run build
+  pnpm --filter @workspace/erp-system run build
 
-echo "=== [7/7] إعادة تشغيل الـ Backend ==="
+echo "=== [6/6] إعادة تشغيل الـ Backend ==="
 pm2 restart halaltech-api --update-env
 
 echo "--- انتظار تشغيل الـ API (حد أقصى 60 ثانية) ---"
@@ -55,7 +50,7 @@ done
 
 echo ""
 echo "✅ النشر اكتمل بنجاح!"
-echo "   MUHKAM        : https://$(grep ALLOWED_ORIGINS .env | cut -d= -f2 | sed 's|https://||')/"
-echo "   MUHKAM ULTIMATE: https://$(grep ALLOWED_ORIGINS .env | cut -d= -f2 | sed 's|https://||')/advanced/"
+DOMAIN=$(grep -oP 'ALLOWED_ORIGINS=https?://\K[^,\s]+' .env 2>/dev/null | head -1 || echo "localhost")
+echo "   الموقع: https://${DOMAIN}/"
 echo ""
 pm2 status

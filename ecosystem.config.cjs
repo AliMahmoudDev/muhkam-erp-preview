@@ -6,10 +6,9 @@
  *   pm2 save
  *   pm2 startup
  *
- * الـ Backend يخدم كلا النسختين:
- *   /             → MuhKam          (artifacts/muhkam-pro/dist/public)
- *   /advanced/    → MuhKam Advanced (artifacts/erp-system/dist/public)
- *   /api/         → REST API (مشترك)
+ * الـ Backend يخدم:
+ *   /             → MUHKAM ERP      (artifacts/erp-system/dist/public)
+ *   /api/         → REST API
  */
 
 /* تحميل متغيرات البيئة من ملف .env بدون حزمة خارجية */
@@ -51,7 +50,10 @@ module.exports = {
         JWT_SECRET: env.JWT_SECRET,
         JWT_REFRESH_SECRET: env.JWT_REFRESH_SECRET || env.JWT_SECRET,
         ALLOWED_ORIGINS: env.ALLOWED_ORIGINS,
-        FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/muhkam-pro/dist/public",
+        SUPER_ADMIN_PIN: env.SUPER_ADMIN_PIN,
+        DEFAULT_ADMIN_PIN: env.DEFAULT_ADMIN_PIN,
+        MAX_TRIALS_PER_IP: env.MAX_TRIALS_PER_IP,
+        FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
         ADVANCED_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
       },
       error_file: "/var/log/pm2/halaltech-error.log",
