@@ -118,6 +118,17 @@ export default function SuperAdmin() {
   const [settingsActiveCard, setSettingsActiveCard] = useState<'support' | 'backup' | 'security' | 'audit_log' | 'managers' | 'plans' | null>(null);
 
 
+  /* ── Unblock Tool ─── */
+  const [unblockIP, setUnblockIP]       = useState('');
+  const [unblockEmail, setUnblockEmail] = useState('');
+  const [unblockResult, setUnblockResult] = useState<{
+    active_blocks: number;
+    overridden_blocks: number;
+    rows: { id: number; email: string; ip: string; fingerprint: string | null; override_reason: string | null; created_at: string }[];
+  } | null>(null);
+  const [unblockLoading, setUnblockLoading] = useState(false);
+  const [unblockMsg, setUnblockMsg]     = useState<{ ok: boolean; text: string } | null>(null);
+
   /* ── Password Reset ─── */
   const [resetPassResult, setResetPassResult] = useState<{
     company_name: string;
@@ -6288,6 +6299,217 @@ export default function SuperAdmin() {
                       </div>
                 ))}
 
+                {/* ── Unblock Tool ── */}
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(6,182,212,0.05) 100%)',
+                  border: '1.5px solid rgba(16,185,129,0.3)',
+                  borderRadius: '18px',
+                  padding: '24px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🔓</div>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 900, color: '#10B981' }}>رفع الحجب عن عميل جديد</div>
+                      <div style={{ fontSize: '12px', color: C.muted, marginTop: '2px' }}>ادخل IP أو البريد الإلكتروني للعميل لرفع الحجب من قاعدة البيانات وRedis</div>
+                    </div>
+                  </div>
+
+                  {/* Inputs */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: C.muted, fontWeight: 700, marginBottom: '6px' }}>عنوان IP</div>
+                      <input
+                        value={unblockIP}
+                        onChange={e => setUnblockIP(e.target.value)}
+                        placeholder="مثال: 41.234.56.78"
+                        dir="ltr"
+                        style={{
+                          width: '100%', padding: '10px 12px', borderRadius: '10px',
+                          border: `1.5px solid ${C.border}`, background: C.card,
+                          color: C.text, fontFamily: 'monospace', fontSize: '13px', outline: 'none',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: C.muted, fontWeight: 700, marginBottom: '6px' }}>البريد الإلكتروني (اختياري)</div>
+                      <input
+                        value={unblockEmail}
+                        onChange={e => setUnblockEmail(e.target.value)}
+                        placeholder="مثال: customer@email.com"
+                        dir="ltr"
+                        style={{
+                          width: '100%', padding: '10px 12px', borderRadius: '10px',
+                          border: `1.5px solid ${C.border}`, background: C.card,
+                          color: C.text, fontFamily: 'monospace', fontSize: '13px', outline: 'none',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: unblockResult ? '16px' : '0' }}>
+                    <button
+                      disabled={unblockLoading || (!unblockIP.trim() && !unblockEmail.trim())}
+                      onClick={async () => {
+                        if (!unblockIP.trim() && !unblockEmail.trim()) return;
+                        setUnblockLoading(true);
+                        setUnblockResult(null);
+                        setUnblockMsg(null);
+                        try {
+                          const params = new URLSearchParams();
+                          if (unblockIP.trim()) params.set('ip', unblockIP.trim());
+                          if (unblockEmail.trim()) params.set('email', unblockEmail.trim());
+                          const r = await authFetch(`/api/super/trial-abuse/lookup?${params.toString()}`);
+                          const data = await r.json();
+                          setUnblockResult(data);
+                        } catch {
+                          setUnblockMsg({ ok: false, text: 'فشل في الفحص' });
+                        } finally {
+                          setUnblockLoading(false);
+                        }
+                      }}
+                      style={{
+                        padding: '10px 20px', borderRadius: '10px', border: '1.5px solid rgba(6,182,212,0.4)',
+                        background: 'rgba(6,182,212,0.1)', color: '#06B6D4', cursor: unblockLoading ? 'not-allowed' : 'pointer',
+                        fontFamily: FONT, fontWeight: 700, fontSize: '13px', opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.5 : 1,
+                      }}
+                    >
+                      🔍 فحص الحالة
+                    </button>
+
+                    <button
+                      disabled={unblockLoading || (!unblockIP.trim() && !unblockEmail.trim())}
+                      onClick={async () => {
+                        if (!unblockIP.trim() && !unblockEmail.trim()) return;
+                        const confirmMsg = `رفع جميع الحجوبات عن:\nIP: ${unblockIP || 'غير محدد'}\nEmail: ${unblockEmail || 'غير محدد'}\n\nهل أنت متأكد؟`;
+                        if (!window.confirm(confirmMsg)) return;
+                        setUnblockLoading(true);
+                        setUnblockMsg(null);
+                        try {
+                          /* 1. DB: bulk override */
+                          const dbRes = await authFetch('/api/super/trial-abuse/bulk-override', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              ip: unblockIP.trim() || undefined,
+                              email: unblockEmail.trim() || undefined,
+                              reason: `رفع يدوي من السوبر أدمن`,
+                            }),
+                          });
+                          const dbData = await dbRes.json();
+
+                          /* 2. Redis: clear cooldown + rate limit (best effort) */
+                          let redisMsgPart = '';
+                          if (unblockIP.trim()) {
+                            try {
+                              await authFetch('/api/super/trial-monitoring/unblock-ip', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ip: unblockIP.trim() }),
+                              });
+                              redisMsgPart = ' + مسح Redis';
+                            } catch { redisMsgPart = ' (Redis غير متاح)'; }
+                          }
+
+                          /* 3. Refresh lookup */
+                          if (unblockIP.trim() || unblockEmail.trim()) {
+                            const params = new URLSearchParams();
+                            if (unblockIP.trim()) params.set('ip', unblockIP.trim());
+                            if (unblockEmail.trim()) params.set('email', unblockEmail.trim());
+                            const r = await authFetch(`/api/super/trial-abuse/lookup?${params.toString()}`);
+                            setUnblockResult(await r.json());
+                          }
+
+                          setUnblockMsg({
+                            ok: true,
+                            text: `✅ تم رفع ${dbData.overridden_count} حجب من قاعدة البيانات${redisMsgPart} — العميل يستطيع التسجيل الآن`,
+                          });
+                        } catch {
+                          setUnblockMsg({ ok: false, text: 'فشل في رفع الحجب — تحقق من اللوجز' });
+                        } finally {
+                          setUnblockLoading(false);
+                        }
+                      }}
+                      style={{
+                        padding: '10px 20px', borderRadius: '10px', border: '1.5px solid rgba(16,185,129,0.4)',
+                        background: 'rgba(16,185,129,0.12)', color: '#10B981', cursor: unblockLoading ? 'not-allowed' : 'pointer',
+                        fontFamily: FONT, fontWeight: 700, fontSize: '13px', opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.5 : 1,
+                      }}
+                    >
+                      {unblockLoading ? '⏳ جارٍ...' : '🔓 رفع جميع الحجوبات'}
+                    </button>
+                  </div>
+
+                  {/* Message */}
+                  {unblockMsg && (
+                    <div style={{
+                      marginTop: '12px', padding: '12px 16px', borderRadius: '10px',
+                      background: unblockMsg.ok ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.1)',
+                      border: `1px solid ${unblockMsg.ok ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                      color: unblockMsg.ok ? '#10B981' : '#EF4444',
+                      fontSize: '13px', fontWeight: 700,
+                    }}>
+                      {unblockMsg.text}
+                    </div>
+                  )}
+
+                  {/* Lookup Result */}
+                  {unblockResult && (
+                    <div style={{ marginTop: '14px' }}>
+                      <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                        <div style={{ padding: '10px 16px', borderRadius: '10px', background: unblockResult.active_blocks > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(52,211,153,0.1)', border: `1px solid ${unblockResult.active_blocks > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(52,211,153,0.3)'}` }}>
+                          <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700 }}>حجوبات نشطة</div>
+                          <div style={{ fontSize: '22px', fontWeight: 900, color: unblockResult.active_blocks > 0 ? '#EF4444' : '#34D399' }}>{unblockResult.active_blocks}</div>
+                        </div>
+                        <div style={{ padding: '10px 16px', borderRadius: '10px', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                          <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700 }}>تم رفع حجبها</div>
+                          <div style={{ fontSize: '22px', fontWeight: 900, color: '#34D399' }}>{unblockResult.overridden_blocks}</div>
+                        </div>
+                        <div style={{ padding: '10px 16px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}` }}>
+                          <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700 }}>إجمالي السجلات</div>
+                          <div style={{ fontSize: '22px', fontWeight: 900, color: C.text }}>{unblockResult.rows.length}</div>
+                        </div>
+                        {unblockResult.active_blocks === 0 && unblockResult.rows.length === 0 && (
+                          <div style={{ padding: '10px 16px', borderRadius: '10px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#F59E0B', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
+                            ⚠️ لا توجد سجلات — قد تكون المشكلة في مكان آخر
+                          </div>
+                        )}
+                      </div>
+                      {unblockResult.rows.length > 0 && (
+                        <div style={{ overflowX: 'auto', borderRadius: '10px', border: `1px solid ${C.border}` }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                            <thead>
+                              <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                                {['البريد', 'IP', 'البصمة', 'الحالة', 'التاريخ'].map(h => (
+                                  <th key={h} style={{ padding: '8px 12px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {unblockResult.rows.map(r => (
+                                <tr key={r.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                                  <td style={{ padding: '8px 12px', color: C.text, fontFamily: 'monospace', fontSize: '11px' }}>{r.email}</td>
+                                  <td style={{ padding: '8px 12px', color: C.muted, fontFamily: 'monospace', fontSize: '11px' }}>{r.ip}</td>
+                                  <td style={{ padding: '8px 12px', color: C.muted, fontFamily: 'monospace', fontSize: '10px' }}>{r.fingerprint ? r.fingerprint.slice(0, 10) + '…' : '—'}</td>
+                                  <td style={{ padding: '8px 12px' }}>
+                                    {r.override_reason
+                                      ? <span style={{ color: '#34D399', fontWeight: 700, fontSize: '11px' }}>✓ مرفوع</span>
+                                      : <span style={{ color: '#EF4444', fontWeight: 700, fontSize: '11px' }}>🚫 محجوب</span>
+                                    }
+                                  </td>
+                                  <td style={{ padding: '8px 12px', color: C.muted, fontSize: '11px' }}>{new Date(r.created_at).toLocaleDateString('ar')}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* ── Recent Blocks ── */}
                 {card('آخر محاولات محجوبة', (
                   monData.recent_blocks.length === 0
@@ -6296,7 +6518,7 @@ export default function SuperAdmin() {
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                           <thead>
                             <tr>
-                              {['البريد الإلكتروني', 'IP', 'السبب', 'الوقت'].map(h => (
+                              {['البريد الإلكتروني', 'IP', 'السبب', 'الوقت', 'إجراء'].map(h => (
                                 <th key={h} style={{ padding: '8px 12px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
                               ))}
                             </tr>
@@ -6311,6 +6533,24 @@ export default function SuperAdmin() {
                                 </td>
                                 <td style={{ padding: '10px 12px', color: C.muted, fontSize: '11px' }}>
                                   {new Date(b.created_at).toLocaleString('ar')}
+                                </td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  <button
+                                    onClick={() => {
+                                      setUnblockIP(b.ip);
+                                      setUnblockEmail(b.email ?? '');
+                                      setUnblockResult(null);
+                                      setUnblockMsg(null);
+                                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    style={{
+                                      padding: '5px 10px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.4)',
+                                      background: 'rgba(16,185,129,0.1)', color: '#10B981', cursor: 'pointer',
+                                      fontFamily: FONT, fontWeight: 700, fontSize: '11px',
+                                    }}
+                                  >
+                                    🔓 رفع
+                                  </button>
                                 </td>
                               </tr>
                             ))}

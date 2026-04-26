@@ -29,6 +29,8 @@ import { anomalyDetector } from "../lib/trial-anomaly";
 import { recentBlocksStore } from "../lib/trial-recent-blocks";
 import { writeAuditLog } from "../lib/audit-log";
 import { db, companiesTable } from "@workspace/db";
+import { trialRedis, K } from "../lib/redis";
+import { cooldownStore } from "../lib/trial-cooldown";
 
 const router  = Router();
 const superOnly = [authenticate, requireRole("super_admin")] as const;
@@ -225,6 +227,112 @@ router.post(
     });
 
     res.json({ ok: true, status: newStatus });
+  }),
+);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GET /api/super/trial-monitoring/check-ip?ip=x.x.x.x
+   Diagnose why a specific IP is blocked (cooldown, rate limit, etc.)
+   ══════════════════════════════════════════════════════════════════════════ */
+router.get(
+  "/super/trial-monitoring/check-ip",
+  ...superOnly,
+  wrap(async (req, res) => {
+    const ip = String(req.query.ip ?? "").trim();
+    if (!ip) {
+      res.status(400).json({ error: "ip query param required" });
+      return;
+    }
+
+    const normalIP = ip.startsWith("::ffff:") ? ip.slice(7) : ip.toLowerCase();
+
+    let redisOk = true;
+    let cooldown: { blocked: boolean; until?: Date; level?: number } = { blocked: false };
+    let rateCount = 0;
+    let rateTtl   = 0;
+
+    try {
+      cooldown  = await cooldownStore.check(normalIP);
+      const raw = await trialRedis.get(K.RATE_IP(normalIP));
+      rateCount = raw ? Number(raw) : 0;
+      rateTtl   = await trialRedis.ttl(K.RATE_IP(normalIP));
+    } catch {
+      redisOk = false;
+    }
+
+    res.json({
+      ip:           normalIP,
+      redis_ok:     redisOk,
+      cooldown_blocked: cooldown.blocked,
+      cooldown_until:   cooldown.until?.toISOString() ?? null,
+      cooldown_level:   cooldown.level ?? null,
+      rate_count:   rateCount,
+      rate_ttl_sec: rateTtl > 0 ? rateTtl : 0,
+    });
+  }),
+);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   POST /api/super/trial-monitoring/unblock-ip
+   Body: { ip: string, fingerprint?: string }
+   Clears Redis cooldown + rate limit for an IP (and optionally a fingerprint).
+   Does NOT override DB-based blocks — those go through /super/trial-abuse/:id/override.
+   ══════════════════════════════════════════════════════════════════════════ */
+const UnblockSchema = z.object({
+  ip:          z.string().min(1).max(64),
+  fingerprint: z.string().max(128).optional(),
+});
+
+router.post(
+  "/super/trial-monitoring/unblock-ip",
+  ...superOnly,
+  wrap(async (req, res) => {
+    const parsed = UnblockSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid body", details: parsed.error.flatten() });
+      return;
+    }
+
+    const { ip, fingerprint } = parsed.data;
+    const normalIP = ip.startsWith("::ffff:") ? ip.slice(7) : ip.toLowerCase().trim();
+    const actor    = req.user;
+
+    const cleared: string[] = [];
+
+    try {
+      /* 1. Clear IP cooldown */
+      const delCooldown = await trialRedis.del(K.COOLDOWN(normalIP));
+      if (delCooldown > 0) cleared.push("ip_cooldown");
+
+      /* 2. Clear IP rate limit */
+      const delRate = await trialRedis.del(K.RATE_IP(normalIP));
+      if (delRate > 0) cleared.push("ip_rate_limit");
+
+      /* 3. Clear fingerprint blocks if provided */
+      if (fingerprint) {
+        const fpKey = `fp:${fingerprint}`;
+        const delFpCooldown = await trialRedis.del(K.COOLDOWN(fpKey));
+        if (delFpCooldown > 0) cleared.push("fp_cooldown");
+
+        const delFpRate = await trialRedis.del(K.RATE_FP(fingerprint));
+        if (delFpRate > 0) cleared.push("fp_rate_limit");
+      }
+    } catch (err) {
+      res.status(503).json({ error: "Redis unavailable — cannot clear blocks", ok: false });
+      return;
+    }
+
+    void writeAuditLog({
+      action:      "TRIAL_GUARD_UNBLOCK_IP",
+      record_type: "trial_monitoring",
+      record_id:   actor?.id ?? 0,
+      old_value:   { ip: normalIP, fingerprint },
+      new_value:   { cleared },
+      user:        { id: actor?.id, username: actor?.username },
+      note:        `Super admin cleared Redis blocks for IP ${normalIP}${fingerprint ? ` + fingerprint ${fingerprint.slice(0, 8)}…` : ""}`,
+    });
+
+    res.json({ ok: true, ip: normalIP, cleared });
   }),
 );
 

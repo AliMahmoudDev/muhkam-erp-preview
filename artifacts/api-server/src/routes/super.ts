@@ -1450,6 +1450,67 @@ router.delete("/super/trial-abuse/:id/override", ...superOnly, wrap(async (req, 
   res.json({ success: true, row: updated });
 }));
 
+/* ── GET /super/trial-abuse/lookup — look up all DB entries for an IP or email ─ */
+router.get("/super/trial-abuse/lookup", ...superOnly, wrap(async (req, res) => {
+  const ip    = String(req.query.ip    ?? "").trim().toLowerCase();
+  const email = String(req.query.email ?? "").trim().toLowerCase();
+
+  if (!ip && !email) {
+    res.status(400).json({ error: "ip أو email مطلوب" });
+    return;
+  }
+
+  const conditions = [];
+  if (ip)    conditions.push(eq(trialAbuseLogTable.ip, ip));
+  if (email) conditions.push(eq(trialAbuseLogTable.email, email));
+
+  const rows = await db
+    .select()
+    .from(trialAbuseLogTable)
+    .where(conditions.length === 1 ? conditions[0] : sql`(${trialAbuseLogTable.ip} = ${ip} OR ${trialAbuseLogTable.email} = ${email})`)
+    .orderBy(desc(trialAbuseLogTable.created_at))
+    .limit(50);
+
+  const activeBlocks  = rows.filter(r => r.override_reason === null).length;
+  const overriddenBlocks = rows.filter(r => r.override_reason !== null).length;
+
+  res.json({ rows, active_blocks: activeBlocks, overridden_blocks: overriddenBlocks });
+}));
+
+/* ── POST /super/trial-abuse/bulk-override — override all entries for an IP or email ─ */
+router.post("/super/trial-abuse/bulk-override", ...superOnly, wrap(async (req, res) => {
+  const { ip, email, reason } = req.body as { ip?: string; email?: string; reason?: string };
+
+  if (!ip && !email) {
+    res.status(400).json({ error: "ip أو email مطلوب" });
+    return;
+  }
+  if (!reason?.trim()) {
+    res.status(400).json({ error: "سبب التجاوز مطلوب" });
+    return;
+  }
+
+  const normalIP    = ip    ? ip.trim().toLowerCase()    : undefined;
+  const normalEmail = email ? email.trim().toLowerCase() : undefined;
+
+  const whereClause = normalIP && normalEmail
+    ? sql`(${trialAbuseLogTable.ip} = ${normalIP} OR ${trialAbuseLogTable.email} = ${normalEmail})`
+    : normalIP
+      ? eq(trialAbuseLogTable.ip, normalIP)
+      : eq(trialAbuseLogTable.email, normalEmail!);
+
+  const updated = await db
+    .update(trialAbuseLogTable)
+    .set({
+      override_reason: reason.trim(),
+      overridden_by:   req.user?.username ?? "super_admin",
+    })
+    .where(sql`(${whereClause}) AND ${trialAbuseLogTable.override_reason} IS NULL`)
+    .returning({ id: trialAbuseLogTable.id });
+
+  res.json({ success: true, overridden_count: updated.length });
+}));
+
 /* ── POST /super/companies/:id/verify-email — manually mark email verified ─ */
 router.post("/super/companies/:id/verify-email", ...superOnly, wrap(async (req, res) => {
   const cid = parseInt(req.params.id as string);
