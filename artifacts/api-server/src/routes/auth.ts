@@ -9,8 +9,8 @@ import jwt from 'jsonwebtoken';
 import { db, erpUsersTable, companiesTable } from '@workspace/db';
 import { logger } from '../lib/logger';
 import {
-  isEmailTrialAbused,
-  isIPTrialAbused,
+  checkTrialEligibility,
+  extractClientIP,
   recordTrialSignup,
   generateVerificationToken,
   buildVerificationLink,
@@ -627,16 +627,16 @@ router.get('/auth/me', authenticate, (req, res) => {
 
 /* ── POST /auth/register — SaaS: register new company + first admin ─
  *
- * Anti-abuse protection applied here:
- *  1. Duplicate email check in erp_users (existing guard, kept)
- *  2. Email trial-abuse check in trial_abuse_log — blocks email that was
- *     used before for a trial (hard block, requires admin override)
- *  3. IP trial-abuse check — blocks IPs that have already registered
- *     MAX_TRIALS_PER_IP (default 2) trial accounts (hard block)
- *  4. Stores signup_ip, signup_user_agent, has_used_trial on company row
- *  5. Generates email verification token and logs the verification link
- *     (soft requirement — trial is active immediately but marked unverified)
- *  6. Records the signup permanently in trial_abuse_log
+ * Anti-abuse protection applied here (FAIL-CLOSED — blocks on any DB error):
+ *  1. Duplicate email check in erp_users (existing guard)
+ *  2. checkTrialEligibility() — runs 4 checks in priority order:
+ *       a. Email permanently blocked in trial_abuse_log
+ *       b. Public IP exceeded MAX_TRIALS_PUBLIC_IP (default 2)
+ *       c. Private IP exceeded MAX_TRIALS_PRIVATE_IP (default 5)
+ *       d. UA+IP fingerprint exceeded MAX_TRIALS_UA_IP (default 3)
+ *  3. Stores signup_ip, signup_user_agent, has_used_trial on company row
+ *  4. Generates email verification token and logs the verification link
+ *  5. Records signup permanently in trial_abuse_log (all IPs, including private)
  */
 router.post('/auth/register', async (req, res) => {
   try {
@@ -672,9 +672,8 @@ router.post('/auth/register', async (req, res) => {
 
     const normalEmail = email.toLowerCase().trim();
 
-    /* ── Extract client IP and User-Agent for abuse tracking ─── */
-    // req.ip is populated by Express trust-proxy (same mechanism as superAdminIPGuard)
-    const clientIP = req.ip || req.socket.remoteAddress || 'unknown';
+    /* ── Extract client IP and User-Agent ────────────────────── */
+    const clientIP  = extractClientIP(req);
     const userAgent = req.headers['user-agent'];
 
     /* ── Duplicate email check (erp_users) ───────────────────── */
@@ -687,23 +686,37 @@ router.post('/auth/register', async (req, res) => {
       return;
     }
 
-    /* ── Trial abuse check #1: email already used a trial ────── */
-    // Check the permanent trial_abuse_log (survives company deletion)
-    const emailAbused = await isEmailTrialAbused(normalEmail);
-    if (emailAbused) {
-      res.status(409).json({
-        error: 'هذا البريد الإلكتروني استُخدم بالفعل في فترة تجريبية — تواصل معنا للمساعدة',
-        code:  'TRIAL_EMAIL_USED',
+    /* ── Trial abuse checks (FAIL-CLOSED — all 4 checks in one call) ─── */
+    let trialCheck;
+    try {
+      trialCheck = await checkTrialEligibility(normalEmail, clientIP, userAgent);
+    } catch (err) {
+      // DB error during abuse check — BLOCK the registration (fail-closed)
+      logger.error({ err, email: normalEmail, ip: clientIP }, '[register] Trial check DB error — blocking registration (fail-closed)');
+      res.status(503).json({
+        error: 'خدمة التحقق غير متاحة مؤقتاً — يرجى المحاولة بعد دقيقة',
+        code:  'TRIAL_CHECK_UNAVAILABLE',
       });
       return;
     }
 
-    /* ── Trial abuse check #2: IP registered too many trials ─── */
-    const ipCheck = await isIPTrialAbused(clientIP);
-    if (ipCheck.abused) {
-      res.status(429).json({
-        error: 'تم الوصول إلى الحد الأقصى للحسابات التجريبية من هذا الاتصال — تواصل مع الدعم',
-        code:  'TRIAL_IP_LIMIT',
+    if (!trialCheck.allowed) {
+      const statusCode = trialCheck.blocked_by === 'email' ? 409 : 429;
+      const messages: Record<string, string> = {
+        email:      'هذا البريد الإلكتروني استُخدم بالفعل في فترة تجريبية — تواصل معنا للمساعدة',
+        ip_public:  'تم الوصول إلى الحد الأقصى للحسابات التجريبية من هذا الاتصال — تواصل مع الدعم',
+        ip_private: 'تم الوصول إلى الحد الأقصى للحسابات التجريبية من هذه الشبكة — تواصل مع الدعم',
+        ua_ip:      'تم رصد نشاط غير معتاد من هذا الجهاز — تواصل مع الدعم',
+      };
+      const code: Record<string, string> = {
+        email:      'TRIAL_EMAIL_USED',
+        ip_public:  'TRIAL_IP_LIMIT',
+        ip_private: 'TRIAL_NETWORK_LIMIT',
+        ua_ip:      'TRIAL_DEVICE_LIMIT',
+      };
+      res.status(statusCode).json({
+        error: messages[trialCheck.blocked_by ?? ''] ?? 'التسجيل غير متاح — تواصل مع الدعم',
+        code:  code[trialCheck.blocked_by ?? ''] ?? 'TRIAL_BLOCKED',
       });
       return;
     }
