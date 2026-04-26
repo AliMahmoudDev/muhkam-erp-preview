@@ -65,32 +65,48 @@ router.get(
   "/super/trial-monitoring",
   ...superOnly,
   wrap(async (_req, res) => {
-    /* All anomaly calls are now async (Redis). Run independent ones in parallel. */
-    const [
-      status,
-      inWindow,
-      pauseUntil,
-      pauseRemain,
-      topIPs,
-      topFPs,
-      warningFiredAt,
-      pauseReason,
-      wasManualPause,
-      recentBlocks,
-    ] = await Promise.all([
-      anomalyDetector.status(),
-      anomalyDetector.countGlobal(),
-      anomalyDetector.pausedUntilDate(),
-      anomalyDetector.pauseRemainingSeconds(),
-      anomalyDetector.topIPs(10),
-      anomalyDetector.topFingerprints(10),
-      anomalyDetector.warningFiredAtDate(),
-      anomalyDetector.pauseReason(),
-      anomalyDetector.wasManualPause(),
-      recentBlocksStore.recent(20),
-    ]);
+    /* Try Redis-dependent calls; fall back to safe defaults if Redis is down */
+    let redisOk = true;
+    let status: string = "normal";
+    let inWindow = 0;
+    let pauseUntil: Date | null = null;
+    let pauseRemain = 0;
+    let topIPs: { key: string; count: number }[] = [];
+    let topFPs: { key: string; count: number }[] = [];
+    let warningFiredAt: Date | null = null;
+    let pauseReason: string | null = null;
+    let wasManualPause = false;
+    let recentBlocks: unknown[] = [];
 
-    /* Suspicious companies — trial_score < 50 or is_suspicious flag */
+    try {
+      [
+        status,
+        inWindow,
+        pauseUntil,
+        pauseRemain,
+        topIPs,
+        topFPs,
+        warningFiredAt,
+        pauseReason,
+        wasManualPause,
+        recentBlocks,
+      ] = await Promise.all([
+        anomalyDetector.status(),
+        anomalyDetector.countGlobal(),
+        anomalyDetector.pausedUntilDate(),
+        anomalyDetector.pauseRemainingSeconds(),
+        anomalyDetector.topIPs(10),
+        anomalyDetector.topFingerprints(10),
+        anomalyDetector.warningFiredAtDate(),
+        anomalyDetector.pauseReason(),
+        anomalyDetector.wasManualPause(),
+        recentBlocksStore.recent(20),
+      ]);
+    } catch {
+      redisOk = false;
+    }
+
+    /* Suspicious companies — always from DB (no Redis needed) */
     const suspiciousCompanies = await db
       .select({
         id:                  companiesTable.id,
@@ -106,6 +122,7 @@ router.get(
       .limit(20);
 
     res.json({
+      redis_ok:                 redisOk,
       status,
       registrations_in_window:  inWindow,
       alert_threshold:          anomalyDetector.alertThreshold(),

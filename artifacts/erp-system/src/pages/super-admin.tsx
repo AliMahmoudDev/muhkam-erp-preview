@@ -272,6 +272,7 @@ export default function SuperAdmin() {
 
   /* Trial Monitoring */
   interface TrialMonitoringData {
+    redis_ok: boolean;
     status: 'normal' | 'warning' | 'paused';
     registrations_in_window: number;
     alert_threshold: number;
@@ -6061,395 +6062,357 @@ export default function SuperAdmin() {
           TAB: MONITORING  🛡️
           ══════════════════════════════ */}
       {activeTab === 'monitoring' && (() => {
-        const MON_STATUS_MAP = {
-          normal:  { label: 'طبيعي',          color: '#34D399', bg: 'rgba(52,211,153,0.12)',  icon: '✅' },
-          warning: { label: 'تحذير',           color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  icon: '⚠️' },
-          paused:  { label: 'متوقف مؤقتاً',   color: '#EF4444', bg: 'rgba(239,68,68,0.12)',   icon: '🚫' },
+        const MON_STATUS_MAP: Record<string, { label: string; color: string; bg: string; border: string; icon: string; glow: string }> = {
+          normal:  { label: 'طبيعي',        color: '#34D399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.3)',  icon: '✅', glow: 'rgba(52,211,153,0.15)' },
+          warning: { label: 'تحذير',         color: '#F59E0B', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.3)',  icon: '⚠️', glow: 'rgba(245,158,11,0.15)' },
+          paused:  { label: 'متوقف مؤقتاً', color: '#EF4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.3)',   icon: '🚫', glow: 'rgba(239,68,68,0.15)' },
         };
-        const st = monData ? MON_STATUS_MAP[monData.status] : null;
+        const st = MON_STATUS_MAP[monData?.status ?? 'normal'] ?? MON_STATUS_MAP['normal'];
 
-        const card = (title: string, children: React.ReactNode, extra?: React.CSSProperties) => (
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '16px', padding: '22px 24px', ...extra }}>
-            <div style={{ fontSize: '13px', fontWeight: 800, color: C.muted, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</div>
+        const mCard = (icon: string, title: string, children: React.ReactNode, accentColor?: string) => (
+          <div style={{
+            background: C.card, border: `1px solid ${C.border}`, borderRadius: '20px',
+            padding: '22px 24px', position: 'relative', overflow: 'hidden',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+          }}>
+            {accentColor && <div style={{ position: 'absolute', top: 0, right: 0, width: '3px', height: '100%', background: accentColor, borderRadius: '0 20px 20px 0' }} />}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '18px' }}>{icon}</span>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{title}</div>
+            </div>
             {children}
           </div>
         );
 
         const badge = (label: string, color: string, bg: string) => (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, color, background: bg }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, color, background: bg, whiteSpace: 'nowrap' }}>
             {label}
           </span>
         );
 
+        const inputStyle: React.CSSProperties = {
+          width: '100%', padding: '11px 14px', borderRadius: '12px',
+          border: `1.5px solid ${C.border}`, background: 'rgba(255,255,255,0.04)',
+          color: C.text, fontFamily: 'monospace', fontSize: '13px', outline: 'none',
+          boxSizing: 'border-box', transition: 'border-color 0.2s',
+        };
+
+        const doLookup = async () => {
+          if (!unblockIP.trim() && !unblockEmail.trim()) return;
+          setUnblockLoading(true);
+          setUnblockResult(null);
+          setUnblockMsg(null);
+          try {
+            const params = new URLSearchParams();
+            if (unblockIP.trim()) params.set('ip', unblockIP.trim());
+            if (unblockEmail.trim()) params.set('email', unblockEmail.trim());
+            const r = await authFetch(`/api/super/trial-abuse/lookup?${params.toString()}`);
+            const data = await r.json();
+            setUnblockResult(data);
+          } catch {
+            setUnblockMsg({ ok: false, text: 'فشل في الفحص — تحقق من الاتصال' });
+          } finally {
+            setUnblockLoading(false);
+          }
+        };
+
+        const doUnblockAll = async () => {
+          if (!unblockIP.trim() && !unblockEmail.trim()) return;
+          if (!window.confirm(`رفع جميع الحجوبات عن:\nIP: ${unblockIP || 'غير محدد'}\nEmail: ${unblockEmail || 'غير محدد'}\n\nهل أنت متأكد؟`)) return;
+          setUnblockLoading(true);
+          setUnblockMsg(null);
+          try {
+            const dbRes = await authFetch('/api/super/trial-abuse/bulk-override', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ip: unblockIP.trim() || undefined, email: unblockEmail.trim() || undefined, reason: 'رفع يدوي من السوبر أدمن' }),
+            });
+            const dbData = await dbRes.json();
+            let redisPart = '';
+            if (unblockIP.trim()) {
+              try {
+                await authFetch('/api/super/trial-monitoring/unblock-ip', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ip: unblockIP.trim() }),
+                });
+                redisPart = ' + مسح Redis ✓';
+              } catch { redisPart = ' (Redis غير متاح)'; }
+            }
+            const params = new URLSearchParams();
+            if (unblockIP.trim()) params.set('ip', unblockIP.trim());
+            if (unblockEmail.trim()) params.set('email', unblockEmail.trim());
+            const r = await authFetch(`/api/super/trial-abuse/lookup?${params.toString()}`);
+            setUnblockResult(await r.json());
+            setUnblockMsg({ ok: true, text: `✅ تم رفع ${dbData.overridden_count ?? 0} حجب من قاعدة البيانات${redisPart} — العميل يستطيع التسجيل الآن` });
+            void refetchMon();
+          } catch {
+            setUnblockMsg({ ok: false, text: 'فشل في رفع الحجب — تحقق من اللوجز' });
+          } finally {
+            setUnblockLoading(false);
+          }
+        };
+
         return (
           <div style={{ direction: 'rtl', fontFamily: FONT }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+            <style>{`
+              @keyframes mon-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+              @keyframes mon-slide-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+              .mon-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important; }
+              .mon-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+              .mon-btn:active { transform: translateY(0); }
+              .mon-input:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+            `}</style>
+
+            {/* ── Page Header ── */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <h1 style={{ fontSize: '22px', fontWeight: 900, color: C.text, margin: 0 }}>
-                  🛡️ مراقبة التسجيلات التجريبية
-                </h1>
-                <p style={{ fontSize: '13px', color: C.muted, margin: '6px 0 0' }}>
-                  مراقبة النشاط غير الطبيعي في تسجيلات الحسابات التجريبية — يتجدد كل 30 ثانية
-                </p>
+                <h1 style={{ fontSize: '24px', fontWeight: 900, color: C.text, margin: 0 }}>🛡️ مراقبة التسجيلات التجريبية</h1>
+                <p style={{ fontSize: '13px', color: C.muted, margin: '6px 0 0' }}>تحكم كامل في حماية التسجيلات — يتجدد تلقائياً كل 30 ثانية</p>
               </div>
-              <button
-                onClick={() => refetchMon()}
-                style={{ padding: '10px 18px', borderRadius: '10px', border: `1.5px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
-              >
-                🔄 تحديث
-              </button>
-            </div>
-
-            {monLoading && (
-              <div style={{ textAlign: 'center', padding: '60px 0', color: C.muted }}>جارٍ التحميل...</div>
-            )}
-
-            {monError && !monLoading && (
-              <div style={{
-                background: 'rgba(239,68,68,0.06)', border: '1.5px solid rgba(239,68,68,0.25)',
-                borderRadius: '18px', padding: '36px', textAlign: 'center',
-              }}>
-                <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔴</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: '#EF4444', marginBottom: '8px' }}>
-                  Redis غير متاح
-                </div>
-                <div style={{ fontSize: '14px', color: C.muted, lineHeight: 1.7, maxWidth: '480px', margin: '0 auto' }}>
-                  خدمة مراقبة التسجيلات تعتمد على Redis. لتفعيل هذه الميزة، قم بتثبيت Redis على السيرفر وتعيين متغير البيئة:
-                </div>
-                <div style={{
-                  margin: '16px auto', padding: '12px 24px', borderRadius: '10px',
-                  background: 'rgba(0,0,0,0.3)', fontFamily: 'monospace', fontSize: '13px',
-                  color: '#86EFAC', display: 'inline-block',
-                }}>
-                  REDIS_URL=redis://127.0.0.1:6379
-                </div>
-                <div style={{ marginTop: '8px', fontSize: '12px', color: C.muted }}>
-                  بدون Redis: التسجيل لا يزال يعمل — فقط المراقبة المتقدمة والـ rate limiting معطلة.
-                </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {monData && !monData.redis_ok && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', fontSize: '12px', fontWeight: 700, color: '#F59E0B' }}>
+                    <span style={{ animation: 'mon-pulse 2s infinite' }}>⚠️</span> Redis غير متصل
+                  </div>
+                )}
+                {monData?.redis_ok && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)', fontSize: '12px', fontWeight: 700, color: '#34D399' }}>
+                    🟢 Redis متصل
+                  </div>
+                )}
                 <button
                   onClick={() => void refetchMon()}
-                  style={{ marginTop: '16px', padding: '10px 20px', borderRadius: '10px', border: '1.5px solid rgba(239,68,68,0.3)', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
+                  className="mon-btn"
+                  style={{ padding: '9px 18px', borderRadius: '12px', border: `1.5px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px', transition: 'all 0.2s' }}
                 >
-                  🔄 إعادة المحاولة
+                  🔄 تحديث
                 </button>
+              </div>
+            </div>
+
+            {/* ── Loading ── */}
+            {monLoading && (
+              <div style={{ textAlign: 'center', padding: '80px 0', color: C.muted }}>
+                <div style={{ fontSize: '40px', marginBottom: '16px', animation: 'mon-pulse 1.5s infinite' }}>🛡️</div>
+                <div style={{ fontWeight: 700 }}>جارٍ تحميل بيانات المراقبة...</div>
+              </div>
+            )}
+
+            {/* ── Error ── */}
+            {monError && !monLoading && (
+              <div style={{ background: 'rgba(239,68,68,0.06)', border: '1.5px solid rgba(239,68,68,0.2)', borderRadius: '20px', padding: '40px', textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔴</div>
+                <div style={{ fontSize: '18px', fontWeight: 900, color: '#EF4444', marginBottom: '8px' }}>تعذّر تحميل بيانات المراقبة</div>
+                <div style={{ fontSize: '13px', color: C.muted, marginBottom: '20px' }}>تحقق من اتصال السيرفر وأعد المحاولة</div>
+                <button onClick={() => void refetchMon()} className="mon-btn" style={{ padding: '11px 24px', borderRadius: '12px', border: '1.5px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '14px', transition: 'all 0.2s' }}>🔄 إعادة المحاولة</button>
               </div>
             )}
 
             {monData && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'mon-slide-in 0.4s ease' }}>
 
-                {/* ── Status Card ── */}
-                {card('حالة النظام', (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                {/* ── Redis Warning Banner ── */}
+                {!monData.redis_ok && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(234,88,12,0.08) 100%)',
+                    border: '1.5px solid rgba(245,158,11,0.35)', borderRadius: '16px', padding: '16px 20px',
+                    display: 'flex', alignItems: 'center', gap: '14px',
+                  }}>
+                    <span style={{ fontSize: '24px' }}>⚠️</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 800, color: '#F59E0B', fontSize: '14px' }}>Redis غير متاح — المراقبة المتقدمة معطلة</div>
+                      <div style={{ fontSize: '12px', color: C.muted, marginTop: '3px' }}>
+                        التسجيل يعمل عادياً، لكن rate limiting وإحصائيات IP معطلة.
+                        لتفعيل Redis: <span style={{ fontFamily: 'monospace', color: '#86EFAC', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '6px' }}>REDIS_URL=redis://127.0.0.1:6379</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Status Hero Card ── */}
+                <div style={{
+                  background: `linear-gradient(135deg, ${st.bg} 0%, rgba(15,15,26,0.8) 100%)`,
+                  border: `1.5px solid ${st.border}`,
+                  borderRadius: '24px', padding: '28px 32px',
+                  boxShadow: `0 0 40px ${st.glow}`,
+                  position: 'relative', overflow: 'hidden',
+                }}>
+                  <div style={{ position: 'absolute', top: '-30px', left: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: st.glow, filter: 'blur(40px)', pointerEvents: 'none' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
                       <div style={{
-                        width: '60px', height: '60px', borderRadius: '16px',
-                        background: st!.bg, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: '28px',
+                        width: '70px', height: '70px', borderRadius: '20px',
+                        background: st.bg, border: `1.5px solid ${st.border}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px',
+                        boxShadow: `0 4px 20px ${st.glow}`,
                       }}>
-                        {st!.icon}
+                        {st.icon}
                       </div>
                       <div>
-                        <div style={{ fontSize: '24px', fontWeight: 900, color: st!.color }}>{st!.label}</div>
-                        {monData.pause_reason && (
-                          <div style={{ fontSize: '12px', color: C.muted, marginTop: '4px' }}>{monData.pause_reason}</div>
-                        )}
+                        <div style={{ fontSize: '13px', color: C.muted, fontWeight: 700, marginBottom: '4px' }}>حالة نظام الحماية</div>
+                        <div style={{ fontSize: '28px', fontWeight: 900, color: st.color }}>{st.label}</div>
+                        {monData.pause_reason && <div style={{ fontSize: '12px', color: C.muted, marginTop: '4px' }}>{monData.pause_reason}</div>}
                         {monData.pause_until && (
                           <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '4px' }}>
-                            متوقف حتى: {new Date(monData.pause_until).toLocaleString('ar')}
-                            {monData.pause_remaining_seconds > 0 && ` (${Math.ceil(monData.pause_remaining_seconds / 60)} دقيقة)`}
+                            ⏱️ متوقف حتى: {new Date(monData.pause_until).toLocaleString('ar')}
+                            {monData.pause_remaining_seconds > 0 && ` — ${Math.ceil(monData.pause_remaining_seconds / 60)} دقيقة متبقية`}
                           </div>
                         )}
                         {monData.warning_fired_at && monData.status === 'warning' && (
-                          <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '4px' }}>
-                            تحذير منذ: {new Date(monData.warning_fired_at).toLocaleString('ar')}
-                          </div>
+                          <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '4px' }}>⚡ تحذير منذ: {new Date(monData.warning_fired_at).toLocaleString('ar')}</div>
                         )}
                       </div>
                     </div>
-
-                    {/* Manual Actions */}
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                       {monData.status === 'warning' && (
-                        <button
-                          onClick={async () => {
-                            await authFetch('/api/super/trial-monitoring/clear-warning', { method: 'POST' });
-                            void refetchMon();
-                          }}
-                          style={{ padding: '9px 16px', borderRadius: '10px', border: '1.5px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.1)', color: '#F59E0B', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
-                        >
+                        <button className="mon-btn" onClick={async () => { await authFetch('/api/super/trial-monitoring/clear-warning', { method: 'POST' }); void refetchMon(); }}
+                          style={{ padding: '10px 18px', borderRadius: '12px', border: '1.5px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.12)', color: '#F59E0B', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px', transition: 'all 0.2s' }}>
                           🧹 مسح التحذير
                         </button>
                       )}
                       {monData.status !== 'paused' && (
-                        <button
-                          onClick={async () => {
-                            const mins = prompt('مدة الإيقاف بالدقائق (1-1440):');
-                            if (!mins || isNaN(Number(mins))) return;
-                            const reason = prompt('سبب الإيقاف:') || 'إيقاف يدوي من المشرف';
-                            await authFetch('/api/super/trial-monitoring/pause', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ minutes: Number(mins), reason }),
-                            });
-                            void refetchMon();
-                          }}
-                          style={{ padding: '9px 16px', borderRadius: '10px', border: '1.5px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
-                        >
+                        <button className="mon-btn" onClick={async () => {
+                          const mins = prompt('مدة الإيقاف بالدقائق (1-1440):');
+                          if (!mins || isNaN(Number(mins))) return;
+                          const reason = prompt('سبب الإيقاف:') || 'إيقاف يدوي من المشرف';
+                          await authFetch('/api/super/trial-monitoring/pause', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ minutes: Number(mins), reason }) });
+                          void refetchMon();
+                        }}
+                          style={{ padding: '10px 18px', borderRadius: '12px', border: '1.5px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px', transition: 'all 0.2s' }}>
                           ⏸️ إيقاف مؤقت
                         </button>
                       )}
                       {monData.status === 'paused' && (
-                        <button
-                          onClick={async () => {
-                            await authFetch('/api/super/trial-monitoring/resume', { method: 'POST' });
-                            void refetchMon();
-                          }}
-                          style={{ padding: '9px 16px', borderRadius: '10px', border: '1.5px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.1)', color: '#34D399', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
-                        >
+                        <button className="mon-btn" onClick={async () => { await authFetch('/api/super/trial-monitoring/resume', { method: 'POST' }); void refetchMon(); }}
+                          style={{ padding: '10px 18px', borderRadius: '12px', border: '1.5px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.12)', color: '#34D399', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px', transition: 'all 0.2s' }}>
                           ▶️ استئناف التسجيلات
                         </button>
                       )}
                     </div>
                   </div>
-                ))}
+                </div>
 
-                {/* ── Metrics Row ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+                {/* ── Metric Cards ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '16px' }}>
                   {[
-                    { label: 'تسجيلات في النافذة الحالية', value: monData.registrations_in_window, color: monData.registrations_in_window >= monData.block_threshold ? '#EF4444' : monData.registrations_in_window >= monData.alert_threshold ? '#F59E0B' : '#34D399' },
-                    { label: 'حد التحذير',  value: monData.alert_threshold, color: '#F59E0B' },
-                    { label: 'حد الإيقاف', value: monData.block_threshold,  color: '#EF4444' },
-                    { label: 'الوقت المتبقي (ثانية)', value: monData.pause_remaining_seconds || '—', color: C.muted },
+                    {
+                      icon: '📊', label: 'تسجيلات في النافذة',
+                      value: monData.registrations_in_window,
+                      color: monData.registrations_in_window >= monData.block_threshold ? '#EF4444' : monData.registrations_in_window >= monData.alert_threshold ? '#F59E0B' : '#34D399',
+                      sub: 'آخر 15 دقيقة',
+                    },
+                    { icon: '⚠️', label: 'حد التحذير',   value: monData.alert_threshold, color: '#F59E0B', sub: 'تسجيل / نافذة' },
+                    { icon: '🚫', label: 'حد الإيقاف',  value: monData.block_threshold,  color: '#EF4444', sub: 'تسجيل / نافذة' },
+                    { icon: '⏱️', label: 'وقت الإيقاف', value: monData.pause_remaining_seconds > 0 ? `${Math.ceil(monData.pause_remaining_seconds / 60)} دقيقة` : '—', color: monData.pause_remaining_seconds > 0 ? '#EF4444' : C.muted, sub: 'متبقي' },
                   ].map(m => (
-                    <div key={m.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '16px 18px' }}>
-                      <div style={{ fontSize: '11px', color: C.muted, marginBottom: '8px', fontWeight: 700 }}>{m.label}</div>
-                      <div style={{ fontSize: '26px', fontWeight: 900, color: m.color }}>{m.value}</div>
+                    <div key={m.label} className="mon-card" style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '18px', padding: '20px', transition: 'all 0.2s', cursor: 'default' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '18px' }}>{m.icon}</span>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.label}</span>
+                      </div>
+                      <div style={{ fontSize: '28px', fontWeight: 900, color: m.color, lineHeight: 1 }}>{m.value}</div>
+                      <div style={{ fontSize: '11px', color: C.muted, marginTop: '6px' }}>{m.sub}</div>
                     </div>
                   ))}
                 </div>
 
-                {/* ── Top Sources Row ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                  {/* Top IPs */}
-                  {card('أعلى عناوين IP', (
-                    monData.top_ips.length === 0
-                      ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '12px 0' }}>لا توجد بيانات في النافذة الحالية</div>
-                      : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {monData.top_ips.map(e => (
-                            <div key={e.ip} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)' }}>
-                              <span style={{ fontSize: '13px', color: C.text, fontFamily: 'monospace' }}>{e.ip}</span>
-                              <span style={{ fontSize: '12px', fontWeight: 800, color: e.count >= 5 ? '#EF4444' : '#F59E0B', background: 'rgba(245,158,11,0.1)', padding: '2px 10px', borderRadius: '20px' }}>{e.count}</span>
-                            </div>
-                          ))}
-                        </div>
-                  ))}
-
-                  {/* Top Fingerprints */}
-                  {card('أعلى أجهزة (بصمة)', (
-                    monData.top_fingerprints.length === 0
-                      ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '12px 0' }}>لا توجد بيانات في النافذة الحالية</div>
-                      : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {monData.top_fingerprints.map(e => (
-                            <div key={e.fingerprint} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)' }}>
-                              <span style={{ fontSize: '11px', color: C.muted, fontFamily: 'monospace' }}>{e.fingerprint.slice(0, 16)}…</span>
-                              <span style={{ fontSize: '12px', fontWeight: 800, color: e.count >= 3 ? '#EF4444' : '#F59E0B', background: 'rgba(245,158,11,0.1)', padding: '2px 10px', borderRadius: '20px' }}>{e.count}</span>
-                            </div>
-                          ))}
-                        </div>
-                  ))}
-                </div>
-
-                {/* ── Suspicious Companies ── */}
-                {card('الحسابات المشبوهة', (
-                  monData.suspicious_companies.length === 0
-                    ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>✅ لا توجد حسابات مشبوهة حالياً</div>
-                    : <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                          <thead>
-                            <tr>
-                              {['الشركة', 'البريد', 'درجة الثقة', 'حالة التحقق', 'الحالة'].map(h => (
-                                <th key={h} style={{ padding: '8px 12px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {monData.suspicious_companies.map(c => (
-                              <tr key={c.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                                <td style={{ padding: '10px 12px', color: C.text, fontWeight: 700 }}>{c.name}</td>
-                                <td style={{ padding: '10px 12px', color: C.muted, fontFamily: 'monospace', fontSize: '12px' }}>{c.email ?? '—'}</td>
-                                <td style={{ padding: '10px 12px' }}>
-                                  <span style={{ fontWeight: 800, color: c.trial_score < 30 ? '#EF4444' : c.trial_score < 60 ? '#F59E0B' : '#34D399' }}>{c.trial_score}</span>
-                                </td>
-                                <td style={{ padding: '10px 12px' }}>
-                                  {badge(
-                                    c.verification_status === 'verified' ? '✓ موثق' : c.verification_status === 'pending' ? '⏳ معلق' : c.verification_status,
-                                    c.verification_status === 'verified' ? '#34D399' : '#F59E0B',
-                                    c.verification_status === 'verified' ? 'rgba(52,211,153,0.1)' : 'rgba(245,158,11,0.1)',
-                                  )}
-                                </td>
-                                <td style={{ padding: '10px 12px' }}>
-                                  {badge('مشبوه', '#EF4444', 'rgba(239,68,68,0.1)')}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                ))}
-
-                {/* ── Unblock Tool ── */}
+                {/* ══════════════════════════════════════════
+                    🔓 UNBLOCK TOOL — Main Feature
+                    ══════════════════════════════════════════ */}
                 <div style={{
-                  background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(6,182,212,0.05) 100%)',
-                  border: '1.5px solid rgba(16,185,129,0.3)',
-                  borderRadius: '18px',
-                  padding: '24px',
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(16,185,129,0.08) 50%, rgba(6,182,212,0.06) 100%)',
+                  border: '1.5px solid rgba(99,102,241,0.35)',
+                  borderRadius: '24px', padding: '28px 32px',
+                  boxShadow: '0 0 40px rgba(99,102,241,0.08)',
+                  position: 'relative', overflow: 'hidden',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🔓</div>
+                  <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(99,102,241,0.08)', filter: 'blur(30px)', pointerEvents: 'none' }} />
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' }}>
+                    <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(16,185,129,0.2))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', border: '1px solid rgba(99,102,241,0.3)' }}>🔓</div>
                     <div>
-                      <div style={{ fontSize: '15px', fontWeight: 900, color: '#10B981' }}>رفع الحجب عن عميل جديد</div>
-                      <div style={{ fontSize: '12px', color: C.muted, marginTop: '2px' }}>ادخل IP أو البريد الإلكتروني للعميل لرفع الحجب من قاعدة البيانات وRedis</div>
+                      <div style={{ fontSize: '17px', fontWeight: 900, color: C.text }}>أداة رفع الحجب</div>
+                      <div style={{ fontSize: '12px', color: C.muted, marginTop: '3px' }}>رفع شامل من قاعدة البيانات + Redis — ادخل IP أو البريد أو كليهما</div>
                     </div>
                   </div>
 
-                  {/* Inputs */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                  {/* Inputs Row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'flex-end', marginBottom: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '11px', color: C.muted, fontWeight: 700, marginBottom: '6px' }}>عنوان IP</div>
+                      <div style={{ fontSize: '11px', color: C.muted, fontWeight: 700, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🌐 عنوان IP</div>
                       <input
                         value={unblockIP}
                         onChange={e => setUnblockIP(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && void doLookup()}
                         placeholder="مثال: 41.234.56.78"
                         dir="ltr"
-                        style={{
-                          width: '100%', padding: '10px 12px', borderRadius: '10px',
-                          border: `1.5px solid ${C.border}`, background: C.card,
-                          color: C.text, fontFamily: 'monospace', fontSize: '13px', outline: 'none',
-                          boxSizing: 'border-box',
-                        }}
+                        className="mon-input"
+                        style={inputStyle}
                       />
                     </div>
                     <div>
-                      <div style={{ fontSize: '11px', color: C.muted, fontWeight: 700, marginBottom: '6px' }}>البريد الإلكتروني (اختياري)</div>
+                      <div style={{ fontSize: '11px', color: C.muted, fontWeight: 700, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>✉️ البريد الإلكتروني</div>
                       <input
                         value={unblockEmail}
                         onChange={e => setUnblockEmail(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && void doLookup()}
                         placeholder="مثال: customer@email.com"
                         dir="ltr"
-                        style={{
-                          width: '100%', padding: '10px 12px', borderRadius: '10px',
-                          border: `1.5px solid ${C.border}`, background: C.card,
-                          color: C.text, fontFamily: 'monospace', fontSize: '13px', outline: 'none',
-                          boxSizing: 'border-box',
-                        }}
+                        className="mon-input"
+                        style={inputStyle}
                       />
                     </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: unblockResult ? '16px' : '0' }}>
                     <button
+                      className="mon-btn"
                       disabled={unblockLoading || (!unblockIP.trim() && !unblockEmail.trim())}
-                      onClick={async () => {
-                        if (!unblockIP.trim() && !unblockEmail.trim()) return;
-                        setUnblockLoading(true);
-                        setUnblockResult(null);
-                        setUnblockMsg(null);
-                        try {
-                          const params = new URLSearchParams();
-                          if (unblockIP.trim()) params.set('ip', unblockIP.trim());
-                          if (unblockEmail.trim()) params.set('email', unblockEmail.trim());
-                          const r = await authFetch(`/api/super/trial-abuse/lookup?${params.toString()}`);
-                          const data = await r.json();
-                          setUnblockResult(data);
-                        } catch {
-                          setUnblockMsg({ ok: false, text: 'فشل في الفحص' });
-                        } finally {
-                          setUnblockLoading(false);
-                        }
-                      }}
+                      onClick={() => void doLookup()}
                       style={{
-                        padding: '10px 20px', borderRadius: '10px', border: '1.5px solid rgba(6,182,212,0.4)',
-                        background: 'rgba(6,182,212,0.1)', color: '#06B6D4', cursor: unblockLoading ? 'not-allowed' : 'pointer',
-                        fontFamily: FONT, fontWeight: 700, fontSize: '13px', opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.5 : 1,
+                        padding: '11px 20px', borderRadius: '12px', border: '1.5px solid rgba(6,182,212,0.4)',
+                        background: 'rgba(6,182,212,0.12)', color: '#06B6D4', cursor: 'pointer',
+                        fontFamily: FONT, fontWeight: 700, fontSize: '13px', whiteSpace: 'nowrap',
+                        opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.4 : 1, transition: 'all 0.2s',
                       }}
                     >
-                      🔍 فحص الحالة
-                    </button>
-
-                    <button
-                      disabled={unblockLoading || (!unblockIP.trim() && !unblockEmail.trim())}
-                      onClick={async () => {
-                        if (!unblockIP.trim() && !unblockEmail.trim()) return;
-                        const confirmMsg = `رفع جميع الحجوبات عن:\nIP: ${unblockIP || 'غير محدد'}\nEmail: ${unblockEmail || 'غير محدد'}\n\nهل أنت متأكد؟`;
-                        if (!window.confirm(confirmMsg)) return;
-                        setUnblockLoading(true);
-                        setUnblockMsg(null);
-                        try {
-                          /* 1. DB: bulk override */
-                          const dbRes = await authFetch('/api/super/trial-abuse/bulk-override', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              ip: unblockIP.trim() || undefined,
-                              email: unblockEmail.trim() || undefined,
-                              reason: `رفع يدوي من السوبر أدمن`,
-                            }),
-                          });
-                          const dbData = await dbRes.json();
-
-                          /* 2. Redis: clear cooldown + rate limit (best effort) */
-                          let redisMsgPart = '';
-                          if (unblockIP.trim()) {
-                            try {
-                              await authFetch('/api/super/trial-monitoring/unblock-ip', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ip: unblockIP.trim() }),
-                              });
-                              redisMsgPart = ' + مسح Redis';
-                            } catch { redisMsgPart = ' (Redis غير متاح)'; }
-                          }
-
-                          /* 3. Refresh lookup */
-                          if (unblockIP.trim() || unblockEmail.trim()) {
-                            const params = new URLSearchParams();
-                            if (unblockIP.trim()) params.set('ip', unblockIP.trim());
-                            if (unblockEmail.trim()) params.set('email', unblockEmail.trim());
-                            const r = await authFetch(`/api/super/trial-abuse/lookup?${params.toString()}`);
-                            setUnblockResult(await r.json());
-                          }
-
-                          setUnblockMsg({
-                            ok: true,
-                            text: `✅ تم رفع ${dbData.overridden_count} حجب من قاعدة البيانات${redisMsgPart} — العميل يستطيع التسجيل الآن`,
-                          });
-                        } catch {
-                          setUnblockMsg({ ok: false, text: 'فشل في رفع الحجب — تحقق من اللوجز' });
-                        } finally {
-                          setUnblockLoading(false);
-                        }
-                      }}
-                      style={{
-                        padding: '10px 20px', borderRadius: '10px', border: '1.5px solid rgba(16,185,129,0.4)',
-                        background: 'rgba(16,185,129,0.12)', color: '#10B981', cursor: unblockLoading ? 'not-allowed' : 'pointer',
-                        fontFamily: FONT, fontWeight: 700, fontSize: '13px', opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.5 : 1,
-                      }}
-                    >
-                      {unblockLoading ? '⏳ جارٍ...' : '🔓 رفع جميع الحجوبات'}
+                      🔍 فحص
                     </button>
                   </div>
 
-                  {/* Message */}
+                  {/* Action Bar */}
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                    <button
+                      className="mon-btn"
+                      disabled={unblockLoading || (!unblockIP.trim() && !unblockEmail.trim())}
+                      onClick={() => void doUnblockAll()}
+                      style={{
+                        padding: '12px 24px', borderRadius: '12px',
+                        background: unblockLoading ? 'rgba(16,185,129,0.1)' : 'linear-gradient(135deg, rgba(16,185,129,0.3), rgba(6,182,212,0.2))',
+                        border: '1.5px solid rgba(16,185,129,0.5)', color: '#10B981',
+                        cursor: unblockLoading ? 'not-allowed' : 'pointer',
+                        fontFamily: FONT, fontWeight: 800, fontSize: '14px',
+                        opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.4 : 1,
+                        transition: 'all 0.2s', boxShadow: '0 4px 16px rgba(16,185,129,0.15)',
+                      }}
+                    >
+                      {unblockLoading ? '⏳ جارٍ رفع الحجب...' : '🔓 رفع جميع الحجوبات (DB + Redis)'}
+                    </button>
+                    <button
+                      className="mon-btn"
+                      onClick={() => { setUnblockIP(''); setUnblockEmail(''); setUnblockResult(null); setUnblockMsg(null); }}
+                      style={{ padding: '12px 18px', borderRadius: '12px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px', transition: 'all 0.2s' }}
+                    >
+                      🗑️ مسح
+                    </button>
+                  </div>
+
+                  {/* Feedback Message */}
                   {unblockMsg && (
                     <div style={{
-                      marginTop: '12px', padding: '12px 16px', borderRadius: '10px',
+                      padding: '14px 18px', borderRadius: '14px',
                       background: unblockMsg.ok ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.1)',
-                      border: `1px solid ${unblockMsg.ok ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                      border: `1.5px solid ${unblockMsg.ok ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'}`,
                       color: unblockMsg.ok ? '#10B981' : '#EF4444',
-                      fontSize: '13px', fontWeight: 700,
+                      fontSize: '14px', fontWeight: 700, marginBottom: '14px',
+                      animation: 'mon-slide-in 0.3s ease',
                     }}>
                       {unblockMsg.text}
                     </div>
@@ -6457,49 +6420,52 @@ export default function SuperAdmin() {
 
                   {/* Lookup Result */}
                   {unblockResult && (
-                    <div style={{ marginTop: '14px' }}>
-                      <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                        <div style={{ padding: '10px 16px', borderRadius: '10px', background: unblockResult.active_blocks > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(52,211,153,0.1)', border: `1px solid ${unblockResult.active_blocks > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(52,211,153,0.3)'}` }}>
-                          <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700 }}>حجوبات نشطة</div>
-                          <div style={{ fontSize: '22px', fontWeight: 900, color: unblockResult.active_blocks > 0 ? '#EF4444' : '#34D399' }}>{unblockResult.active_blocks}</div>
+                    <div style={{ animation: 'mon-slide-in 0.3s ease' }}>
+                      {/* Summary Cards */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                        <div style={{ padding: '14px 18px', borderRadius: '14px', background: (unblockResult.active_blocks ?? 0) > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(52,211,153,0.1)', border: `1.5px solid ${(unblockResult.active_blocks ?? 0) > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(52,211,153,0.3)'}` }}>
+                          <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase' }}>حجوبات نشطة</div>
+                          <div style={{ fontSize: '28px', fontWeight: 900, color: (unblockResult.active_blocks ?? 0) > 0 ? '#EF4444' : '#34D399' }}>{unblockResult.active_blocks ?? 0}</div>
                         </div>
-                        <div style={{ padding: '10px 16px', borderRadius: '10px', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}>
-                          <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700 }}>تم رفع حجبها</div>
-                          <div style={{ fontSize: '22px', fontWeight: 900, color: '#34D399' }}>{unblockResult.overridden_blocks}</div>
+                        <div style={{ padding: '14px 18px', borderRadius: '14px', background: 'rgba(52,211,153,0.08)', border: '1.5px solid rgba(52,211,153,0.25)' }}>
+                          <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase' }}>تم رفع حجبها</div>
+                          <div style={{ fontSize: '28px', fontWeight: 900, color: '#34D399' }}>{unblockResult.overridden_blocks ?? 0}</div>
                         </div>
-                        <div style={{ padding: '10px 16px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}` }}>
-                          <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700 }}>إجمالي السجلات</div>
-                          <div style={{ fontSize: '22px', fontWeight: 900, color: C.text }}>{unblockResult.rows.length}</div>
+                        <div style={{ padding: '14px 18px', borderRadius: '14px', background: 'rgba(255,255,255,0.04)', border: `1.5px solid ${C.border}` }}>
+                          <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase' }}>إجمالي السجلات</div>
+                          <div style={{ fontSize: '28px', fontWeight: 900, color: C.text }}>{(unblockResult.rows ?? []).length}</div>
                         </div>
-                        {unblockResult.active_blocks === 0 && unblockResult.rows.length === 0 && (
-                          <div style={{ padding: '10px 16px', borderRadius: '10px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#F59E0B', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-                            ⚠️ لا توجد سجلات — قد تكون المشكلة في مكان آخر
+                        {(unblockResult.active_blocks ?? 0) === 0 && (unblockResult.rows ?? []).length === 0 && (
+                          <div style={{ padding: '14px 18px', borderRadius: '14px', background: 'rgba(245,158,11,0.1)', border: '1.5px solid rgba(245,158,11,0.3)', color: '#F59E0B', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            ⚠️ لا توجد سجلات — المشكلة قد تكون في مكان آخر
                           </div>
                         )}
                       </div>
-                      {unblockResult.rows.length > 0 && (
-                        <div style={{ overflowX: 'auto', borderRadius: '10px', border: `1px solid ${C.border}` }}>
+
+                      {/* Records Table */}
+                      {(unblockResult.rows ?? []).length > 0 && (
+                        <div style={{ overflowX: 'auto', borderRadius: '14px', border: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.02)' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                             <thead>
-                              <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                              <tr style={{ background: 'rgba(255,255,255,0.04)' }}>
                                 {['البريد', 'IP', 'البصمة', 'الحالة', 'التاريخ'].map(h => (
-                                  <th key={h} style={{ padding: '8px 12px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                                  <th key={h} style={{ padding: '10px 14px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}`, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
                                 ))}
                               </tr>
                             </thead>
                             <tbody>
-                              {unblockResult.rows.map(r => (
+                              {(unblockResult.rows ?? []).map(r => (
                                 <tr key={r.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                                  <td style={{ padding: '8px 12px', color: C.text, fontFamily: 'monospace', fontSize: '11px' }}>{r.email}</td>
-                                  <td style={{ padding: '8px 12px', color: C.muted, fontFamily: 'monospace', fontSize: '11px' }}>{r.ip}</td>
-                                  <td style={{ padding: '8px 12px', color: C.muted, fontFamily: 'monospace', fontSize: '10px' }}>{r.fingerprint ? r.fingerprint.slice(0, 10) + '…' : '—'}</td>
-                                  <td style={{ padding: '8px 12px' }}>
+                                  <td style={{ padding: '10px 14px', color: C.text, fontFamily: 'monospace', fontSize: '12px' }}>{r.email}</td>
+                                  <td style={{ padding: '10px 14px', color: C.muted, fontFamily: 'monospace', fontSize: '12px' }}>{r.ip}</td>
+                                  <td style={{ padding: '10px 14px', color: C.muted, fontFamily: 'monospace', fontSize: '11px' }}>{r.fingerprint ? r.fingerprint.slice(0, 10) + '…' : '—'}</td>
+                                  <td style={{ padding: '10px 14px' }}>
                                     {r.override_reason
-                                      ? <span style={{ color: '#34D399', fontWeight: 700, fontSize: '11px' }}>✓ مرفوع</span>
-                                      : <span style={{ color: '#EF4444', fontWeight: 700, fontSize: '11px' }}>🚫 محجوب</span>
+                                      ? <span style={{ color: '#34D399', fontWeight: 800, fontSize: '12px', background: 'rgba(52,211,153,0.1)', padding: '3px 10px', borderRadius: '20px' }}>✓ مرفوع</span>
+                                      : <span style={{ color: '#EF4444', fontWeight: 800, fontSize: '12px', background: 'rgba(239,68,68,0.1)', padding: '3px 10px', borderRadius: '20px' }}>🚫 محجوب</span>
                                     }
                                   </td>
-                                  <td style={{ padding: '8px 12px', color: C.muted, fontSize: '11px' }}>{new Date(r.created_at).toLocaleDateString('ar')}</td>
+                                  <td style={{ padding: '10px 14px', color: C.muted, fontSize: '11px' }}>{new Date(r.created_at).toLocaleDateString('ar-EG')}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -6510,46 +6476,103 @@ export default function SuperAdmin() {
                   )}
                 </div>
 
-                {/* ── Recent Blocks ── */}
-                {card('آخر محاولات محجوبة', (
-                  monData.recent_blocks.length === 0
-                    ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>✅ لم يتم حجب أي محاولة مؤخراً</div>
+                {/* ── Top Sources Row ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                  {mCard('🌐', 'أعلى عناوين IP', (
+                    (monData.top_ips ?? []).length === 0
+                      ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>{monData.redis_ok ? 'لا توجد بيانات في النافذة الحالية' : 'Redis غير متاح'}</div>
+                      : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {(monData.top_ips ?? []).map(e => (
+                            <div key={e.ip} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '13px', color: C.text, fontFamily: 'monospace' }}>{e.ip}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 800, color: e.count >= 5 ? '#EF4444' : '#F59E0B', background: e.count >= 5 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)', padding: '2px 10px', borderRadius: '20px' }}>{e.count}</span>
+                                <button className="mon-btn" onClick={() => { setUnblockIP(e.ip); setUnblockResult(null); setUnblockMsg(null); }} style={{ padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.08)', color: '#10B981', cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: FONT, transition: 'all 0.2s' }}>رفع</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                  ), '#6366f1')}
+
+                  {mCard('🖥️', 'أعلى أجهزة (بصمة)', (
+                    (monData.top_fingerprints ?? []).length === 0
+                      ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>{monData.redis_ok ? 'لا توجد بيانات في النافذة الحالية' : 'Redis غير متاح'}</div>
+                      : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {(monData.top_fingerprints ?? []).map(e => (
+                            <div key={e.fingerprint} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                              <span style={{ fontSize: '11px', color: C.muted, fontFamily: 'monospace' }}>{e.fingerprint.slice(0, 18)}…</span>
+                              <span style={{ fontSize: '12px', fontWeight: 800, color: e.count >= 3 ? '#EF4444' : '#F59E0B', background: e.count >= 3 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)', padding: '2px 10px', borderRadius: '20px' }}>{e.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                  ), '#8B5CF6')}
+                </div>
+
+                {/* ── Suspicious Companies ── */}
+                {mCard('🚨', 'الحسابات المشبوهة', (
+                  (monData.suspicious_companies ?? []).length === 0
+                    ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>✅ لا توجد حسابات مشبوهة حالياً</div>
                     : <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                           <thead>
                             <tr>
-                              {['البريد الإلكتروني', 'IP', 'السبب', 'الوقت', 'إجراء'].map(h => (
-                                <th key={h} style={{ padding: '8px 12px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
+                              {['الشركة', 'البريد', 'درجة الثقة', 'التحقق', 'الحالة'].map(h => (
+                                <th key={h} style={{ padding: '10px 12px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
-                            {monData.recent_blocks.map((b, i) => (
+                            {(monData.suspicious_companies ?? []).map(c => (
+                              <tr key={c.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                                <td style={{ padding: '10px 12px', color: C.text, fontWeight: 700 }}>{c.name}</td>
+                                <td style={{ padding: '10px 12px', color: C.muted, fontFamily: 'monospace', fontSize: '12px' }}>{c.email ?? '—'}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  <span style={{ fontWeight: 900, fontSize: '15px', color: c.trial_score < 30 ? '#EF4444' : c.trial_score < 60 ? '#F59E0B' : '#34D399' }}>{c.trial_score}</span>
+                                </td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  {badge(
+                                    c.verification_status === 'verified' ? '✓ موثق' : c.verification_status === 'pending' ? '⏳ معلق' : c.verification_status,
+                                    c.verification_status === 'verified' ? '#34D399' : '#F59E0B',
+                                    c.verification_status === 'verified' ? 'rgba(52,211,153,0.1)' : 'rgba(245,158,11,0.1)',
+                                  )}
+                                </td>
+                                <td style={{ padding: '10px 12px' }}>{badge('مشبوه', '#EF4444', 'rgba(239,68,68,0.1)')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                ), '#EF4444')}
+
+                {/* ── Recent Blocks ── */}
+                {mCard('🔒', 'آخر محاولات محجوبة', (
+                  (monData.recent_blocks ?? []).length === 0
+                    ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>✅ لم يتم حجب أي محاولة مؤخراً</div>
+                    : <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <thead>
+                            <tr>
+                              {['البريد', 'IP', 'السبب', 'الوقت', 'إجراء'].map(h => (
+                                <th key={h} style={{ padding: '10px 12px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(monData.recent_blocks ?? []).map((b, i) => (
                               <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
                                 <td style={{ padding: '10px 12px', color: C.text, fontFamily: 'monospace', fontSize: '12px' }}>{b.email}</td>
                                 <td style={{ padding: '10px 12px', color: C.muted, fontFamily: 'monospace', fontSize: '12px' }}>{b.ip}</td>
-                                <td style={{ padding: '10px 12px' }}>
-                                  {badge(b.reason, '#EF4444', 'rgba(239,68,68,0.1)')}
-                                </td>
-                                <td style={{ padding: '10px 12px', color: C.muted, fontSize: '11px' }}>
-                                  {new Date(b.created_at).toLocaleString('ar')}
-                                </td>
+                                <td style={{ padding: '10px 12px' }}>{badge(b.reason, '#EF4444', 'rgba(239,68,68,0.1)')}</td>
+                                <td style={{ padding: '10px 12px', color: C.muted, fontSize: '11px' }}>{new Date(b.created_at).toLocaleString('ar-EG')}</td>
                                 <td style={{ padding: '10px 12px' }}>
                                   <button
-                                    onClick={() => {
-                                      setUnblockIP(b.ip);
-                                      setUnblockEmail(b.email ?? '');
-                                      setUnblockResult(null);
-                                      setUnblockMsg(null);
-                                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    }}
-                                    style={{
-                                      padding: '5px 10px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.4)',
-                                      background: 'rgba(16,185,129,0.1)', color: '#10B981', cursor: 'pointer',
-                                      fontFamily: FONT, fontWeight: 700, fontSize: '11px',
-                                    }}
+                                    className="mon-btn"
+                                    onClick={() => { setUnblockIP(b.ip); setUnblockEmail(b.email ?? ''); setUnblockResult(null); setUnblockMsg(null); document.querySelector('[data-unblock-tool]')?.scrollIntoView({ behavior: 'smooth' }); }}
+                                    style={{ padding: '6px 12px', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.1)', color: '#10B981', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '12px', transition: 'all 0.2s' }}
                                   >
-                                    🔓 رفع
+                                    🔓 رفع الحجب
                                   </button>
                                 </td>
                               </tr>
@@ -6557,7 +6580,7 @@ export default function SuperAdmin() {
                           </tbody>
                         </table>
                       </div>
-                ))}
+                ), '#F59E0B')}
 
               </div>
             )}
