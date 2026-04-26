@@ -1,122 +1,103 @@
 /**
- * registration-limiter.ts
+ * registration-limiter.ts — Redis-backed rate limiters for POST /auth/register.
  *
- * Dedicated rate limiters for the POST /auth/register endpoint.
+ * Two independent limiters:
+ *   1. Per-IP  : window=15 min, limit=REG_IP_LIMIT  (default 5)
+ *   2. Per-FP  : window=30 min, limit=REG_FP_LIMIT  (default 3)
  *
- * Two independent limiters run in sequence:
+ * Storage: Redis INCR + EXPIRE.
+ *   Key trial:rate:ip:{ip}  — counter, auto-expires after window
+ *   Key trial:rate:fp:{fp}  — counter, auto-expires after window
  *
- *   1. Per-IP limiter
- *      Window : 15 minutes
- *      Limit  : REG_IP_LIMIT  (default 5) attempts per IP
- *      Purpose: Stops brute-force registrations from a single IP
- *               before they hit the DB-backed trial-guard checks.
+ * Fail-closed: if Redis is unavailable the command throws and the route
+ * returns 503 TRIAL_SYSTEM_UNAVAILABLE — never silently allow.
  *
- *   2. Per-Fingerprint limiter
- *      Window : 30 minutes
- *      Limit  : REG_FP_LIMIT  (default 3) attempts per device fingerprint
- *      Purpose: Catches VPN rotators who change IP but keep the same browser.
- *               Applied AFTER the fingerprint is computed in the request.
- *
- * Storage: in-memory sliding window (same pattern as per-tenant-rate-limit.ts).
- *   Redis support is optional — if REDIS_URL is set the counters are shared
- *   across processes. If not, each process has its own counters (acceptable
- *   since registration is low-volume and multi-process deployments are rare).
- *
- * Both limiters return 429 with Arabic messages and standard rate-limit headers.
+ * API is identical to the previous in-memory version; callers are unchanged
+ * except for `await` on the two async functions and the middleware.
  */
 
 import type { Request, Response, NextFunction } from "express";
+import { trialRedis, K } from "./redis";
 import { logger } from "./logger";
 
-/* ── Config ────────────────────────────────────────────────────────────────── */
+/* ── Config ─────────────────────────────────────────────────────────────── */
+const IP_WINDOW_SEC = Math.ceil(Number(process.env.REG_IP_WINDOW_MS  ?? String(15 * 60 * 1000)) / 1000);
+const IP_LIMIT      = Number(process.env.REG_IP_LIMIT ?? "5");
 
-const IP_WINDOW_MS  = Number(process.env.REG_IP_WINDOW_MS  ?? String(15 * 60 * 1000)); // 15 min
-const IP_LIMIT      = Number(process.env.REG_IP_LIMIT      ?? "5");
+const FP_WINDOW_SEC = Math.ceil(Number(process.env.REG_FP_WINDOW_MS  ?? String(30 * 60 * 1000)) / 1000);
+const FP_LIMIT      = Number(process.env.REG_FP_LIMIT ?? "3");
 
-const FP_WINDOW_MS  = Number(process.env.REG_FP_WINDOW_MS  ?? String(30 * 60 * 1000)); // 30 min
-const FP_LIMIT      = Number(process.env.REG_FP_LIMIT      ?? "3");
-
-/* ── Sliding window store (in-memory) ──────────────────────────────────────── */
-
-interface WindowEntry { timestamps: number[]; }
-const store = new Map<string, WindowEntry>();
-
-function countWindow(key: string, windowMs: number, nowMs: number): number {
-  const cutoff = nowMs - windowMs;
-  const entry  = store.get(key);
-  if (!entry) return 0;
-  // Evict old entries
-  const fresh = entry.timestamps.filter(t => t > cutoff);
-  entry.timestamps = fresh;
-  return fresh.length;
-}
-
-function recordHit(key: string, windowMs: number, nowMs: number): void {
-  let entry = store.get(key);
-  if (!entry) { entry = { timestamps: [] }; store.set(key, entry); }
-  const cutoff = nowMs - windowMs;
-  entry.timestamps = entry.timestamps.filter(t => t > cutoff);
-  entry.timestamps.push(nowMs);
-}
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [k, v] of store) {
-    // Use the longest window for pruning
-    const cutoff = now - Math.max(IP_WINDOW_MS, FP_WINDOW_MS);
-    v.timestamps = v.timestamps.filter(t => t > cutoff);
-    if (v.timestamps.length === 0) store.delete(k);
-  }
-}, 5 * 60 * 1000);
-
-/* ── Exported check functions ──────────────────────────────────────────────── */
-
-/** Check and record an IP-based rate limit hit. Returns true if blocked. */
-export function checkAndRecordIPLimit(ip: string): { blocked: boolean; remaining: number; resetMs: number } {
-  const now  = Date.now();
-  const key  = `reg:ip:${ip}`;
-  const used = countWindow(key, IP_WINDOW_MS, now);
-  const remaining = Math.max(0, IP_LIMIT - used - 1);
-
-  if (used >= IP_LIMIT) {
-    logger.warn({ ip, used, limit: IP_LIMIT }, "[RegLimit] IP rate limit exceeded");
-    return { blocked: true, remaining: 0, resetMs: now + IP_WINDOW_MS };
+/* ── Shared Redis INCR/EXPIRE helper ────────────────────────────────────── */
+async function checkAndRecord(
+  key:       string,
+  limit:     number,
+  windowSec: number,
+  logTag:    string,
+): Promise<{ blocked: boolean; remaining: number; resetMs: number }> {
+  /* INCR returns the new value. If it's 1 (first hit), set the expiry. */
+  const count = await trialRedis.incr(key);
+  if (count === 1) {
+    /* First registration in this window — set TTL. */
+    await trialRedis.expire(key, windowSec);
   }
 
-  recordHit(key, IP_WINDOW_MS, now);
-  return { blocked: false, remaining, resetMs: now + IP_WINDOW_MS };
-}
+  const ttl      = await trialRedis.ttl(key);
+  const resetMs  = Date.now() + Math.max(ttl, 0) * 1000;
+  const remaining = Math.max(0, limit - count);
 
-/** Check and record a fingerprint-based rate limit hit. Returns true if blocked. */
-export function checkAndRecordFPLimit(fingerprint: string): { blocked: boolean; remaining: number; resetMs: number } {
-  const now  = Date.now();
-  const key  = `reg:fp:${fingerprint}`;
-  const used = countWindow(key, FP_WINDOW_MS, now);
-  const remaining = Math.max(0, FP_LIMIT - used - 1);
-
-  if (used >= FP_LIMIT) {
-    logger.warn({ fingerprint: fingerprint.slice(0, 8) + "…", used, limit: FP_LIMIT }, "[RegLimit] Fingerprint rate limit exceeded");
-    return { blocked: true, remaining: 0, resetMs: now + FP_WINDOW_MS };
+  if (count > limit) {
+    logger.warn({ key, count, limit, tag: logTag }, `[RegLimit] ${logTag} rate limit exceeded`);
+    return { blocked: true, remaining: 0, resetMs };
   }
 
-  recordHit(key, FP_WINDOW_MS, now);
-  return { blocked: false, remaining, resetMs: now + FP_WINDOW_MS };
+  return { blocked: false, remaining, resetMs };
 }
 
-/* ── Express middleware (IP-only — applied at route mount time) ─────────────── */
+/* ── Public async API ───────────────────────────────────────────────────── */
+
+/** Check and record an IP-based registration rate hit. Throws if Redis is down. */
+export async function checkAndRecordIPLimit(
+  ip: string,
+): Promise<{ blocked: boolean; remaining: number; resetMs: number }> {
+  return checkAndRecord(K.RATE_IP(ip), IP_LIMIT, IP_WINDOW_SEC, "IP");
+}
+
+/** Check and record a fingerprint-based rate hit. Throws if Redis is down. */
+export async function checkAndRecordFPLimit(
+  fingerprint: string,
+): Promise<{ blocked: boolean; remaining: number; resetMs: number }> {
+  return checkAndRecord(K.RATE_FP(fingerprint), FP_LIMIT, FP_WINDOW_SEC, "FP");
+}
+
+/* ── Express middleware (IP only, applied at route mount) ───────────────── */
 
 /**
- * Middleware that applies the IP rate limit.
- * Mount it directly on the register route:
- *   router.post('/auth/register', ipRegistrationLimiter, async (req, res) => { … })
+ * Async middleware — applies the IP rate limit before the route handler runs.
+ * Mount on the register route:
+ *   router.post('/auth/register', ipRegistrationLimiter, handler)
  */
-export function ipRegistrationLimiter(req: Request, res: Response, next: NextFunction): void {
+export async function ipRegistrationLimiter(
+  req:  Request,
+  res:  Response,
+  next: NextFunction,
+): Promise<void> {
   const ip = (req.ip ?? req.socket.remoteAddress ?? "unknown").trim();
-  const result = checkAndRecordIPLimit(ip);
 
-  res.setHeader("X-RateLimit-Limit-Register", String(IP_LIMIT));
-  res.setHeader("X-RateLimit-Remaining-Register", String(result.remaining));
-  res.setHeader("X-RateLimit-Window-Register", String(Math.round(IP_WINDOW_MS / 1000)));
+  let result: { blocked: boolean; remaining: number; resetMs: number };
+  try {
+    result = await checkAndRecordIPLimit(ip);
+  } catch (err) {
+    logger.error({ err }, "[RegLimit] Redis unavailable — failing closed on IP limiter");
+    res.status(503).json({
+      error: "خدمة التسجيل غير متاحة مؤقتاً — يرجى المحاولة لاحقاً",
+      code:  "TRIAL_SYSTEM_UNAVAILABLE",
+    });
+    return;
+  }
+
+  res.setHeader("X-RateLimit-Limit-Register",     String(IP_LIMIT));
+  res.setHeader("X-RateLimit-Remaining-Register",  String(result.remaining));
+  res.setHeader("X-RateLimit-Window-Register",     String(IP_WINDOW_SEC));
 
   if (result.blocked) {
     const retryAfter = Math.ceil((result.resetMs - Date.now()) / 1000);
