@@ -104,9 +104,9 @@ jobs:
 
             pnpm install --frozen-lockfile
 
-            # Push any new DB migrations
+            # Push any new DB migrations (--force ensures new columns on existing tables are applied)
             cd "$APP_DIR/lib/db"
-            pnpm run push
+            pnpm run push-force
 
             cd "$APP_DIR/artifacts/erp-system"
             NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
