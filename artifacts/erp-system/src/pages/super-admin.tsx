@@ -11,7 +11,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { useLocation } from 'wouter';
 import {
   type BackupFile, type Company, type CompanyFeatures, type Stats, type Manager,
-  STATUS, translatePlan, C, PER_PAGE, FONT, authHeaders,
+  STATUS, translatePlan, C, FONT, authHeaders,
 } from './super-admin/types';
 import {
   AnimatedNumber, Toast, DarkInput, Modal, ConfirmDeleteModal, ActionBtn, PageBtn,
@@ -54,6 +54,8 @@ export default function SuperAdmin() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [deleteTarget, setDeleteTarget] = useState<Company | null>(null);
   const [deleteCoErr, setDeleteCoErr] = useState('');
   /* Subscription management modal */
@@ -968,12 +970,12 @@ export default function SuperAdmin() {
       (statusFilter === 'all' || co.status === statusFilter)
     );
   });
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const safePage = Math.min(page, totalPages);
-  const paged = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
+  const paged = filtered.slice((safePage - 1) * perPage, safePage * perPage);
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, perPage]);
 
   const expiryInfo = (co: Company) => {
     const formatted = new Date(co.end_date).toLocaleDateString('ar-EG-u-nu-latn', {
@@ -2398,55 +2400,37 @@ export default function SuperAdmin() {
                 </button>
               </div>
 
-              {/* Search + filter */}
+              {/* Search + filter + per-page + view mode */}
               <div
                 style={{
                   padding: '14px 24px',
                   borderBottom: `1px solid ${C.border}`,
                   display: 'flex',
-                  gap: '12px',
+                  gap: '10px',
                   flexWrap: 'wrap',
                   alignItems: 'center',
                 }}
               >
-                <div style={{ position: 'relative', flex: '1 1 220px', minWidth: '180px' }}>
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      right: '12px',
-                      transform: 'translateY(-50%)',
-                      fontSize: '15px',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    🔍
-                  </span>
+                {/* Search */}
+                <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '160px' }}>
+                  <span style={{ position: 'absolute', top: '50%', right: '12px', transform: 'translateY(-50%)', fontSize: '14px', pointerEvents: 'none' }}>🔍</span>
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="ابحث عن شركة…"
                     style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '9px 38px 9px 14px',
-                      borderRadius: '10px',
-                      border: `1.5px solid ${C.border}`,
-                      background: C.bg,
-                      color: C.text,
-                      fontSize: '13px',
-                      fontFamily: FONT,
-                      outline: 'none',
-                      transition: 'border-color 0.2s',
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '8px 36px 8px 12px', borderRadius: '10px',
+                      border: `1.5px solid ${C.border}`, background: C.bg,
+                      color: C.text, fontSize: '13px', fontFamily: FONT,
+                      outline: 'none', transition: 'border-color 0.2s',
                     }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = C.orange;
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = C.border;
-                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = C.orange; }}
+                    onBlur={(e)  => { e.currentTarget.style.borderColor = C.border; }}
                   />
                 </div>
+
+                {/* Status filters */}
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {STATUS_FILTERS.map((f) => {
                     const active = statusFilter === f.key;
@@ -2455,22 +2439,57 @@ export default function SuperAdmin() {
                         key={f.key}
                         onClick={() => setStatusFilter(f.key)}
                         style={{
-                          padding: '7px 14px',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          fontFamily: FONT,
+                          padding: '6px 12px', borderRadius: '20px', fontSize: '12px',
+                          fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
                           transition: 'all 0.15s',
                           border: active ? 'none' : `1px solid ${C.border}`,
                           background: active ? C.orange : 'transparent',
                           color: active ? '#fff' : C.muted,
                         }}
-                      >
-                        {f.label}
-                      </button>
+                      >{f.label}</button>
                     );
                   })}
+                </div>
+
+                {/* Spacer */}
+                <div style={{ flex: 1 }} />
+
+                {/* Per-page selector */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', color: C.muted, whiteSpace: 'nowrap' }}>عدد الصفوف:</span>
+                  <select
+                    value={perPage}
+                    onChange={(e) => setPerPage(Number(e.target.value))}
+                    style={{
+                      padding: '6px 10px', borderRadius: '8px', border: `1px solid ${C.border}`,
+                      background: C.bg, color: C.text, fontSize: '12px',
+                      fontFamily: FONT, cursor: 'pointer', outline: 'none',
+                    }}
+                  >
+                    {[10, 25, 50, 100].map(n => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* View mode toggle */}
+                <div style={{ display: 'flex', gap: '4px', background: C.bg, borderRadius: '10px', border: `1px solid ${C.border}`, padding: '3px' }}>
+                  {(['table', 'cards'] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setViewMode(m)}
+                      title={m === 'table' ? 'عرض جدول' : 'عرض بطاقات'}
+                      style={{
+                        padding: '5px 10px', borderRadius: '7px', border: 'none',
+                        background: viewMode === m ? C.orange : 'transparent',
+                        color: viewMode === m ? '#fff' : C.muted,
+                        fontSize: '14px', cursor: 'pointer', transition: 'all 0.15s',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {m === 'table' ? '☰' : '⊞'}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -2713,7 +2732,7 @@ export default function SuperAdmin() {
                 </div>
               )}
 
-              {/* Table body */}
+              {/* Table / Cards body */}
               {coLoading ? (
                 <div style={{ padding: '60px', textAlign: 'center', color: C.muted }}>
                   جاري التحميل...
@@ -2723,6 +2742,84 @@ export default function SuperAdmin() {
                   {search || statusFilter !== 'all'
                     ? 'لا توجد نتائج مطابقة للبحث'
                     : 'لا توجد شركات مسجّلة بعد'}
+                </div>
+              ) : viewMode === 'cards' ? (
+                <div style={{ padding: '16px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
+                  {paged.map((co) => {
+                    const st = STATUS[co.status] ?? STATUS.active;
+                    const expiry = expiryInfo(co);
+                    return (
+                      <div
+                        key={co.id}
+                        style={{
+                          background: C.bg, borderRadius: '14px',
+                          border: `1.5px solid ${C.border}`, padding: '16px',
+                          display: 'flex', flexDirection: 'column', gap: '10px',
+                          transition: 'border-color 0.18s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.orange; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; }}
+                      >
+                        {/* Card header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{
+                            width: '40px', height: '40px', borderRadius: '10px',
+                            background: C.orangeDim, border: '1px solid rgba(249,115,22,0.25)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '18px', flexShrink: 0,
+                          }}>🏢</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 800, fontSize: '14px', color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{co.name}</div>
+                            <div style={{ fontSize: '11px', color: C.muted, marginTop: '2px' }}>{co.admin_email ?? '—'}</div>
+                          </div>
+                          <span style={{
+                            fontSize: '11px', fontWeight: 700, padding: '3px 8px',
+                            borderRadius: '20px', background: st.bg, color: st.text, whiteSpace: 'nowrap',
+                          }}>{st.label}</span>
+                        </div>
+                        {/* Info rows */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: `1px solid ${C.border}`, paddingTop: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                            <span style={{ color: C.muted }}>الخطة</span>
+                            <span style={{ color: C.text, fontWeight: 700 }}>{translatePlan(co.plan_type)}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                            <span style={{ color: C.muted }}>الانتهاء</span>
+                            <span style={{ color: expiry.color, fontWeight: 600, fontSize: '11px' }}>{expiry.text}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                            <span style={{ color: C.muted }}>المستخدمون</span>
+                            <span style={{ color: C.text, fontWeight: 700 }}>{co.userCount ?? 0}</span>
+                          </div>
+                        </div>
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: '6px', paddingTop: '4px', flexWrap: 'wrap' }}>
+                          <ActionBtn
+                            label="الاشتراك" icon="💳" color={C.orange}
+                            onClick={() => {
+                              setSubModal(co);
+                              setSubForm({
+                                plan_type: co.plan_type ?? 'trial',
+                                edition: (co.edition as 'advanced' | 'ultimate') ?? 'ultimate',
+                                extend_mode: 'days', extend_days: 30,
+                                end_date: co.end_date?.slice(0, 10) ?? '',
+                                is_active: co.status === 'active',
+                                features: (co.features as CompanyFeatures) ?? DEFAULT_FEATS_ULTIMATE,
+                              });
+                            }}
+                          />
+                          <ActionBtn
+                            label="لقطة" icon="📊" color="#60A5FA"
+                            onClick={() => setSnapshotCompany(co.id)}
+                          />
+                          <ActionBtn
+                            label="حذف" icon="🗑" color={C.danger}
+                            onClick={() => { setDeleteTarget(co); setDeleteCoErr(''); }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div>
@@ -3033,56 +3130,55 @@ export default function SuperAdmin() {
                 </div>
               )}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
+              {/* Pagination — always visible */}
+              {!coLoading && filtered.length > 0 && (
                 <div
                   style={{
-                    padding: '14px 24px',
+                    padding: '12px 24px',
                     borderTop: `1px solid ${C.border}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
                     gap: '10px',
+                    background: 'rgba(249,115,22,0.03)',
                   }}
                 >
                   <span style={{ fontSize: '12px', color: C.muted }}>
-                    عرض {(safePage - 1) * PER_PAGE + 1}–
-                    {Math.min(safePage * PER_PAGE, filtered.length)} من {filtered.length} شركة
+                    عرض {filtered.length === 0 ? 0 : (safePage - 1) * perPage + 1}–{Math.min(safePage * perPage, filtered.length)} من {filtered.length} شركة
+                    {' · '}الصفحة {safePage} من {totalPages}
                   </span>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    <PageBtn
-                      label="السابق"
-                      disabled={safePage <= 1}
-                      onClick={() => setPage((p) => p - 1)}
-                    />
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => setPage(p)}
-                        style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          fontFamily: FONT,
-                          transition: 'all 0.15s',
-                          border: p === safePage ? 'none' : `1px solid ${C.border}`,
-                          background: p === safePage ? C.orange : 'transparent',
-                          color: p === safePage ? '#fff' : C.muted,
-                        }}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                    <PageBtn
-                      label="التالي"
-                      disabled={safePage >= totalPages}
-                      onClick={() => setPage((p) => p + 1)}
-                    />
-                  </div>
+                  {totalPages > 1 && (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <PageBtn
+                        label="السابق"
+                        disabled={safePage <= 1}
+                        onClick={() => setPage((p) => p - 1)}
+                      />
+                      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                        const start = Math.max(1, safePage - 3);
+                        return start + i;
+                      }).filter(p => p <= totalPages).map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          style={{
+                            width: '32px', height: '32px', borderRadius: '8px',
+                            fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+                            fontFamily: FONT, transition: 'all 0.15s',
+                            border: p === safePage ? 'none' : `1px solid ${C.border}`,
+                            background: p === safePage ? C.orange : 'transparent',
+                            color: p === safePage ? '#fff' : C.muted,
+                          }}
+                        >{p}</button>
+                      ))}
+                      <PageBtn
+                        label="التالي"
+                        disabled={safePage >= totalPages}
+                        onClick={() => setPage((p) => p + 1)}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
