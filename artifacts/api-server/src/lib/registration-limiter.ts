@@ -87,11 +87,10 @@ export async function ipRegistrationLimiter(
   try {
     result = await checkAndRecordIPLimit(ip);
   } catch (err) {
-    logger.error({ err }, "[RegLimit] Redis unavailable — failing closed on IP limiter");
-    res.status(503).json({
-      error: "خدمة التسجيل غير متاحة مؤقتاً — يرجى المحاولة لاحقاً",
-      code:  "TRIAL_SYSTEM_UNAVAILABLE",
-    });
+    /* Redis unavailable — fail-OPEN: allow registration, rate limiting is secondary.
+       Primary fraud detection (DB checks) still runs in checkTrialEligibility(). */
+    logger.warn({ err, ip }, "[RegLimit] Redis unavailable — failing open on IP rate limiter");
+    next();
     return;
   }
 

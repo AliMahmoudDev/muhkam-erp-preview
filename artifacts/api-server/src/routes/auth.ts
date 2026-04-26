@@ -679,8 +679,11 @@ router.post('/auth/register', ipRegistrationLimiter, async (req, res) => {
     const userAgent   = req.headers['user-agent'];
     const fingerprint = computeDeviceFingerprint(req);
 
-    /* ── Fingerprint rate limit (before DB queries) ───────────── */
-    const fpLimit = await checkAndRecordFPLimit(fingerprint);
+    /* ── Fingerprint rate limit (fail-open when Redis unavailable) ─ */
+    let fpLimit = { blocked: false, remaining: 3, resetMs: 0 };
+    try { fpLimit = await checkAndRecordFPLimit(fingerprint); } catch {
+      logger.warn({ fingerprint }, '[register] Redis unavailable — skipping FP rate limit (fail-open)');
+    }
     if (fpLimit.blocked) {
       const retryAfter = Math.ceil((fpLimit.resetMs - Date.now()) / 1000);
       res.setHeader('Retry-After', String(retryAfter));

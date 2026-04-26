@@ -196,12 +196,16 @@ export async function checkTrialEligibility(
   const normalIP    = normalizeIP(ip);
   const is_private  = isPrivateOrLoopbackIP(normalIP);
 
-  /* ── 0. Record attempt in anomaly detector (fire-and-forget) ──────────── */
-  void anomalyDetector.record(normalIP);
-  if (fingerprint) void anomalyDetector.record(`fp:${fingerprint}`);
+  /* ── 0. Record attempt in anomaly detector (fire-and-forget, fail-open) ── */
+  void anomalyDetector.record(normalIP).catch(() => {});
+  if (fingerprint) void anomalyDetector.record(`fp:${fingerprint}`).catch(() => {});
 
-  /* ── 0b. Global anomaly pause check ──────────────────────────────────── */
-  if (await anomalyDetector.isPaused()) {
+  /* ── 0b. Global anomaly pause check (fail-open if Redis unavailable) ──── */
+  let paused = false;
+  try { paused = await anomalyDetector.isPaused(); } catch {
+    logger.warn({ ip: normalIP }, "[TrialGuard] Redis unavailable — skipping anomaly pause check (fail-open)");
+  }
+  if (paused) {
     const result: TrialCheckResult = {
       allowed: false, blocked_by: "anomaly_pause",
       reason:        "global registration spike detected — registrations temporarily paused",
@@ -209,12 +213,15 @@ export async function checkTrialEligibility(
       ip_count: 0, ua_ip_count: 0, fp_count: 0, email_blocked: false, fingerprint,
     };
     logger.warn({ email: normalEmail, ip: normalIP }, "[TrialGuard] BLOCKED — anomaly pause");
-    void recentBlocksStore.record({ email: normalEmail, ip: normalIP, reason: "anomaly_pause", created_at: new Date().toISOString() });
+    void recentBlocksStore.record({ email: normalEmail, ip: normalIP, reason: "anomaly_pause", created_at: new Date().toISOString() }).catch(() => {});
     return result;
   }
 
-  /* ── 1. Cooldown check ────────────────────────────────────────────────── */
-  const ipCooldown = await cooldownStore.check(normalIP);
+  /* ── 1. Cooldown check (fail-open if Redis unavailable) ──────────────── */
+  let ipCooldown: import("./trial-cooldown").CooldownCheck = { blocked: false };
+  try { ipCooldown = await cooldownStore.check(normalIP); } catch {
+    logger.warn({ ip: normalIP }, "[TrialGuard] Redis unavailable — skipping IP cooldown check (fail-open)");
+  }
   if (ipCooldown.blocked) {
     const result: TrialCheckResult = {
       allowed: false, blocked_by: "cooldown",
@@ -227,7 +234,10 @@ export async function checkTrialEligibility(
     return result;
   }
   if (fingerprint) {
-    const fpCooldown = await cooldownStore.check(`fp:${fingerprint}`);
+    let fpCooldown: import("./trial-cooldown").CooldownCheck = { blocked: false };
+    try { fpCooldown = await cooldownStore.check(`fp:${fingerprint}`); } catch {
+      logger.warn({ fingerprint: fingerprint.slice(0, 8) }, "[TrialGuard] Redis unavailable — skipping FP cooldown check (fail-open)");
+    }
     if (fpCooldown.blocked) {
       const result: TrialCheckResult = {
         allowed: false, blocked_by: "cooldown",
@@ -241,18 +251,18 @@ export async function checkTrialEligibility(
     }
   }
 
-  /** Helper: escalate cooldown + record to recent-blocks ring buffer on any block. */
-  async function applyBlock(result: TrialCheckResult): Promise<TrialCheckResult> {
+  /** Helper: escalate cooldown + record to recent-blocks on any block (all fire-and-forget). */
+  function applyBlock(result: TrialCheckResult): TrialCheckResult {
     const reason = result.blocked_by ?? "blocked";
-    await cooldownStore.escalate(normalIP, reason);
-    if (fingerprint) await cooldownStore.escalate(`fp:${fingerprint}`, reason);
+    void cooldownStore.escalate(normalIP, reason).catch(() => {});
+    if (fingerprint) void cooldownStore.escalate(`fp:${fingerprint}`, reason).catch(() => {});
     void recentBlocksStore.record({
       email:       normalEmail,
       ip:          normalIP,
       fingerprint: fingerprint,
       reason:      reason,
       created_at:  new Date().toISOString(),
-    });
+    }).catch(() => {});
     return result;
   }
 
