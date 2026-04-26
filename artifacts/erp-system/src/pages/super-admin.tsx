@@ -115,6 +115,7 @@ export default function SuperAdmin() {
   const [supportWa, setSupportWa] = useState('');
   const [supportEmail, setSupportEmail] = useState('');
   const [settingSaving, setSettingSaving] = useState(false);
+  const [settingsActiveCard, setSettingsActiveCard] = useState<'support' | 'backup' | 'security' | null>(null);
 
 
   /* ── Password Reset ─── */
@@ -4325,15 +4326,56 @@ export default function SuperAdmin() {
               </div>
             )}
 
-            {/* ── معلومات التواصل ── */}
-            <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.02)' }}>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#F97316' }}>⚙️ معلومات التواصل للدعم</h3>
-              </div>
-              <div style={{ padding: '24px' }}>
-                <p style={{ fontSize: '12px', color: C.muted, margin: '0 0 20px' }}>
-                  تُستخدم هذه المعلومات في صفحة انتهاء الاشتراك وفي شريط التنبيه للمستخدمين
-                </p>
+            {/* ═══ كروت التنقل (3 أقسام) ═══ */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              {([
+                { key: 'support'  as const, icon: '⚙️', label: 'معلومات التواصل', desc: 'واتساب وبريد الدعم الفني',    color: '#F97316' },
+                { key: 'backup'   as const, icon: '💾', label: 'النسخ الاحتياطية', desc: 'إنشاء / استعادة / تشفير',     color: '#34D399' },
+                { key: 'security' as const, icon: '🔐', label: 'الأمان',            desc: 'المصادقة الثنائية وقيود IP', color: '#A78BFA' },
+              ]).map(card => {
+                const isActive = settingsActiveCard === card.key;
+                return (
+                  <div
+                    key={card.key}
+                    onClick={() => setSettingsActiveCard(isActive ? null : card.key)}
+                    style={{
+                      background: isActive ? `${card.color}18` : C.card,
+                      border: `1.5px solid ${isActive ? card.color : C.border}`,
+                      borderRadius: '16px', padding: '22px 20px',
+                      cursor: 'pointer', transition: 'all 0.18s',
+                      display: 'flex', flexDirection: 'column', gap: '10px',
+                    }}
+                    onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = card.color; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = ''; } }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '28px' }}>{card.icon}</span>
+                      {isActive && <span style={{ color: card.color, fontSize: '18px', fontWeight: 900 }}>✕</span>}
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: isActive ? card.color : C.text }}>{card.label}</div>
+                    <div style={{ fontSize: '12px', color: C.muted, lineHeight: 1.5 }}>{card.desc}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ═══ لوحة المحتوى ═══ */}
+            {settingsActiveCard && (
+              <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.02)' }}>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: C.text }}>
+                    {settingsActiveCard === 'support'  && '⚙️ معلومات التواصل للدعم'}
+                    {settingsActiveCard === 'backup'   && '💾 النسخ الاحتياطية'}
+                    {settingsActiveCard === 'security' && '🔐 الأمان'}
+                  </h3>
+                  <button onClick={() => setSettingsActiveCard(null)} style={{ background: 'transparent', border: 'none', color: C.muted, fontSize: '20px', cursor: 'pointer', lineHeight: 1, padding: '2px 6px' }}>✕</button>
+                </div>
+                {/* ── Support ── */}
+                {settingsActiveCard === 'support' && (
+                  <div style={{ padding: '24px' }}>
+                    <p style={{ fontSize: '12px', color: C.muted, margin: '0 0 20px' }}>
+                      تُستخدم هذه المعلومات في صفحة انتهاء الاشتراك وفي شريط التنبيه للمستخدمين
+                    </p>
                     <DarkInput
                       label="رقم واتساب للدعم"
                       value={supportWa}
@@ -4361,133 +4403,11 @@ export default function SuperAdmin() {
                     >
                   {settingSaving ? 'جاري الحفظ...' : '💾 حفظ الإعدادات'}
                 </button>
-              </div>
-            </div>
-
-            {/* ── سجل التدقيق ── */}
-            <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.02)' }}>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#60A5FA' }}>📋 سجل التدقيق الجنائي</h3>
-              </div>
-              <div style={{ padding: '24px' }}>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '12px', color: C.muted }}>كل إجراء قام به المدير العام</span>
-                      <div style={{ marginRight: 'auto', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                      <select
-                        value={auditAction}
-                        onChange={e => setAuditAction(e.target.value)}
-                        style={{
-                          padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`,
-                          background: 'rgba(15,23,42,0.6)', color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer',
-                        }}
-                      >
-                        <option value="">كل الإجراءات</option>
-                        <option value="SUPER_ADMIN_LIST_VIEW">عرض الشركات</option>
-                        <option value="CREATE">إنشاء</option>
-                        <option value="UPDATE">تحديث</option>
-                        <option value="DELETE">حذف</option>
-                        <option value="ACTIVATE">تفعيل</option>
-                        <option value="SUSPEND">تعليق</option>
-                        <option value="EXTEND">تمديد</option>
-                        <option value="BACKUP_CREATED">نسخة احتياطية</option>
-                        <option value="RESTORE_STARTED">استعادة</option>
-                      </select>
-                      <select
-                        value={auditLimit}
-                        onChange={e => setAuditLimit(Number(e.target.value))}
-                        style={{
-                          padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`,
-                          background: 'rgba(15,23,42,0.6)', color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer',
-                        }}
-                      >
-                        {[25, 50, 100, 200, 500].map(n => <option key={n} value={n}>{n} سجل</option>)}
-                      </select>
-                      <button onClick={() => void refetchAudit()} style={{
-                        padding: '8px 16px', borderRadius: '10px', border: `1px solid ${C.border}`,
-                        background: 'transparent', color: C.muted, fontSize: '13px',
-                        fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
-                      }}>🔄 تحديث</button>
-                      </div>
-                    </div>
-                    {auditLoading ? (
-                      <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>⏳ جارٍ التحميل...</div>
-                    ) : (
-                      <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: '14px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                        <div style={{
-                          display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
-                          padding: '12px 20px', background: 'rgba(255,255,255,0.03)',
-                          borderBottom: `1px solid ${C.border}`,
-                          fontSize: '11px', fontWeight: 800, color: C.muted, gap: '12px',
-                        }}>
-                          <span>الإجراء</span><span>النوع</span><span>رقم السجل</span><span>الملاحظة</span><span>التاريخ</span>
-                        </div>
-                        {!auditData?.rows.length ? (
-                          <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>لا توجد سجلات</div>
-                        ) : (
-                          <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                            {auditData.rows.map(row => {
-                              const ACTION_AR: Record<string, { label: string; color: string }> = {
-                                create:             { label: 'إنشاء',                color: '#34D399' },
-                                update:             { label: 'تعديل',                color: '#60A5FA' },
-                                delete:             { label: 'حذف',                  color: '#EF4444' },
-                                cancel:             { label: 'إلغاء',                color: '#EF4444' },
-                                price_override:     { label: 'تجاوز سعر',           color: '#FBBF24' },
-                                lock_period:        { label: 'إغلاق فترة',           color: '#F87171' },
-                                unlock_period:      { label: 'فتح فترة',             color: '#34D399' },
-                                COMPANY_ACTIVATED:    { label: 'تفعيل شركة',        color: '#34D399' },
-                                COMPANY_SUSPENDED:    { label: 'إيقاف شركة',        color: '#F59E0B' },
-                                COMPANY_EXTENDED:     { label: 'تمديد اشتراك',      color: '#38BDF8' },
-                                COMPANY_DELETED:      { label: 'حذف شركة',          color: '#EF4444' },
-                                ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: '#A78BFA' },
-                                RESTORE_STARTED:      { label: 'بدء استعادة',       color: '#A78BFA' },
-                                RESTORE_COMPLETED:    { label: 'اكتمال استعادة',    color: '#34D399' },
-                                RESTORE_FAILED:       { label: 'فشل استعادة',       color: '#EF4444' },
-                                SUPER_ADMIN_ACCESS:    { label: 'وصول مدير عام',     color: '#818CF8' },
-                                SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: '#818CF8' },
-                              };
-                              const RECORD_AR: Record<string, string> = {
-                                customer: 'عميل', supplier: 'مورد', sale: 'فاتورة بيع',
-                                purchase: 'فاتورة شراء', product: 'منتج',
-                                financial_lock: 'قفل مالي', expense: 'مصروف',
-                                user: 'مستخدم', company: 'شركة', subscription: 'اشتراك',
-                                fiscal_year: 'سنة مالية', system: 'النظام', announcement: 'إعلان',
-                              };
-                              const actionMeta = ACTION_AR[row.action] ?? { label: row.action, color: '#94A3B8' };
-                              return (
-                                <div key={row.id} style={{
-                                  display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
-                                  padding: '12px 20px', gap: '12px',
-                                  borderBottom: `1px solid rgba(255,255,255,0.04)`,
-                                  fontSize: '12px', alignItems: 'center',
-                                }}>
-                                  <span style={{ color: actionMeta.color, fontWeight: 700 }}>{actionMeta.label}</span>
-                                  <span style={{ color: C.muted }}>{RECORD_AR[row.record_type] ?? row.record_type}</span>
-                                  <span style={{ color: C.muted, textAlign: 'center' }}>#{row.record_id}</span>
-                                  <span style={{ color: C.text, fontSize: '11px', lineHeight: 1.4 }}>{row.note ?? '—'}</span>
-                                  <span style={{ color: C.muted, fontSize: '11px', direction: 'ltr', textAlign: 'right' }}>
-                                    {new Date(row.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                        {auditData && (
-                          <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.border}`, fontSize: '12px', color: C.muted }}>
-                            إجمالي السجلات المعروضة: {auditData.count}
-                          </div>
-                        )}
-                      </div>
-                    )}
-              </div>
-            </div>
-
-            {/* ── النسخ الاحتياطية ── */}
-            <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.02)' }}>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#34D399' }}>💾 النسخ الاحتياطية</h3>
-              </div>
-              <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  </div>
+                )}
+                {/* ── Backup ── */}
+                {settingsActiveCard === 'backup' && (
+                  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {/* Header actions */}
                     <div style={{
                       display: 'flex', alignItems: 'center',
@@ -4675,15 +4595,11 @@ export default function SuperAdmin() {
                         }}>{encKey}</div>
                       )}
                     </div>
-              </div>
-            </div>
-
-            {/* ── الأمان ── */}
-            <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.02)' }}>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#A78BFA' }}>🔐 الأمان</h3>
-              </div>
-              <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  </div>
+                )}
+                {/* ── Security ── */}
+                {settingsActiveCard === 'security' && (
+                  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {/* 2FA */}
                     <div style={{
                       background: 'rgba(15,23,42,0.4)', borderRadius: '14px',
@@ -4854,8 +4770,10 @@ export default function SuperAdmin() {
                         </span>
                       </div>
                     </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
           </div>
         )}
