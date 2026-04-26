@@ -33,6 +33,7 @@ import { db, trialAbuseLogTable } from "@workspace/db";
 import { logger } from "./logger";
 import { cooldownStore } from "./trial-cooldown";
 import { anomalyDetector } from "./trial-anomaly";
+import { recentBlocksStore } from "./trial-recent-blocks";
 
 /* ── Configurable limits ───────────────────────────────────────────────────── */
 
@@ -212,6 +213,7 @@ export async function checkTrialEligibility(
       ip_count: 0, ua_ip_count: 0, fp_count: 0, email_blocked: false, fingerprint,
     };
     logger.warn({ email: normalEmail, ip: normalIP }, "[TrialGuard] BLOCKED — anomaly pause");
+    recentBlocksStore.record({ email: normalEmail, ip: normalIP, reason: "anomaly_pause", created_at: new Date().toISOString() });
     return result;
   }
 
@@ -243,11 +245,18 @@ export async function checkTrialEligibility(
     }
   }
 
-  /** Helper: apply cooldown escalation to both IP and fingerprint on block. */
+  /** Helper: apply cooldown escalation to both IP and fingerprint on block,
+   *  and record the attempt in the real-time monitoring ring buffer. */
   function applyBlock(result: TrialCheckResult): TrialCheckResult {
     const reason = result.blocked_by ?? "blocked";
     cooldownStore.escalate(normalIP, reason);
     if (fingerprint) cooldownStore.escalate(`fp:${fingerprint}`, reason);
+    recentBlocksStore.record({
+      email:      normalEmail,
+      ip:         normalIP,
+      reason:     reason,
+      created_at: new Date().toISOString(),
+    });
     return result;
   }
 

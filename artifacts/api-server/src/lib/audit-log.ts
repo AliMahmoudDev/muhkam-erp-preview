@@ -40,8 +40,14 @@ export type AuditAction =
   | "RESTORE_FAILED"
   | "RESTORE_COMPLETED"
   // ── Super-admin tenant data access (forensic) ─────────────────────────────
-  | "SUPER_ADMIN_ACCESS"        // super admin viewed tenant data/details
-  | "SUPER_ADMIN_LIST_VIEW";    // super admin listed all companies
+  | "SUPER_ADMIN_ACCESS"                    // super admin viewed tenant data/details
+  | "SUPER_ADMIN_LIST_VIEW"                 // super admin listed all companies
+  // ── Trial monitoring events ────────────────────────────────────────────────
+  | "TRIAL_MONITORING_WARNING"              // spike crossed ANOMALY_ALERT_COUNT
+  | "TRIAL_REGISTRATION_AUTO_PAUSED"        // spike crossed ANOMALY_TRIP_COUNT
+  | "TRIAL_REGISTRATION_MANUAL_PAUSED"      // super admin paused manually
+  | "TRIAL_REGISTRATION_RESUMED"            // super admin resumed
+  | "TRIAL_MONITORING_WARNING_CLEARED";     // super admin cleared warning
 
 export type AuditRecordType =
   | "customer"
@@ -70,7 +76,8 @@ export type AuditRecordType =
   | "erp_user"               // user account management (password reset, etc.)
   | "system"                 // tenant-level system actions (restore, etc.)
   | "announcement"           // super-admin announcements
-  | "warranty";              // warranty records
+  | "warranty"              // warranty records
+  | "trial_monitoring";     // trial registration monitoring actions
 
 interface AuditUser {
   id?: number;
