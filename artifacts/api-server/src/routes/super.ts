@@ -1186,6 +1186,21 @@ router.get("/super/health", ...superOnly, wrap(async (_req, res) => {
   });
 }));
 
+/* ══════════════════════════════════════════════════════════════════════════
+   GET /super/health/redis — ping Redis and measure latency
+   ══════════════════════════════════════════════════════════════════════════ */
+router.get("/super/health/redis", ...superOnly, wrap(async (_req, res) => {
+  try {
+    const { trialRedis } = await import("../lib/redis");
+    const t0 = Date.now();
+    await trialRedis.ping();
+    const latency_ms = Date.now() - t0;
+    res.json({ status: "ok", latency_ms });
+  } catch (err) {
+    res.status(503).json({ status: "down", message: "Redis is not reachable" });
+  }
+}));
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * TRIAL ABUSE ANALYTICS
  * ═══════════════════════════════════════════════════════════════════════════ */
