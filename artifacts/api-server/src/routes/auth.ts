@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { eq, and, ne, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 import { db, erpUsersTable, companiesTable } from '@workspace/db';
+import { logger } from '../lib/logger';
 import {
   isEmailTrialAbused,
   isIPTrialAbused,

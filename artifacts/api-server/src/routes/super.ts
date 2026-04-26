@@ -1310,7 +1310,7 @@ router.get("/super/trial-abuse", ...superOnly, wrap(async (req, res) => {
 
 /* ── POST /super/trial-abuse/:id/override — grant override for a log row ── */
 router.post("/super/trial-abuse/:id/override", ...superOnly, wrap(async (req, res) => {
-  const id     = parseInt(req.params.id);
+  const id     = parseInt(req.params.id as string);
   const { reason } = req.body as { reason?: string };
 
   if (!id || isNaN(id)) {
@@ -1341,7 +1341,7 @@ router.post("/super/trial-abuse/:id/override", ...superOnly, wrap(async (req, re
 
 /* ── DELETE /super/trial-abuse/:id/override — revoke an override ────────── */
 router.delete("/super/trial-abuse/:id/override", ...superOnly, wrap(async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (!id || isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صالح" });
     return;
@@ -1363,7 +1363,7 @@ router.delete("/super/trial-abuse/:id/override", ...superOnly, wrap(async (req, 
 
 /* ── POST /super/companies/:id/verify-email — manually mark email verified ─ */
 router.post("/super/companies/:id/verify-email", ...superOnly, wrap(async (req, res) => {
-  const cid = parseInt(req.params.id);
+  const cid = parseInt(req.params.id as string);
   if (!cid || isNaN(cid)) {
     res.status(400).json({ error: "معرّف غير صالح" });
     return;

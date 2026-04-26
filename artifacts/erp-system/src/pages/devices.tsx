@@ -1109,16 +1109,16 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                   className={sCls("employee")}
                 >
                   <option value="">— اختر الفاحص —</option>
-                  {employees.filter(em => em.id.startsWith("u_")).length > 0 && (
+                  {employees.filter(em => String(em.id).startsWith("u_")).length > 0 && (
                     <optgroup label="مستخدمو النظام">
-                      {employees.filter(em => em.id.startsWith("u_")).map(em => (
+                      {employees.filter(em => String(em.id).startsWith("u_")).map(em => (
                         <option key={em.id} value={em.id}>{em.name}</option>
                       ))}
                     </optgroup>
                   )}
-                  {employees.filter(em => em.id.startsWith("e_")).length > 0 && (
+                  {employees.filter(em => String(em.id).startsWith("e_")).length > 0 && (
                     <optgroup label="الموظفون">
-                      {employees.filter(em => em.id.startsWith("e_")).map(em => (
+                      {employees.filter(em => String(em.id).startsWith("e_")).map(em => (
                         <option key={em.id} value={em.id}>{em.name}</option>
                       ))}
                     </optgroup>
