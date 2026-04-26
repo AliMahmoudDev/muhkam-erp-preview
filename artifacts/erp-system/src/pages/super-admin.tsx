@@ -1830,16 +1830,13 @@ export default function SuperAdmin() {
       </div>
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px' }}>
-        {/* ── Tab bar (scrollable on mobile) ─── */}
-        <div style={{
-          overflowX: 'auto', marginBottom: '28px', paddingBottom: '6px',
-          msOverflowStyle: 'none', scrollbarWidth: 'none',
-        }}>
-          <div style={{ display: 'flex', gap: '8px', minWidth: 'max-content' }}>
+        {/* ── Tab bar (wraps to show all tabs) ─── */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
           {(
             [
               { key: 'overview',      label: '🏠 نظرة عامة' },
               { key: 'companies',     label: '🏢 الشركات' },
+              { key: 'managers',      label: '👑 المديرون' },
               { key: 'revenue',       label: '📊 الإيرادات' },
               { key: 'alerts',        label: '🔔 التنبيهات' },
               { key: 'announcements', label: '📢 الإعلانات' },
@@ -1847,7 +1844,6 @@ export default function SuperAdmin() {
               { key: 'plans',         label: '💰 الخطط' },
               { key: 'monitoring',    label: '🛡️ مراقبة التجريبي' },
               { key: 'audit_log',     label: '📋 سجل العمليات' },
-              { key: 'managers',      label: '👑 المديرون' },
               { key: 'settings',      label: '⚙️ الإعدادات' },
             ] as const
           ).map((tab) => {
@@ -1857,7 +1853,7 @@ export default function SuperAdmin() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 style={{
-                  padding: '9px 18px',
+                  padding: '8px 16px',
                   borderRadius: '12px',
                   fontSize: '13px',
                   fontWeight: 800,
@@ -1875,7 +1871,6 @@ export default function SuperAdmin() {
               </button>
             );
           })}
-          </div>
         </div>
 
         {/* ══════════════════════════════
