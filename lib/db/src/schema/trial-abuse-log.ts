@@ -20,8 +20,15 @@ export const trialAbuseLogTable = pgTable("trial_abuse_log", {
   /** Client IP at the time of registration (from req.ip via trust-proxy) */
   ip:              text("ip").notNull(),
 
-  /** HTTP User-Agent header value — used for device fingerprinting */
+  /** HTTP User-Agent header value — kept for display and legacy checks */
   user_agent:      text("user_agent"),
+
+  /**
+   * SHA-256 device fingerprint derived from multiple HTTP headers
+   * (user-agent, accept-language, accept-encoding, sec-ch-ua, etc.).
+   * More stable than IP alone — survives VPN rotation.
+   */
+  fingerprint:     text("fingerprint"),
 
   /** The company that was created. Nullable in case insert fails mid-way */
   company_id:      integer("company_id"),
