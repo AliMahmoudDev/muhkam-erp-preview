@@ -1949,9 +1949,12 @@ export default function SuperAdmin() {
                     color: '#60A5FA', action: () => setActiveTab('managers'),
                   },
                   {
-                    icon: '❌', label: 'اشتراكات منتهية', value: stats?.expired ?? '—',
+                    icon: (stats?.expired ?? 0) > 0 ? '⛔' : '✅',
+                    label: 'اشتراكات منتهية',
+                    value: stats?.expired ?? '—',
                     sub: `${stats?.suspended ?? 0} موقوفة إضافياً`,
-                    color: '#EF4444', action: () => { setActiveTab('companies'); setStatusFilter('expired'); },
+                    color: (stats?.expired ?? 0) > 0 ? '#EF4444' : '#34D399',
+                    action: () => { setActiveTab('companies'); setStatusFilter('expired'); },
                   },
                 ].map(kpi => (
                   <div
@@ -2070,7 +2073,7 @@ export default function SuperAdmin() {
                 <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, padding: '22px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h3 style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: C.text }}>📋 آخر الإجراءات</h3>
-                    <button onClick={() => setActiveTab('settings')}
+                    <button onClick={() => setActiveTab('audit_log')}
                       style={{ fontSize: '12px', color: C.orange, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: FONT }}>
                       سجل التدقيق ←
                     </button>
