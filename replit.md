@@ -20,11 +20,10 @@ Key backend files with inline comments:
 - `artifacts/api-server/src/lib/seed-defaults.ts` — First-boot seeding and PIN migration
 - `artifacts/api-server/src/routes/index.ts` — Middleware chain order (public → auth → super → tenant → subscription → routes)
 
-## Architecture (Post-Consolidation — April 2026)
+## Architecture
 - **Single frontend:** `artifacts/erp-system` only — served at `/` (BASE_PATH=/)
-- **muhkam-pro REMOVED:** Archived to GitHub branch `archive/muhkam-pro`, deleted from codebase
 - **Edition control:** Company `edition` field (`ultimate` / `advanced`) controls feature visibility from Super Admin panel
-- **Production domain:** halaltec.com (Hetzner VPS 89.167.85.156) — served at root `/`, no `/advanced/` prefix
+- **Production domain:** halaltec.com (Hetzner VPS 89.167.85.156) — served at root `/`
 
 ## Replit Environment
 - **Backend:** Express API server running on port 8080 via `Start Backend` workflow
@@ -35,7 +34,7 @@ Key backend files with inline comments:
 
 ## CI/CD Status
 - **Deploy pipeline:** ✅ Working — GitHub Actions deploy.yml builds erp-system at BASE_PATH=/ and deploys to VPS
-- **CI pipeline:** ✅ Passing — builds erp-system only, muhkam-pro build step removed
+- **CI pipeline:** ✅ Passing — builds erp-system only
 
 ### CI Fixes Applied (history)
 - Removed project `references` from `artifacts/api-server/tsconfig.json` (not needed with moduleResolution: bundler)
@@ -74,7 +73,7 @@ Key backend files with inline comments:
 
 ## Code Quality Review — Comprehensive TypeScript Cleanup (April 2026 — Session 8)
 
-### Changes Applied to Both Frontends (`erp-system` + `muhkam-base`)
+### Changes Applied to Frontend (`erp-system`)
 - Reduced `as any` / `: any` usages from **77 → 2** (both are unavoidable API-client type limitations)
 - Both frontends now pass `pnpm run type-check` with **zero errors**
 
@@ -100,17 +99,6 @@ Key backend files with inline comments:
 | `expenses.tsx` | `(user as { company_name?: string })` cast |
 | `ReceiptModal.tsx` / `PaymentModal.tsx` | Typed filter callbacks |
 | `employees.tsx` | `catch (err: unknown)` + `(err as Error)?.message` |
-
-### Page Sync Script (Session 9)
-- Created `scripts/src/sync-pages.ts` — syncs shared pages from `erp-system (Muhkam-Advanced) → muhkam-pro`
-- Run via: `pnpm run sync-pages` from workspace root
-
-### Sync Rules (قواعد المزامنة)
-**ALWAYS apply changes to BOTH systems** (`erp-system` + `muhkam-pro`) EXCEPT:
-- **Accounting pages** → Muhkam-Advanced (erp-system) ONLY — do NOT apply to muhkam-pro
-- Accounting pages list: `accounts.tsx`, `accruals.tsx`, `bank-reconciliation.tsx`, `budgets.tsx`, `cost-centers.tsx`, `fiscal-years.tsx`, `fixed-assets.tsx`, `journal-entries.tsx`
-- Files unique to muhkam-pro (extra UI components) — stay in muhkam-pro only
-- Files that differ by design (`App.tsx`, `layout.tsx`, `index.css`, `rbac.ts`, `login.tsx`, `attendance.tsx`) — edit each separately
 
 ### Session 9 Completion — Zero `as any` in Production Pages
 - Fixed both remaining `as any` usages by extending the type definitions:
@@ -915,20 +903,12 @@ Standalone iOS & Android mobile companion app at `artifacts/erp-mobile/`. Built 
 
 ---
 
-## MUHKAM ADVANCED (artifacts/muhkam-base)
-- **Artifact:** MUHKAM ADVANCED — exact copy of the main MUHKAM ERP system (artifacts/erp-system)
-- **Path:** /muhkam-advanced/ (port 19990)
-- **Source:** Complete mirror of artifacts/erp-system/src — same UI, same design, same colors, same features
-- **Purpose:** Tier 2 of the 3-tier strategy (BASE / ADVANCED / ULTIMATE)
-- **Backend:** Reuses the same API server on port 8080
-
----
 
 ## Code Quality Standards (enforced)
 
 ### TypeScript
 - `strict: true`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns` — all enabled in both frontends
-- `noUnusedLocals: true` — **enabled** in both erp-system and muhkam-pro (April 2026 cleanup)
+- `noUnusedLocals: true` — **enabled** in erp-system (April 2026 cleanup)
 - api-server has 0 TypeScript errors at all times
 
 ### UI Components (shadcn/ui)
@@ -938,10 +918,4 @@ Standalone iOS & Android mobile companion app at `artifacts/erp-mobile/`. Built 
 - No unused local variables, imports, or exports permitted
 - `_prefixed` variables are not used to bypass noUnusedLocals — they must be removed
 
-### Sync Script
-- `pnpm run sync-pages` — syncs shared pages from erp-system → muhkam-pro (for files that exist in both)
-
-### muhkam-pro Specifics
-- `ADVANCED_HIDDEN` set in layout.tsx controls which nav items are hidden (accounting pages)
-- App.tsx lazy imports only pages that have actual rendered routes (not redirects)
 
