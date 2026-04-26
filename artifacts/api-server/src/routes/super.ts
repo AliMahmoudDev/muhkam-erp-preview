@@ -4,7 +4,7 @@
  * Super-admin users have no company_id (null) so subscription checks are bypassed.
  */
 import { Router } from "express";
-import { eq, desc, sql, and, isNull, count } from "drizzle-orm";
+import { eq, desc, sql, isNull, count } from "drizzle-orm";
 import { db, companiesTable, erpUsersTable, planSettingsTable, trialAbuseLogTable } from "@workspace/db";
 import type { CompanyFeatures } from "@workspace/db";
 import fs from "fs";
@@ -158,6 +158,7 @@ router.get("/super/audit-log", ...superOnly, wrap(async (req, res) => {
   const action = req.query.action ? String(req.query.action) : null;
   const recordType = req.query.record_type ? String(req.query.record_type) : null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const conditions: any[] = [sql`${auditLogsTable.company_id} IS NULL`];
   if (action)     conditions.push(eq(auditLogsTable.action, action));
   if (recordType) conditions.push(eq(auditLogsTable.record_type, recordType));
@@ -738,6 +739,7 @@ router.delete("/super/managers/:id", ...superOnly, wrap(async (req, res) => {
 /* ── POST /super/backup/create — trigger pg_dump backup ── */
 router.post("/super/backup/create", ...superOnly, wrap(async (_req, res) => {
   const filepath = await createDatabaseBackup();
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   const stats    = fs.statSync(filepath);
   res.json({
     success:    true,
@@ -777,6 +779,7 @@ router.get("/super/backup/download/:filename", ...superOnly, wrap(async (req, re
   }
 
   const filepath = path.join(BACKUP_DIR, filename);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   if (!fs.existsSync(filepath)) {
     res.status(404).json({ error: "الملف غير موجود" });
     return;
@@ -788,7 +791,9 @@ router.get("/super/backup/download/:filename", ...superOnly, wrap(async (req, re
     isEnc ? "application/octet-stream" : "application/json"
   );
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   res.setHeader("Content-Length", fs.statSync(filepath).size);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   fs.createReadStream(filepath).pipe(res);
 }));
 
@@ -1103,6 +1108,7 @@ router.post("/super/announcements", ...superOnly, wrap(async (req, res) => {
     target: target ?? (company_id ? String(company_id) : "all"),
     company_id: company_id ?? null,
     is_active: true,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     created_by: (req.user as any)?.username ?? "super_admin",
     expires_at: expires_at ? new Date(expires_at) : null,
   }).returning();

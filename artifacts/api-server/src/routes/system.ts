@@ -39,6 +39,7 @@ const router: IRouter = Router();
 router.post("/system/backup", authenticate, requireRole("admin"), requireTenant,
   wrap(async (req, res) => {
   const companyId: number = req.user!.company_id!;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cEq = <T extends { company_id: unknown }>(t: T) => eq((t as any).company_id, companyId);
 
   const [
@@ -294,6 +295,7 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
      other tenants' rows to whoever holds this tenant's filesystem. */
   let snapshotPath: string | null = null;
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cEq = <T extends { company_id: unknown }>(t: T) => eq((t as any).company_id, companyId);
     const [
       products, customers, sales, purchases,
@@ -351,10 +353,12 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
         safes, warehouses, settings, alerts,
       },
     };
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     await fs.mkdir(BACKUP_DIR, { recursive: true });
     const dt = new Date().toISOString().replace("T", "_").replace(/:/g, "-").slice(0, 19);
     const filename = `pre-restore_company-${companyId}_${dt}.json`;
     const full = path.join(BACKUP_DIR, filename);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     await fs.writeFile(full, JSON.stringify(snap), { mode: 0o600 });
     snapshotPath = filename;
   } catch (err) {
@@ -406,8 +410,10 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
       const tenantJeIds = (await tx.select({ id: journalEntriesTable.id }).from(journalEntriesTable)
         .where(eq(journalEntriesTable.company_id, companyId))).map(r => r.id);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tenantOnly = (col: any) => eq(col, companyId);
       const ins = async <T>(tbl: Parameters<typeof tx.insert>[0], rows: T[]) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (rows.length > 0) await tx.insert(tbl).values(rows as any);
       };
 

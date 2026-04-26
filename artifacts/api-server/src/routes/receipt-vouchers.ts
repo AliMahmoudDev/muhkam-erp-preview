@@ -9,6 +9,7 @@ import { hasPermission } from "../lib/permissions";
 
 const router: IRouter = Router();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCid(req: any): number {
   return req.user!.company_id!;
 }

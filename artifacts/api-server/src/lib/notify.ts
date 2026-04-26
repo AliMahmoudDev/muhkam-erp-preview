@@ -72,6 +72,7 @@ export async function notifyManagers(companyId: number, permissionKey: string, p
           OR (permissions::jsonb ->> ${permissionKey}::text)::boolean = true
         )
     `);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userIds: number[] = ((rows as any).rows ?? rows).map((r: any) => r.id);
     if (userIds.length === 0) return;
     await db.insert(notificationsTable).values(

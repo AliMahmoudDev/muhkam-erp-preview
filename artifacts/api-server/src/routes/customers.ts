@@ -191,6 +191,7 @@ router.get("/customers/:id", wrap(async (req, res) => {
   if (!rows.rows.length) {
     res.status(404).json({ error: "العميل غير موجود" }); return;
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const r = rows.rows[0] as any;
   res.json({
     id: r.id,

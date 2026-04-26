@@ -29,7 +29,7 @@
  *    48-hour mark, which writes to the DB once and is then a no-op.
  */
 
-import { and, eq, lte, not } from "drizzle-orm";
+import { and, eq, not } from "drizzle-orm";
 import { db, companiesTable } from "@workspace/db";
 import { logger } from "./logger";
 import { scoreAllTrialCompanies } from "./trial-scoring";
@@ -88,9 +88,9 @@ async function processVerificationReminders(): Promise<void> {
         );
 
         /* TODO: replace with actual email send when email provider is configured */
-        console.log(
-          `📧 [EXPIRED] Company ${company.id} (${company.name}) — email not verified after 48h. ` +
-          `Admin can unlock at: POST /super/companies/${company.id}/verify-email`
+        logger.info(
+          { companyId: company.id, name: company.name },
+          "[trial-scheduler] [EXPIRED] email not verified after 48h — write-lock enforced"
         );
 
       } else if (ageMs >= WARNING_AFTER_MS) {
@@ -101,9 +101,9 @@ async function processVerificationReminders(): Promise<void> {
         );
 
         /* TODO: replace with email send */
-        console.log(
-          `📧 [LAST CHANCE] ${company.admin_email} — Please verify your email. ` +
-          `Your trial account (${company.name}) will be write-locked in less than 24 hours.`
+        logger.warn(
+          { companyId: company.id, email: company.admin_email, name: company.name },
+          "[trial-scheduler] [LAST CHANCE] email verification warning sent"
         );
 
       } else if (ageMs >= REMINDER_AFTER_MS) {
@@ -114,8 +114,9 @@ async function processVerificationReminders(): Promise<void> {
         );
 
         /* TODO: replace with email send */
-        console.log(
-          `📧 [REMINDER] ${company.admin_email} — Please verify your email to keep your trial account active.`
+        logger.info(
+          { companyId: company.id, email: company.admin_email },
+          "[trial-scheduler] [REMINDER] email verification reminder sent"
         );
       }
     } catch (err) {
@@ -129,7 +130,6 @@ async function processVerificationReminders(): Promise<void> {
 
 async function processConversionTriggers(): Promise<void> {
   const now = new Date();
-  const nowStr = now.toISOString().slice(0, 10);
 
   /* Active, verified trial companies still within their trial window */
   const trialCompanies = await db
@@ -164,9 +164,9 @@ async function processConversionTriggers(): Promise<void> {
           "[trial-scheduler] Conversion trigger: early feature nudge"
         );
         /* TODO: replace with email/in-app notification */
-        console.log(
-          `💡 [CONVERSION D${dayElapsed}] ${company.admin_email} — ` +
-          `"Have you tried the stock transfer feature? Move inventory between warehouses in seconds."`
+        logger.info(
+          { companyId: company.id, email: company.admin_email, dayElapsed },
+          "[trial-scheduler] [CONVERSION] early feature nudge notification"
         );
 
       } else if (dayElapsed >= CONV_LATE_START && dayElapsed <= CONV_LATE_END) {
@@ -176,9 +176,9 @@ async function processConversionTriggers(): Promise<void> {
           "[trial-scheduler] Conversion trigger: trial ending soon"
         );
         /* TODO: replace with email/in-app notification */
-        console.log(
-          `⏰ [EXPIRY D${dayElapsed}] ${company.admin_email} — ` +
-          `"Your trial for ${company.name} ends in ${daysLeft} day(s). Upgrade now to keep your data."`
+        logger.warn(
+          { companyId: company.id, email: company.admin_email, dayElapsed, daysLeft },
+          "[trial-scheduler] [EXPIRY] trial ending soon notification"
         );
       }
     } catch (err) {

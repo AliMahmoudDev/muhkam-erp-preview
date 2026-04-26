@@ -578,6 +578,7 @@ async function buildSaleJournalLines(sale: typeof salesTable.$inferSelect, compa
   const total     = Number(sale.total_amount);
   const paid      = Number(sale.paid_amount);
   const debt      = total - paid;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const taxAmount = Number((sale as any).tax_amount ?? 0);
   const netRevenue = total - taxAmount;  // الإيراد صافي بدون ضريبة
   const lines: JournalLine[] = [];

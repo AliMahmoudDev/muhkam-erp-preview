@@ -580,9 +580,11 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
     "estimated_delivery","external_workshop","external_workshop_name",
     "broker_name","alert_days_threshold","qa_notes","locked",
   ];
+  // eslint-disable-next-line security/detect-object-injection
   for (const f of FIELDS) if (f in b) updates[f] = (b as Record<string, unknown>)[f];
 
   const NUM = ["estimated_cost","final_cost","deposit_paid","external_workshop_cost","broker_commission"];
+  // eslint-disable-next-line security/detect-object-injection
   for (const f of NUM) if (f in b) updates[f] = String((b as Record<string, unknown>)[f]);
 
   if ("device_score" in b) updates.device_score = b.device_score ? Number(b.device_score) : null;

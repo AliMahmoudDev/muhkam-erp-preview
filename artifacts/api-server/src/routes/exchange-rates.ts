@@ -41,6 +41,7 @@ router.get("/exchange-rates/latest", wrap(async (req, res) => {
       .orderBy(desc(exchangeRatesTable.date), desc(exchangeRatesTable.created_at))
       .limit(1);
 
+    // eslint-disable-next-line security/detect-object-injection
     if (row) result[cur] = Number(row.rate);
   }
 

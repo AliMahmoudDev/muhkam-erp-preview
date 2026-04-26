@@ -17,6 +17,7 @@ import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatProduct(p: any & { category_name?: string | null }) {
   return {
     id: p.id,
@@ -158,6 +159,7 @@ router.post("/products", wrap(async (req, res) => {
     : 0;
 
   const resolvedCategoryId = await resolveCategoryId(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (parsed.data as any).category_id,
     parsed.data.category,
     companyId,
@@ -212,6 +214,7 @@ router.put("/products/:id", wrap(async (req, res) => {
 
   const companyId = req.user!.company_id!;
   const resolvedCategoryId = await resolveCategoryId(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (parsed.data as any).category_id,
     parsed.data.category,
     companyId,

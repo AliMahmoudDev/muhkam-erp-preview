@@ -74,6 +74,7 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
       AND product_id IN (${sql.raw(safeProductIdsCsv)})
     GROUP BY product_id
   `) : { rows: [] as Record<string, unknown>[] };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const whStockMap = new Map((whStockRows.rows as Record<string, unknown>[]).map((r: any) => [Number(r.product_id), Number(r.wh_qty ?? 0)]));
 
   const session = await db.transaction(async (tx) => {

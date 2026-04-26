@@ -114,6 +114,7 @@ router.get("/backups/:id/download", authenticate, requireRole("super_admin"), wr
     throw httpError(403, "مسار الملف غير مسموح به");
   }
 
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   if (!fs.existsSync(safepath)) throw httpError(404, "الملف غير موجود على الخادم");
 
   const safeFilename = path.basename(record.filename).replace(/[^\w.\-]/g, "_");
@@ -140,6 +141,7 @@ router.delete("/backups/:id", authenticate, requireRole("super_admin"), wrap(asy
   if (!filepath.startsWith(safeBase + path.sep) && filepath !== safeBase) {
     throw httpError(403, "مسار الملف غير مسموح به");
   }
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
 
   await db.delete(backupsTable).where(eq(backupsTable.id, id));

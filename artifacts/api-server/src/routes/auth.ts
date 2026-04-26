@@ -6,7 +6,7 @@
 import { Router } from 'express';
 import { eq, and, ne, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
-import { db, erpUsersTable, companiesTable, trialAbuseLogTable } from '@workspace/db';
+import { db, erpUsersTable, companiesTable } from '@workspace/db';
 import {
   isEmailTrialAbused,
   isIPTrialAbused,

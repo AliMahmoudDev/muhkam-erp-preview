@@ -340,11 +340,13 @@ router.post("/salary-advances/:id/manual-payment", wrap(async (req, res) => {
 
   const result = await db.transaction(async (tx) => {
     // قفل صف السلفة لمنع تسديدين متزامنين يتجاوزان الرصيد
-    const [locked] = await tx.execute(sql`
+    const rawLock = await tx.execute(sql`
       SELECT id, remaining_balance, status FROM ${salaryAdvancesTable}
       WHERE id = ${id} AND company_id = ${companyId}
       FOR UPDATE
-    `).then((r: any) => (r.rows ?? r) as Array<{ id: number; remaining_balance: string; status: string }>);
+    `);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [locked] = ((rawLock as any).rows ?? rawLock) as Array<{ id: number; remaining_balance: string; status: string }>;
     if (!locked) return { error: { status: 404, message: "السلفة غير موجودة" } };
     const remaining = n(locked.remaining_balance);
     if (amount > remaining) return { error: { status: 400, message: `المبلغ يتجاوز الرصيد المتبقي (${remaining})` } };

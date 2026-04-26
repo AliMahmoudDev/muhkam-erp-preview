@@ -132,8 +132,6 @@ export function buildVerificationLink(token: string): string {
 export function logVerificationLink(email: string, link: string): void {
   logger.info(
     { email, verification_link: link },
-    "[trial-guard] Email verification link (send this to the user if no email provider is configured)"
+    "[trial-guard] Verification link (copy from logs if no email provider is configured)"
   );
-  // Also log to stdout for easy copy-paste in development
-  console.log(`\n📧 [VERIFY EMAIL] Send this link to ${email}:\n  ${link}\n`);
 }

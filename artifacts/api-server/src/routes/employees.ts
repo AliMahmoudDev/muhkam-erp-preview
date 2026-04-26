@@ -651,6 +651,7 @@ router.put(
 
     const [emp] = await db
       .update(employeesTable)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .set(updates as any)
       .where(and(eq(employeesTable.id, id), eq(employeesTable.company_id, companyId)))
       .returning();

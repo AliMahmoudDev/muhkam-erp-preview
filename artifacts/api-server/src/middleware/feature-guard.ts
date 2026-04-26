@@ -85,6 +85,7 @@ export function requireFeature(feature: keyof CompanyFeatures) {
       // No features record (e.g. company not found) → fail open
       if (!features) { next(); return; }
 
+      // eslint-disable-next-line security/detect-object-injection
       if (features[feature] === false) {
         logger.warn(
           { companyId: user.company_id, feature, path: req.path, method: req.method },

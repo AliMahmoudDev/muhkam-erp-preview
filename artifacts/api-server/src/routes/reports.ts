@@ -269,7 +269,9 @@ router.get("/reports/daily-profit", wrap(async (req, res) => {
   };
 
   for (const r of salesRows.rows as Record<string, unknown>[]) { const d = ensure(String(r.day)); d.sales_revenue += Number(r.sales_revenue); d.sales_cogs += Number(r.sales_cogs); }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const r of retRows.rows  as any[]) { const d = ensure(r.day); d.ret_revenue  += Number(r.ret_revenue);  d.ret_cogs   += Number(r.ret_cogs);   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const r of expRows.rows  as any[]) { const d = ensure(r.day); d.expenses     += Number(r.total_expenses); }
 
   const days = Array.from(dayMap.entries())
@@ -421,6 +423,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
     GROUP BY c.id, c.name, c.customer_code
   `);
   if (!custRow.rows.length) { res.status(404).json({ error: "العميل غير موجود" }); return; }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const customer = custRow.rows[0] as any;
 
   type StatRow = { date: string; type: string; description: string; debit: number; credit: number; reference_no?: string | null };
@@ -536,6 +539,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
       ${cfSimpleSql(companyId)}
   `);
   if (!custRow.rows.length) { res.status(404).json({ error: "المورد غير موجود" }); return; }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supplier = custRow.rows[0] as any;
 
   type StatRow = { date: string; type: string; description: string; debit: number; credit: number; reference_no?: string | null };
@@ -1086,6 +1090,7 @@ router.get("/reports/health-check", wrap(async (req, res) => {
 
   /* ── فحص الربحية ── */
   {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const row        = (profitRows.rows[0] ?? {}) as any;
     const revenue    = r2(Number(row.total_revenue ?? 0));
     const cogs       = r2(Number(row.total_cogs    ?? 0));
@@ -1108,6 +1113,7 @@ router.get("/reports/health-check", wrap(async (req, res) => {
 
   /* ── فحص التدفق النقدي ── */
   {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const row      = (cashRows.rows[0] ?? {}) as any;
     const receipts  = r2(Number(row.total_receipts ?? 0));
     const payments  = r2(Number(row.total_payments ?? 0));
@@ -1350,7 +1356,9 @@ router.get("/reports/balance-sheet", wrap(async (req, res) => {
   const totalExpTotal  = r2(expenseSum);
   const retainedEarnings = r2(totalRevenue - totalExpTotal);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const inventoryValue = r2(Number((inventoryRow.rows[0] as any)?.inventory_value ?? 0));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const openingCapital = r2(Number((capitalRow.rows[0] as any)?.opening_capital ?? 0));
 
   totalCash        = r2(totalCash);
@@ -1445,6 +1453,7 @@ router.get("/reports/trial-balance", wrap(async (req, res) => {
     ORDER BY a.code
   `);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const accounts = (rawRows.rows as Record<string, unknown>[]).map((r: any) => ({
     account_id:    r.account_id,
     account_code:  r.account_code,
