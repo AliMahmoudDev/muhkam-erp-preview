@@ -54,7 +54,8 @@ export type AuditAction =
   | "TRIAL_REGISTRATION_AUTO_PAUSED"        // spike crossed ANOMALY_TRIP_COUNT
   | "TRIAL_REGISTRATION_MANUAL_PAUSED"      // super admin paused manually
   | "TRIAL_REGISTRATION_RESUMED"            // super admin resumed
-  | "TRIAL_MONITORING_WARNING_CLEARED";     // super admin cleared warning
+  | "TRIAL_MONITORING_WARNING_CLEARED"      // super admin cleared warning
+  | "TRIAL_GUARD_UNBLOCK_IP";              // super admin cleared Redis blocks for an IP
 
 export type AuditRecordType =
   | "customer"
