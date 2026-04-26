@@ -115,7 +115,7 @@ export default function SuperAdmin() {
   const [supportWa, setSupportWa] = useState('');
   const [supportEmail, setSupportEmail] = useState('');
   const [settingSaving, setSettingSaving] = useState(false);
-  const [settingsActiveCard, setSettingsActiveCard] = useState<'support' | 'backup' | 'security' | null>(null);
+  const [settingsActiveCard, setSettingsActiveCard] = useState<'support' | 'backup' | 'security' | 'audit_log' | 'managers' | 'plans' | null>(null);
 
 
   /* ── Password Reset ─── */
@@ -302,7 +302,7 @@ export default function SuperAdmin() {
   const { data: auditData, isLoading: auditLoading, refetch: refetchAudit } = useQuery<{ count: number; rows: AuditRow[] }>({
     queryKey: ['/api/super/audit-log', auditLimit, auditAction],
     queryFn: () => fetcher(`/api/super/audit-log?limit=${auditLimit}${auditAction ? `&action=${auditAction}` : ''}`),
-    enabled: activeTab === 'audit_log' || activeTab === 'settings',
+    enabled: activeTab === 'settings' && settingsActiveCard === 'audit_log',
     staleTime: 30_000,
   });
 
@@ -416,7 +416,7 @@ export default function SuperAdmin() {
     useQuery<PlanSetting[]>({
       queryKey: ['/api/super/plan-settings'],
       queryFn: () => fetcher('/api/super/plan-settings'),
-      enabled: activeTab === 'plans',
+      enabled: activeTab === 'settings' && settingsActiveCard === 'plans',
       staleTime: 30_000,
     });
 
@@ -1837,14 +1837,11 @@ export default function SuperAdmin() {
             [
               { key: 'overview',      label: '🏠 نظرة عامة' },
               { key: 'companies',     label: '🏢 الشركات' },
-              { key: 'managers',      label: '👑 المديرون' },
               { key: 'revenue',       label: '📊 الإيرادات' },
               { key: 'alerts',        label: '🔔 التنبيهات' },
               { key: 'announcements', label: '📢 الإعلانات' },
               { key: 'health',        label: '🌡️ صحة السيرفر' },
-              { key: 'plans',         label: '💰 الخطط' },
               { key: 'monitoring',    label: '🛡️ مراقبة التجريبي' },
-              { key: 'audit_log',     label: '📋 سجل العمليات' },
               { key: 'settings',      label: '⚙️ الإعدادات' },
             ] as const
           ).map((tab) => {
@@ -1942,7 +1939,7 @@ export default function SuperAdmin() {
                   {
                     icon: '👥', label: 'إجمالي المستخدمين', value: stats?.totalUsers ?? '—',
                     sub: `${stats?.recentSignups ?? 0} انضموا هذا الشهر`,
-                    color: '#60A5FA', action: () => setActiveTab('managers'),
+                    color: '#60A5FA', action: () => { setActiveTab('settings'); setSettingsActiveCard('managers'); },
                   },
                   {
                     icon: (stats?.expired ?? 0) > 0 ? '⛔' : '✅',
@@ -2069,7 +2066,7 @@ export default function SuperAdmin() {
                 <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, padding: '22px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h3 style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: C.text }}>📋 آخر الإجراءات</h3>
-                    <button onClick={() => setActiveTab('audit_log')}
+                    <button onClick={() => { setActiveTab('settings'); setSettingsActiveCard('audit_log'); }}
                       style={{ fontSize: '12px', color: C.orange, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: FONT }}>
                       سجل التدقيق ←
                     </button>
@@ -3182,7 +3179,7 @@ export default function SuperAdmin() {
         {/* ══════════════════════════════
             TAB: MANAGERS
             ══════════════════════════════ */}
-        {activeTab === 'managers' && (
+        {(activeTab === 'managers' || (activeTab === 'settings' && settingsActiveCard === 'managers')) && (
           <div
             style={{
               background: C.card,
@@ -4326,12 +4323,31 @@ export default function SuperAdmin() {
               </div>
             )}
 
-            {/* ═══ كروت التنقل (3 أقسام) ═══ */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            {/* زر رجوع عند عرض محتوى كامل */}
+            {['managers','audit_log','plans'].includes(settingsActiveCard ?? '') && (
+              <button
+                onClick={() => setSettingsActiveCard(null)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  background: 'transparent', border: `1px solid ${C.border}`,
+                  borderRadius: '10px', padding: '8px 16px', cursor: 'pointer',
+                  color: C.muted, fontSize: '13px', fontFamily: FONT,
+                  transition: 'color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+                onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}
+              >← العودة إلى الإعدادات</button>
+            )}
+
+            {/* ═══ كروت التنقل (3 أقسام) — تُخفى عند عرض محتوى كامل الصفحة ═══ */}
+            {!['managers','audit_log','plans'].includes(settingsActiveCard ?? '') && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               {([
-                { key: 'support'  as const, icon: '⚙️', label: 'معلومات التواصل', desc: 'واتساب وبريد الدعم الفني',    color: '#F97316' },
-                { key: 'backup'   as const, icon: '💾', label: 'النسخ الاحتياطية', desc: 'إنشاء / استعادة / تشفير',     color: '#34D399' },
-                { key: 'security' as const, icon: '🔐', label: 'الأمان',            desc: 'المصادقة الثنائية وقيود IP', color: '#A78BFA' },
+                { key: 'support'   as const, icon: '⚙️', label: 'معلومات التواصل', desc: 'واتساب وبريد الدعم الفني',    color: '#F97316' },
+                { key: 'backup'    as const, icon: '💾', label: 'النسخ الاحتياطية', desc: 'إنشاء / استعادة / تشفير',     color: '#34D399' },
+                { key: 'security'  as const, icon: '🔐', label: 'الأمان',            desc: 'المصادقة الثنائية وقيود IP', color: '#A78BFA' },
+                { key: 'audit_log' as const, icon: '📋', label: 'سجل العمليات',      desc: 'مراقبة جميع إجراءات النظام', color: '#60A5FA' },
+                { key: 'managers'  as const, icon: '👑', label: 'المديرون',           desc: 'إدارة مديري النظام',          color: '#F472B6' },
+                { key: 'plans'     as const, icon: '💰', label: 'الخطط',             desc: 'إعداد خطط الاشتراك والأسعار', color: '#FBBF24' },
               ]).map(card => {
                 const isActive = settingsActiveCard === card.key;
                 return (
@@ -4357,16 +4373,19 @@ export default function SuperAdmin() {
                   </div>
                 );
               })}
-            </div>
+            </div>}
 
-            {/* ═══ لوحة المحتوى ═══ */}
-            {settingsActiveCard && (
+            {/* ═══ لوحة المحتوى (للكروت الثلاثة الأولى فقط) ═══ */}
+            {settingsActiveCard && !['managers','audit_log','plans'].includes(settingsActiveCard) && (
               <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.02)' }}>
                   <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: C.text }}>
-                    {settingsActiveCard === 'support'  && '⚙️ معلومات التواصل للدعم'}
-                    {settingsActiveCard === 'backup'   && '💾 النسخ الاحتياطية'}
-                    {settingsActiveCard === 'security' && '🔐 الأمان'}
+                    {settingsActiveCard === 'support'   && '⚙️ معلومات التواصل للدعم'}
+                    {settingsActiveCard === 'backup'    && '💾 النسخ الاحتياطية'}
+                    {settingsActiveCard === 'security'  && '🔐 الأمان'}
+                    {settingsActiveCard === 'audit_log' && '📋 سجل العمليات'}
+                    {settingsActiveCard === 'managers'  && '👑 المديرون'}
+                    {settingsActiveCard === 'plans'     && '💰 الخطط'}
                   </h3>
                   <button onClick={() => setSettingsActiveCard(null)} style={{ background: 'transparent', border: 'none', color: C.muted, fontSize: '20px', cursor: 'pointer', lineHeight: 1, padding: '2px 6px' }}>✕</button>
                 </div>
@@ -5029,7 +5048,7 @@ export default function SuperAdmin() {
       {/* ═══════════════════════════════════════════════
           TAB: AUDIT LOG  📋
           ═══════════════════════════════════════════════ */}
-      {activeTab === 'audit_log' && (
+      {(activeTab === 'audit_log' || (activeTab === 'settings' && settingsActiveCard === 'audit_log')) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
           {/* Header + controls */}
@@ -5590,7 +5609,7 @@ export default function SuperAdmin() {
       {/* ══════════════════════════════════════════════════════════════════
           PLAN SETTINGS TAB
           ══════════════════════════════════════════════════════════════════ */}
-      {activeTab === 'plans' && (
+      {(activeTab === 'plans' || (activeTab === 'settings' && settingsActiveCard === 'plans')) && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
             <div>
