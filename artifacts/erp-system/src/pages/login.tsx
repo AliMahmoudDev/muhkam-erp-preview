@@ -54,8 +54,12 @@ export default function Login() {
         warehouse_id?: number | null;
         safe_id?: number | null;
         permissions?: Record<string, boolean>;
-      }
+      },
+      companyId: number
     ) => {
+      if (companyId) {
+        localStorage.setItem('erp_company_id', String(companyId));
+      }
       login(user);
       setLocation('/');
     },
@@ -914,7 +918,7 @@ function LoginForm({
             marginBottom: '8px',
           }}
         >
-          اسم المستخدم
+          اسم المستخدم أو البريد الإلكتروني
         </label>
         <div style={{ position: 'relative' }}>
           {/* Icon */}
@@ -937,7 +941,7 @@ function LoginForm({
             type="text"
             value={username}
             autoComplete="username"
-            placeholder="أدخل اسم المستخدم"
+            placeholder="اسم المستخدم أو البريد الإلكتروني"
             disabled={loading}
             onChange={(e) => {
               setUsername(e.target.value);

@@ -711,53 +711,58 @@ router.post('/auth/register', async (req, res) => {
     const verificationToken   = generateVerificationToken();
     const verificationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
-    /* ── Create company — trial 7 days ───────────────────────── */
+    /* ── Hash password before transaction (CPU-bound, outside DB lock) ─ */
     const today    = new Date();
     const trialEnd = new Date(today);
     trialEnd.setDate(trialEnd.getDate() + 7);
 
-    const [company] = await db
-      .insert(companiesTable)
-      .values({
-        name:       company_name.trim(),
-        plan_type:  'trial',
-        start_date: today.toISOString().slice(0, 10),
-        end_date:   trialEnd.toISOString().slice(0, 10),
-        is_active:  true,
-        admin_email: normalEmail,
-
-        /* anti-abuse fields */
-        signup_ip:                    clientIP,
-        signup_user_agent:            userAgent ?? null,
-        has_used_trial:               true,
-        email_verified:               false,
-        email_verification_token:     verificationToken,
-        email_verification_expires_at: verificationExpires,
-      })
-      .returning();
-
-    /* ── Create first admin user ─────────────────────────────── */
     const baseUsername =
       normalEmail
         .split('@')[0]
         .toLowerCase()
         .replace(/[^a-z0-9_]/g, '') || 'admin';
-    const username  = `${baseUsername}_${company.id}`;
-    const hashedPw  = await hashPin(password);
+    const hashedPw = await hashPin(password);
 
-    const [user] = await db
-      .insert(erpUsersTable)
-      .values({
-        name:       admin_name.trim(),
-        username,
-        email:      normalEmail,
-        pin:        hashedPw,
-        role:       'admin',
-        active:     true,
-        company_id: company.id,
-        permissions: '{}',
-      })
-      .returning();
+    /* ── Atomic transaction: company + user together ─────────── */
+    const { company, user } = await db.transaction(async (tx) => {
+      const [newCompany] = await tx
+        .insert(companiesTable)
+        .values({
+          name:       company_name.trim(),
+          plan_type:  'trial',
+          start_date: today.toISOString().slice(0, 10),
+          end_date:   trialEnd.toISOString().slice(0, 10),
+          is_active:  true,
+          admin_email: normalEmail,
+
+          /* anti-abuse fields */
+          signup_ip:                    clientIP,
+          signup_user_agent:            userAgent ?? null,
+          has_used_trial:               true,
+          email_verified:               false,
+          email_verification_token:     verificationToken,
+          email_verification_expires_at: verificationExpires,
+        })
+        .returning();
+
+      const username = `${baseUsername}_${newCompany.id}`;
+
+      const [newUser] = await tx
+        .insert(erpUsersTable)
+        .values({
+          name:       admin_name.trim(),
+          username,
+          email:      normalEmail,
+          pin:        hashedPw,
+          role:       'admin',
+          active:     true,
+          company_id: newCompany.id,
+          permissions: '{}',
+        })
+        .returning();
+
+      return { company: newCompany, user: newUser };
+    });
 
     /* ── Record to permanent trial abuse log ─────────────────── */
     // Fire-and-forget — must not prevent the user from getting their tokens
@@ -804,7 +809,8 @@ router.post('/auth/register', async (req, res) => {
       /* soft hint — trial is active but user should verify their email */
       verify_email_notice: 'أُرسل رابط التحقق إلى بريدك الإلكتروني — يرجى التحقق خلال 48 ساعة',
     });
-  } catch {
+  } catch (err) {
+    logger.error({ err }, '[register] Unexpected error during account creation');
     res.status(500).json({ error: 'فشل إنشاء الحساب — حاول مجدداً' });
   }
 });

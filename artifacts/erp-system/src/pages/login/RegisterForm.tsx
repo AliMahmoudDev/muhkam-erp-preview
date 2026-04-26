@@ -14,7 +14,8 @@ interface RegisterFormProps {
       warehouse_id?: number | null;
       safe_id?: number | null;
       permissions?: Record<string, boolean>;
-    }
+    },
+    companyId: number
   ) => void;
   onSwitch: () => void;
 }
@@ -29,6 +30,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [createdUsername, setCreatedUsername] = useState('');
   const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -79,17 +81,19 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
       });
       const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
       if (!res.ok) { setError(String(data.error || 'فشل إنشاء الحساب')); return; }
+
+      const userData = (data.user ?? {}) as {
+        id: number; name: string; username: string; role: string;
+        active?: boolean; warehouse_id?: number | null; safe_id?: number | null;
+        permissions?: Record<string, boolean>;
+      };
+      const companyData = (data.company ?? {}) as { id: number };
+
+      setCreatedUsername(userData.username ?? '');
       setSuccess(true);
       setTimeout(() => {
-        const { user } = data as {
-          user: {
-            id: number; name: string; username: string; role: string;
-            active?: boolean; warehouse_id?: number | null; safe_id?: number | null;
-            permissions?: Record<string, boolean>;
-          };
-        };
-        onSuccess(user);
-      }, 900);
+        onSuccess(userData, companyData.id);
+      }, 1800);
     } catch {
       setError('تعذّر الاتصال بالخادم');
     } finally {
@@ -99,11 +103,28 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
 
   if (success) {
     return (
-      <div style={{ textAlign: 'center', padding: '40px 0' }} dir="rtl">
+      <div style={{ textAlign: 'center', padding: '32px 0' }} dir="rtl">
         <div style={{ fontSize: '56px', marginBottom: '16px' }}>🎉</div>
         <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#0f0c29', marginBottom: '10px' }}>
           تم إنشاء حسابك بنجاح!
         </h3>
+        {createdUsername && (
+          <div style={{
+            margin: '14px auto', maxWidth: '280px',
+            padding: '12px 16px', borderRadius: '12px',
+            background: '#f5f3ff', border: '1.5px solid #c4b5fd',
+          }}>
+            <p style={{ fontSize: '12px', color: '#6d28d9', fontWeight: 700, marginBottom: '4px' }}>
+              اسم المستخدم الخاص بك
+            </p>
+            <p style={{ fontSize: '16px', fontWeight: 900, color: '#0f0c29', letterSpacing: '0.5px', direction: 'ltr' }}>
+              {createdUsername}
+            </p>
+            <p style={{ fontSize: '11px', color: '#7c6fa0', marginTop: '4px' }}>
+              احتفظ به — ستحتاجه لتسجيل الدخول لاحقاً
+            </p>
+          </div>
+        )}
         <p style={{ fontSize: '14px', color: '#7c6fa0' }}>جاري تسجيل الدخول...</p>
       </div>
     );
