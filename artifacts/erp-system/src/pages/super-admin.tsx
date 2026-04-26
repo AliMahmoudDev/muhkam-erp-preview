@@ -1831,45 +1831,111 @@ export default function SuperAdmin() {
       </div>
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px' }}>
-        {/* ── Tab bar (wraps to show all tabs) ─── */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
-          {(
-            [
-              { key: 'overview',      label: '🏠 نظرة عامة' },
-              { key: 'companies',     label: '🏢 الشركات' },
-              { key: 'revenue',       label: '📊 الإيرادات' },
-              { key: 'alerts',        label: '🔔 التنبيهات' },
-              { key: 'announcements', label: '📢 الإعلانات' },
-              { key: 'health',        label: '🌡️ صحة السيرفر' },
-              { key: 'monitoring',    label: '🛡️ مراقبة التجريبي' },
-              { key: 'settings',      label: '⚙️ الإعدادات' },
-            ] as const
-          ).map((tab) => {
-            const active = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  fontFamily: FONT,
-                  transition: 'all 0.18s',
-                  whiteSpace: 'nowrap',
-                  border: active ? 'none' : `1.5px solid ${C.border}`,
-                  background: active ? C.orange : 'transparent',
-                  color: active ? '#fff' : C.muted,
-                  boxShadow: active ? `0 4px 16px rgba(249,115,22,0.3)` : 'none',
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* ── Navigation Cards ─── */}
+        {(() => {
+          const NAV_CARDS = [
+            { key: 'overview',      label: 'نظرة عامة',       icon: '🏠', color: '#F97316', shadow: 'rgba(249,115,22,0.45)',  desc: 'لوحة التحكم الرئيسية' },
+            { key: 'companies',     label: 'الشركات',          icon: '🏢', color: '#3B82F6', shadow: 'rgba(59,130,246,0.45)',  desc: 'إدارة الشركات المشتركة' },
+            { key: 'revenue',       label: 'الإيرادات',         icon: '📊', color: '#10B981', shadow: 'rgba(16,185,129,0.45)',  desc: 'تقارير الإيرادات والمالية' },
+            { key: 'alerts',        label: 'التنبيهات',         icon: '🔔', color: '#EF4444', shadow: 'rgba(239,68,68,0.45)',   desc: 'تنبيهات النظام والأحداث' },
+            { key: 'announcements', label: 'الإعلانات',         icon: '📢', color: '#8B5CF6', shadow: 'rgba(139,92,246,0.45)', desc: 'إشعارات للمستخدمين' },
+            { key: 'health',        label: 'صحة السيرفر',       icon: '🌡️', color: '#06B6D4', shadow: 'rgba(6,182,212,0.45)',   desc: 'مراقبة أداء الخوادم' },
+            { key: 'monitoring',    label: 'مراقبة التجريبي',  icon: '🛡️', color: '#6366F1', shadow: 'rgba(99,102,241,0.45)',  desc: 'البيئة التجريبية' },
+            { key: 'settings',      label: 'الإعدادات',         icon: '⚙️', color: '#64748B', shadow: 'rgba(100,116,139,0.45)', desc: 'إعدادات النظام والأمان' },
+          ] as const;
+
+          return (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '14px',
+              marginBottom: '32px',
+            }}>
+              {NAV_CARDS.map((card) => {
+                const active = activeTab === card.key;
+                return (
+                  <button
+                    key={card.key}
+                    onClick={() => setActiveTab(card.key)}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-4px) scale(1.03)';
+                        (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 12px 32px ${card.shadow}`;
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = card.color;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0) scale(1)';
+                        (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 8px rgba(0,0,0,0.12)`;
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = C.border;
+                      }
+                    }}
+                    style={{
+                      position: 'relative',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                      padding: '20px 12px 16px',
+                      borderRadius: '18px',
+                      cursor: 'pointer',
+                      fontFamily: FONT,
+                      transition: 'all 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+                      border: active ? `2px solid ${card.color}` : `1.5px solid ${C.border}`,
+                      background: active
+                        ? `linear-gradient(145deg, ${card.color}22 0%, ${card.color}08 100%)`
+                        : C.card,
+                      boxShadow: active
+                        ? `0 8px 28px ${card.shadow}, inset 0 1px 0 ${card.color}30`
+                        : `0 2px 8px rgba(0,0,0,0.12)`,
+                      transform: active ? 'translateY(-3px) scale(1.02)' : 'translateY(0) scale(1)',
+                      outline: 'none',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {active && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0,
+                        height: '3px',
+                        background: `linear-gradient(90deg, ${card.color}, ${card.color}99)`,
+                        borderRadius: '18px 18px 0 0',
+                      }} />
+                    )}
+                    <span style={{
+                      fontSize: '28px',
+                      lineHeight: 1,
+                      filter: active ? 'drop-shadow(0 2px 6px ' + card.shadow + ')' : 'none',
+                      transition: 'filter 0.2s',
+                    }}>
+                      {card.icon}
+                    </span>
+                    <span style={{
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      color: active ? card.color : C.text,
+                      letterSpacing: '0.01em',
+                      transition: 'color 0.2s',
+                    }}>
+                      {card.label}
+                    </span>
+                    <span style={{
+                      fontSize: '10px',
+                      color: active ? card.color + 'bb' : C.muted,
+                      textAlign: 'center',
+                      lineHeight: 1.4,
+                      transition: 'color 0.2s',
+                    }}>
+                      {card.desc}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* ══════════════════════════════
             TAB: OVERVIEW  🏠
