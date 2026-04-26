@@ -16,6 +16,8 @@ import {
   buildVerificationLink,
   logVerificationLink,
 } from '../lib/trial-guard';
+import { computeDeviceFingerprint } from '../lib/trial-fingerprint';
+import { ipRegistrationLimiter, checkAndRecordFPLimit } from '../lib/registration-limiter';
 import { scoreTrialCompany } from '../lib/trial-scoring';
 import { invalidateEmailVerifyCache } from '../middleware/email-verify-guard';
 import { authenticate, signToken, signRefreshToken, verifyRefreshToken } from '../middleware/auth';
@@ -638,7 +640,7 @@ router.get('/auth/me', authenticate, (req, res) => {
  *  4. Generates email verification token and logs the verification link
  *  5. Records signup permanently in trial_abuse_log (all IPs, including private)
  */
-router.post('/auth/register', async (req, res) => {
+router.post('/auth/register', ipRegistrationLimiter, async (req, res) => {
   try {
     const { company_name, admin_name, email, password } = req.body as {
       company_name?: string;
@@ -672,9 +674,23 @@ router.post('/auth/register', async (req, res) => {
 
     const normalEmail = email.toLowerCase().trim();
 
-    /* ── Extract client IP and User-Agent ────────────────────── */
-    const clientIP  = extractClientIP(req);
-    const userAgent = req.headers['user-agent'];
+    /* ── Extract client IP, User-Agent, and Device Fingerprint ── */
+    const clientIP    = extractClientIP(req);
+    const userAgent   = req.headers['user-agent'];
+    const fingerprint = computeDeviceFingerprint(req);
+
+    /* ── Fingerprint rate limit (before DB queries) ───────────── */
+    const fpLimit = checkAndRecordFPLimit(fingerprint);
+    if (fpLimit.blocked) {
+      const retryAfter = Math.ceil((fpLimit.resetMs - Date.now()) / 1000);
+      res.setHeader('Retry-After', String(retryAfter));
+      res.status(429).json({
+        error: 'تجاوزت الحد المسموح به من هذا الجهاز — يرجى الانتظار قبل المحاولة مرة أخرى',
+        code:  'REGISTRATION_FP_RATE_LIMITED',
+        retry_after_seconds: retryAfter,
+      });
+      return;
+    }
 
     /* ── Duplicate email check (erp_users) ───────────────────── */
     const [existingUser] = await db
@@ -686,10 +702,10 @@ router.post('/auth/register', async (req, res) => {
       return;
     }
 
-    /* ── Trial abuse checks (FAIL-CLOSED — all 4 checks in one call) ─── */
+    /* ── Trial abuse checks (FAIL-CLOSED — all 7 checks in one call) ─── */
     let trialCheck;
     try {
-      trialCheck = await checkTrialEligibility(normalEmail, clientIP, userAgent);
+      trialCheck = await checkTrialEligibility(normalEmail, clientIP, userAgent, fingerprint);
     } catch (err) {
       // DB error during abuse check — BLOCK the registration (fail-closed)
       logger.error({ err, email: normalEmail, ip: clientIP }, '[register] Trial check DB error — blocking registration (fail-closed)');
@@ -789,10 +805,11 @@ router.post('/auth/register', async (req, res) => {
     /* ── Record to permanent trial abuse log ─────────────────── */
     // Fire-and-forget — must not prevent the user from getting their tokens
     void recordTrialSignup({
-      email:      normalEmail,
-      ip:         clientIP,
-      user_agent: userAgent,
-      company_id: company.id,
+      email:       normalEmail,
+      ip:          clientIP,
+      user_agent:  userAgent,
+      fingerprint: fingerprint,
+      company_id:  company.id,
     });
 
     /* ── Compute initial trial score (fire-and-forget) ────────── */
