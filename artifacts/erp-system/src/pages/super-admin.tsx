@@ -32,7 +32,7 @@ export default function SuperAdmin() {
   /* ── Tab ─── */
   const [activeTab, setActiveTab] = useState<
     'overview' | 'companies' | 'managers' | 'settings' |
-    'revenue' | 'alerts' | 'announcements' | 'health' | 'plans'
+    'revenue' | 'alerts' | 'announcements' | 'health' | 'plans' | 'monitoring'
   >('overview');
 
   /* ── Companies state ─── */
@@ -236,6 +236,34 @@ export default function SuperAdmin() {
     enabled: activeTab === 'alerts',
     staleTime: 30_000,
     refetchInterval: activeTab === 'alerts' ? 60_000 : false,
+  });
+
+  /* Trial Monitoring */
+  interface TrialMonitoringData {
+    status: 'normal' | 'warning' | 'paused';
+    registrations_in_window: number;
+    alert_threshold: number;
+    block_threshold: number;
+    pause_until: string | null;
+    pause_remaining_seconds: number;
+    warning_fired_at: string | null;
+    pause_reason: string | null;
+    top_ips: { ip: string; count: number }[];
+    top_fingerprints: { fingerprint: string; count: number }[];
+    suspicious_companies: {
+      id: number; name: string; email: string | null;
+      trial_score: number; is_suspicious: boolean; verification_status: string;
+    }[];
+    recent_blocks: { email: string; ip: string; reason: string; created_at: string }[];
+  }
+  const {
+    data: monData, isLoading: monLoading, refetch: refetchMon,
+  } = useQuery<TrialMonitoringData>({
+    queryKey: ['/api/super/trial-monitoring'],
+    queryFn: () => authFetch('/api/super/trial-monitoring').then(r => r.json()),
+    enabled: activeTab === 'monitoring',
+    staleTime: 15_000,
+    refetchInterval: activeTab === 'monitoring' ? 30_000 : false,
   });
 
   /* Audit log */
@@ -1748,6 +1776,7 @@ export default function SuperAdmin() {
               { key: 'announcements', label: '📢 الإعلانات' },
               { key: 'health',        label: '🌡️ صحة السيرفر' },
               { key: 'plans',         label: '💰 الخطط والأسعار' },
+              { key: 'monitoring',    label: '🛡️ مراقبة التجريبي' },
               { key: 'managers',      label: '👑 المديرون' },
               { key: 'settings',      label: '⚙️ الإعدادات' },
             ] as const
@@ -5768,6 +5797,254 @@ export default function SuperAdmin() {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════
+          TAB: MONITORING  🛡️
+          ══════════════════════════════ */}
+      {activeTab === 'monitoring' && (() => {
+        const MON_STATUS_MAP = {
+          normal:  { label: 'طبيعي',          color: '#34D399', bg: 'rgba(52,211,153,0.12)',  icon: '✅' },
+          warning: { label: 'تحذير',           color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  icon: '⚠️' },
+          paused:  { label: 'متوقف مؤقتاً',   color: '#EF4444', bg: 'rgba(239,68,68,0.12)',   icon: '🚫' },
+        };
+        const st = monData ? MON_STATUS_MAP[monData.status] : null;
+
+        const card = (title: string, children: React.ReactNode, extra?: React.CSSProperties) => (
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '16px', padding: '22px 24px', ...extra }}>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: C.muted, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</div>
+            {children}
+          </div>
+        );
+
+        const badge = (label: string, color: string, bg: string) => (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, color, background: bg }}>
+            {label}
+          </span>
+        );
+
+        return (
+          <div style={{ direction: 'rtl', fontFamily: FONT }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+              <div>
+                <h1 style={{ fontSize: '22px', fontWeight: 900, color: C.text, margin: 0 }}>
+                  🛡️ مراقبة التسجيلات التجريبية
+                </h1>
+                <p style={{ fontSize: '13px', color: C.muted, margin: '6px 0 0' }}>
+                  مراقبة النشاط غير الطبيعي في تسجيلات الحسابات التجريبية — يتجدد كل 30 ثانية
+                </p>
+              </div>
+              <button
+                onClick={() => refetchMon()}
+                style={{ padding: '10px 18px', borderRadius: '10px', border: `1.5px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
+              >
+                🔄 تحديث
+              </button>
+            </div>
+
+            {monLoading && (
+              <div style={{ textAlign: 'center', padding: '60px 0', color: C.muted }}>جارٍ التحميل...</div>
+            )}
+
+            {monData && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                {/* ── Status Card ── */}
+                {card('حالة النظام', (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div style={{
+                        width: '60px', height: '60px', borderRadius: '16px',
+                        background: st!.bg, display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', fontSize: '28px',
+                      }}>
+                        {st!.icon}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '24px', fontWeight: 900, color: st!.color }}>{st!.label}</div>
+                        {monData.pause_reason && (
+                          <div style={{ fontSize: '12px', color: C.muted, marginTop: '4px' }}>{monData.pause_reason}</div>
+                        )}
+                        {monData.pause_until && (
+                          <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '4px' }}>
+                            متوقف حتى: {new Date(monData.pause_until).toLocaleString('ar')}
+                            {monData.pause_remaining_seconds > 0 && ` (${Math.ceil(monData.pause_remaining_seconds / 60)} دقيقة)`}
+                          </div>
+                        )}
+                        {monData.warning_fired_at && monData.status === 'warning' && (
+                          <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '4px' }}>
+                            تحذير منذ: {new Date(monData.warning_fired_at).toLocaleString('ar')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Manual Actions */}
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      {monData.status === 'warning' && (
+                        <button
+                          onClick={async () => {
+                            await authFetch('/api/super/trial-monitoring/clear-warning', { method: 'POST' });
+                            void refetchMon();
+                          }}
+                          style={{ padding: '9px 16px', borderRadius: '10px', border: '1.5px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.1)', color: '#F59E0B', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
+                        >
+                          🧹 مسح التحذير
+                        </button>
+                      )}
+                      {monData.status !== 'paused' && (
+                        <button
+                          onClick={async () => {
+                            const mins = prompt('مدة الإيقاف بالدقائق (1-1440):');
+                            if (!mins || isNaN(Number(mins))) return;
+                            const reason = prompt('سبب الإيقاف:') || 'إيقاف يدوي من المشرف';
+                            await authFetch('/api/super/trial-monitoring/pause', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ minutes: Number(mins), reason }),
+                            });
+                            void refetchMon();
+                          }}
+                          style={{ padding: '9px 16px', borderRadius: '10px', border: '1.5px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
+                        >
+                          ⏸️ إيقاف مؤقت
+                        </button>
+                      )}
+                      {monData.status === 'paused' && (
+                        <button
+                          onClick={async () => {
+                            await authFetch('/api/super/trial-monitoring/resume', { method: 'POST' });
+                            void refetchMon();
+                          }}
+                          style={{ padding: '9px 16px', borderRadius: '10px', border: '1.5px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.1)', color: '#34D399', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}
+                        >
+                          ▶️ استئناف التسجيلات
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* ── Metrics Row ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+                  {[
+                    { label: 'تسجيلات في النافذة الحالية', value: monData.registrations_in_window, color: monData.registrations_in_window >= monData.block_threshold ? '#EF4444' : monData.registrations_in_window >= monData.alert_threshold ? '#F59E0B' : '#34D399' },
+                    { label: 'حد التحذير',  value: monData.alert_threshold, color: '#F59E0B' },
+                    { label: 'حد الإيقاف', value: monData.block_threshold,  color: '#EF4444' },
+                    { label: 'الوقت المتبقي (ثانية)', value: monData.pause_remaining_seconds || '—', color: C.muted },
+                  ].map(m => (
+                    <div key={m.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '16px 18px' }}>
+                      <div style={{ fontSize: '11px', color: C.muted, marginBottom: '8px', fontWeight: 700 }}>{m.label}</div>
+                      <div style={{ fontSize: '26px', fontWeight: 900, color: m.color }}>{m.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Top Sources Row ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                  {/* Top IPs */}
+                  {card('أعلى عناوين IP', (
+                    monData.top_ips.length === 0
+                      ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '12px 0' }}>لا توجد بيانات في النافذة الحالية</div>
+                      : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {monData.top_ips.map(e => (
+                            <div key={e.ip} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)' }}>
+                              <span style={{ fontSize: '13px', color: C.text, fontFamily: 'monospace' }}>{e.ip}</span>
+                              <span style={{ fontSize: '12px', fontWeight: 800, color: e.count >= 5 ? '#EF4444' : '#F59E0B', background: 'rgba(245,158,11,0.1)', padding: '2px 10px', borderRadius: '20px' }}>{e.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                  ))}
+
+                  {/* Top Fingerprints */}
+                  {card('أعلى أجهزة (بصمة)', (
+                    monData.top_fingerprints.length === 0
+                      ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '12px 0' }}>لا توجد بيانات في النافذة الحالية</div>
+                      : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {monData.top_fingerprints.map(e => (
+                            <div key={e.fingerprint} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)' }}>
+                              <span style={{ fontSize: '11px', color: C.muted, fontFamily: 'monospace' }}>{e.fingerprint.slice(0, 16)}…</span>
+                              <span style={{ fontSize: '12px', fontWeight: 800, color: e.count >= 3 ? '#EF4444' : '#F59E0B', background: 'rgba(245,158,11,0.1)', padding: '2px 10px', borderRadius: '20px' }}>{e.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                  ))}
+                </div>
+
+                {/* ── Suspicious Companies ── */}
+                {card('الحسابات المشبوهة', (
+                  monData.suspicious_companies.length === 0
+                    ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>✅ لا توجد حسابات مشبوهة حالياً</div>
+                    : <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <thead>
+                            <tr>
+                              {['الشركة', 'البريد', 'درجة الثقة', 'حالة التحقق', 'الحالة'].map(h => (
+                                <th key={h} style={{ padding: '8px 12px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {monData.suspicious_companies.map(c => (
+                              <tr key={c.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                                <td style={{ padding: '10px 12px', color: C.text, fontWeight: 700 }}>{c.name}</td>
+                                <td style={{ padding: '10px 12px', color: C.muted, fontFamily: 'monospace', fontSize: '12px' }}>{c.email ?? '—'}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  <span style={{ fontWeight: 800, color: c.trial_score < 30 ? '#EF4444' : c.trial_score < 60 ? '#F59E0B' : '#34D399' }}>{c.trial_score}</span>
+                                </td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  {badge(
+                                    c.verification_status === 'verified' ? '✓ موثق' : c.verification_status === 'pending' ? '⏳ معلق' : c.verification_status,
+                                    c.verification_status === 'verified' ? '#34D399' : '#F59E0B',
+                                    c.verification_status === 'verified' ? 'rgba(52,211,153,0.1)' : 'rgba(245,158,11,0.1)',
+                                  )}
+                                </td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  {badge('مشبوه', '#EF4444', 'rgba(239,68,68,0.1)')}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                ))}
+
+                {/* ── Recent Blocks ── */}
+                {card('آخر محاولات محجوبة', (
+                  monData.recent_blocks.length === 0
+                    ? <div style={{ color: C.muted, fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>✅ لم يتم حجب أي محاولة مؤخراً</div>
+                    : <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <thead>
+                            <tr>
+                              {['البريد الإلكتروني', 'IP', 'السبب', 'الوقت'].map(h => (
+                                <th key={h} style={{ padding: '8px 12px', textAlign: 'right', color: C.muted, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {monData.recent_blocks.map((b, i) => (
+                              <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
+                                <td style={{ padding: '10px 12px', color: C.text, fontFamily: 'monospace', fontSize: '12px' }}>{b.email}</td>
+                                <td style={{ padding: '10px 12px', color: C.muted, fontFamily: 'monospace', fontSize: '12px' }}>{b.ip}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  {badge(b.reason, '#EF4444', 'rgba(239,68,68,0.1)')}
+                                </td>
+                                <td style={{ padding: '10px 12px', color: C.muted, fontSize: '11px' }}>
+                                  {new Date(b.created_at).toLocaleString('ar')}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                ))}
+
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <style>{`
         @keyframes sa-fade-in { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
