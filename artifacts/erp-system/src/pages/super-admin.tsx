@@ -356,6 +356,23 @@ export default function SuperAdmin() {
     refetchInterval: (activeTab === 'health' || activeTab === 'overview') ? 30_000 : false,
   });
 
+  /* Redis Health — polled every 10 s always (used in navbar + health tab) */
+  interface RedisHealthData {
+    status: 'ok' | 'down';
+    latency_ms?: number;
+    message?: string;
+  }
+  const { data: redisHealth } = useQuery<RedisHealthData>({
+    queryKey: ['/api/super/health/redis'],
+    queryFn: () =>
+      fetch('/api/super/health/redis', { headers: authHeaders() })
+        .then(r => r.json() as Promise<RedisHealthData>)
+        .catch(() => ({ status: 'down' as const })),
+    refetchInterval: 10_000,
+    retry: false,
+    staleTime: 8_000,
+  });
+
   /* Overview — recent audit events (last 5) */
   const { data: overviewAudit } = useQuery<{ count: number; rows: AuditRow[] }>({
     queryKey: ['/api/super/audit-log', 5, ''],
@@ -1737,31 +1754,55 @@ export default function SuperAdmin() {
             <div style={{ fontSize: '11px', color: C.muted }}>{today}</div>
           </div>
         </div>
-        <button
-          onClick={logout}
-          style={{
-            background: 'transparent',
-            border: `1px solid ${C.border}`,
-            borderRadius: '10px',
-            color: C.muted,
-            padding: '8px 18px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: 700,
-            fontFamily: FONT,
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = C.danger;
-            e.currentTarget.style.color = C.danger;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = C.border;
-            e.currentTarget.style.color = C.muted;
-          }}
-        >
-          تسجيل الخروج
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Redis status indicator */}
+          <div
+            title={redisHealth?.status === 'ok' ? `Redis يعمل — ${redisHealth.latency_ms}ms` : 'Redis متوقف'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '5px 12px', borderRadius: '20px',
+              background: redisHealth?.status === 'ok' ? 'rgba(52,211,153,0.12)' : 'rgba(239,68,68,0.12)',
+              border: `1px solid ${redisHealth?.status === 'ok' ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.3)'}`,
+              fontSize: '12px', fontWeight: 700,
+              color: redisHealth?.status === 'ok' ? '#34D399' : '#EF4444',
+              cursor: 'default',
+            }}
+          >
+            <span style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: redisHealth?.status === 'ok' ? '#34D399' : '#EF4444',
+              display: 'inline-block',
+              boxShadow: redisHealth?.status === 'ok' ? '0 0 6px #34D399' : '0 0 6px #EF4444',
+            }} />
+            Redis
+          </div>
+
+          <button
+            onClick={logout}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${C.border}`,
+              borderRadius: '10px',
+              color: C.muted,
+              padding: '8px 18px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 700,
+              fontFamily: FONT,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = C.danger;
+              e.currentTarget.style.color = C.danger;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = C.border;
+              e.currentTarget.style.color = C.muted;
+            }}
+          >
+            تسجيل الخروج
+          </button>
+        </div>
       </div>
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px' }}>
@@ -5428,6 +5469,59 @@ export default function SuperAdmin() {
                   ))}
                 </div>
               </div>
+
+              {/* ── Redis Health Card ─────────────────────────────────────── */}
+              {(() => {
+                const ok      = redisHealth?.status === 'ok';
+                const color   = redisHealth ? (ok ? '#34D399' : '#EF4444') : '#94A3B8';
+                const bgColor = redisHealth ? (ok ? 'rgba(52,211,153,0.08)' : 'rgba(239,68,68,0.08)') : 'rgba(148,163,184,0.06)';
+                const label   = !redisHealth ? '⚠️ غير متاح حالياً' : ok ? '🟢 يعمل' : '🔴 متوقف';
+                return (
+                  <div style={{
+                    background: bgColor,
+                    borderRadius: '16px',
+                    border: `1px solid ${color}33`,
+                    padding: '20px 24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <span style={{ fontSize: '28px' }}>🗄️</span>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: 900, color: C.text, marginBottom: '2px' }}>حالة Redis</div>
+                        <div style={{ fontSize: '13px', color: C.muted }}>يتجدد كل 10 ثوانٍ</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '13px', color: C.muted, marginBottom: '4px' }}>الحالة</div>
+                        <div style={{ fontSize: '18px', fontWeight: 900, color }}>
+                          {label}
+                        </div>
+                      </div>
+                      {redisHealth?.status === 'ok' && redisHealth.latency_ms !== undefined && (
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '13px', color: C.muted, marginBottom: '4px' }}>الاستجابة</div>
+                          <div style={{
+                            fontSize: '18px', fontWeight: 900, fontFamily: 'monospace',
+                            color: redisHealth.latency_ms > 50 ? '#F59E0B' : '#34D399',
+                          }}>
+                            {redisHealth.latency_ms}ms
+                          </div>
+                        </div>
+                      )}
+                      <div style={{
+                        width: 14, height: 14, borderRadius: '50%',
+                        background: color,
+                        boxShadow: `0 0 8px ${color}`,
+                        flexShrink: 0,
+                      }} />
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           ) : null}
         </div>
