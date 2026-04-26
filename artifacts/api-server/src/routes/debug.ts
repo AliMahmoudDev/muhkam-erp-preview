@@ -63,18 +63,23 @@ router.get(
     const userAgent   = uaOverride ?? (req.headers["user-agent"] as string | undefined);
     const fingerprint = fpOverride ?? computeDeviceFingerprint(req);
 
-    /* ── Cooldown state ─────────────────────────────────────────────────── */
-    const ipCooldown = cooldownStore.check(ip);
-    const fpCooldown = cooldownStore.check(`fp:${fingerprint}`);
+    /* ── Cooldown state (async — Redis) ──────────────────────────────────── */
+    const [ipCooldown, fpCooldown] = await Promise.all([
+      cooldownStore.check(ip),
+      cooldownStore.check(`fp:${fingerprint}`),
+    ]);
 
-    /* ── Anomaly state ──────────────────────────────────────────────────── */
-    const globalCount = anomalyDetector.countGlobal();
-    const ipAnomalyCount = anomalyDetector.countKey(ip);
-    const fpAnomalyCount = anomalyDetector.countKey(`fp:${fingerprint}`);
-    const paused = anomalyDetector.isPaused();
-    const pausedUntil = anomalyDetector.pausedUntilDate();
+    /* ── Anomaly state (async — Redis) ───────────────────────────────────── */
+    const [globalCount, ipAnomalyCount, fpAnomalyCount, paused, pausedUntil] =
+      await Promise.all([
+        anomalyDetector.countGlobal(),
+        anomalyDetector.countKey(ip),
+        anomalyDetector.countKey(`fp:${fingerprint}`),
+        anomalyDetector.isPaused(),
+        anomalyDetector.pausedUntilDate(),
+      ]);
 
-    /* ── Run full trial check ───────────────────────────────────────────── */
+    /* ── Run full trial check ────────────────────────────────────────────── */
     let decision = null;
     let check_error: string | null = null;
 
@@ -89,7 +94,7 @@ router.get(
         email:       email.toLowerCase().trim(),
         ip,
         user_agent:  userAgent ?? null,
-        fingerprint: `${fingerprint.slice(0, 8)}…${fingerprint.slice(-4)}`, // truncated for safety
+        fingerprint: `${fingerprint.slice(0, 8)}…${fingerprint.slice(-4)}`,
       },
       ip_metadata: {
         is_private:    isPrivateOrLoopbackIP(ip),
@@ -99,7 +104,7 @@ router.get(
         MAX_TRIALS_PUBLIC_IP,
         MAX_TRIALS_PRIVATE_IP,
         MAX_TRIALS_UA_IP,
-        FINGERPRINT_LIMIT: MAX_TRIALS_UA_IP, // same limit reused for fingerprint
+        FINGERPRINT_LIMIT: MAX_TRIALS_UA_IP,
       },
       cooldown: {
         ip: {
@@ -126,7 +131,7 @@ router.get(
       decision,
       check_error,
       note: check_error
-        ? "DB error — registration would be BLOCKED (fail-closed)"
+        ? "DB or Redis error — registration would be BLOCKED (fail-closed)"
         : undefined,
     });
   }),

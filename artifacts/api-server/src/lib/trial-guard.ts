@@ -11,15 +11,15 @@
  *  6. FINGERPRINT— device fingerprint (SHA-256 of browser signals) exceeds limit
  *
  * ── FAIL-CLOSED ─────────────────────────────────────────────────────────────
- *  Every DB query failure BLOCKS the registration.
+ *  Every DB or Redis query failure BLOCKS the registration.
  *
  * ── Cooldown escalation (trial-cooldown.ts) ──────────────────────────────────
- *  When any check blocks → escalate cooldown for IP + fingerprint.
+ *  When any check blocks → escalate cooldown for IP + fingerprint (Redis).
  *  Level 1 = 1h, Level 2 = 24h, Level 3 = 7 days.
  *
  * ── Anomaly detection (trial-anomaly.ts) ─────────────────────────────────────
+ *  Two-stage: warning (alert count) → pause (trip count).
  *  Global spike → auto-pause all registrations for PAUSE_MS.
- *  Per-key spike → logged as WARN for alerting.
  *
  * ── IP extraction ───────────────────────────────────────────────────────────
  *  extractClientIP() reads X-Forwarded-For (trusted via Express trust-proxy=1)
@@ -97,17 +97,16 @@ export function isPrivateOrLoopbackIP(ip: string): boolean {
   const parts = v4.split(".").map(Number);
   if (parts.length === 4) {
     const [a, b] = parts;
-    if (a === 127) return true;                          // 127.0.0.0/8  loopback
-    if (a === 10)  return true;                          // 10.0.0.0/8   RFC-1918
-    if (a === 192 && b === 168) return true;             // 192.168.0.0/16
-    if (a === 172 && b !== undefined && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+    if (a === 127) return true;
+    if (a === 10)  return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 172 && b !== undefined && b >= 16 && b <= 31) return true;
   }
   return false;
 }
 
-/* ── Individual checks (all FAIL-CLOSED — throw on DB error) ──────────────── */
+/* ── Individual DB checks (all FAIL-CLOSED — throw on error) ──────────────── */
 
-/** Check 1: email block. Throws → caller blocks registration. */
 async function checkEmailBlock(email: string): Promise<boolean> {
   const rows = await db
     .select({ id: trialAbuseLogTable.id })
@@ -122,7 +121,6 @@ async function checkEmailBlock(email: string): Promise<boolean> {
   return rows.length > 0;
 }
 
-/** Check 2 & 3: IP count with separate limits for public vs private ranges. Throws → caller blocks. */
 async function checkIPBlock(
   ip: string,
 ): Promise<{ blocked: boolean; count: number; is_private: boolean }> {
@@ -143,7 +141,6 @@ async function checkIPBlock(
   return { blocked: total >= limit, count: total, is_private };
 }
 
-/** Check 5: UA + IP. Throws → caller blocks. Only runs when UA is present. */
 async function checkUAIPBlock(
   ip:        string,
   userAgent: string,
@@ -162,7 +159,6 @@ async function checkUAIPBlock(
   return { blocked: total >= MAX_TRIALS_UA_IP, count: total };
 }
 
-/** Check 6: device fingerprint (SHA-256 of browser signals). Throws → caller blocks. */
 async function checkFingerprintBlock(
   fingerprint: string,
 ): Promise<{ blocked: boolean; count: number }> {
@@ -184,7 +180,7 @@ async function checkFingerprintBlock(
 /**
  * Runs all 7 trial abuse checks in priority order and returns a decision.
  *
- * FAIL-CLOSED: if any DB query throws, this function re-throws.
+ * FAIL-CLOSED: if any DB or Redis query throws, this function re-throws.
  * Caller must catch and return 503 — never silently allow on failure.
  *
  * Side effects on block: escalates cooldown for IP + fingerprint.
@@ -200,12 +196,12 @@ export async function checkTrialEligibility(
   const normalIP    = normalizeIP(ip);
   const is_private  = isPrivateOrLoopbackIP(normalIP);
 
-  /* ── 0. Record attempt in anomaly detector ────────────────────────────── */
-  anomalyDetector.record(normalIP);
-  if (fingerprint) anomalyDetector.record(`fp:${fingerprint}`);
+  /* ── 0. Record attempt in anomaly detector (fire-and-forget) ──────────── */
+  void anomalyDetector.record(normalIP);
+  if (fingerprint) void anomalyDetector.record(`fp:${fingerprint}`);
 
-  /* ── 0b. Global anomaly pause ─────────────────────────────────────────── */
-  if (anomalyDetector.isPaused()) {
+  /* ── 0b. Global anomaly pause check ──────────────────────────────────── */
+  if (await anomalyDetector.isPaused()) {
     const result: TrialCheckResult = {
       allowed: false, blocked_by: "anomaly_pause",
       reason:        "global registration spike detected — registrations temporarily paused",
@@ -213,12 +209,12 @@ export async function checkTrialEligibility(
       ip_count: 0, ua_ip_count: 0, fp_count: 0, email_blocked: false, fingerprint,
     };
     logger.warn({ email: normalEmail, ip: normalIP }, "[TrialGuard] BLOCKED — anomaly pause");
-    recentBlocksStore.record({ email: normalEmail, ip: normalIP, reason: "anomaly_pause", created_at: new Date().toISOString() });
+    void recentBlocksStore.record({ email: normalEmail, ip: normalIP, reason: "anomaly_pause", created_at: new Date().toISOString() });
     return result;
   }
 
   /* ── 1. Cooldown check ────────────────────────────────────────────────── */
-  const ipCooldown = cooldownStore.check(normalIP);
+  const ipCooldown = await cooldownStore.check(normalIP);
   if (ipCooldown.blocked) {
     const result: TrialCheckResult = {
       allowed: false, blocked_by: "cooldown",
@@ -231,7 +227,7 @@ export async function checkTrialEligibility(
     return result;
   }
   if (fingerprint) {
-    const fpCooldown = cooldownStore.check(`fp:${fingerprint}`);
+    const fpCooldown = await cooldownStore.check(`fp:${fingerprint}`);
     if (fpCooldown.blocked) {
       const result: TrialCheckResult = {
         allowed: false, blocked_by: "cooldown",
@@ -240,28 +236,28 @@ export async function checkTrialEligibility(
         ip_count: 0, ua_ip_count: 0, fp_count: 0, email_blocked: false, fingerprint,
         cooldown_until: fpCooldown.until, cooldown_level: fpCooldown.level,
       };
-      logger.warn({ email: normalEmail, fingerprint: fingerprint.slice(0,8), level: fpCooldown.level }, "[TrialGuard] BLOCKED — fingerprint cooldown");
+      logger.warn({ email: normalEmail, fingerprint: fingerprint.slice(0, 8), level: fpCooldown.level }, "[TrialGuard] BLOCKED — fingerprint cooldown");
       return result;
     }
   }
 
-  /** Helper: apply cooldown escalation to both IP and fingerprint on block,
-   *  and record the attempt in the real-time monitoring ring buffer. */
-  function applyBlock(result: TrialCheckResult): TrialCheckResult {
+  /** Helper: escalate cooldown + record to recent-blocks ring buffer on any block. */
+  async function applyBlock(result: TrialCheckResult): Promise<TrialCheckResult> {
     const reason = result.blocked_by ?? "blocked";
-    cooldownStore.escalate(normalIP, reason);
-    if (fingerprint) cooldownStore.escalate(`fp:${fingerprint}`, reason);
-    recentBlocksStore.record({
-      email:      normalEmail,
-      ip:         normalIP,
-      reason:     reason,
-      created_at: new Date().toISOString(),
+    await cooldownStore.escalate(normalIP, reason);
+    if (fingerprint) await cooldownStore.escalate(`fp:${fingerprint}`, reason);
+    void recentBlocksStore.record({
+      email:       normalEmail,
+      ip:          normalIP,
+      fingerprint: fingerprint,
+      reason:      reason,
+      created_at:  new Date().toISOString(),
     });
     return result;
   }
 
   /* ── 2. Email ─────────────────────────────────────────────────────────── */
-  const email_blocked = await checkEmailBlock(normalEmail); // throws on DB error
+  const email_blocked = await checkEmailBlock(normalEmail);
   if (email_blocked) {
     return applyBlock({
       allowed: false, blocked_by: "email",
@@ -272,7 +268,7 @@ export async function checkTrialEligibility(
   }
 
   /* ── 3 & 4. IP ────────────────────────────────────────────────────────── */
-  const ipResult = await checkIPBlock(normalIP); // throws on DB error
+  const ipResult = await checkIPBlock(normalIP);
   if (ipResult.blocked) {
     const limit = is_private ? MAX_TRIALS_PRIVATE_IP : MAX_TRIALS_PUBLIC_IP;
     return applyBlock({
@@ -287,7 +283,7 @@ export async function checkTrialEligibility(
   /* ── 5. UA + IP ───────────────────────────────────────────────────────── */
   let ua_ip_count = 0;
   if (userAgent) {
-    const uaResult = await checkUAIPBlock(normalIP, userAgent); // throws on DB error
+    const uaResult = await checkUAIPBlock(normalIP, userAgent);
     ua_ip_count = uaResult.count;
     if (uaResult.blocked) {
       return applyBlock({
@@ -302,7 +298,7 @@ export async function checkTrialEligibility(
   /* ── 6. Device fingerprint ────────────────────────────────────────────── */
   let fp_count = 0;
   if (fingerprint) {
-    const fpResult = await checkFingerprintBlock(fingerprint); // throws on DB error
+    const fpResult = await checkFingerprintBlock(fingerprint);
     fp_count = fpResult.count;
     if (fpResult.blocked) {
       return applyBlock({
@@ -327,16 +323,6 @@ export async function checkTrialEligibility(
 
 /* ── Record signup ─────────────────────────────────────────────────────────── */
 
-/**
- * Records a confirmed trial signup into the permanent abuse log.
- * Call AFTER the company and user are successfully created.
- *
- * Records all IPs including private — private-IP registrations count toward
- * the relaxed limit (MAX_TRIALS_PRIVATE_IP) so they are tracked properly.
- *
- * Does NOT throw — a failed log entry is recoverable by the super admin;
- * a rolled-back registration is not. Error is logged at CRITICAL level.
- */
 export async function recordTrialSignup(opts: {
   email:       string;
   ip:          string;
@@ -379,12 +365,12 @@ export function logVerificationLink(email: string, link: string): void {
   );
 }
 
-/* ── Legacy shims — kept so existing call sites compile without changes ─────── */
+/* ── Legacy shims ──────────────────────────────────────────────────────────── */
 
 /** @deprecated Use checkTrialEligibility() */
 export async function isEmailTrialAbused(email: string): Promise<boolean> {
   try   { return await checkEmailBlock(email); }
-  catch { return true; } // fail-closed
+  catch { return true; }
 }
 
 /** @deprecated Use checkTrialEligibility() */
@@ -393,6 +379,6 @@ export async function isIPTrialAbused(ip: string): Promise<{ abused: boolean; co
     const r = await checkIPBlock(ip);
     return { abused: r.blocked, count: r.count };
   } catch {
-    return { abused: true, count: -1 }; // fail-closed
+    return { abused: true, count: -1 };
   }
 }

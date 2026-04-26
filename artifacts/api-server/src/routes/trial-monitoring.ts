@@ -63,12 +63,30 @@ router.get(
   "/super/trial-monitoring",
   ...superOnly,
   wrap(async (_req, res) => {
-    const status        = anomalyDetector.status();
-    const inWindow      = anomalyDetector.countGlobal();
-    const pauseUntil    = anomalyDetector.pausedUntilDate();
-    const pauseRemain   = anomalyDetector.pauseRemainingSeconds();
-    const topIPs        = anomalyDetector.topIPs(10);
-    const topFPs        = anomalyDetector.topFingerprints(10);
+    /* All anomaly calls are now async (Redis). Run independent ones in parallel. */
+    const [
+      status,
+      inWindow,
+      pauseUntil,
+      pauseRemain,
+      topIPs,
+      topFPs,
+      warningFiredAt,
+      pauseReason,
+      wasManualPause,
+      recentBlocks,
+    ] = await Promise.all([
+      anomalyDetector.status(),
+      anomalyDetector.countGlobal(),
+      anomalyDetector.pausedUntilDate(),
+      anomalyDetector.pauseRemainingSeconds(),
+      anomalyDetector.topIPs(10),
+      anomalyDetector.topFingerprints(10),
+      anomalyDetector.warningFiredAtDate(),
+      anomalyDetector.pauseReason(),
+      anomalyDetector.wasManualPause(),
+      recentBlocksStore.recent(20),
+    ]);
 
     /* Suspicious companies — trial_score < 50 or is_suspicious flag */
     const suspiciousCompanies = await db
@@ -85,9 +103,6 @@ router.get(
       .orderBy(desc(companiesTable.trial_score))
       .limit(20);
 
-    /* Recent blocks from in-memory ring buffer */
-    const recentBlocks = recentBlocksStore.recent(20);
-
     res.json({
       status,
       registrations_in_window:  inWindow,
@@ -95,11 +110,11 @@ router.get(
       block_threshold:          anomalyDetector.blockThreshold(),
       pause_until:              pauseUntil?.toISOString() ?? null,
       pause_remaining_seconds:  pauseRemain,
-      warning_fired_at:         anomalyDetector.warningFiredAtDate()?.toISOString() ?? null,
-      pause_reason:             anomalyDetector.pauseReason(),
-      was_manual_pause:         anomalyDetector.wasManualPause(),
-      top_ips:          topIPs.map(e => ({ ip:          e.key,  count: e.count })),
-      top_fingerprints: topFPs.map(e => ({ fingerprint: e.key,  count: e.count })),
+      warning_fired_at:         warningFiredAt?.toISOString() ?? null,
+      pause_reason:             pauseReason,
+      was_manual_pause:         wasManualPause,
+      top_ips:          topIPs.map(e => ({ ip:          e.key, count: e.count })),
+      top_fingerprints: topFPs.map(e => ({ fingerprint: e.key, count: e.count })),
       suspicious_companies: suspiciousCompanies,
       recent_blocks:        recentBlocks,
     });
@@ -113,22 +128,24 @@ router.post(
   "/super/trial-monitoring/clear-warning",
   ...superOnly,
   wrap(async (req, res) => {
-    const actor     = req.user;
-    const prevStatus = anomalyDetector.status();
+    const actor      = req.user;
+    const prevStatus = await anomalyDetector.status();
 
-    anomalyDetector.clearWarning();
+    await anomalyDetector.clearWarning();
+
+    const newStatus = await anomalyDetector.status();
 
     void writeAuditLog({
       action:      "TRIAL_MONITORING_WARNING_CLEARED",
       record_type: "trial_monitoring",
       record_id:   actor?.id ?? 0,
       old_value:   { status: prevStatus },
-      new_value:   { status: anomalyDetector.status() },
+      new_value:   { status: newStatus },
       user:        { id: actor?.id, username: actor?.username },
       note:        "Super admin cleared trial registration warning",
     });
 
-    res.json({ ok: true, status: anomalyDetector.status() });
+    res.json({ ok: true, status: newStatus });
   }),
 );
 
@@ -152,10 +169,15 @@ router.post(
     }
 
     const { minutes, reason } = parsed.data;
-    const actor     = req.user;
-    const prevStatus = anomalyDetector.status();
+    const actor      = req.user;
+    const prevStatus = await anomalyDetector.status();
 
-    anomalyDetector.manualPause(minutes, reason);
+    await anomalyDetector.manualPause(minutes, reason);
+
+    const [newStatus, pauseUntil] = await Promise.all([
+      anomalyDetector.status(),
+      anomalyDetector.pausedUntilDate(),
+    ]);
 
     void writeAuditLog({
       action:      "TRIAL_REGISTRATION_MANUAL_PAUSED",
@@ -168,10 +190,10 @@ router.post(
     });
 
     res.json({
-      ok:             true,
-      status:         anomalyDetector.status(),
-      pause_until:    anomalyDetector.pausedUntilDate()?.toISOString(),
-      pause_minutes:  minutes,
+      ok:            true,
+      status:        newStatus,
+      pause_until:   pauseUntil?.toISOString(),
+      pause_minutes: minutes,
       reason,
     });
   }),
@@ -185,22 +207,24 @@ router.post(
   ...superOnly,
   wrap(async (req, res) => {
     const actor      = req.user;
-    const prevStatus = anomalyDetector.status();
+    const prevStatus = await anomalyDetector.status();
 
-    anomalyDetector.manualResume();
-    anomalyDetector.clearWarning(); // also clear warning on resume
+    await anomalyDetector.manualResume();
+    await anomalyDetector.clearWarning(); // also clear warning on resume
+
+    const newStatus = await anomalyDetector.status();
 
     void writeAuditLog({
       action:      "TRIAL_REGISTRATION_RESUMED",
       record_type: "trial_monitoring",
       record_id:   actor?.id ?? 0,
       old_value:   { status: prevStatus },
-      new_value:   { status: anomalyDetector.status() },
+      new_value:   { status: newStatus },
       user:        { id: actor?.id, username: actor?.username },
       note:        "Super admin manually resumed trial registrations",
     });
 
-    res.json({ ok: true, status: anomalyDetector.status() });
+    res.json({ ok: true, status: newStatus });
   }),
 );
 
