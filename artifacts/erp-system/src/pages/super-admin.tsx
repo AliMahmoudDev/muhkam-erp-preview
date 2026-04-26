@@ -1847,8 +1847,8 @@ export default function SuperAdmin() {
           return (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '14px',
+              gridTemplateColumns: 'repeat(8, 1fr)',
+              gap: '10px',
               marginBottom: '32px',
             }}>
               {NAV_CARDS.map((card) => {
@@ -1859,8 +1859,8 @@ export default function SuperAdmin() {
                     onClick={() => setActiveTab(card.key)}
                     onMouseEnter={(e) => {
                       if (!active) {
-                        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-4px) scale(1.03)';
-                        (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 12px 32px ${card.shadow}`;
+                        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-4px) scale(1.04)';
+                        (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 10px 28px ${card.shadow}`;
                         (e.currentTarget as HTMLButtonElement).style.borderColor = card.color;
                       }
                     }}
@@ -1877,9 +1877,9 @@ export default function SuperAdmin() {
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '10px',
-                      padding: '20px 12px 16px',
-                      borderRadius: '18px',
+                      gap: '6px',
+                      padding: '14px 6px 12px',
+                      borderRadius: '14px',
                       cursor: 'pointer',
                       fontFamily: FONT,
                       transition: 'all 0.22s cubic-bezier(0.34,1.56,0.64,1)',
@@ -1888,11 +1888,12 @@ export default function SuperAdmin() {
                         ? `linear-gradient(145deg, ${card.color}22 0%, ${card.color}08 100%)`
                         : C.card,
                       boxShadow: active
-                        ? `0 8px 28px ${card.shadow}, inset 0 1px 0 ${card.color}30`
+                        ? `0 8px 24px ${card.shadow}, inset 0 1px 0 ${card.color}30`
                         : `0 2px 8px rgba(0,0,0,0.12)`,
                       transform: active ? 'translateY(-3px) scale(1.02)' : 'translateY(0) scale(1)',
                       outline: 'none',
                       overflow: 'hidden',
+                      minWidth: 0,
                     }}
                   >
                     {active && (
@@ -1901,11 +1902,11 @@ export default function SuperAdmin() {
                         top: 0, left: 0, right: 0,
                         height: '3px',
                         background: `linear-gradient(90deg, ${card.color}, ${card.color}99)`,
-                        borderRadius: '18px 18px 0 0',
+                        borderRadius: '14px 14px 0 0',
                       }} />
                     )}
                     <span style={{
-                      fontSize: '28px',
+                      fontSize: '22px',
                       lineHeight: 1,
                       filter: active ? 'drop-shadow(0 2px 6px ' + card.shadow + ')' : 'none',
                       transition: 'filter 0.2s',
@@ -1913,20 +1914,28 @@ export default function SuperAdmin() {
                       {card.icon}
                     </span>
                     <span style={{
-                      fontSize: '13px',
+                      fontSize: '11px',
                       fontWeight: 800,
                       color: active ? card.color : C.text,
                       letterSpacing: '0.01em',
                       transition: 'color 0.2s',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
                     }}>
                       {card.label}
                     </span>
                     <span style={{
-                      fontSize: '10px',
+                      fontSize: '9px',
                       color: active ? card.color + 'bb' : C.muted,
                       textAlign: 'center',
-                      lineHeight: 1.4,
+                      lineHeight: 1.3,
                       transition: 'color 0.2s',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
                     }}>
                       {card.desc}
                     </span>
