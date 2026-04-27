@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:all": "pnpm --filter @workspace/api-server test && pnpm --filter @workspace/erp-system test",
+    "test:e2e": "playwright test",
     "type-check": "pnpm --filter @workspace/api-server type-check && pnpm --filter @workspace/erp-system type-check",
     "sync-pages": "pnpm --filter @workspace/scripts sync-pages",
     "prepare": "husky"
@@ -45,6 +46,7 @@
     }
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
     "husky": "^9.1.7",
