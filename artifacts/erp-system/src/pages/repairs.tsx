@@ -827,6 +827,7 @@ function ChecklistWizard({
   const [awaitingNotes, setAwaitingNotes] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<ChecklistItem["status"]>(null);
   const [pendingNotes, setPendingNotes] = useState("");
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const allDone = wizardIdx >= total;
   const currentItem = allDone ? null : checklist[wizardIdx];
@@ -974,26 +975,49 @@ function ChecklistWizard({
         </div>
       ) : null}
 
-      {/* Summary of answered items */}
+      {/* Summary of answered items — collapsible */}
       {doneCount > 0 && (
-        <div className="mt-3 space-y-0.5 border-t border-white/5 pt-3">
-          <p className="text-[10px] text-white/25 mb-1.5">النتائج المسجلة — اضغط لتعديل</p>
-          {checklist.filter((c) => c.status).map((item) => {
-            const { label, cls } = statusBadge(item.status);
-            const realIdx = checklist.indexOf(item);
-            return (
-              <button key={item.id}
-                onClick={() => { setWizardIdx(realIdx); setAwaitingNotes(false); }}
-                className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-white/3 transition-all text-right">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[10px] text-white/25 w-4 shrink-0 text-center">{realIdx + 1}</span>
-                  <span className="text-xs text-white/60 truncate">{item.label}</span>
-                  {item.notes && <span className="text-[10px] text-white/30 truncate max-w-[80px]">({item.notes})</span>}
-                </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 mr-2 ${cls}`}>{label}</span>
-              </button>
-            );
-          })}
+        <div className="mt-3 border-t border-white/5 pt-2">
+          <button
+            onClick={() => setSummaryOpen(v => !v)}
+            className="w-full flex items-center justify-between px-1 py-1 rounded-lg hover:bg-white/3 transition-all"
+          >
+            <div className="flex items-center gap-2">
+              <ChevronRight className={`w-3 h-3 text-white/25 transition-transform duration-200 ${summaryOpen ? "rotate-90" : ""}`} />
+              <span className="text-[10px] text-white/30 font-semibold">النتائج المسجلة — اضغط لتعديل</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px]">
+              {checklist.filter(c => c.status === "pass").length > 0 && (
+                <span className="text-emerald-400 font-bold">{checklist.filter(c => c.status === "pass").length}✓</span>
+              )}
+              {checklist.filter(c => c.status === "fail").length > 0 && (
+                <span className="text-red-400 font-bold">{checklist.filter(c => c.status === "fail").length}✗</span>
+              )}
+              {checklist.filter(c => c.status === "partial").length > 0 && (
+                <span className="text-amber-400 font-bold">{checklist.filter(c => c.status === "partial").length}~</span>
+              )}
+            </div>
+          </button>
+          {summaryOpen && (
+            <div className="mt-1 space-y-0.5">
+              {checklist.filter((c) => c.status).map((item) => {
+                const { label, cls } = statusBadge(item.status);
+                const realIdx = checklist.indexOf(item);
+                return (
+                  <button key={item.id}
+                    onClick={() => { setWizardIdx(realIdx); setAwaitingNotes(false); setSummaryOpen(false); }}
+                    className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-white/3 transition-all text-right">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[10px] text-white/25 w-4 shrink-0 text-center">{realIdx + 1}</span>
+                      <span className="text-xs text-white/60 truncate">{item.label}</span>
+                      {item.notes && <span className="text-[10px] text-white/30 truncate max-w-[80px]">({item.notes})</span>}
+                    </div>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 mr-2 ${cls}`}>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
