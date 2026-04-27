@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useGetSales } from "@workspace/api-client-react";
 import { Search, FileDown, Printer } from "lucide-react";
 import { formatCurrency, formatDate, TableSkeleton, PaymentBadge, StatusBadge, InvoicePdfButton } from "./shared";
+import { useAppSettings } from "@/contexts/app-settings";
+import { exportTableToPDF } from "@/lib/pdf-export";
 
 const PAY_AR: Record<string,string> = { cash:"نقدي", credit:"آجل", partial:"جزئي" };
 const STATUS_AR: Record<string,string> = { paid:"مدفوع", partial:"جزئي", unpaid:"غير مدفوع", pending:"معلق" };
@@ -33,6 +35,7 @@ export default function SalesInvoicesReport() {
   const { data:sales=[], isLoading } = useGetSales();
   const [search,setSearch]           = useState("");
   const [payFilter,setPayFilter]     = useState("");
+  const { settings }                 = useAppSettings();
 
   const filtered = sales.filter(s => {
     const matchS = !search || s.invoice_no.includes(search) || (s.customer_name&&s.customer_name.includes(search));
@@ -57,6 +60,18 @@ export default function SalesInvoicesReport() {
         <div className="flex gap-2 mr-auto">
           <button onClick={()=>exportSalesExcel(filtered)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all"><FileDown className="w-3.5 h-3.5"/> Excel</button>
           <button onClick={()=>printSalesReport(filtered)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 hover:bg-blue-500/30 transition-all"><Printer className="w-3.5 h-3.5"/> PDF الكل</button>
+          <button
+            onClick={() => exportTableToPDF({
+              title: "تقرير فواتير المبيعات",
+              columns: ["رقم الفاتورة","العميل","الإجمالي","المدفوع","المتبقي","نوع الدفع","الحالة","التاريخ"],
+              rows: filtered.map(s => [s.invoice_no, s.customer_name||"عميل نقدي", formatCurrency(s.total_amount), formatCurrency(s.paid_amount), formatCurrency(s.remaining_amount), PAY_AR[s.payment_type]||s.payment_type, STATUS_AR[s.status]||s.status, formatDate(s.created_at)]),
+              filename: "فواتير_المبيعات",
+              companyName: settings.companyName,
+            })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-all"
+          >
+            <FileDown className="w-3.5 h-3.5"/> تصدير PDF
+          </button>
         </div>
       </div>
       <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">

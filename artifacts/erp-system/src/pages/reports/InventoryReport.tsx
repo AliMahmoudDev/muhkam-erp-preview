@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGetProducts } from '@workspace/api-client-react';
-import { Search, AlertTriangle, ArrowUpDown, X } from 'lucide-react';
+import { Search, AlertTriangle, ArrowUpDown, X, FileDown } from 'lucide-react';
+import { exportTableToPDF } from '@/lib/pdf-export';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { api, authFetch, formatCurrency, useCountUp, TableSkeleton } from './shared';
 import { useAppSettings } from '@/contexts/app-settings';
@@ -241,6 +242,21 @@ export default function InventoryReport() {
           </select>
           <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/30 pointer-events-none" />
         </div>
+        <button
+          onClick={() => exportTableToPDF({
+            title: "تقرير المخزون",
+            columns: ["المنتج","التصنيف","الكمية","سعر التكلفة","سعر البيع","قيمة المخزون","هامش%"],
+            rows: filtered.map(p => {
+              const margin = p.sale_price > 0 ? ((p.sale_price - p.cost_price) / p.sale_price) * 100 : 0;
+              return [p.name, p.category||"—", p.quantity, formatCurrency(p.cost_price), formatCurrency(p.sale_price), formatCurrency(p.quantity * p.cost_price), `${margin.toFixed(1)}%`];
+            }),
+            filename: "تقرير_المخزون",
+            companyName: rSettings.companyName,
+          })}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-all"
+        >
+          <FileDown className="w-3.5 h-3.5" /> تصدير PDF
+        </button>
       </div>
 
       <div className="flex items-center gap-1 flex-wrap border-b border-white/8 pb-2">
