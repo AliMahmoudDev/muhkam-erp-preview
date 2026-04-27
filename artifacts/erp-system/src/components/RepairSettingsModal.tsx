@@ -6,7 +6,7 @@ import {
   X, ClipboardList, CheckSquare, GitBranch, Users, QrCode,
   Plus, ChevronDown, CheckCircle2, XCircle, Trash2, Pencil,
   Bell, BellOff, Percent, AlertCircle, Zap,
-  ArrowLeft, Copy,
+  ArrowLeft, Copy, Printer,
   Info, Settings2, Save,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -650,6 +650,59 @@ function QrTrackingTab() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const printQR = () => {
+    /* serialize the QR SVG and open in a print window */
+    const svg = document.getElementById("qr-print-target")?.querySelector("svg");
+    if (!svg) { toast({ title: "تعذر تحميل الرمز", variant: "destructive" }); return; }
+    const svgStr = new XMLSerializer().serializeToString(svg);
+    const win = window.open("", "_blank", "width=420,height=620");
+    if (!win) { toast({ title: "السماح بالنوافذ مطلوب للطباعة", variant: "destructive" }); return; }
+    win.document.write(`<!doctype html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8" />
+<title>QR — ${sampleJobNo}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", "Tahoma", sans-serif; background: #fff; color: #111;
+    display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .ticket { border: 2px dashed #999; border-radius: 16px; padding: 28px 32px; text-align: center;
+    width: 320px; }
+  .brand { font-size: 11px; color: #888; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 18px; }
+  .title { font-size: 18px; font-weight: 800; margin-bottom: 4px; color: #111; }
+  .sub { font-size: 13px; color: #555; margin-bottom: 22px; }
+  .qr-box { background: #fff; padding: 8px; border: 1px solid #eee; border-radius: 12px;
+    display: inline-block; margin-bottom: 20px; }
+  .qr-box svg { display: block; width: 200px; height: 200px; }
+  .job-no { font-family: ui-monospace, "SF Mono", monospace; font-size: 16px; font-weight: 700;
+    background: #f3f4f6; padding: 8px 18px; border-radius: 999px; display: inline-block; margin-bottom: 12px; }
+  .url { font-family: ui-monospace, monospace; font-size: 9px; color: #888; word-break: break-all; padding: 0 8px; }
+  .footer { margin-top: 18px; font-size: 11px; color: #666; line-height: 1.6; border-top: 1px solid #eee; padding-top: 14px; }
+  @media print {
+    .ticket { border: 1px solid #000; }
+    @page { size: A6; margin: 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="ticket">
+    <div class="brand">MUHKAM ERP — صيانة</div>
+    <div class="title">تتبع طلب الصيانة</div>
+    <div class="sub">صوّر الرمز لمتابعة حالة جهازك</div>
+    <div class="qr-box">${svgStr}</div>
+    <div class="job-no">${sampleJobNo}</div>
+    <div class="url">${trackingUrl}</div>
+    <div class="footer">شكراً لاختياركم خدمتنا<br/>سيتم تحديثكم بكل مرحلة من الإصلاح</div>
+  </div>
+  <script>
+    window.onload = function() { setTimeout(function(){ window.print(); }, 250); };
+    window.onafterprint = function() { window.close(); };
+  </script>
+</body>
+</html>`);
+    win.document.close();
+  };
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="p-5 space-y-5">
@@ -714,11 +767,15 @@ function QrTrackingTab() {
                 {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                 {copied ? "تم النسخ" : "نسخ الرابط"}
               </button>
+              <button onClick={printQR}
+                className="flex items-center gap-1.5 text-[11px] text-violet-300 bg-violet-500/12 hover:bg-violet-500/20 border border-violet-500/25 rounded-lg px-2.5 py-1 transition-all font-semibold">
+                <Printer className="w-3 h-3" /> طباعة
+              </button>
             </div>
           </div>
           <div className="flex flex-col items-center gap-5 py-8 px-4">
             {/* QR Code */}
-            <div className="p-4 bg-white rounded-2xl shadow-lg shadow-black/30">
+            <div id="qr-print-target" className="p-4 bg-white rounded-2xl shadow-lg shadow-black/30">
               <QRCodeSVG
                 value={trackingUrl}
                 size={160}

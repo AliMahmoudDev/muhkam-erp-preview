@@ -701,6 +701,64 @@ router.delete("/repair-jobs/:id", wrap(async (req, res) => {
   return res.json({ ok: true });
 }));
 
+/* ══ ENGINEER REPORTS ═══════════════════════════════════════
+   Stored in repair_status_history with event_type="engineer_report"
+   - GET     /repair-jobs/:id/engineer-reports
+   - POST    /repair-jobs/:id/engineer-reports         body: { note }
+   - DELETE  /repair-jobs/:id/engineer-reports/:rid
+═══════════════════════════════════════════════════════════ */
+router.get("/repair-jobs/:id/engineer-reports", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const job_id = Number(req.params.id);
+  const rows = await db.select().from(repairStatusHistoryTable)
+    .where(and(
+      eq(repairStatusHistoryTable.job_id, job_id),
+      eq(repairStatusHistoryTable.company_id, company_id),
+      eq(repairStatusHistoryTable.event_type, "engineer_report"),
+    ))
+    .orderBy(desc(repairStatusHistoryTable.created_at));
+  return res.json(rows);
+}));
+
+router.post("/repair-jobs/:id/engineer-reports", wrap(async (req, res) => {
+  const { company_id, user_id, user_name } = ctx(req);
+  const job_id = Number(req.params.id);
+  const note = String((req.body as Record<string, unknown>).note ?? "").trim();
+  if (!note) return res.status(400).json({ error: "نص التقرير مطلوب" });
+
+  const [job] = await db.select({
+    id: repairJobsTable.id,
+    technician_id: repairJobsTable.technician_id,
+    technician_name: repairJobsTable.technician_name,
+  }).from(repairJobsTable)
+    .where(and(eq(repairJobsTable.id, job_id), eq(repairJobsTable.company_id, company_id)));
+  if (!job) return res.status(404).json({ error: "بطاقة الصيانة غير موجودة" });
+
+  const [row] = await db.insert(repairStatusHistoryTable).values({
+    job_id,
+    company_id,
+    event_type:      "engineer_report",
+    note,
+    user_id,
+    user_name,
+    technician_id:   job.technician_id ?? null,
+    technician_name: job.technician_name ?? null,
+  }).returning();
+  return res.status(201).json(row);
+}));
+
+router.delete("/repair-jobs/:id/engineer-reports/:rid", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const rid = Number(req.params.rid);
+  await db.delete(repairStatusHistoryTable)
+    .where(and(
+      eq(repairStatusHistoryTable.id, rid),
+      eq(repairStatusHistoryTable.company_id, company_id),
+      eq(repairStatusHistoryTable.event_type, "engineer_report"),
+    ));
+  return res.json({ ok: true });
+}));
+
 /* ── PARTS ─────────────────────────────────────────────────── */
 router.post("/repair-jobs/:id/parts", wrap(async (req, res) => {
   const { company_id } = ctx(req);

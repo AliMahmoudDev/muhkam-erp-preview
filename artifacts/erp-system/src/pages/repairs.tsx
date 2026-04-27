@@ -1295,15 +1295,44 @@ function JobDetail({
   whatsAppReady: (job: RepairJob) => string;
   whatsAppProgress: (job: RepairJob) => string;
 }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
   const [editEst, setEditEst]       = useState(job.estimated_cost ?? "0");
   const [editFinal, setEditFinal]   = useState(job.final_cost ?? "0");
   const [editDeposit, setEditDeposit] = useState(job.deposit_paid ?? "0");
   const [editDelivery, setEditDelivery] = useState(job.estimated_delivery ?? "");
   const [editTech, setEditTech]     = useState(job.technician_id?.toString() ?? "");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [reportOpen, setReportOpen]       = useState(false);
+  const [reportOpen, setReportOpen]       = useState(true);
   const [historyOpen, setHistoryOpen]     = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
+  const [newReportText, setNewReportText] = useState("");
+  const [addingReport, setAddingReport]   = useState(false);
+
+  /* engineer reports = filter from history with event_type="engineer_report" */
+  const engineerReports = (job.history ?? []).filter(h => h.event_type === "engineer_report");
+  const otherHistory    = (job.history ?? []).filter(h => h.event_type !== "engineer_report");
+
+  const refreshJob = () => qc.invalidateQueries({ queryKey: ["/api/repair-jobs", job.id] });
+
+  const addReport = async () => {
+    const note = newReportText.trim();
+    if (!note) return;
+    const r = await authFetch(api(`/api/repair-jobs/${job.id}/engineer-reports`), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ note }),
+    });
+    if (!r.ok) { toast({ title: "خطأ في حفظ التقرير", variant: "destructive" }); return; }
+    setNewReportText(""); setAddingReport(false);
+    toast({ title: "✓ تم حفظ التقرير" });
+    refreshJob();
+  };
+
+  const deleteReport = async (rid: number) => {
+    const r = await authFetch(api(`/api/repair-jobs/${job.id}/engineer-reports/${rid}`), { method: "DELETE" });
+    if (!r.ok) { toast({ title: "خطأ في الحذف", variant: "destructive" }); return; }
+    refreshJob();
+  };
 
   const handleSave = () => {
     onPatch({
@@ -1459,42 +1488,114 @@ function JobDetail({
           )}
         </div>
 
-        {/* Diagnostic Report Text — collapsible */}
-        <div className="glass-panel rounded-2xl border border-violet-500/10 bg-violet-500/3 overflow-hidden">
+        {/* Engineer Reports — collapsible (multiple reports) */}
+        <div className="glass-panel rounded-2xl border border-violet-500/15 bg-violet-500/[0.03] overflow-hidden">
           <button
             onClick={() => setReportOpen((v) => !v)}
             className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-white/3 transition-all"
           >
-            <p className="text-[10px] text-violet-400/70 font-bold flex items-center gap-1.5">
-              <Star className="w-3 h-3" /> تقرير التشخيص النصي
+            <p className="text-[11px] text-violet-300/80 font-bold flex items-center gap-1.5">
+              <ClipboardList className="w-3.5 h-3.5" /> تقارير مهندس الصيانة
+              {engineerReports.length > 0 && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-300/70 font-medium tabular-nums">
+                  {engineerReports.length}
+                </span>
+              )}
             </p>
-            <ChevronRight
-              className={`w-4 h-4 text-violet-400/50 transition-transform duration-200 ${reportOpen ? "-rotate-90" : "rotate-90"}`}
-            />
+            <div className="flex items-center gap-2">
+              {reportOpen && !addingReport && (
+                <span
+                  onClick={(e) => { e.stopPropagation(); setAddingReport(true); }}
+                  className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-violet-500/12 border border-violet-500/25 text-violet-300 hover:bg-violet-500/20 transition-all"
+                >
+                  <Plus className="w-3 h-3" /> تقرير جديد
+                </span>
+              )}
+              <ChevronRight
+                className={`w-4 h-4 text-violet-400/50 transition-transform duration-200 ${reportOpen ? "-rotate-90" : "rotate-90"}`}
+              />
+            </div>
           </button>
           {reportOpen && (
-            <div className="px-4 pb-4">
-              <div className="text-[11px] text-white/50 leading-6 font-mono whitespace-pre-wrap bg-black/20 rounded-xl p-3">
-{`بطاقة صيانة: ${job.job_no}
-العميل: ${job.customer_name}${job.customer_phone ? " | " + job.customer_phone : ""}
-الجهاز: ${job.device_brand} ${job.device_model}${job.imei ? " | IMEI: " + job.imei : ""}
-تاريخ الاستلام: ${job.received_at}${job.estimated_delivery ? " | موعد التسليم: " + job.estimated_delivery : ""}
-الفني: ${job.technician_name ?? "—"}
-الحالة: ${STATUS_MAP[job.status]?.label ?? job.status}
-درجة الجهاز: ${score}%
+            <div className="px-4 pb-4 space-y-2.5">
 
-نتائج الفحص:
-${checklist.filter((c) => c.status && c.id !== "__power_off__").map((c) => {
-  const sym = c.status === "pass" ? "✓" : c.status === "fail" ? "✗" : c.status === "partial" ? "~" : "○";
-  return `  ${sym} ${c.label}${c.notes ? ` (${c.notes})` : ""}`;
-}).join("\n") || "  الجهاز لا يفتح — لم يُجرَ الفحص"}
+              {/* Inline new-report form */}
+              {addingReport && (
+                <div className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-3 space-y-2">
+                  <textarea
+                    autoFocus
+                    value={newReportText}
+                    onChange={(e) => setNewReportText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") { setAddingReport(false); setNewReportText(""); }
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) addReport();
+                    }}
+                    placeholder="اكتب ملاحظات أو تشخيص أو خطوات الإصلاح..."
+                    rows={4}
+                    className="erp-input w-full text-sm leading-relaxed resize-y" />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-white/30">Ctrl+Enter للحفظ السريع</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setAddingReport(false); setNewReportText(""); }}
+                        className="text-[11px] px-3 py-1 rounded-lg border border-white/10 text-white/40 hover:text-white/65 hover:border-white/20 transition-all">
+                        إلغاء
+                      </button>
+                      <button
+                        onClick={addReport}
+                        disabled={!newReportText.trim()}
+                        className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-lg bg-violet-500/20 border border-violet-500/35 text-violet-200 hover:bg-violet-500/30 disabled:opacity-30 transition-all">
+                        <Save className="w-3 h-3" /> حفظ
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-المشكلة: ${job.problem_description ?? "—"}
-التكلفة التقديرية: ${formatCurrency(Number(editEst))}
-التكلفة النهائية: ${formatCurrency(Number(editFinal))}
-العربون: ${formatCurrency(Number(editDeposit))}
-المتبقي: ${formatCurrency(Math.max(0, Number(editFinal || editEst) - Number(editDeposit)))}`}
-              </div>
+              {/* Reports list */}
+              {engineerReports.length === 0 && !addingReport && (
+                <div className="text-center py-6 space-y-2">
+                  <ClipboardList className="w-6 h-6 text-violet-400/30 mx-auto" />
+                  <p className="text-[11px] text-white/35">لا توجد تقارير بعد</p>
+                  <button
+                    onClick={() => setAddingReport(true)}
+                    className="text-[11px] text-violet-400/70 hover:text-violet-300 transition-colors inline-flex items-center gap-1">
+                    <Plus className="w-3 h-3" /> اكتب أول تقرير
+                  </button>
+                </div>
+              )}
+
+              {engineerReports.map((r) => {
+                const dt = new Date(r.created_at);
+                const dateStr = dt.toLocaleDateString("ar-EG", { month: "short", day: "numeric" });
+                const timeStr = dt.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+                const author  = r.technician_name || r.user_name || "—";
+                return (
+                  <div key={r.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-3 group">
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center text-[10px] font-bold text-violet-300">
+                          {author[0] ?? "?"}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-bold text-violet-300/85">{author}</span>
+                          <span className="text-[9px] text-white/30">{dateStr} • {timeStr}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteReport(r.id)}
+                        className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 p-1 transition-all"
+                        title="حذف التقرير">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-[12px] text-white/75 leading-6 whitespace-pre-wrap pr-8">
+                      {r.note}
+                    </p>
+                  </div>
+                );
+              })}
+
             </div>
           )}
         </div>
@@ -1518,15 +1619,15 @@ ${checklist.filter((c) => c.status && c.id !== "__power_off__").map((c) => {
           </div>
         )}
 
-        {/* Timeline / History */}
-        {job.history && job.history.length > 0 && (
+        {/* Timeline / History (excludes engineer reports — they have their own section) */}
+        {otherHistory.length > 0 && (
           <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
             <button
               onClick={() => setHistoryOpen((v) => !v)}
               className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-white/3 transition-all"
             >
               <p className="text-[10px] text-white/40 font-bold flex items-center gap-1.5">
-                <History className="w-3 h-3" /> سجل الأحداث ({job.history.length})
+                <History className="w-3 h-3" /> سجل الأحداث ({otherHistory.length})
               </p>
               <ChevronRight
                 className={`w-4 h-4 text-white/30 transition-transform duration-200 ${historyOpen ? "-rotate-90" : "rotate-90"}`}
@@ -1534,7 +1635,7 @@ ${checklist.filter((c) => c.status && c.id !== "__power_off__").map((c) => {
             </button>
             {historyOpen && (
               <div className="px-4 pb-4 space-y-2">
-                {job.history.map((h) => {
+                {otherHistory.map((h) => {
                   const fromLabel = h.status_from ? (STATUS_MAP[h.status_from]?.label ?? h.status_from) : null;
                   const toLabel   = h.status_to   ? (STATUS_MAP[h.status_to]?.label   ?? h.status_to)   : null;
                   const dt = new Date(h.created_at);
