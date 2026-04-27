@@ -651,6 +651,11 @@ function QrTrackingTab() {
   };
 
   const printQR = () => {
+    /* SEC-005: escape HTML entities لمنع أي XSS في نافذة الطباعة */
+    const escHtml = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+       .replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+
     /* serialize the QR SVG and open in a print window */
     const svg = document.getElementById("qr-print-target")?.querySelector("svg");
     if (!svg) { toast({ title: "تعذر تحميل الرمز", variant: "destructive" }); return; }
@@ -661,7 +666,7 @@ function QrTrackingTab() {
 <html dir="rtl" lang="ar">
 <head>
 <meta charset="utf-8" />
-<title>QR — ${sampleJobNo}</title>
+<title>QR — ${escHtml(sampleJobNo)}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "Segoe UI", "Tahoma", sans-serif; background: #fff; color: #111;
@@ -690,8 +695,8 @@ function QrTrackingTab() {
     <div class="title">تتبع طلب الصيانة</div>
     <div class="sub">صوّر الرمز لمتابعة حالة جهازك</div>
     <div class="qr-box">${svgStr}</div>
-    <div class="job-no">${sampleJobNo}</div>
-    <div class="url">${trackingUrl}</div>
+    <div class="job-no">${escHtml(sampleJobNo)}</div>
+    <div class="url">${escHtml(trackingUrl)}</div>
     <div class="footer">شكراً لاختياركم خدمتنا<br/>سيتم تحديثكم بكل مرحلة من الإصلاح</div>
   </div>
   <script>

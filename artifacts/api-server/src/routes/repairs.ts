@@ -593,7 +593,9 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
     "status","technician_id","technician_name","technician_2_id","technician_2_name","technician_2_section",
     "problem_description","notes","imei","serial_no","color","storage",
     "estimated_delivery","external_workshop","external_workshop_name",
-    "broker_name","alert_days_threshold","qa_notes","locked",
+    "broker_name","alert_days_threshold","qa_notes",
+    /* SEC-001: تم حذف "locked" من هنا — يُضبط تلقائياً فقط عند التسليم
+       ولا يجب السماح لأي مستخدم بفتح بطاقة مسلّمة يدوياً عبر الـ API */
     "accessories","branch_id","device_pin",
   ];
   // eslint-disable-next-line security/detect-object-injection
@@ -703,9 +705,10 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
 }));
 
 router.delete("/repair-jobs/:id", wrap(async (req, res) => {
-  const { company_id } = ctx(req);
+  const { company_id, user_id, user_name } = ctx(req);
   const id = Number(req.params.id);
-  const [job] = await db.select({ id: repairJobsTable.id }).from(repairJobsTable)
+  const [job] = await db.select({ id: repairJobsTable.id, job_no: repairJobsTable.job_no })
+    .from(repairJobsTable)
     .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
     .limit(1);
   if (!job) return res.status(404).json({ error: "غير موجود" });
@@ -714,6 +717,15 @@ router.delete("/repair-jobs/:id", wrap(async (req, res) => {
     await tx.delete(repairStatusHistoryTable).where(eq(repairStatusHistoryTable.job_id, job.id));
     await tx.delete(repairJobsTable)
       .where(and(eq(repairJobsTable.id, job.id), eq(repairJobsTable.company_id, company_id)));
+  });
+  /* SEC-002: سجّل حذف بطاقة الصيانة في audit_log لضمان الأثر الجنائي */
+  void writeAuditLog({
+    action: "delete",
+    record_type: "repair_job",
+    record_id: id,
+    old_value: { job_no: job.job_no },
+    user: { id: user_id, username: user_name },
+    company_id,
   });
   return res.json({ ok: true });
 }));
@@ -737,11 +749,17 @@ router.get("/repair-jobs/:id/engineer-reports", wrap(async (req, res) => {
   return res.json(rows);
 }));
 
+/* الحد الأقصى لنص تقرير المهندس = 5000 حرف — SEC-004 */
+const MAX_ENGINEER_REPORT_LEN = 5000;
+
 router.post("/repair-jobs/:id/engineer-reports", wrap(async (req, res) => {
   const { company_id, user_id, user_name } = ctx(req);
   const job_id = Number(req.params.id);
   const note = String((req.body as Record<string, unknown>).note ?? "").trim();
   if (!note) return res.status(400).json({ error: "نص التقرير مطلوب" });
+  /* SEC-004: رفض النصوص التي تتجاوز الحد الأقصى لمنع إرهاق الخادم */
+  if (note.length > MAX_ENGINEER_REPORT_LEN)
+    return res.status(400).json({ error: `نص التقرير لا يجب أن يتجاوز ${MAX_ENGINEER_REPORT_LEN} حرف` });
 
   const [job] = await db.select({
     id: repairJobsTable.id,
@@ -761,18 +779,48 @@ router.post("/repair-jobs/:id/engineer-reports", wrap(async (req, res) => {
     technician_id:   job.technician_id ?? null,
     technician_name: job.technician_name ?? null,
   }).returning();
+  /* SEC-006: سجّل إضافة التقرير في audit_log للأثر الجنائي */
+  void writeAuditLog({
+    action: "create",
+    record_type: "repair_job",
+    record_id: job_id,
+    new_value: { event_type: "engineer_report", note_length: note.length },
+    user: { id: user_id, username: user_name },
+    company_id,
+  });
   return res.status(201).json(row);
 }));
 
 router.delete("/repair-jobs/:id/engineer-reports/:rid", wrap(async (req, res) => {
-  const { company_id } = ctx(req);
+  const { company_id, user_id, user_name } = ctx(req);
+  const job_id = Number(req.params.id);
   const rid = Number(req.params.rid);
+  /* SEC-003: تحقق من وجود التقرير قبل الحذف لضمان company_id isolation */
+  const [existing] = await db.select({ id: repairStatusHistoryTable.id })
+    .from(repairStatusHistoryTable)
+    .where(and(
+      eq(repairStatusHistoryTable.id, rid),
+      eq(repairStatusHistoryTable.company_id, company_id),
+      eq(repairStatusHistoryTable.event_type, "engineer_report"),
+    ))
+    .limit(1);
+  if (!existing) return res.status(404).json({ error: "التقرير غير موجود" });
+
   await db.delete(repairStatusHistoryTable)
     .where(and(
       eq(repairStatusHistoryTable.id, rid),
       eq(repairStatusHistoryTable.company_id, company_id),
       eq(repairStatusHistoryTable.event_type, "engineer_report"),
     ));
+  /* SEC-003: سجّل حذف التقرير في audit_log لضمان الأثر الجنائي */
+  void writeAuditLog({
+    action: "delete",
+    record_type: "repair_job",
+    record_id: job_id,
+    old_value: { engineer_report_id: rid },
+    user: { id: user_id, username: user_name },
+    company_id,
+  });
   return res.json({ ok: true });
 }));
 
