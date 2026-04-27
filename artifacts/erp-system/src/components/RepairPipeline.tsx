@@ -1,27 +1,32 @@
 import { useState } from "react";
-import { CheckCircle2, XCircle, Ban, ChevronRight } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import { createPortal } from "react-dom";
 
 const PIPELINE_STAGES = [
-  { key: "received",                  label: "استلام الجهاز",          icon: "📥", color: "#8b5cf6" },
-  { key: "initial_inspection",        label: "الفحص الأولي",           icon: "🔍", color: "#6366f1" },
-  { key: "diagnosis",                 label: "التشخيص",                icon: "🩺", color: "#3b82f6" },
-  { key: "waiting_customer_approval", label: "انتظار موافقة العميل",   icon: "⏳", color: "#f59e0b" },
-  { key: "approved",                  label: "تمت الموافقة",           icon: "✅", color: "#10b981" },
-  { key: "in_repair",                 label: "جاري الإصلاح",           icon: "🔧", color: "#06b6d4" },
-  { key: "repaired",                  label: "تم الإصلاح",             icon: "🛠️", color: "#22d3ee" },
-  { key: "final_quality_check",       label: "مراقبة الجودة",          icon: "🏅", color: "#a855f7" },
-  { key: "ready_for_delivery",        label: "جاهز للتسليم",           icon: "📦", color: "#84cc16" },
-  { key: "delivered",                 label: "تم التسليم",             icon: "🎉", color: "#14b8a6" },
+  { key: "received",                  label: "استلام",        icon: "📥", color: "violet" },
+  { key: "initial_inspection",        label: "الفحص الأولي",  icon: "🔍", color: "indigo" },
+  { key: "diagnosis",                 label: "التشخيص",       icon: "🩺", color: "blue"   },
+  { key: "waiting_customer_approval", label: "موافقة العميل", icon: "⏳", color: "amber"  },
+  { key: "approved",                  label: "موافقة",        icon: "✅", color: "emerald"},
+  { key: "in_repair",                 label: "جارٍ الإصلاح",  icon: "🔧", color: "cyan"   },
+  { key: "repaired",                  label: "تم الإصلاح",    icon: "🛠️", color: "teal"   },
+  { key: "final_quality_check",       label: "مراقبة الجودة", icon: "🏅", color: "purple" },
+  { key: "ready_for_delivery",        label: "جاهز للتسليم",  icon: "📦", color: "lime"   },
+  { key: "delivered",                 label: "مُسلَّم",        icon: "🎉", color: "teal"   },
 ] as const;
 
 const TERMINAL_STAGES = [
-  { key: "rejected",  label: "مرفوض", icon: "🚫", color: "#ef4444" },
-  { key: "cancelled", label: "ملغي",  icon: "❌", color: "#f43f5e" },
+  { key: "rejected",  label: "مرفوض", icon: "🚫" },
+  { key: "cancelled", label: "ملغي",  icon: "❌" },
 ] as const;
 
 const ALL_LABELS: Record<string, string> = {
-  ...Object.fromEntries(PIPELINE_STAGES.map(s => [s.key, s.label])),
-  ...Object.fromEntries(TERMINAL_STAGES.map(s => [s.key, s.label])),
+  received: "استلام الجهاز", initial_inspection: "الفحص الأولي",
+  diagnosis: "التشخيص", waiting_customer_approval: "انتظار موافقة العميل",
+  approved: "تمت الموافقة", in_repair: "جاري الإصلاح",
+  repaired: "تم الإصلاح", final_quality_check: "مراقبة الجودة",
+  ready_for_delivery: "جاهز للتسليم", delivered: "تم التسليم",
+  rejected: "مرفوض", cancelled: "ملغي",
 };
 
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
@@ -34,12 +39,22 @@ const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   repaired:                  ["final_quality_check"],
   final_quality_check:       ["ready_for_delivery"],
   ready_for_delivery:        ["delivered"],
-  delivered:                 [],
-  rejected:                  [],
-  cancelled:                 [],
+  delivered: [], rejected: [], cancelled: [],
 };
 
-interface RepairJob {
+const COLOR_CLASSES: Record<string, { dot: string; glow: string; text: string; bg: string }> = {
+  violet: { dot: "bg-violet-400",  glow: "shadow-violet-500/30",  text: "text-violet-300",  bg: "bg-violet-500/15 border-violet-500/40" },
+  indigo: { dot: "bg-indigo-400",  glow: "shadow-indigo-500/30",  text: "text-indigo-300",  bg: "bg-indigo-500/15 border-indigo-500/40" },
+  blue:   { dot: "bg-blue-400",    glow: "shadow-blue-500/30",    text: "text-blue-300",    bg: "bg-blue-500/15 border-blue-500/40"   },
+  amber:  { dot: "bg-amber-400",   glow: "shadow-amber-500/30",   text: "text-amber-300",   bg: "bg-amber-500/15 border-amber-500/40"  },
+  emerald:{ dot: "bg-emerald-400", glow: "shadow-emerald-500/30", text: "text-emerald-300", bg: "bg-emerald-500/15 border-emerald-500/40"},
+  cyan:   { dot: "bg-cyan-400",    glow: "shadow-cyan-500/30",    text: "text-cyan-300",    bg: "bg-cyan-500/15 border-cyan-500/40"   },
+  teal:   { dot: "bg-teal-400",    glow: "shadow-teal-500/30",    text: "text-teal-300",    bg: "bg-teal-500/15 border-teal-500/40"   },
+  purple: { dot: "bg-purple-400",  glow: "shadow-purple-500/30",  text: "text-purple-300",  bg: "bg-purple-500/15 border-purple-500/40"},
+  lime:   { dot: "bg-lime-400",    glow: "shadow-lime-500/30",    text: "text-lime-300",    bg: "bg-lime-500/15 border-lime-500/40"   },
+};
+
+interface RepairJobData {
   id: number;
   status: string;
   [key: string]: unknown;
@@ -48,198 +63,182 @@ interface RepairJob {
 interface Props {
   currentStatus: string;
   jobId: number;
-  jobData: RepairJob;
+  jobData: RepairJobData;
   onStatusChange: (newStatus: string) => void;
 }
 
-interface ConfirmModal {
+interface ConfirmState {
   target: string;
   label: string;
   errors: string[];
+  loading: boolean;
 }
 
 export default function RepairPipeline({ currentStatus, jobData, onStatusChange }: Props) {
-  const [modal, setModal] = useState<ConfirmModal | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
 
-  const currentIdx = PIPELINE_STAGES.findIndex(s => s.key === currentStatus);
-  const isTerminal = TERMINAL_STAGES.some(s => s.key === currentStatus);
-  const allowed = ALLOWED_TRANSITIONS[currentStatus] ?? [];
+  const currentIdx   = PIPELINE_STAGES.findIndex(s => s.key === currentStatus);
+  const isTerminal   = TERMINAL_STAGES.some(s => s.key === currentStatus);
+  const allowed      = ALLOWED_TRANSITIONS[currentStatus] ?? [];
+  const currentLabel = ALL_LABELS[currentStatus] ?? currentStatus;
 
-  function handleStageClick(key: string, label: string) {
+  function openConfirm(key: string, label: string) {
     if (!allowed.includes(key)) return;
-    setModal({ target: key, label, errors: [] });
+    setConfirm({ target: key, label, errors: [], loading: false });
   }
 
-  async function handleConfirm() {
-    if (!modal) return;
-    setLoading(true);
+  async function doTransition() {
+    if (!confirm) return;
+    setConfirm(c => c ? { ...c, loading: true } : null);
     try {
       const res = await fetch(`/api/repair-jobs/${jobData.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ status: modal.target }),
+        body: JSON.stringify({ status: confirm.target }),
       });
+      const data = await res.json() as { error?: string };
       if (!res.ok) {
-        const data = await res.json() as { error?: string };
-        if (res.status === 422) {
-          const errorList = (data.error ?? "").split(", ").filter(Boolean);
-          setModal(m => m ? { ...m, errors: errorList } : null);
-          return;
-        }
-        setModal(m => m ? { ...m, errors: [data.error ?? "حدث خطأ"] } : null);
+        const errList = (data.error ?? "حدث خطأ").split(", ").filter(Boolean);
+        setConfirm(c => c ? { ...c, loading: false, errors: errList } : null);
         return;
       }
-      onStatusChange(modal.target);
-      setModal(null);
-    } finally {
-      setLoading(false);
+      onStatusChange(confirm.target);
+      setConfirm(null);
+    } catch {
+      setConfirm(c => c ? { ...c, loading: false, errors: ["تعذّر الاتصال بالخادم"] } : null);
     }
   }
 
-  const currentLabel = ALL_LABELS[currentStatus] ?? currentStatus;
-  const terminalStage = TERMINAL_STAGES.find(s => s.key === currentStatus);
+  const modal = confirm ? createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.75)" }}
+      dir="rtl"
+      onClick={(e) => { if (e.target === e.currentTarget) setConfirm(null); }}
+    >
+      <div
+        className="rounded-2xl border border-white/10 p-5 w-full max-w-sm shadow-2xl"
+        style={{ background: "rgba(15,10,30,0.97)", backdropFilter: "blur(20px)" }}
+      >
+        <h3 className="text-sm font-black text-white mb-1">تأكيد تغيير الحالة</h3>
+        <p className="text-xs text-white/50 mb-4">
+          الانتقال من{" "}
+          <span className="text-violet-300 font-bold">{currentLabel}</span>
+          {" "}إلى{" "}
+          <span className="text-white font-bold">{confirm.label}</span>
+        </p>
+
+        {confirm.errors.length > 0 && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/25">
+            <p className="text-[11px] font-bold text-red-400 mb-1.5">⚠ متطلبات غير مستوفاة:</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              {confirm.errors.map((e, i) => (
+                <li key={i} className="text-[11px] text-red-300">{e}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            onClick={doTransition}
+            disabled={confirm.loading}
+            className="flex-1 py-2 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-50"
+            style={{ background: "rgba(124,58,237,0.7)", border: "1px solid rgba(139,92,246,0.4)" }}
+          >
+            {confirm.loading ? "جارٍ التحديث..." : "✓ تأكيد"}
+          </button>
+          <button
+            onClick={() => setConfirm(null)}
+            className="px-4 py-2 rounded-xl border border-white/10 text-white/60 hover:text-white text-xs transition-all"
+          >
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  ) : null;
 
   return (
-    <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
-      <div className="px-4 pt-3 pb-1">
-        <p className="text-[10px] text-violet-400/70 font-bold mb-2 flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
-          مسار الصيانة
-        </p>
-      </div>
+    <>
+      {modal}
+      <div className="rounded-xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+        <div className="overflow-x-auto scrollbar-none" dir="ltr">
+          <div className="flex items-stretch min-w-max">
+            {PIPELINE_STAGES.map((stage, idx) => {
+              const isActive    = stage.key === currentStatus;
+              const isCompleted = !isTerminal && currentIdx > idx && currentIdx !== -1;
+              const isClickable = allowed.includes(stage.key);
+              const cc          = COLOR_CLASSES[stage.color] ?? COLOR_CLASSES.violet;
 
-      <div className="overflow-x-auto pb-3 px-3 scrollbar-none" dir="ltr">
-        <div className="flex items-center gap-1 min-w-max">
-          {PIPELINE_STAGES.map((stage, idx) => {
-            const isActive    = stage.key === currentStatus;
-            const isCompleted = !isTerminal && currentIdx > idx && currentIdx !== -1;
-            const isClickable = allowed.includes(stage.key);
-            const isDimmed    = !isActive && !isCompleted && !isClickable;
-
-            return (
-              <div key={stage.key} className="flex items-center gap-1">
+              return (
                 <button
-                  onClick={() => handleStageClick(stage.key, stage.label)}
+                  key={stage.key}
+                  onClick={() => openConfirm(stage.key, ALL_LABELS[stage.key] ?? stage.label)}
                   disabled={!isClickable && !isActive}
-                  title={stage.label}
+                  title={ALL_LABELS[stage.key]}
                   className={[
-                    "relative flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-xl border transition-all duration-200 min-w-[72px]",
-                    isActive
-                      ? "border-violet-500/60 bg-violet-500/15 shadow-[0_0_12px_rgba(139,92,246,0.3)]"
-                      : isCompleted
-                        ? "border-emerald-500/30 bg-emerald-500/8 cursor-default"
-                        : isClickable
-                          ? "border-white/20 bg-white/5 hover:border-violet-400/40 hover:bg-violet-500/8 cursor-pointer"
-                          : "border-white/5 bg-white/2 cursor-not-allowed",
-                    isDimmed ? "opacity-30" : "",
-                  ].join(" ")}
+                    "relative flex flex-col items-center gap-1 px-3 py-2.5 border-l border-white/5 first:border-l-0 min-w-[64px] transition-all duration-150",
+                    isActive    ? `${cc.bg} shadow-lg ${cc.glow}` :
+                    isCompleted ? "bg-emerald-500/8" :
+                    isClickable ? "hover:bg-white/5 cursor-pointer" :
+                    "opacity-25 cursor-not-allowed",
+                  ].filter(Boolean).join(" ")}
                 >
-                  <div className="relative">
-                    <span className="text-base">{stage.icon}</span>
+                  {isActive && (
+                    <span className={`absolute top-0 left-0 right-0 h-0.5 ${cc.dot}`} />
+                  )}
+                  <div className="relative text-sm leading-none">
+                    {stage.icon}
                     {isCompleted && (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400 absolute -top-1 -right-1" />
+                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 absolute -top-1 -right-1" />
                     )}
                     {isActive && (
-                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+                      <span className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${cc.dot} animate-pulse`} />
                     )}
                   </div>
                   <span className={[
-                    "text-[9px] font-bold leading-tight text-center whitespace-nowrap",
-                    isActive    ? "text-violet-300"  :
-                    isCompleted ? "text-emerald-400/80" :
-                    isClickable ? "text-white/60"    : "text-white/20",
+                    "text-[9px] font-semibold leading-tight text-center whitespace-nowrap",
+                    isActive    ? cc.text      :
+                    isCompleted ? "text-emerald-400/70" :
+                    isClickable ? "text-white/50" : "text-white/20",
                   ].join(" ")}>
                     {stage.label}
                   </span>
                 </button>
+              );
+            })}
 
-                {idx < PIPELINE_STAGES.length - 1 && (
-                  <ChevronRight className={`w-3 h-3 shrink-0 ${isCompleted || isActive ? "text-white/30" : "text-white/10"}`} />
-                )}
-              </div>
-            );
-          })}
+            <div className="w-px bg-white/10 mx-0 self-stretch" />
 
-          <div className="w-px h-8 bg-white/10 mx-2 shrink-0" />
-
-          {TERMINAL_STAGES.map(stage => {
-            const isActive    = stage.key === currentStatus;
-            const isClickable = allowed.includes(stage.key);
-            return (
-              <button
-                key={stage.key}
-                onClick={() => handleStageClick(stage.key, stage.label)}
-                disabled={!isClickable && !isActive}
-                title={stage.label}
-                className={[
-                  "flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-xl border transition-all duration-200 min-w-[60px]",
-                  isActive
-                    ? "border-red-500/60 bg-red-500/15 shadow-[0_0_10px_rgba(239,68,68,0.25)]"
-                    : isClickable
-                      ? "border-red-500/20 bg-red-500/5 hover:border-red-400/40 hover:bg-red-500/10 cursor-pointer"
-                      : "border-white/5 bg-white/2 cursor-not-allowed opacity-30",
-                ].join(" ")}
-              >
-                <span className="text-base">
-                  {stage.key === "rejected" ? <XCircle className="w-4 h-4 text-red-400" /> : <Ban className="w-4 h-4 text-rose-400" />}
-                </span>
-                <span className={`text-[9px] font-bold ${isActive ? "text-red-300" : isClickable ? "text-red-400/60" : "text-white/20"}`}>
-                  {stage.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {isTerminal && (
-        <div className="mx-3 mb-3 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-[11px] text-red-300 text-center font-bold">
-          {terminalStage?.icon} هذه البطاقة في حالة نهائية: {currentLabel}
-        </div>
-      )}
-
-      {modal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="rtl">
-          <div className="glass-panel rounded-2xl border border-white/10 p-5 w-full max-w-sm shadow-2xl">
-            <h3 className="text-sm font-black text-white mb-1">تأكيد تغيير الحالة</h3>
-            <p className="text-xs text-white/50 mb-4">
-              هل تريد الانتقال من{" "}
-              <span className="text-violet-300 font-bold">{currentLabel}</span>
-              {" "}إلى{" "}
-              <span className="text-white font-bold">{modal.label}</span>؟
-            </p>
-
-            {modal.errors.length > 0 && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                <p className="text-[11px] font-bold text-red-400 mb-1">متطلبات غير مستوفاة:</p>
-                <ul className="list-disc list-inside space-y-0.5">
-                  {modal.errors.map((e, i) => (
-                    <li key={i} className="text-[11px] text-red-300">{e}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <button
-                onClick={handleConfirm}
-                disabled={loading}
-                className="flex-1 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all disabled:opacity-50"
-              >
-                {loading ? "جارٍ التحديث..." : "تأكيد الانتقال"}
-              </button>
-              <button
-                onClick={() => setModal(null)}
-                className="px-4 py-2 rounded-xl border border-white/10 text-white/60 hover:text-white hover:border-white/20 text-xs transition-all"
-              >
-                إلغاء
-              </button>
-            </div>
+            {TERMINAL_STAGES.map(stage => {
+              const isActive    = stage.key === currentStatus;
+              const isClickable = allowed.includes(stage.key);
+              return (
+                <button
+                  key={stage.key}
+                  onClick={() => openConfirm(stage.key, ALL_LABELS[stage.key] ?? stage.label)}
+                  disabled={!isClickable && !isActive}
+                  title={ALL_LABELS[stage.key]}
+                  className={[
+                    "flex flex-col items-center gap-1 px-3 py-2.5 border-l border-white/5 min-w-[56px] transition-all",
+                    isActive    ? "bg-red-500/15 border-l-red-500/20" :
+                    isClickable ? "hover:bg-red-500/8 cursor-pointer" :
+                    "opacity-20 cursor-not-allowed",
+                  ].filter(Boolean).join(" ")}
+                >
+                  <span className="text-sm leading-none">{stage.icon}</span>
+                  <span className={`text-[9px] font-semibold ${isActive ? "text-red-300" : isClickable ? "text-red-400/60" : "text-white/20"}`}>
+                    {stage.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }
