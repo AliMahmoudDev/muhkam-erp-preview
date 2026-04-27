@@ -9,23 +9,21 @@
 const PIPELINE_ORDER = [
   'received', 'initial_inspection', 'diagnosis',
   'waiting_customer_approval', 'approved', 'in_repair',
-  'repaired', 'final_quality_check', 'ready_for_delivery', 'delivered'
+  'repaired', 'final_quality_check', 'ready_for_delivery',
+  'shipped', 'delivered'
 ] as const;
 
-const ALLOWED_TRANSITIONS: Record<string, string[]> = {
-  received:                  ['initial_inspection', 'cancelled'],
-  initial_inspection:        ['diagnosis', 'cancelled'],
-  diagnosis:                 ['waiting_customer_approval', 'cancelled'],
-  waiting_customer_approval: ['approved', 'rejected'],
-  approved:                  ['in_repair'],
-  in_repair:                 ['repaired'],
-  repaired:                  ['final_quality_check'],
-  final_quality_check:       ['ready_for_delivery'],
-  ready_for_delivery:        ['delivered'],
-  delivered:                 [],
-  rejected:                  [],
-  cancelled:                 [],
-};
+/**
+ * الحالات الجانبية (Side Branches) — مسموح الانتقال إليها من أي مرحلة نشطة.
+ * - waiting_parts: حالة مؤقتة (بانتظار قطعة) — يقدر يرجع منها لأي حالة.
+ * - rejected/cancelled: حالات إنهاء طارئة.
+ */
+const SIDE_BRANCHES = ['waiting_parts', 'rejected', 'cancelled'];
+
+/**
+ * الحالات النهائية — لا يمكن الانتقال منها.
+ */
+const TERMINAL_STATUSES = ['delivered', 'rejected', 'cancelled'];
 
 const STAGE_REQUIREMENTS: Record<string, { field: string; label_ar: string }[]> = {
   initial_inspection: [
@@ -60,19 +58,20 @@ export function validateTransition(
   targetStatus: string,
   jobData: Record<string, unknown>
 ): { allowed: boolean; errors: string[] } {
-  const allowed = ALLOWED_TRANSITIONS[currentStatus];
-
-  if (!allowed) {
-    return { allowed: true, errors: [] };
-  }
-
-  if (!allowed.includes(targetStatus)) {
+  /* ── منع الانتقال من حالة نهائية (مُسلَّم/ملغي/مرفوض) ── */
+  if (TERMINAL_STATUSES.includes(currentStatus)) {
     return {
       allowed: false,
-      errors: [`الانتقال من "${currentStatus}" إلى "${targetStatus}" غير مسموح`],
+      errors: [`لا يمكن تغيير حالة بطاقة منتهية ("${currentStatus}")`],
     };
   }
 
+  /* ── الفروع الجانبية (waiting_parts / rejected / cancelled) متاحة دائماً ── */
+  if (SIDE_BRANCHES.includes(targetStatus)) {
+    return { allowed: true, errors: [] };
+  }
+
+  /* ── أي انتقال آخر مسموح (للأمام أو للخلف) — لكن متطلبات المرحلة المستهدفة لازم تتحقق ── */
   const reqs = STAGE_REQUIREMENTS[targetStatus] ?? [];
   const errors: string[] = [];
 
@@ -110,4 +109,4 @@ export function validateTransition(
   return { allowed: true, errors: [] };
 }
 
-export { PIPELINE_ORDER, ALLOWED_TRANSITIONS };
+export { PIPELINE_ORDER, SIDE_BRANCHES, TERMINAL_STATUSES };

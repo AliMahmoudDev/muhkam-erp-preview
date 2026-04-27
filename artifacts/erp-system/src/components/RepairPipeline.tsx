@@ -12,34 +12,31 @@ const PIPELINE_STAGES = [
   { key: "repaired",                  label: "تم الإصلاح",    icon: "🛠️", color: "teal"   },
   { key: "final_quality_check",       label: "مراقبة الجودة", icon: "🏅", color: "purple" },
   { key: "ready_for_delivery",        label: "جاهز للتسليم",  icon: "📦", color: "lime"   },
+  { key: "shipped",                   label: "قيد الشحن",     icon: "🚚", color: "sky"    },
   { key: "delivered",                 label: "مُسلَّم",        icon: "🎉", color: "teal"   },
 ] as const;
 
-const TERMINAL_STAGES = [
-  { key: "rejected",  label: "مرفوض", icon: "🚫" },
-  { key: "cancelled", label: "ملغي",  icon: "❌" },
+/**
+ * الفروع الجانبية — حالات يمكن الانتقال إليها من أي مرحلة نشطة، مش جزء من التسلسل الخطي.
+ * - waiting_parts: حالة مؤقتة (بانتظار قطعة) يرجع منها الفني للحالة المناسبة لما القطعة توصل.
+ * - rejected/cancelled: حالات إنهاء طارئة.
+ */
+const SIDE_BRANCHES = [
+  { key: "waiting_parts", label: "بانتظار قطعة", icon: "⏸",  color: "pink"  },
+  { key: "rejected",      label: "مرفوض",        icon: "🚫", color: "red"   },
+  { key: "cancelled",     label: "ملغي",         icon: "❌", color: "red"   },
 ] as const;
+
+const TERMINAL_KEYS = ["delivered", "rejected", "cancelled"];
 
 const ALL_LABELS: Record<string, string> = {
   received: "استلام الجهاز", initial_inspection: "الفحص الأولي",
   diagnosis: "التشخيص", waiting_customer_approval: "انتظار موافقة العميل",
   approved: "تمت الموافقة", in_repair: "جاري الإصلاح",
   repaired: "تم الإصلاح", final_quality_check: "مراقبة الجودة",
-  ready_for_delivery: "جاهز للتسليم", delivered: "تم التسليم",
-  rejected: "مرفوض", cancelled: "ملغي",
-};
-
-const ALLOWED_TRANSITIONS: Record<string, string[]> = {
-  received:                  ["initial_inspection", "cancelled"],
-  initial_inspection:        ["diagnosis", "cancelled"],
-  diagnosis:                 ["waiting_customer_approval", "cancelled"],
-  waiting_customer_approval: ["approved", "rejected"],
-  approved:                  ["in_repair"],
-  in_repair:                 ["repaired"],
-  repaired:                  ["final_quality_check"],
-  final_quality_check:       ["ready_for_delivery"],
-  ready_for_delivery:        ["delivered"],
-  delivered: [], rejected: [], cancelled: [],
+  ready_for_delivery: "جاهز للتسليم", shipped: "قيد الشحن للعميل",
+  delivered: "تم التسليم", rejected: "مرفوض", cancelled: "ملغي",
+  waiting_parts: "بانتظار قطعة غيار",
 };
 
 const COLOR_CLASSES: Record<string, { dot: string; glow: string; text: string; bg: string }> = {
@@ -52,6 +49,9 @@ const COLOR_CLASSES: Record<string, { dot: string; glow: string; text: string; b
   teal:   { dot: "bg-teal-400",    glow: "shadow-teal-500/30",    text: "text-teal-300",    bg: "bg-teal-500/15 border-teal-500/40"   },
   purple: { dot: "bg-purple-400",  glow: "shadow-purple-500/30",  text: "text-purple-300",  bg: "bg-purple-500/15 border-purple-500/40"},
   lime:   { dot: "bg-lime-400",    glow: "shadow-lime-500/30",    text: "text-lime-300",    bg: "bg-lime-500/15 border-lime-500/40"   },
+  sky:    { dot: "bg-sky-400",     glow: "shadow-sky-500/30",     text: "text-sky-300",     bg: "bg-sky-500/15 border-sky-500/40"     },
+  pink:   { dot: "bg-pink-400",    glow: "shadow-pink-500/30",    text: "text-pink-300",    bg: "bg-pink-500/15 border-pink-500/40"   },
+  red:    { dot: "bg-red-400",     glow: "shadow-red-500/30",     text: "text-red-300",     bg: "bg-red-500/15 border-red-500/40"     },
 };
 
 interface RepairJobData {
@@ -78,12 +78,18 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
 
   const currentIdx   = PIPELINE_STAGES.findIndex(s => s.key === currentStatus);
-  const isTerminal   = TERMINAL_STAGES.some(s => s.key === currentStatus);
-  const allowed      = ALLOWED_TRANSITIONS[currentStatus] ?? [];
+  const isTerminal   = TERMINAL_KEYS.includes(currentStatus);
   const currentLabel = ALL_LABELS[currentStatus] ?? currentStatus;
 
+  /* ── انتقال حر: أي مرحلة مسموحة طالما البطاقة مش منتهية ── */
+  function canMoveTo(targetKey: string): boolean {
+    if (isTerminal) return false;
+    if (targetKey === currentStatus) return false;
+    return true;
+  }
+
   function openConfirm(key: string, label: string) {
-    if (!allowed.includes(key)) return;
+    if (!canMoveTo(key)) return;
     setConfirm({ target: key, label, errors: [], loading: false });
   }
 
@@ -171,7 +177,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
               const originalIdx = PIPELINE_STAGES.findIndex(s => s.key === stage.key);
               const isActive    = stage.key === currentStatus;
               const isCompleted = !isTerminal && currentIdx > originalIdx && currentIdx !== -1;
-              const isClickable = allowed.includes(stage.key);
+              const isClickable = canMoveTo(stage.key);
               const cc          = COLOR_CLASSES[stage.color] ?? COLOR_CLASSES.violet;
 
               return (
@@ -183,7 +189,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
                   className={[
                     "relative flex flex-col items-center gap-1 px-3 py-2.5 border-l border-white/5 first:border-l-0 min-w-[64px] transition-all duration-150",
                     isActive    ? `${cc.bg} shadow-lg ${cc.glow}` :
-                    isCompleted ? "bg-emerald-500/8" :
+                    isCompleted ? "bg-emerald-500/8 hover:bg-emerald-500/15 cursor-pointer" :
                     isClickable ? "hover:bg-white/5 cursor-pointer" :
                     "opacity-25 cursor-not-allowed",
                   ].filter(Boolean).join(" ")}
@@ -204,7 +210,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
                     "text-[9px] font-semibold leading-tight text-center whitespace-nowrap",
                     isActive    ? cc.text      :
                     isCompleted ? "text-emerald-400/70" :
-                    isClickable ? "text-white/50" : "text-white/20",
+                    isClickable ? "text-white/60 hover:text-white/90" : "text-white/20",
                   ].join(" ")}>
                     {stage.label}
                   </span>
@@ -214,9 +220,10 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
 
             <div className="w-px bg-white/10 mx-0 self-stretch" />
 
-            {TERMINAL_STAGES.map(stage => {
+            {SIDE_BRANCHES.map(stage => {
               const isActive    = stage.key === currentStatus;
-              const isClickable = allowed.includes(stage.key);
+              const isClickable = canMoveTo(stage.key);
+              const cc          = COLOR_CLASSES[stage.color] ?? COLOR_CLASSES.red;
               return (
                 <button
                   key={stage.key}
@@ -224,14 +231,22 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
                   disabled={!isClickable && !isActive}
                   title={ALL_LABELS[stage.key]}
                   className={[
-                    "flex flex-col items-center gap-1 px-3 py-2.5 border-l border-white/5 min-w-[56px] transition-all",
-                    isActive    ? "bg-red-500/15 border-l-red-500/20" :
-                    isClickable ? "hover:bg-red-500/8 cursor-pointer" :
+                    "relative flex flex-col items-center gap-1 px-3 py-2.5 border-l border-white/5 min-w-[60px] transition-all",
+                    isActive    ? `${cc.bg} shadow-lg ${cc.glow}` :
+                    isClickable ? "hover:bg-white/5 cursor-pointer" :
                     "opacity-20 cursor-not-allowed",
                   ].filter(Boolean).join(" ")}
                 >
+                  {isActive && (
+                    <span className={`absolute top-0 left-0 right-0 h-0.5 ${cc.dot}`} />
+                  )}
                   <span className="text-sm leading-none">{stage.icon}</span>
-                  <span className={`text-[9px] font-semibold ${isActive ? "text-red-300" : isClickable ? "text-red-400/60" : "text-white/20"}`}>
+                  <span className={[
+                    "text-[9px] font-semibold leading-tight whitespace-nowrap",
+                    isActive    ? cc.text :
+                    isClickable ? `${cc.text} opacity-70 hover:opacity-100` :
+                    "text-white/20",
+                  ].join(" ")}>
                     {stage.label}
                   </span>
                 </button>
@@ -239,6 +254,13 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
             })}
           </div>
         </div>
+        {!isTerminal && (
+          <div className="px-3 py-1.5 border-t border-white/5 bg-white/[0.015]" dir="rtl">
+            <p className="text-[10px] text-white/40 leading-tight">
+              💡 يمكنك الضغط على أي مرحلة للتنقل المباشر — تخطّي مراحل غير ضرورية أو الرجوع لمرحلة سابقة. متطلبات كل مرحلة لازم تكون مكتملة.
+            </p>
+          </div>
+        )}
       </div>
     </>
   );

@@ -936,6 +936,18 @@ Standalone iOS & Android mobile companion app at `artifacts/erp-mobile/`. Built 
 - **IMPORTANT — status source-of-truth**: card editor pulls statuses from `/api/repair-statuses` (the real per-company list backed by `repair_statuses` table), NOT from the hardcoded `PIPELINE_STAGES` constant. The latter is only used by the read-only "حالات الصيانة" StatusesTab as documentation. Card editor also offers an inline "حالة جديدة" creator that POSTs to `/api/repair-statuses` so admins can add new statuses (e.g., "بانتظار قطعة" already exists as `waiting_parts` in SYSTEM_STATUSES) without leaving the dialog. Orphan statuses (in card but not in current company list) are flagged with an amber warning.
 - `STATUS_MAP` in `repairs.tsx` was extended to cover the 3 backend-only keys missing from the original 12-item documentation list: `waiting_parts`, `diagnosing`, `qa` — so breakdown chips render correctly with Arabic labels and proper colors.
 
+### Pipeline V2 — مرونة + شحن + فروع جانبية (2026-04-27)
+
+- **Added `shipped` system status** (sky-blue, truck icon) — between `ready_for_delivery` and `delivered` in `PIPELINE_ORDER`. Seeds automatically into `repair_statuses` for new companies. Added everywhere needed: `SYSTEM_STATUSES` (repairs.ts), `FALLBACK_STATUS_LABELS` (repair-tracking.ts → customer QR page), `STATUS_MAP`/`STATUS_BORDER`/`STATUS_BAR_COLOR` (repairs.tsx), `PIPELINE_STAGES` (RepairPipeline.tsx).
+- **Side branches concept**: `RepairPipeline.tsx` now has 2 sections — main linear pipeline (11 stages: received → ... → shipped → delivered) AND a side-branches row (`waiting_parts` ⏸, `rejected` 🚫, `cancelled` ❌). Side branches are NOT part of the linear flow; they're "always-available" actions that can be triggered from any active stage.
+- **Free transitions**: replaced strict `ALLOWED_TRANSITIONS` enforcement with a permissive model in `repair-pipeline.service.ts`. New rules:
+  1. **Terminal block**: cannot change status if currently `delivered` / `rejected` / `cancelled` (defined in `TERMINAL_STATUSES`).
+  2. **Side branches always allowed**: `waiting_parts` / `rejected` / `cancelled` reachable from any non-terminal stage.
+  3. **Free forward + backward**: any other transition is allowed — staff can skip stages (e.g., `received` → `in_repair` directly when customer pre-approved) or step back to fix mistakes.
+  4. **Requirements still enforced**: `STAGE_REQUIREMENTS` map still validates target stage's prerequisites (`technician_id`, `final_cost`, etc.) — skipping doesn't let you bypass data quality.
+- **UI feedback**: pipeline shows hint footer "💡 يمكنك الضغط على أي مرحلة للتنقل المباشر — تخطّي مراحل غير ضرورية أو الرجوع لمرحلة سابقة". Completed stages get hover/cursor (re-clickable for backward step). Side branches use their own color (waiting_parts pink, terminals red).
+- Removed exports: `ALLOWED_TRANSITIONS` no longer exported from `repair-pipeline.service.ts` (replaced by `SIDE_BRANCHES`, `TERMINAL_STATUSES`). RepairPipeline.tsx renamed `TERMINAL_STAGES` → `SIDE_BRANCHES` (now includes `waiting_parts`).
+
 ---
 
 

@@ -340,6 +340,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
   repaired:                   { label: "تم الإصلاح",            color: "text-teal-400",     bg: "bg-teal-500/15 border-teal-500/30",      icon: CheckCheck },
   final_quality_check:        { label: "مراقبة الجودة",          color: "text-purple-400",   bg: "bg-purple-500/15 border-purple-500/30",  icon: Star },
   ready_for_delivery:         { label: "جاهز للتسليم",          color: "text-lime-400",     bg: "bg-lime-500/15 border-lime-500/30",      icon: Package },
+  shipped:                    { label: "قيد الشحن",             color: "text-sky-400",      bg: "bg-sky-500/15 border-sky-500/30",        icon: Truck },
   rejected:                   { label: "مرفوض",                 color: "text-red-400",      bg: "bg-red-500/15 border-red-500/30",        icon: XCircle },
 };
 
@@ -348,9 +349,10 @@ const STATUS_BORDER: Record<string, string> = {
   diagnosis: "border-blue-500/30", waiting_customer_approval: "border-amber-500/30",
   approved: "border-emerald-500/30", in_repair: "border-cyan-500/30",
   repaired: "border-teal-500/30", final_quality_check: "border-purple-500/30",
-  ready_for_delivery: "border-lime-500/30", delivered: "border-emerald-600/30",
+  ready_for_delivery: "border-lime-500/30", shipped: "border-sky-500/30", delivered: "border-emerald-600/30",
   rejected: "border-red-600/30", cancelled: "border-red-500/20",
   pending: "border-amber-500/30", in_progress: "border-blue-500/30", done: "border-emerald-500/30",
+  waiting_parts: "border-pink-500/30", diagnosing: "border-blue-500/30", qa: "border-cyan-500/30",
 };
 
 const STATUS_BAR_COLOR: Record<string, string> = {
@@ -368,7 +370,11 @@ const STATUS_BAR_COLOR: Record<string, string> = {
   repaired:                  "bg-teal-500/60",
   final_quality_check:       "bg-purple-500/60",
   ready_for_delivery:        "bg-lime-500/60",
+  shipped:                   "bg-sky-500/60",
   rejected:                  "bg-red-600/60",
+  waiting_parts:             "bg-pink-500/60",
+  diagnosing:                "bg-blue-400/60",
+  qa:                        "bg-cyan-500/60",
 };
 
 /* ── Score Helpers ──────────────────────────────────────────── */

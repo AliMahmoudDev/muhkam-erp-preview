@@ -44,8 +44,9 @@ const SYSTEM_STATUSES = [
   { key: "waiting_parts", label_ar: "بانتظار قطعة",    color: "#ec4899", sort_order: 4 },
   { key: "qa",            label_ar: "اختبار الجودة",   color: "#06b6d4", sort_order: 5 },
   { key: "done",          label_ar: "تم الإصلاح",       color: "#10b981", sort_order: 6 },
-  { key: "delivered",     label_ar: "تم التسليم",       color: "#14b8a6", sort_order: 7 },
-  { key: "cancelled",     label_ar: "ملغي",             color: "#ef4444", sort_order: 8 },
+  { key: "shipped",       label_ar: "قيد الشحن",        color: "#0ea5e9", sort_order: 7 },
+  { key: "delivered",     label_ar: "تم التسليم",       color: "#14b8a6", sort_order: 8 },
+  { key: "cancelled",     label_ar: "ملغي",             color: "#ef4444", sort_order: 9 },
 ];
 
 

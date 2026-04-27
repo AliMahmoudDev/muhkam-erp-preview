@@ -43,6 +43,7 @@ const FALLBACK_STATUS_LABELS: Record<string, { label: string; color: string }> =
   waiting_parts:              { label: "بانتظار قطعة",          color: "#ec4899" },
   qa:                         { label: "اختبار الجودة",         color: "#06b6d4" },
   diagnosing:                 { label: "قيد الفحص",             color: "#3b82f6" },
+  shipped:                    { label: "قيد الشحن",             color: "#0ea5e9" },
 };
 
 /**
