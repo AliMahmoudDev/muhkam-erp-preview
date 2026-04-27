@@ -39,6 +39,7 @@ interface RepairJob {
   customer_id?: number;
   device_brand: string;
   device_model: string;
+  device_type?: string;
   imei?: string;
   device_pin?: string;
   color?: string;
@@ -113,6 +114,46 @@ interface ChecklistItem {
   category?: string;
   status: "pass" | "fail" | "partial" | "untestable" | null;
   notes?: string;
+}
+
+/* ── Device types for filtered checklists ──────────────────────
+   Must mirror VALID_DEVICE_TYPES on the backend. */
+export const DEVICE_TYPES: Array<{ key: string; label: string; emoji: string }> = [
+  { key: "iphone",          label: "آيفون",            emoji: "📱" },
+  { key: "ipad",            label: "آيباد",            emoji: "📱" },
+  { key: "watch",           label: "أبل ووتش",         emoji: "⌚" },
+  { key: "airpods",         label: "إيربودز",          emoji: "🎧" },
+  { key: "mac",             label: "ماك",              emoji: "💻" },
+  { key: "samsung_phone",   label: "سامسونج موبايل",   emoji: "📱" },
+  { key: "samsung_tablet",  label: "سامسونج تابلت",    emoji: "📱" },
+  { key: "android_phone",   label: "أندرويد موبايل",   emoji: "🤖" },
+  { key: "android_tablet",  label: "أندرويد تابلت",    emoji: "🤖" },
+  { key: "other",           label: "أخرى",             emoji: "🔧" },
+];
+
+/**
+ * Derive the device_type from the intake (brand, category) selection.
+ * Falls back to "general" for unknown combos so legacy jobs keep working.
+ */
+export function deriveDeviceType(brand: string, category: string): string {
+  const b = (brand || "").toLowerCase();
+  const c = (category || "").toLowerCase();
+  if (b.includes("apple")) {
+    if (c.includes("iphone"))  return "iphone";
+    if (c.includes("ipad"))    return "ipad";
+    if (c.includes("watch"))   return "watch";
+    if (c.includes("airpods")) return "airpods";
+    if (c.includes("mac"))     return "mac";
+  }
+  if (b.includes("samsung")) {
+    if (c.includes("tab")) return "samsung_tablet";
+    return "samsung_phone";
+  }
+  if (["xiaomi","huawei","oppo","vivo","realme","nokia","oneplus"].some(x => b.includes(x))) {
+    if (c.includes("pad") || c.includes("matepad")) return "android_tablet";
+    return "android_phone";
+  }
+  return "other";
 }
 
 /* ── Constants ──────────────────────────────────────────────── */
@@ -693,10 +734,24 @@ export default function Repairs() {
     queryFn: () => apiFetch<{ id: number; name: string }[]>(api("/api/branches")),
   });
 
-  /* ── Configurable checklist items from server (fallback to built-in) ── */
+  /* ── Detail query when job is selected ── */
+  const { data: jobDetail } = useQuery<RepairJob>({
+    queryKey: ["/api/repair-jobs", selectedJob?.id],
+    queryFn: () => apiFetch<RepairJob>(api(`/api/repair-jobs/${selectedJob!.id}`)),
+    enabled: !!selectedJob?.id,
+  });
+
+  const detail = jobDetail ?? selectedJob;
+
+  /* ── Configurable checklist items from server, filtered by the job's device_type ──
+     Falls back to general items, then to DEFAULT_CHECKLIST. */
+  const detailDeviceType = detail?.device_type || "general";
   const { data: checklistTemplate = [] } = useQuery<{ id: number; label_ar: string; sort_order: number; category: string }[]>({
-    queryKey: ["/api/repair-checklist-items"],
-    queryFn: () => apiFetch<{ id: number; label_ar: string; sort_order: number; category: string }[]>(api("/api/repair-checklist-items")),
+    queryKey: ["/api/repair-checklist-items", detailDeviceType],
+    queryFn: () => apiFetch<{ id: number; label_ar: string; sort_order: number; category: string }[]>(
+      api(`/api/repair-checklist-items?device_type=${encodeURIComponent(detailDeviceType)}`)
+    ),
+    enabled: !!detail,
   });
 
   const templateChecklist: ChecklistItem[] = useMemo(() => {
@@ -708,15 +763,6 @@ export default function Repairs() {
       status: null,
     }));
   }, [checklistTemplate]);
-
-  /* ── Detail query when job is selected ── */
-  const { data: jobDetail } = useQuery<RepairJob>({
-    queryKey: ["/api/repair-jobs", selectedJob?.id],
-    queryFn: () => apiFetch<RepairJob>(api(`/api/repair-jobs/${selectedJob!.id}`)),
-    enabled: !!selectedJob?.id,
-  });
-
-  const detail = jobDetail ?? selectedJob;
   const parsedChecklist = useMemo(() => {
     try {
       const v = detail?.checklist ? JSON.parse(detail.checklist) : null;
@@ -1081,7 +1127,6 @@ export default function Repairs() {
                 customers={customers}
                 users={users}
                 branches={branches}
-                checklistTemplate={templateChecklist}
                 onClose={() => setShowNewForm(false)}
                 onCreated={(job) => {
                   qc.invalidateQueries({ queryKey: ["/api/repair-jobs"] });
@@ -2086,12 +2131,11 @@ function JobDetail({
    NEW JOB FORM
 ══════════════════════════════════════════════════════════════ */
 function NewJobForm({
-  customers, users, branches, checklistTemplate, onClose, onCreated,
+  customers, users, branches, onClose, onCreated,
 }: {
   customers: { id: number; name: string; phone?: string }[];
   users: { id: number; name: string }[];
   branches: { id: number; name: string }[];
-  checklistTemplate: ChecklistItem[];
   onClose: () => void;
   onCreated: (job: RepairJob) => void;
 }) {
@@ -2134,24 +2178,51 @@ function NewJobForm({
 
   /* ── Power check + local checklist ── */
   const [devicePowers, setDevicePowers]       = useState<null | "on" | "off">(null);
-  const [localChecklist, setLocalChecklist]   = useState<ChecklistItem[]>(checklistTemplate);
+  const [localChecklist, setLocalChecklist]   = useState<ChecklistItem[]>([]);
 
-  /* Re-filter checklist when device category changes */
+  /* Derive device_type live from current intake selection so the checklist
+     reflects the chosen device (iPhone vs Mac vs Samsung Tablet, etc.). */
+  const intakeDeviceType = useMemo(
+    () => deriveDeviceType(brand, category),
+    [brand, category],
+  );
+
+  /* Load the configured checklist template for this device type. */
+  const { data: intakeTemplate = [] } = useQuery<{ id: number; label_ar: string; sort_order: number; category: string }[]>({
+    queryKey: ["/api/repair-checklist-items", intakeDeviceType],
+    queryFn: async () => {
+      const r = await authFetch(api(`/api/repair-checklist-items?device_type=${encodeURIComponent(intakeDeviceType)}`));
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json() as Promise<{ id: number; label_ar: string; sort_order: number; category: string }[]>;
+    },
+    enabled: !!brand && !!category,
+  });
+
+  /* Reset local checklist whenever the device type changes or its template
+     finishes loading. Depending on `intakeTemplate.length` (a primitive)
+     instead of the array reference avoids an infinite render loop caused
+     by the `= []` default creating a fresh reference each render. */
+  const intakeTemplateLen = intakeTemplate.length;
   useEffect(() => {
-    if (!checklistTemplate.length) return;
-    const cats = [...new Set(checklistTemplate.map(c => c.category ?? "عام"))];
-    const hasMatch = category && cats.includes(category);
-    const filtered = hasMatch
-      ? checklistTemplate.filter(c => {
-          const cat = c.category ?? "عام";
-          return cat === category || cat === "عام";
-        })
-      : checklistTemplate;
-    setLocalChecklist(filtered.map(c => ({ ...c, status: null, notes: undefined })));
+    if (!brand || !category) {
+      setLocalChecklist([]);
+      setDevicePowers(null);
+      return;
+    }
+    const items: ChecklistItem[] = intakeTemplateLen
+      ? intakeTemplate.map(t => ({
+          id: String(t.id),
+          label: t.label_ar,
+          category: t.category ?? "عام",
+          status: null,
+        }))
+      : DEFAULT_CHECKLIST.map(c => ({ ...c, status: null, notes: undefined }));
+    setLocalChecklist(items);
     setDevicePowers(null);
-  }, [category]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intakeDeviceType, intakeTemplateLen, brand, category]);
 
-  const checklistComplete = localChecklist.every((c) => c.status !== null);
+  const checklistComplete = localChecklist.length > 0 && localChecklist.every((c) => c.status !== null);
 
   /* ── Derived device options ── */
   const brandNames   = Object.keys(DEVICE_CATALOG);
@@ -2242,6 +2313,7 @@ function NewJobForm({
           customer_phone: phoneDigits,
           device_brand: deviceBrand,
           device_model: deviceModel,
+          device_type: deriveDeviceType(deviceBrand, category),
           imei,
           device_pin: devicePin || null,
           problem_description: problem,

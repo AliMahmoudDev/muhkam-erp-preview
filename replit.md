@@ -212,13 +212,27 @@ Key backend files with inline comments:
 ### 5. نظام الصيانة والإصلاح (Repair Job Cards) — أبريل 2026
 #### إعدادات الصيانة الكاملة — RepairSettingsModal (أبريل 2026)
 - **Component:** `artifacts/erp-system/src/components/RepairSettingsModal.tsx`
-- Modal عريض (860px) بـ sidebar جانبي RTL + 5 تبويبات:
-  1. **بنود الفحص** — إدارة بنود الفحص الأولي بتصنيفات (Apple/Android)
-  2. **بنود QC** — نفس الهيكل لبنود مراقبة الجودة (`device_type="qc_apple"/"qc_android"`)
-  3. **حالات الصيانة** — عرض كامل لمراحل Pipeline مع الألوان والأوصاف
-  4. **الفنيين** — عرض المستخدمين مع نسب العمولة والتخصص والإشعارات (localStorage)
-  5. **QR والتتبع** — توليد QR code بمكتبة `qrcode.react` مع إعداد رابط التتبع
+- Modal عريض (860px) بـ sidebar جانبي RTL + 4 تبويبات:
+  1. **بنود الفحص** — تبويب موحّد للفحص الأولي و QC (نفس البنود تُستخدم في المرحلتين للمقارنة)
+  2. **حالات الصيانة** — عرض كامل لمراحل Pipeline مع الألوان والأوصاف
+  3. **الفنيين** — عرض المستخدمين مع نسب العمولة والتخصص والإشعارات (localStorage)
+  4. **QR والتتبع** — توليد QR code بمكتبة `qrcode.react` مع إعداد رابط التتبع
 - حذف `RepairSettings` القديمة من `repairs.tsx` واستبدالها بـ `RepairSettingsModal`
+
+#### فلترة بنود الفحص حسب نوع الجهاز (أبريل 2026)
+- **DB:** عمود `device_type text NOT NULL DEFAULT 'general'` على `repair_jobs` + استخدام نفس العمود على `repair_checklist_items`
+- **10 أنواع جهاز معتمدة:** `iphone | ipad | watch | airpods | mac | samsung_phone | samsung_tablet | android_phone | android_tablet | other` (مع `general` كـ fallback)
+- **Backend:** 10 قوالب `SEED_TEMPLATES` جاهزة في `artifacts/api-server/src/routes/repairs.ts`
+  - `POST /api/repair-checklist-items/seed-device-type` — تحميل القالب الافتراضي لنوع جهاز معين (409 لو موجود)
+  - `POST /api/repair-checklist-items/copy { from, to }` — نسخ بنود من نوع لآخر (مفيد لتعديل قالب موجود)
+  - `GET /api/repair-checklist-items?device_type=…` — فلترة exact match
+  - `POST/PATCH /api/repair-jobs` — يقبل ويتحقق من `device_type` (يقع لـ `general` لو غير صالح)
+- **Frontend (`pages/repairs.tsx`):**
+  - `DEVICE_TYPES` ثابت + `deriveDeviceType(brand, category)` يحوّل اختيارات الـ intake (Apple>iPhone → iphone، Samsung>Galaxy Tab → samsung_tablet، إلخ)
+  - `NewJobForm` يحمّل قائمة الفحص live حسب الاختيار، و POST يرسل `device_type`
+  - `JobDetail` يفلتر القائمة بـ `job.device_type` لعرض البنود الصحيحة
+- **Frontend (`RepairSettingsModal.tsx`):** تبويب «بنود الفحص» فيه 10 تبويبات أفقية بأيقونات + زر «تحميل افتراضي» + dropdown «نسخ من» يسمح بنسخ بنود نوع جهاز لآخر
+- **Migration history:** سابقاً كان `apple/android/qc_apple/qc_android` — تم تحويلها إلى `iphone` (56+3 صفوف) + backfill لـ 7 وظائف قديمة بناءً على البراند والموديل
 
 
 - **DB schema:** `lib/db/src/schema/repairs.ts` → `repair_jobs` + `repair_job_parts` tables (created via SQL)

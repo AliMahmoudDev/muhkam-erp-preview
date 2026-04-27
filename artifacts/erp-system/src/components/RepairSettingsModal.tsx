@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
 import {
-  X, ClipboardList, CheckSquare, GitBranch, Users, QrCode,
+  X, ClipboardList, GitBranch, Users, QrCode,
   Plus, ChevronDown, CheckCircle2, XCircle, Trash2, Pencil,
   Bell, BellOff, Percent, AlertCircle, Zap,
   ArrowLeft, ArrowRight, Copy, Printer,
@@ -19,9 +19,12 @@ import { api } from "@/lib/api";
 /* ══════════════════════════════════════════════════════════════
    TYPES
 ══════════════════════════════════════════════════════════════ */
-type Platform = "apple" | "android";
-type SettingsTab = "checklist" | "qc" | "statuses" | "dashboard-cards" | "technicians" | "qr";
-type ChecklistKind = "inspection" | "qc";
+type DeviceType =
+  | "iphone" | "ipad" | "watch" | "airpods" | "mac"
+  | "samsung_phone" | "samsung_tablet"
+  | "android_phone" | "android_tablet"
+  | "other";
+type SettingsTab = "checklist" | "statuses" | "dashboard-cards" | "technicians" | "qr";
 
 interface ChecklistRow {
   id: number;
@@ -41,10 +44,21 @@ interface ERP_User {
 /* ══════════════════════════════════════════════════════════════
    CONSTANTS
 ══════════════════════════════════════════════════════════════ */
-const PLATFORM_META: Record<Platform, { label: string; icon: string; apiPrefix: string }> = {
-  apple:   { label: "أبل",    icon: "", apiPrefix: "" },
-  android: { label: "أندرويد", icon: "🤖", apiPrefix: "android" },
-};
+const DEVICE_TYPE_META: Array<{ key: DeviceType; label: string; emoji: string }> = [
+  { key: "iphone",         label: "آيفون",          emoji: "📱" },
+  { key: "ipad",           label: "آيباد",          emoji: "📱" },
+  { key: "watch",          label: "أبل ووتش",       emoji: "⌚" },
+  { key: "airpods",        label: "إيربودز",        emoji: "🎧" },
+  { key: "mac",            label: "ماك",            emoji: "💻" },
+  { key: "samsung_phone",  label: "سامسونج موبايل", emoji: "📱" },
+  { key: "samsung_tablet", label: "سامسونج تابلت",  emoji: "📱" },
+  { key: "android_phone",  label: "أندرويد موبايل", emoji: "🤖" },
+  { key: "android_tablet", label: "أندرويد تابلت",  emoji: "🤖" },
+  { key: "other",          label: "أخرى",           emoji: "🔧" },
+];
+
+const DEVICE_TYPE_LABEL: Record<DeviceType, string> =
+  Object.fromEntries(DEVICE_TYPE_META.map(d => [d.key, d.label])) as Record<DeviceType, string>;
 
 const PIPELINE_STAGES: Array<{
   key: string; label: string;
@@ -66,8 +80,7 @@ const PIPELINE_STAGES: Array<{
 ];
 
 const TABS: Array<{ id: SettingsTab; label: string; sublabel: string; icon: React.FC<{ className?: string }>; adminOnly?: boolean }> = [
-  { id: "checklist",       label: "بنود الفحص",       sublabel: "قوالب الفحص الأولي", icon: ClipboardList },
-  { id: "qc",              label: "بنود QC",          sublabel: "مراقبة الجودة",      icon: CheckSquare },
+  { id: "checklist",       label: "بنود الفحص",       sublabel: "قوالب الفحص و QC حسب نوع الجهاز", icon: ClipboardList },
   { id: "statuses",        label: "حالات الصيانة",    sublabel: "مسار الإصلاح",       icon: GitBranch },
   { id: "dashboard-cards", label: "كروت اللوحة",      sublabel: "تخصيص ملخّص الصفحة", icon: LayoutDashboard, adminOnly: true },
   { id: "technicians",     label: "الفنيين",          sublabel: "إعدادات الموظفين",   icon: Users },
@@ -89,13 +102,13 @@ export const DASHBOARD_CARD_COLORS = [
 ];
 
 /* ══════════════════════════════════════════════════════════════
-   CHECKLIST TAB (shared for inspection + QC)
+   CHECKLIST TAB — per device type (inspection + QC use same items)
 ══════════════════════════════════════════════════════════════ */
-function ChecklistTab({ kind }: { kind: ChecklistKind }) {
+function ChecklistTab() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [activePlatform, setActivePlatform] = useState<Platform>("apple");
+  const [activeType, setActiveType]         = useState<DeviceType>("iphone");
   const [editingId, setEditingId]           = useState<number | null>(null);
   const [editLabel, setEditLabel]           = useState("");
   const [addingToCat, setAddingToCat]       = useState<string | null>(null);
@@ -103,14 +116,12 @@ function ChecklistTab({ kind }: { kind: ChecklistKind }) {
   const [showNewCat, setShowNewCat]         = useState(false);
   const [newCatInput, setNewCatInput]       = useState("");
   const [seeding, setSeeding]               = useState(false);
+  const [copying, setCopying]               = useState(false);
+  const [showCopyMenu, setShowCopyMenu]     = useState(false);
   const [localCats, setLocalCats]           = useState<string[]>([]);
   const [expandedCats, setExpandedCats]     = useState<Set<string>>(new Set());
 
-  /* device_type encoding: inspection → "apple"/"android", QC → "qc_apple"/"qc_android" */
-  const deviceType = kind === "inspection"
-    ? activePlatform
-    : `qc_${activePlatform}`;
-
+  const deviceType = activeType;
   const qKey = ["/api/repair-checklist-items", deviceType];
 
   const { data: rawItems, isLoading, isError } = useQuery<ChecklistRow[]>({
@@ -148,26 +159,36 @@ function ChecklistTab({ kind }: { kind: ChecklistKind }) {
   }, [dbCategories.join(",")]);
 
   useEffect(() => {
-    setEditingId(null); setAddingToCat(null); setNewItemLabel(""); setLocalCats([]); setExpandedCats(new Set());
-  }, [activePlatform]);
+    setEditingId(null); setAddingToCat(null); setNewItemLabel(""); setLocalCats([]); setExpandedCats(new Set()); setShowCopyMenu(false);
+  }, [activeType]);
 
   const toggleCat = (cat: string) =>
     setExpandedCats(prev => { const n = new Set(prev); n.has(cat) ? n.delete(cat) : n.add(cat); return n; });
 
-  const seedPlatform = async () => {
-    if (kind === "qc") {
-      toast({ title: "بنود QC يُضاف يدوياً — لا يوجد seed افتراضي" }); return;
-    }
+  const seedDeviceType = async () => {
     setSeeding(true);
-    const r = await authFetch(api("/api/repair-checklist-items/seed-platform"), {
+    const r = await authFetch(api("/api/repair-checklist-items/seed-device-type"), {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ platform: activePlatform }),
+      body: JSON.stringify({ device_type: deviceType }),
     });
     setSeeding(false);
     if (r.status === 409) { toast({ title: "البنود محملة مسبقاً" }); return; }
     if (!r.ok)            { toast({ title: "خطأ في تحميل البنود", variant: "destructive" }); return; }
     const { count } = await r.json();
     toast({ title: `✓ تم تحميل ${count} بند` });
+    invalidate();
+  };
+
+  const copyFrom = async (fromType: DeviceType) => {
+    setCopying(true); setShowCopyMenu(false);
+    const r = await authFetch(api("/api/repair-checklist-items/copy"), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from: fromType, to: deviceType }),
+    });
+    setCopying(false);
+    if (!r.ok) { toast({ title: "تعذر النسخ", variant: "destructive" }); return; }
+    const { count } = await r.json();
+    toast({ title: `✓ تم نسخ ${count} بند من ${DEVICE_TYPE_LABEL[fromType]}` });
     invalidate();
   };
 
@@ -211,57 +232,69 @@ function ChecklistTab({ kind }: { kind: ChecklistKind }) {
   };
 
   const isEmpty = !isLoading && !isError && items.length === 0 && localCats.length === 0;
-  const isApple = activePlatform === "apple";
+  const activeMeta = DEVICE_TYPE_META.find(d => d.key === activeType)!;
 
-  /* colours */
-  const accent    = isApple ? "text-white"        : "text-emerald-300";
-  const accentDim = isApple ? "text-white/55"     : "text-emerald-400/70";
-  const accentBg  = isApple ? "bg-white/10"       : "bg-emerald-500/12";
-  const accentBdr = isApple ? "border-white/20"   : "border-emerald-500/25";
-  const badgeCls  = isApple ? "bg-white/8 text-white/40" : "bg-emerald-500/10 text-emerald-500/60";
-  const kindColor = kind === "inspection" ? "violet" : "purple";
-  const kindLabel = kind === "inspection" ? "بنود الفحص" : "بنود QC";
+  /* shared violet accent (one tab strip, one colour) */
+  const accent    = "text-violet-200";
+  const accentDim = "text-violet-300/70";
+  const accentBg  = "bg-violet-500/10";
+  const accentBdr = "border-violet-500/25";
+  const badgeCls  = "bg-violet-500/15 text-violet-200/70";
 
   return (
     <div className="flex flex-col h-full">
-      {/* Platform tabs */}
-      <div className="flex border-b border-white/10 shrink-0">
-        {(["apple", "android"] as Platform[]).map(p => {
-          const meta = PLATFORM_META[p]; const isActive = activePlatform === p;
-          return (
-            <button key={p} onClick={() => setActivePlatform(p)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all border-b-2 ${
-                isActive
-                  ? p === "apple"
-                    ? "border-white/70 text-white bg-white/5"
-                    : "border-emerald-400 text-emerald-300 bg-emerald-500/8"
-                  : "border-transparent text-white/30 hover:text-white/55"
-              }`}>
-              <span className="text-base">{meta.icon}</span>
-              <span>{meta.label}</span>
-              {isActive && items.length > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium tabular-nums ${badgeCls}`}>
-                  {items.length}
-                </span>
-              )}
-            </button>
-          );
-        })}
-        <div className="flex-1" />
-        <div className="flex items-center px-4 gap-2">
+      {/* Device-type tabs (scrollable horizontally) */}
+      <div className="flex items-center border-b border-white/10 shrink-0 overflow-x-auto">
+        <div className="flex">
+          {DEVICE_TYPE_META.map(t => {
+            const isActive = activeType === t.key;
+            const itemCount = isActive ? items.length : 0;
+            return (
+              <button key={t.key} onClick={() => setActiveType(t.key)}
+                className={`flex items-center gap-1.5 px-3.5 py-3 text-[12.5px] font-semibold transition-all border-b-2 whitespace-nowrap ${
+                  isActive
+                    ? "border-violet-400 text-violet-200 bg-violet-500/8"
+                    : "border-transparent text-white/30 hover:text-white/55"
+                }`}>
+                <span className="text-sm">{t.emoji}</span>
+                <span>{t.label}</span>
+                {isActive && itemCount > 0 && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium tabular-nums ${badgeCls}`}>
+                    {itemCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex-1 min-w-4" />
+        <div className="flex items-center px-3 gap-2 shrink-0">
           <button onClick={() => setShowNewCat(v => !v)}
             className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors border border-white/8 hover:border-white/20 rounded-lg px-3 py-1.5">
-            <Plus className="w-3.5 h-3.5" /> تصنيف جديد
+            <Plus className="w-3.5 h-3.5" /> تصنيف
           </button>
-          {kind === "inspection" && (
-            <button onClick={seedPlatform} disabled={seeding}
-              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
-                isApple ? "bg-white/8 border-white/15 text-white/60 hover:bg-white/12" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400/70 hover:bg-emerald-500/15"
-              }`}>
-              <Zap className="w-3 h-3" />
-              {seeding ? "جاري..." : "تحميل افتراضي"}
+          <div className="relative">
+            <button onClick={() => setShowCopyMenu(v => !v)} disabled={copying}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/55 hover:bg-white/10 disabled:opacity-40">
+              <Copy className="w-3 h-3" /> {copying ? "..." : "نسخ من"}
             </button>
-          )}
+            {showCopyMenu && (
+              <div className="absolute left-0 top-full mt-1 z-10 w-44 rounded-xl border border-white/10 bg-[#1a1820] shadow-2xl py-1 max-h-72 overflow-y-auto">
+                {DEVICE_TYPE_META.filter(d => d.key !== activeType).map(d => (
+                  <button key={d.key} onClick={() => copyFrom(d.key)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-white/65 hover:bg-white/8 text-right">
+                    <span className="text-sm">{d.emoji}</span>
+                    <span className="flex-1">{d.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button onClick={seedDeviceType} disabled={seeding}
+            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${accentBg} ${accentBdr} ${accent} hover:bg-violet-500/15`}>
+            <Zap className="w-3 h-3" />
+            {seeding ? "جاري..." : "تحميل افتراضي"}
+          </button>
         </div>
       </div>
 
@@ -296,17 +329,23 @@ function ChecklistTab({ kind }: { kind: ChecklistKind }) {
         )}
         {isEmpty && (
           <div className="flex flex-col items-center justify-center py-16 gap-4 px-8">
-            <div className={`w-12 h-12 rounded-2xl bg-${kindColor}-500/10 flex items-center justify-center`}>
-              {kind === "inspection" ? <ClipboardList className={`w-6 h-6 text-${kindColor}-400/60`} /> : <CheckSquare className={`w-6 h-6 text-${kindColor}-400/60`} />}
+            <div className="w-12 h-12 rounded-2xl bg-violet-500/10 flex items-center justify-center text-2xl">
+              {activeMeta.emoji}
             </div>
-            <p className="text-white/40 text-sm text-center">لا توجد بنود {kindLabel} لـ {PLATFORM_META[activePlatform].label}</p>
-            {kind === "inspection" && (
-              <button onClick={seedPlatform} disabled={seeding}
-                className={`flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold border transition-all disabled:opacity-50 ${accentBg} ${accentBdr} ${accent}`}>
+            <p className="text-white/40 text-sm text-center">
+              لا توجد بنود فحص لـ {activeMeta.label} بعد — تُستخدم نفس البنود في الفحص الأولي و QC
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button onClick={seedDeviceType} disabled={seeding}
+                className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold border transition-all disabled:opacity-50 ${accentBg} ${accentBdr} ${accent} hover:bg-violet-500/15`}>
                 <Zap className="w-4 h-4" />
-                {seeding ? "جاري التحميل..." : `تحميل بنود ${PLATFORM_META[activePlatform].label}`}
+                {seeding ? "جاري التحميل..." : `تحميل بنود ${activeMeta.label}`}
               </button>
-            )}
+              <button onClick={() => setShowCopyMenu(v => !v)} disabled={copying}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold border border-white/10 bg-white/5 text-white/65 hover:bg-white/10 disabled:opacity-50">
+                <Copy className="w-4 h-4" /> نسخ من نوع آخر
+              </button>
+            </div>
             <button onClick={() => { setShowNewCat(true); }}
               className="text-xs text-white/25 hover:text-white/50 transition-colors">
               أو أضف تصنيفاً يدوياً
@@ -1425,8 +1464,7 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
 
           {/* ── Content ── */}
           <div className="flex-1 overflow-hidden flex flex-col">
-            {activeTab === "checklist"        && <ChecklistTab kind="inspection" />}
-            {activeTab === "qc"               && <ChecklistTab kind="qc" />}
+            {activeTab === "checklist"        && <ChecklistTab />}
             {activeTab === "statuses"         && <StatusesTab />}
             {activeTab === "dashboard-cards"  && <DashboardCardsTab />}
             {activeTab === "technicians"      && <TechniciansTab />}

@@ -10,6 +10,7 @@ export const repairJobsTable = pgTable("repair_jobs", {
   customer_phone:           text("customer_phone"),
   device_brand:             text("device_brand").notNull(),
   device_model:             text("device_model").notNull(),
+  device_type:              text("device_type").notNull().default("general"),
   imei:                     text("imei"),
   serial_no:                text("serial_no"),
   color:                    text("color"),

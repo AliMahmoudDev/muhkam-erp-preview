@@ -50,34 +50,39 @@ const SYSTEM_STATUSES = [
 ];
 
 
-/* ── Platform seed templates ─────────────────────────────────── */
+/* ── Device-type seed templates ─────────────────────────────────── */
 type SeedItem = { label_ar: string; category: string };
 
-const APPLE_CHECKLIST: SeedItem[] = [
-  /* الشاشة واللمس */
+/* List of supported device types — must match frontend DEVICE_TYPES */
+const VALID_DEVICE_TYPES = [
+  "iphone", "ipad", "watch", "airpods", "mac",
+  "samsung_phone", "samsung_tablet",
+  "android_phone", "android_tablet",
+  "other", "general",
+] as const;
+type DeviceType = typeof VALID_DEVICE_TYPES[number];
+
+const IPHONE_CHECKLIST: SeedItem[] = [
   { label_ar: "حالة الشاشة",                      category: "الشاشة واللمس" },
   { label_ar: "أصلية / تقليد",                    category: "الشاشة واللمس" },
   { label_ar: "اللمس",                             category: "الشاشة واللمس" },
   { label_ar: "سفرة الشاشة (بولش)",               category: "الشاشة واللمس" },
   { label_ar: "الإضاءة",                           category: "الشاشة واللمس" },
   { label_ar: "True Tone",                          category: "الشاشة واللمس" },
-  /* الكاميرات و Face ID */
   { label_ar: "الكاميرا الأمامية",                 category: "الكاميرات و Face ID" },
   { label_ar: "بورتريه أمامي",                     category: "الكاميرات و Face ID" },
   { label_ar: "الكاميرا الخلفية العريضة",          category: "الكاميرات و Face ID" },
   { label_ar: "الكاميرا الخلفية الواسعة",          category: "الكاميرات و Face ID" },
   { label_ar: "كاميرا التقريب الخلفية",            category: "الكاميرات و Face ID" },
-  { label_ar: "نقطة الكاميرا",                     category: "الكاميرات و Face ID" },
+  { label_ar: "نقطة الكاميرا (Face ID)",           category: "الكاميرات و Face ID" },
   { label_ar: "بورتريه خلفي",                      category: "الكاميرات و Face ID" },
   { label_ar: "الفلاش / LED",                       category: "الكاميرات و Face ID" },
-  /* الأزرار والبصمة */
   { label_ar: "زر رفع الصوت",                      category: "الأزرار والبصمة" },
   { label_ar: "زر خفض الصوت",                      category: "الأزرار والبصمة" },
-  { label_ar: "زر الصامت",                         category: "الأزرار والبصمة" },
+  { label_ar: "زر الصامت / Action Button",         category: "الأزرار والبصمة" },
   { label_ar: "زر الباور",                         category: "الأزرار والبصمة" },
   { label_ar: "البصمة (Touch ID)",                 category: "الأزرار والبصمة" },
   { label_ar: "زر التحكم بالكاميرا (iPhone 16+)", category: "الأزرار والبصمة" },
-  /* الاتصال */
   { label_ar: "إثارة الشبكة / SIM",               category: "الاتصال" },
   { label_ar: "بيانات الموبايل (4G / 5G)",         category: "الاتصال" },
   { label_ar: "واي فاي",                           category: "الاتصال" },
@@ -86,7 +91,6 @@ const APPLE_CHECKLIST: SeedItem[] = [
   { label_ar: "NFC (Apple Pay)",                   category: "الاتصال" },
   { label_ar: "إير دروب",                          category: "الاتصال" },
   { label_ar: "eSIM",                              category: "الاتصال" },
-  /* المستشعرات */
   { label_ar: "مستشعر التسارع",                    category: "المستشعرات" },
   { label_ar: "الجايروسكوب",                       category: "المستشعرات" },
   { label_ar: "مستشعر القرب",                      category: "المستشعرات" },
@@ -95,21 +99,17 @@ const APPLE_CHECKLIST: SeedItem[] = [
   { label_ar: "البوصلة (مقياس المغناطيسية)",       category: "المستشعرات" },
   { label_ar: "ماسح LiDAR (Pro)",                  category: "المستشعرات" },
   { label_ar: "مستشعر الحرارة (Pro 15+)",          category: "المستشعرات" },
-  /* الصوت والمايكروفونات */
   { label_ar: "سماعة الأذن",                       category: "الصوت والمايكروفونات" },
   { label_ar: "مكبر الصوت",                        category: "الصوت والمايكروفونات" },
   { label_ar: "مايك الكاميرا الأمامية",            category: "الصوت والمايكروفونات" },
   { label_ar: "مايك الكاميرا الخلفية",             category: "الصوت والمايكروفونات" },
   { label_ar: "مايك المكالمات (سفلي)",             category: "الصوت والمايكروفونات" },
-  { label_ar: "مايك السبيكر (سفلي)",               category: "الصوت والمايكروفونات" },
   { label_ar: "عزل الصوت",                         category: "الصوت والمايكروفونات" },
   { label_ar: "الاهتزاز (Taptic Engine)",           category: "الصوت والمايكروفونات" },
-  /* الشحن والبطارية */
   { label_ar: "الشحن السلكي (USB-C / Lightning)",  category: "الشحن والبطارية" },
-  { label_ar: "الشحن اللاسلكي",                    category: "الشحن والبطارية" },
+  { label_ar: "الشحن اللاسلكي / MagSafe",          category: "الشحن والبطارية" },
   { label_ar: "قراءة الأمبير (ستر)",               category: "الشحن والبطارية" },
   { label_ar: "صحة البطارية",                      category: "الشحن والبطارية" },
-  /* الفحص الخارجي */
   { label_ar: "حالة الهيكل",                       category: "الفحص الخارجي" },
   { label_ar: "الزجاج الخلفي",                     category: "الفحص الخارجي" },
   { label_ar: "زجاج عدسة الكاميرا",               category: "الفحص الخارجي" },
@@ -121,54 +121,174 @@ const APPLE_CHECKLIST: SeedItem[] = [
   { label_ar: "حالة منفذ الشحن",                   category: "الفحص الخارجي" },
 ];
 
-const ANDROID_CHECKLIST: SeedItem[] = [
-  /* الشاشة واللمس */
+const IPAD_CHECKLIST: SeedItem[] = [
+  { label_ar: "حالة الشاشة",                       category: "الشاشة واللمس" },
+  { label_ar: "أصلية / تقليد",                     category: "الشاشة واللمس" },
+  { label_ar: "اللمس متعدد النقاط",                category: "الشاشة واللمس" },
+  { label_ar: "Apple Pencil (الجيل 1 / 2 / Pro)", category: "الشاشة واللمس" },
+  { label_ar: "الإضاءة / السطوع",                  category: "الشاشة واللمس" },
+  { label_ar: "True Tone / ProMotion",             category: "الشاشة واللمس" },
+  { label_ar: "الكاميرا الأمامية",                 category: "الكاميرات و Face ID" },
+  { label_ar: "Center Stage",                       category: "الكاميرات و Face ID" },
+  { label_ar: "الكاميرا الخلفية",                  category: "الكاميرات و Face ID" },
+  { label_ar: "ماسح LiDAR (Pro)",                  category: "الكاميرات و Face ID" },
+  { label_ar: "Face ID",                            category: "الكاميرات و Face ID" },
+  { label_ar: "زر الباور / Touch ID",              category: "الأزرار" },
+  { label_ar: "أزرار الصوت",                       category: "الأزرار" },
+  { label_ar: "الواي فاي",                         category: "الاتصال" },
+  { label_ar: "بلوتوث",                            category: "الاتصال" },
+  { label_ar: "خلوي / SIM (للموديلات الخلوية)",   category: "الاتصال" },
+  { label_ar: "eSIM",                              category: "الاتصال" },
+  { label_ar: "GPS",                               category: "الاتصال" },
+  { label_ar: "مستشعر التسارع والجايروسكوب",       category: "المستشعرات" },
+  { label_ar: "مستشعر الإضاءة المحيطة",            category: "المستشعرات" },
+  { label_ar: "البارومتر",                         category: "المستشعرات" },
+  { label_ar: "البوصلة",                           category: "المستشعرات" },
+  { label_ar: "السماعات (4 أو 2)",                category: "الصوت والمايكروفونات" },
+  { label_ar: "المايكات",                          category: "الصوت والمايكروفونات" },
+  { label_ar: "Smart Connector (للكيبورد)",        category: "الملحقات" },
+  { label_ar: "موصل MagSafe / Smart Folio",        category: "الملحقات" },
+  { label_ar: "USB-C / Lightning شحن وبيانات",    category: "الشحن والبطارية" },
+  { label_ar: "صحة البطارية",                      category: "الشحن والبطارية" },
+  { label_ar: "حالة الهيكل",                       category: "الفحص الخارجي" },
+  { label_ar: "حالة الزجاج",                       category: "الفحص الخارجي" },
+  { label_ar: "مؤشر تلف المياه",                   category: "الفحص الخارجي" },
+  { label_ar: "حالة المسامير / مفتوح مسبقاً",      category: "الفحص الخارجي" },
+  { label_ar: "درج الشريحة",                       category: "الفحص الخارجي" },
+];
+
+const WATCH_CHECKLIST: SeedItem[] = [
+  { label_ar: "حالة الشاشة",                       category: "الشاشة" },
+  { label_ar: "اللمس / Force Touch",                category: "الشاشة" },
+  { label_ar: "Always-On Display",                  category: "الشاشة" },
+  { label_ar: "الإضاءة / السطوع",                  category: "الشاشة" },
+  { label_ar: "Digital Crown — تدوير",              category: "التحكم" },
+  { label_ar: "Digital Crown — ضغط",                category: "التحكم" },
+  { label_ar: "Side Button",                        category: "التحكم" },
+  { label_ar: "Action Button (Ultra)",              category: "التحكم" },
+  { label_ar: "مستشعر نبض القلب",                  category: "المستشعرات الصحية" },
+  { label_ar: "ECG (تخطيط القلب)",                 category: "المستشعرات الصحية" },
+  { label_ar: "SpO2 (الأكسجين)",                   category: "المستشعرات الصحية" },
+  { label_ar: "مستشعر درجة الحرارة (Series 8+)",  category: "المستشعرات الصحية" },
+  { label_ar: "مستشعر التسارع والجايروسكوب",       category: "المستشعرات" },
+  { label_ar: "البارومتر / الارتفاع",              category: "المستشعرات" },
+  { label_ar: "البوصلة",                           category: "المستشعرات" },
+  { label_ar: "GPS",                               category: "الاتصال" },
+  { label_ar: "الواي فاي",                         category: "الاتصال" },
+  { label_ar: "بلوتوث",                            category: "الاتصال" },
+  { label_ar: "الخلوي (Cellular موديل)",           category: "الاتصال" },
+  { label_ar: "السماعة",                           category: "الصوت" },
+  { label_ar: "المايك",                            category: "الصوت" },
+  { label_ar: "Taptic Engine (الاهتزاز)",          category: "الصوت" },
+  { label_ar: "موصل الشحن (المغناطيسي)",          category: "الشحن والبطارية" },
+  { label_ar: "صحة البطارية",                      category: "الشحن والبطارية" },
+  { label_ar: "آلية تركيب السوار (يمين)",          category: "الهيكل والسوار" },
+  { label_ar: "آلية تركيب السوار (يسار)",          category: "الهيكل والسوار" },
+  { label_ar: "حالة الهيكل / الإطار",              category: "الهيكل والسوار" },
+  { label_ar: "زجاج خلفي (المستشعرات)",            category: "الهيكل والسوار" },
+  { label_ar: "مقاومة الماء",                      category: "الهيكل والسوار" },
+];
+
+const AIRPODS_CHECKLIST: SeedItem[] = [
+  { label_ar: "صوت السماعة اليمنى (R)",            category: "الصوت — يمين" },
+  { label_ar: "مايك السماعة اليمنى (R)",           category: "الصوت — يمين" },
+  { label_ar: "حساس اللمس / الضغط (R)",            category: "الصوت — يمين" },
+  { label_ar: "حساس وضع الأذن (R)",                category: "الصوت — يمين" },
+  { label_ar: "صوت السماعة اليسرى (L)",            category: "الصوت — يسار" },
+  { label_ar: "مايك السماعة اليسرى (L)",           category: "الصوت — يسار" },
+  { label_ar: "حساس اللمس / الضغط (L)",            category: "الصوت — يسار" },
+  { label_ar: "حساس وضع الأذن (L)",                category: "الصوت — يسار" },
+  { label_ar: "إلغاء الضوضاء (ANC)",               category: "ميزات الصوت" },
+  { label_ar: "وضع الشفافية (Transparency)",       category: "ميزات الصوت" },
+  { label_ar: "الصوت المكاني (Spatial Audio)",     category: "ميزات الصوت" },
+  { label_ar: "بطارية السماعة اليمنى",             category: "البطارية" },
+  { label_ar: "بطارية السماعة اليسرى",             category: "البطارية" },
+  { label_ar: "بطارية العلبة (Case)",              category: "البطارية" },
+  { label_ar: "منفذ شحن العلبة (USB-C / Lightning)", category: "العلبة (Case)" },
+  { label_ar: "الشحن اللاسلكي للعلبة",             category: "العلبة (Case)" },
+  { label_ar: "MagSafe (إن وجد)",                  category: "العلبة (Case)" },
+  { label_ar: "زر العلبة الخلفي (Pairing)",        category: "العلبة (Case)" },
+  { label_ar: "مؤشر LED الأمامي",                  category: "العلبة (Case)" },
+  { label_ar: "مفصلة الغطاء (Hinge)",             category: "العلبة (Case)" },
+  { label_ar: "إغلاق مغناطيسي محكم",               category: "العلبة (Case)" },
+  { label_ar: "حالة الجسم الخارجي للسماعات",      category: "الفحص الخارجي" },
+  { label_ar: "حالة الجسم الخارجي للعلبة",         category: "الفحص الخارجي" },
+  { label_ar: "نقاط الشحن (الذهبية) للسماعات",    category: "الفحص الخارجي" },
+  { label_ar: "Find My / المسلسل مسجّل",           category: "الفحص الخارجي" },
+];
+
+const MAC_CHECKLIST: SeedItem[] = [
+  { label_ar: "حالة الشاشة / Retina",               category: "الشاشة" },
+  { label_ar: "إضاءة الشاشة",                      category: "الشاشة" },
+  { label_ar: "True Tone / ProMotion",             category: "الشاشة" },
+  { label_ar: "Notch (للموديلات الجديدة)",         category: "الشاشة" },
+  { label_ar: "كل أزرار الكيبورد",                category: "الكيبورد والترك باد" },
+  { label_ar: "إضاءة الكيبورد (Backlit)",          category: "الكيبورد والترك باد" },
+  { label_ar: "Touch Bar (إن وجد)",                category: "الكيبورد والترك باد" },
+  { label_ar: "Touch ID",                           category: "الكيبورد والترك باد" },
+  { label_ar: "Trackpad — اللمس",                   category: "الكيبورد والترك باد" },
+  { label_ar: "Trackpad — Force Click",             category: "الكيبورد والترك باد" },
+  { label_ar: "كاميرا FaceTime",                   category: "الكاميرا والصوت" },
+  { label_ar: "السماعات",                          category: "الكاميرا والصوت" },
+  { label_ar: "صفيف المايكات",                     category: "الكاميرا والصوت" },
+  { label_ar: "Thunderbolt / USB-C — كل المنافذ",  category: "المنافذ" },
+  { label_ar: "MagSafe (إن وجد)",                  category: "المنافذ" },
+  { label_ar: "HDMI",                              category: "المنافذ" },
+  { label_ar: "SD Card Reader",                    category: "المنافذ" },
+  { label_ar: "منفذ السماعات (3.5mm)",             category: "المنافذ" },
+  { label_ar: "الواي فاي",                         category: "الاتصال" },
+  { label_ar: "بلوتوث",                            category: "الاتصال" },
+  { label_ar: "AirDrop / Continuity",              category: "الاتصال" },
+  { label_ar: "الشاحن الأصلي",                    category: "الشحن والبطارية" },
+  { label_ar: "صحة البطارية / دورات الشحن",       category: "الشحن والبطارية" },
+  { label_ar: "أداء المعالج (Benchmark)",          category: "الأداء والحرارة" },
+  { label_ar: "المروحة وضوضاء التشغيل",            category: "الأداء والحرارة" },
+  { label_ar: "حرارة التشغيل تحت الحمل",           category: "الأداء والحرارة" },
+  { label_ar: "حالة الهيكل / الغطاء",              category: "الفحص الخارجي" },
+  { label_ar: "المفصلة (Hinge)",                   category: "الفحص الخارجي" },
+  { label_ar: "حالة المسامير / مفتوح مسبقاً",      category: "الفحص الخارجي" },
+  { label_ar: "علامات سوائل / صدأ داخلي",          category: "الفحص الخارجي" },
+];
+
+const ANDROID_PHONE_CHECKLIST: SeedItem[] = [
   { label_ar: "حالة الشاشة",                      category: "الشاشة واللمس" },
   { label_ar: "أصلية / تقليد",                    category: "الشاشة واللمس" },
   { label_ar: "اللمس",                             category: "الشاشة واللمس" },
   { label_ar: "بصمة الشاشة (In-Display)",          category: "الشاشة واللمس" },
   { label_ar: "الإضاءة",                           category: "الشاشة واللمس" },
   { label_ar: "Always On Display",                 category: "الشاشة واللمس" },
-  /* الكاميرات */
   { label_ar: "الكاميرا الأمامية",                 category: "الكاميرات" },
   { label_ar: "الكاميرا الخلفية الرئيسية",         category: "الكاميرات" },
   { label_ar: "الكاميرا الواسعة",                  category: "الكاميرات" },
   { label_ar: "كاميرا الماكرو / التقريب",          category: "الكاميرات" },
   { label_ar: "الفلاش",                            category: "الكاميرات" },
-  /* الأزرار والبصمة */
   { label_ar: "زر رفع الصوت",                      category: "الأزرار والبصمة" },
   { label_ar: "زر خفض الصوت",                      category: "الأزرار والبصمة" },
   { label_ar: "زر الباور",                         category: "الأزرار والبصمة" },
   { label_ar: "بصمة الإصبع الجانبية",              category: "الأزرار والبصمة" },
   { label_ar: "فتح بالوجه (Face Unlock)",          category: "الأزرار والبصمة" },
-  /* الاتصال */
   { label_ar: "إثارة الشبكة / SIM",               category: "الاتصال" },
   { label_ar: "بيانات الموبايل (4G / 5G)",         category: "الاتصال" },
   { label_ar: "واي فاي",                           category: "الاتصال" },
   { label_ar: "بلوتوث",                            category: "الاتصال" },
   { label_ar: "GPS / الموقع",                      category: "الاتصال" },
   { label_ar: "NFC",                               category: "الاتصال" },
-  { label_ar: "إير شير / Nearby Share",            category: "الاتصال" },
-  /* المستشعرات */
   { label_ar: "مستشعر التسارع",                    category: "المستشعرات" },
   { label_ar: "الجايروسكوب",                       category: "المستشعرات" },
   { label_ar: "مستشعر القرب",                      category: "المستشعرات" },
   { label_ar: "مستشعر الإضاءة المحيطة",            category: "المستشعرات" },
   { label_ar: "البارومتر",                         category: "المستشعرات" },
   { label_ar: "البوصلة",                           category: "المستشعرات" },
-  /* الصوت والمايكروفونات */
   { label_ar: "سماعة الأذن",                       category: "الصوت والمايكروفونات" },
   { label_ar: "مكبر الصوت",                        category: "الصوت والمايكروفونات" },
   { label_ar: "مايك الأمامي",                      category: "الصوت والمايكروفونات" },
   { label_ar: "مايك الخلفي",                       category: "الصوت والمايكروفونات" },
   { label_ar: "عزل الصوت",                         category: "الصوت والمايكروفونات" },
   { label_ar: "الاهتزاز",                          category: "الصوت والمايكروفونات" },
-  /* الشحن والبطارية */
   { label_ar: "الشحن السلكي (USB-C)",              category: "الشحن والبطارية" },
   { label_ar: "الشحن اللاسلكي",                    category: "الشحن والبطارية" },
   { label_ar: "الشحن العكسي اللاسلكي",            category: "الشحن والبطارية" },
   { label_ar: "صحة البطارية",                      category: "الشحن والبطارية" },
-  /* الفحص الخارجي */
   { label_ar: "حالة الهيكل",                       category: "الفحص الخارجي" },
   { label_ar: "الزجاج الخلفي / الغطاء",           category: "الفحص الخارجي" },
   { label_ar: "زجاج عدسة الكاميرا",               category: "الفحص الخارجي" },
@@ -178,6 +298,69 @@ const ANDROID_CHECKLIST: SeedItem[] = [
   { label_ar: "درج الشريحة",                       category: "الفحص الخارجي" },
   { label_ar: "حالة منفذ الشحن",                   category: "الفحص الخارجي" },
 ];
+
+const SAMSUNG_PHONE_CHECKLIST: SeedItem[] = ANDROID_PHONE_CHECKLIST.concat([
+  { label_ar: "S Pen (للطرازات Note / S Ultra)",   category: "ملحقات سامسونج" },
+  { label_ar: "Samsung DeX",                        category: "ملحقات سامسونج" },
+]);
+
+const ANDROID_TABLET_CHECKLIST: SeedItem[] = [
+  { label_ar: "حالة الشاشة",                       category: "الشاشة واللمس" },
+  { label_ar: "اللمس متعدد النقاط",                category: "الشاشة واللمس" },
+  { label_ar: "الإضاءة / السطوع",                  category: "الشاشة واللمس" },
+  { label_ar: "الكاميرا الأمامية",                 category: "الكاميرات" },
+  { label_ar: "الكاميرا الخلفية",                  category: "الكاميرات" },
+  { label_ar: "الفلاش",                            category: "الكاميرات" },
+  { label_ar: "أزرار الصوت",                       category: "الأزرار" },
+  { label_ar: "زر الباور / البصمة",                category: "الأزرار" },
+  { label_ar: "فتح بالوجه (Face Unlock)",          category: "الأزرار" },
+  { label_ar: "الواي فاي",                         category: "الاتصال" },
+  { label_ar: "بلوتوث",                            category: "الاتصال" },
+  { label_ar: "خلوي / SIM (للموديلات الخلوية)",   category: "الاتصال" },
+  { label_ar: "GPS",                               category: "الاتصال" },
+  { label_ar: "مستشعر التسارع والجايروسكوب",       category: "المستشعرات" },
+  { label_ar: "مستشعر الإضاءة المحيطة",            category: "المستشعرات" },
+  { label_ar: "البوصلة",                           category: "المستشعرات" },
+  { label_ar: "السماعات",                          category: "الصوت والمايكروفونات" },
+  { label_ar: "المايكات",                          category: "الصوت والمايكروفونات" },
+  { label_ar: "USB-C شحن وبيانات",                category: "الشحن والبطارية" },
+  { label_ar: "صحة البطارية",                      category: "الشحن والبطارية" },
+  { label_ar: "حالة الهيكل",                       category: "الفحص الخارجي" },
+  { label_ar: "حالة الزجاج",                       category: "الفحص الخارجي" },
+  { label_ar: "مؤشر تلف المياه",                   category: "الفحص الخارجي" },
+  { label_ar: "مفتوح مسبقاً",                      category: "الفحص الخارجي" },
+  { label_ar: "درج الشريحة",                       category: "الفحص الخارجي" },
+];
+
+const SAMSUNG_TABLET_CHECKLIST: SeedItem[] = ANDROID_TABLET_CHECKLIST.concat([
+  { label_ar: "S Pen (للطرازات المدعومة)",         category: "ملحقات سامسونج" },
+  { label_ar: "Samsung DeX",                        category: "ملحقات سامسونج" },
+]);
+
+const OTHER_CHECKLIST: SeedItem[] = [
+  { label_ar: "تشغيل الجهاز",                      category: "عام" },
+  { label_ar: "الشاشة (إن وجدت)",                  category: "عام" },
+  { label_ar: "الأزرار",                           category: "عام" },
+  { label_ar: "منفذ الشحن",                        category: "عام" },
+  { label_ar: "البطارية",                          category: "عام" },
+  { label_ar: "الصوت / السماعة",                   category: "عام" },
+  { label_ar: "الاتصال (واي فاي / بلوتوث)",       category: "عام" },
+  { label_ar: "حالة الهيكل الخارجي",               category: "عام" },
+  { label_ar: "مؤشر تلف المياه",                   category: "عام" },
+];
+
+const SEED_TEMPLATES: Record<string, SeedItem[]> = {
+  iphone:          IPHONE_CHECKLIST,
+  ipad:            IPAD_CHECKLIST,
+  watch:           WATCH_CHECKLIST,
+  airpods:         AIRPODS_CHECKLIST,
+  mac:             MAC_CHECKLIST,
+  samsung_phone:   SAMSUNG_PHONE_CHECKLIST,
+  samsung_tablet:  SAMSUNG_TABLET_CHECKLIST,
+  android_phone:   ANDROID_PHONE_CHECKLIST,
+  android_tablet:  ANDROID_TABLET_CHECKLIST,
+  other:           OTHER_CHECKLIST,
+};
 
 async function ensureCompanyDefaults(companyId: number) {
   /* جلب كل الحالات الموجودة (الـ keys) للشركة */
@@ -258,7 +441,7 @@ router.get("/repair-checklist-items", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   await ensureCompanyDefaults(company_id);
   const deviceType = req.query.device_type as string | undefined;
-  const where = deviceType && deviceType !== "general"
+  const where = deviceType
     ? and(eq(repairChecklistItemsTable.company_id, company_id), eq(repairChecklistItemsTable.device_type, deviceType))
     : eq(repairChecklistItemsTable.company_id, company_id);
   const rows = await db.select().from(repairChecklistItemsTable)
@@ -295,27 +478,24 @@ router.post("/repair-checklist-items", wrap(async (req, res) => {
   return res.status(201).json(row);
 }));
 
-/* Seed all items for a platform (apple | android) */
-router.post("/repair-checklist-items/seed-platform", wrap(async (req, res) => {
+/* Seed all items for a specific device type (iphone | ipad | watch | airpods | mac | samsung_phone | etc.) */
+router.post("/repair-checklist-items/seed-device-type", wrap(async (req, res) => {
   const { company_id } = ctx(req);
-  const { platform } = req.body as { platform: string };
-  if (platform !== "apple" && platform !== "android")
-    return res.status(400).json({ error: "platform must be apple or android" });
+  const { device_type } = req.body as { device_type: string };
+  const template = SEED_TEMPLATES[device_type];
+  if (!template) return res.status(400).json({ error: "device_type غير معروف" });
 
-  const template = platform === "apple" ? APPLE_CHECKLIST : ANDROID_CHECKLIST;
-
-  // Check if already seeded
+  /* Check if already seeded */
   const existing = await db.select({ id: repairChecklistItemsTable.id })
     .from(repairChecklistItemsTable)
     .where(and(
       eq(repairChecklistItemsTable.company_id, company_id),
-      eq(repairChecklistItemsTable.device_type, platform),
+      eq(repairChecklistItemsTable.device_type, device_type),
     ))
     .limit(1);
-  if (existing.length > 0)
-    return res.status(409).json({ error: "already_seeded" });
+  if (existing.length > 0) return res.status(409).json({ error: "already_seeded" });
 
-  // Insert all at once with sort_order by category group
+  /* Insert all at once with sort_order by category group */
   const catOrder: Record<string, number> = {};
   const rows = template.map((item) => {
     catOrder[item.category] = (catOrder[item.category] ?? 0) + 1;
@@ -323,11 +503,40 @@ router.post("/repair-checklist-items/seed-platform", wrap(async (req, res) => {
       company_id,
       label_ar: item.label_ar,
       category: item.category,
-      device_type: platform,
+      device_type,
       sort_order: catOrder[item.category],
       is_system: true,
     };
   });
+  await db.insert(repairChecklistItemsTable).values(rows);
+  return res.json({ ok: true, count: rows.length });
+}));
+
+/* Copy checklist items from one device type to another (e.g. derive AirPods from iPhone) */
+router.post("/repair-checklist-items/copy", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const { from, to } = req.body as { from: string; to: string };
+  if (!from || !to || from === to) return res.status(400).json({ error: "from/to invalid" });
+  if (!VALID_DEVICE_TYPES.includes(to as DeviceType)) return res.status(400).json({ error: "to غير معروف" });
+
+  const sourceItems = await db.select().from(repairChecklistItemsTable)
+    .where(and(eq(repairChecklistItemsTable.company_id, company_id), eq(repairChecklistItemsTable.device_type, from)));
+  if (sourceItems.length === 0) return res.status(404).json({ error: "لا توجد بنود في النوع المصدر" });
+
+  const existingTarget = await db.select({ id: repairChecklistItemsTable.id })
+    .from(repairChecklistItemsTable)
+    .where(and(eq(repairChecklistItemsTable.company_id, company_id), eq(repairChecklistItemsTable.device_type, to)))
+    .limit(1);
+  if (existingTarget.length > 0) return res.status(409).json({ error: "already_has_items" });
+
+  const rows = sourceItems.map((s) => ({
+    company_id,
+    label_ar: s.label_ar,
+    category: s.category ?? "عام",
+    device_type: to,
+    sort_order: s.sort_order ?? 0,
+    is_system: false,
+  }));
   await db.insert(repairChecklistItemsTable).values(rows);
   return res.json({ ok: true, count: rows.length });
 }));
@@ -522,6 +731,10 @@ router.post("/repair-jobs", wrap(async (req, res) => {
     customer_id:          b.customer_id ? Number(b.customer_id) : null,
     device_brand:         String(b.device_brand ?? ""),
     device_model:         String(b.device_model ?? ""),
+    device_type:          (() => {
+      const dt = String(b.device_type ?? "general").trim();
+      return VALID_DEVICE_TYPES.includes(dt as DeviceType) ? dt : "general";
+    })(),
     imei:                 b.imei ? String(b.imei) : null,
     serial_no:            b.serial_no ? String(b.serial_no) : null,
     color:                b.color ? String(b.color) : null,
@@ -607,9 +820,15 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
     /* SEC-001: تم حذف "locked" من هنا — يُضبط تلقائياً فقط عند التسليم
        ولا يجب السماح لأي مستخدم بفتح بطاقة مسلّمة يدوياً عبر الـ API */
     "accessories","branch_id","device_pin",
+    "device_brand","device_model",
   ];
   // eslint-disable-next-line security/detect-object-injection
   for (const f of FIELDS) if (f in b) updates[f] = (b as Record<string, unknown>)[f];
+
+  if ("device_type" in b) {
+    const dt = String(b.device_type ?? "general").trim();
+    updates.device_type = VALID_DEVICE_TYPES.includes(dt as DeviceType) ? dt : "general";
+  }
 
   const NUM = ["estimated_cost","final_cost","deposit_paid","external_workshop_cost","broker_commission"];
   // eslint-disable-next-line security/detect-object-injection
