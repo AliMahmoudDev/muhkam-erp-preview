@@ -42,6 +42,7 @@ const ROUTE_FEATURES: Partial<Record<string, keyof CompanyFeatures>> = {
 
 /* ── Lazy-loaded pages ─────────────────────────────────── */
 const Login = lazy(() => import('@/pages/login'));
+const RepairTrack = lazy(() => import('@/pages/repair-track'));
 const Dashboard = lazy(() => import('@/pages/dashboard'));
 const Sales = lazy(() => import('@/pages/sales'));
 const Purchases = lazy(() => import('@/pages/purchases'));
@@ -114,6 +115,15 @@ function Router() {
   const { user, subscriptionExpired } = useAuth();
   const { hasFeature } = useSubscription();
   const [location] = useLocation();
+
+  /* ── PUBLIC: customer repair tracking via QR — no auth required ── */
+  if (location.startsWith('/track/')) {
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <RepairTrack />
+      </Suspense>
+    );
+  }
 
   if (!user) {
     return location === '/login' ? (

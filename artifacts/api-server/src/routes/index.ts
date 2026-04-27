@@ -65,6 +65,7 @@ import scrapItemsRouter from "./scrap-items";
 import badDebtsRouter from "./bad-debts";
 import devicesRouter from "./devices";
 import stockTransfersRouter from "./stock-transfers";
+import repairTrackingRouter from "./repair-tracking";
 
 const router: IRouter = Router();
 
@@ -72,6 +73,7 @@ const router: IRouter = Router();
 router.use(authRouter);   // /auth/users  /auth/login  /auth/me
 router.use(healthRouter); // /health
 router.use(zktecoRouter); // /iclock/cdata  /iclock/getrequest  /api/attendance/zkteco
+router.use(repairTrackingRouter); // /api/public/repair-tracking/:companyId/:jobNo (تتبع العميل عبر QR — مفتوح بدون مصادقة)
 
 /* ── Global auth guard — all routes below require valid JWT ────── */
 router.use(authenticate);

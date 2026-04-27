@@ -30,6 +30,7 @@ interface HistoryEntry {
 
 interface RepairJob {
   id: number;
+  company_id: number;
   job_no: string;
   customer_name: string;
   customer_phone?: string;
@@ -1362,7 +1363,7 @@ function JobDetail({
       baseUrl = saved.baseUrl ?? "";
     } catch { /* ignore */ }
     const effectiveBase = baseUrl || `${window.location.origin}/track`;
-    const trackingUrl   = `${effectiveBase}/${job.job_no}`;
+    const trackingUrl   = `${effectiveBase}/${job.company_id}/${encodeURIComponent(job.job_no)}`;
 
     const svg = document.getElementById(`qr-job-${job.id}`)?.querySelector("svg");
     if (!svg) { toast({ title: "تعذر تحميل الرمز", variant: "destructive" }); return; }
@@ -1428,7 +1429,7 @@ function JobDetail({
       const saved = JSON.parse(localStorage.getItem("repair_qr_settings") ?? "{}") as { baseUrl?: string };
       baseUrl = saved.baseUrl ?? "";
     } catch { /* ignore */ }
-    return `${baseUrl || `${window.location.origin}/track`}/${job.job_no}`;
+    return `${baseUrl || `${window.location.origin}/track`}/${job.company_id}/${encodeURIComponent(job.job_no)}`;
   })();
 
   return (
