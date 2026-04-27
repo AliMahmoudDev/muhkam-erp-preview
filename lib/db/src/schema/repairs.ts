@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, numeric, timestamp, date, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, numeric, timestamp, date, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
 export const repairJobsTable = pgTable("repair_jobs", {
@@ -81,6 +81,7 @@ export const repairStatusesTable = pgTable("repair_statuses", {
   created_at:   timestamp("created_at").defaultNow().notNull(),
 }, (t) => [
   index("repair_statuses_company_idx").on(t.company_id),
+  uniqueIndex("repair_statuses_company_key_unique").on(t.company_id, t.key),
 ]);
 
 export const repairChecklistItemsTable = pgTable("repair_checklist_items", {

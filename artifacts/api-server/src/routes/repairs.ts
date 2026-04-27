@@ -180,13 +180,17 @@ const ANDROID_CHECKLIST: SeedItem[] = [
 ];
 
 async function ensureCompanyDefaults(companyId: number) {
-  const existingStatuses = await db.select({ id: repairStatusesTable.id })
+  /* جلب كل الحالات الموجودة (الـ keys) للشركة */
+  const existing = await db.select({ key: repairStatusesTable.key })
     .from(repairStatusesTable)
-    .where(eq(repairStatusesTable.company_id, companyId))
-    .limit(1);
-  if (existingStatuses.length === 0) {
+    .where(eq(repairStatusesTable.company_id, companyId));
+  const existingKeys = new Set(existing.map(r => r.key));
+
+  /* إضافة فقط الحالات النظامية الناقصة (مثلاً shipped لشركات قديمة) */
+  const missing = SYSTEM_STATUSES.filter(s => !existingKeys.has(s.key));
+  if (missing.length > 0) {
     await db.insert(repairStatusesTable).values(
-      SYSTEM_STATUSES.map(s => ({ ...s, company_id: companyId, is_system: true }))
+      missing.map(s => ({ ...s, company_id: companyId, is_system: true }))
     );
   }
 }
