@@ -16,11 +16,13 @@
 import Redis, { type RedisOptions } from "ioredis";
 import { logger } from "./logger";
 
+const hasRedis = !!(process.env.REDIS_URL || process.env.REDIS_HOST);
+
 const SHARED_OPTS: RedisOptions = {
   maxRetriesPerRequest: 0,      // fail-closed: throw immediately on disconnected command
   enableOfflineQueue: false,    // do not buffer commands while reconnecting
   enableReadyCheck: true,
-  lazyConnect: false,           // connect eagerly so failures surface at startup
+  lazyConnect: !hasRedis,       // lazy when no Redis configured (avoids eager connect errors)
   retryStrategy: (times: number) => {
     /* Reconnect with exponential back-off (max 10 s).
        Commands fail immediately (maxRetriesPerRequest: 0) while the
