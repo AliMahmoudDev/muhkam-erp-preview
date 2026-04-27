@@ -923,25 +923,47 @@ export default function Repairs() {
           </select>
         </div>
 
-        {/* Status Filters */}
+        {/* Status Filters — generated from dashboard cards so they match the cards above */}
         <div className="flex gap-1 flex-wrap">
-          {[
-            { v: "all",         l: "الكل",     dot: ""                    },
-            { v: "pending",     l: "انتظار",   dot: "bg-amber-400"        },
-            { v: "in_progress", l: "جارٍ",     dot: "bg-cyan-400"         },
-            { v: "done",        l: "تم",        dot: "bg-emerald-400"      },
-            { v: "delivered",   l: "تسليم",    dot: "bg-violet-400"       },
-          ].map((f) => (
-            <button key={f.v} onClick={() => setStatusFilter(f.v)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all duration-150 ${
-                statusFilter === f.v
-                  ? "bg-white/10 border-white/20 text-white shadow-sm"
-                  : "border-white/6 text-white/35 hover:text-white/60 hover:border-white/12"
-              }`}>
-              {f.dot && <span className={`w-1.5 h-1.5 rounded-full ${f.dot} ${statusFilter === f.v ? "opacity-100" : "opacity-50"}`} />}
-              {f.l}
-            </button>
-          ))}
+          {/* "All" chip — always first */}
+          <button
+            onClick={() => setStatusFilter("all")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all duration-150 ${
+              statusFilter === "all"
+                ? "bg-white/10 border-white/20 text-white shadow-sm"
+                : "border-white/6 text-white/35 hover:text-white/60 hover:border-white/12"
+            }`}
+          >
+            الكل
+            {dashboard?.total_all != null && (
+              <span className="text-[10px] font-mono opacity-60">{dashboard.total_all}</span>
+            )}
+          </button>
+
+          {/* One chip per dashboard card — matches the cards displayed above */}
+          {(dashboard?.cards ?? []).map((card) => {
+            const Icon  = CARD_ICON_REGISTRY[card.icon] ?? Wrench;
+            const value = card.statuses.join(",");
+            const isActive = statusFilter === value;
+            return (
+              <button
+                key={card.id}
+                onClick={() => setStatusFilter(prev => (prev === value ? "all" : value))}
+                title={card.name}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all duration-150"
+                style={{
+                  background:  isActive ? `${card.color}26` : "transparent",
+                  borderColor: isActive ? `${card.color}88` : `${card.color}33`,
+                  color:       isActive ? "#fff" : `${card.color}cc`,
+                  boxShadow:   isActive ? `0 0 0 1px ${card.color}55` : undefined,
+                }}
+              >
+                <Icon className="w-3 h-3 shrink-0" style={{ color: card.color }} />
+                <span className="truncate max-w-[120px]">{card.name}</span>
+                <span className="text-[10px] font-mono opacity-70">{card.count}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Job List / Grid */}
