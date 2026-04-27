@@ -5,8 +5,9 @@ import {
   MinusCircle, Trash2, Save, ChevronLeft, Send, ClipboardList,
   AlertCircle, Clock, CheckCheck, Truck, Ban,
   Star, Settings, MessageSquare, ChevronRight, RotateCcw,
-  LayoutGrid, List, Package, GitBranch, History,
+  LayoutGrid, List, Package, GitBranch, History, Printer,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency } from "@/lib/format";
@@ -1347,6 +1348,89 @@ function JobDetail({
     });
   };
 
+  /* ── Print QR ticket for THIS job — customer scans to track ───── */
+  const printJobQR = () => {
+    /* SEC: escape HTML entities to prevent XSS in print window */
+    const escHtml = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+       .replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+
+    /* Read saved baseUrl from localStorage (set in RepairSettingsModal QR tab) */
+    let baseUrl = "";
+    try {
+      const saved = JSON.parse(localStorage.getItem("repair_qr_settings") ?? "{}") as { baseUrl?: string };
+      baseUrl = saved.baseUrl ?? "";
+    } catch { /* ignore */ }
+    const effectiveBase = baseUrl || `${window.location.origin}/track`;
+    const trackingUrl   = `${effectiveBase}/${job.job_no}`;
+
+    const svg = document.getElementById(`qr-job-${job.id}`)?.querySelector("svg");
+    if (!svg) { toast({ title: "تعذر تحميل الرمز", variant: "destructive" }); return; }
+    const svgStr = new XMLSerializer().serializeToString(svg);
+    const win = window.open("", "_blank", "width=420,height=720");
+    if (!win) { toast({ title: "السماح بالنوافذ مطلوب للطباعة", variant: "destructive" }); return; }
+    win.document.write(`<!doctype html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8" />
+<title>QR — ${escHtml(job.job_no)}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", "Tahoma", sans-serif; background: #fff; color: #111;
+    display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .ticket { border: 2px dashed #999; border-radius: 16px; padding: 24px 28px; text-align: center; width: 320px; }
+  .brand { font-size: 11px; color: #888; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 14px; }
+  .title { font-size: 17px; font-weight: 800; margin-bottom: 4px; color: #111; }
+  .sub { font-size: 12px; color: #555; margin-bottom: 18px; }
+  .qr-box { background: #fff; padding: 8px; border: 1px solid #eee; border-radius: 12px; display: inline-block; margin-bottom: 18px; }
+  .qr-box svg { display: block; width: 200px; height: 200px; }
+  .job-no { font-family: ui-monospace, "SF Mono", monospace; font-size: 16px; font-weight: 700;
+    background: #f3f4f6; padding: 8px 18px; border-radius: 999px; display: inline-block; margin-bottom: 14px; }
+  .info { text-align: right; font-size: 12px; color: #333; line-height: 1.8; padding: 12px 16px;
+    background: #fafafa; border-radius: 10px; margin-bottom: 12px; }
+  .info b { color: #111; font-weight: 700; display: inline-block; min-width: 70px; }
+  .url { font-family: ui-monospace, monospace; font-size: 9px; color: #888; word-break: break-all; padding: 0 6px; }
+  .footer { margin-top: 14px; font-size: 11px; color: #666; line-height: 1.6; border-top: 1px solid #eee; padding-top: 12px; }
+  @media print {
+    .ticket { border: 1px solid #000; }
+    @page { size: A6; margin: 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="ticket">
+    <div class="brand">MUHKAM ERP — صيانة</div>
+    <div class="title">إيصال متابعة الصيانة</div>
+    <div class="sub">صوّر الرمز لمتابعة حالة جهازك</div>
+    <div class="qr-box">${svgStr}</div>
+    <div class="job-no">${escHtml(job.job_no)}</div>
+    <div class="info">
+      <div><b>العميل:</b> ${escHtml(job.customer_name ?? "")}</div>
+      <div><b>الجهاز:</b> ${escHtml(`${job.device_brand ?? ""} ${job.device_model ?? ""}`.trim())}</div>
+      ${job.problem_description ? `<div><b>العطل:</b> ${escHtml(job.problem_description)}</div>` : ""}
+    </div>
+    <div class="url">${escHtml(trackingUrl)}</div>
+    <div class="footer">شكراً لاختياركم خدمتنا<br/>سيتم تحديثكم بكل مرحلة من الإصلاح</div>
+  </div>
+  <script>
+    window.onload = function() { setTimeout(function(){ window.print(); }, 250); };
+    window.onafterprint = function() { window.close(); };
+  </script>
+</body>
+</html>`);
+    win.document.close();
+  };
+
+  /* compose tracking URL for the hidden QR SVG */
+  const jobTrackingUrl = (() => {
+    let baseUrl = "";
+    try {
+      const saved = JSON.parse(localStorage.getItem("repair_qr_settings") ?? "{}") as { baseUrl?: string };
+      baseUrl = saved.baseUrl ?? "";
+    } catch { /* ignore */ }
+    return `${baseUrl || `${window.location.origin}/track`}/${job.job_no}`;
+  })();
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* ── Top bar ── */}
@@ -1370,6 +1454,11 @@ function JobDetail({
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={printJobQR}
+              title="طباعة إيصال QR لمتابعة العميل"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg border border-violet-500/25 text-violet-300 text-[10px] font-bold hover:bg-violet-500/10 transition-all">
+              <Printer className="w-3 h-3" /> طباعة QR
+            </button>
             <button onClick={() => onWhatsApp(job, whatsAppProgress(job))}
               title="تحديث الحالة واتساب"
               className="flex items-center gap-1 px-2 py-1 rounded-lg border border-[#25D366]/25 text-[#25D366] text-[10px] font-bold hover:bg-[#25D366]/10 transition-all">
@@ -1386,6 +1475,10 @@ function JobDetail({
               className="w-7 h-7 rounded-xl border border-red-500/15 flex items-center justify-center text-red-400/40 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/8 transition-all">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
+          </div>
+          {/* hidden QR — provides the SVG that printJobQR serializes */}
+          <div id={`qr-job-${job.id}`} className="absolute -left-[9999px] -top-[9999px]" aria-hidden>
+            <QRCodeSVG value={jobTrackingUrl} size={200} level="M" includeMargin={false} />
           </div>
         </div>
         {/* Row 2: status badge */}
