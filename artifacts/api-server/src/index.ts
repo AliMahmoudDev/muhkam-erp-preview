@@ -9,6 +9,7 @@ import { seedDefaults } from "./lib/seed-defaults";
 import { initRLS } from "./lib/rls-init";
 import { purgeExpiredRefreshTokens } from "./lib/refresh-token-store";
 import { pool } from "@workspace/db";
+import { sendTelegramAlert } from "./lib/telegram";
 
 /* ── Startup: validate required environment variables ──────── */
 const REQUIRED_ENV_VARS = ["JWT_SECRET", "JWT_REFRESH_SECRET", "DATABASE_URL"] as const;
@@ -62,6 +63,9 @@ async function main() {
       process.exit(1);
     }
     logger.info(`Backend started on port ${PORT}`);
+    void sendTelegramAlert(
+      `🚀 *مُحكم ERP* يعمل بشكل طبيعي\nالسيرفر شغال على البورت ${PORT}\nالوقت: ${new Date().toLocaleString("ar-EG")}`
+    );
     startBackupScheduler();
     startDbBackupScheduler();
     startTrialScheduler();

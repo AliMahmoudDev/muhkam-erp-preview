@@ -59,6 +59,8 @@ services:
       NODE_ENV: production
       ALLOWED_ORIGINS: https://halaltec.com
       BACKUP_DIR: /app/backups
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
     volumes:
       - api_backups:/app/backups
       # ULTIMATE frontend static files

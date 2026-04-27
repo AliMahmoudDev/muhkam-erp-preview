@@ -15,6 +15,7 @@ import { logger } from './lib/logger';
 import { sanitizeBody } from './middleware/auth';
 import { makeRateLimitStore } from './lib/rate-limit-store';
 import { recordRequest } from './lib/request-counter';
+import { sendTelegramAlert } from './lib/telegram';
 import { requestTimeout } from './middleware/request-timeout';
 import { perTenantRateLimit } from './middleware/per-tenant-rate-limit';
 
@@ -152,6 +153,22 @@ app.use(requestTimeout);
 app.use((_req, res, next) => {
   const start = Date.now();
   res.on('finish', () => recordRequest(res.statusCode, Date.now() - start));
+  next();
+});
+
+/* ── Slow API response alert (> 3000ms) ─────────────────────── */
+const SLOW_THRESHOLD_MS = 3000;
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const responseTime = Date.now() - start;
+    if (responseTime > SLOW_THRESHOLD_MS) {
+      const companyId = (req.headers['x-company-id'] as string | undefined) ?? 'غير معروف';
+      void sendTelegramAlert(
+        `⚠️ *تحذير: استجابة بطيئة*\nالمسار: ${req.method} ${req.path}\nالوقت: ${responseTime}ms\nالشركة: ${companyId}`
+      );
+    }
+  });
   next();
 });
 

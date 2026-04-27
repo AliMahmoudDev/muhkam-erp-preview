@@ -9,6 +9,7 @@
  */
 
 import { logger } from './logger';
+import { sendTelegramAlert } from './telegram';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_SEC = 15 * 60; // 15 دقيقة
@@ -79,7 +80,7 @@ export async function getLoginLockout(userId: number): Promise<LockoutEntry> {
   return memLoginMap.get(userId) ?? { attempts: 0, lockedUntil: null };
 }
 
-export async function recordLoginFailure(userId: number): Promise<LockoutEntry> {
+export async function recordLoginFailure(userId: number, ip?: string): Promise<LockoutEntry> {
   const now = Date.now();
   const entry = await getLoginLockout(userId);
 
@@ -91,6 +92,11 @@ export async function recordLoginFailure(userId: number): Promise<LockoutEntry> 
     const attempts = entry.attempts + 1;
     const lockedUntil = attempts >= MAX_ATTEMPTS ? now + LOCKOUT_MS : null;
     updated = { attempts, lockedUntil };
+    if (lockedUntil !== null) {
+      void sendTelegramAlert(
+        `🔒 *محاولة اختراق محتملة*\nIP: ${ip ?? 'غير متاح'}\nعدد المحاولات: ${attempts}\nالوقت: ${new Date().toLocaleString("ar-EG")}`
+      );
+    }
   }
 
   if (redis) {

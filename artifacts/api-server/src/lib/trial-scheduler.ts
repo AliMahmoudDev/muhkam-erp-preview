@@ -33,6 +33,7 @@ import { and, eq, not } from "drizzle-orm";
 import { db, companiesTable } from "@workspace/db";
 import { logger } from "./logger";
 import { scoreAllTrialCompanies } from "./trial-scoring";
+import { sendTelegramAlert } from "./telegram";
 
 const TICK_MS = 60 * 60 * 1000; // every hour
 
@@ -179,6 +180,13 @@ async function processConversionTriggers(): Promise<void> {
         logger.warn(
           { companyId: company.id, email: company.admin_email, dayElapsed, daysLeft },
           "[trial-scheduler] [EXPIRY] trial ending soon notification"
+        );
+      }
+
+      /* Alert 5 — Telegram: اشتراك على وشك الانتهاء (3 أيام أو أقل) */
+      if (daysLeft >= 0 && daysLeft <= 3) {
+        void sendTelegramAlert(
+          `⚠️ *اشتراك على وشك الانتهاء*\nالشركة: ${company.name}\nتاريخ الانتهاء: ${new Date(company.end_date).toLocaleDateString("ar-EG")}\nالأيام المتبقية: ${daysLeft}`
         );
       }
     } catch (err) {
