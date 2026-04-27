@@ -1,0 +1,113 @@
+/**
+ * repair-pipeline.service.ts
+ *
+ * خدمة التحقق من صحة انتقالات حالات بطاقات الصيانة.
+ * تضمن أن الانتقال بين الحالات يتبع الترتيب المحدد مسبقاً
+ * وأن جميع المتطلبات مستوفاة قبل الانتقال.
+ */
+
+const PIPELINE_ORDER = [
+  'received', 'initial_inspection', 'diagnosis',
+  'waiting_customer_approval', 'approved', 'in_repair',
+  'repaired', 'final_quality_check', 'ready_for_delivery', 'delivered'
+] as const;
+
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  received:                  ['initial_inspection', 'cancelled'],
+  initial_inspection:        ['diagnosis', 'cancelled'],
+  diagnosis:                 ['waiting_customer_approval', 'cancelled'],
+  waiting_customer_approval: ['approved', 'rejected'],
+  approved:                  ['in_repair'],
+  in_repair:                 ['repaired'],
+  repaired:                  ['final_quality_check'],
+  final_quality_check:       ['ready_for_delivery'],
+  ready_for_delivery:        ['delivered'],
+  delivered:                 [],
+  rejected:                  [],
+  cancelled:                 [],
+};
+
+const STAGE_REQUIREMENTS: Record<string, { field: string; label_ar: string }[]> = {
+  initial_inspection: [
+    { field: 'technician_id', label_ar: 'يجب تعيين فني مسؤول' },
+    { field: 'checklist',     label_ar: 'يجب إكمال قائمة الفحص الأولي' },
+  ],
+  diagnosis: [
+    { field: 'problem_description', label_ar: 'يجب كتابة وصف المشكلة' },
+    { field: 'estimated_cost',      label_ar: 'يجب إدخال التكلفة التقديرية' },
+  ],
+  in_repair: [
+    { field: 'technician_id', label_ar: 'يجب تعيين فني مسؤول' },
+  ],
+  repaired: [
+    { field: 'final_cost', label_ar: 'يجب إدخال التكلفة النهائية' },
+  ],
+  ready_for_delivery: [
+    { field: 'final_cost', label_ar: 'يجب إدخال التكلفة النهائية' },
+  ],
+};
+
+/**
+ * يتحقق من صحة الانتقال بين حالتين في Pipeline الصيانة.
+ *
+ * @param currentStatus - الحالة الحالية لبطاقة الصيانة
+ * @param targetStatus  - الحالة المطلوب الانتقال إليها
+ * @param jobData       - بيانات بطاقة الصيانة الكاملة
+ * @returns كائن يحتوي على: allowed (مسموح أم لا) و errors (قائمة الأخطاء بالعربية)
+ */
+export function validateTransition(
+  currentStatus: string,
+  targetStatus: string,
+  jobData: Record<string, unknown>
+): { allowed: boolean; errors: string[] } {
+  const allowed = ALLOWED_TRANSITIONS[currentStatus];
+
+  if (!allowed) {
+    return { allowed: true, errors: [] };
+  }
+
+  if (!allowed.includes(targetStatus)) {
+    return {
+      allowed: false,
+      errors: [`الانتقال من "${currentStatus}" إلى "${targetStatus}" غير مسموح`],
+    };
+  }
+
+  const reqs = STAGE_REQUIREMENTS[targetStatus] ?? [];
+  const errors: string[] = [];
+
+  for (const req of reqs) {
+    const value = jobData[req.field];
+
+    if (req.field === 'checklist') {
+      try {
+        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        if (!Array.isArray(parsed) || parsed.length === 0 || !parsed.some((i: { status?: unknown }) => i.status !== null && i.status !== undefined)) {
+          errors.push(req.label_ar);
+        }
+      } catch {
+        errors.push(req.label_ar);
+      }
+      continue;
+    }
+
+    if (req.field === 'estimated_cost' || req.field === 'final_cost') {
+      if (!value || Number(value) <= 0) {
+        errors.push(req.label_ar);
+      }
+      continue;
+    }
+
+    if (!value || String(value).trim() === '') {
+      errors.push(req.label_ar);
+    }
+  }
+
+  if (errors.length > 0) {
+    return { allowed: false, errors };
+  }
+
+  return { allowed: true, errors: [] };
+}
+
+export { PIPELINE_ORDER, ALLOWED_TRANSITIONS };

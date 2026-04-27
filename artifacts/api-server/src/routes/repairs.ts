@@ -13,6 +13,8 @@ import {
 import { wrap } from "../lib/async-handler";
 import { notifyUser } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
+import { validateTransition } from "../services/repair-pipeline.service";
+import { writeAuditLog } from "../lib/audit-log";
 
 const router: IRouter = Router();
 router.use(["/repair-jobs", "/repair-statuses", "/repair-customers", "/repair-checklist-items", "/scrap-items"], requireFeature("maintenance"));
@@ -518,7 +520,7 @@ router.post("/repair-jobs", wrap(async (req, res) => {
     technician_2_id:      b.technician_2_id ? Number(b.technician_2_id) : null,
     technician_2_name:    b.technician_2_name ? String(b.technician_2_name) : null,
     technician_2_section: b.technician_2_section ? String(b.technician_2_section) : null,
-    status:               "pending",
+    status:               "received",
     estimated_cost:       b.estimated_cost ? String(b.estimated_cost) : "0",
     deposit_paid:         b.deposit_paid ? String(b.deposit_paid) : "0",
     received_at:          String(b.received_at ?? new Date().toISOString().split("T")[0]),
@@ -540,7 +542,7 @@ router.post("/repair-jobs", wrap(async (req, res) => {
   await db.insert(repairStatusHistoryTable).values({
     job_id: job.id,
     company_id,
-    status_to: "pending",
+    status_to: "received",
     user_id,
     user_name,
     event_type: "created",
@@ -573,6 +575,15 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
   if (!existing) return res.status(404).json({ error: "غير موجود" });
   if (existing.locked && !("locked" in b)) {
     return res.status(400).json({ error: "البطاقة مغلقة بعد التسليم — لا يمكن التعديل" });
+  }
+
+  if ("status" in b && String(b.status) !== existing.status) {
+    const jobData: Record<string, unknown> = { ...existing as Record<string, unknown> };
+    for (const k of Object.keys(b)) jobData[k] = (b as Record<string, unknown>)[k];
+    const { allowed, errors } = validateTransition(existing.status, String(b.status), jobData);
+    if (!allowed) {
+      return res.status(422).json({ error: errors.join(', ') });
+    }
   }
 
   const updates: Record<string, unknown> = { updated_at: new Date() };
@@ -614,8 +625,17 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
       status_to: String(b.status),
       user_id,
       user_name,
-      event_type: "status_change",
-      note: b.status_note ? String(b.status_note) : null,
+      event_type: "pipeline_transition",
+      note: "انتقال تلقائي عبر Pipeline",
+    });
+    void writeAuditLog({
+      action: "repair_status_change",
+      record_type: "repair_job",
+      record_id: id,
+      old_value: { status: existing.status },
+      new_value: { status: String(b.status) },
+      user: { id: user_id, username: user_name },
+      company_id,
     });
   }
 

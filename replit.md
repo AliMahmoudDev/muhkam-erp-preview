@@ -47,6 +47,15 @@ Key backend files with inline comments:
 - Fixed `artifacts/erp-system/src/components/ui/spinner.tsx`: `React.ComponentProps<typeof Loader2Icon>` instead of `<"svg">`
 - Added `pnpm.overrides` in root `package.json` to deduplicate `@types/react` and fix `calendar.tsx` dual-types TS error
 
+## Repair Pipeline System (April 2026)
+- Added `repair_pipeline_config` table in DB and schema (`lib/db/src/schema/repairs.ts`)
+- Created `artifacts/api-server/src/services/repair-pipeline.service.ts`: validates pipeline transitions with ALLOWED_TRANSITIONS + STAGE_REQUIREMENTS
+- PATCH `/api/repair-jobs/:id` now intercepts `status` changes and validates via `validateTransition()` — returns HTTP 422 if invalid
+- All status transitions are logged to `repair_status_history` (event_type: `pipeline_transition`) and `audit_logs` (action: `repair_status_change`)
+- Created `artifacts/erp-system/src/components/RepairPipeline.tsx`: horizontal scrollable pipeline bar with modals, Arabic RTL
+- Wired RepairPipeline into JobDetail in `repairs.tsx` — replaces old status buttons
+- New job initial status changed from `pending` to `received`
+
 ## Super Admin Panel — 6 New Features (April 2026 — Session 7)
 
 ### DB

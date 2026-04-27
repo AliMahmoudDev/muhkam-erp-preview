@@ -153,6 +153,20 @@ export const badDebtsTable = pgTable("bad_debts", {
   index("bad_debts_status_idx").on(t.status),
 ]);
 
+export const repairPipelineConfigTable = pgTable("repair_pipeline_config", {
+  id:           serial("id").primaryKey(),
+  company_id:   integer("company_id").notNull(),
+  status_key:   text("status_key").notNull(),
+  label_ar:     text("label_ar").notNull(),
+  color:        text("color").notNull(),
+  icon:         text("icon").notNull(),
+  sort_order:   integer("sort_order").notNull(),
+  requirements: text("requirements"),
+  created_at:   timestamp("created_at").defaultNow(),
+}, (t) => [
+  index("repair_pipeline_config_company_idx").on(t.company_id),
+]);
+
 export const insertRepairJobSchema = createInsertSchema(repairJobsTable).omit({ id: true, created_at: true, updated_at: true });
 export const insertRepairJobPartSchema = createInsertSchema(repairJobPartsTable).omit({ id: true, created_at: true });
 export const insertRepairStatusSchema = createInsertSchema(repairStatusesTable).omit({ id: true, created_at: true });
@@ -167,3 +181,4 @@ export type RepairChecklistItem = typeof repairChecklistItemsTable.$inferSelect;
 export type RepairStatusHistory = typeof repairStatusHistoryTable.$inferSelect;
 export type ScrapItem = typeof scrapItemsTable.$inferSelect;
 export type BadDebt = typeof badDebtsTable.$inferSelect;
+export type RepairPipelineConfig = typeof repairPipelineConfigTable.$inferSelect;

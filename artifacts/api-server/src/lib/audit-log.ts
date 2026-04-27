@@ -55,7 +55,8 @@ export type AuditAction =
   | "TRIAL_REGISTRATION_MANUAL_PAUSED"      // super admin paused manually
   | "TRIAL_REGISTRATION_RESUMED"            // super admin resumed
   | "TRIAL_MONITORING_WARNING_CLEARED"      // super admin cleared warning
-  | "TRIAL_GUARD_UNBLOCK_IP";              // super admin cleared Redis blocks for an IP
+  | "TRIAL_GUARD_UNBLOCK_IP"              // super admin cleared Redis blocks for an IP
+  | "repair_status_change";              // تغيير حالة بطاقة صيانة عبر Pipeline
 
 export type AuditRecordType =
   | "customer"
@@ -85,7 +86,8 @@ export type AuditRecordType =
   | "system"                 // tenant-level system actions (restore, etc.)
   | "announcement"           // super-admin announcements
   | "warranty"              // warranty records
-  | "trial_monitoring";     // trial registration monitoring actions
+  | "trial_monitoring"      // trial registration monitoring actions
+  | "repair_job";           // بطاقة صيانة
 
 interface AuditUser {
   id?: number;

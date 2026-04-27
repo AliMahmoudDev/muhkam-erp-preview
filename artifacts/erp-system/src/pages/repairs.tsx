@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency } from "@/lib/format";
 import { api } from '@/lib/api';
+import RepairPipeline from "@/components/RepairPipeline";
 
 
 /* ── Types ──────────────────────────────────────────────────── */
@@ -286,11 +287,21 @@ const DEVICE_CATALOG: Record<string, Record<string, string[]>> = {
 };
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string; icon: React.FC<{ className?: string }> }> = {
-  pending:     { label: "انتظار",      color: "text-amber-400",   bg: "bg-amber-500/15 border-amber-500/30",   icon: Clock },
-  in_progress: { label: "جارٍ الإصلاح", color: "text-blue-400",    bg: "bg-blue-500/15 border-blue-500/30",     icon: Wrench },
-  done:        { label: "تم الإصلاح",  color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30", icon: CheckCheck },
-  delivered:   { label: "تم التسليم", color: "text-purple-400",  bg: "bg-purple-500/15 border-purple-500/30", icon: Truck },
-  cancelled:   { label: "ملغي",        color: "text-red-400",     bg: "bg-red-500/15 border-red-500/30",       icon: Ban },
+  pending:                    { label: "انتظار",                color: "text-amber-400",    bg: "bg-amber-500/15 border-amber-500/30",    icon: Clock },
+  in_progress:                { label: "جارٍ الإصلاح",          color: "text-blue-400",     bg: "bg-blue-500/15 border-blue-500/30",      icon: Wrench },
+  done:                       { label: "تم الإصلاح",            color: "text-emerald-400",  bg: "bg-emerald-500/15 border-emerald-500/30", icon: CheckCheck },
+  delivered:                  { label: "تم التسليم",            color: "text-purple-400",   bg: "bg-purple-500/15 border-purple-500/30",  icon: Truck },
+  cancelled:                  { label: "ملغي",                  color: "text-red-400",      bg: "bg-red-500/15 border-red-500/30",        icon: Ban },
+  received:                   { label: "استلام الجهاز",          color: "text-violet-400",   bg: "bg-violet-500/15 border-violet-500/30",  icon: Package },
+  initial_inspection:         { label: "الفحص الأولي",           color: "text-indigo-400",   bg: "bg-indigo-500/15 border-indigo-500/30",  icon: Search },
+  diagnosis:                  { label: "التشخيص",               color: "text-blue-400",     bg: "bg-blue-500/15 border-blue-500/30",      icon: AlertCircle },
+  waiting_customer_approval:  { label: "انتظار موافقة العميل",   color: "text-amber-400",    bg: "bg-amber-500/15 border-amber-500/30",    icon: Clock },
+  approved:                   { label: "تمت الموافقة",           color: "text-emerald-400",  bg: "bg-emerald-500/15 border-emerald-500/30", icon: CheckCircle2 },
+  in_repair:                  { label: "جاري الإصلاح",          color: "text-cyan-400",     bg: "bg-cyan-500/15 border-cyan-500/30",      icon: Wrench },
+  repaired:                   { label: "تم الإصلاح",            color: "text-teal-400",     bg: "bg-teal-500/15 border-teal-500/30",      icon: CheckCheck },
+  final_quality_check:        { label: "مراقبة الجودة",          color: "text-purple-400",   bg: "bg-purple-500/15 border-purple-500/30",  icon: Star },
+  ready_for_delivery:         { label: "جاهز للتسليم",          color: "text-lime-400",     bg: "bg-lime-500/15 border-lime-500/30",      icon: Package },
+  rejected:                   { label: "مرفوض",                 color: "text-red-400",      bg: "bg-red-500/15 border-red-500/30",        icon: XCircle },
 };
 
 /* ── Score Helpers ──────────────────────────────────────────── */
@@ -1706,18 +1717,12 @@ function JobDetail({
       {/* ── Scrollable Body ── */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-        {/* Status Actions */}
-        <div className="glass-panel rounded-2xl p-3 border border-white/5">
-          <p className="text-[10px] text-white/40 mb-2">تغيير حالة البطاقة</p>
-          <div className="flex flex-wrap gap-1.5">
-            {Object.entries(STATUS_MAP).map(([k, v]) => (
-              <button key={k} onClick={() => onPatch({ status: k })}
-                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1 ${job.status === k ? `${v.color} ${v.bg}` : "border-white/10 text-white/40 hover:border-white/20"}`}>
-                <v.icon className="w-2.5 h-2.5" /> {v.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <RepairPipeline
+          currentStatus={job.status}
+          jobId={job.id}
+          jobData={job as { id: number; status: string; [key: string]: unknown }}
+          onStatusChange={(s) => onPatch({ status: s })}
+        />
 
         {/* Two columns: device info + score */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
