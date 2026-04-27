@@ -91,6 +91,10 @@ jobs:
             if [ -f "$APP_DIR/.env" ]; then
               set -a
               source "$APP_DIR/.env"
+              # التحقق من وجود المتغيرات المطلوبة
+              : "${JWT_SECRET:?خطأ: JWT_SECRET غير موجود في ملف .env}"
+              : "${JWT_REFRESH_SECRET:?خطأ: JWT_REFRESH_SECRET غير موجود في ملف .env}"
+              : "${DATABASE_URL:?خطأ: DATABASE_URL غير موجود في ملف .env}"
               set +a
             fi
 
@@ -120,6 +124,12 @@ jobs:
               pm2 start dist/index.mjs --name halaltech-api --cwd "$APP_DIR/artifacts/api-server" --update-env
             fi
             pm2 save
+            # التحقق من تشغيل Redis
+            if ! redis-cli ping > /dev/null 2>&1; then
+              echo "تحذير: Redis غير متاح — التطبيق سيعمل بدون cache"
+            else
+              echo "Redis يعمل بشكل صحيح"
+            fi
 
             sudo cp "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/muhkam
             sudo nginx -t && sudo nginx -s reload

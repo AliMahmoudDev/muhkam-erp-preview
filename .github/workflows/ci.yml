@@ -46,7 +46,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Wait for DB
         run: |
@@ -87,7 +87,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared libraries
         run: pnpm --filter @workspace/api-client-react build
@@ -124,7 +124,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build MuhKam ERP frontend (erp-system)
         run: |
