@@ -50,6 +50,10 @@ services:
     environment:
       DATABASE_URL: postgresql://erpuser:${DB_PASSWORD:-localpassword}@postgres:5432/erp
       JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      # مفتاح توقيع رموز التحديث — مطلوب، يختلف عن JWT_SECRET
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      # مفتاح تشفير رموز TOTP — مطلوب لميزة المصادقة الثنائية
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY}
       REDIS_URL: redis://redis:6379
       PORT: 3000
       NODE_ENV: production
