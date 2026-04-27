@@ -15,6 +15,8 @@ import { notifyUser } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
 import { validateTransition } from "../services/repair-pipeline.service";
 import { writeAuditLog } from "../lib/audit-log";
+import { normalizeName, getNextCustomerCode } from "./customers";
+import { getOrCreateCustomerAccount } from "../lib/auto-account";
 
 const router: IRouter = Router();
 router.use(["/repair-jobs", "/repair-statuses", "/repair-customers", "/repair-checklist-items", "/scrap-items"], requireFeature("maintenance"));
@@ -599,7 +601,22 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
 
   const NUM = ["estimated_cost","final_cost","deposit_paid","external_workshop_cost","broker_commission"];
   // eslint-disable-next-line security/detect-object-injection
-  for (const f of NUM) if (f in b) updates[f] = String((b as Record<string, unknown>)[f]);
+  for (const f of NUM) {
+    if (!(f in b)) continue;
+    // eslint-disable-next-line security/detect-object-injection
+    const raw = (b as Record<string, unknown>)[f];
+    if (raw === null || raw === undefined || String(raw).trim() === "") {
+      // eslint-disable-next-line security/detect-object-injection
+      updates[f] = "0";
+    } else {
+      const num = Number(raw);
+      if (!Number.isFinite(num)) {
+        return res.status(400).json({ error: `قيمة غير صحيحة للحقل ${f}` });
+      }
+      // eslint-disable-next-line security/detect-object-injection
+      updates[f] = String(num);
+    }
+  }
 
   if ("device_score" in b) updates.device_score = b.device_score ? Number(b.device_score) : null;
   if ("checklist" in b)    updates.checklist = JSON.stringify(b.checklist);
@@ -849,28 +866,75 @@ router.post("/repair-customers", wrap(async (req, res) => {
   if (!name)  return res.status(400).json({ error: "اسم العميل مطلوب" });
   if (!phone) return res.status(400).json({ error: "رقم الهاتف مطلوب" });
 
-  /* Duplicate phone check */
-  const dup = await db.execute(sql`
+  const normalized = normalizeName(name);
+
+  /* Duplicate name check (within company) */
+  const dupName = await db.execute(sql`
+    SELECT id, name FROM customers
+    WHERE company_id = ${company_id} AND normalized_name = ${normalized}
+    LIMIT 1
+  `);
+  if ((dupName.rows as unknown[]).length > 0) {
+    const d = (dupName.rows as Record<string, unknown>[])[0];
+    return res.status(400).json({ error: `يوجد عميل بنفس الاسم بالفعل: "${d.name}"`, existing: d });
+  }
+
+  /* Duplicate phone check (within company) */
+  const dupPhone = await db.execute(sql`
     SELECT id, name FROM customers WHERE company_id = ${company_id} AND phone = ${phone} LIMIT 1
   `);
-  if ((dup.rows as unknown[]).length > 0) {
-    const d = (dup.rows as Record<string, unknown>[])[0];
+  if ((dupPhone.rows as unknown[]).length > 0) {
+    const d = (dupPhone.rows as Record<string, unknown>[])[0];
     return res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${d.name}"`, existing: d });
   }
 
-  /* Next customer code */
-  const codeRows = await db.execute(sql`
-    SELECT COALESCE(MAX(customer_code), 1000) + 1 AS next_code FROM customers WHERE company_id = ${company_id}
-  `);
-  const nextCode = Number((codeRows.rows as Record<string, unknown>[])[0]?.next_code ?? 1001);
+  /* Globally-unique next customer_code (UNIQUE constraint is global across companies) */
+  let attempts = 0;
+  let inserted: Record<string, unknown> | null = null;
+  let lastError: unknown = null;
 
-  const result = await db.execute(sql`
-    INSERT INTO customers (name, customer_code, phone, balance, is_customer, is_supplier, source, company_id)
-    VALUES (${name}, ${nextCode}, ${phone}, 0, true, false, 'repair', ${company_id})
-    RETURNING id, name, phone, customer_code
-  `);
-  const row = (result.rows as Record<string, unknown>[])[0];
-  return res.status(201).json(row);
+  while (attempts < 5 && !inserted) {
+    attempts++;
+    const nextCode = await getNextCustomerCode();
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO customers (name, customer_code, normalized_name, phone, balance,
+                               is_customer, is_supplier, source, company_id)
+        VALUES (${name}, ${nextCode}, ${normalized}, ${phone}, 0,
+                true, false, 'repair', ${company_id})
+        RETURNING id, name, phone, customer_code
+      `);
+      inserted = (result.rows as Record<string, unknown>[])[0] ?? null;
+    } catch (e: unknown) {
+      lastError = e;
+      const msg = String((e as { message?: string })?.message ?? "");
+      /* retry only on customer_code unique-collision */
+      if (!/customers_customer_code_unique|duplicate key/.test(msg)) throw e;
+    }
+  }
+
+  if (!inserted) {
+    return res.status(500).json({
+      error: "تعذر توليد رقم عميل فريد، حاول مرة أخرى",
+      details: String((lastError as { message?: string })?.message ?? ""),
+    });
+  }
+
+  /* Auto-create chart-of-accounts entry & link */
+  try {
+    const acct = await getOrCreateCustomerAccount(
+      Number(inserted.customer_code),
+      name,
+      company_id,
+    );
+    await db.execute(sql`
+      UPDATE customers SET account_id = ${acct.id} WHERE id = ${Number(inserted.id)}
+    `);
+  } catch {
+    /* non-fatal: customer is created, accounting link can be repaired later */
+  }
+
+  return res.status(201).json(inserted);
 }));
 
 export default router;

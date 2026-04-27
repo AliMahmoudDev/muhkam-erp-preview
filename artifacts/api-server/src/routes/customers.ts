@@ -21,7 +21,7 @@ import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
-function normalizeName(name: string): string {
+export function normalizeName(name: string): string {
   return name.trim().replace(/\s+/g, " ").toLowerCase()
     .replace(/أ|إ|آ/g, "ا")
     .replace(/ة/g, "ه")
@@ -38,7 +38,7 @@ function formatCustomer(c: typeof customersTable.$inferSelect, ledgerBalance?: n
   };
 }
 
-async function getNextCustomerCode(): Promise<number> {
+export async function getNextCustomerCode(): Promise<number> {
   const result = await db.select({ maxCode: max(customersTable.customer_code) }).from(customersTable);
   const currentMax = result[0]?.maxCode ?? 0;
   return Math.max(currentMax ?? 0, 1000) + 1;

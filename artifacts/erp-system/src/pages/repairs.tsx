@@ -1335,10 +1335,12 @@ function JobDetail({
   };
 
   const handleSave = () => {
+    /* normalize empty/blank numbers → "0" so backend never sees "" */
+    const num = (v: string) => v.trim() === "" ? "0" : v.trim();
     onPatch({
-      estimated_cost: editEst,
-      final_cost: editFinal,
-      deposit_paid: editDeposit,
+      estimated_cost: num(editEst),
+      final_cost: num(editFinal),
+      deposit_paid: num(editDeposit),
       estimated_delivery: editDelivery || null,
       technician_id: editTech ? Number(editTech) : null,
       technician_name: users.find((u) => u.id.toString() === editTech)?.name ?? null,
