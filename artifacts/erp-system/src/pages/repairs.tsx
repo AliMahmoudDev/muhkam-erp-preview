@@ -640,51 +640,73 @@ export default function Repairs() {
           </div>
         )}
 
-        {/* GRID VIEW */}
+        {/* GRID VIEW — 8 cards per row */}
         {!isLoading && jobs.length > 0 && viewMode === "grid" && !selectedJob && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {jobs.map((job) => {
+              const s = STATUS_MAP[job.status] ?? { label: job.status, color: "text-white/60", bg: "bg-white/5 border-white/10", icon: AlertCircle };
+              const StatusIcon = s.icon;
               return (
                 <div key={job.id}
-                  className="glass-panel rounded-xl border border-white/8 hover:border-violet-500/25 transition-all group overflow-hidden">
-                  {/* Card top */}
-                  <div className="p-3 cursor-pointer" onClick={() => { setSelectedJob(job); setShowNewForm(false); }}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                        <Wrench className="w-5 h-5 text-violet-400" />
-                      </div>
-                      <StatusBadge status={job.status} />
-                    </div>
-                    <p className="font-bold text-white text-sm leading-tight truncate">{job.customer_name}</p>
-                    <p className="text-[10px] text-white/25 font-mono mt-0.5">{job.job_no}</p>
+                  onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
+                  className="glass-panel rounded-xl border border-white/8 hover:border-violet-500/30 hover:bg-violet-500/4 transition-all cursor-pointer flex flex-col overflow-hidden">
 
-                    <div className="mt-2.5 flex flex-wrap gap-1">
-                      {job.device_brand && <span className="text-[10px] text-white/45 bg-white/5 px-1.5 py-0.5 rounded">{job.device_brand}</span>}
-                      {job.device_model && <span className="text-[10px] text-white/35">{job.device_model}</span>}
+                  {/* Status bar */}
+                  <div className={`h-1 w-full ${
+                    job.status === "pending"     ? "bg-amber-500/60"   :
+                    job.status === "in_progress" ? "bg-blue-500/60"    :
+                    job.status === "done"        ? "bg-emerald-500/60" :
+                    job.status === "delivered"   ? "bg-violet-500/60"  :
+                    "bg-white/10"
+                  }`} />
+
+                  <div className="p-2 flex flex-col gap-1.5 flex-1">
+                    {/* Top: status badge + job no */}
+                    <div className="flex items-center justify-between gap-1">
+                      <span className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded border text-[9px] font-bold leading-none ${s.color} ${s.bg}`}>
+                        <StatusIcon className="w-2 h-2" />
+                        {s.label}
+                      </span>
                       {job.device_score != null && (
-                        <span className={`text-[10px] font-black px-1 py-0.5 rounded ${job.device_score >= 80 ? "text-emerald-400 bg-emerald-500/10" : job.device_score >= 50 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10"}`}>
+                        <span className={`text-[9px] font-black leading-none ${job.device_score >= 80 ? "text-emerald-400" : job.device_score >= 50 ? "text-amber-400" : "text-red-400"}`}>
                           {job.device_score}%
                         </span>
                       )}
                     </div>
 
+                    {/* Job number */}
+                    <p className="text-[9px] text-white/25 font-mono leading-none truncate">{job.job_no}</p>
+
+                    {/* Customer */}
+                    <p className="text-[11px] font-bold text-white leading-tight truncate">{job.customer_name}</p>
+
+                    {/* Device */}
+                    <p className="text-[10px] text-white/45 truncate leading-tight">
+                      {[job.device_brand, job.device_model].filter(Boolean).join(" ")}
+                    </p>
+
+                    {/* Fault */}
                     {job.problem_description && (
-                      <p className="text-[10px] text-white/30 mt-1.5 truncate" title={job.problem_description}>{job.problem_description}</p>
+                      <p className="text-[9px] text-white/30 truncate leading-tight" title={job.problem_description}>
+                        {job.problem_description}
+                      </p>
                     )}
 
-                    <div className="mt-3 pt-2.5 border-t border-white/6 flex items-end justify-between">
-                      <div>
-                        <p className="text-emerald-300 font-bold text-sm">{formatCurrency(Number(job.final_cost ?? job.estimated_cost))}</p>
-                        <p className="text-[10px] text-white/30 mt-0.5">{job.received_at}</p>
-                      </div>
-                    </div>
-                  </div>
+                    {/* Spacer */}
+                    <div className="flex-1" />
 
-                  {/* Card bottom — technician */}
-                  <div className="px-3 pb-3 flex items-center justify-between">
-                    <p className="text-[10px] text-white/25 truncate flex-1">
-                      {job.technician_name ?? "—"}
-                    </p>
+                    {/* Footer: cost + date */}
+                    <div className="pt-1.5 border-t border-white/6 flex items-center justify-between gap-1">
+                      <span className="text-[10px] font-bold text-emerald-300 truncate">
+                        {formatCurrency(Number(job.final_cost ?? job.estimated_cost))}
+                      </span>
+                      <span className="text-[9px] text-white/25 shrink-0">{job.received_at?.slice(0, 5)}</span>
+                    </div>
+
+                    {/* Technician */}
+                    {job.technician_name && (
+                      <p className="text-[9px] text-white/25 truncate leading-none">{job.technician_name}</p>
+                    )}
                   </div>
                 </div>
               );
