@@ -245,6 +245,11 @@ export default function MoreScreen() {
           <MenuItem icon="bar-chart-2"   label="التقارير"          badge="عرض"   onPress={() => router.push("/reports")}      color="#06B6D4" last />
         </SectionCard>
 
+        {/* الإشعارات */}
+        <SectionCard title="الإشعارات" color={AMBER}>
+          <MenuItem icon="bell" label="مركز الإشعارات" onPress={() => router.push("/notifications")} color={AMBER} last />
+        </SectionCard>
+
         {/* الإعدادات */}
         <SectionCard title="الإعدادات" color="#10B981">
           <MenuItem icon="settings" label="إعدادات النظام"   onPress={() => router.push("/settings")} color="#10B981" last />
