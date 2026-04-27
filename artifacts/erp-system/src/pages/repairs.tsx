@@ -953,13 +953,16 @@ function ChecklistWizard({
 function JobChecklist({
   checklist,
   onSaveItem,
+  readOnly = false,
 }: {
   checklist: ChecklistItem[];
   onSaveItem: (id: string, status: ChecklistItem["status"], notes: string) => void;
+  readOnly?: boolean;
 }) {
-  const [editingNotes, setEditingNotes]     = useState<string | null>(null);
-  const [pendingStatus, setPendingStatus]   = useState<ChecklistItem["status"]>(null);
-  const [notesText, setNotesText]           = useState("");
+  const [editingNotes, setEditingNotes]   = useState<string | null>(null);
+  const [pendingStatus, setPendingStatus] = useState<ChecklistItem["status"]>(null);
+  const [notesText, setNotesText]         = useState("");
+  const [expandedCats, setExpandedCats]   = useState<Set<string>>(new Set());
 
   /* Power-off sentinel */
   if (checklist.length === 1 && checklist[0].id === "__power_off__") {
@@ -974,21 +977,41 @@ function JobChecklist({
     );
   }
 
+  /* Group items by category */
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, ChecklistItem[]>();
+    for (const item of checklist) {
+      const cat = item.category ?? "عام";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(item);
+    }
+    return map;
+  }, [checklist]);
+
+  const toggleCat = (cat: string) =>
+    setExpandedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+
   const pass       = checklist.filter(c => c.status === "pass").length;
   const fail       = checklist.filter(c => c.status === "fail").length;
   const partial    = checklist.filter(c => c.status === "partial").length;
   const unanswered = checklist.filter(c => !c.status).length;
-  const total       = checklist.length;
-  const doneCount   = total - unanswered;
+  const total      = checklist.length;
+  const doneCount  = total - unanswered;
 
   const STATUS_OPTS: { key: ChecklistItem["status"]; label: string; cls: string; activeCls: string }[] = [
-    { key: "pass",       label: "✓",         cls: "border-white/10 text-white/30 hover:border-emerald-500/40 hover:text-emerald-400", activeCls: "border-emerald-500/50 bg-emerald-500/15 text-emerald-300" },
-    { key: "fail",       label: "✗",         cls: "border-white/10 text-white/30 hover:border-red-500/40 hover:text-red-400",          activeCls: "border-red-500/50 bg-red-500/15 text-red-300" },
-    { key: "partial",    label: "~",         cls: "border-white/10 text-white/30 hover:border-amber-500/40 hover:text-amber-400",      activeCls: "border-amber-500/50 bg-amber-500/15 text-amber-300" },
-    { key: "untestable", label: "—",         cls: "border-white/10 text-white/20 hover:border-white/20 hover:text-white/50",           activeCls: "border-white/20 bg-white/5 text-white/50" },
+    { key: "pass",       label: "✓", cls: "border-white/10 text-white/30 hover:border-emerald-500/40 hover:text-emerald-400", activeCls: "border-emerald-500/50 bg-emerald-500/15 text-emerald-300" },
+    { key: "fail",       label: "✗", cls: "border-white/10 text-white/30 hover:border-red-500/40 hover:text-red-400",          activeCls: "border-red-500/50 bg-red-500/15 text-red-300" },
+    { key: "partial",    label: "~", cls: "border-white/10 text-white/30 hover:border-amber-500/40 hover:text-amber-400",      activeCls: "border-amber-500/50 bg-amber-500/15 text-amber-300" },
+    { key: "untestable", label: "—", cls: "border-white/10 text-white/20 hover:border-white/20 hover:text-white/50",           activeCls: "border-white/20 bg-white/5 text-white/50" },
   ];
 
   const handleClick = (item: ChecklistItem, key: ChecklistItem["status"]) => {
+    if (readOnly) return;
     if (key === "partial" || key === "untestable") {
       setEditingNotes(item.id);
       setPendingStatus(key);
@@ -1006,80 +1029,138 @@ function JobChecklist({
     setNotesText("");
   };
 
+  const statusLabel = (s: ChecklistItem["status"]) =>
+    s === "pass" ? "يعمل" : s === "fail" ? "لا يعمل" : s === "partial" ? "جزئي" : "—";
+
+  const statusBadgeCls = (s: ChecklistItem["status"]) =>
+    s === "pass"       ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" :
+    s === "fail"       ? "text-red-400 bg-red-500/10 border-red-500/20" :
+    s === "partial"    ? "text-amber-400 bg-amber-500/10 border-amber-500/20" :
+    s === "untestable" ? "text-white/30 bg-white/5 border-white/10" : "";
+
   return (
     <div className="glass-panel rounded-2xl p-3 border border-white/5">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] text-white/40 font-bold flex items-center gap-1">
+        <p className="text-[10px] text-white/40 font-bold flex items-center gap-1.5">
           <ClipboardList className="w-3 h-3" /> فحص الجهاز
+          {readOnly && <span className="text-[9px] text-white/25 border border-white/10 rounded px-1 py-0.5">مقفل</span>}
         </p>
         <div className="flex items-center gap-2 text-[10px]">
-          {pass > 0        && <span className="text-emerald-400">{pass} يعمل</span>}
-          {fail > 0        && <span className="text-red-400">{fail} لا يعمل</span>}
-          {partial > 0     && <span className="text-amber-400">{partial} جزئي</span>}
-          {unanswered > 0  && <span className="text-white/30">{unanswered} لم يُفحص</span>}
+          {pass > 0       && <span className="text-emerald-400">{pass} يعمل</span>}
+          {fail > 0       && <span className="text-red-400">{fail} لا يعمل</span>}
+          {partial > 0    && <span className="text-amber-400">{partial} جزئي</span>}
+          {unanswered > 0 && <span className="text-white/30">{unanswered} لم يُفحص</span>}
         </div>
       </div>
+
       {/* Progress bar */}
       <div className="w-full bg-white/5 rounded-full h-1 mb-3">
         <div className="h-1 rounded-full bg-violet-500 transition-all duration-500"
           style={{ width: total ? `${(doneCount / total) * 100}%` : "0%" }} />
       </div>
-      {/* Items */}
+
+      {/* Categories accordion */}
       <div className="space-y-1">
-        {checklist.map((item) => (
-          <div key={item.id}>
-            <div className="flex items-center gap-2 py-1 px-1 rounded-lg hover:bg-white/3 transition-all group">
-              {/* Status indicator */}
-              <div className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
-                item.status === "pass"       ? "bg-emerald-400" :
-                item.status === "fail"       ? "bg-red-400" :
-                item.status === "partial"    ? "bg-amber-400" :
-                item.status === "untestable" ? "bg-white/20" : "bg-white/10"
-              }`} />
-              {/* Label */}
-              <span className={`flex-1 text-xs transition-colors ${item.status ? "text-white/70" : "text-white/50"}`}>
-                {item.label}
-              </span>
-              {/* Status buttons */}
-              <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                {STATUS_OPTS.map(({ key, label, cls, activeCls }) => (
-                  <button
-                    key={key}
-                    onClick={() => handleClick(item, key)}
-                    className={`w-6 h-6 rounded-md border text-[11px] font-bold transition-all ${
-                      item.status === key ? activeCls : cls
-                    }`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
+        {Array.from(categoryMap.entries()).map(([cat, items]) => {
+          const isOpen     = expandedCats.has(cat);
+          const catPass    = items.filter(i => i.status === "pass").length;
+          const catFail    = items.filter(i => i.status === "fail").length;
+          const catPartial = items.filter(i => i.status === "partial").length;
+          const catPending = items.filter(i => !i.status).length;
+
+          return (
+            <div key={cat} className="rounded-xl border border-white/6 overflow-hidden">
+              {/* Category header */}
+              <button
+                onClick={() => toggleCat(cat)}
+                className="w-full flex items-center justify-between px-3 py-2 hover:bg-white/4 transition-all text-right">
+                <div className="flex items-center gap-2">
+                  <ChevronRight className={`w-3 h-3 text-white/35 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`} />
+                  <span className="text-[11px] text-white/65 font-bold">{cat}</span>
+                  <span className="text-[9px] text-white/25">({items.length})</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[9px]">
+                  {catPass    > 0 && <span className="text-emerald-400 font-bold">{catPass}✓</span>}
+                  {catFail    > 0 && <span className="text-red-400 font-bold">{catFail}✗</span>}
+                  {catPartial > 0 && <span className="text-amber-400 font-bold">{catPartial}~</span>}
+                  {catPending > 0 && <span className="text-white/25">{catPending}؟</span>}
+                </div>
+              </button>
+
+              {/* Items — shown when expanded */}
+              {isOpen && (
+                <div className="border-t border-white/5 divide-y divide-white/4">
+                  {items.map((item) => (
+                    <div key={item.id} className={`px-3 ${!readOnly ? "hover:bg-white/3" : ""} transition-all group`}>
+                      <div className="flex items-center gap-2 py-1.5">
+                        {/* Status dot */}
+                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          item.status === "pass"       ? "bg-emerald-400" :
+                          item.status === "fail"       ? "bg-red-400" :
+                          item.status === "partial"    ? "bg-amber-400" :
+                          item.status === "untestable" ? "bg-white/20" : "bg-white/8"
+                        }`} />
+                        {/* Label */}
+                        <span className={`flex-1 text-xs ${item.status ? "text-white/70" : "text-white/45"}`}>
+                          {item.label}
+                        </span>
+                        {/* Result badge (always visible) */}
+                        {item.status && (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded border font-bold ${statusBadgeCls(item.status)}`}>
+                            {statusLabel(item.status)}
+                          </span>
+                        )}
+                        {/* Edit buttons — only when not readOnly */}
+                        {!readOnly && (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {STATUS_OPTS.map(({ key, label, cls, activeCls }) => (
+                              <button
+                                key={key}
+                                onClick={() => handleClick(item, key)}
+                                className={`w-6 h-6 rounded-md border text-[11px] font-bold transition-all ${
+                                  item.status === key ? activeCls : cls
+                                }`}>
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Notes editing */}
+                      {!readOnly && editingNotes === item.id && (
+                        <div className="flex gap-2 mb-2 px-4">
+                          <input
+                            autoFocus
+                            value={notesText}
+                            onChange={(e) => setNotesText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") confirmNotes(item.id);
+                              if (e.key === "Escape") { setEditingNotes(null); setPendingStatus(null); }
+                            }}
+                            placeholder="ملاحظة (اختياري)..."
+                            className="erp-input flex-1 text-xs py-0.5"
+                          />
+                          <button onClick={() => confirmNotes(item.id)} className="text-emerald-400 p-1 hover:text-emerald-300">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Existing notes */}
+                      {item.notes && (!editingNotes || editingNotes !== item.id) && (
+                        <p className="text-[10px] text-white/30 px-5 pb-1.5 italic">{item.notes}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            {/* Notes inline for partial/untestable */}
-            {editingNotes === item.id && (
-              <div className="flex gap-2 mt-1 mb-2 px-4">
-                <input
-                  autoFocus
-                  value={notesText}
-                  onChange={(e) => setNotesText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") confirmNotes(item.id);
-                    if (e.key === "Escape") { setEditingNotes(null); setPendingStatus(null); }
-                  }}
-                  placeholder="ملاحظة (اختياري)..."
-                  className="erp-input flex-1 text-xs py-0.5"
-                />
-                <button onClick={() => confirmNotes(item.id)} className="text-emerald-400 p-1 hover:text-emerald-300">
-                  <CheckCircle2 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-            {item.notes && editingNotes !== item.id && (
-              <p className="text-[10px] text-white/30 px-5 pb-0.5 italic">{item.notes}</p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
+
       {unanswered === 0 && (
         <p className="text-center text-[10px] text-emerald-400/60 mt-3">✓ اكتمل الفحص</p>
       )}
@@ -1647,8 +1728,8 @@ function JobDetail({
           </div>
         </div>
 
-        {/* Diagnostic Checklist — Inline editable */}
-        <JobChecklist checklist={checklist} onSaveItem={onSaveCheckItem} />
+        {/* Diagnostic Checklist — read-only after job is registered */}
+        <JobChecklist checklist={checklist} onSaveItem={onSaveCheckItem} readOnly />
 
         {/* Diagnostic Report Text — collapsible */}
         <div className="glass-panel rounded-2xl border border-violet-500/10 bg-violet-500/3 overflow-hidden">
