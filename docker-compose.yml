@@ -24,6 +24,18 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: muhkam-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
@@ -33,9 +45,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://erpuser:${DB_PASSWORD:-localpassword}@postgres:5432/erp
       JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      REDIS_URL: redis://redis:6379
       PORT: 3000
       NODE_ENV: production
       ALLOWED_ORIGINS: https://halaltec.com
@@ -71,3 +86,4 @@ volumes:
   postgres_data:
   api_backups:
   nginx_certs:
+  redis_data:

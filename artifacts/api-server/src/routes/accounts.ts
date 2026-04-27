@@ -3,6 +3,7 @@ import { eq, asc, and } from "drizzle-orm";
 import { db, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
+import { setCache, getCache, deleteCache } from "../lib/cache";
 
 const router: IRouter = Router();
 router.use("/accounts", requireFeature("accounting"));
@@ -27,10 +28,15 @@ function fmtEntry(e: typeof journalEntriesTable.$inferSelect) {
 // ── دليل الحسابات ──────────────────────────────────────────
 router.get("/accounts", wrap(async (req, res) => {
   const cid = getCid(req);
+  const cacheKey = `coa:${cid}`;
+  const cached = await getCache<ReturnType<typeof fmt>[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
   const accounts = await db.select().from(accountsTable)
     .where(eq(accountsTable.company_id, cid))
     .orderBy(asc(accountsTable.code));
-  res.json(accounts.map(fmt));
+  const result = accounts.map(fmt);
+  await setCache(cacheKey, result, 600);
+  res.json(result);
 }));
 
 router.post("/accounts", wrap(async (req, res) => {
@@ -49,6 +55,7 @@ router.post("/accounts", wrap(async (req, res) => {
     current_balance: String(opening_balance ?? 0),
     company_id: cid,
   }).returning();
+  await deleteCache(`coa:${cid}`);
   res.status(201).json(fmt(acc));
 }));
 
@@ -61,6 +68,7 @@ router.put("/accounts/:id", wrap(async (req, res) => {
     .set({ name, is_active, is_posting })
     .where(and(eq(accountsTable.id, id), eq(accountsTable.company_id, cid))).returning();
   if (!acc) { res.status(404).json({ error: "الحساب غير موجود" }); return; }
+  await deleteCache(`coa:${cid}`);
   res.json(fmt(acc));
 }));
 
@@ -69,6 +77,7 @@ router.delete("/accounts/:id", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   await db.delete(accountsTable).where(and(eq(accountsTable.id, id), eq(accountsTable.company_id, cid)));
+  await deleteCache(`coa:${cid}`);
   res.json({ success: true });
 }));
 

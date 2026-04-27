@@ -37,6 +37,7 @@ import {
 import { invalidateClosingDateCache } from "../lib/period-lock";
 import { writeAuditLog } from "../lib/audit-log";
 import { auditLogsTable } from "@workspace/db";
+import { setCache, getCache, deleteCache } from "../lib/cache";
 
 const router = Router();
 
@@ -72,6 +73,9 @@ async function readSettings(keys: string[], companyId: number): Promise<Record<s
 
 router.get("/settings/users", authenticate, requireRole("admin"), wrap(async (req, res) => {
   const companyId = getTenant(req);
+  const cacheKey = `users:${companyId}`;
+  const cached = await getCache<object[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
   const users = await db.select().from(erpUsersTable)
     .where(and(eq(erpUsersTable.company_id, companyId), ne(erpUsersTable.role, "super_admin")))
     .orderBy(erpUsersTable.id);
@@ -80,6 +84,7 @@ router.get("/settings/users", authenticate, requireRole("admin"), wrap(async (re
     pin: pin ? "****" : null,
     pinLength: Math.min(Math.max(pin?.length ?? 4, 4), 6),
   }));
+  await setCache(cacheKey, masked, 120);
   res.json(masked);
 }));
 
@@ -117,6 +122,7 @@ router.post("/settings/users", authenticate, requireRole("admin"), wrap(async (r
     user: { id: req.user!.id, username: req.user!.username },
     company_id: companyId,
   });
+  await deleteCache(`users:${req.user!.company_id}`);
   res.json({ ...user, pin: "****" });
 }));
 
@@ -187,6 +193,7 @@ router.delete("/settings/users/:id", authenticate, requireRole("admin"), wrap(as
     user: { id: req.user!.id, username: req.user!.username },
     company_id: companyId,
   });
+  await deleteCache(`users:${companyId}`);
   res.json({ success: true });
 }));
 
@@ -649,10 +656,14 @@ router.get("/settings/system", authenticate, wrap(async (req, res) => {
        .json({ error: role === "super_admin" ? "company_id query param required" : "Tenant not resolved" });
     return;
   }
+  const cacheKey = `settings:${companyId}`;
+  const cached = await getCache<Record<string, string>>(cacheKey);
+  if (cached) { res.json(cached); return; }
   const rows = await db.select().from(systemSettingsTable)
     .where(eq(systemSettingsTable.company_id, companyId));
   const result: Record<string, string> = {};
   for (const r of rows) result[r.key] = r.value ?? "";
+  await setCache(cacheKey, result, 300);
   res.json(result);
 }));
 
@@ -672,6 +683,7 @@ router.post("/settings/system", authenticate, wrap(async (req, res) => {
     return;
   }
   await upsertSetting(key.trim(), value ?? "", companyId);
+  await deleteCache(`settings:${companyId}`);
   res.json({ success: true, key: key.trim(), value: value ?? "" });
 }));
 
