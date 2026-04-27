@@ -1028,6 +1028,15 @@ function DashboardCardsTab() {
 /* ══════════════════════════════════════════════════════════════
    DASHBOARD CARD EDITOR (modal-within-modal)
 ══════════════════════════════════════════════════════════════ */
+interface CompanyStatus {
+  id: number;
+  key: string;
+  label_ar: string;
+  color: string;
+  sort_order: number;
+  is_system: boolean;
+}
+
 function DashboardCardEditor({
   initial, onClose, onSaved,
 }: {
@@ -1036,6 +1045,7 @@ function DashboardCardEditor({
   onSaved: () => void;
 }) {
   const { toast } = useToast();
+  const qc = useQueryClient();
   const [name, setName] = useState(initial?.name ?? "");
   const [statuses, setStatuses] = useState<string[]>(initial?.statuses ?? []);
   const [color, setColor] = useState(initial?.color ?? DASHBOARD_CARD_COLORS[0]);
@@ -1043,10 +1053,63 @@ function DashboardCardEditor({
   const [alertThreshold, setAlertThreshold] = useState<string>(initial?.alert_threshold?.toString() ?? "");
   const [saving, setSaving] = useState(false);
 
+  /* Fetch the REAL per-company statuses (same list jobs are tagged with).
+     This includes system defaults like waiting_parts plus any custom ones
+     the company has added via /api/repair-statuses CRUD. */
+  const { data: companyStatuses = [], isLoading: loadingStatuses } = useQuery<CompanyStatus[]>({
+    queryKey: ["/api/repair-statuses"],
+    queryFn: () => authFetch(api("/api/repair-statuses")).then(r => r.json()),
+  });
+
+  /* Inline "add status" form */
+  const [showAddStatus, setShowAddStatus] = useState(false);
+  const [newStatusLabel, setNewStatusLabel] = useState("");
+  const [newStatusColor, setNewStatusColor] = useState(DASHBOARD_CARD_COLORS[0]);
+  const [creatingStatus, setCreatingStatus] = useState(false);
+
   const PreviewIcon = DASHBOARD_CARD_ICONS[icon] ?? Wrench;
 
   const toggleStatus = (key: string) => {
     setStatuses(prev => prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]);
+  };
+
+  /* Auto-generate a clean snake_case key from Arabic/English label */
+  const slugify = (label: string): string => {
+    const ascii = label.toLowerCase()
+      .replace(/[^\w\s\u0600-\u06FF]/g, "")
+      .trim().replace(/\s+/g, "_");
+    return ascii.match(/[\u0600-\u06FF]/) ? `custom_${Date.now().toString(36)}` : ascii;
+  };
+
+  const createStatus = async () => {
+    const label = newStatusLabel.trim();
+    if (!label) { toast({ title: "اكتب اسم الحالة", variant: "destructive" }); return; }
+    const key = slugify(label);
+    setCreatingStatus(true);
+    try {
+      const r = await authFetch(api("/api/repair-statuses"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key,
+          label_ar: label,
+          color: newStatusColor,
+          sort_order: companyStatuses.length + 1,
+        }),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error ?? "تعذر إضافة الحالة");
+      }
+      const created = await r.json();
+      toast({ title: "تم إضافة الحالة" });
+      setStatuses(prev => [...prev, created.key ?? key]);
+      setNewStatusLabel("");
+      setShowAddStatus(false);
+      qc.invalidateQueries({ queryKey: ["/api/repair-statuses"] });
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : "تعذر إضافة الحالة", variant: "destructive" });
+    } finally { setCreatingStatus(false); }
   };
 
   const save = async () => {
@@ -1128,30 +1191,86 @@ function DashboardCardEditor({
               className="erp-input w-full text-sm" />
           </div>
 
-          {/* Statuses */}
+          {/* Statuses — pulled from REAL per-company list (includes waiting_parts
+              and any custom statuses you add). */}
           <div>
-            <label className="text-[11px] text-white/45 font-bold mb-1.5 block">
-              الحالات المضمومة <span className="text-violet-400/70">({statuses.length})</span>
-            </label>
-            <div className="rounded-xl border border-white/8 p-2 max-h-56 overflow-y-auto">
-              <div className="flex flex-wrap gap-1.5">
-                {PIPELINE_STAGES.map(s => {
-                  const on = statuses.includes(s.key);
-                  return (
-                    <button key={s.key} type="button" onClick={() => toggleStatus(s.key)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
-                        on
-                          ? "bg-violet-500/20 border-violet-500/40 text-violet-200"
-                          : "bg-white/[0.02] border-white/8 text-white/45 hover:text-white/75 hover:border-white/15"
-                      }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                      {s.label}
-                      {on && <CheckCircle2 className="w-3 h-3" />}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] text-white/45 font-bold">
+                الحالات المضمومة <span className="text-violet-400/70">({statuses.length})</span>
+              </label>
+              <button type="button" onClick={() => setShowAddStatus(v => !v)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/55 text-[10px] font-bold transition-all">
+                <Plus className="w-3 h-3" /> حالة جديدة
+              </button>
             </div>
+
+            {/* Inline create form */}
+            {showAddStatus && (
+              <div className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-2 mb-2 flex items-center gap-2">
+                <input value={newStatusLabel} onChange={e => setNewStatusLabel(e.target.value)}
+                  placeholder="اسم الحالة بالعربية" maxLength={40}
+                  className="erp-input flex-1 text-[12px]" />
+                <div className="flex gap-0.5">
+                  {DASHBOARD_CARD_COLORS.slice(0, 6).map(c => (
+                    <button key={c} type="button" onClick={() => setNewStatusColor(c)}
+                      className="w-5 h-5 rounded-md border-2"
+                      style={{
+                        background: c,
+                        borderColor: newStatusColor === c ? "#fff" : "transparent",
+                      }}
+                      title={c} />
+                  ))}
+                </div>
+                <button type="button" onClick={createStatus} disabled={creatingStatus}
+                  className="px-2.5 py-1 rounded-lg bg-violet-500/30 hover:bg-violet-500/50 border border-violet-500/50 text-violet-100 text-[11px] font-bold disabled:opacity-50">
+                  {creatingStatus ? "..." : "إضافة"}
+                </button>
+              </div>
+            )}
+
+            <div className="rounded-xl border border-white/8 p-2 max-h-56 overflow-y-auto">
+              {loadingStatuses ? (
+                <div className="text-center text-white/30 text-xs py-4">جارٍ التحميل...</div>
+              ) : companyStatuses.length === 0 ? (
+                <div className="text-center text-white/35 text-xs py-4">
+                  لا توجد حالات بعد — أضف واحدة بالأعلى
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {companyStatuses.map(s => {
+                    const on = statuses.includes(s.key);
+                    return (
+                      <button key={s.key} type="button" onClick={() => toggleStatus(s.key)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
+                          on
+                            ? "bg-violet-500/20 border-violet-500/40 text-violet-200"
+                            : "bg-white/[0.02] border-white/8 text-white/45 hover:text-white/75 hover:border-white/15"
+                        }`}>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.color }} />
+                        {s.label_ar}
+                        {!s.is_system && (
+                          <span className="text-[8px] px-1 rounded bg-violet-500/15 text-violet-300/80 font-bold">مخصص</span>
+                        )}
+                        {on && <CheckCircle2 className="w-3 h-3" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Show stale/orphan statuses (in card but not in current list) */}
+            {(() => {
+              const known = new Set(companyStatuses.map(s => s.key));
+              const orphans = statuses.filter(k => !known.has(k));
+              if (orphans.length === 0) return null;
+              return (
+                <p className="text-[10px] text-amber-400/70 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  حالات لم تعد موجودة: {orphans.join(", ")} — احذفها أو أبقِها للسجلّات القديمة
+                </p>
+              );
+            })()}
           </div>
 
           {/* Color */}

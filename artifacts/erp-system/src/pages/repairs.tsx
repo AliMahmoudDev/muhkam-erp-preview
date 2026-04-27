@@ -324,7 +324,10 @@ const DEVICE_CATALOG: Record<string, Record<string, string[]>> = {
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string; icon: React.FC<{ className?: string }> }> = {
   pending:                    { label: "انتظار",                color: "text-amber-400",    bg: "bg-amber-500/15 border-amber-500/30",    icon: Clock },
+  diagnosing:                 { label: "قيد الفحص",             color: "text-blue-400",     bg: "bg-blue-500/15 border-blue-500/30",      icon: Search },
   in_progress:                { label: "جارٍ الإصلاح",          color: "text-blue-400",     bg: "bg-blue-500/15 border-blue-500/30",      icon: Wrench },
+  waiting_parts:              { label: "بانتظار قطعة",          color: "text-pink-400",     bg: "bg-pink-500/15 border-pink-500/30",      icon: Package },
+  qa:                         { label: "اختبار الجودة",          color: "text-cyan-400",     bg: "bg-cyan-500/15 border-cyan-500/30",      icon: ShieldCheck },
   done:                       { label: "تم الإصلاح",            color: "text-emerald-400",  bg: "bg-emerald-500/15 border-emerald-500/30", icon: CheckCheck },
   delivered:                  { label: "تم التسليم",            color: "text-purple-400",   bg: "bg-purple-500/15 border-purple-500/30",  icon: Truck },
   cancelled:                  { label: "ملغي",                  color: "text-red-400",      bg: "bg-red-500/15 border-red-500/30",        icon: Ban },
