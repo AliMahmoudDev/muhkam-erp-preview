@@ -771,20 +771,29 @@ export default function Repairs() {
       if (v.length === 1 && v[0].id === "__power_off__") {
         return [{ id: "__power_off__", label: "الجهاز لا يفتح ولا يشتغل", status: "fail" as const }];
       }
-      // Merge saved statuses + notes with current template
-      const savedMap: Record<string, { status: ChecklistItem["status"]; notes?: string }> = {};
-      v.forEach((c: { id?: string | number; item_id?: string | number; status: string; notes?: string }) => {
-        const k = String(c.id ?? c.item_id ?? "");
-        if (!k) return;
-        // Migrate old "na" → "untestable"
-        const status = c.status === "na" ? "untestable" : c.status as ChecklistItem["status"];
-        savedMap[k] = { status, notes: c.notes };
-      });
-      return templateChecklist.map((t) => ({
-        ...t,
-        status: savedMap[t.id]?.status ?? null,
-        notes: savedMap[t.id]?.notes,
-      }));
+      // Use the saved checklist as the source of truth — show ONLY the items
+      // that were actually inspected at intake (not the full current template),
+      // so later edits to the template don't pollute existing job records.
+      // Look up labels/categories from the template when the saved row is missing them.
+      const templateMap: Record<string, ChecklistItem> = {};
+      templateChecklist.forEach(t => { templateMap[t.id] = t; });
+      const items: ChecklistItem[] = v
+        .map((c: { id?: string | number; item_id?: string | number; label?: string; category?: string; status: string; notes?: string }) => {
+          const id = String(c.id ?? c.item_id ?? "");
+          if (!id) return null;
+          const t = templateMap[id];
+          // Migrate old "na" → "untestable"
+          const status = c.status === "na" ? "untestable" : c.status as ChecklistItem["status"];
+          return {
+            id,
+            label:    c.label    ?? t?.label    ?? `بند ${id}`,
+            category: c.category ?? t?.category ?? "عام",
+            status,
+            notes:    c.notes,
+          } as ChecklistItem;
+        })
+        .filter((x): x is ChecklistItem => x !== null);
+      return items.length ? items : templateChecklist;
     } catch { return templateChecklist; }
   }, [detail?.checklist, templateChecklist]);
   const checklist: ChecklistItem[] = parsedChecklist;
