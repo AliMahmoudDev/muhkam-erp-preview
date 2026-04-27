@@ -2328,7 +2328,7 @@ export default function Devices() {
             <Smartphone className="w-4 h-4 text-violet-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white leading-tight">الموبايلات المستعملة</h1>
+            <h1 className="text-lg font-bold text-white leading-tight">الأجهزة المستعملة</h1>
             <p className="text-[11px] text-white/30">شراء وبيع الأجهزة — البيع والصيانة</p>
           </div>
         </div>

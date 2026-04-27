@@ -5,6 +5,7 @@ import {
   MinusCircle, Trash2, Save, ChevronLeft, Send, ClipboardList,
   AlertCircle, Clock, CheckCheck, Truck, Ban,
   Star, Settings, MessageSquare, ChevronRight, ChevronDown, RotateCcw,
+  LayoutGrid, List,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
@@ -319,6 +320,7 @@ export default function Repairs() {
   const [selectedJob, setSelectedJob] = useState<RepairJob | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   /* ── helper ── */
   async function apiFetch<T>(url: string): Promise<T> {
@@ -468,6 +470,21 @@ export default function Repairs() {
             بطاقات الصيانة
           </h1>
           <div className="flex items-center gap-1.5">
+            {/* View toggle — only when no job selected */}
+            {!selectedJob && (
+              <div className="flex gap-0.5 bg-white/4 rounded-xl border border-white/8 p-0.5">
+                <button onClick={() => setViewMode("list")}
+                  title="عرض قائمة"
+                  className={`p-1.5 rounded-lg transition-all ${viewMode === "list" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
+                  <List className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setViewMode("grid")}
+                  title="عرض شبكة"
+                  className={`p-1.5 rounded-lg transition-all ${viewMode === "grid" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             <button
               onClick={() => setShowSettings(true)}
               title="إعدادات بنود الفحص"
@@ -533,46 +550,92 @@ export default function Repairs() {
           ))}
         </div>
 
-        {/* Job List */}
-        <div className="flex flex-col gap-1.5">
-          {isLoading && <div className="text-center text-white/30 text-sm py-8">جاري التحميل...</div>}
-          {!isLoading && jobs.length === 0 && (
-            <div className="text-center text-white/30 text-sm py-8 flex flex-col items-center gap-2">
-              <Wrench className="w-8 h-8 opacity-20" />
-              لا توجد بطاقات صيانة
-            </div>
-          )}
-          {jobs.map((job) => {
-            const isActive = selectedJob?.id === job.id;
-            return (
-              <div key={job.id} onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
-                className={`glass-panel rounded-2xl p-3 border cursor-pointer transition-all hover:border-violet-500/30 ${isActive ? "border-violet-500/40 bg-violet-500/5" : "border-white/5"}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[10px] text-white/30 font-mono">{job.job_no}</span>
-                      <StatusBadge status={job.status} />
+        {/* Job List / Grid */}
+        {isLoading && <div className="text-center text-white/30 text-sm py-8">جاري التحميل...</div>}
+        {!isLoading && jobs.length === 0 && (
+          <div className="text-center text-white/30 text-sm py-8 flex flex-col items-center gap-2">
+            <Wrench className="w-8 h-8 opacity-20" />
+            لا توجد بطاقات صيانة
+          </div>
+        )}
+
+        {/* LIST VIEW */}
+        {!isLoading && jobs.length > 0 && (viewMode === "list" || selectedJob) && (
+          <div className="flex flex-col gap-1.5">
+            {jobs.map((job) => {
+              const isActive = selectedJob?.id === job.id;
+              return (
+                <div key={job.id} onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
+                  className={`glass-panel rounded-2xl p-3 border cursor-pointer transition-all hover:border-violet-500/30 ${isActive ? "border-violet-500/40 bg-violet-500/5" : "border-white/5"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-[10px] text-white/30 font-mono">{job.job_no}</span>
+                        <StatusBadge status={job.status} />
+                      </div>
+                      <div className="font-bold text-white text-sm truncate">{job.customer_name}</div>
+                      <div className="text-white/50 text-xs">{job.device_brand} {job.device_model}</div>
+                      {job.problem_description && (
+                        <div className="text-white/30 text-[11px] truncate mt-0.5">{job.problem_description}</div>
+                      )}
                     </div>
-                    <div className="font-bold text-white text-sm truncate">{job.customer_name}</div>
-                    <div className="text-white/50 text-xs">{job.device_brand} {job.device_model}</div>
-                    {job.problem_description && (
-                      <div className="text-white/30 text-[11px] truncate mt-0.5">{job.problem_description}</div>
+                    {job.device_score != null && (
+                      <div className={`text-xs font-black px-1.5 py-0.5 rounded-lg ${job.device_score >= 80 ? "text-emerald-400 bg-emerald-500/10" : job.device_score >= 50 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10"}`}>
+                        {job.device_score}%
+                      </div>
                     )}
                   </div>
-                  {job.device_score != null && (
-                    <div className={`text-xs font-black px-1.5 py-0.5 rounded-lg ${job.device_score >= 80 ? "text-emerald-400 bg-emerald-500/10" : job.device_score >= 50 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10"}`}>
-                      {job.device_score}%
-                    </div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-[10px] text-white/30">{job.received_at}</span>
+                    <span className="text-xs font-bold text-violet-300">{formatCurrency(Number(job.estimated_cost))}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* GRID VIEW */}
+        {!isLoading && jobs.length > 0 && viewMode === "grid" && !selectedJob && (
+          <div className="grid grid-cols-2 gap-2">
+            {jobs.map((job) => {
+              const s = STATUS_MAP[job.status] ?? { label: job.status, color: "text-white/60", bg: "bg-white/5 border-white/10", icon: AlertCircle };
+              const StatusIcon = s.icon;
+              return (
+                <div key={job.id} onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
+                  className="glass-panel rounded-xl p-2.5 border border-white/5 cursor-pointer transition-all hover:border-violet-500/30 hover:bg-violet-500/5 flex flex-col gap-2">
+                  {/* Top row: badge + score */}
+                  <div className="flex items-center justify-between gap-1">
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] font-bold ${s.color} ${s.bg}`}>
+                      <StatusIcon className="w-2.5 h-2.5" />
+                      {s.label}
+                    </span>
+                    {job.device_score != null && (
+                      <span className={`text-[10px] font-black px-1 py-0.5 rounded ${job.device_score >= 80 ? "text-emerald-400 bg-emerald-500/10" : job.device_score >= 50 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10"}`}>
+                        {job.device_score}%
+                      </span>
+                    )}
+                  </div>
+                  {/* Job no */}
+                  <span className="text-[9px] text-white/25 font-mono leading-none">{job.job_no}</span>
+                  {/* Customer */}
+                  <div className="font-bold text-white text-xs truncate leading-tight">{job.customer_name}</div>
+                  {/* Device */}
+                  <div className="text-white/40 text-[11px] truncate">{job.device_brand} {job.device_model}</div>
+                  {/* Problem */}
+                  {job.problem_description && (
+                    <div className="text-white/25 text-[10px] truncate">{job.problem_description}</div>
                   )}
+                  {/* Bottom row: date + cost */}
+                  <div className="flex items-center justify-between mt-auto pt-1 border-t border-white/5">
+                    <span className="text-[9px] text-white/25">{job.received_at}</span>
+                    <span className="text-[11px] font-bold text-violet-300">{formatCurrency(Number(job.estimated_cost))}</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between mt-1.5">
-                  <span className="text-[10px] text-white/30">{job.received_at}</span>
-                  <span className="text-xs font-bold text-violet-300">{formatCurrency(Number(job.estimated_cost))}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ══════════════════════════════════════════════════════

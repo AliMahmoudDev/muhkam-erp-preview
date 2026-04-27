@@ -113,7 +113,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
     roles: ['admin', 'manager', 'cashier', 'salesperson'],
   },
   { name: 'المرتجعات', href: '/returns', icon: RotateCcw, roles: ['admin', 'manager'] },
-  { name: 'الموبايلات', href: '/devices', icon: Smartphone, roles: ['admin', 'manager', 'cashier'] },
+  { name: 'الأجهزة', href: '/devices', icon: Smartphone, roles: ['admin', 'manager', 'cashier'] },
   { name: 'الصيانة', href: '/repairs', icon: Wrench, roles: ['admin', 'manager', 'cashier'] },
   { name: 'مخزن التوالف', href: '/scrap-inventory', icon: Wrench, roles: ['admin', 'manager'] },
   { name: 'الضمانات', href: '/warranty', icon: ShieldCheck, roles: ['admin', 'manager', 'cashier'] },
