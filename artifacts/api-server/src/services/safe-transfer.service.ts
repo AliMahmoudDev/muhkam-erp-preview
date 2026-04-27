@@ -89,13 +89,12 @@ export interface TransferResult {
 /* ─── 1. Pure fee calculation — no DB, fully testable ──────────────────── */
 
 /**
- * Calculates fee and net amount for a transfer.
- * Pure function — safe to call anywhere without side effects.
- *
- * @param amount    Gross transfer amount in EGP
- * @param fee_type  "none" | "fixed" | "percentage"
- * @param fee_rate  For "fixed": absolute fee in EGP. For "percentage": rate (e.g. 2.5 = 2.5%).
- * @returns { fee_amount, net_amount } — both rounded to 2 decimal places.
+ * يحسب قيمة الرسوم والمبلغ الصافي للتحويل.
+ * دالة نقية لا تُعدِّل أي حالة — آمنة الاستدعاء من أي مكان.
+ * @param {number} amount - المبلغ الإجمالي للتحويل بالجنيه المصري
+ * @param {FeeType} fee_type - نوع الرسوم: "none" بلا رسوم، "fixed" ثابتة، "percentage" نسبة مئوية
+ * @param {number} fee_rate - قيمة الرسوم: مبلغ ثابت إذا "fixed"، أو نسبة (مثل 2.5 تعني 2.5%) إذا "percentage"
+ * @returns {FeeCalculation} - كائن يحتوي على `fee_amount` و`net_amount` مقرَّبَين لخانتين عشريتين
  */
 export function calculateTransferFee(
   amount:   number,
@@ -124,8 +123,15 @@ export function calculateTransferFee(
 export interface ValidationError { field: string; message: string }
 
 /**
- * Validates transfer parameters before touching the database.
- * Returns the first validation error found, or null if valid.
+ * يتحقق من صحة معاملات التحويل قبل أي استعلام على قاعدة البيانات.
+ * يُرجع أول خطأ يُعثر عليه، أو null إذا كانت جميع المعاملات صحيحة.
+ * @param {object} data - بيانات التحويل المراد التحقق منها
+ * @param {number} data.amount - المبلغ الإجمالي
+ * @param {number} data.from_safe_id - معرّف خزينة المصدر
+ * @param {number} data.to_safe_id - معرّف خزينة الوجهة
+ * @param {number} data.fee_rate - قيمة معدل الرسوم
+ * @param {number} data.net_amount - المبلغ الصافي (الإجمالي مطروحاً منه الرسوم)
+ * @returns {ValidationError | null} - كائن الخطأ مع اسم الحقل ورسالة عربية، أو null إذا لا أخطاء
  */
 export function validateTransferInput(data: {
   amount:       number;
@@ -161,19 +167,20 @@ type AnyTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 interface LockedSafe { id: number; name: string; balance: string }
 
 /**
- * Performs the actual balance mutations and record insertions within an existing
- * DB transaction. Called by executeSafeTransfer() — do not call directly.
+ * يُنفِّذ تعديلات الأرصدة وإدراج السجلات داخل معاملة قاعدة بيانات قائمة.
+ * يُستدعى فقط من `executeSafeTransfer()` — لا تستدعِه مباشرةً.
  *
- * Locking strategy:
- *   Rows are locked with SELECT FOR UPDATE in ascending id order, regardless
- *   of which is source and which is destination. This prevents the classic
- *   deadlock where two concurrent transfers swap direction (A→B and B→A both
- *   try to lock in the same order, so one will wait rather than deadlock).
+ * استراتيجية القفل:
+ *   يتم قفل صفوف الخزائن بـ SELECT FOR UPDATE بترتيب تصاعدي حسب الـ id،
+ *   بصرف النظر عن اتجاه التحويل، لمنع حالة الإغلاق المتبادل (Deadlock)
+ *   حين يحاول تحويلان متزامنان قفل نفس الصفوف بترتيب معكوس.
  *
- * Balance check:
- *   The debit UPDATE includes `WHERE balance >= amount`. If the safe has
- *   insufficient funds, the update returns 0 rows and we throw a 400 error
- *   inside the transaction (which rolls back all mutations automatically).
+ * فحص الرصيد:
+ *   أمر UPDATE يتضمن `WHERE balance >= amount`؛ إذا كان الرصيد غير كافٍ
+ *   تُعاد 0 صفوف ويُلقى خطأ 400 داخل المعاملة مما يُتراجع عن جميع التعديلات.
+ * @param {AnyTx} tx - كائن معاملة Drizzle الجارية
+ * @param {object} opts - خيارات التحويل (المعرّفات والمبالغ والتاريخ ومرجع التحويل)
+ * @returns {Promise<{ transferId: number; fromSafe: LockedSafe; toSafe: LockedSafe }>} - معرّف التحويل المُنشأ وبيانات الخزينتين
  */
 export async function applySafeTransfer(
   tx: AnyTx,
@@ -293,12 +300,13 @@ export async function applySafeTransfer(
 /* ─── 4. Create transfer fee expense ───────────────────────────────────── */
 
 /**
- * Records the transfer fee as a company expense (if fee > 0).
- * Also records an outgoing transaction for the fee so it appears in the
- * source safe's transaction history.
- *
- * Called within the same DB transaction as applySafeTransfer, so both
- * the balance mutation and the fee expense are atomic.
+ * يُسجِّل رسوم التحويل كمصروف للشركة إذا كانت الرسوم أكبر من صفر.
+ * يُسجِّل أيضاً حركة خروج في سجل معاملات خزينة المصدر
+ * حتى تظهر الرسوم في كشف حساب الخزينة.
+ * يُستدعى ضمن نفس معاملة `applySafeTransfer` لضمان الذرية التامة.
+ * @param {AnyTx} tx - كائن معاملة Drizzle الجارية
+ * @param {object} opts - خيارات الرسوم (المبلغ، معرّف المصدر واسمه، مرجع التحويل، التاريخ، ومعرّف الشركة)
+ * @returns {Promise<void>} - لا تُرجع قيمة (لا شيء إذا كانت الرسوم صفراً)
  */
 export async function createTransferExpense(
   tx: AnyTx,
@@ -348,24 +356,25 @@ export async function createTransferExpense(
 /* ─── 5. Main orchestrator ──────────────────────────────────────────────── */
 
 /**
- * Main entry point for creating a safe transfer.
- * This function coordinates validation, the DB transaction, and audit logging.
+ * نقطة الدخول الرئيسية لإنشاء تحويل بين خزينتين.
+ * تنسِّق هذه الدالة التحقق من المدخلات، ومعاملة قاعدة البيانات، وسجلات التدقيق.
  *
- * Execution order:
- *  1. Calculate fee and net amount (pure, no DB)
- *  2. Pre-flight ownership check (outside tx — cheap early rejection)
- *  3. Write "CREATED" audit log
- *  4. Begin DB transaction:
- *     a. Lock both safe rows (prevents concurrent balance corruption)
- *     b. Debit source safe by gross amount
- *     c. Credit destination safe by net amount
- *     d. Insert safe_transfers record
- *     e. Insert two transactions records (out + in)
- *     f. Insert expense for the fee (if any)
- *  5. On commit: write "COMPLETED" and "FEE_APPLIED" audit logs
+ * ترتيب التنفيذ:
+ *  1. حساب الرسوم والمبلغ الصافي (بدون قاعدة بيانات)
+ *  2. التحقق المسبق من ملكية الخزينتين قبل فتح المعاملة (رفض مبكر وسريع)
+ *  3. كتابة سجل تدقيق "SAFE_TRANSFER_CREATED" (إطلاق وانسَ)
+ *  4. فتح معاملة قاعدة بيانات واحدة تشمل:
+ *     أ. قفل صفوف الخزينتين لمنع تلوُّث الأرصدة المتزامن
+ *     ب. خصم المبلغ الإجمالي من خزينة المصدر
+ *     ج. إضافة المبلغ الصافي إلى خزينة الوجهة
+ *     د. إدراج سجل التحويل في جدول safe_transfers
+ *     هـ. إدراج حركتَي معاملة (خروج + دخول) في جدول transactions
+ *     و. إدراج مصروف الرسوم (إن وُجد) في جدول expenses
+ *  5. بعد التثبيت: كتابة سجلَي تدقيق "COMPLETED" و"FEE_APPLIED"
  *
- * If any step inside the transaction fails, PostgreSQL rolls back everything
- * atomically — no partial balance changes or orphan records.
+ * في حال فشل أي خطوة داخل المعاملة، تُتراجع PostgreSQL عن كل شيء ذرياً.
+ * @param {TransferInput} input - بيانات التحويل الكاملة
+ * @returns {Promise<TransferResult>} - نتيجة التحويل الناجح مع المرجع والمبالغ
  */
 export async function executeSafeTransfer(input: TransferInput): Promise<TransferResult> {
   const { from_safe_id, to_safe_id, amount, fee_type, fee_rate,

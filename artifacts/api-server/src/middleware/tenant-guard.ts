@@ -19,6 +19,13 @@ interface CacheEntry { expiresAt: number; status: "ok" | "inactive" | "expired";
 const cache = new Map<number, CacheEntry>();
 const CACHE_TTL_MS = 60_000; // 1 minute
 
+/**
+ * يجلب حالة اشتراك الشركة من قاعدة البيانات مع تخزين مؤقت لمدة 60 ثانية.
+ * يُعيد "ok" إذا كان الاشتراك نشطاً وساري المفعول،
+ * "expired" إذا تجاوز تاريخ الانتهاء، و"inactive" إذا كانت الشركة موقوفة أو غير موجودة.
+ * @param {number} companyId - معرّف الشركة المراد التحقق منها
+ * @returns {Promise<{ status: "ok" | "inactive" | "expired"; daysPastDue: number }>} - حالة الاشتراك وعدد أيام التأخر
+ */
 async function getCompanyStatus(companyId: number): Promise<{ status: "ok" | "inactive" | "expired"; daysPastDue: number }> {
   const now = Date.now();
   const cached = cache.get(companyId);
@@ -52,13 +59,33 @@ async function getCompanyStatus(companyId: number): Promise<{ status: "ok" | "in
   return { status: result, daysPastDue };
 }
 
-/** Invalidate cache for a company (call after renewing subscription) */
+/**
+ * يُبطل الإدخال المخزَّن مؤقتاً لشركة معينة.
+ * يجب استدعاؤه فور تجديد اشتراك الشركة لضمان أن الطلبات التالية
+ * تعكس الحالة الجديدة الصحيحة فوراً دون انتظار انتهاء صلاحية الكاش.
+ * @param {number} companyId - معرّف الشركة المراد حذف كاشها
+ * @returns {void}
+ */
 export function invalidateTenantCache(companyId: number): void {
   cache.delete(companyId);
 }
 
 const GRACE_PERIOD_DAYS = 7;
 
+/**
+ * وسيط التحقق من صلاحية اشتراك المستأجر على كل طلب مصادَق عليه.
+ *
+ * السلوك:
+ *  - المشرف العام يتجاوز هذا الفحص دائماً
+ *  - الشركات الموقوفة: 403
+ *  - الاشتراكات المنتهية: 402 مع تفاصيل الأيام المتأخرة
+ *  - طلبات GET تحصل على فترة سماح 7 أيام بعد انتهاء الاشتراك
+ *  - عند خطأ في قاعدة البيانات: يسمح بالطلب (fail-open) لتجنب تعطُّل الخدمة
+ * @param {Request} req - كائن الطلب من Express
+ * @param {Response} res - كائن الاستجابة من Express
+ * @param {NextFunction} next - دالة الانتقال للوسيط التالي
+ * @returns {Promise<void>} - لا تُرجع قيمة
+ */
 export async function tenantGuard(req: Request, res: Response, next: NextFunction): Promise<void> {
   // Only check authenticated requests with a company
   const user = req.user;

@@ -6,21 +6,16 @@ import { isTokenBlacklisted } from "../lib/session-blacklist";
 import { sanitizeObject } from "../lib/sanitize";
 
 /**
- * setDbContext — sets PostgreSQL session variables for Row Level Security
- * and switches to the constrained app role (erp_app_role).
+ * يضبط متغيرات جلسة PostgreSQL لتفعيل عزل البيانات على مستوى الصفوف (RLS)
+ * ويُحوِّل الاتصال إلى الدور المقيَّد `erp_app_role`.
  *
- * IMPORTANT — connection-pool caveat:
- *   The PRIMARY tenant guard is the application-layer
- *   `where(eq(table.company_id, req.companyId))` clause used in every route.
- *   RLS is defense-in-depth. Because Drizzle's global `db` checks out a
- *   different pooled connection for each query, `SET ROLE` and `set_config`
- *   here apply only to ONE connection. Subsequent queries in the same request
- *   may run on a different connection where neither the role nor the GUCs are
- *   set — those queries will run as the owner role (RLS bypassed) with no
- *   tenant GUC (policy permits, treated as background job).
- *   Full RLS enforcement requires per-request connection pinning (transaction
- *   or pool checkout) — tracked as a follow-up. The current setup still
- *   protects whichever queries happen to land on the prepared connection.
+ * ملاحظة مهمة — تجمُّع الاتصالات:
+ *   الطبقة الأولى للحماية هي شرط `where(eq(table.company_id, req.companyId))`
+ *   الموجود في كل مسار. أما RLS فهو طبقة دفاعية إضافية فحسب. نظرًا لأن
+ *   Drizzle يستخدم اتصالًا مختلفًا من التجمُّع لكل استعلام، فإن `SET ROLE`
+ *   و`set_config` لا يضمنان تطبيق RLS على جميع الاستعلامات في الطلب الواحد.
+ * @param {object} user - بيانات المستخدم التي تشمل رقم الشركة والدور
+ * @returns {Promise<void>} - لا تُرجع قيمة
  */
 async function setDbContext(user: { company_id: number | null; role: string }): Promise<void> {
   const companyId = user.company_id ? String(user.company_id) : "";
@@ -37,8 +32,10 @@ async function setDbContext(user: { company_id: number | null; role: string }): 
 }
 
 /**
- * clearDbContext — best-effort cleanup of the role/GUC state on the pooled
- * connection that handled the current request, to limit cross-request leakage.
+ * يُعيد ضبط دور الاتصال ومتغيرات الجلسة إلى قيمها الافتراضية
+ * بعد انتهاء الطلب، للحدّ من تسرُّب سياق المستأجر إلى طلبات أخرى
+ * تستخدم الاتصال ذاته من التجمُّع.
+ * @returns {Promise<void>} - لا تُرجع قيمة
  */
 async function clearDbContext(): Promise<void> {
   try {
@@ -81,7 +78,13 @@ declare global {
   }
 }
 
-/* ── Sign a short-lived access token (4 h) ──────────────── */
+/**
+ * يُنشئ رمز وصول (Access Token) قصير الصلاحية مدته 4 ساعات.
+ * @param {number} userId - معرّف المستخدم
+ * @param {string} role - دور المستخدم في النظام
+ * @param {number|null} companyId - معرّف الشركة المرتبطة بالمستخدم (null للمشرف العام)
+ * @returns {string} - رمز JWT موقَّع
+ */
 export function signToken(userId: number, role: string, companyId: number | null = null): string {
   return jwt.sign({ userId, role, companyId }, JWT_SECRET, { expiresIn: "4h" });
 }
@@ -95,10 +98,21 @@ if (!process.env.JWT_REFRESH_SECRET) {
 }
 const REFRESH_SECRET: string = process.env.JWT_REFRESH_SECRET;
 
+/**
+ * يُنشئ رمز تحديث (Refresh Token) طويل الصلاحية مدته 7 أيام.
+ * يُستخدم لاستبدال رمز الوصول المنتهي دون إعادة تسجيل الدخول.
+ * @param {number} userId - معرّف المستخدم
+ * @returns {string} - رمز JWT موقَّع بالسرّ الخاص بالتحديث
+ */
 export function signRefreshToken(userId: number): string {
   return jwt.sign({ userId, type: "refresh" }, REFRESH_SECRET, { expiresIn: "7d" });
 }
 
+/**
+ * يتحقق من صحة رمز التحديث ويُرجع معرّف المستخدم المضمَّن فيه.
+ * @param {string} token - رمز التحديث المُرسَل من العميل
+ * @returns {{ userId: number } | null} - معرّف المستخدم في حال كان الرمز صحيحاً، أو null عند الفشل
+ */
 export function verifyRefreshToken(token: string): { userId: number } | null {
   try {
     const decoded = jwt.verify(token, REFRESH_SECRET) as { userId: number; type: string };
@@ -109,7 +123,20 @@ export function verifyRefreshToken(token: string): { userId: number } | null {
   }
 }
 
-/* ── Verify JWT and attach user from DB ─────────────────── */
+/**
+ * وسيط المصادقة الرئيسي — يتحقق من رمز JWT ويُرفق بيانات المستخدم بالطلب.
+ *
+ * ترتيب التحقق:
+ *  1. يقرأ الرمز من الكوكيز (httpOnly) أولاً، ثم من ترويسة Authorization كاحتياط
+ *  2. يتحقق من أن الرمز غير مُدرج في قائمة الإلغاء (logout/revocation)
+ *  3. يُفكّك الرمز ويتحقق من صلاحيته عبر JWT_SECRET
+ *  4. يُعيد قراءة بيانات المستخدم من قاعدة البيانات (لا يثق برمز التوكن وحده)
+ *  5. يتحقق من نشاط الحساب، وصلاحية الاشتراك، وإعدادات المستخدم
+ * @param {Request} req - كائن الطلب من Express
+ * @param {Response} res - كائن الاستجابة من Express
+ * @param {NextFunction} next - دالة الانتقال للوسيط التالي
+ * @returns {Promise<void>} - لا تُرجع قيمة
+ */
 export async function authenticate(
   req: Request,
   res: Response,
@@ -196,7 +223,12 @@ export async function authenticate(
   next();
 }
 
-/* ── Role guard factory ─────────────────────────────────── */
+/**
+ * مصنع وسائط التحقق من الدور — يُنشئ وسيطاً يرفض الطلبات
+ * التي لا يمتلك أصحابها أحد الأدوار المُحددة.
+ * @param {...string} roles - قائمة الأدوار المسموح بها (مثل: "admin", "manager")
+ * @returns {Function} - وسيط Express يتحقق من دور المستخدم
+ */
 export function requireRole(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -215,7 +247,14 @@ export function requireRole(...roles: string[]) {
   };
 }
 
-/* ── XSS body sanitizer ─────────────────────────────────── */
+/**
+ * وسيط تنظيف جسم الطلب من هجمات XSS.
+ * يُطبَّق على كائنات JSON فقط، ويتجاهل الـ Buffer (مثل نقطة الاستعادة /api/system/restore).
+ * @param {Request} req - كائن الطلب من Express
+ * @param {Response} _res - كائن الاستجابة (غير مُستخدَم)
+ * @param {NextFunction} next - دالة الانتقال للوسيط التالي
+ * @returns {void}
+ */
 export function sanitizeBody(req: Request, _res: Response, next: NextFunction): void {
   /* Skip Buffers (e.g. /api/system/restore uses express.raw() — body is a Buffer) */
   if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
@@ -231,9 +270,15 @@ export function sanitizeBody(req: Request, _res: Response, next: NextFunction): 
    completely — every route can safely use req.user!.company_id!
    after this middleware passes.
    ───────────────────────────────────────────────────────── */
-/* Stricter than requireTenant — REJECTS super_admin too. Use on routes
-   that mutate tenant-scoped resources by id and have no business
-   running cross-tenant. */
+/**
+ * وسيط التحقق الصارم من سياق المستأجر — يرفض حتى المشرف العام.
+ * يُستخدَم في المسارات التي تُعدِّل موارد مرتبطة بشركة محددة
+ * ولا يصح تنفيذها عبر شركات متعددة (cross-tenant).
+ * @param {Request} req - كائن الطلب من Express
+ * @param {Response} res - كائن الاستجابة من Express
+ * @param {NextFunction} next - دالة الانتقال للوسيط التالي
+ * @returns {void}
+ */
 export function requireTenantStrict(req: Request, res: Response, next: NextFunction): void {
   const cid = req.user?.company_id;
   if (typeof cid !== "number" || cid <= 0) {
@@ -245,6 +290,15 @@ export function requireTenantStrict(req: Request, res: Response, next: NextFunct
   next();
 }
 
+/**
+ * وسيط التحقق من سياق المستأجر — يضمن ارتباط الطلب بشركة محددة.
+ * يجب تشغيله بعد `authenticate`. يسمح للمشرف العام بالمرور دون شركة.
+ * بعد اجتياز هذا الوسيط، يمكن لكل مسار استخدام `req.user.company_id` بأمان.
+ * @param {Request} req - كائن الطلب من Express
+ * @param {Response} res - كائن الاستجابة من Express
+ * @param {NextFunction} next - دالة الانتقال للوسيط التالي
+ * @returns {void}
+ */
 export function requireTenant(req: Request, res: Response, next: NextFunction): void {
   if (!req.user) {
     res.status(401).json({ error: "غير مصرح: يلزم تسجيل الدخول أولاً" });
@@ -263,11 +317,14 @@ export function requireTenant(req: Request, res: Response, next: NextFunction): 
   next();
 }
 
-/* ─────────────────────────────────────────────────────────
-   getTenant(req) — strict tenant accessor for route handlers.
-   Throws (caught by error handler → 403) if company_id missing.
-   For super_admin, requires explicit ?company_id= query param.
-   ───────────────────────────────────────────────────────── */
+/**
+ * يستخرج معرّف الشركة (tenant) من الطلب بشكل صارم.
+ * يُرجع القيمة مباشرةً أو يُلقي استثناءً (يُعالجه error handler بـ 403).
+ * المشرف العام يحتاج إلى تمرير `?company_id=` صراحةً في الاستعلام أو الجسم.
+ * @param {Request} req - كائن الطلب من Express
+ * @returns {number} - معرّف الشركة
+ * @throws {Error} - إذا لم يكن سياق الشركة متاحاً (status: 403) أو ناقصاً للمشرف (status: 400)
+ */
 export function getTenant(req: Request): number {
   const cid = req.user?.company_id;
   if (typeof cid === "number" && cid > 0) return cid;
@@ -286,7 +343,18 @@ export const adminOnly    = [authenticate, requireRole("admin"), requireTenant] 
 export const managerUp    = [authenticate, requireRole("admin", "manager"), requireTenant] as const;
 export const anyAuth      = [authenticate, requireTenant] as const;
 
-/* ── IP Allowlist guard for super_admin routes ──────────── */
+/**
+ * وسيط قائمة السماح بالعناوين IP لمسارات المشرف العام.
+ * إذا كان متغير البيئة `SUPER_ADMIN_IPS` فارغاً، يُسمح بالوصول من أي عنوان
+ * (السلوك الافتراضي في بيئة التطوير).
+ * في الإنتاج: يُرفض أي عنوان IP غير موجود في القائمة.
+ * يعتمد على `req.ip` الذي تحدده Express عبر إعداد "trust proxy"
+ * لمنع تزوير ترويسة X-Forwarded-For.
+ * @param {Request} req - كائن الطلب من Express
+ * @param {Response} res - كائن الاستجابة من Express
+ * @param {NextFunction} next - دالة الانتقال للوسيط التالي
+ * @returns {void}
+ */
 export function superAdminIPGuard(req: Request, res: Response, next: NextFunction): void {
   const allowedIPs = process.env.SUPER_ADMIN_IPS?.split(",").map((ip) => ip.trim()).filter(Boolean);
 
