@@ -205,6 +205,7 @@ export function NotificationBell() {
       <button
         onClick={() => setOpen(o => !o)}
         title="رسائلي"
+        aria-label="رسائلي"
         style={{
           position: 'relative',
           padding: '7px',

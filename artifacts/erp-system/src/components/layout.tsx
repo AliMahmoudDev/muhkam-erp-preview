@@ -286,6 +286,12 @@ export function AppLayout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex" dir="rtl">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-black focus:p-2 focus:rounded"
+      >
+        تخطي إلى المحتوى الرئيسي
+      </a>
       {/* ══════════════════════════════════════════
           SIDEBAR
       ══════════════════════════════════════════ */}
@@ -353,6 +359,7 @@ export function AppLayout({ children }: LayoutProps) {
           <button
             onClick={() => setSidebarCollapsed((v) => !v)}
             title={sidebarCollapsed ? 'توسيع القائمة' : 'طي القائمة'}
+            aria-label={sidebarCollapsed ? 'توسيع القائمة' : 'طي القائمة'}
             style={{
               position: sidebarCollapsed ? 'static' : 'absolute',
               left: sidebarCollapsed ? 'auto' : 8,
@@ -405,7 +412,7 @@ export function AppLayout({ children }: LayoutProps) {
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto pb-4 mt-1" style={{ scrollbarWidth: 'none', padding: sidebarCollapsed ? '4px 8px' : '0 12px' }}>
+        <nav role="navigation" aria-label="القائمة الرئيسية" className="flex-1 overflow-y-auto pb-4 mt-1" style={{ scrollbarWidth: 'none', padding: sidebarCollapsed ? '4px 8px' : '0 12px' }}>
           {NAV_SECTIONS.map((section, si) => {
             const items = visibleNav.filter((i) => section.hrefs.includes(i.href));
             if (!items.length) return null;
@@ -480,6 +487,8 @@ export function AppLayout({ children }: LayoutProps) {
           MOBILE BOTTOM NAV
       ══════════════════════════════════════════ */}
       <nav
+        role="navigation"
+        aria-label="قائمة التنقل السريع"
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-2"
         style={{
           height: 56,
@@ -516,11 +525,16 @@ export function AppLayout({ children }: LayoutProps) {
           MAIN CONTENT COLUMN
       ══════════════════════════════════════════ */}
       <main
+        id="main-content"
+        role="main"
+        aria-label="المحتوى الرئيسي"
         className="flex-1 flex flex-col min-h-screen overflow-hidden pb-14 lg:pb-0"
         style={{ minWidth: 0 }}
       >
         {/* ── Topbar ── */}
         <header
+          role="banner"
+          aria-label="شريط العنوان"
           className="flex items-center gap-3 shrink-0"
           style={{
             height: '56px',
@@ -588,6 +602,7 @@ export function AppLayout({ children }: LayoutProps) {
                 <button
                   onClick={logout}
                   title="تسجيل الخروج"
+                  aria-label="تسجيل الخروج"
                   style={{ width: 26, height: 26, borderRadius: 7, border: 'none', background: 'transparent', color: textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                 >
                   <LogOut style={{ width: 14, height: 14 }} />

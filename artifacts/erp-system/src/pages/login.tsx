@@ -505,7 +505,7 @@ export default function Login() {
         >
           {/* ── 2FA Step ─── */}
           {requires2FA ? (
-            <form onSubmit={handleTotpSubmit} noValidate>
+            <form onSubmit={handleTotpSubmit} noValidate aria-label="نموذج التحقق الثنائي">
               <div style={{ marginBottom: '28px', textAlign: 'center' }}>
                 <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔐</div>
                 <h2
@@ -527,6 +527,9 @@ export default function Login() {
 
               {error && (
                 <div
+                  id="totp-error"
+                  role="alert"
+                  aria-live="polite"
                   style={{
                     padding: '10px 14px',
                     borderRadius: '10px',
@@ -556,6 +559,8 @@ export default function Login() {
                 placeholder="• • • • • •"
                 inputMode="numeric"
                 autoFocus
+                aria-label="رمز التحقق الثنائي"
+                aria-describedby="totp-error"
                 style={{
                   width: '100%',
                   padding: '16px',
@@ -887,7 +892,7 @@ function LoginForm({
   }, [error]);
 
   return (
-    <form onSubmit={onSubmit} noValidate>
+    <form onSubmit={onSubmit} noValidate aria-label="نموذج تسجيل الدخول">
       {/* Heading */}
       <div style={{ marginBottom: '28px', textAlign: 'center' }}>
         <div style={{ fontSize: '36px', marginBottom: '6px' }}>🤩</div>
@@ -937,11 +942,14 @@ function LoginForm({
             👤
           </span>
           <input
+            id="login-username"
             ref={usernameRef}
             type="text"
             value={username}
             autoComplete="username"
             placeholder="اسم المستخدم أو البريد الإلكتروني"
+            aria-label="اسم المستخدم أو البريد الإلكتروني"
+            aria-describedby="login-error"
             disabled={loading}
             onChange={(e) => {
               setUsername(e.target.value);
@@ -1059,11 +1067,14 @@ function LoginForm({
             🔒
           </span>
           <input
+            id="login-pin"
             ref={pinRef}
             type={showPin ? 'text' : 'password'}
             value={pin}
             autoComplete="current-password"
             placeholder="أدخل الرقم السري"
+            aria-label="الرقم السري"
+            aria-describedby="login-error"
             disabled={loading}
             onChange={(e) => {
               setPin(e.target.value);
@@ -1117,6 +1128,9 @@ function LoginForm({
       {/* ── Error ────────────────────────────────────── */}
       {error && (
         <div
+          id="login-error"
+          role="alert"
+          aria-live="polite"
           ref={errorRef}
           style={{
             marginBottom: '18px',

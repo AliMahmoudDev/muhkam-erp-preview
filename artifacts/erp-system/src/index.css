@@ -4590,3 +4590,11 @@ html.light .row-menu-dropdown .text-emerald-300 { color: #059669; }
 html.light .row-menu-dropdown .text-amber-300   { color: #d97706; }
 html.light .row-menu-dropdown .text-red-400     { color: #dc2626; }
 html.light .row-menu-dropdown .text-violet-300  { color: #7c3aed; }
+
+/* ── تقليل الحركة لإمكانية الوصول ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -199,6 +199,7 @@ export function AlertBell() {
           alignItems: 'center',
         }}
         title="التنبيهات"
+        aria-label="التنبيهات"
       >
         <Bell style={{ width: 16, height: 16 }} />
         {badgeCount > 0 && (
