@@ -627,8 +627,8 @@ export default function Repairs() {
                       <td className="px-2 py-2 whitespace-nowrap"><StatusBadge status={job.status} /></td>
                       <td className="px-2 py-2 text-white font-bold max-w-[160px] truncate">{job.customer_name}</td>
                       <td className="px-2 py-2 text-white/60 font-mono whitespace-nowrap">{job.customer_phone || "—"}</td>
-                      <td className="px-2 py-2 text-white/60 max-w-[120px] truncate">{job.device_model || "—"}</td>
-                      <td className="px-2 py-2 text-white/70 max-w-[120px] truncate">{job.device_brand || "—"}</td>
+                      <td className="px-2 py-2 text-white/60 max-w-[120px] truncate">{job.device_brand || "—"}</td>
+                      <td className="px-2 py-2 text-white/70 max-w-[120px] truncate">{job.device_model || "—"}</td>
                       <td className="px-2 py-2 text-white/50 max-w-[200px] truncate" title={job.problem_description || ""}>{job.problem_description || "—"}</td>
                       <td className="px-2 py-2 text-white/60 max-w-[120px] truncate">{job.technician_name || "—"}</td>
                       <td className="px-2 py-2 text-violet-300 font-bold whitespace-nowrap">{formatCurrency(Number(job.final_cost ?? job.estimated_cost))}</td>
