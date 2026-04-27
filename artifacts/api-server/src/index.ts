@@ -57,12 +57,12 @@ async function main() {
     logger.error({ err }, "[startup] RLS init failed — continuing without RLS");
   }
 
-  const server = app.listen(PORT, (err?: Error) => {
+  const server = app.listen(PORT, "0.0.0.0", (err?: Error) => {
     if (err) {
       logger.error({ err }, "Error listening on port");
       process.exit(1);
     }
-    logger.info(`Backend started on port ${PORT}`);
+    logger.info(`Backend started on port ${PORT} (0.0.0.0)`);
     void sendTelegramAlert(
       `🚀 *مُحكم ERP* يعمل بشكل طبيعي\nالسيرفر شغال على البورت ${PORT}\nالوقت: ${new Date().toLocaleString("ar-EG")}`
     );
