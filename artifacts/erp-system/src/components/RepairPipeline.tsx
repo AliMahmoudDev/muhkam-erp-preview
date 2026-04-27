@@ -167,9 +167,10 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
       <div className="rounded-xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
         <div className="overflow-x-auto scrollbar-none" dir="ltr">
           <div className="flex items-stretch min-w-max">
-            {PIPELINE_STAGES.map((stage, idx) => {
+            {[...PIPELINE_STAGES].reverse().map((stage) => {
+              const originalIdx = PIPELINE_STAGES.findIndex(s => s.key === stage.key);
               const isActive    = stage.key === currentStatus;
-              const isCompleted = !isTerminal && currentIdx > idx && currentIdx !== -1;
+              const isCompleted = !isTerminal && currentIdx > originalIdx && currentIdx !== -1;
               const isClickable = allowed.includes(stage.key);
               const cc          = COLOR_CLASSES[stage.color] ?? COLOR_CLASSES.violet;
 
