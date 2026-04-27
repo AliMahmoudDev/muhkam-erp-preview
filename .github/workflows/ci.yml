@@ -99,11 +99,9 @@ jobs:
         run: pnpm --filter @workspace/erp-system lint
 
       - name: Type check backend
-        continue-on-error: true
         run: pnpm --filter @workspace/api-server type-check
 
       - name: Type check frontend (erp-system)
-        continue-on-error: true
         run: pnpm --filter @workspace/erp-system type-check
 
   build:
