@@ -642,39 +642,49 @@ export default function Repairs() {
 
         {/* GRID VIEW */}
         {!isLoading && jobs.length > 0 && viewMode === "grid" && !selectedJob && (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {jobs.map((job) => {
-              const s = STATUS_MAP[job.status] ?? { label: job.status, color: "text-white/60", bg: "bg-white/5 border-white/10", icon: AlertCircle };
-              const StatusIcon = s.icon;
               return (
-                <div key={job.id} onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
-                  className="glass-panel rounded-xl p-2.5 border border-white/5 cursor-pointer transition-all hover:border-violet-500/30 hover:bg-violet-500/5 flex flex-col gap-2">
-                  {/* Top row: badge + score */}
-                  <div className="flex items-center justify-between gap-1">
-                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] font-bold ${s.color} ${s.bg}`}>
-                      <StatusIcon className="w-2.5 h-2.5" />
-                      {s.label}
-                    </span>
-                    {job.device_score != null && (
-                      <span className={`text-[10px] font-black px-1 py-0.5 rounded ${job.device_score >= 80 ? "text-emerald-400 bg-emerald-500/10" : job.device_score >= 50 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10"}`}>
-                        {job.device_score}%
-                      </span>
+                <div key={job.id}
+                  className="glass-panel rounded-xl border border-white/8 hover:border-violet-500/25 transition-all group overflow-hidden">
+                  {/* Card top */}
+                  <div className="p-3 cursor-pointer" onClick={() => { setSelectedJob(job); setShowNewForm(false); }}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                        <Wrench className="w-5 h-5 text-violet-400" />
+                      </div>
+                      <StatusBadge status={job.status} />
+                    </div>
+                    <p className="font-bold text-white text-sm leading-tight truncate">{job.customer_name}</p>
+                    <p className="text-[10px] text-white/25 font-mono mt-0.5">{job.job_no}</p>
+
+                    <div className="mt-2.5 flex flex-wrap gap-1">
+                      {job.device_brand && <span className="text-[10px] text-white/45 bg-white/5 px-1.5 py-0.5 rounded">{job.device_brand}</span>}
+                      {job.device_model && <span className="text-[10px] text-white/35">{job.device_model}</span>}
+                      {job.device_score != null && (
+                        <span className={`text-[10px] font-black px-1 py-0.5 rounded ${job.device_score >= 80 ? "text-emerald-400 bg-emerald-500/10" : job.device_score >= 50 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10"}`}>
+                          {job.device_score}%
+                        </span>
+                      )}
+                    </div>
+
+                    {job.problem_description && (
+                      <p className="text-[10px] text-white/30 mt-1.5 truncate" title={job.problem_description}>{job.problem_description}</p>
                     )}
+
+                    <div className="mt-3 pt-2.5 border-t border-white/6 flex items-end justify-between">
+                      <div>
+                        <p className="text-emerald-300 font-bold text-sm">{formatCurrency(Number(job.final_cost ?? job.estimated_cost))}</p>
+                        <p className="text-[10px] text-white/30 mt-0.5">{job.received_at}</p>
+                      </div>
+                    </div>
                   </div>
-                  {/* Job no */}
-                  <span className="text-[9px] text-white/25 font-mono leading-none">{job.job_no}</span>
-                  {/* Customer */}
-                  <div className="font-bold text-white text-xs truncate leading-tight">{job.customer_name}</div>
-                  {/* Device */}
-                  <div className="text-white/40 text-[11px] truncate">{job.device_brand} {job.device_model}</div>
-                  {/* Problem */}
-                  {job.problem_description && (
-                    <div className="text-white/25 text-[10px] truncate">{job.problem_description}</div>
-                  )}
-                  {/* Bottom row: date + cost */}
-                  <div className="flex items-center justify-between mt-auto pt-1 border-t border-white/5">
-                    <span className="text-[9px] text-white/25">{job.received_at}</span>
-                    <span className="text-[11px] font-bold text-violet-300">{formatCurrency(Number(job.estimated_cost))}</span>
+
+                  {/* Card bottom — technician */}
+                  <div className="px-3 pb-3 flex items-center justify-between">
+                    <p className="text-[10px] text-white/25 truncate flex-1">
+                      {job.technician_name ?? "—"}
+                    </p>
                   </div>
                 </div>
               );
