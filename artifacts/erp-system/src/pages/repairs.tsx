@@ -5,7 +5,7 @@ import {
   MinusCircle, Trash2, Save, ChevronLeft, Send, ClipboardList,
   AlertCircle, Clock, CheckCheck, Truck, Ban,
   Star, Settings, MessageSquare, ChevronRight, ChevronDown, RotateCcw,
-  LayoutGrid, List,
+  LayoutGrid, List, Package, GitBranch, History,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
@@ -14,6 +14,17 @@ import { api } from '@/lib/api';
 
 
 /* ── Types ──────────────────────────────────────────────────── */
+interface HistoryEntry {
+  id: number;
+  status_from?: string;
+  status_to?: string;
+  user_name?: string;
+  technician_name?: string;
+  event_type?: string;
+  note?: string;
+  created_at: string;
+}
+
 interface RepairJob {
   id: number;
   job_no: string;
@@ -38,9 +49,12 @@ interface RepairJob {
   received_at: string;
   estimated_delivery?: string;
   delivered_at?: string;
+  accessories?: string;
+  branch_id?: number;
   notes?: string;
   created_at: string;
   parts?: RepairPart[];
+  history?: HistoryEntry[];
 }
 
 interface RepairPart {
@@ -65,6 +79,16 @@ interface ChecklistItem {
 }
 
 /* ── Constants ──────────────────────────────────────────────── */
+const ACCESSORIES_LIST = [
+  { key: "charger",   label: "شاحن" },
+  { key: "box",       label: "علبة" },
+  { key: "case",      label: "جراب" },
+  { key: "sim_tray",  label: "درج SIM" },
+  { key: "earphones", label: "سماعة" },
+  { key: "cable",     label: "كابل" },
+  { key: "other",     label: "أخرى" },
+];
+
 const DEFAULT_CHECKLIST: ChecklistItem[] = [
   { id: "screen",       label: "الشاشة والعرض",      status: null },
   { id: "touch",        label: "اللمس والاستجابة",    status: null },
@@ -355,6 +379,11 @@ export default function Repairs() {
   const { data: customers = [] } = useQuery<{ id: number; name: string; phone?: string }[]>({
     queryKey: ["/api/customers"],
     queryFn: () => apiFetch<{ id: number; name: string; phone?: string }[]>(api("/api/customers")),
+  });
+
+  const { data: branches = [] } = useQuery<{ id: number; name: string }[]>({
+    queryKey: ["/api/branches"],
+    queryFn: () => apiFetch<{ id: number; name: string }[]>(api("/api/branches")),
   });
 
   /* ── Configurable checklist items from server (fallback to built-in) ── */
@@ -737,6 +766,7 @@ export default function Repairs() {
             : <NewJobForm
                 customers={customers}
                 users={users}
+                branches={branches}
                 checklistTemplate={templateChecklist}
                 onClose={() => setShowNewForm(false)}
                 onCreated={(job) => {
@@ -1626,6 +1656,7 @@ function JobDetail({
   const [editTech, setEditTech]     = useState(job.technician_id?.toString() ?? "");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const handleSave = () => {
     onPatch({
@@ -1771,6 +1802,72 @@ ${checklist.filter((c) => c.status && c.id !== "__power_off__").map((c) => {
           )}
         </div>
 
+        {/* Accessories display */}
+        {job.accessories && (
+          <div className="glass-panel rounded-2xl p-3 border border-white/5">
+            <p className="text-[10px] text-white/40 font-bold flex items-center gap-1 mb-2">
+              <Package className="w-3 h-3" /> الإكسسوارات المستلمة
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {job.accessories.split(",").map((key) => {
+                const acc = ACCESSORIES_LIST.find((a) => a.key === key.trim());
+                return (
+                  <span key={key} className="px-2.5 py-1 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/30 text-violet-300">
+                    ✓ {acc?.label ?? key}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Timeline / History */}
+        {job.history && job.history.length > 0 && (
+          <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+            <button
+              onClick={() => setHistoryOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-white/3 transition-all"
+            >
+              <p className="text-[10px] text-white/40 font-bold flex items-center gap-1.5">
+                <History className="w-3 h-3" /> سجل الأحداث ({job.history.length})
+              </p>
+              <ChevronRight
+                className={`w-4 h-4 text-white/30 transition-transform duration-200 ${historyOpen ? "-rotate-90" : "rotate-90"}`}
+              />
+            </button>
+            {historyOpen && (
+              <div className="px-4 pb-4 space-y-2">
+                {job.history.map((h) => {
+                  const fromLabel = h.status_from ? (STATUS_MAP[h.status_from]?.label ?? h.status_from) : null;
+                  const toLabel   = h.status_to   ? (STATUS_MAP[h.status_to]?.label   ?? h.status_to)   : null;
+                  const dt = new Date(h.created_at);
+                  const dateStr = dt.toLocaleDateString("ar-EG", { month: "short", day: "numeric" });
+                  const timeStr = dt.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+                  return (
+                    <div key={h.id} className="flex gap-3 items-start">
+                      <div className="flex flex-col items-center pt-0.5">
+                        <div className="w-2 h-2 rounded-full bg-violet-500/60 shrink-0" />
+                        <div className="w-px flex-1 bg-white/5 mt-1" />
+                      </div>
+                      <div className="flex-1 pb-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-white/60 font-medium">
+                            {h.note ?? (fromLabel && toLabel ? `${fromLabel} ← ${toLabel}` : toLabel ?? fromLabel ?? h.event_type)}
+                          </span>
+                          <span className="text-[10px] text-white/25 shrink-0">{dateStr} {timeStr}</span>
+                        </div>
+                        {(h.user_name || h.technician_name) && (
+                          <span className="text-[10px] text-white/30">{h.user_name ?? h.technician_name}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Technician & Financials — moved to bottom */}
         <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-3">
           <p className="text-[10px] text-white/40 font-bold">الفني والتكلفة</p>
@@ -1837,10 +1934,11 @@ ${checklist.filter((c) => c.status && c.id !== "__power_off__").map((c) => {
    NEW JOB FORM
 ══════════════════════════════════════════════════════════════ */
 function NewJobForm({
-  customers, users, checklistTemplate, onClose, onCreated,
+  customers, users, branches, checklistTemplate, onClose, onCreated,
 }: {
   customers: { id: number; name: string; phone?: string }[];
   users: { id: number; name: string }[];
+  branches: { id: number; name: string }[];
   checklistTemplate: ChecklistItem[];
   onClose: () => void;
   onCreated: (job: RepairJob) => void;
@@ -1854,6 +1952,16 @@ function NewJobForm({
   const [showAddCust, setShowAddCust]   = useState(false);
   const [newCustName, setNewCustName]   = useState("");
   const [addingCust, setAddingCust]     = useState(false);
+
+  /* ── Branch & Accessories state ── */
+  const [branchId, setBranchId]         = useState("");
+  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+
+  const toggleAccessory = (key: string) => {
+    setSelectedAccessories((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
 
   /* ── Device state ── */
   const [brand, setBrand]       = useState("");
@@ -1992,6 +2100,8 @@ function NewJobForm({
           received_at: receivedAt,
           estimated_delivery: estimatedDelivery || null,
           checklist: sentChecklist,
+          accessories: selectedAccessories.length ? selectedAccessories.join(",") : null,
+          branch_id: branchId ? Number(branchId) : null,
         }),
       });
       const job = await res.json();
@@ -2074,6 +2184,19 @@ function NewJobForm({
             </div>
           )}
         </div>
+
+        {/* ── 1b. Branch ── */}
+        {branches.length > 0 && (
+          <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
+            <p className="text-[10px] text-white/40 font-bold flex items-center gap-1">
+              <GitBranch className="w-3 h-3" /> الفرع
+            </p>
+            <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="erp-input w-full text-sm">
+              <option value="">— بدون تحديد فرع —</option>
+              {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </div>
+        )}
 
         {/* ── 2. Device Data ── */}
         <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
@@ -2183,6 +2306,32 @@ function NewJobForm({
               className="erp-input w-full text-sm resize-none"
             />
           </div>
+        </div>
+
+        {/* ── 2b. Accessories ── */}
+        <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
+          <p className="text-[10px] text-white/40 font-bold flex items-center gap-1">
+            <Package className="w-3 h-3" /> الإكسسوارات المستلمة مع الجهاز
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {ACCESSORIES_LIST.map((acc) => (
+              <button
+                key={acc.key}
+                type="button"
+                onClick={() => toggleAccessory(acc.key)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                  selectedAccessories.includes(acc.key)
+                    ? "bg-violet-500/25 border-violet-500/50 text-violet-300"
+                    : "border-white/10 text-white/40 hover:border-white/25 hover:text-white/60"
+                }`}
+              >
+                {selectedAccessories.includes(acc.key) ? "✓ " : ""}{acc.label}
+              </button>
+            ))}
+          </div>
+          {selectedAccessories.length === 0 && (
+            <p className="text-[10px] text-white/25">لا إكسسوارات — اضغط لتحديد ما تم استلامه</p>
+          )}
         </div>
 
         {/* ── 3. Device Power Check ── */}

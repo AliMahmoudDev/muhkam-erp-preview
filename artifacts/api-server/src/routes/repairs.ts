@@ -532,6 +532,8 @@ router.post("/repair-jobs", wrap(async (req, res) => {
     broker_name:              b.broker_name ? String(b.broker_name) : null,
     broker_commission:        b.broker_commission ? String(b.broker_commission) : "0",
     device_pin:               b.device_pin ? String(b.device_pin) : null,
+    accessories:              b.accessories ? String(b.accessories) : null,
+    branch_id:                b.branch_id ? Number(b.branch_id) : null,
   }).returning();
 
   /* History entry */
@@ -579,6 +581,7 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
     "problem_description","notes","imei","serial_no","color","storage",
     "estimated_delivery","external_workshop","external_workshop_name",
     "broker_name","alert_days_threshold","qa_notes","locked",
+    "accessories","branch_id","device_pin",
   ];
   // eslint-disable-next-line security/detect-object-injection
   for (const f of FIELDS) if (f in b) updates[f] = (b as Record<string, unknown>)[f];
