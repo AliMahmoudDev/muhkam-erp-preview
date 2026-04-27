@@ -559,8 +559,8 @@ export default function Repairs() {
           </div>
         )}
 
-        {/* LIST VIEW */}
-        {!isLoading && jobs.length > 0 && (viewMode === "list" || selectedJob) && (
+        {/* LIST VIEW — compact card when a job is selected (narrow panel) */}
+        {!isLoading && jobs.length > 0 && viewMode === "list" && selectedJob && (
           <div className="flex flex-col gap-1.5">
             {jobs.map((job) => {
               const isActive = selectedJob?.id === job.id;
@@ -587,11 +587,56 @@ export default function Repairs() {
                   </div>
                   <div className="flex items-center justify-between mt-1.5">
                     <span className="text-[10px] text-white/30">{job.received_at}</span>
-                    <span className="text-xs font-bold text-violet-300">{formatCurrency(Number(job.estimated_cost))}</span>
+                    <span className="text-xs font-bold text-violet-300">{formatCurrency(Number(job.final_cost ?? job.estimated_cost))}</span>
                   </div>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* LIST VIEW — full table when no job selected (wide layout) */}
+        {!isLoading && jobs.length > 0 && viewMode === "list" && !selectedJob && (
+          <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table dir="rtl" className="w-full text-right text-xs">
+                <thead className="bg-violet-500/15 border-b border-violet-500/25">
+                  <tr className="text-violet-200 font-bold text-[11px]">
+                    <th className="px-2 py-2.5 whitespace-nowrap">رقم الطلب</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">الفرع</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">تاريخ الطلب</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">حالة الطلب</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">اسم العميل</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">رقم الموبايل</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">نوع الجهاز</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">اسم الجهاز</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">نوع العطل</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">المهندس</th>
+                    <th className="px-2 py-2.5 whitespace-nowrap">التكلفة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobs.map((job, idx) => (
+                    <tr
+                      key={job.id}
+                      onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
+                      className={`cursor-pointer transition-all border-b border-white/5 last:border-b-0 hover:bg-violet-500/8 ${idx % 2 === 0 ? "bg-white/[0.015]" : ""}`}>
+                      <td className="px-2 py-2 font-mono text-white/70 whitespace-nowrap">{job.job_no}</td>
+                      <td className="px-2 py-2 text-white/40 whitespace-nowrap">—</td>
+                      <td className="px-2 py-2 text-white/50 whitespace-nowrap">{job.received_at}</td>
+                      <td className="px-2 py-2 whitespace-nowrap"><StatusBadge status={job.status} /></td>
+                      <td className="px-2 py-2 text-white font-bold max-w-[160px] truncate">{job.customer_name}</td>
+                      <td className="px-2 py-2 text-white/60 font-mono whitespace-nowrap">{job.customer_phone || "—"}</td>
+                      <td className="px-2 py-2 text-white/60 max-w-[120px] truncate">{job.device_model || "—"}</td>
+                      <td className="px-2 py-2 text-white/70 max-w-[120px] truncate">{job.device_brand || "—"}</td>
+                      <td className="px-2 py-2 text-white/50 max-w-[200px] truncate" title={job.problem_description || ""}>{job.problem_description || "—"}</td>
+                      <td className="px-2 py-2 text-white/60 max-w-[120px] truncate">{job.technician_name || "—"}</td>
+                      <td className="px-2 py-2 text-violet-300 font-bold whitespace-nowrap">{formatCurrency(Number(job.final_cost ?? job.estimated_cost))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
