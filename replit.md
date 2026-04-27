@@ -210,6 +210,17 @@ Key backend files with inline comments:
 - **Navigation:** "الموبايلات" in التجارة section of layout.tsx sidebar
 
 ### 5. نظام الصيانة والإصلاح (Repair Job Cards) — أبريل 2026
+#### إعدادات الصيانة الكاملة — RepairSettingsModal (أبريل 2026)
+- **Component:** `artifacts/erp-system/src/components/RepairSettingsModal.tsx`
+- Modal عريض (860px) بـ sidebar جانبي RTL + 5 تبويبات:
+  1. **بنود الفحص** — إدارة بنود الفحص الأولي بتصنيفات (Apple/Android)
+  2. **بنود QC** — نفس الهيكل لبنود مراقبة الجودة (`device_type="qc_apple"/"qc_android"`)
+  3. **حالات الصيانة** — عرض كامل لمراحل Pipeline مع الألوان والأوصاف
+  4. **الفنيين** — عرض المستخدمين مع نسب العمولة والتخصص والإشعارات (localStorage)
+  5. **QR والتتبع** — توليد QR code بمكتبة `qrcode.react` مع إعداد رابط التتبع
+- حذف `RepairSettings` القديمة من `repairs.tsx` واستبدالها بـ `RepairSettingsModal`
+
+
 - **DB schema:** `lib/db/src/schema/repairs.ts` → `repair_jobs` + `repair_job_parts` tables (created via SQL)
 - **Backend routes:** `artifacts/api-server/src/routes/repairs.ts` — full CRUD + parts management + stats
   - `GET /api/repair-jobs` (list with status/search filters)
