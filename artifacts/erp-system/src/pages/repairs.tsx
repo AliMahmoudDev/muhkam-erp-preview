@@ -304,6 +304,16 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
   rejected:                   { label: "مرفوض",                 color: "text-red-400",      bg: "bg-red-500/15 border-red-500/30",        icon: XCircle },
 };
 
+const STATUS_BORDER: Record<string, string> = {
+  received: "border-violet-500/30", initial_inspection: "border-indigo-500/30",
+  diagnosis: "border-blue-500/30", waiting_customer_approval: "border-amber-500/30",
+  approved: "border-emerald-500/30", in_repair: "border-cyan-500/30",
+  repaired: "border-teal-500/30", final_quality_check: "border-purple-500/30",
+  ready_for_delivery: "border-lime-500/30", delivered: "border-emerald-600/30",
+  rejected: "border-red-600/30", cancelled: "border-red-500/20",
+  pending: "border-amber-500/30", in_progress: "border-blue-500/30", done: "border-emerald-500/30",
+};
+
 const STATUS_BAR_COLOR: Record<string, string> = {
   pending:                   "bg-amber-500/60",
   in_progress:               "bg-blue-500/60",
@@ -562,13 +572,18 @@ export default function Repairs() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { key: "pending",     label: "انتظار",      color: "text-amber-400" },
-            { key: "in_progress", label: "جارية",       color: "text-blue-400" },
-            { key: "done",        label: "منتهية",      color: "text-emerald-400" },
+            { key: "pending",     label: "انتظار",   icon: "⏳", from: "from-amber-500/20",   border: "border-amber-500/25",   text: "text-amber-300",   sub: "text-amber-400/50"   },
+            { key: "in_progress", label: "جارية",    icon: "🔧", from: "from-cyan-500/20",     border: "border-cyan-500/25",     text: "text-cyan-300",    sub: "text-cyan-400/50"    },
+            { key: "done",        label: "منتهية",   icon: "✅", from: "from-emerald-500/20",  border: "border-emerald-500/25",  text: "text-emerald-300", sub: "text-emerald-400/50" },
           ].map((s) => (
-            <div key={s.key} className="glass-panel rounded-xl p-2 border border-white/5 text-center">
-              <div className={`text-xl font-black ${s.color}`}>{(stats as unknown as Record<string, number>)?.[s.key] ?? 0}</div>
-              <div className="text-[10px] text-white/40">{s.label}</div>
+            <div key={s.key} className={`rounded-2xl p-3 border bg-gradient-to-br ${s.from} to-transparent ${s.border} flex flex-col gap-1`}>
+              <div className="flex items-center justify-between">
+                <span className="text-base leading-none">{s.icon}</span>
+                <span className={`text-[9px] font-bold uppercase tracking-widest ${s.sub}`}>{s.label}</span>
+              </div>
+              <div className={`text-3xl font-black leading-none tracking-tight ${s.text}`}>
+                {(stats as unknown as Record<string, number>)?.[s.key] ?? 0}
+              </div>
             </div>
           ))}
         </div>
@@ -593,16 +608,21 @@ export default function Repairs() {
         </div>
 
         {/* Status Filters */}
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-1 flex-wrap">
           {[
-            { v: "all", l: "الكل" },
-            { v: "pending", l: "انتظار" },
-            { v: "in_progress", l: "جارٍ" },
-            { v: "done", l: "تم" },
-            { v: "delivered", l: "تسليم" },
+            { v: "all",         l: "الكل",     dot: ""                    },
+            { v: "pending",     l: "انتظار",   dot: "bg-amber-400"        },
+            { v: "in_progress", l: "جارٍ",     dot: "bg-cyan-400"         },
+            { v: "done",        l: "تم",        dot: "bg-emerald-400"      },
+            { v: "delivered",   l: "تسليم",    dot: "bg-violet-400"       },
           ].map((f) => (
             <button key={f.v} onClick={() => setStatusFilter(f.v)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${statusFilter === f.v ? "bg-violet-500/20 border-violet-500/40 text-violet-300" : "border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"}`}>
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all duration-150 ${
+                statusFilter === f.v
+                  ? "bg-white/10 border-white/20 text-white shadow-sm"
+                  : "border-white/6 text-white/35 hover:text-white/60 hover:border-white/12"
+              }`}>
+              {f.dot && <span className={`w-1.5 h-1.5 rounded-full ${f.dot} ${statusFilter === f.v ? "opacity-100" : "opacity-50"}`} />}
               {f.l}
             </button>
           ))}
@@ -619,33 +639,41 @@ export default function Repairs() {
 
         {/* LIST VIEW — compact card when a job is selected (narrow panel) */}
         {!isLoading && jobs.length > 0 && viewMode === "list" && selectedJob && (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             {jobs.map((job) => {
               const isActive = selectedJob?.id === job.id;
+              const s = STATUS_MAP[job.status] ?? { label: job.status, color: "text-white/50", bg: "", icon: AlertCircle };
+              const barColor = STATUS_BAR_COLOR[job.status] ?? "bg-white/10";
               return (
                 <div key={job.id} onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
-                  className={`glass-panel rounded-2xl p-3 border cursor-pointer transition-all hover:border-violet-500/30 ${isActive ? "border-violet-500/40 bg-violet-500/5" : "border-white/5"}`}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-[10px] text-white/30 font-mono">{job.job_no}</span>
-                        <StatusBadge status={job.status} />
+                  className={`relative rounded-2xl border cursor-pointer transition-all duration-150 overflow-hidden group ${
+                    isActive
+                      ? `${STATUS_BORDER[job.status] ?? "border-violet-500/40"} bg-white/5 shadow-lg`
+                      : "border-white/6 hover:border-white/15 hover:bg-white/3"
+                  }`}>
+                  <div className={`absolute top-0 right-0 bottom-0 w-[3px] ${barColor}`} />
+                  <div className="pr-3 pl-3 py-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border leading-none ${s.color} ${s.bg}`}>{s.label}</span>
+                          <span className="text-[9px] text-white/20 font-mono">{job.job_no}</span>
+                        </div>
+                        <p className="font-black text-white text-[13px] leading-tight truncate">{job.customer_name}</p>
+                        <p className="text-white/40 text-[11px] mt-0.5 truncate">{job.device_brand} {job.device_model}</p>
                       </div>
-                      <div className="font-bold text-white text-sm truncate">{job.customer_name}</div>
-                      <div className="text-white/50 text-xs">{job.device_brand} {job.device_model}</div>
-                      {job.problem_description && (
-                        <div className="text-white/30 text-[11px] truncate mt-0.5">{job.problem_description}</div>
-                      )}
+                      <div className="shrink-0 text-left">
+                        <p className="text-sm font-black text-white">{formatCurrency(Number(job.final_cost ?? job.estimated_cost))}</p>
+                        {job.device_score != null && (
+                          <p className={`text-[10px] font-bold text-right ${job.device_score >= 80 ? "text-emerald-400" : job.device_score >= 50 ? "text-amber-400" : "text-red-400"}`}>
+                            {job.device_score}%
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    {job.device_score != null && (
-                      <div className={`text-xs font-black px-1.5 py-0.5 rounded-lg ${job.device_score >= 80 ? "text-emerald-400 bg-emerald-500/10" : job.device_score >= 50 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10"}`}>
-                        {job.device_score}%
-                      </div>
+                    {job.technician_name && (
+                      <p className="text-[9px] text-white/25 mt-1 truncate">{job.technician_name} · {job.received_at}</p>
                     )}
-                  </div>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[10px] text-white/30">{job.received_at}</span>
-                    <span className="text-xs font-bold text-violet-300">{formatCurrency(Number(job.final_cost ?? job.estimated_cost))}</span>
                   </div>
                 </div>
               );
@@ -655,110 +683,112 @@ export default function Repairs() {
 
         {/* LIST VIEW — full table when no job selected (wide layout) */}
         {!isLoading && jobs.length > 0 && viewMode === "list" && !selectedJob && (
-          <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+          <div className="rounded-2xl border border-white/6 overflow-hidden" style={{ background: "rgba(255,255,255,0.025)" }}>
             <div className="overflow-x-auto">
-              <table dir="rtl" className="w-full text-right text-xs">
-                <thead className="bg-violet-500/15 border-b border-violet-500/25">
-                  <tr className="text-violet-200 font-bold text-[11px]">
-                    <th className="px-2 py-2.5 whitespace-nowrap">رقم الطلب</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">الفرع</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">تاريخ الطلب</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">حالة الطلب</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">اسم العميل</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">رقم الموبايل</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">نوع الجهاز</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">اسم الجهاز</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">نوع العطل</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">المهندس</th>
-                    <th className="px-2 py-2.5 whitespace-nowrap">التكلفة</th>
+              <table dir="rtl" className="w-full text-right">
+                <thead>
+                  <tr className="border-b border-white/8" style={{ background: "rgba(255,255,255,0.04)" }}>
+                    {["رقم الطلب","التاريخ","الحالة","العميل","الهاتف","الجهاز","العطل","الفني","التكلفة"].map(h => (
+                      <th key={h} className="px-3 py-3 text-[10px] font-bold text-white/35 whitespace-nowrap tracking-wider uppercase">{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody>
-                  {jobs.map((job, idx) => (
-                    <tr
-                      key={job.id}
-                      onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
-                      className={`cursor-pointer transition-all border-b border-white/5 last:border-b-0 hover:bg-violet-500/8 ${idx % 2 === 0 ? "bg-white/[0.015]" : ""}`}>
-                      <td className="px-2 py-2 font-mono text-white/70 whitespace-nowrap">{job.job_no}</td>
-                      <td className="px-2 py-2 text-white/40 whitespace-nowrap">—</td>
-                      <td className="px-2 py-2 text-white/50 whitespace-nowrap">{job.received_at}</td>
-                      <td className="px-2 py-2 whitespace-nowrap"><StatusBadge status={job.status} /></td>
-                      <td className="px-2 py-2 text-white font-bold max-w-[160px] truncate">{job.customer_name}</td>
-                      <td className="px-2 py-2 text-white/60 font-mono whitespace-nowrap">{job.customer_phone || "—"}</td>
-                      <td className="px-2 py-2 text-white/60 max-w-[120px] truncate">{job.device_brand || "—"}</td>
-                      <td className="px-2 py-2 text-white/70 max-w-[120px] truncate">{job.device_model || "—"}</td>
-                      <td className="px-2 py-2 text-white/50 max-w-[200px] truncate" title={job.problem_description || ""}>{job.problem_description || "—"}</td>
-                      <td className="px-2 py-2 text-white/60 max-w-[120px] truncate">{job.technician_name || "—"}</td>
-                      <td className="px-2 py-2 text-violet-300 font-bold whitespace-nowrap">{formatCurrency(Number(job.final_cost ?? job.estimated_cost))}</td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-white/4">
+                  {jobs.map((job) => {
+                    const barColor = STATUS_BAR_COLOR[job.status] ?? "bg-white/10";
+                    return (
+                      <tr key={job.id}
+                        onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
+                        className="cursor-pointer transition-all duration-100 hover:bg-white/4 group">
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-0.5 h-5 rounded-full ${barColor}`} />
+                            <span className="text-[11px] font-mono text-white/50 group-hover:text-white/80 transition-colors">{job.job_no}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-[11px] text-white/30 whitespace-nowrap">{job.received_at}</td>
+                        <td className="px-3 py-3 whitespace-nowrap"><StatusBadge status={job.status} /></td>
+                        <td className="px-3 py-3 max-w-[160px]">
+                          <p className="text-[13px] font-black text-white truncate group-hover:text-white transition-colors">{job.customer_name}</p>
+                        </td>
+                        <td className="px-3 py-3 text-[11px] text-white/40 font-mono whitespace-nowrap">{job.customer_phone || "—"}</td>
+                        <td className="px-3 py-3 max-w-[150px]">
+                          <p className="text-[11px] text-white/60 truncate">{[job.device_brand, job.device_model].filter(Boolean).join(" ") || "—"}</p>
+                        </td>
+                        <td className="px-3 py-3 max-w-[180px]">
+                          <p className="text-[11px] text-white/35 truncate italic">{job.problem_description || "—"}</p>
+                        </td>
+                        <td className="px-3 py-3 text-[11px] text-white/45 whitespace-nowrap truncate max-w-[120px]">{job.technician_name || "—"}</td>
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <span className="text-[13px] font-black text-white">{formatCurrency(Number(job.final_cost ?? job.estimated_cost))}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        {/* GRID VIEW — 8 cards per row */}
+        {/* GRID VIEW — 3-4 cols, premium cards */}
         {!isLoading && jobs.length > 0 && viewMode === "grid" && !selectedJob && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {jobs.map((job) => {
               const s = STATUS_MAP[job.status] ?? { label: job.status, color: "text-white/60", bg: "bg-white/5 border-white/10", icon: AlertCircle };
               const StatusIcon = s.icon;
+              const barColor = STATUS_BAR_COLOR[job.status] ?? "bg-white/10";
+              const borderColor = STATUS_BORDER[job.status] ?? "border-white/8";
+              const cost = Number(job.final_cost ?? job.estimated_cost);
               return (
                 <div key={job.id}
                   onClick={() => { setSelectedJob(job); setShowNewForm(false); }}
-                  className="glass-panel rounded-xl border border-white/8 hover:border-violet-500/30 hover:bg-violet-500/4 transition-all cursor-pointer flex flex-col overflow-hidden">
+                  className={`relative rounded-2xl border cursor-pointer transition-all duration-200 overflow-hidden flex flex-col group hover:-translate-y-0.5 hover:shadow-xl ${borderColor}`}
+                  style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(10px)" }}>
 
-                  {/* Status bar */}
-                  <div className={`h-1 w-full ${STATUS_BAR_COLOR[job.status] ?? "bg-white/10"}`} />
+                  {/* Top gradient accent */}
+                  <div className={`h-[3px] w-full ${barColor}`} />
 
-                  <div className="p-2 flex flex-col gap-1.5 flex-1">
-                    {/* Top: status badge + job no */}
+                  <div className="p-3 flex flex-col gap-2 flex-1">
+                    {/* Status + score row */}
                     <div className="flex items-center justify-between gap-1">
-                      <span className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded border text-[9px] font-bold leading-none ${s.color} ${s.bg}`}>
+                      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg border text-[9px] font-bold leading-none ${s.color} ${s.bg}`}>
                         <StatusIcon className="w-2 h-2" />
                         {s.label}
                       </span>
                       {job.device_score != null && (
-                        <span className={`text-[9px] font-black leading-none ${job.device_score >= 80 ? "text-emerald-400" : job.device_score >= 50 ? "text-amber-400" : "text-red-400"}`}>
+                        <span className={`text-[10px] font-black tabular-nums ${job.device_score >= 80 ? "text-emerald-400" : job.device_score >= 50 ? "text-amber-400" : "text-red-400"}`}>
                           {job.device_score}%
                         </span>
                       )}
                     </div>
 
-                    {/* Job number */}
-                    <p className="text-[9px] text-white/25 font-mono leading-none truncate">{job.job_no}</p>
-
-                    {/* Customer */}
-                    <p className="text-[11px] font-bold text-white leading-tight truncate">{job.customer_name}</p>
-
-                    {/* Device */}
-                    <p className="text-[10px] text-white/45 truncate leading-tight">
-                      {[job.device_brand, job.device_model].filter(Boolean).join(" ")}
-                    </p>
-
-                    {/* Fault */}
-                    {job.problem_description && (
-                      <p className="text-[9px] text-white/30 truncate leading-tight" title={job.problem_description}>
-                        {job.problem_description}
-                      </p>
-                    )}
-
-                    {/* Spacer */}
-                    <div className="flex-1" />
-
-                    {/* Footer: cost + date */}
-                    <div className="pt-1.5 border-t border-white/6 flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-bold text-emerald-300 truncate">
-                        {formatCurrency(Number(job.final_cost ?? job.estimated_cost))}
-                      </span>
-                      <span className="text-[9px] text-white/25 shrink-0">{job.received_at?.slice(0, 5)}</span>
+                    {/* Customer — hero text */}
+                    <div>
+                      <p className="font-black text-white text-sm leading-tight truncate group-hover:text-white transition-colors">{job.customer_name}</p>
+                      <p className="text-[10px] text-white/40 truncate mt-0.5">{[job.device_brand, job.device_model].filter(Boolean).join(" ") || "—"}</p>
                     </div>
 
-                    {/* Technician */}
-                    {job.technician_name && (
-                      <p className="text-[9px] text-white/25 truncate leading-none">{job.technician_name}</p>
+                    {/* Problem */}
+                    {job.problem_description && (
+                      <p className="text-[10px] text-white/30 truncate italic leading-tight" title={job.problem_description}>{job.problem_description}</p>
                     )}
+
+                    <div className="flex-1" />
+
+                    {/* Footer */}
+                    <div className="pt-2 border-t border-white/6 flex items-end justify-between gap-1">
+                      <div>
+                        <p className="text-base font-black text-white leading-none tabular-nums">{formatCurrency(cost)}</p>
+                        {job.technician_name && (
+                          <p className="text-[9px] text-white/25 mt-1 truncate max-w-[100px]">{job.technician_name}</p>
+                        )}
+                      </div>
+                      <p className="text-[9px] text-white/20 font-mono shrink-0">{job.received_at?.slice(5)}</p>
+                    </div>
+
+                    {/* Job number — watermark style */}
+                    <p className="text-[9px] text-white/15 font-mono leading-none tracking-wider">{job.job_no}</p>
                   </div>
                 </div>
               );
@@ -1720,34 +1750,47 @@ function JobDetail({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* ── Top bar ── */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0">
-        <div className="flex items-center gap-3">
-          <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <div className="font-black text-white text-sm">{job.device_brand} {job.device_model}</div>
-            <div className="text-[10px] text-white/40 font-mono">{job.job_no}</div>
-          </div>
-          <StatusBadge status={job.status} />
-        </div>
-        <div className="flex items-center gap-1.5">
-          {/* WhatsApp buttons */}
-          <button onClick={() => onWhatsApp(job, whatsAppProgress(job))}
-            title="تحديث الحالة"
-            className="btn-icon text-[#25D366] hover:bg-[#25D366]/10 text-[10px] gap-1 px-2 py-1 rounded-lg border border-[#25D366]/20 flex items-center">
-            <Send className="w-3 h-3" /> تحديث
-          </button>
-          {(job.status === "done" || job.status === "delivered") && (
-            <button onClick={() => onWhatsApp(job, whatsAppReady(job))}
-              title="إشعار الاستلام"
-              className="btn-icon text-[#25D366] hover:bg-[#25D366]/10 text-[10px] gap-1 px-2 py-1 rounded-lg border border-[#25D366]/20 flex items-center">
-              <CheckCheck className="w-3 h-3" /> جاهز
+      <div className="shrink-0 border-b border-white/6" style={{ background: "rgba(255,255,255,0.02)" }}>
+        {/* Row 1: back + device + actions */}
+        <div className="flex items-center justify-between px-3 pt-3 pb-2 gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button onClick={onClose}
+              className="shrink-0 w-7 h-7 rounded-xl border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/25 transition-all">
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-          )}
-          <button onClick={() => setShowDeleteConfirm(true)} className="btn-icon text-red-400/50 hover:text-red-400 hover:bg-red-500/10">
-            <Trash2 className="w-4 h-4" />
-          </button>
+            <div className="min-w-0">
+              <p className="font-black text-white text-[15px] leading-tight truncate">
+                {job.device_brand} {job.device_model}
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[10px] text-white/25 font-mono">{job.job_no}</span>
+                <span className="text-white/15 text-[10px]">·</span>
+                <span className="text-[10px] text-white/40">{job.customer_name}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={() => onWhatsApp(job, whatsAppProgress(job))}
+              title="تحديث الحالة واتساب"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg border border-[#25D366]/25 text-[#25D366] text-[10px] font-bold hover:bg-[#25D366]/10 transition-all">
+              <Send className="w-3 h-3" /> تحديث
+            </button>
+            {(job.status === "done" || job.status === "delivered" || job.status === "ready_for_delivery") && (
+              <button onClick={() => onWhatsApp(job, whatsAppReady(job))}
+                title="إشعار جاهز للاستلام"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-[#25D366]/25 text-[#25D366] text-[10px] font-bold hover:bg-[#25D366]/10 transition-all">
+                <CheckCheck className="w-3 h-3" /> جاهز
+              </button>
+            )}
+            <button onClick={() => setShowDeleteConfirm(true)}
+              className="w-7 h-7 rounded-xl border border-red-500/15 flex items-center justify-center text-red-400/40 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/8 transition-all">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+        {/* Row 2: status badge */}
+        <div className="px-3 pb-2.5">
+          <StatusBadge status={job.status} />
         </div>
       </div>
 
