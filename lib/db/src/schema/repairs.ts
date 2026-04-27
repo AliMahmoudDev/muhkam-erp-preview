@@ -167,6 +167,27 @@ export const repairPipelineConfigTable = pgTable("repair_pipeline_config", {
   index("repair_pipeline_config_company_idx").on(t.company_id),
 ]);
 
+/**
+ * Customizable dashboard cards on the repairs page.
+ * Each card groups one or more status keys, has its own name, color, icon.
+ * Configurable per-company by admins; controls the top-of-page summary cards.
+ */
+export const repairDashboardCardsTable = pgTable("repair_dashboard_cards", {
+  id:               serial("id").primaryKey(),
+  company_id:       integer("company_id").notNull(),
+  name:             text("name").notNull(),
+  statuses:         text("statuses").notNull(),    // JSON array of status keys
+  color:            text("color").notNull().default("#8b5cf6"),
+  icon:             text("icon").notNull().default("Wrench"),
+  sort_order:       integer("sort_order").notNull().default(0),
+  alert_threshold:  integer("alert_threshold"),    // null = no alert
+  is_system:        boolean("is_system").notNull().default(false),
+  created_at:       timestamp("created_at").defaultNow().notNull(),
+  updated_at:       timestamp("updated_at").defaultNow().notNull(),
+}, (t) => [
+  index("repair_dashboard_cards_company_idx").on(t.company_id, t.sort_order),
+]);
+
 export const insertRepairJobSchema = createInsertSchema(repairJobsTable).omit({ id: true, created_at: true, updated_at: true });
 export const insertRepairJobPartSchema = createInsertSchema(repairJobPartsTable).omit({ id: true, created_at: true });
 export const insertRepairStatusSchema = createInsertSchema(repairStatusesTable).omit({ id: true, created_at: true });
@@ -182,3 +203,4 @@ export type RepairStatusHistory = typeof repairStatusHistoryTable.$inferSelect;
 export type ScrapItem = typeof scrapItemsTable.$inferSelect;
 export type BadDebt = typeof badDebtsTable.$inferSelect;
 export type RepairPipelineConfig = typeof repairPipelineConfigTable.$inferSelect;
+export type RepairDashboardCard = typeof repairDashboardCardsTable.$inferSelect;

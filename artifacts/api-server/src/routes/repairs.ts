@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import {
   db,
   repairJobsTable,
@@ -372,7 +372,12 @@ router.get("/repair-jobs", wrap(async (req, res) => {
   const { status, technician_id, search } = req.query as Record<string, string>;
 
   const conds = [eq(repairJobsTable.company_id, company_id)];
-  if (status && status !== "all") conds.push(eq(repairJobsTable.status, status));
+  if (status && status !== "all") {
+    /* Support comma-separated for dashboard cards that group multiple statuses */
+    const list = status.split(",").map(s => s.trim()).filter(Boolean);
+    if (list.length === 1)      conds.push(eq(repairJobsTable.status, list[0]));
+    else if (list.length > 1)   conds.push(inArray(repairJobsTable.status, list));
+  }
   if (technician_id && technician_id !== "all") {
     const tid = Number(technician_id);
     conds.push(sql`(${repairJobsTable.technician_id} = ${tid} OR ${repairJobsTable.technician_2_id} = ${tid})`);

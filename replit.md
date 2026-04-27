@@ -921,6 +921,19 @@ Standalone iOS & Android mobile companion app at `artifacts/erp-mobile/`. Built 
 ### Reports Page Enhancement
 - Reports now has 9 tabs: health / P&L / cashflow / balance / trial-balance / VAT / aging / products / analysis
 
+### Customizable Repair Dashboard Cards (April 2026)
+- Replaced 3 hardcoded summary cards (انتظار/جارية/منتهية) at top of `/repairs` with admin-customizable cards.
+- Schema: `repair_dashboard_cards` (id, company_id, name, statuses TEXT JSON array, color, icon, sort_order, alert_threshold, is_system) in `lib/db/src/schema/repairs.ts`.
+- Backend routes in `artifacts/api-server/src/routes/repair-dashboard-cards.ts`:
+  - CRUD on `/api/repair-dashboard-cards` (GET list, POST, PATCH, DELETE, POST `/reorder`) — all admin-only via `requireRole("admin","super_admin")`.
+  - Auto-seeds 3 system defaults on first GET if company has none.
+  - `GET /api/repair-dashboard` returns `{ cards: [...], total_all }` with per-card count + status breakdown + last_update (joined on history table).
+  - **NOTE**: Path is `/repair-dashboard` (NOT `/repair-jobs/dashboard`) to avoid colliding with `GET /repair-jobs/:id` which would capture `dashboard` as `:id`.
+- `GET /api/repair-jobs?status=` now accepts comma-separated values (e.g. `?status=pending,in_progress`) for card-grouped filtering — uses `inArray()` from drizzle-orm.
+- Frontend admin UI in `artifacts/erp-system/src/components/RepairSettingsModal.tsx`: new "كروت اللوحة" tab (admin-only — non-admins see lock screen). `DashboardCardsTab` lists cards with reorder arrows + edit/delete; `DashboardCardEditor` modal-within-modal with live preview, name, multi-select status chips, 12-color palette, 20-icon picker, alert threshold.
+- Frontend rendering in `artifacts/erp-system/src/pages/repairs.tsx`: `DashboardCardsSection` component with hybrid layout — top segmented proportion bar (proportional widths, dir=ltr) + flex cards row (proportional `flex-grow` based on count, min-width 120) with mini progress bar + last-update preview line + click-to-expand drawer showing per-status breakdown chips that filter the job list.
+- Icon registry duplicated between settings modal (`DASHBOARD_CARD_ICONS`) and repairs page (`CARD_ICON_REGISTRY`) — must be kept in sync if icons are added/removed.
+
 ---
 
 

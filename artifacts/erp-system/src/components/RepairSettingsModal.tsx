@@ -6,10 +6,13 @@ import {
   X, ClipboardList, CheckSquare, GitBranch, Users, QrCode,
   Plus, ChevronDown, CheckCircle2, XCircle, Trash2, Pencil,
   Bell, BellOff, Percent, AlertCircle, Zap,
-  ArrowLeft, Copy, Printer,
-  Info, Settings2, Save,
+  ArrowLeft, ArrowRight, Copy, Printer,
+  Info, Settings2, Save, LayoutDashboard, Lock,
+  Clock, Wrench, CheckCheck, Truck, Ban, Package, Search, Star,
+  ShieldCheck, Hammer, Cog, AlertTriangle, Box, Cpu,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 
@@ -17,7 +20,7 @@ import { api } from "@/lib/api";
    TYPES
 ══════════════════════════════════════════════════════════════ */
 type Platform = "apple" | "android";
-type SettingsTab = "checklist" | "qc" | "statuses" | "technicians" | "qr";
+type SettingsTab = "checklist" | "qc" | "statuses" | "dashboard-cards" | "technicians" | "qr";
 type ChecklistKind = "inspection" | "qc";
 
 interface ChecklistRow {
@@ -62,12 +65,27 @@ const PIPELINE_STAGES: Array<{
   { key: "cancelled",                 label: "ملغي",                 color: "text-rose-400",   dot: "bg-rose-400",     desc: "إلغاء الطلب من النظام", terminal: true },
 ];
 
-const TABS: Array<{ id: SettingsTab; label: string; sublabel: string; icon: React.FC<{ className?: string }> }> = [
-  { id: "checklist",   label: "بنود الفحص",      sublabel: "قوالب الفحص الأولي",  icon: ClipboardList },
-  { id: "qc",          label: "بنود QC",          sublabel: "مراقبة الجودة",       icon: CheckSquare },
-  { id: "statuses",    label: "حالات الصيانة",    sublabel: "مسار الإصلاح",        icon: GitBranch },
-  { id: "technicians", label: "الفنيين",          sublabel: "إعدادات الموظفين",    icon: Users },
-  { id: "qr",          label: "QR والتتبع",       sublabel: "متابعة العميل",       icon: QrCode },
+const TABS: Array<{ id: SettingsTab; label: string; sublabel: string; icon: React.FC<{ className?: string }>; adminOnly?: boolean }> = [
+  { id: "checklist",       label: "بنود الفحص",       sublabel: "قوالب الفحص الأولي", icon: ClipboardList },
+  { id: "qc",              label: "بنود QC",          sublabel: "مراقبة الجودة",      icon: CheckSquare },
+  { id: "statuses",        label: "حالات الصيانة",    sublabel: "مسار الإصلاح",       icon: GitBranch },
+  { id: "dashboard-cards", label: "كروت اللوحة",      sublabel: "تخصيص ملخّص الصفحة", icon: LayoutDashboard, adminOnly: true },
+  { id: "technicians",     label: "الفنيين",          sublabel: "إعدادات الموظفين",   icon: Users },
+  { id: "qr",              label: "QR والتتبع",       sublabel: "متابعة العميل",      icon: QrCode },
+];
+
+/* Curated Lucide icon set available for dashboard cards */
+export const DASHBOARD_CARD_ICONS: Record<string, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
+  Clock, Wrench, CheckCheck, Truck, Ban, Package, Search, Star,
+  ShieldCheck, Hammer, Cog, AlertTriangle, AlertCircle, Box, Cpu,
+  CheckCircle2, XCircle, Zap, GitBranch, ClipboardList,
+};
+
+/* Colors palette for dashboard cards */
+export const DASHBOARD_CARD_COLORS = [
+  "#f59e0b", "#06b6d4", "#10b981", "#8b5cf6", "#3b82f6",
+  "#ec4899", "#14b8a6", "#a855f7", "#84cc16", "#ef4444",
+  "#f97316", "#6366f1",
 ];
 
 /* ══════════════════════════════════════════════════════════════
@@ -825,6 +843,383 @@ function QrTrackingTab() {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   DASHBOARD CARDS TAB (admin only)
+   Manage the customizable summary cards at the top of the
+   repairs page: name, statuses grouped, color, icon, alerts.
+══════════════════════════════════════════════════════════════ */
+interface DashboardCardRow {
+  id: number;
+  name: string;
+  statuses: string[];
+  color: string;
+  icon: string;
+  sort_order: number;
+  alert_threshold: number | null;
+  is_system: boolean;
+}
+
+function DashboardCardsTab() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const { data: cards = [], isLoading } = useQuery<DashboardCardRow[]>({
+    queryKey: ["/api/repair-dashboard-cards"],
+    queryFn: () => authFetch(api("/api/repair-dashboard-cards")).then(r => r.json()),
+  });
+
+  const [editing, setEditing] = useState<DashboardCardRow | null>(null);
+  const [showNew, setShowNew] = useState(false);
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["/api/repair-dashboard-cards"] });
+    qc.invalidateQueries({ queryKey: ["/api/repair-dashboard"] });
+  };
+
+  const move = async (idx: number, dir: -1 | 1) => {
+    const target = idx + dir;
+    if (target < 0 || target >= cards.length) return;
+    const next = [...cards];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    const ids = next.map(c => c.id);
+    try {
+      await authFetch(api("/api/repair-dashboard-cards/reorder"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      invalidate();
+    } catch { toast({ title: "تعذر إعادة الترتيب", variant: "destructive" }); }
+  };
+
+  const remove = async (id: number) => {
+    if (!confirm("حذف هذا الكارت؟")) return;
+    setBusyId(id);
+    try {
+      const r = await authFetch(api(`/api/repair-dashboard-cards/${id}`), { method: "DELETE" });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error ?? "تعذر الحذف");
+      }
+      toast({ title: "تم حذف الكارت" });
+      invalidate();
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : "تعذر الحذف", variant: "destructive" });
+    } finally { setBusyId(null); }
+  };
+
+  if (!isAdmin) {
+    return (
+      <div className="h-full flex items-center justify-center p-6">
+        <div className="text-center max-w-sm">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
+            <Lock className="w-5 h-5 text-amber-400/70" />
+          </div>
+          <h3 className="text-white/80 text-sm font-bold mb-1">صلاحيات المسؤول مطلوبة</h3>
+          <p className="text-white/35 text-[12px] leading-relaxed">
+            تخصيص كروت لوحة الصيانة متاح لمدير النظام فقط لضمان توحيد العرض بين الفرع والفنيين.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-y-auto" dir="rtl">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-white/8 flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-violet-500/8 border border-violet-500/15 flex-1">
+            <Info className="w-4 h-4 text-violet-400/70 shrink-0 mt-0.5" />
+            <p className="text-[12px] text-violet-300/70 leading-relaxed">
+              كل كارت يضمّ حالة واحدة أو أكثر، يُعرض أعلى صفحة الصيانة بحجم نسبي حسب عدد البطاقات. الترتيب من اليمين لليسار.
+            </p>
+          </div>
+        </div>
+        <button onClick={() => { setShowNew(true); setEditing(null); }}
+          className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 text-xs font-bold transition-all">
+          <Plus className="w-3.5 h-3.5" /> كارت جديد
+        </button>
+      </div>
+
+      {/* List */}
+      <div className="px-5 py-4">
+        {isLoading && <div className="text-center text-white/30 text-sm py-8">جارٍ التحميل...</div>}
+        {!isLoading && cards.length === 0 && (
+          <div className="text-center text-white/30 text-sm py-8">لا توجد كروت — أضف كارت جديد</div>
+        )}
+        <div className="flex flex-col gap-2">
+          {cards.map((c, i) => {
+            const Icon = DASHBOARD_CARD_ICONS[c.icon] ?? Wrench;
+            return (
+              <div key={c.id}
+                className="rounded-2xl border border-white/8 bg-white/[0.025] p-3 flex items-center gap-3 hover:border-white/15 transition-all">
+                {/* Reorder */}
+                <div className="flex flex-col gap-0.5 shrink-0">
+                  <button onClick={() => move(i, -1)} disabled={i === 0}
+                    className="w-5 h-5 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/8 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                    <ArrowRight className="w-3 h-3 rotate-90" />
+                  </button>
+                  <button onClick={() => move(i, +1)} disabled={i === cards.length - 1}
+                    className="w-5 h-5 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/8 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                    <ArrowRight className="w-3 h-3 -rotate-90" />
+                  </button>
+                </div>
+
+                {/* Icon + color preview */}
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+                  style={{ background: `${c.color}22`, borderColor: `${c.color}40` }}>
+                  <Icon className="w-4 h-4" />
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[13px] font-bold text-white/85 truncate">{c.name}</span>
+                    {c.is_system && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/8 text-white/40 font-medium">افتراضي</span>}
+                    {c.alert_threshold != null && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400/80 font-medium flex items-center gap-1">
+                        <Bell className="w-2.5 h-2.5" /> ≥ {c.alert_threshold}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {c.statuses.slice(0, 5).map(s => (
+                      <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-white/45 font-mono">{s}</span>
+                    ))}
+                    {c.statuses.length > 5 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-white/35">+{c.statuses.length - 5}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => { setEditing(c); setShowNew(false); }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
+                    title="تعديل">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => remove(c.id)} disabled={busyId === c.id || cards.length <= 1}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    title={cards.length <= 1 ? "لا يمكن حذف الكارت الأخير" : "حذف"}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Edit/Create dialog */}
+      {(editing || showNew) && (
+        <DashboardCardEditor
+          initial={editing}
+          onClose={() => { setEditing(null); setShowNew(false); }}
+          onSaved={() => { setEditing(null); setShowNew(false); invalidate(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD CARD EDITOR (modal-within-modal)
+══════════════════════════════════════════════════════════════ */
+function DashboardCardEditor({
+  initial, onClose, onSaved,
+}: {
+  initial: DashboardCardRow | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { toast } = useToast();
+  const [name, setName] = useState(initial?.name ?? "");
+  const [statuses, setStatuses] = useState<string[]>(initial?.statuses ?? []);
+  const [color, setColor] = useState(initial?.color ?? DASHBOARD_CARD_COLORS[0]);
+  const [icon, setIcon] = useState(initial?.icon ?? "Wrench");
+  const [alertThreshold, setAlertThreshold] = useState<string>(initial?.alert_threshold?.toString() ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const PreviewIcon = DASHBOARD_CARD_ICONS[icon] ?? Wrench;
+
+  const toggleStatus = (key: string) => {
+    setStatuses(prev => prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]);
+  };
+
+  const save = async () => {
+    if (!name.trim()) { toast({ title: "الاسم مطلوب", variant: "destructive" }); return; }
+    if (statuses.length === 0) { toast({ title: "اختَر حالة واحدة على الأقل", variant: "destructive" }); return; }
+    setSaving(true);
+    try {
+      const body = {
+        name: name.trim(),
+        statuses,
+        color,
+        icon,
+        alert_threshold: alertThreshold.trim() === "" ? null : Number(alertThreshold),
+      };
+      const url = initial
+        ? api(`/api/repair-dashboard-cards/${initial.id}`)
+        : api("/api/repair-dashboard-cards");
+      const r = await authFetch(url, {
+        method: initial ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error ?? "تعذر الحفظ");
+      }
+      toast({ title: initial ? "تم تحديث الكارت" : "تم إنشاء الكارت" });
+      onSaved();
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : "تعذر الحفظ", variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-start justify-center pt-8 pb-8 bg-black/70 backdrop-blur-md" dir="rtl"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="glass-panel rounded-2xl border border-white/12 w-full mx-4 overflow-hidden flex flex-col"
+        style={{ maxWidth: 580, maxHeight: "90vh" }}>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10 shrink-0">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+            style={{ background: `${color}22`, border: `1px solid ${color}40` }}>
+            <PreviewIcon className="w-4 h-4" style={{ color }} />
+          </div>
+          <h3 className="flex-1 text-sm font-bold text-white/85">
+            {initial ? "تعديل الكارت" : "كارت جديد"}
+          </h3>
+          <button onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white/70 hover:bg-white/8 transition-all">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {/* Live preview */}
+          <div className="rounded-2xl p-3 border bg-gradient-to-br to-transparent flex flex-col gap-1"
+            style={{ background: `linear-gradient(135deg, ${color}22, transparent)`, borderColor: `${color}40` }}>
+            <div className="flex items-center justify-between">
+              <PreviewIcon className="w-4 h-4" style={{ color }} />
+              <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: `${color}cc` }}>
+                {name || "اسم الكارت"}
+              </span>
+            </div>
+            <div className="text-3xl font-black leading-none tracking-tight" style={{ color }}>
+              0
+            </div>
+            <div className="h-1 rounded-full mt-1" style={{ background: `${color}33` }}>
+              <div className="h-full rounded-full transition-all" style={{ width: "40%", background: color }} />
+            </div>
+          </div>
+
+          {/* Name */}
+          <div>
+            <label className="text-[11px] text-white/45 font-bold mb-1.5 block">اسم الكارت</label>
+            <input value={name} onChange={e => setName(e.target.value)}
+              placeholder="مثال: بانتظار قطعة" maxLength={40}
+              className="erp-input w-full text-sm" />
+          </div>
+
+          {/* Statuses */}
+          <div>
+            <label className="text-[11px] text-white/45 font-bold mb-1.5 block">
+              الحالات المضمومة <span className="text-violet-400/70">({statuses.length})</span>
+            </label>
+            <div className="rounded-xl border border-white/8 p-2 max-h-56 overflow-y-auto">
+              <div className="flex flex-wrap gap-1.5">
+                {PIPELINE_STAGES.map(s => {
+                  const on = statuses.includes(s.key);
+                  return (
+                    <button key={s.key} type="button" onClick={() => toggleStatus(s.key)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
+                        on
+                          ? "bg-violet-500/20 border-violet-500/40 text-violet-200"
+                          : "bg-white/[0.02] border-white/8 text-white/45 hover:text-white/75 hover:border-white/15"
+                      }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                      {s.label}
+                      {on && <CheckCircle2 className="w-3 h-3" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Color */}
+          <div>
+            <label className="text-[11px] text-white/45 font-bold mb-1.5 block">اللون</label>
+            <div className="flex flex-wrap gap-1.5">
+              {DASHBOARD_CARD_COLORS.map(c => (
+                <button key={c} type="button" onClick={() => setColor(c)}
+                  className="w-7 h-7 rounded-lg border-2 transition-all"
+                  style={{
+                    background: c,
+                    borderColor: color === c ? "#fff" : "transparent",
+                    boxShadow: color === c ? `0 0 0 2px ${c}40` : "none",
+                  }}
+                  title={c} />
+              ))}
+            </div>
+          </div>
+
+          {/* Icon */}
+          <div>
+            <label className="text-[11px] text-white/45 font-bold mb-1.5 block">الأيقونة</label>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(DASHBOARD_CARD_ICONS).map(([key, IconC]) => (
+                <button key={key} type="button" onClick={() => setIcon(key)}
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center border transition-all ${
+                    icon === key
+                      ? "bg-violet-500/20 border-violet-500/50 text-white"
+                      : "bg-white/[0.02] border-white/8 text-white/40 hover:text-white/75 hover:border-white/15"
+                  }`}
+                  title={key}>
+                  <IconC className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Alert threshold */}
+          <div>
+            <label className="text-[11px] text-white/45 font-bold mb-1.5 block flex items-center gap-1.5">
+              <Bell className="w-3 h-3" /> تنبيه عند تجاوز (اختياري)
+            </label>
+            <input value={alertThreshold} onChange={e => setAlertThreshold(e.target.value.replace(/[^\d]/g, ""))}
+              placeholder="مثال: 5" inputMode="numeric"
+              className="erp-input w-full text-sm" />
+            <p className="text-[10px] text-white/30 mt-1">يتغيّر شكل الكارت لتنبيه بصري عند بلوغ هذا الحد</p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center gap-2 px-5 py-3 border-t border-white/10 shrink-0 bg-white/[0.02]">
+          <button onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 text-xs font-bold transition-all">
+            إلغاء
+          </button>
+          <div className="flex-1" />
+          <button onClick={save} disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-500/25 hover:bg-violet-500/40 border border-violet-500/40 text-violet-100 text-xs font-bold transition-all disabled:opacity-50">
+            <Save className="w-3.5 h-3.5" /> {saving ? "جارٍ الحفظ..." : "حفظ"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    MAIN MODAL
 ══════════════════════════════════════════════════════════════ */
 interface RepairSettingsModalProps {
@@ -911,11 +1306,12 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
 
           {/* ── Content ── */}
           <div className="flex-1 overflow-hidden flex flex-col">
-            {activeTab === "checklist"   && <ChecklistTab kind="inspection" />}
-            {activeTab === "qc"          && <ChecklistTab kind="qc" />}
-            {activeTab === "statuses"    && <StatusesTab />}
-            {activeTab === "technicians" && <TechniciansTab />}
-            {activeTab === "qr"          && <QrTrackingTab />}
+            {activeTab === "checklist"        && <ChecklistTab kind="inspection" />}
+            {activeTab === "qc"               && <ChecklistTab kind="qc" />}
+            {activeTab === "statuses"         && <StatusesTab />}
+            {activeTab === "dashboard-cards"  && <DashboardCardsTab />}
+            {activeTab === "technicians"      && <TechniciansTab />}
+            {activeTab === "qr"               && <QrTrackingTab />}
           </div>
 
         </div>
