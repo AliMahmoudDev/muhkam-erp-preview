@@ -1678,8 +1678,9 @@ function JobDetail({
   const [editDelivery, setEditDelivery] = useState(job.estimated_delivery ?? "");
   const [editTech, setEditTech]     = useState(job.technician_id?.toString() ?? "");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
+  const [reportOpen, setReportOpen]       = useState(false);
+  const [historyOpen, setHistoryOpen]     = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
 
   const handleSave = () => {
     onPatch({
@@ -1779,8 +1780,48 @@ function JobDetail({
           </div>
         </div>
 
-        {/* Diagnostic Checklist — read-only after job is registered */}
-        <JobChecklist checklist={checklist} onSaveItem={onSaveCheckItem} readOnly />
+        {/* Diagnostic Checklist — collapsible */}
+        <div className="glass-panel rounded-2xl border border-white/8 overflow-hidden">
+          <button
+            onClick={() => setChecklistOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-3 py-2.5 text-right hover:bg-white/3 transition-all"
+          >
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] text-white/50 font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                نتائج الفحص
+              </p>
+              <div className="flex items-center gap-1.5">
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                  {checklist.filter(c => c.status === "pass").length} ✓
+                </span>
+                {checklist.filter(c => c.status === "fail").length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-500/15 text-red-400 border border-red-500/20">
+                    {checklist.filter(c => c.status === "fail").length} ✗
+                  </span>
+                )}
+                {checklist.filter(c => c.status === "partial").length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                    {checklist.filter(c => c.status === "partial").length} ~
+                  </span>
+                )}
+                {checklist.filter(c => !c.status).length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-white/5 text-white/30 border border-white/10">
+                    {checklist.filter(c => !c.status).length} ○
+                  </span>
+                )}
+              </div>
+            </div>
+            <ChevronRight
+              className={`w-4 h-4 text-white/30 transition-transform duration-200 ${checklistOpen ? "-rotate-90" : "rotate-90"}`}
+            />
+          </button>
+          {checklistOpen && (
+            <div className="border-t border-white/5">
+              <JobChecklist checklist={checklist} onSaveItem={onSaveCheckItem} readOnly />
+            </div>
+          )}
+        </div>
 
         {/* Diagnostic Report Text — collapsible */}
         <div className="glass-panel rounded-2xl border border-violet-500/10 bg-violet-500/3 overflow-hidden">
