@@ -1,9 +1,14 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { db, erpUsersTable, companiesTable } from "@workspace/db";
+import { db, pool, erpUsersTable, companiesTable } from "@workspace/db";
+import type { PoolClient } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { isTokenBlacklisted } from "../lib/session-blacklist";
 import { sanitizeObject } from "../lib/sanitize";
+import { logger } from "../lib/logger";
+
+/** نوع عميل pg المُثبَّت من تجمُّع الاتصالات */
+type PinnedClient = PoolClient;
 
 /**
  * يضبط متغيرات جلسة PostgreSQL لتفعيل عزل البيانات على مستوى الصفوف (RLS)
@@ -15,17 +20,30 @@ import { sanitizeObject } from "../lib/sanitize";
  *   Drizzle يستخدم اتصالًا مختلفًا من التجمُّع لكل استعلام، فإن `SET ROLE`
  *   و`set_config` لا يضمنان تطبيق RLS على جميع الاستعلامات في الطلب الواحد.
  * @param {object} user - بيانات المستخدم التي تشمل رقم الشركة والدور
+ * @param {PinnedClient} [client] - عميل pg مُثبَّت (اختياري). إن وُجد، تُنفَّذ الأوامر عليه مباشرةً
  * @returns {Promise<void>} - لا تُرجع قيمة
  */
-async function setDbContext(user: { company_id: number | null; role: string }): Promise<void> {
+async function setDbContext(
+  user: { company_id: number | null; role: string },
+  client?: PinnedClient,
+): Promise<void> {
   const companyId = user.company_id ? String(user.company_id) : "";
   const isSuperAdmin = user.role === "super_admin" ? "true" : "false";
   try {
-    await db.execute(sql`SET ROLE erp_app_role`);
-    await db.execute(
-      sql`SELECT set_config('app.current_company_id', ${companyId}, false),
-                 set_config('app.is_super_admin', ${isSuperAdmin}, false)`
-    );
+    if (client) {
+      await client.query("SET ROLE erp_app_role");
+      await client.query(
+        "SELECT set_config('app.current_company_id', $1, false)," +
+        "       set_config('app.is_super_admin', $2, false)",
+        [companyId, isSuperAdmin],
+      );
+    } else {
+      await db.execute(sql`SET ROLE erp_app_role`);
+      await db.execute(
+        sql`SELECT set_config('app.current_company_id', ${companyId}, false),
+                   set_config('app.is_super_admin', ${isSuperAdmin}, false)`
+      );
+    }
   } catch {
     /* Non-fatal: app-level company_id filtering is still the primary guard */
   }
@@ -35,15 +53,24 @@ async function setDbContext(user: { company_id: number | null; role: string }): 
  * يُعيد ضبط دور الاتصال ومتغيرات الجلسة إلى قيمها الافتراضية
  * بعد انتهاء الطلب، للحدّ من تسرُّب سياق المستأجر إلى طلبات أخرى
  * تستخدم الاتصال ذاته من التجمُّع.
+ * @param {PinnedClient} [client] - عميل pg مُثبَّت (اختياري). إن وُجد، تُنفَّذ الأوامر عليه مباشرةً
  * @returns {Promise<void>} - لا تُرجع قيمة
  */
-async function clearDbContext(): Promise<void> {
+async function clearDbContext(client?: PinnedClient): Promise<void> {
   try {
-    await db.execute(sql`RESET ROLE`);
-    await db.execute(
-      sql`SELECT set_config('app.current_company_id', '', false),
-                 set_config('app.is_super_admin', 'false', false)`
-    );
+    if (client) {
+      await client.query("RESET ROLE");
+      await client.query(
+        "SELECT set_config('app.current_company_id', '', false)," +
+        "       set_config('app.is_super_admin', 'false', false)",
+      );
+    } else {
+      await db.execute(sql`RESET ROLE`);
+      await db.execute(
+        sql`SELECT set_config('app.current_company_id', '', false),
+                   set_config('app.is_super_admin', 'false', false)`
+      );
+    }
   } catch {
     /* ignore — best effort */
   }
@@ -67,13 +94,17 @@ export interface AuthUser {
   employee_id: number | null;
 }
 
-/* Extend Express Request */
+/* Extend Express Request and Locals */
 declare global {
   namespace Express {
     interface Request {
       user?: AuthUser;
       role?: string;
       companyId?: number | null;
+    }
+    interface Locals {
+      /** عميل pg مُثبَّت لطلب RLS (دفاع في العمق) — غير مضمون الوجود */
+      pgClient?: PinnedClient;
     }
   }
 }
@@ -212,13 +243,32 @@ export async function authenticate(
 
   req.user = user as AuthUser;
 
-  /* Set PostgreSQL session context for RLS (defense-in-depth layer) */
-  await setDbContext(user);
+  /* ── Per-request connection pinning for RLS (defense-in-depth) ───────────────
+     نحجز اتصالًا واحدًا من التجمُّع لكامل عمر الطلب، ونضبط عليه متغيرات جلسة
+     RLS حتى تنطبق على جميع الاستعلامات التي تستخدم هذا الاتصال.
+     يُعرَّض العميل المُثبَّت عبر res.locals.pgClient ليستخدمه أي مسار يريد.
+     إذا فشل الحجز، نسجّل التحذير ونستمر بالتجمُّع الاعتيادي (fail-open) —
+     الحماية الأساسية هي شرط company_id في كل مسار، وهي تبقى سارية دائمًا.
+     ──────────────────────────────────────────────────────────────────────────── */
+  let pinnedClient: PinnedClient | undefined;
+  try {
+    pinnedClient = await pool.connect();
+    await setDbContext(user, pinnedClient);
+    res.locals.pgClient = pinnedClient;
+  } catch (err) {
+    logger.warn({ err }, "[auth] connection-pinning failed — falling back to pool for RLS context");
+    void setDbContext(user);          // pool best-effort fallback
+  }
 
-  /* Best-effort cleanup on response end to limit cross-request leakage of
-     role/GUC state on pooled connections. */
-  res.on("finish", () => { void clearDbContext(); });
-  res.on("close",  () => { void clearDbContext(); });
+  /* تنظيف الاتصال المُثبَّت عند انتهاء الاستجابة — مع الحرص على عدم الإطلاق مرتين */
+  const releasePinned = (): void => {
+    const c = pinnedClient;
+    if (!c) return;
+    pinnedClient = undefined;         // guard against double-release on finish+close
+    void clearDbContext(c).finally(() => { c.release(); });
+  };
+  res.on("finish", releasePinned);
+  res.on("close",  releasePinned);
 
   next();
 }
