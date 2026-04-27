@@ -6078,19 +6078,18 @@ export default function SuperAdmin() {
           <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 11px', borderRadius: '30px', fontSize: '11px', fontWeight: 700, color, background: bg, whiteSpace: 'nowrap', letterSpacing: '0.02em' }}>{label}</span>
         );
 
-        const SectionCard = ({ id, children, accent }: { id: string; children: React.ReactNode; accent?: string }) => (
-          <div id={id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '22px', overflow: 'hidden', position: 'relative' }}>
-            {accent && <div style={{ position: 'absolute', top: 0, right: 0, width: '4px', height: '100%', background: accent, borderRadius: '0 22px 22px 0' }} />}
+        const SectionCard = ({ id, children, accentColor }: { id: string; children: React.ReactNode; accentColor?: string }) => (
+          <div id={id} style={{ background: C.card, border: `1px solid ${accentColor ? accentColor + '22' : C.border}`, borderRadius: '16px', overflow: 'hidden', position: 'relative', borderTop: accentColor ? `3px solid ${accentColor}` : undefined }}>
             {children}
           </div>
         );
 
         const SectionHead = ({ icon, title, sub, extra }: { icon: string; title: string; sub?: string; extra?: React.ReactNode }) => (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px', borderBottom: `1px solid ${C.border}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '22px' }}>{icon}</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: `1px solid ${C.border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>{icon}</span>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: 900, color: C.text }}>{title}</div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: C.text }}>{title}</div>
                 {sub && <div style={{ fontSize: '12px', color: C.muted, marginTop: '2px' }}>{sub}</div>}
               </div>
             </div>
@@ -6154,110 +6153,100 @@ export default function SuperAdmin() {
         const maxFPCount = Math.max(...(monData?.top_fingerprints ?? []).map(e => e.count), 1);
 
         return (
-          <div style={{ direction: 'rtl', fontFamily: FONT }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* ════════════ ANIMATIONS ════════════ */}
             <style>{`
-              @keyframes mon-fade-up   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-              @keyframes mon-pulse-dot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:0.6} }
-              @keyframes mon-shimmer   { 0%{background-position:200% center} 100%{background-position:-200% center} }
+              @keyframes mon-fade-up   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+              @keyframes mon-pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
               @keyframes mon-spin      { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-              @keyframes mon-glow-beat { 0%,100%{box-shadow:0 0 20px var(--glow)} 50%{box-shadow:0 0 40px var(--glow)} }
+              @keyframes mon-glow-beat { 0%,100%{box-shadow:0 0 18px var(--glow)} 50%{box-shadow:0 0 36px var(--glow)} }
               @keyframes mon-bar-in    { from{width:0} to{width:var(--w)} }
 
-              .mon-nav-card { cursor:pointer; transition:all 0.25s cubic-bezier(.34,1.56,.64,1); }
-              .mon-nav-card:hover { transform:translateY(-4px) scale(1.03); box-shadow:0 12px 36px rgba(0,0,0,0.4) !important; }
-              .mon-nav-card:active { transform:translateY(-1px) scale(1.01); }
+              .mon-nav-card { cursor:pointer; transition:all 0.2s; border-top:3px solid transparent; }
+              .mon-nav-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.3) !important; }
+              .mon-nav-card:active { transform:translateY(-1px); }
 
-              .mon-sec { animation:mon-fade-up 0.5s ease both; }
-              .mon-sec:nth-child(2)  { animation-delay:0.05s }
-              .mon-sec:nth-child(3)  { animation-delay:0.10s }
-              .mon-sec:nth-child(4)  { animation-delay:0.15s }
-              .mon-sec:nth-child(5)  { animation-delay:0.20s }
-              .mon-sec:nth-child(6)  { animation-delay:0.25s }
-              .mon-sec:nth-child(7)  { animation-delay:0.30s }
+              .mon-sec { animation:mon-fade-up 0.45s ease both; }
+              .mon-sec:nth-child(2) { animation-delay:0.05s }
+              .mon-sec:nth-child(3) { animation-delay:0.10s }
+              .mon-sec:nth-child(4) { animation-delay:0.15s }
+              .mon-sec:nth-child(5) { animation-delay:0.20s }
+              .mon-sec:nth-child(6) { animation-delay:0.25s }
+              .mon-sec:nth-child(7) { animation-delay:0.30s }
 
-              .mon-btn { transition:all 0.2s cubic-bezier(.34,1.56,.64,1); }
-              .mon-btn:hover { filter:brightness(1.15); transform:translateY(-2px); }
+              .mon-btn { transition:all 0.18s; }
+              .mon-btn:hover { filter:brightness(1.12); transform:translateY(-1px); }
               .mon-btn:active { transform:translateY(0); }
-
-              .mon-input:focus { border-color:#6366f1 !important; box-shadow:0 0 0 4px rgba(99,102,241,0.15) !important; }
-
-              .mon-row:hover { background:rgba(255,255,255,0.04) !important; }
-
-              .mon-bar { animation:mon-bar-in 0.8s cubic-bezier(.34,1.56,.64,1) both; }
-
-              .mon-stat-card:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(0,0,0,0.35) !important; }
+              .mon-input:focus { border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99,102,241,0.14) !important; }
+              .mon-row:hover { background:rgba(255,255,255,0.035) !important; }
+              .mon-bar { animation:mon-bar-in 0.7s cubic-bezier(.34,1.56,.64,1) both; }
+              .mon-stat:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.28) !important; }
             `}</style>
 
-            {/* ════════════ PAGE HEADER ════════════ */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '14px' }}>
+            {/* ════════════ HEADER — matches other tabs ════════════ */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'linear-gradient(135deg,#6366f1,#8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', boxShadow: '0 4px 20px rgba(99,102,241,0.35)' }}>🛡️</div>
-                  <h1 style={{ fontSize: '26px', fontWeight: 900, color: C.text, margin: 0 }}>مراقبة التسجيلات التجريبية</h1>
-                </div>
-                <p style={{ fontSize: '13px', color: C.muted, margin: '0 0 0 56px' }}>تحكم شامل في حماية التسجيلات — يتجدد كل 30 ثانية تلقائياً</p>
+                <h2 style={{ margin: 0, fontWeight: 900, fontSize: '22px', color: C.text }}>🛡️ مراقبة التسجيلات التجريبية</h2>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>تحكم شامل في حماية التسجيلات — يتجدد كل 30 ثانية تلقائياً</p>
               </div>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                {/* Redis status pill */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 {monData && (
                   <div style={{
-                    display: 'flex', alignItems: 'center', gap: '7px', padding: '7px 16px', borderRadius: '30px',
+                    display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px',
                     background: monData.redis_ok ? 'rgba(52,211,153,0.1)' : 'rgba(245,158,11,0.1)',
-                    border: `1px solid ${monData.redis_ok ? 'rgba(52,211,153,0.3)' : 'rgba(245,158,11,0.35)'}`,
+                    border: `1px solid ${monData.redis_ok ? 'rgba(52,211,153,0.3)' : 'rgba(245,158,11,0.3)'}`,
                     fontSize: '12px', fontWeight: 700,
                     color: monData.redis_ok ? '#34D399' : '#F59E0B',
                   }}>
-                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: monData.redis_ok ? '#34D399' : '#F59E0B', display: 'inline-block', animation: 'mon-pulse-dot 2s infinite' }} />
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: monData.redis_ok ? '#34D399' : '#F59E0B', display: 'inline-block', animation: 'mon-pulse-dot 2s infinite' }} />
                     {monData.redis_ok ? 'Redis متصل' : 'Redis غير متصل'}
                   </div>
                 )}
                 <button onClick={() => void refetchMon()} className="mon-btn"
-                  style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 18px', borderRadius: '14px', border: `1.5px solid ${C.border}`, background: 'rgba(255,255,255,0.04)', color: C.text, cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
-                  🔄 <span>تحديث</span>
+                  style={{ padding: '8px 18px', borderRadius: '10px', border: `1px solid ${C.border}`, background: 'rgba(34,197,94,0.1)', color: '#86EFAC', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                  🔄 تحديث
                 </button>
               </div>
             </div>
 
-            {/* ════════════ QUICK NAV CARDS ════════════ */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: '12px', marginBottom: '32px' }}>
+            {/* ════════════ QUICK NAV — compact strip ════════════ */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: '10px' }}>
               {[
-                { id: 'mon-status',    icon: '🟢', label: 'حالة النظام',      color: st.color,   glow: st.glow,                  border: st.border },
-                { id: 'mon-stats',     icon: '📊', label: 'الإحصائيات',       color: '#60A5FA',  glow: 'rgba(96,165,250,0.2)',    border: 'rgba(96,165,250,0.3)' },
-                { id: 'mon-unblock',   icon: '🔓', label: 'رفع الحجب',        color: '#10B981',  glow: 'rgba(16,185,129,0.2)',    border: 'rgba(16,185,129,0.35)' },
-                { id: 'mon-ips',       icon: '🌐', label: 'أعلى IPs',         color: '#A78BFA',  glow: 'rgba(167,139,250,0.2)',   border: 'rgba(167,139,250,0.3)' },
-                { id: 'mon-suspects',  icon: '🚨', label: 'المشبوهون',        color: '#EF4444',  glow: 'rgba(239,68,68,0.2)',     border: 'rgba(239,68,68,0.35)' },
-                { id: 'mon-blocks',    icon: '🔒', label: 'آخر الحجوبات',    color: '#F59E0B',  glow: 'rgba(245,158,11,0.2)',    border: 'rgba(245,158,11,0.3)' },
+                { id: 'mon-status',   icon: '🟢', label: 'حالة النظام',   color: st.color },
+                { id: 'mon-stats',    icon: '📊', label: 'الإحصائيات',    color: '#60A5FA' },
+                { id: 'mon-unblock',  icon: '🔓', label: 'رفع الحجب',     color: '#10B981' },
+                { id: 'mon-ips',      icon: '🌐', label: 'أعلى IPs',      color: '#A78BFA' },
+                { id: 'mon-suspects', icon: '🚨', label: 'المشبوهون',     color: '#EF4444' },
+                { id: 'mon-blocks',   icon: '🔒', label: 'آخر الحجوبات', color: '#F59E0B' },
               ].map(n => (
                 <div key={n.id} className="mon-nav-card" onClick={() => scrollTo(n.id)}
                   style={{
-                    padding: '16px 14px', borderRadius: '18px', textAlign: 'center',
-                    background: `linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))`,
-                    border: `1.5px solid ${n.border}`,
-                    boxShadow: `0 4px 20px ${n.glow}`,
+                    padding: '12px 10px', borderRadius: '14px', textAlign: 'center',
+                    background: C.card, border: `1px solid ${C.border}`,
+                    borderTop: `3px solid ${n.color}`,
                   }}>
-                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>{n.icon}</div>
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: n.color, lineHeight: 1.3 }}>{n.label}</div>
+                  <div style={{ fontSize: '18px', marginBottom: '5px' }}>{n.icon}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: n.color }}>{n.label}</div>
                 </div>
               ))}
             </div>
 
             {/* ════════════ LOADING ════════════ */}
             {monLoading && (
-              <div style={{ textAlign: 'center', padding: '100px 0' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', border: '3px solid rgba(99,102,241,0.2)', borderTopColor: '#6366f1', margin: '0 auto 20px', animation: 'mon-spin 0.8s linear infinite' }} />
-                <div style={{ fontSize: '14px', color: C.muted, fontWeight: 700 }}>جارٍ تحميل بيانات المراقبة...</div>
+              <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(99,102,241,0.2)', borderTopColor: '#6366f1', margin: '0 auto 16px', animation: 'mon-spin 0.8s linear infinite' }} />
+                <div style={{ fontWeight: 700 }}>جارٍ تحميل بيانات المراقبة...</div>
               </div>
             )}
 
             {/* ════════════ ERROR ════════════ */}
             {monError && !monLoading && (
-              <div style={{ background: 'rgba(239,68,68,0.05)', border: '1.5px solid rgba(239,68,68,0.2)', borderRadius: '24px', padding: '60px 40px', textAlign: 'center' }}>
-                <div style={{ fontSize: '56px', marginBottom: '16px' }}>🔴</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: '#EF4444', marginBottom: '8px' }}>تعذّر تحميل بيانات المراقبة</div>
-                <div style={{ fontSize: '13px', color: C.muted, marginBottom: '24px' }}>تحقق من اتصال السيرفر وأعد المحاولة</div>
+              <div style={{ background: 'rgba(239,68,68,0.05)', border: `1px solid rgba(239,68,68,0.2)`, borderRadius: '16px', padding: '48px 40px', textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔴</div>
+                <div style={{ fontSize: '18px', fontWeight: 900, color: '#EF4444', marginBottom: '8px' }}>تعذّر تحميل بيانات المراقبة</div>
+                <div style={{ fontSize: '13px', color: C.muted, marginBottom: '20px' }}>تحقق من اتصال السيرفر وأعد المحاولة</div>
                 <button onClick={() => void refetchMon()} className="mon-btn"
-                  style={{ padding: '12px 28px', borderRadius: '14px', border: '1.5px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.1)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '14px' }}>
+                  style={{ padding: '10px 24px', borderRadius: '10px', border: `1px solid rgba(239,68,68,0.3)`, background: 'rgba(239,68,68,0.1)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
                   🔄 إعادة المحاولة
                 </button>
               </div>
@@ -6281,49 +6270,44 @@ export default function SuperAdmin() {
 
                 {/* ════════════ §1 STATUS HERO ════════════ */}
                 <div id="mon-status" className="mon-sec" style={{
-                  background: st.grad, border: `1.5px solid ${st.border}`, borderRadius: '24px',
-                  padding: '32px 36px', position: 'relative', overflow: 'hidden',
-                  boxShadow: `0 0 60px ${st.glow}`,
-                  '--glow': st.glow,
-                } as React.CSSProperties}>
-                  {/* Glow orbs */}
-                  <div style={{ position: 'absolute', top: '-40px', left: '-40px', width: '160px', height: '160px', borderRadius: '50%', background: st.glow, filter: 'blur(60px)', pointerEvents: 'none' }} />
-                  <div style={{ position: 'absolute', bottom: '-30px', right: '15%', width: '100px', height: '100px', borderRadius: '50%', background: st.glow, filter: 'blur(50px)', pointerEvents: 'none' }} />
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '24px', position: 'relative' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
-                      {/* Status icon */}
+                  background: C.card,
+                  border: `1px solid ${st.border}`,
+                  borderTop: `3px solid ${st.color}`,
+                  borderRadius: '16px',
+                  padding: '24px',
+                  position: 'relative', overflow: 'hidden',
+                }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: st.grad, pointerEvents: 'none' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', position: 'relative' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
                       <div style={{
-                        width: '80px', height: '80px', borderRadius: '24px',
-                        background: 'rgba(255,255,255,0.06)', border: `2px solid ${st.border}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px',
-                        backdropFilter: 'blur(10px)',
+                        width: '64px', height: '64px', borderRadius: '16px',
+                        background: st.bg, border: `1px solid ${st.border}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px',
                         animation: 'mon-glow-beat 3s ease infinite',
                         '--glow': st.glow,
                       } as React.CSSProperties}>
                         {st.icon}
                       </div>
                       <div>
-                        <div style={{ fontSize: '12px', fontWeight: 700, color: C.muted, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>حالة نظام الحماية</div>
-                        <div style={{ fontSize: '32px', fontWeight: 900, color: st.color, lineHeight: 1 }}>{st.label}</div>
-                        {monData.pause_reason && <div style={{ fontSize: '13px', color: C.muted, marginTop: '6px' }}>📝 {monData.pause_reason}</div>}
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: C.muted, marginBottom: '4px' }}>حالة نظام الحماية</div>
+                        <div style={{ fontSize: '28px', fontWeight: 900, color: st.color, lineHeight: 1 }}>{st.label}</div>
+                        {monData.pause_reason && <div style={{ fontSize: '12px', color: C.muted, marginTop: '4px' }}>📝 {monData.pause_reason}</div>}
                         {monData.pause_until && (
-                          <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '5px', fontWeight: 700 }}>
+                          <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '4px', fontWeight: 700 }}>
                             ⏱️ متوقف حتى: {new Date(monData.pause_until).toLocaleString('ar-EG')}
                             {monData.pause_remaining_seconds > 0 && ` — ${Math.ceil(monData.pause_remaining_seconds / 60)} دقيقة متبقية`}
                           </div>
                         )}
                         {monData.warning_fired_at && monData.status === 'warning' && (
-                          <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '5px', fontWeight: 700 }}>⚡ تحذير نشط منذ: {new Date(monData.warning_fired_at).toLocaleString('ar-EG')}</div>
+                          <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '4px', fontWeight: 700 }}>⚡ تحذير نشط منذ: {new Date(monData.warning_fired_at).toLocaleString('ar-EG')}</div>
                         )}
                       </div>
                     </div>
-
-                    {/* Action buttons */}
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {monData.status === 'warning' && (
                         <button className="mon-btn" onClick={async () => { await authFetch('/api/super/trial-monitoring/clear-warning', { method: 'POST' }); void refetchMon(); }}
-                          style={{ padding: '11px 20px', borderRadius: '14px', border: '1.5px solid rgba(245,158,11,0.5)', background: 'rgba(245,158,11,0.15)', color: '#F59E0B', cursor: 'pointer', fontFamily: FONT, fontWeight: 800, fontSize: '13px' }}>
+                          style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.1)', color: '#F59E0B', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
                           🧹 مسح التحذير
                         </button>
                       )}
@@ -6335,12 +6319,12 @@ export default function SuperAdmin() {
                           await authFetch('/api/super/trial-monitoring/pause', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ minutes: Number(mins), reason }) });
                           void refetchMon();
                         }}
-                          style={{ padding: '11px 20px', borderRadius: '14px', border: '1.5px solid rgba(239,68,68,0.5)', background: 'rgba(239,68,68,0.12)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 800, fontSize: '13px' }}>
+                          style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
                           ⏸️ إيقاف مؤقت
                         </button>
                       ) : (
                         <button className="mon-btn" onClick={async () => { await authFetch('/api/super/trial-monitoring/resume', { method: 'POST' }); void refetchMon(); }}
-                          style={{ padding: '11px 20px', borderRadius: '14px', border: '1.5px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.15)', color: '#34D399', cursor: 'pointer', fontFamily: FONT, fontWeight: 800, fontSize: '13px', boxShadow: '0 4px 16px rgba(52,211,153,0.15)' }}>
+                          style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.12)', color: '#34D399', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
                           ▶️ استئناف التسجيلات
                         </button>
                       )}
@@ -6362,19 +6346,23 @@ export default function SuperAdmin() {
                       { icon: '⏱️', label: 'وقت الإيقاف',       value: monData.pause_remaining_seconds > 0 ? `${Math.ceil(monData.pause_remaining_seconds / 60)} د` : '—', sub: 'متبقي', color: monData.pause_remaining_seconds > 0 ? '#EF4444' : C.muted, glow: 'rgba(99,102,241,0.15)', bar: null, barMax: 0, barColor: '' },
                     ];
                   })().map(m => (
-                    <div key={m.label} className="mon-stat-card" style={{
-                      background: C.card, border: `1px solid ${C.border}`, borderRadius: '20px',
-                      padding: '22px 20px', cursor: 'default', transition: 'all 0.25s',
-                      boxShadow: `0 4px 20px ${m.glow}`,
+                    <div key={m.label} className="mon-stat" style={{
+                      background: C.card,
+                      borderRadius: '16px',
+                      border: `1px solid ${m.color}22`,
+                      borderTop: `3px solid ${m.color}`,
+                      padding: '20px',
+                      display: 'flex', flexDirection: 'column', gap: '8px',
+                      cursor: 'default', transition: 'all 0.2s',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <span style={{ fontSize: '22px' }}>{m.icon}</span>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{m.sub}</span>
+                        <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>{m.sub}</span>
                       </div>
-                      <div style={{ fontSize: '36px', fontWeight: 900, color: m.color, lineHeight: 1, marginBottom: '8px' }}>{m.value}</div>
-                      <div style={{ fontSize: '12px', fontWeight: 700, color: C.muted, marginBottom: m.bar !== null ? '12px' : '0' }}>{m.label}</div>
+                      <div style={{ fontSize: '28px', fontWeight: 900, color: m.color }}>{m.value}</div>
+                      <div style={{ fontSize: '11px', color: C.muted }}>{m.label}</div>
                       {m.bar !== null && (
-                        <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                        <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: '4px' }}>
                           <div className="mon-bar" style={{ height: '100%', borderRadius: '2px', background: m.barColor, '--w': `${m.bar}%`, width: `${m.bar}%` } as React.CSSProperties} />
                         </div>
                       )}
@@ -6383,12 +6371,12 @@ export default function SuperAdmin() {
                 </div>
 
                 {/* ════════════ §3 UNBLOCK TOOL ════════════ */}
-                <div id="mon-unblock" className="mon-sec">
-                  <SectionCard id="mon-unblock-inner" accent="linear-gradient(180deg,#10B981,#06B6D4)">
+                <SectionCard id="mon-unblock" accentColor="#10B981">
+                  <div className="mon-sec">
                     <SectionHead icon="🔓" title="أداة رفع الحجب الشاملة" sub="رفع فوري من قاعدة البيانات + Redis في خطوة واحدة" extra={
                       <Pill label="DB + Redis" color="#10B981" bg="rgba(16,185,129,0.12)" />
                     } />
-                    <div style={{ padding: '24px 28px' }}>
+                    <div style={{ padding: '20px 24px' }}>
                       {/* Steps */}
                       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
                         {[{ n: '1', t: 'أدخل IP أو البريد' }, { n: '2', t: 'اضغط فحص' }, { n: '3', t: 'ارفع الحجب' }].map((s, i) => (
@@ -6500,14 +6488,14 @@ export default function SuperAdmin() {
                         </div>
                       )}
                     </div>
-                  </SectionCard>
-                </div>
+                  </div>
+                </SectionCard>
 
                 {/* ════════════ §4 TOP IPs + FPs ════════════ */}
                 <div id="mon-ips" className="mon-sec" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
 
                   {/* Top IPs */}
-                  <SectionCard id="mon-ips-inner" accent="#6366f1">
+                  <SectionCard id="mon-ips-inner2" accentColor="#6366f1">
                     <SectionHead icon="🌐" title="أعلى عناوين IP" sub={`${(monData.top_ips ?? []).length} عنوان مشبوه`} />
                     <div style={{ padding: '20px 24px' }}>
                       {(monData.top_ips ?? []).length === 0 ? (
@@ -6542,7 +6530,7 @@ export default function SuperAdmin() {
                   </SectionCard>
 
                   {/* Top Fingerprints */}
-                  <SectionCard id="mon-fps-inner" accent="#8B5CF6">
+                  <SectionCard id="mon-fps-inner2" accentColor="#8B5CF6">
                     <SectionHead icon="🖥️" title="أعلى بصمات الأجهزة" sub={`${(monData.top_fingerprints ?? []).length} جهاز مشبوه`} />
                     <div style={{ padding: '20px 24px' }}>
                       {(monData.top_fingerprints ?? []).length === 0 ? (
@@ -6573,7 +6561,7 @@ export default function SuperAdmin() {
 
                 {/* ════════════ §5 SUSPICIOUS COMPANIES ════════════ */}
                 <div id="mon-suspects" className="mon-sec">
-                  <SectionCard id="mon-suspects-inner" accent="#EF4444">
+                  <SectionCard id="mon-suspects-inner2" accentColor="#EF4444">
                     <SectionHead icon="🚨" title="الحسابات المشبوهة" sub={`${(monData.suspicious_companies ?? []).length} حساب يستحق المراجعة`} extra={
                       (monData.suspicious_companies ?? []).length > 0
                         ? <Pill label={`${(monData.suspicious_companies ?? []).length} مشبوه`} color="#EF4444" bg="rgba(239,68,68,0.1)" />
@@ -6616,7 +6604,7 @@ export default function SuperAdmin() {
 
                 {/* ════════════ §6 RECENT BLOCKS ════════════ */}
                 <div id="mon-blocks" className="mon-sec">
-                  <SectionCard id="mon-blocks-inner" accent="#F59E0B">
+                  <SectionCard id="mon-blocks-inner2" accentColor="#F59E0B">
                     <SectionHead icon="🔒" title="آخر محاولات محجوبة" sub="الـ 20 محاولة الأخيرة في الوقت الفعلي" extra={
                       (monData.recent_blocks ?? []).length > 0
                         ? <Pill label={`${(monData.recent_blocks ?? []).length} محاولة`} color="#F59E0B" bg="rgba(245,158,11,0.1)" />
