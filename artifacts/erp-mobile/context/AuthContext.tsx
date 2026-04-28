@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (companyId && !isNaN(companyId)) body.company_id = companyId;
     const res = await fetch(`${_baseUrl}/api/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Client": "mobile" },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
@@ -77,12 +77,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(err.error || "فشل تسجيل الدخول");
     }
     const data = await res.json();
+    const authUser: AuthUser = {
+      id: data.user.id,
+      name: data.user.name,
+      username: data.user.username,
+      role: data.user.role,
+      companyId: data.user.company_id ?? null,
+    };
     await Promise.all([
       AsyncStorage.setItem(TOKEN_KEY, data.token),
-      AsyncStorage.setItem(USER_KEY, JSON.stringify(data.user)),
+      AsyncStorage.setItem(USER_KEY, JSON.stringify(authUser)),
     ]);
     setToken(data.token);
-    setUser(data.user);
+    setUser(authUser);
   }, []);
 
   const logout = useCallback(async () => {

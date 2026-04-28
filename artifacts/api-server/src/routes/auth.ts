@@ -281,7 +281,10 @@ router.post('/auth/login', async (req, res) => {
     /* Set httpOnly cookies — token never exposed to JS */
     setAuthCookies(res, token, refreshToken);
 
+    const isMobile = req.headers['x-client'] === 'mobile';
+
     res.json({
+      ...(isMobile ? { token } : {}),
       user: {
         id: user.id,
         name: user.name,
