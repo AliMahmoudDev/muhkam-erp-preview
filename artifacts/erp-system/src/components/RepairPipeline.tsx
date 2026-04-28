@@ -199,7 +199,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
    *  مصروف ذرّي) — لو فشل الـ PATCH هنا فالبيانات المحفوظة صحيحة من الناحية المحاسبية،
    *  وستُكتشف البوّابة كمستوفاة في المرة التالية. لا نقوم بإلغاء حفظ الـ modal لأنه قد
    *  يكون أنشأ مصروفاً أو حركة مخزون لا يمكن التراجع عنها بأمان من العميل. */
-  async function applyGatedTransition(target: Exclude<GatedKey, null>) {
+  async function applyGatedTransition(target: Exclude<GatedKey, null> | "ready_for_delivery") {
     try {
       const res = await fetch(`/api/repair-jobs/${jobData.id}`, {
         method: "PATCH",
