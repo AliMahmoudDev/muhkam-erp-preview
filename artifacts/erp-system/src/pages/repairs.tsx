@@ -1408,6 +1408,17 @@ function JobChecklist({
   const [notesText, setNotesText]         = useState("");
   const [expandedCats, setExpandedCats]   = useState<Set<string>>(new Set());
 
+  /* Group items by category — must be before any early return */
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, ChecklistItem[]>();
+    for (const item of checklist) {
+      const cat = item.category ?? "عام";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(item);
+    }
+    return map;
+  }, [checklist]);
+
   /* Power-off sentinel */
   if (checklist.length === 1 && checklist[0].id === "__power_off__") {
     return (
@@ -1420,17 +1431,6 @@ function JobChecklist({
       </div>
     );
   }
-
-  /* Group items by category */
-  const categoryMap = useMemo(() => {
-    const map = new Map<string, ChecklistItem[]>();
-    for (const item of checklist) {
-      const cat = item.category ?? "عام";
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(item);
-    }
-    return map;
-  }, [checklist]);
 
   const toggleCat = (cat: string) =>
     setExpandedCats((prev) => {
@@ -2250,7 +2250,6 @@ function NewJobForm({
       : DEFAULT_CHECKLIST.map(c => ({ ...c, status: null, notes: undefined }));
     setLocalChecklist(items);
     setDevicePowers(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intakeDeviceType, intakeTemplateLen, brand, category]);
 
   const checklistComplete = localChecklist.length > 0 && localChecklist.every((c) => c.status !== null);

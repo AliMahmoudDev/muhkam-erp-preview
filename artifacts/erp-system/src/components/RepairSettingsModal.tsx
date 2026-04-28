@@ -163,7 +163,7 @@ function ChecklistTab() {
   }, [activeType]);
 
   const toggleCat = (cat: string) =>
-    setExpandedCats(prev => { const n = new Set(prev); n.has(cat) ? n.delete(cat) : n.add(cat); return n; });
+    setExpandedCats(prev => { const n = new Set(prev); if (n.has(cat)) { n.delete(cat); } else { n.add(cat); } return n; });
 
   const seedDeviceType = async () => {
     setSeeding(true);
