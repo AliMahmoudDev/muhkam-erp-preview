@@ -98,7 +98,6 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
     setDecisions(prev => {
       const next: Record<number, Decision> = {};
       for (const p of internalUnreturned) {
-        // eslint-disable-next-line security/detect-object-injection
         next[p.id] = prev[p.id] ?? "defer";
       }
       return next;
@@ -111,7 +110,6 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
     try {
       /* 1) إرجاع القطع التي اختار لها المستخدم stock/scrap */
       for (const p of internalUnreturned) {
-        // eslint-disable-next-line security/detect-object-injection
         const dec = decisions[p.id];
         if (dec === "defer") continue;
         const r = await authFetch(api(`/api/repair-jobs/${job.id}/parts/${p.id}/return`), {
