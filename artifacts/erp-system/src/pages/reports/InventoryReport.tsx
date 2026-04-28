@@ -260,13 +260,15 @@ export default function InventoryReport() {
       </div>
 
       <div className="flex items-center gap-1 flex-wrap border-b border-white/8 pb-2">
-        {[
-          { id: '', label: `الكل (${products.length})` },
-          ...categories.map((c) => ({
-            id: c,
-            label: `${c} (${products.filter((p) => p.category === c).length})`,
-          })),
-        ].map((cat) => (
+        {(
+          [
+            { id: '', label: `الكل (${products.length})` },
+            ...categories.map((c) => ({
+              id: c,
+              label: `${c} (${products.filter((p) => p.category === c).length})`,
+            })),
+          ] as { id: string; label: string }[]
+        ).map((cat) => (
           <button
             key={cat.id}
             onClick={() => setCatFilter(cat.id)}
