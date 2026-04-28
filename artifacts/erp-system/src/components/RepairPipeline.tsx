@@ -16,11 +16,13 @@ import DeliveryReceiptModal from "@/components/modals/DeliveryReceiptModal";
  * البوّابات (gated transitions) — هذه الأهداف لا تُستخدم فيها رسالة التأكيد العامة،
  * بل يُفتح modal مخصّص لجمع البيانات قبل تنفيذ نقل الحالة.
  *
- * - ready_for_delivery → QualityCheckModal (فحص QC)
- * - shipped            → PreDeliveryModal  (مراجعة قطع + ورشة + وسيط)
- * - delivered          → ShippingCostModal (تكلفة شحن + مصروف تلقائي)
+ * - final_quality_check → QualityCheckModal (يفتح عند in_repair → QC)
+ *                          • قبول → ينقل تلقائياً إلى ready_for_delivery
+ *                          • رفض  → يبقى في in_repair مع حفظ السبب في qa_notes
+ * - shipped             → PreDeliveryModal  (مراجعة قطع + ورشة + وسيط)
+ * - delivered           → ShippingCostModal (تكلفة شحن + مصروف تلقائي)
  */
-const GATED_TARGETS = new Set<string>(["ready_for_delivery", "shipped", "delivered"]);
+const GATED_TARGETS = new Set<string>(["final_quality_check", "shipped", "delivered"]);
 
 interface Stage {
   key: string;
@@ -132,7 +134,7 @@ interface ConfirmState {
 }
 
 /** أي بوّابة (gated target) فُتح لها modal مخصّص — تُعالَج خارج الـ confirm العام */
-type GatedKey = "ready_for_delivery" | "shipped" | "delivered" | null;
+type GatedKey = "final_quality_check" | "shipped" | "delivered" | null;
 
 export default function RepairPipeline({ currentStatus, jobData, onStatusChange }: Props) {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
@@ -302,11 +304,23 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
   return (
     <>
       {modal}
-      {gated === "ready_for_delivery" && (
+      {gated === "final_quality_check" && (
         <QualityCheckModal
           job={jobLite}
           onClose={() => setGated(null)}
-          onSaved={() => void applyGatedTransition("ready_for_delivery")}
+          onSaved={(outcome) => {
+            if (outcome === "approve") {
+              /* قبول الفحص → ينقل تلقائياً إلى "جاهز للتسليم" (يقفز مرحلة QC المرئية).
+                 الـ POST /qa-checklist في الـ modal حفظ qa_completed_at بالفعل،
+                 فبوّابة ready_for_delivery تكون مستوفاة. */
+              void applyGatedTransition("ready_for_delivery");
+            } else {
+              /* رفض الفحص → الحالة تبقى in_repair، فقط نُغلق الـ modal ونُحدّث البطاقة
+                 لإظهار qa_notes الجديد. */
+              setGated(null);
+              onStatusChange(currentStatus);
+            }
+          }}
         />
       )}
       {gated === "shipped" && (

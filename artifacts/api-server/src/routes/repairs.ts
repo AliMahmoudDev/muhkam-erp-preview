@@ -1282,6 +1282,20 @@ router.post("/repair-jobs/:id/qa-checklist", wrap(async (req, res) => {
     return res.status(400).json({ error: "يجب اتخاذ قرار (نجح/فشل/لا ينطبق) لكل بند فحص" });
   }
 
+  /* SEC-GATE-003: قبول QC على مستوى الخادم يعني "اجتياز الفحص"؛ لذلك لا نسمح
+     بضبط qa_completed_at إن وُجد أي بند فاشل. الواجهة تمنع ذلك ولكن نُحصّن
+     الخادم ضد طلبات API مباشرة قد تتجاوز التحقق العميل. الفنّي عند فشل أي بند
+     يجب أن يستخدم مسار "رفض QC" (PATCH qa_notes) بدلاً من القبول. */
+  const failedCount = items.filter((i: unknown) => {
+    const it = i as { status?: unknown };
+    return it.status === "fail";
+  }).length;
+  if (failedCount > 0) {
+    return res.status(400).json({
+      error: `لا يمكن قبول الفحص ووجود ${failedCount} بند فاشل — استخدم "رفض الفحص" لإعادة البطاقة للإصلاح مع كتابة السبب`,
+    });
+  }
+
   const [job] = await db.select().from(repairJobsTable)
     .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
   if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
