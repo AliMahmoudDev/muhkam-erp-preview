@@ -5,7 +5,7 @@
  */
 import { Router } from "express";
 import { eq, desc, sql, isNull, count } from "drizzle-orm";
-import { db, companiesTable, erpUsersTable, planSettingsTable, trialAbuseLogTable } from "@workspace/db";
+import { db, companiesTable, erpUsersTable, planSettingsTable, trialAbuseLogTable, superSettingsTable } from "@workspace/db";
 import type { CompanyFeatures } from "@workspace/db";
 import fs from "fs";
 import path from "path";
@@ -135,6 +135,8 @@ import { hashPin } from "../lib/hash";
 import { createCompanySchema, validate } from "../lib/schemas";
 import { createDatabaseBackup, listBackups } from "../lib/db-backup";
 import { writeAuditLog } from "../lib/audit-log";
+import { alertManager, DEFAULT_TELEGRAM_CONFIG } from "../lib/telegram-alert-manager";
+import type { TelegramAlertConfig } from "../lib/telegram-alert-manager";
 
 const router = Router();
 
@@ -1535,6 +1537,91 @@ router.post("/super/companies/:id/verify-email", ...superOnly, wrap(async (req, 
   }
 
   res.json({ success: true, company: updated });
+}));
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Telegram Alert Settings
+   GET  /super/telegram-settings  → returns current config (merged w/ defaults)
+   PUT  /super/telegram-settings  → saves config to DB + invalidates cache
+══════════════════════════════════════════════════════════════════════════ */
+
+router.get("/super/telegram-settings", ...superOnly, wrap(async (_req, res) => {
+  const [row] = await db
+    .select()
+    .from(superSettingsTable)
+    .where(eq(superSettingsTable.key, "telegram_alert_config"));
+
+  let config: TelegramAlertConfig;
+  if (row?.value) {
+    const saved = JSON.parse(row.value) as Partial<TelegramAlertConfig>;
+    // Merge saved into defaults so new alert types always appear in the UI
+    config = {
+      enabled: saved.enabled ?? DEFAULT_TELEGRAM_CONFIG.enabled,
+      alerts: { ...DEFAULT_TELEGRAM_CONFIG.alerts },
+    };
+    if (saved.alerts) {
+      for (const [key, rule] of Object.entries(saved.alerts)) {
+        if (config.alerts[key]) {
+          config.alerts[key] = { ...config.alerts[key], ...rule };
+        }
+      }
+    }
+  } else {
+    config = { ...DEFAULT_TELEGRAM_CONFIG };
+  }
+
+  res.json(config);
+}));
+
+router.put("/super/telegram-settings", ...superOnly, wrap(async (req, res) => {
+  const body = req.body as Partial<TelegramAlertConfig>;
+
+  // Validate structure
+  if (typeof body !== "object" || body === null) {
+    res.status(400).json({ error: "Invalid body" });
+    return;
+  }
+
+  const toSave: TelegramAlertConfig = {
+    enabled: typeof body.enabled === "boolean" ? body.enabled : true,
+    alerts: {},
+  };
+
+  if (body.alerts && typeof body.alerts === "object") {
+    for (const [key, rule] of Object.entries(body.alerts)) {
+      if (typeof rule === "object" && rule !== null) {
+        toSave.alerts[key] = {
+          enabled:      typeof rule.enabled === "boolean" ? rule.enabled : true,
+          cooldownHours: typeof rule.cooldownHours === "number" ? rule.cooldownHours : 4,
+          label:        rule.label ?? key,
+        };
+      }
+    }
+  }
+
+  const value = JSON.stringify(toSave);
+
+  await db
+    .insert(superSettingsTable)
+    .values({ key: "telegram_alert_config", value })
+    .onConflictDoUpdate({
+      target: superSettingsTable.key,
+      set:    { value, updated_at: new Date() },
+    });
+
+  // Invalidate in-process cache immediately
+  alertManager.invalidateConfigCache();
+
+  await writeAuditLog({
+    action:      "TELEGRAM_SETTINGS_UPDATED",
+    record_type: "system",
+    record_id:   0,
+    new_value:   { enabled: toSave.enabled, alertCount: Object.keys(toSave.alerts).length },
+    user:        req.user,
+    company_id:  null,
+  });
+
+  res.json({ success: true, config: toSave });
 }));
 
 export default router;

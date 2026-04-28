@@ -47,3 +47,4 @@ export * from "./sales-targets";
 export * from "./repairs";
 export * from "./devices";
 export * from "./trial-abuse-log";
+export * from "./super-settings";

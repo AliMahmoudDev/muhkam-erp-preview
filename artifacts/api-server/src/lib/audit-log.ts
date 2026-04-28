@@ -41,6 +41,7 @@ export type AuditAction =
   | "MANAGER_TOGGLED"
   | "MANAGER_DELETED"
   | "PLAN_SETTINGS_UPDATED"
+  | "TELEGRAM_SETTINGS_UPDATED"
   // ── Backup / restore lifecycle ────────────────────────────────────────────
   | "RESTORE_STARTED"
   | "RESTORE_REJECTED"
