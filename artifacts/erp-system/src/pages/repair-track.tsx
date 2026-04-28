@@ -142,12 +142,18 @@ export default function RepairTrack() {
                 <span className="text-[12px] text-white/50 font-semibold">سجل تحديثات الحالة</span>
               </div>
               <div className="px-5 py-4">
-                {data.history.length === 0 ? (
-                  <div className="flex items-center gap-2 text-white/35 text-[12px] py-3">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    لا توجد تحديثات بعد
-                  </div>
-                ) : (
+                {(() => {
+                  /* حماية دفاعية: استجابات قديمة قد لا ترجع history أو ترجعه null */
+                  const history: TrackHistory[] = Array.isArray(data.history) ? data.history : [];
+                  if (history.length === 0) {
+                    return (
+                      <div className="flex items-center gap-2 text-white/35 text-[12px] py-3">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        لا توجد تحديثات بعد
+                      </div>
+                    );
+                  }
+                  return (
                   <ol className="space-y-3">
                     <li className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full bg-white/30 mt-1.5 shrink-0" />
@@ -156,7 +162,7 @@ export default function RepairTrack() {
                         <p className="text-[10px] text-white/35 mt-0.5">{fmtDate(data.received_at)}</p>
                       </div>
                     </li>
-                    {data.history.map((h, i) => (
+                    {history.map((h, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <div className="w-2 h-2 rounded-full mt-1.5 shrink-0"
                           style={{ background: h.to?.color ?? "#888" }} />
@@ -169,7 +175,8 @@ export default function RepairTrack() {
                       </li>
                     ))}
                   </ol>
-                )}
+                  );
+                })()}
               </div>
             </div>
 

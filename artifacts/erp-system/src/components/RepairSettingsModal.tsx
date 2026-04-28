@@ -234,32 +234,59 @@ function ChecklistTab() {
   const isEmpty = !isLoading && !isError && items.length === 0 && localCats.length === 0;
   const activeMeta = DEVICE_TYPE_META.find(d => d.key === activeType)!;
 
-  /* shared violet accent (one tab strip, one colour) */
-  const accent    = "text-violet-200";
-  const accentDim = "text-violet-300/70";
-  const accentBg  = "bg-violet-500/10";
-  const accentBdr = "border-violet-500/25";
-  const badgeCls  = "bg-violet-500/15 text-violet-200/70";
+  /* أكسنت موحَّد عبر تبويبات هذه الصفحة — أمبر احترافي بدلاً من البنفسجي */
+  const accent    = "text-amber-200";
+  const accentDim = "text-amber-300/75";
+  const accentBg  = "bg-amber-500/10";
+  const accentBdr = "border-amber-500/30";
+  const badgeCls  = "bg-amber-500/15 text-amber-200/85 border border-amber-500/25";
 
   return (
     <div className="flex flex-col h-full">
-      {/* Device-type tabs (scrollable horizontally) */}
-      <div className="flex items-center border-b border-white/10 shrink-0 overflow-x-auto">
-        <div className="flex">
+      {/* ═════ شريط أنواع الأجهزة — pills تلتفّ على عدّة صفوف بدلاً من القصّ ═════ */}
+      <div
+        className="px-4 pt-4 pb-3 shrink-0"
+        style={{
+          background: "linear-gradient(180deg, rgba(245,158,11,0.04) 0%, transparent 100%)",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+        }}
+      >
+        <div className="flex items-center justify-between gap-3 mb-2.5">
+          <h3 className="text-[10px] font-black tracking-[0.2em] text-white/35 uppercase">
+            نوع الجهاز
+          </h3>
+          <span className="text-[10px] text-white/30">
+            {DEVICE_TYPE_META.length} نوع متاح
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
           {DEVICE_TYPE_META.map(t => {
             const isActive = activeType === t.key;
             const itemCount = isActive ? items.length : 0;
             return (
-              <button key={t.key} onClick={() => setActiveType(t.key)}
-                className={`flex items-center gap-1.5 px-3.5 py-3 text-[12.5px] font-semibold transition-all border-b-2 whitespace-nowrap ${
+              <button
+                key={t.key}
+                onClick={() => setActiveType(t.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all whitespace-nowrap"
+                style={
                   isActive
-                    ? "border-violet-400 text-violet-200 bg-violet-500/8"
-                    : "border-transparent text-white/30 hover:text-white/55"
-                }`}>
-                <span className="text-sm">{t.emoji}</span>
+                    ? {
+                        background: "linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.10))",
+                        border: "1px solid rgba(245,158,11,0.45)",
+                        color: "#fcd34d",
+                        boxShadow: "0 4px 10px -3px rgba(245,158,11,0.30), inset 0 1px 0 rgba(255,255,255,0.06)",
+                      }
+                    : {
+                        background: "rgba(255,255,255,0.035)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        color: "rgba(255,255,255,0.55)",
+                      }
+                }
+              >
+                <span className="text-sm leading-none">{t.emoji}</span>
                 <span>{t.label}</span>
                 {isActive && itemCount > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium tabular-nums ${badgeCls}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold tabular-nums ${badgeCls}`}>
                     {itemCount}
                   </span>
                 )}
@@ -267,35 +294,65 @@ function ChecklistTab() {
             );
           })}
         </div>
-        <div className="flex-1 min-w-4" />
-        <div className="flex items-center px-3 gap-2 shrink-0">
-          <button onClick={() => setShowNewCat(v => !v)}
-            className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors border border-white/8 hover:border-white/20 rounded-lg px-3 py-1.5">
-            <Plus className="w-3.5 h-3.5" /> تصنيف
+      </div>
+
+      {/* ═════ شريط الإجراءات السريعة ═════ */}
+      <div
+        className="flex items-center flex-wrap gap-2 px-4 py-2.5 shrink-0"
+        style={{
+          background: "rgba(255,255,255,0.015)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <span className="text-[11px] text-white/40 font-semibold flex items-center gap-1.5 ml-auto">
+          <Settings2 className="w-3 h-3" />
+          إجراءات على «{activeMeta.label}»
+        </span>
+        <button
+          onClick={() => setShowNewCat(v => !v)}
+          className="flex items-center gap-1.5 text-[11px] text-white/65 hover:text-white transition-colors border border-white/10 hover:border-white/25 hover:bg-white/5 rounded-lg px-2.5 py-1.5 font-semibold"
+        >
+          <Plus className="w-3 h-3" /> تصنيف جديد
+        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowCopyMenu(v => !v)}
+            disabled={copying}
+            className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/12 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-40 font-semibold"
+          >
+            <Copy className="w-3 h-3" /> {copying ? "جاري النسخ..." : "نسخ من نوع آخر"}
           </button>
-          <div className="relative">
-            <button onClick={() => setShowCopyMenu(v => !v)} disabled={copying}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/55 hover:bg-white/10 disabled:opacity-40">
-              <Copy className="w-3 h-3" /> {copying ? "..." : "نسخ من"}
-            </button>
-            {showCopyMenu && (
-              <div className="absolute left-0 top-full mt-1 z-10 w-44 rounded-xl border border-white/10 bg-[#1a1820] shadow-2xl py-1 max-h-72 overflow-y-auto">
-                {DEVICE_TYPE_META.filter(d => d.key !== activeType).map(d => (
-                  <button key={d.key} onClick={() => copyFrom(d.key)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-white/65 hover:bg-white/8 text-right">
-                    <span className="text-sm">{d.emoji}</span>
-                    <span className="flex-1">{d.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <button onClick={seedDeviceType} disabled={seeding}
-            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${accentBg} ${accentBdr} ${accent} hover:bg-violet-500/15`}>
-            <Zap className="w-3 h-3" />
-            {seeding ? "جاري..." : "تحميل افتراضي"}
-          </button>
+          {showCopyMenu && (
+            <div
+              className="absolute left-0 top-full mt-1.5 z-20 w-52 rounded-xl py-1 max-h-72 overflow-y-auto"
+              style={{
+                background: "#10141f",
+                border: "1px solid rgba(255,255,255,0.12)",
+                boxShadow: "0 20px 40px -10px rgba(0,0,0,0.6)",
+              }}
+            >
+              <p className="text-[10px] text-white/35 font-bold tracking-wider uppercase px-3 pt-1.5 pb-1">انسخ بنود من:</p>
+              {DEVICE_TYPE_META.filter(d => d.key !== activeType).map(d => (
+                <button
+                  key={d.key}
+                  onClick={() => copyFrom(d.key)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-white/75 hover:bg-amber-500/10 hover:text-amber-200 text-right transition-colors"
+                >
+                  <span className="text-sm">{d.emoji}</span>
+                  <span className="flex-1">{d.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+        <button
+          onClick={seedDeviceType}
+          disabled={seeding}
+          className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg border transition-all disabled:opacity-40 font-bold ${accentBg} ${accentBdr} ${accent} hover:bg-amber-500/20`}
+        >
+          <Zap className="w-3 h-3" />
+          {seeding ? "جاري التحميل..." : "تحميل بنود افتراضية"}
+        </button>
       </div>
 
       {/* Add cat input */}
@@ -329,7 +386,7 @@ function ChecklistTab() {
         )}
         {isEmpty && (
           <div className="flex flex-col items-center justify-center py-16 gap-4 px-8">
-            <div className="w-12 h-12 rounded-2xl bg-violet-500/10 flex items-center justify-center text-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/12 border border-amber-500/25 flex items-center justify-center text-2xl">
               {activeMeta.emoji}
             </div>
             <p className="text-white/40 text-sm text-center">
@@ -337,7 +394,7 @@ function ChecklistTab() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <button onClick={seedDeviceType} disabled={seeding}
-                className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold border transition-all disabled:opacity-50 ${accentBg} ${accentBdr} ${accent} hover:bg-violet-500/15`}>
+                className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold border transition-all disabled:opacity-50 ${accentBg} ${accentBdr} ${accent} hover:bg-amber-500/20`}>
                 <Zap className="w-4 h-4" />
                 {seeding ? "جاري التحميل..." : `تحميل بنود ${activeMeta.label}`}
               </button>
@@ -395,7 +452,7 @@ function ChecklistTab() {
                             <>
                               <span className="flex-1 text-sm text-white/75">{item.label_ar}</span>
                               <button onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); setAddingToCat(null); }}
-                                className="opacity-0 group-hover:opacity-100 text-white/25 hover:text-violet-400 p-1 transition-all shrink-0">
+                                className="opacity-0 group-hover:opacity-100 text-white/25 hover:text-amber-400 p-1 transition-all shrink-0">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={() => deleteItem(item.id)}
@@ -550,7 +607,7 @@ function TechniciansTab() {
     toast({ title: "✓ تم حفظ إعدادات الفني" });
   };
 
-  const techUsers = users.filter(u => u.active !== false);
+  const techUsers = (Array.isArray(users) ? users : []).filter(u => u.active !== false);
 
   const getSettings = (id: number): TechSettings =>
     settings[id] ?? { commission: 0, notifications: true, specialty: "" };
@@ -588,7 +645,7 @@ function TechniciansTab() {
               className="border-b border-white/5 last:border-b-0 px-4 py-3.5 hover:bg-white/[0.02] transition-colors">
               <div className="flex items-start gap-3">
                 {/* avatar */}
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500/30 to-indigo-500/20 border border-violet-500/20 flex items-center justify-center shrink-0 text-sm font-bold text-violet-300">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/30 to-orange-500/15 border border-amber-500/25 flex items-center justify-center shrink-0 text-sm font-bold text-amber-300">
                   {u.name[0] ?? "؟"}
                 </div>
 
@@ -770,11 +827,11 @@ function QrTrackingTab() {
       <div className="p-5 space-y-5">
 
         {/* Info banner */}
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-violet-500/8 border border-violet-500/15">
-          <QrCode className="w-5 h-5 text-violet-400/70 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/8 border border-amber-500/20">
+          <QrCode className="w-5 h-5 text-amber-400/85 shrink-0 mt-0.5" />
           <div>
-            <p className="text-[13px] font-semibold text-violet-300/80 mb-1">تتبع العميل عبر QR</p>
-            <p className="text-[12px] text-violet-300/50 leading-relaxed">
+            <p className="text-[13px] font-semibold text-amber-300/80 mb-1">تتبع العميل عبر QR</p>
+            <p className="text-[12px] text-amber-300/50 leading-relaxed">
               كل طلب صيانة يحصل على رمز QR خاص به. العميل يصوّره ويتابع حالة جهازه في أي وقت دون الحاجة لتواصل مباشر.
             </p>
           </div>
@@ -830,7 +887,7 @@ function QrTrackingTab() {
                 {copied ? "تم النسخ" : "نسخ الرابط"}
               </button>
               <button onClick={printQR}
-                className="flex items-center gap-1.5 text-[11px] text-violet-300 bg-violet-500/12 hover:bg-violet-500/20 border border-violet-500/25 rounded-lg px-2.5 py-1 transition-all font-semibold">
+                className="flex items-center gap-1.5 text-[11px] text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-lg px-2.5 py-1 transition-all font-semibold">
                 <Printer className="w-3 h-3" /> طباعة
               </button>
             </div>
@@ -969,15 +1026,15 @@ function DashboardCardsTab() {
       {/* Header */}
       <div className="px-5 py-4 border-b border-white/8 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-violet-500/8 border border-violet-500/15 flex-1">
-            <Info className="w-4 h-4 text-violet-400/70 shrink-0 mt-0.5" />
-            <p className="text-[12px] text-violet-300/70 leading-relaxed">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/8 border border-amber-500/20 flex-1">
+            <Info className="w-4 h-4 text-amber-400/85 shrink-0 mt-0.5" />
+            <p className="text-[12px] text-amber-300/70 leading-relaxed">
               كل كارت يضمّ حالة واحدة أو أكثر، يُعرض أعلى صفحة الصيانة بحجم نسبي حسب عدد البطاقات. الترتيب من اليمين لليسار.
             </p>
           </div>
         </div>
         <button onClick={() => { setShowNew(true); setEditing(null); }}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 text-xs font-bold transition-all">
+          className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold transition-all">
           <Plus className="w-3.5 h-3.5" /> كارت جديد
         </button>
       </div>
@@ -1036,7 +1093,7 @@ function DashboardCardsTab() {
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
                   <button onClick={() => { setEditing(c); setShowNew(false); }}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-amber-300 hover:bg-amber-500/10 transition-all"
                     title="تعديل">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -1235,7 +1292,7 @@ function DashboardCardEditor({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[11px] text-white/45 font-bold">
-                الحالات المضمومة <span className="text-violet-400/70">({statuses.length})</span>
+                الحالات المضمومة <span className="text-amber-400/85">({statuses.length})</span>
               </label>
               <button type="button" onClick={() => setShowAddStatus(v => !v)}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/55 text-[10px] font-bold transition-all">
@@ -1245,7 +1302,7 @@ function DashboardCardEditor({
 
             {/* Inline create form */}
             {showAddStatus && (
-              <div className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-2 mb-2 flex items-center gap-2">
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-center gap-2">
                 <input value={newStatusLabel} onChange={e => setNewStatusLabel(e.target.value)}
                   placeholder="اسم الحالة بالعربية" maxLength={40}
                   className="erp-input flex-1 text-[12px]" />
@@ -1261,7 +1318,7 @@ function DashboardCardEditor({
                   ))}
                 </div>
                 <button type="button" onClick={createStatus} disabled={creatingStatus}
-                  className="px-2.5 py-1 rounded-lg bg-violet-500/30 hover:bg-violet-500/50 border border-violet-500/50 text-violet-100 text-[11px] font-bold disabled:opacity-50">
+                  className="px-2.5 py-1 rounded-lg bg-amber-500/30 hover:bg-amber-500/50 border border-amber-500/50 text-amber-100 text-[11px] font-bold disabled:opacity-50">
                   {creatingStatus ? "..." : "إضافة"}
                 </button>
               </div>
@@ -1282,13 +1339,13 @@ function DashboardCardEditor({
                       <button key={s.key} type="button" onClick={() => toggleStatus(s.key)}
                         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
                           on
-                            ? "bg-violet-500/20 border-violet-500/40 text-violet-200"
+                            ? "bg-amber-500/20 border-amber-500/40 text-amber-200"
                             : "bg-white/[0.02] border-white/8 text-white/45 hover:text-white/75 hover:border-white/15"
                         }`}>
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.color }} />
                         {s.label_ar}
                         {!s.is_system && (
-                          <span className="text-[8px] px-1 rounded bg-violet-500/15 text-violet-300/80 font-bold">مخصص</span>
+                          <span className="text-[8px] px-1 rounded bg-amber-500/15 text-amber-300/80 font-bold">مخصص</span>
                         )}
                         {on && <CheckCircle2 className="w-3 h-3" />}
                       </button>
@@ -1337,7 +1394,7 @@ function DashboardCardEditor({
                 <button key={key} type="button" onClick={() => setIcon(key)}
                   className={`w-9 h-9 rounded-lg flex items-center justify-center border transition-all ${
                     icon === key
-                      ? "bg-violet-500/20 border-violet-500/50 text-white"
+                      ? "bg-amber-500/20 border-amber-500/50 text-white"
                       : "bg-white/[0.02] border-white/8 text-white/40 hover:text-white/75 hover:border-white/15"
                   }`}
                   title={key}>
@@ -1367,7 +1424,7 @@ function DashboardCardEditor({
           </button>
           <div className="flex-1" />
           <button onClick={save} disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-500/25 hover:bg-violet-500/40 border border-violet-500/40 text-violet-100 text-xs font-bold transition-all disabled:opacity-50">
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500/25 hover:bg-amber-500/35 border border-amber-500/40 text-amber-100 text-xs font-bold transition-all disabled:opacity-50">
             <Save className="w-3.5 h-3.5" /> {saving ? "جارٍ الحفظ..." : "حفظ"}
           </button>
         </div>
@@ -1395,29 +1452,51 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const tabIcon = (tab: typeof TABS[0], active: boolean) => {
-    const Icon = tab.icon;
-    return <Icon className={`w-4 h-4 shrink-0 ${active ? "text-violet-300" : "text-white/30"}`} />;
-  };
-
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-start justify-center pt-4 pb-4 bg-black/75 backdrop-blur-md" dir="rtl"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-
-      <div className="glass-panel rounded-2xl border border-white/10 w-full mx-4 overflow-hidden flex flex-col"
-        style={{ maxWidth: 860, maxHeight: "94vh" }}>
+    <div
+      className="fixed inset-0 z-[60] flex items-start justify-center pt-3 pb-3 px-3 backdrop-blur-md"
+      style={{ background: "rgba(4,6,14,0.78)" }}
+      dir="rtl"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="rs-modal-shell w-full overflow-hidden flex flex-col rounded-2xl"
+        style={{
+          maxWidth: 1180,
+          maxHeight: "95vh",
+          background: "linear-gradient(180deg, #0f1422 0%, #0b0f1a 100%)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          boxShadow: "0 30px 80px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset",
+        }}
+      >
 
         {/* ═══ TOP BAR ═══ */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10 shrink-0 bg-white/[0.02]">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500/30 to-indigo-500/20 border border-violet-500/20 flex items-center justify-center shrink-0">
-            <Settings2 className="w-4 h-4 text-violet-300/80" />
+        <div
+          className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+          style={{
+            background: "linear-gradient(90deg, rgba(245,158,11,0.06) 0%, rgba(255,255,255,0.02) 60%, transparent 100%)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background: "linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.12))",
+              border: "1px solid rgba(245,158,11,0.30)",
+              boxShadow: "0 4px 12px rgba(245,158,11,0.12)",
+            }}
+          >
+            <Settings2 className="w-4 h-4 text-amber-300" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-bold text-white/85">إعدادات الصيانة</h2>
-            <p className="text-[11px] text-white/30">تخصيص قوالب الفحص والفنيين ومسار الإصلاح</p>
+            <h2 className="text-[15px] font-black text-white tracking-tight">إعدادات وحدة الصيانة</h2>
+            <p className="text-[11px] text-white/45 mt-0.5">قوالب الفحص — مسار الإصلاح — كروت اللوحة — الفنيين — تتبّع QR</p>
           </div>
-          <button onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white/70 hover:bg-white/8 transition-all">
+          <button
+            onClick={onClose}
+            title="إغلاق (Esc)"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -1426,26 +1505,51 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
         <div className="flex flex-1 overflow-hidden">
 
           {/* ── Sidebar ── */}
-          <div className="w-52 border-l border-white/8 shrink-0 bg-white/[0.015] overflow-y-auto flex flex-col">
-            <nav className="flex-1 py-2">
+          <div
+            className="w-60 shrink-0 overflow-y-auto flex flex-col"
+            style={{
+              background: "linear-gradient(180deg, rgba(255,255,255,0.022) 0%, rgba(255,255,255,0.008) 100%)",
+              borderLeft: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <nav className="flex-1 py-2 px-2 space-y-1">
               {TABS.map(tab => {
                 const active = activeTab === tab.id;
                 return (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-start gap-3 px-4 py-3 text-right transition-all relative ${
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="w-full flex items-start gap-3 px-3 py-2.5 text-right transition-all relative rounded-xl"
+                    style={
                       active
-                        ? "bg-violet-500/12 text-white"
-                        : "text-white/40 hover:text-white/65 hover:bg-white/[0.03]"
-                    }`}>
+                        ? {
+                            background: "linear-gradient(90deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.05) 100%)",
+                            border: "1px solid rgba(245,158,11,0.28)",
+                            boxShadow: "0 4px 12px -4px rgba(245,158,11,0.18)",
+                          }
+                        : { border: "1px solid transparent" }
+                    }
+                  >
                     {active && (
-                      <span className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-violet-400 rounded-full" />
+                      <span className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-7 bg-amber-400 rounded-full" />
                     )}
-                    {tabIcon(tab, active)}
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all"
+                      style={{
+                        background: active ? "rgba(245,158,11,0.20)" : "rgba(255,255,255,0.04)",
+                        border: active ? "1px solid rgba(245,158,11,0.35)" : "1px solid rgba(255,255,255,0.06)",
+                      }}
+                    >
+                      {(() => {
+                        const Icon = tab.icon;
+                        return <Icon className={`w-3.5 h-3.5 ${active ? "text-amber-300" : "text-white/45"}`} />;
+                      })()}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[13px] font-semibold leading-tight ${active ? "text-white/90" : "text-white/50"}`}>
+                      <p className={`text-[13px] font-bold leading-tight ${active ? "text-white" : "text-white/65"}`}>
                         {tab.label}
                       </p>
-                      <p className={`text-[11px] leading-tight mt-0.5 ${active ? "text-white/35" : "text-white/25"}`}>
+                      <p className={`text-[10.5px] leading-tight mt-1 ${active ? "text-amber-200/65" : "text-white/30"}`}>
                         {tab.sublabel}
                       </p>
                     </div>
@@ -1455,15 +1559,19 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
             </nav>
 
             {/* sidebar footer */}
-            <div className="px-4 py-3 border-t border-white/8">
-              <p className="text-[10px] text-white/18 leading-relaxed">
+            <div
+              className="px-4 py-3"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <p className="text-[10px] text-white/35 leading-relaxed font-semibold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                 مُحكم ERP — وحدة الصيانة
               </p>
             </div>
           </div>
 
           {/* ── Content ── */}
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden flex flex-col" style={{ background: "rgba(0,0,0,0.18)" }}>
             {activeTab === "checklist"        && <ChecklistTab />}
             {activeTab === "statuses"         && <StatusesTab />}
             {activeTab === "dashboard-cards"  && <DashboardCardsTab />}
