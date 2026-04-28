@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/auth";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { DASHBOARD_CARD_ICONS, DASHBOARD_CARD_COLORS } from "@/lib/repairConstants";
+import { useAppSettings } from "@/contexts/app-settings";
 
 /* ══════════════════════════════════════════════════════════════
    TYPES
@@ -1553,7 +1554,7 @@ function DashboardCardEditor({
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-start justify-center pt-8 pb-8 bg-black/70 backdrop-blur-md" dir="rtl"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="rs-dark-inner glass-panel rounded-2xl border border-white/12 w-full mx-4 overflow-hidden flex flex-col"
+      <div className="glass-panel rounded-2xl border border-white/12 w-full mx-4 overflow-hidden flex flex-col"
         style={{ maxWidth: 580, maxHeight: "90vh" }}>
 
         {/* Header */}
@@ -1755,6 +1756,8 @@ interface RepairSettingsModalProps {
 
 export default function RepairSettingsModal({ onClose, initialTab = "checklist" }: RepairSettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  const { settings } = useAppSettings();
+  const isLight = (settings.theme ?? "dark") === "light";
 
   /* close on Escape */
   useEffect(() => {
@@ -1780,20 +1783,22 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
   return createPortal(
     <div
       className="fixed inset-0 z-[60] flex items-start justify-center pt-3 pb-3 px-3"
-      style={{ background: "rgba(2,4,10,0.82)", backdropFilter: "blur(14px) saturate(140%)" }}
+      style={{
+        background: isLight ? "rgba(0,0,0,0.45)" : "rgba(2,4,10,0.82)",
+        backdropFilter: "blur(14px) saturate(140%)",
+      }}
       dir="rtl"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="rs-modal-enter rs-mesh-bg relative w-full overflow-hidden flex flex-col rounded-[20px]"
+        className={`rs-modal-enter rs-mesh-bg${isLight ? " rs-mesh-bg--light" : ""} relative w-full overflow-hidden flex flex-col rounded-[20px]`}
         style={{
           maxWidth: 1240,
           maxHeight: "95vh",
-          border: "1px solid rgba(255,255,255,0.09)",
-          boxShadow:
-            "0 40px 100px -20px rgba(0,0,0,0.85)," +
-            "0 0 0 1px rgba(255,255,255,0.04) inset," +
-            "0 1px 0 rgba(255,255,255,0.06) inset",
+          border: isLight ? "1px solid rgba(0,0,0,0.11)" : "1px solid rgba(255,255,255,0.09)",
+          boxShadow: isLight
+            ? "0 20px 60px -10px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)"
+            : "0 40px 100px -20px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.04) inset,0 1px 0 rgba(255,255,255,0.06) inset",
         }}
       >
         {/* ── Ambient corner glows (لمسة ضوئية) ── */}

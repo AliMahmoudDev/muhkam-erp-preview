@@ -4568,74 +4568,124 @@ html.light .nav-item:hover { color: rgba(0,0,0,0.80); background: rgba(0,0,0,0.0
 html.light .nav-item.active { color: #92400e; background: rgba(245,158,11,0.09); }
 
 /* ══════════════════════════════════════════════════════════════════
-   REPAIR SETTINGS MODAL — always-dark override (light mode compat)
-   .rs-mesh-bg is always rendered on a dark gradient; force dark CSS
-   variables so erp-input, glass-panel, etc. remain readable.
+   REPAIR SETTINGS MODAL — light mode variant (.rs-mesh-bg--light)
+   Applied via JS when settings.theme === "light". Overrides all
+   dark-hardcoded Tailwind classes to dark-on-light equivalents.
 ══════════════════════════════════════════════════════════════════ */
-html.light .rs-mesh-bg {
-  /* Re-apply dark CSS-variable tokens so children inherit dark values */
-  --erp-input-bg:           rgba(255,255,255,0.05);
-  --erp-input-border:       rgba(255,255,255,0.12);
-  --erp-input-text:         rgba(255,255,255,0.90);
-  --erp-input-placeholder:  rgba(255,255,255,0.30);
-  --erp-input-focus-border: rgba(245,158,11,0.55);
-  --erp-dropdown-bg:        #0f172a;
-  --erp-dropdown-border:    rgba(255,255,255,0.12);
-  --erp-dropdown-item:      rgba(255,255,255,0.90);
-  --erp-dropdown-hover:     rgba(255,255,255,0.07);
-  --erp-dropdown-active:    rgba(245,158,11,0.12);
-  --erp-dropdown-active-text: #fcd34d;
-  color-scheme: dark;
+
+/* ── Base: light background & text colour ── */
+.rs-mesh-bg--light {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+}
+.rs-mesh-bg--light .rs-glow { display: none; }
+
+/* ── Text: white/* → slate equivalents ── */
+.rs-mesh-bg--light .text-white    { color: #0f172a !important; }
+.rs-mesh-bg--light .text-white\/95 { color: rgba(15,23,42,0.95) !important; }
+.rs-mesh-bg--light .text-white\/90,.rs-mesh-bg--light .text-white\/85 { color: rgba(15,23,42,0.88) !important; }
+.rs-mesh-bg--light .text-white\/80,.rs-mesh-bg--light .text-white\/75 { color: rgba(15,23,42,0.80) !important; }
+.rs-mesh-bg--light .text-white\/70,.rs-mesh-bg--light .text-white\/65 { color: rgba(15,23,42,0.70) !important; }
+.rs-mesh-bg--light .text-white\/60,.rs-mesh-bg--light .text-white\/55 { color: rgba(15,23,42,0.58) !important; }
+.rs-mesh-bg--light .text-white\/50,.rs-mesh-bg--light .text-white\/45 { color: rgba(15,23,42,0.48) !important; }
+.rs-mesh-bg--light .text-white\/40,.rs-mesh-bg--light .text-white\/35 { color: rgba(15,23,42,0.38) !important; }
+.rs-mesh-bg--light .text-white\/30,.rs-mesh-bg--light .text-white\/25 { color: rgba(15,23,42,0.30) !important; }
+.rs-mesh-bg--light .text-white\/20,.rs-mesh-bg--light .text-white\/15 { color: rgba(15,23,42,0.22) !important; }
+
+/* ── Backgrounds: bg-white/* → near-transparent slate ── */
+.rs-mesh-bg--light .bg-white\/2,
+.rs-mesh-bg--light .bg-white\/3,
+.rs-mesh-bg--light .bg-white\/5  { background: rgba(0,0,0,0.03) !important; }
+.rs-mesh-bg--light .bg-white\/8,
+.rs-mesh-bg--light .bg-white\/10 { background: rgba(0,0,0,0.05) !important; }
+.rs-mesh-bg--light .bg-white\/15,
+.rs-mesh-bg--light .bg-white\/20 { background: rgba(0,0,0,0.07) !important; }
+
+/* ── Borders: border-white/* → slate borders ── */
+.rs-mesh-bg--light .border-white\/5  { border-color: rgba(0,0,0,0.07) !important; }
+.rs-mesh-bg--light .border-white\/8  { border-color: rgba(0,0,0,0.09) !important; }
+.rs-mesh-bg--light .border-white\/10,
+.rs-mesh-bg--light .border-white\/12 { border-color: rgba(0,0,0,0.11) !important; }
+.rs-mesh-bg--light .border-white\/15,
+.rs-mesh-bg--light .border-white\/20 { border-color: rgba(0,0,0,0.14) !important; }
+
+/* ── erp-input inside the light modal ── */
+.rs-mesh-bg--light .erp-input {
+  background:   #ffffff !important;
+  border-color: rgba(0,0,0,0.12) !important;
+  color:        #1e293b !important;
+}
+.rs-mesh-bg--light .erp-input::placeholder { color: rgba(0,0,0,0.30) !important; }
+.rs-mesh-bg--light .erp-input:focus,
+.rs-mesh-bg--light .erp-input:focus-visible {
+  border-color: rgba(245,158,11,0.60) !important;
+  box-shadow:   0 0 0 3px rgba(245,158,11,0.10) !important;
+  background:   #fffef8 !important;
 }
 
-/* erp-input inside the dark modal — override the html.light rule */
-html.light .rs-mesh-bg .erp-input {
-  background:   rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.12);
-  color:        rgba(255,255,255,0.90);
-}
-html.light .rs-mesh-bg .erp-input::placeholder {
-  color: rgba(255,255,255,0.30);
-}
-html.light .rs-mesh-bg .erp-input:focus,
-html.light .rs-mesh-bg .erp-input:focus-visible {
-  border-color: rgba(245,158,11,0.55);
-  box-shadow:   0 0 0 3px rgba(245,158,11,0.12);
-  background:   rgba(255,255,255,0.07);
+/* ── Kbd hint ── */
+.rs-mesh-bg--light .rs-kbd {
+  background: rgba(0,0,0,0.07) !important;
+  border-color: rgba(0,0,0,0.14) !important;
+  color: rgba(0,0,0,0.45) !important;
 }
 
-/* glass-panel inside the modal should keep dark look */
-html.light .rs-mesh-bg .glass-panel {
-  background:    rgba(255,255,255,0.06);
-  border-color:  rgba(255,255,255,0.10);
-  box-shadow:    none;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* ── Nav items inside the light modal ── */
+.rs-mesh-bg--light .rs-nav-item:hover { background: rgba(0,0,0,0.04) !important; }
+
+/* ── Hover effects on buttons ── */
+.rs-mesh-bg--light button:hover { color: inherit; }
+
+/* ── Scrollbar in light mode ── */
+.rs-mesh-bg--light .rs-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.04); }
+.rs-mesh-bg--light .rs-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); }
+.rs-mesh-bg--light .rs-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.28); }
+
+/* ── Structural inline-style overrides (need !important to beat inline) ── */
+
+/* Top bar */
+.rs-mesh-bg--light > div > div:first-of-type {
+  background: linear-gradient(180deg, rgba(0,0,0,0.025), rgba(0,0,0,0.01)) !important;
+  border-bottom-color: rgba(0,0,0,0.08) !important;
 }
 
-/* rs-dark-inner — sub-modals (e.g. DashboardCard editor) that are
-   always dark regardless of theme */
-html.light .rs-dark-inner {
-  --erp-input-bg:           rgba(255,255,255,0.05);
-  --erp-input-border:       rgba(255,255,255,0.12);
-  --erp-input-text:         rgba(255,255,255,0.90);
-  --erp-input-placeholder:  rgba(255,255,255,0.30);
-  --erp-input-focus-border: rgba(245,158,11,0.55);
-  color-scheme: dark;
-  background: linear-gradient(180deg, #111827 0%, #0b1120 100%);
-  border-color: rgba(255,255,255,0.10);
+/* Aside sidebar */
+.rs-mesh-bg--light aside {
+  background: rgba(0,0,0,0.025) !important;
+  border-left-color: rgba(0,0,0,0.07) !important;
 }
-html.light .rs-dark-inner .erp-input {
-  background:   rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.12);
-  color:        rgba(255,255,255,0.90);
+
+/* Sidebar footer info box */
+.rs-mesh-bg--light aside > div:last-child {
+  background: rgba(0,0,0,0.03) !important;
+  border-color: rgba(0,0,0,0.07) !important;
 }
-html.light .rs-dark-inner .erp-input::placeholder { color: rgba(255,255,255,0.30); }
-html.light .rs-dark-inner .erp-input:focus,
-html.light .rs-dark-inner .erp-input:focus-visible {
-  border-color: rgba(245,158,11,0.55);
-  box-shadow:   0 0 0 3px rgba(245,158,11,0.12);
-  background:   rgba(255,255,255,0.07);
+
+/* Main content area */
+.rs-mesh-bg--light main {
+  background: rgba(0,0,0,0.01) !important;
+}
+
+/* Nav item active pill / indicator box */
+.rs-mesh-bg--light .rs-nav-item[style] {
+  border-color: rgba(245,158,11,0.25) !important;
+}
+
+/* Topbar stat box + close button (inline background/border) */
+.rs-mesh-bg--light button[style],
+.rs-mesh-bg--light div[style*="rgba(255,255,255,0.0"] {
+  background: rgba(0,0,0,0.04) !important;
+  border-color: rgba(0,0,0,0.09) !important;
+}
+
+/* Nav icon box — non-active state */
+.rs-mesh-bg--light .rs-nav-icon[style] {
+  background: rgba(0,0,0,0.04) !important;
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+/* Amber dot ring color in light mode (was #0e1320 dark) */
+.rs-mesh-bg--light span[style*="0 2px #0e1320"] {
+  box-shadow: 0 0 10px rgba(52,211,153,0.5), 0 0 0 2px #f1f5f9 !important;
 }
 
 /* ── END OF CANONICAL DEFINITIONS ────────────────────────────────── */
