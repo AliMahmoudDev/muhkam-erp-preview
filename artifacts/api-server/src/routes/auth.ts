@@ -41,6 +41,7 @@ import {
   reset2FALockout,
   MAX_ATTEMPTS,
 } from '../lib/brute-force-store';
+import { alertManager, ALERT_TYPES } from '../lib/telegram-alert-manager';
 /* maybeBackupAsync intentionally NOT imported — backups are now manual or
    scheduled only (see backup-scheduler.ts). Triggering full DB backups on
    every login/logout caused massive pool pressure under load. */
@@ -817,6 +818,13 @@ router.post('/auth/register', ipRegistrationLimiter, async (req, res) => {
 
     /* ── Compute initial trial score (fire-and-forget) ────────── */
     void scoreTrialCompany(company.id);
+
+    /* ── Telegram: شركة جديدة سجّلت (لا cooldown — كل تسجيل يُرسل) ── */
+    void alertManager.send({
+      type:          ALERT_TYPES.NEW_COMPANY,
+      message:       `🎉 *شركة جديدة*\nالاسم: ${company.name}\nالخطة: ${company.plan_type}\nالوقت: ${new Date().toLocaleString("ar-EG")}`,
+      cooldownHours: 0,
+    });
 
     /* ── Log verification link (no email service configured yet) */
     const verifyLink = buildVerificationLink(verificationToken);

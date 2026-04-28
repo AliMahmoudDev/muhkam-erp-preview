@@ -9,7 +9,7 @@ import { seedDefaults } from "./lib/seed-defaults";
 import { initRLS } from "./lib/rls-init";
 import { purgeExpiredRefreshTokens } from "./lib/refresh-token-store";
 import { pool } from "@workspace/db";
-import { sendTelegramAlert } from "./lib/telegram";
+import { alertManager, ALERT_TYPES } from "./lib/telegram-alert-manager";
 
 /* ── Startup: validate required environment variables ──────── */
 const REQUIRED_ENV_VARS = ["JWT_SECRET", "JWT_REFRESH_SECRET", "DATABASE_URL"] as const;
@@ -63,13 +63,33 @@ async function main() {
       process.exit(1);
     }
     logger.info(`Backend started on port ${PORT} (0.0.0.0)`);
-    void sendTelegramAlert(
-      `🚀 *مُحكم ERP* يعمل بشكل طبيعي\nالسيرفر شغال على البورت ${PORT}\nالوقت: ${new Date().toLocaleString("ar-EG")}`
-    );
+    void alertManager.send({
+      type:    ALERT_TYPES.SERVER_START,
+      message: `🚀 *مُحكم ERP* بدأ التشغيل\nالبورت: ${PORT}\nالوقت: ${new Date().toLocaleString("ar-EG")}`,
+      once:    true,
+    });
     startBackupScheduler();
     startDbBackupScheduler();
     startTrialScheduler();
     startMonitoring();
+
+    /* مراقبة الذاكرة كل 30 دقيقة — تنبيه لو تجاوزت 400MB، حل لو عادت لطبيعتها */
+    setInterval(async () => {
+      const used = process.memoryUsage().heapUsed / 1024 / 1024;
+      if (used > 400) {
+        await alertManager.send({
+          type:          ALERT_TYPES.SERVER_HIGH_MEMORY,
+          message:       `🔴 *ذاكرة عالية*\nالاستخدام: ${Math.round(used)}MB\nالحد: 400MB`,
+          cooldownHours: 4,
+        });
+      } else {
+        await alertManager.markResolved(
+          ALERT_TYPES.SERVER_HIGH_MEMORY,
+          `الذاكرة عادت لطبيعتها: ${Math.round(used)}MB`
+        );
+      }
+    }, 30 * 60 * 1000);
+
     /* Purge expired refresh tokens daily */
     void purgeExpiredRefreshTokens();
     setInterval(() => void purgeExpiredRefreshTokens(), 24 * 60 * 60 * 1000);

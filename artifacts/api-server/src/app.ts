@@ -15,7 +15,7 @@ import { logger } from './lib/logger';
 import { sanitizeBody } from './middleware/auth';
 import { makeRateLimitStore } from './lib/rate-limit-store';
 import { recordRequest } from './lib/request-counter';
-import { sendTelegramAlert } from './lib/telegram';
+import { alertManager, ALERT_TYPES } from './lib/telegram-alert-manager';
 import { requestTimeout } from './middleware/request-timeout';
 import { perTenantRateLimit } from './middleware/per-tenant-rate-limit';
 
@@ -164,9 +164,11 @@ app.use((req, res, next) => {
     const responseTime = Date.now() - start;
     if (responseTime > SLOW_THRESHOLD_MS) {
       const companyId = (req.headers['x-company-id'] as string | undefined) ?? 'غير معروف';
-      void sendTelegramAlert(
-        `⚠️ *تحذير: استجابة بطيئة*\nالمسار: ${req.method} ${req.path}\nالوقت: ${responseTime}ms\nالشركة: ${companyId}`
-      );
+      void alertManager.send({
+        type:         ALERT_TYPES.SERVER_SLOW,
+        message:      `⚠️ *استجابة بطيئة*\nالمسار: ${req.method} ${req.path}\nالوقت: ${responseTime}ms\nالشركة: ${companyId}`,
+        cooldownHours: 4,
+      });
     }
   });
   next();

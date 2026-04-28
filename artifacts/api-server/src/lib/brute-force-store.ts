@@ -9,7 +9,7 @@
  */
 
 import { logger } from './logger';
-import { sendTelegramAlert } from './telegram';
+import { alertManager, ALERT_TYPES } from './telegram-alert-manager';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_SEC = 15 * 60; // 15 دقيقة
@@ -93,9 +93,11 @@ export async function recordLoginFailure(userId: number, ip?: string): Promise<L
     const lockedUntil = attempts >= MAX_ATTEMPTS ? now + LOCKOUT_MS : null;
     updated = { attempts, lockedUntil };
     if (lockedUntil !== null) {
-      void sendTelegramAlert(
-        `🔒 *محاولة اختراق محتملة*\nIP: ${ip ?? 'غير متاح'}\nعدد المحاولات: ${attempts}\nالوقت: ${new Date().toLocaleString("ar-EG")}`
-      );
+      void alertManager.send({
+        type:          ALERT_TYPES.BRUTE_FORCE(ip ?? "unknown"),
+        message:       `🔒 *محاولة اختراق محتملة*\nIP: ${ip ?? 'غير متاح'}\nعدد المحاولات: ${attempts}\nالوقت: ${new Date().toLocaleString("ar-EG")}`,
+        cooldownHours: 4,
+      });
     }
   }
 

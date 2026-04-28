@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { db, companiesTable, erpUsersTable } from "@workspace/db";
 import { authenticate, requireRole } from "../middleware/auth";
 import { wrap } from "../lib/async-handler";
+import { alertManager, ALERT_TYPES } from "../lib/telegram-alert-manager";
 
 const router = Router();
 
@@ -109,6 +110,13 @@ router.post("/companies", ...adminOnly, wrap(async (req, res) => {
     .insert(companiesTable)
     .values({ name: name.trim(), plan_type, start_date, end_date, is_active })
     .returning();
+
+  void alertManager.send({
+    type:          ALERT_TYPES.NEW_COMPANY,
+    message:       `🎉 *شركة جديدة (super_admin)*\nالاسم: ${created.name}\nالخطة: ${created.plan_type}\nالوقت: ${new Date().toLocaleString("ar-EG")}`,
+    cooldownHours: 0,
+  });
+
   res.status(201).json(created);
 }));
 

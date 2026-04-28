@@ -34,7 +34,7 @@ import {
 import { asc, eq, sql } from "drizzle-orm";
 import { logger } from "./logger";
 import { isEncryptionEnabled, encryptFile, encryptedExtension } from "./backup-crypto";
-import { sendTelegramAlert } from "./telegram";
+import { alertManager, ALERT_TYPES } from "./telegram-alert-manager";
 
 /* ── Backup folder ─────────────────────────────────────────────── */
 export const BACKUP_DIR = process.env.BACKUP_DIR ?? "/home/runner/erp-backups";
@@ -285,12 +285,18 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
     }
 
     logger.info({ trigger, filename: finalFilename, size: finalSize, totalRows, truncated }, "Backup completed");
+    void alertManager.markResolved(
+      ALERT_TYPES.BACKUP_FAILED,
+      "النسخة الاحتياطية تعمل بشكل طبيعي"
+    );
     return record!;
   } catch (err) {
     logger.error({ trigger, err }, "Backup failed");
-    void sendTelegramAlert(
-      `🚨 *فشل النسخة الاحتياطية*\nالخطأ: ${err instanceof Error ? err.message : String(err)}\nالوقت: ${new Date().toLocaleString("ar-EG")}`
-    );
+    void alertManager.send({
+      type:          ALERT_TYPES.BACKUP_FAILED,
+      message:       `🚨 *فشل النسخة الاحتياطية*\nالخطأ: ${err instanceof Error ? err.message : String(err)}\nالوقت: ${new Date().toLocaleString("ar-EG")}`,
+      cooldownHours: 4,
+    });
     return null;
   } finally {
     isBackingUp = false;

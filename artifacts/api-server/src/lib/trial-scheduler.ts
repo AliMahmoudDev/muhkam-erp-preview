@@ -33,7 +33,7 @@ import { and, eq, not } from "drizzle-orm";
 import { db, companiesTable } from "@workspace/db";
 import { logger } from "./logger";
 import { scoreAllTrialCompanies } from "./trial-scoring";
-import { sendTelegramAlert } from "./telegram";
+import { alertManager, ALERT_TYPES } from "./telegram-alert-manager";
 
 const TICK_MS = 60 * 60 * 1000; // every hour
 
@@ -185,9 +185,11 @@ async function processConversionTriggers(): Promise<void> {
 
       /* Alert 5 — Telegram: اشتراك على وشك الانتهاء (3 أيام أو أقل) */
       if (daysLeft >= 0 && daysLeft <= 3) {
-        void sendTelegramAlert(
-          `⚠️ *اشتراك على وشك الانتهاء*\nالشركة: ${company.name}\nتاريخ الانتهاء: ${new Date(company.end_date).toLocaleDateString("ar-EG")}\nالأيام المتبقية: ${daysLeft}`
-        );
+        void alertManager.send({
+          type:          ALERT_TYPES.SUBSCRIPTION_EXPIRING(company.id),
+          message:       `⚠️ *اشتراك على وشك الانتهاء*\nالشركة: ${company.name}\nتاريخ الانتهاء: ${new Date(company.end_date).toLocaleDateString("ar-EG")}\nالأيام المتبقية: ${daysLeft}`,
+          cooldownHours: 4,
+        });
       }
     } catch (err) {
       logger.error({ err, companyId: company.id }, "[trial-scheduler] Error processing conversion trigger");
