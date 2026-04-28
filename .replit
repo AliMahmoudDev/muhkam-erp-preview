@@ -33,12 +33,12 @@ name = "Backend API"
 author = "agent"
 
 [workflows.workflow.metadata]
-outputType = "webview"
+outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "NODE_ENV=production PORT=5000 pnpm --filter @workspace/api-server run start"
-waitForPort = 5000
+args = "pnpm --filter @workspace/api-server run start"
+waitForPort = 8080
 
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
@@ -66,3 +66,7 @@ BACKUP_ENCRYPTION_KEY = "TCSEfqxy/S4ZGeB77ELxsfdFsAcIHl2t8SyDSmndS2avwpICgLFsgdU
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
