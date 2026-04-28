@@ -155,6 +155,8 @@ const TABS: Array<{
 function ChecklistTab() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { settings: csSettings } = useAppSettings();
+  const isLight = (csSettings.theme ?? "dark") === "light";
 
   /* ── manufacturer/category state ── */
   const [manufacturers, setManufacturers]   = useState<Manufacturer[]>(loadManufacturers);
@@ -371,24 +373,41 @@ function ChecklistTab() {
     );
   }, [items, searchQuery]);
 
-  /* ── pill styles ── */
-  const mfrActiveStyle = {
+  /* ── pill styles (light-aware) ── */
+  const mfrActiveStyle = isLight ? {
+    background: "linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(217,119,6,0.10) 100%)",
+    border: "1px solid rgba(245,158,11,0.55)",
+    color: "#92400e",
+    boxShadow: "0 4px 12px -4px rgba(245,158,11,0.30), 0 0 0 3px rgba(245,158,11,0.08)",
+  } : {
     background: "linear-gradient(135deg, rgba(245,158,11,0.28) 0%, rgba(217,119,6,0.12) 100%)",
     border: "1px solid rgba(245,158,11,0.55)",
     color: "#fef3c7",
     boxShadow: "0 6px 16px -4px rgba(245,158,11,0.40), inset 0 1px 0 rgba(255,255,255,0.10), 0 0 0 3px rgba(245,158,11,0.08)",
   };
-  const mfrInactiveStyle = {
+  const mfrInactiveStyle = isLight ? {
+    background: "rgba(0,0,0,0.04)",
+    border: "1px solid rgba(0,0,0,0.10)",
+    color: "rgba(15,23,42,0.65)",
+  } : {
     background: "rgba(255,255,255,0.04)",
     border: "1px solid rgba(255,255,255,0.09)",
     color: "rgba(255,255,255,0.62)",
   };
-  const catActiveStyle = {
+  const catActiveStyle = isLight ? {
+    background: "rgba(245,158,11,0.12)",
+    border: "1px solid rgba(245,158,11,0.45)",
+    color: "#92400e",
+  } : {
     background: "rgba(245,158,11,0.15)",
     border: "1px solid rgba(245,158,11,0.40)",
     color: "#fde68a",
   };
-  const catInactiveStyle = {
+  const catInactiveStyle = isLight ? {
+    background: "rgba(0,0,0,0.04)",
+    border: "1px solid rgba(0,0,0,0.08)",
+    color: "rgba(15,23,42,0.55)",
+  } : {
     background: "rgba(255,255,255,0.03)",
     border: "1px solid rgba(255,255,255,0.07)",
     color: "rgba(255,255,255,0.50)",
@@ -400,20 +419,22 @@ function ChecklistTab() {
       <div
         className="px-5 pt-4 pb-0 shrink-0 relative"
         style={{
-          background: "linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 60%, transparent 100%)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          background: isLight
+            ? "linear-gradient(180deg, rgba(245,158,11,0.06) 0%, rgba(245,158,11,0.02) 60%, transparent 100%)"
+            : "linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 60%, transparent 100%)",
+          borderBottom: isLight ? "1px solid rgba(0,0,0,0.08)" : "1px solid rgba(255,255,255,0.06)",
         }}
       >
         {/* ── صف 1: عنوان + بيانات ── */}
         <div className="flex items-center justify-between gap-3 mb-2.5">
           <div className="flex items-center gap-2.5">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-amber-300 to-amber-500" />
-            <h3 className="text-[11px] font-black tracking-[0.22em] text-white/55 uppercase">
+            <h3 className={`text-[11px] font-black tracking-[0.22em] uppercase ${isLight ? "text-slate-500" : "text-white/55"}`}>
               الشركة المصنعة
             </h3>
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-white/35">
-            <span className="font-bold text-amber-300/85 tabular-nums">{items.length}</span>
+          <div className={`flex items-center gap-2 text-[10px] ${isLight ? "text-slate-400" : "text-white/35"}`}>
+            <span className="font-bold text-amber-500 tabular-nums">{items.length}</span>
             <span>بند في «{activeMeta.label}»</span>
           </div>
         </div>
@@ -434,7 +455,9 @@ function ChecklistTab() {
                 {isMfrActive && mfr.categories.length > 0 && (
                   <span
                     className="text-[10px] px-1.5 py-0.5 rounded-full font-black tabular-nums"
-                    style={{ background: "rgba(0,0,0,0.25)", color: "#fde68a", border: "1px solid rgba(252,211,77,0.25)" }}
+                    style={isLight
+                      ? { background: "rgba(245,158,11,0.15)", color: "#92400e", border: "1px solid rgba(245,158,11,0.30)" }
+                      : { background: "rgba(0,0,0,0.25)", color: "#fde68a", border: "1px solid rgba(252,211,77,0.25)" }}
                   >
                     {mfr.categories.length}
                   </span>
@@ -445,7 +468,9 @@ function ChecklistTab() {
           <button
             onClick={() => { setShowAddMfr(v => !v); setShowAddCat(false); }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11.5px] font-bold whitespace-nowrap transition-all"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.40)" }}
+            style={isLight
+              ? { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)", color: "rgba(15,23,42,0.45)" }
+              : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.40)" }}
           >
             <Plus className="w-3.5 h-3.5" /> شركة جديدة
           </button>
@@ -454,7 +479,7 @@ function ChecklistTab() {
         {/* ── صف 3: فئات الشركة المختارة + زر إضافة فئة ── */}
         <div
           className="flex flex-wrap gap-1 pb-2.5 pt-2"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ borderTop: isLight ? "1px solid rgba(0,0,0,0.08)" : "1px solid rgba(255,255,255,0.06)" }}
         >
           {activeMfrData?.categories.map(cat => {
             const isCatActive = activeType === cat.key;
@@ -470,7 +495,9 @@ function ChecklistTab() {
                 {isCatActive && items.length > 0 && (
                   <span
                     className="text-[10px] px-1 rounded font-black tabular-nums"
-                    style={{ background: "rgba(0,0,0,0.25)", color: "#fde68a" }}
+                    style={isLight
+                      ? { background: "rgba(245,158,11,0.15)", color: "#92400e" }
+                      : { background: "rgba(0,0,0,0.25)", color: "#fde68a" }}
                   >
                     {items.length}
                   </span>
@@ -482,20 +509,22 @@ function ChecklistTab() {
             <button
               onClick={() => { setShowAddCat(v => !v); setShowAddMfr(false); }}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all"
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}
+              style={isLight
+                ? { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)", color: "rgba(15,23,42,0.40)" }
+                : { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}
             >
               <Plus className="w-3 h-3" /> فئة جديدة
             </button>
           )}
           {activeMfrData?.categories.length === 0 && (
-            <p className="text-[11px] text-white/25 py-0.5">لا توجد فئات — اضغط «فئة جديدة» لإضافة الأولى</p>
+            <p className={`text-[11px] py-0.5 ${isLight ? "text-slate-400" : "text-white/25"}`}>لا توجد فئات — اضغط «فئة جديدة» لإضافة الأولى</p>
           )}
         </div>
       </div>
 
       {/* ── Add Manufacturer inline form ── */}
       {showAddMfr && (
-        <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.018)" }}>
+        <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={isLight ? { borderBottom: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)" } : { borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.018)" }}>
           <select
             value={addMfrEmoji}
             onChange={e => setAddMfrEmoji(e.target.value)}
@@ -524,7 +553,7 @@ function ChecklistTab() {
 
       {/* ── Add Category inline form ── */}
       {showAddCat && (
-        <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.018)" }}>
+        <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={isLight ? { borderBottom: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)" } : { borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.018)" }}>
           <select
             value={addCatEmoji}
             onChange={e => setAddCatEmoji(e.target.value)}
@@ -554,32 +583,30 @@ function ChecklistTab() {
       {/* ═════ شريط البحث + الإجراءات — أسلوب Linear toolbar ═════ */}
       <div
         className="flex items-center flex-wrap gap-2 px-5 py-2.5 shrink-0"
-        style={{
-          background: "rgba(255,255,255,0.012)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
+        style={isLight
+          ? { background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.08)" }
+          : { background: "rgba(255,255,255,0.012)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
       >
         {/* مربع البحث */}
         <div
           className="flex items-center gap-2 px-3 h-9 rounded-xl flex-1 min-w-[200px] max-w-[360px]"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
+          style={isLight
+            ? { background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.10)" }
+            : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
-          <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
+          <Search className={`w-3.5 h-3.5 shrink-0 ${isLight ? "text-slate-400" : "text-white/40"}`} />
           <input
             ref={searchRef}
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder={`ابحث في بنود ${activeMeta.label}...`}
-            className="flex-1 bg-transparent text-[12px] text-white placeholder:text-white/45 outline-none font-medium"
+            className={`flex-1 bg-transparent text-[12px] outline-none font-medium ${isLight ? "text-slate-700 placeholder:text-slate-400" : "text-white placeholder:text-white/45"}`}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="text-white/30 hover:text-white/70 shrink-0"
+              className={`shrink-0 ${isLight ? "text-slate-400 hover:text-slate-600" : "text-white/30 hover:text-white/70"}`}
               title="مسح البحث"
             >
               <X className="w-3 h-3" />
@@ -595,11 +622,10 @@ function ChecklistTab() {
         {/* الإجراءات */}
         <button
           onClick={() => setShowNewCat(v => !v)}
-          className="flex items-center gap-1.5 text-[11.5px] text-white/70 hover:text-white h-9 px-3 rounded-xl font-bold"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.10)",
-          }}
+          className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl font-bold ${isLight ? "text-slate-600 hover:text-slate-800" : "text-white/70 hover:text-white"}`}
+          style={isLight
+            ? { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)" }
+            : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}
         >
           <Plus className="w-3.5 h-3.5" /> تصنيف جديد
         </button>
@@ -607,26 +633,30 @@ function ChecklistTab() {
           <button
             onClick={() => setShowCopyMenu(v => !v)}
             disabled={copying}
-            className="flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl text-white/70 hover:text-white disabled:opacity-40 font-bold"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.10)",
-            }}
+            className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl disabled:opacity-40 font-bold ${isLight ? "text-slate-600 hover:text-slate-800" : "text-white/70 hover:text-white"}`}
+            style={isLight
+              ? { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)" }
+              : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}
           >
             <Copy className="w-3.5 h-3.5" /> {copying ? "جاري النسخ..." : "نسخ من"}
             <ChevronDown className="w-3 h-3 opacity-60" />
           </button>
           {showCopyMenu && (
             <div
-              className="absolute left-0 top-full mt-1.5 z-20 w-56 rounded-xl py-1.5 max-h-80 overflow-y-auto rs-scroll"
-              style={{
-                background: "rgba(15,19,32,0.98)",
-                backdropFilter: "blur(20px)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                boxShadow:
-                  "0 24px 48px -12px rgba(0,0,0,0.7)," +
-                  "0 0 0 1px rgba(255,255,255,0.04) inset",
-              }}
+              className="rs-popup-dark absolute left-0 top-full mt-1.5 z-20 w-56 rounded-xl py-1.5 max-h-80 overflow-y-auto rs-scroll"
+              style={isLight
+                ? {
+                  background: "#1e293b",
+                  backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  boxShadow: "0 24px 48px -12px rgba(0,0,0,0.50), 0 0 0 1px rgba(255,255,255,0.06) inset",
+                }
+                : {
+                  background: "rgba(15,19,32,0.98)",
+                  backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  boxShadow: "0 24px 48px -12px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset",
+                }}
             >
               <p className="text-[10px] text-white/40 font-black tracking-wider uppercase px-3 pt-1 pb-1.5">
                 انسخ بنود من:
@@ -1808,10 +1838,9 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
         {/* ═══ TOP BAR — أسلوب Command Bar ═══ */}
         <div
           className="relative flex items-center gap-3 px-5 py-3.5 shrink-0"
-          style={{
-            background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
-          }}
+          style={isLight
+            ? { background: "linear-gradient(180deg, rgba(0,0,0,0.025), rgba(0,0,0,0.010))", borderBottom: "1px solid rgba(0,0,0,0.08)" }
+            : { background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))", borderBottom: "1px solid rgba(255,255,255,0.07)" }}
         >
           {/* علامة التطبيق — مربع أمبر متوهّج */}
           <div className="relative shrink-0">
@@ -1849,19 +1878,18 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
           {/* إحصائية مدمجة — عدد البنود الكلي */}
           <div
             className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl shrink-0"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.07)",
-            }}
+            style={isLight
+              ? { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.09)" }
+              : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
             title="إجمالي بنود الفحص عبر كل أنواع الأجهزة"
           >
-            <ClipboardList className="w-3.5 h-3.5 text-amber-300/80" />
-            <span className="text-[11px] text-white/55 font-semibold">إجمالي البنود</span>
-            <span className="text-[12px] font-black text-white tabular-nums">{totalItemsCount}</span>
+            <ClipboardList className="w-3.5 h-3.5 text-amber-500" />
+            <span className={`text-[11px] font-semibold ${isLight ? "text-slate-500" : "text-white/55"}`}>إجمالي البنود</span>
+            <span className={`text-[12px] font-black tabular-nums ${isLight ? "text-slate-800" : "text-white"}`}>{totalItemsCount}</span>
           </div>
 
           {/* تلميح Esc */}
-          <div className="hidden lg:flex items-center gap-1.5 text-[10px] text-white/35 font-semibold shrink-0">
+          <div className={`hidden lg:flex items-center gap-1.5 text-[10px] font-semibold shrink-0 ${isLight ? "text-slate-400" : "text-white/35"}`}>
             <span>للإغلاق</span>
             <kbd className="rs-kbd">Esc</kbd>
           </div>
@@ -1870,11 +1898,10 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
           <button
             onClick={onClose}
             title="إغلاق (Esc)"
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-white/45 hover:text-white shrink-0"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
+            className={`w-9 h-9 flex items-center justify-center rounded-xl shrink-0 ${isLight ? "text-slate-500 hover:text-slate-800" : "text-white/45 hover:text-white"}`}
+            style={isLight
+              ? { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.09)" }
+              : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -1886,11 +1913,9 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
           {/* ── Sidebar — Linear-style nav ── */}
           <aside
             className="w-[244px] shrink-0 overflow-y-auto rs-scroll flex flex-col"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(255,255,255,0.018) 0%, rgba(255,255,255,0.004) 100%)",
-              borderLeft: "1px solid rgba(255,255,255,0.06)",
-            }}
+            style={isLight
+              ? { background: "linear-gradient(180deg, rgba(0,0,0,0.025) 0%, rgba(0,0,0,0.010) 100%)", borderLeft: "1px solid rgba(0,0,0,0.07)" }
+              : { background: "linear-gradient(180deg, rgba(255,255,255,0.018) 0%, rgba(255,255,255,0.004) 100%)", borderLeft: "1px solid rgba(255,255,255,0.06)" }}
           >
             {/* رأس الـ sidebar */}
             <div className="px-4 pt-4 pb-2">
@@ -1931,29 +1956,29 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
                       />
                     )}
                     <div
-                      className="rs-nav-icon w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                      className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                       style={{
                         background: active
                           ? "linear-gradient(135deg, rgba(245,158,11,0.30), rgba(217,119,6,0.12))"
-                          : "rgba(255,255,255,0.035)",
+                          : isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.035)",
                         border: active
                           ? "1px solid rgba(245,158,11,0.40)"
-                          : "1px solid rgba(255,255,255,0.06)",
+                          : isLight ? "1px solid rgba(0,0,0,0.08)" : "1px solid rgba(255,255,255,0.06)",
                         boxShadow: active
-                          ? "0 2px 8px rgba(245,158,11,0.25), inset 0 1px 0 rgba(255,255,255,0.10)"
+                          ? "0 2px 8px rgba(245,158,11,0.25)"
                           : "none",
                       }}
                     >
                       <Icon
-                        className={`w-4 h-4 ${active ? "text-amber-200" : "text-white/50 group-hover:text-amber-300"} transition-colors`}
+                        className={`w-4 h-4 ${active ? "text-amber-300" : isLight ? "text-slate-500 group-hover:text-amber-600" : "text-white/50 group-hover:text-amber-300"} transition-colors`}
                         strokeWidth={active ? 2.4 : 2}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[13px] font-bold leading-tight ${active ? "text-white" : "text-white/70 group-hover:text-white/95"} transition-colors`}>
+                      <p className={`text-[13px] font-bold leading-tight ${active ? (isLight ? "text-slate-800" : "text-white") : (isLight ? "text-slate-600 group-hover:text-slate-800" : "text-white/70 group-hover:text-white/95")} transition-colors`}>
                         {tab.label}
                       </p>
-                      <p className={`text-[10.5px] leading-tight mt-1 truncate ${active ? "text-amber-200/80" : "text-white/50"}`}>
+                      <p className={`text-[10.5px] leading-tight mt-1 truncate ${active ? "text-amber-500" : isLight ? "text-slate-400" : "text-white/50"}`}>
                         {tab.sublabel}
                       </p>
                     </div>
@@ -1965,10 +1990,9 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
             {/* sidebar footer — حالة + اختصار */}
             <div
               className="px-3 py-3 mx-2 mb-2 rounded-xl"
-              style={{
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.06)",
-              }}
+              style={isLight
+                ? { background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.07)" }
+                : { background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}
             >
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <span className="text-[10px] font-black text-white/55 tracking-wider uppercase">

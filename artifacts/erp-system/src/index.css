@@ -4665,27 +4665,35 @@ html.light .nav-item.active { color: #92400e; background: rgba(245,158,11,0.09);
   background: rgba(0,0,0,0.01) !important;
 }
 
-/* Nav item active pill / indicator box */
-.rs-mesh-bg--light .rs-nav-item[style] {
-  border-color: rgba(245,158,11,0.25) !important;
-}
-
-/* Topbar stat box + close button (inline background/border) */
-.rs-mesh-bg--light button[style],
-.rs-mesh-bg--light div[style*="rgba(255,255,255,0.0"] {
-  background: rgba(0,0,0,0.04) !important;
-  border-color: rgba(0,0,0,0.09) !important;
-}
-
-/* Nav icon box — non-active state */
-.rs-mesh-bg--light .rs-nav-icon[style] {
-  background: rgba(0,0,0,0.04) !important;
-  border-color: rgba(0,0,0,0.08) !important;
-}
-
 /* Amber dot ring color in light mode (was #0e1320 dark) */
 .rs-mesh-bg--light span[style*="0 2px #0e1320"] {
   box-shadow: 0 0 10px rgba(52,211,153,0.5), 0 0 0 2px #f1f5f9 !important;
+}
+
+/* ── Dark popup/dropdown menus (rs-popup-dark) keep dark look inside light modal ── */
+/* The container keeps its dark background (set via inline style in JS) */
+/* All text inside must stay white — override the global text-white→dark rules */
+.rs-mesh-bg--light .rs-popup-dark,
+.rs-mesh-bg--light .rs-popup-dark * {
+  color: inherit !important;
+}
+.rs-mesh-bg--light .rs-popup-dark .text-white\/80,
+.rs-mesh-bg--light .rs-popup-dark .text-white\/75 { color: rgba(255,255,255,0.80) !important; }
+.rs-mesh-bg--light .rs-popup-dark .text-white\/70,
+.rs-mesh-bg--light .rs-popup-dark .text-white\/65 { color: rgba(255,255,255,0.70) !important; }
+.rs-mesh-bg--light .rs-popup-dark .text-white\/60,
+.rs-mesh-bg--light .rs-popup-dark .text-white\/55 { color: rgba(255,255,255,0.60) !important; }
+.rs-mesh-bg--light .rs-popup-dark .text-white\/50,
+.rs-mesh-bg--light .rs-popup-dark .text-white\/45 { color: rgba(255,255,255,0.50) !important; }
+.rs-mesh-bg--light .rs-popup-dark .text-white\/40,
+.rs-mesh-bg--light .rs-popup-dark .text-white\/35 { color: rgba(255,255,255,0.40) !important; }
+.rs-mesh-bg--light .rs-popup-dark .text-white\/30,
+.rs-mesh-bg--light .rs-popup-dark .text-white\/25 { color: rgba(255,255,255,0.30) !important; }
+.rs-mesh-bg--light .rs-popup-dark .text-white { color: #ffffff !important; }
+/* Hover effects inside dark popup */
+.rs-mesh-bg--light .rs-popup-dark button:hover {
+  background: rgba(245,158,11,0.12) !important;
+  color: rgba(253,230,138,0.90) !important;
 }
 
 /* ── END OF CANONICAL DEFINITIONS ────────────────────────────────── */
