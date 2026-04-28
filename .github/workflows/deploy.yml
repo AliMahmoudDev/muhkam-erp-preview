@@ -108,8 +108,12 @@ jobs:
 
             pnpm install --frozen-lockfile
 
-            # Push any new DB migrations (--force ensures new columns on existing tables are applied)
+            # ── خطوة 1: Migration ضامن — يُضيف الأعمدة/الجداول الجديدة مباشرة بـ SQL
+            # آمن تماماً: كل جملة تستخدم IF NOT EXISTS فلا تفشل إن كانت موجودة مسبقاً
             cd "$APP_DIR/lib/db"
+            node migrate-safe.mjs
+
+            # ── خطوة 2: drizzle-kit push كطبقة ثانية للتأكد من اكتمال المخطط
             pnpm run push-force
 
             cd "$APP_DIR/artifacts/erp-system"
