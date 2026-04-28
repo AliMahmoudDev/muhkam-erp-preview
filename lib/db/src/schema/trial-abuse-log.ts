@@ -30,6 +30,15 @@ export const trialAbuseLogTable = pgTable("trial_abuse_log", {
    */
   fingerprint:     text("fingerprint"),
 
+  /** Raw JSON blob of the signals used to compute the fingerprint */
+  fingerprint_data: text("fingerprint_data"),
+
+  /** Abuse-risk score (0–100) computed from fingerprint signals */
+  device_score:    integer("device_score").default(0),
+
+  /** Number of trial registrations associated with this fingerprint */
+  registration_count: integer("registration_count").default(0),
+
   /** The company that was created. Nullable in case insert fails mid-way */
   company_id:      integer("company_id"),
 
