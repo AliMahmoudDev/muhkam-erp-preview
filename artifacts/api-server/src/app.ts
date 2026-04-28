@@ -201,11 +201,6 @@ app.use('/api', perTenantRateLimit);
 
 app.use('/api', router);
 
-/* ── Root health ping — lets workflow port detection succeed ── */
-app.get('/', (_req, res) => {
-  res.status(200).json({ status: 'ok', service: 'muhkam-erp-api' });
-});
-
 /* ── Production: serve React frontend static files ─────────────────────────
    Single unified frontend served from Express backend:
    • MuhKam ERP → /* (artifacts/erp-system/dist/public)
