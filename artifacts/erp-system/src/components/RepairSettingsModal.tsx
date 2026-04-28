@@ -1812,7 +1812,7 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-start justify-center pt-3 pb-3 px-3"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       style={{
         background: isLight ? "rgba(0,0,0,0.45)" : "rgba(2,4,10,0.82)",
         backdropFilter: "blur(14px) saturate(140%)",
@@ -1919,7 +1919,7 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
           >
             {/* رأس الـ sidebar */}
             <div className="px-4 pt-4 pb-2">
-              <p className="text-[9px] font-black tracking-[0.22em] text-white/30 uppercase">
+              <p className={`text-[9px] font-black tracking-[0.22em] uppercase ${isLight ? "text-slate-400" : "text-white/30"}`}>
                 الأقسام
               </p>
             </div>
@@ -1995,15 +1995,15 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
                 : { background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}
             >
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <span className="text-[10px] font-black text-white/55 tracking-wider uppercase">
+                <span className={`text-[10px] font-black tracking-wider uppercase ${isLight ? "text-slate-400" : "text-white/55"}`}>
                   الحالة
                 </span>
-                <span className="flex items-center gap-1 text-[10px] text-emerald-300/85 font-bold">
+                <span className={`flex items-center gap-1 text-[10px] font-bold ${isLight ? "text-emerald-700" : "text-emerald-300/85"}`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   متصل
                 </span>
               </div>
-              <p className="text-[10px] text-white/35 leading-relaxed">
+              <p className={`text-[10px] leading-relaxed ${isLight ? "text-slate-400" : "text-white/35"}`}>
                 مُحكم ERP — وحدة الصيانة المتكاملة
               </p>
             </div>
@@ -2014,8 +2014,9 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
             key={activeTab}
             className="rs-content-enter flex-1 overflow-hidden flex flex-col relative"
             style={{
-              background:
-                "radial-gradient(1200px 600px at 50% -200px, rgba(245,158,11,0.025), transparent 60%), rgba(0,0,0,0.20)",
+              background: isLight
+                ? "radial-gradient(1200px 600px at 50% -200px, rgba(245,158,11,0.07), transparent 60%)"
+                : "radial-gradient(1200px 600px at 50% -200px, rgba(245,158,11,0.025), transparent 60%), rgba(0,0,0,0.20)",
             }}
           >
             {activeTab === "checklist"        && <ChecklistTab />}
