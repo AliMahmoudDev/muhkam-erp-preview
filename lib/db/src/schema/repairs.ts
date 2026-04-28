@@ -44,6 +44,15 @@ export const repairJobsTable = pgTable("repair_jobs", {
   accessories:              text("accessories"),
   branch_id:                integer("branch_id"),
   notes:                    text("notes"),
+  /* ── حقول مرحلة "جاهز للتسليم" (مراجعة ما قبل التسليم) ── */
+  pre_delivery_reviewed_at: timestamp("pre_delivery_reviewed_at"),
+  /* ── حقول مرحلة الشحن ── */
+  shipping_cost:            numeric("shipping_cost", { precision: 12, scale: 2 }).default("0"),
+  shipping_expense_id:      integer("shipping_expense_id"),
+  shipping_settled_at:      timestamp("shipping_settled_at"),
+  /* ── حقول مرحلة التسليم ── */
+  delivery_receipt_sent_at: timestamp("delivery_receipt_sent_at"),
+  delivery_receipt_method:  text("delivery_receipt_method"), // 'whatsapp' | 'print' | 'both'
   created_at:               timestamp("created_at").defaultNow().notNull(),
   updated_at:               timestamp("updated_at").defaultNow().notNull(),
 }, (t) => [

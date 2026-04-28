@@ -3,10 +3,24 @@ import {
   CheckCircle2, PackageOpen, ScanSearch, MessageCircleQuestion,
   Wrench, ShieldCheck, PackageCheck, Truck, PartyPopper,
   PauseCircle, Ban, XCircle, ChevronRight, ChevronLeft, Loader2,
-  AlertTriangle,
+  AlertTriangle, FileText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
+import QualityCheckModal from "@/components/modals/QualityCheckModal";
+import PreDeliveryModal from "@/components/modals/PreDeliveryModal";
+import ShippingCostModal from "@/components/modals/ShippingCostModal";
+import DeliveryReceiptModal from "@/components/modals/DeliveryReceiptModal";
+
+/**
+ * البوّابات (gated transitions) — هذه الأهداف لا تُستخدم فيها رسالة التأكيد العامة،
+ * بل يُفتح modal مخصّص لجمع البيانات قبل تنفيذ نقل الحالة.
+ *
+ * - ready_for_delivery → QualityCheckModal (فحص QC)
+ * - shipped            → PreDeliveryModal  (مراجعة قطع + ورشة + وسيط)
+ * - delivered          → ShippingCostModal (تكلفة شحن + مصروف تلقائي)
+ */
+const GATED_TARGETS = new Set<string>(["ready_for_delivery", "shipped", "delivered"]);
 
 interface Stage {
   key: string;
@@ -117,8 +131,13 @@ interface ConfirmState {
   loading: boolean;
 }
 
+/** أي بوّابة (gated target) فُتح لها modal مخصّص — تُعالَج خارج الـ confirm العام */
+type GatedKey = "ready_for_delivery" | "shipped" | "delivered" | null;
+
 export default function RepairPipeline({ currentStatus, jobData, onStatusChange }: Props) {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [gated, setGated]         = useState<GatedKey>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
 
   const isTerminal   = TERMINAL_KEYS.includes(currentStatus);
   const currentLabel = ALL_LABELS[currentStatus] ?? currentStatus;
@@ -142,6 +161,11 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
 
   function openConfirm(key: string, label: string) {
     if (!canMoveTo(key)) return;
+    /* البوّابات (Gated) — افتح modal مخصّص بدلاً من الـ confirm العام */
+    if (GATED_TARGETS.has(key)) {
+      setGated(key as Exclude<GatedKey, null>);
+      return;
+    }
     setConfirm({ target: key, label, errors: [], loading: false });
   }
 
@@ -165,6 +189,35 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
       setConfirm(null);
     } catch {
       setConfirm(c => c ? { ...c, loading: false, errors: ["تعذّر الاتصال بالخادم"] } : null);
+    }
+  }
+
+  /** يستدعَى من أي gated modal بعد ما يحفظ بياناته بنجاح — نُنفّذ نقل الحالة.
+   *  ملاحظة على عدم وجود rollback: الـ modals تحفظ بيانات حقيقية (QC، مراجعة، شحن مع
+   *  مصروف ذرّي) — لو فشل الـ PATCH هنا فالبيانات المحفوظة صحيحة من الناحية المحاسبية،
+   *  وستُكتشف البوّابة كمستوفاة في المرة التالية. لا نقوم بإلغاء حفظ الـ modal لأنه قد
+   *  يكون أنشأ مصروفاً أو حركة مخزون لا يمكن التراجع عنها بأمان من العميل. */
+  async function applyGatedTransition(target: Exclude<GatedKey, null>) {
+    try {
+      const res = await fetch(`/api/repair-jobs/${jobData.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status: target }),
+      });
+      if (res.ok) {
+        onStatusChange(target);
+        setGated(null);
+        return;
+      }
+      /* فشل النقل بعد حفظ الـ modal — نعرض confirm فيه الأخطاء + زر إعادة محاولة */
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      const errList = (data.error ?? `تعذّر تحديث الحالة (HTTP ${res.status})`).split(", ").filter(Boolean);
+      setGated(null);
+      setConfirm({ target, label: ALL_LABELS[target] ?? target, errors: errList, loading: false });
+    } catch {
+      setGated(null);
+      setConfirm({ target, label: ALL_LABELS[target] ?? target, errors: ["تعذّر الاتصال بالخادم"], loading: false });
     }
   }
 
@@ -228,9 +281,55 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
     ? (visibleIdx / (PIPELINE_STAGES.length - 1)) * 100
     : 0;
 
+  /* البطاقة كـ JobLite للـ modals — الـ jobData يحوي كل الحقول من الـ DB */
+  const jobLite = {
+    id:                     jobData.id,
+    job_no:                 String(jobData.job_no ?? ""),
+    device_brand:           jobData.device_brand as string | null | undefined,
+    device_model:           jobData.device_model as string | null | undefined,
+    checklist:              jobData.checklist,
+    qa_checklist:           jobData.qa_checklist,
+    qa_notes:               jobData.qa_notes as string | null | undefined,
+    device_score:           jobData.device_score as number | null | undefined,
+    external_workshop:      jobData.external_workshop as boolean | null | undefined,
+    external_workshop_name: jobData.external_workshop_name as string | null | undefined,
+    external_workshop_cost: jobData.external_workshop_cost as string | number | null | undefined,
+    broker_name:            jobData.broker_name as string | null | undefined,
+    broker_commission:      jobData.broker_commission as string | number | null | undefined,
+    shipping_cost:          jobData.shipping_cost as string | number | null | undefined,
+  };
+
   return (
     <>
       {modal}
+      {gated === "ready_for_delivery" && (
+        <QualityCheckModal
+          job={jobLite}
+          onClose={() => setGated(null)}
+          onSaved={() => void applyGatedTransition("ready_for_delivery")}
+        />
+      )}
+      {gated === "shipped" && (
+        <PreDeliveryModal
+          job={jobLite}
+          onClose={() => setGated(null)}
+          onSaved={() => void applyGatedTransition("shipped")}
+        />
+      )}
+      {gated === "delivered" && (
+        <ShippingCostModal
+          job={jobLite}
+          onClose={() => setGated(null)}
+          onSaved={() => void applyGatedTransition("delivered")}
+        />
+      )}
+      {showReceipt && (
+        <DeliveryReceiptModal
+          jobId={jobData.id}
+          onClose={() => setShowReceipt(false)}
+          onSent={() => onStatusChange(currentStatus)}
+        />
+      )}
       <div
         className="rounded-2xl border border-white/10 overflow-hidden"
         style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.035) 0%, rgba(124,58,237,0.05) 100%)" }}
@@ -259,18 +358,29 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
             <span className="text-xs font-black text-white">{currentLabel}</span>
           </div>
 
-          <button
-            onClick={() => nextStage && openConfirm(nextStage.key, ALL_LABELS[nextStage.key] ?? nextStage.label)}
-            disabled={!nextStage || isTerminal}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-violet-400/40 text-[11px] font-black text-violet-200 hover:bg-violet-500/20 hover:border-violet-400/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            style={{ background: "rgba(124,58,237,0.10)" }}
-          >
-            {nextStage && (
-              <span className="text-violet-200/70 hidden sm:inline">{nextStage.label} ·</span>
-            )}
-            <span>التالي</span>
-            <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
-          </button>
+          {currentStatus === "delivered" ? (
+            <button
+              onClick={() => setShowReceipt(true)}
+              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-400/40 text-[11px] font-black text-emerald-200 hover:bg-emerald-500/20 hover:border-emerald-400/60 transition-all"
+              style={{ background: "rgba(16,185,129,0.10)" }}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>إيصال التسليم</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => nextStage && openConfirm(nextStage.key, ALL_LABELS[nextStage.key] ?? nextStage.label)}
+              disabled={!nextStage || isTerminal}
+              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-violet-400/40 text-[11px] font-black text-violet-200 hover:bg-violet-500/20 hover:border-violet-400/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              style={{ background: "rgba(124,58,237,0.10)" }}
+            >
+              {nextStage && (
+                <span className="text-violet-200/70 hidden sm:inline">{nextStage.label} ·</span>
+              )}
+              <span>التالي</span>
+              <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+            </button>
+          )}
         </div>
 
         {/* ── Stepper ───────────────────────────────────────────────── */}

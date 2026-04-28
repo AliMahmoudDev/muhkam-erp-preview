@@ -9,6 +9,12 @@ import {
   repairStatusHistoryTable,
   scrapItemsTable,
   erpUsersTable,
+  productsTable,
+  stockMovementsTable,
+  expensesTable,
+  expenseCategoriesTable,
+  safesTable,
+  transactionsTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { notifyUser } from "../lib/notify";
@@ -17,7 +23,7 @@ import { validateTransition } from "../services/repair-pipeline.service";
 import { writeAuditLog } from "../lib/audit-log";
 import { alertManager } from "../lib/telegram-alert-manager";
 import { normalizeName, getNextCustomerCode } from "./customers";
-import { getOrCreateCustomerAccount } from "../lib/auto-account";
+import { getOrCreateCustomerAccount, getOrCreateSafeAccount, getOrCreateGeneralExpenseAccount, createAutoJournalEntry } from "../lib/auto-account";
 
 const router: IRouter = Router();
 router.use(["/repair-jobs", "/repair-statuses", "/repair-customers", "/repair-checklist-items", "/scrap-items"], requireFeature("maintenance"));
@@ -845,9 +851,20 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
   }
 
   if ("status" in b && String(b.status) !== existing.status) {
-    const jobData: Record<string, unknown> = { ...existing as Record<string, unknown> };
-    for (const k of Object.keys(b)) jobData[k] = (b as Record<string, unknown>)[k];
-    const { allowed, errors } = validateTransition(existing.status, String(b.status), jobData);
+    /* SEC-GATE-001:
+       لا نسمح للعميل بحقن حقول البوّابة (qa_completed_at / pre_delivery_reviewed_at /
+       shipping_settled_at / delivery_receipt_sent_at) عبر body لتمرير validateTransition.
+       هذه الحقول تُضبط حصراً من خلال الـ endpoints المخصّصة:
+         POST /qa-checklist     → qa_completed_at
+         POST /pre-delivery     → pre_delivery_reviewed_at
+         POST /shipping         → shipping_settled_at
+         POST /delivery-receipt → delivery_receipt_sent_at
+       لذلك نقيّم الانتقال بناءً على بيانات الـ DB الموثوقة فقط. */
+    const { allowed, errors } = validateTransition(
+      existing.status,
+      String(b.status),
+      existing as Record<string, unknown>,
+    );
     if (!allowed) {
       return res.status(422).json({ error: errors.join(', ') });
     }
@@ -894,8 +911,10 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
   if ("device_score" in b) updates.device_score = b.device_score ? Number(b.device_score) : null;
   if ("checklist" in b)    updates.checklist = JSON.stringify(b.checklist);
   if ("qa_checklist" in b) {
+    /* SEC-GATE-002: نسمح بحفظ qa_checklist عبر PATCH العام (للتعديل اليدوي)
+       لكن لا نضبط qa_completed_at — هذا الـ timestamp بوّابة، ويُضبط حصراً
+       من POST /repair-jobs/:id/qa-checklist لمنع تجاوز فحص QC الإلزامي. */
     updates.qa_checklist = JSON.stringify(b.qa_checklist);
-    updates.qa_completed_at = new Date();
   }
   if (b.status === "delivered") {
     updates.delivered_at = new Date().toISOString().split("T")[0];
@@ -1127,41 +1146,512 @@ router.delete("/repair-jobs/:id/parts/:partId", wrap(async (req, res) => {
   return res.json({ ok: true });
 }));
 
-/* Return part to stock or scrap (for repair returns) */
+/**
+ * إرجاع قطعة غيار من بطاقة صيانة إلى المخزن أو إلى سجل الهالك (Scrap).
+ *
+ * - destination = "stock"  → يزيد كمية المنتج في productsTable + يسجل stock_movement (نوع: repair_return)
+ * - destination = "scrap"  → يضيف القطعة إلى scrap_items (لا يعود للمخزون)
+ *
+ * تطبيق ذرّي عبر transaction لمنع تعارض ما بين تحديث الجدول والمخزن.
+ */
 router.post("/repair-jobs/:id/parts/:partId/return", wrap(async (req, res) => {
   const { company_id, user_id, user_name } = ctx(req);
   const partId = Number(req.params.partId);
   const b = req.body as Record<string, unknown>;
   const dest = String(b.destination ?? "stock"); // 'stock' | 'scrap'
+  if (dest !== "stock" && dest !== "scrap") {
+    return res.status(400).json({ error: "وجهة الإرجاع يجب أن تكون stock أو scrap" });
+  }
 
-  const [part] = await db.select().from(repairJobPartsTable)
-    .where(and(eq(repairJobPartsTable.id, partId), eq(repairJobPartsTable.company_id, company_id)));
-  if (!part) return res.status(404).json({ error: "القطعة غير موجودة" });
-  if (part.is_returned) return res.status(400).json({ error: "تم إرجاعها بالفعل" });
+  /* خطأ HTTP محمول داخل المعاملة — نُرميه لإلغاء المعاملة ثم نمسكه ليعطي status معبّر */
+  class HttpAbort extends Error {
+    constructor(public httpStatus: number, public reason: string) { super(reason); }
+  }
 
-  await db.update(repairJobPartsTable).set({
-    is_returned: true,
-    return_destination: dest,
-    returned_at: new Date(),
-  }).where(eq(repairJobPartsTable.id, partId));
+  try {
+    await db.transaction(async (tx) => {
+      /* RACE-FIX: claim atomically — نحدّث القطعة فقط لو لم تُرجَع بعد، ونعيدها كـ returning. */
+      const [claimed] = await tx.update(repairJobPartsTable)
+        .set({
+          is_returned: true,
+          return_destination: dest,
+          returned_at: new Date(),
+        })
+        .where(and(
+          eq(repairJobPartsTable.id, partId),
+          eq(repairJobPartsTable.company_id, company_id),
+          eq(repairJobPartsTable.is_returned, false),
+        ))
+        .returning();
 
-  if (dest === "scrap") {
-    await db.insert(scrapItemsTable).values({
-      company_id,
-      product_id: part.product_id,
-      product_name: part.product_name,
-      quantity: part.quantity,
-      unit_cost: part.unit_price,
-      warehouse_id: part.warehouse_id,
-      reason: String(b.reason ?? "إرجاع من صيانة - تالفة"),
-      source_type: "repair_return",
-      source_id: part.job_id,
-      created_by: user_id,
-      created_by_name: user_name,
+      if (!claimed) {
+        /* إمّا غير موجودة أو سُبقت بإرجاع آخر — تحقّق سبب الفشل */
+        const [check] = await tx.select({ id: repairJobPartsTable.id })
+          .from(repairJobPartsTable)
+          .where(and(eq(repairJobPartsTable.id, partId), eq(repairJobPartsTable.company_id, company_id)));
+        if (!check) throw new HttpAbort(404, "القطعة غير موجودة");
+        throw new HttpAbort(400, "تم إرجاعها بالفعل");
+      }
+
+      const part = claimed;
+
+      if (dest === "stock" && part.product_id && part.warehouse_id) {
+        /* زيادة كمية المنتج في المخزن المحدد */
+        const [prod] = await tx.select({ id: productsTable.id, quantity: productsTable.quantity, name: productsTable.name })
+          .from(productsTable)
+          .where(and(eq(productsTable.id, part.product_id), eq(productsTable.company_id, company_id)));
+        if (!prod) throw new HttpAbort(404, "المنتج المرتبط لم يعد موجوداً");
+
+        const oldQty = Number(prod.quantity);
+        const addQty = Number(part.quantity);
+        const newQty = oldQty + addQty;
+
+        await tx.update(productsTable)
+          .set({ quantity: String(newQty) })
+          .where(and(eq(productsTable.id, part.product_id), eq(productsTable.company_id, company_id)));
+
+        await tx.insert(stockMovementsTable).values({
+          product_id:      part.product_id,
+          product_name:    part.product_name,
+          movement_type:   "repair_return",
+          quantity:        String(addQty),         // موجب = وارد
+          quantity_before: String(oldQty),
+          quantity_after:  String(newQty),
+          unit_cost:       part.unit_price,
+          reference_type:  "repair_job",
+          reference_id:    part.job_id,
+          notes:           `إرجاع قطعة غير مستخدمة من بطاقة صيانة #${part.job_id}`,
+          date:            new Date().toISOString().split("T")[0],
+          warehouse_id:    part.warehouse_id,
+          company_id,
+        });
+      }
+
+      if (dest === "scrap") {
+        await tx.insert(scrapItemsTable).values({
+          company_id,
+          product_id: part.product_id,
+          product_name: part.product_name,
+          quantity: part.quantity,
+          unit_cost: part.unit_price,
+          warehouse_id: part.warehouse_id,
+          reason: String(b.reason ?? "إرجاع من صيانة - تالفة"),
+          source_type: "repair_return",
+          source_id: part.job_id,
+          created_by: user_id,
+          created_by_name: user_name,
+        });
+      }
     });
+  } catch (err) {
+    if (err instanceof HttpAbort) return res.status(err.httpStatus).json({ error: err.reason });
+    throw err;
   }
 
   return res.json({ ok: true });
+}));
+
+/* ══════════════════════════════════════════════════════════════
+   STAGE-GATE ENDPOINTS — Modals مخصّصة لكل بوّابة في Pipeline
+   هذه الـ endpoints تَملأ الحقول المطلوبة (timestamps) التي
+   تتحقق منها validateTransition في الانتقال التالي.
+══════════════════════════════════════════════════════════════ */
+
+/**
+ * (1) إكمال فحص مراقبة الجودة (QC) قبل "جاهز للتسليم".
+ *
+ * يستقبل: { items: [...], notes?, device_score? }
+ * يُسجّل: qa_checklist (JSON) + qa_completed_at + qa_notes + device_score
+ * يحفظ سطر في status_history (event_type='qa_completed') لتتبع الفنّي الذي أنجز الفحص.
+ */
+router.post("/repair-jobs/:id/qa-checklist", wrap(async (req, res) => {
+  const { company_id, user_id, user_name } = ctx(req);
+  const id = Number(req.params.id);
+  const b = req.body as Record<string, unknown>;
+
+  const items = Array.isArray(b.items) ? b.items : [];
+  if (items.length === 0) {
+    return res.status(400).json({ error: "يجب إدخال بنود فحص QC" });
+  }
+  /* كل بند يجب أن يحوي status (pass/fail/n/a) */
+  const allDecided = items.every((i: unknown) => {
+    const it = i as { status?: unknown };
+    return it.status === "pass" || it.status === "fail" || it.status === "n/a";
+  });
+  if (!allDecided) {
+    return res.status(400).json({ error: "يجب اتخاذ قرار (نجح/فشل/لا ينطبق) لكل بند فحص" });
+  }
+
+  const [job] = await db.select().from(repairJobsTable)
+    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
+  if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
+
+  const updates: Record<string, unknown> = {
+    qa_checklist: JSON.stringify(items),
+    qa_completed_at: new Date(),
+    qa_notes: b.notes != null ? String(b.notes) : job.qa_notes,
+    updated_at: new Date(),
+  };
+  if (b.device_score != null && String(b.device_score).trim() !== "") {
+    const score = Number(b.device_score);
+    if (Number.isFinite(score) && score >= 0 && score <= 100) {
+      updates.device_score = score;
+    }
+  }
+
+  const [updated] = await db.update(repairJobsTable).set(updates)
+    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
+    .returning();
+
+  await db.insert(repairStatusHistoryTable).values({
+    job_id: id,
+    company_id,
+    user_id,
+    user_name,
+    event_type: "qa_completed",
+    note: `إكمال فحص مراقبة الجودة — ${items.filter((i: { status?: string }) => i.status === "fail").length} بند فشل`,
+  });
+
+  return res.json(updated);
+}));
+
+/**
+ * (2) مراجعة ما قبل التسليم — يضع pre_delivery_reviewed_at = now().
+ *
+ * يستقبل (اختياري): {
+ *   external_workshop, external_workshop_name, external_workshop_cost,
+ *   broker_name, broker_commission
+ * }
+ * إرجاع القطع غير المستخدمة يتم عبر POST /parts/:partId/return بشكل منفصل
+ * (المستخدم يقرر لكل قطعة على حدة قبل الضغط على "تأكيد المراجعة").
+ */
+router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
+  const { company_id, user_id, user_name } = ctx(req);
+  const id = Number(req.params.id);
+  const b = req.body as Record<string, unknown>;
+
+  const [job] = await db.select().from(repairJobsTable)
+    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
+  if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
+
+  const updates: Record<string, unknown> = {
+    pre_delivery_reviewed_at: new Date(),
+    updated_at: new Date(),
+  };
+
+  /* ورشة خارجية */
+  if ("external_workshop" in b) {
+    updates.external_workshop = Boolean(b.external_workshop);
+    if (b.external_workshop) {
+      updates.external_workshop_name = String(b.external_workshop_name ?? "").trim() || null;
+      const cost = Number(b.external_workshop_cost ?? 0);
+      updates.external_workshop_cost = String(Number.isFinite(cost) && cost >= 0 ? cost : 0);
+    } else {
+      updates.external_workshop_name = null;
+      updates.external_workshop_cost = "0";
+    }
+  }
+
+  /* وسيط/سمسار */
+  if ("broker_name" in b || "broker_commission" in b) {
+    const bName = String(b.broker_name ?? "").trim();
+    updates.broker_name = bName || null;
+    const bComm = Number(b.broker_commission ?? 0);
+    updates.broker_commission = String(Number.isFinite(bComm) && bComm >= 0 ? bComm : 0);
+  }
+
+  const [updated] = await db.update(repairJobsTable).set(updates)
+    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
+    .returning();
+
+  /* عدد القطع التي ما زالت بدون قرار إرجاع */
+  const pendingParts = await db.select({ count: sql<number>`count(*)::int` })
+    .from(repairJobPartsTable)
+    .where(and(
+      eq(repairJobPartsTable.job_id, id),
+      eq(repairJobPartsTable.company_id, company_id),
+      eq(repairJobPartsTable.is_returned, false),
+      eq(repairJobPartsTable.source, "internal"),
+    ));
+
+  await db.insert(repairStatusHistoryTable).values({
+    job_id: id,
+    company_id,
+    user_id,
+    user_name,
+    event_type: "pre_delivery_reviewed",
+    note: `مراجعة ما قبل التسليم — قطع داخلية لم تُرجَع: ${Number(pendingParts[0]?.count ?? 0)}`,
+  });
+
+  return res.json(updated);
+}));
+
+/**
+ * (3) تسجيل تكلفة الشحن — تنشئ مصروفاً تلقائياً وتخصمه من الخزنة المختارة.
+ *
+ * يستقبل: { shipping_cost: number, safe_id: number, notes? }
+ * - يُنشئ سطر مصروف في expenses (الفئة: "مصاريف شحن صيانة" — تُستحدَث تلقائياً إن لم تكن موجودة)
+ * - يُخصَم المبلغ من رصيد الخزنة (safe) بشكل ذرّي
+ * - يُسجَّل سطر في transactions + journal entry + يُربط expense.id بالبطاقة (shipping_expense_id)
+ * - في النهاية يضع shipping_settled_at = now() لفتح بوابة الانتقال إلى "تم التسليم".
+ *
+ * إن كانت تكلفة الشحن = 0 يمكن للمستخدم تأكيد ذلك (يضع shipping_settled_at بدون مصروف).
+ */
+router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
+  const { company_id, user_id, user_name } = ctx(req);
+  const id = Number(req.params.id);
+  const b = req.body as Record<string, unknown>;
+
+  const cost = Number(b.shipping_cost ?? 0);
+  if (!Number.isFinite(cost) || cost < 0) {
+    return res.status(400).json({ error: "تكلفة الشحن غير صحيحة" });
+  }
+
+  const [job] = await db.select().from(repairJobsTable)
+    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
+  if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
+  if (job.shipping_settled_at) {
+    return res.status(400).json({ error: "تكلفة الشحن مسجّلة مسبقاً لهذه البطاقة" });
+  }
+
+  /* حالة 1: المستخدم أكّد عدم وجود تكلفة شحن
+     IDEMPOTENCY: الـ WHERE يضمن أنه لو طلبان متزامنان أرسلا shipping=0
+     فسطر واحد فقط هو الذي سيُحدّث، والثاني سيرجع بدون updated rows. */
+  if (cost === 0) {
+    const [updated] = await db.update(repairJobsTable).set({
+      shipping_cost: "0",
+      shipping_settled_at: new Date(),
+      updated_at: new Date(),
+    }).where(and(
+      eq(repairJobsTable.id, id),
+      eq(repairJobsTable.company_id, company_id),
+      sql`${repairJobsTable.shipping_settled_at} IS NULL`,
+    )).returning();
+
+    if (!updated) return res.status(409).json({ error: "تكلفة الشحن مسجّلة مسبقاً (تنفيذ متزامن)" });
+
+    await db.insert(repairStatusHistoryTable).values({
+      job_id: id,
+      company_id,
+      user_id,
+      user_name,
+      event_type: "shipping_settled",
+      note: "تم تأكيد عدم وجود تكلفة شحن",
+    });
+
+    return res.json({ job: updated, expense: null });
+  }
+
+  /* حالة 2: تكلفة شحن > 0 — ننشئ مصروف فعلي */
+  const safeId = Number(b.safe_id);
+  if (!Number.isFinite(safeId) || safeId <= 0) {
+    return res.status(400).json({ error: "يجب اختيار خزنة لخصم تكلفة الشحن منها" });
+  }
+
+  /* خطأ HTTP محمول داخل المعاملة لإلغائها بأمان */
+  class HttpAbort extends Error {
+    constructor(public httpStatus: number, public reason: string) { super(reason); }
+  }
+
+  let txResult: { job: typeof job; expense: { id: number }; safeName: string; note: string } | null = null;
+
+  try {
+    txResult = await db.transaction(async (tx) => {
+      /* IDEMPOTENCY-FIX: claim الـ shipping_settled_at ذرّياً قبل أي تعديل آخر —
+         إن سبقنا طلب آخر فالـ UPDATE لن يُرجع أي صف، ونوقف العملية. */
+      const [claimedJob] = await tx.update(repairJobsTable).set({
+        shipping_settled_at: new Date(),
+        updated_at: new Date(),
+      }).where(and(
+        eq(repairJobsTable.id, id),
+        eq(repairJobsTable.company_id, company_id),
+        sql`${repairJobsTable.shipping_settled_at} IS NULL`,
+      )).returning();
+
+      if (!claimedJob) throw new HttpAbort(409, "تكلفة الشحن مسجّلة مسبقاً (تنفيذ متزامن)");
+
+      /* جلب الخزنة وخصم المبلغ ذرّياً */
+      const [safe] = await tx.select().from(safesTable)
+        .where(and(eq(safesTable.id, safeId), eq(safesTable.company_id, company_id)));
+      if (!safe) throw new HttpAbort(404, "الخزنة غير موجودة");
+
+      const debited = await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} - ${String(cost)}` })
+        .where(and(
+          eq(safesTable.id, safeId),
+          eq(safesTable.company_id, company_id),
+          sql`${safesTable.balance} >= ${String(cost)}`,
+        ))
+        .returning({ id: safesTable.id });
+      if (debited.length === 0) {
+        throw new HttpAbort(400, `رصيد الخزنة غير كافٍ (المتاح: ${Number(safe.balance).toFixed(2)})`);
+      }
+
+      /* فئة المصروف — استحداث "مصاريف شحن صيانة" إن لم تكن موجودة */
+      const SHIPPING_CAT_NAME = "مصاريف شحن صيانة";
+      let [shipCat] = await tx.select().from(expenseCategoriesTable)
+        .where(and(eq(expenseCategoriesTable.name, SHIPPING_CAT_NAME), eq(expenseCategoriesTable.company_id, company_id)));
+      if (!shipCat) {
+        const [created] = await tx.insert(expenseCategoriesTable).values({
+          name: SHIPPING_CAT_NAME,
+          company_id,
+        }).returning();
+        shipCat = created;
+      }
+
+      /* إدراج المصروف */
+      const note = String(b.notes ?? `شحن بطاقة صيانة ${job.job_no}`);
+      const [exp] = await tx.insert(expensesTable).values({
+        description:    note,
+        amount:         String(cost),
+        category:       SHIPPING_CAT_NAME,
+        safe_id:        safeId,
+        safe_name:      safe.name,
+        reference_type: "repair_job",
+        reference_id:   id,
+        company_id,
+      }).returning();
+
+      /* سطر في transactions */
+      await tx.insert(transactionsTable).values({
+        type: "expense",
+        amount: String(cost),
+        description: note,
+        reference_type: "repair_shipping",
+        reference_id: id,
+        safe_id: safeId,
+        company_id,
+      });
+
+      /* تحديث البطاقة بـ shipping_cost + رابط المصروف (settled_at تم claim'ه أعلاه) */
+      const [updated] = await tx.update(repairJobsTable).set({
+        shipping_cost:        String(cost),
+        shipping_expense_id:  exp.id,
+      }).where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id))).returning();
+
+      await tx.insert(repairStatusHistoryTable).values({
+        job_id: id,
+        company_id,
+        user_id,
+        user_name,
+        event_type: "shipping_settled",
+        note: `تكلفة شحن ${cost.toFixed(2)} — مصروف #${exp.id}`,
+      });
+
+      return { job: updated, expense: exp, safeName: safe.name, note };
+    });
+  } catch (err) {
+    if (err instanceof HttpAbort) return res.status(err.httpStatus).json({ error: err.reason });
+    throw err;
+  }
+
+  /* القيد المحاسبي خارج المعاملة (دوال auto-account لا تقبل tx).
+     ملاحظة: نُنفّذه بعد commit ضماناً للاتساق المحاسبي —
+     لو فشل هنا تظل بيانات الشحن صحيحة ويتم تسجيل الخطأ ليُعالَج لاحقاً. */
+  if (txResult) {
+    try {
+      const expenseAcct = await getOrCreateGeneralExpenseAccount(company_id);
+      const safeAcct    = await getOrCreateSafeAccount(safeId, txResult.safeName, company_id);
+      await createAutoJournalEntry({
+        date:        new Date().toISOString().split("T")[0],
+        description: txResult.note,
+        reference:   `repair_shipping:${id}`,
+        debit:       expenseAcct,
+        credit:      safeAcct,
+        amount:      cost,
+        companyId:   company_id,
+      });
+    } catch (jErr) {
+      console.error("[repair-shipping] auto-journal failed for job", id, jErr);
+    }
+  }
+
+  return res.json({ job: txResult?.job, expense: txResult?.expense });
+}));
+
+/**
+ * (4) بيانات إيصال التسليم — للطباعة و WhatsApp.
+ *
+ * يُرجع البيانات المنسّقة (بدون HTML) ليبنيها العميل (frontend) كما يشاء —
+ * هذا أوضح فصلاً للمسؤوليات وأسهل اختباراً من إرجاع HTML من الخادم.
+ */
+router.get("/repair-jobs/:id/receipt-data", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const id = Number(req.params.id);
+
+  const [job] = await db.select().from(repairJobsTable)
+    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
+  if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
+
+  const parts = await db.select().from(repairJobPartsTable)
+    .where(and(eq(repairJobPartsTable.job_id, id), eq(repairJobPartsTable.company_id, company_id)));
+
+  const partsTotal = parts.reduce((sum, p) => sum + (Number(p.quantity) * Number(p.unit_price)), 0);
+
+  return res.json({
+    job_no:           job.job_no,
+    customer_name:    job.customer_name,
+    customer_phone:   job.customer_phone,
+    device_brand:     job.device_brand,
+    device_model:     job.device_model,
+    imei:             job.imei,
+    serial_no:        job.serial_no,
+    color:            job.color,
+    storage:          job.storage,
+    received_at:      job.received_at,
+    delivered_at:     job.delivered_at,
+    problem_description: job.problem_description,
+    notes:            job.notes,
+    technician_name:  job.technician_name,
+    estimated_cost:   Number(job.estimated_cost ?? 0),
+    final_cost:       Number(job.final_cost ?? 0),
+    deposit_paid:     Number(job.deposit_paid ?? 0),
+    shipping_cost:    Number(job.shipping_cost ?? 0),
+    parts_total:      partsTotal,
+    parts:            parts.map((p) => ({
+      product_name: p.product_name,
+      quantity:     Number(p.quantity),
+      unit_price:   Number(p.unit_price),
+      total:        Number(p.quantity) * Number(p.unit_price),
+    })),
+    qa_completed_at:  job.qa_completed_at,
+    delivery_receipt_sent_at: job.delivery_receipt_sent_at,
+  });
+}));
+
+/**
+ * (5) تسجيل أن إيصال التسليم قد أُرسل / طُبع.
+ * يستقبل: { method: 'whatsapp' | 'print' | 'both' }
+ */
+router.post("/repair-jobs/:id/delivery-receipt", wrap(async (req, res) => {
+  const { company_id, user_id, user_name } = ctx(req);
+  const id = Number(req.params.id);
+  const b = req.body as Record<string, unknown>;
+
+  const method = String(b.method ?? "both");
+  if (!["whatsapp", "print", "both"].includes(method)) {
+    return res.status(400).json({ error: "طريقة الإرسال غير صحيحة" });
+  }
+
+  const [updated] = await db.update(repairJobsTable).set({
+    delivery_receipt_sent_at: new Date(),
+    delivery_receipt_method:  method,
+    updated_at:               new Date(),
+  })
+    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
+    .returning();
+  if (!updated) return res.status(404).json({ error: "البطاقة غير موجودة" });
+
+  await db.insert(repairStatusHistoryTable).values({
+    job_id: id,
+    company_id,
+    user_id,
+    user_name,
+    event_type: "delivery_receipt_sent",
+    note: `تم إرسال/طباعة إيصال التسليم — ${method === "whatsapp" ? "واتساب" : method === "print" ? "طباعة" : "واتساب + طباعة"}`,
+  });
+
+  return res.json(updated);
 }));
 
 /* ══════════════════════════════════════════════════════════════

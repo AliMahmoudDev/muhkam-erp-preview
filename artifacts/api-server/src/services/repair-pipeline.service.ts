@@ -25,6 +25,13 @@ const SIDE_BRANCHES = ['waiting_parts', 'rejected', 'cancelled'];
  */
 const TERMINAL_STATUSES = ['delivered', 'rejected', 'cancelled'];
 
+/**
+ * متطلبات الانتقال إلى الحالة المستهدفة.
+ *
+ * كل عنصر يحوي اسم الحقل المطلوب على بطاقة الصيانة + رسالة عربية للمستخدم.
+ * `qa_completed`, `pre_delivery_reviewed`, `shipping_settled` هي حقول
+ * مشتقة (timestamps) — تُملأ تلقائياً من endpoints مخصّصة (modals الـ UI).
+ */
 const STAGE_REQUIREMENTS: Record<string, { field: string; label_ar: string }[]> = {
   initial_inspection: [
     { field: 'technician_id', label_ar: 'يجب تعيين فني مسؤول' },
@@ -40,8 +47,18 @@ const STAGE_REQUIREMENTS: Record<string, { field: string; label_ar: string }[]> 
   repaired: [
     { field: 'final_cost', label_ar: 'يجب إدخال التكلفة النهائية' },
   ],
+  /* ── الانتقال من "مراقبة الجودة" إلى "جاهز للتسليم" ── */
   ready_for_delivery: [
-    { field: 'final_cost', label_ar: 'يجب إدخال التكلفة النهائية' },
+    { field: 'final_cost',           label_ar: 'يجب إدخال التكلفة النهائية' },
+    { field: 'qa_completed_at',      label_ar: 'يجب إكمال بنود فحص مراقبة الجودة (QC) أولاً' },
+  ],
+  /* ── الانتقال من "جاهز للتسليم" إلى "الشحن" ── */
+  shipped: [
+    { field: 'pre_delivery_reviewed_at', label_ar: 'يجب مراجعة القطع غير المستخدمة وبيانات الورشة الخارجية والوسيط أولاً' },
+  ],
+  /* ── الانتقال من "الشحن" إلى "تم التسليم" ── */
+  delivered: [
+    { field: 'shipping_settled_at',  label_ar: 'يجب تسجيل تكلفة الشحن (أو تأكيد عدمها) قبل الإغلاق' },
   ],
   waiting_parts: [
     { field: 'notes', label_ar: 'يجب كتابة ملاحظة توضح القطعة المطلوبة' },
