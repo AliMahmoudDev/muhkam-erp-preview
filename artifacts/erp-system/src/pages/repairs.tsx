@@ -949,7 +949,7 @@ export default function Repairs() {
 
         {/* Technician performance — collapsible panel, shown only when no job selected */}
         {!selectedJob && (
-          <div className="rounded-2xl border border-white/8 bg-white/[0.025] overflow-hidden">
+          <div className="rounded-2xl border border-[var(--erp-border)] bg-white/[0.025] overflow-hidden">
             <button
               type="button"
               onClick={() => setShowTechStats((v) => !v)}
@@ -964,17 +964,17 @@ export default function Repairs() {
                 )}
               </span>
               <ChevronRight
-                className={`w-4 h-4 text-white/30 transition-transform duration-200 ${showTechStats ? "-rotate-90" : "rotate-90"}`}
+                className={`w-4 h-4 erp-label transition-transform duration-200 ${showTechStats ? "-rotate-90" : "rotate-90"}`}
               />
             </button>
             {showTechStats && (
-              <div className="border-t border-white/5 px-3 py-2">
+              <div className="border-t border-[var(--erp-border)] px-3 py-2">
                 {techStats.length === 0 ? (
-                  <p className="text-center text-[11px] text-white/30 py-4">لا توجد بيانات أداء حالياً</p>
+                  <p className="text-center text-[11px] erp-label py-4">لا توجد بيانات أداء حالياً</p>
                 ) : (
                   <div className="space-y-1">
                     {/* رأس الأعمدة */}
-                    <div className="grid grid-cols-12 gap-2 text-[9px] text-white/30 font-bold uppercase tracking-wider px-2 pb-1 border-b border-white/5">
+                    <div className="grid grid-cols-12 gap-2 text-[9px] erp-label font-bold uppercase tracking-wider px-2 pb-1 border-b border-[var(--erp-border)]">
                       <div className="col-span-5">الفني</div>
                       <div className="col-span-2 text-center">المُسنَدة</div>
                       <div className="col-span-2 text-center">المُسلَّمة</div>
@@ -985,7 +985,7 @@ export default function Repairs() {
                         key={t.technician_id}
                         className="grid grid-cols-12 gap-2 items-center px-2 py-1.5 rounded-lg text-xs bg-white/[0.02] hover:bg-white/[0.04] transition-all"
                       >
-                        <div className="col-span-5 truncate text-white/80 font-medium" title={t.technician_name}>
+                        <div className="col-span-5 truncate erp-text font-medium" title={t.technician_name}>
                           {t.technician_name}
                         </div>
                         <div className="col-span-2 text-center tabular-nums text-white/85 font-bold">
@@ -1853,12 +1853,12 @@ function JobDetail({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* ── Top bar ── */}
-      <div className="shrink-0 border-b border-white/6" style={{ background: "rgba(255,255,255,0.02)" }}>
+      <div className="shrink-0 border-b border-[var(--erp-border)]" style={{ background: "rgba(255,255,255,0.02)" }}>
         {/* Row 1: back + device + actions */}
         <div className="flex items-center justify-between px-3 pt-3 pb-2 gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             <button onClick={onClose}
-              className="shrink-0 w-7 h-7 rounded-xl border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/25 transition-all">
+              className="shrink-0 w-7 h-7 rounded-xl border border-[var(--erp-border)] flex items-center justify-center erp-label hover:text-white hover:border-white/25 transition-all">
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <div className="min-w-0">
@@ -1868,7 +1868,7 @@ function JobDetail({
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-[10px] text-white/25 font-mono">{job.job_no}</span>
                 <span className="text-white/15 text-[10px]">·</span>
-                <span className="text-[10px] text-white/40">{job.customer_name}</span>
+                <span className="text-[10px] erp-label">{job.customer_name}</span>
               </div>
             </div>
           </div>
@@ -1907,7 +1907,7 @@ function JobDetail({
       </div>
 
       {/* ── Pipeline — pinned, not scrollable ── */}
-      <div className="shrink-0 px-3 py-2 border-b border-white/5">
+      <div className="shrink-0 px-3 py-2 border-b border-[var(--erp-border)]">
         <RepairPipeline
           currentStatus={job.status}
           jobId={job.id}
@@ -1922,8 +1922,8 @@ function JobDetail({
         {/* Two columns: device info + score */}
         <div className="grid grid-cols-3 gap-3">
           {/* Device Info */}
-          <div className="col-span-2 glass-panel rounded-2xl p-3 border border-white/5 space-y-2">
-            <p className="text-[10px] text-white/40 font-bold flex items-center gap-1"><Smartphone className="w-3 h-3" /> معلومات الجهاز</p>
+          <div className="col-span-2 glass-panel rounded-2xl p-3 border border-[var(--erp-border)] space-y-2">
+            <p className="text-[10px] erp-label font-bold flex items-center gap-1"><Smartphone className="w-3 h-3" /> معلومات الجهاز</p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <InfoRow label="الماركة" value={job.device_brand} />
               <InfoRow label="الموديل" value={job.device_model} />
@@ -1932,8 +1932,8 @@ function JobDetail({
               {job.color      && <InfoRow label="اللون" value={job.color} />}
               {job.storage    && <InfoRow label="التخزين" value={job.storage} />}
             </div>
-            <div className="border-t border-white/5 pt-2">
-              <p className="text-[10px] text-white/40 font-bold flex items-center gap-1"><Phone className="w-3 h-3" /> العميل</p>
+            <div className="border-t border-[var(--erp-border)] pt-2">
+              <p className="text-[10px] erp-label font-bold flex items-center gap-1"><Phone className="w-3 h-3" /> العميل</p>
               <div className="grid grid-cols-2 gap-2 mt-1 text-xs">
                 <InfoRow label="الاسم" value={job.customer_name} />
                 {job.customer_phone && <InfoRow label="الهاتف" value={job.customer_phone} />}
@@ -1942,13 +1942,13 @@ function JobDetail({
             {job.problem_description && (
               <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-2">
                 <p className="text-[10px] text-amber-400/80 mb-0.5">المشكلة المُبلَّغ عنها</p>
-                <p className="text-xs text-white/70">{job.problem_description}</p>
+                <p className="text-xs erp-text">{job.problem_description}</p>
               </div>
             )}
           </div>
 
           {/* Score */}
-          <div className="glass-panel rounded-2xl p-3 border border-white/5 flex flex-col items-center justify-center gap-2">
+          <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)] flex flex-col items-center justify-center gap-2">
             <ScoreRing score={score} />
             <div className="text-center space-y-0.5">
               <div className="text-[10px] text-emerald-400/70">{checklist.filter((c) => c.status === "pass").length} تعمل</div>
@@ -1960,13 +1960,13 @@ function JobDetail({
         </div>
 
         {/* Diagnostic Checklist — collapsible */}
-        <div className="glass-panel rounded-2xl border border-white/8 overflow-hidden">
+        <div className="glass-panel rounded-2xl border border-[var(--erp-border)] overflow-hidden">
           <button
             onClick={() => setChecklistOpen((v) => !v)}
             className="w-full flex items-center justify-between px-3 py-2.5 text-right hover:bg-white/3 transition-all"
           >
             <div className="flex items-center gap-2">
-              <p className="text-[10px] text-white/50 font-bold flex items-center gap-1.5">
+              <p className="text-[10px] erp-text-muted font-bold flex items-center gap-1.5">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                 نتائج الفحص
               </p>
@@ -1985,18 +1985,18 @@ function JobDetail({
                   </span>
                 )}
                 {checklist.filter(c => !c.status).length > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-white/5 text-white/30 border border-white/10">
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold erp-card-soft erp-label border border-[var(--erp-border)]">
                     {checklist.filter(c => !c.status).length} ○
                   </span>
                 )}
               </div>
             </div>
             <ChevronRight
-              className={`w-4 h-4 text-white/30 transition-transform duration-200 ${checklistOpen ? "-rotate-90" : "rotate-90"}`}
+              className={`w-4 h-4 erp-label transition-transform duration-200 ${checklistOpen ? "-rotate-90" : "rotate-90"}`}
             />
           </button>
           {checklistOpen && (
-            <div className="border-t border-white/5">
+            <div className="border-t border-[var(--erp-border)]">
               <JobChecklist checklist={checklist} onSaveItem={onSaveCheckItem} readOnly />
             </div>
           )}
@@ -2051,11 +2051,11 @@ function JobDetail({
                     rows={4}
                     className="erp-input w-full text-sm leading-relaxed resize-y" />
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-white/30">Ctrl+Enter للحفظ السريع</span>
+                    <span className="text-[10px] erp-label">Ctrl+Enter للحفظ السريع</span>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => { setAddingReport(false); setNewReportText(""); }}
-                        className="text-[11px] px-3 py-1 rounded-lg border border-white/10 text-white/40 hover:text-white/65 hover:border-white/20 transition-all">
+                        className="text-[11px] px-3 py-1 rounded-lg border border-[var(--erp-border)] erp-label hover:text-white/65 hover:border-white/20 transition-all">
                         إلغاء
                       </button>
                       <button
@@ -2088,7 +2088,7 @@ function JobDetail({
                 const timeStr = dt.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
                 const author  = r.technician_name || r.user_name || "—";
                 return (
-                  <div key={r.id} className="rounded-xl border border-white/8 bg-white/[0.02] p-3 group">
+                  <div key={r.id} className="rounded-xl border border-[var(--erp-border)] bg-white/[0.02] p-3 group">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center text-[10px] font-bold text-violet-300">
@@ -2096,7 +2096,7 @@ function JobDetail({
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[11px] font-bold text-violet-300/85">{author}</span>
-                          <span className="text-[9px] text-white/30">{dateStr} • {timeStr}</span>
+                          <span className="text-[9px] erp-label">{dateStr} • {timeStr}</span>
                         </div>
                       </div>
                       <button
@@ -2119,8 +2119,8 @@ function JobDetail({
 
         {/* Accessories display */}
         {job.accessories && (
-          <div className="glass-panel rounded-2xl p-3 border border-white/5">
-            <p className="text-[10px] text-white/40 font-bold flex items-center gap-1 mb-2">
+          <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)]">
+            <p className="text-[10px] erp-label font-bold flex items-center gap-1 mb-2">
               <Package className="w-3 h-3" /> الإكسسوارات المستلمة
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -2138,16 +2138,16 @@ function JobDetail({
 
         {/* Timeline / History (excludes engineer reports — they have their own section) */}
         {otherHistory.length > 0 && (
-          <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+          <div className="glass-panel rounded-2xl border border-[var(--erp-border)] overflow-hidden">
             <button
               onClick={() => setHistoryOpen((v) => !v)}
               className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-white/3 transition-all"
             >
-              <p className="text-[10px] text-white/40 font-bold flex items-center gap-1.5">
+              <p className="text-[10px] erp-label font-bold flex items-center gap-1.5">
                 <History className="w-3 h-3" /> سجل الأحداث ({otherHistory.length})
               </p>
               <ChevronRight
-                className={`w-4 h-4 text-white/30 transition-transform duration-200 ${historyOpen ? "-rotate-90" : "rotate-90"}`}
+                className={`w-4 h-4 erp-label transition-transform duration-200 ${historyOpen ? "-rotate-90" : "rotate-90"}`}
               />
             </button>
             {historyOpen && (
@@ -2162,17 +2162,17 @@ function JobDetail({
                     <div key={h.id} className="flex gap-3 items-start">
                       <div className="flex flex-col items-center pt-0.5">
                         <div className="w-2 h-2 rounded-full bg-violet-500/60 shrink-0" />
-                        <div className="w-px flex-1 bg-white/5 mt-1" />
+                        <div className="w-px flex-1 erp-card-soft mt-1" />
                       </div>
                       <div className="flex-1 pb-2">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] text-white/60 font-medium">
+                          <span className="text-[10px] erp-text-muted font-medium">
                             {h.note ?? (fromLabel && toLabel ? `${fromLabel} ← ${toLabel}` : toLabel ?? fromLabel ?? h.event_type)}
                           </span>
                           <span className="text-[10px] text-white/25 shrink-0">{dateStr} {timeStr}</span>
                         </div>
                         {(h.user_name || h.technician_name) && (
-                          <span className="text-[10px] text-white/30">{h.user_name ?? h.technician_name}</span>
+                          <span className="text-[10px] erp-label">{h.user_name ?? h.technician_name}</span>
                         )}
                       </div>
                     </div>
@@ -2184,36 +2184,36 @@ function JobDetail({
         )}
 
         {/* Technician & Financials — moved to bottom */}
-        <div className="glass-panel rounded-2xl p-3 border border-white/5 space-y-3">
-          <p className="text-[10px] text-white/40 font-bold">الفني والتكلفة</p>
+        <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)] space-y-3">
+          <p className="text-[10px] erp-label font-bold">الفني والتكلفة</p>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-white/40 mb-1 block">الفني المسؤول</label>
+              <label className="text-[10px] erp-label mb-1 block">الفني المسؤول</label>
               <select value={editTech} onChange={(e) => setEditTech(e.target.value)} className="erp-input w-full text-xs">
                 <option value="">— اختر الفني —</option>
                 {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] text-white/40 mb-1 block">موعد التسليم</label>
+              <label className="text-[10px] erp-label mb-1 block">موعد التسليم</label>
               <input type="date" value={editDelivery} onChange={(e) => setEditDelivery(e.target.value)} className="erp-input w-full text-xs" />
             </div>
             <div>
-              <label className="text-[10px] text-white/40 mb-1 block">تكلفة تقديرية</label>
+              <label className="text-[10px] erp-label mb-1 block">تكلفة تقديرية</label>
               <input type="number" value={editEst} onChange={(e) => setEditEst(e.target.value)} className="erp-input w-full text-xs" />
             </div>
             <div>
-              <label className="text-[10px] text-white/40 mb-1 block">التكلفة النهائية</label>
+              <label className="text-[10px] erp-label mb-1 block">التكلفة النهائية</label>
               <input type="number" value={editFinal} onChange={(e) => setEditFinal(e.target.value)} className="erp-input w-full text-xs" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-white/40 mb-1 block">عربون مدفوع</label>
+              <label className="text-[10px] erp-label mb-1 block">عربون مدفوع</label>
               <input type="number" value={editDeposit} onChange={(e) => setEditDeposit(e.target.value)} className="erp-input w-full text-xs" />
             </div>
             <div className="flex items-end">
-              <div className="text-sm text-white/60">
+              <div className="text-sm erp-text-muted">
                 المتبقي: <span className="font-black text-amber-400">{formatCurrency(Math.max(0, Number(editFinal || editEst) - Number(editDeposit)))}</span>
               </div>
             </div>
@@ -2229,14 +2229,14 @@ function JobDetail({
       {/* Delete confirm */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" dir="rtl">
-          <div className="glass-panel rounded-2xl p-6 w-80 border border-white/10 space-y-4">
+          <div className="glass-panel rounded-2xl p-6 w-80 border border-[var(--erp-border)] space-y-4">
             <p className="font-bold text-white">حذف البطاقة {job.job_no}؟</p>
-            <p className="text-sm text-white/50">لا يمكن التراجع عن هذا الإجراء.</p>
+            <p className="text-sm erp-text-muted">لا يمكن التراجع عن هذا الإجراء.</p>
             <div className="flex gap-2">
               <button onClick={() => { setShowDeleteConfirm(false); onDelete(); }}
                 className="flex-1 py-2 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-bold">حذف</button>
               <button onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 py-2 rounded-xl border border-white/10 text-white/60 text-sm">إلغاء</button>
+                className="flex-1 py-2 rounded-xl border border-[var(--erp-border)] erp-text-muted text-sm">إلغاء</button>
             </div>
           </div>
         </div>

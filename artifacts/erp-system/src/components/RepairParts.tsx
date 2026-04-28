@@ -157,12 +157,12 @@ export default function RepairParts({ jobId, readOnly = false }: Props) {
 
   return (
     <div
-      className="rounded-2xl border border-white/8 overflow-hidden"
+      className="rounded-2xl border border-[var(--erp-border)] overflow-hidden"
       style={{ background: "rgba(255,255,255,0.025)", backdropFilter: "blur(10px)" }}
       dir="rtl"
     >
       {/* رأس البطاقة */}
-      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-white/6">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[var(--erp-border)]">
         <p className="text-[11px] text-cyan-300/85 font-bold flex items-center gap-1.5">
           <Package className="w-3.5 h-3.5" />
           قطع الغيار المستخدمة
@@ -184,10 +184,10 @@ export default function RepairParts({ jobId, readOnly = false }: Props) {
 
       {/* نموذج الإضافة */}
       {!readOnly && adding && (
-        <div className="px-4 py-3 border-b border-white/6 space-y-2 bg-cyan-500/[0.03]">
+        <div className="px-4 py-3 border-b border-[var(--erp-border)] space-y-2 bg-cyan-500/[0.03]">
           <div className="grid grid-cols-2 gap-2">
             <div className="col-span-2">
-              <label className="text-[10px] text-white/40 mb-1 block">اسم القطعة *</label>
+              <label className="text-[10px] erp-label mb-1 block">اسم القطعة *</label>
               <input
                 autoFocus
                 type="text"
@@ -198,7 +198,7 @@ export default function RepairParts({ jobId, readOnly = false }: Props) {
               />
             </div>
             <div>
-              <label className="text-[10px] text-white/40 mb-1 block">الكمية</label>
+              <label className="text-[10px] erp-label mb-1 block">الكمية</label>
               <input
                 type="number"
                 min="0"
@@ -209,7 +209,7 @@ export default function RepairParts({ jobId, readOnly = false }: Props) {
               />
             </div>
             <div>
-              <label className="text-[10px] text-white/40 mb-1 block">سعر الوحدة</label>
+              <label className="text-[10px] erp-label mb-1 block">سعر الوحدة</label>
               <input
                 type="number"
                 min="0"
@@ -220,7 +220,7 @@ export default function RepairParts({ jobId, readOnly = false }: Props) {
               />
             </div>
             <div className="col-span-2">
-              <label className="text-[10px] text-white/40 mb-1 block">المصدر</label>
+              <label className="text-[10px] erp-label mb-1 block">المصدر</label>
               <select
                 value={draft.source}
                 onChange={(e) =>
@@ -239,7 +239,7 @@ export default function RepairParts({ jobId, readOnly = false }: Props) {
                 setAdding(false);
                 setDraft(EMPTY_DRAFT);
               }}
-              className="flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-all"
+              className="flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg border border-[var(--erp-border)] erp-text-muted hover:text-white hover:bg-white/5 transition-all"
             >
               <X className="w-3 h-3" /> إلغاء
             </button>
@@ -265,17 +265,17 @@ export default function RepairParts({ jobId, readOnly = false }: Props) {
       {/* قائمة القطع */}
       <div className="px-4 py-3">
         {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-6 text-white/40 text-xs">
+          <div className="flex items-center justify-center gap-2 py-6 erp-label text-xs">
             <Loader2 className="w-4 h-4 animate-spin" /> جارٍ التحميل...
           </div>
         ) : parts.length === 0 ? (
-          <div className="text-center py-6 text-white/30 text-xs">
+          <div className="text-center py-6 erp-label text-xs">
             لا توجد قطع غيار مُسجَّلة لهذه البطاقة
           </div>
         ) : (
           <div className="space-y-1.5">
             {/* رأس الأعمدة */}
-            <div className="grid grid-cols-12 gap-2 text-[9px] text-white/30 font-bold uppercase tracking-wider px-2 pb-1 border-b border-white/5">
+            <div className="grid grid-cols-12 gap-2 text-[9px] erp-label font-bold uppercase tracking-wider px-2 pb-1 border-b border-[var(--erp-border)]">
               <div className="col-span-5">القطعة</div>
               <div className="col-span-1 text-center">الكمية</div>
               <div className="col-span-2 text-end">سعر الوحدة</div>
@@ -332,7 +332,7 @@ export default function RepairParts({ jobId, readOnly = false }: Props) {
                     {returned && (
                       <span
                         title="تم الإرجاع"
-                        className="text-[9px] text-white/30 px-1.5 py-0.5 rounded-full border border-white/10"
+                        className="text-[9px] erp-label px-1.5 py-0.5 rounded-full border border-[var(--erp-border)]"
                       >
                         مُرجَعة
                       </span>
@@ -347,8 +347,8 @@ export default function RepairParts({ jobId, readOnly = false }: Props) {
 
       {/* الإجمالي */}
       {parts.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/6 bg-cyan-500/[0.04]">
-          <span className="text-[11px] text-white/50 font-bold">إجمالي تكلفة القطع</span>
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--erp-border)] bg-cyan-500/[0.04]">
+          <span className="text-[11px] erp-text-muted font-bold">إجمالي تكلفة القطع</span>
           <span className="text-sm text-cyan-200 font-black tabular-nums">
             {formatCurrency(total)}
           </span>

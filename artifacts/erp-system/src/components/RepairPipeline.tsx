@@ -231,11 +231,11 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
       onClick={(e) => { if (e.target === e.currentTarget) setConfirm(null); }}
     >
       <div
-        className="rounded-2xl border border-white/10 p-5 w-full max-w-sm shadow-2xl"
+        className="rounded-2xl border border-[var(--erp-border)] p-5 w-full max-w-sm shadow-2xl"
         style={{ background: "rgba(15,10,30,0.97)", backdropFilter: "blur(20px)" }}
       >
         <h3 className="text-sm font-black text-white mb-1">تأكيد تغيير الحالة</h3>
-        <p className="text-xs text-white/50 mb-4">
+        <p className="text-xs erp-text-muted mb-4">
           الانتقال من{" "}
           <span className="text-violet-300 font-bold">{currentLabel}</span>
           {" "}إلى{" "}
@@ -269,7 +269,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
           </button>
           <button
             onClick={() => setConfirm(null)}
-            className="px-4 py-2 rounded-xl border border-white/10 text-white/60 hover:text-white text-xs transition-all"
+            className="px-4 py-2 rounded-xl border border-[var(--erp-border)] erp-text-muted hover:text-white text-xs transition-all"
           >
             إلغاء
           </button>
@@ -345,21 +345,21 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
         />
       )}
       <div
-        className="rounded-2xl border border-white/10 overflow-hidden"
+        className="rounded-2xl border border-[var(--erp-border)] overflow-hidden"
         style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.035) 0%, rgba(124,58,237,0.05) 100%)" }}
         dir="rtl"
       >
         {/* ── Top toolbar: Prev | Current Stage | Next ─────────────── */}
-        <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-white/5">
+        <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-[var(--erp-border)]">
           <button
             onClick={() => prevStage && openConfirm(prevStage.key, ALL_LABELS[prevStage.key] ?? prevStage.label)}
             disabled={!prevStage || isTerminal}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 text-[11px] font-bold text-white/70 hover:text-white hover:bg-white/5 hover:border-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--erp-border)] text-[11px] font-bold erp-text hover:text-white hover:bg-white/5 hover:border-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
             <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
             <span>السابق</span>
             {prevStage && (
-              <span className="text-white/40 hidden sm:inline">· {prevStage.label}</span>
+              <span className="erp-label hidden sm:inline">· {prevStage.label}</span>
             )}
           </button>
 
@@ -368,7 +368,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
             style={{ background: "rgba(124,58,237,0.18)" }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-            <span className="text-[10px] text-white/55">المرحلة الحالية:</span>
+            <span className="text-[10px] erp-text-muted">المرحلة الحالية:</span>
             <span className="text-xs font-black text-white">{currentLabel}</span>
           </div>
 
@@ -473,8 +473,8 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
         </div>
 
         {/* ── Side branches ─────────────────────────────────────────── */}
-        <div className="px-4 py-2 border-t border-white/5 bg-white/[0.015] flex flex-wrap items-center gap-2">
-          <span className="text-[10px] text-white/40 font-bold">حالات استثنائية:</span>
+        <div className="px-4 py-2 border-t border-[var(--erp-border)] bg-white/[0.015] flex flex-wrap items-center gap-2">
+          <span className="text-[10px] erp-label font-bold">حالات استثنائية:</span>
           <div className="flex items-center gap-1.5 flex-wrap">
             {SIDE_BRANCHES.map(stage => {
               const isActive    = stage.key === currentStatus;
