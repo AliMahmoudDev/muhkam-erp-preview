@@ -775,12 +775,30 @@ export default function Login() {
         /* Input base */
         .lp-input {
           transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+          color: #0f0c29 !important;
+          -webkit-text-fill-color: #0f0c29 !important;
+          caret-color: #4a1a90;
         }
         .lp-input:focus {
           outline: none;
           border-color: #4a1a90 !important;
           box-shadow: 0 0 0 4px rgba(61,24,120,0.12), 0 4px 20px rgba(212,175,55,0.08) !important;
           background: #fffdf8 !important;
+        }
+        .lp-input::placeholder {
+          color: #9a8fb8 !important;
+          opacity: 1;
+        }
+        /* Override browser autofill styling that turns text white */
+        .lp-input:-webkit-autofill,
+        .lp-input:-webkit-autofill:hover,
+        .lp-input:-webkit-autofill:focus,
+        .lp-input:-webkit-autofill:active {
+          -webkit-text-fill-color: #0f0c29 !important;
+          -webkit-box-shadow: 0 0 0 1000px #fefcff inset !important;
+          box-shadow: 0 0 0 1000px #fefcff inset !important;
+          caret-color: #0f0c29 !important;
+          transition: background-color 9999s ease-in-out 0s;
         }
 
         /* Primary button */
