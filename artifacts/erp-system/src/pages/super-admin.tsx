@@ -154,8 +154,15 @@ export default function SuperAdmin() {
 
   const fetcher = useCallback(
     (url: string) =>
-      authFetch(api(url)).then((r) => {
-        if (!r.ok) throw new Error('فشل جلب البيانات');
+      authFetch(api(url)).then(async (r) => {
+        if (!r.ok) {
+          let detail = '';
+          try {
+            const body = await r.json();
+            detail = body?.error || body?.message || '';
+          } catch { /* ignore JSON parse errors */ }
+          throw new Error(detail ? `فشل جلب البيانات: ${detail}` : `فشل جلب البيانات (${r.status})`);
+        }
         return r.json();
       }),
     []
@@ -701,8 +708,9 @@ export default function SuperAdmin() {
     data:    tgConfigData,
     isLoading: tgLoading,
     isError:   tgError,
+    error:     tgErrorObj,
     refetch:   tgRefetch,
-  } = useQuery<TgConfig>({
+  } = useQuery<TgConfig, Error>({
     queryKey: ['/api/super/telegram-settings'],
     queryFn:  () => fetcher('/api/super/telegram-settings'),
     enabled:  activeTab === 'settings' && settingsActiveCard === 'telegram',
@@ -4926,6 +4934,11 @@ export default function SuperAdmin() {
                     {tgError && !tgConfig && (
                       <div style={{ textAlign: 'center', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                         <div style={{ fontSize: '14px', color: '#EF4444' }}>❌ تعذّر تحميل إعدادات تليجرام</div>
+                        {tgErrorObj?.message && (
+                          <div style={{ fontSize: '12px', color: C.muted, maxWidth: '420px', wordBreak: 'break-word' }}>
+                            {tgErrorObj.message}
+                          </div>
+                        )}
                         <button
                           onClick={() => tgRefetch()}
                           style={{ padding: '8px 20px', borderRadius: '10px', border: '1.5px solid #38BDF850', background: 'rgba(56,189,248,0.1)', color: '#38BDF8', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}

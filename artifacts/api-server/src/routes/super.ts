@@ -137,6 +137,7 @@ import { createDatabaseBackup, listBackups } from "../lib/db-backup";
 import { writeAuditLog } from "../lib/audit-log";
 import { alertManager, DEFAULT_TELEGRAM_CONFIG } from "../lib/telegram-alert-manager";
 import type { TelegramAlertConfig } from "../lib/telegram-alert-manager";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -1546,28 +1547,48 @@ router.post("/super/companies/:id/verify-email", ...superOnly, wrap(async (req, 
 ══════════════════════════════════════════════════════════════════════════ */
 
 router.get("/super/telegram-settings", ...superOnly, wrap(async (_req, res) => {
-  const [row] = await db
-    .select()
-    .from(superSettingsTable)
-    .where(eq(superSettingsTable.key, "telegram_alert_config"));
+  let row: { value: string | null } | undefined;
+  try {
+    [row] = await db
+      .select()
+      .from(superSettingsTable)
+      .where(eq(superSettingsTable.key, "telegram_alert_config"));
+  } catch (err) {
+    // Most likely cause: super_settings table doesn't exist yet (missing migration).
+    // Fall back to defaults so the UI is still usable.
+    logger.warn(
+      { err },
+      "[super/telegram-settings] DB read failed — returning defaults",
+    );
+    res.json({ ...DEFAULT_TELEGRAM_CONFIG });
+    return;
+  }
 
-  let config: TelegramAlertConfig;
+  let config: TelegramAlertConfig = { ...DEFAULT_TELEGRAM_CONFIG };
+
   if (row?.value) {
-    const saved = JSON.parse(row.value) as Partial<TelegramAlertConfig>;
-    // Merge saved into defaults so new alert types always appear in the UI
-    config = {
-      enabled: saved.enabled ?? DEFAULT_TELEGRAM_CONFIG.enabled,
-      alerts: { ...DEFAULT_TELEGRAM_CONFIG.alerts },
-    };
-    if (saved.alerts) {
-      for (const [key, rule] of Object.entries(saved.alerts)) {
-        if (config.alerts[key]) {
-          config.alerts[key] = { ...config.alerts[key], ...rule };
+    try {
+      const saved = JSON.parse(row.value) as Partial<TelegramAlertConfig>;
+      // Merge saved into defaults so new alert types always appear in the UI
+      config = {
+        enabled: saved.enabled ?? DEFAULT_TELEGRAM_CONFIG.enabled,
+        alerts: { ...DEFAULT_TELEGRAM_CONFIG.alerts },
+      };
+      if (saved.alerts && typeof saved.alerts === "object") {
+        for (const [key, rule] of Object.entries(saved.alerts)) {
+          if (config.alerts[key] && rule && typeof rule === "object") {
+            config.alerts[key] = { ...config.alerts[key], ...rule };
+          }
         }
       }
+    } catch (err) {
+      // Saved value is not valid JSON — log and fall back to defaults.
+      logger.warn(
+        { err, rawValue: row.value?.slice(0, 200) },
+        "[super/telegram-settings] corrupted JSON in DB — returning defaults",
+      );
+      config = { ...DEFAULT_TELEGRAM_CONFIG };
     }
-  } else {
-    config = { ...DEFAULT_TELEGRAM_CONFIG };
   }
 
   res.json(config);
