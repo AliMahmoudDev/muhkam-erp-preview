@@ -15,6 +15,7 @@ import { notifyUser } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
 import { validateTransition } from "../services/repair-pipeline.service";
 import { writeAuditLog } from "../lib/audit-log";
+import { alertManager } from "../lib/telegram-alert-manager";
 import { normalizeName, getNextCustomerCode } from "./customers";
 import { getOrCreateCustomerAccount } from "../lib/auto-account";
 
@@ -700,6 +701,47 @@ router.get("/repair-jobs/technicians", wrap(async (req, res) => {
   return res.json(users);
 }));
 
+/**
+ * GET /repair-jobs/technician-stats
+ *
+ * إحصاء أداء الفنيين للشركة الحالية:
+ *   - total_jobs:      إجمالي البطاقات المُسنَدة (كفنّي أساسي أو ثاني)
+ *   - delivered:       بطاقات تم تسليمها
+ *   - avg_duration_days: متوسط مدة الإصلاح بالأيام (received_at → delivered_at)
+ *   - active_jobs:     بطاقات لا تزال جارية
+ *
+ * ⚠ هذا الـ route لازم يكون قبل /repair-jobs/:id (وإلّا Express يَعتبر "technician-stats" قيمة لـ :id).
+ */
+router.get("/repair-jobs/technician-stats", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+
+  /* استعلام واحد لكل فنّي — يحسب البطاقات حيث الفني الأساسي يتطابق
+     (مع الإشارة إلى أنّنا لا نُكرّر الحساب عبر technician_2_id لتفادي الازدواج). */
+  const rows = await db.execute(sql`
+    SELECT
+      u.id          AS technician_id,
+      u.name        AS technician_name,
+      COUNT(j.id)::int                                              AS total_jobs,
+      COUNT(j.id) FILTER (WHERE j.status = 'delivered')::int         AS delivered,
+      COUNT(j.id) FILTER (WHERE j.status NOT IN ('delivered','cancelled','rejected'))::int AS active_jobs,
+      ROUND(AVG(
+        EXTRACT(EPOCH FROM (j.delivered_at::timestamp - j.received_at::timestamp)) / 86400.0
+      ) FILTER (WHERE j.delivered_at IS NOT NULL), 2)::float        AS avg_duration_days
+    FROM erp_users u
+    LEFT JOIN repair_jobs j
+      ON j.company_id = u.company_id
+     AND (j.technician_id = u.id OR j.technician_2_id = u.id)
+    WHERE u.company_id = ${company_id}
+    GROUP BY u.id, u.name
+    HAVING COUNT(j.id) > 0
+    ORDER BY total_jobs DESC, u.name ASC
+  `);
+
+  /* drizzle's execute() result has .rows for pg driver */
+  const list = (rows as unknown as { rows: Array<Record<string, unknown>> }).rows ?? [];
+  return res.json(list);
+}));
+
 router.get("/repair-jobs/:id", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
@@ -929,6 +971,12 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
       note: String(b.report_note),
     });
   }
+
+  /* أي تحديث للبطاقة يحلّ تنبيه التأخير المُسجَّل (لو موجود) — يمنع spam التنبيهات */
+  void alertManager.markResolved(
+    `repair_overdue:${id}`,
+    `✅ بطاقة ${existing.job_no} تم تحديثها — تنبيه التأخير لُغي تلقائياً.`,
+  );
 
   return res.json(updated);
 }));

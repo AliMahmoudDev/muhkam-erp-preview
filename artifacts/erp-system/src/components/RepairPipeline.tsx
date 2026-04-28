@@ -66,9 +66,16 @@ const COLOR: Record<string, { ring: string; bg: string; text: string; soft: stri
   red:     { ring: "ring-red-400/50",     bg: "bg-red-500",     text: "text-red-300",     soft: "bg-red-500/15 border-red-400/40",     shadow: "shadow-red-500/40"     },
 };
 
+interface HistoryEntry {
+  status_to?: string | null;
+  status_from?: string | null;
+  event_type?: string | null;
+}
+
 interface RepairJobData {
   id: number;
   status: string;
+  history?: HistoryEntry[];
   [key: string]: unknown;
 }
 
@@ -77,6 +84,30 @@ interface Props {
   jobId: number;
   jobData: RepairJobData;
   onStatusChange: (newStatus: string) => void;
+}
+
+/**
+ * يستخرج الحالات المخفية (diagnosis/approved/repaired) التي مرّت بها البطاقة
+ * من سجل الانتقالات، ويُرجع خريطة (الحالة المرئية → قائمة الحالات المخفية المكتملة)
+ * لعرض شارة صغيرة "✓ تشخيص" تحت أقرب مرحلة ظاهرة.
+ */
+function buildHiddenStageBadges(
+  history: HistoryEntry[] | undefined
+): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  if (!Array.isArray(history)) return out;
+  const seen = new Set<string>();
+  for (const h of history) {
+    const k = h?.status_to;
+    if (!k || typeof k !== "string") continue;
+    if (!(k in HIDDEN_TO_VISIBLE)) continue;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const visible = HIDDEN_TO_VISIBLE[k as keyof typeof HIDDEN_TO_VISIBLE];
+    if (!out[visible]) out[visible] = [];
+    out[visible].push(ALL_LABELS[k] ?? k);
+  }
+  return out;
 }
 
 interface ConfirmState {
@@ -94,6 +125,9 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
 
   const effectiveStatus = HIDDEN_TO_VISIBLE[currentStatus] ?? currentStatus;
   const visibleIdx      = PIPELINE_STAGES.findIndex(s => s.key === effectiveStatus);
+
+  /* خريطة "الحالة المرئية → قائمة المراحل المخفية المكتملة" — لعرض شارات صغيرة تحت كل مرحلة */
+  const hiddenBadges = buildHiddenStageBadges(jobData?.history);
 
   function canMoveTo(targetKey: string): boolean {
     if (isTerminal) return false;
@@ -293,6 +327,21 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
                   ].join(" ")}>
                     {stage.label}
                   </span>
+
+                  {/* شارات المراحل المخفية المكتملة (مثل: ✓ تشخيص) — تحت أقرب مرحلة ظاهرة */}
+                  {hiddenBadges[stage.key]?.length ? (
+                    <div className="flex flex-col items-center gap-0.5 mt-0.5">
+                      {hiddenBadges[stage.key].map((lbl) => (
+                        <span
+                          key={lbl}
+                          title={`المرحلة المخفية المكتملة: ${lbl}`}
+                          className="px-1.5 py-[1px] rounded-full text-[8px] leading-none font-bold bg-emerald-500/12 border border-emerald-500/25 text-emerald-300/85"
+                        >
+                          ✓ {lbl}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </button>
               );
             })}

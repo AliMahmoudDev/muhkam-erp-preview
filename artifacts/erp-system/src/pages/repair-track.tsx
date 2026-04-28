@@ -17,22 +17,34 @@ interface TrackData {
 }
 
 export default function RepairTrack() {
-  const [, params] = useRoute<{ companyId: string; jobNo: string }>("/track/:companyId/:jobNo");
-  const companyId = params?.companyId;
-  const jobNo = params?.jobNo ? decodeURIComponent(params.jobNo) : "";
+  /* المسار القديم: /track/:companyId/:jobNo (مع شركة) — للحفاظ على التوافق مع QR codes القديمة */
+  const [matchedFull, paramsFull] = useRoute<{ companyId: string; jobNo: string }>(
+    "/track/:companyId/:jobNo",
+  );
+  /* المسار الجديد: /track/:jobNo (بدون شركة) — رابط مُختصَر للعميل */
+  const [, paramsShort] = useRoute<{ jobNo: string }>("/track/:jobNo");
+
+  const companyId = matchedFull ? paramsFull?.companyId : undefined;
+  const rawJobNo = matchedFull ? paramsFull?.jobNo : paramsShort?.jobNo;
+  const jobNo = rawJobNo ? decodeURIComponent(rawJobNo) : "";
 
   const [data, setData] = useState<TrackData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!companyId || !jobNo) { setError("رابط غير صالح"); setLoading(false); return; }
+    if (!jobNo) { setError("رابط غير صالح"); setLoading(false); return; }
     let alive = true;
     (async () => {
       try {
-        const r = await fetch(api(`/api/public/repair-tracking/${encodeURIComponent(companyId)}/${encodeURIComponent(jobNo)}`));
+        /* اختر المسار حسب توفر companyId — ينفع المسارين القديم والجديد */
+        const url = companyId
+          ? api(`/api/public/repair-tracking/${encodeURIComponent(companyId)}/${encodeURIComponent(jobNo)}`)
+          : api(`/api/public/repair-track/${encodeURIComponent(jobNo)}`);
+        const r = await fetch(url);
         if (!alive) return;
         if (r.status === 404) { setError("لم يتم العثور على طلب بهذا الرقم"); }
+        else if (r.status === 429) { setError("محاولات كثيرة — انتظر دقيقة وحاول مجدداً"); }
         else if (!r.ok)        { setError("تعذر تحميل بيانات التتبع"); }
         else { const j = await r.json() as TrackData; setData(j); }
       } catch { if (alive) setError("خطأ في الاتصال — حاول لاحقاً"); }

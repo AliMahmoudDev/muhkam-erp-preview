@@ -15,6 +15,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency } from "@/lib/format";
 import { api } from '@/lib/api';
 import RepairPipeline from "@/components/RepairPipeline";
+import RepairParts from "@/components/RepairParts";
 import RepairSettingsModal from "@/components/RepairSettingsModal";
 
 
@@ -734,6 +735,23 @@ export default function Repairs() {
     queryFn: () => apiFetch<{ id: number; name: string }[]>(api("/api/branches")),
   });
 
+  /* ── إحصاء أداء الفنيين — يُعرض في لوحة جانبية قابلة للطيّ ── */
+  interface TechnicianStat {
+    technician_id: number;
+    technician_name: string;
+    total_jobs: number;
+    delivered: number;
+    active_jobs: number;
+    avg_duration_days: number | null;
+  }
+  const [showTechStats, setShowTechStats] = useState(false);
+  const { data: techStats = [] } = useQuery<TechnicianStat[]>({
+    queryKey: ["/api/repair-jobs/technician-stats"],
+    queryFn: () => apiFetch<TechnicianStat[]>(api("/api/repair-jobs/technician-stats")),
+    enabled: showTechStats, // لا تجلب إلّا عند فتح اللوحة
+    refetchInterval: 60_000,
+  });
+
   /* ── Detail query when job is selected ── */
   const { data: jobDetail } = useQuery<RepairJob>({
     queryKey: ["/api/repair-jobs", selectedJob?.id],
@@ -922,6 +940,65 @@ export default function Repairs() {
             {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
         </div>
+
+        {/* Technician performance — collapsible panel, shown only when no job selected */}
+        {!selectedJob && (
+          <div className="rounded-2xl border border-white/8 bg-white/[0.025] overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowTechStats((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-2 text-right hover:bg-white/3 transition-all"
+            >
+              <span className="text-[11px] text-cyan-300/85 font-bold flex items-center gap-1.5">
+                📊 أداء الفنيين
+                {showTechStats && techStats.length > 0 && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/12 border border-cyan-500/25 text-cyan-300/80 font-medium tabular-nums">
+                    {techStats.length}
+                  </span>
+                )}
+              </span>
+              <ChevronRight
+                className={`w-4 h-4 text-white/30 transition-transform duration-200 ${showTechStats ? "-rotate-90" : "rotate-90"}`}
+              />
+            </button>
+            {showTechStats && (
+              <div className="border-t border-white/5 px-3 py-2">
+                {techStats.length === 0 ? (
+                  <p className="text-center text-[11px] text-white/30 py-4">لا توجد بيانات أداء حالياً</p>
+                ) : (
+                  <div className="space-y-1">
+                    {/* رأس الأعمدة */}
+                    <div className="grid grid-cols-12 gap-2 text-[9px] text-white/30 font-bold uppercase tracking-wider px-2 pb-1 border-b border-white/5">
+                      <div className="col-span-5">الفني</div>
+                      <div className="col-span-2 text-center">المُسنَدة</div>
+                      <div className="col-span-2 text-center">المُسلَّمة</div>
+                      <div className="col-span-3 text-end">متوسط المدة</div>
+                    </div>
+                    {techStats.map((t) => (
+                      <div
+                        key={t.technician_id}
+                        className="grid grid-cols-12 gap-2 items-center px-2 py-1.5 rounded-lg text-xs bg-white/[0.02] hover:bg-white/[0.04] transition-all"
+                      >
+                        <div className="col-span-5 truncate text-white/80 font-medium" title={t.technician_name}>
+                          {t.technician_name}
+                        </div>
+                        <div className="col-span-2 text-center tabular-nums text-white/85 font-bold">
+                          {t.total_jobs}
+                        </div>
+                        <div className="col-span-2 text-center tabular-nums text-emerald-300/85">
+                          {t.delivered}
+                        </div>
+                        <div className="col-span-3 text-end tabular-nums text-cyan-300/80">
+                          {t.avg_duration_days != null ? `${t.avg_duration_days} يوم` : "—"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Status Filters — generated from dashboard cards so they match the cards above */}
         <div className="flex gap-1 flex-wrap">
@@ -1917,6 +1994,9 @@ function JobDetail({
             </div>
           )}
         </div>
+
+        {/* Spare parts — قطع الغيار المستخدمة في البطاقة */}
+        <RepairParts jobId={job.id} companyId={job.company_id} />
 
         {/* Engineer Reports — collapsible (multiple reports) */}
         <div className="glass-panel rounded-2xl border border-violet-500/15 bg-violet-500/[0.03] overflow-hidden">

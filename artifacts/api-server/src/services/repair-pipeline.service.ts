@@ -43,6 +43,9 @@ const STAGE_REQUIREMENTS: Record<string, { field: string; label_ar: string }[]> 
   ready_for_delivery: [
     { field: 'final_cost', label_ar: 'يجب إدخال التكلفة النهائية' },
   ],
+  waiting_parts: [
+    { field: 'notes', label_ar: 'يجب كتابة ملاحظة توضح القطعة المطلوبة' },
+  ],
 };
 
 /**
@@ -66,12 +69,12 @@ export function validateTransition(
     };
   }
 
-  /* ── الفروع الجانبية (waiting_parts / rejected / cancelled) متاحة دائماً ── */
-  if (SIDE_BRANCHES.includes(targetStatus)) {
-    return { allowed: true, errors: [] };
-  }
+  /* ── الفروع الجانبية (waiting_parts / rejected / cancelled) متاحة دائماً
+        من أي مرحلة نشطة — لكن إن كان لها متطلبات (مثل waiting_parts → notes)
+        لازم نُطبّقها كذلك، فلا نرجع مباشرة. ── */
 
-  /* ── أي انتقال آخر مسموح (للأمام أو للخلف) — لكن متطلبات المرحلة المستهدفة لازم تتحقق ── */
+  /* ── أي انتقال — لازم متطلبات المرحلة المستهدفة تتحقق إن وُجدت ── */
+  // eslint-disable-next-line security/detect-object-injection
   const reqs = STAGE_REQUIREMENTS[targetStatus] ?? [];
   const errors: string[] = [];
 

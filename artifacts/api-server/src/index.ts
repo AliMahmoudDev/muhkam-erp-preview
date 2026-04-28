@@ -5,6 +5,7 @@ import { startBackupScheduler, stopBackupScheduler } from "./lib/backup-schedule
 import { startTrialScheduler, stopTrialScheduler } from "./lib/trial-scheduler";
 import { startDbBackupScheduler } from "./lib/db-backup";
 import { startMonitoring } from "./lib/monitor";
+import { startRepairMonitor, stopRepairMonitor } from "./lib/repair-monitor";
 import { seedDefaults } from "./lib/seed-defaults";
 import { initRLS } from "./lib/rls-init";
 import { purgeExpiredRefreshTokens } from "./lib/refresh-token-store";
@@ -72,6 +73,7 @@ async function main() {
     startDbBackupScheduler();
     startTrialScheduler();
     startMonitoring();
+    startRepairMonitor();
 
     /* مراقبة الذاكرة كل 30 دقيقة — تنبيه لو تجاوزت 400MB، حل لو عادت لطبيعتها */
     setInterval(async () => {
@@ -99,6 +101,7 @@ async function main() {
     logger.info({ signal }, "Shutdown signal received — closing server");
     stopBackupScheduler();
     stopTrialScheduler();
+    stopRepairMonitor();
     server.close(async () => {
       try {
         await pool.end();

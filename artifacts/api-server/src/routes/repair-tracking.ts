@@ -15,10 +15,23 @@
 
 import { Router, type IRouter } from "express";
 import { eq, and, asc } from "drizzle-orm";
+import rateLimit from "express-rate-limit";
 import { db, repairJobsTable, repairStatusHistoryTable, repairStatusesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 
 const router: IRouter = Router();
+
+/**
+ * حدّاد طلبات للتتبع العام: 10 طلبات / دقيقة / IP — يحمي من الـ scraping الجماعي
+ * لأرقام الطلبات (job_no قابل للتخمين رقمياً).
+ */
+const publicTrackingLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "محاولات كثيرة — حاول بعد دقيقة" },
+});
 
 /**
  * Fallback Arabic labels — يُطابق STATUS_MAP في الواجهة (repairs.tsx)
@@ -50,7 +63,7 @@ const FALLBACK_STATUS_LABELS: Record<string, { label: string; color: string }> =
  * GET /api/public/repair-tracking/:companyId/:jobNo
  * يُعيد بيانات تتبع الطلب الموجزة — متاح للجمهور.
  */
-router.get("/public/repair-tracking/:companyId/:jobNo", wrap(async (req, res) => {
+router.get("/public/repair-tracking/:companyId/:jobNo", publicTrackingLimiter, wrap(async (req, res) => {
   const companyId = Number(req.params.companyId);
   const jobNo = String(req.params.jobNo ?? "").trim();
 
@@ -122,6 +135,102 @@ router.get("/public/repair-tracking/:companyId/:jobNo", wrap(async (req, res) =>
     }));
 
   /* إخفاء جزء من اسم العميل لحماية الخصوصية: "أحمد م***" */
+  const maskedName = (() => {
+    const n = (job.customer_name ?? "").trim();
+    if (!n) return "";
+    const parts = n.split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2) + "***";
+    return parts[0] + " " + (parts[1]?.[0] ?? "") + "***";
+  })();
+
+  return res.json({
+    job_no: job.job_no,
+    customer_name_masked: maskedName,
+    device: `${job.device_brand ?? ""} ${job.device_model ?? ""}`.trim(),
+    status: fmtStatus(job.status),
+    received_at: job.received_at,
+    estimated_delivery: job.estimated_delivery,
+    delivered_at: job.delivered_at,
+    history,
+  });
+}));
+
+/**
+ * GET /api/public/repair-track/:jobNo
+ *
+ * نسخة مُختصَرة من رابط التتبّع تستخدم رقم الطلب فقط — بدون companyId.
+ * للحماية: إن وُجدت بطاقات بنفس الرقم في أكثر من شركة، نُرجع 404 (تجنّب
+ * كشف وجود الرقم في شركة أخرى).
+ *
+ * مُحدَّد بمعدّل 10 طلبات/دقيقة/IP.
+ */
+router.get("/public/repair-track/:jobNo", publicTrackingLimiter, wrap(async (req, res) => {
+  const jobNo = String(req.params.jobNo ?? "").trim();
+  if (!jobNo) return res.status(400).json({ error: "رقم الطلب مطلوب" });
+
+  /* جلب أوّل بطاقتين فقط — لاكتشاف التضارب دون مسح كل القاعدة */
+  const matches = await db.select({
+    id: repairJobsTable.id,
+    company_id: repairJobsTable.company_id,
+    job_no: repairJobsTable.job_no,
+    customer_name: repairJobsTable.customer_name,
+    device_brand: repairJobsTable.device_brand,
+    device_model: repairJobsTable.device_model,
+    status: repairJobsTable.status,
+    received_at: repairJobsTable.received_at,
+    estimated_delivery: repairJobsTable.estimated_delivery,
+    delivered_at: repairJobsTable.delivered_at,
+  })
+    .from(repairJobsTable)
+    .where(eq(repairJobsTable.job_no, jobNo))
+    .limit(2);
+
+  /* ما لقيناش طلب أو فيه أكثر من شركة بنفس الرقم → 404 (لا نُفصح عن وجود تضارب) */
+  if (matches.length === 0 || matches.length > 1) {
+    return res.status(404).json({ error: "لم يتم العثور على طلب بهذا الرقم" });
+  }
+
+  const job = matches[0];
+  const companyId = job.company_id;
+
+  const statusRows = await db.select({
+    key: repairStatusesTable.key,
+    label_ar: repairStatusesTable.label_ar,
+    color: repairStatusesTable.color,
+  })
+    .from(repairStatusesTable)
+    .where(eq(repairStatusesTable.company_id, companyId));
+  const statusMap = new Map(statusRows.map(s => [s.key, s]));
+
+  const fmtStatus = (key: string | null | undefined) => {
+    if (!key) return null;
+    const s = statusMap.get(key);
+    if (s) return { key, label: s.label_ar, color: s.color ?? "#64748b" };
+    const f = FALLBACK_STATUS_LABELS[key];
+    return { key, label: f?.label ?? key, color: f?.color ?? "#64748b" };
+  };
+
+  const historyRows = await db.select({
+    status_to: repairStatusHistoryTable.status_to,
+    status_from: repairStatusHistoryTable.status_from,
+    event_type: repairStatusHistoryTable.event_type,
+    created_at: repairStatusHistoryTable.created_at,
+  })
+    .from(repairStatusHistoryTable)
+    .where(and(
+      eq(repairStatusHistoryTable.job_id, job.id),
+      eq(repairStatusHistoryTable.company_id, companyId),
+    ))
+    .orderBy(asc(repairStatusHistoryTable.created_at));
+
+  const history = historyRows
+    .filter(h => h.event_type !== "engineer_report" && h.status_to)
+    .map(h => ({
+      from: fmtStatus(h.status_from),
+      to:   fmtStatus(h.status_to),
+      at:   h.created_at,
+    }));
+
   const maskedName = (() => {
     const n = (job.customer_name ?? "").trim();
     if (!n) return "";
