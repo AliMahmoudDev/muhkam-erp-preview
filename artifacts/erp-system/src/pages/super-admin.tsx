@@ -107,7 +107,7 @@ export default function SuperAdmin() {
   }
   const { data: snapshotData, isLoading: snapshotLoading } = useQuery<SnapshotData>({
     queryKey: ['/api/super/companies', snapshotCompany, 'snapshot'],
-    queryFn: () => authFetch(`/api/super/companies/${snapshotCompany}/snapshot`).then(r => r.json()),
+    queryFn: () => fetcher(`/api/super/companies/${snapshotCompany}/snapshot`),
     enabled: snapshotCompany !== null,
     staleTime: 30_000,
   });
@@ -7280,7 +7280,7 @@ export default function SuperAdmin() {
             <div style={{ padding: '20px 28px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: 0, fontWeight: 900, fontSize: '18px', color: C.text }}>
-                  🏢 {snapshotData?.company.name ?? 'جارٍ التحميل...'}
+                  🏢 {snapshotData?.company?.name ?? 'جارٍ التحميل...'}
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '12px', color: C.muted }}>لقطة سريعة — آخر تحديث الآن</p>
               </div>
@@ -7294,7 +7294,7 @@ export default function SuperAdmin() {
                 <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>⏳ جارٍ التحميل...</div>
               )}
 
-              {snapshotData && (() => {
+              {snapshotData?.company && (() => {
                 const c = snapshotData.company;
                 const planColors: Record<string, string> = { trial: '#94A3B8', basic: '#60A5FA', pro: '#A78BFA', paid: '#34D399', professional: '#F59E0B' };
                 const planNames: Record<string, string>  = { trial: 'تجريبية', basic: 'أساسية', pro: 'احترافية', paid: 'مدفوعة', professional: 'مميزة' };
