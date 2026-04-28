@@ -191,13 +191,6 @@ input[type=number]::-webkit-outer-spin-button {
 /* Firefox */
 input[type=number] { -moz-appearance: textfield; }
 
-/* ── Glass panel ───────────────────────────────── */
-.glass-panel {
-  background: hsla(225, 25%, 7%, 0.65);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.06) inset, 0 20px 60px rgba(0,0,0,0.4);
-}
 
 /* ── Premium card with gradient border ─────────── */
 .card-premium {
@@ -360,43 +353,6 @@ input[type=number] { -moz-appearance: textfield; }
 .erp-nav-icon {
   width: var(--erp-icon-size, 18px) !important;
   height: var(--erp-icon-size, 18px) !important;
-}
-
-/* ── Sidebar nav item ──────────────────────────── */
-.nav-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 12px;
-  font-size: 0.84rem;
-  font-weight: 500;
-  color: rgba(255,255,255,0.45);
-  transition: color 0.18s ease, background 0.18s ease, transform 0.12s ease;
-  cursor: pointer;
-}
-.nav-item:hover {
-  color: rgba(255,255,255,0.88);
-  background: rgba(255,255,255,0.06);
-  transform: translateX(-2px);
-}
-.nav-item.active {
-  color: #fff;
-  background: rgba(245,158,11,0.13);
-  font-weight: 700;
-}
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 60%;
-  background: linear-gradient(to bottom, #f59e0b, #d97706);
-  border-radius: 99px 0 0 99px;
-  box-shadow: 0 0 8px rgba(245,158,11,0.4);
 }
 
 /* ── Section label ─────────────────────────────── */
@@ -754,18 +710,6 @@ html.light {
   --destructive: 0 72% 42%;
   --destructive-foreground: 0 0% 100%;
   color-scheme: light;
-}
-html.light body {
-  background: var(--bg-base);
-  font-size: 14px;
-  font-weight: 500;
-  color: #0A0F1A;
-  font-family: 'Cairo', 'Tajawal', sans-serif;
-}
-html.light .glass-panel {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
-  box-shadow: var(--card-shadow);
 }
 html.light .card-premium {
   background: var(--bg-elevated);
@@ -1289,35 +1233,7 @@ html.light .erp-table-row:hover {
 html.light .erp-table-td { color: #1e293b; }
 
 /* ── ERP Input ───────────────────────────────────── */
-.erp-input {
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.88);
-  padding: 0 12px;
-  font-size: 13.5px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-  color-scheme: inherit;
-}
-.erp-input::placeholder { color: rgba(255,255,255,0.28); }
-.erp-input:focus-visible {
-  outline: none;
-  border-color: rgba(245,158,11,0.50);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
-  background: rgba(255,255,255,0.06);
-}
-html.light .erp-input {
-  border-color: rgba(0,0,0,0.13);
-  background: #fff;
-  color: #1e293b;
-}
-html.light .erp-input::placeholder { color: rgba(0,0,0,0.30); }
-html.light .erp-input:focus-visible {
-  border-color: rgba(245,158,11,0.60);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
-  background: #fffef8;
-}
+
 
 /* ── ERP Card (clean version) ────────────────────── */
 .erp-card {
@@ -1600,60 +1516,9 @@ html.light .erp-card-lift:hover {
   box-shadow: 0 8px 24px rgba(0,0,0,0.09);
 }
 
-/* Alias glass-panel → erp-card for pages that still use glass-panel */
-.glass-panel {
-  border-radius: var(--radius-lg);
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  backdrop-filter: blur(16px);
-  box-shadow: none;
-}
-html.light .glass-panel {
-  background: #fff;
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
-}
 
 /* ── Sidebar nav — polish ────────────────────────── */
-.nav-item {
-  height: 38px;            /* fixed height for uniformity */
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: 0 var(--sp-2);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: rgba(255,255,255,0.42);
-  transition: color 0.15s ease, background 0.15s ease;
-  cursor: pointer;
-  margin-bottom: 2px;
-}
-.nav-item:hover {
-  color: rgba(255,255,255,0.82);
-  background: rgba(255,255,255,0.055);
-  transform: none;         /* no translateX — layout stable */
-}
-.nav-item.active {
-  color: rgba(255,255,255,0.95);
-  background: rgba(245,158,11,0.12);
-  font-weight: 700;
-}
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 55%;
-  background: linear-gradient(to bottom, #f59e0b, #d97706);
-  border-radius: 99px 0 0 99px;
-  /* no box-shadow — less visual noise */
-}
-html.light .nav-item { color: rgba(0,0,0,0.38); }
-html.light .nav-item:hover { color: rgba(0,0,0,0.75); background: rgba(0,0,0,0.055); }
-html.light .nav-item.active { color: rgba(0,0,0,0.88); background: rgba(245,158,11,0.09); }
+
 
 /* ── Sidebar section divider label — polish ───────── */
 .erp-divider-label, .nav-section-label {
@@ -1924,29 +1789,7 @@ html.light .erp-section-title { color: #0f172a; }
 html.light .erp-section-sub   { color: #64748b; }
 
 /* ── Input — polish ─────────────────────────────── */
-.erp-input {
-  height: 40px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255,255,255,0.09);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.88);
-  padding: 0 12px;
-  font-size: var(--text-md);
-  font-family: inherit;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-  width: 100%;
-  color-scheme: inherit;
-}
-.erp-input::placeholder { color: rgba(255,255,255,0.26); }
-.erp-input:focus-visible {
-  outline: none;
-  border-color: rgba(245,158,11,0.50);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.10);
-  background: rgba(255,255,255,0.06);
-}
-html.light .erp-input { border-color: rgba(0,0,0,0.11); background: #fff; color: #1e293b; }
-html.light .erp-input::placeholder { color: rgba(0,0,0,0.28); }
-html.light .erp-input:focus-visible { border-color: rgba(245,158,11,0.55); box-shadow: 0 0 0 3px rgba(245,158,11,0.10); background: #fffef8; }
+
 
 /* ── Empty state — polish ────────────────────────── */
 .erp-empty-state {
@@ -2121,17 +1964,7 @@ html.light {
 }
 
 /* ── 3. App background ───────────────────────────────────── */
-html.light body { background: var(--erp-bg-app) !important; }
 
-/* ── 4. Comprehensive glass-panel rebuild ────────────────── */
-html.light .glass-panel,
-html.light .card-premium,
-html.light .erp-card {
-  background: var(--erp-bg-card) !important;
-  border: 1px solid var(--erp-border-md) !important;
-  box-shadow: var(--erp-shadow-card) !important;
-  backdrop-filter: none !important;
-}
 
 /* ── 5. glass-input rebuild ──────────────────────────────── */
 html.light .glass-input {
@@ -2433,10 +2266,6 @@ html.light .divide-white\/5  > * + * { border-color: rgba(0,0,0,0.06) !important
 html.light .divide-white\/10 > * + * { border-color: rgba(0,0,0,0.08) !important; }
 html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important; }
 
-/* ── 22. Dark mode polish — reduce visual noise ──────────── */
-.glass-panel {
-  backdrop-filter: blur(12px) saturate(130%);
-}
 .glass-input:focus-visible {
   border-color: #f59e0b;
   box-shadow: 0 0 0 3px rgba(245,158,11,0.14);
@@ -2616,39 +2445,7 @@ html.light .db-product-cat { color: #94a3b8 !important; }
    يحل كل التضارب السابق ويُطبق النظام الجديد بشكل قاطع
    ════════════════════════════════════════════════════════════════════ */
 
-/* ── Body / App background ──────────────────────────────── */
-body {
-  background: hsl(225, 25%, 5%) !important;
-  color: rgba(255,255,255,0.92);
-}
-html.light body {
-  background: #f0f2f7 !important;
-  color: #0d1117 !important;
-}
 
-/* ── glass-panel: DARK MODE restore ─────────────────────── */
-/* المشكلة: تعريف مكرر عند line 1164 يُزيل الـ shadow ويجعل الخلفية شبه مرئية */
-.glass-panel {
-  background: hsla(225, 24%, 9%, 0.88) !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
-  backdrop-filter: blur(24px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.055) inset,
-    0 8px 32px rgba(0,0,0,0.45),
-    0 2px 8px rgba(0,0,0,0.30) !important;
-}
-
-/* ── glass-panel: LIGHT MODE ─────────────────────────────── */
-html.light .glass-panel {
-  background: #ffffff !important;
-  border: 1px solid rgba(0,0,0,0.09) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow:
-    0 1px 3px rgba(0,0,0,0.07),
-    0 4px 20px rgba(0,0,0,0.05) !important;
-}
 
 /* ── glass-input: DARK MODE ──────────────────────────────── */
 .glass-input {
@@ -2707,38 +2504,7 @@ html.light .stat-card-violet {
 }
 
 /* ── nav-item: final ────────────────────────────────────── */
-.nav-item {
-  position: relative;
-  height: 38px;
-  display: flex; align-items: center; gap: 10px;
-  padding: 0 10px;
-  border-radius: 9px;
-  font-size: 13px; font-weight: 500;
-  color: rgba(255,255,255,0.65) !important;
-  cursor: pointer; margin-bottom: 2px;
-  transition: color 0.15s ease, background 0.15s ease !important;
-}
-.nav-item:hover {
-  color: rgba(255,255,255,0.85) !important;
-  background: rgba(255,255,255,0.06) !important;
-}
-.nav-item.active {
-  color: #ffffff !important;
-  background: rgba(245,158,11,0.14) !important;
-  font-weight: 700 !important;
-}
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  right: 0; top: 50%;
-  transform: translateY(-50%);
-  width: 3px; height: 56%;
-  background: linear-gradient(to bottom, #f59e0b, #d97706);
-  border-radius: 99px 0 0 99px;
-}
-html.light .nav-item { color: rgba(0,0,0,0.40) !important; }
-html.light .nav-item:hover { color: rgba(0,0,0,0.80) !important; background: rgba(0,0,0,0.06) !important; }
-html.light .nav-item.active { color: #92400e !important; background: rgba(245,158,11,0.10) !important; }
+
 
 /* ── erp-table: final ───────────────────────────────────── */
 .erp-table-head tr {
@@ -3477,11 +3243,6 @@ html.light .skeleton-shimmer::after     { background: linear-gradient(90deg, tra
    REPORT UTILITY CLASSES — adaptive dark/light
    ════════════════════════════════════════════════════════════════════════════ */
 
-/* ── font-size bump for light mode ── */
-html.light body { font-size: 16px !important; }
-html.light h1   { font-size: 24px !important; font-weight: 800 !important; color: #0d1117 !important; }
-html.light h2   { font-size: 20px !important; font-weight: 700 !important; color: #0d1117 !important; }
-html.light h3   { font-size: 18px !important; font-weight: 700 !important; color: #0d1117 !important; }
 
 /* ── Panels ── */
 .rpt-panel {
@@ -4693,3 +4454,117 @@ html.light .row-menu-dropdown .text-violet-300  { color: #7c3aed; }
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   CANONICAL DEFINITIONS — النهائية الوحيدة لكل class مكرر
+   يجب أن تبقى في نهاية الملف دائماً لضمان الـ cascade
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── html.light body: CANONICAL ──────────────────────────────────── */
+html.light body {
+  background: #f0f2f7 !important;
+  color: #0d1117 !important;
+  font-family: 'Tajawal', 'Cairo', sans-serif;
+  font-size: 14px;
+}
+
+/* ── glass-panel: DARK ───────────────────────────────────────────── */
+.glass-panel {
+  background: hsla(225, 24%, 9%, 0.88);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+  border-radius: 16px;
+}
+/* ── glass-panel: LIGHT ──────────────────────────────────────────── */
+html.light .glass-panel {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.09);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+}
+
+/* ── erp-input: DARK ─────────────────────────────────────────────── */
+.erp-input {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.09);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.88);
+  padding: 0 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.erp-input::placeholder { color: rgba(255,255,255,0.26); }
+.erp-input:focus {
+  border-color: rgba(245,158,11,0.50);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.10);
+  background: rgba(255,255,255,0.06);
+}
+.erp-input:focus-visible {
+  border-color: rgba(245,158,11,0.50);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.10);
+  background: rgba(255,255,255,0.06);
+}
+/* ── erp-input: LIGHT ────────────────────────────────────────────── */
+html.light .erp-input {
+  border-color: rgba(0,0,0,0.11);
+  background: #ffffff;
+  color: #1e293b;
+}
+html.light .erp-input::placeholder { color: rgba(0,0,0,0.28); }
+html.light .erp-input:focus,
+html.light .erp-input:focus-visible {
+  border-color: rgba(245,158,11,0.55);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.10);
+  background: #fffef8;
+}
+
+/* ── nav-item: DARK ──────────────────────────────────────────────── */
+.nav-item {
+  position: relative;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  margin-bottom: 2px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.nav-item:hover {
+  color: rgba(255,255,255,0.88);
+  background: rgba(255,255,255,0.06);
+}
+.nav-item.active {
+  color: #ffffff;
+  background: rgba(245,158,11,0.13);
+  font-weight: 700;
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 55%;
+  background: linear-gradient(to bottom, #f59e0b, #d97706);
+  border-radius: 99px 0 0 99px;
+}
+/* ── nav-item: LIGHT ─────────────────────────────────────────────── */
+html.light .nav-item { color: rgba(0,0,0,0.45); }
+html.light .nav-item:hover { color: rgba(0,0,0,0.80); background: rgba(0,0,0,0.055); }
+html.light .nav-item.active { color: #92400e; background: rgba(245,158,11,0.09); }
+
+/* ── END OF CANONICAL DEFINITIONS ────────────────────────────────── */
