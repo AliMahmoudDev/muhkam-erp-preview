@@ -9,16 +9,17 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EmptyState } from "@/components/EmptyState";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch, formatCurrency } from "@/lib/api";
 
 const AMBER = "#F59E0B";
+const INVENTORY_COLOR = "#8B5CF6";
 
 interface Product {
   id: number;
@@ -44,17 +45,21 @@ function ProductCard({ item }: { item: Product }) {
       onPress={() => router.push({ pathname: "/product-details", params: { id: String(item.id) } })}
       activeOpacity={0.8}
     >
-      <View style={[styles.cardLeft, { backgroundColor: stockColor + "18" }]}>
+      <View style={[styles.cardLeft, { backgroundColor: stockColor + "15", borderRightWidth: 1, borderRightColor: stockColor + "30" }]}>
         <Text style={[styles.qtyNum, { color: stockColor }]}>{item.quantity}</Text>
-        <Text style={[styles.qtyUnit, { color: stockColor }]}>وحدة</Text>
-        <View style={[styles.stockBadge, { backgroundColor: stockColor + "30" }]}>
+        <Text style={[styles.qtyUnit, { color: stockColor + "AA" }]}>وحدة</Text>
+        <View style={[styles.stockBadge, { backgroundColor: stockColor + "25", borderColor: stockColor + "40" }]}>
           <Text style={[styles.stockBadgeText, { color: stockColor }]}>{stockLabel}</Text>
         </View>
       </View>
       <View style={styles.cardRight}>
         <Text style={[styles.name, { color: c.text }]} numberOfLines={2}>{item.name}</Text>
         <View style={styles.metaRow}>
-          {item.category ? <Text style={[styles.meta, { color: c.mutedForeground, backgroundColor: c.muted }]}>{item.category}</Text> : null}
+          {item.category ? (
+            <View style={[styles.catPill, { backgroundColor: INVENTORY_COLOR + "15" }]}>
+              <Text style={[styles.meta, { color: INVENTORY_COLOR }]}>{item.category}</Text>
+            </View>
+          ) : null}
           {item.sku ? <Text style={[styles.sku, { color: c.mutedForeground }]}>#{item.sku}</Text> : null}
         </View>
         <View style={styles.priceRow}>
@@ -66,12 +71,18 @@ function ProductCard({ item }: { item: Product }) {
   );
 }
 
+const FILTERS = [
+  { key: "all", label: "الكل" },
+  { key: "low", label: "منخفض" },
+  { key: "out", label: "نفذ" },
+];
+
 export default function InventoryScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "low" | "out">("all");
+  const [filter, setFilter] = useState("all");
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["products"],
@@ -88,58 +99,42 @@ export default function InventoryScreen() {
     return matchSearch && matchFilter;
   });
 
-  const lowCount = (data || []).filter((p) => p.low_stock_threshold != null && p.quantity <= p.low_stock_threshold).length;
+  const lowCount = (data || []).filter(
+    (p) => p.low_stock_threshold != null && p.quantity <= p.low_stock_threshold
+  ).length;
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <View style={[styles.header, { backgroundColor: c.headerBg, paddingTop: isWeb ? 67 : insets.top + 12 }]}>
-        <View style={styles.headerLine} />
-        <Text style={styles.headerTitle}>المخزون</Text>
-        <Text style={styles.headerSub}>
-          {data?.length || 0} منتج {lowCount > 0 ? `• ${lowCount} يحتاج تجديد` : ""}
-        </Text>
-      </View>
-
-      <View style={[styles.searchBox, { backgroundColor: c.card, borderColor: c.border }]}>
-        <Feather name="search" size={16} color={c.mutedForeground} />
-        <TextInput
-          style={[styles.searchInput, { color: c.text }]}
-          placeholder="بحث بالاسم أو الكود..."
-          placeholderTextColor={c.mutedForeground}
-          value={search} onChangeText={setSearch} textAlign="right"
-        />
-      </View>
-
-      <View style={styles.filters}>
-        {(["all", "low", "out"] as const).map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.chip, {
-              backgroundColor: filter === f ? AMBER : c.card,
-              borderColor: filter === f ? AMBER : c.border,
-            }]}
-            onPress={() => setFilter(f)}
-          >
-            <Text style={[styles.chipText, { color: filter === f ? "#0a0500" : c.mutedForeground }]}>
-              {f === "all" ? "الكل" : f === "low" ? "منخفض" : "نفذ"}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <ScreenHeader
+        title="المخزون"
+        subtitle={`${data?.length || 0} منتج${lowCount > 0 ? ` • ${lowCount} يحتاج تجديد` : ""}`}
+        accentColor={INVENTORY_COLOR}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="بحث بالاسم أو الكود..."
+        filters={FILTERS}
+        activeFilter={filter}
+        onFilterChange={setFilter}
+      />
 
       {isLoading ? (
-        <ActivityIndicator color={AMBER} size="large" style={{ marginTop: 48 }} />
+        <ActivityIndicator color={INVENTORY_COLOR} size="large" style={{ marginTop: 48 }} />
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={(i) => String(i.id)}
           renderItem={({ item }) => <ProductCard item={item} />}
-          contentContainerStyle={[styles.list, { paddingBottom: isWeb ? 34 : insets.bottom + 100 }, !filtered.length && styles.emptyList]}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: isWeb ? 34 : insets.bottom + 100 },
+            !filtered.length && styles.emptyList,
+          ]}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={AMBER} />}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={INVENTORY_COLOR} />}
           ListEmptyComponent={
             <EmptyState
-              icon="package" title="لا توجد منتجات"
+              icon="package"
+              title="لا توجد منتجات"
               subtitle="اضغط + لإضافة أول منتج"
             />
           }
@@ -147,11 +142,11 @@ export default function InventoryScreen() {
       )}
 
       <TouchableOpacity
-        style={[styles.fab, { bottom: isWeb ? 34 : insets.bottom + 80 }]}
+        style={[styles.fab, { bottom: isWeb ? 34 : insets.bottom + 80, backgroundColor: INVENTORY_COLOR }]}
         onPress={() => router.push("/new-product")}
         activeOpacity={0.85}
       >
-        <Feather name="plus" size={26} color="#0a0500" />
+        <Feather name="plus" size={26} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );
@@ -159,43 +154,50 @@ export default function InventoryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingBottom: 16, paddingHorizontal: 20, position: "relative" },
-  headerLine: { position: "absolute", top: 0, left: 0, right: 0, height: 2, backgroundColor: AMBER },
-  headerTitle: { fontSize: 22, fontFamily: "Tajawal_700Bold", color: "#F0F7FF", textAlign: "right" },
-  headerSub: { fontSize: 12, color: AMBER, fontFamily: "Tajawal_400Regular", textAlign: "right", marginTop: 2 },
-  searchBox: {
-    flexDirection: "row-reverse", alignItems: "center",
-    marginHorizontal: 16, marginTop: 12,
-    borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, gap: 10,
-  },
-  searchInput: { flex: 1, fontSize: 14, fontFamily: "Tajawal_400Regular" },
-  filters: { flexDirection: "row-reverse", gap: 8, paddingHorizontal: 16, paddingVertical: 10 },
-  chip: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 7 },
-  chipText: { fontSize: 13, fontFamily: "Tajawal_500Medium" },
   list: { padding: 16, gap: 12 },
   emptyList: { flex: 1 },
   fab: {
-    position: "absolute", right: 20,
-    width: 58, height: 58, borderRadius: 29,
-    backgroundColor: AMBER, justifyContent: "center", alignItems: "center",
-    shadowColor: AMBER, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+    position: "absolute",
+    right: 20,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: INVENTORY_COLOR,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   card: {
-    borderRadius: 16, borderWidth: 1,
-    flexDirection: "row-reverse", overflow: "hidden",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row-reverse",
+    overflow: "hidden",
   },
   cardLeft: {
-    width: 80, padding: 12, alignItems: "center", justifyContent: "center", gap: 4,
+    width: 82,
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
   },
   qtyNum: { fontSize: 24, fontFamily: "Tajawal_700Bold" },
   qtyUnit: { fontSize: 11, fontFamily: "Tajawal_400Regular" },
-  stockBadge: { borderRadius: 8, paddingHorizontal: 6, paddingVertical: 3, marginTop: 4 },
+  stockBadge: {
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    marginTop: 4,
+  },
   stockBadgeText: { fontSize: 10, fontFamily: "Tajawal_700Bold" },
   cardRight: { flex: 1, padding: 14, alignItems: "flex-end" },
   name: { fontSize: 15, fontFamily: "Tajawal_700Bold", textAlign: "right", marginBottom: 6 },
-  metaRow: { flexDirection: "row-reverse", gap: 6, marginBottom: 8 },
-  meta: { fontSize: 11, fontFamily: "Tajawal_400Regular", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  metaRow: { flexDirection: "row-reverse", gap: 6, marginBottom: 8, flexWrap: "wrap" },
+  catPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  meta: { fontSize: 11, fontFamily: "Tajawal_500Medium" },
   sku: { fontSize: 11, fontFamily: "Tajawal_400Regular", paddingVertical: 3 },
   priceRow: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
   priceLabel: { fontSize: 11, fontFamily: "Tajawal_400Regular" },

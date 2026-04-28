@@ -9,12 +9,12 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EmptyState } from "@/components/EmptyState";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch, formatCurrency } from "@/lib/api";
 
@@ -43,14 +43,12 @@ function CustomerCard({ item }: { item: Customer }) {
       activeOpacity={0.8}
     >
       <View style={styles.row}>
-        {/* رصيد */}
         <View style={[styles.balanceBox, { backgroundColor: balColor + "18", borderColor: balColor + "30" }]}>
           <Text style={[styles.balLabel, { color: balColor }]}>{balLabel}</Text>
           <Text style={[styles.balValue, { color: balColor }]}>{formatCurrency(Math.abs(item.balance))}</Text>
           <Text style={[styles.balCurrency, { color: balColor }]}>ج.م</Text>
         </View>
 
-        {/* البيانات */}
         <View style={styles.info}>
           <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>{item.name}</Text>
           {item.phone ? (
@@ -64,7 +62,6 @@ function CustomerCard({ item }: { item: Customer }) {
           ) : null}
         </View>
 
-        {/* أزرار الدفعة + الأفاتار */}
         <View style={styles.rightCol}>
           <View style={[styles.avatar, { backgroundColor: AMBER + "18", borderColor: AMBER + "30" }]}>
             <Text style={[styles.avatarText, { color: AMBER }]}>{initial}</Text>
@@ -83,6 +80,7 @@ function CustomerCard({ item }: { item: Customer }) {
                 },
               });
             }}
+            activeOpacity={0.8}
           >
             <Feather name={isDebt ? "arrow-down-left" : "arrow-up-right"} size={12} color="#fff" />
             <Text style={styles.payBtnText}>{isDebt ? "استلام" : "دفع"}</Text>
@@ -93,12 +91,18 @@ function CustomerCard({ item }: { item: Customer }) {
   );
 }
 
+const FILTERS = [
+  { key: "all", label: "الكل" },
+  { key: "debt", label: "مديونون" },
+  { key: "credit", label: "دائنون" },
+];
+
 export default function CustomersScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "debt" | "credit">("all");
+  const [filter, setFilter] = useState("all");
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["customers"],
@@ -117,38 +121,17 @@ export default function CustomersScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <View style={[styles.header, { backgroundColor: c.headerBg, paddingTop: isWeb ? 67 : insets.top + 12 }]}>
-        <View style={styles.headerLine} />
-        <Text style={styles.headerTitle}>العملاء</Text>
-        <Text style={styles.headerSub}>
-          {data?.length || 0} عميل
-          {totalDebt > 0 ? ` • ديون: ${formatCurrency(totalDebt)} ج.م` : ""}
-        </Text>
-      </View>
-
-      <View style={[styles.searchBox, { backgroundColor: c.card, borderColor: c.border }]}>
-        <Feather name="search" size={16} color={c.mutedForeground} />
-        <TextInput
-          style={[styles.searchInput, { color: c.text }]}
-          placeholder="بحث بالاسم أو الهاتف..."
-          placeholderTextColor={c.mutedForeground}
-          value={search} onChangeText={setSearch} textAlign="right"
-        />
-      </View>
-
-      <View style={styles.filters}>
-        {(["all", "debt", "credit"] as const).map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.chip, { backgroundColor: filter === f ? AMBER : c.card, borderColor: filter === f ? AMBER : c.border }]}
-            onPress={() => setFilter(f)}
-          >
-            <Text style={[styles.chipText, { color: filter === f ? "#0a0500" : c.mutedForeground }]}>
-              {f === "all" ? "الكل" : f === "debt" ? "مديونون" : "دائنون"}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <ScreenHeader
+        title="العملاء"
+        subtitle={`${data?.length || 0} عميل${totalDebt > 0 ? ` • ديون: ${formatCurrency(totalDebt)} ج.م` : ""}`}
+        accentColor={AMBER}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="بحث بالاسم أو الهاتف..."
+        filters={FILTERS}
+        activeFilter={filter}
+        onFilterChange={setFilter}
+      />
 
       {isLoading ? (
         <ActivityIndicator color={AMBER} size="large" style={{ marginTop: 48 }} />
@@ -157,12 +140,17 @@ export default function CustomersScreen() {
           data={filtered}
           keyExtractor={(i) => String(i.id)}
           renderItem={({ item }) => <CustomerCard item={item} />}
-          contentContainerStyle={[styles.list, { paddingBottom: isWeb ? 34 : insets.bottom + 100 }, !filtered.length && styles.emptyList]}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: isWeb ? 34 : insets.bottom + 100 },
+            !filtered.length && styles.emptyList,
+          ]}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={AMBER} />}
           ListEmptyComponent={
             <EmptyState
-              icon="users" title="لا يوجد عملاء"
+              icon="users"
+              title="لا يوجد عملاء"
               subtitle="أضف أول عميل الآن"
             />
           }
@@ -182,39 +170,42 @@ export default function CustomersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingBottom: 16, paddingHorizontal: 20, position: "relative" },
-  headerLine: { position: "absolute", top: 0, left: 0, right: 0, height: 2, backgroundColor: AMBER },
-  headerTitle: { fontSize: 22, fontFamily: "Tajawal_700Bold", color: "#F0F7FF", textAlign: "right" },
-  headerSub: { fontSize: 12, color: AMBER, fontFamily: "Tajawal_400Regular", textAlign: "right", marginTop: 2 },
-  searchBox: {
-    flexDirection: "row-reverse", alignItems: "center",
-    marginHorizontal: 16, marginTop: 12,
-    borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, gap: 10,
-  },
-  searchInput: { flex: 1, fontSize: 14, fontFamily: "Tajawal_400Regular" },
-  filters: { flexDirection: "row-reverse", gap: 8, paddingHorizontal: 16, paddingVertical: 10 },
-  chip: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 7 },
-  chipText: { fontSize: 13, fontFamily: "Tajawal_500Medium" },
   list: { padding: 16, gap: 12 },
   emptyList: { flex: 1 },
   fab: {
-    position: "absolute", right: 20,
-    width: 58, height: 58, borderRadius: 29,
-    backgroundColor: AMBER, justifyContent: "center", alignItems: "center",
-    shadowColor: AMBER, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+    position: "absolute",
+    right: 20,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: AMBER,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: AMBER,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   card: { borderRadius: 16, borderWidth: 1, padding: 14 },
   row: { flexDirection: "row-reverse", alignItems: "center", gap: 12 },
   rightCol: { alignItems: "center", gap: 6 },
   avatar: {
-    width: 46, height: 46, borderRadius: 23,
-    justifyContent: "center", alignItems: "center", borderWidth: 1,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
   },
   avatarText: { fontSize: 18, fontFamily: "Tajawal_700Bold" },
   payBtn: {
-    flexDirection: "row", alignItems: "center", gap: 3,
-    borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   payBtnText: { color: "#fff", fontSize: 10, fontFamily: "Tajawal_700Bold" },
   info: { flex: 1, alignItems: "flex-end" },
@@ -223,7 +214,11 @@ const styles = StyleSheet.create({
   phone: { fontSize: 13, fontFamily: "Tajawal_400Regular" },
   code: { fontSize: 12, fontFamily: "Tajawal_700Bold", marginTop: 2 },
   balanceBox: {
-    borderRadius: 12, padding: 10, alignItems: "center", minWidth: 80, borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    alignItems: "center",
+    minWidth: 80,
+    borderWidth: 1,
   },
   balLabel: { fontSize: 10, fontFamily: "Tajawal_700Bold", marginBottom: 2 },
   balValue: { fontSize: 15, fontFamily: "Tajawal_700Bold" },

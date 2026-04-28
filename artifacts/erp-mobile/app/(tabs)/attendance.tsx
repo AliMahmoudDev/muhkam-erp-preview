@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useState, useEffect } from "react";
@@ -176,10 +177,16 @@ export default function AttendanceScreen() {
       <Text style={[styles.dateText, { color: c.mutedForeground }]}>{dateLabel}</Text>
 
       {/* Live Clock card */}
-      <View style={[styles.clockCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
-        <Text style={[styles.clock, { color: c.foreground }]}>{nowStr}</Text>
-        <Text style={[styles.clockSub, { color: c.mutedForeground }]}>الوقت الحالي</Text>
-      </View>
+      <LinearGradient
+        colors={["#0A0E1F", "#111628", "#1A1040"]}
+        style={styles.clockCard}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={[styles.clockAccent, { backgroundColor: AMBER + "30" }]} />
+        <Text style={styles.clock}>{nowStr}</Text>
+        <Text style={[styles.clockSub, { color: "rgba(255,255,255,0.5)" }]}>الوقت الحالي</Text>
+      </LinearGradient>
 
       {/* Today Status */}
       {todayRecord ? (
@@ -298,10 +305,16 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontFamily: "Tajawal_700Bold", textAlign: "right", marginBottom: 4 },
   dateText: { fontSize: 13, fontFamily: "Tajawal_400Regular", textAlign: "right", marginBottom: 20 },
   clockCard: {
-    borderRadius: 16, borderWidth: 1, padding: 24,
+    borderRadius: 20, padding: 28,
     alignItems: "center", marginBottom: 16,
+    overflow: "hidden", position: "relative",
+    borderWidth: 1, borderColor: "#FFFFFF10",
   },
-  clock: { fontSize: 44, fontFamily: "Tajawal_700Bold", letterSpacing: 2 },
+  clockAccent: {
+    position: "absolute", top: -30, right: -30,
+    width: 100, height: 100, borderRadius: 50,
+  },
+  clock: { fontSize: 46, fontFamily: "Tajawal_700Bold", letterSpacing: 3, color: "#F0F7FF" },
   clockSub: { fontSize: 12, fontFamily: "Tajawal_400Regular", marginTop: 4 },
   statusCard: {
     borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 20,

@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -19,6 +20,7 @@ import { apiFetch, formatCurrency } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 const AMBER = "#F59E0B";
+const AMBER_DARK = "#D97706";
 
 interface Safe { id: number; name: string; balance: number; }
 interface Expense { id: number; amount: number; }
@@ -40,12 +42,23 @@ function ThemeSwitcher() {
         return (
           <TouchableOpacity
             key={opt.key}
-            style={[styles.themeOption, active && { backgroundColor: isDark ? c.card : "#FFFFFF", shadowColor: AMBER, shadowOpacity: active ? 0.15 : 0, shadowRadius: 6, elevation: active ? 3 : 0 }]}
+            style={[
+              styles.themeOption,
+              active && {
+                backgroundColor: isDark ? "#1C2340" : "#FFFFFF",
+                shadowColor: AMBER,
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                elevation: 3,
+              },
+            ]}
             onPress={() => setMode(opt.key)}
             activeOpacity={0.7}
           >
-            <Feather name={opt.icon} size={16} color={active ? AMBER : c.mutedForeground} />
-            <Text style={[styles.themeLabel, { color: active ? AMBER : c.mutedForeground }]}>{opt.label}</Text>
+            <Feather name={opt.icon} size={15} color={active ? AMBER : c.mutedForeground} />
+            <Text style={[styles.themeLabel, { color: active ? AMBER : c.mutedForeground }]}>
+              {opt.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -53,22 +66,16 @@ function ThemeSwitcher() {
   );
 }
 
-function SectionCard({ title, color, children }: { title: string; color?: string; children: React.ReactNode }) {
-  const c = useColors();
+function SectionHeader({ title, color }: { title: string; color?: string }) {
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeaderRow}>
-        <View style={[styles.sectionDot, { backgroundColor: color || AMBER }]} />
-        <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>{title}</Text>
-      </View>
-      <View style={[styles.sectionCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
-        {children}
-      </View>
+    <View style={styles.sectionHeaderRow}>
+      <View style={[styles.sectionDot, { backgroundColor: color || AMBER }]} />
+      <Text style={styles.sectionLabel}>{title}</Text>
     </View>
   );
 }
 
-function MenuItem({
+function MenuRow({
   icon, label, value, color, onPress, last, badge,
 }: {
   icon: keyof typeof Feather.glyphMap;
@@ -80,42 +87,54 @@ function MenuItem({
   badge?: string;
 }) {
   const c = useColors();
-  const itemColor = color || AMBER;
+  const col = color || AMBER;
   return (
     <TouchableOpacity
       style={[
-        styles.menuItem,
+        styles.menuRow,
         !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
       ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Feather name="chevron-left" size={16} color={c.mutedForeground} />
-      {value && <Text style={[styles.menuValue, { color: itemColor }]}>{value}</Text>}
+      <Feather name="chevron-left" size={15} color={c.mutedForeground} />
+      {value && <Text style={[styles.menuValue, { color: col }]}>{value}</Text>}
       {badge && (
-        <View style={[styles.badge, { backgroundColor: itemColor + "20" }]}>
-          <Text style={[styles.badgeText, { color: itemColor }]}>{badge}</Text>
+        <View style={[styles.badge, { backgroundColor: col + "20" }]}>
+          <Text style={[styles.badgeText, { color: col }]}>{badge}</Text>
         </View>
       )}
       <Text style={[styles.menuLabel, { color: c.text }]}>{label}</Text>
-      <View style={[styles.menuIcon, { backgroundColor: itemColor + "1A" }]}>
-        <Feather name={icon} size={16} color={itemColor} />
+      <View style={[styles.menuIcon, { backgroundColor: col + "18", borderColor: col + "28" }]}>
+        <Feather name={icon} size={15} color={col} />
       </View>
     </TouchableOpacity>
+  );
+}
+
+function SectionCard({ title, color, children }: { title: string; color?: string; children: React.ReactNode }) {
+  const c = useColors();
+  return (
+    <View style={styles.section}>
+      <SectionHeader title={title} color={color} />
+      <View style={[styles.sectionCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
+        {children}
+      </View>
+    </View>
   );
 }
 
 function PurchasesMenuItem() {
   const c = useColors();
   return (
-    <View style={[styles.menuItem, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}>
-      <View style={styles.purchasesActions}>
+    <View style={[styles.menuRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}>
+      <View style={styles.purchaseActions}>
         <TouchableOpacity
           style={[styles.purchaseBtn, { backgroundColor: "#7C3AED18", borderColor: "#7C3AED30" }]}
           onPress={() => router.push("/new-purchase")}
           activeOpacity={0.7}
         >
-          <Feather name="plus" size={13} color="#7C3AED" />
+          <Feather name="plus" size={12} color="#7C3AED" />
           <Text style={[styles.purchaseBtnText, { color: "#7C3AED" }]}>فاتورة جديدة</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -123,13 +142,13 @@ function PurchasesMenuItem() {
           onPress={() => router.push("/purchases")}
           activeOpacity={0.7}
         >
-          <Feather name="list" size={13} color="#7C3AED" />
+          <Feather name="list" size={12} color="#7C3AED" />
           <Text style={[styles.purchaseBtnText, { color: "#7C3AED" }]}>عرض الكل</Text>
         </TouchableOpacity>
       </View>
       <Text style={[styles.menuLabel, { color: c.text }]}>المشتريات</Text>
-      <View style={[styles.menuIcon, { backgroundColor: "#7C3AED1A" }]}>
-        <Feather name="shopping-bag" size={16} color="#7C3AED" />
+      <View style={[styles.menuIcon, { backgroundColor: "#7C3AED18", borderColor: "#7C3AED28" }]}>
+        <Feather name="shopping-bag" size={15} color="#7C3AED" />
       </View>
     </View>
   );
@@ -163,104 +182,172 @@ export default function MoreScreen() {
     user?.role === "salesperson" ? "مندوب مبيعات" :
     "كاشير";
 
+  const nameInitials = (user?.name || "م")
+    .split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase();
+
   const handleLogout = () => {
     Alert.alert("تسجيل الخروج", "هل تريد تسجيل الخروج؟", [
       { text: "إلغاء", style: "cancel" },
-      { text: "خروج", style: "destructive", onPress: async () => { await logout(); router.replace("/login"); } },
+      {
+        text: "خروج", style: "destructive",
+        onPress: async () => { await logout(); router.replace("/login"); },
+      },
     ]);
   };
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <View style={[styles.header, { backgroundColor: c.headerBg, paddingTop: isWeb ? 67 : insets.top + 12, borderBottomColor: c.border }]}>
-        <View style={[styles.headerLine, { backgroundColor: AMBER }]} />
-        <Text style={[styles.headerTitle, { color: c.text }]}>المزيد</Text>
-        <Text style={[styles.headerSub, { color: AMBER }]}>مُحكم ERP</Text>
-      </View>
-
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: isWeb ? 34 : insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* بروفايل */}
-        <View style={[styles.profileCard, { backgroundColor: c.card, borderColor: AMBER + "30" }]}>
-          <View style={[styles.profileTopLine, { backgroundColor: AMBER }]} />
-          <View style={styles.profileRow}>
-            <View style={styles.profileInfo}>
-              <Text style={[styles.profileName, { color: c.text }]}>{user?.name}</Text>
-              <View style={[styles.rolePill, { backgroundColor: AMBER + "1A" }]}>
-                <Text style={[styles.rolePillText, { color: AMBER }]}>{roleLabel}</Text>
+        <LinearGradient
+          colors={["#0A0E1F", "#1A1040", "#0D1028"]}
+          style={[styles.heroBanner, { paddingTop: isWeb ? 60 : insets.top + 16 }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.heroStars}>
+            {[...Array(6)].map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.star,
+                  { left: `${10 + i * 15}%` as any, top: `${20 + (i % 3) * 25}%` as any, opacity: 0.3 + (i % 3) * 0.15 }
+                ]}
+              />
+            ))}
+          </View>
+
+          <View style={styles.heroContent}>
+            <LinearGradient
+              colors={[AMBER, AMBER_DARK]}
+              style={styles.heroAvatar}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.heroAvatarText}>{nameInitials}</Text>
+            </LinearGradient>
+
+            <View style={styles.heroInfo}>
+              <Text style={styles.heroName}>{user?.name}</Text>
+              <View style={[styles.roleBadge, { backgroundColor: AMBER + "25", borderColor: AMBER + "40" }]}>
+                <Text style={[styles.roleBadgeText, { color: AMBER }]}>{roleLabel}</Text>
               </View>
-              <Text style={[styles.profileUsername, { color: c.mutedForeground }]}>@{user?.username}</Text>
+              <Text style={styles.heroUsername}>@{user?.username}</Text>
             </View>
-            <View style={[styles.logoWrap, { backgroundColor: AMBER + "15", borderColor: AMBER + "25" }]}>
+
+            <View style={styles.heroLogoWrap}>
               <Image
                 source={require("@/assets/images/muhkam-logo.png")}
-                style={styles.logoImg}
+                style={styles.heroLogo}
                 contentFit="contain"
               />
             </View>
           </View>
-        </View>
 
-        {/* مبدّل الثيم */}
-        <SectionCard title="مظهر التطبيق" color="#7C3AED">
-          <View style={styles.themePad}>
-            <Text style={[styles.themeHint, { color: c.mutedForeground }]}>اختر بين الوضع الفاتح والداكن</Text>
-            <ThemeSwitcher />
+          <View style={styles.heroStats}>
+            {[
+              { label: "الخزائن", value: `${formatCurrency(totalSafesBalance)} ج.م`, color: totalSafesBalance >= 0 ? "#10B981" : "#EF4444" },
+              { label: "المصروفات", value: `${formatCurrency(totalExpenses)} ج.م`, color: "#F97316" },
+            ].map((s) => (
+              <View key={s.label} style={[styles.heroStat, { backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.1)" }]}>
+                <Text style={[styles.heroStatVal, { color: s.color }]}>{s.value}</Text>
+                <Text style={styles.heroStatLabel}>{s.label}</Text>
+              </View>
+            ))}
           </View>
-        </SectionCard>
+        </LinearGradient>
 
-        {/* الخزينة */}
-        <SectionCard title="الخزائن">
-          {safes.length === 0 ? (
-            <MenuItem icon="database" label="لا توجد خزائن مُعرَّفة" color="#EF4444" last />
-          ) : (
-            safes.map((s, idx) => (
-              <MenuItem
-                key={s.id}
-                icon="dollar-sign"
-                label={s.name}
-                value={`${formatCurrency(Number(s.balance))} ج.م`}
-                color={Number(s.balance) >= 0 ? "#10B981" : "#EF4444"}
-                last={idx === safes.length - 1}
+        <View style={styles.body}>
+          <SectionCard title="مظهر التطبيق" color="#7C3AED">
+            <View style={styles.themePad}>
+              <Text style={[styles.themeHint, { color: c.mutedForeground }]}>
+                اختر بين الوضع الفاتح والداكن
+              </Text>
+              <ThemeSwitcher />
+            </View>
+          </SectionCard>
+
+          <SectionCard title="الخزائن">
+            {safes.length === 0 ? (
+              <MenuRow icon="database" label="لا توجد خزائن مُعرَّفة" color="#EF4444" last />
+            ) : (
+              safes.map((s, idx) => (
+                <MenuRow
+                  key={s.id}
+                  icon="dollar-sign"
+                  label={s.name}
+                  value={`${formatCurrency(Number(s.balance))} ج.م`}
+                  color={Number(s.balance) >= 0 ? "#10B981" : "#EF4444"}
+                  last={idx === safes.length - 1}
+                />
+              ))
+            )}
+            {safes.length > 1 && (
+              <MenuRow
+                icon="layers"
+                label="الإجمالي الكلي"
+                value={`${formatCurrency(totalSafesBalance)} ج.م`}
+                color={totalSafesBalance >= 0 ? AMBER : "#EF4444"}
+                last
               />
-            ))
-          )}
-          {safes.length > 1 && (
-            <MenuItem
-              icon="layers"
-              label="الإجمالي الكلي"
-              value={`${formatCurrency(totalSafesBalance)} ج.م`}
-              color={totalSafesBalance >= 0 ? AMBER : "#EF4444"}
+            )}
+          </SectionCard>
+
+          <SectionCard title="العمليات">
+            <PurchasesMenuItem />
+            <MenuRow
+              icon="credit-card"
+              label="المصروفات"
+              value={`${formatCurrency(totalExpenses)} ج.م`}
+              onPress={() => router.push("/expenses")}
+              color={AMBER}
+            />
+            <MenuRow
+              icon="bar-chart-2"
+              label="التقارير"
+              badge="عرض"
+              onPress={() => router.push("/reports")}
+              color="#06B6D4"
               last
             />
-          )}
-        </SectionCard>
+          </SectionCard>
 
-        {/* العمليات */}
-        <SectionCard title="العمليات">
-          <PurchasesMenuItem />
-          <MenuItem icon="credit-card"   label="المصروفات"         value={`${formatCurrency(totalExpenses)} ج.م`}  onPress={() => router.push("/expenses")} color={AMBER} />
-          <MenuItem icon="bar-chart-2"   label="التقارير"          badge="عرض"   onPress={() => router.push("/reports")}      color="#06B6D4" last />
-        </SectionCard>
+          <SectionCard title="الإشعارات" color={AMBER}>
+            <MenuRow
+              icon="bell"
+              label="مركز الإشعارات"
+              onPress={() => router.push("/notifications")}
+              color={AMBER}
+              last
+            />
+          </SectionCard>
 
-        {/* الإشعارات */}
-        <SectionCard title="الإشعارات" color={AMBER}>
-          <MenuItem icon="bell" label="مركز الإشعارات" onPress={() => router.push("/notifications")} color={AMBER} last />
-        </SectionCard>
+          <SectionCard title="الإعدادات" color="#10B981">
+            <MenuRow
+              icon="settings"
+              label="إعدادات النظام"
+              onPress={() => router.push("/settings")}
+              color="#10B981"
+              last
+            />
+          </SectionCard>
 
-        {/* الإعدادات */}
-        <SectionCard title="الإعدادات" color="#10B981">
-          <MenuItem icon="settings" label="إعدادات النظام"   onPress={() => router.push("/settings")} color="#10B981" last />
-        </SectionCard>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+            <LinearGradient
+              colors={["#7F1D1D", "#991B1B"]}
+              style={styles.logoutGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Feather name="log-out" size={18} color="#FFFFFF" />
+              <Text style={styles.logoutText}>تسجيل الخروج</Text>
+            </LinearGradient>
+          </TouchableOpacity>
 
-        {/* الحساب */}
-        <SectionCard title="الحساب" color="#EF4444">
-          <MenuItem icon="log-out" label="تسجيل الخروج" color="#EF4444" onPress={handleLogout} last />
-        </SectionCard>
-
-        <Text style={[styles.version, { color: c.mutedForeground }]}>مُحكم ERP v2.0</Text>
+          <Text style={[styles.version, { color: c.mutedForeground }]}>مُحكم ERP v2.0</Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -268,52 +355,213 @@ export default function MoreScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingBottom: 14, paddingHorizontal: 20, position: "relative", borderBottomWidth: StyleSheet.hairlineWidth },
-  headerLine: { position: "absolute", top: 0, left: 0, right: 0, height: 2 },
-  headerTitle: { fontSize: 22, fontFamily: "Tajawal_700Bold", textAlign: "right" },
-  headerSub: { fontSize: 12, fontFamily: "Tajawal_400Regular", textAlign: "right", marginTop: 2 },
-  content: { padding: 16, gap: 4 },
-  profileCard: { borderRadius: 20, borderWidth: 1, overflow: "hidden", marginBottom: 12 },
-  profileTopLine: { height: 2 },
-  profileRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", padding: 18 },
-  profileInfo: { alignItems: "flex-end", gap: 6 },
-  profileName: { fontSize: 18, fontFamily: "Tajawal_700Bold" },
-  rolePill: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
-  rolePillText: { fontSize: 12, fontFamily: "Tajawal_700Bold" },
-  profileUsername: { fontSize: 12, fontFamily: "Tajawal_400Regular" },
-  logoWrap: { width: 56, height: 56, borderRadius: 16, justifyContent: "center", alignItems: "center", borderWidth: 1 },
-  logoImg: { width: 40, height: 40 },
-  section: { marginBottom: 12 },
-  sectionHeaderRow: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginBottom: 6, marginRight: 4 },
-  sectionDot: { width: 3, height: 14, borderRadius: 2 },
-  sectionTitle: { fontSize: 12, fontFamily: "Tajawal_500Medium" },
-  sectionCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
-  menuItem: {
-    flexDirection: "row-reverse", alignItems: "center",
-    paddingVertical: 14, paddingHorizontal: 16, gap: 10,
+  content: { gap: 0 },
+  heroBanner: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    overflow: "hidden",
+    position: "relative",
   },
-  menuIcon: { width: 34, height: 34, borderRadius: 10, justifyContent: "center", alignItems: "center" },
-  menuLabel: { flex: 1, fontSize: 14, fontFamily: "Tajawal_500Medium", textAlign: "right" },
-  menuValue: { fontSize: 13, fontFamily: "Tajawal_700Bold" },
-  badge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { fontSize: 11, fontFamily: "Tajawal_700Bold" },
+  heroStars: { position: "absolute", inset: 0 },
+  star: {
+    position: "absolute",
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: AMBER,
+  },
+  heroContent: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 14,
+    marginBottom: 20,
+  },
+  heroAvatar: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  heroAvatarText: {
+    color: "#0A0500",
+    fontFamily: "Tajawal_700Bold",
+    fontSize: 20,
+  },
+  heroInfo: { flex: 1, alignItems: "flex-end", gap: 5 },
+  heroName: {
+    fontSize: 18,
+    fontFamily: "Tajawal_700Bold",
+    color: "#F0F7FF",
+    textAlign: "right",
+  },
+  roleBadge: {
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderWidth: 1,
+  },
+  roleBadgeText: {
+    fontSize: 11,
+    fontFamily: "Tajawal_700Bold",
+  },
+  heroUsername: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.5)",
+    fontFamily: "Tajawal_400Regular",
+  },
+  heroLogoWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: "rgba(245,158,11,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(245,158,11,0.25)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  heroLogo: { width: 32, height: 32 },
+  heroStats: {
+    flexDirection: "row-reverse",
+    gap: 10,
+  },
+  heroStat: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    alignItems: "flex-end",
+  },
+  heroStatVal: {
+    fontSize: 14,
+    fontFamily: "Tajawal_700Bold",
+    marginBottom: 2,
+  },
+  heroStatLabel: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.5)",
+    fontFamily: "Tajawal_400Regular",
+  },
+  body: { padding: 16, gap: 4 },
+  section: { marginBottom: 14 },
+  sectionHeaderRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 7,
+    paddingRight: 2,
+  },
+  sectionDot: { width: 3, height: 14, borderRadius: 2 },
+  sectionLabel: {
+    fontSize: 12,
+    fontFamily: "Tajawal_500Medium",
+    color: "#94A3B8",
+  },
+  sectionCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  menuRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  menuIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  menuLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Tajawal_500Medium",
+    textAlign: "right",
+  },
+  menuValue: {
+    fontSize: 12,
+    fontFamily: "Tajawal_700Bold",
+  },
+  badge: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontFamily: "Tajawal_700Bold",
+  },
   themePad: { padding: 14, gap: 10 },
-  themeHint: { fontSize: 12, fontFamily: "Tajawal_400Regular", textAlign: "center" },
+  themeHint: {
+    fontSize: 12,
+    fontFamily: "Tajawal_400Regular",
+    textAlign: "center",
+  },
   themeSwitcher: {
     flexDirection: "row-reverse",
-    borderRadius: 14, borderWidth: 1,
-    padding: 4, gap: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 4,
+    gap: 4,
   },
   themeOption: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 6, borderRadius: 10, paddingVertical: 10,
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    borderRadius: 10,
+    paddingVertical: 10,
   },
-  themeLabel: { fontSize: 13, fontFamily: "Tajawal_700Bold" },
-  version: { fontSize: 12, fontFamily: "Tajawal_400Regular", textAlign: "center", marginTop: 16 },
-  purchasesActions: { flexDirection: "row-reverse", gap: 6 },
+  themeLabel: {
+    fontSize: 12,
+    fontFamily: "Tajawal_700Bold",
+  },
+  purchaseActions: {
+    flexDirection: "row-reverse",
+    gap: 6,
+  },
   purchaseBtn: {
-    flexDirection: "row-reverse", alignItems: "center", gap: 4,
-    borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  purchaseBtnText: { fontSize: 11, fontFamily: "Tajawal_700Bold" },
+  purchaseBtnText: {
+    fontSize: 11,
+    fontFamily: "Tajawal_700Bold",
+  },
+  logoutBtn: {
+    borderRadius: 16,
+    overflow: "hidden",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  logoutGradient: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 16,
+  },
+  logoutText: {
+    fontSize: 15,
+    fontFamily: "Tajawal_700Bold",
+    color: "#FFFFFF",
+  },
+  version: {
+    fontSize: 11,
+    fontFamily: "Tajawal_400Regular",
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 4,
+  },
 });
