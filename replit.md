@@ -26,11 +26,24 @@ Key backend files with inline comments:
 - **Production domain:** halaltec.com (Hetzner VPS 89.167.85.156) — served at root `/`
 
 ## Replit Environment
-- **Backend:** Express API server running on port 8080 via `Start Backend` workflow
+- **Backend:** Express API server running on port 8080 via `Backend API` workflow
 - **Frontend:** `erp-system` React/Vite running on port 5000 — single unified frontend at `BASE_PATH=/`
+- **Mobile (Expo):** Running via `ERP Mobile Dev` workflow — see note below
 - **Database:** PostgreSQL provisioned via Replit (heliumdb), schema pushed via Drizzle ORM
 - **Packages:** Managed via pnpm workspaces
 - **Default super admin:** username: `superadmin`, PIN from `SUPER_ADMIN_PIN` env var
+
+### ERP Mobile Dev Workflow — Port Proxy Architecture
+Replit's `restart_workflow` health check only works for specific supported ports (3000, 3001, 3002, 3003, 4200, 5000, 5173, 6000, 6800, 8000, 8008, 8080, 8099, 9000). Expo uses port 20384 which is NOT in this list, causing the artifact workflow (`artifacts/erp-mobile: expo`) to always fail on restart.
+
+**Solution:** A regular workflow `ERP Mobile Dev` runs `artifacts/erp-mobile/scripts/dev-start.js` which:
+1. Starts Metro (Expo bundler) on port **8100** 
+2. Opens IPv4 proxy on **0.0.0.0:8099** → Metro (the health-check port, in the supported list → workflow shows RUNNING)
+3. Opens IPv4 proxy on **0.0.0.0:20384** → Metro (for the Expo canvas iframe via `*.expo.riker.replit.dev`)
+
+The artifact workflow `artifacts/erp-mobile: expo` will always show FAILED — this is expected and harmless. Use `restart_workflow("ERP Mobile Dev")` to restart the mobile server after code changes.
+
+**HEALTH_PORT** env var controls the supported port (default: 8099). **CANVAS_PORT** is hardcoded to 20384.
 
 ## CI/CD Status
 - **Deploy pipeline:** ✅ Working — GitHub Actions deploy.yml builds erp-system at BASE_PATH=/ and deploys to VPS

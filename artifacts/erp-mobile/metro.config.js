@@ -1,3 +1,10 @@
 const { getDefaultConfig } = require("expo/metro-config");
 
-module.exports = getDefaultConfig(__dirname);
+const config = getDefaultConfig(__dirname);
+
+config.server = {
+  ...config.server,
+  host: "0.0.0.0",
+};
+
+module.exports = config;
