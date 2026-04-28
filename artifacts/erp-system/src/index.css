@@ -4567,4 +4567,75 @@ html.light .nav-item { color: rgba(0,0,0,0.45); }
 html.light .nav-item:hover { color: rgba(0,0,0,0.80); background: rgba(0,0,0,0.055); }
 html.light .nav-item.active { color: #92400e; background: rgba(245,158,11,0.09); }
 
+/* ══════════════════════════════════════════════════════════════════
+   REPAIR SETTINGS MODAL — always-dark override (light mode compat)
+   .rs-mesh-bg is always rendered on a dark gradient; force dark CSS
+   variables so erp-input, glass-panel, etc. remain readable.
+══════════════════════════════════════════════════════════════════ */
+html.light .rs-mesh-bg {
+  /* Re-apply dark CSS-variable tokens so children inherit dark values */
+  --erp-input-bg:           rgba(255,255,255,0.05);
+  --erp-input-border:       rgba(255,255,255,0.12);
+  --erp-input-text:         rgba(255,255,255,0.90);
+  --erp-input-placeholder:  rgba(255,255,255,0.30);
+  --erp-input-focus-border: rgba(245,158,11,0.55);
+  --erp-dropdown-bg:        #0f172a;
+  --erp-dropdown-border:    rgba(255,255,255,0.12);
+  --erp-dropdown-item:      rgba(255,255,255,0.90);
+  --erp-dropdown-hover:     rgba(255,255,255,0.07);
+  --erp-dropdown-active:    rgba(245,158,11,0.12);
+  --erp-dropdown-active-text: #fcd34d;
+  color-scheme: dark;
+}
+
+/* erp-input inside the dark modal — override the html.light rule */
+html.light .rs-mesh-bg .erp-input {
+  background:   rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+  color:        rgba(255,255,255,0.90);
+}
+html.light .rs-mesh-bg .erp-input::placeholder {
+  color: rgba(255,255,255,0.30);
+}
+html.light .rs-mesh-bg .erp-input:focus,
+html.light .rs-mesh-bg .erp-input:focus-visible {
+  border-color: rgba(245,158,11,0.55);
+  box-shadow:   0 0 0 3px rgba(245,158,11,0.12);
+  background:   rgba(255,255,255,0.07);
+}
+
+/* glass-panel inside the modal should keep dark look */
+html.light .rs-mesh-bg .glass-panel {
+  background:    rgba(255,255,255,0.06);
+  border-color:  rgba(255,255,255,0.10);
+  box-shadow:    none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* rs-dark-inner — sub-modals (e.g. DashboardCard editor) that are
+   always dark regardless of theme */
+html.light .rs-dark-inner {
+  --erp-input-bg:           rgba(255,255,255,0.05);
+  --erp-input-border:       rgba(255,255,255,0.12);
+  --erp-input-text:         rgba(255,255,255,0.90);
+  --erp-input-placeholder:  rgba(255,255,255,0.30);
+  --erp-input-focus-border: rgba(245,158,11,0.55);
+  color-scheme: dark;
+  background: linear-gradient(180deg, #111827 0%, #0b1120 100%);
+  border-color: rgba(255,255,255,0.10);
+}
+html.light .rs-dark-inner .erp-input {
+  background:   rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+  color:        rgba(255,255,255,0.90);
+}
+html.light .rs-dark-inner .erp-input::placeholder { color: rgba(255,255,255,0.30); }
+html.light .rs-dark-inner .erp-input:focus,
+html.light .rs-dark-inner .erp-input:focus-visible {
+  border-color: rgba(245,158,11,0.55);
+  box-shadow:   0 0 0 3px rgba(245,158,11,0.12);
+  background:   rgba(255,255,255,0.07);
+}
+
 /* ── END OF CANONICAL DEFINITIONS ────────────────────────────────── */

@@ -1553,7 +1553,7 @@ function DashboardCardEditor({
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-start justify-center pt-8 pb-8 bg-black/70 backdrop-blur-md" dir="rtl"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="glass-panel rounded-2xl border border-white/12 w-full mx-4 overflow-hidden flex flex-col"
+      <div className="rs-dark-inner glass-panel rounded-2xl border border-white/12 w-full mx-4 overflow-hidden flex flex-col"
         style={{ maxWidth: 580, maxHeight: "90vh" }}>
 
         {/* Header */}
