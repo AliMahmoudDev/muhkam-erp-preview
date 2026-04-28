@@ -68,6 +68,7 @@ export default function SuperAdmin() {
     end_date: string; is_active: boolean; features: CompanyFeatures;
   }>({ plan_type: 'trial', edition: 'ultimate', extend_mode: 'days', extend_days: 30, end_date: '', is_active: true, features: DEFAULT_FEATS_ULTIMATE });
   const [subSaving, setSubSaving] = useState(false);
+  const [panelTab, setPanelTab] = useState<0 | 1 | 2 | 3>(0);
   /* Confirm-code delete flow */
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
   const [generatedCode, setGeneratedCode] = useState('');
@@ -179,6 +180,27 @@ export default function SuperAdmin() {
     queryFn: () => fetcher('/api/super/companies'),
     staleTime: 30_000,
   });
+
+  /* ── Panel: per-company detail (users) ─── */
+  interface PanelUser { id: number; name: string; username: string; email: string | null; role: string; active: boolean; }
+  interface PanelCompanyDetail extends Company { users: PanelUser[]; }
+  const { data: panelCompanyDetail, isLoading: panelDetailLoading } = useQuery<PanelCompanyDetail>({
+    queryKey: ['/api/super/companies', subModal?.id, 'panel-detail'],
+    queryFn: () => fetcher(`/api/super/companies/${subModal!.id}`),
+    enabled: subModal !== null && panelTab === 2,
+    staleTime: 30_000,
+  });
+
+  /* ── Panel: audit log for specific company (record_type=company) ─── */
+  interface AuditEntry { id: number; action: string; record_type: string | null; record_id: number | null; note: string | null; username: string | null; created_at: string; }
+  interface AuditLogResp { count: number; rows: AuditEntry[]; }
+  const { data: panelAuditResp, isLoading: panelAuditLoading } = useQuery<AuditLogResp>({
+    queryKey: ['/api/super/audit-log', 'company-type', subModal?.id],
+    queryFn: () => fetcher('/api/super/audit-log?record_type=company&limit=500'),
+    enabled: subModal !== null && panelTab === 3,
+    staleTime: 60_000,
+  });
+
   const {
     data: managers = [],
     isLoading: mgLoading,
@@ -2921,6 +2943,7 @@ export default function SuperAdmin() {
                           <ActionBtn
                             label="الاشتراك" icon="💳" color={C.orange}
                             onClick={() => {
+                              setPanelTab(0);
                               setSubModal(co);
                               setSubForm({
                                 plan_type: co.plan_type ?? 'trial',
@@ -3154,6 +3177,7 @@ export default function SuperAdmin() {
                                   const feats: CompanyFeatures = co.features
                                     ? { ...defaultFeats, ...co.features }
                                     : { ...defaultFeats };
+                                  setPanelTab(0);
                                   setSubModal(co);
                                   setSubForm({
                                     plan_type: co.plan_type,
@@ -6838,221 +6862,398 @@ export default function SuperAdmin() {
 
       </div>{/* end maxWidth container */}
 
-      {/* ── Subscription Management Modal ─────────────────────────────────── */}
+      {/* ── Company Management Slide Panel ───────────────────────────────── */}
       {subModal && (
         <div
           onClick={() => setSubModal(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1200, display: 'flex', justifyContent: 'flex-end' }}
         >
           <div
+            className="co-mgmt-panel"
             onClick={(e) => e.stopPropagation()}
-            style={{ background: '#0f172a', border: '1px solid rgba(99,102,241,0.35)', borderRadius: '18px', width: '100%', maxWidth: '540px', maxHeight: '90vh', overflowY: 'auto', fontFamily: FONT, direction: 'rtl' }}
+            style={{ background: '#0f172a', borderLeft: '1px solid rgba(99,102,241,0.25)', width: '100%', maxWidth: '520px', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: FONT, direction: 'rtl' }}
           >
-            {/* Header */}
-            <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: '17px', fontWeight: 800, color: '#e2e8f0' }}>📋 إدارة الاشتراك</div>
-                <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '2px' }}>{subModal.name}</div>
+            {/* ── Panel Header ── */}
+            <div style={{ padding: '20px 24px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+              {/* Company name + close */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#e2e8f0' }}>🏢 {subModal.name}</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{
+                      padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
+                      background: STATUS[subModal.status]?.bg ?? 'rgba(148,163,184,0.1)',
+                      color: STATUS[subModal.status]?.text ?? '#94a3b8',
+                    }}>{STATUS[subModal.status]?.label ?? subModal.status}</span>
+                    <span>{subModal.admin_email ?? '—'}</span>
+                    <span style={{ color: '#475569' }}>·</span>
+                    <span>{subModal.userCount} مستخدم</span>
+                  </div>
+                </div>
+                <button onClick={() => setSubModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer', lineHeight: 1, flexShrink: 0, marginTop: '2px' }}>✕</button>
               </div>
-              <button onClick={() => setSubModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
+              {/* Tab bar */}
+              <div style={{ display: 'flex', gap: '2px' }}>
+                {([
+                  { label: '📋 الاشتراك', idx: 0 },
+                  { label: '⚙️ الوحدات', idx: 1 },
+                  { label: '👥 المستخدمون', idx: 2 },
+                  { label: '📜 السجل', idx: 3 },
+                ] as { label: string; idx: 0 | 1 | 2 | 3 }[]).map(({ label, idx }) => (
+                  <button
+                    key={idx}
+                    onClick={() => setPanelTab(idx)}
+                    style={{
+                      padding: '9px 13px',
+                      border: 'none',
+                      background: panelTab === idx ? 'rgba(99,102,241,0.18)' : 'transparent',
+                      color: panelTab === idx ? '#a5b4fc' : '#64748b',
+                      fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                      transition: 'all 0.15s', borderRadius: '8px 8px 0 0',
+                      borderBottom: panelTab === idx ? '2px solid #6366f1' : '2px solid transparent',
+                    }}
+                  >{label}</button>
+                ))}
+              </div>
             </div>
 
-            {/* Current Status */}
-            <div style={{ margin: '16px 24px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              {[
-                { label: 'الخطة الحالية', value: translatePlan(subModal.plan_type), color: C.orange },
-                { label: 'النسخة', value: subModal.edition === 'advanced' ? '🚀 Advanced' : '⭐ Pro', color: subModal.edition === 'advanced' ? '#fcd34d' : '#a5b4fc' },
-                { label: 'الحالة', value: subModal.status === 'active' ? '✅ نشط' : subModal.status === 'trial' ? '🔵 تجريبي' : subModal.status === 'expired' ? '❌ منتهي' : '⛔ موقوف', color: subModal.status === 'active' || subModal.status === 'trial' ? C.success : C.danger },
-                { label: 'الأيام المتبقية', value: subModal.daysRemaining < 0 ? 'منتهي' : `${subModal.daysRemaining} يوم`, color: subModal.daysRemaining < 0 ? C.danger : subModal.daysRemaining <= 7 ? C.warning : C.success },
-                { label: 'تاريخ الانتهاء', value: new Date(subModal.end_date).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }), color: '#e2e8f0' },
-                { label: 'عدد المستخدمين', value: `${subModal.userCount} مستخدم`, color: '#e2e8f0' },
-              ].map(({ label, value, color }) => (
-                <div key={label} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
-                  <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '3px' }}>{label}</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color }}>{value}</div>
-                </div>
-              ))}
-            </div>
+            {/* ── Tab Content (scrollable) ── */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
 
-            <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-
-              {/* Plan */}
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>📦 الخطة</label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {[
-                    { val: 'trial', label: 'تجريبي', color: '#64748b' },
-                    { val: 'basic', label: 'أساسي', color: '#3b82f6' },
-                    { val: 'professional', label: 'احترافي', color: '#8b5cf6' },
-                    { val: 'paid', label: 'مدفوع', color: C.orange },
-                  ].map(({ val, label, color }) => (
-                    <button
-                      key={val}
-                      onClick={() => setSubForm(f => ({ ...f, plan_type: val }))}
-                      style={{
-                        padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
-                        background: subForm.plan_type === val ? color : 'rgba(255,255,255,0.05)',
-                        border: `2px solid ${subForm.plan_type === val ? color : 'rgba(255,255,255,0.12)'}`,
-                        color: subForm.plan_type === val ? '#fff' : '#94a3b8',
-                      }}
-                    >{label}</button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Edition */}
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>🏷️ النسخة</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {[
-                    { val: 'ultimate' as const, label: '⭐ MuhKam Pro', color: '#6366f1', desc: 'بدون محاسبة' },
-                    { val: 'advanced' as const, label: '🚀 MuhKam Advanced', color: '#f59e0b', desc: 'مع محاسبة كاملة' },
-                  ].map(({ val, label, color, desc }) => (
-                    <button
-                      key={val}
-                      onClick={() => setSubForm(f => ({
-                        ...f,
-                        edition: val,
-                        features: val === 'advanced' ? { ...DEFAULT_FEATS_ADVANCED } : { ...DEFAULT_FEATS_ULTIMATE },
-                      }))}
-                      style={{
-                        flex: 1, padding: '10px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, textAlign: 'center', transition: 'all 0.15s',
-                        background: subForm.edition === val ? (val === 'advanced' ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)') : 'rgba(255,255,255,0.04)',
-                        border: `2px solid ${subForm.edition === val ? color : 'rgba(255,255,255,0.1)'}`,
-                        color: subForm.edition === val ? color : '#64748b',
-                      }}
-                    >
-                      <div>{label}</div>
-                      <div style={{ fontSize: '10px', fontWeight: 400, marginTop: '2px', opacity: 0.7 }}>{desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Module Feature Control */}
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>⚙️ التحكم في الوحدات</label>
-                <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                  {([
-                    { key: 'accounting' as const, label: 'المحاسبة الكاملة', icon: '📊', desc: 'شجرة الحسابات، القيود، الميزانية' },
-                    { key: 'hr' as const, label: 'الموارد البشرية', icon: '👥', desc: 'الموظفون والحضور والانصراف' },
-                    { key: 'pos' as const, label: 'نقطة البيع (POS)', icon: '🖥️', desc: 'واجهة البيع المباشرة' },
-                    { key: 'warranty' as const, label: 'الضمان', icon: '🛡️', desc: 'إدارة ضمانات المنتجات' },
-                    { key: 'consignment' as const, label: 'الأمانات', icon: '📦', desc: 'بيع وإدارة بضاعة الأمانة' },
-                    { key: 'fixed_assets' as const, label: 'الأصول الثابتة', icon: '🏗️', desc: 'تتبع وإهلاك الأصول' },
-                    { key: 'budgets' as const, label: 'الموازنات ومراكز التكلفة', icon: '💹', desc: 'ميزانيات ومراكز التكلفة' },
-                    { key: 'bank_reconciliation' as const, label: 'المطابقة البنكية', icon: '🏦', desc: 'مطابقة كشوف البنك' },
-                    { key: 'maintenance' as const, label: 'الصيانة', icon: '🔧', desc: 'وحدة الصيانة (قريباً)' },
-                  ] as { key: keyof CompanyFeatures; label: string; icon: string; desc: string }[]).map(({ key, label, icon, desc }, i) => (
-                    <div
-                      key={key}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '12px 16px',
-                        borderBottom: i < 8 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                        background: subForm.features[key] ? 'rgba(52,211,153,0.03)' : 'transparent',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '18px' }}>{icon}</span>
-                        <div>
-                          <div style={{ fontSize: '12px', fontWeight: 700, color: subForm.features[key] ? '#e2e8f0' : '#64748b' }}>{label}</div>
-                          <div style={{ fontSize: '10px', color: '#475569', marginTop: '1px' }}>{desc}</div>
-                        </div>
+              {/* ── Tab 0: Subscription ── */}
+              {panelTab === 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  {/* Current info grid */}
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {[
+                      { label: 'الخطة الحالية', value: translatePlan(subModal.plan_type), color: C.orange },
+                      { label: 'النسخة', value: subModal.edition === 'advanced' ? '🚀 Advanced' : '⭐ Pro', color: subModal.edition === 'advanced' ? '#fcd34d' : '#a5b4fc' },
+                      { label: 'الحالة', value: subModal.status === 'active' ? '✅ نشط' : subModal.status === 'trial' ? '🔵 تجريبي' : subModal.status === 'expired' ? '❌ منتهي' : '⛔ موقوف', color: subModal.status === 'active' || subModal.status === 'trial' ? C.success : C.danger },
+                      { label: 'الأيام المتبقية', value: subModal.daysRemaining < 0 ? 'منتهي' : `${subModal.daysRemaining} يوم`, color: subModal.daysRemaining < 0 ? C.danger : subModal.daysRemaining <= 7 ? C.warning : C.success },
+                      { label: 'تاريخ الانتهاء', value: new Date(subModal.end_date).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }), color: '#e2e8f0' },
+                      { label: 'تاريخ الإنشاء', value: new Date(subModal.created_at).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' }), color: '#e2e8f0' },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '3px' }}>{label}</div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color }}>{value}</div>
                       </div>
-                      <button
-                        onClick={() => setSubForm(f => ({ ...f, features: { ...f.features, [key]: !f.features[key] } }))}
-                        style={{
-                          width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                          background: subForm.features[key] ? 'linear-gradient(135deg,#34d399,#059669)' : 'rgba(255,255,255,0.12)',
-                          position: 'relative', transition: 'all 0.2s', flexShrink: 0,
-                        }}
-                      >
-                        <span style={{
-                          position: 'absolute', top: '3px',
-                          right: subForm.features[key] ? '3px' : 'auto',
-                          left: subForm.features[key] ? 'auto' : '3px',
-                          width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
-                          transition: 'all 0.2s', display: 'block',
-                        }} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Date control */}
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>📅 تجديد الاشتراك</label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                  {[
-                    { val: 'days' as const, label: '⏳ تمديد بأيام' },
-                    { val: 'date' as const, label: '📆 تحديد تاريخ' },
-                  ].map(({ val, label }) => (
-                    <button
-                      key={val}
-                      onClick={() => setSubForm(f => ({ ...f, extend_mode: val }))}
-                      style={{
-                        flex: 1, padding: '8px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
-                        background: subForm.extend_mode === val ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
-                        border: `2px solid ${subForm.extend_mode === val ? '#6366f1' : 'rgba(255,255,255,0.1)'}`,
-                        color: subForm.extend_mode === val ? '#a5b4fc' : '#64748b',
-                      }}
-                    >{label}</button>
-                  ))}
-                </div>
-                {subForm.extend_mode === 'days' ? (
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {[7, 14, 30, 60, 90, 180, 365].map((d) => (
-                      <button
-                        key={d}
-                        onClick={() => setSubForm(f => ({ ...f, extend_days: d }))}
-                        style={{
-                          padding: '7px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
-                          background: subForm.extend_days === d ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.05)',
-                          border: `2px solid ${subForm.extend_days === d ? C.orange : 'rgba(255,255,255,0.1)'}`,
-                          color: subForm.extend_days === d ? C.orange : '#94a3b8',
-                        }}
-                      >{d === 365 ? 'سنة' : `${d} يوم`}</button>
                     ))}
                   </div>
-                ) : (
-                  <input
-                    type="date"
-                    value={subForm.end_date}
-                    onChange={(e) => setSubForm(f => ({ ...f, end_date: e.target.value }))}
-                    min={new Date().toISOString().slice(0, 10)}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '2px solid rgba(99,102,241,0.4)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontSize: '14px', fontFamily: FONT, boxSizing: 'border-box' }}
-                  />
-                )}
-              </div>
 
-              {/* Status toggle */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '14px 16px', border: `1px solid ${subForm.is_active ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#e2e8f0' }}>حالة الشركة</div>
-                  <div style={{ fontSize: '11px', color: subForm.is_active ? C.success : C.danger, marginTop: '2px' }}>{subForm.is_active ? '✅ نشطة ويمكن تسجيل الدخول' : '⛔ موقوفة ولا يمكن تسجيل الدخول'}</div>
+                  {/* Plan */}
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>📦 الخطة</label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {[
+                        { val: 'trial', label: 'تجريبي', color: '#64748b' },
+                        { val: 'basic', label: 'أساسي', color: '#3b82f6' },
+                        { val: 'professional', label: 'احترافي', color: '#8b5cf6' },
+                        { val: 'paid', label: 'مدفوع', color: C.orange },
+                      ].map(({ val, label, color }) => (
+                        <button
+                          key={val}
+                          onClick={() => setSubForm(f => ({ ...f, plan_type: val }))}
+                          style={{
+                            padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
+                            background: subForm.plan_type === val ? color : 'rgba(255,255,255,0.05)',
+                            border: `2px solid ${subForm.plan_type === val ? color : 'rgba(255,255,255,0.12)'}`,
+                            color: subForm.plan_type === val ? '#fff' : '#94a3b8',
+                          }}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Edition */}
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>🏷️ النسخة</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {[
+                        { val: 'ultimate' as const, label: '⭐ MuhKam Pro', color: '#6366f1', desc: 'بدون محاسبة' },
+                        { val: 'advanced' as const, label: '🚀 MuhKam Advanced', color: '#f59e0b', desc: 'مع محاسبة كاملة' },
+                      ].map(({ val, label, color, desc }) => (
+                        <button
+                          key={val}
+                          onClick={() => setSubForm(f => ({
+                            ...f, edition: val,
+                            features: val === 'advanced' ? { ...DEFAULT_FEATS_ADVANCED } : { ...DEFAULT_FEATS_ULTIMATE },
+                          }))}
+                          style={{
+                            flex: 1, padding: '10px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, textAlign: 'center', transition: 'all 0.15s',
+                            background: subForm.edition === val ? (val === 'advanced' ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)') : 'rgba(255,255,255,0.04)',
+                            border: `2px solid ${subForm.edition === val ? color : 'rgba(255,255,255,0.1)'}`,
+                            color: subForm.edition === val ? color : '#64748b',
+                          }}
+                        >
+                          <div>{label}</div>
+                          <div style={{ fontSize: '10px', fontWeight: 400, marginTop: '2px', opacity: 0.7 }}>{desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Date / Extend */}
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>📅 تجديد الاشتراك</label>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                      {[
+                        { val: 'days' as const, label: '⏳ تمديد بأيام' },
+                        { val: 'date' as const, label: '📆 تحديد تاريخ' },
+                      ].map(({ val, label }) => (
+                        <button
+                          key={val}
+                          onClick={() => setSubForm(f => ({ ...f, extend_mode: val }))}
+                          style={{
+                            flex: 1, padding: '8px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
+                            background: subForm.extend_mode === val ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
+                            border: `2px solid ${subForm.extend_mode === val ? '#6366f1' : 'rgba(255,255,255,0.1)'}`,
+                            color: subForm.extend_mode === val ? '#a5b4fc' : '#64748b',
+                          }}
+                        >{label}</button>
+                      ))}
+                    </div>
+                    {subForm.extend_mode === 'days' ? (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {[7, 14, 30, 60, 90, 180, 365].map((d) => (
+                          <button
+                            key={d}
+                            onClick={() => setSubForm(f => ({ ...f, extend_days: d }))}
+                            style={{
+                              padding: '7px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                              background: subForm.extend_days === d ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.05)',
+                              border: `2px solid ${subForm.extend_days === d ? C.orange : 'rgba(255,255,255,0.1)'}`,
+                              color: subForm.extend_days === d ? C.orange : '#94a3b8',
+                            }}
+                          >{d === 365 ? 'سنة' : `${d} يوم`}</button>
+                        ))}
+                      </div>
+                    ) : (
+                      <input
+                        type="date"
+                        value={subForm.end_date}
+                        onChange={(e) => setSubForm(f => ({ ...f, end_date: e.target.value }))}
+                        min={new Date().toISOString().slice(0, 10)}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '2px solid rgba(99,102,241,0.4)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontSize: '14px', fontFamily: FONT, boxSizing: 'border-box' }}
+                      />
+                    )}
+                  </div>
+
+                  {/* Status toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '14px 16px', border: `1px solid ${subForm.is_active ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#e2e8f0' }}>حالة الشركة</div>
+                      <div style={{ fontSize: '11px', color: subForm.is_active ? C.success : C.danger, marginTop: '2px' }}>{subForm.is_active ? '✅ نشطة ويمكن تسجيل الدخول' : '⛔ موقوفة ولا يمكن تسجيل الدخول'}</div>
+                    </div>
+                    <button
+                      onClick={() => setSubForm(f => ({ ...f, is_active: !f.is_active }))}
+                      style={{
+                        padding: '8px 18px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, border: 'none', transition: 'all 0.2s',
+                        background: subForm.is_active ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)',
+                        color: subForm.is_active ? C.success : C.danger,
+                      }}
+                    >{subForm.is_active ? '✅ نشط' : '⛔ موقوف'}</button>
+                  </div>
+
+                  {/* Save */}
+                  <button
+                    onClick={() => void saveSubscription()}
+                    disabled={subSaving || (subForm.extend_mode === 'date' && !subForm.end_date)}
+                    style={{
+                      width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 800, cursor: subSaving ? 'wait' : 'pointer', fontFamily: FONT, border: 'none', transition: 'all 0.2s',
+                      background: subSaving ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg,#6366f1,#4f46e5)',
+                      color: '#fff', opacity: (subSaving || (subForm.extend_mode === 'date' && !subForm.end_date)) ? 0.6 : 1,
+                    }}
+                  >{subSaving ? '⏳ جاري الحفظ...' : '💾 حفظ التغييرات'}</button>
                 </div>
-                <button
-                  onClick={() => setSubForm(f => ({ ...f, is_active: !f.is_active }))}
-                  style={{
-                    padding: '8px 18px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, border: 'none', transition: 'all 0.2s',
-                    background: subForm.is_active ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)',
-                    color: subForm.is_active ? C.success : C.danger,
-                  }}
-                >{subForm.is_active ? '✅ نشط' : '⛔ موقوف'}</button>
-              </div>
+              )}
 
-              {/* Save button */}
+              {/* ── Tab 1: Modules ── */}
+              {panelTab === 1 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>التحكم في الوحدات المُفعَّلة لهذه الشركة</div>
+                  <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                    {([
+                      { key: 'accounting' as const, label: 'المحاسبة الكاملة', icon: '📊', desc: 'شجرة الحسابات، القيود، الميزانية' },
+                      { key: 'hr' as const, label: 'الموارد البشرية', icon: '👥', desc: 'الموظفون والحضور والانصراف' },
+                      { key: 'pos' as const, label: 'نقطة البيع (POS)', icon: '🖥️', desc: 'واجهة البيع المباشرة' },
+                      { key: 'warranty' as const, label: 'الضمان', icon: '🛡️', desc: 'إدارة ضمانات المنتجات' },
+                      { key: 'consignment' as const, label: 'الأمانات', icon: '📦', desc: 'بيع وإدارة بضاعة الأمانة' },
+                      { key: 'fixed_assets' as const, label: 'الأصول الثابتة', icon: '🏗️', desc: 'تتبع وإهلاك الأصول' },
+                      { key: 'budgets' as const, label: 'الموازنات ومراكز التكلفة', icon: '💹', desc: 'ميزانيات ومراكز التكلفة' },
+                      { key: 'bank_reconciliation' as const, label: 'المطابقة البنكية', icon: '🏦', desc: 'مطابقة كشوف البنك' },
+                      { key: 'maintenance' as const, label: 'الصيانة', icon: '🔧', desc: 'وحدة الصيانة (قريباً)' },
+                    ] as { key: keyof CompanyFeatures; label: string; icon: string; desc: string }[]).map(({ key, label, icon, desc }, i) => (
+                      <div
+                        key={key}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '12px 16px',
+                          borderBottom: i < 8 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                          background: subForm.features[key] ? 'rgba(52,211,153,0.04)' : 'transparent',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '18px' }}>{icon}</span>
+                          <div>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: subForm.features[key] ? '#e2e8f0' : '#64748b' }}>{label}</div>
+                            <div style={{ fontSize: '10px', color: '#475569', marginTop: '1px' }}>{desc}</div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setSubForm(f => ({ ...f, features: { ...f.features, [key]: !f.features[key] } }))}
+                          style={{
+                            width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                            background: subForm.features[key] ? 'linear-gradient(135deg,#34d399,#059669)' : 'rgba(255,255,255,0.12)',
+                            position: 'relative', transition: 'all 0.2s', flexShrink: 0,
+                          }}
+                        >
+                          <span style={{
+                            position: 'absolute', top: '3px',
+                            right: subForm.features[key] ? '3px' : 'auto',
+                            left: subForm.features[key] ? 'auto' : '3px',
+                            width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
+                            transition: 'all 0.2s', display: 'block',
+                          }} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => void saveSubscription()}
+                    disabled={subSaving}
+                    style={{
+                      width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 800, cursor: subSaving ? 'wait' : 'pointer', fontFamily: FONT, border: 'none', transition: 'all 0.2s',
+                      background: subSaving ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg,#6366f1,#4f46e5)',
+                      color: '#fff', opacity: subSaving ? 0.6 : 1,
+                    }}
+                  >{subSaving ? '⏳ جاري الحفظ...' : '💾 حفظ إعدادات الوحدات'}</button>
+                </div>
+              )}
+
+              {/* ── Tab 2: Users ── */}
+              {panelTab === 2 && (
+                <div>
+                  {panelDetailLoading ? (
+                    <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>⏳ جارٍ التحميل...</div>
+                  ) : (panelCompanyDetail?.users ?? []).length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>
+                      <div style={{ fontSize: '32px', marginBottom: '8px' }}>👥</div>
+                      <div>لا يوجد مستخدمون لهذه الشركة</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ fontSize: '12px', color: C.muted, marginBottom: '4px' }}>
+                        {(panelCompanyDetail?.users ?? []).length} مستخدم مسجّل
+                      </div>
+                      {(panelCompanyDetail?.users ?? []).map((u) => (
+                        <div key={u.id} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          background: 'rgba(255,255,255,0.04)', borderRadius: '10px',
+                          padding: '12px 14px', border: '1px solid rgba(255,255,255,0.07)',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '34px', height: '34px', borderRadius: '8px', flexShrink: 0,
+                              background: u.active ? 'rgba(52,211,153,0.15)' : 'rgba(148,163,184,0.12)',
+                              border: `1px solid ${u.active ? 'rgba(52,211,153,0.3)' : 'rgba(148,163,184,0.18)'}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px',
+                            }}>👤</div>
+                            <div>
+                              <div style={{ fontSize: '13px', fontWeight: 700, color: '#e2e8f0' }}>{u.name}</div>
+                              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>@{u.username}</div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '3px' }}>
+                            <span style={{
+                              fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px',
+                              background: u.active ? 'rgba(52,211,153,0.12)' : 'rgba(148,163,184,0.1)',
+                              color: u.active ? '#34d399' : '#94a3b8',
+                            }}>{u.active ? 'نشط' : 'غير نشط'}</span>
+                            <span style={{ fontSize: '10px', color: '#475569' }}>{u.role}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Tab 3: Audit Log ── */}
+              {panelTab === 3 && (
+                <div>
+                  {panelAuditLoading ? (
+                    <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>⏳ جارٍ تحميل السجل...</div>
+                  ) : (() => {
+                    const coAudit = (panelAuditResp?.rows ?? []).filter(e => e.record_id === subModal.id);
+                    const ACTION_COLORS: Record<string, string> = {
+                      update: '#6366f1', COMPANY_ACTIVATED: '#22c55e', COMPANY_SUSPENDED: '#ef4444',
+                      COMPANY_EXTENDED: '#f59e0b', SUPER_ADMIN_ACCESS: '#64748b',
+                      create: '#22c55e', delete: '#ef4444', COMPANY_CREATED: '#22c55e',
+                    };
+                    return coAudit.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>
+                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>📜</div>
+                        <div>لا يوجد سجل نشاط لهذه الشركة بعد</div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ fontSize: '12px', color: C.muted, marginBottom: '4px' }}>{coAudit.length} إجراء مسجّل</div>
+                        {coAudit.map((entry) => {
+                          const color = ACTION_COLORS[entry.action] ?? '#64748b';
+                          return (
+                            <div key={entry.id} style={{
+                              background: 'rgba(255,255,255,0.04)', borderRadius: '10px',
+                              padding: '12px 14px 10px',
+                              border: '1px solid rgba(255,255,255,0.07)',
+                              borderRight: `3px solid ${color}`,
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color }}>{entry.action}</span>
+                                <span style={{ fontSize: '10px', color: '#475569' }}>
+                                  {new Date(entry.created_at).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                              </div>
+                              {entry.note && <div style={{ fontSize: '12px', color: '#94a3b8' }}>{entry.note}</div>}
+                              {entry.username && <div style={{ fontSize: '10px', color: '#475569', marginTop: '3px' }}>بواسطة: {entry.username}</div>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+
+            {/* ── Panel Footer: Quick Actions ── */}
+            <div style={{
+              padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', gap: '8px', flexWrap: 'wrap', flexShrink: 0,
+              background: 'rgba(0,0,0,0.2)',
+            }}>
+              {!subModal.is_active ? (
+                <button
+                  onClick={() => { coMutate.mutate({ url: `/api/super/companies/${subModal.id}/activate` }); setSubModal(null); }}
+                  style={{ padding: '8px 14px', borderRadius: '10px', border: '1.5px solid rgba(34,197,94,0.4)', background: 'rgba(34,197,94,0.1)', color: C.success, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+                >✅ تفعيل</button>
+              ) : (
+                <button
+                  onClick={() => { coMutate.mutate({ url: `/api/super/companies/${subModal.id}/suspend` }); setSubModal(null); }}
+                  style={{ padding: '8px 14px', borderRadius: '10px', border: '1.5px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: C.danger, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+                >⛔ إيقاف</button>
+              )}
               <button
-                onClick={() => void saveSubscription()}
-                disabled={subSaving || (subForm.extend_mode === 'date' && !subForm.end_date)}
-                style={{
-                  width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 800, cursor: subSaving ? 'wait' : 'pointer', fontFamily: FONT, border: 'none', transition: 'all 0.2s',
-                  background: subSaving ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg,#6366f1,#4f46e5)',
-                  color: '#fff', opacity: (subSaving || (subForm.extend_mode === 'date' && !subForm.end_date)) ? 0.6 : 1,
-                }}
-              >{subSaving ? '⏳ جاري الحفظ...' : '💾 حفظ التغييرات'}</button>
+                onClick={() => { resetPassword.mutate({ id: subModal.id, company_name: subModal.name }); setSubModal(null); }}
+                style={{ padding: '8px 14px', borderRadius: '10px', border: '1.5px solid rgba(124,58,237,0.4)', background: 'rgba(124,58,237,0.1)', color: '#a78bfa', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+              >🔑 إعادة كلمة المرور</button>
+              <button
+                onClick={() => { setSubModal(null); setSnapshotCompany(subModal.id); }}
+                style={{ padding: '8px 14px', borderRadius: '10px', border: '1.5px solid rgba(96,165,250,0.4)', background: 'rgba(96,165,250,0.1)', color: '#60a5fa', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+              >📊 لقطة</button>
+              <button
+                onClick={() => { setSubModal(null); setDeleteCoErr(''); setDeleteTarget(subModal); }}
+                style={{ padding: '8px 14px', borderRadius: '10px', border: '1.5px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.08)', color: C.danger, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, marginRight: 'auto' }}
+              >🗑️ حذف</button>
             </div>
           </div>
         </div>

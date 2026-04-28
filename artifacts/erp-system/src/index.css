@@ -4774,4 +4774,13 @@ html.light .nav-item.active { color: #92400e; background: rgba(245,158,11,0.09);
   color: rgba(253,230,138,0.90) !important;
 }
 
+/* ── Company Management Slide Panel ──────────────────────────────── */
+@keyframes co-panel-slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.co-mgmt-panel {
+  animation: co-panel-slide-in 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* ── END OF CANONICAL DEFINITIONS ────────────────────────────────── */

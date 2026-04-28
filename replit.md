@@ -210,6 +210,18 @@ Key backend files with inline comments:
 - **Navigation:** "الموبايلات" in التجارة section of layout.tsx sidebar
 
 ### 5. نظام الصيانة والإصلاح (Repair Job Cards) — أبريل 2026
+#### صفحة إدارة الشركات — لوحة جانبية ذات 4 تبويبات (أبريل 2026)
+- **الملف:** `artifacts/erp-system/src/pages/super-admin.tsx`
+- استبدال مودال الاشتراك المركزي (`subModal` popup) بـ **لوحة جانبية انزلاقية** تنبثق من اليسار (RTL) بعرض 520px
+- اللوحة الجديدة تحتوي 4 تبويبات:
+  1. **📋 الاشتراك** — معلومات الحالة + اختيار الخطة + النسخة + التمديد (أيام/تاريخ) + حالة التفعيل + حفظ
+  2. **⚙️ الوحدات** — 9 مفاتيح تبديل (accounting, hr, pos, warranty, consignment, fixed_assets, budgets, bank_reconciliation, maintenance) + حفظ
+  3. **👥 المستخدمون** — قائمة مستخدمي الشركة من `GET /api/super/companies/:id` (يُحمَّل عند فتح التبويب فقط)
+  4. **📜 السجل** — سجل المراجعة من `GET /api/super/audit-log?record_type=company&limit=500` مُفلتَر client-side بـ `record_id`
+- **تذييل اللوحة:** أزرار إجراء سريعة — تفعيل/إيقاف، إعادة كلمة المرور، لقطة سريعة، حذف
+- `panelTab` state جديد، واستعلامَيْ `panelCompanyDetail` و`panelAuditResp` بـ `enabled` مشروط
+- Animation CSS: `@keyframes co-panel-slide-in` + `.co-mgmt-panel` في `index.css`
+
 #### إعدادات الصيانة الكاملة — RepairSettingsModal (أبريل 2026)
 - **Component:** `artifacts/erp-system/src/components/RepairSettingsModal.tsx`
 - Modal عريض (860px) بـ sidebar جانبي RTL + 4 تبويبات:
