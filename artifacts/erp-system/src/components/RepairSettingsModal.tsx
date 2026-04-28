@@ -8,13 +8,13 @@ import {
   Bell, BellOff, Percent, AlertCircle, Zap,
   ArrowLeft, ArrowRight, Copy, Printer,
   Info, Settings2, Save, LayoutDashboard, Lock,
-  Clock, Wrench, CheckCheck, Truck, Ban, Package, Search, Star,
-  ShieldCheck, Hammer, Cog, AlertTriangle, Box, Cpu,
+  Search, Wrench,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
+import { DASHBOARD_CARD_ICONS, DASHBOARD_CARD_COLORS } from "@/lib/repairConstants";
 
 /* ══════════════════════════════════════════════════════════════
    TYPES
@@ -147,18 +147,6 @@ const TABS: Array<{
 ];
 
 /* Curated Lucide icon set available for dashboard cards */
-export const DASHBOARD_CARD_ICONS: Record<string, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
-  Clock, Wrench, CheckCheck, Truck, Ban, Package, Search, Star,
-  ShieldCheck, Hammer, Cog, AlertTriangle, AlertCircle, Box, Cpu,
-  CheckCircle2, XCircle, Zap, GitBranch, ClipboardList,
-};
-
-/* Colors palette for dashboard cards */
-export const DASHBOARD_CARD_COLORS = [
-  "#f59e0b", "#06b6d4", "#10b981", "#8b5cf6", "#3b82f6",
-  "#ec4899", "#14b8a6", "#a855f7", "#84cc16", "#ef4444",
-  "#f97316", "#6366f1",
-];
 
 /* ══════════════════════════════════════════════════════════════
    CHECKLIST TAB — per device type (inspection + QC use same items)
@@ -893,9 +881,9 @@ function TechniciansTab() {
   const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery<ERP_User[]>({
-    queryKey: ["/api/auth/users"],
+    queryKey: ["/api/settings/users"],
     queryFn: async () => {
-      const r = await authFetch(api("/api/auth/users"));
+      const r = await authFetch(api("/api/settings/users"));
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
     },

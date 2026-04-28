@@ -17,6 +17,7 @@ import { api } from '@/lib/api';
 import RepairPipeline from "@/components/RepairPipeline";
 import RepairParts from "@/components/RepairParts";
 import RepairSettingsModal from "@/components/RepairSettingsModal";
+import { deriveDeviceType } from "@/lib/repairConstants";
 
 
 /* ── Types ──────────────────────────────────────────────────── */
@@ -117,45 +118,6 @@ interface ChecklistItem {
   notes?: string;
 }
 
-/* ── Device types for filtered checklists ──────────────────────
-   Must mirror VALID_DEVICE_TYPES on the backend. */
-export const DEVICE_TYPES: Array<{ key: string; label: string; emoji: string }> = [
-  { key: "iphone",          label: "آيفون",            emoji: "📱" },
-  { key: "ipad",            label: "آيباد",            emoji: "📱" },
-  { key: "watch",           label: "أبل ووتش",         emoji: "⌚" },
-  { key: "airpods",         label: "إيربودز",          emoji: "🎧" },
-  { key: "mac",             label: "ماك",              emoji: "💻" },
-  { key: "samsung_phone",   label: "سامسونج موبايل",   emoji: "📱" },
-  { key: "samsung_tablet",  label: "سامسونج تابلت",    emoji: "📱" },
-  { key: "android_phone",   label: "أندرويد موبايل",   emoji: "🤖" },
-  { key: "android_tablet",  label: "أندرويد تابلت",    emoji: "🤖" },
-  { key: "other",           label: "أخرى",             emoji: "🔧" },
-];
-
-/**
- * Derive the device_type from the intake (brand, category) selection.
- * Falls back to "general" for unknown combos so legacy jobs keep working.
- */
-export function deriveDeviceType(brand: string, category: string): string {
-  const b = (brand || "").toLowerCase();
-  const c = (category || "").toLowerCase();
-  if (b.includes("apple")) {
-    if (c.includes("iphone"))  return "iphone";
-    if (c.includes("ipad"))    return "ipad";
-    if (c.includes("watch"))   return "watch";
-    if (c.includes("airpods")) return "airpods";
-    if (c.includes("mac"))     return "mac";
-  }
-  if (b.includes("samsung")) {
-    if (c.includes("tab")) return "samsung_tablet";
-    return "samsung_phone";
-  }
-  if (["xiaomi","huawei","oppo","vivo","realme","nokia","oneplus"].some(x => b.includes(x))) {
-    if (c.includes("pad") || c.includes("matepad")) return "android_tablet";
-    return "android_phone";
-  }
-  return "other";
-}
 
 /* ── Constants ──────────────────────────────────────────────── */
 const ACCESSORIES_LIST = [
