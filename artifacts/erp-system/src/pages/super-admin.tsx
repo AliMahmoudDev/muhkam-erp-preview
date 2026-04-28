@@ -697,11 +697,17 @@ export default function SuperAdmin() {
   }, [sysSettings]);
 
   /* ── Telegram settings query ── */
-  const { data: tgConfigData } = useQuery<TgConfig>({
+  const {
+    data:    tgConfigData,
+    isLoading: tgLoading,
+    isError:   tgError,
+    refetch:   tgRefetch,
+  } = useQuery<TgConfig>({
     queryKey: ['/api/super/telegram-settings'],
     queryFn:  () => fetcher('/api/super/telegram-settings'),
     enabled:  activeTab === 'settings' && settingsActiveCard === 'telegram',
     staleTime: 30_000,
+    retry: 1,
   });
   useEffect(() => { if (tgConfigData) setTgConfig(tgConfigData); }, [tgConfigData]);
 
@@ -4910,9 +4916,20 @@ export default function SuperAdmin() {
                   <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
                     {/* Loading state */}
-                    {!tgConfig && (
+                    {tgLoading && !tgConfig && (
                       <div style={{ textAlign: 'center', padding: '40px', color: C.muted, fontSize: '14px' }}>
                         ⏳ جاري تحميل الإعدادات...
+                      </div>
+                    )}
+
+                    {/* Error state */}
+                    {tgError && !tgConfig && (
+                      <div style={{ textAlign: 'center', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ fontSize: '14px', color: '#EF4444' }}>❌ تعذّر تحميل إعدادات تليجرام</div>
+                        <button
+                          onClick={() => tgRefetch()}
+                          style={{ padding: '8px 20px', borderRadius: '10px', border: '1.5px solid #38BDF850', background: 'rgba(56,189,248,0.1)', color: '#38BDF8', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+                        >🔄 إعادة المحاولة</button>
                       </div>
                     )}
 
