@@ -60,6 +60,59 @@ const DEVICE_TYPE_META: Array<{ key: DeviceType; label: string; emoji: string }>
 const DEVICE_TYPE_LABEL: Record<DeviceType, string> =
   Object.fromEntries(DEVICE_TYPE_META.map(d => [d.key, d.label])) as Record<DeviceType, string>;
 
+/* ══════════════════════════════════════════════════════════════
+   MANUFACTURER HIERARCHY — 2-level selector
+══════════════════════════════════════════════════════════════ */
+const MFR_STORAGE_KEY = "muhkam_repair_mfrs_v1";
+
+interface DeviceCategory { key: string; label: string; emoji: string; }
+interface Manufacturer   { key: string; label: string; emoji: string; categories: DeviceCategory[]; }
+
+const DEFAULT_MANUFACTURERS: Manufacturer[] = [
+  {
+    key: "apple", label: "Apple", emoji: "🍎",
+    categories: [
+      { key: "iphone",  label: "آيفون",    emoji: "📱" },
+      { key: "ipad",    label: "آيباد",    emoji: "📱" },
+      { key: "watch",   label: "أبل ووتش", emoji: "⌚" },
+      { key: "airpods", label: "إيربودز",  emoji: "🎧" },
+      { key: "mac",     label: "ماك",      emoji: "💻" },
+    ],
+  },
+  {
+    key: "android", label: "Android", emoji: "🤖",
+    categories: [
+      { key: "android_phone",  label: "موبايل", emoji: "📱" },
+      { key: "android_tablet", label: "تابلت",  emoji: "📱" },
+    ],
+  },
+  {
+    key: "samsung", label: "Samsung", emoji: "📱",
+    categories: [
+      { key: "samsung_phone",  label: "سامسونج موبايل", emoji: "📱" },
+      { key: "samsung_tablet", label: "سامسونج تابلت",  emoji: "📱" },
+    ],
+  },
+  {
+    key: "other", label: "أخرى", emoji: "🔧",
+    categories: [
+      { key: "other", label: "أخرى", emoji: "🔧" },
+    ],
+  },
+];
+
+function loadManufacturers(): Manufacturer[] {
+  try {
+    const s = localStorage.getItem(MFR_STORAGE_KEY);
+    if (!s) return DEFAULT_MANUFACTURERS;
+    const parsed = JSON.parse(s) as Manufacturer[];
+    return parsed.length > 0 ? parsed : DEFAULT_MANUFACTURERS;
+  } catch { return DEFAULT_MANUFACTURERS; }
+}
+function saveManufacturers(mfrs: Manufacturer[]) {
+  localStorage.setItem(MFR_STORAGE_KEY, JSON.stringify(mfrs));
+}
+
 const PIPELINE_STAGES: Array<{
   key: string; label: string;
   color: string; dot: string;
@@ -114,7 +167,18 @@ function ChecklistTab() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [activeType, setActiveType]         = useState<DeviceType>("iphone");
+  /* ── manufacturer/category state ── */
+  const [manufacturers, setManufacturers]   = useState<Manufacturer[]>(loadManufacturers);
+  const [activeMfr, setActiveMfr]           = useState<string>("apple");
+  const [showAddMfr, setShowAddMfr]         = useState(false);
+  const [addMfrLabel, setAddMfrLabel]       = useState("");
+  const [addMfrEmoji, setAddMfrEmoji]       = useState("📱");
+  const [showAddCat, setShowAddCat]         = useState(false);
+  const [addCatLabel, setAddCatLabel]       = useState("");
+  const [addCatEmoji, setAddCatEmoji]       = useState("📱");
+
+  /* ── item state ── */
+  const [activeType, setActiveType]         = useState<string>("iphone");
   const [editingId, setEditingId]           = useState<number | null>(null);
   const [editLabel, setEditLabel]           = useState("");
   const [addingToCat, setAddingToCat]       = useState<string | null>(null);
@@ -126,6 +190,44 @@ function ChecklistTab() {
   const [showCopyMenu, setShowCopyMenu]     = useState(false);
   const [localCats, setLocalCats]           = useState<string[]>([]);
   const [expandedCats, setExpandedCats]     = useState<Set<string>>(new Set());
+
+  /* ── derived manufacturer / category helpers ── */
+  const activeMfrData  = manufacturers.find(m => m.key === activeMfr) ?? manufacturers[0];
+  const activeCatData  = activeMfrData?.categories.find(c => c.key === activeType);
+  const allDeviceTypes = manufacturers.flatMap(m => m.categories);
+
+  const doSelectMfr = (mfrKey: string) => {
+    setActiveMfr(mfrKey);
+    const mfr = manufacturers.find(m => m.key === mfrKey);
+    if (mfr && mfr.categories.length > 0) setActiveType(mfr.categories[0].key);
+    setShowAddMfr(false); setShowAddCat(false);
+  };
+
+  const doAddManufacturer = () => {
+    const label = addMfrLabel.trim();
+    if (!label) return;
+    const key = `mfr_${label.toLowerCase().replace(/[^a-z0-9]/gi, "_").slice(0, 24)}_${Date.now()}`;
+    const newMfr: Manufacturer = { key, label, emoji: addMfrEmoji, categories: [] };
+    const updated = [...manufacturers, newMfr];
+    setManufacturers(updated);
+    saveManufacturers(updated);
+    setActiveMfr(key);
+    setAddMfrLabel(""); setAddMfrEmoji("📱"); setShowAddMfr(false);
+  };
+
+  const doAddCategory = () => {
+    const label = addCatLabel.trim();
+    if (!label) return;
+    const key = `${activeMfr}_${label.replace(/\s+/g, "_").replace(/[^a-z0-9_\u0600-\u06ff]/g, "").slice(0, 24)}_${Date.now()}`;
+    const newCat: DeviceCategory = { key, label, emoji: addCatEmoji };
+    const updated = manufacturers.map(m =>
+      m.key === activeMfr ? { ...m, categories: [...m.categories, newCat] } : m
+    );
+    setManufacturers(updated);
+    saveManufacturers(updated);
+    setActiveType(key);
+    setAddCatLabel(""); setAddCatEmoji("📱"); setShowAddCat(false);
+  };
 
   const deviceType = activeType;
   const qKey = ["/api/repair-checklist-items", deviceType];
@@ -186,7 +288,7 @@ function ChecklistTab() {
     invalidate();
   };
 
-  const copyFrom = async (fromType: DeviceType) => {
+  const copyFrom = async (fromType: string) => {
     setCopying(true); setShowCopyMenu(false);
     const r = await authFetch(api("/api/repair-checklist-items/copy"), {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -195,7 +297,9 @@ function ChecklistTab() {
     setCopying(false);
     if (!r.ok) { toast({ title: "تعذر النسخ", variant: "destructive" }); return; }
     const { count } = await r.json();
-    toast({ title: `✓ تم نسخ ${count} بند من ${DEVICE_TYPE_LABEL[fromType]}` });
+    const fromLabel = allDeviceTypes.find(t => t.key === fromType)?.label
+      ?? DEVICE_TYPE_LABEL[fromType as DeviceType] ?? fromType;
+    toast({ title: `✓ تم نسخ ${count} بند من ${fromLabel}` });
     invalidate();
   };
 
@@ -239,7 +343,13 @@ function ChecklistTab() {
   };
 
   const isEmpty = !isLoading && !isError && items.length === 0 && localCats.length === 0;
-  const activeMeta = DEVICE_TYPE_META.find(d => d.key === activeType)!;
+
+  /* activeMeta — safe for built-in and custom types */
+  const activeMeta = {
+    key:   activeType,
+    label: activeCatData?.label ?? DEVICE_TYPE_LABEL[activeType as DeviceType] ?? activeType,
+    emoji: activeCatData?.emoji ?? "📱",
+  };
 
   /* أكسنت موحَّد عبر تبويبات هذه الصفحة — أمبر احترافي بدلاً من البنفسجي */
   const accent    = "text-amber-200";
@@ -272,81 +382,185 @@ function ChecklistTab() {
     );
   }, [items, searchQuery]);
 
+  /* ── pill styles ── */
+  const mfrActiveStyle = {
+    background: "linear-gradient(135deg, rgba(245,158,11,0.28) 0%, rgba(217,119,6,0.12) 100%)",
+    border: "1px solid rgba(245,158,11,0.55)",
+    color: "#fef3c7",
+    boxShadow: "0 6px 16px -4px rgba(245,158,11,0.40), inset 0 1px 0 rgba(255,255,255,0.10), 0 0 0 3px rgba(245,158,11,0.08)",
+  };
+  const mfrInactiveStyle = {
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.09)",
+    color: "rgba(255,255,255,0.62)",
+  };
+  const catActiveStyle = {
+    background: "rgba(245,158,11,0.15)",
+    border: "1px solid rgba(245,158,11,0.40)",
+    color: "#fde68a",
+  };
+  const catInactiveStyle = {
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.07)",
+    color: "rgba(255,255,255,0.50)",
+  };
+
   return (
     <div className="flex flex-col h-full">
-      {/* ═════ HERO — نوع الجهاز كـ "Project Switcher" أنيق ═════ */}
+      {/* ═════ HERO — manufacturer + category 2-level selector ═════ */}
       <div
-        className="px-5 pt-4 pb-3 shrink-0 relative"
+        className="px-5 pt-4 pb-0 shrink-0 relative"
         style={{
-          background:
-            "linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 60%, transparent 100%)",
+          background: "linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 60%, transparent 100%)",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        {/* رأس القسم */}
-        <div className="flex items-center justify-between gap-3 mb-3">
+        {/* ── صف 1: عنوان + بيانات ── */}
+        <div className="flex items-center justify-between gap-3 mb-2.5">
           <div className="flex items-center gap-2.5">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-amber-300 to-amber-500" />
             <h3 className="text-[11px] font-black tracking-[0.22em] text-white/55 uppercase">
-              اختر نوع الجهاز
+              الشركة المصنعة
             </h3>
           </div>
           <div className="flex items-center gap-2 text-[10px] text-white/35">
-            <span className="hidden md:inline">{DEVICE_TYPE_META.length} نوع متاح</span>
-            <span className="hidden md:inline text-white/15">•</span>
             <span className="font-bold text-amber-300/85 tabular-nums">{items.length}</span>
             <span>بند في «{activeMeta.label}»</span>
           </div>
         </div>
 
-        {/* صفّ الـ pills — بإيقاع 8pt grid وتأثير hover lift */}
-        <div className="flex flex-wrap gap-1.5">
-          {DEVICE_TYPE_META.map(t => {
-            const isActive = activeType === t.key;
-            const itemCount = isActive ? items.length : 0;
+        {/* ── صف 2: الشركات المصنعة + زر إضافة شركة ── */}
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {manufacturers.map(mfr => {
+            const isMfrActive = activeMfr === mfr.key;
             return (
               <button
-                key={t.key}
-                onClick={() => setActiveType(t.key)}
-                className={`rs-pill ${isActive ? "rs-pill--active" : ""} flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] font-bold whitespace-nowrap`}
-                style={
-                  isActive
-                    ? {
-                        background:
-                          "linear-gradient(135deg, rgba(245,158,11,0.28) 0%, rgba(217,119,6,0.12) 100%)",
-                        border: "1px solid rgba(245,158,11,0.55)",
-                        color: "#fef3c7",
-                        boxShadow:
-                          "0 6px 16px -4px rgba(245,158,11,0.40)," +
-                          "inset 0 1px 0 rgba(255,255,255,0.10)," +
-                          "0 0 0 3px rgba(245,158,11,0.08)",
-                      }
-                    : {
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.09)",
-                        color: "rgba(255,255,255,0.62)",
-                      }
-                }
+                key={mfr.key}
+                onClick={() => doSelectMfr(mfr.key)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] font-bold whitespace-nowrap transition-all"
+                style={isMfrActive ? mfrActiveStyle : mfrInactiveStyle}
               >
-                <span className="text-base leading-none">{t.emoji}</span>
-                <span>{t.label}</span>
-                {isActive && itemCount > 0 && (
+                <span className="text-base leading-none">{mfr.emoji}</span>
+                <span>{mfr.label}</span>
+                {isMfrActive && mfr.categories.length > 0 && (
                   <span
-                    className="text-[10px] px-1.5 py-0.5 rounded-full font-black tabular-nums ml-0.5"
-                    style={{
-                      background: "rgba(0,0,0,0.30)",
-                      color: "#fde68a",
-                      border: "1px solid rgba(252,211,77,0.30)",
-                    }}
+                    className="text-[10px] px-1.5 py-0.5 rounded-full font-black tabular-nums"
+                    style={{ background: "rgba(0,0,0,0.25)", color: "#fde68a", border: "1px solid rgba(252,211,77,0.25)" }}
                   >
-                    {itemCount}
+                    {mfr.categories.length}
                   </span>
                 )}
               </button>
             );
           })}
+          <button
+            onClick={() => { setShowAddMfr(v => !v); setShowAddCat(false); }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11.5px] font-bold whitespace-nowrap transition-all"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.40)" }}
+          >
+            <Plus className="w-3.5 h-3.5" /> شركة جديدة
+          </button>
+        </div>
+
+        {/* ── صف 3: فئات الشركة المختارة + زر إضافة فئة ── */}
+        <div
+          className="flex flex-wrap gap-1 pb-2.5 pt-2"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          {activeMfrData?.categories.map(cat => {
+            const isCatActive = activeType === cat.key;
+            return (
+              <button
+                key={cat.key}
+                onClick={() => setActiveType(cat.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-semibold whitespace-nowrap transition-all"
+                style={isCatActive ? catActiveStyle : catInactiveStyle}
+              >
+                <span className="text-sm leading-none">{cat.emoji}</span>
+                <span>{cat.label}</span>
+                {isCatActive && items.length > 0 && (
+                  <span
+                    className="text-[10px] px-1 rounded font-black tabular-nums"
+                    style={{ background: "rgba(0,0,0,0.25)", color: "#fde68a" }}
+                  >
+                    {items.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          {activeMfrData && (
+            <button
+              onClick={() => { setShowAddCat(v => !v); setShowAddMfr(false); }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all"
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}
+            >
+              <Plus className="w-3 h-3" /> فئة جديدة
+            </button>
+          )}
+          {activeMfrData?.categories.length === 0 && (
+            <p className="text-[11px] text-white/25 py-0.5">لا توجد فئات — اضغط «فئة جديدة» لإضافة الأولى</p>
+          )}
         </div>
       </div>
+
+      {/* ── Add Manufacturer inline form ── */}
+      {showAddMfr && (
+        <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.018)" }}>
+          <select
+            value={addMfrEmoji}
+            onChange={e => setAddMfrEmoji(e.target.value)}
+            className="text-lg bg-transparent outline-none cursor-pointer"
+          >
+            {["📱","💻","⌚","🎧","🖥️","🤖","🔧","🎮","📷","🖨️"].map(e => (
+              <option key={e} value={e}>{e}</option>
+            ))}
+          </select>
+          <input
+            autoFocus
+            value={addMfrLabel}
+            onChange={e => setAddMfrLabel(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") doAddManufacturer(); if (e.key === "Escape") { setShowAddMfr(false); setAddMfrLabel(""); } }}
+            placeholder="اسم الشركة المصنعة (مثال: Huawei)..."
+            className="erp-input flex-1 text-sm py-1"
+          />
+          <button onClick={doAddManufacturer} disabled={!addMfrLabel.trim()} className="text-emerald-400 hover:text-emerald-300 disabled:opacity-30">
+            <CheckCircle2 className="w-4 h-4" />
+          </button>
+          <button onClick={() => { setShowAddMfr(false); setAddMfrLabel(""); }} className="text-white/30 hover:text-white/60">
+            <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Add Category inline form ── */}
+      {showAddCat && (
+        <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.018)" }}>
+          <select
+            value={addCatEmoji}
+            onChange={e => setAddCatEmoji(e.target.value)}
+            className="text-lg bg-transparent outline-none cursor-pointer"
+          >
+            {["📱","💻","⌚","🎧","🔧","🤖","📷","🖥️","🎮","🖨️"].map(e => (
+              <option key={e} value={e}>{e}</option>
+            ))}
+          </select>
+          <input
+            autoFocus
+            value={addCatLabel}
+            onChange={e => setAddCatLabel(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") doAddCategory(); if (e.key === "Escape") { setShowAddCat(false); setAddCatLabel(""); } }}
+            placeholder={`اسم الفئة تحت ${activeMfrData?.label ?? ""}... (مثال: سمارت واتش)`}
+            className="erp-input flex-1 text-sm py-1"
+          />
+          <button onClick={doAddCategory} disabled={!addCatLabel.trim()} className="text-emerald-400 hover:text-emerald-300 disabled:opacity-30">
+            <CheckCircle2 className="w-4 h-4" />
+          </button>
+          <button onClick={() => { setShowAddCat(false); setAddCatLabel(""); }} className="text-white/30 hover:text-white/60">
+            <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* ═════ شريط البحث + الإجراءات — أسلوب Linear toolbar ═════ */}
       <div
@@ -428,7 +642,7 @@ function ChecklistTab() {
               <p className="text-[10px] text-white/40 font-black tracking-wider uppercase px-3 pt-1 pb-1.5">
                 انسخ بنود من:
               </p>
-              {DEVICE_TYPE_META.filter(d => d.key !== activeType).map(d => (
+              {allDeviceTypes.filter(d => d.key !== activeType).map(d => (
                 <button
                   key={d.key}
                   onClick={() => copyFrom(d.key)}
