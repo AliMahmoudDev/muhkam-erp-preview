@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
@@ -79,7 +79,13 @@ const PIPELINE_STAGES: Array<{
   { key: "cancelled",                 label: "ملغي",                 color: "text-rose-400",   dot: "bg-rose-400",     desc: "إلغاء الطلب من النظام", terminal: true },
 ];
 
-const TABS: Array<{ id: SettingsTab; label: string; sublabel: string; icon: React.FC<{ className?: string }>; adminOnly?: boolean }> = [
+const TABS: Array<{
+  id: SettingsTab;
+  label: string;
+  sublabel: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  adminOnly?: boolean;
+}> = [
   { id: "checklist",       label: "بنود الفحص",       sublabel: "قوالب الفحص و QC حسب نوع الجهاز", icon: ClipboardList },
   { id: "statuses",        label: "حالات الصيانة",    sublabel: "مسار الإصلاح",       icon: GitBranch },
   { id: "dashboard-cards", label: "كروت اللوحة",      sublabel: "تخصيص ملخّص الصفحة", icon: LayoutDashboard, adminOnly: true },
@@ -241,24 +247,58 @@ function ChecklistTab() {
   const accentBdr = "border-amber-500/30";
   const badgeCls  = "bg-amber-500/15 text-amber-200/85 border border-amber-500/25";
 
+  /* بحث محلّي داخل البنود */
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  /* ⌘K / Ctrl+K → focus search */
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter(i =>
+      i.label_ar.toLowerCase().includes(q) || i.category.toLowerCase().includes(q)
+    );
+  }, [items, searchQuery]);
+
   return (
     <div className="flex flex-col h-full">
-      {/* ═════ شريط أنواع الأجهزة — pills تلتفّ على عدّة صفوف بدلاً من القصّ ═════ */}
+      {/* ═════ HERO — نوع الجهاز كـ "Project Switcher" أنيق ═════ */}
       <div
-        className="px-4 pt-4 pb-3 shrink-0"
+        className="px-5 pt-4 pb-3 shrink-0 relative"
         style={{
-          background: "linear-gradient(180deg, rgba(245,158,11,0.04) 0%, transparent 100%)",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          background:
+            "linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 60%, transparent 100%)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        <div className="flex items-center justify-between gap-3 mb-2.5">
-          <h3 className="text-[10px] font-black tracking-[0.2em] text-white/35 uppercase">
-            نوع الجهاز
-          </h3>
-          <span className="text-[10px] text-white/30">
-            {DEVICE_TYPE_META.length} نوع متاح
-          </span>
+        {/* رأس القسم */}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="w-1 h-4 rounded-full bg-gradient-to-b from-amber-300 to-amber-500" />
+            <h3 className="text-[11px] font-black tracking-[0.22em] text-white/55 uppercase">
+              اختر نوع الجهاز
+            </h3>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-white/35">
+            <span className="hidden md:inline">{DEVICE_TYPE_META.length} نوع متاح</span>
+            <span className="hidden md:inline text-white/15">•</span>
+            <span className="font-bold text-amber-300/85 tabular-nums">{items.length}</span>
+            <span>بند في «{activeMeta.label}»</span>
+          </div>
         </div>
+
+        {/* صفّ الـ pills — بإيقاع 8pt grid وتأثير hover lift */}
         <div className="flex flex-wrap gap-1.5">
           {DEVICE_TYPE_META.map(t => {
             const isActive = activeType === t.key;
@@ -267,26 +307,37 @@ function ChecklistTab() {
               <button
                 key={t.key}
                 onClick={() => setActiveType(t.key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all whitespace-nowrap"
+                className={`rs-pill ${isActive ? "rs-pill--active" : ""} flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] font-bold whitespace-nowrap`}
                 style={
                   isActive
                     ? {
-                        background: "linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.10))",
-                        border: "1px solid rgba(245,158,11,0.45)",
-                        color: "#fcd34d",
-                        boxShadow: "0 4px 10px -3px rgba(245,158,11,0.30), inset 0 1px 0 rgba(255,255,255,0.06)",
+                        background:
+                          "linear-gradient(135deg, rgba(245,158,11,0.28) 0%, rgba(217,119,6,0.12) 100%)",
+                        border: "1px solid rgba(245,158,11,0.55)",
+                        color: "#fef3c7",
+                        boxShadow:
+                          "0 6px 16px -4px rgba(245,158,11,0.40)," +
+                          "inset 0 1px 0 rgba(255,255,255,0.10)," +
+                          "0 0 0 3px rgba(245,158,11,0.08)",
                       }
                     : {
-                        background: "rgba(255,255,255,0.035)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        color: "rgba(255,255,255,0.55)",
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.09)",
+                        color: "rgba(255,255,255,0.62)",
                       }
                 }
               >
-                <span className="text-sm leading-none">{t.emoji}</span>
+                <span className="text-base leading-none">{t.emoji}</span>
                 <span>{t.label}</span>
                 {isActive && itemCount > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold tabular-nums ${badgeCls}`}>
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded-full font-black tabular-nums ml-0.5"
+                    style={{
+                      background: "rgba(0,0,0,0.30)",
+                      color: "#fde68a",
+                      border: "1px solid rgba(252,211,77,0.30)",
+                    }}
+                  >
                     {itemCount}
                   </span>
                 )}
@@ -296,50 +347,95 @@ function ChecklistTab() {
         </div>
       </div>
 
-      {/* ═════ شريط الإجراءات السريعة ═════ */}
+      {/* ═════ شريط البحث + الإجراءات — أسلوب Linear toolbar ═════ */}
       <div
-        className="flex items-center flex-wrap gap-2 px-4 py-2.5 shrink-0"
+        className="flex items-center flex-wrap gap-2 px-5 py-2.5 shrink-0"
         style={{
-          background: "rgba(255,255,255,0.015)",
+          background: "rgba(255,255,255,0.012)",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        <span className="text-[11px] text-white/40 font-semibold flex items-center gap-1.5 ml-auto">
-          <Settings2 className="w-3 h-3" />
-          إجراءات على «{activeMeta.label}»
-        </span>
+        {/* مربع البحث */}
+        <div
+          className="flex items-center gap-2 px-3 h-9 rounded-xl flex-1 min-w-[200px] max-w-[360px]"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
+          <input
+            ref={searchRef}
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={`ابحث في بنود ${activeMeta.label}...`}
+            className="flex-1 bg-transparent text-[12px] text-white placeholder:text-white/45 outline-none font-medium"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-white/30 hover:text-white/70 shrink-0"
+              title="مسح البحث"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+          {!searchQuery && (
+            <kbd className="rs-kbd shrink-0 hidden sm:inline-flex">⌘ K</kbd>
+          )}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* الإجراءات */}
         <button
           onClick={() => setShowNewCat(v => !v)}
-          className="flex items-center gap-1.5 text-[11px] text-white/65 hover:text-white transition-colors border border-white/10 hover:border-white/25 hover:bg-white/5 rounded-lg px-2.5 py-1.5 font-semibold"
+          className="flex items-center gap-1.5 text-[11.5px] text-white/70 hover:text-white h-9 px-3 rounded-xl font-bold"
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.10)",
+          }}
         >
-          <Plus className="w-3 h-3" /> تصنيف جديد
+          <Plus className="w-3.5 h-3.5" /> تصنيف جديد
         </button>
         <div className="relative">
           <button
             onClick={() => setShowCopyMenu(v => !v)}
             disabled={copying}
-            className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/12 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-40 font-semibold"
+            className="flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl text-white/70 hover:text-white disabled:opacity-40 font-bold"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.10)",
+            }}
           >
-            <Copy className="w-3 h-3" /> {copying ? "جاري النسخ..." : "نسخ من نوع آخر"}
+            <Copy className="w-3.5 h-3.5" /> {copying ? "جاري النسخ..." : "نسخ من"}
+            <ChevronDown className="w-3 h-3 opacity-60" />
           </button>
           {showCopyMenu && (
             <div
-              className="absolute left-0 top-full mt-1.5 z-20 w-52 rounded-xl py-1 max-h-72 overflow-y-auto"
+              className="absolute left-0 top-full mt-1.5 z-20 w-56 rounded-xl py-1.5 max-h-80 overflow-y-auto rs-scroll"
               style={{
-                background: "#10141f",
+                background: "rgba(15,19,32,0.98)",
+                backdropFilter: "blur(20px)",
                 border: "1px solid rgba(255,255,255,0.12)",
-                boxShadow: "0 20px 40px -10px rgba(0,0,0,0.6)",
+                boxShadow:
+                  "0 24px 48px -12px rgba(0,0,0,0.7)," +
+                  "0 0 0 1px rgba(255,255,255,0.04) inset",
               }}
             >
-              <p className="text-[10px] text-white/35 font-bold tracking-wider uppercase px-3 pt-1.5 pb-1">انسخ بنود من:</p>
+              <p className="text-[10px] text-white/40 font-black tracking-wider uppercase px-3 pt-1 pb-1.5">
+                انسخ بنود من:
+              </p>
               {DEVICE_TYPE_META.filter(d => d.key !== activeType).map(d => (
                 <button
                   key={d.key}
                   onClick={() => copyFrom(d.key)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-white/75 hover:bg-amber-500/10 hover:text-amber-200 text-right transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-white/80 hover:bg-amber-500/10 hover:text-amber-200 text-right rounded-md mx-1 transition-colors"
                 >
-                  <span className="text-sm">{d.emoji}</span>
-                  <span className="flex-1">{d.label}</span>
+                  <span className="text-base">{d.emoji}</span>
+                  <span className="flex-1 font-semibold">{d.label}</span>
+                  <ArrowLeft className="w-3 h-3 opacity-40" />
                 </button>
               ))}
             </div>
@@ -348,9 +444,16 @@ function ChecklistTab() {
         <button
           onClick={seedDeviceType}
           disabled={seeding}
-          className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg border transition-all disabled:opacity-40 font-bold ${accentBg} ${accentBdr} ${accent} hover:bg-amber-500/20`}
+          className="flex items-center gap-1.5 text-[11.5px] h-9 px-3.5 rounded-xl font-black disabled:opacity-40 text-amber-50"
+          style={{
+            background: "linear-gradient(135deg, rgba(245,158,11,0.85), rgba(217,119,6,0.65))",
+            border: "1px solid rgba(245,158,11,0.55)",
+            boxShadow:
+              "0 4px 14px -3px rgba(245,158,11,0.45)," +
+              "inset 0 1px 0 rgba(255,255,255,0.20)",
+          }}
         >
-          <Zap className="w-3 h-3" />
+          <Zap className="w-3.5 h-3.5" />
           {seeding ? "جاري التحميل..." : "تحميل بنود افتراضية"}
         </button>
       </div>
@@ -412,8 +515,10 @@ function ChecklistTab() {
         {!isLoading && !isError && !isEmpty && (
           <div className="pb-4">
             {allCategories.map(cat => {
-              const catItems = items.filter(i => i.category === cat).sort((a, b) => a.sort_order - b.sort_order);
-              const isExpanded = expandedCats.has(cat);
+              const catItems = filteredItems.filter(i => i.category === cat).sort((a, b) => a.sort_order - b.sort_order);
+              if (searchQuery && catItems.length === 0) return null;
+              /* أثناء البحث، يفتح كل التصنيفات تلقائياً لإظهار النتائج */
+              const isExpanded = searchQuery ? true : expandedCats.has(cat);
               const isLocal    = !dbCategories.includes(cat);
               return (
                 <div key={cat} className="border-b border-white/5 last:border-b-0">
@@ -1452,104 +1557,192 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  /* عدّ إجمالي بنود الفحص عبر كل أنواع الأجهزة (لإظهاره في الرأس) */
+  const { data: allItems = [] } = useQuery<ChecklistRow[]>({
+    queryKey: ["/api/repair-checklist-items", "all"],
+    queryFn: async () => {
+      const r = await authFetch(api("/api/repair-checklist-items"));
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    },
+    staleTime: 30_000,
+  });
+  const totalItemsCount = Array.isArray(allItems) ? allItems.length : 0;
+
+  const activeMeta = TABS.find(t => t.id === activeTab)!;
+
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-start justify-center pt-3 pb-3 px-3 backdrop-blur-md"
-      style={{ background: "rgba(4,6,14,0.78)" }}
+      className="fixed inset-0 z-[60] flex items-start justify-center pt-3 pb-3 px-3"
+      style={{ background: "rgba(2,4,10,0.82)", backdropFilter: "blur(14px) saturate(140%)" }}
       dir="rtl"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="rs-modal-shell w-full overflow-hidden flex flex-col rounded-2xl"
+        className="rs-modal-enter rs-mesh-bg relative w-full overflow-hidden flex flex-col rounded-[20px]"
         style={{
-          maxWidth: 1180,
+          maxWidth: 1240,
           maxHeight: "95vh",
-          background: "linear-gradient(180deg, #0f1422 0%, #0b0f1a 100%)",
-          border: "1px solid rgba(255,255,255,0.10)",
-          boxShadow: "0 30px 80px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset",
+          border: "1px solid rgba(255,255,255,0.09)",
+          boxShadow:
+            "0 40px 100px -20px rgba(0,0,0,0.85)," +
+            "0 0 0 1px rgba(255,255,255,0.04) inset," +
+            "0 1px 0 rgba(255,255,255,0.06) inset",
         }}
       >
+        {/* ── Ambient corner glows (لمسة ضوئية) ── */}
+        <div className="rs-glow rs-glow--amber"  style={{ top: -120, right: -120, width: 360, height: 360 }} />
+        <div className="rs-glow rs-glow--violet" style={{ bottom: -160, left: -140, width: 380, height: 380, animationDelay: "1.5s" }} />
 
-        {/* ═══ TOP BAR ═══ */}
+        {/* ═══ TOP BAR — أسلوب Command Bar ═══ */}
         <div
-          className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+          className="relative flex items-center gap-3 px-5 py-3.5 shrink-0"
           style={{
-            background: "linear-gradient(90deg, rgba(245,158,11,0.06) 0%, rgba(255,255,255,0.02) 60%, transparent 100%)",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
           }}
         >
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-            style={{
-              background: "linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.12))",
-              border: "1px solid rgba(245,158,11,0.30)",
-              boxShadow: "0 4px 12px rgba(245,158,11,0.12)",
-            }}
-          >
-            <Settings2 className="w-4 h-4 text-amber-300" />
+          {/* علامة التطبيق — مربع أمبر متوهّج */}
+          <div className="relative shrink-0">
+            <div
+              className="w-10 h-10 rounded-2xl flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                boxShadow:
+                  "0 6px 20px -4px rgba(245,158,11,0.55)," +
+                  "inset 0 1px 0 rgba(255,255,255,0.30)," +
+                  "inset 0 -1px 0 rgba(0,0,0,0.20)",
+              }}
+            >
+              <Settings2 className="w-5 h-5 text-white drop-shadow" strokeWidth={2.4} />
+            </div>
+            <span
+              className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-emerald-400"
+              style={{ boxShadow: "0 0 10px rgba(52,211,153,0.7), 0 0 0 2px #0e1320" }}
+            />
           </div>
+
+          {/* العنوان */}
           <div className="flex-1 min-w-0">
-            <h2 className="text-[15px] font-black text-white tracking-tight">إعدادات وحدة الصيانة</h2>
-            <p className="text-[11px] text-white/45 mt-0.5">قوالب الفحص — مسار الإصلاح — كروت اللوحة — الفنيين — تتبّع QR</p>
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-[16px] font-black text-white tracking-[-0.01em]">إعدادات وحدة الصيانة</h2>
+              <span className="text-[10px] font-bold text-amber-300/80 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 tabular-nums">
+                v2.0
+              </span>
+            </div>
+            <p className="text-[11px] text-white/40 mt-0.5 font-medium">
+              {activeMeta.label} — {activeMeta.sublabel}
+            </p>
           </div>
+
+          {/* إحصائية مدمجة — عدد البنود الكلي */}
+          <div
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl shrink-0"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
+            title="إجمالي بنود الفحص عبر كل أنواع الأجهزة"
+          >
+            <ClipboardList className="w-3.5 h-3.5 text-amber-300/80" />
+            <span className="text-[11px] text-white/55 font-semibold">إجمالي البنود</span>
+            <span className="text-[12px] font-black text-white tabular-nums">{totalItemsCount}</span>
+          </div>
+
+          {/* تلميح Esc */}
+          <div className="hidden lg:flex items-center gap-1.5 text-[10px] text-white/35 font-semibold shrink-0">
+            <span>للإغلاق</span>
+            <kbd className="rs-kbd">Esc</kbd>
+          </div>
+
+          {/* زر الإغلاق */}
           <button
             onClick={onClose}
             title="إغلاق (Esc)"
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-white/45 hover:text-white shrink-0"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* ═══ BODY: sidebar + content ═══ */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="relative flex flex-1 overflow-hidden">
 
-          {/* ── Sidebar ── */}
-          <div
-            className="w-60 shrink-0 overflow-y-auto flex flex-col"
+          {/* ── Sidebar — Linear-style nav ── */}
+          <aside
+            className="w-[244px] shrink-0 overflow-y-auto rs-scroll flex flex-col"
             style={{
-              background: "linear-gradient(180deg, rgba(255,255,255,0.022) 0%, rgba(255,255,255,0.008) 100%)",
-              borderLeft: "1px solid rgba(255,255,255,0.07)",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.018) 0%, rgba(255,255,255,0.004) 100%)",
+              borderLeft: "1px solid rgba(255,255,255,0.06)",
             }}
           >
-            <nav className="flex-1 py-2 px-2 space-y-1">
+            {/* رأس الـ sidebar */}
+            <div className="px-4 pt-4 pb-2">
+              <p className="text-[9px] font-black tracking-[0.22em] text-white/30 uppercase">
+                الأقسام
+              </p>
+            </div>
+
+            <nav className="flex-1 px-2 pb-2 space-y-0.5">
               {TABS.map(tab => {
                 const active = activeTab === tab.id;
+                const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className="w-full flex items-start gap-3 px-3 py-2.5 text-right transition-all relative rounded-xl"
+                    className="rs-nav-item w-full flex items-center gap-3 px-2.5 py-2.5 text-right rounded-xl group"
                     style={
                       active
                         ? {
-                            background: "linear-gradient(90deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.05) 100%)",
-                            border: "1px solid rgba(245,158,11,0.28)",
-                            boxShadow: "0 4px 12px -4px rgba(245,158,11,0.18)",
+                            background:
+                              "linear-gradient(90deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.04) 70%, transparent 100%)",
+                            border: "1px solid rgba(245,158,11,0.25)",
+                            boxShadow:
+                              "0 4px 14px -4px rgba(245,158,11,0.30)," +
+                              "inset 0 1px 0 rgba(255,255,255,0.05)",
                           }
                         : { border: "1px solid transparent" }
                     }
                   >
                     {active && (
-                      <span className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-7 bg-amber-400 rounded-full" />
+                      <span
+                        className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-8 rounded-full"
+                        style={{
+                          background: "linear-gradient(180deg, #fcd34d, #f59e0b)",
+                          boxShadow: "0 0 12px rgba(245,158,11,0.6)",
+                        }}
+                      />
                     )}
                     <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all"
+                      className="rs-nav-icon w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                       style={{
-                        background: active ? "rgba(245,158,11,0.20)" : "rgba(255,255,255,0.04)",
-                        border: active ? "1px solid rgba(245,158,11,0.35)" : "1px solid rgba(255,255,255,0.06)",
+                        background: active
+                          ? "linear-gradient(135deg, rgba(245,158,11,0.30), rgba(217,119,6,0.12))"
+                          : "rgba(255,255,255,0.035)",
+                        border: active
+                          ? "1px solid rgba(245,158,11,0.40)"
+                          : "1px solid rgba(255,255,255,0.06)",
+                        boxShadow: active
+                          ? "0 2px 8px rgba(245,158,11,0.25), inset 0 1px 0 rgba(255,255,255,0.10)"
+                          : "none",
                       }}
                     >
-                      {(() => {
-                        const Icon = tab.icon;
-                        return <Icon className={`w-3.5 h-3.5 ${active ? "text-amber-300" : "text-white/45"}`} />;
-                      })()}
+                      <Icon
+                        className={`w-4 h-4 ${active ? "text-amber-200" : "text-white/50 group-hover:text-amber-300"} transition-colors`}
+                        strokeWidth={active ? 2.4 : 2}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[13px] font-bold leading-tight ${active ? "text-white" : "text-white/65"}`}>
+                      <p className={`text-[13px] font-bold leading-tight ${active ? "text-white" : "text-white/70 group-hover:text-white/95"} transition-colors`}>
                         {tab.label}
                       </p>
-                      <p className={`text-[10.5px] leading-tight mt-1 ${active ? "text-amber-200/65" : "text-white/30"}`}>
+                      <p className={`text-[10.5px] leading-tight mt-1 truncate ${active ? "text-amber-200/80" : "text-white/50"}`}>
                         {tab.sublabel}
                       </p>
                     </div>
@@ -1558,26 +1751,44 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
               })}
             </nav>
 
-            {/* sidebar footer */}
+            {/* sidebar footer — حالة + اختصار */}
             <div
-              className="px-4 py-3"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+              className="px-3 py-3 mx-2 mb-2 rounded-xl"
+              style={{
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
             >
-              <p className="text-[10px] text-white/35 leading-relaxed font-semibold flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                مُحكم ERP — وحدة الصيانة
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-[10px] font-black text-white/55 tracking-wider uppercase">
+                  الحالة
+                </span>
+                <span className="flex items-center gap-1 text-[10px] text-emerald-300/85 font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  متصل
+                </span>
+              </div>
+              <p className="text-[10px] text-white/35 leading-relaxed">
+                مُحكم ERP — وحدة الصيانة المتكاملة
               </p>
             </div>
-          </div>
+          </aside>
 
           {/* ── Content ── */}
-          <div className="flex-1 overflow-hidden flex flex-col" style={{ background: "rgba(0,0,0,0.18)" }}>
+          <main
+            key={activeTab}
+            className="rs-content-enter flex-1 overflow-hidden flex flex-col relative"
+            style={{
+              background:
+                "radial-gradient(1200px 600px at 50% -200px, rgba(245,158,11,0.025), transparent 60%), rgba(0,0,0,0.20)",
+            }}
+          >
             {activeTab === "checklist"        && <ChecklistTab />}
             {activeTab === "statuses"         && <StatusesTab />}
             {activeTab === "dashboard-cards"  && <DashboardCardsTab />}
             {activeTab === "technicians"      && <TechniciansTab />}
             {activeTab === "qr"               && <QrTrackingTab />}
-          </div>
+          </main>
 
         </div>
 

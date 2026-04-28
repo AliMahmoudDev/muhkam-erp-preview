@@ -491,6 +491,101 @@ button:not([disabled]):active {
 /* ── Table row hover ── */
 tr { transition: background 0.1s ease !important; }
 
+/* ─────────────────────────────────────────────────────────────
+   REPAIR-SETTINGS MODAL — PREMIUM DESIGN UTILITIES
+   (مستوحى من Linear / Frame.io / Raycast — مساحة عمل احترافية)
+   ───────────────────────────────────────────────────────────── */
+@keyframes rs-modal-in {
+  from { opacity: 0; transform: scale(0.985) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes rs-glow-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.04); }
+}
+@keyframes rs-content-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rs-modal-enter   { animation: rs-modal-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.rs-content-enter { animation: rs-content-fade 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* mesh-gradient background — يعطي إحساس بالعمق والفخامة */
+.rs-mesh-bg {
+  background:
+    radial-gradient(900px 380px at 100% -10%, rgba(245,158,11,0.10), transparent 60%),
+    radial-gradient(700px 420px at -10% 110%, rgba(99,102,241,0.07), transparent 55%),
+    radial-gradient(500px 300px at 50% 50%, rgba(34,211,238,0.025), transparent 60%),
+    linear-gradient(180deg, #0e1320 0%, #090c14 100%);
+}
+
+/* ambient corner glow — للأركان */
+.rs-glow {
+  position: absolute; pointer-events: none; border-radius: 50%;
+  filter: blur(60px); opacity: 0.6;
+  will-change: transform, opacity;
+  animation: rs-glow-pulse 6s ease-in-out infinite;
+}
+@media (max-width: 1023px) {
+  .rs-glow { opacity: 0.35; transform: scale(0.7); }
+}
+.rs-glow--amber  { background: radial-gradient(circle, rgba(245,158,11,0.35), transparent 70%); }
+.rs-glow--violet { background: radial-gradient(circle, rgba(139,92,246,0.20), transparent 70%); }
+.rs-glow--cyan   { background: radial-gradient(circle, rgba(34,211,238,0.18), transparent 70%); }
+
+/* premium thin scrollbar */
+.rs-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.rs-scroll::-webkit-scrollbar-track { background: transparent; }
+.rs-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.rs-scroll::-webkit-scrollbar-thumb:hover { background: rgba(245,158,11,0.30); background-clip: padding-box; }
+
+/* keyboard shortcut chip (kbd) */
+.rs-kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px; font-weight: 700;
+  color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  letter-spacing: 0.02em;
+}
+
+/* sidebar nav button hover (Linear style — slide + amber tint) */
+.rs-nav-item {
+  position: relative;
+  transition: background 0.18s ease, transform 0.16s cubic-bezier(0.34,1.56,0.64,1);
+}
+/* RTL: hover slides toward content (left edge) which means positive X in LTR coords */
+.rs-nav-item:hover { transform: translateX(2px); }
+.rs-nav-item:hover .rs-nav-icon { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.18); }
+
+/* device-pill premium */
+.rs-pill {
+  position: relative;
+  transition: transform 0.16s cubic-bezier(0.34,1.56,0.64,1),
+              background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.rs-pill:hover:not(.rs-pill--active) {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.16) !important;
+}
+
+/* category card hover lift (subtle, Linear-style) */
+.rs-cat-card {
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.rs-cat-card:hover { background: rgba(255,255,255,0.035); }
+
 /* ── Skeleton shimmer improvement ── */
 @keyframes erp-shimmer {
   0%   { background-position: -400px 0; }
