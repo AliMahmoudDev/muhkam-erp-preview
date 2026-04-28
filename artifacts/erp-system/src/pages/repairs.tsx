@@ -718,21 +718,25 @@ export default function Repairs() {
       if (techFilter) params.set("technician_id", techFilter);
       return apiFetch<RepairJob[]>(api(`/api/repair-jobs?${params}`));
     },
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   const { data: users = [] } = useQuery<{ id: number; name: string }[]>({
     queryKey: ["/api/repair-jobs/technicians"],
     queryFn: () => apiFetch<{ id: number; name: string }[]>(api("/api/repair-jobs/technicians")),
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   const { data: customers = [] } = useQuery<{ id: number; name: string; phone?: string }[]>({
     queryKey: ["/api/customers"],
     queryFn: () => apiFetch<{ id: number; name: string; phone?: string }[]>(api("/api/customers")),
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   const { data: branches = [] } = useQuery<{ id: number; name: string }[]>({
     queryKey: ["/api/branches"],
     queryFn: () => apiFetch<{ id: number; name: string }[]>(api("/api/branches")),
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   /* ── إحصاء أداء الفنيين — يُعرض في لوحة جانبية قابلة للطيّ ── */
@@ -750,6 +754,7 @@ export default function Repairs() {
     queryFn: () => apiFetch<TechnicianStat[]>(api("/api/repair-jobs/technician-stats")),
     enabled: showTechStats, // لا تجلب إلّا عند فتح اللوحة
     refetchInterval: 60_000,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   /* ── Detail query when job is selected ── */
@@ -770,6 +775,7 @@ export default function Repairs() {
       api(`/api/repair-checklist-items?device_type=${encodeURIComponent(detailDeviceType)}`)
     ),
     enabled: !!detail,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   const templateChecklist: ChecklistItem[] = useMemo(() => {
@@ -1018,9 +1024,9 @@ export default function Repairs() {
           </button>
 
           {/* One chip per dashboard card — matches the cards displayed above */}
-          {(dashboard?.cards ?? []).map((card) => {
+          {(Array.isArray(dashboard?.cards) ? dashboard!.cards : []).map((card) => {
             const Icon  = CARD_ICON_REGISTRY[card.icon] ?? Wrench;
-            const value = card.statuses.join(",");
+            const value = (Array.isArray(card.statuses) ? card.statuses : []).join(",");
             const isActive = statusFilter === value;
             return (
               <button
@@ -1723,8 +1729,9 @@ function JobDetail({
   const [addingReport, setAddingReport]   = useState(false);
 
   /* engineer reports = filter from history with event_type="engineer_report" */
-  const engineerReports = (job.history ?? []).filter(h => h.event_type === "engineer_report");
-  const otherHistory    = (job.history ?? []).filter(h => h.event_type !== "engineer_report");
+  const _safeHistory   = Array.isArray(job.history) ? job.history : [];
+  const engineerReports = _safeHistory.filter(h => h.event_type === "engineer_report");
+  const otherHistory    = _safeHistory.filter(h => h.event_type !== "engineer_report");
 
   const refreshJob = () => qc.invalidateQueries({ queryKey: ["/api/repair-jobs", job.id] });
 
@@ -2117,7 +2124,7 @@ function JobDetail({
               <Package className="w-3 h-3" /> الإكسسوارات المستلمة
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {job.accessories.split(",").map((key) => {
+              {(typeof job.accessories === "string" ? job.accessories.split(",") : []).map((key) => {
                 const acc = ACCESSORIES_LIST.find((a) => a.key === key.trim());
                 return (
                   <span key={key} className="px-2.5 py-1 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/30 text-violet-300">
@@ -2307,6 +2314,7 @@ function NewJobForm({
       return r.json() as Promise<{ id: number; label_ar: string; sort_order: number; category: string }[]>;
     },
     enabled: !!brand && !!category,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   /* Reset local checklist whenever the device type changes or its template

@@ -138,6 +138,7 @@ function ChecklistTab() {
       return r.json();
     },
     staleTime: 0,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   const items = useMemo(
@@ -685,6 +686,7 @@ function TechniciansTab() {
       return r.json();
     },
     staleTime: 60_000,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   /* settings stored locally per user id */
@@ -1068,6 +1070,7 @@ function DashboardCardsTab() {
   const { data: cards = [], isLoading } = useQuery<DashboardCardRow[]>({
     queryKey: ["/api/repair-dashboard-cards"],
     queryFn: () => authFetch(api("/api/repair-dashboard-cards")).then(r => r.json()),
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   const [editing, setEditing] = useState<DashboardCardRow | null>(null);
@@ -1260,6 +1263,7 @@ function DashboardCardEditor({
   const { data: companyStatuses = [], isLoading: loadingStatuses } = useQuery<CompanyStatus[]>({
     queryKey: ["/api/repair-statuses"],
     queryFn: () => authFetch(api("/api/repair-statuses")).then(r => r.json()),
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   /* Inline "add status" form */
