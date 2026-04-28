@@ -3298,7 +3298,7 @@ export default function SuperAdmin() {
         {/* ══════════════════════════════
             TAB: MANAGERS
             ══════════════════════════════ */}
-        {(activeTab === 'managers' || (activeTab === 'settings' && settingsActiveCard === 'managers')) && (
+        {activeTab === 'managers' && (
           <div
             style={{
               background: C.card,
@@ -4442,24 +4442,8 @@ export default function SuperAdmin() {
               </div>
             )}
 
-            {/* زر رجوع عند عرض محتوى كامل */}
-            {['managers','audit_log','plans'].includes(settingsActiveCard ?? '') && (
-              <button
-                onClick={() => setSettingsActiveCard(null)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  background: 'transparent', border: `1px solid ${C.border}`,
-                  borderRadius: '10px', padding: '8px 16px', cursor: 'pointer',
-                  color: C.muted, fontSize: '13px', fontFamily: FONT,
-                  transition: 'color 0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-                onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}
-              >← العودة إلى الإعدادات</button>
-            )}
-
-            {/* ═══ كروت التنقل (3 أقسام) — تُخفى عند عرض محتوى كامل الصفحة ═══ */}
-            {!['managers','audit_log','plans'].includes(settingsActiveCard ?? '') && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            {/* ═══ كروت الإعدادات (4 أقسام) ═══ */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
               {([
                 { key: 'support'   as const, icon: '⚙️', label: 'معلومات التواصل', desc: 'واتساب وبريد الدعم الفني',    color: '#F97316' },
                 { key: 'backup'    as const, icon: '💾', label: 'النسخ الاحتياطية', desc: 'إنشاء / استعادة / تشفير',     color: '#34D399' },
@@ -4475,14 +4459,16 @@ export default function SuperAdmin() {
                     key={card.key}
                     onClick={() => setSettingsActiveCard(isActive ? null : card.key)}
                     style={{
-                      background: isActive ? `${card.color}18` : C.card,
+                      background: isActive ? `${card.color}1A` : C.card,
                       border: `1.5px solid ${isActive ? card.color : C.border}`,
                       borderRadius: '16px', padding: '22px 20px',
-                      cursor: 'pointer', transition: 'all 0.18s',
+                      cursor: 'pointer', transition: 'all 0.2s',
                       display: 'flex', flexDirection: 'column', gap: '10px',
+                      boxShadow: isActive ? `0 0 0 3px ${card.color}30, 0 8px 32px ${card.color}25` : 'none',
+                      transform: isActive ? 'translateY(-2px)' : '',
                     }}
-                    onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = card.color; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
-                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = ''; } }}
+                    onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = card.color; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 4px 20px ${card.color}20`; } }}
+                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = 'none'; } }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '28px' }}>{card.icon}</span>
@@ -4493,23 +4479,29 @@ export default function SuperAdmin() {
                   </div>
                 );
               })}
-            </div>}
+            </div>
 
-            {/* ═══ لوحة المحتوى (للكروت الثلاثة الأولى فقط) ═══ */}
-            {settingsActiveCard && !['managers','audit_log','plans'].includes(settingsActiveCard) && (
-              <div style={{ background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.02)' }}>
-                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: C.text }}>
-                    {settingsActiveCard === 'support'   && '⚙️ معلومات التواصل للدعم'}
-                    {settingsActiveCard === 'backup'    && '💾 النسخ الاحتياطية'}
-                    {settingsActiveCard === 'security'  && '🔐 الأمان'}
-                    {settingsActiveCard === 'audit_log' && '📋 سجل العمليات'}
-                    {settingsActiveCard === 'managers'  && '👑 المديرون'}
-                    {settingsActiveCard === 'plans'     && '💰 الخطط'}
-                    {settingsActiveCard === 'telegram'  && '📨 إشعارات تليجرام'}
-                  </h3>
-                  <button onClick={() => setSettingsActiveCard(null)} style={{ background: 'transparent', border: 'none', color: C.muted, fontSize: '20px', cursor: 'pointer', lineHeight: 1, padding: '2px 6px' }}>✕</button>
-                </div>
+            {/* ═══ لوحة المحتوى المنبثقة ═══ */}
+            {settingsActiveCard && (
+              <div style={{ background: C.card, borderRadius: '18px', border: `1.5px solid ${settingsActiveCard === 'support' ? '#F97316' : settingsActiveCard === 'backup' ? '#34D399' : settingsActiveCard === 'security' ? '#A78BFA' : settingsActiveCard === 'audit_log' ? '#60A5FA' : settingsActiveCard === 'managers' ? '#F472B6' : settingsActiveCard === 'plans' ? '#FBBF24' : settingsActiveCard === 'telegram' ? '#38BDF8' : C.border}50`, overflow: 'hidden', animation: 'sa-panel-in 0.25s ease-out both' }}>
+                {(() => {
+                  const CARD_COLOR: Record<string, string> = { support: '#F97316', backup: '#34D399', security: '#A78BFA', audit_log: '#60A5FA', managers: '#F472B6', plans: '#FBBF24', telegram: '#38BDF8' };
+                  const hc = settingsActiveCard ? (CARD_COLOR[settingsActiveCard] ?? C.border) : C.border;
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', borderBottom: `1px solid ${C.border}`, background: `${hc}12` }}>
+                      <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: hc }}>
+                        {settingsActiveCard === 'support'   && '⚙️ معلومات التواصل للدعم'}
+                        {settingsActiveCard === 'backup'    && '💾 النسخ الاحتياطية'}
+                        {settingsActiveCard === 'security'  && '🔐 الأمان'}
+                        {settingsActiveCard === 'audit_log' && '📋 سجل العمليات'}
+                        {settingsActiveCard === 'managers'  && '👑 المديرون'}
+                        {settingsActiveCard === 'plans'     && '💰 الخطط والأسعار'}
+                        {settingsActiveCard === 'telegram'  && '📨 إشعارات تليجرام'}
+                      </h3>
+                      <button onClick={() => setSettingsActiveCard(null)} style={{ background: 'transparent', border: `1px solid ${hc}50`, borderRadius: '8px', color: hc, fontSize: '16px', cursor: 'pointer', lineHeight: 1, padding: '4px 10px', fontWeight: 700 }}>✕</button>
+                    </div>
+                  );
+                })()}
                 {/* ── Support ── */}
                 {settingsActiveCard === 'support' && (
                   <div style={{ padding: '24px' }}>
@@ -5049,6 +5041,215 @@ export default function SuperAdmin() {
                     </>)}
                   </div>
                 )}
+
+                {/* ── Managers ── */}
+                {settingsActiveCard === 'managers' && (
+                  <div>
+                    <div style={{ padding: '18px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                      <div>
+                        <h2 style={{ fontSize: '16px', fontWeight: 800, color: C.text, margin: 0 }}>المديرون العامون</h2>
+                        <p style={{ fontSize: '12px', color: C.muted, margin: '2px 0 0' }}>{managers.length} مدير عام مسجّل</p>
+                      </div>
+                      <button onClick={() => { resetAddForm(); setShowAddMgr(true); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', background: '#F472B6', color: '#fff', border: 'none', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                        <span>➕</span><span>مدير عام جديد</span>
+                      </button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 140px 160px 90px 1fr', gap: '8px', padding: '10px 24px', background: 'rgba(244,114,182,0.08)', borderBottom: `1px solid ${C.border}`, fontSize: '11px', fontWeight: 700, color: '#F472B6', alignItems: 'center' }}>
+                      <div>#</div><div>الاسم</div><div>اسم المستخدم</div><div>آخر دخول</div><div style={{ textAlign: 'center' }}>الحالة</div><div style={{ textAlign: 'center' }}>الإجراءات</div>
+                    </div>
+                    {mgLoading ? (
+                      <div style={{ padding: '60px', textAlign: 'center', color: C.muted }}>جاري التحميل...</div>
+                    ) : mgError ? (
+                      <div style={{ padding: '60px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</div>
+                        <div style={{ color: C.danger, fontWeight: 700, marginBottom: '8px' }}>تعذّر جلب بيانات المديرين</div>
+                        <button onClick={() => void mgRefetch()} style={{ padding: '8px 20px', borderRadius: '10px', background: C.orange, color: '#fff', border: 'none', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>إعادة المحاولة</button>
+                      </div>
+                    ) : managers.length === 0 ? (
+                      <div style={{ padding: '60px', textAlign: 'center', color: C.muted }}>لا يوجد مديرون عامون مسجّلون</div>
+                    ) : managers.map((m, idx) => {
+                      const isMgr = m.id === user?.id;
+                      const isOddRow = idx % 2 === 1;
+                      const isMgrActive = m.active !== false;
+                      const lastLogin = m.last_login ? new Date(m.last_login).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' }) : 'لم يسجل بعد';
+                      return (
+                        <div key={m.id} style={{ borderBottom: `1px solid ${C.border}`, background: isOddRow ? 'rgba(15,23,42,0.4)' : 'transparent' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 140px 160px 90px 1fr', gap: '8px', padding: '14px 24px', alignItems: 'center' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, color: '#F472B6', flexShrink: 0 }}>#{m.id}</div>
+                            <div>
+                              <div style={{ fontSize: '14px', fontWeight: 700, color: C.text }}>{m.name}{isMgr && <span style={{ marginRight: '8px', fontSize: '10px', fontWeight: 700, color: '#F472B6', background: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.3)', padding: '2px 8px', borderRadius: '10px' }}>أنت</span>}</div>
+                              {m.email && <div style={{ fontSize: '11px', color: C.muted }}>{m.email}</div>}
+                            </div>
+                            <div style={{ fontSize: '13px', fontWeight: 600, color: C.muted, direction: 'ltr' }}>@{m.username}</div>
+                            <div style={{ fontSize: '12px', color: m.last_login ? C.success : C.muted }}>{lastLogin}</div>
+                            <div style={{ textAlign: 'center' }}><span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, display: 'inline-block', background: isMgrActive ? 'rgba(34,197,94,0.12)' : 'rgba(148,163,184,0.1)', color: isMgrActive ? C.success : C.muted, border: `1px solid ${isMgrActive ? 'rgba(34,197,94,0.3)' : 'rgba(148,163,184,0.2)'}` }}>{isMgrActive ? 'نشط' : 'موقوف'}</span></div>
+                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                              <button onClick={() => openEdit(m)} style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid rgba(244,114,182,0.4)', background: 'rgba(244,114,182,0.1)', color: '#F472B6', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>✏️ تعديل</button>
+                              {!isMgr && <button onClick={() => mgToggle.mutate(m.id)} style={{ padding: '6px 12px', borderRadius: '8px', border: `1.5px solid ${isMgrActive ? C.danger : C.success}44`, background: isMgrActive ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)', color: isMgrActive ? C.danger : C.success, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>{isMgrActive ? '⛔ إيقاف' : '✅ تفعيل'}</button>}
+                              {!isMgr && <button onClick={() => { setDeleteMgrErr(''); setDeleteMgr(m); }} style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: C.danger, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🗑️ حذف</button>}
+                              {isMgr && <span style={{ fontSize: '11px', color: C.muted, alignSelf: 'center' }}>لا يمكن تعديل الحساب الحالي هنا</span>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* ── Audit Log ── */}
+                {settingsActiveCard === 'audit_log' && (
+                  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                      <p style={{ margin: 0, fontSize: '13px', color: C.muted }}>كل إجراء قام به المدير العام مُسجَّل هنا</p>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button onClick={() => { if (!auditData?.rows.length) return; const rows = auditData.rows.map(r => `${r.action},${r.record_type},${r.record_id},${r.note ?? ''},${r.created_at}`).join('\n'); const blob = new Blob([`الإجراء,نوع السجل,رقم السجل,الملاحظة,التاريخ\n${rows}`], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'audit-log.csv'; a.click(); }} style={{ padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#86EFAC', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>📥 CSV</button>
+                        <select value={auditAction} onChange={e => setAuditAction(e.target.value)} style={{ padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer' }}>
+                          <option value="">كل الإجراءات</option>
+                          <option value="COMPANY_CREATED">إنشاء شركة</option>
+                          <option value="COMPANY_UPDATED">تحديث شركة</option>
+                          <option value="COMPANY_ACTIVATED">تفعيل شركة</option>
+                          <option value="COMPANY_SUSPENDED">إيقاف شركة</option>
+                          <option value="COMPANY_EXTENDED">تمديد اشتراك</option>
+                          <option value="COMPANY_DELETED">حذف شركة</option>
+                          <option value="COMPANY_SUBSCRIPTION_UPDATED">تحديث اشتراك</option>
+                          <option value="ADMIN_PASSWORD_RESET">إعادة كلمة المرور</option>
+                          <option value="MANAGER_CREATED">إنشاء مدير</option>
+                          <option value="MANAGER_UPDATED">تحديث مدير</option>
+                          <option value="MANAGER_TOGGLED">تغيير حالة مدير</option>
+                          <option value="MANAGER_DELETED">حذف مدير</option>
+                          <option value="PLAN_SETTINGS_UPDATED">تحديث إعدادات الخطة</option>
+                          <option value="BACKUP_CREATED">نسخة احتياطية</option>
+                          <option value="RESTORE_STARTED">استعادة</option>
+                          <option value="SUPER_ADMIN_LIST_VIEW">عرض الشركات</option>
+                        </select>
+                        <select value={auditLimit} onChange={e => setAuditLimit(Number(e.target.value))} style={{ padding: '8px 14px', borderRadius: '10px', border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: '13px', fontFamily: FONT, cursor: 'pointer' }}>
+                          {[25, 50, 100, 200, 500].map(n => <option key={n} value={n}>{n} سجل</option>)}
+                        </select>
+                        <button onClick={() => void refetchAudit()} style={{ padding: '8px 16px', borderRadius: '10px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🔄 تحديث</button>
+                      </div>
+                    </div>
+                    {auditLoading ? (
+                      <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>⏳ جارٍ التحميل...</div>
+                    ) : (
+                      <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: '12px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px', padding: '10px 20px', background: 'rgba(96,165,250,0.08)', borderBottom: `1px solid ${C.border}`, fontSize: '11px', fontWeight: 800, color: '#60A5FA', gap: '12px' }}>
+                          <span>الإجراء</span><span>النوع</span><span>رقم</span><span>الملاحظة</span><span>التاريخ</span>
+                        </div>
+                        {!auditData?.rows.length ? (
+                          <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>لا توجد سجلات</div>
+                        ) : (
+                          <div style={{ maxHeight: '480px', overflowY: 'auto' }}>
+                            {auditData!.rows.map(row => {
+                              const AUD_COLORS: Record<string, { label: string; color: string }> = {
+                                COMPANY_ACTIVATED: { label: 'تفعيل شركة', color: '#34D399' },
+                                COMPANY_SUSPENDED: { label: 'إيقاف شركة', color: '#F59E0B' },
+                                COMPANY_EXTENDED: { label: 'تمديد اشتراك', color: '#38BDF8' },
+                                COMPANY_DELETED: { label: 'حذف شركة', color: '#EF4444' },
+                                COMPANY_CREATED: { label: 'إنشاء شركة', color: '#34D399' },
+                                COMPANY_UPDATED: { label: 'تحديث شركة', color: '#60A5FA' },
+                                COMPANY_SUBSCRIPTION_UPDATED: { label: 'تحديث اشتراك', color: '#60A5FA' },
+                                ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: '#A78BFA' },
+                                MANAGER_CREATED: { label: 'إنشاء مدير', color: '#34D399' },
+                                MANAGER_UPDATED: { label: 'تحديث مدير', color: '#60A5FA' },
+                                MANAGER_TOGGLED: { label: 'تغيير حالة مدير', color: '#F59E0B' },
+                                MANAGER_DELETED: { label: 'حذف مدير', color: '#EF4444' },
+                                PLAN_SETTINGS_UPDATED: { label: 'تحديث إعدادات الخطة', color: '#FBBF24' },
+                                BACKUP_CREATED: { label: 'نسخة احتياطية', color: '#34D399' },
+                                RESTORE_STARTED: { label: 'بدء استعادة', color: '#A78BFA' },
+                                RESTORE_COMPLETED: { label: 'اكتمال استعادة', color: '#34D399' },
+                                RESTORE_FAILED: { label: 'فشل استعادة', color: '#EF4444' },
+                                SUPER_ADMIN_ACCESS: { label: 'وصول مدير عام', color: '#818CF8' },
+                                SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: '#818CF8' },
+                                TELEGRAM_SETTINGS_UPDATED: { label: 'تحديث تليجرام', color: '#38BDF8' },
+                              };
+                              const REC_AR: Record<string, string> = { company: 'شركة', subscription: 'اشتراك', system: 'النظام', user: 'مستخدم' };
+                              const am = AUD_COLORS[row.action] ?? { label: row.action, color: '#94A3B8' };
+                              return (
+                                <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px', padding: '11px 20px', gap: '12px', borderBottom: `1px solid rgba(255,255,255,0.04)`, fontSize: '12px', alignItems: 'center' }}>
+                                  <span style={{ color: am.color, fontWeight: 700 }}>{am.label}</span>
+                                  <span style={{ color: C.muted }}>{REC_AR[row.record_type] ?? row.record_type}</span>
+                                  <span style={{ color: C.muted, textAlign: 'center' }}>#{row.record_id}</span>
+                                  <span style={{ color: C.text, fontSize: '11px', lineHeight: 1.4 }}>{row.note ?? '—'}</span>
+                                  <span style={{ color: C.muted, fontSize: '11px', direction: 'ltr', textAlign: 'right' }}>{new Date(row.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {auditData && <div style={{ padding: '10px 20px', borderTop: `1px solid ${C.border}`, fontSize: '12px', color: C.muted }}>إجمالي السجلات: {auditData!.count}</div>}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── Plans ── */}
+                {settingsActiveCard === 'plans' && (
+                  <div style={{ padding: '24px' }}>
+                    {planSettingsLoading ? (
+                      <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>جارٍ التحميل…</div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                        {(planSettings ?? []).map(plan => {
+                          const isEditingP = editingPlan?.key === plan.key;
+                          const ep = isEditingP ? editingPlan! : plan;
+                          return (
+                            <div key={plan.key} style={{ background: 'rgba(15,23,42,0.4)', borderRadius: '16px', border: `1.5px solid ${isEditingP ? C.orange : C.border}`, padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: isEditingP ? '0 4px 24px rgba(249,115,22,0.15)' : 'none', transition: 'border-color 0.2s' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: ep.is_active ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', color: ep.is_active ? '#22c55e' : '#ef4444' }}>{ep.is_active ? 'فعّالة' : 'معطّلة'}</span>
+                                <span style={{ fontSize: '11px', color: C.muted, fontFamily: 'monospace' }}>{plan.key}</span>
+                              </div>
+                              {isEditingP ? (
+                                <>
+                                  <div>
+                                    <label style={{ fontSize: '11px', color: C.muted, display: 'block', marginBottom: '4px' }}>اسم الخطة (عربي)</label>
+                                    <input value={ep.name_ar} onChange={e => setEditingPlan({ ...ep, name_ar: e.target.value })} style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '8px 12px', color: C.text, fontSize: '14px', fontFamily: FONT, boxSizing: 'border-box' }} />
+                                  </div>
+                                  <div>
+                                    <label style={{ fontSize: '11px', color: C.muted, display: 'block', marginBottom: '4px' }}>الوصف</label>
+                                    <input value={ep.description ?? ''} onChange={e => setEditingPlan({ ...ep, description: e.target.value })} style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '8px 12px', color: C.text, fontSize: '13px', fontFamily: FONT, boxSizing: 'border-box' }} />
+                                  </div>
+                                  <div>
+                                    <label style={{ fontSize: '11px', color: C.muted, display: 'block', marginBottom: '4px' }}>السعر الشهري (ج.م.)</label>
+                                    <input type="number" min={0} value={ep.price} onChange={e => setEditingPlan({ ...ep, price: Number(e.target.value) })} style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '8px 12px', color: C.orange, fontSize: '18px', fontWeight: 800, fontFamily: FONT, boxSizing: 'border-box' }} />
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <input type="checkbox" id={`sp-mobile-${plan.key}`} checked={ep.includes_mobile} onChange={e => setEditingPlan({ ...ep, includes_mobile: e.target.checked })} />
+                                    <label htmlFor={`sp-mobile-${plan.key}`} style={{ fontSize: '13px', color: C.text, cursor: 'pointer' }}>تشمل تطبيق الموبايل</label>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <input type="checkbox" id={`sp-active-${plan.key}`} checked={ep.is_active} onChange={e => setEditingPlan({ ...ep, is_active: e.target.checked })} />
+                                    <label htmlFor={`sp-active-${plan.key}`} style={{ fontSize: '13px', color: C.text, cursor: 'pointer' }}>الخطة فعّالة</label>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                                    <button onClick={() => savePlan(ep)} disabled={planSaving} style={{ flex: 1, background: C.orange, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px', fontWeight: 800, fontSize: '13px', fontFamily: FONT, cursor: 'pointer' }}>{planSaving ? 'جارٍ الحفظ…' : '💾 حفظ'}</button>
+                                    <button onClick={() => setEditingPlan(null)} style={{ flex: 1, background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: '10px', padding: '10px', fontWeight: 700, fontSize: '13px', fontFamily: FONT, cursor: 'pointer' }}>إلغاء</button>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div>
+                                    <div style={{ fontSize: '18px', fontWeight: 900, color: C.text }}>{plan.name_ar}</div>
+                                    {plan.description && <div style={{ fontSize: '12px', color: C.muted, marginTop: '4px' }}>{plan.description}</div>}
+                                  </div>
+                                  <div style={{ fontSize: '32px', fontWeight: 900, color: '#FBBF24' }}>
+                                    {plan.price.toLocaleString('ar-EG')}
+                                    <span style={{ fontSize: '14px', color: C.muted, fontWeight: 600, marginRight: '4px' }}>ج.م./شهر</span>
+                                  </div>
+                                  {plan.includes_mobile && <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', background: 'rgba(99,102,241,0.12)', color: '#818cf8', alignSelf: 'flex-start' }}>📱 يشمل الموبايل</span>}
+                                  <button onClick={() => setEditingPlan({ ...plan })} style={{ background: 'transparent', border: `1.5px solid #FBBF24`, color: '#FBBF24', borderRadius: '10px', padding: '8px', fontWeight: 700, fontSize: '13px', fontFamily: FONT, cursor: 'pointer', marginTop: '4px' }}>✏️ تعديل السعر</button>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <div style={{ marginTop: '20px', padding: '14px 18px', borderRadius: '12px', background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }}>
+                      <p style={{ margin: 0, fontSize: '12px', color: C.muted, lineHeight: 1.6 }}>⚠️ تغيير الأسعار يؤثر فقط على حسابات الإيرادات والتقارير. لا يتم تحديث الرسوم تلقائياً للعملاء الحاليين.</p>
+                    </div>
+                  </div>
+                )}
+
               </div>
             )}
 
@@ -5306,7 +5507,7 @@ export default function SuperAdmin() {
       {/* ═══════════════════════════════════════════════
           TAB: AUDIT LOG  📋
           ═══════════════════════════════════════════════ */}
-      {(activeTab === 'audit_log' || (activeTab === 'settings' && settingsActiveCard === 'audit_log')) && (
+      {activeTab === 'audit_log' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
           {/* Header + controls */}
@@ -5867,7 +6068,7 @@ export default function SuperAdmin() {
       {/* ══════════════════════════════════════════════════════════════════
           PLAN SETTINGS TAB
           ══════════════════════════════════════════════════════════════════ */}
-      {(activeTab === 'plans' || (activeTab === 'settings' && settingsActiveCard === 'plans')) && (
+      {activeTab === 'plans' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
             <div>
@@ -6968,6 +7169,7 @@ export default function SuperAdmin() {
 
       <style>{`
         @keyframes sa-fade-in { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes sa-panel-in { from { opacity: 0; transform: translateY(-10px) scaleY(0.97); transform-origin: top; } to { opacity: 1; transform: translateY(0) scaleY(1); transform-origin: top; } }
       `}</style>
     </div>
   );
