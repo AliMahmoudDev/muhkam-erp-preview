@@ -27,8 +27,7 @@ const n = (v: unknown) => (v != null ? Number(v) : 0);
 ══════════════════════════════════════════════════════════════════ */
 
 router.get("/employee-bonuses", wrap(async (req, res) => {
-  const selfId     = selfEmployeeId(req);
-  const canViewAll = hasPermission(req.user, "can_view_employees");
+  const selfId = selfEmployeeId(req);
   if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
@@ -91,8 +90,7 @@ router.delete("/employee-bonuses/:id", wrap(async (req, res) => {
 const DEDUCTION_TYPES = new Set(["late", "absence", "damage", "other"]);
 
 router.get("/employee-deductions", wrap(async (req, res) => {
-  const selfId     = selfEmployeeId(req);
-  const canViewAll = hasPermission(req.user, "can_view_employees");
+  const selfId = selfEmployeeId(req);
   if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;

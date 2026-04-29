@@ -76,8 +76,7 @@ router.put("/salary-advances/settings", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/salary-advances", wrap(async (req, res) => {
-  const selfId     = selfEmployeeId(req);
-  const canViewAll = hasPermission(req.user, "can_view_employees");
+  const selfId = selfEmployeeId(req);
   if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
@@ -269,7 +268,7 @@ router.post("/salary-advances/:id/approve", wrap(async (req, res) => {
           sql`${safesTable.balance} >= ${String(amount)}`,
         ))
         .returning();
-      if (!debited[0]) return { error: { status: 400, message: `رصيد الخزينة غير كافٍ (${Number(safe.balance).toFixed(2)} ${safe.currency ?? ""})` } };
+      if (!debited[0]) return { error: { status: 400, message: `رصيد الخزينة غير كافٍ (${Number(safe.balance).toFixed(2)})` } };
       safeDebited = safe.id;
     }
 

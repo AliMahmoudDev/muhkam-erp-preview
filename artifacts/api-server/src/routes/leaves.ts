@@ -12,7 +12,7 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
-import { selfEmployeeId } from "../lib/employee-self";
+import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
@@ -140,8 +140,7 @@ router.get("/employee-leave-balance/:employeeId", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/leave-requests", wrap(async (req, res) => {
-  const selfId     = selfEmployeeId(req);
-  const canViewAll = hasPermission(req.user, "can_view_employees");
+  const selfId = selfEmployeeId(req);
   // selfId=-1 means no employee_id and no permission → deny
   if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
@@ -181,11 +180,16 @@ router.get("/leave-requests", wrap(async (req, res) => {
 router.post("/leave-requests", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
-  const { employee_id, leave_type_id, start_date, end_date, reason } = req.body as Record<string, unknown>;
+  const isSelf    = isSelfServiceUser(req);
+  const selfId    = selfEmployeeId(req);
+  if (isSelf && (!selfId || selfId === -1)) { res.status(403).json({ error: "حساب الموظف غير مرتبط بسجل موظف" }); return; }
+  let { employee_id, leave_type_id, start_date, end_date, reason } = req.body as Record<string, unknown>;
+  // Self-service: always restrict to own employee_id
+  if (isSelf) employee_id = selfId;
   if (!employee_id || !leave_type_id || !start_date || !end_date) { res.status(400).json({ error: "جميع بيانات الإجازة مطلوبة" }); return; }
   if (new Date(String(start_date)) > new Date(String(end_date))) { res.status(400).json({ error: "تاريخ البداية يجب أن يكون قبل تاريخ النهاية" }); return; }
 
-  // Verify employee
+  // Verify employee belongs to this company
   const [emp] = await db.select({ id: employeesTable.id, hire_date: employeesTable.hire_date }).from(employeesTable)
     .where(and(eq(employeesTable.id, Number(employee_id)), eq(employeesTable.company_id, companyId)));
   if (!emp) { res.status(404).json({ error: "الموظف غير موجود" }); return; }
@@ -244,7 +248,9 @@ router.post("/leave-requests", wrap(async (req, res) => {
 }));
 
 router.get("/leave-requests/:id", wrap(async (req, res) => {
+  const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
+  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
   const [request] = await db.select({
     id: leaveRequestsTable.id, employee_id: leaveRequestsTable.employee_id,
     leave_type_id: leaveRequestsTable.leave_type_id, start_date: leaveRequestsTable.start_date,
@@ -257,7 +263,7 @@ router.get("/leave-requests/:id", wrap(async (req, res) => {
     leave_type_name_ar: leaveTypesTable.name_ar, is_paid: leaveTypesTable.is_paid,
   })
     .from(leaveRequestsTable)
-    .leftJoin(employeesTable, eq(leaveRequestsTable.employee_id, employeesTable.id))
+    .innerJoin(employeesTable, and(eq(leaveRequestsTable.employee_id, employeesTable.id), eq(employeesTable.company_id, companyId)))
     .leftJoin(leaveTypesTable, eq(leaveRequestsTable.leave_type_id, leaveTypesTable.id))
     .where(eq(leaveRequestsTable.id, id));
   if (!request) { res.status(404).json({ error: "الطلب غير موجود" }); return; }
@@ -267,11 +273,15 @@ router.get("/leave-requests/:id", wrap(async (req, res) => {
 /* ── Approve / Reject ─────────────────────────────────────────── */
 router.post("/leave-requests/:id/approve", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح بالاعتماد" }); return; }
+  const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
   const { comment } = req.body as { comment?: string };
 
-  const [request] = await db.select().from(leaveRequestsTable).where(eq(leaveRequestsTable.id, id));
+  const [request] = await db.select({ lr: leaveRequestsTable }).from(leaveRequestsTable)
+    .innerJoin(employeesTable, and(eq(leaveRequestsTable.employee_id, employeesTable.id), eq(employeesTable.company_id, companyId)))
+    .where(eq(leaveRequestsTable.id, id))
+    .then(rows => rows.map(r => r.lr));
   if (!request) { res.status(404).json({ error: "الطلب غير موجود" }); return; }
   if (request.status !== "pending") { res.status(409).json({ error: "الطلب غير معلّق" }); return; }
 
@@ -298,9 +308,18 @@ router.post("/leave-requests/:id/approve", wrap(async (req, res) => {
 
 router.post("/leave-requests/:id/reject", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
   const { reason } = req.body as { reason?: string };
+
+  const [request] = await db.select({ lr: leaveRequestsTable }).from(leaveRequestsTable)
+    .innerJoin(employeesTable, and(eq(leaveRequestsTable.employee_id, employeesTable.id), eq(employeesTable.company_id, companyId)))
+    .where(eq(leaveRequestsTable.id, id))
+    .then(rows => rows.map(r => r.lr));
+  if (!request) { res.status(404).json({ error: "الطلب غير موجود" }); return; }
+  if (request.status !== "pending") { res.status(409).json({ error: "لا يمكن رفض طلب غير معلّق" }); return; }
+
   await db.update(leaveRequestsTable)
     .set({ status: "rejected", rejection_reason: reason ?? "مرفوض", updated_at: new Date() })
     .where(eq(leaveRequestsTable.id, id));

@@ -8,7 +8,7 @@ import {
   Clock, Calendar, Briefcase, Building2, CheckCircle2,
   XCircle, Loader2, Sun, Moon, Coffee, TrendingDown,
   Gift, FileText, Wallet, UserCheck, AlertCircle,
-  DollarSign, Users, MapPin, RotateCcw, LogOut, LogIn,
+  Users, MapPin, RotateCcw, LogOut, LogIn,
   PlusCircle, X, ChevronDown, ChevronUp,
 } from 'lucide-react';
 
@@ -596,10 +596,10 @@ export default function EmployeePortal() {
                 </span>
               </div>
             )}
-            {todayRec?.status && (
+            {Boolean(todayRec?.status) && (
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <span style={{ fontSize:12, color:textMuted }}>الحالة</span>
-                <AttBadge s={String(todayRec.status)} />
+                <AttBadge s={String(todayRec!.status)} />
               </div>
             )}
           </div>
@@ -708,7 +708,7 @@ export default function EmployeePortal() {
                     {fmtDate(a.requested_date, false)}{a.reason ? ` · ${fmt(a.reason)}` : ''}
                   </p>
                 </div>
-                {a.remaining_balance && Number(a.remaining_balance) > 0 && (
+                {Boolean(a.remaining_balance) && Number(a.remaining_balance) > 0 && (
                   <div style={{ textAlign:'center' }}>
                     <p style={{ fontSize:10, color:textMuted }}>المتبقي</p>
                     <p style={{ fontSize:12, fontWeight:700, color:'#fbbf24' }}>{fmtCurrency(a.remaining_balance, fmt(a.currency))}</p>
@@ -799,8 +799,8 @@ export default function EmployeePortal() {
                     <span style={{ fontSize:11, color:textMuted }}>({Number(l.total_days ?? 0)} يوم)</span>
                     <StatusBadge s={String(l.status??'')} map={LEAVE_STATUS}/>
                   </div>
-                  {l.reason && <p style={{ fontSize:11, color:textMuted, marginTop:2 }}>{fmt(l.reason)}</p>}
-                  {l.rejection_reason && <p style={{ fontSize:11, color:'#f87171', marginTop:2 }}>سبب الرفض: {fmt(l.rejection_reason)}</p>}
+                  {Boolean(l.reason) && <p style={{ fontSize:11, color:textMuted, marginTop:2 }}>{fmt(l.reason)}</p>}
+                  {Boolean(l.rejection_reason) && <p style={{ fontSize:11, color:'#f87171', marginTop:2 }}>سبب الرفض: {fmt(l.rejection_reason)}</p>}
                 </div>
               </div>
             ))}

@@ -205,7 +205,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
           <h1 style={{ fontSize: 26, fontWeight: 800, color: text, margin: 0, lineHeight: 1.3 }}>
             {user?.name}
           </h1>
-          {(emp.job_title_ar || emp.department_name_ar) && (
+          {Boolean(emp.job_title_ar || emp.department_name_ar) && (
             <p style={{ fontSize: 13, color: muted, marginTop: 4 }}>
               {String(emp.job_title_ar ?? '')} {emp.department_name_ar ? `· ${String(emp.department_name_ar)}` : ''}
             </p>

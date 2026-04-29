@@ -19,7 +19,7 @@ export function selfEmployeeId(req: Request): number | null {
   // Any user linked to an employee → self-service mode
   if (req.user?.employee_id) return req.user.employee_id;
   // No employee_id: fall back to permission check
-  if (hasPermission(req.user ?? null, "can_view_employees")) return null;
+  if (hasPermission(req.user, "can_view_employees")) return null;
   // No employee_id, no permission → deny
   return -1;
 }
@@ -38,5 +38,5 @@ export function canAccessEmployee(req: Request, employeeId: number | null | unde
  * Forbid write mutations when the caller has no manage permission.
  */
 export function isSelfServiceUser(req: Request): boolean {
-  return !hasPermission(req.user ?? null, "can_manage_employees");
+  return !hasPermission(req.user, "can_manage_employees");
 }

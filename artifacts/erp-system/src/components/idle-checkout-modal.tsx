@@ -17,7 +17,7 @@ interface Props {
 const COUNTDOWN_SECS = 5 * 60; // 5 دقائق
 
 export default function IdleCheckoutModal({
-  employeeId,
+  employeeId: _employeeId,
   todayRecordId,
   alreadyCheckedOut,
   onStayLoggedIn,
