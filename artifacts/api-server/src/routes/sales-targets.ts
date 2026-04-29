@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, ne, gte, lt, sql } from "drizzle-orm";
+import { eq, and, ne, isNotNull, gte, lt, sql } from "drizzle-orm";
 import {
   db, salesTargetsTable, erpUsersTable, salesTable,
 } from "@workspace/db";
@@ -28,11 +28,12 @@ router.get("/sales-targets", wrap(async (req, res) => {
   const month = (req.query.month as string) || currentYearMonth();
 
   const [users, targets, achievements] = await Promise.all([
-    db.select({ id: erpUsersTable.id, name: erpUsersTable.name, role: erpUsersTable.role })
+    db.select({ id: erpUsersTable.id, name: erpUsersTable.name, role: erpUsersTable.role, employee_id: erpUsersTable.employee_id })
       .from(erpUsersTable)
       .where(and(
         eq(erpUsersTable.company_id, companyId),
         ne(erpUsersTable.role, "super_admin"),
+        isNotNull(erpUsersTable.employee_id),
       )),
 
     db.select()
@@ -66,6 +67,7 @@ router.get("/sales-targets", wrap(async (req, res) => {
     user_id:         u.id,
     user_name:       u.name,
     role:            u.role,
+    employee_id:     u.employee_id,
     target_id:       targetMap.get(u.id)?.id      ?? null,
     target_amount:   Number(targetMap.get(u.id)?.target_amount  ?? 0),
     achieved_amount: achieveMap.get(u.id) ?? 0,
