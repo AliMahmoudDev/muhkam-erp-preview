@@ -56,7 +56,6 @@ beforeEach(() => {
       fontWeightNormal: 400,
       iconSize: 24,
       theme: 'dark',
-      darkThemeVariant: 'default',
       decimalPlaces: 2,
       thousandsSeparator: 'comma',
     },

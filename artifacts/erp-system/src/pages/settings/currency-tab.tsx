@@ -4,14 +4,12 @@ import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import {
   Check, Save, CheckCircle2, DollarSign, CaseSensitive,
-  Loader2,
-  Moon, Type,
+  Loader2, Type,
 } from "lucide-react";
 import { PageHeader } from "./_shared";
 import type {
   CurrencyCode, NumberFormat, FontFamily,
-  DecimalPlaces, ThousandsSeparator,
-  DarkThemeVariant, FontSize,
+  DecimalPlaces, ThousandsSeparator, FontSize,
 } from "@/contexts/app-settings";
 
 /* ══════════════════════ Static option lists ══════════════════════════════ */
@@ -27,13 +25,6 @@ const EXCHANGE_CURRENCIES = [
   { code: "CNY", flag: "🇨🇳", label: "يوان صيني",    symbol: "¥" },
 ] as const;
 
-
-
-const DARK_THEME_OPTIONS: { value: DarkThemeVariant; label: string; desc: string; bgFrom: string; bgTo: string }[] = [
-  { value: "default",         label: "افتراضي",           desc: "رمادي داكن كلاسيكي",     bgFrom: "#0D1117", bgTo: "#0A0E1A" },
-  { value: "deep-blue",       label: "أزرق عميق",         desc: "بحري غامق بلمسة زرقاء",  bgFrom: "#050D1F", bgTo: "#03091A" },
-  { value: "midnight-purple", label: "بنفسجي منتصف الليل", desc: "داكن بصبغة بنفسجية",   bgFrom: "#0D0A1E", bgTo: "#090618" },
-];
 
 
 const FONT_OPTIONS: { key: FontFamily; label: string; preview: string }[] = [
@@ -97,7 +88,6 @@ export default function CurrencyTab() {
   const [fontFamily,        setFontFamily]        = useState<FontFamily>(settings.fontFamily);
   const [fontWeight,        setFontWeight]        = useState<number>(settings.fontWeightNormal ?? 400);
   const [fontSize,          setFontSize]          = useState<FontSize>(settings.fontSize ?? "md");
-  const [darkThemeVariant,  setDarkThemeVariant]  = useState<DarkThemeVariant>(settings.darkThemeVariant ?? "default");
   const [saved,             setSaved]             = useState(false);
 
   /* ── exchange rates state (merged here) ── */
@@ -177,7 +167,6 @@ export default function CurrencyTab() {
       fontFamily,
       fontWeightNormal: fontWeight,
       fontSize,
-      darkThemeVariant,
     });
     setSaved(true);
     toast({ title: "تم حفظ الإعدادات ✓", description: "تم تطبيق إعدادات المتجر على كامل النظام" });
@@ -397,34 +386,6 @@ export default function CurrencyTab() {
                   ))}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </Section>
-
-      {/* ══ 4. ثيم الوضع الداكن ══════════════════════════════════════════ */}
-      <Section icon={Moon} title="ثيم الوضع الداكن">
-        <div className="grid grid-cols-3 gap-3">
-          {DARK_THEME_OPTIONS.map(o => {
-            const active = darkThemeVariant === o.value;
-            return (
-              <button key={o.value} onClick={() => setDarkThemeVariant(o.value)}
-                className={`relative flex flex-col gap-3 p-4 rounded-2xl border-2 text-right transition-all overflow-hidden ${
-                  active ? "border-amber-500 shadow-[0_0_16px_rgba(245,158,11,0.2)]" : "border-white/8 hover:border-amber-500/30"
-                }`}
-                style={{ background: o.bgFrom }}>
-                <div className="w-full h-10 rounded-xl border border-white/5"
-                  style={{ background: `linear-gradient(135deg, ${o.bgFrom}, ${o.bgTo})` }} />
-                {active && (
-                  <span className="absolute top-3 left-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-black" />
-                  </span>
-                )}
-                <div>
-                  <p className={`font-bold text-sm ${active ? "text-amber-400" : "text-white/80"}`}>{o.label}</p>
-                  <p className="text-white/30 text-xs mt-0.5">{o.desc}</p>
-                </div>
-              </button>
             );
           })}
         </div>

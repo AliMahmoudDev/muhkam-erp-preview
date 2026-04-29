@@ -8,8 +8,6 @@ export type Theme = 'dark' | 'light';
 export type NumberFormat = 'western' | 'arabic-indic';
 export type DecimalPlaces = 0 | 2 | 3;
 export type ThousandsSeparator = 'comma' | 'period' | 'space' | 'arabic-comma';
-export type DarkThemeVariant = 'default' | 'deep-blue' | 'midnight-purple';
-
 export interface AppSettings {
   currency: CurrencyCode;
   numberFormat: NumberFormat;
@@ -27,7 +25,6 @@ export interface AppSettings {
   fontWeightNormal: number;
   iconSize: number;
   theme: Theme;
-  darkThemeVariant: DarkThemeVariant;
   /* ─── تنسيقات ─── */
   decimalPlaces: DecimalPlaces;
   thousandsSeparator: ThousandsSeparator;
@@ -56,7 +53,6 @@ const DEFAULTS: AppSettings = {
   fontWeightNormal: 400,
   iconSize: 24,
   theme: 'dark',
-  darkThemeVariant: 'default',
   decimalPlaces: 2,
   thousandsSeparator: 'comma',
 };
@@ -81,26 +77,6 @@ function hexToHsl(hex: string): string {
   }
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
-
-/* ─── ثيمات الوضع الداكن ─── */
-const DARK_THEME_VARS: Record<DarkThemeVariant, Record<string, string>> = {
-  'default': {
-    '--erp-bg-base':    '#0D1117',
-    '--erp-bg-sidebar': '#0A0E1A',
-    '--erp-bg-card':    'rgba(255,255,255,0.03)',
-  },
-  'deep-blue': {
-    '--erp-bg-base':    '#050D1F',
-    '--erp-bg-sidebar': '#03091A',
-    '--erp-bg-card':    'rgba(30,60,120,0.12)',
-  },
-  'midnight-purple': {
-    '--erp-bg-base':    '#0D0A1E',
-    '--erp-bg-sidebar': '#090618',
-    '--erp-bg-card':    'rgba(80,40,140,0.10)',
-  },
-};
-
 
 const STORAGE_KEY = 'halal_erp_settings';
 
@@ -200,9 +176,9 @@ function applySettings(s: AppSettings) {
     root.classList.add('dark');
     root.classList.remove('light');
     root.setAttribute('data-theme', 'dark');
-    const themeVars = DARK_THEME_VARS[s.darkThemeVariant ?? 'default'];
-    Object.entries(themeVars).forEach(([k, v]) => root.style.setProperty(k, v));
-    root.setAttribute('data-dark-variant', s.darkThemeVariant ?? 'default');
+    root.style.setProperty('--erp-bg-base',    '#0D1117');
+    root.style.setProperty('--erp-bg-sidebar', '#0A0E1A');
+    root.style.setProperty('--erp-bg-card',    'rgba(255,255,255,0.03)');
   }
 
 }
