@@ -4,6 +4,10 @@
 -- كل جملة مؤمَّنة بـ IF NOT EXISTS — آمنة للتشغيل أكثر من مرة.
 -- =====================================================================
 
+-- =====================================================================
+-- القسم الأول: جداول المصلّحات (الإصلاحات السابقة)
+-- =====================================================================
+
 -- 1. أعمدة repair_jobs — نوع الجهاز والإكسسوارات والفرع والتقنيين والجودة والشحن
 ALTER TABLE repair_jobs
   ADD COLUMN IF NOT EXISTS device_type              TEXT NOT NULL DEFAULT 'general',
@@ -62,5 +66,78 @@ ALTER TABLE trial_abuse_log
   ADD COLUMN IF NOT EXISTS device_score        INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS registration_count  INTEGER DEFAULT 0;
 
+-- =====================================================================
+-- القسم الثاني: إصلاح تسجيل الدخول — أعمدة erp_users الجديدة
+-- *** هذا هو سبب "فشل تسجيل الدخول" على VPS ***
+-- Drizzle يحاول SELECT كل الأعمدة المعرّفة في الـ schema —
+-- إذا كان أي عمود غير موجود في DB يظهر خطأ 500.
+-- =====================================================================
+
+-- 5. أعمدة جديدة في erp_users (مطلوبة لعمل تسجيل الدخول)
+ALTER TABLE erp_users
+  ADD COLUMN IF NOT EXISTS email             TEXT,
+  ADD COLUMN IF NOT EXISTS employee_id       INTEGER,
+  ADD COLUMN IF NOT EXISTS warehouse_id      INTEGER,
+  ADD COLUMN IF NOT EXISTS safe_id           INTEGER,
+  ADD COLUMN IF NOT EXISTS login_attempts    INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS last_login        TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS totp_secret       TEXT,
+  ADD COLUMN IF NOT EXISTS totp_enabled      BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS totp_verified     BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS trusted_device_id TEXT;
+
+-- =====================================================================
+-- القسم الثالث: إصلاح فحص الاشتراك — أعمدة companies الجديدة
+-- =====================================================================
+
+-- 6. أعمدة جديدة في companies
+ALTER TABLE companies
+  ADD COLUMN IF NOT EXISTS edition           TEXT NOT NULL DEFAULT 'ultimate',
+  ADD COLUMN IF NOT EXISTS features          JSONB,
+  ADD COLUMN IF NOT EXISTS admin_email       TEXT,
+  ADD COLUMN IF NOT EXISTS signup_ip         TEXT,
+  ADD COLUMN IF NOT EXISTS signup_user_agent TEXT,
+  ADD COLUMN IF NOT EXISTS has_used_trial    BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS email_verified    BOOLEAN NOT NULL DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS email_verification_token       TEXT,
+  ADD COLUMN IF NOT EXISTS email_verification_expires_at  TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS verification_status            TEXT NOT NULL DEFAULT 'verified',
+  ADD COLUMN IF NOT EXISTS trial_score       INTEGER NOT NULL DEFAULT 100,
+  ADD COLUMN IF NOT EXISTS is_suspicious     BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- تصحيح الشركات الموجودة مسبقاً: اعتبارها موثّقة (لا تحجبها من الدخول)
+UPDATE companies
+  SET email_verified    = TRUE,
+      verification_status = 'verified'
+  WHERE email_verified IS FALSE
+     OR verification_status = 'pending';
+
+-- =====================================================================
+-- القسم الرابع: جدول refresh_tokens (إذا لم يكن موجوداً)
+-- =====================================================================
+
+-- 7. جدول refresh_tokens
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id         SERIAL PRIMARY KEY,
+  token_hash TEXT    NOT NULL UNIQUE,
+  user_id    INTEGER NOT NULL REFERENCES erp_users(id) ON DELETE CASCADE,
+  used       BOOLEAN NOT NULL DEFAULT FALSE,
+  revoked    BOOLEAN NOT NULL DEFAULT FALSE,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  used_at    TIMESTAMP WITH TIME ZONE
+);
+CREATE INDEX IF NOT EXISTS refresh_tokens_user_id_idx  ON refresh_tokens (user_id);
+CREATE INDEX IF NOT EXISTS refresh_tokens_hash_idx     ON refresh_tokens (token_hash);
+CREATE INDEX IF NOT EXISTS refresh_tokens_expires_idx  ON refresh_tokens (expires_at);
+
+-- =====================================================================
+-- القسم الخامس: جداول HR والرواتب (قد تكون مفقودة)
+-- =====================================================================
+
+-- 8. salary_advances — عمود safe_id إذا كان ناقصاً
+ALTER TABLE salary_advances
+  ADD COLUMN IF NOT EXISTS safe_id INTEGER;
+
 -- تأكيد
-SELECT 'Migration applied successfully ✓' AS status;
+SELECT 'VPS Migration v2 applied successfully ✓' AS status;

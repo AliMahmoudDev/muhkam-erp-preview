@@ -298,7 +298,8 @@ router.post('/auth/login', async (req, res) => {
         company_id: user.company_id ?? null,
       },
     });
-  } catch {
+  } catch (err) {
+    logger.error({ err }, '[auth/login] unexpected error during login');
     res.status(500).json({ error: 'فشل تسجيل الدخول' });
   }
 });
@@ -1083,7 +1084,8 @@ router.post('/auth/login/email', async (req, res) => {
         company_id: user.company_id ?? null,
       },
     });
-  } catch {
+  } catch (err) {
+    logger.error({ err }, '[auth/login/email] unexpected error during login');
     res.status(500).json({ error: 'فشل تسجيل الدخول' });
   }
 });
