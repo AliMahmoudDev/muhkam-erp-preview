@@ -3,7 +3,7 @@ import { useAppSettings } from "@/contexts/app-settings";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import {
-  Check, Save, CheckCircle2, DollarSign, AlignLeft, CaseSensitive,
+  Check, Save, CheckCircle2, DollarSign, CaseSensitive,
   Loader2,
   Moon, Type,
 } from "lucide-react";
@@ -430,67 +430,102 @@ export default function CurrencyTab() {
         </div>
       </Section>
 
-      {/* ══ 8. حجم الخط ══════════════════════════════════════════════════ */}
-      <Section icon={Type} title="حجم الخط">
-        <div className="grid grid-cols-4 gap-3">
-          {FONT_SIZE_OPTIONS.map(o => {
-            const active = fontSize === o.value;
-            return (
-              <button key={o.value} onClick={() => setFontSize(o.value)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-                  active ? "bg-amber-500/10 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.15)]" : "bg-[#1A2235] border-[#2D3748] hover:border-amber-500/30"
-                }`}>
-                <span className={`font-black ${active ? "text-amber-400" : "text-white/50"}`}
-                  style={{ fontSize: o.px }}>أ</span>
-                <p className={`font-bold text-xs ${active ? "text-amber-400" : "text-white/60"}`}>{o.label}</p>
-                <p className="text-white/25 text-[10px]">{o.px}</p>
-                {active && <Check className="w-3 h-3 text-amber-400" />}
-              </button>
-            );
-          })}
-        </div>
-      </Section>
+      {/* ══ 5. إعدادات الخطوط (موحّدة) ══════════════════════════════════ */}
+      <Section icon={Type} title="إعدادات الخطوط">
+        <div className="divide-y divide-white/5">
 
-      {/* ══ الخطوط ════════════════════════════════════════════════════════ */}
-      <Section icon={AlignLeft} title="إعدادات الخطوط">
-        <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-3">نوع الخط</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-          {FONT_OPTIONS.map(f => {
-            const active = fontFamily === f.key;
-            return (
-              <button key={f.key} onClick={() => setFontFamily(f.key)}
-                className={`flex flex-col gap-1.5 p-4 rounded-xl border text-right transition-all ${
-                  active ? "bg-amber-500/10 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.15)]" : "bg-[#1A2235] border-[#2D3748] hover:border-amber-500/30"
-                }`}>
-                <div className="flex items-center justify-between">
-                  <p className={`font-bold text-sm ${active ? "text-amber-400" : "text-white/80"}`}>{f.label}</p>
-                  {active && <Check className="w-4 h-4 text-amber-400" />}
-                </div>
-                <p className="text-white/40 text-xs" style={{ fontFamily: `'${f.key}', sans-serif` }}>{f.preview}</p>
-              </button>
-            );
-          })}
-        </div>
+          {/* ── نوع الخط ── */}
+          <div className="flex items-center gap-4 py-3 first:pt-0">
+            <span className="text-white/40 text-xs font-bold w-20 shrink-0 text-right">نوع الخط</span>
+            <div className="flex-1 flex flex-wrap gap-2">
+              {FONT_OPTIONS.map(f => {
+                const active = fontFamily === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setFontFamily(f.key)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-right transition-all ${
+                      active
+                        ? "bg-amber-500/15 border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.12)]"
+                        : "bg-[#1A2235] border-white/8 hover:border-amber-500/30"
+                    }`}
+                  >
+                    <span
+                      className={`text-sm font-bold ${active ? "text-amber-400" : "text-white/60"}`}
+                      style={{ fontFamily: `'${f.key}', sans-serif` }}
+                    >
+                      {f.label}
+                    </span>
+                    <span className="text-white/20 text-[10px] font-mono hidden sm:inline"
+                      style={{ fontFamily: `'${f.key}', sans-serif` }}>
+                      {f.key === "Inter" ? "Abc" : "أبج"}
+                    </span>
+                    {active && <Check className="w-3 h-3 text-amber-400 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-        <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-3">وزن الخط</p>
-        <div className="grid grid-cols-3 gap-3">
-          {FONT_WEIGHT_OPTIONS.map(w => {
-            const active = fontWeight === w.value;
-            return (
-              <button key={w.value} onClick={() => setFontWeight(w.value)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-                  active ? "bg-amber-500/10 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.15)]" : "bg-[#1A2235] border-[#2D3748] hover:border-amber-500/30"
-                }`}>
-                <span className={`text-2xl ${active ? "text-amber-400" : "text-white/50"}`}
-                  style={{ fontFamily: `'${fontFamily}', sans-serif`, fontWeight: w.value }}>أ</span>
-                <div className="text-center">
-                  <p className={`font-bold text-xs ${active ? "text-amber-400" : "text-white/70"}`}>{w.label}</p>
-                  <p className="text-white/25 text-[10px]">{w.labelEn} · {w.value}</p>
-                </div>
-                {active && <Check className="w-3.5 h-3.5 text-amber-400" />}
-              </button>
-            );
-          })}
+          {/* ── حجم الخط ── */}
+          <div className="flex items-center gap-4 py-3">
+            <span className="text-white/40 text-xs font-bold w-20 shrink-0 text-right">حجم الخط</span>
+            <div className="flex gap-2">
+              {FONT_SIZE_OPTIONS.map(o => {
+                const active = fontSize === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    onClick={() => setFontSize(o.value)}
+                    className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border transition-all ${
+                      active
+                        ? "bg-amber-500/15 border-amber-500/50"
+                        : "bg-[#1A2235] border-white/8 hover:border-amber-500/30"
+                    }`}
+                  >
+                    <span
+                      className={`font-black leading-none ${active ? "text-amber-400" : "text-white/50"}`}
+                      style={{ fontSize: o.px }}
+                    >أ</span>
+                    <span className={`text-[10px] font-bold mt-1 ${active ? "text-amber-400" : "text-white/35"}`}>
+                      {o.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── وزن الخط ── */}
+          <div className="flex items-center gap-4 py-3 last:pb-0">
+            <span className="text-white/40 text-xs font-bold w-20 shrink-0 text-right">وزن الخط</span>
+            <div className="flex gap-2">
+              {FONT_WEIGHT_OPTIONS.map(w => {
+                const active = fontWeight === w.value;
+                return (
+                  <button
+                    key={w.value}
+                    onClick={() => setFontWeight(w.value)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
+                      active
+                        ? "bg-amber-500/15 border-amber-500/50"
+                        : "bg-[#1A2235] border-white/8 hover:border-amber-500/30"
+                    }`}
+                  >
+                    <span
+                      className={`text-base leading-none ${active ? "text-amber-400" : "text-white/50"}`}
+                      style={{ fontFamily: `'${fontFamily}', sans-serif`, fontWeight: w.value }}
+                    >أ</span>
+                    <span className={`text-xs font-bold ${active ? "text-amber-400" : "text-white/50"}`}>
+                      {w.label}
+                    </span>
+                    {active && <Check className="w-3 h-3 text-amber-400 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
       </Section>
 
