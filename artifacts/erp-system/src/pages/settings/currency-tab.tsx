@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useAppSettings } from "@/contexts/app-settings";
-import { formatCurrencyPreview } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import {
@@ -28,23 +27,6 @@ const EXCHANGE_CURRENCIES = [
   { code: "CNY", flag: "🇨🇳", label: "يوان صيني",    symbol: "¥" },
 ] as const;
 
-const NUMBER_FORMAT_OPTIONS: { value: NumberFormat; label: string; example: string }[] = [
-  { value: "western",      label: "أرقام غربية",       example: "1,234.56" },
-  { value: "arabic-indic", label: "أرقام عربية-هندية", example: "١٬٢٣٤٫٥٦" },
-];
-
-const DECIMAL_PLACES_OPTIONS: { value: DecimalPlaces; label: string; example: string }[] = [
-  { value: 0, label: "بدون كسور",   example: "1,234" },
-  { value: 2, label: "منزلتان",     example: "1,234.56" },
-  { value: 3, label: "ثلاث منازل", example: "1,234.567" },
-];
-
-const THOUSANDS_SEP_OPTIONS: { value: ThousandsSeparator; label: string; example: string }[] = [
-  { value: "comma",         label: "فاصلة  ,",       example: "1,000,000" },
-  { value: "period",        label: "نقطة  .",          example: "1.000.000" },
-  { value: "space",         label: "مسافة",            example: "1 000 000" },
-  { value: "arabic-comma",  label: "فاصلة عربية  ،",  example: "1،000،000" },
-];
 
 const DATE_FORMAT_OPTIONS: { value: DateFormat; label: string; example: string }[] = [
   { value: "dd/mm/yyyy",  label: "يوم/شهر/سنة",  example: "25/01/2025" },
@@ -237,9 +219,6 @@ export default function CurrencyTab() {
 
   const isLightMode = settings.theme === "light";
 
-  /* ── preview sample amounts ── */
-  const previewAmounts = [100, 1234.56, 50000];
-
   const handleSave = () => {
     update({
       currency,
@@ -400,41 +379,83 @@ export default function CurrencyTab() {
 
       </div>
 
-      {/* ══ 3. الأرقام والأماكن العشرية ══════════════════════════════════ */}
+      {/* ══ 3. إعدادات الأرقام ════════════════════════════════════════════ */}
       <Section icon={CaseSensitive} title="إعدادات الأرقام">
-        <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-3">شكل الأرقام</p>
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          {NUMBER_FORMAT_OPTIONS.map(o => (
-            <OptionPill key={o.value} value={o.value} active={numFmt === o.value}
-              label={o.label} sub={o.example} onClick={(v) => setNumFmt(v as NumberFormat)} />
-          ))}
-        </div>
+        <div className="space-y-2">
+          {([
+            { fmt: "western"      as NumberFormat, label: "أرقام غربية",       preview: "1٬234" },
+            { fmt: "arabic-indic" as NumberFormat, label: "أرقام عربية-هندية", preview: "١٬٢٣٤" },
+          ] as const).map(row => {
+            const active = numFmt === row.fmt;
+            return (
+              <div
+                key={row.fmt}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+                  active
+                    ? "bg-amber-500/8 border-amber-500/40"
+                    : "bg-[#0D1424] border-white/5 hover:border-white/10"
+                }`}
+              >
+                {/* ── Left: format type selector ── */}
+                <button
+                  onClick={() => setNumFmt(row.fmt)}
+                  className="flex items-center gap-2.5 min-w-[150px] shrink-0 text-right"
+                >
+                  <span className={`font-mono text-base font-black tracking-wide ${active ? "text-amber-400" : "text-white/40"}`}>
+                    {row.preview}
+                  </span>
+                  <span className={`text-xs font-bold ${active ? "text-amber-300" : "text-white/35"}`}>
+                    {row.label}
+                  </span>
+                  {active && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                </button>
 
-        <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-3">عدد المنازل العشرية</p>
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {DECIMAL_PLACES_OPTIONS.map(o => (
-            <OptionPill key={o.value} value={o.value} active={decimalPlaces === o.value}
-              label={o.label} sub={o.example} onClick={(v) => setDecimalPlaces(v as DecimalPlaces)} />
-          ))}
-        </div>
+                {/* ── Divider ── */}
+                <div className="w-px h-6 bg-white/8 shrink-0" />
 
-        <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-3">فاصل الآلاف</p>
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          {THOUSANDS_SEP_OPTIONS.map(o => (
-            <OptionPill key={o.value} value={o.value} active={thousandsSep === o.value}
-              label={o.label} sub={o.example} onClick={(v) => setThousandsSep(v as ThousandsSeparator)} />
-          ))}
-        </div>
+                {/* ── Right: sub-option chips ── */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Decimal group */}
+                  {([
+                    { dp: 0 as DecimalPlaces, label: "بدون كسور" },
+                    { dp: 2 as DecimalPlaces, label: "بكسور"     },
+                  ] as const).map(o => (
+                    <button
+                      key={o.dp}
+                      onClick={() => setDecimalPlaces(o.dp)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                        decimalPlaces === o.dp
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                          : "bg-[#1A2235] text-white/35 border border-white/8 hover:border-amber-500/25 hover:text-white/60"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
 
-        <div className="bg-[#0D1424] rounded-xl p-4 border border-white/5">
-          <p className="text-white/30 text-[10px] font-bold uppercase tracking-wider mb-3">معاينة مباشرة</p>
-          <div className="grid grid-cols-3 gap-2">
-            {previewAmounts.map(n => (
-              <div key={n} className="bg-[#111827] rounded-lg p-2.5 text-center border border-white/5">
-                <p className="text-amber-400 font-black text-sm">{formatCurrencyPreview(n, currency, numFmt)}</p>
+                  <div className="w-px h-4 bg-white/8 mx-0.5 shrink-0" />
+
+                  {/* Separator group */}
+                  {([
+                    { sep: "comma"  as ThousandsSeparator, label: "بدون نقطة" },
+                    { sep: "period" as ThousandsSeparator, label: "نقطة ."      },
+                  ] as const).map(o => (
+                    <button
+                      key={o.sep}
+                      onClick={() => setThousandsSep(o.sep)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                        thousandsSep === o.sep
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                          : "bg-[#1A2235] text-white/35 border border-white/8 hover:border-amber-500/25 hover:text-white/60"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </Section>
 
