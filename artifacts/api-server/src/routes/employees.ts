@@ -501,18 +501,15 @@ router.post(
 router.get(
   '/employees/:id',
   wrap(async (req, res) => {
-    if (!hasPermission(req.user, 'can_view_employees')) {
-      res.status(403).json({ error: 'غير مصرح' });
-      return;
-    }
     const companyId = req.user!.company_id!;
-    const id = parseInt(String(req.params['id']), 10);
-    // Self-service: employee can only view own record
-    const selfId = selfEmployeeId(req);
-    if (selfId !== null && id !== selfId) {
-      res.status(403).json({ error: 'غير مصرح' });
-      return;
-    }
+    const id        = parseInt(String(req.params['id']), 10);
+    const selfId    = selfEmployeeId(req);
+    const canViewAll = hasPermission(req.user, 'can_view_employees');
+    // Allow: full permission without employee_id (pure admin), OR viewing own record
+    // Deny: no permission & not self, OR has permission but has employee_id & viewing others
+    const isSelf = selfId !== null && selfId === id;
+    if (!canViewAll && !isSelf) { res.status(403).json({ error: 'غير مصرح' }); return; }
+    if (canViewAll && selfId !== null && !isSelf) { res.status(403).json({ error: 'غير مصرح — يمكنك فقط الاطلاع على بياناتك' }); return; }
 
     const rows = await db
       .select({

@@ -29,6 +29,19 @@ function getOrCreateDeviceId(): string {
 
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 
+function fmtTime(val: unknown): string {
+  if (!val) return '—';
+  const s = String(val);
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
+    const [h, m] = s.split(':').map(Number);
+    const d = new Date(); d.setHours(h, m, 0, 0);
+    return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s;
+  return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 function greetingInfo(): { text: string; Icon: typeof Sun; color: string } {
   const h = new Date().getHours();
   if (h < 12) return { text: 'صباح الخير', Icon: Sun, color: '#f59e0b' };
@@ -74,7 +87,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
     queryKey: ['gateway-attendance-today', empId, today],
     queryFn: async () => {
       if (!empId) return [];
-      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&date_from=${today}&date_to=${today}`);
+      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&from=${today}&to=${today}`);
       return r.ok ? r.json() : [];
     },
     enabled: !!empId,
@@ -94,8 +107,8 @@ export default function EmployeeGateway({ onEnter }: Props) {
   const todayRec = Array.isArray(todayRecRaw) && todayRecRaw.length > 0
     ? (todayRecRaw[0] as AnyRec)
     : null;
-  const checkedIn  = !!todayRec?.check_in;
-  const checkedOut = !!todayRec?.check_out;
+  const checkedIn  = !!todayRec?.check_in_time;
+  const checkedOut = !!todayRec?.check_out_time;
   const emp = (empRaw ?? {}) as AnyRec;
 
   /* ── Device fingerprint check ── */
@@ -259,14 +272,14 @@ export default function EmployeeGateway({ onEnter }: Props) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#34d399' }}>
                 <CheckCircle2 style={{ width: 16, height: 16 }} />
                 <span style={{ fontSize: 13, fontWeight: 600 }}>
-                  سجّلت حضورك الساعة {new Date(String(todayRec!.check_in)).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                  سجّلت حضورك الساعة {fmtTime(todayRec!.check_in_time)}
                 </span>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#818cf8' }}>
                 <LogOut style={{ width: 16, height: 16 }} />
                 <span style={{ fontSize: 13, fontWeight: 600 }}>
-                  انصرفت الساعة {new Date(String(todayRec!.check_out)).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                  انصرفت الساعة {fmtTime(todayRec!.check_out_time)}
                 </span>
               </div>
             )}

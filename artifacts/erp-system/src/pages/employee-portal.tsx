@@ -22,17 +22,30 @@ function fmt(v: unknown): string {
   return String(v);
 }
 
-function fmtTime(iso: unknown): string {
-  if (!iso) return '—';
-  const d = new Date(String(iso));
-  if (isNaN(d.getTime())) return '—';
+function fmtTime(val: unknown): string {
+  if (!val) return '—';
+  const s = String(val);
+  // HH:MM or HH:MM:SS time-only string (from DB TIME column)
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
+    const [h, m] = s.split(':').map(Number);
+    const d = new Date(); d.setHours(h, m, 0, 0);
+    return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s;
   return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-function fmtDate(iso: unknown): string {
-  if (!iso) return '—';
-  const d = new Date(String(iso));
-  if (isNaN(d.getTime())) return '—';
+function fmtDate(val: unknown): string {
+  if (!val) return '—';
+  const s = String(val);
+  // YYYY-MM-DD date-only string (avoids timezone offset issues)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y, mo, day] = s.split('-').map(Number);
+    return new Date(y, mo - 1, day).toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s;
   return d.toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
@@ -95,7 +108,7 @@ export default function EmployeePortal() {
     queryKey: ['portal-attendance-today', empId, today],
     queryFn: async () => {
       if (!empId) return [];
-      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&date_from=${today}&date_to=${today}`);
+      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&from=${today}&to=${today}`);
       return r.json();
     },
     enabled: !!empId,
@@ -111,20 +124,20 @@ export default function EmployeePortal() {
     queryKey: ['portal-attendance-recent', empId, dateFrom],
     queryFn: async () => {
       if (!empId) return [];
-      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&date_from=${dateFrom}&date_to=${today}`);
+      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&from=${dateFrom}&to=${today}`);
       return r.json();
     },
     enabled: !!empId,
   });
 
   /* ── fetch attendance summary ── */
-  const monthStart = today.slice(0, 7) + '-01';
+  const currentMonth = today.slice(0, 7); // e.g. "2026-04"
   const { data: summaryRaw } = useQuery<AnyRec>({
-    queryKey: ['portal-summary', empId, monthStart],
+    queryKey: ['portal-summary', empId, currentMonth],
     queryFn: async () => {
       if (!empId) return {};
-      const r = await authFetch(`/api/attendance/summary/${empId}?date_from=${monthStart}&date_to=${today}`);
-      return r.json();
+      const r = await authFetch(`/api/attendance/summary/${empId}?month=${currentMonth}`);
+      return r.ok ? r.json() : {};
     },
     enabled: !!empId,
   });
@@ -146,8 +159,8 @@ export default function EmployeePortal() {
     ? (todayRecRaw[0] as AnyRec)
     : null;
 
-  const alreadyCheckedIn  = !!todayRec && !!todayRec.check_in;
-  const alreadyCheckedOut = !!todayRec && !!todayRec.check_out;
+  const alreadyCheckedIn  = !!todayRec && !!todayRec.check_in_time;
+  const alreadyCheckedOut = !!todayRec && !!todayRec.check_out_time;
 
   async function doCheckIn() {
     if (!empId) return;
@@ -374,7 +387,7 @@ export default function EmployeePortal() {
                   <div>
                     <p style={{ fontSize: 11, color: textMuted, marginBottom: 2 }}>وقت الحضور</p>
                     <p style={{ fontSize: 16, fontWeight: 900, color: alreadyCheckedIn ? '#34d399' : textMuted }}>
-                      {alreadyCheckedIn ? fmtTime(todayRec?.check_in) : '—'}
+                      {alreadyCheckedIn ? fmtTime(todayRec?.check_in_time) : '—'}
                     </p>
                   </div>
                   {alreadyCheckedIn
@@ -396,7 +409,7 @@ export default function EmployeePortal() {
                   <div>
                     <p style={{ fontSize: 11, color: textMuted, marginBottom: 2 }}>وقت الانصراف</p>
                     <p style={{ fontSize: 16, fontWeight: 900, color: alreadyCheckedOut ? '#818cf8' : textMuted }}>
-                      {alreadyCheckedOut ? fmtTime(todayRec?.check_out) : '—'}
+                      {alreadyCheckedOut ? fmtTime(todayRec?.check_out_time) : '—'}
                     </p>
                   </div>
                   {alreadyCheckedOut
@@ -509,16 +522,16 @@ export default function EmployeePortal() {
                 </thead>
                 <tbody>
                   {recentRecs.map((rec, i) => {
-                    const ci   = rec.check_in  ? fmtTime(rec.check_in)  : '—';
-                    const co   = rec.check_out ? fmtTime(rec.check_out) : '—';
+                    const ci   = rec.check_in_time  ? fmtTime(rec.check_in_time)  : '—';
+                    const co   = rec.check_out_time ? fmtTime(rec.check_out_time) : '—';
                     let duration = '—';
-                    if (rec.check_in && rec.check_out) {
-                      const ms = new Date(String(rec.check_out)).getTime() - new Date(String(rec.check_in)).getTime();
+                    if (rec.check_in_time && rec.check_out_time) {
+                      const ms = new Date(String(rec.check_out_time)).getTime() - new Date(String(rec.check_in_time)).getTime();
                       const hr = Math.floor(ms / 3600000);
                       const mn = Math.floor((ms % 3600000) / 60000);
                       duration = `${hr}س ${mn}د`;
                     }
-                    const isToday = String(rec.date ?? '').slice(0, 10) === today;
+                    const isToday = String(rec.attendance_date ?? '').slice(0, 10) === today;
                     return (
                       <tr
                         key={String(rec.id ?? i)}
@@ -531,7 +544,7 @@ export default function EmployeePortal() {
                       >
                         <td style={{ padding: '11px 16px', whiteSpace: 'nowrap' }}>
                           <span style={{ fontWeight: isToday ? 800 : 500, color: isToday ? '#f59e0b' : undefined }}>
-                            {fmtDate(rec.date ?? rec.check_in)}
+                            {fmtDate(rec.attendance_date ?? rec.check_in_time)}
                           </span>
                           {isToday && (
                             <span className="mr-2 text-[10px] font-bold px-1.5 py-0.5 rounded"

@@ -200,7 +200,7 @@ export function AppLayout({ children }: LayoutProps) {
     queryKey: ['layout-attendance-today', empId, todayStr],
     queryFn: async () => {
       if (!empId) return [];
-      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&date_from=${todayStr}&date_to=${todayStr}`);
+      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&from=${todayStr}&to=${todayStr}`);
       return r.ok ? r.json() : [];
     },
     enabled: !!empId,
@@ -210,8 +210,8 @@ export function AppLayout({ children }: LayoutProps) {
     ? (todayRecRaw[0] as Record<string, unknown>)
     : null;
   const todayRecordId = todayRec?.id as number | undefined;
-  const alreadyCheckedIn  = !!todayRec?.check_in;
-  const alreadyCheckedOut = !!todayRec?.check_out;
+  const alreadyCheckedIn  = !!todayRec?.check_in_time;
+  const alreadyCheckedOut = !!todayRec?.check_out_time;
 
   /* ── Idle timeout: 1 hour ── */
   useIdleTimeout({

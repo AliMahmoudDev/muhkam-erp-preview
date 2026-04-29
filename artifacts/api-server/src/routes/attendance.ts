@@ -100,17 +100,26 @@ router.get("/employee-shifts/:employeeId", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/attendance/records", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const selfEmpId     = req.user?.employee_id ?? null;
+  const canViewAll    = hasPermission(req.user, "can_view_employees");
+  const requestedEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
+  const isSelf        = selfEmpId !== null && requestedEmpId !== null && selfEmpId === requestedEmpId;
+  if (!canViewAll && !isSelf) { res.status(403).json({ error: "غير مصرح" }); return; }
+
   const companyId = req.user!.company_id!;
-  const from     = String(req.query["from"] ?? "");
-  const to       = String(req.query["to"] ?? "");
-  const empId    = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
-  const status   = String(req.query["status"] ?? "");
+  const from   = String(req.query["from"] ?? "");
+  const to     = String(req.query["to"] ?? "");
+  const status = String(req.query["status"] ?? "");
 
   const conditions = [sql`${employeesTable.company_id} = ${companyId}`];
   if (from) conditions.push(gte(attendanceRecordsTable.attendance_date, from));
   if (to)   conditions.push(lte(attendanceRecordsTable.attendance_date, to));
-  if (empId) conditions.push(eq(attendanceRecordsTable.employee_id, empId));
+  // Self-service: always restrict to own records; admins use provided filter or none
+  if (!canViewAll && selfEmpId) {
+    conditions.push(eq(attendanceRecordsTable.employee_id, selfEmpId));
+  } else if (requestedEmpId) {
+    conditions.push(eq(attendanceRecordsTable.employee_id, requestedEmpId));
+  }
   if (status) conditions.push(eq(attendanceRecordsTable.status, status));
 
   const rows = await db.select({
@@ -275,8 +284,11 @@ router.put("/attendance/records/:id", wrap(async (req, res) => {
 
 /* ── Attendance Summary ───────────────────────────────────────── */
 router.get("/attendance/summary/:employeeId", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const empId = parseInt(String(req.params["employeeId"]), 10);
+  const selfEmpId  = req.user?.employee_id ?? null;
+  const canViewAll = hasPermission(req.user, "can_view_employees");
+  const empId      = parseInt(String(req.params["employeeId"]), 10);
+  const isSelf     = selfEmpId !== null && selfEmpId === empId;
+  if (!canViewAll && !isSelf) { res.status(403).json({ error: "غير مصرح" }); return; }
   const month = String(req.query["month"] ?? new Date().toISOString().substring(0, 7));
   const [summary] = await db.select().from(attendanceSummaryTable)
     .where(and(eq(attendanceSummaryTable.employee_id, empId), eq(attendanceSummaryTable.month, month)));
