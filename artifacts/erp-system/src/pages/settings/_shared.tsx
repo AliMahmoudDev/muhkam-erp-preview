@@ -192,7 +192,7 @@ export function PermissionGroupCard({
   permissions: Record<string, boolean>;
   onChange: (key: string, val: boolean) => void;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const keys    = group.permissions.map(p => p.key);
   const onCount = keys.filter(k => permissions[k]).length;
