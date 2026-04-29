@@ -12,6 +12,7 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { selfEmployeeId } from "../lib/employee-self";
 import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
@@ -112,8 +113,10 @@ router.put("/leave-policies/:id", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/employee-leave-balance/:employeeId", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const empId = parseInt(String(req.params["employeeId"]), 10);
+  const selfId     = selfEmployeeId(req);
+  const canViewAll = hasPermission(req.user, "can_view_employees");
+  const empId      = parseInt(String(req.params["employeeId"]), 10);
+  if (!canViewAll && selfId !== empId) { res.status(403).json({ error: "غير مصرح" }); return; }
   const rows = await db.select({
     id: employeeLeaveBalancesTable.id, employee_id: employeeLeaveBalancesTable.employee_id,
     leave_type_id: employeeLeaveBalancesTable.leave_type_id,
@@ -136,9 +139,12 @@ router.get("/employee-leave-balance/:employeeId", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/leave-requests", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const selfId     = selfEmployeeId(req);
+  const canViewAll = hasPermission(req.user, "can_view_employees");
+  if (!canViewAll && !selfId) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
-  const empId   = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
+  const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
+  const empId = !canViewAll && selfId !== null ? selfId : queryEmpId;
   const status  = String(req.query["status"] ?? "");
   const from    = String(req.query["from"] ?? "");
   const to      = String(req.query["to"] ?? "");

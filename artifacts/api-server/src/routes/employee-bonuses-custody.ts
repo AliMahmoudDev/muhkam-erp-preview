@@ -27,11 +27,12 @@ const n = (v: unknown) => (v != null ? Number(v) : 0);
 ══════════════════════════════════════════════════════════════════ */
 
 router.get("/employee-bonuses", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const selfId     = selfEmployeeId(req);
+  const canViewAll = hasPermission(req.user, "can_view_employees");
+  if (!canViewAll && !selfId) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
-  const selfId = selfEmployeeId(req);
-  const empId = selfId !== null ? selfId : queryEmpId;
+  const empId = !canViewAll && selfId !== null ? selfId : queryEmpId;
   const conditions = [eq(employeeBonusesTable.company_id, companyId)];
   if (empId) conditions.push(eq(employeeBonusesTable.employee_id, empId));
   const rows = await db.select().from(employeeBonusesTable)
@@ -90,11 +91,12 @@ router.delete("/employee-bonuses/:id", wrap(async (req, res) => {
 const DEDUCTION_TYPES = new Set(["late", "absence", "damage", "other"]);
 
 router.get("/employee-deductions", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const selfId     = selfEmployeeId(req);
+  const canViewAll = hasPermission(req.user, "can_view_employees");
+  if (!canViewAll && !selfId) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
-  const selfId = selfEmployeeId(req);
-  const empId = selfId !== null ? selfId : queryEmpId;
+  const empId = !canViewAll && selfId !== null ? selfId : queryEmpId;
   const type = req.query["deduction_type"] ? String(req.query["deduction_type"]) : null;
   const conditions = [
     eq(employeeDeductionsTable.company_id, companyId),

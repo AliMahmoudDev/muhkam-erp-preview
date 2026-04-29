@@ -76,13 +76,14 @@ router.put("/salary-advances/settings", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/salary-advances", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const selfId     = selfEmployeeId(req);
+  const canViewAll = hasPermission(req.user, "can_view_employees");
+  if (!canViewAll && !selfId) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
   const status = String(req.query["status"] ?? "");
-  // Self-service: force-filter to the caller's own employee record
-  const selfId = selfEmployeeId(req);
-  const empId = selfId !== null ? selfId : queryEmpId;
+  // Self-service: force-filter to own records; admins use query param
+  const empId = !canViewAll && selfId !== null ? selfId : queryEmpId;
 
   const conditions = [eq(employeesTable.company_id, companyId)];
   if (empId)  conditions.push(eq(salaryAdvancesTable.employee_id, empId));

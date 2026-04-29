@@ -186,8 +186,8 @@ function Router() {
     );
   }
 
-  /* ── Employee portal: personal dashboard only ─────────── */
-  if (user.role === 'employee') {
+  /* ── Employee portal: mandatory for any user who has an employee_id ── */
+  if (user.employee_id) {
     return (
       <Suspense fallback={<PageFallback />}>
         <EmployeePortal />

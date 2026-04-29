@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
 import { useAppSettings } from '@/contexts/app-settings';
@@ -8,13 +8,15 @@ import { useIdleTimeout } from '@/hooks/use-idle-timeout';
 import LogoutCheckoutModal from '@/components/logout-checkout-modal';
 import IdleCheckoutModal from '@/components/idle-checkout-modal';
 import {
-  LogIn, LogOut, User, Clock, Calendar, Briefcase,
-  Building2, Smartphone, Fingerprint, ChevronRight,
-  CheckCircle2, XCircle, AlertCircle, Loader2,
-  Sun, Moon, Coffee, BarChart2, Bell,
+  LogOut, Clock, Calendar, Briefcase, Building2, CheckCircle2,
+  XCircle, Loader2, Sun, Moon, Coffee, TrendingDown,
+  Gift, FileText, Wallet, UserCheck, AlertCircle, ChevronDown,
+  ChevronUp, DollarSign, Users, MapPin, RotateCcw,
 } from 'lucide-react';
 
-/* ─── helpers ──────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════ */
 type AnyRec = Record<string, unknown>;
 
 function fmt(v: unknown): string {
@@ -25,7 +27,6 @@ function fmt(v: unknown): string {
 function fmtTime(val: unknown): string {
   if (!val) return '—';
   const s = String(val);
-  // HH:MM or HH:MM:SS time-only string (from DB TIME column)
   if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
     const [h, m] = s.split(':').map(Number);
     const d = new Date(); d.setHours(h, m, 0, 0);
@@ -36,21 +37,35 @@ function fmtTime(val: unknown): string {
   return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-function fmtDate(val: unknown): string {
+function fmtDate(val: unknown, showWeekday = true): string {
   if (!val) return '—';
   const s = String(val);
-  // YYYY-MM-DD date-only string (avoids timezone offset issues)
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
     const [y, mo, day] = s.split('-').map(Number);
-    return new Date(y, mo - 1, day).toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short' });
+    return new Date(y, mo - 1, day).toLocaleDateString('ar-EG', {
+      ...(showWeekday ? { weekday: 'short' } : {}),
+      day: 'numeric', month: 'short', year: 'numeric',
+    });
   }
   const d = new Date(s);
   if (isNaN(d.getTime())) return s;
-  return d.toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short' });
+  return d.toLocaleDateString('ar-EG', {
+    ...(showWeekday ? { weekday: 'short' } : {}),
+    day: 'numeric', month: 'short',
+  });
 }
 
-function todayStr() {
-  return new Date().toISOString().split('T')[0];
+function fmtCurrency(val: unknown, currency = 'EGP'): string {
+  const n = parseFloat(String(val ?? '0'));
+  if (isNaN(n)) return '—';
+  return n.toLocaleString('ar-EG', { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ' + currency;
+}
+
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+function nDaysAgo(n: number): string {
+  const d = new Date(); d.setDate(d.getDate() - n);
+  return d.toISOString().split('T')[0];
 }
 
 function greetingText(): { text: string; Icon: typeof Sun } {
@@ -60,24 +75,141 @@ function greetingText(): { text: string; Icon: typeof Sun } {
   return { text: 'مساء النور', Icon: Moon };
 }
 
-function statusBadge(s: string) {
-  const map: Record<string, { label: string; cls: string }> = {
-    present:  { label: 'حاضر',      cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
-    absent:   { label: 'غائب',      cls: 'bg-red-500/15 text-red-400 border-red-500/30' },
-    late:     { label: 'متأخر',     cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-    on_leave: { label: 'إجازة',     cls: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
-    holiday:  { label: 'إجازة رسمية', cls: 'bg-violet-500/15 text-violet-400 border-violet-500/30' },
-    half_day: { label: 'نصف يوم',   cls: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
+function calcDuration(checkIn: unknown, checkOut: unknown): string {
+  if (!checkIn) return '—';
+  const parse = (v: unknown) => {
+    const s = String(v ?? '');
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
+      const [h, m, sec = 0] = s.split(':').map(Number);
+      const d = new Date(); d.setHours(h, m, sec, 0); return d;
+    }
+    return new Date(s);
   };
-  const m = map[s] ?? { label: s, cls: 'bg-white/5 text-white/50 border-white/10' };
+  const inD = parse(checkIn);
+  const outD = checkOut ? parse(checkOut) : new Date();
+  const mins = Math.max(0, Math.round((outD.getTime() - inD.getTime()) / 60000));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return `${h}س ${m}د`;
+}
+
+/* ══════════════════════════════════════════════════
+   STATUS BADGES
+══════════════════════════════════════════════════ */
+function AttBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; color: string; bg: string }> = {
+    present:  { label: 'حاضر',         color: '#34d399', bg: 'rgba(52,211,153,0.13)' },
+    absent:   { label: 'غائب',         color: '#f87171', bg: 'rgba(248,113,113,0.13)' },
+    late:     { label: 'متأخر',        color: '#fbbf24', bg: 'rgba(251,191,36,0.13)' },
+    on_leave: { label: 'إجازة',        color: '#60a5fa', bg: 'rgba(96,165,250,0.13)' },
+    holiday:  { label: 'إجازة رسمية', color: '#a78bfa', bg: 'rgba(167,139,250,0.13)' },
+    half_day: { label: 'نصف يوم',     color: '#fb923c', bg: 'rgba(251,146,60,0.13)'  },
+  };
+  const m = map[status] ?? { label: status || '—', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${m.cls}`}>
+    <span style={{ display:'inline-flex', alignItems:'center', padding:'2px 8px', borderRadius:6,
+      fontSize:11, fontWeight:700, background: m.bg, color: m.color }}>
       {m.label}
     </span>
   );
 }
 
-/* ─── main component ─────────────────────────────────────── */
+function AdvanceBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; color: string; bg: string }> = {
+    pending:  { label: 'قيد المراجعة', color: '#fbbf24', bg: 'rgba(251,191,36,0.13)' },
+    approved: { label: 'موافق عليه',   color: '#34d399', bg: 'rgba(52,211,153,0.13)' },
+    rejected: { label: 'مرفوض',        color: '#f87171', bg: 'rgba(248,113,113,0.13)' },
+    paid:     { label: 'مدفوع',        color: '#60a5fa', bg: 'rgba(96,165,250,0.13)' },
+    active:   { label: 'نشط',          color: '#a78bfa', bg: 'rgba(167,139,250,0.13)' },
+    settled:  { label: 'مسدد',         color: '#34d399', bg: 'rgba(52,211,153,0.13)' },
+    cancelled:{ label: 'ملغى',         color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
+  };
+  const m = map[status] ?? { label: status, color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' };
+  return (
+    <span style={{ display:'inline-flex', padding:'2px 8px', borderRadius:6,
+      fontSize:11, fontWeight:700, background: m.bg, color: m.color }}>
+      {m.label}
+    </span>
+  );
+}
+
+function LeaveBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; color: string; bg: string }> = {
+    pending:  { label: 'قيد الانتظار', color: '#fbbf24', bg: 'rgba(251,191,36,0.13)' },
+    approved: { label: 'موافق عليه',   color: '#34d399', bg: 'rgba(52,211,153,0.13)' },
+    rejected: { label: 'مرفوض',        color: '#f87171', bg: 'rgba(248,113,113,0.13)' },
+    cancelled:{ label: 'ملغى',         color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
+  };
+  const m = map[status] ?? { label: status, color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' };
+  return (
+    <span style={{ display:'inline-flex', padding:'2px 8px', borderRadius:6,
+      fontSize:11, fontWeight:700, background: m.bg, color: m.color }}>
+      {m.label}
+    </span>
+  );
+}
+
+/* ══════════════════════════════════════════════════
+   SECTION CARD
+══════════════════════════════════════════════════ */
+function SectionCard({
+  icon, title, accent = '#f59e0b', children, isDark, border, cardBg, defaultOpen = true,
+}: {
+  icon: React.ReactNode; title: string; accent?: string; children: React.ReactNode;
+  isDark: boolean; border: string; cardBg: string; defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ borderRadius: 16, border: `1px solid ${border}`, background: cardBg,
+      overflow: 'hidden', marginBottom: 20 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', display:'flex', alignItems:'center', gap:12, padding:'16px 20px',
+          background:'transparent', border:'none', cursor:'pointer', textAlign:'right' }}
+      >
+        <span style={{ width:36, height:36, borderRadius:10, background:`${accent}22`,
+          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color: accent }}>
+          {icon}
+        </span>
+        <span style={{ fontSize:15, fontWeight:800, color: isDark ? '#f1f5f9' : '#0f172a', flex:1 }}>
+          {title}
+        </span>
+        <span style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)', flexShrink:0 }}>
+          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </span>
+      </button>
+      {open && (
+        <div style={{ borderTop: `1px solid ${border}`, padding:'16px 20px' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════
+   STAT MINI CARD
+══════════════════════════════════════════════════ */
+function StatCard({ label, value, icon, color, bg }: {
+  label: string; value: string | number; icon: React.ReactNode;
+  color: string; bg: string;
+}) {
+  return (
+    <div style={{ borderRadius:12, padding:'14px 16px', background: bg,
+      display:'flex', flexDirection:'column', gap:8, flex:1, minWidth:120 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+        <span style={{ color, opacity:0.8 }}>{icon}</span>
+        <span style={{ fontSize:11, color, fontWeight:600, opacity:0.8 }}>{label}</span>
+      </div>
+      <span style={{ fontSize:26, fontWeight:900, color, fontVariantNumeric:'tabular-nums' }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════
+   MAIN COMPONENT
+══════════════════════════════════════════════════ */
 export default function EmployeePortal() {
   const { user, logout } = useAuth();
   const { settings } = useAppSettings();
@@ -88,50 +220,62 @@ export default function EmployeePortal() {
   const logoSrc = settings.customLogo || `${import.meta.env.BASE_URL}logo.png`;
   const empId = user?.employee_id;
 
-  /* ── greeting ── */
   const { text: greeting, Icon: GreetIcon } = greetingText();
   const today = todayStr();
+  const currentMonth = today.slice(0, 7);
 
-  /* ── fetch employee profile ── */
+  /* ── theme tokens ── */
+  const textMain  = isDark ? '#f1f5f9' : '#0f172a';
+  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
+  const bg        = isDark ? '#080e1a' : '#f0f2f8';
+  const cardBg    = isDark ? 'rgba(255,255,255,0.035)' : '#ffffff';
+  const border    = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)';
+
+  /* ── live clock ── */
+  const [nowTime, setNowTime] = useState(() =>
+    new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+  );
+  useEffect(() => {
+    const id = setInterval(() =>
+      setNowTime(new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }))
+    , 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  /* ── modals ── */
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showIdleModal,   setShowIdleModal]   = useState(false);
+  useIdleTimeout({ timeoutMs: 60 * 60 * 1000, onIdle: () => { if (!showLogoutModal) setShowIdleModal(true); } });
+
+  /* ── check-in/out actions ── */
+  const [checkingIn,  setCheckingIn]  = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
+
+  /* ══ API QUERIES ══════════════════════════════════════════ */
+
+  /* Employee profile */
   const { data: empRaw } = useQuery<AnyRec>({
     queryKey: ['portal-employee', empId],
     queryFn: async () => {
       if (!empId) return {};
       const r = await authFetch(`/api/employees/${empId}`);
-      return r.json();
+      return r.ok ? r.json() : {};
     },
     enabled: !!empId,
   });
 
-  /* ── fetch today's attendance ── */
+  /* Today attendance */
   const { data: todayRecRaw, isLoading: todayLoading } = useQuery<AnyRec[]>({
-    queryKey: ['portal-attendance-today', empId, today],
+    queryKey: ['portal-att-today', empId, today],
     queryFn: async () => {
       if (!empId) return [];
       const r = await authFetch(`/api/attendance/records?employee_id=${empId}&from=${today}&to=${today}`);
-      return r.json();
+      return r.ok ? r.json() : [];
     },
-    enabled: !!empId,
-    refetchInterval: 60_000,
+    enabled: !!empId, refetchInterval: 60_000,
   });
 
-  /* ── fetch recent attendance (last 14 days) ── */
-  const dateFrom = (() => {
-    const d = new Date(); d.setDate(d.getDate() - 13);
-    return d.toISOString().split('T')[0];
-  })();
-  const { data: recentRaw, isLoading: recentLoading } = useQuery<AnyRec[]>({
-    queryKey: ['portal-attendance-recent', empId, dateFrom],
-    queryFn: async () => {
-      if (!empId) return [];
-      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&from=${dateFrom}&to=${today}`);
-      return r.json();
-    },
-    enabled: !!empId,
-  });
-
-  /* ── fetch attendance summary ── */
-  const currentMonth = today.slice(0, 7); // e.g. "2026-04"
+  /* Monthly summary */
   const { data: summaryRaw } = useQuery<AnyRec>({
     queryKey: ['portal-summary', empId, currentMonth],
     queryFn: async () => {
@@ -142,507 +286,532 @@ export default function EmployeePortal() {
     enabled: !!empId,
   });
 
-  /* ── Logout / Idle modals ── */
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showIdleModal,   setShowIdleModal]   = useState(false);
-
-  useIdleTimeout({
-    timeoutMs: 60 * 60 * 1000,
-    onIdle: () => { if (!showLogoutModal) setShowIdleModal(true); },
+  /* Recent attendance 30 days */
+  const dateFrom30 = nDaysAgo(29);
+  const { data: recentRaw } = useQuery<AnyRec[]>({
+    queryKey: ['portal-att-recent', empId, dateFrom30],
+    queryFn: async () => {
+      if (!empId) return [];
+      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&from=${dateFrom30}&to=${today}`);
+      return r.ok ? r.json() : [];
+    },
+    enabled: !!empId,
   });
 
-  /* ── check in / check out ── */
-  const [checkingIn,  setCheckingIn]  = useState(false);
-  const [checkingOut, setCheckingOut] = useState(false);
+  /* Salary advances */
+  const { data: advancesRaw } = useQuery<AnyRec[]>({
+    queryKey: ['portal-advances', empId],
+    queryFn: async () => {
+      if (!empId) return [];
+      const r = await authFetch(`/api/salary-advances?employee_id=${empId}`);
+      return r.ok ? r.json() : [];
+    },
+    enabled: !!empId,
+  });
 
-  const todayRec = Array.isArray(todayRecRaw) && todayRecRaw.length > 0
-    ? (todayRecRaw[0] as AnyRec)
-    : null;
+  /* Deductions */
+  const { data: deductionsRaw } = useQuery<AnyRec[]>({
+    queryKey: ['portal-deductions', empId],
+    queryFn: async () => {
+      if (!empId) return [];
+      const r = await authFetch(`/api/employee-deductions?employee_id=${empId}`);
+      return r.ok ? r.json() : [];
+    },
+    enabled: !!empId,
+  });
 
-  const alreadyCheckedIn  = !!todayRec && !!todayRec.check_in_time;
-  const alreadyCheckedOut = !!todayRec && !!todayRec.check_out_time;
+  /* Bonuses */
+  const { data: bonusesRaw } = useQuery<AnyRec[]>({
+    queryKey: ['portal-bonuses', empId],
+    queryFn: async () => {
+      if (!empId) return [];
+      const r = await authFetch(`/api/employee-bonuses?employee_id=${empId}`);
+      return r.ok ? r.json() : [];
+    },
+    enabled: !!empId,
+  });
 
+  /* Leave requests */
+  const { data: leavesRaw } = useQuery<AnyRec[]>({
+    queryKey: ['portal-leaves', empId],
+    queryFn: async () => {
+      if (!empId) return [];
+      const r = await authFetch(`/api/leave-requests?employee_id=${empId}`);
+      return r.ok ? r.json() : [];
+    },
+    enabled: !!empId,
+  });
+
+  /* Leave balance */
+  const { data: leaveBalRaw } = useQuery<AnyRec[]>({
+    queryKey: ['portal-leave-bal', empId],
+    queryFn: async () => {
+      if (!empId) return [];
+      const r = await authFetch(`/api/employee-leave-balance/${empId}`);
+      return r.ok ? r.json() : [];
+    },
+    enabled: !!empId,
+  });
+
+  /* ══ DERIVED DATA ════════════════════════════════════════ */
+  const emp         = (empRaw ?? {}) as AnyRec;
+  const summary     = (summaryRaw ?? {}) as AnyRec;
+  const recentRecs  = Array.isArray(recentRaw)    ? recentRaw    : [];
+  const advances    = Array.isArray(advancesRaw)  ? advancesRaw  : [];
+  const deductions  = Array.isArray(deductionsRaw) ? deductionsRaw : [];
+  const bonuses     = Array.isArray(bonusesRaw)   ? bonusesRaw   : [];
+  const leaves      = Array.isArray(leavesRaw)    ? leavesRaw    : [];
+  const leavesBal   = Array.isArray(leaveBalRaw)  ? leaveBalRaw  : [];
+
+  const todayRec = Array.isArray(todayRecRaw) && todayRecRaw.length > 0 ? todayRecRaw[0] as AnyRec : null;
+  const alreadyCheckedIn  = !!todayRec?.check_in_time;
+  const alreadyCheckedOut = !!todayRec?.check_out_time;
+
+  const empName     = [fmt(emp.first_name_ar), fmt(emp.last_name_ar)].filter(x => x !== '—').join(' ') || fmt(user?.username);
+  const empCode     = fmt(emp.employee_code);
+  const empSalary   = emp.salary ? fmtCurrency(emp.salary, fmt(emp.currency)) : '—';
+  const empHire     = fmtDate(emp.hire_date, false);
+  const empType     = emp.employment_type === 'full_time' ? 'دوام كامل' : emp.employment_type === 'part_time' ? 'دوام جزئي' : fmt(emp.employment_type);
+  const empStatus   = emp.employment_status === 'active' ? 'نشط' : fmt(emp.employment_status);
+
+  /* ── check-in / check-out ── */
   async function doCheckIn() {
     if (!empId) return;
     setCheckingIn(true);
     try {
-      const res = await authFetch('/api/attendance/check-in', {
-        method: 'POST',
-        body: JSON.stringify({ employee_id: empId }),
-      });
+      const res = await authFetch('/api/attendance/check-in', { method: 'POST', body: JSON.stringify({ employee_id: empId }) });
       if (!res.ok) throw new Error(await res.text());
       toast({ title: 'تم تسجيل الحضور ✓', description: `حضرت في ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}` });
-      qc.invalidateQueries({ queryKey: ['portal-attendance-today'] });
-      qc.invalidateQueries({ queryKey: ['portal-attendance-recent'] });
+      qc.invalidateQueries({ queryKey: ['portal-att-today'] });
+      qc.invalidateQueries({ queryKey: ['portal-att-recent'] });
+      qc.invalidateQueries({ queryKey: ['portal-summary'] });
     } catch (e) {
-      toast({ title: 'فشل تسجيل الحضور', description: e instanceof Error ? e.message : 'خطأ غير متوقع', variant: 'destructive' });
-    } finally {
-      setCheckingIn(false);
-    }
+      toast({ title: 'فشل تسجيل الحضور', description: e instanceof Error ? e.message : 'خطأ', variant: 'destructive' });
+    } finally { setCheckingIn(false); }
   }
 
   async function doCheckOut() {
     if (!todayRec?.id) return;
     setCheckingOut(true);
     try {
-      const res = await authFetch('/api/attendance/check-out', {
-        method: 'POST',
-        body: JSON.stringify({ record_id: todayRec.id }),
-      });
+      const res = await authFetch('/api/attendance/check-out', { method: 'POST', body: JSON.stringify({ record_id: todayRec.id }) });
       if (!res.ok) throw new Error(await res.text());
       toast({ title: 'تم تسجيل الانصراف ✓', description: `انصرفت في ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}` });
-      qc.invalidateQueries({ queryKey: ['portal-attendance-today'] });
-      qc.invalidateQueries({ queryKey: ['portal-attendance-recent'] });
+      qc.invalidateQueries({ queryKey: ['portal-att-today'] });
+      qc.invalidateQueries({ queryKey: ['portal-att-recent'] });
+      qc.invalidateQueries({ queryKey: ['portal-summary'] });
     } catch (e) {
-      toast({ title: 'فشل تسجيل الانصراف', description: e instanceof Error ? e.message : 'خطأ غير متوقع', variant: 'destructive' });
-    } finally {
-      setCheckingOut(false);
-    }
+      toast({ title: 'فشل تسجيل الانصراف', description: e instanceof Error ? e.message : 'خطأ', variant: 'destructive' });
+    } finally { setCheckingOut(false); }
   }
 
-  /* ── derived data ── */
-  const emp        = (empRaw ?? {}) as AnyRec;
-  const recentRecs = Array.isArray(recentRaw) ? (recentRaw as AnyRec[]) : [];
-  const summary    = (summaryRaw ?? {}) as AnyRec;
+  /* ── deduction type label ── */
+  function deductLabel(t: string) {
+    return ({ late: 'تأخر', absence: 'غياب', damage: 'تلف', other: 'أخرى' }[t] ?? t);
+  }
 
-  const textMain  = isDark ? '#f1f5f9' : '#0f172a';
-  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const bg        = isDark ? '#0b111f' : '#f4f6fb';
-  const cardBg    = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
-  const border    = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)';
-
-  /* ─── current time display ─── */
-  const [nowTime, setNowTime] = useState(() =>
-    new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
-  );
-  useEffect(() => {
-    const id = setInterval(() => {
-      setNowTime(new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-
+  /* ═════════════════════════════════════════════════════════
+     RENDER
+  ═════════════════════════════════════════════════════════ */
   return (
-    <div
-      dir="rtl"
-      style={{
-        minHeight: '100vh',
-        background: bg,
-        fontFamily: `'${settings.fontFamily}', sans-serif`,
-        color: textMain,
-      }}
-    >
-      {/* ══ TOP NAV BAR ════════════════════════════════════════════════ */}
-      <div
-        style={{
-          height: 60,
-          background: isDark ? 'rgba(11,17,31,0.95)' : '#ffffff',
-          borderBottom: `1px solid ${border}`,
-          backdropFilter: 'blur(12px)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          padding: '0 24px',
-        }}
-      >
-        {/* Logo */}
-        <div style={{ width: 36, height: 36, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-          <img src={logoSrc} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+    <div dir="rtl" style={{ minHeight: '100vh', background: bg, fontFamily: `'${settings.fontFamily}', sans-serif`, color: textMain }}>
+
+      {/* ══ NAVBAR ════════════════════════════════════════════ */}
+      <div style={{
+        height: 60, background: isDark ? 'rgba(8,14,26,0.96)' : '#ffffff',
+        borderBottom: `1px solid ${border}`, backdropFilter: 'blur(12px)',
+        position: 'sticky', top: 0, zIndex: 50,
+        display: 'flex', alignItems: 'center', gap: 14, padding: '0 24px',
+      }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
+          <img src={logoSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 900, color: isDark ? '#f59e0b' : '#b45309', lineHeight: 1.2 }}>
-            {settings.companyName}
-          </p>
-          <p style={{ fontSize: 10, color: textMuted, lineHeight: 1.2 }}>بوابة الموظف</p>
+          <p style={{ fontSize: 13, fontWeight: 900, color: isDark ? '#f59e0b' : '#b45309', lineHeight: 1.2 }}>{settings.companyName}</p>
+          <p style={{ fontSize: 10, color: textMuted, lineHeight: 1.2 }}>بوابة الموظف الذاتية</p>
         </div>
-
         <div style={{ flex: 1 }} />
-
-        {/* Time */}
-        <div className="hidden sm:flex items-center gap-2" style={{ color: textMuted, fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
-          <Clock size={14} />
-          <span>{nowTime}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: textMuted, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+          <Clock size={13} /><span className="hidden sm:inline">{nowTime}</span>
         </div>
-
-        {/* Logout */}
         <button
           onClick={() => setShowLogoutModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-80"
-          style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.22)' }}
+          style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', borderRadius:8,
+            border:'1px solid rgba(239,68,68,0.25)', background:'rgba(239,68,68,0.10)',
+            color:'#f87171', cursor:'pointer', fontSize:12, fontWeight:700 }}
         >
-          <LogOut size={13} />
-          <span className="hidden sm:inline">خروج</span>
+          <LogOut size={13} /><span className="hidden sm:inline">تسجيل الخروج</span>
         </button>
       </div>
 
-      {/* ══ MAIN CONTENT ═══════════════════════════════════════════════ */}
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '28px 20px 60px' }}>
+      {/* ══ CONTENT ═══════════════════════════════════════════ */}
+      <div style={{ maxWidth: 980, margin: '0 auto', padding: '28px 20px 80px' }}>
 
-        {/* ── GREETING HEADER ── */}
-        <div
-          className="rounded-2xl p-6 mb-6 relative overflow-hidden"
-          style={{
-            background: isDark
-              ? 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(11,17,31,0.95) 50%)'
-              : 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 50%)',
-            border: `1px solid ${isDark ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.30)'}`,
-          }}
-        >
-          {/* decorative glow */}
-          <div style={{
-            position: 'absolute', top: -40, right: -40,
-            width: 180, height: 180,
-            background: 'radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }} />
-
-          <div className="flex items-start gap-5 relative">
-            {/* Avatar */}
-            <div
-              className="flex items-center justify-center shrink-0"
-              style={{
-                width: 64, height: 64, borderRadius: 18,
-                background: isDark ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.20)',
-                border: '2px solid rgba(245,158,11,0.35)',
-              }}
-            >
-              <User size={28} style={{ color: '#f59e0b' }} />
+        {/* ── GREETING BANNER ── */}
+        <div style={{
+          borderRadius: 20, padding: '24px 28px', marginBottom: 24, position: 'relative', overflow: 'hidden',
+          background: isDark
+            ? 'linear-gradient(135deg, rgba(245,158,11,0.20) 0%, rgba(8,14,26,0.98) 60%)'
+            : 'linear-gradient(135deg, #fef3c7 0%, #fffdf0 60%)',
+          border: `1px solid ${isDark ? 'rgba(245,158,11,0.22)' : 'rgba(245,158,11,0.30)'}`,
+        }}>
+          <div style={{ position:'absolute', top:-50, right:-50, width:200, height:200,
+            background:'radial-gradient(circle, rgba(245,158,11,0.15) 0%, transparent 70%)' }} />
+          <div style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
+            <div style={{ width:56, height:56, borderRadius:16, flexShrink:0,
+              background: isDark ? 'rgba(245,158,11,0.18)' : 'rgba(245,158,11,0.18)',
+              display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <GreetIcon size={28} color="#f59e0b" />
             </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <GreetIcon size={15} style={{ color: '#f59e0b' }} />
-                <span style={{ fontSize: 12, color: isDark ? '#f59e0b' : '#92400e', fontWeight: 600 }}>{greeting}</span>
-              </div>
-              <h1 style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.3, marginBottom: 4 }}>
-                {user?.name ?? fmt(emp.name)}
-              </h1>
-              <div className="flex flex-wrap gap-3" style={{ fontSize: 12, color: textMuted }}>
-                {emp.job_title_name && (
-                  <span className="flex items-center gap-1">
-                    <Briefcase size={12} />
-                    {fmt(emp.job_title_name)}
-                  </span>
-                )}
-                {emp.department_name && (
-                  <span className="flex items-center gap-1">
-                    <Building2 size={12} />
-                    {fmt(emp.department_name)}
-                  </span>
-                )}
-                {emp.branch_name && (
-                  <span className="flex items-center gap-1">
-                    <Building2 size={12} />
-                    {fmt(emp.branch_name)}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Date badge */}
-            <div className="shrink-0 text-center hidden sm:block">
-              <p style={{ fontSize: 11, color: textMuted, marginBottom: 2 }}>اليوم</p>
-              <p style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#f59e0b' : '#b45309' }}>
-                {new Date().toLocaleDateString('ar-EG', { weekday: 'long' })}
+            <div>
+              <p style={{ fontSize:22, fontWeight:900, color: isDark ? '#fcd34d' : '#92400e', lineHeight:1.2 }}>
+                {greeting}، {empName}
               </p>
-              <p style={{ fontSize: 11, color: textMuted }}>
-                {new Date().toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+              <p style={{ fontSize:13, color: textMuted, marginTop:4 }}>
+                {new Date().toLocaleDateString('ar-EG', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* ── GRID: check-in card + stats ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-
-          {/* Check-in / Check-out Card */}
-          <div
-            className="rounded-2xl p-5 sm:col-span-2 lg:col-span-1"
-            style={{ background: cardBg, border: `1px solid ${border}` }}
-          >
-            <p style={{ fontSize: 11, color: textMuted, fontWeight: 700, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              تسجيل الحضور والانصراف
-            </p>
-
-            {todayLoading ? (
-              <div className="flex justify-center py-6">
-                <Loader2 className="animate-spin" size={22} style={{ color: textMuted }} />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {/* check-in row */}
-                <div
-                  className="flex items-center justify-between rounded-xl px-4 py-3"
-                  style={{
-                    background: alreadyCheckedIn
-                      ? 'rgba(52,211,153,0.10)'
-                      : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
-                    border: `1px solid ${alreadyCheckedIn ? 'rgba(52,211,153,0.25)' : border}`,
-                  }}
-                >
-                  <div>
-                    <p style={{ fontSize: 11, color: textMuted, marginBottom: 2 }}>وقت الحضور</p>
-                    <p style={{ fontSize: 16, fontWeight: 900, color: alreadyCheckedIn ? '#34d399' : textMuted }}>
-                      {alreadyCheckedIn ? fmtTime(todayRec?.check_in_time) : '—'}
-                    </p>
-                  </div>
-                  {alreadyCheckedIn
-                    ? <CheckCircle2 size={20} style={{ color: '#34d399' }} />
-                    : <LogIn size={18} style={{ color: textMuted }} />
-                  }
-                </div>
-
-                {/* check-out row */}
-                <div
-                  className="flex items-center justify-between rounded-xl px-4 py-3"
-                  style={{
-                    background: alreadyCheckedOut
-                      ? 'rgba(99,102,241,0.10)'
-                      : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
-                    border: `1px solid ${alreadyCheckedOut ? 'rgba(99,102,241,0.25)' : border}`,
-                  }}
-                >
-                  <div>
-                    <p style={{ fontSize: 11, color: textMuted, marginBottom: 2 }}>وقت الانصراف</p>
-                    <p style={{ fontSize: 16, fontWeight: 900, color: alreadyCheckedOut ? '#818cf8' : textMuted }}>
-                      {alreadyCheckedOut ? fmtTime(todayRec?.check_out_time) : '—'}
-                    </p>
-                  </div>
-                  {alreadyCheckedOut
-                    ? <CheckCircle2 size={20} style={{ color: '#818cf8' }} />
-                    : <LogOut size={18} style={{ color: textMuted }} />
-                  }
-                </div>
-
-                {/* action button */}
-                <div className="pt-1">
-                  {!alreadyCheckedIn ? (
-                    <button
-                      onClick={doCheckIn}
-                      disabled={checkingIn}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
-                      style={{ background: 'linear-gradient(to left, #10b981, #059669)', color: '#fff', boxShadow: '0 4px 16px rgba(16,185,129,0.30)' }}
-                    >
-                      {checkingIn ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
-                      تسجيل الحضور
-                    </button>
-                  ) : !alreadyCheckedOut ? (
-                    <button
-                      onClick={doCheckOut}
-                      disabled={checkingOut}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
-                      style={{ background: 'linear-gradient(to left, #6366f1, #4f46e5)', color: '#fff', boxShadow: '0 4px 16px rgba(99,102,241,0.30)' }}
-                    >
-                      {checkingOut ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
-                      تسجيل الانصراف
-                    </button>
-                  ) : (
-                    <div
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"
-                      style={{ background: 'rgba(52,211,153,0.10)', color: '#34d399', border: '1px solid rgba(52,211,153,0.25)' }}
-                    >
-                      <CheckCircle2 size={16} />
-                      تم تسجيل الحضور والانصراف
-                    </div>
-                  )}
-                </div>
+            <div style={{ flex:1 }} />
+            {empCode !== '—' && (
+              <div style={{ textAlign:'center', padding:'8px 16px', borderRadius:10,
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }}>
+                <p style={{ fontSize:10, color:textMuted, fontWeight:600 }}>كود الموظف</p>
+                <p style={{ fontSize:18, fontWeight:900, color: isDark ? '#fcd34d' : '#92400e', fontVariantNumeric:'tabular-nums' }}>{empCode}</p>
               </div>
             )}
           </div>
-
-          {/* Stats: days present */}
-          <StatCard
-            icon={<CheckCircle2 size={22} style={{ color: '#34d399' }} />}
-            label="أيام الحضور"
-            value={fmt(summary.present_days ?? summary.total_present)}
-            sub="هذا الشهر"
-            color="emerald"
-            isDark={isDark}
-            cardBg={cardBg}
-            border={border}
-            textMuted={textMuted}
-          />
-
-          {/* Stats: absences */}
-          <StatCard
-            icon={<XCircle size={22} style={{ color: '#f87171' }} />}
-            label="أيام الغياب"
-            value={fmt(summary.absent_days ?? summary.total_absent)}
-            sub="هذا الشهر"
-            color="red"
-            isDark={isDark}
-            cardBg={cardBg}
-            border={border}
-            textMuted={textMuted}
-          />
         </div>
 
-        {/* ── RECENT ATTENDANCE TABLE ── */}
-        <div
-          className="rounded-2xl overflow-hidden mb-6"
-          style={{ background: cardBg, border: `1px solid ${border}` }}
-        >
-          {/* header */}
-          <div
-            className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: `1px solid ${border}` }}
-          >
-            <div className="flex items-center gap-2">
-              <Calendar size={15} style={{ color: '#f59e0b' }} />
-              <p style={{ fontSize: 12, fontWeight: 700, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                سجل الحضور — آخر 14 يوم
-              </p>
+        {/* ── TODAY ATTENDANCE + PROFILE ROW ── */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:20 }}>
+
+          {/* Today check-in/out card */}
+          <div style={{ borderRadius:16, border:`1px solid ${border}`, background:cardBg, padding:20, gridColumn:'span 1' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+              <span style={{ width:36, height:36, borderRadius:10, background:'rgba(52,211,153,0.14)',
+                display:'flex', alignItems:'center', justifyContent:'center', color:'#34d399' }}>
+                <UserCheck size={18} />
+              </span>
+              <span style={{ fontSize:14, fontWeight:800, color: isDark ? '#f1f5f9' : '#0f172a' }}>حضور اليوم</span>
+              <div style={{ flex:1 }} />
+              {todayLoading && <Loader2 size={14} className="animate-spin" style={{ color:textMuted }} />}
+            </div>
+
+            {/* Status row */}
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:12, color:textMuted }}>الحضور</span>
+                <span style={{ fontSize:14, fontWeight:700, color: alreadyCheckedIn ? '#34d399' : textMuted }}>
+                  {alreadyCheckedIn ? fmtTime(todayRec?.check_in_time) : '—'}
+                </span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:12, color:textMuted }}>الانصراف</span>
+                <span style={{ fontSize:14, fontWeight:700, color: alreadyCheckedOut ? '#f87171' : textMuted }}>
+                  {alreadyCheckedOut ? fmtTime(todayRec?.check_out_time) : '—'}
+                </span>
+              </div>
+              {alreadyCheckedIn && (
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <span style={{ fontSize:12, color:textMuted }}>المدة</span>
+                  <span style={{ fontSize:14, fontWeight:700, color:'#a78bfa', fontVariantNumeric:'tabular-nums' }}>
+                    {calcDuration(todayRec?.check_in_time, todayRec?.check_out_time)}
+                    {!alreadyCheckedOut && <span style={{ fontSize:10, color:textMuted, marginRight:4 }}>(جارٍ)</span>}
+                  </span>
+                </div>
+              )}
+              {todayRec?.status && (
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <span style={{ fontSize:12, color:textMuted }}>الحالة</span>
+                  <AttBadge status={String(todayRec.status)} />
+                </div>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display:'flex', gap:10, marginTop:18 }}>
+              {!alreadyCheckedIn && (
+                <button
+                  onClick={doCheckIn} disabled={checkingIn}
+                  style={{ flex:1, padding:'10px 0', borderRadius:10, border:'none', cursor:'pointer',
+                    background:'linear-gradient(135deg, #059669, #34d399)', color:'#fff',
+                    fontWeight:800, fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                    opacity: checkingIn ? 0.7 : 1 }}
+                >
+                  {checkingIn ? <Loader2 size={14} className="animate-spin" /> : <UserCheck size={14} />}
+                  تسجيل الحضور
+                </button>
+              )}
+              {alreadyCheckedIn && !alreadyCheckedOut && (
+                <button
+                  onClick={doCheckOut} disabled={checkingOut}
+                  style={{ flex:1, padding:'10px 0', borderRadius:10, border:'none', cursor:'pointer',
+                    background:'linear-gradient(135deg, #dc2626, #f87171)', color:'#fff',
+                    fontWeight:800, fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                    opacity: checkingOut ? 0.7 : 1 }}
+                >
+                  {checkingOut ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
+                  تسجيل الانصراف
+                </button>
+              )}
+              {alreadyCheckedIn && alreadyCheckedOut && (
+                <div style={{ flex:1, padding:'10px 0', borderRadius:10, textAlign:'center',
+                  background: isDark ? 'rgba(52,211,153,0.08)' : 'rgba(52,211,153,0.1)',
+                  color:'#34d399', fontWeight:700, fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                  <CheckCircle2 size={14} /> تم تسجيل يوم العمل
+                </div>
+              )}
             </div>
           </div>
 
-          {recentLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="animate-spin" size={22} style={{ color: textMuted }} />
+          {/* Employee info card */}
+          <div style={{ borderRadius:16, border:`1px solid ${border}`, background:cardBg, padding:20 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+              <span style={{ width:36, height:36, borderRadius:10, background:'rgba(96,165,250,0.14)',
+                display:'flex', alignItems:'center', justifyContent:'center', color:'#60a5fa' }}>
+                <Briefcase size={18} />
+              </span>
+              <span style={{ fontSize:14, fontWeight:800, color: isDark ? '#f1f5f9' : '#0f172a' }}>بيانات الوظيفة</span>
             </div>
-          ) : recentRecs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12" style={{ color: textMuted }}>
-              <Calendar size={36} style={{ marginBottom: 10, opacity: 0.3 }} />
-              <p style={{ fontSize: 13 }}>لا توجد سجلات حضور بعد</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {[
+                { label:'المسمى الوظيفي', value: fmt(emp.job_title_ar ?? emp.job_title_id), icon: <Briefcase size={12} /> },
+                { label:'القسم', value: fmt(emp.department_ar ?? emp.department_id), icon: <Building2 size={12} /> },
+                { label:'الفرع', value: fmt(emp.branch_ar ?? emp.branch_id), icon: <MapPin size={12} /> },
+                { label:'تاريخ التعيين', value: empHire, icon: <Calendar size={12} /> },
+                { label:'نوع التوظيف', value: empType, icon: <Users size={12} /> },
+                { label:'الراتب الأساسي', value: empSalary, icon: <DollarSign size={12} /> },
+              ].map(({ label, value, icon }) => (
+                value !== '—' && (
+                  <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:textMuted }}>
+                      {icon}{label}
+                    </span>
+                    <span style={{ fontSize:12, fontWeight:700, color: isDark ? '#f1f5f9' : '#1e293b', textAlign:'left' }}>{value}</span>
+                  </div>
+                )
+              ))}
             </div>
+          </div>
+        </div>
+
+        {/* ── MONTHLY SUMMARY STATS ── */}
+        <div style={{ borderRadius:16, border:`1px solid ${border}`, background:cardBg, padding:20, marginBottom:20 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+            <span style={{ width:36, height:36, borderRadius:10, background:'rgba(167,139,250,0.14)',
+              display:'flex', alignItems:'center', justifyContent:'center', color:'#a78bfa' }}>
+              <Calendar size={18} />
+            </span>
+            <span style={{ fontSize:14, fontWeight:800, color: isDark ? '#f1f5f9' : '#0f172a' }}>
+              ملخص شهر {new Date(currentMonth + '-01').toLocaleDateString('ar-EG', { month:'long', year:'numeric' })}
+            </span>
+          </div>
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+            <StatCard label="أيام الحضور"   value={Number(summary.present_days  ?? 0)} icon={<CheckCircle2 size={16} />} color="#34d399" bg="rgba(52,211,153,0.10)" />
+            <StatCard label="أيام الغياب"   value={Number(summary.absent_days   ?? 0)} icon={<XCircle size={16} />}      color="#f87171" bg="rgba(248,113,113,0.10)" />
+            <StatCard label="مرات التأخر"   value={Number(summary.late_days     ?? 0)} icon={<AlertCircle size={16} />}  color="#fbbf24" bg="rgba(251,191,36,0.10)" />
+            <StatCard label="أيام الإجازة"  value={Number(summary.leave_days    ?? 0)} icon={<Calendar size={16} />}     color="#60a5fa" bg="rgba(96,165,250,0.10)" />
+            <StatCard label="ساعات العمل"   value={`${Number(summary.total_hours ?? 0).toFixed(0)}س`} icon={<Clock size={16} />} color="#a78bfa" bg="rgba(167,139,250,0.10)" />
+          </div>
+        </div>
+
+        {/* ── SALARY ADVANCES ── */}
+        <SectionCard icon={<Wallet size={18} />} title={`السلف والمصروفات (${advances.length})`}
+          accent="#f59e0b" isDark={isDark} border={border} cardBg={cardBg}>
+          {advances.length === 0 ? (
+            <p style={{ fontSize:13, color:textMuted, textAlign:'center', padding:'16px 0' }}>لا توجد سلف مسجلة</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {advances.map((a, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px',
+                  borderRadius:10, background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)',
+                  border:`1px solid ${border}` }}>
+                  <Wallet size={14} style={{ color:'#f59e0b', flexShrink:0 }} />
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                      <span style={{ fontSize:13, fontWeight:700 }}>
+                        {fmtCurrency(a.approved_amount ?? a.requested_amount, fmt(a.currency))}
+                      </span>
+                      <AdvanceBadge status={String(a.status ?? '')} />
+                    </div>
+                    <div style={{ fontSize:11, color:textMuted, marginTop:2 }}>
+                      {fmtDate(a.requested_date, false)}
+                      {a.reason ? ` · ${fmt(a.reason)}` : ''}
+                    </div>
+                  </div>
+                  {a.remaining_balance && Number(a.remaining_balance) > 0 && (
+                    <div style={{ textAlign:'center' }}>
+                      <p style={{ fontSize:10, color:textMuted }}>المتبقي</p>
+                      <p style={{ fontSize:12, fontWeight:700, color:'#fbbf24' }}>{fmtCurrency(a.remaining_balance, fmt(a.currency))}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        {/* ── DEDUCTIONS ── */}
+        <SectionCard icon={<TrendingDown size={18} />} title={`الخصومات (${deductions.length})`}
+          accent="#f87171" isDark={isDark} border={border} cardBg={cardBg}>
+          {deductions.length === 0 ? (
+            <p style={{ fontSize:13, color:textMuted, textAlign:'center', padding:'16px 0' }}>لا توجد خصومات مسجلة</p>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {deductions.map((d, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px',
+                  borderRadius:10, background: isDark ? 'rgba(248,113,113,0.05)' : 'rgba(248,113,113,0.04)',
+                  border:`1px solid rgba(248,113,113,0.15)` }}>
+                  <TrendingDown size={14} style={{ color:'#f87171', flexShrink:0 }} />
+                  <div style={{ flex:1 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <span style={{ fontSize:13, fontWeight:700, color:'#f87171' }}>
+                        -{fmtCurrency(d.amount, fmt(d.currency))}
+                      </span>
+                      <span style={{ fontSize:11, padding:'2px 7px', borderRadius:5,
+                        background:'rgba(248,113,113,0.12)', color:'#f87171', fontWeight:600 }}>
+                        {deductLabel(String(d.deduction_type ?? ''))}
+                      </span>
+                    </div>
+                    <div style={{ fontSize:11, color:textMuted, marginTop:2 }}>
+                      {fmtDate(d.deduction_date, false)}
+                      {d.reason ? ` · ${fmt(d.reason)}` : ''}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        {/* ── BONUSES ── */}
+        <SectionCard icon={<Gift size={18} />} title={`الحوافز والمكافآت (${bonuses.length})`}
+          accent="#34d399" isDark={isDark} border={border} cardBg={cardBg}>
+          {bonuses.length === 0 ? (
+            <p style={{ fontSize:13, color:textMuted, textAlign:'center', padding:'16px 0' }}>لا توجد حوافز مسجلة</p>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {bonuses.map((b, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px',
+                  borderRadius:10, background: isDark ? 'rgba(52,211,153,0.05)' : 'rgba(52,211,153,0.04)',
+                  border:`1px solid rgba(52,211,153,0.15)` }}>
+                  <Gift size={14} style={{ color:'#34d399', flexShrink:0 }} />
+                  <div style={{ flex:1 }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:'#34d399' }}>
+                      +{fmtCurrency(b.amount, fmt(b.currency))}
+                    </span>
+                    <div style={{ fontSize:11, color:textMuted, marginTop:2 }}>
+                      {fmtDate(b.granted_date, false)}
+                      {b.reason ? ` · ${fmt(b.reason)}` : ''}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        {/* ── LEAVE REQUESTS ── */}
+        <SectionCard icon={<FileText size={18} />} title={`طلبات الإجازة (${leaves.length})`}
+          accent="#60a5fa" isDark={isDark} border={border} cardBg={cardBg}>
+          {leavesBal.length > 0 && (
+            <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:14, paddingBottom:14, borderBottom:`1px solid ${border}` }}>
+              {leavesBal.map((lb, i) => (
+                <div key={i} style={{ borderRadius:10, padding:'8px 14px',
+                  background: isDark ? 'rgba(96,165,250,0.08)' : 'rgba(96,165,250,0.07)',
+                  border:`1px solid rgba(96,165,250,0.15)` }}>
+                  <p style={{ fontSize:10, color:'#60a5fa', fontWeight:600, marginBottom:2 }}>
+                    {fmt(lb.leave_type_name_ar ?? lb.leave_type_code)}
+                  </p>
+                  <p style={{ fontSize:16, fontWeight:900, color:'#60a5fa' }}>
+                    {Number(lb.balance_days ?? 0).toFixed(0)} يوم
+                  </p>
+                  <p style={{ fontSize:10, color:textMuted }}>رصيد متاح</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {leaves.length === 0 ? (
+            <p style={{ fontSize:13, color:textMuted, textAlign:'center', padding:'16px 0' }}>لا توجد طلبات إجازة</p>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {leaves.map((l, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px',
+                  borderRadius:10, background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)',
+                  border:`1px solid ${border}` }}>
+                  <FileText size={14} style={{ color:'#60a5fa', flexShrink:0 }} />
+                  <div style={{ flex:1 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                      <span style={{ fontSize:13, fontWeight:700 }}>
+                        {fmtDate(l.start_date, false)} ← {fmtDate(l.end_date, false)}
+                      </span>
+                      <span style={{ fontSize:11, color:textMuted }}>({Number(l.total_days ?? 0)} يوم)</span>
+                      <LeaveBadge status={String(l.status ?? '')} />
+                    </div>
+                    {l.reason && (
+                      <div style={{ fontSize:11, color:textMuted, marginTop:2 }}>{fmt(l.reason)}</div>
+                    )}
+                    {l.rejection_reason && (
+                      <div style={{ fontSize:11, color:'#f87171', marginTop:2 }}>
+                        سبب الرفض: {fmt(l.rejection_reason)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        {/* ── ATTENDANCE HISTORY ── */}
+        <SectionCard icon={<RotateCcw size={18} />} title="سجل الحضور والانصراف (30 يوم)"
+          accent="#a78bfa" isDark={isDark} border={border} cardBg={cardBg} defaultOpen={false}>
+          {recentRecs.length === 0 ? (
+            <p style={{ fontSize:13, color:textMuted, textAlign:'center', padding:'16px 0' }}>لا توجد سجلات</p>
+          ) : (
+            <div style={{ overflowX:'auto' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                 <thead>
-                  <tr style={{ borderBottom: `1px solid ${border}` }}>
+                  <tr style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
                     {['التاريخ', 'الحضور', 'الانصراف', 'المدة', 'الحالة'].map(h => (
-                      <th key={h} style={{ padding: '10px 16px', textAlign: 'right', fontSize: 11, color: textMuted, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                        {h}
-                      </th>
+                      <th key={h} style={{ padding:'8px 12px', textAlign:'right', fontWeight:700,
+                        color:textMuted, whiteSpace:'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {recentRecs.map((rec, i) => {
-                    const ci   = rec.check_in_time  ? fmtTime(rec.check_in_time)  : '—';
-                    const co   = rec.check_out_time ? fmtTime(rec.check_out_time) : '—';
-                    let duration = '—';
-                    if (rec.check_in_time && rec.check_out_time) {
-                      const ms = new Date(String(rec.check_out_time)).getTime() - new Date(String(rec.check_in_time)).getTime();
-                      const hr = Math.floor(ms / 3600000);
-                      const mn = Math.floor((ms % 3600000) / 60000);
-                      duration = `${hr}س ${mn}د`;
-                    }
-                    const isToday = String(rec.attendance_date ?? '').slice(0, 10) === today;
-                    return (
-                      <tr
-                        key={String(rec.id ?? i)}
-                        style={{
-                          borderBottom: `1px solid ${border}`,
-                          background: isToday
-                            ? isDark ? 'rgba(245,158,11,0.06)' : 'rgba(245,158,11,0.05)'
-                            : 'transparent',
-                        }}
-                      >
-                        <td style={{ padding: '11px 16px', whiteSpace: 'nowrap' }}>
-                          <span style={{ fontWeight: isToday ? 800 : 500, color: isToday ? '#f59e0b' : undefined }}>
-                            {fmtDate(rec.attendance_date ?? rec.check_in_time)}
-                          </span>
-                          {isToday && (
-                            <span className="mr-2 text-[10px] font-bold px-1.5 py-0.5 rounded"
-                              style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
-                              اليوم
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ padding: '11px 16px', color: '#34d399', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{ci}</td>
-                        <td style={{ padding: '11px 16px', color: '#818cf8', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{co}</td>
-                        <td style={{ padding: '11px 16px', color: textMuted, fontVariantNumeric: 'tabular-nums' }}>{duration}</td>
-                        <td style={{ padding: '11px 16px' }}>{statusBadge(String(rec.status ?? 'present'))}</td>
-                      </tr>
-                    );
-                  })}
+                  {[...recentRecs].reverse().map((rec, i) => (
+                    <tr key={i} style={{
+                      borderTop: `1px solid ${border}`,
+                      background: i % 2 === 0 ? 'transparent' : (isDark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.015)'),
+                    }}>
+                      <td style={{ padding:'8px 12px', whiteSpace:'nowrap', fontWeight:600 }}>
+                        {fmtDate(rec.date)}
+                      </td>
+                      <td style={{ padding:'8px 12px', color:'#34d399', fontWeight:600, whiteSpace:'nowrap' }}>
+                        {fmtTime(rec.check_in_time)}
+                      </td>
+                      <td style={{ padding:'8px 12px', color:'#f87171', fontWeight:600, whiteSpace:'nowrap' }}>
+                        {fmtTime(rec.check_out_time)}
+                      </td>
+                      <td style={{ padding:'8px 12px', color:'#a78bfa', fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
+                        {calcDuration(rec.check_in_time, rec.check_out_time)}
+                      </td>
+                      <td style={{ padding:'8px 12px' }}>
+                        <AttBadge status={String(rec.status ?? '')} />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           )}
-        </div>
-
-        {/* ── QUICK LINKS ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-          {/* Mobile App */}
-          <div
-            className="rounded-2xl p-5 flex items-start gap-4 cursor-pointer hover:opacity-90 transition-opacity"
-            style={{
-              background: isDark
-                ? 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(99,102,241,0.06))'
-                : 'linear-gradient(135deg, #eef2ff, #f5f3ff)',
-              border: `1px solid ${isDark ? 'rgba(99,102,241,0.30)' : 'rgba(99,102,241,0.20)'}`,
-            }}
-          >
-            <div
-              className="flex items-center justify-center shrink-0"
-              style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(99,102,241,0.20)', flexShrink: 0 }}
-            >
-              <Smartphone size={22} style={{ color: '#818cf8' }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p style={{ fontSize: 15, fontWeight: 800, marginBottom: 4, color: isDark ? '#c7d2fe' : '#4f46e5' }}>
-                تطبيق الموبايل
-              </p>
-              <p style={{ fontSize: 12, color: textMuted, lineHeight: 1.5, marginBottom: 12 }}>
-                حمّل تطبيق مُحكم على هاتفك لتسجيل الحضور وعرض بياناتك في أي وقت
-              </p>
-              <div className="flex gap-2">
-                <span
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
-                  style={{ background: 'rgba(99,102,241,0.18)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.30)' }}
-                >
-                  قريباً
-                </span>
-              </div>
-            </div>
-            <ChevronRight size={16} style={{ color: textMuted, flexShrink: 0, marginTop: 2 }} />
-          </div>
-
-          {/* Fingerprint Device */}
-          <div
-            className="rounded-2xl p-5 flex items-start gap-4"
-            style={{
-              background: isDark
-                ? 'linear-gradient(135deg, rgba(245,158,11,0.16), rgba(245,158,11,0.05))'
-                : 'linear-gradient(135deg, #fef9c3, #fffbeb)',
-              border: `1px solid ${isDark ? 'rgba(245,158,11,0.28)' : 'rgba(245,158,11,0.25)'}`,
-            }}
-          >
-            <div
-              className="flex items-center justify-center shrink-0"
-              style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(245,158,11,0.20)', flexShrink: 0 }}
-            >
-              <Fingerprint size={22} style={{ color: '#f59e0b' }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p style={{ fontSize: 15, fontWeight: 800, marginBottom: 4, color: isDark ? '#fde68a' : '#b45309' }}>
-                جهاز البصمة
-              </p>
-              <p style={{ fontSize: 12, color: textMuted, lineHeight: 1.5, marginBottom: 12 }}>
-                إعدادات ومزامنة جهاز البصمة ZKTeco — يُدار بواسطة مدير النظام
-              </p>
-              <div className="flex gap-2">
-                <span
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
-                  style={{ background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.30)' }}
-                >
-                  <Fingerprint size={11} />
-                  إعدادات البصمة (للمدير)
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        </SectionCard>
 
       </div>
 
-      {/* ── Logout check-out modal ── */}
+      {/* ══ MODALS ════════════════════════════════════════════ */}
       {showLogoutModal && (
         <LogoutCheckoutModal
           employeeId={empId}
@@ -653,8 +822,6 @@ export default function EmployeePortal() {
           onCancel={() => setShowLogoutModal(false)}
         />
       )}
-
-      {/* ── Idle timeout modal ── */}
       {showIdleModal && (
         <IdleCheckoutModal
           employeeId={empId}
@@ -664,47 +831,6 @@ export default function EmployeePortal() {
           onLogout={() => { setShowIdleModal(false); logout(); }}
         />
       )}
-    </div>
-  );
-}
-
-/* ─── StatCard ───────────────────────────────────────────── */
-function StatCard({
-  icon, label, value, sub, color, isDark, cardBg, border, textMuted,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub: string;
-  color: 'emerald' | 'red' | 'amber' | 'violet';
-  isDark: boolean;
-  cardBg: string;
-  border: string;
-  textMuted: string;
-}) {
-  const colors: Record<string, { bg: string; glow: string }> = {
-    emerald: { bg: 'rgba(52,211,153,0.10)', glow: 'rgba(52,211,153,0.18)' },
-    red:     { bg: 'rgba(248,113,113,0.10)', glow: 'rgba(248,113,113,0.18)' },
-    amber:   { bg: 'rgba(245,158,11,0.10)',  glow: 'rgba(245,158,11,0.18)'  },
-    violet:  { bg: 'rgba(167,139,250,0.10)', glow: 'rgba(167,139,250,0.18)' },
-  };
-  const c = colors[color];
-  return (
-    <div
-      className="rounded-2xl p-5 flex flex-col justify-between"
-      style={{ background: cardBg, border: `1px solid ${border}` }}
-    >
-      <div
-        className="flex items-center justify-center"
-        style={{ width: 48, height: 48, borderRadius: 14, background: c.bg, marginBottom: 16 }}
-      >
-        {icon}
-      </div>
-      <div>
-        <p style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, marginBottom: 4 }}>{value}</p>
-        <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{label}</p>
-        <p style={{ fontSize: 11, color: textMuted }}>{sub}</p>
-      </div>
     </div>
   );
 }
