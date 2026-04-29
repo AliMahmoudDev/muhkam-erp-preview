@@ -299,7 +299,9 @@ const employeeCreateSchema = z.object({
 router.get(
   '/employees',
   wrap(async (req, res) => {
-    if (!hasPermission(req.user, 'can_view_employees')) {
+    const selfId      = selfEmployeeId(req);
+    const canViewAll  = hasPermission(req.user, 'can_view_employees');
+    if (!canViewAll && selfId === -1) {
       res.status(403).json({ error: 'غير مصرح بعرض الموظفين' });
       return;
     }
@@ -318,8 +320,7 @@ router.get(
       isNull(employeesTable.deleted_at),
     ];
     // Self-service: restrict list to the caller's own employee record
-    const selfId = selfEmployeeId(req);
-    if (selfId !== null) conditions.push(eq(employeesTable.id, selfId));
+    if (selfId !== null && selfId !== -1) conditions.push(eq(employeesTable.id, selfId));
     if (deptId) conditions.push(eq(employeesTable.department_id, deptId));
     if (status) conditions.push(eq(employeesTable.employment_status, status));
     if (search) {

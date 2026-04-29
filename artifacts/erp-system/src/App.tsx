@@ -186,13 +186,9 @@ function Router() {
     );
   }
 
-  /* ── Employee portal: mandatory for any user who has an employee_id ── */
-  if (user.employee_id) {
-    return (
-      <Suspense fallback={<PageFallback />}>
-        <EmployeePortal />
-      </Suspense>
-    );
+  /* ── Employee role: redirect root to personal portal (no dashboard access) ── */
+  if (user.role === 'employee' && location === '/') {
+    return <Redirect to="/my-portal" />;
   }
 
   /* ── POS: full-screen standalone (no sidebar / layout) ── */
@@ -261,6 +257,13 @@ function Router() {
         <Route path="/payroll">{() => <Redirect to="/employees" />}</Route>
         <Route path="/attendance">
           {() => <Guard path="/attendance" component={Attendance} />}
+        </Route>
+        <Route path="/my-portal">
+          {() => (
+            <Suspense fallback={<PageFallback />}>
+              <EmployeePortal />
+            </Suspense>
+          )}
         </Route>
         <Route path="/leaves">{() => <Redirect to="/employees" />}</Route>
         <Route path="/salary-advances">{() => <Redirect to="/employees" />}</Route>

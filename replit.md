@@ -1014,6 +1014,39 @@ Standalone iOS & Android mobile companion app at `artifacts/erp-mobile/`. Built 
 
 ---
 
+## Session 6 — Employee Self-Service Portal Fixes (April 29, 2026)
+
+### Employee Portal (`/my-portal`)
+- Built as embedded page inside AppLayout (no standalone navbar)
+- Shows: greeting + job info, today attendance (check-in/check-out), monthly stats, salary advances (with request modal), deductions, bonuses, leave requests + balance, 30-day history
+- Route: `/my-portal` in App.tsx Switch; `employee` role redirects to `/my-portal` from `/`
+- Sidebar: "بوابتي الشخصية" nav item visible only when `user.employee_id` is set
+
+### Self-Service Permission Architecture (`employee-self.ts`)
+Critical fix: `selfEmployeeId()` now works for ANY user role with `employee_id` (not just `employee`):
+- User has `employee_id` → returns their id (restrict to own data)
+- User has no `employee_id` + has `can_view_employees` → returns null (view all — admin/manager)
+- User has no `employee_id` + no permission → returns -1 (force deny)
+- Previous bug: only `employee` role got their employee_id; cashier/salesperson with employee_id got 403
+
+### Leaves Router Registration (Critical Bug Fix)
+- `artifacts/api-server/src/routes/leaves.ts` was never imported/registered in `routes/index.ts`
+- This caused ALL leave endpoints to return 404 (not found, not a permission issue)
+- Fixed: added import + `router.use(leavesRouter)` to `routes/index.ts`
+
+### Self-Service Filter Logic Fix (salary-advances, bonuses, deductions, leaves)
+- Old pattern: `!canViewAll && selfId !== null ? selfId : queryEmpId` — broke when `employee` role has `can_view_employees: true`, making them see all data
+- New pattern: `selfId !== null ? selfId : queryEmpId` — always restricts to own data when user has employee_id
+- Old 403 guard: `if (!canViewAll && !selfId)` — failed for -1 (truthy in JS)
+- New 403 guard: `if (selfId === -1)` — cleanly denies users without employee_id and without permission
+- Fixed in: `salary-advances.ts`, `employee-bonuses-custody.ts` (bonuses + deductions), `leaves.ts` (requests + balance)
+
+### Employees List/Detail Endpoint Fix
+- GET /employees list: changed hard 403 to allow self-service (only block selfId === -1)
+- GET /employees/:id: now works correctly for all roles with employee_id (salesperson, cashier)
+
+---
+
 
 ## Code Quality Standards (enforced)
 

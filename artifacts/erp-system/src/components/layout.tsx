@@ -23,6 +23,7 @@ import IdleCheckoutModal from '@/components/idle-checkout-modal';
 
 /* ── Nav sections ───────────────────────────────── */
 const NAV_SECTIONS = [
+  { label: 'حسابي', hrefs: ['/my-portal'] },
   { label: 'القائمة', hrefs: ['/'] },
   {
     label: 'التجارة',
@@ -252,6 +253,8 @@ export function AppLayout({ children }: LayoutProps) {
   const WARRANTY_PATHS    = new Set(['/warranty']);
   const MAINTENANCE_PATHS = new Set(['/repairs', '/devices', '/scrap-inventory']);
   const visibleNav = NAV_ITEMS.filter((item) => {
+    /* My portal: only for users who are linked to an employee */
+    if (item.href === '/my-portal' && !user?.employee_id) return false;
     /* 1. Permission-based page access (can_access_*) */
     const permKey = ROUTE_PERMISSION[item.href];
     if (permKey) {

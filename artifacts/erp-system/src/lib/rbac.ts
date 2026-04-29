@@ -31,6 +31,7 @@ import {
   Wrench,
   Smartphone,
   ArrowLeftRight,
+  UserCircle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -108,6 +109,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   { name: 'الإعدادات',             href: '/settings',            icon: Settings,        roles: ['admin'] },
   { name: 'الموظفون',              href: '/employees',           icon: UserCheck,       roles: ['admin', 'manager', 'employee'] },
   { name: 'الحضور والانصراف',      href: '/attendance',          icon: Clock,           roles: ['admin', 'manager'] },
+  { name: 'بوابتي الشخصية',        href: '/my-portal',           icon: UserCircle,      roles: ['admin', 'manager', 'cashier', 'salesperson', 'employee'] },
 ];
 
 /* ── Helpers ────────────────────────────────────────────── */

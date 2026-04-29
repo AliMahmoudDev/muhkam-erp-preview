@@ -78,12 +78,12 @@ router.put("/salary-advances/settings", wrap(async (req, res) => {
 router.get("/salary-advances", wrap(async (req, res) => {
   const selfId     = selfEmployeeId(req);
   const canViewAll = hasPermission(req.user, "can_view_employees");
-  if (!canViewAll && !selfId) { res.status(403).json({ error: "غير مصرح" }); return; }
+  if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
   const status = String(req.query["status"] ?? "");
-  // Self-service: force-filter to own records; admins use query param
-  const empId = !canViewAll && selfId !== null ? selfId : queryEmpId;
+  // If caller has an employee_id, always restrict to own records; admins use query param
+  const empId = selfId !== null ? selfId : queryEmpId;
 
   const conditions = [eq(employeesTable.company_id, companyId)];
   if (empId)  conditions.push(eq(salaryAdvancesTable.employee_id, empId));
@@ -120,7 +120,7 @@ router.post("/salary-advances", wrap(async (req, res) => {
   let { employee_id, safe_id } = body;
   const { requested_amount, advance_type, reason, deduct_from } = body;
   if (isSelf) {
-    if (selfId == null) { res.status(403).json({ error: "حساب الموظف غير مرتبط بسجل" }); return; }
+    if (!selfId || selfId === -1) { res.status(403).json({ error: "حساب الموظف غير مرتبط بسجل موظف" }); return; }
     employee_id = selfId;
     safe_id = null;
   }

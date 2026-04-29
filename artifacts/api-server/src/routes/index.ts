@@ -68,6 +68,7 @@ import devicesRouter from "./devices";
 import stockTransfersRouter from "./stock-transfers";
 import repairTrackingRouter from "./repair-tracking";
 import { deviceCheckRouter } from "./device-check";
+import leavesRouter from "./leaves";
 
 const router: IRouter = Router();
 
@@ -154,5 +155,6 @@ router.use(costCentersRouter);
 router.use(devicesRouter);
 router.use(stockTransfersRouter);
 router.use(deviceCheckRouter);
+router.use(leavesRouter);
 
 export default router;

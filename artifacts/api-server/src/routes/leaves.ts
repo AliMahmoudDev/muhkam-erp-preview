@@ -113,10 +113,11 @@ router.put("/leave-policies/:id", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/employee-leave-balance/:employeeId", wrap(async (req, res) => {
-  const selfId     = selfEmployeeId(req);
-  const canViewAll = hasPermission(req.user, "can_view_employees");
-  const empId      = parseInt(String(req.params["employeeId"]), 10);
-  if (!canViewAll && selfId !== empId) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const selfId  = selfEmployeeId(req);
+  const empId   = parseInt(String(req.params["employeeId"]), 10);
+  // selfId=-1 → no access; selfId=N → can only see own record; selfId=null → admin can see all
+  if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
+  if (selfId !== null && selfId !== empId) { res.status(403).json({ error: "غير مصرح" }); return; }
   const rows = await db.select({
     id: employeeLeaveBalancesTable.id, employee_id: employeeLeaveBalancesTable.employee_id,
     leave_type_id: employeeLeaveBalancesTable.leave_type_id,
@@ -141,10 +142,12 @@ router.get("/employee-leave-balance/:employeeId", wrap(async (req, res) => {
 router.get("/leave-requests", wrap(async (req, res) => {
   const selfId     = selfEmployeeId(req);
   const canViewAll = hasPermission(req.user, "can_view_employees");
-  if (!canViewAll && !selfId) { res.status(403).json({ error: "غير مصرح" }); return; }
+  // selfId=-1 means no employee_id and no permission → deny
+  if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
-  const empId = !canViewAll && selfId !== null ? selfId : queryEmpId;
+  // If user has an employee_id, always restrict to their own records
+  const empId = (selfId !== null) ? selfId : queryEmpId;
   const status  = String(req.query["status"] ?? "");
   const from    = String(req.query["from"] ?? "");
   const to      = String(req.query["to"] ?? "");
