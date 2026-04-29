@@ -31,8 +31,6 @@ import {
   CheckCircle,
   Printer,
   Download,
-  UserPlus,
-  KeyRound,
   Target,
 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -270,8 +268,6 @@ export default function Employees() {
   // Self-service portal: when role==='employee', auto-show only own profile
   const isSelfService = user?.role === 'employee';
   const selfEmpId = user?.employee_id ?? null;
-  const [showCreateLogin, setShowCreateLogin] = useState(false);
-  const [loginForm, setLoginForm] = useState<{ username: string; pin: string }>({ username: '', pin: '' });
 
   /* ── Page-level tab ─────────────────────────────────────────── */
   const [pageTab, setPageTab] = useState<PageTab>('list');
@@ -1090,19 +1086,6 @@ export default function Employees() {
                 <div className="text-xs text-amber-300 font-mono">{selected.employee_code}</div>
               </div>
               <div className="flex items-center gap-2">
-                {canManage && !isSelfService && (
-                  <button
-                    onClick={() => {
-                      setLoginForm({ username: '', pin: '' });
-                      setShowCreateLogin(true);
-                    }}
-                    className="erp-btn erp-btn-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
-                    title="إنشاء حساب دخول لهذا الموظف"
-                  >
-                    <UserPlus size={14} />
-                    <span className="text-xs">إنشاء حساب دخول</span>
-                  </button>
-                )}
                 {!isSelfService && (
                   <button onClick={() => setSelected(null)} className="text-white/40 hover:text-white">
                     <X size={16} />
@@ -3203,83 +3186,6 @@ export default function Employees() {
         );
       })()}
 
-      {/* ── Create Login Account Modal ─────────────────────────── */}
-      {showCreateLogin && selected && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="erp-card w-full max-w-md space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <KeyRound size={18} className="text-emerald-400" />
-                <h3 className="text-base font-bold text-white">إنشاء حساب دخول</h3>
-              </div>
-              <button onClick={() => setShowCreateLogin(false)} className="text-white/40 hover:text-white">
-                <X size={16} />
-              </button>
-            </div>
-            <div className="text-xs text-white/60">
-              للموظف: <span className="text-amber-300">{selected.first_name_ar} {selected.last_name_ar}</span>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-xs text-white/70">اسم المستخدم</label>
-              <input
-                type="text"
-                value={loginForm.username}
-                onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                className="erp-input w-full"
-                placeholder="مثال: ahmad"
-                autoFocus
-              />
-              <label className="block text-xs text-white/70">رمز PIN (4-8 أرقام)</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={loginForm.pin}
-                onChange={(e) => setLoginForm({ ...loginForm, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })}
-                className="erp-input w-full font-mono"
-                placeholder="••••"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={async () => {
-                  if (!loginForm.username.trim() || loginForm.pin.length < 4) {
-                    toast({ title: 'تحقق من البيانات', description: 'اسم المستخدم ورمز PIN (4 أرقام على الأقل) مطلوبان', variant: 'destructive' });
-                    return;
-                  }
-                  try {
-                    const res = await authFetch(api('/api/settings/users'), {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        username: loginForm.username.trim(),
-                        pin: loginForm.pin,
-                        role: 'employee',
-                        employee_id: selected.id,
-                        active: true,
-                      }),
-                    });
-                    if (!res.ok) {
-                      const j = await res.json().catch(() => ({}));
-                      throw new Error(j.message || j.error || 'فشل إنشاء الحساب');
-                    }
-                    toast({ title: 'تم إنشاء الحساب', description: `يمكن للموظف الآن الدخول باسم ${loginForm.username}` });
-                    setShowCreateLogin(false);
-                  } catch (err: unknown) {
-                    toast({ title: 'خطأ', description: (err as Error)?.message || 'فشل إنشاء الحساب', variant: 'destructive' });
-                  }
-                }}
-                className="erp-btn erp-btn-primary"
-              >
-                إنشاء الحساب
-              </button>
-              <button onClick={() => setShowCreateLogin(false)} className="erp-btn erp-btn-ghost">
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
