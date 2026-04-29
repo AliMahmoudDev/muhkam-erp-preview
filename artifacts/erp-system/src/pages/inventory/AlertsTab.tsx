@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
+import { AlertSettingBanner } from '@/components/AlertSettingBanner';
 import { AlertTriangle, TrendingDown, RefreshCw, CheckCircle, Filter, Bell, ArrowRightLeft, FileSpreadsheet, FileText, ShoppingCart, TrendingUp, ClipboardList, X, Printer } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
@@ -431,6 +432,17 @@ function AlertsTab({
 
   return (
     <div className="space-y-5">
+      <AlertSettingBanner
+        enabledKey="alert_low_stock_enabled"
+        thresholdKey="alert_low_stock_qty"
+        title="تنبيه انخفاض المخزون"
+        thresholdLabel="حد الكمية"
+        thresholdUnit="قطعة"
+        icon="📦"
+        color="orange"
+        defaultThreshold="5"
+      />
+
       {/* إحصائيات سريعة — قابلة للضغط للتصفية */}
       <div className="grid grid-cols-3 gap-4">
         <div

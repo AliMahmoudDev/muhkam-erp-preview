@@ -1,4 +1,5 @@
 import { safeArray } from '@/lib/safe-data';
+import { AlertSettingBanner } from '@/components/AlertSettingBanner';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
@@ -2031,6 +2032,17 @@ export default function Customers() {
           </div>
         </div>
       )}
+
+      <AlertSettingBanner
+        enabledKey="alert_debt_enabled"
+        thresholdKey="alert_debt_days"
+        title="تنبيه الديون المتأخرة"
+        thresholdLabel="التنبيه بعد"
+        thresholdUnit="يوم"
+        icon="💰"
+        color="amber"
+        defaultThreshold="30"
+      />
 
       {/* فلتر النوع */}
       <div className="flex flex-wrap gap-2">

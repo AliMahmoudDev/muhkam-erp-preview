@@ -5,6 +5,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { safeArray } from "@/lib/safe-data";
 import { Search, Plus, Shield, ShieldCheck, ShieldX, Clock, Trash2 } from "lucide-react";
 import { api } from '@/lib/api';
+import { AlertSettingBanner } from '@/components/AlertSettingBanner';
 
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
@@ -255,6 +256,17 @@ export default function Warranty() {
           </div>
         ))}
       </div>
+
+      <AlertSettingBanner
+        enabledKey="alert_warranty_enabled"
+        thresholdKey="alert_warranty_days"
+        title="تنبيه انتهاء الضمان"
+        thresholdLabel="التنبيه قبل"
+        thresholdUnit="يوم"
+        icon="🛡️"
+        color="amber"
+        defaultThreshold="30"
+      />
 
       {/* ── Filters ── */}
       <div className="flex flex-wrap gap-3 items-center">

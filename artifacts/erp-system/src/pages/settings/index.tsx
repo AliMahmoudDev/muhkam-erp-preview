@@ -6,7 +6,6 @@ import {
   Store,
   Settings,
   Building2,
-  Bell,
   FileText,
   HardDrive,
   Cpu,
@@ -19,7 +18,6 @@ const OpeningBalanceTab = lazy(() => import('./opening-balance-tab'));
 const FinancialLockTab  = lazy(() => import('./financial-lock-tab'));
 const CurrencyTab       = lazy(() => import('./currency-tab'));
 const CompanyTab        = lazy(() => import('./company-tab'));
-const AlertsTab         = lazy(() => import('./alerts-tab'));
 const InvoiceTab        = lazy(() => import('./invoice-tab'));
 const SystemTab         = lazy(() => import('./system-tab'));
 const VatTab            = lazy(() => import('./vat-tab'));
@@ -31,7 +29,6 @@ type Tab =
   | 'financial-lock'
   | 'currency'
   | 'company'
-  | 'alerts'
   | 'invoice'
   | 'vat'
   | 'system';
@@ -60,7 +57,6 @@ const TAB_SECTIONS: {
     tabs: [
       { id: 'currency', label: 'إعدادات المتجر', icon: Store },
       { id: 'vat', label: 'ضريبة القيمة المضافة', icon: Percent },
-      { id: 'alerts', label: 'التنبيهات', icon: Bell },
       { id: 'invoice', label: 'الفاتورة', icon: FileText },
     ],
   },
@@ -213,7 +209,6 @@ export default function SettingsPage() {
             {activeTab === 'financial-lock' && <FinancialLockTab />}
             {activeTab === 'currency' && <CurrencyTab />}
             {activeTab === 'vat' && <VatTab />}
-            {activeTab === 'alerts' && <AlertsTab />}
             {activeTab === 'invoice' && <InvoiceTab />}
             {activeTab === 'system' && <SystemTab />}
           </Suspense>
