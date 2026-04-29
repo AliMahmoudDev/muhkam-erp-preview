@@ -11,7 +11,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { NAV_ITEMS, canAccess, ROUTE_PERMISSION, type UserRole } from '@/lib/rbac';
 import { hasPermission } from '@/lib/permissions';
 import { translateRole } from '@/lib/roles';
-import { LogOut, Warehouse, Search, X, ChevronDown } from 'lucide-react';
+import { LogOut, Warehouse, Search, X, ChevronDown, UserCircle } from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 import { NotificationBell } from '@/components/notification-bell';
@@ -23,7 +23,6 @@ import IdleCheckoutModal from '@/components/idle-checkout-modal';
 
 /* ── Nav sections ───────────────────────────────── */
 const NAV_SECTIONS = [
-  { label: 'حسابي', hrefs: ['/my-portal'] },
   { label: 'القائمة', hrefs: ['/'] },
   {
     label: 'التجارة',
@@ -525,6 +524,36 @@ export function AppLayout({ children }: LayoutProps) {
             );
           })}
         </nav>
+
+        {/* ── My Portal pinned bottom link ── */}
+        {user?.employee_id && (
+          <div style={{ flexShrink: 0, borderTop: sidebarBdr, padding: sidebarCollapsed ? '8px' : '8px 12px' }}>
+            <Link href="/my-portal">
+              <div
+                className={`nav-item ${location === '/my-portal' ? 'active' : ''}`}
+                title={sidebarCollapsed ? 'بوابتي الشخصية' : undefined}
+                style={{
+                  ...(sidebarCollapsed ? { justifyContent: 'center', paddingRight: 0, paddingLeft: 0 } : {}),
+                  background: location === '/my-portal'
+                    ? (isDark ? 'rgba(245,158,11,0.15)' : 'rgba(180,83,9,0.08)')
+                    : (isDark ? 'rgba(245,158,11,0.06)' : 'rgba(180,83,9,0.05)'),
+                  border: `1px solid ${location === '/my-portal'
+                    ? (isDark ? 'rgba(245,158,11,0.35)' : 'rgba(180,83,9,0.25)')
+                    : (isDark ? 'rgba(245,158,11,0.12)' : 'rgba(180,83,9,0.10)')}`,
+                  borderRadius: 10,
+                  marginBottom: 0,
+                }}
+              >
+                <UserCircle style={{ width: 16, height: 16, flexShrink: 0, color: '#f59e0b', opacity: location === '/my-portal' ? 1 : 0.75 }} />
+                {!sidebarCollapsed && (
+                  <span style={{ flex: 1, color: '#f59e0b', fontWeight: location === '/my-portal' ? 800 : 600, fontSize: 13 }}>
+                    بوابتي الشخصية
+                  </span>
+                )}
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* Sidebar footer */}
         <div
