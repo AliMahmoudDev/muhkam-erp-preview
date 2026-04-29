@@ -26,27 +26,11 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Backend API"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "ERP Mobile Dev"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "ERP Frontend"
-
-[[workflows.workflow]]
-name = "Backend API"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=8080 pnpm --filter @workspace/api-server run build && PORT=8080 pnpm --filter @workspace/api-server run start"
-waitForPort = 8080
+args = "Muhkam ERP Frontend"
 
 [[workflows.workflow]]
 name = "ERP Mobile Dev"
@@ -61,16 +45,16 @@ waitForPort = 8099
 outputType = "console"
 
 [[workflows.workflow]]
-name = "ERP Frontend"
+name = "Muhkam ERP Frontend"
 author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=5000 pnpm --filter @workspace/erp-system run dev"
-waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node artifacts/erp-system/scripts/dev-start.cjs"
+waitForPort = 5000
 
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
