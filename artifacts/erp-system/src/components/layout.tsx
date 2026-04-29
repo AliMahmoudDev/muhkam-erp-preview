@@ -321,26 +321,24 @@ export function AppLayout({ children }: LayoutProps) {
               : 'linear-gradient(135deg,rgba(245,158,11,0.05) 0%,transparent 60%)',
           }}
         >
-          {/* Logo container */}
+          {/* Logo — square, no frame */}
           <div
-            className="flex items-center justify-center shrink-0"
             style={{
-              width: 42,
-              height: 42,
+              width: sidebarCollapsed ? 44 : 48,
+              height: sidebarCollapsed ? 44 : 48,
               borderRadius: 12,
               overflow: 'hidden',
-              background: isDark ? 'rgba(245,158,11,0.13)' : 'rgba(245,158,11,0.10)',
-              border: '1.5px solid rgba(245,158,11,0.32)',
-              boxShadow: '0 0 18px rgba(245,158,11,0.18)',
               flexShrink: 0,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
             }}
           >
             <img
               src={logoSrc}
               alt={settings.companyName}
-              style={{ width: 32, height: 32, objectFit: 'contain' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
+                const el = e.target as HTMLImageElement;
+                el.style.display = 'none';
               }}
             />
           </div>

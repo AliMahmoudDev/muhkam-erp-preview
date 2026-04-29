@@ -221,13 +221,17 @@ export default function CurrencyTab() {
               <div>
                 <label className="block text-white/40 text-xs font-bold mb-2">شعار الشركة / Logo</label>
                 <div className="flex items-start gap-4">
-                  {/* Logo preview circle */}
+                  {/* Logo square — no frame */}
                   <div
-                    className="shrink-0 flex items-center justify-center rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                    className="shrink-0 rounded-xl overflow-hidden cursor-pointer transition-opacity hover:opacity-80"
                     style={{
-                      width: 64, height: 64,
-                      background: "rgba(245,158,11,0.08)",
-                      border: "2px dashed rgba(245,158,11,0.30)",
+                      width: 72, height: 72,
+                      background: logoPreview ? "transparent" : "rgba(255,255,255,0.04)",
+                      border: logoPreview ? "none" : "2px dashed rgba(255,255,255,0.12)",
+                      boxShadow: logoPreview ? "0 2px 16px rgba(0,0,0,0.40)" : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                     onClick={() => fileInputRef.current?.click()}
                     title="انقر لرفع شعار"
@@ -236,13 +240,13 @@ export default function CurrencyTab() {
                       <img
                         src={logoPreview}
                         alt="logo"
-                        style={{ width: 50, height: 50, objectFit: "contain" }}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                         onError={() => setLogoPreview("")}
                       />
                     ) : (
                       <div className="flex flex-col items-center gap-1">
-                        <ImagePlus className="w-5 h-5 text-amber-400/50" />
-                        <span className="text-[9px] text-white/25 font-bold">شعار</span>
+                        <ImagePlus className="w-5 h-5 text-white/20" />
+                        <span className="text-[9px] text-white/20 font-bold">رفع</span>
                       </div>
                     )}
                   </div>
@@ -343,22 +347,17 @@ export default function CurrencyTab() {
                 >
                   <div
                     style={{
-                      width: 42, height: 42,
+                      width: 48, height: 48,
                       borderRadius: 12,
                       flexShrink: 0,
                       overflow: "hidden",
-                      background: "rgba(245,158,11,0.12)",
-                      border: "1.5px solid rgba(245,158,11,0.30)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 0 16px rgba(245,158,11,0.15)",
+                      boxShadow: "0 2px 10px rgba(0,0,0,0.4)",
                     }}
                   >
                     <img
                       src={logoPreview || FALLBACK_LOGO}
                       alt="preview"
-                      style={{ width: 32, height: 32, objectFit: "contain" }}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = FALLBACK_LOGO;
                       }}
