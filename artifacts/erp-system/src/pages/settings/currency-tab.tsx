@@ -467,62 +467,77 @@ export default function CurrencyTab() {
             </div>
           </div>
 
-          {/* ── حجم الخط ── */}
-          <div className="flex items-center gap-4 py-3">
-            <span className="text-white/40 text-xs font-bold w-20 shrink-0 text-right">حجم الخط</span>
-            <div className="flex gap-2">
-              {FONT_SIZE_OPTIONS.map(o => {
-                const active = fontSize === o.value;
-                return (
-                  <button
-                    key={o.value}
-                    onClick={() => setFontSize(o.value)}
-                    className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border transition-all ${
-                      active
-                        ? "bg-amber-500/15 border-amber-500/50"
-                        : "bg-[#1A2235] border-white/8 hover:border-amber-500/30"
-                    }`}
-                  >
-                    <span
-                      className={`font-black leading-none ${active ? "text-amber-400" : "text-white/50"}`}
-                      style={{ fontSize: o.px }}
-                    >أ</span>
-                    <span className={`text-[10px] font-bold mt-1 ${active ? "text-amber-400" : "text-white/35"}`}>
-                      {o.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── وزن الخط ── */}
+          {/* ── حجم الخط + وزن الخط — سطر واحد ── */}
           <div className="flex items-center gap-4 py-3 last:pb-0">
-            <span className="text-white/40 text-xs font-bold w-20 shrink-0 text-right">وزن الخط</span>
-            <div className="flex gap-2">
-              {FONT_WEIGHT_OPTIONS.map(w => {
-                const active = fontWeight === w.value;
-                return (
-                  <button
-                    key={w.value}
-                    onClick={() => setFontWeight(w.value)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
-                      active
-                        ? "bg-amber-500/15 border-amber-500/50"
-                        : "bg-[#1A2235] border-white/8 hover:border-amber-500/30"
-                    }`}
-                  >
-                    <span
-                      className={`text-base leading-none ${active ? "text-amber-400" : "text-white/50"}`}
-                      style={{ fontFamily: `'${fontFamily}', sans-serif`, fontWeight: w.value }}
-                    >أ</span>
-                    <span className={`text-xs font-bold ${active ? "text-amber-400" : "text-white/50"}`}>
-                      {w.label}
-                    </span>
-                    {active && <Check className="w-3 h-3 text-amber-400 shrink-0" />}
-                  </button>
-                );
-              })}
+            <span className="text-white/40 text-xs font-bold w-20 shrink-0 text-right">الحجم والوزن</span>
+            <div className="flex items-center gap-3 flex-1">
+
+              {/* حجم الخط — select */}
+              <div className="relative flex-1 max-w-[180px]">
+                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-white/30 bg-[#0D1424] leading-none z-10">
+                  حجم الخط
+                </label>
+                <select
+                  value={fontSize}
+                  onChange={e => setFontSize(e.target.value as FontSize)}
+                  dir="rtl"
+                  className="w-full appearance-none bg-[#0D1424] border border-white/12 rounded-lg px-3 py-2.5 text-sm text-white/80 font-bold focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
+                  style={{ fontFamily: `'${fontFamily}', sans-serif` }}
+                >
+                  {FONT_SIZE_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}
+                      style={{ background: "#0D1117" }}>
+                      {o.label} — {o.px}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs">▾</span>
+              </div>
+
+              {/* وزن الخط — select */}
+              <div className="relative flex-1 max-w-[180px]">
+                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-white/30 bg-[#0D1424] leading-none z-10">
+                  وزن الخط
+                </label>
+                <select
+                  value={fontWeight}
+                  onChange={e => setFontWeight(Number(e.target.value))}
+                  dir="rtl"
+                  className="w-full appearance-none bg-[#0D1424] border border-white/12 rounded-lg px-3 py-2.5 text-sm text-white/80 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
+                  style={{ fontFamily: `'${fontFamily}', sans-serif`, fontWeight }}
+                >
+                  {FONT_WEIGHT_OPTIONS.map(w => (
+                    <option key={w.value} value={w.value}
+                      style={{ background: "#0D1117", fontWeight: w.value }}>
+                      {w.label} — {w.labelEn}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs">▾</span>
+              </div>
+
+              {/* معاينة حية */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/5 bg-[#0D1424] shrink-0">
+                <span
+                  className="text-amber-400/80"
+                  style={{
+                    fontFamily: `'${fontFamily}', sans-serif`,
+                    fontSize: FONT_SIZE_OPTIONS.find(o => o.value === fontSize)?.px ?? '15px',
+                    fontWeight,
+                    lineHeight: 1,
+                  }}
+                >أبجد</span>
+                <span
+                  className="text-white/20"
+                  style={{
+                    fontFamily: `'${fontFamily}', sans-serif`,
+                    fontSize: FONT_SIZE_OPTIONS.find(o => o.value === fontSize)?.px ?? '15px',
+                    fontWeight,
+                    lineHeight: 1,
+                  }}
+                >Abc</span>
+              </div>
+
             </div>
           </div>
 
