@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
@@ -33,8 +33,35 @@ import {
   Download,
   UserPlus,
   KeyRound,
+  Target,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+
+/* ── Lazy-loaded sub-page tabs ───────────────────────────────── */
+const AdvanceSettingsTab = lazy(() => import('./employees/advance-settings-tab'));
+const SalesTargetsTab    = lazy(() => import('./employees/sales-targets-tab'));
+
+type PageTab = 'list' | 'advance-settings' | 'sales-targets';
+
+const PAGE_TABS: { id: PageTab; label: string; icon: React.FC<{ className?: string }> }[] = [
+  { id: 'list',             label: 'الموظفون',       icon: (p) => <UserCheck {...p} /> },
+  { id: 'advance-settings', label: 'إعدادات السلف',  icon: (p) => <Banknote {...p} /> },
+  { id: 'sales-targets',   label: 'أهداف المبيعات', icon: (p) => <Target {...p} />   },
+];
+
+function SubTabSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse max-w-2xl mt-6">
+      <div className="h-8 w-48 bg-white/5 rounded-xl" />
+      <div className="h-4 w-64 bg-white/3 rounded-lg" />
+      <div className="grid grid-cols-2 gap-4 mt-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-24 bg-white/3 rounded-2xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 
 /* ── Types ────────────────────────────────────────────────────── */
@@ -245,6 +272,9 @@ export default function Employees() {
   const selfEmpId = user?.employee_id ?? null;
   const [showCreateLogin, setShowCreateLogin] = useState(false);
   const [loginForm, setLoginForm] = useState<{ username: string; pin: string }>({ username: '', pin: '' });
+
+  /* ── Page-level tab ─────────────────────────────────────────── */
+  const [pageTab, setPageTab] = useState<PageTab>('list');
 
   /* ── List state ─────────────────────────────────────────────── */
   const [search, setSearch] = useState('');
@@ -844,16 +874,67 @@ export default function Employees() {
   /* ═══════════════════════════════════════════════════════════
      RENDER
   ════════════════════════════════════════════════════════════ */
+
+  /* ── Shared page header + tab nav ─────────────────────────── */
+  const PageHeader = (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <UserCheck size={22} className="text-amber-400" />
+        <h1 className="text-xl font-bold text-white">إدارة الموظفين</h1>
+        {pageTab === 'list' && (
+          <span className="erp-badge erp-badge-info">{totalActive} نشط</span>
+        )}
+      </div>
+      {/* Tab navigation */}
+      <div className="flex gap-1 border-b border-white/8 pb-0">
+        {PAGE_TABS.map((t) => {
+          const Icon = t.icon;
+          const active = pageTab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setPageTab(t.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all border-b-2 -mb-px ${
+                active
+                  ? 'text-amber-400 border-amber-400 bg-amber-500/5'
+                  : 'text-white/40 border-transparent hover:text-white/70 hover:bg-white/3'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  /* ── Early returns for sub-page tabs ─────────────────────── */
+  if (pageTab === 'advance-settings') {
+    return (
+      <div className="p-4 space-y-4" dir="rtl">
+        {PageHeader}
+        <Suspense fallback={<SubTabSkeleton />}>
+          <AdvanceSettingsTab />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (pageTab === 'sales-targets') {
+    return (
+      <div className="p-4 space-y-4" dir="rtl">
+        {PageHeader}
+        <Suspense fallback={<SubTabSkeleton />}>
+          <SalesTargetsTab />
+        </Suspense>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 space-y-4" dir="rtl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <UserCheck size={22} className="text-amber-400" />
-          <h1 className="text-xl font-bold text-white">إدارة الموظفين</h1>
-          <span className="erp-badge erp-badge-info">{totalActive} نشط</span>
-        </div>
-      </div>
+      {PageHeader}
       {/* Main grid */}
       <div className={`grid grid-cols-1 ${isSelfService ? '' : 'xl:grid-cols-3'} gap-4`}>
         {/* ── Left: List Panel (hidden in self-service mode) ─── */}

@@ -11,9 +11,7 @@ import {
   HardDrive,
   Cpu,
   Percent,
-  Banknote,
   CreditCard,
-  Target,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
@@ -26,9 +24,7 @@ const AlertsTab         = lazy(() => import('./alerts-tab'));
 const InvoiceTab        = lazy(() => import('./invoice-tab'));
 const SystemTab         = lazy(() => import('./system-tab'));
 const VatTab            = lazy(() => import('./vat-tab'));
-const SalaryAdvanceTab  = lazy(() => import('./salary-advance-tab'));
-const PaymentMethodsTab  = lazy(() => import('./payment-methods-tab'));
-const SalesTargetsTab   = lazy(() => import('./sales-targets-tab'));
+const PaymentMethodsTab = lazy(() => import('./payment-methods-tab'));
 
 /* ─── Tab types ─── */
 type Tab =
@@ -40,9 +36,7 @@ type Tab =
   | 'alerts'
   | 'invoice'
   | 'vat'
-  | 'salary-advance'
   | 'payment-methods'
-  | 'sales-targets'
   | 'system';
 
 /* ─── Section config ─── */
@@ -55,7 +49,6 @@ const TAB_SECTIONS: {
     tabs: [
       { id: 'users', label: 'المستخدمون', icon: Users },
       { id: 'company', label: 'بيانات الشركة', icon: Building2 },
-      { id: 'sales-targets', label: 'أهداف المبيعات', icon: Target },
     ],
   },
   {
@@ -63,7 +56,6 @@ const TAB_SECTIONS: {
     tabs: [
       { id: 'opening-balance', label: 'أول المدة', icon: BookOpen },
       { id: 'financial-lock', label: 'إغلاق الفترات', icon: Lock },
-      { id: 'salary-advance', label: 'السلف', icon: Banknote },
     ],
   },
   {
@@ -227,9 +219,7 @@ export default function SettingsPage() {
             {activeTab === 'vat' && <VatTab />}
             {activeTab === 'alerts' && <AlertsTab />}
             {activeTab === 'invoice' && <InvoiceTab />}
-            {activeTab === 'salary-advance' && <SalaryAdvanceTab />}
             {activeTab === 'payment-methods' && <PaymentMethodsTab />}
-            {activeTab === 'sales-targets' && <SalesTargetsTab />}
             {activeTab === 'system' && <SystemTab />}
           </Suspense>
         </div>

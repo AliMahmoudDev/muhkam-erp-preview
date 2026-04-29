@@ -1,26 +1,37 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
-import { Target, Loader2, Save, ChevronRight, ChevronLeft, Trophy, Users } from 'lucide-react';
-import { PageHeader } from './_shared';
+import { Target, Loader2, Save, ChevronRight, ChevronLeft, Trophy, Users, TrendingUp } from 'lucide-react';
+import { safeArray } from '@/lib/safe-data';
 import { api } from '@/lib/api';
 
-
 interface TargetRow {
-  user_id:         number;
-  user_name:       string;
-  role:            string;
-  target_id:       number | null;
-  target_amount:   number;
+  user_id: number;
+  user_name: string;
+  role: string;
+  target_id: number | null;
+  target_amount: number;
   achieved_amount: number;
+  /** optional employee_id link — populated when user has a linked employee */
+  employee_id?: number | null;
+}
+
+interface Employee {
+  id: number;
+  first_name_ar: string;
+  last_name_ar: string;
+  department_name?: string | null;
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  admin:       'مدير',
-  manager:     'مشرف',
-  cashier:     'كاشير',
+  admin: 'مدير',
+  manager: 'مشرف',
+  cashier: 'كاشير',
   salesperson: 'مندوب',
-  accountant:  'محاسب',
+  accountant: 'محاسب',
+  branch_manager: 'مدير فرع',
+  agent: 'موظف مبيعات',
 };
 
 function monthLabel(ym: string) {
@@ -47,21 +58,33 @@ function currentYM() {
 
 export default function SalesTargetsTab() {
   const { toast } = useToast();
-  const [month,   setMonth]   = useState(currentYM());
-  const [rows,    setRows]    = useState<TargetRow[]>([]);
-  const [drafts,  setDrafts]  = useState<Record<number, string>>({});
+  const [month, setMonth] = useState(currentYM());
+  const [rows, setRows] = useState<TargetRow[]>([]);
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
-  const [saving,  setSaving]  = useState<number | null>(null);
+  const [saving, setSaving] = useState<number | null>(null);
+
+  /* Load employees for cross-referencing */
+  const { data: empsRaw } = useQuery({
+    queryKey: ['/api/employees'],
+    queryFn: () => authFetch(api('/api/employees')).then((r) => r.json()),
+  });
+  const employees: Employee[] = safeArray(empsRaw);
+
+  const getEmployeeInfo = (row: TargetRow) => {
+    if (!row.employee_id) return null;
+    return employees.find((e) => e.id === row.employee_id) ?? null;
+  };
 
   const load = useCallback(async (ym: string) => {
     setLoading(true);
     try {
       const r = await authFetch(api(`/api/sales-targets?month=${ym}`));
       if (r.ok) {
-        const d = await r.json() as { month: string; items: TargetRow[] };
+        const d = (await r.json()) as { month: string; items: TargetRow[] };
         setRows(d.items);
         const init: Record<number, string> = {};
-        d.items.forEach(row => {
+        d.items.forEach((row) => {
           init[row.user_id] = row.target_amount > 0 ? String(row.target_amount) : '';
         });
         setDrafts(init);
@@ -71,7 +94,9 @@ export default function SalesTargetsTab() {
     }
   }, []);
 
-  useEffect(() => { void load(month); }, [month, load]);
+  useEffect(() => {
+    void load(month);
+  }, [month, load]);
 
   const handleSave = async (userId: number) => {
     const val = parseFloat(drafts[userId] || '0') || 0;
@@ -79,6 +104,7 @@ export default function SalesTargetsTab() {
     try {
       const r = await authFetch(api('/api/sales-targets'), {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, year_month: month, target_amount: val }),
       });
       if (!r.ok) throw new Error('فشل الحفظ');
@@ -91,15 +117,25 @@ export default function SalesTargetsTab() {
     }
   };
 
+  /* Aggregate stats */
+  const totalTarget = rows.reduce((s, r) => s + r.target_amount, 0);
+  const totalAchieved = rows.reduce((s, r) => s + r.achieved_amount, 0);
+  const overallPct = totalTarget > 0 ? Math.min(100, (totalAchieved / totalTarget) * 100) : 0;
+
   return (
     <div className="space-y-6" dir="rtl">
-      <PageHeader
-        title="أهداف المبيعات"
-        sub="تحديد هدف شهري لكل مستخدم ومتابعة تقدمه في لوحة التحكم"
-      />
+      <div className="mb-2">
+        <h2 className="text-lg font-black text-white">أهداف المبيعات</h2>
+        <p className="text-white/40 text-sm mt-0.5">
+          تحديد هدف شهري لكل مستخدم ومتابعة تقدمه — مرتبط بسجلات الموظفين والمبيعات
+        </p>
+      </div>
 
       {/* Month navigator */}
-      <div className="flex items-center justify-between p-4 rounded-2xl border border-white/8" style={{ background: 'var(--erp-bg-card)' }}>
+      <div
+        className="flex items-center justify-between p-4 rounded-2xl border border-white/8"
+        style={{ background: 'var(--erp-bg-card)' }}
+      >
         <button
           onClick={() => setMonth(prevMonth(month))}
           className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition"
@@ -125,6 +161,35 @@ export default function SalesTargetsTab() {
         </button>
       </div>
 
+      {/* Overall stats bar */}
+      {rows.length > 0 && totalTarget > 0 && (
+        <div
+          className="rounded-2xl border border-white/8 p-4 space-y-2"
+          style={{ background: 'var(--erp-bg-card)' }}
+        >
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-amber-400" />
+            <span className="text-white/70 text-sm font-bold">إجمالي الفريق</span>
+            <span className="mr-auto font-bold text-sm" style={{ color: overallPct >= 100 ? '#34d399' : overallPct >= 60 ? '#f59e0b' : '#f87171' }}>
+              {overallPct.toFixed(1)}%
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-white/8 overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${overallPct}%`,
+                background: overallPct >= 100 ? '#34d399' : overallPct >= 60 ? '#f59e0b' : '#f87171',
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-white/35">
+            <span>محقق: {totalAchieved.toLocaleString('ar-EG-u-nu-latn')} ج.م</span>
+            <span>المستهدف: {totalTarget.toLocaleString('ar-EG-u-nu-latn')} ج.م</span>
+          </div>
+        </div>
+      )}
+
       {/* Users list */}
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-white/30 text-sm">
@@ -137,11 +202,12 @@ export default function SalesTargetsTab() {
         </div>
       ) : (
         <div className="space-y-2">
-          {rows.map(row => {
+          {rows.map((row) => {
             const targetVal = parseFloat(drafts[row.user_id] || '0') || 0;
             const pct = targetVal > 0 ? Math.min(100, (row.achieved_amount / targetVal) * 100) : 0;
             const isDirty = targetVal !== row.target_amount;
             const color = pct >= 100 ? '#34d399' : pct >= 60 ? '#f59e0b' : '#f87171';
+            const empInfo = getEmployeeInfo(row);
 
             return (
               <div
@@ -157,7 +223,18 @@ export default function SalesTargetsTab() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-white font-bold text-sm truncate">{row.user_name}</p>
-                      <p className="text-white/35 text-xs">{ROLE_LABELS[row.role] ?? row.role}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-white/35 text-xs">{ROLE_LABELS[row.role] ?? row.role}</p>
+                        {empInfo && (
+                          <>
+                            <span className="text-white/20 text-xs">·</span>
+                            <p className="text-amber-400/60 text-xs truncate">
+                              {empInfo.first_name_ar} {empInfo.last_name_ar}
+                              {empInfo.department_name ? ` — ${empInfo.department_name}` : ''}
+                            </p>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -170,10 +247,14 @@ export default function SalesTargetsTab() {
                         step="100"
                         placeholder="0"
                         value={drafts[row.user_id] ?? ''}
-                        onChange={e => setDrafts(p => ({ ...p, [row.user_id]: e.target.value }))}
+                        onChange={(e) =>
+                          setDrafts((p) => ({ ...p, [row.user_id]: e.target.value }))
+                        }
                         className="w-32 px-3 py-2 pl-10 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-amber-500/50 text-right"
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">ج.م</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">
+                        ج.م
+                      </span>
                     </div>
                     <button
                       onClick={() => void handleSave(row.user_id)}
@@ -185,10 +266,11 @@ export default function SalesTargetsTab() {
                       }}
                       title="حفظ"
                     >
-                      {saving === row.user_id
-                        ? <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
-                        : <Save className="w-3.5 h-3.5 text-amber-400" />
-                      }
+                      {saving === row.user_id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                      ) : (
+                        <Save className="w-3.5 h-3.5 text-amber-400" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -198,9 +280,14 @@ export default function SalesTargetsTab() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-white/40">
-                        تحقق: <span className="font-bold" style={{ color }}>{row.achieved_amount.toLocaleString('ar-EG-u-nu-latn')} ج.م</span>
+                        تحقق:{' '}
+                        <span className="font-bold" style={{ color }}>
+                          {row.achieved_amount.toLocaleString('ar-EG-u-nu-latn')} ج.م
+                        </span>
                       </span>
-                      <span className="font-bold" style={{ color }}>{pct.toFixed(1)}%</span>
+                      <span className="font-bold" style={{ color }}>
+                        {pct.toFixed(1)}%
+                      </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
                       <div
@@ -223,6 +310,7 @@ export default function SalesTargetsTab() {
         <Target className="w-4 h-4 text-white/25 mt-0.5 shrink-0" />
         <p className="text-white/30 text-xs leading-relaxed">
           اضبط الهدف بـ 0 لحذفه. الأهداف تظهر في لوحة التحكم الرئيسية مع شريط تقدم لكل مستخدم.
+          المستخدمون المرتبطون بموظفين تظهر بياناتهم الوظيفية هنا للمرجعية.
         </p>
       </div>
     </div>

@@ -3,9 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Percent, Users, DollarSign, CalendarDays, ShieldCheck, Loader2 } from 'lucide-react';
-import { PageHeader } from './_shared';
 import { api } from '@/lib/api';
-
 
 interface AdvanceSettings {
   max_advance_percentage: number;
@@ -23,7 +21,15 @@ const DEFAULT_SETTINGS: AdvanceSettings = {
   requires_approval: true,
 };
 
-function Section({ icon: Icon, title, children }: { icon: React.FC<{ className?: string }>; title: string; children: React.ReactNode }) {
+function Section({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.FC<{ className?: string }>;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="border border-white/5 rounded-2xl overflow-hidden" style={{ background: 'var(--erp-bg-card)' }}>
       <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-white/5">
@@ -80,7 +86,7 @@ function NumberField({
   );
 }
 
-export default function SalaryAdvanceTab() {
+export default function AdvanceSettingsTab() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [settings, setSettings] = useState<AdvanceSettings>(DEFAULT_SETTINGS);
@@ -137,11 +143,11 @@ export default function SalaryAdvanceTab() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="إعدادات السلف"
-        sub="تحكم في حدود وقواعد منح السلف للموظفين"
-      />
+    <div className="space-y-6 max-w-2xl">
+      <div className="mb-2">
+        <h2 className="text-lg font-black text-white">إعدادات السلف</h2>
+        <p className="text-white/40 text-sm mt-0.5">تحكم في حدود وقواعد منح السلف للموظفين</p>
+      </div>
 
       <Section icon={Percent} title="حدود السلفة">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

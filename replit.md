@@ -45,6 +45,14 @@ The artifact workflow `artifacts/erp-mobile: expo` will always show FAILED — t
 
 **HEALTH_PORT** env var controls the supported port (default: 8099). **CANVAS_PORT** is hardcoded to 20384.
 
+## Page Architecture Notes
+- **Employees page** (`src/pages/employees.tsx`): Contains 3 top-level tabs via `pageTab` state:
+  - `list` — main employee list and detail panel (original content)
+  - `advance-settings` — lazy-loads `src/pages/employees/advance-settings-tab.tsx` (إعدادات السلف)
+  - `sales-targets` — lazy-loads `src/pages/employees/sales-targets-tab.tsx` (أهداف المبيعات)
+  - Both sub-tabs were previously in `settings/` and have been moved here; linked properly to employees/safes/sales APIs.
+- **Settings page** (`src/pages/settings/index.tsx`): Removed `salary-advance` and `sales-targets` tabs. Now has 10 tabs across 4 sections.
+
 ## CI/CD Status
 - **Deploy pipeline:** ✅ Working — GitHub Actions deploy.yml builds erp-system at BASE_PATH=/ and deploys to VPS
 - **CI pipeline:** ✅ Passing — builds erp-system only
