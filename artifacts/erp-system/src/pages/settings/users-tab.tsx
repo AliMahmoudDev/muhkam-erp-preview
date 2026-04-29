@@ -111,6 +111,9 @@ export default function UsersTab() {
     if (!form.name.trim() || !form.username.trim()) {
       toast({ title: "الاسم واسم المستخدم مطلوبان", variant: "destructive" }); return;
     }
+    if (form.role === "employee" && !form.employee_id) {
+      toast({ title: "يجب ربط الحساب بملف موظف عند اختيار دور 'موظف'", variant: "destructive" }); return;
+    }
     if ((form.role === "cashier" || form.role === "salesperson") && !form.warehouse_id) {
       toast({ title: "اختر المخزن أولاً", variant: "destructive" }); return;
     }
@@ -320,6 +323,7 @@ export default function UsersTab() {
                   <option value="manager">مشرف</option>
                   <option value="cashier">كاشير</option>
                   <option value="salesperson">مندوب مبيعات</option>
+                  <option value="employee">موظف (بياناتي فقط)</option>
                 </SSelect>
               </div>
               <div>
@@ -343,16 +347,25 @@ export default function UsersTab() {
             </div>
 
             {/* Employee linkage */}
-            <div>
-              <FieldLabel>ربط بملف موظف <span className="text-white/30 text-[10px] font-normal">(مطلوب لتسجيل الحضور من الموبايل)</span></FieldLabel>
+            <div className={form.role === "employee" ? "ring-2 ring-amber-500/40 rounded-xl p-3 bg-amber-500/5" : ""}>
+              <FieldLabel>
+                ربط بملف موظف
+                {form.role === "employee"
+                  ? <span className="text-red-400 mr-0.5">* مطلوب لدور الموظف</span>
+                  : <span className="text-white/30 text-[10px] font-normal"> (مطلوب لتسجيل الحضور من الموبايل)</span>
+                }
+              </FieldLabel>
               <SSelect value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))}>
-                <option value="">— غير مرتبط —</option>
+                <option value="">— اختر الموظف —</option>
                 {empOptions.map((e) => (
                   <option key={e.id} value={e.id}>
                     {String(e.first_name_ar)} {String(e.last_name_ar)} [{String(e.employee_code)}]
                   </option>
                 ))}
               </SSelect>
+              {form.role === "employee" && !form.employee_id && (
+                <p className="text-amber-400 text-[11px] mt-1.5">⚠ يجب اختيار ملف الموظف حتى تظهر بوابة الموظف الشخصية عند تسجيل الدخول</p>
+              )}
             </div>
 
             <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-3">
