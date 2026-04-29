@@ -4,14 +4,14 @@ import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import {
   Check, Save, CheckCircle2, DollarSign, AlignLeft, CaseSensitive,
-  Sun, Loader2, Calendar, Hash, Phone, CalendarDays,
-  Moon, LayoutList, Type,
+  Sun, Loader2, Calendar, Hash,
+  Moon, Type,
 } from "lucide-react";
 import { PageHeader } from "./_shared";
 import type {
   CurrencyCode, NumberFormat, FontFamily, LightVariant,
-  DateFormat, DecimalPlaces, ThousandsSeparator, PhoneFormat,
-  WeekStartDay, DarkThemeVariant, DisplayDensity, FontSize,
+  DateFormat, DecimalPlaces, ThousandsSeparator,
+  DarkThemeVariant, FontSize,
 } from "@/contexts/app-settings";
 
 /* ══════════════════════ Static option lists ══════════════════════════════ */
@@ -34,16 +34,6 @@ const DATE_FORMAT_OPTIONS: { value: DateFormat; label: string; example: string }
   { value: "dd-mm-yyyy",  label: "يوم-شهر-سنة",  example: "25-01-2025" },
 ];
 
-const PHONE_FORMAT_OPTIONS: { value: PhoneFormat; label: string; example: string }[] = [
-  { value: "local",         label: "محلي",          example: "01012345678" },
-  { value: "international", label: "دولي",           example: "+201012345678" },
-];
-
-const WEEK_START_OPTIONS: { value: WeekStartDay; label: string; flag: string }[] = [
-  { value: "saturday", label: "السبت",    flag: "🇸🇦" },
-  { value: "sunday",   label: "الأحد",   flag: "🇺🇸" },
-  { value: "monday",   label: "الاثنين", flag: "🇪🇺" },
-];
 
 const DARK_THEME_OPTIONS: { value: DarkThemeVariant; label: string; desc: string; bgFrom: string; bgTo: string }[] = [
   { value: "default",         label: "افتراضي",           desc: "رمادي داكن كلاسيكي",     bgFrom: "#0D1117", bgTo: "#0A0E1A" },
@@ -51,11 +41,6 @@ const DARK_THEME_OPTIONS: { value: DarkThemeVariant; label: string; desc: string
   { value: "midnight-purple", label: "بنفسجي منتصف الليل", desc: "داكن بصبغة بنفسجية",   bgFrom: "#0D0A1E", bgTo: "#090618" },
 ];
 
-const DENSITY_OPTIONS: { value: DisplayDensity; label: string; desc: string; icon: string }[] = [
-  { value: "compact",     label: "مضغوط",   desc: "صفوف أقل ارتفاعاً، عرض أكثر",      icon: "⬛" },
-  { value: "comfortable", label: "مريح",    desc: "التوازن الافتراضي",                   icon: "🟫" },
-  { value: "spacious",    label: "واسع",    desc: "مسافات أكبر، أسهل للقراءة",          icon: "🟦" },
-];
 
 const FONT_OPTIONS: { key: FontFamily; label: string; preview: string }[] = [
   { key: "Cairo",   label: "القاهرة",  preview: "أبجد هوز — Cairo"   },
@@ -139,14 +124,11 @@ export default function CurrencyTab() {
   const [thousandsSep,      setThousandsSep]      = useState<ThousandsSeparator>(settings.thousandsSeparator ?? "comma");
   const [dateFormat,        setDateFormat]        = useState<DateFormat>(settings.dateFormat ?? "dd/mm/yyyy");
   const [invoicePrefix,     setInvoicePrefix]     = useState<string>(settings.invoicePrefix ?? "INV-");
-  const [phoneFormat,       setPhoneFormat]       = useState<PhoneFormat>(settings.phoneFormat ?? "local");
-  const [weekStartDay,      setWeekStartDay]      = useState<WeekStartDay>(settings.weekStartDay ?? "saturday");
   const [fontFamily,        setFontFamily]        = useState<FontFamily>(settings.fontFamily);
   const [fontWeight,        setFontWeight]        = useState<number>(settings.fontWeightNormal ?? 400);
   const [fontSize,          setFontSize]          = useState<FontSize>(settings.fontSize ?? "md");
   const [darkThemeVariant,  setDarkThemeVariant]  = useState<DarkThemeVariant>(settings.darkThemeVariant ?? "default");
   const [lightVariant,      setLightVariant]      = useState<LightVariant>(settings.lightVariant ?? "soft");
-  const [displayDensity,    setDisplayDensity]    = useState<DisplayDensity>(settings.displayDensity ?? "comfortable");
   const [saved,             setSaved]             = useState(false);
 
   /* ── exchange rates state (merged here) ── */
@@ -227,14 +209,11 @@ export default function CurrencyTab() {
       thousandsSeparator: thousandsSep,
       dateFormat,
       invoicePrefix: invoicePrefix.trim() || "INV-",
-      phoneFormat,
-      weekStartDay,
       fontFamily,
       fontWeightNormal: fontWeight,
       fontSize,
       darkThemeVariant,
       lightVariant,
-      displayDensity,
     });
     setSaved(true);
     toast({ title: "تم حفظ الإعدادات ✓", description: "تم تطبيق إعدادات المتجر على كامل النظام" });
@@ -488,33 +467,7 @@ export default function CurrencyTab() {
         </div>
       </Section>
 
-      {/* ══ 6. تنسيق الهاتف + يوم بداية الأسبوع ═════════════════════════ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <Section icon={Phone} title="تنسيق رقم الهاتف">
-          <div className="space-y-3">
-            {PHONE_FORMAT_OPTIONS.map(o => (
-              <OptionPill key={o.value} value={o.value} active={phoneFormat === o.value}
-                label={o.label} sub={o.example} onClick={(v) => setPhoneFormat(v as PhoneFormat)} />
-            ))}
-          </div>
-        </Section>
-        <Section icon={CalendarDays} title="بداية الأسبوع">
-          <div className="space-y-3">
-            {WEEK_START_OPTIONS.map(o => (
-              <button key={o.value} onClick={() => setWeekStartDay(o.value)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${
-                  weekStartDay === o.value ? "bg-amber-500/10 border-amber-500/60" : "bg-[#1A2235] border-[#2D3748] hover:border-amber-500/30"
-                }`}>
-                <span className="text-xl">{o.flag}</span>
-                <p className={`font-bold text-sm flex-1 ${weekStartDay === o.value ? "text-amber-400" : "text-white/80"}`}>{o.label}</p>
-                {weekStartDay === o.value && <Check className="w-4 h-4 text-amber-400" />}
-              </button>
-            ))}
-          </div>
-        </Section>
-      </div>
-
-      {/* ══ 7. ثيم الوضع الداكن ══════════════════════════════════════════ */}
+      {/* ══ 6. ثيم الوضع الداكن ══════════════════════════════════════════ */}
       <Section icon={Moon} title="ثيم الوضع الداكن">
         <div className="grid grid-cols-3 gap-3">
           {DARK_THEME_OPTIONS.map(o => {
@@ -557,26 +510,6 @@ export default function CurrencyTab() {
                 <p className={`font-bold text-xs ${active ? "text-amber-400" : "text-white/60"}`}>{o.label}</p>
                 <p className="text-white/25 text-[10px]">{o.px}</p>
                 {active && <Check className="w-3 h-3 text-amber-400" />}
-              </button>
-            );
-          })}
-        </div>
-      </Section>
-
-      {/* ══ 9. كثافة العرض ═══════════════════════════════════════════════ */}
-      <Section icon={LayoutList} title="كثافة العرض">
-        <div className="grid grid-cols-3 gap-3">
-          {DENSITY_OPTIONS.map(o => {
-            const active = displayDensity === o.value;
-            return (
-              <button key={o.value} onClick={() => setDisplayDensity(o.value)}
-                className={`flex flex-col items-center gap-2.5 p-4 rounded-xl border transition-all text-center ${
-                  active ? "bg-amber-500/10 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.15)]" : "bg-[#1A2235] border-[#2D3748] hover:border-amber-500/30"
-                }`}>
-                <span className="text-2xl">{o.icon}</span>
-                <p className={`font-bold text-sm ${active ? "text-amber-400" : "text-white/80"}`}>{o.label}</p>
-                <p className="text-white/30 text-xs">{o.desc}</p>
-                {active && <Check className="w-3.5 h-3.5 text-amber-400" />}
               </button>
             );
           })}

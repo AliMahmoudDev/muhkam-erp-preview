@@ -10,10 +10,7 @@ export type LightVariant = 'soft' | 'high-contrast';
 export type DateFormat = 'dd/mm/yyyy' | 'yyyy-mm-dd' | 'dd-mm-yyyy';
 export type DecimalPlaces = 0 | 2 | 3;
 export type ThousandsSeparator = 'comma' | 'period' | 'space' | 'arabic-comma';
-export type PhoneFormat = 'local' | 'international';
-export type WeekStartDay = 'saturday' | 'sunday' | 'monday';
 export type DarkThemeVariant = 'default' | 'deep-blue' | 'midnight-purple';
-export type DisplayDensity = 'compact' | 'comfortable' | 'spacious';
 
 export interface AppSettings {
   currency: CurrencyCode;
@@ -39,9 +36,6 @@ export interface AppSettings {
   decimalPlaces: DecimalPlaces;
   invoicePrefix: string;
   thousandsSeparator: ThousandsSeparator;
-  phoneFormat: PhoneFormat;
-  weekStartDay: WeekStartDay;
-  displayDensity: DisplayDensity;
 }
 
 export const FONT_SIZES: Record<FontSize, { label: string; base: string; cssVal: string }> = {
@@ -73,9 +67,6 @@ const DEFAULTS: AppSettings = {
   decimalPlaces: 2,
   invoicePrefix: 'INV-',
   thousandsSeparator: 'comma',
-  phoneFormat: 'local',
-  weekStartDay: 'saturday',
-  displayDensity: 'comfortable',
 };
 
 /* ─── تحويل Hex إلى HSL ─── */
@@ -118,12 +109,6 @@ const DARK_THEME_VARS: Record<DarkThemeVariant, Record<string, string>> = {
   },
 };
 
-/* ─── كثافة العرض ─── */
-const DENSITY_VARS: Record<DisplayDensity, Record<string, string>> = {
-  compact:     { '--erp-row-py': '4px',   '--erp-cell-px': '8px',  '--erp-gap': '12px' },
-  comfortable: { '--erp-row-py': '8px',   '--erp-cell-px': '12px', '--erp-gap': '16px' },
-  spacious:    { '--erp-row-py': '14px',  '--erp-cell-px': '16px', '--erp-gap': '24px' },
-};
 
 const STORAGE_KEY = 'halal_erp_settings';
 
@@ -230,9 +215,6 @@ function applySettings(s: AppSettings) {
     root.setAttribute('data-dark-variant', s.darkThemeVariant ?? 'default');
   }
 
-  const densityVars = DENSITY_VARS[s.displayDensity ?? 'comfortable'];
-  Object.entries(densityVars).forEach(([k, v]) => root.style.setProperty(k, v));
-  root.setAttribute('data-density', s.displayDensity ?? 'comfortable');
 }
 
 function loadSettings(): AppSettings {
