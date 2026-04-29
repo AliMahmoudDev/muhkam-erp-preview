@@ -132,8 +132,6 @@ export const PERMISSION_GROUPS: PermGroup[] = [
       { key: "can_approve_payroll",        label: "اعتماد الرواتب" },
       { key: "can_view_attendance",        label: "عرض الحضور والانصراف" },
       { key: "can_manage_attendance",      label: "إدارة الحضور والانصراف" },
-      { key: "can_view_leaves",            label: "عرض الإجازات" },
-      { key: "can_manage_leaves",          label: "إدارة الإجازات" },
     ],
   },
 
@@ -239,7 +237,6 @@ export const PERMISSION_TEMPLATES: Record<string, Record<string, boolean>> = {
     can_view_employees: true,      can_manage_employees: true,  can_view_employee_salary: true,
     can_view_payroll: true,        can_manage_payroll: false,   can_approve_payroll: false,
     can_view_attendance: true,     can_manage_attendance: true,
-    can_view_leaves: true,         can_manage_leaves: true,
     // الميزانية
     can_view_budgets: true,        can_manage_budgets: true,
     // الفروع (عرض فقط)
@@ -292,7 +289,6 @@ export const PERMISSION_TEMPLATES: Record<string, Record<string, boolean>> = {
     can_view_employees: false, can_manage_employees: false, can_view_employee_salary: false,
     can_view_payroll: false, can_manage_payroll: false, can_approve_payroll: false,
     can_view_attendance: false, can_manage_attendance: false,
-    can_view_leaves: false, can_manage_leaves: false,
     can_view_budgets: false, can_manage_budgets: false,
     can_view_branches: false, can_manage_branches: false,
     can_manage_users: false, can_manage_settings: false, can_view_audit_log: false,
@@ -342,7 +338,6 @@ export const PERMISSION_TEMPLATES: Record<string, Record<string, boolean>> = {
     can_view_employees: false, can_manage_employees: false, can_view_employee_salary: false,
     can_view_payroll: false,   can_manage_payroll: false, can_approve_payroll: false,
     can_view_attendance: false, can_manage_attendance: false,
-    can_view_leaves: false, can_manage_leaves: false,
     can_view_budgets: false,  can_manage_budgets: false,
     can_view_branches: false, can_manage_branches: false,
     can_manage_users: false,  can_manage_settings: false, can_view_audit_log: false,

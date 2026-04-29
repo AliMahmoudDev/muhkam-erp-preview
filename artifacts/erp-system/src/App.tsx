@@ -77,6 +77,7 @@ const BankReconciliation = lazy(() => import('@/pages/bank-reconciliation'));
 const Budgets = lazy(() => import('@/pages/budgets'));
 const CostCenters = lazy(() => import('@/pages/cost-centers'));
 const Transfers = lazy(() => import('@/pages/transfers'));
+const EmployeePortal = lazy(() => import('@/pages/employee-portal'));
 
 /* ── QueryClient with staleTime for performance ─────────── */
 const queryClient = new QueryClient({
@@ -158,6 +159,15 @@ function Router() {
     return (
       <Suspense fallback={<PageFallback />}>
         <SuperAdmin />
+      </Suspense>
+    );
+  }
+
+  /* ── Employee portal: personal dashboard only ─────────── */
+  if (user.role === 'employee') {
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <EmployeePortal />
       </Suspense>
     );
   }
