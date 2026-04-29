@@ -6,8 +6,6 @@ export type AccentColor = 'amber' | 'emerald' | 'violet' | 'sky' | 'rose' | 'ora
 export type FontSize = 'sm' | 'md' | 'lg' | 'xl';
 export type Theme = 'dark' | 'light';
 export type NumberFormat = 'western' | 'arabic-indic';
-export type LightVariant = 'soft' | 'high-contrast';
-export type DateFormat = 'dd/mm/yyyy' | 'yyyy-mm-dd' | 'dd-mm-yyyy';
 export type DecimalPlaces = 0 | 2 | 3;
 export type ThousandsSeparator = 'comma' | 'period' | 'space' | 'arabic-comma';
 export type DarkThemeVariant = 'default' | 'deep-blue' | 'midnight-purple';
@@ -29,12 +27,9 @@ export interface AppSettings {
   fontWeightNormal: number;
   iconSize: number;
   theme: Theme;
-  lightVariant: LightVariant;
   darkThemeVariant: DarkThemeVariant;
   /* ─── تنسيقات ─── */
-  dateFormat: DateFormat;
   decimalPlaces: DecimalPlaces;
-  invoicePrefix: string;
   thousandsSeparator: ThousandsSeparator;
 }
 
@@ -61,11 +56,8 @@ const DEFAULTS: AppSettings = {
   fontWeightNormal: 400,
   iconSize: 24,
   theme: 'dark',
-  lightVariant: 'soft',
   darkThemeVariant: 'default',
-  dateFormat: 'dd/mm/yyyy',
   decimalPlaces: 2,
-  invoicePrefix: 'INV-',
   thousandsSeparator: 'comma',
 };
 
@@ -204,12 +196,10 @@ function applySettings(s: AppSettings) {
     root.classList.add('light');
     root.classList.remove('dark');
     root.setAttribute('data-theme', 'light');
-    root.setAttribute('data-light-variant', s.lightVariant ?? 'soft');
   } else {
     root.classList.add('dark');
     root.classList.remove('light');
     root.setAttribute('data-theme', 'dark');
-    root.removeAttribute('data-light-variant');
     const themeVars = DARK_THEME_VARS[s.darkThemeVariant ?? 'default'];
     Object.entries(themeVars).forEach(([k, v]) => root.style.setProperty(k, v));
     root.setAttribute('data-dark-variant', s.darkThemeVariant ?? 'default');

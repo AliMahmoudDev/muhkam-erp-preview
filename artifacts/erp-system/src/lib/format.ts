@@ -2,7 +2,6 @@ const STORAGE_KEY = 'halal_erp_settings';
 
 type CurrencyCode = 'EGP' | 'USD' | 'CNY';
 type ThousandsSeparator = 'comma' | 'period' | 'space' | 'arabic-comma';
-type DateFormat = 'dd/mm/yyyy' | 'yyyy-mm-dd' | 'dd-mm-yyyy';
 
 const CURRENCY_MAP: Record<CurrencyCode, { locale: string; symbol: string }> = {
   EGP: { locale: 'ar-EG-u-nu-latn', symbol: 'ج.م' },
@@ -66,18 +65,6 @@ function getActiveThousandsSep(): ThousandsSeparator {
     }
   } catch {}
   return 'comma';
-}
-
-function getActiveDateFormat(): DateFormat {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const df = parsed.dateFormat;
-      if (['dd/mm/yyyy', 'yyyy-mm-dd', 'dd-mm-yyyy'].includes(df)) return df as DateFormat;
-    }
-  } catch {}
-  return 'dd/mm/yyyy';
 }
 
 /** Apply the stored number-format preference to an already-formatted string */
@@ -157,12 +144,9 @@ export function formatDate(dateStr: string | undefined | null): string {
   try {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return '-';
-    const df  = getActiveDateFormat();
-    const dd  = String(date.getDate()).padStart(2, '0');
-    const mm  = String(date.getMonth() + 1).padStart(2, '0');
+    const dd   = String(date.getDate()).padStart(2, '0');
+    const mm   = String(date.getMonth() + 1).padStart(2, '0');
     const yyyy = String(date.getFullYear());
-    if (df === 'yyyy-mm-dd')  return `${yyyy}-${mm}-${dd}`;
-    if (df === 'dd-mm-yyyy')  return `${dd}-${mm}-${yyyy}`;
     return `${dd}/${mm}/${yyyy}`;
   } catch {
     return '-';

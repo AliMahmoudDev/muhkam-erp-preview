@@ -4,13 +4,13 @@ import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import {
   Check, Save, CheckCircle2, DollarSign, AlignLeft, CaseSensitive,
-  Sun, Loader2, Calendar, Hash,
+  Loader2,
   Moon, Type,
 } from "lucide-react";
 import { PageHeader } from "./_shared";
 import type {
-  CurrencyCode, NumberFormat, FontFamily, LightVariant,
-  DateFormat, DecimalPlaces, ThousandsSeparator,
+  CurrencyCode, NumberFormat, FontFamily,
+  DecimalPlaces, ThousandsSeparator,
   DarkThemeVariant, FontSize,
 } from "@/contexts/app-settings";
 
@@ -27,12 +27,6 @@ const EXCHANGE_CURRENCIES = [
   { code: "CNY", flag: "🇨🇳", label: "يوان صيني",    symbol: "¥" },
 ] as const;
 
-
-const DATE_FORMAT_OPTIONS: { value: DateFormat; label: string; example: string }[] = [
-  { value: "dd/mm/yyyy",  label: "يوم/شهر/سنة",  example: "25/01/2025" },
-  { value: "yyyy-mm-dd",  label: "سنة-شهر-يوم",  example: "2025-01-25" },
-  { value: "dd-mm-yyyy",  label: "يوم-شهر-سنة",  example: "25-01-2025" },
-];
 
 
 const DARK_THEME_OPTIONS: { value: DarkThemeVariant; label: string; desc: string; bgFrom: string; bgTo: string }[] = [
@@ -83,28 +77,6 @@ function Section({
   );
 }
 
-function OptionPill<T extends string | number>({
-  value, active, label, sub, onClick,
-}: {
-  value: T; active: boolean; label: string; sub?: string; onClick: (v: T) => void;
-}) {
-  return (
-    <button
-      onClick={() => onClick(value)}
-      className={`flex items-center justify-between gap-3 p-3 rounded-xl border text-right transition-all text-sm ${
-        active
-          ? "bg-amber-500/10 border-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
-          : "bg-[#1A2235] border-[#2D3748] hover:border-amber-500/30"
-      }`}
-    >
-      <div>
-        <p className={`font-bold ${active ? "text-amber-400" : "text-white/80"}`}>{label}</p>
-        {sub && <p className="text-white/30 text-xs mt-0.5 font-mono">{sub}</p>}
-      </div>
-      {active && <Check className="w-4 h-4 text-amber-400 shrink-0" />}
-    </button>
-  );
-}
 
 /* ══════════════════════ Exchange Rates ═══════════════════════════════════ */
 
@@ -122,13 +94,10 @@ export default function CurrencyTab() {
   const [numFmt,            setNumFmt]            = useState<NumberFormat>(settings.numberFormat ?? "western");
   const [decimalPlaces,     setDecimalPlaces]     = useState<DecimalPlaces>(settings.decimalPlaces ?? 2);
   const [thousandsSep,      setThousandsSep]      = useState<ThousandsSeparator>(settings.thousandsSeparator ?? "comma");
-  const [dateFormat,        setDateFormat]        = useState<DateFormat>(settings.dateFormat ?? "dd/mm/yyyy");
-  const [invoicePrefix,     setInvoicePrefix]     = useState<string>(settings.invoicePrefix ?? "INV-");
   const [fontFamily,        setFontFamily]        = useState<FontFamily>(settings.fontFamily);
   const [fontWeight,        setFontWeight]        = useState<number>(settings.fontWeightNormal ?? 400);
   const [fontSize,          setFontSize]          = useState<FontSize>(settings.fontSize ?? "md");
   const [darkThemeVariant,  setDarkThemeVariant]  = useState<DarkThemeVariant>(settings.darkThemeVariant ?? "default");
-  const [lightVariant,      setLightVariant]      = useState<LightVariant>(settings.lightVariant ?? "soft");
   const [saved,             setSaved]             = useState(false);
 
   /* ── exchange rates state (merged here) ── */
@@ -199,21 +168,16 @@ export default function CurrencyTab() {
     else toast({ title: `تم حفظ ${ok} وفشل ${fail}`, variant: "destructive" });
   };
 
-  const isLightMode = settings.theme === "light";
-
   const handleSave = () => {
     update({
       currency,
       numberFormat: numFmt,
       decimalPlaces,
       thousandsSeparator: thousandsSep,
-      dateFormat,
-      invoicePrefix: invoicePrefix.trim() || "INV-",
       fontFamily,
       fontWeightNormal: fontWeight,
       fontSize,
       darkThemeVariant,
-      lightVariant,
     });
     setSaved(true);
     toast({ title: "تم حفظ الإعدادات ✓", description: "تم تطبيق إعدادات المتجر على كامل النظام" });
@@ -438,36 +402,7 @@ export default function CurrencyTab() {
         </div>
       </Section>
 
-      {/* ══ 4. تنسيق التاريخ ══════════════════════════════════════════════ */}
-      <Section icon={Calendar} title="تنسيق التاريخ">
-        <div className="grid grid-cols-3 gap-3">
-          {DATE_FORMAT_OPTIONS.map(o => (
-            <OptionPill key={o.value} value={o.value} active={dateFormat === o.value}
-              label={o.label} sub={o.example} onClick={(v) => setDateFormat(v as DateFormat)} />
-          ))}
-        </div>
-      </Section>
-
-      {/* ══ 5. بادئة الفاتورة ═════════════════════════════════════════════ */}
-      <Section icon={Hash} title="بادئة رقم الفاتورة">
-        <p className="text-white/40 text-xs mb-3">تُضاف في بداية رقم كل فاتورة مطبوعة — مثال: <span className="text-amber-400 font-mono">INV-001</span></p>
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            value={invoicePrefix}
-            onChange={e => setInvoicePrefix(e.target.value)}
-            maxLength={10}
-            placeholder="INV-"
-            className="flex-1 bg-[#1A2235] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50 font-mono text-left ltr"
-            dir="ltr"
-          />
-          <div className="bg-[#0D1424] border border-white/5 rounded-xl px-4 py-2.5 text-amber-400 font-mono text-sm min-w-[90px] text-center">
-            {(invoicePrefix || "INV-")}001
-          </div>
-        </div>
-      </Section>
-
-      {/* ══ 6. ثيم الوضع الداكن ══════════════════════════════════════════ */}
+      {/* ══ 4. ثيم الوضع الداكن ══════════════════════════════════════════ */}
       <Section icon={Moon} title="ثيم الوضع الداكن">
         <div className="grid grid-cols-3 gap-3">
           {DARK_THEME_OPTIONS.map(o => {
@@ -557,51 +492,6 @@ export default function CurrencyTab() {
             );
           })}
         </div>
-      </Section>
-
-      {/* ══ الوضع الفاتح ══════════════════════════════════════════════════ */}
-      <Section icon={Sun} title="مظهر الواجهة الفاتحة">
-        {!isLightMode ? (
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-[#1A2235] border border-white/5">
-            <Sun className="w-4 h-4 text-white/20 shrink-0" />
-            <p className="text-white/30 text-sm">فعّل الوضع الفاتح أولاً من زر تبديل الثيم في الشريط العلوي</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {([
-              { v: "soft" as LightVariant,          label: "ناعم — Soft",              desc: "خلفية كريمية هادئة، ظلال ناعمة",     bg: "#FAFAFA", previewBg: "#FFFFFF", borderCol: "#E5E7EB" },
-              { v: "high-contrast" as LightVariant,  label: "تباين عالٍ — High Contrast", desc: "خلفية بيضاء نقية، حدود داكنة", bg: "#FFFFFF", previewBg: "#FFFFFF", borderCol: "#9CA3AF" },
-            ] as const).map(opt => {
-              const active = lightVariant === opt.v;
-              return (
-                <button key={opt.v} onClick={() => setLightVariant(opt.v)}
-                  className={`relative flex flex-col gap-3 p-4 rounded-2xl border-2 text-right transition-all overflow-hidden ${
-                    active ? "border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.25)]" : "border-gray-200 hover:border-amber-300"
-                  }`} style={{ background: opt.bg }}>
-                  {active && (
-                    <span className="absolute top-3 left-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </span>
-                  )}
-                  <div className="w-full rounded-xl overflow-hidden border shadow-sm" style={{ background: opt.previewBg, borderColor: opt.borderCol }}>
-                    <div className="h-5 flex items-center gap-1.5 px-2" style={{ background: opt.v === "soft" ? "#F5F5F5" : "#E8EBF0", borderBottom: `1px solid ${opt.borderCol}` }}>
-                      <div className="w-8 h-1.5 rounded-full" style={{ background: opt.borderCol }} />
-                      <div className="w-12 h-1.5 rounded-full" style={{ background: opt.borderCol }} />
-                    </div>
-                    <div className="p-2 flex gap-1.5">
-                      <div className="flex-1 h-7 rounded-lg" style={{ background: opt.v === "soft" ? "#F5F5F5" : "#FFFFFF", border: `1px solid ${opt.borderCol}` }} />
-                      <div className="flex-1 h-7 rounded-lg" style={{ background: opt.v === "soft" ? "#F5F5F5" : "#FFFFFF", border: `1px solid ${opt.borderCol}` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-800 text-sm">{opt.label}</p>
-                    <p className="text-gray-400 text-xs mt-0.5">{opt.desc}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
       </Section>
 
       {/* ══ زر الحفظ ══════════════════════════════════════════════════════ */}
