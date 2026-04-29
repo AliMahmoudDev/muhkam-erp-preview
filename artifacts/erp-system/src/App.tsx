@@ -10,7 +10,8 @@ import { AuthProvider, useAuth } from '@/contexts/auth';
 import { SubscriptionProvider, useSubscription, type CompanyFeatures } from '@/contexts/subscription';
 import { AppSettingsProvider } from '@/contexts/app-settings';
 import { WarehouseProvider } from '@/contexts/warehouse';
-import { canAccess, type UserRole } from '@/lib/rbac';
+import { canAccess, ROUTE_PERMISSION, type UserRole } from '@/lib/rbac';
+import { hasPermission } from '@/lib/permissions';
 import { Spinner } from '@/components/ui/spinner';
 import NotFound from '@/pages/not-found';
 import AccessDenied from '@/pages/access-denied';
@@ -100,8 +101,17 @@ function PageFallback() {
 function Guard({ path, component: Component }: { path: string; component: React.ComponentType }) {
   const { user } = useAuth();
   const { hasFeature } = useSubscription();
-  const role = (user?.role ?? 'cashier') as UserRole;
-  if (!canAccess(role, path)) return <AccessDenied />;
+
+  /* Permission-based page access (can_access_*) has priority */
+  const permKey = ROUTE_PERMISSION[path];
+  if (permKey) {
+    if (!hasPermission(user, permKey)) return <AccessDenied />;
+  } else {
+    /* Fallback to legacy role check for routes not yet in ROUTE_PERMISSION */
+    const role = (user?.role ?? 'cashier') as UserRole;
+    if (!canAccess(role, path)) return <AccessDenied />;
+  }
+
   const requiredFeature = ROUTE_FEATURES[path];
   if (requiredFeature && !hasFeature(requiredFeature)) return <Redirect to="/" />;
   return (
@@ -154,8 +164,7 @@ function Router() {
 
   /* ── POS: full-screen standalone (no sidebar / layout) ── */
   if (location === '/pos') {
-    const posRole = (user?.role ?? 'cashier') as UserRole;
-    if (!canAccess(posRole, '/pos')) return <AccessDenied />;
+    if (!hasPermission(user, 'can_access_pos')) return <AccessDenied />;
     if (!hasFeature('pos')) return <Redirect to="/" />;
     return (
       <Suspense

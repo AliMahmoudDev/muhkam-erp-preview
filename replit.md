@@ -11,6 +11,15 @@ The following documentation files are maintained at the root of the repository:
 | `SECURITY.md` | JWT auth flow, token rotation, role/permission system, tenant isolation, super admin protections, audit logging, production checklist |
 | `CHANGELOG.md` | Version history and roadmap |
 
+## Permissions System (Updated)
+**Architecture:** 3-layer system — role defaults → user overrides → page guards
+- **Page-level:** `can_access_[page]` for all 32 routes (dashboard, sales, pos, purchases, products, inventory, customers, returns, devices, repairs, warranty, scrap_inventory, bad_debts, income, expenses, treasury, vouchers, reports, accounts, journal_entries, fixed_assets, accruals, bank_reconciliation, budgets, cost_centers, fiscal_years, audit_log, branches, employees, attendance, settings, transfers)
+- **Action-level:** ~72 action permissions across 9 groups (sales, inventory, customers, finance, reports, maintenance, hr, accounting, system)
+- **Key files:** `artifacts/erp-system/src/lib/permissions.ts` (frontend ROLE_DEFAULTS), `artifacts/api-server/src/lib/permissions.ts` (backend), `artifacts/erp-system/src/lib/rbac.ts` (ROUTE_PERMISSION map), `artifacts/erp-system/src/pages/settings/_constants.ts` (PERMISSION_GROUPS + PERMISSION_TEMPLATES)
+- **Guard:** `App.tsx` Guard checks `hasPermission(user, ROUTE_PERMISSION[path])` first; falls back to role-based check for unknown routes
+- **Nav:** `layout.tsx` visibleNav uses the same permission check via `ROUTE_PERMISSION` map
+- **UI:** 9 permission groups with page-access items visually differentiated (globe icon); 4 role presets (admin=all, manager, salesperson, cashier)
+
 Key backend files with inline comments:
 - `artifacts/api-server/src/middleware/auth.ts` — JWT verification, role guards, RLS context setup
 - `artifacts/api-server/src/middleware/tenant-guard.ts` — Subscription enforcement with caching

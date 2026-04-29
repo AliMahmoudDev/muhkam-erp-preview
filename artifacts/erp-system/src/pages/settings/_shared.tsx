@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, ChevronDown, ChevronRight } from "lucide-react";
+import { X, ChevronDown, ChevronRight, Globe } from "lucide-react";
 import { COLOR_MAP, type PermGroup } from "./_constants";
 
 /* ─── Field Label ─── */
@@ -228,7 +228,7 @@ export function PermissionGroupCard({
         </div>
       </div>
       {open && (
-        <div className="grid grid-cols-2 gap-px p-1">
+        <div className="p-1 space-y-px">
           {group.permissions.map(p => {
             const active = !!permissions[p.key];
             return (
@@ -239,14 +239,23 @@ export function PermissionGroupCard({
                 onClick={() => onChange(p.key, !active)}
                 onKeyDown={e => (e.key === "Enter" || e.key === " ") && onChange(p.key, !active)}
                 className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
-                style={{ background: active ? "rgba(255,255,255,0.04)" : "transparent" }}
+                style={{
+                  background: p.isPage
+                    ? (active ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.01)")
+                    : (active ? "rgba(255,255,255,0.04)" : "transparent"),
+                }}
               >
-                <span className="text-xs leading-snug" style={{
-                  color: active ? "var(--erp-text-1)" : "var(--erp-text-3)",
-                  fontWeight: active ? 600 : 400,
-                }}>
-                  {p.label}
-                </span>
+                <div className="flex items-center gap-2 min-w-0">
+                  {p.isPage && (
+                    <Globe className="w-3 h-3 shrink-0" style={{ color: active ? c.toggleOn : "rgba(255,255,255,0.2)" }} />
+                  )}
+                  <span className="text-xs leading-snug" style={{
+                    color: active ? "var(--erp-text-1)" : "var(--erp-text-3)",
+                    fontWeight: p.isPage ? (active ? 700 : 500) : (active ? 600 : 400),
+                  }}>
+                    {p.label}
+                  </span>
+                </div>
                 <PermToggle active={active} color={group.color} />
               </div>
             );

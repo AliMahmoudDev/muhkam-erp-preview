@@ -8,7 +8,7 @@ import { useWarehouse } from '@/contexts/warehouse';
 import { authFetch } from '@/lib/auth-fetch';
 import { safeArray } from '@/lib/safe-data';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { NAV_ITEMS, canAccess, type UserRole } from '@/lib/rbac';
+import { NAV_ITEMS, canAccess, ROUTE_PERMISSION, type UserRole } from '@/lib/rbac';
 import { hasPermission } from '@/lib/permissions';
 import { translateRole } from '@/lib/roles';
 import { LogOut, Warehouse, Search, X, ChevronDown } from 'lucide-react';
@@ -216,27 +216,23 @@ export function AppLayout({ children }: LayoutProps) {
   const WARRANTY_PATHS    = new Set(['/warranty']);
   const MAINTENANCE_PATHS = new Set(['/repairs', '/devices', '/scrap-inventory']);
   const visibleNav = NAV_ITEMS.filter((item) => {
-    if (!canAccess(role, item.href)) return false;
-    if (item.href === '/sales' && !hasPermission(user, 'can_view_sales')) return false;
-    if (item.href === '/inventory' && !hasPermission(user, 'can_view_inventory')) return false;
-    if (item.href === '/products' && !hasPermission(user, 'can_view_products')) return false;
-    if (item.href === '/customers' && !hasPermission(user, 'can_view_customers')) return false;
-    if (item.href === '/expenses' && !hasPermission(user, 'can_view_expenses')) return false;
-    if (item.href === '/reports' && !hasPermission(user, 'can_view_reports')) return false;
-    if (item.href === '/receipt-vouchers' && !hasPermission(user, 'can_add_receipt_voucher'))
-      return false;
-    if (item.href === '/payment-vouchers' && !hasPermission(user, 'can_add_payment_voucher'))
-      return false;
-    if (item.href === '/treasury' && !hasPermission(user, 'can_view_treasury')) return false;
-    if (item.href === '/purchases' && !hasPermission(user, 'can_view_purchases')) return false;
-    if (ACCOUNTING_CORE.has(item.href)   && !hasFeature('accounting'))        return false;
-    if (FIXED_ASSETS.has(item.href)      && !hasFeature('fixed_assets'))      return false;
+    /* 1. Permission-based page access (can_access_*) */
+    const permKey = ROUTE_PERMISSION[item.href];
+    if (permKey) {
+      if (!hasPermission(user, permKey)) return false;
+    } else {
+      /* Legacy role-based fallback for routes not in ROUTE_PERMISSION */
+      if (!canAccess(role, item.href)) return false;
+    }
+    /* 2. Feature-flag checks (subscription plan) */
+    if (ACCOUNTING_CORE.has(item.href)   && !hasFeature('accounting'))          return false;
+    if (FIXED_ASSETS.has(item.href)      && !hasFeature('fixed_assets'))        return false;
     if (BANK_RECON.has(item.href)        && !hasFeature('bank_reconciliation')) return false;
-    if (BUDGETS.has(item.href)           && !hasFeature('budgets'))            return false;
-    if (HR_PATHS.has(item.href)          && !hasFeature('hr'))                 return false;
-    if (POS_PATHS.has(item.href)         && !hasFeature('pos'))                return false;
-    if (WARRANTY_PATHS.has(item.href)    && !hasFeature('warranty'))           return false;
-    if (MAINTENANCE_PATHS.has(item.href) && !hasFeature('maintenance'))        return false;
+    if (BUDGETS.has(item.href)           && !hasFeature('budgets'))             return false;
+    if (HR_PATHS.has(item.href)          && !hasFeature('hr'))                  return false;
+    if (POS_PATHS.has(item.href)         && !hasFeature('pos'))                 return false;
+    if (WARRANTY_PATHS.has(item.href)    && !hasFeature('warranty'))            return false;
+    if (MAINTENANCE_PATHS.has(item.href) && !hasFeature('maintenance'))         return false;
     return true;
   });
 
