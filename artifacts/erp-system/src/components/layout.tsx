@@ -16,6 +16,9 @@ import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 import { NotificationBell } from '@/components/notification-bell';
 import { api } from '@/lib/api';
+import { useIdleTimeout } from '@/hooks/use-idle-timeout';
+import LogoutCheckoutModal from '@/components/logout-checkout-modal';
+import IdleCheckoutModal from '@/components/idle-checkout-modal';
 
 
 /* ── Nav sections ───────────────────────────────── */
@@ -184,6 +187,39 @@ export function AppLayout({ children }: LayoutProps) {
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  /* ── Logout + check-out interception ── */
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  /* ── Idle timeout modal ── */
+  const [showIdleModal, setShowIdleModal] = useState(false);
+
+  /* ── Today's attendance record (for employees with employee_id) ── */
+  const empId = user?.employee_id;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const { data: todayRecRaw } = useQuery<Record<string, unknown>[]>({
+    queryKey: ['layout-attendance-today', empId, todayStr],
+    queryFn: async () => {
+      if (!empId) return [];
+      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&date_from=${todayStr}&date_to=${todayStr}`);
+      return r.ok ? r.json() : [];
+    },
+    enabled: !!empId,
+    refetchInterval: 2 * 60_000,
+  });
+  const todayRec = Array.isArray(todayRecRaw) && todayRecRaw.length > 0
+    ? (todayRecRaw[0] as Record<string, unknown>)
+    : null;
+  const todayRecordId = todayRec?.id as number | undefined;
+  const alreadyCheckedIn  = !!todayRec?.check_in;
+  const alreadyCheckedOut = !!todayRec?.check_out;
+
+  /* ── Idle timeout: 1 hour ── */
+  useIdleTimeout({
+    timeoutMs: 60 * 60 * 1000,
+    onIdle: () => {
+      if (!showLogoutModal) setShowIdleModal(true);
+    },
+  });
 
   const { data: warehousesRaw } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['/api/settings/warehouses'],
@@ -614,7 +650,7 @@ export function AppLayout({ children }: LayoutProps) {
                 </div>
                 <div style={{ width: 1, height: 22, background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)', flexShrink: 0, margin: '0 2px' }} />
                 <button
-                  onClick={logout}
+                  onClick={() => setShowLogoutModal(true)}
                   title="تسجيل الخروج"
                   aria-label="تسجيل الخروج"
                   style={{ width: 26, height: 26, borderRadius: 7, border: 'none', background: 'transparent', color: textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
@@ -631,6 +667,29 @@ export function AppLayout({ children }: LayoutProps) {
           <PageTransition>{children}</PageTransition>
         </div>
       </main>
+
+      {/* ── Logout check-out modal ── */}
+      {showLogoutModal && (
+        <LogoutCheckoutModal
+          employeeId={empId}
+          todayRecordId={todayRecordId}
+          alreadyCheckedIn={alreadyCheckedIn}
+          alreadyCheckedOut={alreadyCheckedOut}
+          onLogout={() => { setShowLogoutModal(false); logout(); }}
+          onCancel={() => setShowLogoutModal(false)}
+        />
+      )}
+
+      {/* ── Idle timeout modal ── */}
+      {showIdleModal && (
+        <IdleCheckoutModal
+          employeeId={empId}
+          todayRecordId={todayRecordId}
+          alreadyCheckedOut={alreadyCheckedOut}
+          onStayLoggedIn={() => setShowIdleModal(false)}
+          onLogout={() => { setShowIdleModal(false); logout(); }}
+        />
+      )}
     </div>
   );
 }

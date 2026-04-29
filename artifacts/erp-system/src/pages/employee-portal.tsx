@@ -4,6 +4,9 @@ import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
 import { useAppSettings } from '@/contexts/app-settings';
 import { useToast } from '@/hooks/use-toast';
+import { useIdleTimeout } from '@/hooks/use-idle-timeout';
+import LogoutCheckoutModal from '@/components/logout-checkout-modal';
+import IdleCheckoutModal from '@/components/idle-checkout-modal';
 import {
   LogIn, LogOut, User, Clock, Calendar, Briefcase,
   Building2, Smartphone, Fingerprint, ChevronRight,
@@ -126,6 +129,15 @@ export default function EmployeePortal() {
     enabled: !!empId,
   });
 
+  /* ── Logout / Idle modals ── */
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showIdleModal,   setShowIdleModal]   = useState(false);
+
+  useIdleTimeout({
+    timeoutMs: 60 * 60 * 1000,
+    onIdle: () => { if (!showLogoutModal) setShowIdleModal(true); },
+  });
+
   /* ── check in / check out ── */
   const [checkingIn,  setCheckingIn]  = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -245,7 +257,7 @@ export default function EmployeePortal() {
 
         {/* Logout */}
         <button
-          onClick={logout}
+          onClick={() => setShowLogoutModal(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-80"
           style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.22)' }}
         >
@@ -616,6 +628,29 @@ export default function EmployeePortal() {
         </div>
 
       </div>
+
+      {/* ── Logout check-out modal ── */}
+      {showLogoutModal && (
+        <LogoutCheckoutModal
+          employeeId={empId}
+          todayRecordId={todayRec?.id as number | undefined}
+          alreadyCheckedIn={alreadyCheckedIn}
+          alreadyCheckedOut={alreadyCheckedOut}
+          onLogout={() => { setShowLogoutModal(false); logout(); }}
+          onCancel={() => setShowLogoutModal(false)}
+        />
+      )}
+
+      {/* ── Idle timeout modal ── */}
+      {showIdleModal && (
+        <IdleCheckoutModal
+          employeeId={empId}
+          todayRecordId={todayRec?.id as number | undefined}
+          alreadyCheckedOut={alreadyCheckedOut}
+          onStayLoggedIn={() => setShowIdleModal(false)}
+          onLogout={() => { setShowIdleModal(false); logout(); }}
+        />
+      )}
     </div>
   );
 }

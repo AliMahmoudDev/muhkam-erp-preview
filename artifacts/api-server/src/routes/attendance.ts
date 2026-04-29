@@ -196,7 +196,7 @@ router.post("/attendance/check-in", wrap(async (req, res) => {
 router.post("/attendance/check-out", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
-  const { employee_id, attendance_date, check_out_time } = req.body as Record<string, unknown>;
+  const { employee_id, attendance_date, check_out_time, notes, record_id } = req.body as Record<string, unknown>;
   const empId = employee_id
     ? Number(employee_id)
     : (req.user?.employee_id ?? null);
@@ -240,7 +240,14 @@ router.post("/attendance/check-out", wrap(async (req, res) => {
   }
 
   const [record] = await db.update(attendanceRecordsTable)
-    .set({ check_out_time: time, working_hours: workingHours != null ? String(workingHours) : null, overtime_hours: String(overtimeHours), submitted_by: userId, updated_at: new Date() })
+    .set({
+      check_out_time: time,
+      working_hours: workingHours != null ? String(workingHours) : null,
+      overtime_hours: String(overtimeHours),
+      submitted_by: userId,
+      updated_at: new Date(),
+      ...(notes !== undefined ? { notes: String(notes) } : {}),
+    })
     .where(eq(attendanceRecordsTable.id, existing.id))
     .returning();
 

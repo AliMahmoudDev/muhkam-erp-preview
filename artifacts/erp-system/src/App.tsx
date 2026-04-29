@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from 'wouter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -18,6 +18,7 @@ import AccessDenied from '@/pages/access-denied';
 import SubscriptionExpired from '@/pages/subscription-expired';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { OfflineBanner } from '@/components/offline-banner';
+import EmployeeGateway from '@/components/employee-gateway';
 
 /* ── Feature → route mapping ─────────────────────────────
    Defines which feature flag must be enabled for each route.
@@ -126,6 +127,16 @@ function Router() {
   const { user, subscriptionExpired } = useAuth();
   const { hasFeature } = useSubscription();
   const [location] = useLocation();
+  const [gatewayPassed, setGatewayPassed] = useState(() => {
+    const uid = (() => {
+      try {
+        const s = localStorage.getItem('erp_current_user');
+        if (!s) return 0;
+        return (JSON.parse(s) as { id?: number }).id ?? 0;
+      } catch { return 0; }
+    })();
+    return !!sessionStorage.getItem(`erp_gateway_${uid}`);
+  });
 
   /* ── PUBLIC: customer repair tracking via QR — no auth required ── */
   if (location.startsWith('/track/')) {
@@ -160,6 +171,18 @@ function Router() {
       <Suspense fallback={<PageFallback />}>
         <SuperAdmin />
       </Suspense>
+    );
+  }
+
+  /* ── Gateway: shown once per session for all non-super_admin ── */
+  if (!gatewayPassed) {
+    return (
+      <EmployeeGateway
+        onEnter={() => {
+          sessionStorage.setItem(`erp_gateway_${user.id}`, '1');
+          setGatewayPassed(true);
+        }}
+      />
     );
   }
 
