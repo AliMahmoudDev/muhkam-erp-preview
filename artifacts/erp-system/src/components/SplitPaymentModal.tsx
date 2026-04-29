@@ -1,13 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
-import { authFetch } from '@/lib/auth-fetch';
 import { X, CheckCircle2, Coins, Clock, Vault, CreditCard, ArrowLeftRight, CalendarRange } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
-import {
-  type PaymentMethodKey,
-  type PaymentMethodsSettings,
-  PAYMENT_METHODS_DEFAULTS,
-} from '@/pages/settings/payment-methods-tab';
-import { api } from '@/lib/api';
+
+/* ── أنواع طرق الدفع ── */
+export type PaymentMethodKey = 'cash' | 'card' | 'bank_transfer' | 'installment';
+
+export interface PaymentMethodConfig {
+  enabled: boolean;
+  label:   string;
+  note:    string;
+}
+
+export type PaymentMethodsSettings = Record<PaymentMethodKey, PaymentMethodConfig>;
+
+export const PAYMENT_METHODS_DEFAULTS: PaymentMethodsSettings = {
+  cash:          { enabled: true,  label: 'نقدي',          note: 'دفع نقدي مباشر'              },
+  card:          { enabled: false, label: 'شبكة / بطاقة',  note: 'بطاقة ائتمان أو مدى'         },
+  bank_transfer: { enabled: true,  label: 'تحويل بنكي',    note: 'تحويل عبر البنك أو المحفظة' },
+  installment:   { enabled: false, label: 'تقسيط',         note: 'دفع على أقساط متفق عليها'   },
+};
 
 /* ── شكل إدخال الدفع ── */
 export type SplitPaymentEntry = {
@@ -18,25 +29,6 @@ export type SplitPaymentEntry = {
 
 type ConfirmedRow = SplitPaymentEntry & { id: string };
 type Safe = { id: number; name: string };
-
-/* تحميل إعدادات طرق الدفع من السيرفر أو localStorage */
-async function fetchPaymentSettings(): Promise<PaymentMethodsSettings> {
-  try {
-    const r = await authFetch(api('/api/settings/system'));
-    if (!r.ok) return { ...PAYMENT_METHODS_DEFAULTS };
-    const data = await r.json() as Record<string, string>;
-    const raw  = data['payment_methods'];
-    if (!raw) return { ...PAYMENT_METHODS_DEFAULTS };
-    const parsed = JSON.parse(raw) as Partial<PaymentMethodsSettings>;
-    const merged: PaymentMethodsSettings = { ...PAYMENT_METHODS_DEFAULTS };
-    (Object.keys(PAYMENT_METHODS_DEFAULTS) as PaymentMethodKey[]).forEach(k => {
-      if (parsed[k]) merged[k] = { ...PAYMENT_METHODS_DEFAULTS[k], ...parsed[k] };
-    });
-    return merged;
-  } catch {
-    return { ...PAYMENT_METHODS_DEFAULTS };
-  }
-}
 
 const METHOD_ICONS: Record<string, React.FC<{ className?: string }>> = {
   cash:          Coins,
@@ -81,18 +73,10 @@ export function SplitPaymentModal({
 }: Props) {
   const firstSafeId = defaultSafeId ?? (safes.length > 0 ? safes[0].id : null);
 
-  const [pmSettings, setPmSettings] = useState<PaymentMethodsSettings>({ ...PAYMENT_METHODS_DEFAULTS });
-  const [loadingPM,  setLoadingPM]  = useState(true);
-
-  /* تحميل الإعدادات */
-  useEffect(() => {
-    fetchPaymentSettings().then(s => { setPmSettings(s); setLoadingPM(false); });
-  }, []);
-
   /* بناء قائمة الأزرار المتاحة */
-  const availableTypes = (Object.keys(pmSettings) as PaymentMethodKey[])
-    .filter(k => pmSettings[k].enabled && (k !== 'cash' || canCash))
-    .map(k => ({ key: k as PaymentMethodKey | 'credit', label: pmSettings[k].label }));
+  const availableTypes = (Object.keys(PAYMENT_METHODS_DEFAULTS) as PaymentMethodKey[])
+    .filter(k => PAYMENT_METHODS_DEFAULTS[k].enabled && (k !== 'cash' || canCash))
+    .map(k => ({ key: k as PaymentMethodKey | 'credit', label: PAYMENT_METHODS_DEFAULTS[k].label }));
 
   if (canCredit) {
     availableTypes.push({ key: 'credit', label: 'آجل' });
@@ -107,11 +91,6 @@ export function SplitPaymentModal({
   const [shake,        setShake]        = useState(false);
   const [rowKey,       setRowKey]       = useState(0);
   const amountRef = useRef<HTMLInputElement>(null);
-
-  /* تحديث النوع الافتراضي بعد تحميل الإعدادات */
-  useEffect(() => {
-    if (!loadingPM) setActiveType(availableTypes[0]?.key ?? 'cash');
-  }, [loadingPM, availableTypes]);
 
   useEffect(() => { setTimeout(() => amountRef.current?.focus(), 60); }, [rowKey]);
   useEffect(() => {
@@ -231,7 +210,7 @@ export function SplitPaymentModal({
               const Icon = METHOD_ICONS[row.type]  ?? Coins;
               const lbl  = row.type === 'credit'
                 ? 'ائتمان العميل'
-                : pmSettings[row.type as PaymentMethodKey]?.label ?? row.type;
+                : PAYMENT_METHODS_DEFAULTS[row.type as PaymentMethodKey]?.label ?? row.type;
               const loc  = row.safe_id ? (safes.find(s => s.id === row.safe_id)?.name ?? '—') : null;
               return (
                 <div
@@ -260,7 +239,7 @@ export function SplitPaymentModal({
         )}
 
         {/* Active entry row */}
-        {!isDone && !loadingPM && (
+        {!isDone && (
           <div className="px-4 pb-4">
             <div
               className={`rounded-2xl p-3 transition-all ${shake ? 'erp-shake' : ''}`}
@@ -394,7 +373,7 @@ export function SplitPaymentModal({
             ...Object.entries(totals).map(([type, val]) => ({
               label: type === 'credit'
                 ? 'آجل'
-                : pmSettings[type as PaymentMethodKey]?.label ?? type,
+                : PAYMENT_METHODS_DEFAULTS[type as PaymentMethodKey]?.label ?? type,
               val,
               color: (METHOD_COLORS[type] ?? METHOD_COLORS.cash).text,
             })),

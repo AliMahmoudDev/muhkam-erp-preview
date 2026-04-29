@@ -8,7 +8,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Phone, MapPin, FileText, Globe, Loader2, Save, CheckCircle2,
-  Percent, Mail, Printer, ImagePlus, Trash2,
+  Mail, Printer, ImagePlus, Trash2,
 } from "lucide-react";
 import { PageHeader, FieldLabel, SInput } from "./_shared";
 
@@ -20,7 +20,6 @@ interface CompanySettings {
   company_address: string;
   company_tax_id:  string;
   company_website: string;
-  company_vat_rate: string;
   invoice_header:  string;
   invoice_footer:  string;
   company_notes:   string;
@@ -34,7 +33,6 @@ const EMPTY: CompanySettings = {
   company_address: "",
   company_tax_id:  "",
   company_website: "",
-  company_vat_rate: "14",
   invoice_header:  "",
   invoice_footer:  "",
   company_notes:   "",
@@ -47,7 +45,6 @@ const FIELDS: { key: keyof CompanySettings; label: string; placeholder: string; 
   { key: "company_phone",   label: "رقم الهاتف",           placeholder: "مثال: 201000000000+",             icon: Phone },
   { key: "company_address", label: "العنوان",              placeholder: "مثال: القاهرة، مدينة نصر",         icon: MapPin },
   { key: "company_tax_id",  label: "الرقم الضريبي",        placeholder: "مثال: 123456789",                 icon: FileText },
-  { key: "company_vat_rate", label: "نسبة ضريبة القيمة المضافة %", placeholder: "14",                     icon: Percent, type: "number" },
   { key: "company_website", label: "الموقع الإلكتروني",    placeholder: "مثال: https://example.com",       icon: Globe },
 ];
 

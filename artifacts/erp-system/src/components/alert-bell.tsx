@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'wouter';
 import { Bell, RefreshCw, CheckCircle } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAppSettings } from '@/contexts/app-settings';
@@ -44,6 +45,13 @@ const TYPE_ICONS: Record<string, string> = {
   health: '🩺',
 };
 
+const TYPE_LINKS: Record<string, string> = {
+  low_stock:        '/inventory',
+  customer_debt:    '/customers',
+  supplier_payable: '/purchases',
+  cash_low:         '/finance',
+};
+
 function todayStr() {
   return new Date().toISOString().split('T')[0];
 }
@@ -56,6 +64,16 @@ export function AlertBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { settings } = useAppSettings();
   const isDark = (settings.theme ?? 'dark') === 'dark';
+  const [, navigate] = useLocation();
+
+  function handleAlertClick(alert: Alert) {
+    if (!alert.is_read) markRead(alert.id);
+    const link = TYPE_LINKS[alert.type];
+    if (link) {
+      setOpen(false);
+      navigate(link);
+    }
+  }
 
   /* ── derived counts ─────────────────────────────────────── */
   const active = allAlerts.filter((a) => !a.is_resolved);
@@ -383,6 +401,7 @@ export function AlertBell() {
               displayed.map((alert) => (
                 <div
                   key={alert.id}
+                  onClick={() => handleAlertClick(alert)}
                   style={{
                     padding: '10px 14px',
                     borderBottom: `1px solid ${border}`,
@@ -398,6 +417,7 @@ export function AlertBell() {
                     display: 'flex',
                     gap: 10,
                     alignItems: 'flex-start',
+                    cursor: TYPE_LINKS[alert.type] ? 'pointer' : 'default',
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLDivElement).style.background = rowHover;
@@ -509,7 +529,7 @@ export function AlertBell() {
                       <div style={{ marginTop: 6, display: 'flex', gap: 5 }}>
                         {!alert.is_read && (
                           <button
-                            onClick={() => markRead(alert.id)}
+                            onClick={(e) => { e.stopPropagation(); markRead(alert.id); }}
                             style={{
                               fontSize: 10,
                               padding: '2px 8px',
@@ -524,7 +544,7 @@ export function AlertBell() {
                           </button>
                         )}
                         <button
-                          onClick={() => resolveAlert(alert.id)}
+                          onClick={(e) => { e.stopPropagation(); resolveAlert(alert.id); }}
                           style={{
                             fontSize: 10,
                             padding: '2px 8px',
