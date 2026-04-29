@@ -307,6 +307,8 @@ export default function Employees() {
   });
   const [showPayModal, setShowPayModal] = useState<number | null>(null);
   const [payAmount, setPayAmount] = useState('');
+  const [approveModal, setApproveModal] = useState<{ id: number; requestedAmount: number; currency: string } | null>(null);
+  const [approveForm, setApproveForm] = useState({ approved_amount: '', safe_id: '', notes: '' });
 
   /* ── Deductions state ──────────────────────────────────────── */
   const [showDeductForm, setShowDeductForm] = useState(false);
@@ -704,10 +706,11 @@ export default function Employees() {
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
   const approveLoan = useMutation({
-    mutationFn: (id: number) =>
+    mutationFn: ({ id, approved_amount, safe_id, notes }: { id: number; approved_amount?: number; safe_id?: number | null; notes?: string }) =>
       authFetch(api(`/api/salary-advances/${id}/approve`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved_amount, safe_id: safe_id || undefined, notes }),
       }).then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
@@ -715,7 +718,10 @@ export default function Employees() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id] });
-      toast({ title: 'تم اعتماد السلفة' });
+      qc.invalidateQueries({ queryKey: ['/api/settings/safes'] });
+      setApproveModal(null);
+      setApproveForm({ approved_amount: '', safe_id: '', notes: '' });
+      toast({ title: 'تم اعتماد السلفة ✓' });
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
@@ -1221,7 +1227,10 @@ export default function Employees() {
                           <div className="flex gap-1 mt-2">
                             {l.status === 'pending' && (
                               <button
-                                onClick={() => approveLoan.mutate(l.id as number)}
+                                onClick={() => {
+                                  setApproveModal({ id: l.id as number, requestedAmount: Number(l.requested_amount), currency: String(l.currency ?? 'EGP') });
+                                  setApproveForm({ approved_amount: String(l.requested_amount), safe_id: l.safe_id ? String(l.safe_id) : '', notes: '' });
+                                }}
                                 className="erp-btn erp-btn-ghost text-xs text-emerald-400 border border-emerald-500/30 p-1"
                               >
                                 اعتماد
@@ -3185,6 +3194,87 @@ export default function Employees() {
           </div>
         );
       })()}
+
+      {/* ══════════════════════════════════════════════════════════
+          APPROVE LOAN MODAL
+      ══════════════════════════════════════════════════════════ */}
+      {approveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+            <div className="flex items-center justify-between p-5 border-b border-white/10">
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <CheckCircle size={16} className="text-emerald-400" />
+                اعتماد السلفة
+              </h2>
+              <button onClick={() => setApproveModal(null)} className="text-white/40 hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-3">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-sm text-emerald-300">
+                المبلغ المطلوب: <span className="font-bold font-mono">{approveModal.requestedAmount.toLocaleString('ar-EG-u-nu-latn')} {approveModal.currency}</span>
+              </div>
+              <Field label="المبلغ المعتمد *">
+                <input
+                  type="number"
+                  min={0.01}
+                  step={0.01}
+                  value={approveForm.approved_amount}
+                  onChange={(e) => setApproveForm((p) => ({ ...p, approved_amount: e.target.value }))}
+                  className="erp-input w-full"
+                />
+              </Field>
+              <Field label="الخزينة (اختياري)">
+                <select
+                  value={approveForm.safe_id}
+                  onChange={(e) => setApproveForm((p) => ({ ...p, safe_id: e.target.value }))}
+                  className="erp-input w-full"
+                >
+                  <option value="">— بدون خزينة —</option>
+                  {safesForEmployee(selected).map((s) => (
+                    <option key={String(s.id)} value={String(s.id)}>
+                      {String(s.name)}{s.balance != null ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})` : ''}
+                    </option>
+                  ))}
+                  {/* Show all safes if no branch specific ones found */}
+                  {safesForEmployee(selected).length === 0 && safeArray(safes).map((s: AnyRec) => (
+                    <option key={String(s.id)} value={String(s.id)}>
+                      {String(s.name)}{s.balance != null ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-amber-300/70 mt-1">إذا اخترت خزينة سيُخصم المبلغ منها فور الاعتماد</p>
+              </Field>
+              <Field label="ملاحظات الاعتماد (اختياري)">
+                <input
+                  value={approveForm.notes}
+                  onChange={(e) => setApproveForm((p) => ({ ...p, notes: e.target.value }))}
+                  className="erp-input w-full"
+                  placeholder="سبب الاعتماد أو ملاحظة..."
+                />
+              </Field>
+            </div>
+            <div className="flex gap-2 p-5 border-t border-white/10">
+              <button
+                onClick={() => approveLoan.mutate({
+                  id: approveModal.id,
+                  approved_amount: Number(approveForm.approved_amount) || approveModal.requestedAmount,
+                  safe_id: approveForm.safe_id ? Number(approveForm.safe_id) : null,
+                  notes: approveForm.notes || undefined,
+                })}
+                disabled={approveLoan.isPending}
+                className="erp-btn erp-btn-primary flex-1 flex items-center justify-center gap-1"
+              >
+                <CheckCircle size={14} />
+                {approveLoan.isPending ? 'جاري الاعتماد...' : 'اعتماد السلفة'}
+              </button>
+              <button onClick={() => setApproveModal(null)} className="erp-btn erp-btn-ghost">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

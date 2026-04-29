@@ -8,7 +8,7 @@ import {
   db,
   salaryAdvancesTable, salaryAdvanceDeductionsTable,
   salaryAdvanceSettingsTable, salaryAdvanceHistoryTable, salaryAdvanceLedgerTable,
-  employeesTable,
+  employeesTable, safesTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
@@ -242,38 +242,76 @@ router.post("/salary-advances/:id/approve", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
-  const { approved_amount } = req.body as { approved_amount?: number };
+  const body = req.body as { approved_amount?: number; safe_id?: number | string; notes?: string };
 
   const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
   if (advance.status !== "pending") { res.status(409).json({ error: "السلفة غير معلّقة" }); return; }
 
-  const amount = approved_amount ?? Number(advance.requested_amount);
-  const [row] = await db.update(salaryAdvancesTable)
-    .set({ status: "active", approved_amount: String(amount), remaining_balance: String(amount), approver_id: userId, approved_at: new Date(), updated_at: new Date() })
-    .where(eq(salaryAdvancesTable.id, id)).returning();
+  const amount = body.approved_amount ?? Number(advance.requested_amount);
+  if (amount <= 0) { res.status(400).json({ error: "مبلغ الاعتماد يجب أن يكون موجباً" }); return; }
 
-  await logHistory(id, "pending", "active", userId, "اعتماد السلفة");
+  // Safe_id: use body override or fall back to what was stored on the advance
+  const rawSafeId = body.safe_id != null && body.safe_id !== "" ? Number(body.safe_id) : advance.safe_id;
 
-  // Ledger entry
-  await db.insert(salaryAdvanceLedgerTable).values({
-    employee_id: advance.employee_id, advance_id: id,
-    ledger_type: "advance_granted", amount: String(amount), balance: String(amount),
-    ledger_date: new Date().toISOString().split("T")[0],
+  const result = await db.transaction(async (tx) => {
+    // Debit safe balance if a safe is specified
+    let safeDebited: number | null = null;
+    if (rawSafeId) {
+      const [safe] = await tx.select().from(safesTable)
+        .where(and(eq(safesTable.id, rawSafeId), eq(safesTable.company_id, companyId)));
+      if (!safe) return { error: { status: 400, message: "الخزينة المحددة غير موجودة" } };
+      const debited = await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} - ${String(amount)}` })
+        .where(and(
+          eq(safesTable.id, safe.id),
+          eq(safesTable.company_id, companyId),
+          sql`${safesTable.balance} >= ${String(amount)}`,
+        ))
+        .returning();
+      if (!debited[0]) return { error: { status: 400, message: `رصيد الخزينة غير كافٍ (${Number(safe.balance).toFixed(2)} ${safe.currency ?? ""})` } };
+      safeDebited = safe.id;
+    }
+
+    const [row] = await tx.update(salaryAdvancesTable)
+      .set({
+        status: "active",
+        approved_amount: String(amount),
+        remaining_balance: String(amount),
+        approver_id: userId,
+        approved_at: new Date(),
+        updated_at: new Date(),
+        safe_id: safeDebited ?? advance.safe_id,
+      })
+      .where(eq(salaryAdvancesTable.id, id)).returning();
+
+    await tx.insert(salaryAdvanceLedgerTable).values({
+      employee_id: advance.employee_id, advance_id: id,
+      ledger_type: "advance_granted", amount: String(amount), balance: String(amount),
+      ledger_date: new Date().toISOString().split("T")[0],
+      notes: body.notes ?? null,
+    });
+
+    return { ok: true, row };
   });
 
-  await writeAuditLog({ action: "update", record_type: "salary_advance", record_id: id, new_value: { status: "active", amount }, user: { id: userId ?? undefined, username: req.user?.username } });
+  if ("error" in result && result.error) {
+    res.status(result.error.status).json({ error: result.error.message });
+    return;
+  }
 
-  // Notify the employee that their advance was approved.
+  await logHistory(id, "pending", "active", userId, body.notes ? `اعتماد السلفة — ${body.notes}` : "اعتماد السلفة");
+  await writeAuditLog({ action: "update", record_type: "salary_advance", record_id: id, new_value: { status: "active", amount, safe_id: rawSafeId }, user: { id: userId ?? undefined, username: req.user?.username } });
+
   await notifyEmployee(companyId, advance.employee_id, {
     type: "advance_approved",
     title: "تم اعتماد طلب السلفة",
     message: `تم اعتماد سلفتك بمبلغ ${Number(amount).toFixed(2)} ${advance.currency ?? "EGP"}`,
-    link: "/employees",
+    link: "/my-portal",
     reference_id: id,
   });
 
-  res.json({ ok: true, approved_amount: amount, remaining_balance: n(row.remaining_balance) });
+  res.json({ ok: true, approved_amount: amount, remaining_balance: n(result.row!.remaining_balance) });
 }));
 
 /* ── Reject ───────────────────────────────────────────────────── */
