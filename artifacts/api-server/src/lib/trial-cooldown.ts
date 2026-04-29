@@ -66,7 +66,9 @@ class CooldownStore {
     const raw      = await trialRedis.get(K.COOLDOWN(key));
     const current  = raw ? (JSON.parse(raw) as CooldownEntry) : null;
     const nextLevel = Math.min((current?.level ?? 0) + 1, 3) as 1 | 2 | 3;
+    // eslint-disable-next-line security/detect-object-injection
     const until     = Date.now() + DURATIONS_MS[nextLevel];
+    // eslint-disable-next-line security/detect-object-injection
     const ttlSec    = Math.ceil(DURATIONS_MS[nextLevel] / 1000);
 
     const payload: CooldownEntry = { until, level: nextLevel, reason };

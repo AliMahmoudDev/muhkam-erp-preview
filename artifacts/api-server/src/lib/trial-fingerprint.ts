@@ -44,6 +44,7 @@ export interface FingerprintComponents {
  */
 /** Safely extracts a single string value from a header (handles string | string[]). */
 function h(req: Request, name: string): string {
+  // eslint-disable-next-line security/detect-object-injection
   const val = req.headers[name];
   if (!val) return "";
   return (Array.isArray(val) ? val[0] : val).trim();

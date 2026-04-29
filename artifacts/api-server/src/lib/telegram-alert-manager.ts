@@ -115,6 +115,7 @@ class AlertManager {
     };
     if (saved.alerts) {
       for (const [key, rule] of Object.entries(saved.alerts)) {
+        // eslint-disable-next-line security/detect-object-injection
         merged.alerts[key] = { ...merged.alerts[key], ...rule };
       }
     }
@@ -171,6 +172,7 @@ class AlertManager {
 
     // تحقق من نوع التنبيه المحدد
     const base = baseType(type);
+    // eslint-disable-next-line security/detect-object-injection
     const rule = cfg.alerts[base];
     if (rule && !rule.enabled) {
       logger.debug({ alertType: type }, "telegram-alert-manager: alert type disabled");

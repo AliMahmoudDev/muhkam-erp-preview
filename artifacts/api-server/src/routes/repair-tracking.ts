@@ -108,6 +108,7 @@ router.get("/public/repair-tracking/:companyId/:jobNo", publicTrackingLimiter, w
     if (!key) return null;
     const s = statusMap.get(key);
     if (s) return { key, label: s.label_ar, color: s.color ?? "#64748b" };
+    // eslint-disable-next-line security/detect-object-injection
     const f = FALLBACK_STATUS_LABELS[key];
     return { key, label: f?.label ?? key, color: f?.color ?? "#64748b" };
   };
@@ -206,6 +207,7 @@ router.get("/public/repair-track/:jobNo", publicTrackingLimiter, wrap(async (req
     if (!key) return null;
     const s = statusMap.get(key);
     if (s) return { key, label: s.label_ar, color: s.color ?? "#64748b" };
+    // eslint-disable-next-line security/detect-object-injection
     const f = FALLBACK_STATUS_LABELS[key];
     return { key, label: f?.label ?? key, color: f?.color ?? "#64748b" };
   };

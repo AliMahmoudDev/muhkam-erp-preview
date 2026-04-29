@@ -183,7 +183,8 @@ router.post("/leave-requests", wrap(async (req, res) => {
   const isSelf    = isSelfServiceUser(req);
   const selfId    = selfEmployeeId(req);
   if (isSelf && (!selfId || selfId === -1)) { res.status(403).json({ error: "حساب الموظف غير مرتبط بسجل موظف" }); return; }
-  let { employee_id, leave_type_id, start_date, end_date, reason } = req.body as Record<string, unknown>;
+  let { employee_id } = req.body as Record<string, unknown>;
+  const { leave_type_id, start_date, end_date, reason } = req.body as Record<string, unknown>;
   // Self-service: always restrict to own employee_id
   if (isSelf) employee_id = selfId;
   if (!employee_id || !leave_type_id || !start_date || !end_date) { res.status(400).json({ error: "جميع بيانات الإجازة مطلوبة" }); return; }

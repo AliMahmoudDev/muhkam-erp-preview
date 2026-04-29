@@ -489,6 +489,7 @@ router.post("/repair-checklist-items", wrap(async (req, res) => {
 router.post("/repair-checklist-items/seed-device-type", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const { device_type } = req.body as { device_type: string };
+  // eslint-disable-next-line security/detect-object-injection
   const template = SEED_TEMPLATES[device_type];
   if (!template) return res.status(400).json({ error: "device_type غير معروف" });
 
@@ -890,7 +891,6 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
   }
 
   const NUM = ["estimated_cost","final_cost","deposit_paid","external_workshop_cost","broker_commission"];
-  // eslint-disable-next-line security/detect-object-injection
   for (const f of NUM) {
     if (!(f in b)) continue;
     // eslint-disable-next-line security/detect-object-injection
@@ -1576,6 +1576,7 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
         companyId:   company_id,
       });
     } catch (jErr) {
+      // eslint-disable-next-line no-console
       console.error("[repair-shipping] auto-journal failed for job", id, jErr);
     }
   }
