@@ -35,12 +35,20 @@ Key backend files with inline comments:
 - **Production domain:** halaltec.com (Hetzner VPS 89.167.85.156) — served at root `/`
 
 ## Replit Environment
-- **Backend:** Express API server running on port 8080 via `Backend API` workflow
-- **Frontend:** `erp-system` React/Vite running on port 5000 — single unified frontend at `BASE_PATH=/`
+- **Backend:** Express API server running on port 8080 via `artifacts/api-server: API Server` workflow
+- **Frontend:** `erp-system` React/Vite running on port 5000 via `artifacts/erp-system: web` artifact workflow
 - **Mobile (Expo):** Running via `ERP Mobile Dev` workflow — see note below
 - **Database:** PostgreSQL provisioned via Replit (heliumdb), schema pushed via Drizzle ORM
 - **Packages:** Managed via pnpm workspaces
 - **Default super admin:** username: `superadmin`, PIN from `SUPER_ADMIN_PIN` env var
+
+### Port 5000 — Critical Notes
+- Replit's `artifacts/erp-system: web` artifact workflow automatically provides `PORT=5000` to the process
+- Replit releases port 5000 exclusively for this webview artifact workflow
+- Vite binds port 5000 directly and successfully — NO proxy/wrapper scripts needed
+- `dev` script in `artifacts/erp-system/package.json`: `vite --config vite.config.ts --host 0.0.0.0`
+- `vite.config.ts` reads `process.env.PORT` (defaults to 5173 when not set; Replit provides 5000)
+- **DO NOT** add intermediate scripts (like `dev-start.cjs`) between pnpm dev and Vite — they add latency that causes port race conditions
 
 ### ERP Mobile Dev Workflow — Port Proxy Architecture
 Replit's `restart_workflow` health check only works for specific supported ports (3000, 3001, 3002, 3003, 4200, 5000, 5173, 6000, 6800, 8000, 8008, 8080, 8099, 9000). Expo uses port 20384 which is NOT in this list, causing the artifact workflow (`artifacts/erp-mobile: expo`) to always fail on restart.

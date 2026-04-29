@@ -28,10 +28,6 @@ author = "agent"
 task = "workflow.run"
 args = "ERP Mobile Dev"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Muhkam ERP Frontend"
-
 [[workflows.workflow]]
 name = "ERP Mobile Dev"
 author = "agent"
@@ -43,18 +39,6 @@ waitForPort = 8099
 
 [workflows.workflow.metadata]
 outputType = "console"
-
-[[workflows.workflow]]
-name = "Muhkam ERP Frontend"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "node artifacts/erp-system/scripts/dev-start.cjs"
-waitForPort = 5000
 
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
