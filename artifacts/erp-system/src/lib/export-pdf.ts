@@ -30,11 +30,8 @@ function getCurrencySymbol(): string {
       const p = JSON.parse(raw);
       const map: Record<string, string> = {
         EGP: 'ج.م',
-        SAR: 'ر.س',
-        AED: 'د.إ',
         USD: '$',
-        KWD: 'د.ك',
-        BHD: 'د.ب',
+        CNY: '¥',
       };
       return map[p.currency] ?? 'ج.م';
     }

@@ -278,7 +278,7 @@ export default function BankReconciliationPage() {
                 <Select value={bankForm.currency} onValueChange={v => setBankForm(f => ({ ...f, currency: v }))}>
                   <SelectTrigger className="bg-white/5 border-white/10"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {['EGP', 'USD', 'EUR', 'SAR'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {['EGP', 'USD', 'CNY'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

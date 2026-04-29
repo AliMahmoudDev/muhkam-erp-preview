@@ -14,14 +14,14 @@ import { hasPermission } from "@/lib/permissions";
 import { api } from '@/lib/api';
 
 
-type PurchaseCurrency = "EGP" | "USD" | "CNY" | "EUR" | "SAR" | "AED";
+type PurchaseCurrency = "EGP" | "USD" | "CNY";
 
 const CURRENCY_SYMBOLS: Record<PurchaseCurrency, string> = {
-  EGP: "ج.م", USD: "$", CNY: "¥", EUR: "€", SAR: "ر.س", AED: "د.إ",
+  EGP: "ج.م", USD: "$", CNY: "¥",
 };
 
 const CURRENCY_LABELS: Record<PurchaseCurrency, string> = {
-  EGP: "جنيه مصري", USD: "دولار أمريكي", CNY: "يوان صيني", EUR: "يورو", SAR: "ريال سعودي", AED: "درهم إماراتي",
+  EGP: "جنيه مصري", USD: "دولار أمريكي", CNY: "يوان صيني",
 };
 
 /* ─── Minimal shape types for settings lists ─── */

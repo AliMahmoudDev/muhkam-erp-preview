@@ -29,7 +29,7 @@ router.get("/exchange-rates/latest", wrap(async (req, res) => {
   const companyId = getTenant(req);
   const { currency } = req.query as { currency?: string };
 
-  const currencies = currency ? [currency] : ["USD", "CNY", "EUR", "SAR", "AED"];
+  const currencies = currency ? [currency] : ["USD", "CNY"];
   const result: Record<string, number> = {};
 
   for (const cur of currencies) {
@@ -49,7 +49,7 @@ router.get("/exchange-rates/latest", wrap(async (req, res) => {
 }));
 
 const UpsertExchangeRateBody = z.object({
-  currency: z.enum(["USD", "CNY", "EUR", "SAR", "AED"]),
+  currency: z.enum(["USD", "CNY"]),
   rate: z.number().positive(),
   date: z.string().optional(),
   notes: z.string().optional(),

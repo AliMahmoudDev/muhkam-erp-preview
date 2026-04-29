@@ -29,8 +29,8 @@ describe("formatCurrencyPreview", () => {
     expect(result).toContain("1,000");
   });
 
-  it("formats SAR and contains the amount", () => {
-    const result = formatCurrencyPreview(500.25, "SAR", "western");
+  it("formats CNY and contains the amount", () => {
+    const result = formatCurrencyPreview(500.25, "CNY", "western");
     expect(result).toMatch(/500/);
   });
 

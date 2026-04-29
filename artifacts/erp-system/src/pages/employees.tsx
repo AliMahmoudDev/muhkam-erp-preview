@@ -2332,7 +2332,7 @@ export default function Employees() {
                         className="erp-input"
                         style={{ width: '90px', flexShrink: 0 }}
                       >
-                        {['EGP', 'SAR', 'AED', 'USD'].map((c) => (
+                        {['EGP', 'USD', 'CNY'].map((c) => (
                           <option key={c} value={c}>
                             {c}
                           </option>
