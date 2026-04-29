@@ -4,8 +4,11 @@
 -- كل جملة مؤمَّنة بـ IF NOT EXISTS — آمنة للتشغيل أكثر من مرة.
 -- =====================================================================
 
--- 1. أعمدة repair_jobs — مرحلة الجودة والتقنيين والشحن والتسليم
+-- 1. أعمدة repair_jobs — نوع الجهاز والإكسسوارات والفرع والتقنيين والجودة والشحن
 ALTER TABLE repair_jobs
+  ADD COLUMN IF NOT EXISTS device_type              TEXT NOT NULL DEFAULT 'general',
+  ADD COLUMN IF NOT EXISTS accessories              TEXT,
+  ADD COLUMN IF NOT EXISTS branch_id                INTEGER,
   ADD COLUMN IF NOT EXISTS technician_2_id          INTEGER,
   ADD COLUMN IF NOT EXISTS technician_2_name        TEXT,
   ADD COLUMN IF NOT EXISTS technician_2_section     TEXT,
