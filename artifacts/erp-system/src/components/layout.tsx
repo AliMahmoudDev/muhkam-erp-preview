@@ -309,30 +309,36 @@ export function AppLayout({ children }: LayoutProps) {
         <div
           className="flex items-center"
           style={{
-            height: '56px',
+            height: '64px',
             borderBottom: sidebarBdr,
             flexShrink: 0,
-            padding: sidebarCollapsed ? '0 13px' : '0 16px',
+            padding: sidebarCollapsed ? '0 12px' : '0 14px',
             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-            gap: 10,
+            gap: 11,
             position: 'relative',
+            background: isDark
+              ? 'linear-gradient(135deg,rgba(245,158,11,0.06) 0%,transparent 60%)'
+              : 'linear-gradient(135deg,rgba(245,158,11,0.05) 0%,transparent 60%)',
           }}
         >
+          {/* Logo container */}
           <div
             className="flex items-center justify-center shrink-0"
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
+              width: 42,
+              height: 42,
+              borderRadius: 12,
               overflow: 'hidden',
-              background: isDark ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.10)',
-              border: '1.5px solid rgba(245,158,11,0.22)',
+              background: isDark ? 'rgba(245,158,11,0.13)' : 'rgba(245,158,11,0.10)',
+              border: '1.5px solid rgba(245,158,11,0.32)',
+              boxShadow: '0 0 18px rgba(245,158,11,0.18)',
+              flexShrink: 0,
             }}
           >
             <img
               src={logoSrc}
               alt={settings.companyName}
-              style={{ width: 26, height: 26, objectFit: 'contain' }}
+              style={{ width: 32, height: 32, objectFit: 'contain' }}
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
@@ -341,12 +347,26 @@ export function AppLayout({ children }: LayoutProps) {
           {!sidebarCollapsed && (
             <div style={{ flex: 1, minWidth: 0 }}>
               <p
-                style={{ fontSize: 13, fontWeight: 900, color: isDark ? '#f59e0b' : '#b45309', lineHeight: 1.2 }}
+                style={{
+                  fontSize: 13.5,
+                  fontWeight: 900,
+                  color: isDark ? '#f59e0b' : '#b45309',
+                  lineHeight: 1.25,
+                  letterSpacing: '0.01em',
+                }}
                 className="truncate"
               >
                 {settings.companyName}
               </p>
-              <p style={{ fontSize: 10.5, color: textMuted, lineHeight: 1.2 }} className="truncate">
+              <p
+                style={{
+                  fontSize: 10,
+                  color: isDark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.35)',
+                  lineHeight: 1.3,
+                  marginTop: 2,
+                }}
+                className="truncate"
+              >
                 {settings.companySlogan}
               </p>
             </div>

@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAppSettings } from "@/contexts/app-settings";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import {
   Check, Save, CheckCircle2, DollarSign, CaseSensitive,
-  Loader2, Type,
+  Loader2, Type, ImagePlus, Building2, AlignLeft, RotateCcw,
 } from "lucide-react";
 import { PageHeader } from "./_shared";
 import type {
@@ -90,6 +90,28 @@ export default function CurrencyTab() {
   const [fontSize,          setFontSize]          = useState<FontSize>(settings.fontSize ?? "md");
   const [saved,             setSaved]             = useState(false);
 
+  /* ── brand identity state ── */
+  const [companyName,   setCompanyName]   = useState(settings.companyName   ?? "مُحكم | MUHKAM");
+  const [companySlogan, setCompanySlogan] = useState(settings.companySlogan ?? "نظام إدارة مُحكم، لمستقبل أحكم");
+  const [customLogo,    setCustomLogo]    = useState(settings.customLogo    ?? "");
+  const [logoPreview,   setLogoPreview]   = useState(settings.customLogo    ?? "");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const DEFAULT_NAME   = "مُحكم | MUHKAM";
+  const DEFAULT_SLOGAN = "نظام إدارة مُحكم، لمستقبل أحكم";
+  const FALLBACK_LOGO  = `${import.meta.env.BASE_URL}logo.png`;
+
+  const handleLogoFile = (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setCustomLogo(dataUrl);
+      setLogoPreview(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
   /* ── exchange rates state (merged here) ── */
   const [rates,       setRates]       = useState<Record<string, string>>({});
   const [ratesLoading, setRatesLoading] = useState(true);
@@ -167,6 +189,9 @@ export default function CurrencyTab() {
       fontFamily,
       fontWeightNormal: fontWeight,
       fontSize,
+      companyName:   companyName.trim()   || DEFAULT_NAME,
+      companySlogan: companySlogan.trim() || DEFAULT_SLOGAN,
+      customLogo,
     });
     setSaved(true);
     toast({ title: "تم حفظ الإعدادات ✓", description: "تم تطبيق إعدادات المتجر على كامل النظام" });
@@ -176,6 +201,193 @@ export default function CurrencyTab() {
   return (
     <div className="space-y-6" dir="rtl">
       <PageHeader title="إعدادات المتجر" sub="تخصيص العملة والتواريخ والتنسيقات والمظهر العام للنظام" />
+
+      {/* ══ 0. هوية النظام ════════════════════════════════════════════════ */}
+      <div className="border border-white/5 rounded-2xl overflow-hidden" style={{ background: "var(--erp-bg-card)" }}>
+        {/* Header */}
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-white/5">
+          <Building2 className="w-4 h-4 text-amber-400" />
+          <p className="text-white/70 text-xs font-bold uppercase tracking-wider">هوية النظام والشركة</p>
+          <span className="mr-auto text-[10px] text-white/25 font-mono">تظهر في الشريط الجانبي وعلى الشاشات</span>
+        </div>
+
+        <div className="p-5">
+          <div className="flex gap-6 flex-col lg:flex-row">
+
+            {/* ── Left: form fields ─────────────────────────────────────── */}
+            <div className="flex-1 space-y-4 min-w-0">
+
+              {/* Logo upload area */}
+              <div>
+                <label className="block text-white/40 text-xs font-bold mb-2">شعار الشركة / Logo</label>
+                <div className="flex items-start gap-4">
+                  {/* Logo preview circle */}
+                  <div
+                    className="shrink-0 flex items-center justify-center rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                    style={{
+                      width: 64, height: 64,
+                      background: "rgba(245,158,11,0.08)",
+                      border: "2px dashed rgba(245,158,11,0.30)",
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    title="انقر لرفع شعار"
+                  >
+                    {logoPreview ? (
+                      <img
+                        src={logoPreview}
+                        alt="logo"
+                        style={{ width: 50, height: 50, objectFit: "contain" }}
+                        onError={() => setLogoPreview("")}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1">
+                        <ImagePlus className="w-5 h-5 text-amber-400/50" />
+                        <span className="text-[9px] text-white/25 font-bold">شعار</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* URL input + actions */}
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <input
+                      type="text"
+                      placeholder="رابط الشعار أو اترك فارغاً للافتراضي"
+                      value={customLogo}
+                      onChange={e => {
+                        setCustomLogo(e.target.value);
+                        setLogoPreview(e.target.value);
+                      }}
+                      dir="ltr"
+                      className="w-full bg-[#0D1424] border border-white/10 rounded-lg px-3 py-2 text-white/70 text-xs font-mono focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                        style={{ background: "rgba(245,158,11,0.12)", color: "#F59E0B", border: "1px solid rgba(245,158,11,0.25)" }}
+                      >
+                        <ImagePlus className="w-3 h-3" /> رفع صورة
+                      </button>
+                      {customLogo && (
+                        <button
+                          onClick={() => { setCustomLogo(""); setLogoPreview(""); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                          style={{ background: "rgba(239,68,68,0.10)", color: "#F87171", border: "1px solid rgba(239,68,68,0.20)" }}
+                        >
+                          <RotateCcw className="w-3 h-3" /> استعادة الافتراضي
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoFile(f); }}
+                  />
+                </div>
+              </div>
+
+              {/* Company name */}
+              <div>
+                <label className="block text-white/40 text-xs font-bold mb-1.5">
+                  <Building2 className="inline w-3 h-3 ml-1 -mt-0.5" />
+                  اسم الشركة / المتجر
+                </label>
+                <input
+                  type="text"
+                  placeholder={DEFAULT_NAME}
+                  value={companyName}
+                  onChange={e => setCompanyName(e.target.value)}
+                  dir="rtl"
+                  className="w-full bg-[#0D1424] border border-white/10 rounded-lg px-3 py-2.5 text-white/85 text-sm font-bold focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
+                />
+                <p className="text-white/20 text-[10px] mt-1">يظهر في الشريط الجانبي وصفحة تسجيل الدخول</p>
+              </div>
+
+              {/* Slogan */}
+              <div>
+                <label className="block text-white/40 text-xs font-bold mb-1.5">
+                  <AlignLeft className="inline w-3 h-3 ml-1 -mt-0.5" />
+                  الشعار / التوصيف
+                </label>
+                <input
+                  type="text"
+                  placeholder={DEFAULT_SLOGAN}
+                  value={companySlogan}
+                  onChange={e => setCompanySlogan(e.target.value)}
+                  dir="rtl"
+                  className="w-full bg-[#0D1424] border border-white/10 rounded-lg px-3 py-2.5 text-white/70 text-sm focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
+                />
+                <p className="text-white/20 text-[10px] mt-1">سطر وصفي أسفل اسم الشركة</p>
+              </div>
+            </div>
+
+            {/* ── Right: live sidebar preview ───────────────────────────── */}
+            <div className="shrink-0 flex flex-col items-center gap-3 lg:w-52">
+              <p className="text-white/25 text-[10px] font-bold uppercase tracking-wider self-start">معاينة مباشرة</p>
+              {/* Sidebar mini mockup */}
+              <div
+                className="w-full rounded-xl overflow-hidden"
+                style={{
+                  background: "linear-gradient(145deg,#0b111f,#111827)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                }}
+              >
+                {/* The sidebar header replica */}
+                <div
+                  className="flex items-center gap-3 px-4 py-3"
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+                >
+                  <div
+                    style={{
+                      width: 42, height: 42,
+                      borderRadius: 12,
+                      flexShrink: 0,
+                      overflow: "hidden",
+                      background: "rgba(245,158,11,0.12)",
+                      border: "1.5px solid rgba(245,158,11,0.30)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 0 16px rgba(245,158,11,0.15)",
+                    }}
+                  >
+                    <img
+                      src={logoPreview || FALLBACK_LOGO}
+                      alt="preview"
+                      style={{ width: 32, height: 32, objectFit: "contain" }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = FALLBACK_LOGO;
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 900, color: "#F59E0B", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {companyName || DEFAULT_NAME}
+                    </p>
+                    <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.30)", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {companySlogan || DEFAULT_SLOGAN}
+                    </p>
+                  </div>
+                </div>
+                {/* Fake nav items */}
+                {[{ w: "60%", c: "rgba(245,158,11,0.20)" }, { w: "80%", c: "rgba(255,255,255,0.05)" }, { w: "70%", c: "rgba(255,255,255,0.05)" }].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2.5 px-4 py-2.5">
+                    <div style={{ width: 14, height: 14, borderRadius: 4, background: item.c, flexShrink: 0 }} />
+                    <div style={{ height: 6, borderRadius: 3, background: item.c, width: item.w }} />
+                  </div>
+                ))}
+                <div style={{ height: 8 }} />
+              </div>
+              <p className="text-white/15 text-[9px] text-center leading-tight">هذه معاينة تقريبية<br/>للشريط الجانبي</p>
+            </div>
+
+          </div>
+        </div>
+      </div>
 
       {/* ══ 1+2. العملة الرئيسية + أسعار الصرف — بطاقة موحدة ═══════════ */}
       <div className="border border-white/5 rounded-2xl overflow-hidden" style={{ background: "var(--erp-bg-card)" }}>
