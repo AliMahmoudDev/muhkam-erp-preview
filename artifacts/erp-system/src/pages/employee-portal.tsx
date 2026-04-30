@@ -839,10 +839,10 @@ export default function EmployeePortal() {
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px 16px' }}>
                   {[
-                    { label:'الراتب الأساسي',  value: fmtCurrency(p.base_salary,   empCurrency) },
-                    { label:'إجمالي الاستحقاق', value: fmtCurrency(p.gross_salary,  empCurrency) },
-                    { label:'الخصومات',         value: fmtCurrency(p.total_deductions, empCurrency) },
-                    { label:'صافي الراتب',      value: fmtCurrency(p.net_salary,    empCurrency) },
+                    { label:'الإجمالي',         value: fmtCurrency(p.gross_salary,     String(p.currency ?? empCurrency)) },
+                    { label:'الخصومات',         value: fmtCurrency(p.total_deductions, String(p.currency ?? empCurrency)) },
+                    { label:'الحوافز',          value: fmtCurrency(p.incentive_amount, String(p.currency ?? empCurrency)) },
+                    { label:'صافي الراتب',      value: fmtCurrency(p.net_salary,       String(p.currency ?? empCurrency)) },
                   ].map(({ label, value }) => (
                     <div key={label}>
                       <span style={{ fontSize:10, color:textMuted }}>{label}</span>

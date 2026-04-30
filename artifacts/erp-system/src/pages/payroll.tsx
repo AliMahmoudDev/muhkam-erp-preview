@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
@@ -298,9 +298,8 @@ export default function Payroll() {
                     </thead>
                     <tbody>
                       {recordsList.map((rec) => (
-                        <>
+                        <Fragment key={String(rec.id)}>
                           <tr
-                            key={String(rec.id)}
                             className="border-b border-white/5 hover:bg-white/4 transition-colors"
                           >
                             <td className="p-3">
@@ -359,7 +358,7 @@ export default function Payroll() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>
