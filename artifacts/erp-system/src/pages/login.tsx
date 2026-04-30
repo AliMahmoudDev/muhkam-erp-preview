@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
-import { useAppSettings } from '@/contexts/app-settings';
+
 import { useLocation } from 'wouter';
 import { translateRole } from '@/lib/roles';
 import { RegisterForm } from './login/RegisterForm';
@@ -26,7 +26,6 @@ const FEATURES = [
 
 export default function Login() {
   const { login } = useAuth();
-  const { settings } = useAppSettings();
   const [, setLocation] = useLocation();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -69,7 +68,7 @@ export default function Login() {
   const usernameRef = useRef<HTMLInputElement>(null);
   const pinRef = useRef<HTMLInputElement>(null);
 
-  const logoSrc = settings.customLogo || `${import.meta.env.BASE_URL}muhkam-logo.png`;
+  const logoSrc = `${import.meta.env.BASE_URL}muhkam-logo.png`;
 
   /* company_id: explicit URL param ONLY. NEVER fall back to a hard-coded
      company id — that silently routes credentials to the wrong tenant. */
@@ -345,7 +344,7 @@ export default function Login() {
               fontFamily: 'inherit',
             }}
           >
-            {settings.companyName || 'مُحكم | MUHKAM'}
+            {'مُحكم | MUHKAM'}
           </h1>
 
           {/* Subtitle */}
@@ -358,7 +357,7 @@ export default function Login() {
               fontWeight: 500,
             }}
           >
-            {settings.companySlogan || 'نظام إدارة مُحكم، لمستقبل أحكم'}
+            {'نظام إدارة مُحكم، لمستقبل أحكم'}
           </p>
 
           {/* Feature 2×2 grid */}
@@ -484,7 +483,7 @@ export default function Login() {
             />
           </div>
           <div style={{ fontSize: '18px', fontWeight: 800, color: '#3d1878' }}>
-            {settings.companyName || 'مُحكم | MUHKAM'}
+            {'مُحكم | MUHKAM'}
           </div>
         </div>
 
