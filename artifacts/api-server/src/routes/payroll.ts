@@ -15,6 +15,7 @@ import {
   salaryAdvancesTable,
   employeeDeductionsTable,
   journalEntriesTable, journalEntryLinesTable, accountsTable,
+  safesTable, transactionsTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
@@ -456,6 +457,107 @@ router.post("/payroll/periods/:id/approve", wrap(async (req, res) => {
   } catch { /* قيد الرواتب اختياري — يُتجاهل إذا لم تُوجد الحسابات */ }
 
   res.json({ ok: true, status: "approved" });
+}));
+
+/* ── Pay Period (صرف الرواتب من الخزانة) ─────────────────────── */
+router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_approve_payroll")) { res.status(403).json({ error: "غير مصرح بصرف الرواتب" }); return; }
+  const companyId = req.user!.company_id!;
+  const userId    = req.user?.id ?? null;
+  const id        = parseInt(String(req.params["id"]), 10);
+  const { safe_id, notes } = req.body as { safe_id?: number | string; notes?: string };
+
+  const rawSafeId = safe_id ? parseInt(String(safe_id), 10) : NaN;
+  if (!rawSafeId || isNaN(rawSafeId)) { res.status(400).json({ error: "يجب اختيار الخزانة لصرف الرواتب" }); return; }
+
+  // Fetch period
+  const [period] = await db.select().from(payrollPeriodsTable)
+    .where(and(eq(payrollPeriodsTable.id, id), eq(payrollPeriodsTable.company_id, companyId)));
+  if (!period) { res.status(404).json({ error: "الفترة غير موجودة" }); return; }
+  if (period.status !== "approved") { res.status(409).json({ error: "يجب اعتماد الفترة أولاً قبل الصرف" }); return; }
+
+  // Calculate total net salary
+  const records = await db.select({ net_salary: payrollRecordsTable.net_salary, id: payrollRecordsTable.id })
+    .from(payrollRecordsTable).where(eq(payrollRecordsTable.payroll_period_id, id));
+  const totalNet = records.reduce((s, r) => s + Number(r.net_salary ?? 0), 0);
+  if (totalNet <= 0) { res.status(400).json({ error: "لا يوجد مبلغ للصرف" }); return; }
+
+  // Run in transaction
+  const result = await db.transaction(async (tx) => {
+    // 1. Fetch & validate safe
+    const [safe] = await tx.select().from(safesTable)
+      .where(and(eq(safesTable.id, rawSafeId), eq(safesTable.company_id, companyId)));
+    if (!safe) return { error: { status: 404, message: "الخزانة المحددة غير موجودة" } };
+    if (Number(safe.balance) < totalNet) {
+      return { error: { status: 422, message: `رصيد الخزانة "${safe.name}" غير كافٍ — المتاح: ${Number(safe.balance).toFixed(2)} والمطلوب: ${totalNet.toFixed(2)}` } };
+    }
+
+    // 2. Deduct from safe
+    await tx.update(safesTable)
+      .set({ balance: sql`${safesTable.balance} - ${String(totalNet)}` })
+      .where(eq(safesTable.id, rawSafeId));
+
+    // 3. Record treasury transaction
+    await tx.insert(transactionsTable).values({
+      type:           "payroll_disbursement",
+      reference_type: "payroll_period",
+      reference_id:   id,
+      safe_id:        rawSafeId,
+      safe_name:      safe.name,
+      amount:         String(totalNet),
+      direction:      "out",
+      description:    notes?.trim() || `صرف رواتب — ${period.name}`,
+      date:           new Date().toISOString().split("T")[0]!,
+      company_id:     companyId,
+    });
+
+    // 4. Journal entry: رواتب مستحقة (DR) / الخزانة (CR)
+    try {
+      const [liabAcc] = await tx.select().from(accountsTable)
+        .where(and(eq(accountsTable.company_id, companyId), eq(accountsTable.type, "liability"), eq(accountsTable.is_posting, true), ilike(accountsTable.name, "%رواتب%")))
+        .limit(1);
+      const [cashAcc] = await tx.select().from(accountsTable)
+        .where(and(eq(accountsTable.company_id, companyId), eq(accountsTable.type, "asset"), eq(accountsTable.is_posting, true), ilike(accountsTable.name, "%نقدية%")))
+        .limit(1);
+      if (liabAcc && cashAcc) {
+        const todayStr = new Date().toISOString().split("T")[0]!;
+        const [{ c }] = await tx.select({ c: sql<number>`count(*)` }).from(journalEntriesTable).where(eq(journalEntriesTable.company_id, companyId));
+        const entryNo = `PAY-${String(Number(c ?? 0) + 1).padStart(4, "0")}`;
+        const [entry] = await tx.insert(journalEntriesTable).values({
+          company_id: companyId, entry_no: entryNo, date: todayStr,
+          description: `قيد صرف رواتب — ${period.name}`, reference: `PAYROLL-PAY-${id}`, status: "posted",
+          total_debit: String(totalNet), total_credit: String(totalNet),
+        }).returning();
+        await tx.insert(journalEntryLinesTable).values([
+          { entry_id: entry.id, account_id: liabAcc.id, account_name: liabAcc.name, account_code: liabAcc.code, debit: String(totalNet), credit: "0", description: `تسوية رواتب مستحقة — ${period.name}` },
+          { entry_id: entry.id, account_id: cashAcc.id, account_name: cashAcc.name, account_code: cashAcc.code, debit: "0", credit: String(totalNet), description: `صرف رواتب من خزانة "${safe.name}"` },
+        ]);
+      }
+    } catch { /* القيد اختياري */ }
+
+    // 5. Update period & records status → paid
+    await tx.update(payrollPeriodsTable)
+      .set({ status: "paid", processed_by: userId, updated_at: new Date() })
+      .where(eq(payrollPeriodsTable.id, id));
+    await tx.update(payrollRecordsTable)
+      .set({ status: "paid", updated_at: new Date() })
+      .where(eq(payrollRecordsTable.payroll_period_id, id));
+
+    return { ok: true, safeName: safe.name };
+  });
+
+  if ("error" in result) {
+    res.status((result.error as { status: number }).status).json({ error: (result.error as { message: string }).message });
+    return;
+  }
+
+  await writeAuditLog({
+    action: "update", record_type: "payroll_period", record_id: id,
+    new_value: { status: "paid", total_net: totalNet, safe_id: rawSafeId },
+    user: { id: userId ?? undefined, username: req.user?.username },
+  });
+
+  res.json({ ok: true, total_paid: totalNet, safe_name: result.safeName });
 }));
 
 /* ── My Payslips (بوابة الموظف) ──────────────────────────────── */

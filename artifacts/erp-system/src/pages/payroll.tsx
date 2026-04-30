@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import {
   Wallet, Plus, ChevronRight, ChevronDown, CheckCircle2,
-  Play, X, Loader2, FileText,
+  Play, X, Loader2, FileText, Banknote,
 } from 'lucide-react';
 
 type AnyRec = Record<string, unknown>;
@@ -67,6 +67,8 @@ export default function Payroll() {
   const canApprove = hasPermission(user, 'can_approve_payroll');
 
   const [showCreate, setShowCreate] = useState(false);
+  const [showPay, setShowPay] = useState(false);
+  const [payForm, setPayForm] = useState({ safe_id: '', notes: '' });
   const [selectedPeriod, setSelectedPeriod] = useState<AnyRec | null>(null);
   const [expandedRecId, setExpandedRecId] = useState<number | null>(null);
   const [expandedLineItems, setExpandedLineItems] = useState<AnyRec[]>([]);
@@ -102,6 +104,8 @@ export default function Payroll() {
     queryFn: () => f(`/api/payroll/periods/${selectedPeriod!.id}`),
     enabled: !!selectedPeriod,
   });
+
+  const safesQuery = useQuery({ queryKey: ['safes'], queryFn: () => f('/api/safes') });
 
   /* ── Mutations ───────────────────────────────────────────── */
   const mutOk = (k: string | string[], msg: string) => ({
@@ -142,6 +146,21 @@ export default function Payroll() {
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
+  const payPeriod = useMutation({
+    mutationFn: ({ id, safe_id, notes }: { id: number; safe_id: number; notes: string }) =>
+      f(`/api/payroll/periods/${id}/pay`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ safe_id, notes }) }),
+    onSuccess: (data: AnyRec, vars) => {
+      qc.invalidateQueries({ queryKey: ['payroll-periods'] });
+      qc.invalidateQueries({ queryKey: ['payroll-period', vars.id] });
+      qc.invalidateQueries({ queryKey: ['safes'] });
+      toast({ title: `✓ تم صرف الرواتب من خزانة "${String(data.safe_name ?? '')}" بمجموع ${numFmt(data.total_paid)}` });
+      setSelectedPeriod(p => ({ ...p!, status: 'paid' }));
+      setShowPay(false);
+      setPayForm({ safe_id: '', notes: '' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+  });
+
   /* ── Line items expansion ────────────────────────────────── */
   async function toggleLines(recId: number) {
     if (expandedRecId === recId) { setExpandedRecId(null); return; }
@@ -157,6 +176,7 @@ export default function Payroll() {
   const periodList = safeArray(periods.data);
   const detail = periodDetail.data as (AnyRec & { records?: AnyRec[] }) | undefined;
   const recordsList = safeArray(detail?.records);
+  const safesList = safeArray(safesQuery.data);
 
   /* ── Stats for selected period ───────────────────────────── */
   const totalGross = recordsList.reduce((s, r) => s + (Number(r.gross_salary) || 0), 0);
@@ -268,6 +288,19 @@ export default function Payroll() {
                       اعتماد الرواتب
                     </button>
                   )}
+                  {canApprove && selectedPeriod.status === 'approved' && (
+                    <button
+                      onClick={() => setShowPay(true)}
+                      className="erp-btn flex items-center gap-1 text-sm bg-emerald-600/80 hover:bg-emerald-600 text-white border border-emerald-500/40"
+                    >
+                      <Banknote size={14} /> صرف الرواتب
+                    </button>
+                  )}
+                  {selectedPeriod.status === 'paid' && (
+                    <div className="flex items-center gap-1.5 text-sm text-emerald-400">
+                      <CheckCircle2 size={14} /> تم صرف الرواتب بالكامل
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -367,6 +400,79 @@ export default function Payroll() {
           )}
         </div>
       </div>
+
+      {/* ── Pay Period Modal ─────────────────────────────────── */}
+      {showPay && selectedPeriod && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
+            <div className="flex items-center justify-between p-5 border-b border-white/10">
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <Banknote size={16} className="text-emerald-400" /> صرف رواتب — {String(selectedPeriod.name ?? '')}
+              </h2>
+              <button onClick={() => setShowPay(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Total */}
+              <div className="erp-card p-3 rounded-xl flex items-center justify-between">
+                <span className="text-sm text-white/60">إجمالي صافي الرواتب</span>
+                <span className="font-bold text-emerald-400 text-lg font-mono">{numFmt(totalNet)}</span>
+              </div>
+
+              {/* Safe picker */}
+              <div>
+                <label className="text-xs text-white/50 block mb-1">الخزانة <span className="text-red-400">*</span></label>
+                <select
+                  className="erp-input w-full"
+                  value={payForm.safe_id}
+                  onChange={e => setPayForm(p => ({ ...p, safe_id: e.target.value }))}
+                >
+                  <option value="">— اختر الخزانة —</option>
+                  {safesList.map((s) => (
+                    <option key={String(s.id)} value={String(s.id)}>
+                      {String(s.name ?? '')} — رصيد: {numFmt(s.balance, String(s.currency ?? 'EGP'))}
+                    </option>
+                  ))}
+                </select>
+                {payForm.safe_id && (() => {
+                  const safe = safesList.find(s => String(s.id) === payForm.safe_id);
+                  if (!safe) return null;
+                  const bal = Number(safe.balance ?? 0);
+                  const enough = bal >= totalNet;
+                  return (
+                    <p className={`text-xs mt-1 ${enough ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {enough ? `✓ الرصيد كافٍ — المتبقي بعد الصرف: ${numFmt(bal - totalNet)}` : `✗ رصيد الخزانة غير كافٍ — يُنقص ${numFmt(totalNet - bal)}`}
+                    </p>
+                  );
+                })()}
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-xs text-white/50 block mb-1">ملاحظات (اختياري)</label>
+                <input
+                  className="erp-input w-full"
+                  value={payForm.notes}
+                  onChange={e => setPayForm(p => ({ ...p, notes: e.target.value }))}
+                  placeholder={`صرف رواتب — ${String(selectedPeriod.name ?? '')}`}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 p-5 border-t border-white/10">
+              <button
+                onClick={() => payPeriod.mutate({ id: Number(selectedPeriod.id), safe_id: Number(payForm.safe_id), notes: payForm.notes })}
+                disabled={payPeriod.isPending || !payForm.safe_id}
+                className="erp-btn flex-1 flex items-center gap-1 justify-center bg-emerald-600/80 hover:bg-emerald-600 text-white border border-emerald-500/40 disabled:opacity-40"
+              >
+                {payPeriod.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
+                {payPeriod.isPending ? 'جاري الصرف…' : `تأكيد صرف ${numFmt(totalNet)}`}
+              </button>
+              <button onClick={() => setShowPay(false)} className="erp-btn erp-btn-ghost">إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Create Period Modal ──────────────────────────────── */}
       {showCreate && (
