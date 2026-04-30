@@ -123,7 +123,7 @@ export default function SuperAdmin() {
   const [supportWa, setSupportWa] = useState('');
   const [supportEmail, setSupportEmail] = useState('');
   const [settingSaving, setSettingSaving] = useState(false);
-  const [settingsActiveCard, setSettingsActiveCard] = useState<'support' | 'backup' | 'security' | 'audit_log' | 'plans' | 'telegram' | null>(null);
+  const [settingsActiveCard, setSettingsActiveCard] = useState<'support' | 'backup' | 'security' | 'audit_log' | 'telegram' | null>(null);
 
   /* ── Telegram alert settings ── */
   interface TgAlertRule { enabled: boolean; cooldownHours: number; label: string; }
@@ -470,7 +470,7 @@ export default function SuperAdmin() {
     useQuery<PlanSetting[]>({
       queryKey: ['/api/super/plan-settings'],
       queryFn: () => fetcher('/api/super/plan-settings'),
-      enabled: activeTab === 'settings' && settingsActiveCard === 'plans',
+      enabled: activeTab === 'plans',
       staleTime: 30_000,
     });
 
@@ -1926,6 +1926,7 @@ export default function SuperAdmin() {
             { key: 'managers',      label: 'المديرون',          icon: '👑', color: '#F472B6', shadow: 'rgba(244,114,182,0.45)', desc: 'حسابات مديري النظام' },
             { key: 'revenue',       label: 'الإيرادات',         icon: '📊', color: '#10B981', shadow: 'rgba(16,185,129,0.45)',  desc: 'تقارير الإيرادات والمالية' },
             { key: 'alerts',        label: 'التنبيهات',         icon: '🔔', color: '#EF4444', shadow: 'rgba(239,68,68,0.45)',   desc: 'تنبيهات النظام والأحداث' },
+            { key: 'plans',         label: 'الخطط',             icon: '💰', color: '#FBBF24', shadow: 'rgba(251,191,36,0.45)',  desc: 'إعداد خطط الاشتراك والأسعار' },
             { key: 'announcements', label: 'الإعلانات',         icon: '📢', color: '#8B5CF6', shadow: 'rgba(139,92,246,0.45)', desc: 'إشعارات للمستخدمين' },
             { key: 'health',        label: 'صحة السيرفر',       icon: '🌡️', color: '#06B6D4', shadow: 'rgba(6,182,212,0.45)',   desc: 'مراقبة أداء الخوادم' },
             { key: 'monitoring',    label: 'مراقبة التجريبي',  icon: '🛡️', color: '#6366F1', shadow: 'rgba(99,102,241,0.45)',  desc: 'البيئة التجريبية' },
@@ -3512,13 +3513,12 @@ export default function SuperAdmin() {
             )}
 
             {/* ═══ كروت الإعدادات ═══ */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px' }}>
               {([
                 { key: 'support'   as const, icon: '⚙️', label: 'معلومات التواصل', desc: 'واتساب وبريد الدعم الفني',    color: '#F97316' },
                 { key: 'backup'    as const, icon: '💾', label: 'النسخ الاحتياطية', desc: 'إنشاء / استعادة / تشفير',     color: '#34D399' },
                 { key: 'security'  as const, icon: '🔐', label: 'الأمان',            desc: 'المصادقة الثنائية وقيود IP', color: '#A78BFA' },
                 { key: 'audit_log' as const, icon: '📋', label: 'سجل العمليات',      desc: 'مراقبة جميع إجراءات النظام', color: '#60A5FA' },
-                { key: 'plans'     as const, icon: '💰', label: 'الخطط',             desc: 'إعداد خطط الاشتراك والأسعار', color: '#FBBF24' },
                 { key: 'telegram'  as const, icon: '📨', label: 'إشعارات تليجرام',   desc: 'تحكم في التنبيهات والـ Cooldown', color: '#38BDF8' },
               ]).map(card => {
                 const isActive = settingsActiveCard === card.key;
@@ -3551,9 +3551,9 @@ export default function SuperAdmin() {
 
             {/* ═══ لوحة المحتوى المنبثقة ═══ */}
             {settingsActiveCard && (
-              <div style={{ background: C.card, borderRadius: '18px', border: `1.5px solid ${settingsActiveCard === 'support' ? '#F97316' : settingsActiveCard === 'backup' ? '#34D399' : settingsActiveCard === 'security' ? '#A78BFA' : settingsActiveCard === 'audit_log' ? '#60A5FA' : settingsActiveCard === 'plans' ? '#FBBF24' : settingsActiveCard === 'telegram' ? '#38BDF8' : C.border}50`, overflow: 'hidden', animation: 'sa-panel-in 0.25s ease-out both' }}>
+              <div style={{ background: C.card, borderRadius: '18px', border: `1.5px solid ${settingsActiveCard === 'support' ? '#F97316' : settingsActiveCard === 'backup' ? '#34D399' : settingsActiveCard === 'security' ? '#A78BFA' : settingsActiveCard === 'audit_log' ? '#60A5FA' : settingsActiveCard === 'telegram' ? '#38BDF8' : C.border}50`, overflow: 'hidden', animation: 'sa-panel-in 0.25s ease-out both' }}>
                 {(() => {
-                  const CARD_COLOR: Record<string, string> = { support: '#F97316', backup: '#34D399', security: '#A78BFA', audit_log: '#60A5FA', plans: '#FBBF24', telegram: '#38BDF8' };
+                  const CARD_COLOR: Record<string, string> = { support: '#F97316', backup: '#34D399', security: '#A78BFA', audit_log: '#60A5FA', telegram: '#38BDF8' };
                   const hc = settingsActiveCard ? (CARD_COLOR[settingsActiveCard] ?? C.border) : C.border;
                   return (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', borderBottom: `1px solid ${C.border}`, background: `${hc}12` }}>
@@ -3562,7 +3562,6 @@ export default function SuperAdmin() {
                         {settingsActiveCard === 'backup'    && '💾 النسخ الاحتياطية'}
                         {settingsActiveCard === 'security'  && '🔐 الأمان'}
                         {settingsActiveCard === 'audit_log' && '📋 سجل العمليات'}
-                        {settingsActiveCard === 'plans'     && '💰 الخطط والأسعار'}
                         {settingsActiveCard === 'telegram'  && '📨 إشعارات تليجرام'}
                       </h3>
                       <button onClick={() => setSettingsActiveCard(null)} style={{ background: 'transparent', border: `1px solid ${hc}50`, borderRadius: '8px', color: hc, fontSize: '16px', cursor: 'pointer', lineHeight: 1, padding: '4px 10px', fontWeight: 700 }}>✕</button>
@@ -4212,73 +4211,6 @@ export default function SuperAdmin() {
                   </div>
                 )}
 
-                {/* ── Plans ── */}
-                {settingsActiveCard === 'plans' && (
-                  <div style={{ padding: '24px' }}>
-                    {planSettingsLoading ? (
-                      <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>جارٍ التحميل…</div>
-                    ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                        {(planSettings ?? []).map(plan => {
-                          const isEditingP = editingPlan?.key === plan.key;
-                          const ep = isEditingP ? editingPlan! : plan;
-                          return (
-                            <div key={plan.key} style={{ background: 'rgba(15,23,42,0.4)', borderRadius: '16px', border: `1.5px solid ${isEditingP ? C.orange : C.border}`, padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: isEditingP ? '0 4px 24px rgba(249,115,22,0.15)' : 'none', transition: 'border-color 0.2s' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: ep.is_active ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', color: ep.is_active ? '#22c55e' : '#ef4444' }}>{ep.is_active ? 'فعّالة' : 'معطّلة'}</span>
-                                <span style={{ fontSize: '11px', color: C.muted, fontFamily: 'monospace' }}>{plan.key}</span>
-                              </div>
-                              {isEditingP ? (
-                                <>
-                                  <div>
-                                    <label style={{ fontSize: '11px', color: C.muted, display: 'block', marginBottom: '4px' }}>اسم الخطة (عربي)</label>
-                                    <input value={ep.name_ar} onChange={e => setEditingPlan({ ...ep, name_ar: e.target.value })} style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '8px 12px', color: C.text, fontSize: '14px', fontFamily: FONT, boxSizing: 'border-box' }} />
-                                  </div>
-                                  <div>
-                                    <label style={{ fontSize: '11px', color: C.muted, display: 'block', marginBottom: '4px' }}>الوصف</label>
-                                    <input value={ep.description ?? ''} onChange={e => setEditingPlan({ ...ep, description: e.target.value })} style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '8px 12px', color: C.text, fontSize: '13px', fontFamily: FONT, boxSizing: 'border-box' }} />
-                                  </div>
-                                  <div>
-                                    <label style={{ fontSize: '11px', color: C.muted, display: 'block', marginBottom: '4px' }}>السعر الشهري (ج.م.)</label>
-                                    <input type="number" min={0} value={ep.price} onChange={e => setEditingPlan({ ...ep, price: Number(e.target.value) })} style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '8px 12px', color: C.orange, fontSize: '18px', fontWeight: 800, fontFamily: FONT, boxSizing: 'border-box' }} />
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <input type="checkbox" id={`sp-mobile-${plan.key}`} checked={ep.includes_mobile} onChange={e => setEditingPlan({ ...ep, includes_mobile: e.target.checked })} />
-                                    <label htmlFor={`sp-mobile-${plan.key}`} style={{ fontSize: '13px', color: C.text, cursor: 'pointer' }}>تشمل تطبيق الموبايل</label>
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <input type="checkbox" id={`sp-active-${plan.key}`} checked={ep.is_active} onChange={e => setEditingPlan({ ...ep, is_active: e.target.checked })} />
-                                    <label htmlFor={`sp-active-${plan.key}`} style={{ fontSize: '13px', color: C.text, cursor: 'pointer' }}>الخطة فعّالة</label>
-                                  </div>
-                                  <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
-                                    <button onClick={() => savePlan(ep)} disabled={planSaving} style={{ flex: 1, background: C.orange, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px', fontWeight: 800, fontSize: '13px', fontFamily: FONT, cursor: 'pointer' }}>{planSaving ? 'جارٍ الحفظ…' : '💾 حفظ'}</button>
-                                    <button onClick={() => setEditingPlan(null)} style={{ flex: 1, background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: '10px', padding: '10px', fontWeight: 700, fontSize: '13px', fontFamily: FONT, cursor: 'pointer' }}>إلغاء</button>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div>
-                                    <div style={{ fontSize: '18px', fontWeight: 900, color: C.text }}>{plan.name_ar}</div>
-                                    {plan.description && <div style={{ fontSize: '12px', color: C.muted, marginTop: '4px' }}>{plan.description}</div>}
-                                  </div>
-                                  <div style={{ fontSize: '32px', fontWeight: 900, color: '#FBBF24' }}>
-                                    {plan.price.toLocaleString('ar-EG')}
-                                    <span style={{ fontSize: '14px', color: C.muted, fontWeight: 600, marginRight: '4px' }}>ج.م./شهر</span>
-                                  </div>
-                                  {plan.includes_mobile && <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', background: 'rgba(99,102,241,0.12)', color: '#818cf8', alignSelf: 'flex-start' }}>📱 يشمل الموبايل</span>}
-                                  <button onClick={() => setEditingPlan({ ...plan })} style={{ background: 'transparent', border: `1.5px solid #FBBF24`, color: '#FBBF24', borderRadius: '10px', padding: '8px', fontWeight: 700, fontSize: '13px', fontFamily: FONT, cursor: 'pointer', marginTop: '4px' }}>✏️ تعديل السعر</button>
-                                </>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <div style={{ marginTop: '20px', padding: '14px 18px', borderRadius: '12px', background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }}>
-                      <p style={{ margin: 0, fontSize: '12px', color: C.muted, lineHeight: 1.6 }}>⚠️ تغيير الأسعار يؤثر فقط على حسابات الإيرادات والتقارير. لا يتم تحديث الرسوم تلقائياً للعملاء الحاليين.</p>
-                    </div>
-                  </div>
-                )}
 
               </div>
             )}
