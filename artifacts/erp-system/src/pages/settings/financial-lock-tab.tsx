@@ -155,7 +155,7 @@ export default function FinancialLockTab() {
               value={lockDate}
               onChange={e => setLockDate(e.target.value)}
               max={new Date().toISOString().split('T')[0]}
-              className="w-full rounded-xl px-3 py-2.5 bg-[#1A2235] border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500/50"
+              className="w-full rounded-xl px-3 py-2.5 bg-muted/40 border border-border text-foreground text-sm focus:outline-none focus:border-amber-500/50"
             />
           </div>
           <button
@@ -264,7 +264,7 @@ export default function FinancialLockTab() {
                 onChange={e => setUnlockReason(e.target.value)}
                 placeholder="اكتب سبباً واضحاً لفتح الفترة المالية..."
                 rows={3}
-                className="w-full rounded-xl px-3 py-2.5 bg-[#1A2235] border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500/50 resize-none"
+                className="w-full rounded-xl px-3 py-2.5 bg-muted/40 border border-border text-foreground text-sm focus:outline-none focus:border-amber-500/50 resize-none"
               />
               <p className="text-white/25 text-[10px]">{unlockReason.length} / 3 أحرف كحد أدنى</p>
             </div>

@@ -160,11 +160,11 @@ export default function VatTab() {
                     step="0.5"
                     value={vatRate}
                     onChange={(e) => setVatRate(e.target.value)}
-                    className="w-full bg-[#1A2235] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50 ltr text-right"
+                    className="w-full bg-muted/40 border border-border rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:border-amber-500/50 ltr text-right"
                     dir="ltr"
                     placeholder="14"
                   />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                     %
                   </span>
                 </div>

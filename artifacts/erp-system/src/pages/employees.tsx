@@ -981,7 +981,7 @@ export default function Employees() {
           {/* Table */}
           <div className="erp-card overflow-x-auto">
             {empsLoading ? (
-              <TableSkeleton />
+              <table className="erp-table w-full"><tbody><TableSkeleton /></tbody></table>
             ) : (
               <table className="erp-table w-full">
                 <thead>
@@ -1189,7 +1189,9 @@ export default function Employees() {
                   </button>
                 )}
                 {loansLoading ? (
-                  <TableSkeleton />
+                  <div className="space-y-2 py-2">
+                    {[1,2,3].map(i => <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />)}
+                  </div>
                 ) : loans.length === 0 ? (
                   <div className="text-center py-6 text-white/30 text-xs">
                     <Banknote size={28} className="mx-auto mb-2 opacity-30" />
@@ -1290,7 +1292,9 @@ export default function Employees() {
                 )}
 
                 {ledgerLoading ? (
-                  <TableSkeleton />
+                  <div className="space-y-2 py-2">
+                    {[1,2,3].map(i => <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />)}
+                  </div>
                 ) : deductions.length === 0 ? (
                   <div className="text-center py-6 text-white/30 text-xs">
                     <MinusCircle size={28} className="mx-auto mb-2 opacity-30" />

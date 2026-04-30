@@ -377,7 +377,7 @@ export default function Attendance() {
 
           <div className="erp-card overflow-x-auto">
             {records.isLoading ? (
-              <TableSkeleton />
+              <table className="erp-table w-full"><tbody><TableSkeleton /></tbody></table>
             ) : recordsList.length === 0 ? (
               <div className="erp-empty-state">
                 <Clock size={36} className="erp-empty-icon mb-2" />

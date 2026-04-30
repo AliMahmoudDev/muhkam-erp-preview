@@ -159,7 +159,7 @@ export default function AccrualsPage() {
 
       {/* Add Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="bg-[#0f1729] border-white/10 text-white max-w-lg" dir="rtl">
+        <DialogContent className="bg-card border-border text-card-foreground max-w-lg" dir="rtl">
           <DialogHeader><DialogTitle>إضافة استحقاق / مدفوع مقدماً</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -229,7 +229,7 @@ export default function AccrualsPage() {
 
       {/* Recognize Dialog */}
       <Dialog open={!!showRecognize} onOpenChange={() => setShowRecognize(null)}>
-        <DialogContent className="bg-[#0f1729] border-white/10 text-white max-w-sm" dir="rtl">
+        <DialogContent className="bg-card border-border text-card-foreground max-w-sm" dir="rtl">
           <DialogHeader><DialogTitle>تسجيل الاستحقاق الشهري</DialogTitle></DialogHeader>
           {showRecognize && (
             <div className="space-y-4">

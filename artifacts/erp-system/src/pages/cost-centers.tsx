@@ -203,7 +203,7 @@ export default function CostCentersPage() {
 
       {/* Add Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="bg-[#0f1729] border-white/10 text-white max-w-md" dir="rtl">
+        <DialogContent className="bg-card border-border text-card-foreground max-w-md" dir="rtl">
           <DialogHeader><DialogTitle>إضافة مركز تكلفة</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

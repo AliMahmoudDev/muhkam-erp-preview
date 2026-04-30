@@ -118,8 +118,7 @@ export default function SettingsPage() {
     <div className="flex h-[calc(100vh-64px)] overflow-hidden" dir="rtl">
       {/* ─────────── Sidebar ─────────── */}
       <aside
-        className="hidden lg:flex flex-col w-56 shrink-0 border-l border-white/8 overflow-y-auto"
-        style={{ background: 'var(--erp-bg-sidebar, #0B1120)' }}
+        className="settings-sidebar hidden lg:flex flex-col w-56 shrink-0 border-l border-white/8 overflow-y-auto"
       >
         <div className="px-4 pt-6 pb-2 flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
@@ -169,8 +168,7 @@ export default function SettingsPage() {
 
       {/* ─────────── Mobile Tab Bar ─────────── */}
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/8 px-2 py-1 flex gap-1 overflow-x-auto"
-        style={{ background: 'var(--erp-bg-sidebar, #0B1120)' }}
+        className="settings-sidebar lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/8 px-2 py-1 flex gap-1 overflow-x-auto"
       >
         {allTabs.map((tab) => {
           const active = activeTab === tab.id;
@@ -194,8 +192,7 @@ export default function SettingsPage() {
       <main className="flex-1 overflow-y-auto pb-24 lg:pb-8">
         {/* Mobile header */}
         <div
-          className="lg:hidden sticky top-0 z-30 px-4 py-3 border-b border-white/8 flex items-center gap-2"
-          style={{ background: 'var(--erp-bg-main, #0D1424)' }}
+          className="settings-sidebar-main lg:hidden sticky top-0 z-30 px-4 py-3 border-b border-white/8 flex items-center gap-2"
         >
           <Settings className="w-4 h-4 text-amber-400" />
           <p className="text-white font-bold text-sm">{activeLabel}</p>

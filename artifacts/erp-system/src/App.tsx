@@ -202,7 +202,7 @@ function Router() {
         fallback={
           <div
             className="fixed inset-0 flex items-center justify-center"
-            style={{ background: 'hsl(225,28%,4%)' }}
+            style={{ background: 'hsl(var(--background))' }}
           >
             <Spinner className="w-8 h-8 text-amber-500" />
           </div>

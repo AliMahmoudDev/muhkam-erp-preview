@@ -491,7 +491,7 @@ export default function CurrencyTab() {
                       type="number" step="0.01" min="0.01" placeholder="0.00"
                       value={rates[c.code] ?? ""}
                       onChange={e => setRates(r => ({ ...r, [c.code]: e.target.value }))}
-                      className="w-28 bg-[#1A2235] border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm text-left focus:outline-none focus:border-blue-500/50 focus:bg-[#1E2A40] transition-colors"
+                      className="w-28 bg-muted/40 border border-border rounded-lg px-3 py-1.5 text-foreground text-sm text-left focus:outline-none focus:border-blue-500/50 transition-colors"
                       dir="ltr"
                     />
                     <span className="text-white/40 text-xs whitespace-nowrap">ج.م</span>

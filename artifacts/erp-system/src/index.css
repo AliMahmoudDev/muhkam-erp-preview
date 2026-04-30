@@ -4885,4 +4885,102 @@ html.light .nav-item.active { color: #92400e; background: rgba(245,158,11,0.09);
   animation: co-panel-slide-in 0.26s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   DESIGN AUDIT FIXES — comprehensive overrides for hardcoded colors
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Skeleton theme-aware layers ─────────────────────────────────── */
+.skeleton-layer     { background: rgba(255,255,255,0.06) !important; }
+.skeleton-layer-dim { background: rgba(255,255,255,0.04) !important; }
+.stat-card-skeleton { background: hsla(225,25%,8%,0.8) !important; }
+
+html.light .skeleton-layer     { background: rgba(0,0,0,0.07) !important; }
+html.light .skeleton-layer-dim { background: rgba(0,0,0,0.04) !important; }
+html.light .stat-card-skeleton { background: rgba(0,0,0,0.04) !important; }
+
+/* ── Settings sidebar — theme-aware ──────────────────────────────── */
+.settings-sidebar      { background: var(--erp-bg-sidebar, #0B1120); }
+.settings-sidebar-main { background: var(--erp-bg-main,    #0D1424); }
+
+html.light .settings-sidebar      { background: #f1f5f9 !important; border-color: rgba(0,0,0,0.08) !important; }
+html.light .settings-sidebar-main { background: #f8fafc !important; border-color: rgba(0,0,0,0.07) !important; }
+
+/* ── Hardcoded dark dialog / panel backgrounds ───────────────────── */
+/* bg-[#0f1729] — used in dialogs */
+html.light .bg-\[#0f1729\]  { background-color: hsl(var(--card)) !important; }
+html.light .bg-\[#0F1729\]  { background-color: hsl(var(--card)) !important; }
+
+/* bg-[#1A2235] — used in form fields and sections */
+html.light .bg-\[#1A2235\]  { background-color: #f8fafc !important; color: #0d1117 !important; }
+
+/* bg-[#0B1120] — sidebar fallback */
+html.light .bg-\[#0B1120\]  { background-color: #f1f5f9 !important; }
+
+/* bg-[#0D1424] — main panel fallback */
+html.light .bg-\[#0D1424\]  { background-color: #f8fafc !important; }
+
+/* bg-[#0d1117] — dark panel */
+html.light .bg-\[#0d1117\]  { background-color: #ffffff !important; }
+html.light .bg-\[#0D1117\]  { background-color: #ffffff !important; }
+
+/* bg-[#2D3748] — border substitute color */
+html.light .border-\[#2D3748\] { border-color: rgba(0,0,0,0.12) !important; }
+
+/* bg-[#1E2A40] / bg-[#1e2a40] — focused input variant */
+html.light .focus\:bg-\[#1E2A40\]:focus { background-color: #f0f4ff !important; }
+html.light .focus\:bg-\[#1e2a40\]:focus { background-color: #f0f4ff !important; }
+
+/* ── Input fields with bg-[#1A2235] — ensure legible text ────────── */
+html.light input.bg-\[#1A2235\],
+html.light textarea.bg-\[#1A2235\],
+html.light select.bg-\[#1A2235\] {
+  background-color: #f8fafc !important;
+  color: #0d1117 !important;
+  border-color: rgba(0,0,0,0.15) !important;
+}
+
+/* ── Opening-balance / settings section cards ────────────────────── */
+html.light .bg-\[#1A2235\].border.border-amber-500\/20,
+html.light .bg-\[#1A2235\].border.border-amber-500\/25 {
+  background-color: #fffbeb !important;
+}
+
+/* ── Currency tab inputs ─────────────────────────────────────────── */
+html.light .w-28.bg-\[#1A2235\] {
+  background-color: #f8fafc !important;
+  color: #0d1117 !important;
+}
+
+/* ── Repair / notification components with inline dark backgrounds ── */
+html.light [style*="background: #0D1117"],
+html.light [style*="background:#0D1117"],
+html.light [style*="background: #0d1117"],
+html.light [style*="background:#0d1117"] {
+  background: #ffffff !important;
+}
+
+/* ── Toast / bg-[#0D1424]/95 — keep dark look intentionally ─────── */
+/* Toasts are intentionally dark in both modes for readability */
+
+/* ── Inventory panels and modals bg-[#111827] ────────────────────── */
+html.light .bg-\[#111827\] { background-color: #ffffff !important; }
+
+/* ── AlertsTab/CountTab panel bg-[#1a1a2e] ───────────────────────── */
+html.light .bg-\[#1a1a2e\] { background-color: #f8fafc !important; }
+html.light .border-violet-500\/30 { border-color: rgba(109,40,217,0.25) !important; }
+html.light .border-violet-500\/20 { border-color: rgba(109,40,217,0.18) !important; }
+
+/* ── ShippingCostModal option bg-[#1a1530] ───────────────────────── */
+html.light .bg-\[#1a1530\] { background-color: #ffffff !important; color: #0d1117 !important; }
+
+/* ── backup-tab.tsx / transfers.tsx modal panels ─────────────────── */
+html.light .bg-\[#0F1623\] { background-color: #ffffff !important; }
+html.light .bg-\[#0f1623\] { background-color: #ffffff !important; }
+
+/* ── transfers.tsx full page background ──────────────────────────── */
+html.light .bg-\[#0a0f1a\] { background-color: #f8fafc !important; color: #0d1117 !important; }
+
+/* ── sticky thead dark bg inside inventory ───────────────────────── */
+html.light thead.sticky.top-0.bg-\[#111827\] { background-color: #f8fafc !important; }
+
 /* ── END OF CANONICAL DEFINITIONS ────────────────────────────────── */

@@ -54,6 +54,24 @@ The system is built as a monorepo using pnpm workspaces. The architecture separa
 **Feature Specifications:**
 - **Navigation Pages:** Dashboard, Sales (POS + Returns), Purchases (+ Returns), Customers, Profits, Expenses, Income, Receipt Vouchers, Deposit Vouchers, Safe Transfers, Unified Activity Log, Financial Transactions Ledger, Chart of Accounts, Journal Entries, Reports, Settings, Inventory Audit, Employees, Branches, Devices, Repairs, Warranty, Fiscal Years, Audit Log, Employee Self-Service Portal.
 
+## Design Audit Fixes (April 2026)
+
+### Light Mode Fixes
+- Added comprehensive CSS overrides in `index.css` for all hardcoded dark hex color classes (`bg-[#0f1729]`, `bg-[#1A2235]`, `bg-[#111827]`, `bg-[#0B1120]`, `bg-[#0D1424]`, `bg-[#0F1623]`, `bg-[#0a0f1a]`, `bg-[#1a1a2e]`, `bg-[#1a1530]`, `border-[#2D3748]`)
+- Fixed all dialogs in accruals, bank-reconciliation, budgets, cost-centers to use semantic `bg-card border-border text-card-foreground` classes
+- Fixed settings sidebar (`settings/index.tsx`) to use theme-aware CSS class `.settings-sidebar` instead of inline style
+- Fixed VAT tab, financial-lock tab, currency tab inputs to use `bg-muted/40 border-border text-foreground`
+- Fixed `App.tsx` POS loading screen from hardcoded `hsl(225,28%,4%)` to `hsl(var(--background))`
+- Added `.skeleton-layer`, `.skeleton-layer-dim`, `.stat-card-skeleton` CSS classes for theme-aware skeleton backgrounds
+
+### HTML Structure Fixes (React Hydration)
+- Fixed `employees.tsx`: `TableSkeleton` was rendered inside a `<div>` — now wrapped in proper `<table><tbody>`
+- Fixed `employees.tsx`: loans/deductions loading panels used `<TableSkeleton>` (which renders `<tr>` elements) inside `<div>` — replaced with div-based card skeletons
+- Fixed `attendance.tsx`: same `TableSkeleton` inside `<div>` issue
+
+### API Server Reliability
+- Removed `waitForPort = 8080` from API Server workflow to fix startup reliability issues. Server starts on port 8080 successfully without the Replit platform timeout interfering.
+
 ## External Dependencies
 
 - **Node.js**: Version 24
