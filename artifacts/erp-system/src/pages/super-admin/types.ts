@@ -76,15 +76,26 @@ export const PLAN_LABELS: Record<string, string> = {
 
 export const translatePlan = (p: string) => PLAN_LABELS[p] ?? p;
 
+/*
+ * C — colour tokens wired to CSS custom properties.
+ * Works in both dark and light mode automatically.
+ * Semantic accent colours (orange, success, danger…) stay fixed
+ * because they carry meaning regardless of theme.
+ */
 export const C = {
-  bg:        '#0F172A',
-  card:      '#1E293B',
-  surface:   '#172033',
-  border:    '#334155',
+  /* ── surfaces ──────────────────────────────── */
+  bg:        'var(--erp-bg-app)',    // outermost background
+  card:      'var(--erp-bg-card)',   // card / panel surface
+  surface:   'var(--erp-bg-app)',    // input well (slightly recessed from card)
+  border:    'var(--erp-border)',    // generic border
+
+  /* ── typography ─────────────────────────────── */
+  text:      'var(--erp-text-1)',    // primary text
+  muted:     'var(--erp-text-3)',    // secondary / helper text
+
+  /* ── brand & semantic (fixed regardless of theme) ─ */
   orange:    '#F97316',
   orangeDim: 'rgba(249,115,22,0.15)',
-  text:      '#F8FAFC',
-  muted:     '#94A3B8',
   success:   '#22C55E',
   danger:    '#EF4444',
   warning:   '#F59E0B',
