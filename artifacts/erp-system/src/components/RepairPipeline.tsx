@@ -17,12 +17,17 @@ import DeliveryReceiptModal from "@/components/modals/DeliveryReceiptModal";
  * بل يُفتح modal مخصّص لجمع البيانات قبل تنفيذ نقل الحالة.
  *
  * - final_quality_check → QualityCheckModal (يفتح عند in_repair → QC)
- *                          • قبول → ينقل تلقائياً إلى ready_for_delivery
- *                          • رفض  → يبقى في in_repair مع حفظ السبب في qa_notes
- * - shipped             → PreDeliveryModal  (مراجعة قطع + ورشة + وسيط)
+ *                          • حفظ → يحفظ qa_checklist + qa_completed_at فقط (بدون نقل تلقائي)
+ *                          • رفض → يبقى في in_repair مع حفظ السبب في qa_notes
+ *                         الانتقال إلى "جاهز للتسليم" يدوي بعد اعتماد الفحص.
+ * - ready_for_delivery  → PreDeliveryModal  (نوع الورشة [داخلية/خارجية] + قطع/تكلفة + وسيط)
+ *                         يضع pre_delivery_reviewed_at، ثم ينقل البطاقة لـ "جاهز للتسليم".
  * - delivered           → ShippingCostModal (تكلفة شحن + مصروف تلقائي)
+ *
+ * ملاحظة: الانتقال إلى "قيد الشحن" أصبح بسيطاً (confirm عام) لأن المراجعة النهائية
+ * تتم في خطوة "جاهز للتسليم" قبلها.
  */
-const GATED_TARGETS = new Set<string>(["final_quality_check", "shipped", "delivered"]);
+const GATED_TARGETS = new Set<string>(["final_quality_check", "ready_for_delivery", "delivered"]);
 
 interface Stage {
   key: string;
@@ -134,7 +139,7 @@ interface ConfirmState {
 }
 
 /** أي بوّابة (gated target) فُتح لها modal مخصّص — تُعالَج خارج الـ confirm العام */
-type GatedKey = "final_quality_check" | "shipped" | "delivered" | null;
+type GatedKey = "final_quality_check" | "ready_for_delivery" | "delivered" | null;
 
 export default function RepairPipeline({ currentStatus, jobData, onStatusChange }: Props) {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
@@ -199,7 +204,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
    *  مصروف ذرّي) — لو فشل الـ PATCH هنا فالبيانات المحفوظة صحيحة من الناحية المحاسبية،
    *  وستُكتشف البوّابة كمستوفاة في المرة التالية. لا نقوم بإلغاء حفظ الـ modal لأنه قد
    *  يكون أنشأ مصروفاً أو حركة مخزون لا يمكن التراجع عنها بأمان من العميل. */
-  async function applyGatedTransition(target: Exclude<GatedKey, null> | "ready_for_delivery") {
+  async function applyGatedTransition(target: Exclude<GatedKey, null>) {
     try {
       const res = await fetch(`/api/repair-jobs/${jobData.id}`, {
         method: "PATCH",
@@ -309,25 +314,22 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
           job={jobLite}
           onClose={() => setGated(null)}
           onSaved={(outcome) => {
-            if (outcome === "approve") {
-              /* قبول الفحص → ينقل تلقائياً إلى "جاهز للتسليم" (يقفز مرحلة QC المرئية).
-                 الـ POST /qa-checklist في الـ modal حفظ qa_completed_at بالفعل،
-                 فبوّابة ready_for_delivery تكون مستوفاة. */
-              void applyGatedTransition("ready_for_delivery");
-            } else {
-              /* رفض الفحص → الحالة تبقى in_repair، فقط نُغلق الـ modal ونُحدّث البطاقة
-                 لإظهار qa_notes الجديد. */
-              setGated(null);
-              onStatusChange(currentStatus);
-            }
+            /* حفظ نتيجة الفحص (قبول أو رفض) — لا ينقل الحالة تلقائياً.
+               • قبول → احفظ qa_completed_at؛ ينتقل المستخدم يدوياً لاحقاً إلى
+                 "جاهز للتسليم" حيث تفتح بوّابة المراجعة النهائية (PreDeliveryModal).
+               • رفض → الحالة تبقى in_repair مع تسجيل qa_notes.
+               في الحالتين نُغلق المودال ونُحدّث البطاقة لعرض البيانات الجديدة. */
+            void outcome;
+            setGated(null);
+            onStatusChange(currentStatus);
           }}
         />
       )}
-      {gated === "shipped" && (
+      {gated === "ready_for_delivery" && (
         <PreDeliveryModal
           job={jobLite}
           onClose={() => setGated(null)}
-          onSaved={() => void applyGatedTransition("shipped")}
+          onSaved={() => void applyGatedTransition("ready_for_delivery")}
         />
       )}
       {gated === "delivered" && (

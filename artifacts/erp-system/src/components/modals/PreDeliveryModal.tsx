@@ -1,19 +1,28 @@
 /**
- * PreDeliveryModal — بوّابة "جاهز للتسليم" → "قيد الشحن"
+ * PreDeliveryModal — بوّابة "مراقبة الجودة" → "جاهز للتسليم"
  *
- * يعرض:
- *  - قائمة قطع الغيار الداخلية غير المرتجَعة + قرار لكل قطعة (مخزن / هالك / تأجيل)
- *  - بيانات ورشة خارجية (اختياري) + التكلفة
- *  - بيانات وسيط/سمسار (اختياري) + العمولة
+ * يفتح بعد اعتماد فحص مراقبة الجودة (qa_completed_at) قبل النقل لـ "جاهز للتسليم".
+ *
+ * يبدأ المستخدم باختيار **نوع الورشة** (مفتاح أساسي):
+ *   - داخلية → نعرض قائمة قطع الغيار الداخلية غير المرتجَعة + قرار لكل قطعة
+ *              (إرجاع للمخزن / هالك / تأجيل). تكلفة الورشة الخارجية = 0.
+ *   - خارجية → نُخفي قسم القطع تماماً ونطلب: اسم الورشة + تكلفة الإصلاح.
+ *
+ * في الحالتين:
+ *   - حقول الوسيط (اسم + قيمة عمولة) — اختيارية، القيمة يحددها المستخدم.
+ *     عمولة الوسيط تُخصم لاحقاً من الإيراد الصافي للفنّي عند حساب الرواتب.
  *
  * عند الحفظ:
  *   1) لكل قطعة قرارها (stock|scrap) → POST /repair-jobs/:id/parts/:partId/return
+ *      (ينطبق فقط على الورشة الداخلية)
  *   2) POST /api/repair-jobs/:id/pre-delivery — يضع pre_delivery_reviewed_at
- *   3) onSaved() — يطلب من الأب نقل البطاقة إلى shipped
+ *      ويحفظ external_workshop + external_workshop_name + external_workshop_cost
+ *      + broker_name + broker_commission
+ *   3) onSaved() — يطلب من الأب نقل البطاقة إلى ready_for_delivery
  */
 import { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { PackageCheck, Loader2, X, AlertTriangle, ArchiveRestore, Trash2, Clock, Building2, UserCog } from "lucide-react";
+import { PackageCheck, Loader2, X, AlertTriangle, ArchiveRestore, Trash2, Clock, UserCog, Wrench, ExternalLink } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -84,7 +93,13 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
     return d;
   });
 
-  const [hasWorkshop, setHasWorkshop]   = useState(Boolean(job.external_workshop));
+  /* نوع الورشة — مفتاح أساسي يُغيّر شكل البقية:
+        internal → نعرض القطع، نتجاهل اسم/تكلفة الورشة الخارجية
+        external → نُخفي القطع، نطلب اسم الورشة + تكلفة الإصلاح */
+  const [workshopType, setWorkshopType] = useState<"internal" | "external">(
+    job.external_workshop ? "external" : "internal"
+  );
+  const isExternal = workshopType === "external";
   const [workshopName, setWorkshopName] = useState(job.external_workshop_name ?? "");
   const [workshopCost, setWorkshopCost] = useState(String(job.external_workshop_cost ?? "0"));
   const [brokerName, setBrokerName]     = useState(job.broker_name ?? "");
@@ -105,45 +120,73 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
   }, [internalUnreturned.length]);
 
   async function handleSave() {
+    /* تحقق محلي قبل الإرسال */
+    const validationErrs: string[] = [];
+    if (isExternal) {
+      if (workshopName.trim().length < 2) {
+        validationErrs.push("يجب إدخال اسم الورشة الخارجية");
+      }
+      const wc = Number(workshopCost);
+      if (!Number.isFinite(wc) || wc <= 0) {
+        validationErrs.push("يجب إدخال تكلفة إصلاح الورشة الخارجية (> 0)");
+      }
+    }
+    const bc = Number(brokerComm);
+    if (brokerComm.trim() !== "" && (!Number.isFinite(bc) || bc < 0)) {
+      validationErrs.push("قيمة عمولة الوسيط غير صحيحة");
+    }
+    if (brokerName.trim().length > 0 && (!Number.isFinite(bc) || bc <= 0)) {
+      validationErrs.push("أدخلت اسم وسيط — يجب إدخال قيمة عمولة موجبة");
+    }
+    if (validationErrs.length > 0) {
+      setErrors(validationErrs);
+      return;
+    }
+
     setLoading(true);
     setErrors([]);
     try {
-      /* 1) إرجاع القطع التي اختار لها المستخدم stock/scrap */
-      for (const p of internalUnreturned) {
-        const dec = decisions[p.id];
-        if (dec === "defer") continue;
-        const r = await authFetch(api(`/api/repair-jobs/${job.id}/parts/${p.id}/return`), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ destination: dec }),
-        });
-        if (!r.ok) {
-          const d = await r.json() as { error?: string };
-          throw new Error(d.error ?? `فشل إرجاع القطعة ${p.product_name}`);
+      /* 1) إرجاع القطع — فقط للورشة الداخلية. الورشة الخارجية لا تتعامل مع قطع داخلية. */
+      if (!isExternal) {
+        for (const p of internalUnreturned) {
+          const dec = decisions[p.id];
+          if (dec === "defer") continue;
+          const r = await authFetch(api(`/api/repair-jobs/${job.id}/parts/${p.id}/return`), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ destination: dec }),
+          });
+          if (!r.ok) {
+            const d = await r.json() as { error?: string };
+            throw new Error(d.error ?? `فشل إرجاع القطعة ${p.product_name}`);
+          }
         }
       }
 
-      /* 2) حفظ بيانات الورشة + الوسيط + ضبط pre_delivery_reviewed_at */
+      /* 2) حفظ نوع الورشة + بيانات الوسيط + ضبط pre_delivery_reviewed_at.
+            للورشة الداخلية: external_workshop_cost = 0، اسم الورشة فارغ. */
       const wcost = Number(workshopCost);
       const bcomm = Number(brokerComm);
       const r2 = await authFetch(api(`/api/repair-jobs/${job.id}/pre-delivery`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          external_workshop:      hasWorkshop,
-          external_workshop_name: hasWorkshop ? workshopName.trim() : "",
-          external_workshop_cost: hasWorkshop && Number.isFinite(wcost) ? wcost : 0,
+          external_workshop:      isExternal,
+          external_workshop_name: isExternal ? workshopName.trim() : "",
+          external_workshop_cost: isExternal && Number.isFinite(wcost) ? wcost : 0,
           broker_name:            brokerName.trim(),
-          broker_commission:      Number.isFinite(bcomm) ? bcomm : 0,
+          broker_commission:      brokerName.trim().length > 0 && Number.isFinite(bcomm) ? bcomm : 0,
         }),
       });
       const d2 = await r2.json() as { error?: string };
       if (!r2.ok) throw new Error(d2.error ?? "فشل حفظ مراجعة ما قبل التسليم");
 
-      const settled = internalUnreturned.filter(p => decisions[p.id] !== "defer").length;
+      const settled = isExternal ? 0 : internalUnreturned.filter(p => decisions[p.id] !== "defer").length;
       toast({
         title: "تمت مراجعة ما قبل التسليم",
-        description: settled > 0 ? `تم التعامل مع ${settled} قطعة` : "تم تأكيد المراجعة",
+        description: isExternal
+          ? `ورشة خارجية — تكلفة ${wcost.toFixed(2)}`
+          : settled > 0 ? `تم التعامل مع ${settled} قطعة` : "تم تأكيد المراجعة",
       });
       onSaved();
     } catch (e) {
@@ -171,7 +214,7 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
             <div>
               <h3 className="text-sm font-black text-white">مراجعة ما قبل التسليم</h3>
               <p className="text-[11px] text-white/50">
-                البطاقة <span className="text-white font-bold">{job.job_no}</span> — قبل الانتقال إلى "قيد الشحن"
+                البطاقة <span className="text-white font-bold">{job.job_no}</span> — قبل الانتقال إلى "جاهز للتسليم"
               </p>
             </div>
           </div>
@@ -181,7 +224,104 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
         </div>
 
         <div className="px-5 py-4 max-h-[60vh] overflow-y-auto space-y-4">
-          {/* قطع داخلية غير مرتجعة */}
+          {/* اختيار نوع الورشة — مفتاح أساسي يُغيّر شكل البقية */}
+          <section>
+            <h4 className="text-[11px] font-black text-white/70 mb-2 flex items-center gap-1.5">
+              <Wrench className="w-3.5 h-3.5 text-violet-300" />
+              نوع الورشة التي أصلحت الجهاز
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setWorkshopType("internal")}
+                className={[
+                  "rounded-xl border p-3 text-right transition-all flex items-start gap-2",
+                  !isExternal
+                    ? "border-emerald-400/50 bg-emerald-500/15 shadow-md shadow-emerald-500/10"
+                    : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04]",
+                ].join(" ")}
+              >
+                <div className={[
+                  "mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
+                  !isExternal ? "border-emerald-400" : "border-white/30",
+                ].join(" ")}>
+                  {!isExternal && <div className="w-2 h-2 rounded-full bg-emerald-400" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={["text-[12px] font-black", !isExternal ? "text-emerald-200" : "text-white/70"].join(" ")}>
+                    ورشة داخلية
+                  </p>
+                  <p className="text-[10px] text-white/45 mt-0.5">
+                    أُصلح في الشركة باستخدام قطع من المخزون
+                  </p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setWorkshopType("external")}
+                className={[
+                  "rounded-xl border p-3 text-right transition-all flex items-start gap-2",
+                  isExternal
+                    ? "border-cyan-400/50 bg-cyan-500/15 shadow-md shadow-cyan-500/10"
+                    : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04]",
+                ].join(" ")}
+              >
+                <div className={[
+                  "mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
+                  isExternal ? "border-cyan-400" : "border-white/30",
+                ].join(" ")}>
+                  {isExternal && <div className="w-2 h-2 rounded-full bg-cyan-400" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={["text-[12px] font-black", isExternal ? "text-cyan-200" : "text-white/70"].join(" ")}>
+                    ورشة خارجية
+                  </p>
+                  <p className="text-[10px] text-white/45 mt-0.5">
+                    أُرسل لورشة خارج الشركة بتكلفة محددة
+                  </p>
+                </div>
+              </button>
+            </div>
+          </section>
+
+          {/* تفاصيل الورشة الخارجية — فقط لو external */}
+          {isExternal && (
+            <section className="rounded-xl border border-cyan-400/25 p-3" style={{ background: "rgba(34,211,238,0.05)" }}>
+              <h4 className="text-[11px] font-black text-cyan-200 mb-2 flex items-center gap-1.5">
+                <ExternalLink className="w-3.5 h-3.5 text-cyan-300" />
+                بيانات الورشة الخارجية
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-white/55 mb-1 block">اسم الورشة *</label>
+                  <input
+                    value={workshopName}
+                    onChange={(e) => setWorkshopName(e.target.value)}
+                    placeholder="مثال: ورشة الفنّي خالد"
+                    className="w-full px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-cyan-400/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-white/55 mb-1 block">تكلفة الإصلاح *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={workshopCost}
+                    onChange={(e) => setWorkshopCost(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-cyan-400/50"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-white/45 mt-2">
+                هذه التكلفة تُخصم من إيرادات الصيانة عند احتساب صافي الفنّي.
+              </p>
+            </section>
+          )}
+
+          {/* قطع داخلية غير مرتجعة — فقط لو internal */}
+          {!isExternal && (
           <section>
             <h4 className="text-[11px] font-black text-white/70 mb-2 flex items-center gap-1.5">
               <ArchiveRestore className="w-3.5 h-3.5 text-emerald-300" />
@@ -238,62 +378,40 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
               </div>
             )}
           </section>
+          )}
 
-          {/* ورشة خارجية */}
-          <section className="rounded-xl border border-white/8 p-3" style={{ background: "rgba(255,255,255,0.02)" }}>
-            <label className="flex items-center gap-2 cursor-pointer mb-2">
-              <input
-                type="checkbox"
-                checked={hasWorkshop}
-                onChange={(e) => setHasWorkshop(e.target.checked)}
-                className="w-4 h-4 rounded accent-cyan-500"
-              />
-              <Building2 className="w-3.5 h-3.5 text-cyan-300" />
-              <span className="text-[11px] font-bold text-white">تم استخدام ورشة خارجية</span>
-            </label>
-            {hasWorkshop && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                <input
-                  value={workshopName}
-                  onChange={(e) => setWorkshopName(e.target.value)}
-                  placeholder="اسم الورشة"
-                  className="px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-cyan-400/40"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  value={workshopCost}
-                  onChange={(e) => setWorkshopCost(e.target.value)}
-                  placeholder="تكلفة الورشة"
-                  className="px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-cyan-400/40"
-                />
-              </div>
-            )}
-          </section>
-
-          {/* وسيط/سمسار */}
-          <section className="rounded-xl border border-white/8 p-3" style={{ background: "rgba(255,255,255,0.02)" }}>
+          {/* وسيط/سمسار — اختياري في الحالتين */}
+          <section className="rounded-xl border border-amber-400/20 p-3" style={{ background: "rgba(245,158,11,0.04)" }}>
             <div className="flex items-center gap-2 mb-2">
               <UserCog className="w-3.5 h-3.5 text-amber-300" />
               <span className="text-[11px] font-bold text-white">وسيط / سمسار (اختياري)</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input
-                value={brokerName}
-                onChange={(e) => setBrokerName(e.target.value)}
-                placeholder="اسم الوسيط (اتركه فارغاً إن لم يوجد)"
-                className="px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/40"
-              />
-              <input
-                type="number"
-                min={0}
-                value={brokerComm}
-                onChange={(e) => setBrokerComm(e.target.value)}
-                placeholder="عمولة الوسيط"
-                className="px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/40"
-              />
+              <div>
+                <label className="text-[10px] text-white/55 mb-1 block">اسم الوسيط</label>
+                <input
+                  value={brokerName}
+                  onChange={(e) => setBrokerName(e.target.value)}
+                  placeholder="اتركه فارغاً إن لم يوجد"
+                  className="w-full px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/50"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-white/55 mb-1 block">قيمة العمولة</label>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={brokerComm}
+                  onChange={(e) => setBrokerComm(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/50"
+                />
+              </div>
             </div>
-            <p className="text-[10px] text-white/40 mt-1.5">ملاحظة: عمولة الوسيط لا تُحسب كمصروف تلقائي — أنشئ سند صرف يدوي للوسيط من شاشة المصاريف.</p>
+            <p className="text-[10px] text-amber-200/70 mt-2">
+              عمولة الوسيط تُخصم من الإيراد الصافي للفنّي عند احتساب الراتب — لا تُسجَّل كمصروف منفصل.
+            </p>
           </section>
         </div>
 
@@ -318,7 +436,7 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
           >
             {loading
               ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</>
-              : <><PackageCheck className="w-3.5 h-3.5" /> تأكيد المراجعة وانتقال إلى "قيد الشحن"</>}
+              : <><PackageCheck className="w-3.5 h-3.5" /> تأكيد المراجعة وانتقال إلى "جاهز للتسليم"</>}
           </button>
           <button
             onClick={onClose}

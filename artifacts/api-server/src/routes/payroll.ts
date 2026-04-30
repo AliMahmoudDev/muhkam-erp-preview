@@ -313,9 +313,12 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   const salesCost  = Number(salesRevRow?.cost_total ?? 0);
 
   // إيرادات الصيانة (التذاكر المُسلَّمة في الفترة)
+  // ملاحظة على التسمية: العمود external_workshop_cost = تكلفة ورشة خارجية،
+  // و broker_commission = عمولة وسيط — كلاهما يُخصم من إيراد الصيانة الصافي.
   const [repairRevRow] = await db.select({
-    gross_revenue: sql<string>`COALESCE(SUM(CAST(${repairJobsTable.final_cost} AS numeric)), 0)`,
-    parts_cost:    sql<string>`COALESCE(SUM(CAST(${repairJobsTable.external_workshop_cost} AS numeric)), 0)`,
+    gross_revenue:    sql<string>`COALESCE(SUM(CAST(${repairJobsTable.final_cost} AS numeric)), 0)`,
+    workshop_cost:    sql<string>`COALESCE(SUM(CAST(${repairJobsTable.external_workshop_cost} AS numeric)), 0)`,
+    broker_comm_sum:  sql<string>`COALESCE(SUM(CAST(${repairJobsTable.broker_commission} AS numeric)), 0)`,
   }).from(repairJobsTable)
     .where(and(
       eq(repairJobsTable.company_id, companyId),
@@ -323,8 +326,9 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       sql`${repairJobsTable.delivered_at} >= ${period.start_date}`,
       sql`${repairJobsTable.delivered_at} <= ${period.end_date}`,
     ));
-  const repairGross = Number(repairRevRow?.gross_revenue ?? 0);
-  const repairCost  = Number(repairRevRow?.parts_cost ?? 0);
+  const repairGross         = Number(repairRevRow?.gross_revenue ?? 0);
+  const repairWorkshopCost  = Number(repairRevRow?.workshop_cost ?? 0);
+  const repairBrokerComm    = Number(repairRevRow?.broker_comm_sum ?? 0);
 
   // قطع الغيار للصيانة
   const [repairPartsCostRow] = await db.select({
@@ -342,7 +346,11 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   const repairPartsCost = Number(repairPartsCostRow?.parts_cost ?? 0);
 
   const companyGrossRevenue = salesGross + repairGross;
-  const companyNetRevenue   = Math.max(0, (salesGross - salesCost) + (repairGross - repairCost - repairPartsCost));
+  // صافي الشركة = صافي المبيعات + صافي الصيانة (إجمالي − تكلفة ورشة خارجية − قطع غيار − عمولة وسيط)
+  const companyNetRevenue   = Math.max(
+    0,
+    (salesGross - salesCost) + (repairGross - repairWorkshopCost - repairPartsCost - repairBrokerComm)
+  );
 
   const processedRecords: Array<Record<string, unknown>> = [];
 

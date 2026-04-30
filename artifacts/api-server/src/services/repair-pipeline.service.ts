@@ -47,15 +47,18 @@ const STAGE_REQUIREMENTS: Record<string, { field: string; label_ar: string }[]> 
   repaired: [
     { field: 'final_cost', label_ar: 'يجب إدخال التكلفة النهائية' },
   ],
-  /* ── الانتقال من "مراقبة الجودة" إلى "جاهز للتسليم" ── */
+  /* ── الانتقال من "مراقبة الجودة" إلى "جاهز للتسليم" ──
+        بوّابة مزدوجة:
+          1) qa_completed_at        — اكتمال فحص مراقبة الجودة (QC)
+          2) pre_delivery_reviewed_at — اكتمال المراجعة النهائية (PreDeliveryModal):
+             نوع الورشة (داخلية/خارجية) + قطع الغيار/تكلفة الورشة + بيانات الوسيط */
   ready_for_delivery: [
-    { field: 'final_cost',           label_ar: 'يجب إدخال التكلفة النهائية' },
-    { field: 'qa_completed_at',      label_ar: 'يجب إكمال بنود فحص مراقبة الجودة (QC) أولاً' },
+    { field: 'final_cost',               label_ar: 'يجب إدخال التكلفة النهائية' },
+    { field: 'qa_completed_at',          label_ar: 'يجب إكمال بنود فحص مراقبة الجودة (QC) أولاً' },
+    { field: 'pre_delivery_reviewed_at', label_ar: 'يجب إتمام مراجعة ما قبل التسليم (نوع الورشة + القطع/التكلفة + الوسيط) أولاً' },
   ],
-  /* ── الانتقال من "جاهز للتسليم" إلى "الشحن" ── */
-  shipped: [
-    { field: 'pre_delivery_reviewed_at', label_ar: 'يجب مراجعة القطع غير المستخدمة وبيانات الورشة الخارجية والوسيط أولاً' },
-  ],
+  /* ── الانتقال من "جاهز للتسليم" إلى "الشحن" ──
+        لم يعد يتطلب pre_delivery_reviewed_at لأن المراجعة تتم في الخطوة السابقة. */
   /* ── الانتقال من "الشحن" إلى "تم التسليم" ── */
   delivered: [
     { field: 'shipping_settled_at',  label_ar: 'يجب تسجيل تكلفة الشحن (أو تأكيد عدمها) قبل الإغلاق' },

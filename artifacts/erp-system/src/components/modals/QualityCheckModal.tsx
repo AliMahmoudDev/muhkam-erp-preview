@@ -3,11 +3,12 @@
  *
  * يفتح عند الانتقال من "جارٍ الإصلاح" إلى "مراقبة الجودة".
  *
- * تخطيط جديد بعمودين:
+ * تخطيط بعمودين:
  *   - اليمين: بنود الفحص الأولي عند الاستلام (للقراءة فقط، كمرجع للمقارنة).
  *   - اليسار: نفس البنود مع قرار الفني (قبول / رفض / لا ينطبق) + خانة ملاحظات.
  *
- * - زرّ "قبول الفحص" — يحفظ qa_checklist + qa_completed_at، ثم ينتقل إلى "جاهز للتسليم".
+ * - زرّ "حفظ نتيجة الفحص" — يحفظ qa_checklist + qa_completed_at ويغلق المودال.
+ *   النقل لـ "جاهز للتسليم" يتم يدوياً من شريط مسار الإصلاح بعد اعتماد الفحص.
  *   مفعّل فقط حين تُتَّخذ قرار لكل بند ولا يوجد أي بند مرفوض.
  * - زرّ "رفض الفحص" — يبقى البطاقة في "جارٍ الإصلاح" مع حفظ سبب الرفض في qa_notes.
  *
@@ -19,7 +20,7 @@ import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ShieldCheck, Loader2, X, AlertTriangle,
-  Check, Minus, XCircle, ThumbsUp, ThumbsDown, ArrowRight,
+  Check, Minus, XCircle, ThumbsDown, Save,
   ClipboardCheck, ClipboardList, MessageSquare,
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
@@ -180,7 +181,8 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, notes: n } : it));
   }
 
-  /** قبول الفحص — يحفظ qa_checklist + qa_completed_at ثم ينقل لـ ready_for_delivery */
+  /** حفظ نتيجة الفحص — يحفظ qa_checklist + qa_completed_at فقط (بدون نقل تلقائي).
+      النقل لـ "جاهز للتسليم" يدوي من شريط مسار الإصلاح بعد فتح بوّابة المراجعة النهائية. */
   async function handleApprove() {
     if (items.length === 0) {
       setErrors(["لا توجد بنود فحص — يجب أن يكون هناك فحص أولي مسجَّل عند الاستلام"]);
@@ -220,8 +222,8 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
         return;
       }
       toast({
-        title: "✓ تم قبول الفحص",
-        description: `${passCount} بند ناجح · ${naCount} لا ينطبق — جارٍ النقل إلى "جاهز للتسليم"`,
+        title: "✓ تم حفظ نتيجة الفحص",
+        description: `${passCount} بند ناجح · ${naCount} لا ينطبق — يمكنك الآن النقل يدوياً إلى "جاهز للتسليم"`,
       });
       onSaved("approve");
     } catch {
@@ -549,7 +551,7 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
               >
                 {loading
                   ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</>
-                  : <><ThumbsUp className="w-3.5 h-3.5" /> قبول الفحص <ArrowRight className="w-3 h-3" /> جاهز للتسليم</>}
+                  : <><Save className="w-3.5 h-3.5" /> حفظ نتيجة الفحص</>}
               </button>
               <button
                 onClick={() => { setRejectMode(true); setErrors([]); }}
