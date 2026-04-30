@@ -29,7 +29,7 @@ const NAV_SECTIONS = [
     hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/devices', '/repairs', '/scrap-inventory', '/warranty'],
   },
   { label: 'المالية', hrefs: ['/treasury', '/vouchers', '/expenses', '/income', '/reports'] },
-  { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance'] },
+  { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance', '/payroll'] },
   { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/fixed-assets', '/accruals', '/bank-reconciliation', '/budgets', '/cost-centers'] },
   { label: 'النظام', hrefs: ['/settings', '/branches'] },
 ];

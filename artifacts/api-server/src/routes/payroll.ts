@@ -3,7 +3,7 @@
  * Full payroll processing system with salary structures, tax calculation, and period management.
  */
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql, isNull } from "drizzle-orm";
+import { eq, and, desc, sql, isNull, gte, lte, ilike } from "drizzle-orm";
 import {
   db,
   salaryStructuresTable, salaryComponentsTable,
@@ -13,6 +13,8 @@ import {
   employeesTable,
   monthlyIncentiveSummaryTable,
   salaryAdvancesTable,
+  employeeDeductionsTable,
+  journalEntriesTable, journalEntryLinesTable, accountsTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
@@ -342,6 +344,23 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       }
     }
 
+    // Attendance & manual deductions in the payroll period
+    const empDeductions = await db.select().from(employeeDeductionsTable)
+      .where(and(
+        eq(employeeDeductionsTable.employee_id, emp.id),
+        isNull(employeeDeductionsTable.deleted_at),
+        gte(employeeDeductionsTable.deduction_date, period.start_date),
+        lte(employeeDeductionsTable.deduction_date, period.end_date),
+      ));
+    let attendanceDeductionsTotal = 0;
+    for (const ded of empDeductions) {
+      const dedAmt = Number(ded.amount ?? 0);
+      if (dedAmt > 0) {
+        lineItems.push({ component_name: ded.reason ?? `خصم ${ded.deduction_type}`, component_type: "deduction", amount: -dedAmt });
+        attendanceDeductionsTotal += dedAmt;
+      }
+    }
+
     // Incentives
     const periodMonth = period.start_date.substring(0, 7);
     const [incentiveSummary] = await db.select().from(monthlyIncentiveSummaryTable)
@@ -354,7 +373,7 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       }
     }
 
-    const netSalary = grossSalary - totalDeductions - taxAmount - advanceDeductions + incentiveAmount;
+    const netSalary = grossSalary - totalDeductions - taxAmount - advanceDeductions - attendanceDeductionsTotal + incentiveAmount;
 
     const [record] = await db.insert(payrollRecordsTable).values({
       payroll_period_id: id, employee_id: emp.id,
@@ -406,7 +425,82 @@ router.post("/payroll/periods/:id/approve", wrap(async (req, res) => {
     .returning();
   if (!row) { res.status(409).json({ error: "لا يمكن اعتماد هذه الفترة في حالتها الحالية" }); return; }
   await db.update(payrollRecordsTable).set({ status: "approved", updated_at: new Date() }).where(eq(payrollRecordsTable.payroll_period_id, id));
+
+  // ── قيد يومي تلقائي للرواتب ──
+  try {
+    const records = await db.select({ net_salary: payrollRecordsTable.net_salary })
+      .from(payrollRecordsTable).where(eq(payrollRecordsTable.payroll_period_id, id));
+    const totalNet = records.reduce((s, r) => s + Number(r.net_salary ?? 0), 0);
+    if (totalNet > 0) {
+      const [expAcc] = await db.select().from(accountsTable)
+        .where(and(eq(accountsTable.company_id, companyId), eq(accountsTable.type, "expense"), eq(accountsTable.is_posting, true), ilike(accountsTable.name, "%رواتب%")))
+        .limit(1);
+      const [liabAcc] = await db.select().from(accountsTable)
+        .where(and(eq(accountsTable.company_id, companyId), eq(accountsTable.type, "liability"), eq(accountsTable.is_posting, true)))
+        .limit(1);
+      if (expAcc && liabAcc) {
+        const todayStr = row.end_date ?? new Date().toISOString().split("T")[0];
+        const [{ c }] = await db.select({ c: sql<number>`count(*)` }).from(journalEntriesTable).where(eq(journalEntriesTable.company_id, companyId));
+        const entryNo = `PAY-${String(Number(c ?? 0) + 1).padStart(4, "0")}`;
+        const [entry] = await db.insert(journalEntriesTable).values({
+          company_id: companyId, entry_no: entryNo, date: todayStr,
+          description: `قيد رواتب — ${row.name}`, reference: `PAYROLL-${id}`, status: "draft",
+          total_debit: String(totalNet), total_credit: String(totalNet),
+        }).returning();
+        await db.insert(journalEntryLinesTable).values([
+          { entry_id: entry.id, account_id: expAcc.id, account_name: expAcc.name, account_code: expAcc.code, debit: String(totalNet), credit: "0", description: `مصروف رواتب — ${row.name}` },
+          { entry_id: entry.id, account_id: liabAcc.id, account_name: liabAcc.name, account_code: liabAcc.code, debit: "0", credit: String(totalNet), description: `رواتب مستحقة — ${row.name}` },
+        ]);
+      }
+    }
+  } catch { /* قيد الرواتب اختياري — يُتجاهل إذا لم تُوجد الحسابات */ }
+
   res.json({ ok: true, status: "approved" });
+}));
+
+/* ── My Payslips (بوابة الموظف) ──────────────────────────────── */
+router.get("/payroll/my-payslips", wrap(async (req, res) => {
+  const empId = req.user?.employee_id ?? null;
+  if (!empId) { res.json([]); return; }
+  const rows = await db.select({
+    id: payrollRecordsTable.id,
+    payroll_period_id: payrollRecordsTable.payroll_period_id,
+    gross_salary: payrollRecordsTable.gross_salary,
+    net_salary: payrollRecordsTable.net_salary,
+    total_deductions: payrollRecordsTable.total_deductions,
+    tax_amount: payrollRecordsTable.tax_amount,
+    advance_deductions: payrollRecordsTable.advance_deductions,
+    incentive_amount: payrollRecordsTable.incentive_amount,
+    status: payrollRecordsTable.status,
+    currency: payrollRecordsTable.currency,
+    period_name: payrollPeriodsTable.name,
+    period_start: payrollPeriodsTable.start_date,
+    period_end: payrollPeriodsTable.end_date,
+    created_at: payrollRecordsTable.created_at,
+    updated_at: payrollRecordsTable.updated_at,
+  })
+    .from(payrollRecordsTable)
+    .leftJoin(payrollPeriodsTable, eq(payrollRecordsTable.payroll_period_id, payrollPeriodsTable.id))
+    .where(eq(payrollRecordsTable.employee_id, empId))
+    .orderBy(desc(payrollPeriodsTable.start_date));
+  res.json(rows.map(r => ({
+    ...r,
+    gross_salary: Number(r.gross_salary), net_salary: Number(r.net_salary),
+    total_deductions: Number(r.total_deductions), tax_amount: Number(r.tax_amount),
+    advance_deductions: Number(r.advance_deductions), incentive_amount: Number(r.incentive_amount),
+    created_at: fmt(r.created_at as Date | null | undefined), updated_at: fmt(r.updated_at as Date | null | undefined),
+  })));
+}));
+
+router.get("/payroll/my-payslips/:id/lines", wrap(async (req, res) => {
+  const empId = req.user?.employee_id ?? null;
+  if (!empId) { res.json([]); return; }
+  const id = parseInt(String(req.params["id"]), 10);
+  const [rec] = await db.select({ id: payrollRecordsTable.id })
+    .from(payrollRecordsTable).where(and(eq(payrollRecordsTable.id, id), eq(payrollRecordsTable.employee_id, empId)));
+  if (!rec) { res.status(404).json({ error: "القسيمة غير موجودة" }); return; }
+  const lines = await db.select().from(payrollLineItemsTable).where(eq(payrollLineItemsTable.payroll_record_id, id));
+  res.json(lines.map(l => ({ ...l, amount: Number(l.amount), created_at: fmt(l.created_at as Date | null | undefined) })));
 }));
 
 /* ── Async payroll processing (fire & forget) ─────────────────── */

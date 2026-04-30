@@ -263,6 +263,8 @@ router.post("/attendance-deductions/preview", wrap(async (req, res) => {
     if (weeklyOff.includes(dow)) continue;
     // Skip official holidays
     if (holSet.has(r.attendance_date)) continue;
+    // Skip excused (استأذن) — no deduction applied
+    if (r.status === "excused") continue;
 
     // ── Absence ──
     if (r.status === "absent") {

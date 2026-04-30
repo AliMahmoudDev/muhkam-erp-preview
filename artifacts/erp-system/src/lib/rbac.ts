@@ -71,6 +71,7 @@ export const ROUTE_PERMISSION: Record<string, string> = {
   '/branches':            'can_access_branches',
   '/employees':           'can_access_employees',
   '/attendance':          'can_access_attendance',
+  '/payroll':             'can_access_payroll',
   '/settings':            'can_access_settings',
   '/transfers':           'can_access_transfers',
 };
@@ -109,6 +110,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   { name: 'الإعدادات',             href: '/settings',            icon: Settings,        roles: ['admin'] },
   { name: 'الموظفون',              href: '/employees',           icon: UserCheck,       roles: ['admin', 'manager', 'employee'] },
   { name: 'الحضور والانصراف',      href: '/attendance',          icon: Clock,           roles: ['admin', 'manager'] },
+  { name: 'الرواتب',               href: '/payroll',             icon: Wallet,          roles: ['admin', 'manager'] },
   { name: 'بوابتي الشخصية',        href: '/my-portal',           icon: UserCircle,      roles: ['admin', 'manager', 'cashier', 'salesperson', 'employee'] },
 ];
 

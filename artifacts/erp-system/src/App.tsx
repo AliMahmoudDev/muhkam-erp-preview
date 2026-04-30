@@ -35,6 +35,7 @@ const ROUTE_FEATURES: Partial<Record<string, keyof CompanyFeatures>> = {
   '/budgets':             'budgets',
   '/employees':           'hr',
   '/attendance':          'hr',
+  '/payroll':             'hr',
   '/pos':                 'pos',
   '/warranty':            'warranty',
   '/repairs':             'maintenance',
@@ -66,6 +67,7 @@ const SuperAdmin = lazy(() => import('@/pages/super-admin'));
 const Branches = lazy(() => import('@/pages/branches'));
 const Employees = lazy(() => import('@/pages/employees'));
 const Attendance = lazy(() => import('@/pages/attendance'));
+const Payroll    = lazy(() => import('@/pages/payroll'));
 const Returns = lazy(() => import('@/pages/returns'));
 const Warranty = lazy(() => import('@/pages/warranty'));
 const Repairs  = lazy(() => import('@/pages/repairs'));
@@ -254,7 +256,7 @@ function Router() {
         </Route>
         <Route path="/branches">{() => <Guard path="/branches" component={Branches} />}</Route>
         <Route path="/employees">{() => <Guard path="/employees" component={Employees} />}</Route>
-        <Route path="/payroll">{() => <Redirect to="/employees" />}</Route>
+        <Route path="/payroll">{() => <Guard path="/payroll" component={Payroll} />}</Route>
         <Route path="/attendance">
           {() => <Guard path="/attendance" component={Attendance} />}
         </Route>

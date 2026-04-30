@@ -35,6 +35,8 @@ function statusBadge(s: string) {
       return 'erp-badge erp-badge-info';
     case 'holiday':
       return 'erp-badge erp-badge-pending';
+    case 'excused':
+      return 'erp-badge erp-badge-info';
     default:
       return 'erp-badge erp-badge-neutral';
   }
@@ -47,6 +49,7 @@ function statusAr(s: string) {
     on_leave: 'إجازة',
     holiday: 'إجازة رسمية',
     weekend: 'عطلة',
+    excused: 'استأذن',
   };
   return m[s] ?? s;
 }
@@ -692,6 +695,7 @@ export default function Attendance() {
                     <option value="present">حاضر</option>
                     <option value="late">متأخر</option>
                     <option value="absent">غائب</option>
+                    <option value="excused">استأذن (بدون خصم)</option>
                     <option value="on_leave">إجازة</option>
                     <option value="holiday">إجازة رسمية</option>
                   </select>

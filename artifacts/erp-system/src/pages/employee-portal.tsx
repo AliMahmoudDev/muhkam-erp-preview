@@ -450,6 +450,14 @@ export default function EmployeePortal() {
     enabled: !!empId,
   });
 
+  const { data: payslipsRaw } = useQuery<AnyRec[]>({
+    queryKey: ['portal-payslips'],
+    queryFn: async () => {
+      const r = await authFetch('/api/payroll/my-payslips');
+      return r.ok ? r.json() : [];
+    },
+  });
+
   /* ── Derived ── */
   const emp       = (empRaw ?? {}) as AnyRec;
   const summary   = (summaryRaw ?? {}) as AnyRec;
@@ -459,6 +467,7 @@ export default function EmployeePortal() {
   const bonuses    = Array.isArray(bonusesRaw)   ? bonusesRaw   : [];
   const leaves     = Array.isArray(leavesRaw)    ? leavesRaw    : [];
   const leavesBal  = Array.isArray(leaveBalRaw)  ? leaveBalRaw  : [];
+  const payslips   = Array.isArray(payslipsRaw)  ? payslipsRaw  : [];
 
   const todayRec = Array.isArray(todayRecRaw) && todayRecRaw.length > 0 ? todayRecRaw[0] as AnyRec : null;
   const alreadyCheckedIn  = !!todayRec?.check_in_time;
@@ -801,6 +810,45 @@ export default function EmployeePortal() {
                   </div>
                   {Boolean(l.reason) && <p style={{ fontSize:11, color:textMuted, marginTop:2 }}>{fmt(l.reason)}</p>}
                   {Boolean(l.rejection_reason) && <p style={{ fontSize:11, color:'#f87171', marginTop:2 }}>سبب الرفض: {fmt(l.rejection_reason)}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+
+      {/* ── PAYSLIPS ── */}
+      <SectionCard icon={<Wallet size={17}/>} title={`قسائم الرواتب (${payslips.length})`}
+        accent="#34d399" isDark={isDark} border={border} cardBg={cardBg} defaultOpen={false}>
+        {payslips.length === 0 ? (
+          <p style={{ fontSize:13, color:textMuted, textAlign:'center', padding:'12px 0' }}>لا توجد قسائم رواتب</p>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {payslips.map((p, i) => (
+              <div key={i} style={{ borderRadius:10, border:`1px solid ${border}`, padding:'12px 14px',
+                background: isDark ? 'rgba(52,211,153,0.05)' : 'rgba(52,211,153,0.04)' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                  <span style={{ fontSize:13, fontWeight:800 }}>
+                    {String(p.period_name ?? `فترة ${i+1}`)}
+                  </span>
+                  <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                    background: String(p.status) === 'approved' ? 'rgba(52,211,153,0.2)' : 'rgba(251,191,36,0.2)',
+                    color: String(p.status) === 'approved' ? '#34d399' : '#fbbf24', fontWeight:700 }}>
+                    {String(p.status) === 'approved' ? 'معتمد' : String(p.status) === 'processed' ? 'محلول' : 'مسودة'}
+                  </span>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px 16px' }}>
+                  {[
+                    { label:'الراتب الأساسي',  value: fmtCurrency(p.base_salary,   empCurrency) },
+                    { label:'إجمالي الاستحقاق', value: fmtCurrency(p.gross_salary,  empCurrency) },
+                    { label:'الخصومات',         value: fmtCurrency(p.total_deductions, empCurrency) },
+                    { label:'صافي الراتب',      value: fmtCurrency(p.net_salary,    empCurrency) },
+                  ].map(({ label, value }) => (
+                    <div key={label}>
+                      <span style={{ fontSize:10, color:textMuted }}>{label}</span>
+                      <div style={{ fontSize:12, fontWeight:700 }}>{value}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
