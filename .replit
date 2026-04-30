@@ -41,7 +41,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "fuser -k 8080/tcp 2>/dev/null || true; node --enable-source-maps ./artifacts/api-server/dist/index.mjs"
+args = "node --enable-source-maps ./artifacts/api-server/dist/index.mjs"
 waitForPort = 8080
 
 [[workflows.workflow]]

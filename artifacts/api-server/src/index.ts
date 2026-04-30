@@ -41,10 +41,20 @@ function isPortInUse(port: number): Promise<boolean> {
   });
 }
 
+async function waitForPortFree(port: number, retries = 5, delayMs = 1000): Promise<boolean> {
+  for (let i = 0; i < retries; i++) {
+    const inUse = await isPortInUse(port);
+    if (!inUse) return false;
+    logger.warn({ port, attempt: i + 1, retries }, "Port in use — waiting for it to free up...");
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return true;
+}
+
 async function main() {
-  const inUse = await isPortInUse(PORT);
+  const inUse = await waitForPortFree(PORT);
   if (inUse) {
-    logger.warn({ port: PORT }, "Duplicate start prevented — port already in use");
+    logger.warn({ port: PORT }, "Duplicate start prevented — port still in use after retries");
     process.exit(0);
   }
 

@@ -22,9 +22,21 @@ export async function seedDefaults(): Promise<void> {
       const [inserted] = await db.insert(companiesTable).values({
         name:       "الشركة الافتراضية",
         plan_type:  "professional",
+        edition:    "advanced",
         is_active:  true,
         start_date: new Date().toISOString().split("T")[0],
         end_date:   new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        features:   {
+          accounting:          true,
+          hr:                  true,
+          pos:                 true,
+          warranty:            true,
+          consignment:         true,
+          fixed_assets:        true,
+          maintenance:         true,
+          budgets:             true,
+          bank_reconciliation: true,
+        },
       }).returning({ id: companiesTable.id });
       defaultCompany = inserted;
       logger.info("Default company created");
