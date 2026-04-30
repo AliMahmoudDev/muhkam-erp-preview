@@ -3,20 +3,24 @@
  *
  * يفتح عند الانتقال من "جارٍ الإصلاح" إلى "مراقبة الجودة".
  *
- * - يعرض بنود الاستلام الأولي للقراءة فقط كمرجع للفني.
- * - يعرض قائمة فحص قياسية ثابتة (يعمل / لا يعمل / لا ينطبق).
- * - زرّ "قبول" — يحفظ بيانات الفحص + ينتقل تلقائياً إلى "جاهز للتسليم".
- * - زرّ "رفض" — يطلب سبباً إلزامياً، يحفظه في qa_notes، ويُبقي البطاقة في "جارٍ الإصلاح".
+ * تخطيط جديد بعمودين:
+ *   - اليمين: بنود الفحص الأولي عند الاستلام (للقراءة فقط، كمرجع للمقارنة).
+ *   - اليسار: نفس البنود مع قرار الفني (قبول / رفض / لا ينطبق) + خانة ملاحظات.
+ *
+ * - زرّ "قبول الفحص" — يحفظ qa_checklist + qa_completed_at، ثم ينتقل إلى "جاهز للتسليم".
+ *   مفعّل فقط حين تُتَّخذ قرار لكل بند ولا يوجد أي بند مرفوض.
+ * - زرّ "رفض الفحص" — يبقى البطاقة في "جارٍ الإصلاح" مع حفظ سبب الرفض في qa_notes.
  *
  * Endpoints:
- *   POST /api/repair-jobs/:id/qa-checklist  → يحفظ qa_checklist + qa_completed_at (يفتح بوّابة ready_for_delivery)
- *   PATCH /api/repair-jobs/:id              → يحفظ qa_notes (للرفض فقط — لا يلمس qa_completed_at)
+ *   POST  /api/repair-jobs/:id/qa-checklist  → يحفظ qa_checklist + qa_completed_at
+ *   PATCH /api/repair-jobs/:id               → يحفظ qa_notes (للرفض فقط)
  */
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ShieldCheck, Loader2, X, AlertTriangle,
-  Check, Minus, XCircle, Eye, ThumbsUp, ThumbsDown, ArrowRight,
+  Check, Minus, XCircle, ThumbsUp, ThumbsDown, ArrowRight,
+  ClipboardCheck, ClipboardList,
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
@@ -25,17 +29,24 @@ import { useToast } from "@/hooks/use-toast";
 type QcStatus = "pass" | "fail" | "n/a";
 type Outcome  = "approve" | "reject";
 
+/** بند الفحص الأولي كما يحفظه نظام الاستلام */
 interface IntakeItem {
-  label_ar: string;
+  id: string;
+  label: string;
   category?: string;
-  status?: string | null;   // 'present' | 'damaged' | 'missing'
+  status?: string | null;        // pass | fail | partial | untestable | null
   notes?: string | null;
 }
 
+/** بند فحص الجودة — مطابق لبنود الاستلام مع قرار الفني */
 interface QcItem {
-  label_ar: string;
-  status: QcStatus | null;
-  notes?: string;
+  id: string;
+  label: string;
+  category?: string;
+  intake_status?: string | null; // الحالة الأصلية عند الاستلام (مرجع)
+  intake_notes?: string | null;
+  status: QcStatus | null;       // قرار الفني الحالي
+  notes: string;                 // ملاحظات الفني
 }
 
 interface JobLite {
@@ -56,51 +67,49 @@ interface Props {
   onSaved: (outcome: Outcome) => void;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
- * قائمة الفحص القياسية لـ QC — ثابتة ومستقلّة عن بنود الاستلام.
- * ───────────────────────────────────────────────────────────────────── */
-const QC_DEFAULT_ITEMS: { label_ar: string }[] = [
-  { label_ar: "الجهاز يشتغل ويُقلِع للنظام بشكل طبيعي" },
-  { label_ar: "الشاشة سليمة وتعرض بدون خطوط أو بقع" },
-  { label_ar: "اللمس يستجيب في كل المناطق" },
-  { label_ar: "الكاميرا الأمامية تعمل" },
-  { label_ar: "الكاميرا الخلفية تعمل" },
-  { label_ar: "السمّاعة العلوية (المكالمات) تعمل" },
-  { label_ar: "السمّاعة السفلية (الميديا) تعمل" },
-  { label_ar: "الميكروفون يلتقط الصوت بوضوح" },
-  { label_ar: "الشاحن يعمل والبطارية تشحن" },
-  { label_ar: "أزرار الباور والصوت تعمل" },
-  { label_ar: "بصمة/Face ID تعمل (إن وُجدت)" },
-  { label_ar: "WiFi و Bluetooth يتصلان" },
-  { label_ar: "شبكة المحمول وSIM تعمل" },
-  { label_ar: "السماعات اللاسلكية مقترنة (إن طُلب)" },
-  { label_ar: "الجهاز نظيف خارجياً" },
-];
-
-/* ─── ألوان وعناصر مساعدة ─── */
+/* ─── ألوان أزرار القرار ─── */
 const QC_BTN: Record<QcStatus, { label: string; bg: string; ring: string; icon: typeof Check }> = {
-  pass: { label: "يعمل",      bg: "bg-emerald-500/85", ring: "ring-emerald-300/60", icon: Check   },
-  fail: { label: "لا يعمل",   bg: "bg-red-500/85",     ring: "ring-red-300/60",     icon: XCircle },
-  "n/a":{ label: "لا ينطبق",  bg: "bg-zinc-500/85",    ring: "ring-zinc-300/60",    icon: Minus   },
+  pass:   { label: "قبول",     bg: "bg-emerald-500/85", ring: "ring-emerald-300/60", icon: Check   },
+  fail:   { label: "رفض",      bg: "bg-red-500/85",     ring: "ring-red-300/60",     icon: XCircle },
+  "n/a":  { label: "لا ينطبق", bg: "bg-zinc-500/80",    ring: "ring-zinc-300/50",    icon: Minus   },
 };
 
-const INTAKE_LABEL: Record<string, { txt: string; cls: string; bg: string }> = {
-  present: { txt: "موجود",  cls: "text-emerald-300", bg: "bg-emerald-500/8 border-emerald-500/20" },
-  damaged: { txt: "تالف",   cls: "text-amber-300",   bg: "bg-amber-500/8 border-amber-500/20"     },
-  missing: { txt: "مفقود",  cls: "text-red-300",     bg: "bg-red-500/8 border-red-500/20"         },
+/* ─── شارة حالة الاستلام للعرض في العمود الأيمن ─── */
+const INTAKE_BADGE: Record<string, { txt: string; cls: string; bg: string }> = {
+  pass:       { txt: "يعمل",     cls: "text-emerald-300", bg: "bg-emerald-500/10 border-emerald-500/25" },
+  fail:       { txt: "لا يعمل",  cls: "text-red-300",     bg: "bg-red-500/10 border-red-500/25"         },
+  partial:    { txt: "جزئي",     cls: "text-amber-300",   bg: "bg-amber-500/10 border-amber-500/25"     },
+  untestable: { txt: "غير قابل", cls: "text-zinc-300",    bg: "bg-zinc-500/10 border-zinc-500/25"       },
+  na:         { txt: "غير قابل", cls: "text-zinc-300",    bg: "bg-zinc-500/10 border-zinc-500/25"       },
 };
 
 /* ─── parsing helpers ─── */
 function parseChecklist(raw: unknown): IntakeItem[] {
-  if (Array.isArray(raw)) return raw as IntakeItem[];
-  if (typeof raw === "string" && raw.trim()) {
-    try { const v = JSON.parse(raw); return Array.isArray(v) ? v : []; } catch { return []; }
+  let arr: unknown[] = [];
+  if (Array.isArray(raw)) arr = raw;
+  else if (typeof raw === "string" && raw.trim()) {
+    try { const v = JSON.parse(raw); if (Array.isArray(v)) arr = v; } catch { /* ignore */ }
   }
-  return [];
+  return arr
+    .map((c, i) => {
+      const o = c as Record<string, unknown>;
+      const id = String(o.id ?? o.item_id ?? `item-${i}`);
+      const label = String(o.label ?? o.label_ar ?? `بند ${i + 1}`);
+      // تجاهل بند "الجهاز لا يفتح" — لا يصلح للفحص
+      if (id === "__power_off__") return null;
+      return {
+        id,
+        label,
+        category: typeof o.category === "string" ? o.category : undefined,
+        status:   typeof o.status === "string" ? o.status : null,
+        notes:    typeof o.notes === "string" ? o.notes : null,
+      } as IntakeItem;
+    })
+    .filter((x): x is IntakeItem => x !== null);
 }
 
-function parseSavedQc(raw: unknown): QcItem[] {
-  if (Array.isArray(raw)) return raw as QcItem[];
+function parseSavedQc(raw: unknown): Array<{ id?: string; label?: string; status?: string; notes?: string }> {
+  if (Array.isArray(raw)) return raw as Array<{ id?: string; label?: string; status?: string; notes?: string }>;
   if (typeof raw === "string" && raw.trim()) {
     try { const v = JSON.parse(raw); return Array.isArray(v) ? v : []; } catch { return []; }
   }
@@ -112,35 +121,45 @@ function parseSavedQc(raw: unknown): QcItem[] {
 export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
   const { toast } = useToast();
 
-  /* بنود الاستلام للقراءة فقط — مرجع بصري للفني */
+  /* بنود الاستلام — تُمثّل المرجع وتُستخدم لبناء بنود الفحص */
   const intakeItems = useMemo(() => parseChecklist(job.checklist), [job.checklist]);
 
-  /* قائمة الفحص — تبدأ من القائمة القياسية، أو من بيانات محفوظة سابقاً */
+  /* بنود الفحص — مبنيّة من الاستلام مع استرجاع أي قرارات محفوظة سابقاً */
   const initial: QcItem[] = useMemo(() => {
-    const saved = parseSavedQc(job.qa_checklist);
-    if (saved.length > 0) {
-      return saved.map(s => ({
-        label_ar: String(s.label_ar ?? ""),
-        status:   (s.status === "pass" || s.status === "fail" || s.status === "n/a") ? s.status : null,
-        notes:    typeof s.notes === "string" ? s.notes : "",
-      })).filter(i => i.label_ar);
-    }
-    return QC_DEFAULT_ITEMS.map(d => ({ label_ar: d.label_ar, status: null, notes: "" }));
-  }, [job.qa_checklist]);
+    const savedRaw = parseSavedQc(job.qa_checklist);
+    const savedById = new Map<string, { status?: string; notes?: string }>();
+    savedRaw.forEach((s, i) => {
+      const k = String(s.id ?? s.label ?? `item-${i}`);
+      savedById.set(k, { status: s.status, notes: s.notes });
+    });
+
+    return intakeItems.map(it => {
+      const saved = savedById.get(it.id) ?? savedById.get(it.label);
+      const st = saved?.status;
+      return {
+        id:            it.id,
+        label:         it.label,
+        category:      it.category,
+        intake_status: it.status,
+        intake_notes:  it.notes,
+        status:        (st === "pass" || st === "fail" || st === "n/a") ? st : null,
+        notes:         typeof saved?.notes === "string" ? saved.notes : "",
+      };
+    });
+  }, [intakeItems, job.qa_checklist]);
 
   const [items, setItems]     = useState<QcItem[]>(initial);
-  const [notes, setNotes]     = useState<string>("");
   const [score, setScore]     = useState<string>(job.device_score != null ? String(job.device_score) : "");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors]   = useState<string[]>([]);
 
-  /* وضع الرفض — يطلب سبباً إلزامياً */
-  const [rejectMode, setRejectMode] = useState(false);
-  const [rejectReason, setRejectReason] = useState<string>("");
+  /* وضع الرفض — يطلب سبباً إجمالياً إلزامياً */
+  const [rejectMode, setRejectMode]       = useState(false);
+  const [rejectReason, setRejectReason]   = useState<string>("");
 
-  const passCount = items.filter(i => i.status === "pass").length;
-  const failCount = items.filter(i => i.status === "fail").length;
-  const naCount   = items.filter(i => i.status === "n/a").length;
+  const passCount    = items.filter(i => i.status === "pass").length;
+  const failCount    = items.filter(i => i.status === "fail").length;
+  const naCount      = items.filter(i => i.status === "n/a").length;
   const pendingCount = items.length - passCount - failCount - naCount;
   const allDecided   = items.length > 0 && pendingCount === 0;
 
@@ -151,14 +170,18 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, notes: n } : it));
   }
 
-  /** قبول الفحص — يحفظ qa_checklist + qa_completed_at ويُخطر الأب لينقل لـ ready_for_delivery */
+  /** قبول الفحص — يحفظ qa_checklist + qa_completed_at ثم ينقل لـ ready_for_delivery */
   async function handleApprove() {
+    if (items.length === 0) {
+      setErrors(["لا توجد بنود فحص — يجب أن يكون هناك فحص أولي مسجَّل عند الاستلام"]);
+      return;
+    }
     if (!allDecided) {
       setErrors([`يجب اتخاذ قرار لكل بند — متبقي ${pendingCount} بند`]);
       return;
     }
     if (failCount > 0) {
-      setErrors([`لا يمكن قبول الفحص ووجود ${failCount} بند فاشل — استخدم زر "رفض الفحص" بدلاً من ذلك`]);
+      setErrors([`لا يمكن قبول الفحص ووجود ${failCount} بند مرفوض — استخدم زر "رفض الفحص" لإعادة البطاقة للإصلاح`]);
       return;
     }
     setLoading(true);
@@ -169,11 +192,14 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: items.map(i => ({
-            label_ar: i.label_ar,
+            id:       i.id,
+            label:    i.label,
+            label_ar: i.label,
+            category: i.category,
             status:   i.status,
             notes:    i.notes ?? "",
           })),
-          notes,
+          notes: "",
           device_score: score.trim() === "" ? null : Number(score),
         }),
       });
@@ -185,7 +211,7 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
       }
       toast({
         title: "✓ تم قبول الفحص",
-        description: `${passCount} يعمل · ${naCount} لا ينطبق — جارٍ النقل إلى "جاهز للتسليم"`,
+        description: `${passCount} بند ناجح · ${naCount} لا ينطبق — جارٍ النقل إلى "جاهز للتسليم"`,
       });
       onSaved("approve");
     } catch {
@@ -194,7 +220,7 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
     }
   }
 
-  /** رفض الفحص — يحفظ qa_notes فقط (سبب الرفض)، الحالة تبقى in_repair */
+  /** رفض الفحص — يحفظ qa_notes مع تفصيل البنود المرفوضة + يُبقي البطاقة في in_repair */
   async function handleReject() {
     if (rejectReason.trim().length < 3) {
       setErrors(["يجب كتابة سبب رفض الفحص (3 أحرف على الأقل)"]);
@@ -203,9 +229,15 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
     setLoading(true);
     setErrors([]);
     try {
-      /* نضيف ختم زمني داخل النصّ لإظهار سجل القرار في الواجهة لاحقاً */
-      const stamped = `[رفض QC ${new Date().toLocaleString("ar-EG")}] ${rejectReason.trim()}`;
-      const merged  = job.qa_notes ? `${job.qa_notes}\n${stamped}` : stamped;
+      /* تفصيل البنود المرفوضة في النص — ليُعرض في تقرير الفني */
+      const failedLines = items
+        .filter(i => i.status === "fail")
+        .map(i => `  • ${i.label}${i.notes ? ` — ${i.notes}` : ""}`)
+        .join("\n");
+      const stamped =
+        `[رفض QC ${new Date().toLocaleString("ar-EG")}] ${rejectReason.trim()}` +
+        (failedLines ? `\nالبنود المرفوضة:\n${failedLines}` : "");
+      const merged = job.qa_notes ? `${job.qa_notes}\n\n${stamped}` : stamped;
 
       const res = await authFetch(api(`/api/repair-jobs/${job.id}`), {
         method: "PATCH",
@@ -220,7 +252,7 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
       }
       toast({
         title: "⚠ رفض الفحص",
-        description: "البطاقة بقيت في مرحلة \"جارٍ الإصلاح\" — راجع الفني للإصلاح.",
+        description: "البطاقة بقيت في مرحلة \"جارٍ الإصلاح\" — راجع الفني لإعادة المعالجة.",
         variant: "destructive",
       });
       onSaved("reject");
@@ -238,7 +270,7 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="my-4 rounded-2xl border border-white/10 w-full max-w-4xl shadow-2xl"
+        className="my-4 rounded-2xl border border-white/10 w-full max-w-5xl shadow-2xl"
         style={{ background: "rgba(15,12,30,0.97)", backdropFilter: "blur(20px)" }}
       >
         {/* ── Header ── */}
@@ -260,38 +292,14 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
           </button>
         </div>
 
-        {/* ── بنود الاستلام للقراءة فقط (مرجع) ── */}
-        {intakeItems.length > 0 && (
-          <div className="px-5 py-3 border-b border-white/5 bg-white/[0.015]">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Eye className="w-3.5 h-3.5 text-indigo-300" />
-              <p className="text-[11px] font-black text-white/70">بنود الاستلام (مرجع للمقارنة)</p>
-              <span className="text-[10px] text-white/40">— حالة الجهاز عند الاستلام</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-32 overflow-y-auto">
-              {intakeItems.map((it, idx) => {
-                const meta = it.status ? INTAKE_LABEL[it.status] : null;
-                return (
-                  <div
-                    key={idx}
-                    className={`px-2 py-1 rounded-lg text-[10px] flex items-center justify-between gap-1 border ${meta?.bg ?? "bg-white/[0.02] border-white/8"}`}
-                  >
-                    <span className="text-white/75 truncate">{it.label_ar}</span>
-                    {meta && <span className={`${meta.cls} font-bold shrink-0`}>{meta.txt}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* ── Counters ── */}
         <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 border-b border-white/5 bg-white/[0.02]">
+          <span className="text-[10px] text-white/55 ml-1">إجمالي البنود: <span className="text-white font-bold">{items.length}</span></span>
           <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/12 text-emerald-300 border border-emerald-500/25">
-            ✓ يعمل: {passCount}
+            ✓ مقبول: {passCount}
           </span>
           <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-500/12 text-red-300 border border-red-500/25">
-            ✗ لا يعمل: {failCount}
+            ✗ مرفوض: {failCount}
           </span>
           <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-zinc-500/12 text-zinc-300 border border-zinc-500/25">
             ‒ لا ينطبق: {naCount}
@@ -303,86 +311,134 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
           )}
         </div>
 
-        {/* ── بنود الفحص (القياسية الثابتة) ── */}
-        <div className="px-3 sm:px-5 py-4 max-h-[45vh] overflow-y-auto space-y-1.5">
-          {items.map((it, idx) => (
-            <div
-              key={idx}
-              className="rounded-xl border border-white/8 p-2.5"
-              style={{ background: "rgba(255,255,255,0.02)" }}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                <p className="flex-1 min-w-0 text-xs font-bold text-white">{it.label_ar}</p>
-                <div className="flex items-center gap-1 shrink-0">
-                  {(["pass","fail","n/a"] as QcStatus[]).map(st => {
-                    const cfg = QC_BTN[st];
-                    const Icon = cfg.icon;
-                    const active = it.status === st;
-                    return (
-                      <button
-                        key={st}
-                        onClick={() => setItemStatus(idx, st)}
-                        disabled={loading}
-                        className={[
-                          "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all",
-                          active ? `${cfg.bg} text-white ring-2 ${cfg.ring} shadow-md` :
-                                   "bg-white/[0.04] text-white/55 border border-white/8 hover:bg-white/[0.08] hover:text-white",
-                        ].join(" ")}
-                      >
-                        <Icon className="w-3 h-3" />
-                        {cfg.label}
-                      </button>
-                    );
-                  })}
+        {/* ── Two-column layout: intake (right) ↔ QC decisions (left) ── */}
+        {items.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <AlertTriangle className="w-10 h-10 text-amber-400/60 mx-auto mb-2" />
+            <p className="text-sm text-white/70 font-bold mb-1">لا توجد بنود فحص أولي</p>
+            <p className="text-[11px] text-white/40">
+              لم يُسجَّل فحص عند الاستلام — لا يمكن إجراء مراقبة جودة بدون مرجع.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 max-h-[58vh] overflow-y-auto" dir="rtl">
+            {/* ═══ العمود الأيمن: بنود الاستلام (للقراءة فقط) ═══ */}
+            <div className="border-l border-white/5 bg-indigo-500/[0.03]">
+              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-white/5 bg-indigo-500/10 backdrop-blur">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-indigo-300" />
+                  <p className="text-[12px] font-black text-indigo-200">بنود الاستلام (مرجع)</p>
+                  <span className="text-[10px] text-indigo-200/60">— حالة الجهاز عند الاستلام</span>
                 </div>
               </div>
-              {it.status === "fail" && (
-                <input
-                  value={it.notes ?? ""}
-                  onChange={(e) => setItemNotes(idx, e.target.value)}
-                  placeholder="تفاصيل العطل..."
-                  disabled={loading}
-                  className="mt-2 w-full px-3 py-1.5 rounded-lg bg-red-500/5 border border-red-500/20 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-red-400/40"
-                />
-              )}
+              <div className="p-3 space-y-1.5">
+                {items.map((it, idx) => {
+                  const stKey = String(it.intake_status ?? "");
+                  const meta = INTAKE_BADGE[stKey];
+                  return (
+                    <div
+                      key={`r-${it.id}-${idx}`}
+                      className="rounded-xl border border-white/8 px-3 py-2 bg-white/[0.02]"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-bold text-white/85 leading-tight">{it.label}</p>
+                          {it.category && (
+                            <p className="text-[9px] text-white/35 mt-0.5">{it.category}</p>
+                          )}
+                          {it.intake_notes && (
+                            <p className="text-[10px] text-amber-300/70 mt-1 italic">
+                              ملاحظة الاستلام: {it.intake_notes}
+                            </p>
+                          )}
+                        </div>
+                        {meta ? (
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${meta.bg} ${meta.cls}`}>
+                            {meta.txt}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 text-white/40 shrink-0">
+                            —
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-        </div>
 
-        {/* ── ملاحظات + تقييم (للقبول فقط) ── */}
-        {!rejectMode && (
-          <div className="px-5 py-3 border-t border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div className="sm:col-span-2">
-              <label className="block text-[10px] font-bold text-white/55 mb-1">ملاحظات عامة</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                disabled={loading}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-purple-400/40"
-                placeholder="مثلاً: تم الإصلاح والجهاز يعمل بكفاءة..."
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-white/55 mb-1">تقييم الجهاز (0-100)</label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={score}
-                onChange={(e) => setScore(e.target.value)}
-                disabled={loading}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white focus:outline-none focus:border-purple-400/40"
-                placeholder="—"
-              />
+            {/* ═══ العمود الأيسر: قرار الفني ═══ */}
+            <div className="bg-purple-500/[0.03]">
+              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-white/5 bg-purple-500/10 backdrop-blur">
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck className="w-4 h-4 text-purple-300" />
+                  <p className="text-[12px] font-black text-purple-200">قرار الفني (مراقبة الجودة)</p>
+                </div>
+              </div>
+              <div className="p-3 space-y-1.5">
+                {items.map((it, idx) => {
+                  const cardCls =
+                    it.status === "pass" ? "border-emerald-500/30 bg-emerald-500/[0.04]" :
+                    it.status === "fail" ? "border-red-500/30 bg-red-500/[0.04]" :
+                    it.status === "n/a"  ? "border-zinc-500/25 bg-zinc-500/[0.03]" :
+                                           "border-white/8 bg-white/[0.02]";
+                  return (
+                    <div
+                      key={`l-${it.id}-${idx}`}
+                      className={`rounded-xl border px-2.5 py-2 transition-colors ${cardCls}`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <p className="flex-1 min-w-0 text-[11.5px] font-bold text-white truncate">{it.label}</p>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {(["pass","fail","n/a"] as QcStatus[]).map(st => {
+                            const cfg = QC_BTN[st];
+                            const Icon = cfg.icon;
+                            const active = it.status === st;
+                            return (
+                              <button
+                                key={st}
+                                onClick={() => setItemStatus(idx, st)}
+                                disabled={loading}
+                                title={cfg.label}
+                                className={[
+                                  "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all",
+                                  active
+                                    ? `${cfg.bg} text-white ring-2 ${cfg.ring} shadow-md`
+                                    : "bg-white/[0.04] text-white/50 border border-white/10 hover:bg-white/[0.08] hover:text-white",
+                                ].join(" ")}
+                              >
+                                <Icon className="w-3 h-3" />
+                                <span className="hidden sm:inline">{cfg.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <input
+                        value={it.notes ?? ""}
+                        onChange={(e) => setItemNotes(idx, e.target.value)}
+                        placeholder="ملاحظة الفني (اختيارية)"
+                        disabled={loading}
+                        className={[
+                          "mt-1.5 w-full px-2.5 py-1 rounded-md text-[10.5px] text-white placeholder:text-white/25 focus:outline-none transition-colors",
+                          it.status === "fail"
+                            ? "bg-red-500/8 border border-red-500/25 focus:border-red-400/45"
+                            : "bg-white/[0.03] border border-white/8 focus:border-purple-400/35",
+                        ].join(" ")}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
 
-        {/* ── سبب الرفض (للرفض فقط) ── */}
+        {/* ── سبب الرفض الإجمالي (يظهر في وضع الرفض فقط) ── */}
         {rejectMode && (
-          <div className="px-5 py-3 border-t border-white/5">
-            <label className="block text-[11px] font-black text-red-300 mb-1.5 flex items-center gap-1.5">
+          <div className="px-5 py-3 border-t border-white/5 bg-red-500/[0.04]">
+            <label className="text-[11px] font-black text-red-300 mb-1.5 flex items-center gap-1.5">
               <ThumbsDown className="w-3.5 h-3.5" />
               سبب رفض الفحص (إلزامي — سيُعاد للفني)
             </label>
@@ -395,6 +451,34 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
               className="w-full px-3 py-2 rounded-lg bg-red-500/5 border border-red-500/25 text-[12px] text-white placeholder:text-white/30 focus:outline-none focus:border-red-400/50"
               placeholder="مثلاً: الكاميرا الخلفية ما زالت لا تعمل بعد التركيب — يحتاج إعادة فحص..."
             />
+            {failCount > 0 && (
+              <p className="mt-2 text-[10px] text-red-300/80">
+                ⓘ سيُسجَّل تلقائياً تفصيل البنود المرفوضة ({failCount} بند) في تقرير الفني.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── تقييم الجهاز (يظهر في وضع القبول فقط) ── */}
+        {!rejectMode && items.length > 0 && (
+          <div className="px-5 py-3 border-t border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div className="sm:col-span-2 text-[10.5px] text-white/55">
+              <span className="text-white/70 font-bold">ملاحظة:</span> القبول لن يُسمح به ما لم يُتَّخذ قرار لكل بند ولا يوجد أي بند مرفوض.
+              في حالة وجود بند مرفوض، استخدم زر <span className="text-red-300 font-bold">«رفض الفحص»</span> لإعادة البطاقة لـ <span className="text-cyan-300 font-bold">«جارٍ الإصلاح»</span>.
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-white/55 mb-1">تقييم الجهاز (0–100) — اختياري</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={score}
+                onChange={(e) => setScore(e.target.value)}
+                disabled={loading}
+                className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white focus:outline-none focus:border-purple-400/40"
+                placeholder="—"
+              />
+            </div>
           </div>
         )}
 
@@ -417,9 +501,9 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
             <>
               <button
                 onClick={handleApprove}
-                disabled={loading || !allDecided || failCount > 0}
-                className="flex-1 min-w-[200px] py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
-                style={{ background: "rgba(16,185,129,0.8)", border: "1px solid rgba(52,211,153,0.5)" }}
+                disabled={loading || !allDecided || failCount > 0 || items.length === 0}
+                className="flex-1 min-w-[220px] py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+                style={{ background: "rgba(16,185,129,0.85)", border: "1px solid rgba(52,211,153,0.5)" }}
               >
                 {loading
                   ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</>
@@ -427,11 +511,11 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
               </button>
               <button
                 onClick={() => { setRejectMode(true); setErrors([]); }}
-                disabled={loading}
+                disabled={loading || items.length === 0}
                 className="px-4 py-2.5 rounded-xl text-red-300 hover:text-white text-xs font-bold transition-all border border-red-500/30 hover:bg-red-500/15 flex items-center gap-1.5"
               >
                 <ThumbsDown className="w-3.5 h-3.5" />
-                رفض الفحص
+                رفض الفحص (يعود للإصلاح)
               </button>
               <button
                 onClick={onClose}
@@ -446,8 +530,8 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
               <button
                 onClick={handleReject}
                 disabled={loading || rejectReason.trim().length < 3}
-                className="flex-1 min-w-[200px] py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
-                style={{ background: "rgba(239,68,68,0.8)", border: "1px solid rgba(248,113,113,0.5)" }}
+                className="flex-1 min-w-[220px] py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+                style={{ background: "rgba(239,68,68,0.85)", border: "1px solid rgba(248,113,113,0.5)" }}
               >
                 {loading
                   ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</>

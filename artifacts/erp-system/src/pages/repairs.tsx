@@ -1691,7 +1691,7 @@ function JobDetail({
   const { toast } = useToast();
   const [editEst, setEditEst]       = useState(job.estimated_cost ?? "0");
   const [editFinal, setEditFinal]   = useState(job.final_cost ?? "0");
-  const [editDeposit, setEditDeposit] = useState(job.deposit_paid ?? "0");
+  const [editDeposit] = useState(job.deposit_paid ?? "0");
   const [editDelivery, setEditDelivery] = useState(job.estimated_delivery ?? "");
   const [editTech, setEditTech]     = useState(job.technician_id?.toString() ?? "");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
