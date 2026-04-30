@@ -16,6 +16,8 @@ import {
   employeeDeductionsTable,
   journalEntriesTable, journalEntryLinesTable, accountsTable,
   safesTable, transactionsTable,
+  salesTable, saleItemsTable,
+  departmentsTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
@@ -291,6 +293,26 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   const contributions = await db.select().from(statutoryContributionsTable)
     .where(and(eq(statutoryContributionsTable.company_id, companyId), eq(statutoryContributionsTable.is_active, true)));
 
+  // ── Pre-calculate company-wide revenue for the period ──────────
+  // gross revenue = sum of all sales total_amount in this period
+  const [salesRevRow] = await db.select({
+    gross_revenue: sql<string>`COALESCE(SUM(${salesTable.total_amount}), 0)`,
+    cost_total:    sql<string>`COALESCE(SUM(si.cost_total_sum), 0)`,
+  }).from(salesTable)
+    .leftJoin(
+      db.select({ sale_id: saleItemsTable.sale_id, cost_total_sum: sql<string>`SUM(${saleItemsTable.cost_total})` })
+        .from(saleItemsTable).groupBy(saleItemsTable.sale_id).as("si"),
+      eq(salesTable.id, sql`si.sale_id`)
+    )
+    .where(and(
+      eq(salesTable.company_id, companyId),
+      gte(salesTable.date, period.start_date),
+      lte(salesTable.date, period.end_date),
+    ));
+  const companyGrossRevenue = Number(salesRevRow?.gross_revenue ?? 0);
+  const companyCostTotal    = Number(salesRevRow?.cost_total ?? 0);
+  const companyNetRevenue   = Math.max(0, companyGrossRevenue - companyCostTotal);
+
   const processedRecords: Array<Record<string, unknown>> = [];
 
   for (const emp of employees) {
@@ -300,13 +322,72 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
     if (existing.length > 0) continue;
 
     const baseSalary = Number(emp.salary ?? 0);
-    if (baseSalary <= 0) continue;
+    const commissionRate = Number(emp.commission_rate ?? 0);
+    // Allow employees with commission even if base salary is 0
+    if (baseSalary <= 0 && commissionRate <= 0) continue;
 
     // Calculate gross salary (base + allowances from structure — simplified: use base salary)
     const grossSalary = baseSalary;
     const lineItems: Array<{ component_name: string; component_type: string; amount: number; description?: string }> = [];
 
-    lineItems.push({ component_name: "الراتب الأساسي", component_type: "base", amount: baseSalary });
+    if (baseSalary > 0) {
+      lineItems.push({ component_name: "الراتب الأساسي", component_type: "base", amount: baseSalary });
+    }
+
+    // ── Commission / profit share ──────────────────────────────────
+    let commissionAmount = 0;
+    if (commissionRate > 0) {
+      const commissionBasis = (emp.commission_basis ?? 'gross') as 'gross' | 'net';
+      const scopeDeptId     = emp.commission_scope_dept_id;
+
+      let revenueBase = 0;
+
+      if (scopeDeptId) {
+        // Dept-scoped: fetch revenue only from sales linked to that department's employees
+        // (sales don't have dept_id directly — use salesperson_id from employees in that dept)
+        const deptEmpIds = await db.select({ id: employeesTable.id }).from(employeesTable)
+          .where(and(eq(employeesTable.company_id, companyId), eq(employeesTable.department_id, scopeDeptId), isNull(employeesTable.deleted_at)));
+        const ids = deptEmpIds.map(e => e.id);
+
+        if (ids.length > 0) {
+          const [deptRevRow] = await db.select({
+            gross: sql<string>`COALESCE(SUM(${salesTable.total_amount}), 0)`,
+            cost:  sql<string>`COALESCE(SUM(dsi.cost_total_sum), 0)`,
+          }).from(salesTable)
+            .leftJoin(
+              db.select({ sale_id: saleItemsTable.sale_id, cost_total_sum: sql<string>`SUM(${saleItemsTable.cost_total})` })
+                .from(saleItemsTable).groupBy(saleItemsTable.sale_id).as("dsi"),
+              eq(salesTable.id, sql`dsi.sale_id`)
+            )
+            .where(and(
+              eq(salesTable.company_id, companyId),
+              gte(salesTable.date, period.start_date),
+              lte(salesTable.date, period.end_date),
+              inArray(salesTable.salesperson_id, ids),
+            ));
+          const deptGross = Number(deptRevRow?.gross ?? 0);
+          const deptCost  = Number(deptRevRow?.cost ?? 0);
+          revenueBase = commissionBasis === 'net' ? Math.max(0, deptGross - deptCost) : deptGross;
+        }
+      } else {
+        // Company-wide
+        revenueBase = commissionBasis === 'net' ? companyNetRevenue : companyGrossRevenue;
+      }
+
+      commissionAmount = revenueBase * commissionRate / 100;
+      if (commissionAmount > 0) {
+        const deptName = scopeDeptId
+          ? (await db.select({ name: departmentsTable.name_ar }).from(departmentsTable).where(eq(departmentsTable.id, scopeDeptId)).limit(1))[0]?.name ?? 'القسم'
+          : 'الشركة';
+        const basisLabel = commissionBasis === 'net' ? 'صافي ربح' : 'إجمالي إيرادات';
+        lineItems.push({
+          component_name: `حصة الأرباح (${commissionRate}% من ${basisLabel} ${deptName})`,
+          component_type: "incentive",
+          amount: commissionAmount,
+          description: `${basisLabel}: ${revenueBase.toFixed(2)} × ${commissionRate}%`,
+        });
+      }
+    }
 
     // Statutory deductions
     let totalDeductions = 0;
@@ -374,14 +455,15 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       }
     }
 
-    const netSalary = grossSalary - totalDeductions - taxAmount - advanceDeductions - attendanceDeductionsTotal + incentiveAmount;
+    const totalIncentive = incentiveAmount + commissionAmount;
+    const netSalary = grossSalary - totalDeductions - taxAmount - advanceDeductions - attendanceDeductionsTotal + totalIncentive;
 
     const [record] = await db.insert(payrollRecordsTable).values({
       payroll_period_id: id, employee_id: emp.id,
       gross_salary: String(grossSalary), total_allowances: "0",
       total_deductions: String(totalDeductions), tax_amount: String(taxAmount),
       net_salary: String(Math.max(0, netSalary)), currency: emp.currency ?? "EGP",
-      advance_deductions: String(advanceDeductions), incentive_amount: String(incentiveAmount),
+      advance_deductions: String(advanceDeductions), incentive_amount: String(totalIncentive),
       status: "draft",
     }).returning();
 
