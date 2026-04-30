@@ -686,7 +686,7 @@ function SalesTargetsWidget() {
                     {pct.toFixed(0)}%
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--erp-bg-hover)' }}>
                   <div className="h-full rounded-full transition-all duration-700"
                     style={{ width: `${pct}%`, background: color }} />
                 </div>

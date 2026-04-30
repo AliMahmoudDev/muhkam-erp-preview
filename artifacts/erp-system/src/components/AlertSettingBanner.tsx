@@ -121,15 +121,15 @@ export function AlertSettingBanner({
           display: 'block',
         }} />
       </button>
-      <span style={{ color: 'rgba(255,255,255,0.38)', fontSize: 11, whiteSpace: 'nowrap' }}>
+      <span style={{ color: 'var(--erp-text-3)', fontSize: 11, whiteSpace: 'nowrap' }}>
         {enabled ? 'مفعّل' : 'معطّل'}
       </span>
 
       {thresholdKey && enabled && (
         <>
-          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 11 }}>|</span>
+          <span style={{ color: 'var(--erp-text-4)', fontSize: 11 }}>|</span>
           {thresholdLabel && (
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, whiteSpace: 'nowrap' }}>
+            <span style={{ color: 'var(--erp-text-3)', fontSize: 11, whiteSpace: 'nowrap' }}>
               {thresholdLabel}:
             </span>
           )}
@@ -140,13 +140,13 @@ export function AlertSettingBanner({
             onChange={e => { setThreshold(e.target.value); setDirty(true); setSaved(false); }}
             style={{
               width: 56, padding: '2px 6px', borderRadius: 6,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#fff', fontSize: 12, textAlign: 'center', outline: 'none',
+              background: 'var(--erp-bg-hover)',
+              border: '1px solid var(--erp-border)',
+              color: 'var(--erp-text-1)', fontSize: 12, textAlign: 'center', outline: 'none',
             }}
           />
           {thresholdUnit && (
-            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>{thresholdUnit}</span>
+            <span style={{ color: 'var(--erp-text-3)', fontSize: 11 }}>{thresholdUnit}</span>
           )}
         </>
       )}

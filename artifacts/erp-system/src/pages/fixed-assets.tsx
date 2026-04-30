@@ -388,7 +388,7 @@ function AssetDetailModal({ assetId, onClose }: { assetId: number; onClose: () =
             {isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-14 rounded-2xl" style={{ background: 'rgba(255,255,255,0.06)', animation: `pulse ${1.2 + i * 0.1}s infinite` }} />
+                  <div key={i} className="h-14 rounded-2xl" style={{ background: 'var(--erp-bg-hover)', animation: `pulse ${1.2 + i * 0.1}s infinite` }} />
                 ))}
               </div>
             ) : !asset ? null : (

@@ -189,7 +189,7 @@ export function SplitPaymentModal({
             </span>
             <span className="text-white/30">{Math.round(pct)}%</span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--erp-bg-hover)' }}>
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
@@ -366,7 +366,7 @@ export function SplitPaymentModal({
         )}
 
         {/* ملخص */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+        <div style={{ height: 1, background: 'var(--erp-border)' }} />
         <div className="px-5 py-3 space-y-1.5">
           {[
             { label: 'إجمالي الفاتورة', val: total,     color: 'rgba(255,255,255,0.7)' },

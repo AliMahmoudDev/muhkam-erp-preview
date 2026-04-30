@@ -163,7 +163,7 @@ export default function AgingReport() {
                   {pct}% من الإجمالي
                 </div>
                 {/* mini progress */}
-                <div style={{ marginTop: 8, height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 4 }}>
+                <div style={{ marginTop: 8, height: 3, background: "var(--erp-bg-hover)", borderRadius: 4 }}>
                   <div style={{ width: `${pct}%`, height: "100%", background: col.text, borderRadius: 4, transition: "width 0.6s" }} />
                 </div>
               </button>

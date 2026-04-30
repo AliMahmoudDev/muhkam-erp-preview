@@ -518,7 +518,7 @@ function ExpenseBreakdown({ data, total }: { data: ProfitsData["by_expense_categ
             <div key={item.category} className="flex items-center gap-2.5">
               <div className="w-2 h-2 rounded-full shrink-0" style={{background:CAT_COLORS[i%CAT_COLORS.length]}}/>
               <span className="rpt-muted text-xs flex-1 truncate">{item.category}</span>
-              <div className="w-14 h-1 rounded-full overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
+              <div className="w-14 h-1 rounded-full overflow-hidden" style={{background:"var(--erp-bg-hover)"}}>
                 <div className="h-full rounded-full" style={{width:`${pct}%`,background:CAT_COLORS[i%CAT_COLORS.length]}}/>
               </div>
               <span className="rpt-muted text-xs w-7 text-left">{pct.toFixed(0)}%</span>
