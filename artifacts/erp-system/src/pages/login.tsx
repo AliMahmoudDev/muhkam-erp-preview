@@ -452,6 +452,8 @@ export default function Login() {
           padding: '40px 20px',
           minHeight: '100vh',
           background: 'linear-gradient(160deg, #fffdf5 0%, #fef9e7 35%, #fff8e1 65%, #fdf6e3 100%)',
+          colorScheme: 'light',
+          color: '#0f0c29',
         }}
       >
         {/* Mobile logo */}
@@ -985,10 +987,13 @@ function LoginForm({
               border: `1.5px solid ${focused === 'username' ? '#7c3aed' : '#e5e0f8'}`,
               fontSize: '14.5px',
               color: '#0f0c29',
+              WebkitTextFillColor: '#0f0c29',
               background: loading ? '#f9f8ff' : '#fefcff',
+              backgroundColor: loading ? '#f9f8ff' : '#fefcff',
               fontFamily: 'inherit',
               direction: 'rtl',
               height: '54px',
+              colorScheme: 'light',
             }}
           />
           {/* Match indicator — only show ✅ when user found in list */}
@@ -1110,11 +1115,14 @@ function LoginForm({
               border: `1.5px solid ${focused === 'pin' ? '#7c3aed' : '#e5e0f8'}`,
               fontSize: '14.5px',
               color: '#0f0c29',
+              WebkitTextFillColor: '#0f0c29',
               background: loading ? '#f9f8ff' : '#fefcff',
+              backgroundColor: loading ? '#f9f8ff' : '#fefcff',
               fontFamily: 'inherit',
               direction: 'ltr',
               letterSpacing: pin && !showPin ? '0.35em' : 'normal',
               height: '54px',
+              colorScheme: 'light',
             }}
           />
           {/* Show/hide */}
