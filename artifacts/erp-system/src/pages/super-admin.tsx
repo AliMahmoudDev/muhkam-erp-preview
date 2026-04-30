@@ -128,8 +128,20 @@ export default function SuperAdmin() {
   /* ── Telegram alert settings ── */
   interface TgAlertRule { enabled: boolean; cooldownHours: number; label: string; }
   interface TgConfig    { enabled: boolean; alerts: Record<string, TgAlertRule>; }
-  const [tgConfig, setTgConfig]   = useState<TgConfig | null>(null);
-  const [tgSaving, setTgSaving]   = useState(false);
+  interface TgBotStatus {
+    connected: boolean; token_set: boolean; chat_id_set: boolean;
+    bot_username?: string; bot_name?: string; error?: string;
+    token_masked: string | null; chat_id: string | null; source: 'db' | 'env' | 'none';
+  }
+  const [tgConfig, setTgConfig]         = useState<TgConfig | null>(null);
+  const [tgSaving, setTgSaving]         = useState(false);
+  const [tgBotStatus, setTgBotStatus]   = useState<TgBotStatus | null>(null);
+  const [tgBotToken, setTgBotToken]     = useState('');
+  const [tgChatId, setTgChatId]         = useState('');
+  const [tgShowToken, setTgShowToken]   = useState(false);
+  const [tgCredSaving, setTgCredSaving] = useState(false);
+  const [tgTesting, setTgTesting]       = useState(false);
+  const [tgTestResult, setTgTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
 
   /* ── Unblock Tool ─── */
@@ -733,6 +745,8 @@ export default function SuperAdmin() {
   }, [sysSettings]);
 
   /* ── Telegram settings query ── */
+  const isTgOpen = activeTab === 'settings' && settingsActiveCard === 'telegram';
+
   const {
     data:    tgConfigData,
     isLoading: tgLoading,
@@ -742,11 +756,32 @@ export default function SuperAdmin() {
   } = useQuery<TgConfig, Error>({
     queryKey: ['/api/super/telegram-settings'],
     queryFn:  () => fetcher('/api/super/telegram-settings'),
-    enabled:  activeTab === 'settings' && settingsActiveCard === 'telegram',
+    enabled:  isTgOpen,
     staleTime: 30_000,
     retry: 1,
   });
   useEffect(() => { if (tgConfigData) setTgConfig(tgConfigData); }, [tgConfigData]);
+
+  const {
+    data:      tgBotData,
+    isLoading: tgBotLoading,
+    refetch:   tgBotRefetch,
+  } = useQuery<TgBotStatus, Error>({
+    queryKey: ['/api/super/telegram-config'],
+    queryFn:  () => fetcher('/api/super/telegram-config'),
+    enabled:  isTgOpen,
+    staleTime: 20_000,
+    retry: 1,
+  });
+  useEffect(() => {
+    if (tgBotData) {
+      setTgBotStatus(tgBotData);
+      if (!tgBotData.connected) {
+        setTgBotToken('');
+        setTgChatId(tgBotData.chat_id ?? '');
+      }
+    }
+  }, [tgBotData]);
 
   async function saveTelegramSettings() {
     if (!tgConfig) return;
@@ -762,6 +797,50 @@ export default function SuperAdmin() {
       showToast('فشل حفظ الإعدادات', 'error');
     } finally {
       setTgSaving(false);
+    }
+  }
+
+  async function saveTgCredentials() {
+    if (!tgBotToken.trim() || !tgChatId.trim()) {
+      showToast('أدخل Bot Token و Chat ID', 'error');
+      return;
+    }
+    setTgCredSaving(true);
+    setTgTestResult(null);
+    try {
+      const res = await authFetch(api('/api/super/telegram-config'), {
+        method:  'PUT',
+        headers: authHeaders(),
+        body:    JSON.stringify({ bot_token: tgBotToken.trim(), chat_id: tgChatId.trim() }),
+      });
+      const json = await res.json() as TgBotStatus & { success?: boolean; error?: string };
+      if (!res.ok) { showToast(json.error ?? 'فشل الحفظ', 'error'); return; }
+      setTgBotStatus(json);
+      setTgBotToken('');
+      tgBotRefetch();
+      showToast(json.connected ? `✅ تم الاتصال بـ @${json.bot_username ?? 'البوت'}` : '⚠️ تم الحفظ لكن البوت لم يتصل — تحقق من Token', json.connected ? 'success' : 'warning');
+    } catch {
+      showToast('فشل حفظ البيانات', 'error');
+    } finally {
+      setTgCredSaving(false);
+    }
+  }
+
+  async function testTelegramConnection() {
+    setTgTesting(true);
+    setTgTestResult(null);
+    try {
+      const res = await authFetch(api('/api/super/telegram-test'), {
+        method:  'POST',
+        headers: authHeaders(),
+        body:    JSON.stringify({}),
+      });
+      const json = await res.json() as { success: boolean; message?: string; error?: string };
+      setTgTestResult({ ok: json.success, msg: json.success ? 'تم الإرسال بنجاح — تحقق من محادثة التيليجرام' : (json.error ?? 'فشل الإرسال') });
+    } catch {
+      setTgTestResult({ ok: false, msg: 'تعذّر الاتصال بالخادم' });
+    } finally {
+      setTgTesting(false);
     }
   }
 
@@ -3972,157 +4051,305 @@ export default function SuperAdmin() {
                 )}
 
                 {/* ── Telegram Alert Settings ── */}
-                {settingsActiveCard === 'telegram' && (
-                  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {settingsActiveCard === 'telegram' && (() => {
+                  const TG_BLUE = '#38BDF8';
+                  const TG_BG   = 'rgba(56,189,248,0.07)';
+                  const ALERT_ICONS: Record<string, string> = {
+                    company_created: '🏢', company_deleted: '🗑️', subscription_expired: '⏰',
+                    trial_expired: '⌛', trial_abuse: '🚨', login_failure: '🔐',
+                    payment_received: '💰', backup_completed: '💾', system_error: '❌', repair_needed: '🔧',
+                  };
+                  const ALERT_DESC: Record<string, string> = {
+                    company_created: 'عند إضافة شركة جديدة', company_deleted: 'عند حذف شركة',
+                    subscription_expired: 'عند انتهاء اشتراك شركة', trial_expired: 'عند انتهاء فترة تجريبية',
+                    trial_abuse: 'عند اكتشاف إساءة استخدام التجربة', login_failure: 'عند محاولات تسجيل دخول فاشلة متعددة',
+                    payment_received: 'عند استلام دفعة', backup_completed: 'عند اكتمال نسخة احتياطية',
+                    system_error: 'عند وقوع خطأ في النظام', repair_needed: 'عند الحاجة لصيانة',
+                  };
+                  const TgToggle = ({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) => (
+                    <button
+                      onClick={onClick}
+                      disabled={disabled}
+                      style={{
+                        flexShrink: 0, width: '44px', height: '24px', borderRadius: '12px',
+                        border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+                        background: on ? TG_BLUE : 'rgba(148,163,184,0.2)',
+                        position: 'relative', transition: 'background 0.2s',
+                      }}
+                    >
+                      <span style={{
+                        position: 'absolute', top: '4px',
+                        right: on ? '4px' : '20px',
+                        width: '16px', height: '16px', borderRadius: '50%',
+                        background: '#fff', transition: 'right 0.2s',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                      }} />
+                    </button>
+                  );
 
-                    {/* Loading state */}
-                    {tgLoading && !tgConfig && (
-                      <div style={{ textAlign: 'center', padding: '40px', color: C.muted, fontSize: '14px' }}>
-                        ⏳ جاري تحميل الإعدادات...
-                      </div>
-                    )}
+                  return (
+                    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-                    {/* Error state */}
-                    {tgError && !tgConfig && (
-                      <div style={{ textAlign: 'center', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ fontSize: '14px', color: '#EF4444' }}>❌ تعذّر تحميل إعدادات تليجرام</div>
-                        {tgErrorObj?.message && (
-                          <div style={{ fontSize: '12px', color: C.muted, maxWidth: '420px', wordBreak: 'break-word' }}>
-                            {tgErrorObj.message}
-                          </div>
-                        )}
-                        <button
-                          onClick={() => tgRefetch()}
-                          style={{ padding: '8px 20px', borderRadius: '10px', border: '1.5px solid #38BDF850', background: 'rgba(56,189,248,0.1)', color: '#38BDF8', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
-                        >🔄 إعادة المحاولة</button>
-                      </div>
-                    )}
-
-                    {tgConfig && (<>
-                      {/* Master switch */}
+                      {/* ── 1. Connection Status Banner ── */}
                       <div style={{
-                        background: tgConfig.enabled ? 'rgba(56,189,248,0.08)' : 'rgba(239,68,68,0.06)',
-                        border: `1.5px solid ${tgConfig.enabled ? 'rgba(56,189,248,0.35)' : 'rgba(239,68,68,0.25)'}`,
-                        borderRadius: '14px', padding: '18px 22px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
+                        borderRadius: '14px',
+                        border: `1.5px solid ${tgBotStatus?.connected ? 'rgba(52,211,153,0.4)' : tgBotStatus && !tgBotStatus.connected ? 'rgba(239,68,68,0.35)' : `${TG_BLUE}30`}`,
+                        background: tgBotStatus?.connected ? 'rgba(52,211,153,0.07)' : tgBotStatus && !tgBotStatus.connected ? 'rgba(239,68,68,0.06)' : TG_BG,
+                        padding: '16px 20px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
                       }}>
-                        <div>
-                          <div style={{ fontSize: '15px', fontWeight: 900, color: C.text, marginBottom: '4px' }}>
-                            📨 تليجرام — المفتاح الرئيسي
-                          </div>
-                          <div style={{ fontSize: '12px', color: C.muted }}>
-                            {tgConfig.enabled
-                              ? 'البوت يعمل ويرسل التنبيهات المفعّلة أدناه'
-                              : 'جميع الرسائل متوقفة — لن يصل أي إشعار'}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          {tgBotLoading && !tgBotStatus
+                            ? <div style={{ fontSize: '24px' }}>⏳</div>
+                            : tgBotStatus?.connected
+                            ? <div style={{ fontSize: '28px' }}>✅</div>
+                            : <div style={{ fontSize: '28px' }}>❌</div>
+                          }
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 900, color: C.text }}>
+                              {tgBotLoading && !tgBotStatus ? 'جاري التحقق من الاتصال...'
+                                : tgBotStatus?.connected
+                                  ? `متصل — @${tgBotStatus.bot_username ?? 'البوت'}`
+                                  : 'غير متصل'}
+                            </div>
+                            <div style={{ fontSize: '11px', color: C.muted, marginTop: '2px' }}>
+                              {tgBotStatus?.connected
+                                ? `اسم البوت: ${tgBotStatus.bot_name ?? '—'}  |  المصدر: ${tgBotStatus.source === 'db' ? 'قاعدة البيانات' : 'متغير البيئة'}`
+                                : tgBotStatus?.error ?? 'أدخل بيانات البوت في القسم أدناه'}
+                            </div>
+                            {tgBotStatus?.connected && tgBotStatus.token_masked && (
+                              <div style={{ fontSize: '10px', color: C.muted, marginTop: '4px', fontFamily: 'monospace' }}>
+                                Token: {tgBotStatus.token_masked}  |  Chat ID: {tgBotStatus.chat_id}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <button
-                          onClick={() => setTgConfig(c => c ? { ...c, enabled: !c.enabled } : c)}
-                          style={{
-                            padding: '10px 22px', borderRadius: '30px', border: 'none', fontFamily: FONT,
-                            fontWeight: 800, fontSize: '13px', cursor: 'pointer', transition: 'all 0.15s',
-                            background: tgConfig.enabled ? '#38BDF8' : 'rgba(148,163,184,0.15)',
-                            color: tgConfig.enabled ? '#0F172A' : C.muted,
-                            minWidth: '90px',
-                          }}
-                        >
-                          {tgConfig.enabled ? '✅ مفعّل' : '⛔ موقوف'}
-                        </button>
+                          onClick={() => tgBotRefetch()}
+                          style={{ padding: '7px 14px', borderRadius: '10px', border: `1px solid ${TG_BLUE}40`, background: TG_BG, color: TG_BLUE, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT, flexShrink: 0 }}
+                        >🔄 تحديث</button>
                       </div>
 
-                      {/* Per-alert rows */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ fontSize: '12px', color: C.muted, fontWeight: 700, marginBottom: '4px', paddingRight: '4px' }}>
-                          التحكم في كل نوع تنبيه على حدة:
+                      {/* ── 2. Bot Credentials Setup ── */}
+                      <div style={{
+                        borderRadius: '14px', border: `1.5px solid ${C.border}`,
+                        background: C.card, overflow: 'hidden',
+                      }}>
+                        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '18px' }}>🤖</span>
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: 900, color: C.text }}>بيانات البوت</div>
+                            <div style={{ fontSize: '11px', color: C.muted }}>أنشئ بوتاً عبر @BotFather في تيليجرام واحفظ بياناته هنا</div>
+                          </div>
                         </div>
-                        {Object.entries(tgConfig.alerts).map(([key, rule]) => (
-                          <div
-                            key={key}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '12px',
-                              background: 'rgba(15,23,42,0.4)', borderRadius: '12px',
-                              border: `1px solid ${rule.enabled ? 'rgba(56,189,248,0.2)' : C.border}`,
-                              padding: '12px 16px', transition: 'border-color 0.15s',
-                              opacity: tgConfig.enabled ? 1 : 0.45,
-                            }}
-                          >
-                            {/* Toggle button */}
-                            <button
-                              onClick={() => setTgConfig(c => {
-                                if (!c) return c;
-                                return { ...c, alerts: { ...c.alerts, [key]: { ...rule, enabled: !rule.enabled } } };
-                              })}
-                              disabled={!tgConfig.enabled}
-                              style={{
-                                flexShrink: 0, width: '38px', height: '22px', borderRadius: '11px',
-                                border: 'none', cursor: tgConfig.enabled ? 'pointer' : 'not-allowed',
-                                background: rule.enabled ? '#38BDF8' : 'rgba(148,163,184,0.2)',
-                                position: 'relative', transition: 'background 0.15s',
-                              }}
-                              title={rule.enabled ? 'إيقاف هذا التنبيه' : 'تفعيل هذا التنبيه'}
-                            >
-                              <span style={{
-                                position: 'absolute', top: '3px',
-                                left: rule.enabled ? '18px' : '3px',
-                                width: '16px', height: '16px', borderRadius: '50%',
-                                background: '#fff', transition: 'left 0.15s',
-                              }} />
-                            </button>
+                        <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-                            {/* Label */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: '13px', fontWeight: 700, color: rule.enabled ? C.text : C.muted }}>
-                                {rule.label}
-                              </div>
-                              <div style={{ fontSize: '11px', color: C.muted, fontFamily: 'monospace', marginTop: '1px' }}>
-                                {key}
-                              </div>
-                            </div>
-
-                            {/* Cooldown input */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                              <span style={{ fontSize: '11px', color: C.muted, whiteSpace: 'nowrap' }}>cooldown</span>
+                          {/* Bot Token */}
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
+                              Bot Token
+                            </label>
+                            <div style={{ position: 'relative' }}>
                               <input
-                                type="number"
-                                min={0}
-                                max={168}
-                                value={rule.cooldownHours}
-                                onChange={e => {
-                                  const h = Math.max(0, Math.min(168, Number(e.target.value) || 0));
-                                  setTgConfig(c => c ? { ...c, alerts: { ...c.alerts, [key]: { ...rule, cooldownHours: h } } } : c);
-                                }}
-                                disabled={!tgConfig.enabled}
+                                type={tgShowToken ? 'text' : 'password'}
+                                placeholder={tgBotStatus?.token_masked ?? '123456789:ABCDEF-ghijklmnopqrstuvwxyz...'}
+                                value={tgBotToken}
+                                onChange={e => setTgBotToken(e.target.value)}
                                 style={{
-                                  width: '52px', padding: '5px 8px', borderRadius: '8px',
-                                  border: `1px solid ${C.border}`, background: 'rgba(15,23,42,0.6)',
-                                  color: C.text, fontSize: '13px', textAlign: 'center',
-                                  outline: 'none', fontFamily: FONT,
+                                  width: '100%', padding: '10px 42px 10px 14px', borderRadius: '10px',
+                                  border: `1.5px solid ${C.border}`, background: 'rgba(15,23,42,0.5)',
+                                  color: C.text, fontSize: '13px', outline: 'none',
+                                  fontFamily: 'monospace', boxSizing: 'border-box',
                                 }}
                               />
-                              <span style={{ fontSize: '11px', color: C.muted }}>ساعة</span>
+                              <button
+                                onClick={() => setTgShowToken(v => !v)}
+                                style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px', color: C.muted }}
+                              >{tgShowToken ? '🙈' : '👁️'}</button>
                             </div>
                           </div>
-                        ))}
+
+                          {/* Chat ID */}
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
+                              Chat ID
+                            </label>
+                            <input
+                              type="text"
+                              placeholder={tgBotStatus?.chat_id ?? '-1001234567890 أو معرّف المحادثة'}
+                              value={tgChatId}
+                              onChange={e => setTgChatId(e.target.value)}
+                              style={{
+                                width: '100%', padding: '10px 14px', borderRadius: '10px',
+                                border: `1.5px solid ${C.border}`, background: 'rgba(15,23,42,0.5)',
+                                color: C.text, fontSize: '13px', outline: 'none',
+                                fontFamily: 'monospace', boxSizing: 'border-box',
+                              }}
+                            />
+                            <div style={{ fontSize: '11px', color: C.muted, marginTop: '5px' }}>
+                              📌 للحصول على Chat ID: أضف @userinfobot إلى المحادثة أو القناة
+                            </div>
+                          </div>
+
+                          {/* Save Credentials */}
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button
+                              onClick={() => { void saveTgCredentials(); }}
+                              disabled={tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()}
+                              style={{
+                                flex: 1, padding: '11px', borderRadius: '10px', border: 'none',
+                                background: (tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()) ? 'rgba(148,163,184,0.12)' : TG_BLUE,
+                                color: (tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()) ? C.muted : '#0F172A',
+                                fontSize: '13px', fontWeight: 800, cursor: (tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()) ? 'not-allowed' : 'pointer',
+                                fontFamily: FONT, transition: 'all 0.15s',
+                              }}
+                            >
+                              {tgCredSaving ? '⏳ جاري الحفظ...' : '💾 حفظ بيانات البوت'}
+                            </button>
+                            <button
+                              onClick={() => { void testTelegramConnection(); }}
+                              disabled={tgTesting || !tgBotStatus?.connected}
+                              style={{
+                                padding: '11px 18px', borderRadius: '10px',
+                                border: `1.5px solid ${tgBotStatus?.connected ? 'rgba(52,211,153,0.45)' : C.border}`,
+                                background: tgBotStatus?.connected ? 'rgba(52,211,153,0.1)' : 'transparent',
+                                color: tgBotStatus?.connected ? '#34D399' : C.muted,
+                                fontSize: '13px', fontWeight: 800, fontFamily: FONT,
+                                cursor: (tgTesting || !tgBotStatus?.connected) ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.15s', whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {tgTesting ? '⏳...' : '🧪 اختبار'}
+                            </button>
+                          </div>
+
+                          {/* Test result */}
+                          {tgTestResult && (
+                            <div style={{
+                              padding: '10px 14px', borderRadius: '10px',
+                              background: tgTestResult.ok ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
+                              border: `1px solid ${tgTestResult.ok ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                              fontSize: '12px', fontWeight: 700,
+                              color: tgTestResult.ok ? '#34D399' : '#EF4444',
+                            }}>
+                              {tgTestResult.ok ? '✅' : '❌'} {tgTestResult.msg}
+                            </div>
+                          )}
+
+                        </div>
                       </div>
 
-                      {/* Save button */}
-                      <button
-                        onClick={() => { void saveTelegramSettings(); }}
-                        disabled={tgSaving}
-                        style={{
-                          width: '100%', padding: '13px', borderRadius: '12px', border: 'none',
-                          background: tgSaving ? C.border : '#38BDF8',
-                          color: tgSaving ? C.muted : '#0F172A',
-                          fontSize: '14px', fontWeight: 900,
-                          cursor: tgSaving ? 'not-allowed' : 'pointer',
-                          fontFamily: FONT, transition: 'all 0.15s',
-                        }}
-                      >
-                        {tgSaving ? '⏳ جاري الحفظ...' : '💾 حفظ الإعدادات'}
-                      </button>
-                    </>)}
-                  </div>
-                )}
+                      {/* ── 3. Loading/Error for alert rules ── */}
+                      {tgLoading && !tgConfig && (
+                        <div style={{ textAlign: 'center', padding: '24px', color: C.muted, fontSize: '13px' }}>⏳ جاري تحميل إعدادات التنبيهات...</div>
+                      )}
+                      {tgError && !tgConfig && (
+                        <div style={{ textAlign: 'center', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ fontSize: '13px', color: '#EF4444' }}>❌ تعذّر تحميل إعدادات التنبيهات</div>
+                          {tgErrorObj?.message && <div style={{ fontSize: '11px', color: C.muted }}>{tgErrorObj.message}</div>}
+                          <button onClick={() => tgRefetch()} style={{ padding: '7px 18px', borderRadius: '10px', border: `1px solid ${TG_BLUE}40`, background: TG_BG, color: TG_BLUE, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🔄 إعادة المحاولة</button>
+                        </div>
+                      )}
+
+                      {/* ── 4. Alert Settings ── */}
+                      {tgConfig && (<>
+                        {/* Master Switch */}
+                        <div style={{
+                          borderRadius: '14px', padding: '16px 20px',
+                          background: tgConfig.enabled ? 'rgba(56,189,248,0.09)' : 'rgba(239,68,68,0.06)',
+                          border: `1.5px solid ${tgConfig.enabled ? 'rgba(56,189,248,0.4)' : 'rgba(239,68,68,0.3)'}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px',
+                        }}>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 900, color: C.text, marginBottom: '4px' }}>
+                              📨 تفعيل إشعارات تيليجرام
+                            </div>
+                            <div style={{ fontSize: '12px', color: C.muted }}>
+                              {tgConfig.enabled ? '✅ البوت يرسل التنبيهات المفعّلة أدناه' : '⛔ جميع الإشعارات موقوفة حالياً'}
+                            </div>
+                          </div>
+                          <TgToggle
+                            on={tgConfig.enabled}
+                            onClick={() => setTgConfig(c => c ? { ...c, enabled: !c.enabled } : c)}
+                          />
+                        </div>
+
+                        {/* Alert rules */}
+                        <div style={{ borderRadius: '14px', border: `1.5px solid ${C.border}`, overflow: 'hidden', opacity: tgConfig.enabled ? 1 : 0.5, transition: 'opacity 0.2s' }}>
+                          <div style={{ padding: '12px 18px', borderBottom: `1px solid ${C.border}`, background: 'rgba(56,189,248,0.05)' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 900, color: TG_BLUE }}>⚙️ إدارة التنبيهات</div>
+                            <div style={{ fontSize: '11px', color: C.muted, marginTop: '2px' }}>فعّل أو أوقف كل نوع تنبيه بشكل مستقل</div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            {Object.entries(tgConfig.alerts).map(([key, rule], i) => (
+                              <div
+                                key={key}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '12px',
+                                  padding: '13px 18px',
+                                  borderBottom: i < Object.keys(tgConfig.alerts).length - 1 ? `1px solid ${C.border}` : 'none',
+                                  background: rule.enabled ? 'rgba(56,189,248,0.04)' : 'transparent',
+                                  transition: 'background 0.15s',
+                                }}
+                              >
+                                <span style={{ fontSize: '20px', flexShrink: 0 }}>{ALERT_ICONS[key] ?? '🔔'}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '13px', fontWeight: 700, color: rule.enabled && tgConfig.enabled ? C.text : C.muted }}>
+                                    {rule.label}
+                                  </div>
+                                  <div style={{ fontSize: '11px', color: C.muted, marginTop: '1px' }}>
+                                    {ALERT_DESC[key] ?? key}
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                  <select
+                                    value={rule.cooldownHours}
+                                    onChange={e => {
+                                      const h = Number(e.target.value);
+                                      setTgConfig(c => c ? { ...c, alerts: { ...c.alerts, [key]: { ...rule, cooldownHours: h } } } : c);
+                                    }}
+                                    disabled={!tgConfig.enabled || !rule.enabled}
+                                    style={{
+                                      padding: '4px 8px', borderRadius: '8px',
+                                      border: `1px solid ${C.border}`, background: 'rgba(15,23,42,0.5)',
+                                      color: C.muted, fontSize: '11px', outline: 'none', cursor: 'pointer', fontFamily: FONT,
+                                    }}
+                                    title="مدة الانتظار قبل إعادة إرسال نفس النوع"
+                                  >
+                                    {[0,1,2,4,6,8,12,24,48].map(h => (
+                                      <option key={h} value={h}>{h === 0 ? 'بدون انتظار' : `${h}س`}</option>
+                                    ))}
+                                  </select>
+                                  <TgToggle
+                                    on={rule.enabled}
+                                    onClick={() => setTgConfig(c => c ? { ...c, alerts: { ...c.alerts, [key]: { ...rule, enabled: !rule.enabled } } } : c)}
+                                    disabled={!tgConfig.enabled}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Save Alert Settings */}
+                        <button
+                          onClick={() => { void saveTelegramSettings(); }}
+                          disabled={tgSaving}
+                          style={{
+                            width: '100%', padding: '13px', borderRadius: '12px', border: 'none',
+                            background: tgSaving ? 'rgba(148,163,184,0.15)' : TG_BLUE,
+                            color: tgSaving ? C.muted : '#0F172A',
+                            fontSize: '14px', fontWeight: 900,
+                            cursor: tgSaving ? 'not-allowed' : 'pointer',
+                            fontFamily: FONT, transition: 'all 0.15s',
+                          }}
+                        >
+                          {tgSaving ? '⏳ جاري الحفظ...' : '💾 حفظ إعدادات التنبيهات'}
+                        </button>
+                      </>)}
+                    </div>
+                  );
+                })()}
 
 
                 {/* ── Audit Log ── */}

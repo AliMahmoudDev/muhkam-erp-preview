@@ -137,6 +137,7 @@ import { createDatabaseBackup, listBackups } from "../lib/db-backup";
 import { writeAuditLog } from "../lib/audit-log";
 import { alertManager, DEFAULT_TELEGRAM_CONFIG } from "../lib/telegram-alert-manager";
 import type { TelegramAlertConfig } from "../lib/telegram-alert-manager";
+import { checkBotStatus, getTgConfigStatus, invalidateTgCredsCache } from "../lib/telegram";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -1646,6 +1647,82 @@ router.put("/super/telegram-settings", ...superOnly, wrap(async (req, res) => {
   });
 
   res.json({ success: true, config: toSave });
+}));
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Telegram Bot Credentials
+   GET  /super/telegram-config  → returns bot status + masked token
+   PUT  /super/telegram-config  → saves bot_token + chat_id to DB
+   POST /super/telegram-test    → sends a test message
+══════════════════════════════════════════════════════════════════════════ */
+
+router.get("/super/telegram-config", ...superOnly, wrap(async (_req, res) => {
+  const [status, config] = await Promise.all([
+    checkBotStatus(),
+    getTgConfigStatus(),
+  ]);
+  res.json({ ...status, ...config });
+}));
+
+router.put("/super/telegram-config", ...superOnly, wrap(async (req, res) => {
+  const { bot_token, chat_id } = req.body as { bot_token?: string; chat_id?: string };
+
+  if (!bot_token || !chat_id) {
+    res.status(400).json({ error: "bot_token و chat_id مطلوبان" });
+    return;
+  }
+
+  const trimToken  = bot_token.trim();
+  const trimChatId = chat_id.trim();
+
+  // Basic validation: Telegram bot tokens look like "123456:ABC-DEF..."
+  if (!/^\d+:[A-Za-z0-9_-]{35,}$/.test(trimToken)) {
+    res.status(400).json({ error: "Bot Token غير صحيح — يجب أن يكون بصيغة 123456:ABC..." });
+    return;
+  }
+
+  // Save to DB
+  for (const [key, value] of [["tg_bot_token", trimToken], ["tg_chat_id", trimChatId]] as [string, string][]) {
+    await db
+      .insert(superSettingsTable)
+      .values({ key, value })
+      .onConflictDoUpdate({ target: superSettingsTable.key, set: { value, updated_at: new Date() } });
+  }
+
+  // Invalidate caches
+  invalidateTgCredsCache();
+
+  // Verify connection
+  const status = await checkBotStatus();
+
+  await writeAuditLog({
+    action:      "TELEGRAM_SETTINGS_UPDATED",
+    record_type: "system",
+    record_id:   0,
+    new_value:   { action: "credentials_updated", connected: status.connected },
+    user:        req.user,
+    company_id:  null,
+  });
+
+  res.json({ success: true, ...status });
+}));
+
+router.post("/super/telegram-test", ...superOnly, wrap(async (req, res) => {
+  const { message } = req.body as { message?: string };
+
+  const status = await checkBotStatus();
+  if (!status.connected) {
+    res.status(400).json({ success: false, error: status.error ?? "البوت غير متصل" });
+    return;
+  }
+
+  const testMsg = message?.trim() ||
+    `🧪 *اختبار تنبيه MUHKAM ERP*\n\n✅ البوت يعمل بشكل صحيح\n🕐 ${new Date().toLocaleString("ar-EG", { timeZone: "Africa/Cairo" })}`;
+
+  const { sendTelegramAlert: send } = await import("../lib/telegram");
+  await send(testMsg);
+
+  res.json({ success: true, message: "تم الإرسال بنجاح" });
 }));
 
 export default router;
