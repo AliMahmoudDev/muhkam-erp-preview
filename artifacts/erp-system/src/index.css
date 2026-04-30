@@ -2364,6 +2364,29 @@ html.light .from-white\/5  { --tw-gradient-from: rgba(0,0,0,0.035) !important; }
 html.light .to-white\/0    { --tw-gradient-to:   rgba(0,0,0,0.0) !important; }
 html.light .via-white\/5   { --tw-gradient-via:  rgba(0,0,0,0.035) !important; }
 
+/* ── 17g. Arbitrary-value dark hex backgrounds → light equivalents ──
+   Many pages (inventory, treasury, accruals, budgets, cost-centers,
+   bank-reconciliation, etc.) hardcode dark hex backgrounds via the
+   Tailwind arbitrary-value syntax `bg-[#…]`. Map each to a sensible
+   light surface so those pages remain readable in light mode. */
+html.light .bg-\[\#111827\]  { background-color: var(--erp-bg-card) !important; }
+html.light .bg-\[\#0f1729\]  { background-color: var(--erp-bg-card) !important; }
+html.light .bg-\[\#0F1623\]  { background-color: var(--erp-bg-card) !important; }
+html.light .bg-\[\#0f1623\]  { background-color: var(--erp-bg-card) !important; }
+html.light .bg-\[\#0D1424\]  { background-color: var(--erp-bg-card) !important; }
+html.light .bg-\[\#1A2235\]  { background-color: var(--erp-bg-card) !important; }
+html.light .bg-\[\#1a1a2e\]  { background-color: var(--erp-bg-card) !important; }
+html.light .bg-\[\#1a1530\]  { background-color: var(--erp-bg-card) !important; }
+html.light .bg-\[\#1E2A40\]  { background-color: var(--erp-bg-card) !important; }
+html.light .bg-\[\#0a0f1a\]  { background-color: var(--erp-bg-app) !important; }
+html.light .border-\[\#2D3748\] { border-color: var(--erp-border-md) !important; }
+
+/* WhatsApp brand greens — keep brand identity in light too, just slightly darker */
+html.light .text-\[\#25D366\]   { color: #128c4a !important; }
+html.light .bg-\[\#25D366\]     { background-color: #128c4a !important; color: #fff !important; }
+html.light .border-\[\#25D366\] { border-color: #128c4a !important; }
+html.light .text-\[\#20ba58\]   { color: #0f7a3a !important; }
+
 /* ── 17e. Page/section cards that use bg-[#111827] etc. ─── */
 html.light .section-card {
   background: var(--erp-bg-card) !important;
