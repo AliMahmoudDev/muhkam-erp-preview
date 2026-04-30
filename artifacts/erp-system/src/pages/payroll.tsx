@@ -8,8 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import {
   Wallet, Plus, ChevronRight, ChevronDown, CheckCircle2,
-  AlertCircle, Clock, Play, X, Loader2, FileText,
-  Users, TrendingDown, TrendingUp, Ban,
+  Play, X, Loader2, FileText,
 } from 'lucide-react';
 
 type AnyRec = Record<string, unknown>;

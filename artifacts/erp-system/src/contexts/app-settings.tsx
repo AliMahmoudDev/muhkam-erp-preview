@@ -168,17 +168,22 @@ function applySettings(s: AppSettings) {
   document.body.style.fontWeight = fw;
   root.style.setProperty('--erp-icon-size', `${s.iconSize ?? 24}px`);
 
+  /* Clear any previously-injected inline theme overrides so CSS variables
+     defined in :root / html.light can take effect cleanly. */
+  root.style.removeProperty('--erp-bg-base');
+  root.style.removeProperty('--erp-bg-sidebar');
+  root.style.removeProperty('--erp-bg-card');
+
   if ((s.theme ?? 'dark') === 'light') {
     root.classList.add('light');
     root.classList.remove('dark');
     root.setAttribute('data-theme', 'light');
+    root.style.colorScheme = 'light';
   } else {
     root.classList.add('dark');
     root.classList.remove('light');
     root.setAttribute('data-theme', 'dark');
-    root.style.setProperty('--erp-bg-base',    '#0D1117');
-    root.style.setProperty('--erp-bg-sidebar', '#0A0E1A');
-    root.style.setProperty('--erp-bg-card',    'rgba(255,255,255,0.03)');
+    root.style.colorScheme = 'dark';
   }
 
 }

@@ -5,7 +5,10 @@ import { COLOR_MAP, type PermGroup } from "./_constants";
 /* ─── Field Label ─── */
 export function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-[11px] mb-1.5 font-semibold uppercase tracking-wider" style={{ color: "var(--erp-text-3)" }}>
+    <label
+      className="block text-[11px] mb-1.5 font-semibold uppercase tracking-wider"
+      style={{ color: "var(--erp-text-2)" }}
+    >
       {children}
     </label>
   );
@@ -59,8 +62,12 @@ export function GhostBtn({ children, className = "", ...p }: React.ButtonHTMLAtt
   return (
     <button {...p}
       className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
-        border border-white/15 text-white/60 hover:text-white hover:border-white/30
         font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-40 ${className}`}
+      style={{
+        border: "1px solid var(--erp-border-md)",
+        color: "var(--erp-text-2)",
+        background: "transparent",
+      }}
     >{children}</button>
   );
 }
@@ -83,25 +90,47 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay"
       style={{ backdropFilter: "blur(6px)", background: "rgba(0,0,0,0.65)" }}
       onClick={onClose}
     >
       <div
-        className={`rounded-2xl w-full ${maxWidth} border border-white/10 shadow-2xl flex flex-col`}
-        style={{ background: "var(--erp-bg-card)", maxHeight: "90vh" }}
+        className={`rounded-2xl w-full ${maxWidth} shadow-2xl flex flex-col`}
+        style={{
+          background: "var(--erp-bg-card)",
+          border: "1px solid var(--erp-border-md)",
+          maxHeight: "90vh",
+          boxShadow: "var(--erp-shadow-modal)",
+        }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{ borderBottom: "1px solid var(--erp-border)" }}
+        >
           <div className="flex items-center gap-3">
             {Icon && (
               <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
                 <Icon className="w-4 h-4 text-amber-400" />
               </div>
             )}
-            <h3 className="font-bold text-white text-base">{title}</h3>
+            <h3 className="font-bold text-base" style={{ color: "var(--erp-text-1)" }}>
+              {title}
+            </h3>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/8 transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: "var(--erp-text-3)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--erp-text-1)";
+              e.currentTarget.style.background = "var(--erp-bg-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--erp-text-3)";
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
