@@ -476,11 +476,18 @@ router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
   if (!period) { res.status(404).json({ error: "الفترة غير موجودة" }); return; }
   if (period.status !== "approved") { res.status(409).json({ error: "يجب اعتماد الفترة أولاً قبل الصرف" }); return; }
 
-  // Calculate total net salary
-  const records = await db.select({ net_salary: payrollRecordsTable.net_salary, id: payrollRecordsTable.id })
-    .from(payrollRecordsTable).where(eq(payrollRecordsTable.payroll_period_id, id));
-  const totalNet = records.reduce((s, r) => s + Number(r.net_salary ?? 0), 0);
+  // Only fetch UNPAID records (skip employees already paid individually)
+  const unpaidRecords = await db.select({ net_salary: payrollRecordsTable.net_salary, id: payrollRecordsTable.id })
+    .from(payrollRecordsTable)
+    .where(and(eq(payrollRecordsTable.payroll_period_id, id), sql`status != 'paid'`));
+
+  if (unpaidRecords.length === 0) {
+    res.status(409).json({ error: "جميع الرواتب في هذه الفترة تم صرفها مسبقاً" }); return;
+  }
+
+  const totalNet = unpaidRecords.reduce((s, r) => s + Number(r.net_salary ?? 0), 0);
   if (totalNet <= 0) { res.status(400).json({ error: "لا يوجد مبلغ للصرف" }); return; }
+  const unpaidIds = unpaidRecords.map(r => r.id);
 
   // Run in transaction
   const result = await db.transaction(async (tx) => {
@@ -535,13 +542,13 @@ router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
       }
     } catch { /* القيد اختياري */ }
 
-    // 5. Update period & records status → paid
+    // 5. Update ONLY unpaid records → paid, then update period
+    await tx.update(payrollRecordsTable)
+      .set({ status: "paid", updated_at: new Date() })
+      .where(sql`id = ANY(${unpaidIds})`);
     await tx.update(payrollPeriodsTable)
       .set({ status: "paid", processed_by: userId, updated_at: new Date() })
       .where(eq(payrollPeriodsTable.id, id));
-    await tx.update(payrollRecordsTable)
-      .set({ status: "paid", updated_at: new Date() })
-      .where(eq(payrollRecordsTable.payroll_period_id, id));
 
     return { ok: true, safeName: safe.name };
   });

@@ -196,8 +196,10 @@ export default function Payroll() {
   const safesList = safeArray(safesQuery.data);
 
   /* ── Stats for selected period ───────────────────────────── */
-  const totalGross = recordsList.reduce((s, r) => s + (Number(r.gross_salary) || 0), 0);
-  const totalNet   = recordsList.reduce((s, r) => s + (Number(r.net_salary)   || 0), 0);
+  const totalGross   = recordsList.reduce((s, r) => s + (Number(r.gross_salary) || 0), 0);
+  const totalNet     = recordsList.reduce((s, r) => s + (Number(r.net_salary)   || 0), 0);
+  const unpaidNet    = recordsList.filter(r => r.status !== 'paid').reduce((s, r) => s + (Number(r.net_salary) || 0), 0);
+  const unpaidCount  = recordsList.filter(r => r.status !== 'paid').length;
 
   return (
     <div className="p-4 space-y-4" dir="rtl">
@@ -309,7 +311,7 @@ export default function Payroll() {
                     <button
                       onClick={() => setShowPay(true)}
                       disabled={payPeriod.isPending}
-                      className="erp-btn erp-btn-primary flex items-center gap-1 text-sm"
+                      className="erp-btn flex items-center gap-1 text-sm bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white border border-emerald-500/50 disabled:opacity-50"
                     >
                       {payPeriod.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
                       صرف الرواتب
@@ -514,10 +516,21 @@ export default function Payroll() {
             </div>
 
             <div className="p-5 space-y-4">
-              {/* Total */}
-              <div className="erp-card p-3 rounded-xl flex items-center justify-between">
-                <span className="text-sm text-white/60">إجمالي صافي الرواتب</span>
-                <span className="font-bold text-emerald-400 text-lg font-mono">{numFmt(totalNet)}</span>
+              {/* Unpaid summary */}
+              <div className="erp-card p-3 rounded-xl space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-white/50">الموظفون المتبقون للصرف</span>
+                  <span className="text-sm font-bold text-white">{unpaidCount} موظف</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-white/50">المبلغ المستحق الصرف</span>
+                  <span className="font-bold text-emerald-400 text-base font-mono">{numFmt(unpaidNet)}</span>
+                </div>
+                {unpaidCount < recordsList.length && (
+                  <p className="text-xs text-amber-400/80 pt-1 border-t border-white/8">
+                    ملاحظة: تم صرف {recordsList.length - unpaidCount} موظف مسبقاً وسيُتخطّون
+                  </p>
+                )}
               </div>
 
               {/* Safe picker */}
@@ -539,10 +552,10 @@ export default function Payroll() {
                   const safe = safesList.find(s => String(s.id) === payForm.safe_id);
                   if (!safe) return null;
                   const bal = Number(safe.balance ?? 0);
-                  const enough = bal >= totalNet;
+                  const enough = bal >= unpaidNet;
                   return (
                     <p className={`text-xs mt-1 ${enough ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {enough ? `✓ الرصيد كافٍ — المتبقي بعد الصرف: ${numFmt(bal - totalNet)}` : `✗ رصيد الخزانة غير كافٍ — يُنقص ${numFmt(totalNet - bal)}`}
+                      {enough ? `✓ الرصيد كافٍ — المتبقي بعد الصرف: ${numFmt(bal - unpaidNet)}` : `✗ رصيد الخزانة غير كافٍ — يُنقص ${numFmt(unpaidNet - bal)}`}
                     </p>
                   );
                 })()}
@@ -567,7 +580,7 @@ export default function Payroll() {
                 className="erp-btn flex-1 flex items-center gap-1 justify-center bg-emerald-600/80 hover:bg-emerald-600 text-white border border-emerald-500/40 disabled:opacity-40"
               >
                 {payPeriod.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
-                {payPeriod.isPending ? 'جاري الصرف…' : `تأكيد صرف ${numFmt(totalNet)}`}
+                {payPeriod.isPending ? 'جاري الصرف…' : `تأكيد صرف ${numFmt(unpaidNet)}`}
               </button>
               <button onClick={() => setShowPay(false)} className="erp-btn erp-btn-ghost">إلغاء</button>
             </div>
