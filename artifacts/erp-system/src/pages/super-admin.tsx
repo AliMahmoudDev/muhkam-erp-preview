@@ -123,7 +123,7 @@ export default function SuperAdmin() {
   const [supportWa, setSupportWa] = useState('');
   const [supportEmail, setSupportEmail] = useState('');
   const [settingSaving, setSettingSaving] = useState(false);
-  const [settingsActiveCard, setSettingsActiveCard] = useState<'support' | 'backup' | 'security' | 'audit_log' | 'telegram' | null>(null);
+  const [settingsActiveCard, setSettingsActiveCard] = useState<'support' | 'backup' | 'security' | 'audit_log' | 'managers' | 'plans' | 'telegram' | null>(null);
 
   /* ── Telegram alert settings ── */
   interface TgAlertRule { enabled: boolean; cooldownHours: number; label: string; }
@@ -818,7 +818,7 @@ export default function SuperAdmin() {
       setTgBotStatus(json);
       setTgBotToken('');
       tgBotRefetch();
-      showToast(json.connected ? `✅ تم الاتصال بـ @${json.bot_username ?? 'البوت'}` : '⚠️ تم الحفظ لكن البوت لم يتصل — تحقق من Token', json.connected ? 'success' : 'warning');
+      showToast(json.connected ? `✅ تم الاتصال بـ @${json.bot_username ?? 'البوت'}` : '⚠️ تم الحفظ لكن البوت لم يتصل — تحقق من Token', json.connected ? 'success' : 'error');
     } catch {
       showToast('فشل حفظ البيانات', 'error');
     } finally {
