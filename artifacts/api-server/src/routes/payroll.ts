@@ -802,8 +802,8 @@ router.post("/payroll/records/:id/pay", wrap(async (req, res) => {
 
   if (!record) { res.status(404).json({ error: "سجل الراتب غير موجود" }); return; }
   if (record.status === "paid") { res.status(409).json({ error: "تم صرف هذا الراتب مسبقاً" }); return; }
-  if (record.period_status !== "approved" && record.period_status !== "processing") {
-    res.status(409).json({ error: "الفترة يجب أن تكون معتمدة أو قيد المعالجة قبل الصرف" }); return;
+  if (record.period_status !== "approved") {
+    res.status(409).json({ error: "يجب اعتماد الفترة أولاً قبل صرف الرواتب" }); return;
   }
 
   const amount = Number(record.net_salary ?? 0);

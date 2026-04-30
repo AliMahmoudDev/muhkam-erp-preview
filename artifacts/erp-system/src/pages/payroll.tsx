@@ -308,9 +308,11 @@ export default function Payroll() {
                   {canApprove && selectedPeriod.status === 'approved' && (
                     <button
                       onClick={() => setShowPay(true)}
-                      className="erp-btn flex items-center gap-1 text-sm bg-emerald-600/80 hover:bg-emerald-600 text-white border border-emerald-500/40"
+                      disabled={payPeriod.isPending}
+                      className="erp-btn erp-btn-primary flex items-center gap-1 text-sm"
                     >
-                      <Banknote size={14} /> صرف الرواتب
+                      {payPeriod.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
+                      صرف الرواتب
                     </button>
                   )}
                   {selectedPeriod.status === 'paid' && (
@@ -367,7 +369,7 @@ export default function Payroll() {
                             </td>
                             {canApprove && (
                               <td className="p-3 text-center">
-                                {rec.status !== 'paid' && (selectedPeriod.status === 'approved' || selectedPeriod.status === 'processing') ? (
+                                {rec.status !== 'paid' && selectedPeriod.status === 'approved' ? (
                                   <button
                                     onClick={() => setPayRecModal({
                                       recId: Number(rec.id),
