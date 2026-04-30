@@ -65,6 +65,9 @@ interface RepairJob {
   created_at: string;
   parts?: RepairPart[];
   history?: HistoryEntry[];
+  qa_notes?: string | null;
+  qa_checklist?: unknown;
+  qa_completed_at?: string | null;
 }
 
 interface RepairPart {
@@ -1934,6 +1937,63 @@ function JobDetail({
           onStatusChange={(s) => onPatch({ status: s })}
         />
       </div>
+
+      {/* ── بانر رفض QC — يظهر للفني عند رجوع البطاقة لـ "جارٍ الإصلاح" بعد رفض الفحص ── */}
+      {job.qa_notes && !job.qa_completed_at && (() => {
+        /* استخراج البنود الفاشلة من qa_checklist */
+        let failedItems: Array<{ label?: string; status?: string }> = [];
+        try {
+          const parsed = typeof job.qa_checklist === "string"
+            ? JSON.parse(job.qa_checklist)
+            : (Array.isArray(job.qa_checklist) ? job.qa_checklist : []);
+          if (Array.isArray(parsed)) {
+            failedItems = parsed.filter((i: { status?: string }) => i?.status === "fail");
+          }
+        } catch { /* ignore */ }
+        /* استخراج أول سطر من qa_notes كرسالة الرفض (قبل timestamp) */
+        const noteLines = job.qa_notes.split("\n").map(l => l.trim()).filter(Boolean);
+        const mainNote = noteLines.find(l => !l.startsWith("[رفض QC")) ?? noteLines[0] ?? "";
+        const stamp = noteLines.find(l => l.startsWith("[رفض QC")) ?? "";
+        return (
+          <div className="shrink-0 mx-3 my-2 rounded-xl border border-red-500/40 overflow-hidden" dir="rtl">
+            <div className="px-3 py-2 flex items-center gap-2" style={{ background: "rgba(239,68,68,0.12)" }}>
+              <div className="w-6 h-6 rounded-lg bg-red-500/20 border border-red-400/30 flex items-center justify-center shrink-0">
+                <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-black text-red-300">تم رفض فحص الجودة — يجب إعادة الإصلاح</p>
+                {stamp && <p className="text-[10px] text-red-300/60 mt-0.5">{stamp}</p>}
+              </div>
+            </div>
+            <div className="px-3 pb-2.5 pt-1.5 space-y-1.5" style={{ background: "rgba(239,68,68,0.05)" }}>
+              {mainNote && (
+                <div>
+                  <p className="text-[10px] text-white/55 mb-0.5">سبب الرفض:</p>
+                  <p className="text-[11px] text-red-200 leading-relaxed">{mainNote}</p>
+                </div>
+              )}
+              {failedItems.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-white/55 mb-1">البنود الفاشلة ({failedItems.length}):</p>
+                  <div className="flex flex-wrap gap-1">
+                    {failedItems.map((item, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-bold text-red-200 border border-red-500/30"
+                        style={{ background: "rgba(239,68,68,0.15)" }}
+                      >
+                        {(item as { label?: string }).label ?? `بند #${i + 1}`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Scrollable Body ── */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">

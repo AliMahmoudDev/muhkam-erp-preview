@@ -251,10 +251,18 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
         (failedLines ? `\nالبنود المرفوضة:\n${failedLines}` : "");
       const merged = job.qa_notes ? `${job.qa_notes}\n\n${stamped}` : stamped;
 
+      /* نحفظ أيضاً qa_checklist مع نتائج البنود حتى يستطيع الفني رؤية
+         تفصيل الفحص عند فتح البطاقة مجدداً (البانر الأحمر في JobDetail). */
       const res = await authFetch(api(`/api/repair-jobs/${job.id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ qa_notes: merged }),
+        body: JSON.stringify({
+          qa_notes: merged,
+          qa_checklist: items.map(i => ({
+            id: i.id, label: i.label, label_ar: i.label,
+            category: i.category, status: i.status, notes: i.notes ?? "",
+          })),
+        }),
       });
       const data = await res.json().catch(() => ({})) as { error?: string };
       if (!res.ok) {
