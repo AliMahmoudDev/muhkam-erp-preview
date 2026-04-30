@@ -18,7 +18,7 @@ const ROLE_DEFAULTS: Record<string, Record<string, boolean>> = {
     can_access_accruals: true, can_access_bank_reconciliation: true, can_access_budgets: true,
     can_access_cost_centers: true, can_access_fiscal_years: true, can_access_audit_log: true,
     can_access_branches: true, can_access_employees: true, can_access_attendance: true,
-    can_access_settings: true, can_access_transfers: true,
+    can_access_payroll: true, can_access_settings: true, can_access_transfers: true,
     // المبيعات
     can_view_sales: true, can_create_sale: true, can_cash_sale: true,
     can_partial_sale: true, can_credit_sale: true, can_cancel_sale: true,
@@ -71,7 +71,7 @@ const ROLE_DEFAULTS: Record<string, Record<string, boolean>> = {
     can_access_bad_debts: true,  can_access_income: true, can_access_expenses: true,
     can_access_treasury: true,   can_access_vouchers: true, can_access_reports: true,
     can_access_budgets: true,    can_access_branches: true, can_access_employees: true,
-    can_access_attendance: true, can_access_transfers: true,
+    can_access_attendance: true, can_access_payroll: true, can_access_transfers: true,
     can_access_accounts: false,  can_access_journal_entries: false, can_access_fixed_assets: false,
     can_access_accruals: false,  can_access_bank_reconciliation: false,
     can_access_cost_centers: false, can_access_fiscal_years: false,
