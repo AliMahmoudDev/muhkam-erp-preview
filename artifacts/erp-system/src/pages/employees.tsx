@@ -389,7 +389,7 @@ export default function Employees() {
   });
   const branches: Branch[] = safeArray(branchesRaw);
 
-  /* All safes (خزائن) — filter per employee branch in form */
+  /* All safes (خزائن) — نُحمّل الكل بدون تصفية حسب الدور */
   const { data: safesRaw } = useQuery({
     queryKey: ['/api/settings/safes'],
     queryFn: () => authFetch(api('/api/settings/safes')).then((r) => r.json()),
@@ -401,13 +401,7 @@ export default function Employees() {
   });
   const expenseCategories: AnyRec[] = safeArray(expCatsRaw);
 
-  const safesForEmployee = (emp: Employee | null) =>
-    safes.filter(
-      (s) =>
-        s.branch_id == null ||
-        emp?.branch_id == null ||
-        Number(s.branch_id) === Number(emp.branch_id)
-    );
+  const safesForEmployee = (_emp: Employee | null) => safes;
 
   /* Employee sub-data */
   const { data: docsRaw } = useQuery({
@@ -3228,26 +3222,20 @@ export default function Employees() {
                   className="erp-input w-full"
                 />
               </Field>
-              <Field label="الخزينة (اختياري)">
+              <Field label="الخزينة *">
                 <select
                   value={approveForm.safe_id}
                   onChange={(e) => setApproveForm((p) => ({ ...p, safe_id: e.target.value }))}
                   className="erp-input w-full"
                 >
-                  <option value="">— بدون خزينة —</option>
+                  <option value="">— اختر الخزينة —</option>
                   {safesForEmployee(selected).map((s) => (
                     <option key={String(s.id)} value={String(s.id)}>
-                      {String(s.name)}{s.balance != null ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})` : ''}
-                    </option>
-                  ))}
-                  {/* Show all safes if no branch specific ones found */}
-                  {safesForEmployee(selected).length === 0 && safeArray(safes).map((s: AnyRec) => (
-                    <option key={String(s.id)} value={String(s.id)}>
-                      {String(s.name)}{s.balance != null ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})` : ''}
+                      {String(s.name)}{s.balance != null ? ` — الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')}` : ''}
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-amber-300/70 mt-1">إذا اخترت خزينة سيُخصم المبلغ منها فور الاعتماد</p>
+                <p className="text-xs text-amber-300/70 mt-1">⚠️ إلزامي — سيُخصم المبلغ من الخزينة المختارة فور الاعتماد</p>
               </Field>
               <Field label="ملاحظات الاعتماد (اختياري)">
                 <input
@@ -3260,17 +3248,23 @@ export default function Employees() {
             </div>
             <div className="flex gap-2 p-5 border-t border-white/10">
               <button
-                onClick={() => approveLoan.mutate({
-                  id: approveModal.id,
-                  approved_amount: Number(approveForm.approved_amount) || approveModal.requestedAmount,
-                  safe_id: approveForm.safe_id ? Number(approveForm.safe_id) : null,
-                  notes: approveForm.notes || undefined,
-                })}
-                disabled={approveLoan.isPending}
+                onClick={() => {
+                  if (!approveForm.safe_id) {
+                    toast({ title: 'الخزينة مطلوبة', description: 'يجب اختيار الخزينة قبل الاعتماد', variant: 'destructive' });
+                    return;
+                  }
+                  approveLoan.mutate({
+                    id: approveModal.id,
+                    approved_amount: Number(approveForm.approved_amount) || approveModal.requestedAmount,
+                    safe_id: Number(approveForm.safe_id),
+                    notes: approveForm.notes || undefined,
+                  });
+                }}
+                disabled={approveLoan.isPending || !approveForm.safe_id}
                 className="erp-btn erp-btn-primary flex-1 flex items-center justify-center gap-1"
               >
                 <CheckCircle size={14} />
-                {approveLoan.isPending ? 'جاري الاعتماد...' : 'اعتماد السلفة'}
+                {approveLoan.isPending ? 'جاري الاعتماد...' : 'اعتماد وصرف السلفة'}
               </button>
               <button onClick={() => setApproveModal(null)} className="erp-btn erp-btn-ghost">
                 إلغاء
