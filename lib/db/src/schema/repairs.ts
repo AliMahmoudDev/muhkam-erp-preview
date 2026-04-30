@@ -199,6 +199,24 @@ export const repairDashboardCardsTable = pgTable("repair_dashboard_cards", {
   index("repair_dashboard_cards_company_idx").on(t.company_id, t.sort_order),
 ]);
 
+/* ── جدول دفعات الصيانة ──────────────────────────────────────── */
+export const repairPaymentsTable = pgTable("repair_payments", {
+  id:           serial("id").primaryKey(),
+  company_id:   integer("company_id").notNull(),
+  job_id:       integer("job_id").notNull().references(() => repairJobsTable.id, { onDelete: "cascade" }),
+  amount:       numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  payment_method: text("payment_method").notNull().default("cash"), // cash | card | transfer | other
+  notes:        text("notes"),
+  received_by:  integer("received_by"),
+  received_by_name: text("received_by_name"),
+  safe_id:      integer("safe_id"),
+  safe_name:    text("safe_name"),
+  created_at:   timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  index("repair_payments_job_idx").on(t.job_id),
+  index("repair_payments_company_idx").on(t.company_id),
+]);
+
 export const insertRepairJobSchema = createInsertSchema(repairJobsTable).omit({ id: true, created_at: true, updated_at: true });
 export const insertRepairJobPartSchema = createInsertSchema(repairJobPartsTable).omit({ id: true, created_at: true });
 export const insertRepairStatusSchema = createInsertSchema(repairStatusesTable).omit({ id: true, created_at: true });

@@ -7,6 +7,7 @@ import {
   repairStatusesTable,
   repairChecklistItemsTable,
   repairStatusHistoryTable,
+  repairPaymentsTable,
   scrapItemsTable,
   erpUsersTable,
   productsTable,
@@ -1765,6 +1766,221 @@ router.post("/repair-customers", wrap(async (req, res) => {
   }
 
   return res.status(201).json(inserted);
+}));
+
+/* ══════════════════════════════════════════════════════════════
+   REPAIR PAYMENTS — سجل دفعات الصيانة
+══════════════════════════════════════════════════════════════ */
+
+/* GET /api/repair-jobs/:id/payments — جلب دفعات تذكرة معينة */
+router.get("/repair-jobs/:id/payments", wrap(async (req, res) => {
+  const companyId = req.user!.company_id!;
+  const jobId = parseInt(String(req.params["id"]), 10);
+
+  const [job] = await db.select({ id: repairJobsTable.id })
+    .from(repairJobsTable)
+    .where(and(eq(repairJobsTable.id, jobId), eq(repairJobsTable.company_id, companyId)));
+  if (!job) { res.status(404).json({ error: "التذكرة غير موجودة" }); return; }
+
+  const payments = await db.select().from(repairPaymentsTable)
+    .where(and(eq(repairPaymentsTable.job_id, jobId), eq(repairPaymentsTable.company_id, companyId)))
+    .orderBy(desc(repairPaymentsTable.created_at));
+
+  res.json(payments.map(p => ({ ...p, amount: Number(p.amount) })));
+}));
+
+/* POST /api/repair-jobs/:id/payments — تسجيل دفعة جديدة */
+router.post("/repair-jobs/:id/payments", wrap(async (req, res) => {
+  const companyId = req.user!.company_id!;
+  const userId = req.user?.id;
+  const userName = req.user?.username ?? "";
+  const jobId = parseInt(String(req.params["id"]), 10);
+  const { amount, payment_method, notes, safe_id } = req.body as Record<string, unknown>;
+
+  const numAmount = Number(amount);
+  if (!numAmount || numAmount <= 0) { res.status(400).json({ error: "المبلغ يجب أن يكون أكبر من صفر" }); return; }
+
+  const [job] = await db.select()
+    .from(repairJobsTable)
+    .where(and(eq(repairJobsTable.id, jobId), eq(repairJobsTable.company_id, companyId)));
+  if (!job) { res.status(404).json({ error: "التذكرة غير موجودة" }); return; }
+
+  /* تحقق من عدم تجاوز المتبقي */
+  const existingPayments = await db.select({ amount: repairPaymentsTable.amount })
+    .from(repairPaymentsTable)
+    .where(and(eq(repairPaymentsTable.job_id, jobId), eq(repairPaymentsTable.company_id, companyId)));
+  const totalPaid = existingPayments.reduce((s, p) => s + Number(p.amount), 0);
+  const finalCost = Number(job.final_cost ?? job.estimated_cost ?? 0);
+  const remaining = finalCost - totalPaid;
+  if (numAmount > remaining + 0.01) {
+    res.status(422).json({ error: `المبلغ (${numAmount}) يتجاوز المتبقي (${remaining.toFixed(2)})` });
+    return;
+  }
+
+  /* حفظ الدفعة في الخزانة إن حُددت */
+  let safeName: string | null = null;
+  if (safe_id) {
+    const safeIdNum = Number(safe_id);
+    const [safe] = await db.select().from(safesTable)
+      .where(and(eq(safesTable.id, safeIdNum), eq(safesTable.company_id, companyId)));
+    if (safe) {
+      safeName = safe.name;
+      await db.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} + ${String(numAmount)}` })
+        .where(eq(safesTable.id, safeIdNum));
+      await db.insert(transactionsTable).values({
+        type: "repair_payment",
+        reference_type: "repair_job",
+        reference_id: jobId,
+        safe_id: safeIdNum,
+        safe_name: safe.name,
+        amount: String(numAmount),
+        direction: "in",
+        description: `دفعة صيانة — بطاقة ${job.job_no}`,
+        date: new Date().toISOString().split("T")[0]!,
+        company_id: companyId,
+      });
+    }
+  }
+
+  /* تسجيل الدفعة */
+  const [payment] = await db.insert(repairPaymentsTable).values({
+    company_id: companyId,
+    job_id: jobId,
+    amount: String(numAmount),
+    payment_method: String(payment_method ?? "cash"),
+    notes: notes ? String(notes) : null,
+    received_by: userId ?? null,
+    received_by_name: userName,
+    safe_id: safe_id ? Number(safe_id) : null,
+    safe_name: safeName,
+  }).returning();
+
+  /* تحديث deposit_paid في التذكرة */
+  const newTotalPaid = totalPaid + numAmount;
+  await db.update(repairJobsTable)
+    .set({ deposit_paid: String(newTotalPaid), updated_at: new Date() })
+    .where(eq(repairJobsTable.id, jobId));
+
+  /* سجل في التاريخ */
+  await db.insert(repairStatusHistoryTable).values({
+    job_id: jobId,
+    company_id: companyId,
+    event_type: "payment",
+    note: `تم استلام دفعة بقيمة ${numAmount} (${payment_method ?? "نقداً"})${notes ? ` — ${notes}` : ""}`,
+    user_id: userId ?? null,
+    user_name: userName,
+    status_from: job.status,
+    status_to: job.status,
+  });
+
+  res.status(201).json({ ...payment, amount: Number(payment.amount) });
+}));
+
+/* DELETE /api/repair-jobs/:id/payments/:pid — حذف دفعة */
+router.delete("/repair-jobs/:id/payments/:pid", wrap(async (req, res) => {
+  const companyId = req.user!.company_id!;
+  const jobId = parseInt(String(req.params["id"]), 10);
+  const pid = parseInt(String(req.params["pid"]), 10);
+
+  const [payment] = await db.select().from(repairPaymentsTable)
+    .where(and(eq(repairPaymentsTable.id, pid), eq(repairPaymentsTable.job_id, jobId), eq(repairPaymentsTable.company_id, companyId)));
+  if (!payment) { res.status(404).json({ error: "الدفعة غير موجودة" }); return; }
+
+  await db.delete(repairPaymentsTable)
+    .where(eq(repairPaymentsTable.id, pid));
+
+  /* تحديث deposit_paid */
+  const remaining = await db.select({ amount: repairPaymentsTable.amount })
+    .from(repairPaymentsTable)
+    .where(and(eq(repairPaymentsTable.job_id, jobId), eq(repairPaymentsTable.company_id, companyId)));
+  const newTotal = remaining.reduce((s, p) => s + Number(p.amount), 0);
+  await db.update(repairJobsTable)
+    .set({ deposit_paid: String(newTotal), updated_at: new Date() })
+    .where(eq(repairJobsTable.id, jobId));
+
+  res.json({ ok: true });
+}));
+
+/* ══════════════════════════════════════════════════════════════
+   REPAIR TECHNICIAN REPORT — تقرير أداء الفنيين
+══════════════════════════════════════════════════════════════ */
+
+/* GET /api/repair-jobs/reports/technicians — أداء الفنيين */
+router.get("/repair-jobs/reports/technicians", wrap(async (req, res) => {
+  const companyId = req.user!.company_id!;
+  const { from, to } = req.query as { from?: string; to?: string };
+
+  const conditions = [eq(repairJobsTable.company_id, companyId)];
+  if (from) conditions.push(sql`${repairJobsTable.received_at} >= ${from}`);
+  if (to)   conditions.push(sql`${repairJobsTable.received_at} <= ${to}`);
+
+  const rows = await db.select({
+    technician_id:   repairJobsTable.technician_id,
+    technician_name: repairJobsTable.technician_name,
+    total_jobs:      sql<number>`COUNT(*)`,
+    delivered:       sql<number>`SUM(CASE WHEN ${repairJobsTable.status} = 'delivered' THEN 1 ELSE 0 END)`,
+    in_progress:     sql<number>`SUM(CASE WHEN ${repairJobsTable.status} NOT IN ('delivered','cancelled') THEN 1 ELSE 0 END)`,
+    cancelled:       sql<number>`SUM(CASE WHEN ${repairJobsTable.status} = 'cancelled' THEN 1 ELSE 0 END)`,
+    total_revenue:   sql<number>`COALESCE(SUM(CASE WHEN ${repairJobsTable.status} = 'delivered' THEN CAST(${repairJobsTable.final_cost} AS numeric) ELSE 0 END), 0)`,
+    total_collected: sql<number>`COALESCE(SUM(CAST(${repairJobsTable.deposit_paid} AS numeric)), 0)`,
+    avg_cost:        sql<number>`COALESCE(AVG(CASE WHEN ${repairJobsTable.status} = 'delivered' THEN CAST(${repairJobsTable.final_cost} AS numeric) ELSE NULL END), 0)`,
+  })
+  .from(repairJobsTable)
+  .where(and(...conditions))
+  .groupBy(repairJobsTable.technician_id, repairJobsTable.technician_name)
+  .orderBy(desc(sql`SUM(CASE WHEN ${repairJobsTable.status} = 'delivered' THEN 1 ELSE 0 END)`));
+
+  res.json(rows);
+}));
+
+/* GET /api/repair-jobs/reports/revenue — إيرادات الصيانة للفترة */
+router.get("/repair-jobs/reports/revenue", wrap(async (req, res) => {
+  const companyId = req.user!.company_id!;
+  const { from, to } = req.query as { from?: string; to?: string };
+
+  const conditions = [
+    eq(repairJobsTable.company_id, companyId),
+    sql`${repairJobsTable.status} = 'delivered'`,
+  ];
+  if (from) conditions.push(sql`${repairJobsTable.delivered_at} >= ${from}`);
+  if (to)   conditions.push(sql`${repairJobsTable.delivered_at} <= ${to}`);
+
+  const [summary] = await db.select({
+    total_jobs:          sql<number>`COUNT(*)`,
+    gross_revenue:       sql<number>`COALESCE(SUM(CAST(${repairJobsTable.final_cost} AS numeric)), 0)`,
+    total_collected:     sql<number>`COALESCE(SUM(CAST(${repairJobsTable.deposit_paid} AS numeric)), 0)`,
+    total_external_cost: sql<number>`COALESCE(SUM(CAST(${repairJobsTable.external_workshop_cost} AS numeric)), 0)`,
+    avg_revenue:         sql<number>`COALESCE(AVG(CAST(${repairJobsTable.final_cost} AS numeric)), 0)`,
+  }).from(repairJobsTable).where(and(...conditions));
+
+  /* جلب تكلفة قطع الغيار */
+  const partsConds = [eq(repairJobPartsTable.company_id, companyId)];
+  if (from || to) {
+    partsConds.push(sql`${repairJobPartsTable.job_id} IN (
+      SELECT id FROM repair_jobs WHERE company_id = ${companyId} AND status = 'delivered'
+      ${from ? sql`AND delivered_at >= ${from}` : sql``}
+      ${to   ? sql`AND delivered_at <= ${to}`   : sql``}
+    )`);
+  }
+  const [partsRow] = await db.select({
+    parts_cost: sql<number>`COALESCE(SUM(CAST(${repairJobPartsTable.unit_price} AS numeric) * CAST(${repairJobPartsTable.quantity} AS numeric)), 0)`,
+  }).from(repairJobPartsTable).where(and(...partsConds));
+
+  const grossRevenue   = Number(summary?.gross_revenue ?? 0);
+  const partsCost      = Number(partsRow?.parts_cost ?? 0);
+  const externalCost   = Number(summary?.total_external_cost ?? 0);
+  const netProfit      = grossRevenue - partsCost - externalCost;
+
+  res.json({
+    total_jobs:      Number(summary?.total_jobs ?? 0),
+    gross_revenue:   grossRevenue,
+    total_collected: Number(summary?.total_collected ?? 0),
+    parts_cost:      partsCost,
+    external_cost:   externalCost,
+    net_profit:      netProfit,
+    avg_revenue:     Number(summary?.avg_revenue ?? 0),
+  });
 }));
 
 export default router;

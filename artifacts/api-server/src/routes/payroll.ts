@@ -17,6 +17,7 @@ import {
   journalEntriesTable, journalEntryLinesTable, accountsTable,
   safesTable, transactionsTable,
   salesTable, saleItemsTable,
+  repairJobsTable, repairJobPartsTable,
   departmentsTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
@@ -293,8 +294,7 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   const contributions = await db.select().from(statutoryContributionsTable)
     .where(and(eq(statutoryContributionsTable.company_id, companyId), eq(statutoryContributionsTable.is_active, true)));
 
-  // ── Pre-calculate company-wide revenue for the period ──────────
-  // gross revenue = sum of all sales total_amount in this period
+  // ── Pre-calculate company-wide revenue (sales + repairs) for the period ──
   const [salesRevRow] = await db.select({
     gross_revenue: sql<string>`COALESCE(SUM(${salesTable.total_amount}), 0)`,
     cost_total:    sql<string>`COALESCE(SUM(si.cost_total_sum), 0)`,
@@ -309,9 +309,40 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       gte(salesTable.date, period.start_date),
       lte(salesTable.date, period.end_date),
     ));
-  const companyGrossRevenue = Number(salesRevRow?.gross_revenue ?? 0);
-  const companyCostTotal    = Number(salesRevRow?.cost_total ?? 0);
-  const companyNetRevenue   = Math.max(0, companyGrossRevenue - companyCostTotal);
+  const salesGross = Number(salesRevRow?.gross_revenue ?? 0);
+  const salesCost  = Number(salesRevRow?.cost_total ?? 0);
+
+  // إيرادات الصيانة (التذاكر المُسلَّمة في الفترة)
+  const [repairRevRow] = await db.select({
+    gross_revenue: sql<string>`COALESCE(SUM(CAST(${repairJobsTable.final_cost} AS numeric)), 0)`,
+    parts_cost:    sql<string>`COALESCE(SUM(CAST(${repairJobsTable.external_workshop_cost} AS numeric)), 0)`,
+  }).from(repairJobsTable)
+    .where(and(
+      eq(repairJobsTable.company_id, companyId),
+      sql`${repairJobsTable.status} = 'delivered'`,
+      sql`${repairJobsTable.delivered_at} >= ${period.start_date}`,
+      sql`${repairJobsTable.delivered_at} <= ${period.end_date}`,
+    ));
+  const repairGross = Number(repairRevRow?.gross_revenue ?? 0);
+  const repairCost  = Number(repairRevRow?.parts_cost ?? 0);
+
+  // قطع الغيار للصيانة
+  const [repairPartsCostRow] = await db.select({
+    parts_cost: sql<string>`COALESCE(SUM(CAST(${repairJobPartsTable.unit_price} AS numeric) * CAST(${repairJobPartsTable.quantity} AS numeric)), 0)`,
+  }).from(repairJobPartsTable)
+    .where(and(
+      eq(repairJobPartsTable.company_id, companyId),
+      sql`${repairJobPartsTable.job_id} IN (
+        SELECT id FROM repair_jobs WHERE company_id = ${companyId}
+        AND status = 'delivered'
+        AND delivered_at >= ${period.start_date}
+        AND delivered_at <= ${period.end_date}
+      )`,
+    ));
+  const repairPartsCost = Number(repairPartsCostRow?.parts_cost ?? 0);
+
+  const companyGrossRevenue = salesGross + repairGross;
+  const companyNetRevenue   = Math.max(0, (salesGross - salesCost) + (repairGross - repairCost - repairPartsCost));
 
   const processedRecords: Array<Record<string, unknown>> = [];
 
