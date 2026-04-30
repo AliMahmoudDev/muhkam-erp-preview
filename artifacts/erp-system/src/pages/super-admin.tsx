@@ -802,7 +802,7 @@ export default function SuperAdmin() {
 
   async function saveTgCredentials() {
     if (!tgBotToken.trim() || !tgChatId.trim()) {
-      showToast('أدخل Bot Token و Chat ID', 'error');
+      showToast('أدخل رمز البوت ومعرّف المحادثة', 'error');
       return;
     }
     setTgCredSaving(true);
@@ -4055,16 +4055,23 @@ export default function SuperAdmin() {
                   const TG_BLUE = '#38BDF8';
                   const TG_BG   = 'rgba(56,189,248,0.07)';
                   const ALERT_ICONS: Record<string, string> = {
-                    company_created: '🏢', company_deleted: '🗑️', subscription_expired: '⏰',
-                    trial_expired: '⌛', trial_abuse: '🚨', login_failure: '🔐',
-                    payment_received: '💰', backup_completed: '💾', system_error: '❌', repair_needed: '🔧',
+                    server_start:           '🚀', server_slow:            '🐢', server_high_memory: '🧠',
+                    db_slow:                '🗄️', backup_failed:          '⚠️', backup_success:     '💾',
+                    brute_force:            '🔐', subscription_expiring:  '⏰', subscription_expired:'❌',
+                    new_company_registered: '🏢', ip_blocked:             '🚫',
                   };
                   const ALERT_DESC: Record<string, string> = {
-                    company_created: 'عند إضافة شركة جديدة', company_deleted: 'عند حذف شركة',
-                    subscription_expired: 'عند انتهاء اشتراك شركة', trial_expired: 'عند انتهاء فترة تجريبية',
-                    trial_abuse: 'عند اكتشاف إساءة استخدام التجربة', login_failure: 'عند محاولات تسجيل دخول فاشلة متعددة',
-                    payment_received: 'عند استلام دفعة', backup_completed: 'عند اكتمال نسخة احتياطية',
-                    system_error: 'عند وقوع خطأ في النظام', repair_needed: 'عند الحاجة لصيانة',
+                    server_start:           'عند بدء تشغيل الخادم',
+                    server_slow:            'عند تباطؤ استجابة الخادم',
+                    server_high_memory:     'عند ارتفاع استهلاك الذاكرة',
+                    db_slow:                'عند تباطؤ استعلامات قاعدة البيانات',
+                    backup_failed:          'عند فشل النسخ الاحتياطي',
+                    backup_success:         'عند اكتمال النسخ الاحتياطي بنجاح',
+                    brute_force:            'عند محاولات اختراق متكررة من IP',
+                    subscription_expiring:  'عند اقتراب انتهاء اشتراك شركة',
+                    subscription_expired:   'عند انتهاء اشتراك شركة',
+                    new_company_registered: 'عند تسجيل شركة جديدة في المنصة',
+                    ip_blocked:             'عند حجب عنوان IP بسبب الاختراق',
                   };
                   const TgToggle = ({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) => (
                     <button
@@ -4119,7 +4126,7 @@ export default function SuperAdmin() {
                             </div>
                             {tgBotStatus?.connected && tgBotStatus.token_masked && (
                               <div style={{ fontSize: '10px', color: C.muted, marginTop: '4px', fontFamily: 'monospace' }}>
-                                Token: {tgBotStatus.token_masked}  |  Chat ID: {tgBotStatus.chat_id}
+                                الرمز: {tgBotStatus.token_masked}  |  المعرّف: {tgBotStatus.chat_id}
                               </div>
                             )}
                           </div>
@@ -4144,10 +4151,10 @@ export default function SuperAdmin() {
                         </div>
                         <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-                          {/* Bot Token */}
+                          {/* رمز البوت */}
                           <div>
                             <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
-                              Bot Token
+                              رمز البوت
                             </label>
                             <div style={{ position: 'relative' }}>
                               <input
@@ -4169,14 +4176,14 @@ export default function SuperAdmin() {
                             </div>
                           </div>
 
-                          {/* Chat ID */}
+                          {/* معرّف المحادثة */}
                           <div>
                             <label style={{ fontSize: '12px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>
-                              Chat ID
+                              معرّف المحادثة
                             </label>
                             <input
                               type="text"
-                              placeholder={tgBotStatus?.chat_id ?? '-1001234567890 أو معرّف المحادثة'}
+                              placeholder={tgBotStatus?.chat_id ?? '-1001234567890 أو معرّف القناة'}
                               value={tgChatId}
                               onChange={e => setTgChatId(e.target.value)}
                               style={{
@@ -4187,7 +4194,7 @@ export default function SuperAdmin() {
                               }}
                             />
                             <div style={{ fontSize: '11px', color: C.muted, marginTop: '5px' }}>
-                              📌 للحصول على Chat ID: أضف @userinfobot إلى المحادثة أو القناة
+                              📌 للحصول على المعرّف: أضف @userinfobot إلى المحادثة أو القناة
                             </div>
                           </div>
 
@@ -4298,7 +4305,7 @@ export default function SuperAdmin() {
                                     {rule.label}
                                   </div>
                                   <div style={{ fontSize: '11px', color: C.muted, marginTop: '1px' }}>
-                                    {ALERT_DESC[key] ?? key}
+                                    {ALERT_DESC[key] ?? rule.label}
                                   </div>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
