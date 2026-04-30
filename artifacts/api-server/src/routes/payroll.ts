@@ -771,6 +771,102 @@ router.post("/payroll/records/:id/approve", wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
+/* ── Pay individual record (صرف راتب موظف منفرد) ──────────────── */
+router.post("/payroll/records/:id/pay", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_approve_payroll")) { res.status(403).json({ error: "غير مصرح بصرف الراتب" }); return; }
+  const companyId = req.user!.company_id!;
+  const userId    = req.user?.id ?? null;
+  const id        = parseInt(String(req.params["id"]), 10);
+  const { safe_id, notes } = req.body as { safe_id?: number | string; notes?: string };
+
+  const rawSafeId = safe_id ? parseInt(String(safe_id), 10) : NaN;
+  if (!rawSafeId || isNaN(rawSafeId)) { res.status(400).json({ error: "يجب اختيار الخزانة لصرف الراتب" }); return; }
+
+  // Fetch record with employee & period info
+  const [record] = await db.select({
+    id: payrollRecordsTable.id,
+    net_salary: payrollRecordsTable.net_salary,
+    status: payrollRecordsTable.status,
+    currency: payrollRecordsTable.currency,
+    employee_id: payrollRecordsTable.employee_id,
+    payroll_period_id: payrollRecordsTable.payroll_period_id,
+    first_name_ar: employeesTable.first_name_ar,
+    last_name_ar: employeesTable.last_name_ar,
+    period_name: payrollPeriodsTable.name,
+    period_status: payrollPeriodsTable.status,
+  })
+    .from(payrollRecordsTable)
+    .leftJoin(employeesTable, eq(payrollRecordsTable.employee_id, employeesTable.id))
+    .leftJoin(payrollPeriodsTable, eq(payrollRecordsTable.payroll_period_id, payrollPeriodsTable.id))
+    .where(eq(payrollRecordsTable.id, id));
+
+  if (!record) { res.status(404).json({ error: "سجل الراتب غير موجود" }); return; }
+  if (record.status === "paid") { res.status(409).json({ error: "تم صرف هذا الراتب مسبقاً" }); return; }
+  if (record.period_status !== "approved" && record.period_status !== "processing") {
+    res.status(409).json({ error: "الفترة يجب أن تكون معتمدة أو قيد المعالجة قبل الصرف" }); return;
+  }
+
+  const amount = Number(record.net_salary ?? 0);
+  if (amount <= 0) { res.status(400).json({ error: "لا يوجد مبلغ للصرف" }); return; }
+
+  const result = await db.transaction(async (tx) => {
+    // 1. Fetch & validate safe
+    const [safe] = await tx.select().from(safesTable)
+      .where(and(eq(safesTable.id, rawSafeId), eq(safesTable.company_id, companyId)));
+    if (!safe) return { error: { status: 404, message: "الخزانة المحددة غير موجودة" } };
+    if (Number(safe.balance) < amount) {
+      return { error: { status: 422, message: `رصيد الخزانة "${safe.name}" غير كافٍ — المتاح: ${Number(safe.balance).toFixed(2)} والمطلوب: ${amount.toFixed(2)}` } };
+    }
+
+    // 2. Deduct from safe
+    await tx.update(safesTable)
+      .set({ balance: sql`${safesTable.balance} - ${String(amount)}` })
+      .where(eq(safesTable.id, rawSafeId));
+
+    // 3. Record treasury transaction
+    const empName = `${record.first_name_ar ?? ''} ${record.last_name_ar ?? ''}`.trim();
+    await tx.insert(transactionsTable).values({
+      type:           "payroll_disbursement",
+      reference_type: "payroll_record",
+      reference_id:   id,
+      safe_id:        rawSafeId,
+      safe_name:      safe.name,
+      amount:         String(amount),
+      direction:      "out",
+      description:    notes?.trim() || `صرف راتب — ${empName} — ${record.period_name ?? ''}`,
+      date:           new Date().toISOString().split("T")[0]!,
+      company_id:     companyId,
+    });
+
+    // 4. Update record status → paid
+    await tx.update(payrollRecordsTable)
+      .set({ status: "paid", updated_at: new Date() })
+      .where(eq(payrollRecordsTable.id, id));
+
+    // 5. Check if ALL records in the period are now paid → update period to paid
+    const remaining = await tx.select({ id: payrollRecordsTable.id })
+      .from(payrollRecordsTable)
+      .where(and(
+        eq(payrollRecordsTable.payroll_period_id, record.payroll_period_id!),
+        sql`status != 'paid'`,
+      ));
+    if (remaining.length === 0) {
+      await tx.update(payrollPeriodsTable)
+        .set({ status: "paid", processed_by: userId, updated_at: new Date() })
+        .where(eq(payrollPeriodsTable.id, record.payroll_period_id!));
+    }
+
+    return { ok: true, safeName: safe.name, empName };
+  });
+
+  if ("error" in result) {
+    res.status((result.error as { status: number }).status).json({ error: (result.error as { message: string }).message });
+    return;
+  }
+
+  res.json({ ok: true, amount, safe_name: result.safeName, emp_name: result.empName });
+}));
+
 router.post("/payroll/records/:id/reject", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_approve_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const id = parseInt(String(req.params["id"]), 10);

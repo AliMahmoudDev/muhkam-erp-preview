@@ -69,6 +69,9 @@ export default function Payroll() {
   const [showCreate, setShowCreate] = useState(false);
   const [showPay, setShowPay] = useState(false);
   const [payForm, setPayForm] = useState({ safe_id: '', notes: '' });
+  // Per-employee pay: { recId, name, net }
+  const [payRecModal, setPayRecModal] = useState<{ recId: number; name: string; net: number; currency: string } | null>(null);
+  const [payRecSafeId, setPayRecSafeId] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState<AnyRec | null>(null);
   const [expandedRecId, setExpandedRecId] = useState<number | null>(null);
   const [expandedLineItems, setExpandedLineItems] = useState<AnyRec[]>([]);
@@ -105,7 +108,7 @@ export default function Payroll() {
     enabled: !!selectedPeriod,
   });
 
-  const safesQuery = useQuery({ queryKey: ['safes'], queryFn: () => f('/api/safes') });
+  const safesQuery = useQuery({ queryKey: ['settings-safes'], queryFn: () => f('/api/settings/safes') });
 
   /* ── Mutations ───────────────────────────────────────────── */
   const mutOk = (k: string | string[], msg: string) => ({
@@ -152,11 +155,25 @@ export default function Payroll() {
     onSuccess: (data: AnyRec, vars) => {
       qc.invalidateQueries({ queryKey: ['payroll-periods'] });
       qc.invalidateQueries({ queryKey: ['payroll-period', vars.id] });
-      qc.invalidateQueries({ queryKey: ['safes'] });
+      qc.invalidateQueries({ queryKey: ['settings-safes'] });
       toast({ title: `✓ تم صرف الرواتب من خزانة "${String(data.safe_name ?? '')}" بمجموع ${numFmt(data.total_paid)}` });
       setSelectedPeriod(p => ({ ...p!, status: 'paid' }));
       setShowPay(false);
       setPayForm({ safe_id: '', notes: '' });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+  });
+
+  const payRecord = useMutation({
+    mutationFn: ({ recId, safe_id }: { recId: number; safe_id: number }) =>
+      f(`/api/payroll/records/${recId}/pay`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ safe_id }) }),
+    onSuccess: (data: AnyRec) => {
+      qc.invalidateQueries({ queryKey: ['payroll-periods'] });
+      qc.invalidateQueries({ queryKey: ['payroll-period', selectedPeriod?.id] });
+      qc.invalidateQueries({ queryKey: ['settings-safes'] });
+      toast({ title: `✓ صُرف راتب ${String(data.emp_name ?? '')} من "${String(data.safe_name ?? '')}"` });
+      setPayRecModal(null);
+      setPayRecSafeId('');
     },
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
@@ -325,15 +342,14 @@ export default function Payroll() {
                         <th className="text-center p-3">الراتب الإجمالي</th>
                         <th className="text-center p-3">صافي الراتب</th>
                         <th className="text-center p-3">الحالة</th>
-                        <th className="text-center p-3">التفاصيل</th>
+                        {canApprove && <th className="text-center p-3">صرف</th>}
+                        <th className="text-center p-3">تفاصيل</th>
                       </tr>
                     </thead>
                     <tbody>
                       {recordsList.map((rec) => (
                         <Fragment key={String(rec.id)}>
-                          <tr
-                            className="border-b border-white/5 hover:bg-white/4 transition-colors"
-                          >
+                          <tr className="border-b border-white/5 hover:bg-white/4 transition-colors">
                             <td className="p-3">
                               <div className="font-semibold text-white">
                                 {rec.first_name_ar} {rec.last_name_ar}
@@ -349,6 +365,27 @@ export default function Payroll() {
                             <td className="p-3 text-center">
                               <RecBadge s={String(rec.status ?? '')} />
                             </td>
+                            {canApprove && (
+                              <td className="p-3 text-center">
+                                {rec.status !== 'paid' && (selectedPeriod.status === 'approved' || selectedPeriod.status === 'processing') ? (
+                                  <button
+                                    onClick={() => setPayRecModal({
+                                      recId: Number(rec.id),
+                                      name: `${String(rec.first_name_ar ?? '')} ${String(rec.last_name_ar ?? '')}`.trim(),
+                                      net: Number(rec.net_salary ?? 0),
+                                      currency: String(rec.currency ?? 'EGP'),
+                                    })}
+                                    className="flex items-center gap-1 mx-auto px-2 py-1 rounded-lg text-xs bg-emerald-600/70 hover:bg-emerald-600 text-white border border-emerald-500/40 transition-colors"
+                                  >
+                                    <Banknote size={12} /> صرف
+                                  </button>
+                                ) : rec.status === 'paid' ? (
+                                  <CheckCircle2 size={14} className="text-emerald-400 mx-auto" />
+                                ) : (
+                                  <span className="text-white/20 text-xs">—</span>
+                                )}
+                              </td>
+                            )}
                             <td className="p-3 text-center">
                               <button
                                 onClick={() => toggleLines(Number(rec.id))}
@@ -362,7 +399,7 @@ export default function Payroll() {
                           {/* Line items */}
                           {expandedRecId === Number(rec.id) && (
                             <tr key={`lines-${rec.id}`}>
-                              <td colSpan={5} className="bg-white/3 px-6 py-3">
+                              <td colSpan={canApprove ? 6 : 5} className="bg-white/3 px-6 py-3">
                                 {loadingLines ? (
                                   <div className="text-white/40 text-xs text-center py-2">جاري التحميل…</div>
                                 ) : (
@@ -400,6 +437,68 @@ export default function Payroll() {
           )}
         </div>
       </div>
+
+      {/* ── Per-Employee Pay Modal ───────────────────────────── */}
+      {payRecModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
+            <div className="flex items-center justify-between p-5 border-b border-white/10">
+              <h2 className="font-bold text-white flex items-center gap-2 text-base">
+                <Banknote size={15} className="text-emerald-400" /> صرف راتب
+              </h2>
+              <button onClick={() => { setPayRecModal(null); setPayRecSafeId(''); }} className="text-white/40 hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              {/* Employee & amount */}
+              <div className="erp-card p-3 rounded-xl space-y-1">
+                <p className="text-sm font-semibold text-white">{payRecModal.name}</p>
+                <p className="text-xs text-white/50">صافي الراتب المستحق</p>
+                <p className="text-lg font-bold text-emerald-400 font-mono">{numFmt(payRecModal.net, payRecModal.currency)}</p>
+              </div>
+              {/* Safe selector */}
+              <div>
+                <label className="text-xs text-white/50 block mb-1">الخزانة <span className="text-red-400">*</span></label>
+                <select
+                  className="erp-input w-full"
+                  value={payRecSafeId}
+                  onChange={e => setPayRecSafeId(e.target.value)}
+                >
+                  <option value="">— اختر الخزانة —</option>
+                  {safesList.map(s => (
+                    <option key={String(s.id)} value={String(s.id)}>
+                      {String(s.name ?? '')} — رصيد: {numFmt(s.balance, String(s.currency ?? 'EGP'))}
+                    </option>
+                  ))}
+                </select>
+                {payRecSafeId && (() => {
+                  const safe = safesList.find(s => String(s.id) === payRecSafeId);
+                  if (!safe) return null;
+                  const bal = Number(safe.balance ?? 0);
+                  const enough = bal >= payRecModal.net;
+                  return (
+                    <p className={`text-xs mt-1 ${enough ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {enough ? `✓ رصيد كافٍ — المتبقي: ${numFmt(bal - payRecModal.net)}` : `✗ رصيد غير كافٍ — يُنقص ${numFmt(payRecModal.net - bal)}`}
+                    </p>
+                  );
+                })()}
+              </div>
+            </div>
+            <div className="flex gap-2 p-5 border-t border-white/10">
+              <button
+                onClick={() => payRecord.mutate({ recId: payRecModal.recId, safe_id: Number(payRecSafeId) })}
+                disabled={payRecord.isPending || !payRecSafeId}
+                className="erp-btn flex-1 flex items-center gap-1 justify-center bg-emerald-600/80 hover:bg-emerald-600 text-white border border-emerald-500/40 disabled:opacity-40"
+              >
+                {payRecord.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
+                {payRecord.isPending ? 'جاري الصرف…' : `تأكيد صرف ${numFmt(payRecModal.net, payRecModal.currency)}`}
+              </button>
+              <button onClick={() => { setPayRecModal(null); setPayRecSafeId(''); }} className="erp-btn erp-btn-ghost">إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Pay Period Modal ─────────────────────────────────── */}
       {showPay && selectedPeriod && (
