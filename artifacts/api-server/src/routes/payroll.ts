@@ -3,7 +3,7 @@
  * Full payroll processing system with salary structures, tax calculation, and period management.
  */
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql, isNull, gte, lte, ilike } from "drizzle-orm";
+import { eq, and, desc, sql, isNull, gte, lte, ilike, inArray } from "drizzle-orm";
 import {
   db,
   salaryStructuresTable, salaryComponentsTable,
@@ -479,7 +479,7 @@ router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
   // Only fetch UNPAID records (skip employees already paid individually)
   const unpaidRecords = await db.select({ net_salary: payrollRecordsTable.net_salary, id: payrollRecordsTable.id })
     .from(payrollRecordsTable)
-    .where(and(eq(payrollRecordsTable.payroll_period_id, id), sql`status != 'paid'`));
+    .where(and(eq(payrollRecordsTable.payroll_period_id, id), sql`${payrollRecordsTable.status} != 'paid'`));
 
   if (unpaidRecords.length === 0) {
     res.status(409).json({ error: "جميع الرواتب في هذه الفترة تم صرفها مسبقاً" }); return;
@@ -545,7 +545,7 @@ router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
     // 5. Update ONLY unpaid records → paid, then update period
     await tx.update(payrollRecordsTable)
       .set({ status: "paid", updated_at: new Date() })
-      .where(sql`id = ANY(${unpaidIds})`);
+      .where(inArray(payrollRecordsTable.id, unpaidIds));
     await tx.update(payrollPeriodsTable)
       .set({ status: "paid", processed_by: userId, updated_at: new Date() })
       .where(eq(payrollPeriodsTable.id, id));

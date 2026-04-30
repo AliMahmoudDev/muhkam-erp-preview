@@ -1364,6 +1364,15 @@ html.light .erp-modal .border-b,
 html.light .erp-modal .border-t {
   border-color: rgba(0,0,0,0.10) !important;
 }
+/* Force readable text inside modals in light mode */
+html.light .erp-modal .text-white { color: #0d1117 !important; }
+html.light .erp-modal .text-white\/60 { color: rgba(13,17,23,0.60) !important; }
+html.light .erp-modal .text-white\/50 { color: rgba(13,17,23,0.55) !important; }
+html.light .erp-modal .text-white\/40 { color: rgba(13,17,23,0.45) !important; }
+html.light .erp-modal .text-white\/30 { color: rgba(13,17,23,0.35) !important; }
+html.light .erp-modal .text-white\/80 { color: rgba(13,17,23,0.80) !important; }
+html.light .erp-modal .border-white\/8 { border-color: rgba(13,17,23,0.08) !important; }
+html.light .erp-modal .border-white\/20 { border-color: rgba(13,17,23,0.15) !important; }
 
 /* ── ERP Card hover lift ──────────────────────────── */
 .erp-card-lift {
