@@ -20,7 +20,7 @@ import { createPortal } from "react-dom";
 import {
   ShieldCheck, Loader2, X, AlertTriangle,
   Check, Minus, XCircle, ThumbsUp, ThumbsDown, ArrowRight,
-  ClipboardCheck, ClipboardList,
+  ClipboardCheck, ClipboardList, MessageSquare,
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
@@ -156,6 +156,16 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
   /* وضع الرفض — يطلب سبباً إجمالياً إلزامياً */
   const [rejectMode, setRejectMode]       = useState(false);
   const [rejectReason, setRejectReason]   = useState<string>("");
+
+  /* البنود المفتوحة لإظهار خانة الملاحظات */
+  const [openNotes, setOpenNotes] = useState<Set<number>>(new Set());
+  function toggleNotes(idx: number) {
+    setOpenNotes(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
+  }
 
   const passCount    = items.filter(i => i.status === "pass").length;
   const failCount    = items.filter(i => i.status === "fail").length;
@@ -383,13 +393,37 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
                     it.status === "fail" ? "border-red-500/30 bg-red-500/[0.04]" :
                     it.status === "n/a"  ? "border-zinc-500/25 bg-zinc-500/[0.03]" :
                                            "border-white/8 bg-white/[0.02]";
+                  const notesOpen = openNotes.has(idx);
+                  const hasNote   = (it.notes ?? "").trim().length > 0;
                   return (
                     <div
                       key={`l-${it.id}-${idx}`}
-                      className={`rounded-xl border px-2.5 py-2 transition-colors ${cardCls}`}
+                      className={`rounded-xl border transition-colors ${cardCls}`}
                     >
-                      <div className="flex items-center gap-1.5">
-                        <p className="flex-1 min-w-0 text-[11.5px] font-bold text-white truncate">{it.label}</p>
+                      {/* صف البند — نفس ارتفاع بطاقة الاستلام في اليمين */}
+                      <div className="flex items-center gap-1.5 px-2.5 py-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleNotes(idx)}
+                          title={notesOpen ? "إخفاء الملاحظة" : "إظهار حقل الملاحظة"}
+                          className={[
+                            "shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-colors",
+                            hasNote
+                              ? "bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
+                              : notesOpen
+                                ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
+                                : "bg-white/[0.04] text-white/40 border border-white/10 hover:text-white/70 hover:bg-white/[0.08]",
+                          ].join(" ")}
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                        </button>
+                        <p
+                          className="flex-1 min-w-0 text-[11.5px] font-bold text-white truncate cursor-pointer"
+                          onClick={() => toggleNotes(idx)}
+                          title="اضغط لإظهار/إخفاء الملاحظة"
+                        >
+                          {it.label}
+                        </p>
                         <div className="flex items-center gap-1 shrink-0">
                           {(["pass","fail","n/a"] as QcStatus[]).map(st => {
                             const cfg = QC_BTN[st];
@@ -398,6 +432,7 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
                             return (
                               <button
                                 key={st}
+                                type="button"
                                 onClick={() => setItemStatus(idx, st)}
                                 disabled={loading}
                                 title={cfg.label}
@@ -415,18 +450,25 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
                           })}
                         </div>
                       </div>
-                      <input
-                        value={it.notes ?? ""}
-                        onChange={(e) => setItemNotes(idx, e.target.value)}
-                        placeholder="ملاحظة الفني (اختيارية)"
-                        disabled={loading}
-                        className={[
-                          "mt-1.5 w-full px-2.5 py-1 rounded-md text-[10.5px] text-white placeholder:text-white/25 focus:outline-none transition-colors",
-                          it.status === "fail"
-                            ? "bg-red-500/8 border border-red-500/25 focus:border-red-400/45"
-                            : "bg-white/[0.03] border border-white/8 focus:border-purple-400/35",
-                        ].join(" ")}
-                      />
+
+                      {/* الملاحظة — تظهر منسدلة فقط عند الفتح */}
+                      {notesOpen && (
+                        <div className="px-2.5 pb-2 pt-0">
+                          <input
+                            value={it.notes ?? ""}
+                            onChange={(e) => setItemNotes(idx, e.target.value)}
+                            placeholder="ملاحظة الفني (اختيارية)"
+                            disabled={loading}
+                            autoFocus
+                            className={[
+                              "w-full px-2.5 py-1 rounded-md text-[10.5px] text-white placeholder:text-white/25 focus:outline-none transition-colors",
+                              it.status === "fail"
+                                ? "bg-red-500/8 border border-red-500/25 focus:border-red-400/45"
+                                : "bg-white/[0.03] border border-white/8 focus:border-purple-400/35",
+                            ].join(" ")}
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })}
