@@ -314,14 +314,17 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
           job={jobLite}
           onClose={() => setGated(null)}
           onSaved={(outcome) => {
-            /* حفظ نتيجة الفحص (قبول أو رفض) — لا ينقل الحالة تلقائياً.
-               • قبول → احفظ qa_completed_at؛ ينتقل المستخدم يدوياً لاحقاً إلى
-                 "جاهز للتسليم" حيث تفتح بوّابة المراجعة النهائية (PreDeliveryModal).
-               • رفض → الحالة تبقى in_repair مع تسجيل qa_notes.
-               في الحالتين نُغلق المودال ونُحدّث البطاقة لعرض البيانات الجديدة. */
-            void outcome;
-            setGated(null);
-            onStatusChange(currentStatus);
+            if (outcome === "approve") {
+              /* حفظ QC بنجاح → ننقل البطاقة إلى "مراقبة الجودة" (final_quality_check)
+                 حتى يضيء المسار ويُظهر للعميل المرحلة الحالية.
+                 الانتقال إلى "جاهز للتسليم" يكون يدوياً لاحقاً عبر PreDeliveryModal. */
+              void applyGatedTransition("final_quality_check");
+            } else {
+              /* رفض الفحص → الحالة تبقى in_repair مع تسجيل qa_notes في DB.
+                 نُغلق المودال ونُحدّث البطاقة لإظهار الملاحظات الجديدة. */
+              setGated(null);
+              onStatusChange(currentStatus);
+            }
           }}
         />
       )}
