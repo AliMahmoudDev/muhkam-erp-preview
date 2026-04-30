@@ -778,6 +778,7 @@ export default function Login() {
           color: #0f0c29 !important;
           -webkit-text-fill-color: #0f0c29 !important;
           caret-color: #4a1a90;
+          color-scheme: light;
         }
         .lp-input:focus {
           outline: none;
