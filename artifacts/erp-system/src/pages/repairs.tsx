@@ -806,6 +806,8 @@ export default function Repairs() {
       authFetch(api(`/api/repair-jobs/${id}`), { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
     onSuccess: (updated) => {
       qc.invalidateQueries({ queryKey: ["/api/repair-jobs"] });
+      /* نُبطل أيضاً query التفاصيل حتى يُعاد جلب كل الحقول (qa_notes, qa_checklist, …) */
+      qc.invalidateQueries({ queryKey: ["/api/repair-jobs", updated.id] });
       setSelectedJob(updated);
       toast({ title: "✅ تم الحفظ" });
     },
@@ -1934,7 +1936,7 @@ function JobDetail({
           currentStatus={job.status}
           jobId={job.id}
           jobData={job as unknown as { id: number; status: string; [key: string]: unknown }}
-          onStatusChange={(s) => onPatch({ status: s })}
+          onStatusChange={(s) => { onPatch({ status: s }); refreshJob(); }}
         />
       </div>
 
