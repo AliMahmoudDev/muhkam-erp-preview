@@ -192,7 +192,29 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
   /* بنود الاستلام — تُمثّل المرجع وتُستخدم لبناء بنود الفحص */
   const intakeItems = useMemo(() => parseChecklist(job.checklist), [job.checklist]);
 
-  /* بنود الفحص — مبنيّة من الاستلام مع استرجاع أي قرارات محفوظة سابقاً */
+  /* ── مساعد: بناء QcItem[] من أي مصفوفة بنود ── */
+  function buildFromSource(
+    sources: Array<{ id: string; label: string; category?: string; intake_status?: string | null; intake_notes?: string | null }>,
+    savedById: Map<string, { status?: string; notes?: string }>,
+  ): QcItem[] {
+    return sources.map(it => {
+      const saved = savedById.get(it.id) ?? savedById.get(it.label);
+      const st = saved?.status;
+      return {
+        id:            it.id,
+        label:         it.label,
+        category:      it.category,
+        intake_status: it.intake_status ?? null,
+        intake_notes:  it.intake_notes ?? null,
+        status:        (st === "pass" || st === "fail" || st === "n/a") ? st : null,
+        notes:         typeof saved?.notes === "string" ? saved.notes : "",
+      };
+    });
+  }
+
+  /* بنود الفحص — مبنيّة فوراً (بدون async):
+       - إن وُجدت بنود استلام → تُبنى منها
+       - إن لم تُوجد → نستخدم البنود الافتراضية حسب نوع الجهاز  */
   const initial: QcItem[] = useMemo(() => {
     const savedRaw = parseSavedQc(job.qa_checklist);
     const savedById = new Map<string, { status?: string; notes?: string }>();
@@ -201,85 +223,54 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
       savedById.set(k, { status: s.status, notes: s.notes });
     });
 
-    return intakeItems.map(it => {
-      const saved = savedById.get(it.id) ?? savedById.get(it.label);
-      const st = saved?.status;
-      return {
-        id:            it.id,
-        label:         it.label,
-        category:      it.category,
-        intake_status: it.status,
-        intake_notes:  it.notes,
-        status:        (st === "pass" || st === "fail" || st === "n/a") ? st : null,
-        notes:         typeof saved?.notes === "string" ? saved.notes : "",
-      };
-    });
-  }, [intakeItems, job.qa_checklist]);
-
-  const [items, setItems]     = useState<QcItem[]>(initial);
-  const [score, setScore]     = useState<string>(job.device_score != null ? String(job.device_score) : "");
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors]   = useState<string[]>([]);
-
-  /* ── جلب بنود القالب عند غياب بنود الفحص الأولي ── */
-  const [templateLoading, setTemplateLoading] = useState(false);
-  const [isFallback, setIsFallback]           = useState(false);
-
-  useEffect(() => {
-    if (intakeItems.length > 0) return; // يوجد فحص أولي — لا داعي للقالب
-
-    const deviceType = (job.device_type ?? "").trim() || "general";
-
-    /* مساعد: بناء QcItem[] من مصفوفة بنود (DB أو افتراضية) */
-    function buildQcItems(
-      rawItems: Array<{ id: string; label: string; category?: string }>,
-      savedById: Map<string, { status?: string; notes?: string }>,
-    ): QcItem[] {
-      return rawItems.map((item) => {
-        const saved = savedById.get(item.id) ?? savedById.get(item.label);
-        const st    = saved?.status;
-        return {
-          id:            item.id,
-          label:         item.label,
-          category:      item.category,
-          intake_status: null,
-          intake_notes:  null,
-          status:        (st === "pass" || st === "fail" || st === "n/a") ? st : null,
-          notes:         typeof saved?.notes === "string" ? saved.notes : "",
-        };
-      });
+    if (intakeItems.length > 0) {
+      /* ← يوجد فحص أولي */
+      return buildFromSource(
+        intakeItems.map(it => ({ ...it, intake_status: it.status, intake_notes: it.notes })),
+        savedById,
+      );
     }
 
-    const savedRaw   = parseSavedQc(job.qa_checklist);
-    const savedById  = new Map<string, { status?: string; notes?: string }>();
-    savedRaw.forEach((s, i) => {
-      const k = String(s.id ?? s.label ?? `item-${i}`);
-      savedById.set(k, { status: s.status, notes: s.notes });
-    });
+    /* ← لا يوجد فحص أولي → بنود افتراضية فورية */
+    const deviceType = (job.device_type ?? "").trim() || "general";
+    return buildFromSource(getDefaultItems(deviceType), savedById);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intakeItems, job.qa_checklist, job.device_type]);
+
+  /* isFallback = true عندما لا يوجد فحص أولي (نستخدم القالب أو الافتراضي) */
+  const [items, setItems]         = useState<QcItem[]>(initial);
+  const [score, setScore]         = useState<string>(job.device_score != null ? String(job.device_score) : "");
+  const [loading, setLoading]     = useState(false);
+  const [errors, setErrors]       = useState<string[]>([]);
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [isFallback, setIsFallback] = useState(() => intakeItems.length === 0);
+
+  /* ── محاولة تحميل بنود أفضل من DB (إن وجدت) بعد الـ render ── */
+  useEffect(() => {
+    if (intakeItems.length > 0) return; // يوجد فحص أولي — الـ initial صحيح بالفعل
+
+    const deviceType = (job.device_type ?? "").trim() || "general";
 
     setTemplateLoading(true);
     authFetch(api(`/api/repair-checklist-items?device_type=${encodeURIComponent(deviceType)}`))
       .then(res => res.json())
       .then((data: Array<{ id?: number; label_ar?: string; label?: string; category?: string }>) => {
-        if (Array.isArray(data) && data.length > 0) {
-          /* ← استخدام بنود قاعدة البيانات */
-          const dbItems = data.map((item, i) => ({
-            id:       String(item.id ?? `tpl-${i}`),
-            label:    String(item.label_ar ?? item.label ?? `بند ${i + 1}`),
-            category: item.category,
-          }));
-          setItems(buildQcItems(dbItems, savedById));
-        } else {
-          /* ← قاعدة البيانات فارغة — استخدام البنود الافتراضية المدمجة */
-          setItems(buildQcItems(getDefaultItems(deviceType), savedById));
-        }
-        setIsFallback(true);
+        if (!Array.isArray(data) || data.length === 0) return; // الـ defaults الافتراضية كافية
+
+        /* DB لديه بنود مخصصة — نستبدل الافتراضية بها */
+        const savedRaw  = parseSavedQc(job.qa_checklist);
+        const savedById = new Map<string, { status?: string; notes?: string }>();
+        savedRaw.forEach((s, i) => {
+          savedById.set(String(s.id ?? s.label ?? `item-${i}`), { status: s.status, notes: s.notes });
+        });
+        const dbSources = data.map((item, i) => ({
+          id:       String(item.id ?? `tpl-${i}`),
+          label:    String(item.label_ar ?? item.label ?? `بند ${i + 1}`),
+          category: item.category,
+        }));
+        setItems(buildFromSource(dbSources, savedById));
       })
-      .catch(() => {
-        /* ← فشل الجلب — استخدام البنود الافتراضية كبديل أخير */
-        setItems(buildQcItems(getDefaultItems(deviceType), savedById));
-        setIsFallback(true);
-      })
+      .catch(() => { /* إذا فشل الجلب — نبقى على البنود الافتراضية المحددة في initial */ })
       .finally(() => setTemplateLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
