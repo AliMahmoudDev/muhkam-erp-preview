@@ -1457,12 +1457,6 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
       updated_at: now,
     };
 
-    /* تحديث final_cost لو أُضيفت قطع جديدة */
-    if (partsTotal > 0) {
-      const existingCost = Number(job.final_cost ?? 0);
-      updates.final_cost = String(existingCost + partsTotal);
-    }
-
     /* وسيط/سمسار */
     if ("broker_name" in b || "broker_commission" in b) {
       const bName = String(b.broker_name ?? "").trim();
