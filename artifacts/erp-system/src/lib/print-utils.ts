@@ -11,10 +11,10 @@
 export function openPrintWindow(
   html: string,
   options: { width?: number; height?: number; delay?: number; autoClose?: boolean } = {},
-): void {
+): boolean {
   const { width = 800, height = 700, delay, autoClose = false } = options;
   const w = window.open('', '_blank', `width=${width},height=${height}`);
-  if (!w) return;
+  if (!w) return false;
   w.document.write(html);
   w.document.close();
   w.focus();
@@ -24,4 +24,5 @@ export function openPrintWindow(
       if (autoClose) w.close();
     }, delay);
   }
+  return true;
 }

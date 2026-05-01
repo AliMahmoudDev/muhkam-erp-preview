@@ -1,3 +1,5 @@
+import { openPrintWindow } from './print-utils';
+
 function escapeHtml(unsafe: string | null | undefined): string {
   if (unsafe == null) return '';
   return String(unsafe)
@@ -144,14 +146,9 @@ function buildWindow(title: string, bodyHtml: string): void {
 </script>
 </body></html>`;
 
-  const win = window.open('', '_blank', 'width=900,height=700');
-  if (!win) {
+  if (!openPrintWindow(html, { width: 900, height: 700 })) {
     alert('يرجى السماح بالنوافذ المنبثقة في المتصفح ثم أعد المحاولة');
-    return;
   }
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
 }
 
 /* ─── Sales PDF ───────────────────────────────────────────── */
@@ -549,13 +546,7 @@ const INVOICE_STYLES = `
 `;
 
 function invoiceWindow(title: string, body: string): void {
-  const win = window.open('', '_blank', 'width=900,height=750');
-  if (!win) {
-    alert('يرجى السماح بالنوافذ المنبثقة في المتصفح');
-    return;
-  }
-  win.document.open();
-  win.document.write(`<!DOCTYPE html><html dir="rtl" lang="ar"><head>
+  const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -563,8 +554,10 @@ function invoiceWindow(title: string, body: string): void {
 <style>${INVOICE_STYLES}</style>
 </head><body>${body}
 <script>document.fonts.ready.then(function(){setTimeout(function(){window.print();},700);});<\/script>
-</body></html>`);
-  win.document.close();
+</body></html>`;
+  if (!openPrintWindow(html, { width: 900, height: 750 })) {
+    alert('يرجى السماح بالنوافذ المنبثقة في المتصفح');
+  }
 }
 
 /* ─── Sale Invoice ──────────────────────────────────────────────────────────── */
@@ -1008,13 +1001,7 @@ export function printPLReport(data: PLReportData): void {
 
 </div>`;
 
-  const win = window.open('', '_blank', 'width=960,height=750');
-  if (!win) {
-    alert('يرجى السماح بالنوافذ المنبثقة ثم أعد المحاولة');
-    return;
-  }
-  win.document.open();
-  win.document.write(`<!DOCTYPE html><html dir="rtl" lang="ar">
+  const fullHtml = `<!DOCTYPE html><html dir="rtl" lang="ar">
 <head>
   <meta charset="UTF-8"><title>قائمة الأرباح والخسائر — ${s.companyName}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1023,8 +1010,10 @@ export function printPLReport(data: PLReportData): void {
 </head>
 <body>${html}
 <script>document.fonts.ready.then(()=>setTimeout(()=>window.print(),700));<\/script>
-</body></html>`);
-  win.document.close();
+</body></html>`;
+  if (!openPrintWindow(fullHtml, { width: 960, height: 750 })) {
+    alert('يرجى السماح بالنوافذ المنبثقة ثم أعد المحاولة');
+  }
 }
 
 /* ── Balance Sheet PDF ─────────────────────────────────────────────────── */
@@ -1166,9 +1155,7 @@ export function printBalanceSheet(data: BalanceSheetPrintData): void {
   </div>
 </div>`;
 
-  const win = window.open('', '_blank');
-  if (!win) return;
-  win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head>
+  openPrintWindow(`<!DOCTYPE html><html lang="ar" dir="rtl"><head>
   <meta charset="UTF-8"><title>الميزانية العمومية — ${s.companyName}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -1176,8 +1163,7 @@ export function printBalanceSheet(data: BalanceSheetPrintData): void {
 </head>
 <body>${html}
 <script>document.fonts.ready.then(()=>setTimeout(()=>window.print(),700));<\/script>
-</body></html>`);
-  win.document.close();
+</body></html>`, { width: 960, height: 750 });
 }
 
 export interface CashFlowPrintData {
@@ -1293,9 +1279,7 @@ export function printCashFlow(data: CashFlowPrintData): void {
   </div>
 </div>`;
 
-  const win = window.open('', '_blank');
-  if (!win) return;
-  win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head>
+  openPrintWindow(`<!DOCTYPE html><html lang="ar" dir="rtl"><head>
   <meta charset="UTF-8"><title>قائمة التدفقات النقدية — ${s.companyName}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -1303,6 +1287,5 @@ export function printCashFlow(data: CashFlowPrintData): void {
 </head>
 <body>${html}
 <script>document.fonts.ready.then(()=>setTimeout(()=>window.print(),700));<\/script>
-</body></html>`);
-  win.document.close();
+</body></html>`, { width: 960, height: 750 });
 }

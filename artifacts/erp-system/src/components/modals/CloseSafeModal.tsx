@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { openPrintWindow } from '@/lib/print-utils';
 /**
  * CloseSafeModal — إقفال الخزينة
  * Gold/amber theme | Reads /api/financial-transactions
@@ -120,11 +121,7 @@ export default function CloseSafeModal({ onClose }: Props) {
     </div>
     <p style="text-align:center;font-size:10px;color:#999;margin-top:20px">طُبع بواسطة مُحكم - MUHKAM ERP — ${new Date().toLocaleString('ar-EG-u-nu-latn')}</p>
     <script>window.print();</script></body></html>`;
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-    }
+    openPrintWindow(html);
   };
 
   return (

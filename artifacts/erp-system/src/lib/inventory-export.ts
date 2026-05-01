@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { openPrintWindow } from './print-utils';
 
 export interface ExportColumn<T> {
   header: string;
@@ -106,10 +107,7 @@ export function exportToPDF<T>(opts: {
   <script>window.onload=()=>{window.print();}</script>
 </body></html>`;
 
-  const w = window.open('', '_blank', 'width=1024,height=768');
-  if (!w) return;
-  w.document.write(html);
-  w.document.close();
+  openPrintWindow(html, { width: 1024, height: 768 });
 }
 
 /* ── Multi-sheet Excel export ── */
