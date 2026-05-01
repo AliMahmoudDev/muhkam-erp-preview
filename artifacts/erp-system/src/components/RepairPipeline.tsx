@@ -27,7 +27,7 @@ import DeliveryReceiptModal from "@/components/modals/DeliveryReceiptModal";
  * ملاحظة: الانتقال إلى "قيد الشحن" أصبح بسيطاً (confirm عام) لأن المراجعة النهائية
  * تتم في خطوة "جاهز للتسليم" قبلها.
  */
-const GATED_TARGETS = new Set<string>(["final_quality_check", "ready_for_delivery", "delivered"]);
+const GATED_TARGETS = new Set<string>(["ready_for_delivery", "delivered"]);
 
 interface Stage {
   key: string;
