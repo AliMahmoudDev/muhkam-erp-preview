@@ -759,11 +759,16 @@ function ChecklistTab() {
               return (
                 <div key={cat} className="border-b border-white/5 last:border-b-0">
                   <button onClick={() => toggleCat(cat)}
-                    className="w-full flex items-center gap-3 px-4 py-3 bg-white/[0.02] hover:bg-white/[0.04] transition-colors text-right">
-                    <ChevronDown className={`w-3.5 h-3.5 ${accentDim} transition-transform duration-200 shrink-0 ${isExpanded ? "" : "-rotate-90"}`} />
-                    <span className={`text-[13px] font-semibold flex-1 text-right ${accentDim}`}>
+                    className="w-full flex items-center gap-3 px-4 py-3 bg-white/[0.02] hover:bg-white/[0.04] transition-colors text-right"
+                    style={isLight ? { background: "rgba(0,0,0,0.025)" } : undefined}>
+                    <ChevronDown
+                      style={isLight ? { color: "#b45309" } : undefined}
+                      className={`w-3.5 h-3.5 ${isLight ? "" : accentDim} transition-transform duration-200 shrink-0 ${isExpanded ? "" : "-rotate-90"}`} />
+                    <span
+                      style={isLight ? { color: "#b45309" } : undefined}
+                      className={`text-[13px] font-semibold flex-1 text-right ${isLight ? "" : accentDim}`}>
                       {cat}
-                      {isLocal && <span className="text-[10px] text-white/25 font-normal mr-2">جديد</span>}
+                      {isLocal && <span className={`text-[10px] font-normal mr-2 ${isLight ? "text-slate-400" : "text-white/25"}`}>جديد</span>}
                     </span>
                     {!isLocal && <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${badgeCls}`}>{catItems.length}</span>}
                     <span onClick={e => { e.stopPropagation(); openAddToCat(cat); }}
