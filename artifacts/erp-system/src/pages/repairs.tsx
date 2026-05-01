@@ -715,6 +715,12 @@ export default function Repairs() {
     select: (d) => (Array.isArray(d) ? d : []),
   });
 
+  const { data: customDeviceModels = [] } = useQuery<{ id: number; brand: string; category: string; model: string }[]>({
+    queryKey: ["/api/repair-device-models"],
+    queryFn: () => apiFetch<{ id: number; brand: string; category: string; model: string }[]>(api("/api/repair-device-models")),
+    select: (d) => (Array.isArray(d) ? d : []),
+  });
+
   /* ── إحصاء أداء الفنيين — يُعرض في لوحة جانبية قابلة للطيّ ── */
   interface TechnicianStat {
     technician_id: number;
@@ -2411,7 +2417,14 @@ function NewJobForm({
   /* ── Derived device options ── */
   const brandNames   = Object.keys(DEVICE_CATALOG);
   const categories   = brand && DEVICE_CATALOG[brand] ? Object.keys(DEVICE_CATALOG[brand]) : [];
-  const models       = brand && category && DEVICE_CATALOG[brand]?.[category] ? DEVICE_CATALOG[brand][category] : [];
+  const models       = useMemo(() => {
+    const base = (brand && category && DEVICE_CATALOG[brand]?.[category]) ? DEVICE_CATALOG[brand][category] : [];
+    const custom = customDeviceModels
+      .filter(m => m.brand === brand && m.category === category)
+      .map(m => m.model)
+      .filter(m => !base.includes(m));
+    return [...base, ...custom];
+  }, [brand, category, customDeviceModels]);
   const isOtherBrand = brand === "أخرى";
   const isOtherCat   = brand !== "أخرى" && categories.length > 0 && category === "جهاز آخر";
 

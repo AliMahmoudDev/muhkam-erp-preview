@@ -69,6 +69,22 @@ const migrations: { name: string; sql: string }[] = [
     `,
   },
   {
+    name: "إنشاء جدول repair_device_models",
+    sql: `
+      CREATE TABLE IF NOT EXISTS repair_device_models (
+        id          SERIAL PRIMARY KEY,
+        company_id  INTEGER  NOT NULL,
+        brand       TEXT     NOT NULL,
+        category    TEXT     NOT NULL,
+        model       TEXT     NOT NULL,
+        sort_order  INTEGER  NOT NULL DEFAULT 0,
+        created_at  TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS repair_device_models_company_idx
+        ON repair_device_models (company_id);
+    `,
+  },
+  {
     name: "trial_abuse_log — أعمدة بصمة الجهاز",
     sql: `
       ALTER TABLE trial_abuse_log

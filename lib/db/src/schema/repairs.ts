@@ -219,6 +219,18 @@ export const repairPaymentsTable = pgTable("repair_payments", {
   index("repair_payments_company_idx").on(t.company_id),
 ]);
 
+export const repairDeviceModelsTable = pgTable("repair_device_models", {
+  id:         serial("id").primaryKey(),
+  company_id: integer("company_id").notNull(),
+  brand:      text("brand").notNull(),
+  category:   text("category").notNull(),
+  model:      text("model").notNull(),
+  sort_order: integer("sort_order").default(0).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  index("repair_device_models_company_idx").on(t.company_id),
+]);
+
 export const insertRepairJobSchema = createInsertSchema(repairJobsTable).omit({ id: true, created_at: true, updated_at: true });
 export const insertRepairJobPartSchema = createInsertSchema(repairJobPartsTable).omit({ id: true, created_at: true });
 export const insertRepairStatusSchema = createInsertSchema(repairStatusesTable).omit({ id: true, created_at: true });
@@ -235,3 +247,4 @@ export type ScrapItem = typeof scrapItemsTable.$inferSelect;
 export type BadDebt = typeof badDebtsTable.$inferSelect;
 export type RepairPipelineConfig = typeof repairPipelineConfigTable.$inferSelect;
 export type RepairDashboardCard = typeof repairDashboardCardsTable.$inferSelect;
+export type RepairDeviceModel = typeof repairDeviceModelsTable.$inferSelect;

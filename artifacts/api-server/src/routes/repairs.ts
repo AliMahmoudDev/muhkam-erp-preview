@@ -6,6 +6,7 @@ import {
   repairJobPartsTable,
   repairStatusesTable,
   repairChecklistItemsTable,
+  repairDeviceModelsTable,
   repairStatusHistoryTable,
   repairPaymentsTable,
   scrapItemsTable,
@@ -584,6 +585,47 @@ router.delete("/repair-checklist-items/:id", wrap(async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(repairChecklistItemsTable)
     .where(and(eq(repairChecklistItemsTable.id, id), eq(repairChecklistItemsTable.company_id, company_id)));
+  return res.json({ ok: true });
+}));
+
+/* ══════════════════════════════════════════════════════════════
+   REPAIR DEVICE MODELS (custom models added by admin)
+   ══════════════════════════════════════════════════════════════ */
+
+router.get("/repair-device-models", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const rows = await db.select().from(repairDeviceModelsTable)
+    .where(eq(repairDeviceModelsTable.company_id, company_id))
+    .orderBy(repairDeviceModelsTable.brand, repairDeviceModelsTable.category, repairDeviceModelsTable.sort_order);
+  return res.json(rows);
+}));
+
+router.post("/repair-device-models", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const { brand, category, model } = req.body as { brand: string; category: string; model: string };
+  if (!brand?.trim() || !category?.trim() || !model?.trim()) {
+    return res.status(400).json({ error: "brand, category, model مطلوبة" });
+  }
+  const existing = await db.select({ s: repairDeviceModelsTable.sort_order })
+    .from(repairDeviceModelsTable)
+    .where(and(eq(repairDeviceModelsTable.company_id, company_id), eq(repairDeviceModelsTable.brand, brand.trim()), eq(repairDeviceModelsTable.category, category.trim())))
+    .orderBy(desc(repairDeviceModelsTable.sort_order)).limit(1);
+  const nextOrder = (existing[0]?.s ?? -1) + 1;
+  const [row] = await db.insert(repairDeviceModelsTable).values({
+    company_id,
+    brand:      brand.trim(),
+    category:   category.trim(),
+    model:      model.trim(),
+    sort_order: nextOrder,
+  }).returning();
+  return res.status(201).json(row);
+}));
+
+router.delete("/repair-device-models/:id", wrap(async (req, res) => {
+  const { company_id } = ctx(req);
+  const id = Number(req.params.id);
+  await db.delete(repairDeviceModelsTable)
+    .where(and(eq(repairDeviceModelsTable.id, id), eq(repairDeviceModelsTable.company_id, company_id)));
   return res.json({ ok: true });
 }));
 
