@@ -2083,9 +2083,6 @@ function JobDetail({
           )}
         </div>
 
-        {/* Spare parts — قطع الغيار المستخدمة في البطاقة */}
-        <RepairParts jobId={job.id} companyId={job.company_id} />
-
         {/* Engineer Reports — collapsible (multiple reports) */}
         <div className="glass-panel rounded-2xl border border-violet-500/15 bg-violet-500/[0.03] overflow-hidden">
           <button
@@ -2217,7 +2214,36 @@ function JobDetail({
           </div>
         )}
 
-        {/* Timeline / History (excludes engineer reports — they have their own section) */}
+        {/* ── Technician & Costs ───────────────────────────────── */}
+        <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)] space-y-3">
+          <p className="text-[10px] erp-label font-bold">الفني والتكاليف</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] erp-label mb-1 block">الفني المسؤول</label>
+              <select value={editTech} onChange={(e) => setEditTech(e.target.value)} className="erp-input w-full text-xs">
+                <option value="">— اختر الفني —</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] erp-label mb-1 block">موعد التسليم</label>
+              <input type="date" value={editDelivery} onChange={(e) => setEditDelivery(e.target.value)} className="erp-input w-full text-xs" />
+            </div>
+            <div>
+              <label className="text-[10px] erp-label mb-1 block">تكلفة تقديرية</label>
+              <input type="number" value={editEst} onChange={(e) => setEditEst(e.target.value)} className="erp-input w-full text-xs" />
+            </div>
+            <div>
+              <label className="text-[10px] erp-label mb-1 block">التكلفة النهائية</label>
+              <input type="number" value={editFinal} onChange={(e) => { setEditFinal(e.target.value); }} className="erp-input w-full text-xs" />
+            </div>
+          </div>
+          <button onClick={handleSave} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold text-xs transition-all">
+            <Save className="w-3.5 h-3.5" /> حفظ التغييرات
+          </button>
+        </div>
+
+        {/* ── Event Log — سجل الأحداث (آخر الصفحة) ─────────────── */}
         {otherHistory.length > 0 && (
           <div className="glass-panel rounded-2xl border border-[var(--erp-border)] overflow-hidden">
             <button
@@ -2263,194 +2289,8 @@ function JobDetail({
             )}
           </div>
         )}
-
-        {/* ── Technician & Costs ───────────────────────────────── */}
-        <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)] space-y-3">
-          <p className="text-[10px] erp-label font-bold">الفني والتكاليف</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[10px] erp-label mb-1 block">الفني المسؤول</label>
-              <select value={editTech} onChange={(e) => setEditTech(e.target.value)} className="erp-input w-full text-xs">
-                <option value="">— اختر الفني —</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] erp-label mb-1 block">موعد التسليم</label>
-              <input type="date" value={editDelivery} onChange={(e) => setEditDelivery(e.target.value)} className="erp-input w-full text-xs" />
-            </div>
-            <div>
-              <label className="text-[10px] erp-label mb-1 block">تكلفة تقديرية</label>
-              <input type="number" value={editEst} onChange={(e) => setEditEst(e.target.value)} className="erp-input w-full text-xs" />
-            </div>
-            <div>
-              <label className="text-[10px] erp-label mb-1 block">التكلفة النهائية</label>
-              <input type="number" value={editFinal} onChange={(e) => { setEditFinal(e.target.value); }} className="erp-input w-full text-xs" />
-            </div>
-          </div>
-          <button onClick={handleSave} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold text-xs transition-all">
-            <Save className="w-3.5 h-3.5" /> حفظ التغييرات
-          </button>
-        </div>
-
-        {/* ── Financial Summary — الملخص المالي ─────────────────── */}
-        <div className="glass-panel rounded-2xl border border-[var(--erp-border)] overflow-hidden">
-          <button
-            onClick={() => setFinanceOpen(f => !f)}
-            className="w-full flex items-center justify-between p-3 hover:bg-white/5 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-emerald-400" />
-              <span className="text-[11px] font-bold erp-text">الملخص المالي</span>
-              {remaining > 0 && (
-                <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-bold">
-                  متبقي {formatCurrency(remaining)}
-                </span>
-              )}
-              {remaining <= 0 && finalCostNum > 0 && (
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-bold">
-                  ✓ مدفوع بالكامل
-                </span>
-              )}
-            </div>
-            <ChevronDown className={`w-3.5 h-3.5 erp-text-muted transition-transform ${financeOpen ? "rotate-180" : ""}`} />
-          </button>
-
-          {financeOpen && (
-            <div className="p-3 pt-0 space-y-3">
-              {/* شريط تقدم الدفع */}
-              {finalCostNum > 0 && (
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] erp-text-muted">
-                    <span>المدفوع: <span className="text-emerald-400 font-bold">{formatCurrency(totalPaid)}</span></span>
-                    <span>الإجمالي: <span className="erp-text font-bold">{formatCurrency(finalCostNum)}</span></span>
-                  </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${totalPaid >= finalCostNum ? "bg-emerald-500" : "bg-amber-500"}`}
-                      style={{ width: `${Math.min(100, (totalPaid / finalCostNum) * 100)}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-emerald-400">{Math.round(Math.min(100, (totalPaid / finalCostNum) * 100))}% مدفوع</span>
-                    {remaining > 0 && <span className="text-amber-400 font-bold">متبقي: {formatCurrency(remaining)}</span>}
-                  </div>
-                </div>
-              )}
-
-              {/* بطاقات الأرقام */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-white/5 rounded-xl p-2 text-center">
-                  <p className="text-[9px] erp-text-muted mb-0.5">التكلفة النهائية</p>
-                  <p className="text-xs font-black erp-text">{formatCurrency(finalCostNum)}</p>
-                </div>
-                <div className="bg-emerald-500/10 rounded-xl p-2 text-center border border-emerald-500/20">
-                  <p className="text-[9px] text-emerald-400/70 mb-0.5">المدفوع</p>
-                  <p className="text-xs font-black text-emerald-400">{formatCurrency(totalPaid)}</p>
-                </div>
-                <div className={`rounded-xl p-2 text-center border ${remaining > 0 ? "bg-amber-500/10 border-amber-500/20" : "bg-white/5 border-transparent"}`}>
-                  <p className={`text-[9px] mb-0.5 ${remaining > 0 ? "text-amber-400/70" : "erp-text-muted"}`}>المتبقي</p>
-                  <p className={`text-xs font-black ${remaining > 0 ? "text-amber-400" : "erp-text-muted"}`}>{formatCurrency(remaining)}</p>
-                </div>
-              </div>
-
-              {/* سجل الدفعات */}
-              {payments.length > 0 && (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] erp-label font-bold">سجل الدفعات ({payments.length})</p>
-                  {payments.map(p => (
-                    <div key={p.id} className="flex items-center justify-between bg-white/5 rounded-xl px-2.5 py-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-                          {p.payment_method === "cash" ? <Banknote className="w-3 h-3 text-emerald-400" /> :
-                           p.payment_method === "card" ? <CreditCard className="w-3 h-3 text-blue-400" /> :
-                           <DollarSign className="w-3 h-3 text-purple-400" />}
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-emerald-400">{formatCurrency(Number(p.amount))}</p>
-                          <p className="text-[10px] erp-text-muted">
-                            {p.payment_method === "cash" ? "نقداً" : p.payment_method === "card" ? "بطاقة" : p.payment_method === "transfer" ? "تحويل" : p.payment_method}
-                            {p.safe_name ? ` • ${p.safe_name}` : ""}
-                            {p.notes ? ` — ${p.notes}` : ""}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-[9px] erp-text-muted">{new Date(p.created_at).toLocaleDateString("ar-EG")}</p>
-                        <button
-                          onClick={() => deletePayment.mutate(p.id)}
-                          className="w-5 h-5 rounded-lg hover:bg-red-500/20 flex items-center justify-center text-red-400/50 hover:text-red-400 transition-colors"
-                        >
-                          <Trash2 className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* إضافة دفعة */}
-              {remaining > 0 && !showAddPayment && (
-                <button
-                  onClick={() => { setPayAmount(String(remaining)); setShowAddPayment(true); }}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 font-bold text-xs transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" /> تسجيل دفعة
-                </button>
-              )}
-
-              {showAddPayment && (
-                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 space-y-2">
-                  <p className="text-[10px] text-emerald-400 font-bold">دفعة جديدة (المتبقي: {formatCurrency(remaining)})</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[9px] erp-label block mb-1">المبلغ</label>
-                      <input
-                        type="number"
-                        value={payAmount}
-                        onChange={e => setPayAmount(e.target.value)}
-                        max={remaining}
-                        className="erp-input w-full text-xs"
-                        placeholder={`الحد الأقصى: ${remaining}`}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] erp-label block mb-1">طريقة الدفع</label>
-                      <select value={payMethod} onChange={e => setPayMethod(e.target.value)} className="erp-input w-full text-xs">
-                        <option value="cash">نقداً</option>
-                        <option value="card">بطاقة بنكية</option>
-                        <option value="transfer">تحويل بنكي</option>
-                        <option value="other">أخرى</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[9px] erp-label block mb-1">الخزانة (اختياري)</label>
-                    <select value={paySafeId} onChange={e => setPaySafeId(e.target.value)} className="erp-input w-full text-xs">
-                      <option value="">— بدون تسجيل في خزانة —</option>
-                      {safesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[9px] erp-label block mb-1">ملاحظات</label>
-                    <input type="text" value={payNotes} onChange={e => setPayNotes(e.target.value)} className="erp-input w-full text-xs" placeholder="اختياري" />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => addPayment.mutate()}
-                      disabled={addPayment.isPending || !payAmount || Number(payAmount) <= 0}
-                      className="flex-1 py-1.5 rounded-xl bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold text-xs disabled:opacity-40 border border-emerald-500/40"
-                    >
-                      {addPayment.isPending ? "جاري الحفظ…" : "✓ حفظ الدفعة"}
-                    </button>
-                    <button onClick={() => setShowAddPayment(false)} className="px-3 py-1.5 rounded-xl border border-[var(--erp-border)] erp-text-muted text-xs">إلغاء</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
+
 
       {/* Delete confirm */}
       {showDeleteConfirm && (
