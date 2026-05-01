@@ -50,6 +50,8 @@ export const repairJobsTable = pgTable("repair_jobs", {
   shipping_cost:            numeric("shipping_cost", { precision: 12, scale: 2 }).default("0"),
   shipping_expense_id:      integer("shipping_expense_id"),
   shipping_settled_at:      timestamp("shipping_settled_at"),
+  /* ── خصم نهائي على الفاتورة ── */
+  final_discount:           numeric("final_discount", { precision: 12, scale: 2 }).default("0"),
   /* ── حقول مرحلة التسليم ── */
   delivery_receipt_sent_at: timestamp("delivery_receipt_sent_at"),
   delivery_receipt_method:  text("delivery_receipt_method"), // 'whatsapp' | 'print' | 'both'

@@ -1519,6 +1519,11 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
     return res.status(400).json({ error: "تكلفة الشحن غير صحيحة" });
   }
 
+  const discount = Number(b.final_discount ?? 0);
+  if (!Number.isFinite(discount) || discount < 0) {
+    return res.status(400).json({ error: "قيمة الخصم غير صحيحة" });
+  }
+
   const [job] = await db.select().from(repairJobsTable)
     .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
   if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
@@ -1532,6 +1537,7 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
   if (cost === 0) {
     const [updated] = await db.update(repairJobsTable).set({
       shipping_cost: "0",
+      final_discount: String(discount),
       shipping_settled_at: new Date(),
       updated_at: new Date(),
     }).where(and(
@@ -1635,9 +1641,10 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
         company_id,
       });
 
-      /* تحديث البطاقة بـ shipping_cost + رابط المصروف (settled_at تم claim'ه أعلاه) */
+      /* تحديث البطاقة بـ shipping_cost + خصم نهائي + رابط المصروف (settled_at تم claim'ه أعلاه) */
       const [updated] = await tx.update(repairJobsTable).set({
         shipping_cost:        String(cost),
+        final_discount:       String(discount),
         shipping_expense_id:  exp.id,
       }).where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id))).returning();
 
@@ -1720,6 +1727,7 @@ router.get("/repair-jobs/:id/receipt-data", wrap(async (req, res) => {
     final_cost:       Number(job.final_cost ?? 0),
     deposit_paid:     Number(job.deposit_paid ?? 0),
     shipping_cost:    Number(job.shipping_cost ?? 0),
+    final_discount:   Number(job.final_discount ?? 0),
     parts_total:      partsTotal,
     parts:            parts.map((p) => ({
       product_name: p.product_name,

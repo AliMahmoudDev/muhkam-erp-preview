@@ -9,7 +9,7 @@ import type { LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import QualityCheckModal from "@/components/modals/QualityCheckModal";
 import ReadyForDeliveryModal from "@/components/modals/ReadyForDeliveryModal";
-import ShippingCostModal from "@/components/modals/ShippingCostModal";
+import FinalInvoiceModal from "@/components/modals/FinalInvoiceModal";
 import DeliveryReceiptModal from "@/components/modals/DeliveryReceiptModal";
 
 /**
@@ -45,7 +45,7 @@ const PIPELINE_STAGES: Stage[] = [
   { key: "final_quality_check",       label: "مراقبة الجودة", icon: ShieldCheck,           color: "purple"  },
   { key: "ready_for_delivery",        label: "جاهز للتسليم",  icon: PackageCheck,          color: "lime"    },
   { key: "shipped",                   label: "قيد الشحن",     icon: Truck,                 color: "sky"     },
-  { key: "delivered",                 label: "تم التسليم",    icon: PartyPopper,           color: "emerald" },
+  { key: "delivered",                 label: "التسليم",       icon: PartyPopper,           color: "emerald" },
 ];
 
 /* ── Side branches — exception states ────────────────────────────────── */
@@ -70,7 +70,7 @@ const ALL_LABELS: Record<string, string> = {
   approved: "تمت الموافقة", in_repair: "جاري الإصلاح",
   repaired: "تم الإصلاح", final_quality_check: "مراقبة الجودة",
   ready_for_delivery: "جاهز للتسليم", shipped: "قيد الشحن",
-  delivered: "تم التسليم", rejected: "مرفوض", cancelled: "ملغي",
+  delivered: "التسليم", rejected: "مرفوض", cancelled: "ملغي",
   waiting_parts: "بانتظار قطعة غيار",
 };
 
@@ -340,7 +340,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
         />
       )}
       {gated === "delivered" && (
-        <ShippingCostModal
+        <FinalInvoiceModal
           job={jobLite}
           onClose={() => setGated(null)}
           onSaved={() => void applyGatedTransition("delivered")}

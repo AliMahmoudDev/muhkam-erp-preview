@@ -40,6 +40,7 @@ interface ReceiptData {
   final_cost: number;
   deposit_paid: number;
   shipping_cost: number;
+  final_discount: number;
   parts_total: number;
   parts: PartLine[];
 }
@@ -73,9 +74,10 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
   }, [jobId]);
 
   function buildTotals(d: ReceiptData) {
-    const total      = (d.final_cost ?? 0) + (d.parts_total ?? 0) + (d.shipping_cost ?? 0);
+    const sub        = (d.final_cost ?? 0) + (d.parts_total ?? 0) + (d.shipping_cost ?? 0);
+    const total      = Math.max(sub - (d.final_discount ?? 0), 0);
     const remaining  = Math.max(total - (d.deposit_paid ?? 0), 0);
-    return { total, remaining };
+    return { sub, total, remaining };
   }
 
   async function recordDelivered(method: "whatsapp" | "print" | "both") {
@@ -121,6 +123,7 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
   h1 { text-align:center; font-size: 13px; margin: 6px 0; border-bottom: 1px dashed #000; padding-bottom: 4px; }
   .row { display:flex; justify-content: space-between; margin: 2px 0; }
   .label { color: #555; }
+  .discount { color: #c00; }
   table { width:100%; border-collapse: collapse; margin: 6px 0; }
   th,td { padding: 3px 4px; border-bottom: 1px dotted #999; text-align: right; font-size: 10px; }
   .totals { margin-top: 6px; padding-top: 4px; border-top: 1px dashed #000; }
@@ -155,6 +158,7 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
     <div class="row"><span class="label">تكلفة الإصلاح:</span><span>${esc(fmt(data.final_cost))}</span></div>
     ${data.parts_total > 0 ? `<div class="row"><span class="label">قطع الغيار:</span><span>${esc(fmt(data.parts_total))}</span></div>` : ""}
     ${data.shipping_cost > 0 ? `<div class="row"><span class="label">الشحن:</span><span>${esc(fmt(data.shipping_cost))}</span></div>` : ""}
+    ${data.final_discount > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${esc(fmt(data.final_discount))}</span></div>` : ""}
     <div class="row grand"><span>الإجمالي:</span><span>${esc(fmt(total))}</span></div>
     <div class="row"><span class="label">المدفوع مقدماً:</span><span>${esc(fmt(data.deposit_paid))}</span></div>
     <div class="row grand"><span>المتبقي:</span><span>${esc(fmt(remaining))}</span></div>
@@ -190,6 +194,7 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
       `تكلفة الإصلاح: ${fmt(data.final_cost)}`,
       data.parts_total > 0 ? `قطع الغيار: ${fmt(data.parts_total)}` : "",
       data.shipping_cost > 0 ? `الشحن: ${fmt(data.shipping_cost)}` : "",
+      data.final_discount > 0 ? `خصم: - ${fmt(data.final_discount)}` : "",
       `الإجمالي: ${fmt(total)}`,
       `المدفوع مقدماً: ${fmt(data.deposit_paid)}`,
       `*المتبقي: ${fmt(remaining)} ج.م*`,
@@ -268,6 +273,7 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
                   <div className="flex justify-between"><span className="text-white/50">تكلفة الإصلاح:</span><span className="text-white">{fmt(data.final_cost)}</span></div>
                   {data.parts_total > 0 && <div className="flex justify-between"><span className="text-white/50">قطع الغيار:</span><span className="text-white">{fmt(data.parts_total)}</span></div>}
                   {data.shipping_cost > 0 && <div className="flex justify-between"><span className="text-white/50">الشحن:</span><span className="text-white">{fmt(data.shipping_cost)}</span></div>}
+                  {data.final_discount > 0 && <div className="flex justify-between text-red-400"><span>خصم نهائي:</span><span>- {fmt(data.final_discount)}</span></div>}
                   <div className="flex justify-between font-bold text-white pt-1 border-t border-white/8"><span>الإجمالي:</span><span>{fmt(total)}</span></div>
                   <div className="flex justify-between text-emerald-300"><span>المدفوع:</span><span>{fmt(data.deposit_paid)}</span></div>
                   <div className="flex justify-between font-black text-amber-300 text-[12px]"><span>المتبقي:</span><span>{fmt(remaining)}</span></div>
