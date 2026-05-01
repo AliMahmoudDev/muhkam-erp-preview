@@ -1194,16 +1194,7 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
 </div>
 <div class="footer">شكراً لتعاملكم معنا — ${escHtml(settings.companyName)}</div>
 </body></html>`;
-    const w = window.open('', '_blank', 'width=820,height=950');
-    if (!w) return;
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(() => {
-      w.print();
-      w.close();
-    }, 600);
+    openPrintWindow(html, { width: 820, height: 950, delay: 600, autoClose: true });
   };
 
   return (

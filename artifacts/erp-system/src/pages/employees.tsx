@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+import { openPrintWindow } from '@/lib/print-utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
@@ -1482,19 +1483,10 @@ export default function Employees() {
               };
 
               const openReport = (autoPrint: boolean) => {
-                const w = window.open('', '_blank', 'width=900,height=700');
-                if (!w) {
-                  toast({ title: 'فضلاً اسمح بالنوافذ المنبثقة لطباعة التقرير', variant: 'destructive' });
-                  return;
-                }
-                w.document.open();
-                w.document.write(buildReportHTML());
-                w.document.close();
-                if (autoPrint) {
-                  w.onload = () => { w.focus(); w.print(); };
-                  // Fallback for browsers that don't fire onload after document.write
-                  setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 400);
-                }
+                openPrintWindow(
+                  buildReportHTML(),
+                  { width: 900, height: 700, ...(autoPrint ? { delay: 400 } : {}) },
+                );
               };
 
               return (

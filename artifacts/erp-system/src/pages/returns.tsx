@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
  */
 import { useState, useMemo, useEffect } from 'react';
 import { useSearch } from 'wouter';
+import { openPrintWindow } from '@/lib/print-utils';
 import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { safeArray } from '@/lib/safe-data';
@@ -76,9 +77,8 @@ function ReturnDetailModal({ type, id, onClose }: { type: Tab; id: number; onClo
   const originRef = type === 'sales' ? data?.sale_no : (data as PurchaseReturn | undefined)?.invoice_no;
 
   function handlePrint() {
-    const w = window.open('', '_blank', 'width=700,height=900');
-    if (!w || !data) return;
-    w.document.write(`
+    if (!data) return;
+    const _html = `
       <html dir="rtl"><head><meta charset="UTF-8">
       <title>مرتجع ${data.return_no}</title>
       <style>
@@ -114,8 +114,8 @@ function ReturnDetailModal({ type, id, onClose }: { type: Tab; id: number; onClo
       <div class="total">الإجمالي: ${(data.total_amount ?? 0).toLocaleString('ar-EG')} ج.م</div>
       <script>window.onload=()=>window.print()</script>
       </body></html>
-    `);
-    w.document.close();
+    `;
+    openPrintWindow(_html, { width: 700, height: 900 });
   }
 
   return (

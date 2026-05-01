@@ -1,6 +1,7 @@
 import { safeArray } from '@/lib/safe-data';
 import { useState, useRef, useMemo } from 'react';
 import { useLocation, useSearch } from 'wouter';
+import { openPrintWindow } from '@/lib/print-utils';
 import { authFetch } from '@/lib/auth-fetch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDeleteExpense, useGetSettingsSafes } from '@workspace/api-client-react';
@@ -183,12 +184,7 @@ function printExpenseReport(opts: {
     <div class="footer">نظام مُحكم - MUHKAM ERP — تم الطباعة بتاريخ ${today}</div>
     </body></html>`;
 
-  const w = window.open('', '_blank', 'width=900,height=700');
-  if (!w) return;
-  w.document.write(html);
-  w.document.close();
-  w.focus();
-  setTimeout(() => { w.print(); }, 400);
+  openPrintWindow(html, { width: 900, height: 700, delay: 400 });
 }
 
 /* ═══════════════════════════════════════════════════════════════ */

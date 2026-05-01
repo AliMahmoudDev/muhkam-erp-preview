@@ -1,4 +1,5 @@
 import { safeArray } from '@/lib/safe-data';
+import { openPrintWindow } from '@/lib/print-utils';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
 import BadDebts from '@/pages/bad-debts';
 import { useState } from 'react';
@@ -289,11 +290,7 @@ function printCustomerStatement(opts: {
 </body>
 </html>`;
 
-  const win = window.open('', '_blank', 'width=1000,height=700');
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-  }
+  openPrintWindow(html, { width: 1000, height: 700 });
 }
 
 /* ─── دالة طباعة تقرير العملاء ─── */
@@ -407,14 +404,7 @@ function printCustomerReport(opts: {
     <div class="footer">نظام مُحكم - MUHKAM ERP — تم الطباعة بتاريخ ${today}</div>
     </body></html>`;
 
-  const w = window.open('', '_blank', 'width=1000,height=700');
-  if (!w) return;
-  w.document.write(html);
-  w.document.close();
-  w.focus();
-  setTimeout(() => {
-    w.print();
-  }, 400);
+  openPrintWindow(html, { width: 1000, height: 700, delay: 400 });
 }
 
 /* ─── دالة واتساب ─── */

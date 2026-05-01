@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAppSettings } from '@/contexts/app-settings';
 import { useLocation } from 'wouter';
+import { openPrintWindow } from '@/lib/print-utils';
 import { safeArray } from '@/lib/safe-data';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
@@ -138,15 +139,7 @@ ${invoice.customer_name ? `<div class="row"><span>العميل:</span><span>${in
 <div class="footer">شكراً لتعاملكم معنا 🙏<br/>${companyName} © ${now.getFullYear()}</div>
 </body></html>`;
 
-  const w = window.open('', '_blank', 'width=340,height=600');
-  if (!w) return;
-  w.document.write(html);
-  w.document.close();
-  w.focus();
-  setTimeout(() => {
-    w.print();
-    w.close();
-  }, 250);
+  openPrintWindow(html, { width: 340, height: 600, delay: 250, autoClose: true });
 }
 
 /* ─────────────────────────────────────────────────────────────

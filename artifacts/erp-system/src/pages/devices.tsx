@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, type ElementType } from "react";
 import { useAppSettings } from "@/contexts/app-settings";
+import { openPrintWindow } from '@/lib/print-utils';
 import { useGetCustomers } from "@workspace/api-client-react";
 import { safeArray } from "@/lib/safe-data";
 import { SearchableSelect } from "@/components/searchable-select";
@@ -73,9 +74,7 @@ function printSaleReceipt(d: Device, companyName: string) {
   const payMethods: Record<string, string> = { cash: "نقداً", card: "بطاقة", instapay: "InstaPay", transfer: "تحويل" };
   const payStatuses: Record<string, string> = { paid: "مدفوع بالكامل", partial: "مدفوع جزئياً", unpaid: "غير مدفوع" };
 
-  const win = window.open("", "_blank", "width=420,height=680");
-  if (!win) return;
-  win.document.write(`<!DOCTYPE html>
+  const _html = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
 <meta charset="UTF-8">
@@ -152,8 +151,8 @@ ${d.warranty_months ? `
 
 <script>window.onload = () => { window.print(); }</script>
 </body>
-</html>`);
-  win.document.close();
+</html>`;
+  openPrintWindow(_html, { width: 420, height: 680 });
 }
 
 const WARRANTY_OPTS = [

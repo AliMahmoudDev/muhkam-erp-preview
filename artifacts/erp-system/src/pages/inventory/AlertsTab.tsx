@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { openPrintWindow } from '@/lib/print-utils';
 import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
@@ -160,10 +161,7 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
 <script>window.onload=()=>window.print();</script>
 </body></html>`;
 
-    const w = window.open('', '_blank', 'width=1024,height=768');
-    if (!w) return;
-    w.document.write(html);
-    w.document.close();
+    openPrintWindow(html, { width: 1024, height: 768 });
   }
 
   function exportPOExcel() {
