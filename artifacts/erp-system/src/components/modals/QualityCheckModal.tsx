@@ -26,7 +26,6 @@ import {
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { deriveDeviceType } from "@/lib/repairConstants";
 
 type QcStatus = "pass" | "fail" | "n/a";
 type Outcome  = "approve" | "reject";
@@ -56,7 +55,7 @@ interface JobLite {
   job_no: string;
   device_brand?: string | null;
   device_model?: string | null;
-  device_category?: string | null;
+  device_type?: string | null;
   checklist?: unknown;
   qa_checklist?: unknown;
   qa_notes?: string | null;
@@ -163,13 +162,10 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
   useEffect(() => {
     if (intakeItems.length > 0) return; // يوجد فحص أولي — لا داعي للقالب
 
-    const deviceType = deriveDeviceType(
-      job.device_brand ?? "",
-      job.device_category ?? "",
-    );
+    const deviceType = (job.device_type ?? "").trim() || "general";
 
     setTemplateLoading(true);
-    authFetch(api(`/api/repair-checklist-items?device_type=${deviceType}`))
+    authFetch(api(`/api/repair-checklist-items?device_type=${encodeURIComponent(deviceType)}`))
       .then(res => res.json())
       .then((data: Array<{ id?: number; label_ar?: string; label?: string; category?: string }>) => {
         if (!Array.isArray(data) || data.length === 0) return;
