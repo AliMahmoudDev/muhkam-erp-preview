@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'wouter';
 import { safeArray } from '@/lib/safe-data';
 import { authFetch } from '@/lib/auth-fetch';
 import {
@@ -1089,6 +1090,7 @@ interface SaleExtras {
 }
 
 function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => void }) {
+  const [, navigate] = useLocation();
   const { data: saleRaw, isLoading } = useGetSaleById(saleId);
   const sale = saleRaw as (typeof saleRaw & SaleExtras) | undefined;
   const { data: vatSettings } = useVatSettings();
@@ -1218,6 +1220,14 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
             >
               <Printer className="w-4 h-4" /> طباعة
             </button>
+            {sale && (
+              <button
+                onClick={() => { onClose(); navigate(`/returns?q=${encodeURIComponent(sale.invoice_no)}`); }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 hover:bg-emerald-500/30 text-emerald-300 transition-colors text-sm font-bold"
+              >
+                <RotateCcw className="w-4 h-4" /> مرتجعات الفاتورة
+              </button>
+            )}
             <button
               onClick={onClose}
               className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 transition-colors"

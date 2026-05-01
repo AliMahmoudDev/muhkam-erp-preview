@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "wouter";
 import { safeArray } from "@/lib/safe-data";
 import { useCreatePurchase, useGetProducts, useGetCustomers, useCreateProduct, useGetSettingsSafes, useGetSettingsWarehouses, useGetCategories } from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/format";
@@ -596,6 +597,7 @@ function PostingBadge({ status }: { status: string }) {
 }
 
 function PurchaseHistoryPanel() {
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const canCancel = hasPermission(user, "can_cancel_purchase");
@@ -673,6 +675,12 @@ function PurchaseHistoryPanel() {
                           <XCircle className="w-4 h-4" />
                         </button>
                       )}
+                      <button
+                        onClick={() => navigate(`/returns?q=${encodeURIComponent(p.invoice_no)}`)}
+                        title="عرض مرتجعات هذه الفاتورة"
+                        className="btn-icon text-blue-400 hover:text-blue-300 hover:bg-blue-500/10">
+                        <RotateCcw className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>

@@ -2,7 +2,8 @@ import { api } from '@/lib/api';
 /**
  * صفحة المرتجعات — سجل كامل + تقارير تفصيلية
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearch } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { safeArray } from '@/lib/safe-data';
@@ -335,14 +336,19 @@ function ReasonBreakdown({ rows }: { rows: (SaleReturn & PurchaseReturn)[] }) {
 
 /* ── الصفحة الرئيسية ──────────────────────────────────────────────── */
 export default function Returns() {
+  const searchStr = useSearch();
+  const urlQ = useMemo(() => new URLSearchParams(searchStr).get('q') ?? '', [searchStr]);
+
   const [tab, setTab]         = useState<Tab>('sales');
   const [detailId, setDetailId] = useState<number | null>(null);
-  const [search, setSearch]   = useState('');
+  const [search, setSearch]   = useState(urlQ);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo]   = useState('');
   const [filterRefund, setFilterRefund] = useState<string>('all');
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  useEffect(() => { if (urlQ) setSearch(urlQ); }, [urlQ]);
 
   const { data: rawSalesReturns, isLoading: loadSales } = useQuery({
     queryKey: ['/api/sales-returns'],
@@ -465,6 +471,18 @@ export default function Returns() {
           </button>
         ))}
       </div>
+
+      {/* ── بانر التصفية من فاتورة ── */}
+      {urlQ && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-sm">
+          <ExternalLink className="w-4 h-4 shrink-0" />
+          <span>عرض مرتجعات الفاتورة: <strong className="font-mono">{urlQ}</strong></span>
+          <button
+            onClick={() => { setSearch(''); window.history.replaceState({}, '', '/returns'); }}
+            className="mr-auto text-white/40 hover:text-white text-xs underline"
+          >عرض الكل</button>
+        </div>
+      )}
 
       {/* ── تقارير قابلة للطي ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
