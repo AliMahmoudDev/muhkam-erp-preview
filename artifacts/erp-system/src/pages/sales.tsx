@@ -1,3 +1,4 @@
+import { openPrintWindow } from '@/lib/print-utils';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { safeArray } from '@/lib/safe-data';

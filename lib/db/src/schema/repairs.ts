@@ -55,6 +55,11 @@ export const repairJobsTable = pgTable("repair_jobs", {
   /* ── حقول مرحلة التسليم ── */
   delivery_receipt_sent_at: timestamp("delivery_receipt_sent_at"),
   delivery_receipt_method:  text("delivery_receipt_method"), // 'whatsapp' | 'print' | 'both'
+  /* ── الضمان والمرتجع ── */
+  job_type:                 text("job_type").notNull().default("repair"), // 'repair' | 'warranty'
+  warranty_of:              integer("warranty_of"),                        // FK → parent job id
+  is_customer_returned:     boolean("is_customer_returned").default(false),
+  customer_return_amount:   numeric("customer_return_amount", { precision: 12, scale: 2 }).default("0"),
   created_at:               timestamp("created_at").defaultNow().notNull(),
   updated_at:               timestamp("updated_at").defaultNow().notNull(),
 }, (t) => [

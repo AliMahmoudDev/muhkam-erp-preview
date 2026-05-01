@@ -3,7 +3,7 @@ import {
   CheckCircle2, PackageOpen, ScanSearch, MessageCircleQuestion,
   Wrench, ShieldCheck, PackageCheck, Truck, PartyPopper,
   PauseCircle, Ban, XCircle, ChevronRight, ChevronLeft, Loader2,
-  AlertTriangle, FileText,
+  AlertTriangle, FileText, RotateCcw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
@@ -11,6 +11,8 @@ import QualityCheckModal from "@/components/modals/QualityCheckModal";
 import ReadyForDeliveryModal from "@/components/modals/ReadyForDeliveryModal";
 import DeliveryGateModal from "@/components/modals/DeliveryGateModal";
 import DeliveryReceiptModal from "@/components/modals/DeliveryReceiptModal";
+import WarrantyModal from "@/components/modals/WarrantyModal";
+import RepairReturnModal from "@/components/modals/RepairReturnModal";
 
 /**
  * البوّابات (gated transitions) — هذه الأهداف لا تُستخدم فيها رسالة التأكيد العامة،
@@ -142,9 +144,11 @@ interface ConfirmState {
 type GatedKey = "final_quality_check" | "ready_for_delivery" | "delivered" | null;
 
 export default function RepairPipeline({ currentStatus, jobData, onStatusChange }: Props) {
-  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
-  const [gated, setGated]         = useState<GatedKey>(null);
+  const [confirm, setConfirm]         = useState<ConfirmState | null>(null);
+  const [gated, setGated]             = useState<GatedKey>(null);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [showWarranty, setShowWarranty] = useState(false);
+  const [showReturn, setShowReturn]     = useState(false);
 
   const isTerminal   = TERMINAL_KEYS.includes(currentStatus);
   const currentLabel = ALL_LABELS[currentStatus] ?? currentStatus;
@@ -355,11 +359,59 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
           onSent={() => onStatusChange(currentStatus)}
         />
       )}
+      {showWarranty && (
+        <WarrantyModal
+          jobId={jobData.id}
+          jobNo={String(jobData.job_no ?? "")}
+          customerName={String(jobData.customer_name ?? "")}
+          deviceBrand={String(jobData.device_brand ?? "")}
+          deviceModel={String(jobData.device_model ?? "")}
+          onClose={() => setShowWarranty(false)}
+          onCreated={(_newId, _newNo) => {
+            setShowWarranty(false);
+            onStatusChange(currentStatus);
+          }}
+        />
+      )}
+      {showReturn && (
+        <RepairReturnModal
+          jobId={jobData.id}
+          jobNo={String(jobData.job_no ?? "")}
+          finalCost={Number(jobData.final_cost ?? 0)}
+          customerName={String(jobData.customer_name ?? "")}
+          parts={(jobData.parts as Array<{
+            id: number; product_name: string; quantity: number; unit_price: number;
+            source?: string | null; warehouse_id?: number | null; is_returned?: boolean;
+          }>) ?? []}
+          onClose={() => setShowReturn(false)}
+          onDone={() => { setShowReturn(false); onStatusChange(currentStatus); }}
+        />
+      )}
       <div
         className="rounded-2xl border border-[var(--erp-border)] overflow-hidden"
         style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.035) 0%, rgba(124,58,237,0.05) 100%)" }}
         dir="rtl"
       >
+        {/* ── شارة الضمان ────────────────────────────────────────── */}
+        {(jobData.job_type as string) === "warranty" && (
+          <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ background: "rgba(139,92,246,0.10)", borderColor: "rgba(139,92,246,0.25)" }}>
+            <ShieldCheck className="w-3.5 h-3.5 text-violet-400" />
+            <span className="text-[11px] font-bold text-violet-300">بطاقة ضمان</span>
+            {!!jobData.warranty_of && (
+              <span className="text-[10px] text-violet-400/60">· مرتبطة ببطاقة #{String(jobData.warranty_of)}</span>
+            )}
+          </div>
+        )}
+        {/* ── شارة المرتجع ─────────────────────────────────────── */}
+        {(jobData.is_customer_returned as boolean) && (
+          <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.2)" }}>
+            <RotateCcw className="w-3.5 h-3.5 text-red-400" />
+            <span className="text-[11px] font-bold text-red-300">تم تسجيل مرتجع</span>
+            {Number(jobData.customer_return_amount ?? 0) > 0 && (
+              <span className="text-[10px] text-red-400/70">· استُرد {Number(jobData.customer_return_amount).toFixed(2)} ج.م</span>
+            )}
+          </div>
+        )}
         {/* ── Top toolbar: Prev | Current Stage | Next ─────────────── */}
         <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-[var(--erp-border)]">
           <button
@@ -384,14 +436,36 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
           </div>
 
           {currentStatus === "delivered" ? (
-            <button
-              onClick={() => setShowReceipt(true)}
-              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-400/40 text-[11px] font-black text-emerald-200 hover:bg-emerald-500/20 hover:border-emerald-400/60 transition-all"
-              style={{ background: "rgba(16,185,129,0.10)" }}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>إيصال التسليم</span>
-            </button>
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              <button
+                onClick={() => setShowReceipt(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-emerald-400/40 text-[10px] font-black text-emerald-200 hover:bg-emerald-500/20 hover:border-emerald-400/60 transition-all"
+                style={{ background: "rgba(16,185,129,0.10)" }}
+              >
+                <FileText className="w-3 h-3" />
+                <span>إيصال</span>
+              </button>
+              <button
+                onClick={() => setShowWarranty(true)}
+                disabled={jobData.job_type === "warranty"}
+                title={jobData.job_type === "warranty" ? "لا يمكن فتح ضمان على بطاقة ضمان" : "فتح طلب ضمان"}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-violet-400/40 text-[10px] font-black text-violet-200 hover:bg-violet-500/20 hover:border-violet-400/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: "rgba(139,92,246,0.10)" }}
+              >
+                <ShieldCheck className="w-3 h-3" />
+                <span>ضمان</span>
+              </button>
+              <button
+                onClick={() => setShowReturn(true)}
+                disabled={!!jobData.is_customer_returned}
+                title={jobData.is_customer_returned ? "تم تسجيل مرتجع مسبقاً" : "تسجيل مرتجع عميل"}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-red-400/40 text-[10px] font-black text-red-200 hover:bg-red-500/20 hover:border-red-400/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: "rgba(239,68,68,0.10)" }}
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>{jobData.is_customer_returned ? "مُرجَع ✓" : "مرتجع"}</span>
+              </button>
+            </div>
           ) : (
             <button
               onClick={() => nextStage && openConfirm(nextStage.key, ALL_LABELS[nextStage.key] ?? nextStage.label)}

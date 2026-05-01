@@ -1295,6 +1295,241 @@ router.post("/repair-jobs/:id/parts/:partId/return", wrap(async (req, res) => {
 }));
 
 /* ══════════════════════════════════════════════════════════════
+   WARRANTY — إنشاء بطاقة ضمان مرتبطة ببطاقة مُسلَّمة
+══════════════════════════════════════════════════════════════ */
+
+/**
+ * POST /repair-jobs/:id/create-warranty
+ *
+ * ينشئ بطاقة صيانة جديدة من نوع "warranty" مرتبطة بالبطاقة الأصلية.
+ * - البطاقة الأصلية يجب أن تكون في حالة "delivered" وليست ضمان نفسها.
+ * - يأخذ بيانات العميل والجهاز من الأصل تلقائياً.
+ * - رقم البطاقة الجديدة: {parent_job_no}/W{n}
+ */
+router.post("/repair-jobs/:id/create-warranty", wrap(async (req, res) => {
+  const { company_id, user_id, user_name } = ctx(req);
+  const parentId = Number(req.params.id);
+  const b = req.body as Record<string, unknown>;
+
+  const [parent] = await db.select().from(repairJobsTable)
+    .where(and(eq(repairJobsTable.id, parentId), eq(repairJobsTable.company_id, company_id)));
+
+  if (!parent) return res.status(404).json({ error: "بطاقة الصيانة غير موجودة" });
+  if (parent.status !== "delivered") return res.status(400).json({ error: "لا يمكن فتح ضمان إلا على بطاقة مُسلَّمة" });
+  if (parent.job_type === "warranty") return res.status(400).json({ error: "لا يمكن فتح ضمان على بطاقة ضمان" });
+
+  /* حساب رقم الضمان: {parent_job_no}/W1, W2, ... */
+  const siblings = await db.select({ id: repairJobsTable.id })
+    .from(repairJobsTable)
+    .where(and(
+      eq(repairJobsTable.company_id, company_id),
+      eq(repairJobsTable.warranty_of, parentId),
+    ));
+  const warrantyNo = `${parent.job_no}/W${siblings.length + 1}`;
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const [newJob] = await db.insert(repairJobsTable).values({
+    company_id,
+    job_no:                warrantyNo,
+    job_type:              "warranty",
+    warranty_of:           parentId,
+    customer_name:         parent.customer_name,
+    customer_phone:        parent.customer_phone,
+    customer_id:           parent.customer_id,
+    device_brand:          parent.device_brand,
+    device_model:          parent.device_model,
+    device_type:           parent.device_type,
+    imei:                  parent.imei,
+    serial_no:             parent.serial_no,
+    color:                 parent.color,
+    storage:               parent.storage,
+    problem_description:   b.problem_description ? String(b.problem_description) : null,
+    notes:                 b.notes ? String(b.notes) : null,
+    status:                "received",
+    received_at:           today,
+    estimated_cost:        "0",
+    final_cost:            "0",
+    deposit_paid:          "0",
+  }).returning();
+
+  /* سجّل في تاريخ البطاقة الجديدة */
+  await db.insert(repairStatusHistoryTable).values({
+    job_id:       newJob.id,
+    company_id,
+    status_from:  null,
+    status_to:    "received",
+    user_id,
+    user_name,
+    event_type:   "warranty_created",
+    note:         `بطاقة ضمان مرتبطة بـ ${parent.job_no}`,
+  });
+
+  /* سجّل في تاريخ البطاقة الأصل */
+  await db.insert(repairStatusHistoryTable).values({
+    job_id:       parentId,
+    company_id,
+    status_from:  "delivered",
+    status_to:    "delivered",
+    user_id,
+    user_name,
+    event_type:   "warranty_opened",
+    note:         `فُتح طلب ضمان: ${warrantyNo}`,
+  });
+
+  return res.status(201).json(newJob);
+}));
+
+/* ══════════════════════════════════════════════════════════════
+   CUSTOMER RETURN — مرتجع عميل بعد التسليم + استرداد المبلغ
+══════════════════════════════════════════════════════════════ */
+
+/**
+ * POST /repair-jobs/:id/customer-return
+ *
+ * يُسجّل مرتجع عميل على بطاقة مُسلَّمة:
+ * - يُحدّث is_customer_returned = true + customer_return_amount
+ * - لكل قطعة في body.parts: يُرجعها للمخزن أو يُسجّلها توالف (نفس منطق parts/:partId/return)
+ * - يُنشئ معاملة مالية للاسترداد إن كان refund_amount > 0
+ * - يُسجّل حدث في status_history
+ *
+ * Body: {
+ *   refund_amount: number,
+ *   problem_description?: string,
+ *   notes?: string,
+ *   parts: Array<{ part_id: number, destination: 'stock' | 'scrap' }>
+ * }
+ */
+router.post("/repair-jobs/:id/customer-return", wrap(async (req, res) => {
+  const { company_id, user_id, user_name } = ctx(req);
+  const jobId = Number(req.params.id);
+  const b = req.body as Record<string, unknown>;
+
+  const refundAmount = Number(b.refund_amount ?? 0);
+  const partsDisposition = Array.isArray(b.parts)
+    ? (b.parts as Array<{ part_id: number; destination: string }>)
+    : [];
+
+  class HttpAbort extends Error {
+    constructor(public httpStatus: number, public reason: string) { super(reason); }
+  }
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      const [job] = await tx.select().from(repairJobsTable)
+        .where(and(eq(repairJobsTable.id, jobId), eq(repairJobsTable.company_id, company_id)));
+
+      if (!job) throw new HttpAbort(404, "بطاقة الصيانة غير موجودة");
+      if (job.status !== "delivered") throw new HttpAbort(400, "لا يمكن تسجيل مرتجع إلا على بطاقة مُسلَّمة");
+      if (job.is_customer_returned) throw new HttpAbort(400, "تم تسجيل مرتجع على هذه البطاقة مسبقاً");
+
+      /* تحديث البطاقة */
+      await tx.update(repairJobsTable).set({
+        is_customer_returned:   true,
+        customer_return_amount: String(refundAmount),
+        updated_at:             new Date(),
+      }).where(and(eq(repairJobsTable.id, jobId), eq(repairJobsTable.company_id, company_id)));
+
+      /* معالجة القطع */
+      for (const item of partsDisposition) {
+        const dest = item.destination === "scrap" ? "scrap" : "stock";
+
+        const [claimed] = await tx.update(repairJobPartsTable)
+          .set({ is_returned: true, return_destination: dest, returned_at: new Date() })
+          .where(and(
+            eq(repairJobPartsTable.id, item.part_id),
+            eq(repairJobPartsTable.company_id, company_id),
+            eq(repairJobPartsTable.is_returned, false),
+          ))
+          .returning();
+
+        if (!claimed) continue; /* مُرجعت مسبقاً أو غير موجودة — تخطّ */
+
+        if (dest === "stock" && claimed.product_id && claimed.warehouse_id) {
+          const [prod] = await tx.select({ id: productsTable.id, quantity: productsTable.quantity })
+            .from(productsTable)
+            .where(and(eq(productsTable.id, claimed.product_id), eq(productsTable.company_id, company_id)));
+
+          if (prod) {
+            const oldQty = Number(prod.quantity);
+            const addQty = Number(claimed.quantity);
+            const newQty = oldQty + addQty;
+
+            await tx.update(productsTable)
+              .set({ quantity: String(newQty) })
+              .where(and(eq(productsTable.id, claimed.product_id), eq(productsTable.company_id, company_id)));
+
+            await tx.insert(stockMovementsTable).values({
+              product_id:      claimed.product_id,
+              product_name:    claimed.product_name,
+              movement_type:   "repair_return",
+              quantity:        String(addQty),
+              quantity_before: String(oldQty),
+              quantity_after:  String(newQty),
+              unit_cost:       claimed.unit_price,
+              reference_type:  "repair_job",
+              reference_id:    jobId,
+              notes:           `إرجاع قطعة (مرتجع عميل) من بطاقة صيانة #${job.job_no}`,
+              date:            new Date().toISOString().split("T")[0],
+              warehouse_id:    claimed.warehouse_id,
+              company_id,
+            });
+          }
+        }
+
+        if (dest === "scrap") {
+          await tx.insert(scrapItemsTable).values({
+            company_id,
+            product_id:    claimed.product_id ?? undefined,
+            product_name:  claimed.product_name,
+            quantity:      claimed.quantity,
+            unit_cost:     claimed.unit_price,
+            warehouse_id:  claimed.warehouse_id ?? undefined,
+            reason:        `مرتجع عميل — بطاقة صيانة ${job.job_no}`,
+            source_type:   "repair_return",
+            source_id:     jobId,
+            created_by:    user_id,
+            created_by_name: user_name,
+          });
+        }
+      }
+
+      /* معاملة مالية للاسترداد */
+      if (refundAmount > 0) {
+        await tx.insert(transactionsTable).values({
+          company_id,
+          type:           "expense",
+          amount:         String(refundAmount),
+          description:    `استرداد مبلغ مرتجع صيانة — ${job.job_no}`,
+          reference_type: "repair_return",
+          reference_id:   jobId,
+        });
+      }
+
+      /* سجل في التاريخ */
+      await tx.insert(repairStatusHistoryTable).values({
+        job_id:      jobId,
+        company_id,
+        status_from: "delivered",
+        status_to:   "delivered",
+        user_id,
+        user_name,
+        event_type:  "customer_return",
+        note:        `مرتجع عميل — استرداد ${refundAmount} — ${b.problem_description ?? ""}`.trim(),
+      });
+
+      return { ok: true };
+    });
+
+    return res.json(result);
+  } catch (err) {
+    const e = err as { httpStatus?: number; reason?: string; message?: string };
+    if (e.httpStatus) return res.status(e.httpStatus).json({ error: e.reason });
+    throw err;
+  }
+}));
+
+/* ══════════════════════════════════════════════════════════════
    STAGE-GATE ENDPOINTS — Modals مخصّصة لكل بوّابة في Pipeline
    هذه الـ endpoints تَملأ الحقول المطلوبة (timestamps) التي
    تتحقق منها validateTransition في الانتقال التالي.
