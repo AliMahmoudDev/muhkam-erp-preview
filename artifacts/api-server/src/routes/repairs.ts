@@ -1436,7 +1436,7 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
         job_id:       id,
         company_id,
         product_id:   part.product_id,
-        product_name: part.product_name,
+        product_name: part.product_name ?? "",
         quantity:     String(part.quantity),
         unit_price:   String(part.unit_price),
         source:       "internal",
@@ -1456,7 +1456,7 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
             .where(and(eq(productsTable.id, part.product_id), eq(productsTable.company_id, company_id)));
           await tx.insert(stockMovementsTable).values({
             product_id:      part.product_id,
-            product_name:    part.product_name,
+            product_name:    part.product_name ?? "",
             company_id,
             quantity:        String(-part.quantity),
             quantity_before: String(oldQty),
@@ -1493,7 +1493,6 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
     }
 
     /* ─ 3. تحديث البطاقة ─ */
-    const _partsTotal = partsInput.reduce((s, p) => s + p.quantity * p.unit_price, 0);
     const updates: Record<string, unknown> = {
       pre_delivery_reviewed_at: now,
       updated_at: now,
