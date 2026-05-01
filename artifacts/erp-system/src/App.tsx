@@ -40,7 +40,6 @@ const ROUTE_FEATURES: Partial<Record<string, keyof CompanyFeatures>> = {
   '/warranty':            'warranty',
   '/repairs':             'maintenance',
   '/devices':             'maintenance',
-  '/scrap-inventory':     'maintenance',
 };
 
 /* ── Lazy-loaded pages ─────────────────────────────────── */
@@ -72,8 +71,6 @@ const Returns = lazy(() => import('@/pages/returns'));
 const Warranty = lazy(() => import('@/pages/warranty'));
 const Repairs  = lazy(() => import('@/pages/repairs'));
 const Devices  = lazy(() => import('@/pages/devices'));
-const ScrapInventory = lazy(() => import('@/pages/scrap-inventory'));
-const BadDebts = lazy(() => import('@/pages/bad-debts'));
 const FixedAssets = lazy(() => import('@/pages/fixed-assets'));
 const Accruals = lazy(() => import('@/pages/accruals'));
 const BankReconciliation = lazy(() => import('@/pages/bank-reconciliation'));
@@ -232,8 +229,8 @@ function Router() {
         <Route path="/warranty">{() => <Guard path="/warranty" component={Warranty} />}</Route>
         <Route path="/devices">{() => <Guard path="/devices" component={Devices} />}</Route>
         <Route path="/repairs">{() => <Guard path="/repairs" component={Repairs} />}</Route>
-        <Route path="/scrap-inventory">{() => <Guard path="/scrap-inventory" component={ScrapInventory} />}</Route>
-        <Route path="/bad-debts">{() => <Guard path="/bad-debts" component={BadDebts} />}</Route>
+        <Route path="/scrap-inventory">{() => <Redirect to="/inventory" />}</Route>
+        <Route path="/bad-debts">{() => <Redirect to="/customers" />}</Route>
         <Route path="/products">{() => <Guard path="/products" component={Products} />}</Route>
         <Route path="/inventory">{() => <Guard path="/inventory" component={Inventory} />}</Route>
         <Route path="/customers">{() => <Guard path="/customers" component={Customers} />}</Route>

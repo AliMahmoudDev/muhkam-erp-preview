@@ -19,7 +19,7 @@ interface ScrapItem {
   created_at: string;
 }
 
-export default function ScrapInventory() {
+export default function ScrapInventory({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [showNew, setShowNew] = useState(false);
@@ -57,11 +57,13 @@ export default function ScrapInventory() {
   const total = items.reduce((s, i) => s + Number(i.quantity) * Number(i.unit_cost), 0);
 
   return (
-    <div className="p-4 space-y-4 h-full overflow-y-auto" dir="rtl">
+    <div className={embedded ? "space-y-4" : "p-4 space-y-4 h-full overflow-y-auto"} dir="rtl">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-black text-white flex items-center gap-2">
-          <Trash2 className="w-5 h-5 text-amber-400" /> مخزن التوالف
-        </h1>
+        {!embedded && (
+          <h1 className="text-xl font-black text-white flex items-center gap-2">
+            <Trash2 className="w-5 h-5 text-amber-400" /> مخزن التوالف
+          </h1>
+        )}
         <button onClick={() => setShowNew(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold">
           <Plus className="w-3.5 h-3.5" /> إضافة

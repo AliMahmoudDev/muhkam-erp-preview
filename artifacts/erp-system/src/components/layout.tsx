@@ -26,7 +26,7 @@ const NAV_SECTIONS = [
   { label: 'القائمة', hrefs: ['/'] },
   {
     label: 'التجارة',
-    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/devices', '/repairs', '/scrap-inventory', '/warranty'],
+    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/devices', '/repairs', '/warranty'],
   },
   { label: 'المالية', hrefs: ['/treasury', '/expenses', '/income', '/reports'] },
   { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance', '/payroll'] },
@@ -250,7 +250,7 @@ export function AppLayout({ children }: LayoutProps) {
   const HR_PATHS          = new Set(['/employees', '/attendance']);
   const POS_PATHS         = new Set(['/pos']);
   const WARRANTY_PATHS    = new Set(['/warranty']);
-  const MAINTENANCE_PATHS = new Set(['/repairs', '/devices', '/scrap-inventory']);
+  const MAINTENANCE_PATHS = new Set(['/repairs', '/devices']);
   const visibleNav = NAV_ITEMS.filter((item) => {
     /* My portal: only for users who are linked to an employee */
     if (item.href === '/my-portal' && !user?.employee_id) return false;

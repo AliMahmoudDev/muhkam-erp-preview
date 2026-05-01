@@ -38,6 +38,7 @@ import { useState } from 'react';
   } from '@workspace/api-client-react';
   import InventoryReport from './reports/InventoryReport';
 import ConsignmentPage from '@/pages/consignment';
+import ScrapInventory from '@/pages/scrap-inventory';
 
   import { api } from './inventory/_shared';
   import type {
@@ -289,6 +290,13 @@ export default function Inventory() {
             id="reports"
             label="تقارير المخزون"
             icon={<BarChart3 className="w-4 h-4" />}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+          <TabBtn
+            id="scrap"
+            label="مخزن التوالف"
+            icon={<Trash2 className="w-4 h-4" />}
             active={activeTab}
             onClick={setActiveTab}
           />
@@ -586,6 +594,7 @@ export default function Inventory() {
         )}
         {activeTab === 'consignment' && <ConsignmentPage />}
         {activeTab === 'reports' && <InventoryReport />}
+        {activeTab === 'scrap' && <ScrapInventory embedded />}
       </div>
 
       {/* ── Modal: إضافة مخزن ── */}

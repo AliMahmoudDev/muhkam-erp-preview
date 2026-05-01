@@ -1,5 +1,6 @@
 import { safeArray } from '@/lib/safe-data';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
+import BadDebts from '@/pages/bad-debts';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
@@ -1557,6 +1558,7 @@ export default function Customers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const [pageView, setPageView] = useState<'customers' | 'bad-debts'>('customers');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'customers' | 'suppliers' | 'debtors' | 'creditors' | 'repair'>('all');
   const [showAdd, setShowAdd] = useState(false);
@@ -1947,6 +1949,24 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
+      {/* ── شريط تبويبات الصفحة الرئيسية ── */}
+      <div className="flex gap-1 border-b border-white/10 pb-0 -mb-4">
+        {([
+          { id: 'customers', label: 'العملاء والموردون' },
+          { id: 'bad-debts', label: 'الديون المعدومة' },
+        ] as const).map(t => (
+          <button key={t.id} onClick={() => setPageView(t.id)}
+            className={`px-5 py-2.5 text-sm font-bold border-b-2 transition-all ${pageView === t.id ? 'border-amber-400 text-amber-400' : 'border-transparent text-white/40 hover:text-white/70'}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── الديون المعدومة ── */}
+      {pageView === 'bad-debts' && <BadDebts embedded />}
+
+      {/* ── عرض العملاء والموردون ── */}
+      {pageView === 'customers' && <>
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[180px] max-w-xs">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
@@ -3132,6 +3152,7 @@ export default function Customers() {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }
