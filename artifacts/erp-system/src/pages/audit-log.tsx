@@ -68,9 +68,14 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   RESTORE_REJECTED:  { label: "رفض استعادة",          color: "text-red-400"     },
   RESTORE_FAILED:    { label: "فشل استعادة",          color: "text-red-500"     },
   RESTORE_COMPLETED: { label: "اكتمال استعادة",       color: "text-emerald-400" },
+  /* الصيانة */
+  repair_status_change:  { label: "تغيير حالة الصيانة",  color: "text-cyan-400"    },
+  repair_assign:         { label: "تكليف فني",            color: "text-sky-400"     },
+  repair_complete:       { label: "إتمام الصيانة",        color: "text-emerald-400" },
   /* وصول المدير العام */
   SUPER_ADMIN_ACCESS:    { label: "وصول مدير عام",        color: "text-indigo-400"  },
   SUPER_ADMIN_LIST_VIEW: { label: "عرض قائمة الشركات",    color: "text-indigo-400"  },
+  MANAGER_CREATED:       { label: "إنشاء مدير",           color: "text-violet-400"  },
 };
 
 const RECORD_LABELS: Record<string, string> = {
@@ -101,9 +106,23 @@ const RECORD_LABELS: Record<string, string> = {
   system:           "النظام",
   announcement:     "إعلان",
   warranty:         "ضمان",
+  repair_job:       "بطاقة صيانة",
+  trial_monitoring: "مراقبة الفترة التجريبية",
+  branch:           "فرع",
+  device:           "جهاز",
+  income:           "إيراد",
 };
 
 const ALL_RECORD_TYPES = Object.keys(RECORD_LABELS);
+
+function formatKey(key: string): string {
+  return key
+    .replace(/_/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .split(" ")
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 function JsonDiff({ label, data }: { label: string; data: object | null }) {
   const [open, setOpen] = useState(false);
@@ -157,9 +176,11 @@ export default function AuditLog() {
     if (filterUser && !log.username?.toLowerCase().includes(filterUser.toLowerCase())) return false;
     if (search) {
       const s = search.toLowerCase();
-      const label = RECORD_LABELS[log.record_type] ?? log.record_type;
+      const recordLabel = RECORD_LABELS[log.record_type] ?? log.record_type;
+      const actionLabel = ACTION_LABELS[log.action]?.label ?? log.action;
       if (!log.username?.toLowerCase().includes(s) &&
-          !label.toLowerCase().includes(s) &&
+          !recordLabel.toLowerCase().includes(s) &&
+          !actionLabel.includes(s) &&
           !String(log.record_id).includes(s) &&
           !log.action.includes(s)) return false;
     }
@@ -269,8 +290,8 @@ export default function AuditLog() {
             </thead>
             <tbody>
               {filtered.map((log, idx) => {
-                const actionMeta = ACTION_LABELS[log.action] ?? { label: log.action, color: "text-white/60" };
-                const recordLabel = RECORD_LABELS[log.record_type] ?? log.record_type;
+                const actionMeta = ACTION_LABELS[log.action] ?? { label: formatKey(log.action), color: "text-white/50" };
+                const recordLabel = RECORD_LABELS[log.record_type] ?? formatKey(log.record_type);
                 return (
                   <tr key={log.id} className={`border-t border-white/5 hover:bg-white/3 transition-colors ${idx % 2 === 0 ? "" : "bg-white/1"}`}>
                     <td className="p-3">
@@ -323,7 +344,7 @@ export default function AuditLog() {
               return acc;
             }, {})
           ).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([action, count]) => {
-            const meta = ACTION_LABELS[action] ?? { label: action, color: "text-white/50" };
+            const meta = ACTION_LABELS[action] ?? { label: formatKey(action), color: "text-white/50" };
             return (
               <div key={action} className="bg-white/3 border border-white/8 rounded-2xl p-4 text-center">
                 <div className={`text-2xl font-bold ${meta.color}`}>{count}</div>
