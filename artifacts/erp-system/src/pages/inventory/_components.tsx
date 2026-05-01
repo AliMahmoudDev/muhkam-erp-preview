@@ -17,7 +17,7 @@ export function TabBtn({
   return (
     <button
       onClick={() => onClick(id)}
-      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px ${
+      className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px whitespace-nowrap ${
         isActive
           ? 'border-violet-400 text-violet-300'
           : 'border-transparent text-white/50 hover:text-white/80'
@@ -48,7 +48,7 @@ export function TabBtnBadge({
   return (
     <button
       onClick={() => onClick(id)}
-      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px ${
+      className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px whitespace-nowrap ${
         isActive
           ? 'border-amber-400 text-amber-300'
           : 'border-transparent text-white/50 hover:text-white/80'

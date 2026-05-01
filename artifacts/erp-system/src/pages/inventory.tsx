@@ -248,7 +248,7 @@ export default function Inventory() {
     <div className="p-6 space-y-6 text-right" dir="rtl">
       {/* ══ تبويبات المخزون — في الأعلى دائماً ════════════════════════════════ */}
       <div>
-        <div className="flex gap-2 border-b border-white/10 mb-6 flex-wrap">
+        <div className="flex border-b border-white/10 mb-6 overflow-x-auto" style={{scrollbarWidth:'none'}}>
           <TabBtn
             id="overview"
             label="نظرة عامة"
@@ -274,7 +274,7 @@ export default function Inventory() {
           )}
           {canAdjustInventory && (
             <Link to="/transfers">
-              <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-white/60 hover:text-white hover:border-white/30 transition-colors">
+              <button className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 border-transparent text-white/50 hover:text-white/80 transition-colors -mb-px whitespace-nowrap">
                 <Truck className="w-4 h-4" />
                 التحويلات بين الفروع
               </button>
