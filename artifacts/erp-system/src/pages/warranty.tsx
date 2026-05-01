@@ -142,7 +142,7 @@ function WarrantyBadge({ record }: { record: WarrantyRecord }) {
 }
 
 /* ── Main Page ───────────────────────────────────────────────────────────── */
-export default function Warranty() {
+export default function Warranty({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -231,18 +231,20 @@ export default function Warranty() {
     <div className="space-y-4" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }} dir="rtl">
       {showForm && <NewWarrantyForm onClose={() => setShowForm(false)} />}
 
-      {/* ── Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-black text-white flex items-center gap-2">
-          <Shield className="w-6 h-6 text-amber-400" />
-          سجلات الضمان
-        </h1>
-        <button onClick={() => setShowForm(true)}
-          className="btn-primary flex items-center gap-2 px-4 py-2 text-sm font-bold">
-          <Plus className="w-4 h-4" />
-          سجل ضمان جديد
-        </button>
-      </div>
+      {/* ── Header (hidden when embedded) ── */}
+      {!embedded && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-xl font-black text-white flex items-center gap-2">
+            <Shield className="w-6 h-6 text-amber-400" />
+            سجلات الضمان
+          </h1>
+          <button onClick={() => setShowForm(true)}
+            className="btn-primary flex items-center gap-2 px-4 py-2 text-sm font-bold">
+            <Plus className="w-4 h-4" />
+            سجل ضمان جديد
+          </button>
+        </div>
+      )}
 
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -285,6 +287,12 @@ export default function Warranty() {
             </button>
           ))}
         </div>
+        {embedded && (
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold hover:bg-amber-500/30 transition-all mr-auto">
+            <Plus className="w-3.5 h-3.5" /> ضمان جديد
+          </button>
+        )}
       </div>
 
       {/* ── Table ── */}

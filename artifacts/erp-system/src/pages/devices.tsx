@@ -6,12 +6,13 @@ import {
   ShoppingCart, Wrench, BadgeCheck, Info,
   Trash2, RotateCcw, AlertTriangle, Battery, Package,
   Tag, User, TrendingUp, Banknote, Printer,
-  MoreVertical, Eye, LayoutGrid, List, Copy, Calendar, FileText, Percent,
+  MoreVertical, Eye, LayoutGrid, List, Copy, Calendar, FileText, Percent, Shield,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import { useAuth } from "@/contexts/auth";
 import { api } from '@/lib/api';
+import Warranty from '@/pages/warranty';
 
 
 /* ── Types ── */
@@ -2283,6 +2284,7 @@ function RowMenu({ device, onDetail, onRefresh }: {
 
 export default function Devices() {
   const qc = useQueryClient();
+  const [pageView, setPageView] = useState<"devices" | "warranty">("devices");
   const [statusFilter, setStatusFilter] = useState<"all" | DeviceStatus>("all");
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
@@ -2332,11 +2334,39 @@ export default function Devices() {
             <p className="text-[11px] text-white/30">شراء وبيع الأجهزة — البيع والصيانة</p>
           </div>
         </div>
-        <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all">
-          <Plus className="w-4 h-4" /> إضافة جهاز
-        </button>
+        {pageView === "devices" && (
+          <button onClick={() => setShowAdd(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all">
+            <Plus className="w-4 h-4" /> إضافة جهاز
+          </button>
+        )}
       </div>
+
+      {/* ── Page-level tab bar ── */}
+      <div className="flex gap-1 border-b border-white/8 pb-0">
+        {[
+          { id: "devices" as const, label: "الأجهزة", icon: Smartphone },
+          { id: "warranty" as const, label: "الضمانات", icon: Shield },
+        ].map(({ id, label, icon: Icon }) => (
+          <button key={id} onClick={() => setPageView(id)}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold border-b-2 transition-all -mb-px ${
+              pageView === id
+                ? id === "warranty"
+                  ? "border-amber-500 text-amber-300"
+                  : "border-violet-500 text-violet-300"
+                : "border-transparent text-white/40 hover:text-white/70"
+            }`}>
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Warranty tab ── */}
+      {pageView === "warranty" && <Warranty embedded />}
+
+      {/* ── Devices content (hidden on warranty tab) ── */}
+      {pageView === "devices" && <>
 
       {/* ── Stats cards — Row 1: Counts ── */}
       <div className="grid grid-cols-4 gap-2">
@@ -2595,6 +2625,8 @@ export default function Devices() {
           })}
         </div>
       )}
+
+      </>}
 
       {/* ── Modals ── */}
       {showAdd && <AddDeviceModal onClose={() => setShowAdd(false)} onSaved={refresh} />}

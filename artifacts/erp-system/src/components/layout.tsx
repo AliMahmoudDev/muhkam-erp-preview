@@ -26,7 +26,7 @@ const NAV_SECTIONS = [
   { label: 'القائمة', hrefs: ['/'] },
   {
     label: 'التجارة',
-    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/devices', '/repairs', '/warranty'],
+    hrefs: ['/pos', '/sales', '/purchases', '/products', '/inventory', '/customers', '/returns', '/devices', '/repairs'],
   },
   { label: 'المالية', hrefs: ['/treasury', '/expenses', '/income', '/reports'] },
   { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance', '/payroll'] },
@@ -249,7 +249,6 @@ export function AppLayout({ children }: LayoutProps) {
   const BUDGETS           = new Set(['/budgets']);
   const HR_PATHS          = new Set(['/employees', '/attendance']);
   const POS_PATHS         = new Set(['/pos']);
-  const WARRANTY_PATHS    = new Set(['/warranty']);
   const MAINTENANCE_PATHS = new Set(['/repairs', '/devices']);
   const visibleNav = NAV_ITEMS.filter((item) => {
     /* My portal: only for users who are linked to an employee */
@@ -269,7 +268,6 @@ export function AppLayout({ children }: LayoutProps) {
     if (BUDGETS.has(item.href)           && !hasFeature('budgets'))             return false;
     if (HR_PATHS.has(item.href)          && !hasFeature('hr'))                  return false;
     if (POS_PATHS.has(item.href)         && !hasFeature('pos'))                 return false;
-    if (WARRANTY_PATHS.has(item.href)    && !hasFeature('warranty'))            return false;
     if (MAINTENANCE_PATHS.has(item.href) && !hasFeature('maintenance'))         return false;
     return true;
   });

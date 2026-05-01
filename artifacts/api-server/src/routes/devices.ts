@@ -4,7 +4,7 @@ import {
   devicesTable, customersTable, productsTable, safesTable,
   warehousesTable, purchasesTable, purchaseItemsTable,
   stockMovementsTable, transactionsTable, customerLedgerTable,
-  employeesTable, erpUsersTable,
+  employeesTable, erpUsersTable, warrantyTable,
 } from "@workspace/db";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { wrap, httpError } from "../lib/async-handler";
@@ -537,21 +537,47 @@ router.post("/devices/:id/sell", wrap(async (req, res) => {
   if (!existing) return res.status(404).json({ error: "not found" });
   if (existing.status !== "available") return res.status(400).json({ error: "الجهاز غير متاح للبيع" });
 
+  const soldAt = new Date();
+
   const [row] = await db.update(devicesTable).set({
     status: "sold",
     sold_to_customer_id: customer_id ?? null,
     sold_to_customer_name: customer_name ?? null,
     sold_price: sold_price ?? existing.sale_price,
-    sold_at: new Date(),
+    sold_at: soldAt,
     sold_by_user_id: user_id,
     sold_by_user_name: user_name,
     payment_method: payment_method ?? "cash",
     payment_status: payment_status ?? "paid",
     warranty_months: warranty_months ?? null,
-    updated_at: new Date(),
+    updated_at: soldAt,
   })
     .where(and(eq(devicesTable.id, id), eq(devicesTable.company_id, company_id)))
     .returning();
+
+  /* ── Auto-create warranty record if warranty_months > 0 ── */
+  const wMonths = warranty_months ? parseInt(String(warranty_months)) : 0;
+  if (wMonths > 0) {
+    const startDate = soldAt;
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + wMonths);
+
+    await db.insert(warrantyTable).values({
+      company_id,
+      product_name: `${existing.brand} ${existing.model}`,
+      customer_id:    customer_id ? Number(customer_id) : null,
+      customer_name:  customer_name ?? null,
+      customer_phone: null,
+      serial_number:  existing.imei ?? existing.serial_no ?? null,
+      device_model:   `${existing.brand} ${existing.model}`,
+      warranty_months: wMonths,
+      warranty_start:  startDate.toISOString().split("T")[0],
+      warranty_end:    endDate.toISOString().split("T")[0],
+      status: "active",
+      notes: `بيع جهاز مستخدم — ${existing.device_no}`,
+      sale_id: null,
+    });
+  }
 
   return res.json(row);
 }));

@@ -37,7 +37,6 @@ const ROUTE_FEATURES: Partial<Record<string, keyof CompanyFeatures>> = {
   '/attendance':          'hr',
   '/payroll':             'hr',
   '/pos':                 'pos',
-  '/warranty':            'warranty',
   '/repairs':             'maintenance',
   '/devices':             'maintenance',
 };
@@ -68,7 +67,6 @@ const Employees = lazy(() => import('@/pages/employees'));
 const Attendance = lazy(() => import('@/pages/attendance'));
 const Payroll    = lazy(() => import('@/pages/payroll'));
 const Returns = lazy(() => import('@/pages/returns'));
-const Warranty = lazy(() => import('@/pages/warranty'));
 const Repairs  = lazy(() => import('@/pages/repairs'));
 const Devices  = lazy(() => import('@/pages/devices'));
 const FixedAssets = lazy(() => import('@/pages/fixed-assets'));
@@ -226,7 +224,7 @@ function Router() {
         <Route path="/purchases">{() => <Guard path="/purchases" component={Purchases} />}</Route>
         <Route path="/suppliers">{() => <Redirect to="/customers" />}</Route>
         <Route path="/returns">{() => <Guard path="/returns" component={Returns} />}</Route>
-        <Route path="/warranty">{() => <Guard path="/warranty" component={Warranty} />}</Route>
+        <Route path="/warranty">{() => <Redirect to="/devices" />}</Route>
         <Route path="/devices">{() => <Guard path="/devices" component={Devices} />}</Route>
         <Route path="/repairs">{() => <Guard path="/repairs" component={Repairs} />}</Route>
         <Route path="/scrap-inventory">{() => <Redirect to="/inventory" />}</Route>
