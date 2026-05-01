@@ -342,12 +342,14 @@ function ChecklistTab() {
     emoji: activeCatData?.emoji ?? "📱",
   };
 
-  /* أكسنت موحَّد عبر تبويبات هذه الصفحة — أمبر احترافي بدلاً من البنفسجي */
-  const accent    = "text-amber-200";
-  const accentDim = "text-amber-300/75";
-  const accentBg  = "bg-amber-500/10";
-  const accentBdr = "border-amber-500/30";
-  const badgeCls  = "bg-amber-500/15 text-amber-200/85 border border-amber-500/25";
+  /* أكسنت موحَّد عبر تبويبات هذه الصفحة — يتكيّف مع الوضع الفاتح والداكن */
+  const accent    = isLight ? "text-amber-700"  : "text-amber-200";
+  const accentDim = isLight ? "text-amber-600"  : "text-amber-300/75";
+  const accentBg  = isLight ? "bg-amber-50"     : "bg-amber-500/10";
+  const accentBdr = isLight ? "border-amber-300": "border-amber-500/30";
+  const badgeCls  = isLight
+    ? "bg-amber-100 text-amber-800 border border-amber-300/70"
+    : "bg-amber-500/15 text-amber-200/85 border border-amber-500/25";
 
   /* بحث محلّي داخل البنود */
   const [searchQuery, setSearchQuery] = useState("");

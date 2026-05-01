@@ -4762,40 +4762,72 @@ html.light .nav-item.active { color: #92400e; background: rgba(245,158,11,0.09);
    dark-hardcoded Tailwind classes to dark-on-light equivalents.
 ══════════════════════════════════════════════════════════════════ */
 
-/* ── Base: light background & text colour ── */
+/* ── Base: light background — warm off-white with subtle depth ── */
 .rs-mesh-bg--light {
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  background: linear-gradient(160deg, #fefefe 0%, #f7f8fa 40%, #f1f4f8 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04) !important;
 }
 .rs-mesh-bg--light .rs-glow { display: none; }
 
-/* ── Text: white/* → slate equivalents ── */
+/* ── Text: white/* → slate equivalents (improved contrast) ── */
 .rs-mesh-bg--light .text-white    { color: #0f172a !important; }
 .rs-mesh-bg--light .text-white\/95 { color: rgba(15,23,42,0.95) !important; }
-.rs-mesh-bg--light .text-white\/90,.rs-mesh-bg--light .text-white\/85 { color: rgba(15,23,42,0.88) !important; }
-.rs-mesh-bg--light .text-white\/80,.rs-mesh-bg--light .text-white\/75 { color: rgba(15,23,42,0.80) !important; }
-.rs-mesh-bg--light .text-white\/70,.rs-mesh-bg--light .text-white\/65 { color: rgba(15,23,42,0.70) !important; }
-.rs-mesh-bg--light .text-white\/60,.rs-mesh-bg--light .text-white\/55 { color: rgba(15,23,42,0.58) !important; }
-.rs-mesh-bg--light .text-white\/50,.rs-mesh-bg--light .text-white\/45 { color: rgba(15,23,42,0.48) !important; }
-.rs-mesh-bg--light .text-white\/40,.rs-mesh-bg--light .text-white\/35 { color: rgba(15,23,42,0.38) !important; }
-.rs-mesh-bg--light .text-white\/30,.rs-mesh-bg--light .text-white\/25 { color: rgba(15,23,42,0.30) !important; }
-.rs-mesh-bg--light .text-white\/20,.rs-mesh-bg--light .text-white\/15 { color: rgba(15,23,42,0.22) !important; }
+.rs-mesh-bg--light .text-white\/90,.rs-mesh-bg--light .text-white\/85 { color: rgba(15,23,42,0.90) !important; }
+.rs-mesh-bg--light .text-white\/80,.rs-mesh-bg--light .text-white\/75 { color: rgba(15,23,42,0.82) !important; }
+.rs-mesh-bg--light .text-white\/70,.rs-mesh-bg--light .text-white\/65 { color: rgba(15,23,42,0.72) !important; }
+.rs-mesh-bg--light .text-white\/60,.rs-mesh-bg--light .text-white\/55 { color: rgba(15,23,42,0.60) !important; }
+.rs-mesh-bg--light .text-white\/50,.rs-mesh-bg--light .text-white\/45 { color: rgba(15,23,42,0.50) !important; }
+.rs-mesh-bg--light .text-white\/40,.rs-mesh-bg--light .text-white\/35 { color: rgba(15,23,42,0.40) !important; }
+.rs-mesh-bg--light .text-white\/30,.rs-mesh-bg--light .text-white\/25 { color: rgba(15,23,42,0.32) !important; }
+.rs-mesh-bg--light .text-white\/20,.rs-mesh-bg--light .text-white\/15 { color: rgba(15,23,42,0.24) !important; }
 
-/* ── Backgrounds: bg-white/* → near-transparent slate ── */
+/* ── Amber accent text: override pale dark-mode values → readable amber ── */
+.rs-mesh-bg--light .text-amber-200  { color: #b45309 !important; }
+.rs-mesh-bg--light .text-amber-300  { color: #d97706 !important; }
+.rs-mesh-bg--light .text-amber-200\/85 { color: rgba(146,64,14,0.90) !important; }
+
+/* ── Amber accent backgrounds: boost opacity in light mode ── */
+.rs-mesh-bg--light .bg-amber-500\/10  { background: rgba(245,158,11,0.10) !important; }
+.rs-mesh-bg--light .bg-amber-500\/12  { background: rgba(245,158,11,0.12) !important; }
+.rs-mesh-bg--light .bg-amber-500\/15  { background: rgba(245,158,11,0.13) !important; }
+
+/* ── Amber accent borders ── */
+.rs-mesh-bg--light .border-amber-500\/25 { border-color: rgba(217,119,6,0.40) !important; }
+.rs-mesh-bg--light .border-amber-500\/30 { border-color: rgba(217,119,6,0.45) !important; }
+
+/* ── Backgrounds: bg-white/* → refined light surfaces ── */
 .rs-mesh-bg--light .bg-white\/2,
-.rs-mesh-bg--light .bg-white\/3,
-.rs-mesh-bg--light .bg-white\/5  { background: rgba(0,0,0,0.03) !important; }
-.rs-mesh-bg--light .bg-white\/8,
-.rs-mesh-bg--light .bg-white\/10 { background: rgba(0,0,0,0.05) !important; }
+.rs-mesh-bg--light .bg-white\/3   { background: rgba(0,0,0,0.025) !important; }
+.rs-mesh-bg--light .bg-white\/5   { background: rgba(0,0,0,0.035) !important; }
+.rs-mesh-bg--light .bg-white\/8   { background: rgba(0,0,0,0.050) !important; }
+.rs-mesh-bg--light .bg-white\/10  { background: rgba(0,0,0,0.060) !important; }
 .rs-mesh-bg--light .bg-white\/15,
-.rs-mesh-bg--light .bg-white\/20 { background: rgba(0,0,0,0.07) !important; }
+.rs-mesh-bg--light .bg-white\/20  { background: rgba(0,0,0,0.075) !important; }
 
-/* ── Borders: border-white/* → slate borders ── */
-.rs-mesh-bg--light .border-white\/5  { border-color: rgba(0,0,0,0.07) !important; }
-.rs-mesh-bg--light .border-white\/8  { border-color: rgba(0,0,0,0.09) !important; }
+/* ── Borders: border-white/* → clear crisp borders ── */
+.rs-mesh-bg--light .border-white\/5  { border-color: rgba(0,0,0,0.08) !important; }
+.rs-mesh-bg--light .border-white\/8  { border-color: rgba(0,0,0,0.10) !important; }
 .rs-mesh-bg--light .border-white\/10,
-.rs-mesh-bg--light .border-white\/12 { border-color: rgba(0,0,0,0.11) !important; }
+.rs-mesh-bg--light .border-white\/12 { border-color: rgba(0,0,0,0.12) !important; }
 .rs-mesh-bg--light .border-white\/15,
-.rs-mesh-bg--light .border-white\/20 { border-color: rgba(0,0,0,0.14) !important; }
+.rs-mesh-bg--light .border-white\/20 { border-color: rgba(0,0,0,0.15) !important; }
+
+/* ── Arbitrary-value Tailwind opacity classes (bg-white/[0.0X]) ── */
+.rs-mesh-bg--light .bg-white\/\[0\.02\]  { background: rgba(0,0,0,0.025) !important; }
+.rs-mesh-bg--light .bg-white\/\[0\.03\]  { background: rgba(0,0,0,0.030) !important; }
+.rs-mesh-bg--light .bg-white\/\[0\.04\]  { background: rgba(0,0,0,0.040) !important; }
+.rs-mesh-bg--light .bg-white\/\[0\.05\]  { background: rgba(0,0,0,0.050) !important; }
+.rs-mesh-bg--light .bg-white\/\[0\.06\]  { background: rgba(0,0,0,0.055) !important; }
+.rs-mesh-bg--light .bg-white\/\[0\.08\]  { background: rgba(0,0,0,0.065) !important; }
+.rs-mesh-bg--light .hover\:bg-white\/\[0\.04\]:hover  { background: rgba(245,158,11,0.06) !important; }
+.rs-mesh-bg--light .hover\:bg-white\/\[0\.03\]:hover  { background: rgba(245,158,11,0.05) !important; }
+.rs-mesh-bg--light .hover\:bg-white\/\[0\.08\]:hover  { background: rgba(0,0,0,0.06) !important; }
+
+/* ── Category accordion rows ── */
+.rs-mesh-bg--light .border-b.border-white\/5 { border-bottom-color: rgba(0,0,0,0.07) !important; }
+
+/* ── Item row hover ── */
+.rs-mesh-bg--light .hover\:border-white\/8:hover { border-color: rgba(0,0,0,0.09) !important; }
 
 /* ── erp-input inside the light modal ── */
 .rs-mesh-bg--light .erp-input {
