@@ -1271,30 +1271,37 @@ router.post("/repair-jobs/:id/qa-checklist", wrap(async (req, res) => {
   const b = req.body as Record<string, unknown>;
 
   const items = Array.isArray(b.items) ? b.items : [];
-  if (items.length === 0) {
+  /* حين لا يوجد فحص أولي مسجّل عند الاستلام (checklist = null)، تُرسل بنود فارغة
+     مع علم no_intake_checklist=true — نقبلها ونضبط qa_completed_at لإتمام المرحلة */
+  const noIntakeChecklist = b.no_intake_checklist === true;
+
+  if (items.length === 0 && !noIntakeChecklist) {
     return res.status(400).json({ error: "يجب إدخال بنود فحص QC" });
   }
-  /* كل بند يجب أن يحوي status (pass/fail/n/a) */
-  const allDecided = items.every((i: unknown) => {
-    const it = i as { status?: unknown };
-    return it.status === "pass" || it.status === "fail" || it.status === "n/a";
-  });
-  if (!allDecided) {
-    return res.status(400).json({ error: "يجب اتخاذ قرار (نجح/فشل/لا ينطبق) لكل بند فحص" });
-  }
 
-  /* SEC-GATE-003: قبول QC على مستوى الخادم يعني "اجتياز الفحص"؛ لذلك لا نسمح
-     بضبط qa_completed_at إن وُجد أي بند فاشل. الواجهة تمنع ذلك ولكن نُحصّن
-     الخادم ضد طلبات API مباشرة قد تتجاوز التحقق العميل. الفنّي عند فشل أي بند
-     يجب أن يستخدم مسار "رفض QC" (PATCH qa_notes) بدلاً من القبول. */
-  const failedCount = items.filter((i: unknown) => {
-    const it = i as { status?: unknown };
-    return it.status === "fail";
-  }).length;
-  if (failedCount > 0) {
-    return res.status(400).json({
-      error: `لا يمكن قبول الفحص ووجود ${failedCount} بند فاشل — استخدم "رفض الفحص" لإعادة البطاقة للإصلاح مع كتابة السبب`,
+  if (items.length > 0) {
+    /* كل بند يجب أن يحوي status (pass/fail/n/a) */
+    const allDecided = items.every((i: unknown) => {
+      const it = i as { status?: unknown };
+      return it.status === "pass" || it.status === "fail" || it.status === "n/a";
     });
+    if (!allDecided) {
+      return res.status(400).json({ error: "يجب اتخاذ قرار (نجح/فشل/لا ينطبق) لكل بند فحص" });
+    }
+
+    /* SEC-GATE-003: قبول QC على مستوى الخادم يعني "اجتياز الفحص"؛ لذلك لا نسمح
+       بضبط qa_completed_at إن وُجد أي بند فاشل. الواجهة تمنع ذلك ولكن نُحصّن
+       الخادم ضد طلبات API مباشرة قد تتجاوز التحقق العميل. الفنّي عند فشل أي بند
+       يجب أن يستخدم مسار "رفض QC" (PATCH qa_notes) بدلاً من القبول. */
+    const failedCount = items.filter((i: unknown) => {
+      const it = i as { status?: unknown };
+      return it.status === "fail";
+    }).length;
+    if (failedCount > 0) {
+      return res.status(400).json({
+        error: `لا يمكن قبول الفحص ووجود ${failedCount} بند فاشل — استخدم "رفض الفحص" لإعادة البطاقة للإصلاح مع كتابة السبب`,
+      });
+    }
   }
 
   const [job] = await db.select().from(repairJobsTable)

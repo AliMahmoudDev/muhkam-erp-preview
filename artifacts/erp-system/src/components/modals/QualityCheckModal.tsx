@@ -182,38 +182,44 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
   }
 
   /** حفظ نتيجة الفحص — يحفظ qa_checklist + qa_completed_at فقط (بدون نقل تلقائي).
-      النقل لـ "جاهز للتسليم" يدوي من شريط مسار الإصلاح بعد فتح بوّابة المراجعة النهائية. */
+      النقل لـ "جاهز للتسليم" يدوي من شريط مسار الإصلاح بعد فتح بوّابة المراجعة النهائية.
+      حين لا توجد بنود استلام (items.length === 0) نُرسل علم no_intake_checklist=true. */
   async function handleApprove() {
-    if (items.length === 0) {
-      setErrors(["لا توجد بنود فحص — يجب أن يكون هناك فحص أولي مسجَّل عند الاستلام"]);
-      return;
+    const noIntakeChecklist = items.length === 0;
+
+    if (!noIntakeChecklist) {
+      if (!allDecided) {
+        setErrors([`يجب اتخاذ قرار لكل بند — متبقي ${pendingCount} بند`]);
+        return;
+      }
+      if (failCount > 0) {
+        setErrors([`لا يمكن قبول الفحص ووجود ${failCount} بند مرفوض — استخدم زر "رفض الفحص" لإعادة البطاقة للإصلاح`]);
+        return;
+      }
     }
-    if (!allDecided) {
-      setErrors([`يجب اتخاذ قرار لكل بند — متبقي ${pendingCount} بند`]);
-      return;
-    }
-    if (failCount > 0) {
-      setErrors([`لا يمكن قبول الفحص ووجود ${failCount} بند مرفوض — استخدم زر "رفض الفحص" لإعادة البطاقة للإصلاح`]);
-      return;
-    }
+
     setLoading(true);
     setErrors([]);
     try {
+      const body = noIntakeChecklist
+        ? { items: [], no_intake_checklist: true, notes: "", device_score: score.trim() === "" ? null : Number(score) }
+        : {
+            items: items.map(i => ({
+              id:       i.id,
+              label:    i.label,
+              label_ar: i.label,
+              category: i.category,
+              status:   i.status,
+              notes:    i.notes ?? "",
+            })),
+            notes: "",
+            device_score: score.trim() === "" ? null : Number(score),
+          };
+
       const res = await authFetch(api(`/api/repair-jobs/${job.id}/qa-checklist`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map(i => ({
-            id:       i.id,
-            label:    i.label,
-            label_ar: i.label,
-            category: i.category,
-            status:   i.status,
-            notes:    i.notes ?? "",
-          })),
-          notes: "",
-          device_score: score.trim() === "" ? null : Number(score),
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({})) as { error?: string };
       if (!res.ok) {
@@ -223,7 +229,9 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
       }
       toast({
         title: "✓ تم حفظ نتيجة الفحص",
-        description: `${passCount} بند ناجح · ${naCount} لا ينطبق — يمكنك الآن النقل يدوياً إلى "جاهز للتسليم"`,
+        description: noIntakeChecklist
+          ? "تم تأكيد اجتياز الفحص — لا يوجد فحص أولي مرجعي"
+          : `${passCount} بند ناجح · ${naCount} لا ينطبق — يمكنك الآن النقل يدوياً إلى "جاهز للتسليم"`,
       });
       onSaved("approve");
     } catch {
@@ -334,10 +342,10 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
         {/* ── Two-column layout: intake (right) ↔ QC decisions (left) ── */}
         {items.length === 0 ? (
           <div className="px-5 py-10 text-center">
-            <AlertTriangle className="w-10 h-10 text-amber-400/60 mx-auto mb-2" />
-            <p className="text-sm text-white/70 font-bold mb-1">لا توجد بنود فحص أولي</p>
-            <p className="text-[11px] text-white/40">
-              لم يُسجَّل فحص عند الاستلام — لا يمكن إجراء مراقبة جودة بدون مرجع.
+            <AlertTriangle className="w-10 h-10 text-amber-400/60 mx-auto mb-3" />
+            <p className="text-sm text-white/80 font-bold mb-1">لا توجد بنود فحص أولي مسجّلة</p>
+            <p className="text-[11px] text-white/45">
+              لم يُسجَّل فحص عند الاستلام — يمكنك تأكيد اجتياز مراقبة الجودة يدوياً باستخدام الزر أدناه.
             </p>
           </div>
         ) : (
@@ -553,18 +561,20 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
             <>
               <button
                 onClick={handleApprove}
-                disabled={loading || !allDecided || failCount > 0 || items.length === 0}
+                disabled={loading || (items.length > 0 && (!allDecided || failCount > 0))}
                 className="flex-1 min-w-[220px] py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
                 style={{ background: "rgba(16,185,129,0.85)", border: "1px solid rgba(52,211,153,0.5)" }}
               >
                 {loading
                   ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</>
-                  : <><Save className="w-3.5 h-3.5" /> حفظ نتيجة الفحص</>}
+                  : items.length === 0
+                    ? <><ShieldCheck className="w-3.5 h-3.5" /> تأكيد اجتياز الفحص</>
+                    : <><Save className="w-3.5 h-3.5" /> حفظ نتيجة الفحص</>}
               </button>
               <button
                 onClick={() => { setRejectMode(true); setErrors([]); }}
                 disabled={loading || items.length === 0}
-                className="px-4 py-2.5 rounded-xl text-red-300 hover:text-white text-xs font-bold transition-all border border-red-500/30 hover:bg-red-500/15 flex items-center gap-1.5"
+                className="px-4 py-2.5 rounded-xl text-red-300 hover:text-white text-xs font-bold transition-all border border-red-500/30 hover:bg-red-500/15 flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ThumbsDown className="w-3.5 h-3.5" />
                 رفض الفحص (يعود للإصلاح)
