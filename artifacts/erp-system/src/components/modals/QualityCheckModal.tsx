@@ -234,7 +234,6 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
     /* ← لا يوجد فحص أولي → بنود افتراضية فورية */
     const deviceType = (job.device_type ?? "").trim() || "general";
     return buildFromSource(getDefaultItems(deviceType), savedById);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intakeItems, job.qa_checklist, job.device_type]);
 
   /* isFallback = true عندما لا يوجد فحص أولي (نستخدم القالب أو الافتراضي) */
@@ -243,7 +242,7 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
   const [loading, setLoading]     = useState(false);
   const [errors, setErrors]       = useState<string[]>([]);
   const [templateLoading, setTemplateLoading] = useState(false);
-  const [isFallback, setIsFallback] = useState(() => intakeItems.length === 0);
+  const [isFallback, _setIsFallback] = useState(() => intakeItems.length === 0);
 
   /* ── محاولة تحميل بنود أفضل من DB (إن وجدت) بعد الـ render ── */
   useEffect(() => {
@@ -272,7 +271,6 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
       })
       .catch(() => { /* إذا فشل الجلب — نبقى على البنود الافتراضية المحددة في initial */ })
       .finally(() => setTemplateLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* وضع الرفض — يطلب سبباً إجمالياً إلزامياً */

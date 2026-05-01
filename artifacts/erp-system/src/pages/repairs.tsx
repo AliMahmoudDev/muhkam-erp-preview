@@ -7,8 +7,7 @@ import {
   Star, Settings, MessageSquare, ChevronRight, RotateCcw,
   LayoutGrid, List, Package, GitBranch, History, Printer,
   ShieldCheck, Hammer, Cog, AlertTriangle, Box, Cpu, Zap,
-  ChevronDown, Bell, Banknote, CreditCard, Wallet, TrendingUp,
-  Users, BarChart3, DollarSign,
+  ChevronDown, Bell,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +15,6 @@ import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency } from "@/lib/format";
 import { api } from '@/lib/api';
 import RepairPipeline from "@/components/RepairPipeline";
-import RepairParts from "@/components/RepairParts";
 import RepairSettingsModal from "@/components/RepairSettingsModal";
 import { deriveDeviceType } from "@/lib/repairConstants";
 
@@ -1703,16 +1701,16 @@ function JobDetail({
   const [reportOpen, setReportOpen]       = useState(true);
   const [historyOpen, setHistoryOpen]     = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
-  const [financeOpen, setFinanceOpen]     = useState(true);
+  const [_financeOpen, _setFinanceOpen]   = useState(true);
   const [newReportText, setNewReportText] = useState("");
   const [addingReport, setAddingReport]   = useState(false);
 
   /* ── Payments ─────────────────────────────────────────────── */
-  const [showAddPayment, setShowAddPayment] = useState(false);
-  const [payAmount, setPayAmount]   = useState("");
-  const [payMethod, setPayMethod]   = useState("cash");
-  const [payNotes, setPayNotes]     = useState("");
-  const [paySafeId, setPaySafeId]   = useState("");
+  const [_showAddPayment, setShowAddPayment] = useState(false);
+  const [payAmount, setPayAmount]    = useState("");
+  const [payMethod, _setPayMethod]   = useState("cash");
+  const [payNotes, setPayNotes]      = useState("");
+  const [paySafeId, _setPaySafeId]   = useState("");
 
   const paymentsQ = useQuery<RepairPayment[]>({
     queryKey: [`/api/repair-jobs/${job.id}/payments`],
@@ -1721,15 +1719,15 @@ function JobDetail({
   const payments = Array.isArray(paymentsQ.data) ? paymentsQ.data : [];
   const totalPaid = payments.reduce((s, p) => s + Number(p.amount), 0);
   const finalCostNum = Number(editFinal || editEst || 0);
-  const remaining = Math.max(0, finalCostNum - totalPaid);
+  const _remaining = Math.max(0, finalCostNum - totalPaid);
 
   const safesQ = useQuery<{id:number;name:string;balance:string}[]>({
     queryKey: ["/api/settings/safes"],
     queryFn:  () => authFetch(api("/api/settings/safes")).then(r => r.json()),
   });
-  const safesList = Array.isArray(safesQ.data) ? safesQ.data : [];
+  const _safesList = Array.isArray(safesQ.data) ? safesQ.data : [];
 
-  const addPayment = useMutation({
+  const _addPayment = useMutation({
     mutationFn: () => authFetch(api(`/api/repair-jobs/${job.id}/payments`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1744,7 +1742,7 @@ function JobDetail({
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
 
-  const deletePayment = useMutation({
+  const _deletePayment = useMutation({
     mutationFn: (pid: number) => authFetch(api(`/api/repair-jobs/${job.id}/payments/${pid}`), { method: "DELETE" }).then(r => r.json()),
     onSuccess: () => {
       toast({ title: "✓ تم حذف الدفعة" });
