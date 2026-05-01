@@ -715,12 +715,6 @@ export default function Repairs() {
     select: (d) => (Array.isArray(d) ? d : []),
   });
 
-  const { data: customDeviceModels = [] } = useQuery<{ id: number; brand: string; category: string; model: string }[]>({
-    queryKey: ["/api/repair-device-models"],
-    queryFn: () => apiFetch<{ id: number; brand: string; category: string; model: string }[]>(api("/api/repair-device-models")),
-    select: (d) => (Array.isArray(d) ? d : []),
-  });
-
   /* ── إحصاء أداء الفنيين — يُعرض في لوحة جانبية قابلة للطيّ ── */
   interface TechnicianStat {
     technician_id: number;
@@ -2355,6 +2349,11 @@ function NewJobForm({
   const [model, setModel]       = useState("");
   const [customModel, setCustomModel] = useState("");
   const [imei, setImei]         = useState("");
+
+  /* ── Quick-add model state ── */
+  const [showQuickAdd, setShowQuickAdd]     = useState(false);
+  const [quickAddValue, setQuickAddValue]   = useState("");
+  const [savingQuickAdd, setSavingQuickAdd] = useState(false);
   const [devicePin, setDevicePin] = useState("");
   const [problem, setProblem]   = useState("");
   const [techId, setTechId]     = useState("");
@@ -2376,6 +2375,36 @@ function NewJobForm({
     () => deriveDeviceType(brand, category),
     [brand, category],
   );
+
+  /* ── Custom device models (company-specific additions) ── */
+  const qc = useQueryClient();
+  const { data: customDeviceModels = [] } = useQuery<{ id: number; brand: string; category: string; model: string }[]>({
+    queryKey: ["/api/repair-device-models"],
+    queryFn: () => authFetch(api("/api/repair-device-models")).then(r => r.json()),
+    select: (d) => (Array.isArray(d) ? d : []),
+  });
+
+  const handleQuickAddModel = async () => {
+    if (!quickAddValue.trim() || !brand || !category) return;
+    setSavingQuickAdd(true);
+    try {
+      const r = await authFetch(api("/api/repair-device-models"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brand, category, model: quickAddValue.trim() }),
+      });
+      if (!r.ok) throw new Error("فشل الحفظ");
+      await qc.invalidateQueries({ queryKey: ["/api/repair-device-models"] });
+      setModel(quickAddValue.trim());
+      setQuickAddValue("");
+      setShowQuickAdd(false);
+      toast({ title: "تم حفظ الموديل وتحديد الاختيار" });
+    } catch {
+      toast({ title: "تعذّر حفظ الموديل", variant: "destructive" });
+    } finally {
+      setSavingQuickAdd(false);
+    }
+  };
 
   /* Load the configured checklist template for this device type. */
   const { data: intakeTemplate = [] } = useQuery<{ id: number; label_ar: string; sort_order: number; category: string }[]>({
@@ -2657,14 +2686,52 @@ function NewJobForm({
           {brand && !isOtherBrand && category && !isOtherCat && models.length > 0 && (
             <div>
               <label className="text-[10px] text-white/40 mb-1 block">الموديل *</label>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                className="erp-input w-full text-sm"
-              >
-                <option value="">— اختر الموديل —</option>
-                {models.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
+              {showQuickAdd ? (
+                <div className="flex gap-1.5">
+                  <input
+                    autoFocus
+                    value={quickAddValue}
+                    onChange={(e) => setQuickAddValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleQuickAddModel(); if (e.key === "Escape") setShowQuickAdd(false); }}
+                    placeholder="مثال: iPhone 17 Pro Max"
+                    className="erp-input flex-1 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleQuickAddModel}
+                    disabled={savingQuickAdd || !quickAddValue.trim()}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500/80 hover:bg-amber-500 text-black text-xs font-medium disabled:opacity-40 transition-colors"
+                  >
+                    {savingQuickAdd ? "…" : "حفظ"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowQuickAdd(false); setQuickAddValue(""); }}
+                    className="px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 text-xs transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-1.5">
+                  <select
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    className="erp-input flex-1 text-sm"
+                  >
+                    <option value="">— اختر الموديل —</option>
+                    {models.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    title="إضافة موديل جديد"
+                    onClick={() => { setShowQuickAdd(true); setQuickAddValue(""); }}
+                    className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-amber-500/15 hover:border-amber-500/40 text-white/50 hover:text-amber-300 text-sm transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
