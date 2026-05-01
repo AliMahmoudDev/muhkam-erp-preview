@@ -16,16 +16,17 @@
  *   POST  /api/repair-jobs/:id/qa-checklist  → يحفظ qa_checklist + qa_completed_at
  *   PATCH /api/repair-jobs/:id               → يحفظ qa_notes (للرفض فقط)
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ShieldCheck, Loader2, X, AlertTriangle,
   Check, Minus, XCircle, ThumbsDown, Save,
-  ClipboardCheck, ClipboardList, MessageSquare,
+  ClipboardCheck, ClipboardList, MessageSquare, Package,
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { deriveDeviceType } from "@/lib/repairConstants";
 
 type QcStatus = "pass" | "fail" | "n/a";
 type Outcome  = "approve" | "reject";
@@ -55,6 +56,7 @@ interface JobLite {
   job_no: string;
   device_brand?: string | null;
   device_model?: string | null;
+  device_category?: string | null;
   checklist?: unknown;
   qa_checklist?: unknown;
   qa_notes?: string | null;
@@ -154,6 +156,56 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors]   = useState<string[]>([]);
 
+  /* ── جلب بنود القالب عند غياب بنود الفحص الأولي ── */
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [isFallback, setIsFallback]           = useState(false);
+
+  useEffect(() => {
+    if (intakeItems.length > 0) return; // يوجد فحص أولي — لا داعي للقالب
+
+    const deviceType = deriveDeviceType(
+      job.device_brand ?? "",
+      job.device_category ?? "",
+    );
+
+    setTemplateLoading(true);
+    authFetch(api(`/api/repair-checklist-items?device_type=${deviceType}`))
+      .then(res => res.json())
+      .then((data: Array<{ id?: number; label_ar?: string; label?: string; category?: string }>) => {
+        if (!Array.isArray(data) || data.length === 0) return;
+
+        /* بناء بنود الفحص من القالب */
+        const savedRaw = parseSavedQc(job.qa_checklist);
+        const savedById = new Map<string, { status?: string; notes?: string }>();
+        savedRaw.forEach((s, i) => {
+          const k = String(s.id ?? s.label ?? `item-${i}`);
+          savedById.set(k, { status: s.status, notes: s.notes });
+        });
+
+        const fallbackItems: QcItem[] = data.map((item, i) => {
+          const id    = String(item.id ?? `tpl-${i}`);
+          const label = String(item.label_ar ?? item.label ?? `بند ${i + 1}`);
+          const saved = savedById.get(id) ?? savedById.get(label);
+          const st    = saved?.status;
+          return {
+            id,
+            label,
+            category:      item.category,
+            intake_status: null,
+            intake_notes:  null,
+            status:        (st === "pass" || st === "fail" || st === "n/a") ? st : null,
+            notes:         typeof saved?.notes === "string" ? saved.notes : "",
+          };
+        });
+
+        setItems(fallbackItems);
+        setIsFallback(true);
+      })
+      .catch(() => { /* إذا فشل الجلب — الواجهة تبقى بالحالة الفارغة */ })
+      .finally(() => setTemplateLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* وضع الرفض — يطلب سبباً إجمالياً إلزامياً */
   const [rejectMode, setRejectMode]       = useState(false);
   const [rejectReason, setRejectReason]   = useState<string>("");
@@ -183,9 +235,9 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
 
   /** حفظ نتيجة الفحص — يحفظ qa_checklist + qa_completed_at فقط (بدون نقل تلقائي).
       النقل لـ "جاهز للتسليم" يدوي من شريط مسار الإصلاح بعد فتح بوّابة المراجعة النهائية.
-      حين لا توجد بنود استلام (items.length === 0) نُرسل علم no_intake_checklist=true. */
+      حين لا توجد بنود استلام ولا قالب (items.length === 0) نُرسل علم no_intake_checklist=true. */
   async function handleApprove() {
-    const noIntakeChecklist = items.length === 0;
+    const noIntakeChecklist = items.length === 0 && !templateLoading;
 
     if (!noIntakeChecklist) {
       if (!allDecided) {
@@ -231,7 +283,9 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
         title: "✓ تم حفظ نتيجة الفحص",
         description: noIntakeChecklist
           ? "تم تأكيد اجتياز الفحص — لا يوجد فحص أولي مرجعي"
-          : `${passCount} بند ناجح · ${naCount} لا ينطبق — يمكنك الآن النقل يدوياً إلى "جاهز للتسليم"`,
+          : isFallback
+            ? `${passCount} بند ناجح · ${naCount} لا ينطبق (بنود من قالب الجهاز) — يمكنك النقل إلى "جاهز للتسليم"`
+            : `${passCount} بند ناجح · ${naCount} لا ينطبق — يمكنك الآن النقل يدوياً إلى "جاهز للتسليم"`,
       });
       onSaved("approve");
     } catch {
@@ -340,23 +394,36 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
         </div>
 
         {/* ── Two-column layout: intake (right) ↔ QC decisions (left) ── */}
-        {items.length === 0 ? (
+        {templateLoading ? (
+          <div className="px-5 py-10 text-center">
+            <Loader2 className="w-8 h-8 text-purple-400/60 mx-auto mb-3 animate-spin" />
+            <p className="text-sm text-white/60">جارٍ تحميل بنود القالب للجهاز...</p>
+          </div>
+        ) : items.length === 0 ? (
           <div className="px-5 py-10 text-center">
             <AlertTriangle className="w-10 h-10 text-amber-400/60 mx-auto mb-3" />
             <p className="text-sm text-white/80 font-bold mb-1">لا توجد بنود فحص أولي مسجّلة</p>
             <p className="text-[11px] text-white/45">
-              لم يُسجَّل فحص عند الاستلام — يمكنك تأكيد اجتياز مراقبة الجودة يدوياً باستخدام الزر أدناه.
+              لم يُسجَّل فحص عند الاستلام ولا يوجد قالب للجهاز — يمكنك تأكيد اجتياز مراقبة الجودة يدوياً باستخدام الزر أدناه.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 max-h-[58vh] overflow-y-auto" dir="rtl">
-            {/* ═══ العمود الأيمن: بنود الاستلام (للقراءة فقط) ═══ */}
+            {/* ═══ العمود الأيمن: بنود الاستلام أو القالب (للقراءة فقط) ═══ */}
             <div className="border-l border-white/5 bg-indigo-500/[0.03]">
               <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-white/5 bg-indigo-500/10 backdrop-blur">
                 <div className="flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-indigo-300" />
-                  <p className="text-[12px] font-black text-indigo-200">بنود الاستلام (مرجع)</p>
-                  <span className="text-[10px] text-indigo-200/60">— حالة الجهاز عند الاستلام</span>
+                  {isFallback ? (
+                    <Package className="w-4 h-4 text-violet-300" />
+                  ) : (
+                    <ClipboardList className="w-4 h-4 text-indigo-300" />
+                  )}
+                  <p className={`text-[12px] font-black ${isFallback ? "text-violet-200" : "text-indigo-200"}`}>
+                    {isFallback ? "بنود القالب (مرجع)" : "بنود الاستلام (مرجع)"}
+                  </p>
+                  <span className={`text-[10px] ${isFallback ? "text-violet-200/60" : "text-indigo-200/60"}`}>
+                    {isFallback ? "— لا يوجد فحص أولي، تم استخدام قالب الجهاز" : "— حالة الجهاز عند الاستلام"}
+                  </span>
                 </div>
               </div>
               <div className="p-3 space-y-1.5">

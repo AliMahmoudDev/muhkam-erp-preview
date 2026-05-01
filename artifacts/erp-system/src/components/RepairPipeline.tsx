@@ -294,6 +294,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
     job_no:                 String(jobData.job_no ?? ""),
     device_brand:           jobData.device_brand as string | null | undefined,
     device_model:           jobData.device_model as string | null | undefined,
+    device_category:        jobData.device_category as string | null | undefined,
     checklist:              jobData.checklist,
     qa_checklist:           jobData.qa_checklist,
     qa_notes:               jobData.qa_notes as string | null | undefined,
