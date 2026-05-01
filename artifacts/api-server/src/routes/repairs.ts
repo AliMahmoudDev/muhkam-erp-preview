@@ -1493,7 +1493,7 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
     }
 
     /* ─ 3. تحديث البطاقة ─ */
-    const partsTotal = partsInput.reduce((s, p) => s + p.quantity * p.unit_price, 0);
+    const _partsTotal = partsInput.reduce((s, p) => s + p.quantity * p.unit_price, 0);
     const updates: Record<string, unknown> = {
       pre_delivery_reviewed_at: now,
       updated_at: now,
