@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
+import { useLocation, useSearch } from 'wouter';
 import {
   Users,
   BookOpen,
@@ -109,7 +110,15 @@ function SystemInfoCard() {
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('users');
+  const searchStr = useSearch();
+  const [, navigate] = useLocation();
+  const urlTab = new URLSearchParams(searchStr).get('tab') as Tab | null;
+  const [activeTab, setActiveTab] = useState<Tab>(urlTab ?? 'users');
+
+  const changeTab = (t: Tab) => {
+    setActiveTab(t);
+    navigate(`?tab=${t}`, { replace: true });
+  };
 
   const allTabs = TAB_SECTIONS.flatMap((s) => s.tabs);
   const activeLabel = allTabs.find((t) => t.id === activeTab)?.label ?? '';
@@ -140,7 +149,7 @@ export default function SettingsPage() {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => changeTab(tab.id)}
                       className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-right ${
                         active
                           ? 'bg-amber-500/15 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
@@ -176,7 +185,7 @@ export default function SettingsPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => changeTab(tab.id)}
               className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all shrink-0 ${
                 active ? 'text-amber-400' : 'text-white/30 hover:text-white/60'
               }`}

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { safeArray } from "@/lib/safe-data";
 import { useCreatePurchase, useGetProducts, useGetCustomers, useCreateProduct, useGetSettingsSafes, useGetSettingsWarehouses, useGetCategories } from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/format";
@@ -1027,19 +1027,27 @@ function PurchaseReturnsPanel() {
 
 /* ─── الصفحة الرئيسية ─── */
 export default function Purchases() {
-  const [tab, setTab] = useState<"new" | "history" | "returns">("new");
+  const searchStr = useSearch();
+  const [, navigate] = useLocation();
+  const urlTab = new URLSearchParams(searchStr).get('tab') as "new" | "history" | "returns" | null;
+  const [tab, setTab] = useState<"new" | "history" | "returns">(urlTab ?? "new");
+
+  const changeTab = (t: "new" | "history" | "returns") => {
+    setTab(t);
+    navigate(`?tab=${t}`, { replace: true });
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex gap-2 items-center">
         <div className="flex bg-white/5 rounded-2xl p-1 border border-white/10">
-          <button onClick={() => setTab("new")} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${tab === "new" ? "bg-amber-500 text-black shadow" : "text-white/50 hover:text-white"}`}>
+          <button onClick={() => changeTab("new")} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${tab === "new" ? "bg-amber-500 text-black shadow" : "text-white/50 hover:text-white"}`}>
             فاتورة شراء
           </button>
-          <button onClick={() => setTab("history")} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${tab === "history" ? "bg-amber-500 text-black shadow" : "text-white/50 hover:text-white"}`}>
+          <button onClick={() => changeTab("history")} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${tab === "history" ? "bg-amber-500 text-black shadow" : "text-white/50 hover:text-white"}`}>
             <ClipboardList className="w-3.5 h-3.5" /> سجل الفواتير
           </button>
-          <button onClick={() => setTab("returns")} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${tab === "returns" ? "bg-amber-500 text-black shadow" : "text-white/50 hover:text-white"}`}>
+          <button onClick={() => changeTab("returns")} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${tab === "returns" ? "bg-amber-500 text-black shadow" : "text-white/50 hover:text-white"}`}>
             <RotateCcw className="w-3.5 h-3.5" /> المرتجعات
           </button>
         </div>

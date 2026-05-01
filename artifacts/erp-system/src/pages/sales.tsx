@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 import { safeArray } from '@/lib/safe-data';
 import { authFetch } from '@/lib/auth-fetch';
 import {
@@ -3138,8 +3138,17 @@ export default function Sales() {
   const canCreateSale = hasPermission(currentUser, 'can_create_sale') === true;
   const canReturnSale = hasPermission(currentUser, 'can_return_sale') === true;
 
-  const [tab, setTab] = useState<'new' | 'history' | 'returns'>(canCreateSale ? 'new' : 'history');
+  const searchStr = useSearch();
+  const [, navigate] = useLocation();
+  const urlTab = new URLSearchParams(searchStr).get('tab') as 'new' | 'history' | 'returns' | null;
+  const defaultTab = canCreateSale ? 'new' : 'history';
+  const [tab, setTab] = useState<'new' | 'history' | 'returns'>(urlTab ?? defaultTab);
   const [selectedSaleId, setSelectedSaleId] = useState<number | null>(null);
+
+  const changeTab = (t: 'new' | 'history' | 'returns') => {
+    setTab(t);
+    navigate(`?tab=${t}`, { replace: true });
+  };
 
   const effectiveTab =
     tab === 'new' && !canCreateSale
@@ -3154,21 +3163,21 @@ export default function Sales() {
         <div className="flex bg-white/5 rounded-2xl p-1 border border-white/10">
           {canCreateSale && (
             <button
-              onClick={() => setTab('new')}
+              onClick={() => changeTab('new')}
               className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${effectiveTab === 'new' ? 'bg-amber-500 text-black shadow' : 'text-white/50 hover:text-white'}`}
             >
               ➕ فاتورة بيع جديدة
             </button>
           )}
           <button
-            onClick={() => setTab('history')}
+            onClick={() => changeTab('history')}
             className={`px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${effectiveTab === 'history' ? 'bg-amber-500 text-black shadow' : 'text-white/50 hover:text-white'}`}
           >
             <ClipboardList className="w-3.5 h-3.5" /> سجل الفواتير
           </button>
           {canReturnSale && (
             <button
-              onClick={() => setTab('returns')}
+              onClick={() => changeTab('returns')}
               className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${effectiveTab === 'returns' ? 'bg-orange-500 text-white shadow' : 'text-white/50 hover:text-white'}`}
             >
               ↩ المرتجعات

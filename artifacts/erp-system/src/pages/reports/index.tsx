@@ -3,6 +3,7 @@
  * Financial health, P&L, cash flow, balance sheet, product profitability, sales analysis
  */
 import { useState } from "react";
+import { useLocation, useSearch } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, AlertTriangle } from "lucide-react";
@@ -128,8 +129,16 @@ const TABS: { id: Tab; label: string }[] = [
 export default function Reports() {
   const { user } = useAuth();
   const canView  = hasPermission(user, "can_view_reports") === true;
-  const [tab, setTab] = useState<Tab>("health");
+  const searchStr = useSearch();
+  const [, navigate] = useLocation();
+  const urlTab = new URLSearchParams(searchStr).get('tab') as Tab | null;
+  const [tab, setTab] = useState<Tab>(urlTab ?? "health");
   const [warehouseId, setWarehouseId] = useState<number | null>(null);
+
+  const changeTab = (t: Tab) => {
+    setTab(t);
+    navigate(`?tab=${t}`, { replace: true });
+  };
 
   if (!canView) return (
     <div className="flex flex-col items-center justify-center py-20 text-center" style={{ fontFamily:"'Tajawal','Cairo',sans-serif" }}>
@@ -146,7 +155,7 @@ export default function Reports() {
       {/* ── Tab bar + warehouse filter ── */}
       <div className="no-print flex flex-wrap gap-1.5 bg-white/5 rounded-2xl p-1.5 border border-white/10 items-center">
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+          <button key={t.id} onClick={() => changeTab(t.id)}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
               tab === t.id
                 ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"

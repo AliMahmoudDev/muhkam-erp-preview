@@ -1,5 +1,6 @@
 import { safeArray } from '@/lib/safe-data';
 import { useState, useRef, useMemo } from 'react';
+import { useLocation, useSearch } from 'wouter';
 import { authFetch } from '@/lib/auth-fetch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDeleteExpense, useGetSettingsSafes } from '@workspace/api-client-react';
@@ -220,7 +221,15 @@ export default function Expenses() {
   const deleteMutation = useDeleteExpense();
 
   /* ─── States ─── */
-  const [activeTab, setActiveTab] = useState<'expenses' | 'debts'>('expenses');
+  const searchStr = useSearch();
+  const [, navigate] = useLocation();
+  const urlTabExpenses = new URLSearchParams(searchStr).get('tab') as 'expenses' | 'debts' | null;
+  const [activeTab, setActiveTab] = useState<'expenses' | 'debts'>(urlTabExpenses ?? 'expenses');
+
+  const changeTab = (t: 'expenses' | 'debts') => {
+    setActiveTab(t);
+    navigate(`?tab=${t}`, { replace: true });
+  };
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('');
@@ -419,7 +428,7 @@ export default function Expenses() {
 
       {/* ─── Tabs ─── */}
       <div className="flex items-center gap-1.5 border-b border-white/8 -mt-1">
-        <button onClick={() => setActiveTab('expenses')}
+        <button onClick={() => changeTab('expenses')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
             activeTab === 'expenses'
               ? 'border-violet-400 text-white'
@@ -427,7 +436,7 @@ export default function Expenses() {
           }`}>
           <TrendingDown className="w-4 h-4" /> المصروفات
         </button>
-        <button onClick={() => setActiveTab('debts')}
+        <button onClick={() => changeTab('debts')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
             activeTab === 'debts'
               ? 'border-violet-400 text-white'
