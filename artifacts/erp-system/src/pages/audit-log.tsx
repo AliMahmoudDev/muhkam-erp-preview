@@ -72,6 +72,20 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   repair_status_change:  { label: "تغيير حالة الصيانة",  color: "text-cyan-400"    },
   repair_assign:         { label: "تكليف فني",            color: "text-sky-400"     },
   repair_complete:       { label: "إتمام الصيانة",        color: "text-emerald-400" },
+  /* إدارة الشركات (SaaS) — إضافية */
+  COMPANY_CREATED:              { label: "إنشاء شركة",           color: "text-emerald-400" },
+  COMPANY_UPDATED:              { label: "تحديث شركة",           color: "text-amber-400"   },
+  COMPANY_SUBSCRIPTION_UPDATED: { label: "تحديث اشتراك",         color: "text-blue-400"    },
+  MANAGER_UPDATED:              { label: "تحديث مدير",           color: "text-amber-400"   },
+  MANAGER_TOGGLED:              { label: "تغيير حالة مدير",      color: "text-orange-400"  },
+  MANAGER_DELETED:              { label: "حذف مدير",             color: "text-red-400"     },
+  PLAN_SETTINGS_UPDATED:        { label: "تحديث إعدادات الخطة", color: "text-yellow-400"  },
+  TELEGRAM_SETTINGS_UPDATED:    { label: "تحديث تليجرام",        color: "text-cyan-400"    },
+  BACKUP_CREATED:               { label: "نسخة احتياطية",        color: "text-emerald-400" },
+  TRIAL_MONITORING_WARNING:     { label: "تحذير فترة تجريبية",   color: "text-amber-400"   },
+  SAFE_TRANSFER_COMPLETED:      { label: "تحويل خزينة مكتمل",   color: "text-sky-400"     },
+  paid:                         { label: "صرف رواتب",            color: "text-emerald-400" },
+  transfer:                     { label: "تحويل",                color: "text-sky-400"     },
   /* وصول المدير العام */
   SUPER_ADMIN_ACCESS:    { label: "وصول مدير عام",        color: "text-indigo-400"  },
   SUPER_ADMIN_LIST_VIEW: { label: "عرض قائمة الشركات",    color: "text-indigo-400"  },
@@ -111,6 +125,10 @@ const RECORD_LABELS: Record<string, string> = {
   branch:           "فرع",
   device:           "جهاز",
   income:           "إيراد",
+  journal_entry:    "قيد يومية",
+  warehouse:        "مستودع",
+  stock_transfer:   "تحويل مخزون",
+  inventory_count:  "جرد مخزون",
 };
 
 const ALL_RECORD_TYPES = Object.keys(RECORD_LABELS);
