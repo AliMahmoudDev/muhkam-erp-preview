@@ -26,10 +26,26 @@ const router: IRouter = Router();
 
 router.get("/sales-returns", wrap(async (req, res) => {
   const companyId: number = req.user!.company_id!;
-  const items = await db.select().from(salesReturnsTable)
+  const items = await db
+    .select({
+      id: salesReturnsTable.id,
+      return_no: salesReturnsTable.return_no,
+      sale_id: salesReturnsTable.sale_id,
+      customer_id: salesReturnsTable.customer_id,
+      customer_name: salesReturnsTable.customer_name,
+      total_amount: salesReturnsTable.total_amount,
+      reason: salesReturnsTable.reason,
+      notes: salesReturnsTable.notes,
+      date: salesReturnsTable.date,
+      refund_type: salesReturnsTable.refund_type,
+      created_at: salesReturnsTable.created_at,
+      sale_no: salesTable.invoice_no,
+    })
+    .from(salesReturnsTable)
+    .leftJoin(salesTable, eq(salesReturnsTable.sale_id, salesTable.id))
     .where(eq(salesReturnsTable.company_id, companyId))
     .orderBy(desc(salesReturnsTable.created_at));
-  res.json(items.map(r => ({ ...r, total_amount: Number(r.total_amount), created_at: r.created_at.toISOString() })));
+  res.json(items.map(r => ({ ...r, total_amount: Number(r.total_amount), created_at: r.created_at?.toISOString() })));
 }));
 
 router.get("/sales-returns/:id", wrap(async (req, res) => {
@@ -586,10 +602,26 @@ router.delete("/sales-returns/:id", wrap(async (req, res) => {
 
 router.get("/purchase-returns", wrap(async (req, res) => {
   const companyId: number = req.user!.company_id!;
-  const items = await db.select().from(purchaseReturnsTable)
+  const items = await db
+    .select({
+      id: purchaseReturnsTable.id,
+      return_no: purchaseReturnsTable.return_no,
+      purchase_id: purchaseReturnsTable.purchase_id,
+      customer_id: purchaseReturnsTable.customer_id,
+      customer_name: purchaseReturnsTable.customer_name,
+      total_amount: purchaseReturnsTable.total_amount,
+      reason: purchaseReturnsTable.reason,
+      notes: purchaseReturnsTable.notes,
+      date: purchaseReturnsTable.date,
+      refund_type: purchaseReturnsTable.refund_type,
+      created_at: purchaseReturnsTable.created_at,
+      invoice_no: purchasesTable.invoice_no,
+    })
+    .from(purchaseReturnsTable)
+    .leftJoin(purchasesTable, eq(purchaseReturnsTable.purchase_id, purchasesTable.id))
     .where(eq(purchaseReturnsTable.company_id, companyId))
     .orderBy(desc(purchaseReturnsTable.created_at));
-  res.json(items.map(r => ({ ...r, total_amount: Number(r.total_amount), created_at: r.created_at.toISOString() })));
+  res.json(items.map(r => ({ ...r, total_amount: Number(r.total_amount), created_at: r.created_at?.toISOString() })));
 }));
 
 router.get("/purchase-returns/:id", wrap(async (req, res) => {
