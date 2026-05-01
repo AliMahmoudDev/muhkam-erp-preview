@@ -1349,53 +1349,143 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
     .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
   if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
 
-  const updates: Record<string, unknown> = {
-    pre_delivery_reviewed_at: new Date(),
-    updated_at: new Date(),
-  };
+  /* ── القطع المختارة من المخزن ── */
+  type PartInput = { product_id: number; product_name?: string; quantity: number; unit_price: number; warehouse_id?: number | null };
+  const partsInput: PartInput[] = Array.isArray(b.parts)
+    ? (b.parts as unknown[]).map((p) => {
+        const o = p as Record<string, unknown>;
+        return {
+          product_id:   Number(o.product_id),
+          product_name: String(o.product_name ?? ""),
+          quantity:     Math.max(1, Number(o.quantity) || 1),
+          unit_price:   Math.max(0, Number(o.unit_price) || 0),
+          warehouse_id: o.warehouse_id ? Number(o.warehouse_id) : null,
+        };
+      }).filter(p => p.product_id > 0)
+    : [];
 
-  /* ورشة خارجية */
-  if ("external_workshop" in b) {
-    updates.external_workshop = Boolean(b.external_workshop);
-    if (b.external_workshop) {
-      updates.external_workshop_name = String(b.external_workshop_name ?? "").trim() || null;
-      const cost = Number(b.external_workshop_cost ?? 0);
-      updates.external_workshop_cost = String(Number.isFinite(cost) && cost >= 0 ? cost : 0);
-    } else {
-      updates.external_workshop_name = null;
-      updates.external_workshop_cost = "0";
+  /* ── بيانات الدفع ── */
+  type PayInput = { type: "cash" | "credit"; safe_id?: number | null; amount: number };
+  const paymentInfo = b.payment as Record<string, unknown> | undefined;
+  const payRows: PayInput[] = Array.isArray(paymentInfo?.payments)
+    ? (paymentInfo!.payments as unknown[]).map((r) => {
+        const o = r as Record<string, unknown>;
+        return {
+          type:    String(o.type ?? "cash") as "cash" | "credit",
+          safe_id: o.safe_id ? Number(o.safe_id) : null,
+          amount:  Math.max(0, Number(o.amount) || 0),
+        };
+      }).filter(r => r.amount > 0)
+    : [];
+
+  const now = new Date();
+
+  const updated = await db.transaction(async (tx) => {
+    /* ─ 1. تسجيل القطع المختارة في repair_job_parts ─ */
+    for (const part of partsInput) {
+      await tx.insert(repairJobPartsTable).values({
+        job_id:       id,
+        company_id,
+        product_id:   part.product_id,
+        product_name: part.product_name,
+        quantity:     String(part.quantity),
+        unit_price:   String(part.unit_price),
+        source:       "internal",
+        warehouse_id: part.warehouse_id ?? null,
+        is_returned:  false,
+      });
+
+      /* خصم الكمية من المخزن */
+      if (part.warehouse_id) {
+        const [prod] = await tx.select({ id: productsTable.id, quantity: productsTable.quantity })
+          .from(productsTable)
+          .where(and(eq(productsTable.id, part.product_id), eq(productsTable.company_id, company_id)));
+        if (prod) {
+          const oldQty = Number(prod.quantity);
+          const newQty = Math.max(0, oldQty - part.quantity);
+          await tx.update(productsTable).set({ quantity: String(newQty) })
+            .where(and(eq(productsTable.id, part.product_id), eq(productsTable.company_id, company_id)));
+          await tx.insert(stockMovementsTable).values({
+            product_id:      part.product_id,
+            product_name:    part.product_name,
+            company_id,
+            quantity:        String(-part.quantity),
+            quantity_before: String(oldQty),
+            quantity_after:  String(newQty),
+            movement_type:   "repair_part",
+            unit_cost:       String(part.unit_price),
+            reference_id:    id,
+            reference_type:  "repair_job",
+            warehouse_id:    part.warehouse_id ?? null,
+            notes:           `قطعة مستخدمة في بطاقة صيانة #${job.job_no}`,
+            date:            now.toISOString().split("T")[0],
+          });
+        }
+      }
     }
-  }
 
-  /* وسيط/سمسار */
-  if ("broker_name" in b || "broker_commission" in b) {
-    const bName = String(b.broker_name ?? "").trim();
-    updates.broker_name = bName || null;
-    const bComm = Number(b.broker_commission ?? 0);
-    updates.broker_commission = String(Number.isFinite(bComm) && bComm >= 0 ? bComm : 0);
-  }
+    /* ─ 2. تسجيل سجلات الدفع ─ */
+    for (const row of payRows) {
+      await tx.insert(repairPaymentsTable).values({
+        job_id:         id,
+        company_id,
+        payment_method: row.type === "credit" ? "credit" : "cash",
+        amount:         String(row.amount),
+        safe_id:        row.safe_id ?? null,
+        notes:          "دفعة عند مراجعة التسليم",
+      });
 
-  const [updated] = await db.update(repairJobsTable).set(updates)
-    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
-    .returning();
+      /* خصم المبلغ من الخزنة لو دفع نقدي */
+      if (row.type === "cash" && row.safe_id) {
+        await tx.update(safesTable)
+          .set({ balance: sql`${safesTable.balance} + ${String(row.amount)}` })
+          .where(and(eq(safesTable.id, row.safe_id), eq(safesTable.company_id, company_id)));
+      }
+    }
 
-  /* عدد القطع التي ما زالت بدون قرار إرجاع */
-  const pendingParts = await db.select({ count: sql<number>`count(*)::int` })
-    .from(repairJobPartsTable)
-    .where(and(
-      eq(repairJobPartsTable.job_id, id),
-      eq(repairJobPartsTable.company_id, company_id),
-      eq(repairJobPartsTable.is_returned, false),
-      eq(repairJobPartsTable.source, "internal"),
-    ));
+    /* ─ 3. تحديث البطاقة ─ */
+    const partsTotal = partsInput.reduce((s, p) => s + p.quantity * p.unit_price, 0);
+    const updates: Record<string, unknown> = {
+      pre_delivery_reviewed_at: now,
+      updated_at: now,
+    };
 
-  await db.insert(repairStatusHistoryTable).values({
-    job_id: id,
-    company_id,
-    user_id,
-    user_name,
-    event_type: "pre_delivery_reviewed",
-    note: `مراجعة ما قبل التسليم — قطع داخلية لم تُرجَع: ${Number(pendingParts[0]?.count ?? 0)}`,
+    /* تحديث final_cost لو أُضيفت قطع جديدة */
+    if (partsTotal > 0) {
+      const existingCost = Number(job.final_cost ?? 0);
+      updates.final_cost = String(existingCost + partsTotal);
+    }
+
+    /* وسيط/سمسار */
+    if ("broker_name" in b || "broker_commission" in b) {
+      const bName = String(b.broker_name ?? "").trim();
+      updates.broker_name = bName || null;
+      const bComm = Number(b.broker_commission ?? 0);
+      updates.broker_commission = String(Number.isFinite(bComm) && bComm >= 0 ? bComm : 0);
+    }
+
+    const [updated] = await tx.update(repairJobsTable).set(updates)
+      .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
+      .returning();
+
+    /* ─ 4. سجل في التاريخ ─ */
+    const cashTotal   = payRows.filter(r => r.type === "cash").reduce((s, r) => s + r.amount, 0);
+    const creditTotal = payRows.filter(r => r.type === "credit").reduce((s, r) => s + r.amount, 0);
+    const payDesc = cashTotal > 0 && creditTotal > 0
+      ? `نقدي: ${cashTotal.toFixed(2)} + آجل: ${creditTotal.toFixed(2)}`
+      : cashTotal > 0 ? `نقدي: ${cashTotal.toFixed(2)}`
+      : creditTotal > 0 ? `آجل: ${creditTotal.toFixed(2)}`
+      : "لا يوجد دفع";
+    await tx.insert(repairStatusHistoryTable).values({
+      job_id: id,
+      company_id,
+      user_id,
+      user_name,
+      event_type: "pre_delivery_reviewed",
+      note: `مراجعة ما قبل التسليم — ${partsInput.length} قطعة · ${payDesc}`,
+    });
+
+    return updated;
   });
 
   return res.json(updated);
