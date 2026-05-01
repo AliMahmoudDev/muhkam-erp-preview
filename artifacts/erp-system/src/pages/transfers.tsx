@@ -3,6 +3,7 @@
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
@@ -10,7 +11,7 @@ import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import {
   ArrowRightLeft, Plus, X, Loader2, CheckCircle2,
-  Clock, Truck, Package, XCircle,
+  Clock, Truck, Package, XCircle, ChevronRight, Warehouse,
 } from 'lucide-react';
 
 // ─── أنواع ────────────────────────────────────────────────────────────────────
@@ -327,6 +328,7 @@ export default function Transfers() {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
   const canManage = hasPermission(user, 'can_view_inventory');
 
   const [showRequest, setShowRequest] = useState(false);
@@ -405,6 +407,23 @@ export default function Transfers() {
   return (
     <div className="min-h-screen bg-[#0a0f1a] text-white" dir="rtl">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+
+        {/* ── التنقل (مسار التصفح) ── */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/inventory')}
+            className="flex items-center gap-2 text-white/40 hover:text-violet-400 transition-colors group text-sm"
+          >
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            <Warehouse className="w-4 h-4" />
+            <span>العودة إلى المخزون</span>
+          </button>
+          <span className="text-white/15">|</span>
+          <div className="flex items-center gap-2 text-white/50">
+            <ArrowRightLeft className="w-4 h-4 text-violet-400" />
+            <span className="text-sm font-bold text-white">تحويل المخزون بين الفروع</span>
+          </div>
+        </div>
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between flex-wrap gap-3">

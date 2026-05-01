@@ -304,7 +304,9 @@ export function AppLayout({ children }: LayoutProps) {
                               ? 'الميزانية التقديرية'
                               : location === '/cost-centers'
                                 ? 'مراكز التكلفة'
-                                : 'مرحباً بك');
+                                : location === '/transfers'
+                                  ? 'تحويل المخزون بين الفروع'
+                                  : 'مرحباً بك');
 
   /* ── Colors ── */
   const sidebarBg = isDark ? 'hsla(225,28%,6.5%,0.98)' : 'rgba(255,255,255,0.99)';
@@ -466,7 +468,8 @@ export function AppLayout({ children }: LayoutProps) {
           {NAV_SECTIONS.map((section, si) => {
             const items = visibleNav.filter((i) => section.hrefs.includes(i.href));
             if (!items.length) return null;
-            const sectionActive = items.some((i) => i.href === location);
+            const sectionActive = items.some((i) => i.href === location)
+              || (section.hrefs.includes('/inventory') && location === '/transfers');
             const isAccounting = section.label === 'المحاسبة';
             /* Accounting: toggle-able; all others: always open */
             const isOpen = isAccounting
@@ -504,7 +507,8 @@ export function AppLayout({ children }: LayoutProps) {
                 {/* Nav items */}
                 {(sidebarCollapsed || isOpen) &&
                   items.map((item) => {
-                    const active = location === item.href;
+                    const active = location === item.href
+                      || (item.href === '/inventory' && location === '/transfers');
                     return (
                       <Link key={item.href} href={item.href}>
                         <div
