@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
   import { authFetch } from '@/lib/auth-fetch';
   import { useQuery, useQueryClient } from '@tanstack/react-query';
   import { useWarehouse } from '@/contexts/warehouse';
@@ -28,7 +28,7 @@ import { useState } from 'react';
   Eye,
   Archive,
   } from 'lucide-react';
-  import { Link, useLocation } from 'wouter';
+  import { Link, useLocation, useSearch } from 'wouter';
   import { useToast } from '@/hooks/use-toast';
   import { safeArray } from '@/lib/safe-data';
   import {
@@ -68,7 +68,18 @@ export default function Inventory() {
   const isAdmin = user?.role === 'admin';
 
   const [, navigate] = useLocation();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const search = useSearch();
+  const tabFromUrl = new URLSearchParams(search).get('tab') as Tab | null;
+  const VALID_TABS: Tab[] = ['overview','movements','count','alerts','reports','consignment','scrap'];
+  const [activeTab, setActiveTab] = useState<Tab>(
+    tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'overview'
+  );
+  useEffect(() => {
+    if (tabFromUrl && VALID_TABS.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabFromUrl]);
   const [movementsFilter, setMovementsFilter] = useState<'all' | 'zero' | 'low'>('all');
   /* ── warehouse detail modal ── */
   const [warehouseDetailId, setWarehouseDetailId] = useState<number | null>(null);

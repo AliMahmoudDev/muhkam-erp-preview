@@ -11,7 +11,8 @@ import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import {
   ArrowRightLeft, Plus, X, Loader2, CheckCircle2,
-  Clock, Truck, Package, XCircle, ChevronRight, Warehouse,
+  Clock, Truck, Package, XCircle,
+  LayoutDashboard, ClipboardList, Bell, BarChart3, Archive, Trash2,
 } from 'lucide-react';
 
 // ─── أنواع ────────────────────────────────────────────────────────────────────
@@ -408,21 +409,77 @@ export default function Transfers() {
     <div className="min-h-screen bg-[#0a0f1a] text-white" dir="rtl">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
-        {/* ── التنقل (مسار التصفح) ── */}
-        <div className="flex items-center gap-3">
+        {/* ══ شريط تبويبات المخزون — نفس تبويبات صفحة /inventory ══ */}
+        <div className="flex gap-2 border-b border-white/10 flex-wrap -mb-2">
+          {/* نظرة عامة */}
           <button
-            onClick={() => navigate('/inventory')}
-            className="flex items-center gap-2 text-white/40 hover:text-violet-400 transition-colors group text-sm"
+            onClick={() => navigate('/inventory?tab=overview')}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80"
           >
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            <Warehouse className="w-4 h-4" />
-            <span>العودة إلى المخزون</span>
+            <LayoutDashboard className="w-4 h-4" />
+            نظرة عامة
           </button>
-          <span className="text-white/15">|</span>
-          <div className="flex items-center gap-2 text-white/50">
-            <ArrowRightLeft className="w-4 h-4 text-violet-400" />
-            <span className="text-sm font-bold text-white">تحويل المخزون بين الفروع</span>
-          </div>
+          {/* الحركات */}
+          <button
+            onClick={() => navigate('/inventory?tab=movements')}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80"
+          >
+            <Package className="w-4 h-4" />
+            الحركات
+          </button>
+          {/* الجرد */}
+          {canManage && (
+            <button
+              onClick={() => navigate('/inventory?tab=count')}
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80"
+            >
+              <ClipboardList className="w-4 h-4" />
+              الجرد
+            </button>
+          )}
+          {/* التحويلات — التبويب النشط حالياً */}
+          {canManage && (
+            <button
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-violet-400 text-violet-300"
+            >
+              <Truck className="w-4 h-4" />
+              التحويلات بين الفروع
+            </button>
+          )}
+          {/* الائتمان */}
+          {canManage && (
+            <button
+              onClick={() => navigate('/inventory?tab=consignment')}
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80"
+            >
+              <Archive className="w-4 h-4" />
+              الائتمان
+            </button>
+          )}
+          {/* تنبيهات */}
+          <button
+            onClick={() => navigate('/inventory?tab=alerts')}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80"
+          >
+            <Bell className="w-4 h-4" />
+            تنبيهات المخزون
+          </button>
+          {/* تقارير */}
+          <button
+            onClick={() => navigate('/inventory?tab=reports')}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80"
+          >
+            <BarChart3 className="w-4 h-4" />
+            تقارير المخزون
+          </button>
+          {/* مخزن التوالف */}
+          <button
+            onClick={() => navigate('/inventory?tab=scrap')}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80"
+          >
+            <Trash2 className="w-4 h-4" />
+            مخزن التوالف
+          </button>
         </div>
 
         {/* ── Header ── */}
