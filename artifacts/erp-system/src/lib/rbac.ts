@@ -105,7 +105,6 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   { name: 'مراكز التكلفة',         href: '/cost-centers',        icon: Target,          roles: ['admin'] },
   { name: 'السنوات المالية',       href: '/fiscal-years',        icon: BookOpen,        roles: ['admin'] },
   { name: 'سجل التدقيق',           href: '/audit-log',           icon: Shield,          roles: ['admin'] },
-  { name: 'السندات',               href: '/vouchers',            icon: HandCoins,       roles: ['admin', 'manager'] },
   { name: 'الفروع',                href: '/branches',            icon: GitBranch,       roles: ['admin', 'manager'] },
   { name: 'الإعدادات',             href: '/settings',            icon: Settings,        roles: ['admin'] },
   { name: 'الموظفون',              href: '/employees',           icon: UserCheck,       roles: ['admin', 'manager', 'employee'] },
