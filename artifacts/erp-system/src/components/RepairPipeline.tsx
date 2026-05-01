@@ -9,7 +9,7 @@ import type { LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import QualityCheckModal from "@/components/modals/QualityCheckModal";
 import ReadyForDeliveryModal from "@/components/modals/ReadyForDeliveryModal";
-import FinalInvoiceModal from "@/components/modals/FinalInvoiceModal";
+import DeliveryGateModal from "@/components/modals/DeliveryGateModal";
 import DeliveryReceiptModal from "@/components/modals/DeliveryReceiptModal";
 
 /**
@@ -331,6 +331,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
       {gated === "ready_for_delivery" && (
         <ReadyForDeliveryModal
           job={jobLite}
+          qcOnly
           onClose={() => setGated(null)}
           onSaved={() => void applyGatedTransition("ready_for_delivery")}
           onRejected={() => {
@@ -340,7 +341,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
         />
       )}
       {gated === "delivered" && (
-        <FinalInvoiceModal
+        <DeliveryGateModal
           job={jobLite}
           onClose={() => setGated(null)}
           onSaved={() => void applyGatedTransition("delivered")}

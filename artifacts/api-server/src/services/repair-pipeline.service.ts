@@ -48,20 +48,16 @@ const STAGE_REQUIREMENTS: Record<string, { field: string; label_ar: string }[]> 
     { field: 'final_cost', label_ar: 'يجب إدخال التكلفة النهائية' },
   ],
   /* ── الانتقال من "مراقبة الجودة" إلى "جاهز للتسليم" ──
-        بوّابة مزدوجة:
-          1) qa_completed_at        — اكتمال فحص مراقبة الجودة (QC)
-          2) pre_delivery_reviewed_at — اكتمال المراجعة النهائية (PreDeliveryModal):
-             نوع الورشة (داخلية/خارجية) + قطع الغيار/تكلفة الورشة + بيانات الوسيط */
+        يكفي إكمال فحص الجودة (QC). محاسبة العميل تتم في بوّابة التسليم. */
   ready_for_delivery: [
-    { field: 'final_cost',               label_ar: 'يجب إدخال التكلفة النهائية' },
-    { field: 'qa_completed_at',          label_ar: 'يجب إكمال بنود فحص مراقبة الجودة (QC) أولاً' },
-    { field: 'pre_delivery_reviewed_at', label_ar: 'يجب إتمام مراجعة ما قبل التسليم (نوع الورشة + القطع/التكلفة + الوسيط) أولاً' },
+    { field: 'final_cost',      label_ar: 'يجب إدخال التكلفة النهائية' },
+    { field: 'qa_completed_at', label_ar: 'يجب إكمال بنود فحص مراقبة الجودة (QC) أولاً' },
   ],
-  /* ── الانتقال من "جاهز للتسليم" إلى "الشحن" ──
-        لم يعد يتطلب pre_delivery_reviewed_at لأن المراجعة تتم في الخطوة السابقة. */
-  /* ── الانتقال من "الشحن" إلى "تم التسليم" ── */
+  /* ── الانتقال إلى "التسليم" ──
+        يتطلب: اكتمال المحاسبة (pre_delivery_reviewed_at) + تسجيل الشحن/عدمه (shipping_settled_at) */
   delivered: [
-    { field: 'shipping_settled_at',  label_ar: 'يجب تسجيل تكلفة الشحن (أو تأكيد عدمها) قبل الإغلاق' },
+    { field: 'pre_delivery_reviewed_at', label_ar: 'يجب إتمام محاسبة العميل (القطع + الدفع) أولاً' },
+    { field: 'shipping_settled_at',      label_ar: 'يجب تسجيل تكلفة الشحن (أو تأكيد عدمها) قبل الإغلاق' },
   ],
   waiting_parts: [
     { field: 'notes', label_ar: 'يجب كتابة ملاحظة توضح القطعة المطلوبة' },

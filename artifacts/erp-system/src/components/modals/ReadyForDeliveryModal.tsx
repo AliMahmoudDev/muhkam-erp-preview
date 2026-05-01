@@ -110,6 +110,8 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onRejected: () => void;
+  /** إذا كان true: يظهر فحص الجودة فقط — عند الموافقة يستدعي onSaved() مباشرةً */
+  qcOnly?: boolean;
 }
 
 /* ════════════════════════════════════════════════
@@ -167,7 +169,7 @@ function fmtCurrency(n: number) {
 /* ════════════════════════════════════════════════
    المكوّن الرئيسي
 ════════════════════════════════════════════════ */
-export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejected }: Props) {
+export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejected, qcOnly = false }: Props) {
   const { toast } = useToast();
   const [phase, setPhase] = useState<"qc" | "billing">("qc");
 
@@ -250,7 +252,12 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
         return;
       }
       setQcLoading(false);
-      setPhase("billing");
+      if (qcOnly) {
+        toast({ title: "✓ اجتاز الفحص — البطاقة جاهزة للتسليم" });
+        onSaved();
+      } else {
+        setPhase("billing");
+      }
     } catch {
       setQcErrors(["تعذّر الاتصال بالخادم"]);
       setQcLoading(false);
@@ -523,19 +530,21 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
                 <h3 className="text-sm font-black text-white">
                   {phase === "qc" ? "فحص الجودة النهائي" : "محاسبة العميل"}
                 </h3>
-                <span className="flex items-center gap-1 text-[10px] text-white/40">
-                  <span
-                    className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === "qc" ? "bg-purple-500/20 text-purple-300" : "bg-white/10 text-white/40"}`}
-                  >
-                    ١
+                {!qcOnly && (
+                  <span className="flex items-center gap-1 text-[10px] text-white/40">
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === "qc" ? "bg-purple-500/20 text-purple-300" : "bg-white/10 text-white/40"}`}
+                    >
+                      ١
+                    </span>
+                    <span className="text-white/20">←</span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === "billing" ? "bg-lime-500/20 text-lime-300" : "bg-white/10 text-white/40"}`}
+                    >
+                      ٢
+                    </span>
                   </span>
-                  <span className="text-white/20">←</span>
-                  <span
-                    className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === "billing" ? "bg-lime-500/20 text-lime-300" : "bg-white/10 text-white/40"}`}
-                  >
-                    ٢
-                  </span>
-                </span>
+                )}
               </div>
               <p className="text-[11px] text-white/50">
                 البطاقة <span className="text-white font-bold">{job.job_no}</span>
@@ -571,11 +580,11 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
                 <p className="text-sm text-white/70 font-bold mb-1">لا توجد بنود فحص أولي</p>
                 <p className="text-[11px] text-white/40">لم يُسجَّل فحص عند الاستلام — يمكنك المتابعة مباشرةً.</p>
                 <button
-                  onClick={() => setPhase("billing")}
+                  onClick={() => qcOnly ? onSaved() : setPhase("billing")}
                   className="mt-4 px-5 py-2 rounded-xl text-white text-xs font-bold"
                   style={{ background: "rgba(132,204,22,0.2)", border: "1px solid rgba(163,230,53,0.3)" }}
                 >
-                  المتابعة لمحاسبة العميل
+                  {qcOnly ? "تأكيد الانتقال لجاهز للتسليم" : "المتابعة لمحاسبة العميل"}
                 </button>
               </div>
             ) : (
@@ -746,7 +755,7 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
                   >
                     {qcLoading
                       ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</>
-                      : <><Save className="w-3.5 h-3.5" /> قبول الفحص والمتابعة للمحاسبة</>}
+                      : <><Save className="w-3.5 h-3.5" /> {qcOnly ? "قبول الفحص — جاهز للتسليم" : "قبول الفحص والمتابعة للمحاسبة"}</>}
                   </button>
                   <button
                     onClick={() => { setRejectMode(true); setQcErrors([]); }}
