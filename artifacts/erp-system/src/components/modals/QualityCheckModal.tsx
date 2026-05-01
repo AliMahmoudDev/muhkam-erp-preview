@@ -85,6 +85,72 @@ const INTAKE_BADGE: Record<string, { txt: string; cls: string; bg: string }> = {
   na:         { txt: "غير قابل", cls: "text-zinc-300",    bg: "bg-zinc-500/10 border-zinc-500/25"       },
 };
 
+/* ─── بنود QC الافتراضية حسب نوع الجهاز (تُستخدم عندما لا يوجد قالب في قاعدة البيانات) ─── */
+const PHONE_ITEMS = [
+  { id: "d_screen",       label: "الشاشة (الصورة والتاتش)",       category: "الشاشة"     },
+  { id: "d_front_cam",    label: "الكاميرا الأمامية",               category: "الكاميرات"  },
+  { id: "d_back_cam",     label: "الكاميرا الخلفية",                category: "الكاميرات"  },
+  { id: "d_speaker",      label: "السماعة الخارجية",                category: "الصوت"      },
+  { id: "d_earpiece",     label: "سماعة الأذن",                     category: "الصوت"      },
+  { id: "d_mic",          label: "الميكروفون",                      category: "الصوت"      },
+  { id: "d_battery",      label: "البطارية (الشحن والاستهلاك)",     category: "البطارية"   },
+  { id: "d_charging",     label: "منفذ الشحن",                      category: "البطارية"   },
+  { id: "d_wifi",         label: "الواي فاي",                       category: "الاتصالات"  },
+  { id: "d_sim",          label: "قارئ الشريحة",                    category: "الاتصالات"  },
+  { id: "d_btooth",       label: "البلوتوث",                        category: "الاتصالات"  },
+  { id: "d_buttons",      label: "الأزرار الجانبية والصوت",         category: "الأزرار"    },
+  { id: "d_fingerprint",  label: "بصمة الإصبع / Face ID",           category: "الأمان"     },
+  { id: "d_vibration",    label: "الاهتزاز",                        category: "أخرى"       },
+  { id: "d_body",         label: "الهيكل الخارجي (كسر / خدش)",     category: "الهيكل"     },
+];
+
+const LAPTOP_ITEMS = [
+  { id: "d_screen",    label: "الشاشة (الصورة والألوان)",           category: "الشاشة"     },
+  { id: "d_keyboard",  label: "لوحة المفاتيح",                      category: "الإدخال"    },
+  { id: "d_touchpad",  label: "لوحة اللمس (التاتشباد)",             category: "الإدخال"    },
+  { id: "d_battery",   label: "البطارية (الشحن والاستهلاك)",        category: "البطارية"   },
+  { id: "d_charging",  label: "مدخل الشحن / المحوّل",               category: "البطارية"   },
+  { id: "d_wifi",      label: "الواي فاي",                          category: "الاتصالات"  },
+  { id: "d_btooth",    label: "البلوتوث",                           category: "الاتصالات"  },
+  { id: "d_usb",       label: "منافذ USB",                          category: "المنافذ"    },
+  { id: "d_cam",       label: "الكاميرا",                           category: "الكاميرا"   },
+  { id: "d_speaker",   label: "السماعات",                           category: "الصوت"      },
+  { id: "d_mic",       label: "الميكروفون",                         category: "الصوت"      },
+  { id: "d_fan",       label: "المروحة / التهوية",                  category: "الحرارة"    },
+  { id: "d_body",      label: "الهيكل الخارجي",                     category: "الهيكل"     },
+];
+
+const TABLET_ITEMS = [
+  { id: "d_screen",       label: "الشاشة (الصورة والتاتش)",         category: "الشاشة"    },
+  { id: "d_front_cam",    label: "الكاميرا الأمامية",               category: "الكاميرات" },
+  { id: "d_back_cam",     label: "الكاميرا الخلفية",                category: "الكاميرات" },
+  { id: "d_speaker",      label: "السماعات",                        category: "الصوت"     },
+  { id: "d_battery",      label: "البطارية",                        category: "البطارية"  },
+  { id: "d_charging",     label: "منفذ الشحن",                      category: "البطارية"  },
+  { id: "d_wifi",         label: "الواي فاي",                       category: "الاتصالات" },
+  { id: "d_buttons",      label: "الأزرار الجانبية",                category: "الأزرار"   },
+  { id: "d_body",         label: "الهيكل الخارجي",                  category: "الهيكل"    },
+];
+
+const GENERAL_ITEMS = [
+  { id: "d_power",     label: "التشغيل والإيقاف",   category: "أساسيات" },
+  { id: "d_screen",    label: "الشاشة",              category: "أساسيات" },
+  { id: "d_battery",   label: "البطارية / الطاقة",  category: "أساسيات" },
+  { id: "d_sound",     label: "الصوت",               category: "أساسيات" },
+  { id: "d_body",      label: "الهيكل الخارجي",      category: "أساسيات" },
+];
+
+function getDefaultItems(deviceType: string) {
+  const dt = deviceType.toLowerCase();
+  if (dt.includes("iphone") || dt.includes("samsung_phone") || dt.includes("android_phone") || dt.includes("phone"))
+    return PHONE_ITEMS;
+  if (dt.includes("ipad") || dt.includes("tablet") || dt.includes("samsung_tablet"))
+    return TABLET_ITEMS;
+  if (dt.includes("laptop") || dt.includes("macbook") || dt.includes("notebook"))
+    return LAPTOP_ITEMS;
+  return GENERAL_ITEMS;
+}
+
 /* ─── parsing helpers ─── */
 function parseChecklist(raw: unknown): IntakeItem[] {
   let arr: unknown[] = [];
@@ -164,40 +230,56 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
 
     const deviceType = (job.device_type ?? "").trim() || "general";
 
+    /* مساعد: بناء QcItem[] من مصفوفة بنود (DB أو افتراضية) */
+    function buildQcItems(
+      rawItems: Array<{ id: string; label: string; category?: string }>,
+      savedById: Map<string, { status?: string; notes?: string }>,
+    ): QcItem[] {
+      return rawItems.map((item) => {
+        const saved = savedById.get(item.id) ?? savedById.get(item.label);
+        const st    = saved?.status;
+        return {
+          id:            item.id,
+          label:         item.label,
+          category:      item.category,
+          intake_status: null,
+          intake_notes:  null,
+          status:        (st === "pass" || st === "fail" || st === "n/a") ? st : null,
+          notes:         typeof saved?.notes === "string" ? saved.notes : "",
+        };
+      });
+    }
+
+    const savedRaw   = parseSavedQc(job.qa_checklist);
+    const savedById  = new Map<string, { status?: string; notes?: string }>();
+    savedRaw.forEach((s, i) => {
+      const k = String(s.id ?? s.label ?? `item-${i}`);
+      savedById.set(k, { status: s.status, notes: s.notes });
+    });
+
     setTemplateLoading(true);
     authFetch(api(`/api/repair-checklist-items?device_type=${encodeURIComponent(deviceType)}`))
       .then(res => res.json())
       .then((data: Array<{ id?: number; label_ar?: string; label?: string; category?: string }>) => {
-        if (!Array.isArray(data) || data.length === 0) return;
-
-        /* بناء بنود الفحص من القالب */
-        const savedRaw = parseSavedQc(job.qa_checklist);
-        const savedById = new Map<string, { status?: string; notes?: string }>();
-        savedRaw.forEach((s, i) => {
-          const k = String(s.id ?? s.label ?? `item-${i}`);
-          savedById.set(k, { status: s.status, notes: s.notes });
-        });
-
-        const fallbackItems: QcItem[] = data.map((item, i) => {
-          const id    = String(item.id ?? `tpl-${i}`);
-          const label = String(item.label_ar ?? item.label ?? `بند ${i + 1}`);
-          const saved = savedById.get(id) ?? savedById.get(label);
-          const st    = saved?.status;
-          return {
-            id,
-            label,
-            category:      item.category,
-            intake_status: null,
-            intake_notes:  null,
-            status:        (st === "pass" || st === "fail" || st === "n/a") ? st : null,
-            notes:         typeof saved?.notes === "string" ? saved.notes : "",
-          };
-        });
-
-        setItems(fallbackItems);
+        if (Array.isArray(data) && data.length > 0) {
+          /* ← استخدام بنود قاعدة البيانات */
+          const dbItems = data.map((item, i) => ({
+            id:       String(item.id ?? `tpl-${i}`),
+            label:    String(item.label_ar ?? item.label ?? `بند ${i + 1}`),
+            category: item.category,
+          }));
+          setItems(buildQcItems(dbItems, savedById));
+        } else {
+          /* ← قاعدة البيانات فارغة — استخدام البنود الافتراضية المدمجة */
+          setItems(buildQcItems(getDefaultItems(deviceType), savedById));
+        }
         setIsFallback(true);
       })
-      .catch(() => { /* إذا فشل الجلب — الواجهة تبقى بالحالة الفارغة */ })
+      .catch(() => {
+        /* ← فشل الجلب — استخدام البنود الافتراضية كبديل أخير */
+        setItems(buildQcItems(getDefaultItems(deviceType), savedById));
+        setIsFallback(true);
+      })
       .finally(() => setTemplateLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -398,9 +480,9 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
         ) : items.length === 0 ? (
           <div className="px-5 py-10 text-center">
             <AlertTriangle className="w-10 h-10 text-amber-400/60 mx-auto mb-3" />
-            <p className="text-sm text-white/80 font-bold mb-1">لا توجد بنود فحص أولي مسجّلة</p>
+            <p className="text-sm text-white/80 font-bold mb-1">لا توجد بنود فحص</p>
             <p className="text-[11px] text-white/45">
-              لم يُسجَّل فحص عند الاستلام ولا يوجد قالب للجهاز — يمكنك تأكيد اجتياز مراقبة الجودة يدوياً باستخدام الزر أدناه.
+              لم يُعرَف نوع الجهاز — يمكنك تأكيد اجتياز مراقبة الجودة يدوياً باستخدام الزر أدناه.
             </p>
           </div>
         ) : (
