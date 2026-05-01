@@ -759,7 +759,7 @@ function CustomerStatementModal({
         label: 'مرتجع مبيعات (نقدي)',
         ref: r.return_no,
         debit: 0,
-        credit: 0,
+        credit: Number(r.total_amount),
       })
     );
 

@@ -50,6 +50,7 @@ import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { SearchableSelect } from '@/components/searchable-select';
 import { api } from '@/lib/api';
+import { useAppSettings } from '@/contexts/app-settings';
 
 
 interface SalesReturn {
@@ -1095,6 +1096,7 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
   const sale = saleRaw as (typeof saleRaw & SaleExtras) | undefined;
   const { data: vatSettings } = useVatSettings();
   const vatEnabled = vatSettings?.vatEnabled ?? false;
+  const { settings } = useAppSettings();
 
   const escHtml = (v: unknown): string => {
     if (v == null) return '';
@@ -1168,9 +1170,8 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
 </style></head>
 <body>
 <div class="header">
-  <div class="company-name">مُحكم - MUHKAM ERP</div>
-  <div class="company-slogan">الحلال = البركة | متخصصون في صيانة الهواتف المحمولة</div>
-  <div class="company-info">📍 مصر — القاهرة &nbsp;&nbsp; 📞 01000000000</div>
+  <div class="company-name">${escHtml(settings.companyName)}</div>
+  <div class="company-slogan">${escHtml(settings.companySlogan)}</div>
 </div>
 <div class="invoice-title">فاتورة مبيعات — ${escHtml(sale.invoice_no)}</div>
 <div class="meta-grid">
@@ -1191,7 +1192,7 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
   <div class="total-row"><span>المدفوع</span><span>${Number(sale.paid_amount).toFixed(2)} ج.م</span></div>
   ${remainHtml}
 </div>
-<div class="footer">شكراً لتعاملكم معنا — مُحكم - MUHKAM ERP</div>
+<div class="footer">شكراً لتعاملكم معنا — ${escHtml(settings.companyName)}</div>
 </body></html>`;
     const w = window.open('', '_blank', 'width=820,height=950');
     if (!w) return;
@@ -1378,7 +1379,7 @@ function WhatsAppSuccessModal({
 
   const buildWhatsAppMsg = () => {
     const lines: string[] = [
-      `🧾 *فاتورة مبيعات - مُحكم - MUHKAM*`,
+      `🧾 *فاتورة مبيعات*`,
       `رقم الفاتورة: ${invoice.invoice_no}`,
       ``,
       `*الأصناف:*`,
@@ -2982,7 +2983,7 @@ function buildSaleWhatsAppUrl(s: SaleRecord): string {
   }
 
   const lines = [
-    `🧾 *فاتورة مبيعات - مُحكم - MUHKAM*`,
+    `🧾 *فاتورة مبيعات*`,
     `رقم الفاتورة: ${s.invoice_no}`,
     s.customer_name ? `العميل: ${s.customer_name}` : '',
     `الإجمالي: ${total.toFixed(2)} ج.م`,

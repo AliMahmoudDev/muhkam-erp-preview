@@ -1,6 +1,7 @@
 import { api } from '@/lib/api';
 // ✔ POS UX CLEANED — SINGLE ENTRY POINT
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useAppSettings } from '@/contexts/app-settings';
 import { useLocation } from 'wouter';
 import { safeArray } from '@/lib/safe-data';
 import { useAuth } from '@/contexts/auth';
@@ -89,7 +90,7 @@ interface ReturnItem {
 /* ─────────────────────────────────────────────────────────────
    THERMAL RECEIPT PRINT
 ───────────────────────────────────────────────────────────── */
-function printReceipt(invoice: SuccessInvoice) {
+function printReceipt(invoice: SuccessInvoice, companyName: string) {
   const payLabel: Record<string, string> = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
   const now = new Date();
   const dateStr = now.toLocaleDateString('ar-EG-u-nu-latn');
@@ -116,7 +117,7 @@ function printReceipt(invoice: SuccessInvoice) {
 </style>
 </head>
 <body>
-<div class="center bold title">مُحكم - MUHKAM</div>
+<div class="center bold title">${companyName}</div>
 <div class="center" style="font-size:10px;">فاتورة مبيعات</div>
 <div class="sep"></div>
 <div class="row"><span>رقم الفاتورة:</span><span class="bold">${invoice.invoice_no}</span></div>
@@ -134,7 +135,7 @@ ${invoice.customer_name ? `<div class="row"><span>العميل:</span><span>${in
 <div class="row total-row"><span>الإجمالي</span><span>${invoice.total_amount.toFixed(2)} ج.م</span></div>
 <div class="row" style="margin-top:3px;"><span>طريقة الدفع:</span><span>${payLabel[invoice.payment_type] ?? invoice.payment_type}</span></div>
 <div class="sep"></div>
-<div class="footer">شكراً لتعاملكم معنا 🙏<br/>مُحكم - MUHKAM ERP © ${now.getFullYear()}</div>
+<div class="footer">شكراً لتعاملكم معنا 🙏<br/>${companyName} © ${now.getFullYear()}</div>
 </body></html>`;
 
   const w = window.open('', '_blank', 'width=340,height=600');
@@ -152,11 +153,12 @@ ${invoice.customer_name ? `<div class="row"><span>العميل:</span><span>${in
    SUCCESS MODAL
 ───────────────────────────────────────────────────────────── */
 function SuccessModal({ invoice, onClose }: { invoice: SuccessInvoice; onClose: () => void }) {
+  const { settings } = useAppSettings();
   const payLabel: Record<string, string> = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
 
   const waMsg = () => {
     const lines = [
-      `🧾 *فاتورة مبيعات - مُحكم - MUHKAM*`,
+      `🧾 *فاتورة مبيعات - ${settings.companyName}*`,
       `رقم الفاتورة: ${invoice.invoice_no}`,
       ``,
       `*الأصناف:*`,
@@ -217,7 +219,7 @@ function SuccessModal({ invoice, onClose }: { invoice: SuccessInvoice; onClose: 
         <div className="space-y-2.5">
           {/* Print receipt */}
           <button
-            onClick={() => printReceipt(invoice)}
+            onClick={() => printReceipt(invoice, settings.companyName)}
             className="erp-btn-secondary w-full py-3 rounded-2xl font-bold flex items-center justify-center gap-2"
           >
             <Printer className="w-4 h-4" />
@@ -365,7 +367,6 @@ export default function POSPage() {
   const canEditPrice = hasPermission(user, 'can_edit_price') === true;
   const canCash = hasPermission(user, 'can_cash_sale') === true;
   const canCredit = hasPermission(user, 'can_credit_sale') === true;
-  const canPartial = hasPermission(user, 'can_partial_sale') === true;
   const canReturnSale = hasPermission(user, 'can_return_sale') === true;
 
   /* ── Role detection ── */
@@ -421,8 +422,7 @@ export default function POSPage() {
       canEditPrice={canEditPrice}
       canCash={canCash}
       canCredit={canCredit}
-      canPartial={canPartial}
-      canReturnSale={canReturnSale}
+        canReturnSale={canReturnSale}
       isAdmin={isAdmin}
       onResetSetup={() => setAdminSetup({ warehouseId: null, safeId: null })}
     />
@@ -438,7 +438,6 @@ function POSBody({
   canEditPrice,
   canCash,
   canCredit,
-  canPartial: _canPartial,
   canReturnSale,
   isAdmin,
   onResetSetup,
@@ -448,7 +447,6 @@ function POSBody({
   canEditPrice: boolean;
   canCash: boolean;
   canCredit: boolean;
-  canPartial: boolean;
   canReturnSale: boolean;
   isAdmin: boolean;
   onResetSetup: () => void;
@@ -668,8 +666,6 @@ function POSBody({
       qc.invalidateQueries({ queryKey: ['/api/customers'] });
       qc.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       qc.invalidateQueries({ queryKey: ['/api/settings/safes'] });
-      /* fire-and-forget backup after each sale */
-      authFetch(api('/api/system/backup'), { method: 'POST' }).catch(() => {});
       setCheckoutError(null);
       setShowSplitPayment(false);
       setSuccessInvoice({
