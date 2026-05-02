@@ -84,7 +84,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
           command_timeout: 15m
-          envs: DEPLOY_TOKEN,TOTP_ENCRYPTION_KEY,BACKUP_ENCRYPTION_KEY
+          envs: DEPLOY_TOKEN
           script: |
             set -euo pipefail
             APP_DIR=/var/www/muhkam-erp
@@ -97,36 +97,29 @@ jobs:
               set +a
             fi
 
-            # Inject secrets from GitHub Actions into .env if missing on server
+            # Auto-generate missing encryption keys on server (idempotent — only added once)
             ENV_FILE="$APP_DIR/.env"
-            if [ -n "${TOTP_ENCRYPTION_KEY:-}" ]; then
-              if ! grep -q "^TOTP_ENCRYPTION_KEY=" "$ENV_FILE" 2>/dev/null; then
-                echo "TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY}" >> "$ENV_FILE"
-                echo "✓ Added TOTP_ENCRYPTION_KEY to .env"
-              fi
-              export TOTP_ENCRYPTION_KEY
+            touch "$ENV_FILE"
+            if ! grep -q "^TOTP_ENCRYPTION_KEY=" "$ENV_FILE" 2>/dev/null; then
+              echo "TOTP_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$ENV_FILE"
+              echo "✓ Generated TOTP_ENCRYPTION_KEY"
             fi
-            if [ -n "${BACKUP_ENCRYPTION_KEY:-}" ]; then
-              if ! grep -q "^BACKUP_ENCRYPTION_KEY=" "$ENV_FILE" 2>/dev/null; then
-                echo "BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}" >> "$ENV_FILE"
-                echo "✓ Added BACKUP_ENCRYPTION_KEY to .env"
-              fi
-              export BACKUP_ENCRYPTION_KEY
+            if ! grep -q "^BACKUP_ENCRYPTION_KEY=" "$ENV_FILE" 2>/dev/null; then
+              echo "BACKUP_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$ENV_FILE"
+              echo "✓ Generated BACKUP_ENCRYPTION_KEY"
             fi
 
-            # Re-source .env to pick up any newly added vars
-            if [ -f "$ENV_FILE" ]; then
-              set -a
-              source "$ENV_FILE"
-              set +a
-            fi
+            # Re-source .env to pick up all vars (including newly generated ones)
+            set -a
+            source "$ENV_FILE"
+            set +a
 
             # التحقق من وجود جميع المتغيرات المطلوبة
             : "${JWT_SECRET:?خطأ: JWT_SECRET غير موجود في ملف .env}"
             : "${JWT_REFRESH_SECRET:?خطأ: JWT_REFRESH_SECRET غير موجود في ملف .env}"
             : "${DATABASE_URL:?خطأ: DATABASE_URL غير موجود في ملف .env}"
-            : "${TOTP_ENCRYPTION_KEY:?خطأ: TOTP_ENCRYPTION_KEY غير موجود — أضفه في GitHub Secrets}"
-            : "${BACKUP_ENCRYPTION_KEY:?خطأ: BACKUP_ENCRYPTION_KEY غير موجود — أضفه في GitHub Secrets}"
+            : "${TOTP_ENCRYPTION_KEY:?BUG: فشل توليد TOTP_ENCRYPTION_KEY}"
+            : "${BACKUP_ENCRYPTION_KEY:?BUG: فشل توليد BACKUP_ENCRYPTION_KEY}"
 
             # Authenticate git with token (GitHub no longer accepts passwords)
             git remote set-url origin "https://x-access-token:${DEPLOY_TOKEN}@github.com/m4elmelegy-hub/MUHKAM-ERP.git"
@@ -169,8 +162,6 @@ jobs:
             echo "Deploy complete — halaltec.com is live"
         env:
           DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
-          TOTP_ENCRYPTION_KEY: ${{ secrets.TOTP_ENCRYPTION_KEY }}
-          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
 
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
