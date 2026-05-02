@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
-import { useAuthFetch } from "../../lib/auth-fetch";
+import { authFetch } from "../../lib/auth-fetch";
 import { api } from "../../lib/api";
 import { PageHeader, SectionCard, SectionTitle, PrimaryBtn, FieldLabel, SInput } from "./_shared";
 
@@ -13,7 +13,6 @@ interface BulkUpdateResult {
 }
 
 export function PricingTab() {
-  const authFetch = useAuthFetch();
   const [marginPercent, setMarginPercent] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [categories, setCategories] = useState<Category[]>([]);

@@ -42,7 +42,6 @@ outputType = "console"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node --enable-source-maps ./artifacts/api-server/dist/index.mjs"
-waitForPort = 8080
 
 [[workflows.workflow]]
 name = "Start application"

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tags, Plus, Edit2, Trash2, ChevronDown, ChevronRight, X, Check, Search, AlertCircle } from "lucide-react";
-import { useAuthFetch } from "@/lib/auth-fetch";
+import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 
@@ -371,7 +371,6 @@ function PriceListCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const authFetch = useAuthFetch();
   const [expanded, setExpanded] = useState(false);
   const [detail, setDetail] = useState<PriceListDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -479,7 +478,6 @@ function PriceListCard({
 /* ──────────────────────────────── Main Page ─────────────────────────────── */
 
 export default function PriceLists() {
-  const authFetch = useAuthFetch();
   const qc = useQueryClient();
 
   const [showCreate, setShowCreate] = useState(false);
