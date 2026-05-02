@@ -58,7 +58,11 @@ async function main() {
     process.exit(0);
   }
 
-  await seedDefaults();
+  try {
+    await seedDefaults();
+  } catch (err) {
+    logger.error({ err }, "[startup] seedDefaults failed — continuing without seeding");
+  }
 
   /* Defense-in-depth: enable PostgreSQL RLS on tenant tables.
      Failure here is non-fatal — application-level filtering is still in effect. */
@@ -129,4 +133,7 @@ async function main() {
   process.on("SIGINT",  () => cleanup("SIGINT"));
 }
 
-void main();
+main().catch((err) => {
+  logger.error({ err }, "[FATAL] Unhandled error in main() — process exiting");
+  process.exit(1);
+});
