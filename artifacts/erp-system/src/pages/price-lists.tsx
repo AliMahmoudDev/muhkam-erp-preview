@@ -23,7 +23,7 @@ interface PriceListItem {
   product_name: string;
   cost_price: number;
   sale_price: number;
-  barcode: string | null;
+  sku: string | null;
 }
 
 interface PriceListDetail extends PriceList {
@@ -35,7 +35,7 @@ interface Product {
   name: string;
   cost_price: number;
   sale_price: number;
-  barcode: string | null;
+  sku: string | null;
   category_name?: string | null;
 }
 
@@ -64,7 +64,7 @@ function ProductPickerModal({
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return products;
-    return products.filter(p => p.name.toLowerCase().includes(q) || (p.barcode ?? "").includes(q));
+    return products.filter(p => p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q));
   }, [products, search]);
 
   const toggle = (id: number) => {

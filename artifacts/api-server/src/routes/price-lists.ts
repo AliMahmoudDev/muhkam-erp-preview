@@ -42,7 +42,7 @@ router.get("/price-lists/:id", wrap(async (req, res) => {
       product_name: productsTable.name,
       cost_price: productsTable.cost_price,
       sale_price: productsTable.sale_price,
-      barcode: productsTable.barcode,
+      sku: productsTable.sku,
     })
     .from(priceListItemsTable)
     .innerJoin(productsTable, eq(priceListItemsTable.product_id, productsTable.id))
