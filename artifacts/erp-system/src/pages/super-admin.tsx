@@ -731,9 +731,9 @@ export default function SuperAdmin() {
   }
 
   /* ── Support settings query ─── */
-  const { data: sysSettings } = useQuery<Record<string, string>>({
-    queryKey: ['/api/settings/system'],
-    queryFn: () => fetcher('/api/settings/system'),
+  const { data: sysSettings, refetch: refetchSupportSettings } = useQuery<Record<string, string>>({
+    queryKey: ['/api/super/support-settings'],
+    queryFn: () => fetcher('/api/super/support-settings'),
     staleTime: 60_000,
   });
 
@@ -847,16 +847,17 @@ export default function SuperAdmin() {
   async function saveSupportSettings() {
     setSettingSaving(true);
     try {
-      const upsert = async (key: string, value: string) => {
-        await authFetch(api('/api/settings/system'), {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify({ key, value }),
-        });
-      };
-      await upsert('support_whatsapp', supportWa.trim());
-      await upsert('support_email', supportEmail.trim());
-      showToast('تم حفظ إعدادات التواصل');
+      const res = await authFetch(api('/api/super/support-settings'), {
+        method: 'PUT',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          support_whatsapp: supportWa.trim(),
+          support_email: supportEmail.trim(),
+        }),
+      });
+      if (!res.ok) { showToast('فشل حفظ الإعدادات', 'error'); return; }
+      showToast('✅ تم حفظ إعدادات التواصل');
+      void refetchSupportSettings();
     } catch {
       showToast('فشل حفظ الإعدادات', 'error');
     } finally {

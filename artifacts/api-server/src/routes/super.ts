@@ -1725,4 +1725,46 @@ router.post("/super/telegram-test", ...superOnly, wrap(async (req, res) => {
   res.json({ success: true, message: "تم الإرسال بنجاح" });
 }));
 
+/* ══════════════════════════════════════════════════════════════════
+   GLOBAL SUPPORT SETTINGS — GET & PUT (stored in super_settings table)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* GET /super/support-settings — return current support contact info */
+router.get("/super/support-settings", ...superOnly, wrap(async (_req, res) => {
+  const rows = await db
+    .select()
+    .from(superSettingsTable)
+    .where(sql`${superSettingsTable.key} IN ('support_whatsapp','support_email')`);
+  const result: Record<string, string> = {};
+  for (const r of rows) result[r.key] = r.value ?? "";
+  res.json(result);
+}));
+
+/* PUT /super/support-settings — save support contact info */
+router.put("/super/support-settings", ...superOnly, wrap(async (req, res) => {
+  const { support_whatsapp, support_email } = req.body as {
+    support_whatsapp?: string;
+    support_email?: string;
+  };
+
+  const upsert = async (key: string, value: string) => {
+    await db
+      .insert(superSettingsTable)
+      .values({ key, value, updated_at: new Date() })
+      .onConflictDoUpdate({ target: superSettingsTable.key, set: { value, updated_at: new Date() } });
+  };
+
+  if (support_whatsapp !== undefined) await upsert("support_whatsapp", support_whatsapp.trim());
+  if (support_email    !== undefined) await upsert("support_email",    support_email.trim());
+
+  void writeAuditLog({
+    action: "SUPPORT_SETTINGS_UPDATED", record_type: "system", record_id: 0,
+    new_value: { support_whatsapp, support_email },
+    user: req.user, company_id: null,
+    note: "تحديث إعدادات التواصل للدعم",
+  });
+
+  res.json({ success: true });
+}));
+
 export default router;
