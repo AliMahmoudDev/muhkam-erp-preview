@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
@@ -7,9 +7,10 @@ import {
   Star, Settings, MessageSquare, ChevronRight, RotateCcw,
   LayoutGrid, List, Package, GitBranch, History, Printer,
   ShieldCheck, Hammer, Cog, AlertTriangle, Box, Cpu, Zap,
-  ChevronDown, Bell,
+  ChevronDown, Bell, ScanLine,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency } from "@/lib/format";
@@ -483,6 +484,18 @@ export default function Repairs() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleQrDetected = useCallback((code: string) => {
+    let jobRef = code.trim();
+    try {
+      const url = new URL(code);
+      const parts = url.pathname.split("/").filter(Boolean);
+      if (parts.length > 0) jobRef = parts[parts.length - 1];
+    } catch { /* not a URL — use raw value */ }
+    setSearch(jobRef);
+    setShowScanner(false);
+  }, []);
 
   /* ── helper ── */
   async function apiFetch<T>(url: string): Promise<T> {
@@ -699,6 +712,13 @@ export default function Repairs() {
         {/* Settings modal */}
         {showSettings && <RepairSettingsModal onClose={() => setShowSettings(false)} />}
 
+        {/* QR Scanner */}
+        <BarcodeScanner
+          open={showScanner}
+          onClose={() => setShowScanner(false)}
+          onDetected={handleQrDetected}
+        />
+
         {/* Customizable dashboard cards (admin-tunable) */}
         <DashboardCardsSection
           dashboard={dashboard}
@@ -719,7 +739,14 @@ export default function Repairs() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="رقم / اسم / هاتف / IMEI..."
-              className="erp-input w-full pr-8 text-sm" />
+              className="erp-input w-full pr-8 pl-8 text-sm" />
+            <button
+              onClick={() => setShowScanner(true)}
+              title="مسح QR"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-violet-400 transition-colors"
+            >
+              <ScanLine className="w-3.5 h-3.5" />
+            </button>
           </div>
           <select
             value={techFilter}
