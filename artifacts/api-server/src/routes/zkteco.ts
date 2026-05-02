@@ -14,7 +14,12 @@
  *    Body: { api_key, company_id, employee_code, punch_time, punch_type }
  *    punch_type: "in" | "out"
  *
- * Security: set ZKTECO_API_KEY env variable on the server.
+ * Security:
+ *   Per-company keys are required: set ZKTECO_API_KEY_<company_id> for each
+ *   tenant.  The global ZKTECO_API_KEY is only accepted when
+ *   ZKTECO_ALLOW_GLOBAL_KEY=true is explicitly set — DO NOT enable this flag
+ *   in production multi-tenant deployments as it allows cross-tenant forgery.
+ *
  * On the ZKTeco device, configure:
  *   Server address: https://halaltec.com/iclock
  *   (or your domain)
@@ -34,6 +39,24 @@ if (!ZKTECO_KEY) {
     "[zkteco] WARNING: ZKTECO_API_KEY is not set. " +
     "All ZKTeco attendance endpoints will reject requests until the key is configured."
   );
+}
+
+/**
+ * Return the API key required for a given company, or null if none is
+ * configured.  Per-company keys (ZKTECO_API_KEY_<company_id>) are
+ * required in production.  The global ZKTECO_API_KEY is only accepted
+ * when ZKTECO_ALLOW_GLOBAL_KEY=true is explicitly set (for single-tenant
+ * dev/staging environments).  If neither a per-company key nor the
+ * global fallback is available the caller MUST reject the request.
+ *
+ * This prevents a key leaked from one tenant being reused to forge
+ * attendance records for any other tenant.
+ */
+function getCompanyKey(companyId: number): string | null {
+  const companySpecific = process.env[`ZKTECO_API_KEY_${companyId}`];
+  if (companySpecific) return companySpecific;
+  if (process.env["ZKTECO_ALLOW_GLOBAL_KEY"] === "true" && ZKTECO_KEY) return ZKTECO_KEY;
+  return null;
 }
 
 /* ── helpers ────────────────────────────────────────────────── */
@@ -178,14 +201,15 @@ router.post("/iclock/cdata", wrap(async (req, res) => {
   const apiKey = String(req.query["key"] ?? req.query["api_key"] ?? "");
   const companyIdQ = Number(req.query["company_id"] ?? 0);
 
-  // SEC: fail-closed — always require API key; reject if unset or wrong
-  if (!ZKTECO_KEY || apiKey !== ZKTECO_KEY) {
-    res.status(401).send("UNAUTHORIZED");
+  if (!companyIdQ) {
+    res.status(400).send("MISSING_COMPANY");
     return;
   }
 
-  if (!companyIdQ) {
-    res.status(400).send("MISSING_COMPANY");
+  // SEC: fail-closed — validate against per-company key first, then global key
+  const expectedKey = getCompanyKey(companyIdQ);
+  if (!expectedKey || apiKey !== expectedKey) {
+    res.status(401).send("UNAUTHORIZED");
     return;
   }
 
@@ -230,14 +254,15 @@ router.post("/api/attendance/zkteco", wrap(async (req, res) => {
   const { api_key, company_id, employee_code, punch_time, punch_type, punch_date } =
     req.body as Record<string, unknown>;
 
-  // SEC: fail-closed — always require API key; reject if unset or wrong
-  if (!ZKTECO_KEY || String(api_key ?? "") !== ZKTECO_KEY) {
-    res.status(401).json({ error: "مفتاح API مطلوب أو غير صحيح" });
+  if (!company_id || !employee_code || !punch_type) {
+    res.status(400).json({ error: "بيانات ناقصة: company_id, employee_code, punch_type مطلوبة" });
     return;
   }
 
-  if (!company_id || !employee_code || !punch_type) {
-    res.status(400).json({ error: "بيانات ناقصة: company_id, employee_code, punch_type مطلوبة" });
+  // SEC: fail-closed — validate against per-company key first, then global key
+  const companyKey = getCompanyKey(Number(company_id));
+  if (!companyKey || String(api_key ?? "") !== companyKey) {
+    res.status(401).json({ error: "مفتاح API مطلوب أو غير صحيح" });
     return;
   }
 

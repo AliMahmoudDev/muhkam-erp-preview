@@ -1,21 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 
 import { useLocation } from 'wouter';
-import { translateRole } from '@/lib/roles';
 import { RegisterForm } from './login/RegisterForm';
 import { api } from '@/lib/api';
 
-
-interface ErpUser {
-  id: number;
-  name: string;
-  username: string;
-  pinLength: number;
-  role: string;
-  active: boolean;
-}
 
 const FEATURES = [
   { icon: '⚡', label: 'مبيعات فورية', desc: 'وحماية منكاملة' },
@@ -81,18 +70,6 @@ export default function Login() {
     return null;
   })();
 
-  const { data: users = [] } = useQuery<ErpUser[]>({
-    queryKey: ['/api/auth/users', storedCompanyId],
-    enabled: storedCompanyId !== null,
-    queryFn: () =>
-      fetch(api(`/api/auth/users?company_id=${storedCompanyId}`)).then((r) => {
-        if (!r.ok) throw new Error('فشل جلب المستخدمين');
-        return r.json();
-      }),
-  });
-
-  const activeUsers = users.filter((u) => u.active !== false);
-
   useEffect(() => {
     setTimeout(() => usernameRef.current?.focus(), 400);
   }, []);
@@ -113,15 +90,9 @@ export default function Login() {
         return;
       }
 
-      const matchedUser = activeUsers.find(
-        (u) => u.username.toLowerCase() === trimmed.toLowerCase() || u.name === trimmed
-      );
-
       setLoading(true);
       try {
-        const body = matchedUser
-          ? { userId: matchedUser.id, pin }
-          : { username: trimmed.toLowerCase(), pin };
+        const body = { username: trimmed.toLowerCase(), pin, ...(storedCompanyId ? { company_id: storedCompanyId } : {}) };
         const res = await fetch(api('/api/auth/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -185,7 +156,7 @@ export default function Login() {
         setLoading(false);
       }
     },
-    [username, pin, activeUsers, login, setLocation]
+    [username, pin, storedCompanyId, login, setLocation]
   );
 
   const handleTotpSubmit = useCallback(
@@ -678,7 +649,6 @@ export default function Login() {
 
               {mode === 'login' ? (
                 <LoginForm
-                  users={activeUsers}
                   username={username}
                   setUsername={setUsername}
                   pin={pin}
@@ -860,7 +830,6 @@ export default function Login() {
    LOGIN FORM
 ────────────────────────────────────────────────────────── */
 interface LoginFormProps {
-  users: ErpUser[];
   username: string;
   setUsername: (v: string) => void;
   pin: string;
@@ -878,7 +847,6 @@ interface LoginFormProps {
 }
 
 function LoginForm({
-  users,
   username,
   setUsername,
   pin,
@@ -894,10 +862,6 @@ function LoginForm({
   pinRef,
   onSubmit,
 }: LoginFormProps) {
-  const matchedUser = users.find(
-    (u) => u.username.toLowerCase() === username.trim().toLowerCase() || u.name === username.trim()
-  );
-
   const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -994,71 +958,7 @@ function LoginForm({
               colorScheme: 'light',
             }}
           />
-          {/* Match indicator — only show ✅ when user found in list */}
-          {username.trim() && matchedUser && (
-            <span
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '16px',
-                transform: 'translateY(-50%)',
-                fontSize: '15px',
-              }}
-            >
-              ✅
-            </span>
-          )}
         </div>
-
-        {/* Matched user pill */}
-        {matchedUser && (
-          <div
-            style={{
-              marginTop: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '9px 14px',
-              background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)',
-              border: '1px solid #ddd6fe',
-              borderRadius: '12px',
-              fontSize: '12.5px',
-              color: '#5b21b6',
-            }}
-          >
-            <span
-              style={{
-                background: 'linear-gradient(135deg,#4f46e5,#7c3aed)',
-                color: '#fff',
-                width: '28px',
-                height: '28px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12px',
-                fontWeight: 800,
-                flexShrink: 0,
-              }}
-            >
-              {matchedUser.name.charAt(0)}
-            </span>
-            <span style={{ fontWeight: 600 }}>{matchedUser.name}</span>
-            <span
-              style={{
-                marginRight: 'auto',
-                background: 'linear-gradient(135deg,#4f46e5,#7c3aed)',
-                color: '#fff',
-                borderRadius: '7px',
-                padding: '2px 10px',
-                fontSize: '11px',
-                fontWeight: 700,
-              }}
-            >
-              {translateRole(matchedUser.role)}
-            </span>
-          </div>
-        )}
       </div>
       {/* ── PIN ──────────────────────────────────────── */}
       <div style={{ marginBottom: '22px' }}>
@@ -1218,106 +1118,6 @@ function LoginForm({
           <span>🔐 دخول آمن (مُحكم) ←</span>
         )}
       </button>
-      {/* ── Quick-select avatars ───────────────────────── */}
-      {users.length > 0 && (
-        <div style={{ borderTop: '1px solid rgba(212,175,55,0.2)', paddingTop: '18px' }}>
-          <div
-            style={{
-              fontSize: '11.5px',
-              color: '#8b6914',
-              textAlign: 'center',
-              marginBottom: '14px',
-              fontWeight: 600,
-              opacity: 0.8,
-            }}
-          >
-            اختر مستتك بسرعة
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '10px',
-              justifyContent: 'center',
-            }}
-          >
-            {users.slice(0, 6).map((u) => {
-              const isActive = username === u.username;
-              const initials = u.name.charAt(0);
-              return (
-                <button
-                  key={u.id}
-                  type="button"
-                  title={u.name}
-                  onClick={() => {
-                    setUsername(u.username);
-                    pinRef.current?.focus();
-                  }}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '4px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '0',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: '50%',
-                      background: isActive
-                        ? 'linear-gradient(135deg, #2d1060, #4a1a90)'
-                        : 'linear-gradient(135deg, #3d1878, #6b21a8)',
-                      border: `2.5px solid ${isActive ? '#d4af37' : 'rgba(212,175,55,0.3)'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '15px',
-                      fontWeight: 800,
-                      color: '#f5e09a',
-                      boxShadow: isActive ? '0 0 14px rgba(212,175,55,0.4)' : 'none',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    {initials}
-                  </div>
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      color: isActive ? '#2d1060' : '#8b6914',
-                      fontWeight: 700,
-                      maxWidth: '48px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {u.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          {users.length > 0 && (
-            <div
-              style={{
-                textAlign: 'center',
-                marginTop: '10px',
-                fontSize: '10.5px',
-                color: '#b8860b',
-                opacity: 0.6,
-              }}
-            >
-              العودة سريعاً لمستخدم سابق
-            </div>
-          )}
-        </div>
-      )}
     </form>
   );
 }

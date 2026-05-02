@@ -4,7 +4,7 @@
  * Login lockout: max 5 failed attempts → 15-minute lockout per userId.
  */
 import { Router } from 'express';
-import { eq, and, ne, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 import { db, erpUsersTable, companiesTable } from '@workspace/db';
 import { logger } from '../lib/logger';
@@ -95,35 +95,6 @@ function daysRemaining(endDate: string): number {
 }
 
 const router = Router();
-
-/* ── GET /auth/users — public list for login UI (no PINs) ─ */
-router.get('/auth/users', async (req, res) => {
-  try {
-    const companyId = req.query.company_id ? parseInt(String(req.query.company_id)) : null;
-    if (!companyId || isNaN(companyId)) {
-      res.status(400).json({ error: 'company_id مطلوب للوصول إلى قائمة المستخدمين' });
-      return;
-    }
-
-    const rows = await db
-      .select({
-        id: erpUsersTable.id,
-        name: erpUsersTable.name,
-        username: erpUsersTable.username,
-        role: erpUsersTable.role,
-        active: erpUsersTable.active,
-      })
-      .from(erpUsersTable)
-      .where(and(eq(erpUsersTable.company_id, companyId), ne(erpUsersTable.role, 'super_admin')))
-      .orderBy(erpUsersTable.id);
-
-    const users = rows.filter((u) => u.active !== false).map((u) => ({ ...u, pinLength: 4 }));
-
-    res.json(users);
-  } catch {
-    res.status(500).json({ error: 'فشل جلب المستخدمين' });
-  }
-});
 
 /* ── POST /auth/login — validate PIN server-side, return JWT ─ */
 router.post('/auth/login', async (req, res) => {

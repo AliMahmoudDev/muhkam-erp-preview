@@ -74,9 +74,11 @@ import priceListsRouter from "./price-lists";
 const router: IRouter = Router();
 
 /* ── Public routes — no auth required ─────────────────────────── */
-router.use(authRouter);   // /auth/users  /auth/login  /auth/me
+router.use(authRouter);   // /auth/login  /auth/refresh  /auth/2fa/* (no user-directory endpoint)
 router.use(healthRouter); // /health
 router.use(zktecoRouter); // /iclock/cdata  /iclock/getrequest  /api/attendance/zkteco
+                          // ZKTeco endpoints require per-company key (ZKTECO_API_KEY_<company_id>).
+                          // Global ZKTECO_API_KEY is only accepted when ZKTECO_ALLOW_GLOBAL_KEY=true.
 router.use(repairTrackingRouter); // /api/public/repair-tracking/:companyId/:jobNo (تتبع العميل عبر QR — مفتوح بدون مصادقة)
 
 /* ── Global auth guard — all routes below require valid JWT ────── */
