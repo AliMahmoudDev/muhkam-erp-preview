@@ -3,7 +3,7 @@
 # Setup: chmod +x /root/monitor.sh
 #        (crontab -l 2>/dev/null; echo "*/5 * * * * /root/monitor.sh") | crontab -
 
-API_URL="http://localhost:3000/api/healthz"
+API_URL="http://localhost:8080/api/healthz"
 LOG_FILE="/var/log/muhkam-monitor.log"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 

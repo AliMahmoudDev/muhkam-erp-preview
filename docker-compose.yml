@@ -55,7 +55,7 @@ services:
       # مفتاح تشفير رموز TOTP — مطلوب لميزة المصادقة الثنائية
       TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY}
       REDIS_URL: redis://redis:6379
-      PORT: 3000
+      PORT: 8080
       NODE_ENV: production
       ALLOWED_ORIGINS: https://halaltec.com
       BACKUP_DIR: /app/backups
@@ -68,9 +68,9 @@ services:
       # ADVANCED frontend static files
       - ./artifacts/muhkam-advanced/dist/public:/app/muhkam-advanced/dist/public:ro
     ports:
-      - "3000:3000"
+      - "8080:8080"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3

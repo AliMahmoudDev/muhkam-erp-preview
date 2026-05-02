@@ -45,7 +45,7 @@ module.exports = {
       },
       env_production: {
         NODE_ENV: "production",
-        PORT: 3000,
+        PORT: 8080,
         DATABASE_URL: env.DATABASE_URL,
         JWT_SECRET: env.JWT_SECRET,
         JWT_REFRESH_SECRET: env.JWT_REFRESH_SECRET || env.JWT_SECRET,
