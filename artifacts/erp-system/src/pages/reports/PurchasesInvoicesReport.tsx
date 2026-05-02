@@ -53,7 +53,7 @@ export default function PurchasesInvoicesReport() {
         <div className="glass-panel rounded-2xl p-4 border border-amber-500/10"><p className="text-amber-400 text-xs mb-1">المتبقي للعملاء</p><p className="text-2xl font-black text-white">{formatCurrency(totalRemaining)}</p></div>
       </div>
       <div className="flex gap-3 flex-wrap items-center">
-        <div className="relative flex-1 max-w-xs"><Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"/><input className="glass-input w-full pr-9 text-sm" placeholder="بحث برقم الفاتورة أو العميل..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        <div className="relative flex-1 max-w-xs"><Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"/><input className="glass-input w-full icon-pr text-sm" placeholder="بحث برقم الفاتورة أو العميل..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
         <div className="flex gap-1">{[{v:"",l:"الكل"},{v:"cash",l:"نقدي"},{v:"credit",l:"آجل"},{v:"partial",l:"جزئي"}].map(opt=>(
           <button key={opt.v} onClick={()=>setPayFilter(opt.v)} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${payFilter===opt.v?"bg-amber-500/20 border-amber-500/40 text-amber-400":"glass-panel border-white/10 text-white/50 hover:text-white"}`}>{opt.l}</button>
         ))}</div>

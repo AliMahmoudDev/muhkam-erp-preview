@@ -2106,7 +2106,7 @@ export default function Devices() {
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="ابحث بالموديل / IMEI / العميل..."
-            className="erp-input w-full pr-8 text-sm" />
+            className="erp-input w-full icon-pr text-sm" />
           {search && (
             <button onClick={() => setSearch("")} className="absolute left-3 top-1/2 -translate-y-1/2">
               <X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" />

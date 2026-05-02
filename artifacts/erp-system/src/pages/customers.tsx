@@ -1987,7 +1987,7 @@ export default function Customers() {
         <input
           type="text"
           placeholder="بحث بالاسم أو الهاتف..."
-          className="glass-input pl-3 pr-9 w-full py-2 text-sm"
+          className="glass-input pl-3 icon-pr w-full py-2 text-sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

@@ -175,7 +175,7 @@ export default function VouchersHistoryReport() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-48 max-w-sm">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"/>
-          <input className="glass-input w-full pr-9 text-sm" placeholder="بحث برقم السند أو الطرف أو الخزينة..." value={search} onChange={e=>handleSearch(e.target.value)}/>
+          <input className="glass-input w-full icon-pr text-sm" placeholder="بحث برقم السند أو الطرف أو الخزينة..." value={search} onChange={e=>handleSearch(e.target.value)}/>
         </div>
         <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-2xl p-1">
           {(["الكل","قبض","صرف","تحويل"] as VFilter[]).map(t=>{

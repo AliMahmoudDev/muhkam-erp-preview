@@ -274,7 +274,7 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-          <input className="glass-input w-full pr-9 text-sm" placeholder="بحث بالمنتج / العميل / الرقم التسلسلي..."
+          <input className="glass-input w-full icon-pr text-sm" placeholder="بحث بالمنتج / العميل / الرقم التسلسلي..."
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-1">

@@ -168,7 +168,7 @@ function ProductsTab() {
             <input
               type="text"
               placeholder="بحث عن منتج..."
-              className="glass-input pl-4 pr-12 w-64"
+              className="glass-input pl-4 icon-pr w-64"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

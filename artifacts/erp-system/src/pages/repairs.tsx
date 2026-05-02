@@ -739,7 +739,7 @@ export default function Repairs() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="رقم / اسم / هاتف / IMEI..."
-              className="erp-input w-full pr-8 pl-8 text-sm" />
+              className="erp-input w-full icon-pr icon-pl text-sm" />
             <button
               onClick={() => setShowScanner(true)}
               title="مسح QR"
@@ -2499,7 +2499,7 @@ function NewJobForm({
               value={phone}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
               placeholder="رقم الهاتف (11 رقم) *"
-              className="erp-input w-full pr-8 text-sm font-mono tracking-widest"
+              className="erp-input w-full icon-pr text-sm font-mono tracking-widest"
               inputMode="numeric"
               maxLength={11}
             />

@@ -452,7 +452,7 @@ function CountTab({
                     value={partialSearch}
                     onChange={(e) => setPartialSearch(e.target.value)}
                     placeholder="ابحث عن منتج..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 pe-9 text-white text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-violet-400/40"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 icon-pr text-white text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-violet-400/40"
                   />
                   {partialSearch && (
                     <button

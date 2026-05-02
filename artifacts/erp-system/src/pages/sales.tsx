@@ -441,7 +441,7 @@ function SalesReturnsPanel() {
                 <input
                   autoFocus
                   type="text"
-                  className="glass-input pr-9 w-full"
+                  className="glass-input icon-pr w-full"
                   placeholder="رقم الفاتورة / اسم العميل / رمز العميل..."
                   value={invoiceSearch}
                   onChange={(e) => setInvoiceSearch(e.target.value)}

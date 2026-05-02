@@ -424,7 +424,7 @@ export default function UsersTab() {
                     placeholder="ابحث في الصلاحيات..."
                     value={permSearch}
                     onChange={e => setPermSearch(e.target.value)}
-                    className="pr-9 text-xs"
+                    className="icon-pr text-xs"
                   />
                 </div>
                 {(() => {

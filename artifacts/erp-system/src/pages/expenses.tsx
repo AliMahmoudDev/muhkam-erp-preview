@@ -540,7 +540,7 @@ export default function Expenses() {
             <input
               type="text" value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="بحث بالتصنيف أو التفاصيل..."
-              className="glass-input w-full pr-9 text-sm py-2.5"
+              className="glass-input w-full icon-pr text-sm py-2.5"
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">

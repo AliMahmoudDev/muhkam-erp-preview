@@ -53,7 +53,7 @@ export default function ProductProfitReport({ warehouseId }: { warehouseId?: num
         ))}
       </div>
       <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 max-w-xs"><Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"/><input className="glass-input w-full pr-9 text-sm" placeholder="بحث بالمنتج..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        <div className="relative flex-1 max-w-xs"><Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"/><input className="glass-input w-full icon-pr text-sm" placeholder="بحث بالمنتج..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
         <div className="flex gap-1">{(["profit","revenue","margin","qty"] as const).map(s=>(
           <button key={s} onClick={()=>setSort(s)} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${sort===s?"bg-amber-500/20 border-amber-500/40 text-amber-400":"glass-panel border-white/10 text-white/50 hover:text-white"}`}>
             {s==="profit"?"الربح":s==="revenue"?"المبيعات":s==="margin"?"الهامش":"الكمية"}

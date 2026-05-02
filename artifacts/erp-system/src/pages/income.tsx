@@ -206,7 +206,7 @@ export default function Income() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="بحث بالمصدر أو التفاصيل أو الخزينة..."
-            className="glass-input w-full pr-9 text-sm"
+            className="glass-input w-full icon-pr text-sm"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute left-3 top-1/2 -translate-y-1/2">

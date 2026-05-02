@@ -4693,6 +4693,9 @@ html.light .glass-panel {
   outline: none;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
+/* ── Input icon padding — overrides erp-input/glass-input base padding ── */
+.icon-pr { padding-right: 2.75rem !important; }
+.icon-pl { padding-left:  2rem   !important; }
 .erp-input::placeholder { color: rgba(255,255,255,0.26); }
 .erp-input:focus {
   border-color: rgba(245,158,11,0.50);

@@ -217,7 +217,7 @@ export default function InventoryReport() {
         <div className="relative flex-1 min-w-48">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
           <input
-            className="glass-input w-full pr-9 text-sm"
+            className="glass-input w-full icon-pr text-sm"
             placeholder="ابحث عن منتج أو صنف..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}

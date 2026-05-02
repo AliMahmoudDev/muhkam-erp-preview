@@ -506,7 +506,7 @@ export default function Returns() {
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="رقم المرتجع / العميل / السبب / رقم الفاتورة..."
-            className="erp-input w-full pr-8 text-sm"
+            className="erp-input w-full icon-pr text-sm"
           />
         </div>
         {/* من */}

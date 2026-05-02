@@ -238,7 +238,7 @@ export default function AuditLog() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="بحث في السجل..."
-            className="w-full bg-white/8 border border-white/15 rounded-xl pr-9 pl-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/50"
+            className="w-full bg-white/8 border border-white/15 rounded-xl icon-pr pl-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/50"
           />
         </div>
 
