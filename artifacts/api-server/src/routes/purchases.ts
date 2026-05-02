@@ -325,6 +325,9 @@ router.post("/purchases", wrap(async (req, res) => {
 }));
 
 router.get("/purchases/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_purchases")) {
+    res.status(403).json({ error: "غير مصرح بعرض فواتير المشتريات" }); return;
+  }
   const params = GetPurchaseByIdParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -415,6 +418,9 @@ async function buildPurchaseJournalLines(
 
 /* ── ترحيل فاتورة المشتريات (draft → posted) ───────────────────────────── */
 router.post("/purchases/:id/post", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_create_purchase")) {
+    res.status(403).json({ error: "غير مصرح بترحيل فواتير المشتريات" }); return;
+  }
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 

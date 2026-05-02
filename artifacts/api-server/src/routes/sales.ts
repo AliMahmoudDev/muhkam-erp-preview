@@ -539,6 +539,9 @@ router.post("/sales", wrap(async (req, res) => {
 }));
 
 router.get("/sales/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_sales")) {
+    res.status(403).json({ error: "غير مصرح بعرض فواتير المبيعات" }); return;
+  }
   const params = GetSaleByIdParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -549,6 +552,15 @@ router.get("/sales/:id", wrap(async (req, res) => {
   if (!sale) {
     res.status(404).json({ error: "Sale not found" });
     return;
+  }
+
+  /* Warehouse scoping: restricted roles can only access their assigned warehouse */
+  const role = req.user?.role ?? "cashier";
+  if (role !== "admin" && role !== "manager" && role !== "super_admin") {
+    const userWarehouseId = req.user?.warehouse_id ?? null;
+    if (userWarehouseId !== null && sale.warehouse_id !== null && sale.warehouse_id !== userWarehouseId) {
+      res.status(403).json({ error: "غير مصرح بعرض فواتير مخازن أخرى" }); return;
+    }
   }
 
   const items = await db.select().from(saleItemsTable).where(eq(saleItemsTable.sale_id, sale.id));
@@ -628,6 +640,9 @@ async function buildSaleJournalLines(sale: typeof salesTable.$inferSelect, compa
 
 /* ── ترحيل الفاتورة (draft → posted) ───────────────────────────────────── */
 router.post("/sales/:id/post", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_create_sale")) {
+    res.status(403).json({ error: "غير مصرح بترحيل فواتير المبيعات" }); return;
+  }
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
@@ -635,6 +650,15 @@ router.post("/sales/:id/post", wrap(async (req, res) => {
   if (!sale) throw httpError(404, "الفاتورة غير موجودة");
   if (sale.posting_status === "posted")    throw httpError(400, "الفاتورة مرحَّلة بالفعل");
   if (sale.posting_status === "cancelled") throw httpError(400, "لا يمكن ترحيل فاتورة ملغاة");
+
+  /* Warehouse scoping: restricted roles can only post their assigned warehouse's invoices */
+  const rolePost = req.user?.role ?? "cashier";
+  if (rolePost !== "admin" && rolePost !== "manager" && rolePost !== "super_admin") {
+    const userWarehouseIdPost = req.user?.warehouse_id ?? null;
+    if (userWarehouseIdPost !== null && sale.warehouse_id !== null && sale.warehouse_id !== userWarehouseIdPost) {
+      throw httpError(403, "غير مصرح بترحيل فواتير مخازن أخرى");
+    }
+  }
 
   await assertPeriodOpen(sale.date, req);
 

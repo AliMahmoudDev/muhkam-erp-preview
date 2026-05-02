@@ -21,6 +21,7 @@ import {
 import { wrap } from "../lib/async-handler";
 import { notifyUser } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
+import { hasPermission } from "../lib/permissions";
 import { computeTrackingToken } from "../lib/tracking-token";
 import { validateTransition } from "../services/repair-pipeline.service";
 import { writeAuditLog } from "../lib/audit-log";
@@ -392,6 +393,9 @@ async function ensureCompanyDefaults(companyId: number) {
    STATUSES (custom per company)
    ══════════════════════════════════════════════════════════════ */
 router.get("/repair-statuses", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   await ensureCompanyDefaults(company_id);
   const rows = await db.select().from(repairStatusesTable)
@@ -401,6 +405,9 @@ router.get("/repair-statuses", wrap(async (req, res) => {
 }));
 
 router.post("/repair-statuses", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const b = req.body as Record<string, unknown>;
   const label = String(b.label_ar ?? "").trim();
@@ -418,6 +425,9 @@ router.post("/repair-statuses", wrap(async (req, res) => {
 }));
 
 router.patch("/repair-statuses/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -433,6 +443,9 @@ router.patch("/repair-statuses/:id", wrap(async (req, res) => {
 }));
 
 router.delete("/repair-statuses/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   const [s] = await db.select().from(repairStatusesTable)
@@ -448,6 +461,9 @@ router.delete("/repair-statuses/:id", wrap(async (req, res) => {
    CHECKLIST ITEMS (custom per company)
    ══════════════════════════════════════════════════════════════ */
 router.get("/repair-checklist-items", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   await ensureCompanyDefaults(company_id);
   const deviceType = req.query.device_type as string | undefined;
@@ -461,6 +477,9 @@ router.get("/repair-checklist-items", wrap(async (req, res) => {
 }));
 
 router.post("/repair-checklist-items", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const b = req.body as Record<string, unknown>;
   const label = String(b.label_ar ?? "").trim();
@@ -490,6 +509,9 @@ router.post("/repair-checklist-items", wrap(async (req, res) => {
 
 /* Seed all items for a specific device type (iphone | ipad | watch | airpods | mac | samsung_phone | etc.) */
 router.post("/repair-checklist-items/seed-device-type", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const { device_type } = req.body as { device_type: string };
   // eslint-disable-next-line security/detect-object-injection
@@ -525,6 +547,9 @@ router.post("/repair-checklist-items/seed-device-type", wrap(async (req, res) =>
 
 /* Copy checklist items from one device type to another (e.g. derive AirPods from iPhone) */
 router.post("/repair-checklist-items/copy", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const { from, to } = req.body as { from: string; to: string };
   if (!from || !to || from === to) return res.status(400).json({ error: "from/to invalid" });
@@ -553,6 +578,9 @@ router.post("/repair-checklist-items/copy", wrap(async (req, res) => {
 }));
 
 router.patch("/repair-checklist-items/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -570,6 +598,9 @@ router.patch("/repair-checklist-items/:id", wrap(async (req, res) => {
 
 /* Bulk reorder: [{ id, sort_order }] */
 router.post("/repair-checklist-items/reorder", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const items = req.body as { id: number; sort_order: number }[];
   if (!Array.isArray(items)) return res.status(400).json({ error: "invalid" });
@@ -582,6 +613,9 @@ router.post("/repair-checklist-items/reorder", wrap(async (req, res) => {
 }));
 
 router.delete("/repair-checklist-items/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   await db.delete(repairChecklistItemsTable)
@@ -594,6 +628,9 @@ router.delete("/repair-checklist-items/:id", wrap(async (req, res) => {
    ══════════════════════════════════════════════════════════════ */
 
 router.get("/repair-device-models", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const rows = await db.select().from(repairDeviceModelsTable)
     .where(eq(repairDeviceModelsTable.company_id, company_id))
@@ -602,6 +639,9 @@ router.get("/repair-device-models", wrap(async (req, res) => {
 }));
 
 router.post("/repair-device-models", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const { brand, category, model } = req.body as { brand: string; category: string; model: string };
   if (!brand?.trim() || !category?.trim() || !model?.trim()) {
@@ -623,6 +663,9 @@ router.post("/repair-device-models", wrap(async (req, res) => {
 }));
 
 router.delete("/repair-device-models/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   await db.delete(repairDeviceModelsTable)
@@ -634,6 +677,9 @@ router.delete("/repair-device-models/:id", wrap(async (req, res) => {
    REPAIR JOBS
    ══════════════════════════════════════════════════════════════ */
 router.get("/repair-jobs", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بعرض بطاقات الصيانة" });
+  }
   const { company_id } = ctx(req);
   const { status, technician_id, search } = req.query as Record<string, string>;
 
@@ -687,6 +733,9 @@ router.get("/repair-jobs", wrap(async (req, res) => {
 
 /* Stats by status (with colors) for dashboard cards */
 router.get("/repair-jobs/stats", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بعرض إحصاءات الصيانة" });
+  }
   const { company_id } = ctx(req);
   await ensureCompanyDefaults(company_id);
 
@@ -733,6 +782,9 @@ router.get("/repair-jobs/stats", wrap(async (req, res) => {
 
 /* Long-stay alerts: jobs in repair center > N days, not delivered/cancelled */
 router.get("/repair-jobs/alerts", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const days = Number(req.query.days ?? 7);
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
@@ -748,6 +800,9 @@ router.get("/repair-jobs/alerts", wrap(async (req, res) => {
 
 /* Technicians list — kept for backward compat */
 router.get("/repair-jobs/technicians", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const users = await db.select({ id: erpUsersTable.id, name: erpUsersTable.name })
     .from(erpUsersTable)
@@ -767,6 +822,9 @@ router.get("/repair-jobs/technicians", wrap(async (req, res) => {
  * ⚠ هذا الـ route لازم يكون قبل /repair-jobs/:id (وإلّا Express يَعتبر "technician-stats" قيمة لـ :id).
  */
 router.get("/repair-jobs/technician-stats", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بعرض إحصاءات الفنيين" });
+  }
   const { company_id } = ctx(req);
 
   /* استعلام واحد لكل فنّي — يحسب البطاقات حيث الفني الأساسي يتطابق
@@ -797,6 +855,9 @@ router.get("/repair-jobs/technician-stats", wrap(async (req, res) => {
 }));
 
 router.get("/repair-jobs/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بعرض بطاقات الصيانة" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
 
@@ -815,6 +876,9 @@ router.get("/repair-jobs/:id", wrap(async (req, res) => {
 }));
 
 router.post("/repair-jobs", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بإنشاء بطاقات الصيانة" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const b = req.body as Record<string, unknown>;
   const job_no = await nextJobNo(company_id);
@@ -887,6 +951,9 @@ router.post("/repair-jobs", wrap(async (req, res) => {
 }));
 
 router.patch("/repair-jobs/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بتعديل بطاقات الصيانة" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const id = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -1042,6 +1109,9 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
 }));
 
 router.delete("/repair-jobs/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بحذف بطاقات الصيانة" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const id = Number(req.params.id);
   const [job] = await db.select({ id: repairJobsTable.id, job_no: repairJobsTable.job_no })
@@ -1074,6 +1144,9 @@ router.delete("/repair-jobs/:id", wrap(async (req, res) => {
    - DELETE  /repair-jobs/:id/engineer-reports/:rid
 ═══════════════════════════════════════════════════════════ */
 router.get("/repair-jobs/:id/engineer-reports", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بعرض تقارير المهندسين" });
+  }
   const { company_id } = ctx(req);
   const job_id = Number(req.params.id);
   const rows = await db.select().from(repairStatusHistoryTable)
@@ -1090,6 +1163,9 @@ router.get("/repair-jobs/:id/engineer-reports", wrap(async (req, res) => {
 const MAX_ENGINEER_REPORT_LEN = 5000;
 
 router.post("/repair-jobs/:id/engineer-reports", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بإضافة تقارير المهندسين" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const job_id = Number(req.params.id);
   const note = String((req.body as Record<string, unknown>).note ?? "").trim();
@@ -1129,6 +1205,9 @@ router.post("/repair-jobs/:id/engineer-reports", wrap(async (req, res) => {
 }));
 
 router.delete("/repair-jobs/:id/engineer-reports/:rid", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بحذف تقارير المهندسين" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const job_id = Number(req.params.id);
   const rid = Number(req.params.rid);
@@ -1163,6 +1242,9 @@ router.delete("/repair-jobs/:id/engineer-reports/:rid", wrap(async (req, res) =>
 
 /* ── PARTS ─────────────────────────────────────────────────── */
 router.post("/repair-jobs/:id/parts", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بإضافة قطع الغيار" });
+  }
   const { company_id } = ctx(req);
   const job_id = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -1180,6 +1262,9 @@ router.post("/repair-jobs/:id/parts", wrap(async (req, res) => {
 }));
 
 router.delete("/repair-jobs/:id/parts/:partId", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بحذف قطع الغيار" });
+  }
   const { company_id } = ctx(req);
   const partId = Number(req.params.partId);
   await db.delete(repairJobPartsTable)
@@ -1196,6 +1281,9 @@ router.delete("/repair-jobs/:id/parts/:partId", wrap(async (req, res) => {
  * تطبيق ذرّي عبر transaction لمنع تعارض ما بين تحديث الجدول والمخزن.
  */
 router.post("/repair-jobs/:id/parts/:partId/return", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بإرجاع قطع الغيار" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const partId = Number(req.params.partId);
   const b = req.body as Record<string, unknown>;
@@ -1305,6 +1393,9 @@ router.post("/repair-jobs/:id/parts/:partId/return", wrap(async (req, res) => {
  * - رقم البطاقة الجديدة: {parent_job_no}/W{n}
  */
 router.post("/repair-jobs/:id/create-warranty", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بإنشاء بطاقة ضمان" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const parentId = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -1399,6 +1490,9 @@ router.post("/repair-jobs/:id/create-warranty", wrap(async (req, res) => {
  * }
  */
 router.post("/repair-jobs/:id/customer-return", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بتسجيل مرتجع صيانة" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const jobId = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -1541,6 +1635,9 @@ router.post("/repair-jobs/:id/customer-return", wrap(async (req, res) => {
  * يحفظ سطر في status_history (event_type='qa_completed') لتتبع الفنّي الذي أنجز الفحص.
  */
 router.post("/repair-jobs/:id/qa-checklist", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بإكمال فحص الجودة" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const id = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -1623,6 +1720,9 @@ router.post("/repair-jobs/:id/qa-checklist", wrap(async (req, res) => {
  * (المستخدم يقرر لكل قطعة على حدة قبل الضغط على "تأكيد المراجعة").
  */
 router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بمراجعة التسليم" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const id = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -1778,6 +1878,9 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
  * إن كانت تكلفة الشحن = 0 يمكن للمستخدم تأكيد ذلك (يضع shipping_settled_at بدون مصروف).
  */
 router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بتسجيل تكلفة الشحن" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const id = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -1964,6 +2067,9 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
  * هذا أوضح فصلاً للمسؤوليات وأسهل اختباراً من إرجاع HTML من الخادم.
  */
 router.get("/repair-jobs/:id/receipt-data", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بعرض بيانات الإيصال" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
 
@@ -2013,6 +2119,9 @@ router.get("/repair-jobs/:id/receipt-data", wrap(async (req, res) => {
  * يستقبل: { method: 'whatsapp' | 'print' | 'both' }
  */
 router.post("/repair-jobs/:id/delivery-receipt", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بتسجيل إيصال التسليم" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const id = Number(req.params.id);
   const b = req.body as Record<string, unknown>;
@@ -2050,6 +2159,9 @@ router.post("/repair-jobs/:id/delivery-receipt", wrap(async (req, res) => {
    a walk-in repair customer.
 ══════════════════════════════════════════════════════════════ */
 router.get("/repair-customers/lookup", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const phone = String(req.query.phone ?? "").trim();
   if (!phone) return res.json(null);
@@ -2063,6 +2175,9 @@ router.get("/repair-customers/lookup", wrap(async (req, res) => {
 }));
 
 router.post("/repair-customers", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const b = req.body as Record<string, unknown>;
   const name  = String(b.name  ?? "").trim();
@@ -2147,6 +2262,9 @@ router.post("/repair-customers", wrap(async (req, res) => {
 
 /* GET /api/repair-jobs/:id/payments — جلب دفعات تذكرة معينة */
 router.get("/repair-jobs/:id/payments", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    res.status(403).json({ error: "غير مصرح بعرض دفعات الصيانة" }); return;
+  }
   const companyId = req.user!.company_id!;
   const jobId = parseInt(String(req.params["id"]), 10);
 
@@ -2164,6 +2282,9 @@ router.get("/repair-jobs/:id/payments", wrap(async (req, res) => {
 
 /* POST /api/repair-jobs/:id/payments — تسجيل دفعة جديدة */
 router.post("/repair-jobs/:id/payments", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    res.status(403).json({ error: "غير مصرح بتسجيل دفعات الصيانة" }); return;
+  }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id;
   const userName = req.user?.username ?? "";
@@ -2252,6 +2373,9 @@ router.post("/repair-jobs/:id/payments", wrap(async (req, res) => {
 
 /* DELETE /api/repair-jobs/:id/payments/:pid — حذف دفعة */
 router.delete("/repair-jobs/:id/payments/:pid", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    res.status(403).json({ error: "غير مصرح بحذف دفعات الصيانة" }); return;
+  }
   const companyId = req.user!.company_id!;
   const jobId = parseInt(String(req.params["id"]), 10);
   const pid = parseInt(String(req.params["pid"]), 10);
@@ -2281,6 +2405,9 @@ router.delete("/repair-jobs/:id/payments/:pid", wrap(async (req, res) => {
 
 /* GET /api/repair-jobs/reports/technicians — أداء الفنيين */
 router.get("/repair-jobs/reports/technicians", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    res.status(403).json({ error: "غير مصرح بعرض تقارير الفنيين" }); return;
+  }
   const companyId = req.user!.company_id!;
   const { from, to } = req.query as { from?: string; to?: string };
 
@@ -2309,6 +2436,9 @@ router.get("/repair-jobs/reports/technicians", wrap(async (req, res) => {
 
 /* GET /api/repair-jobs/reports/revenue — إيرادات الصيانة للفترة */
 router.get("/repair-jobs/reports/revenue", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_repairs")) {
+    res.status(403).json({ error: "غير مصرح بعرض تقارير الإيرادات" }); return;
+  }
   const companyId = req.user!.company_id!;
   const { from, to } = req.query as { from?: string; to?: string };
 

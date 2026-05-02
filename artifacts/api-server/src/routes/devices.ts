@@ -10,6 +10,7 @@ import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { wrap, httpError } from "../lib/async-handler";
 import type Express from "express";
 import { requireFeature } from "../middleware/feature-guard";
+import { hasPermission } from "../lib/permissions";
 
 const router = Router();
 router.use("/devices", requireFeature("maintenance"));
@@ -44,6 +45,9 @@ function nextInvoiceNo(): string {
 
 /* ─── STATS ─── */
 router.get("/devices/stats", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_devices")) {
+    return res.status(403).json({ error: "غير مصرح بعرض إحصاءات الأجهزة" });
+  }
   const { company_id } = ctx(req);
 
   const countRows = await db.select({
@@ -98,6 +102,9 @@ router.get("/devices/stats", wrap(async (req, res) => {
 
 /* ─── LIST SAFES (for purchase form) ─── */
 router.get("/devices/safes", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const rows = await db.select({ id: safesTable.id, name: safesTable.name, balance: safesTable.balance })
     .from(safesTable)
@@ -108,6 +115,9 @@ router.get("/devices/safes", wrap(async (req, res) => {
 
 /* ─── LIST WAREHOUSES (for purchase form) ─── */
 router.get("/devices/warehouses", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const rows = await db.select({ id: warehousesTable.id, name: warehousesTable.name })
     .from(warehousesTable)
@@ -118,6 +128,9 @@ router.get("/devices/warehouses", wrap(async (req, res) => {
 
 /* ─── CUSTOMER PHONE LOOKUP ─── */
 router.get("/devices/customer-lookup", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
   const phone = (req.query.phone as string ?? "").trim();
   if (!phone) return res.json({ found: false });
@@ -139,6 +152,9 @@ router.get("/devices/customer-lookup", wrap(async (req, res) => {
 
 /* ─── LIST ACTIVE INSPECTORS: system users + active employees ─── */
 router.get("/devices/employees", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
   const { company_id } = ctx(req);
 
   /* System users (active) */
@@ -171,6 +187,9 @@ router.get("/devices/employees", wrap(async (req, res) => {
 
 /* ─── LIST ─── */
 router.get("/devices", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_devices")) {
+    return res.status(403).json({ error: "غير مصرح بعرض الأجهزة" });
+  }
   const { company_id } = ctx(req);
   const { status, search } = req.query as Record<string, string>;
 
@@ -199,6 +218,9 @@ router.get("/devices", wrap(async (req, res) => {
 
 /* ─── GET ONE ─── */
 router.get("/devices/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_devices")) {
+    return res.status(403).json({ error: "غير مصرح بعرض الأجهزة" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   const [row] = await db.select().from(devicesTable)
@@ -209,15 +231,29 @@ router.get("/devices/:id", wrap(async (req, res) => {
 
 /* ─── CREATE DEVICE (simple, no purchase) ─── */
 router.post("/devices", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح بإضافة الأجهزة" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const device_no = await nextDeviceNo(company_id);
+  const b = req.body as Record<string, unknown>;
+  const ALLOWED_FIELDS = [
+    "brand", "model", "color", "storage", "grade", "imei", "serial_no",
+    "battery_health", "condition_notes", "purchase_price", "sale_price",
+    "dual_sim", "with_box", "icloud_locked", "network_locked",
+    "previously_opened", "mdm_locked", "supplier_name", "supplier_phone",
+    "id_card_data", "inspection_data", "inspector_employee_id",
+    "inspector_name", "branch_id",
+  ] as const;
+  const safeBody: Record<string, unknown> = {};
+  for (const f of ALLOWED_FIELDS) if (f in b) safeBody[f] = b[f];
   const [row] = await db.insert(devicesTable).values({
-    ...req.body,
+    ...safeBody,
     company_id,
     device_no,
     added_by_user_id: user_id,
     added_by_user_name: user_name,
-    inspector_name: req.body.inspector_name ?? user_name,
+    inspector_name: (safeBody.inspector_name as string | undefined) ?? user_name,
     status: "available",
   }).returning();
   return res.json(row);
@@ -241,6 +277,9 @@ router.post("/devices", wrap(async (req, res) => {
      7. Customer ledger entry (if credit/partial + existing customer)
 ──────────────────────────────────────────────────────────────────────── */
 router.post("/devices/purchase", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح بشراء الأجهزة" });
+  }
   const { company_id, user_id, user_name, role, warehouse_id: userWarehouseId } = ctx(req);
 
   const {
@@ -512,10 +551,24 @@ router.post("/devices/purchase", wrap(async (req, res) => {
 
 /* ─── UPDATE ─── */
 router.patch("/devices/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح بتعديل الأجهزة" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
+  const b = req.body as Record<string, unknown>;
+  const PATCH_ALLOWED = [
+    "brand", "model", "color", "storage", "grade", "imei", "serial_no",
+    "battery_health", "condition_notes", "purchase_price", "sale_price",
+    "dual_sim", "with_box", "icloud_locked", "network_locked",
+    "previously_opened", "mdm_locked", "supplier_name", "supplier_phone",
+    "id_card_data", "inspection_data", "inspector_employee_id",
+    "inspector_name", "status", "branch_id",
+  ] as const;
+  const safeUpdate: Record<string, unknown> = { updated_at: new Date() };
+  for (const f of PATCH_ALLOWED) if (f in b) safeUpdate[f] = b[f];
   const [row] = await db.update(devicesTable)
-    .set({ ...req.body, updated_at: new Date() })
+    .set(safeUpdate)
     .where(and(eq(devicesTable.id, id), eq(devicesTable.company_id, company_id)))
     .returning();
   if (!row) return res.status(404).json({ error: "not found" });
@@ -524,6 +577,9 @@ router.patch("/devices/:id", wrap(async (req, res) => {
 
 /* ─── SELL ─── */
 router.post("/devices/:id/sell", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح ببيع الأجهزة" });
+  }
   const { company_id, user_id, user_name } = ctx(req);
   const id = Number(req.params.id);
   const {
@@ -584,6 +640,9 @@ router.post("/devices/:id/sell", wrap(async (req, res) => {
 
 /* ─── SEND TO MAINTENANCE ─── */
 router.post("/devices/:id/maintenance", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح بتعديل حالة الجهاز" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   const [row] = await db.update(devicesTable)
@@ -596,6 +655,9 @@ router.post("/devices/:id/maintenance", wrap(async (req, res) => {
 
 /* ─── RETURN TO AVAILABLE (maintenance → available) ─── */
 router.post("/devices/:id/available", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح بتعديل حالة الجهاز" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   const [row] = await db.update(devicesTable)
@@ -608,6 +670,9 @@ router.post("/devices/:id/available", wrap(async (req, res) => {
 
 /* ─── CUSTOMER RETURN (sold → available, clear sale data) ─── */
 router.post("/devices/:id/return", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح بتسجيل إرجاع الجهاز" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   const { return_reason } = req.body as { return_reason?: string };
@@ -644,6 +709,9 @@ router.post("/devices/:id/return", wrap(async (req, res) => {
 
 /* ─── DELETE ─── */
 router.delete("/devices/:id", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_devices")) {
+    return res.status(403).json({ error: "غير مصرح بحذف الأجهزة" });
+  }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
   await db.delete(devicesTable)
