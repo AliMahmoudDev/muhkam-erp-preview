@@ -1938,17 +1938,43 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
-      {/* ── شريط تبويبات الصفحة الرئيسية ── */}
-      <div className="flex gap-1 border-b border-white/10 pb-0 -mb-4">
-        {([
-          { id: 'customers', label: 'العملاء والموردون' },
-          { id: 'bad-debts', label: 'الديون المعدومة' },
-        ] as const).map(t => (
-          <button key={t.id} onClick={() => setPageView(t.id)}
-            className={`px-5 py-2.5 text-sm font-bold border-b-2 transition-all ${pageView === t.id ? 'border-amber-400 text-amber-400' : 'border-transparent text-white/40 hover:text-white/70'}`}>
-            {t.label}
-          </button>
-        ))}
+      {/* ── شريط العنوان: التبويبات + أزرار الإجراءات ── */}
+      <div className="flex items-end justify-between gap-3 border-b border-white/10">
+        <div className="flex gap-1">
+          {([
+            { id: 'customers', label: 'العملاء والموردون' },
+            { id: 'bad-debts', label: 'الديون المعدومة' },
+          ] as const).map(t => (
+            <button key={t.id} onClick={() => setPageView(t.id)}
+              className={`px-5 py-2.5 text-sm font-bold border-b-2 transition-all ${pageView === t.id ? 'border-amber-400 text-amber-400' : 'border-transparent text-white/40 hover:text-white/70'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {pageView === 'customers' && (
+          <div className="flex items-center gap-2 pb-2">
+            <button
+              onClick={() => { setShowReports(true); setReportData(null); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/40 text-violet-400 hover:bg-violet-500/30 transition-all whitespace-nowrap"
+            >
+              <BarChart2 className="w-4 h-4" /> تقارير العملاء
+            </button>
+            <button
+              onClick={() => exportCustomersExcel(customers)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all whitespace-nowrap"
+            >
+              <FileDown className="w-4 h-4" /> Excel
+            </button>
+            {canManageCustomers && (
+              <button
+                onClick={() => setShowAdd(true)}
+                className="btn-primary flex items-center gap-2 whitespace-nowrap py-1.5"
+              >
+                <Plus className="w-4 h-4" /> إضافة عميل
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── الديون المعدومة ── */}
@@ -1956,40 +1982,15 @@ export default function Customers() {
 
       {/* ── عرض العملاء والموردون ── */}
       {pageView === 'customers' && <>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-          <input
-            type="text"
-            placeholder="بحث..."
-            className="glass-input pl-3 pr-9 w-full py-2 text-sm"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <button
-          onClick={() => {
-            setShowReports(true);
-            setReportData(null);
-          }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/40 text-violet-400 hover:bg-violet-500/30 transition-all whitespace-nowrap"
-        >
-          <BarChart2 className="w-4 h-4" /> تقارير العملاء
-        </button>
-        <button
-          onClick={() => exportCustomersExcel(customers)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all whitespace-nowrap"
-        >
-          <FileDown className="w-4 h-4" /> Excel
-        </button>
-        {canManageCustomers && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="btn-primary flex items-center gap-2 whitespace-nowrap py-2"
-          >
-            <Plus className="w-4 h-4" /> إضافة عميل
-          </button>
-        )}
+      <div className="relative max-w-sm">
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+        <input
+          type="text"
+          placeholder="بحث بالاسم أو الهاتف..."
+          className="glass-input pl-3 pr-9 w-full py-2 text-sm"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {/* ── إحصائيات AR / AP ── */}
