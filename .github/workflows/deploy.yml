@@ -108,6 +108,11 @@ jobs:
               echo "BACKUP_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$ENV_FILE"
               echo "✓ Generated BACKUP_ENCRYPTION_KEY"
             fi
+            # Add SUPER_ADMIN_IPS placeholder if missing (admin must fill it in .env manually)
+            if ! grep -q "^SUPER_ADMIN_IPS=" "$ENV_FILE" 2>/dev/null; then
+              echo "SUPER_ADMIN_IPS=" >> "$ENV_FILE"
+              echo "⚠️  SUPER_ADMIN_IPS is empty — super-admin access is BLOCKED in production. Add your IP(s) to .env"
+            fi
 
             # Re-source .env to pick up all vars (including newly generated ones)
             set -a
@@ -145,6 +150,7 @@ jobs:
             pm2 delete halaltech-api || true
 
             # Start with all required env vars passed explicitly (no reliance on --update-env)
+            # Optional vars (REDIS_URL, TELEGRAM_*, SUPER_ADMIN_IPS) are passed if present in .env
             NODE_ENV=production \
               PORT=8080 \
               JWT_SECRET="$JWT_SECRET" \
@@ -152,6 +158,12 @@ jobs:
               DATABASE_URL="$DATABASE_URL" \
               TOTP_ENCRYPTION_KEY="$TOTP_ENCRYPTION_KEY" \
               BACKUP_ENCRYPTION_KEY="$BACKUP_ENCRYPTION_KEY" \
+              SUPER_ADMIN_IPS="${SUPER_ADMIN_IPS:-}" \
+              REDIS_URL="${REDIS_URL:-}" \
+              TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}" \
+              TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}" \
+              SUPPORT_WHATSAPP="${SUPPORT_WHATSAPP:-}" \
+              SUPPORT_EMAIL="${SUPPORT_EMAIL:-}" \
               pm2 start dist/index.mjs \
                 --name halaltech-api \
                 --cwd "$APP_DIR/artifacts/api-server"
