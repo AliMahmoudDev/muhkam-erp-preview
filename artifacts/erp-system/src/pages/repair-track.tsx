@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useSearch } from "wouter";
 import { CheckCircle2, Clock, AlertCircle, Wrench, Loader2, XCircle } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -17,41 +17,44 @@ interface TrackData {
 }
 
 export default function RepairTrack() {
-  /* المسار القديم: /track/:companyId/:jobNo (مع شركة) — للحفاظ على التوافق مع QR codes القديمة */
+  /* /track/:companyId/:jobNo?token=<hmac> */
   const [matchedFull, paramsFull] = useRoute<{ companyId: string; jobNo: string }>(
     "/track/:companyId/:jobNo",
   );
-  /* المسار الجديد: /track/:jobNo (بدون شركة) — رابط مُختصَر للعميل */
-  const [, paramsShort] = useRoute<{ jobNo: string }>("/track/:jobNo");
+
+  /* SEC: read the HMAC token from the URL search string */
+  const search = useSearch();
+  const token = new URLSearchParams(search).get("token") ?? "";
 
   const companyId = matchedFull ? paramsFull?.companyId : undefined;
-  const rawJobNo = matchedFull ? paramsFull?.jobNo : paramsShort?.jobNo;
-  const jobNo = rawJobNo ? decodeURIComponent(rawJobNo) : "";
+  const rawJobNo  = matchedFull ? paramsFull?.jobNo : undefined;
+  const jobNo     = rawJobNo ? decodeURIComponent(rawJobNo) : "";
 
-  const [data, setData] = useState<TrackData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData]       = useState<TrackData | null>(null);
+  const [error, setError]     = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!jobNo) { setError("رابط غير صالح"); setLoading(false); return; }
+    if (!jobNo || !companyId) { setError("رابط غير صالح"); setLoading(false); return; }
+    if (!token) { setError("رابط التتبع غير صالح — أعد مسح رمز QR"); setLoading(false); return; }
     let alive = true;
     (async () => {
       try {
-        /* اختر المسار حسب توفر companyId — ينفع المسارين القديم والجديد */
-        const url = companyId
-          ? api(`/api/public/repair-tracking/${encodeURIComponent(companyId)}/${encodeURIComponent(jobNo)}`)
-          : api(`/api/public/repair-track/${encodeURIComponent(jobNo)}`);
+        const url = api(
+          `/api/public/repair-tracking/${encodeURIComponent(companyId)}/${encodeURIComponent(jobNo)}?token=${encodeURIComponent(token)}`
+        );
         const r = await fetch(url);
         if (!alive) return;
-        if (r.status === 404) { setError("لم يتم العثور على طلب بهذا الرقم"); }
+        if (r.status === 401) { setError("رابط التتبع غير صالح أو منتهي الصلاحية — أعد مسح رمز QR"); }
+        else if (r.status === 404) { setError("لم يتم العثور على طلب بهذا الرقم"); }
         else if (r.status === 429) { setError("محاولات كثيرة — انتظر دقيقة وحاول مجدداً"); }
-        else if (!r.ok)        { setError("تعذر تحميل بيانات التتبع"); }
+        else if (!r.ok)            { setError("تعذر تحميل بيانات التتبع"); }
         else { const j = await r.json() as TrackData; setData(j); }
       } catch { if (alive) setError("خطأ في الاتصال — حاول لاحقاً"); }
       finally { if (alive) setLoading(false); }
     })();
     return () => { alive = false; };
-  }, [companyId, jobNo]);
+  }, [companyId, jobNo, token]);
 
   const fmtDate = (iso: string | null | undefined) => {
     if (!iso) return "—";
@@ -143,7 +146,6 @@ export default function RepairTrack() {
               </div>
               <div className="px-5 py-4">
                 {(() => {
-                  /* حماية دفاعية: استجابات قديمة قد لا ترجع history أو ترجعه null */
                   const history: TrackHistory[] = Array.isArray(data.history) ? data.history : [];
                   if (history.length === 0) {
                     return (

@@ -21,6 +21,7 @@ import {
 import { wrap } from "../lib/async-handler";
 import { notifyUser } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
+import { computeTrackingToken } from "../lib/tracking-token";
 import { validateTransition } from "../services/repair-pipeline.service";
 import { writeAuditLog } from "../lib/audit-log";
 
@@ -678,7 +679,10 @@ router.get("/repair-jobs", wrap(async (req, res) => {
       );
     }
   }
-  return res.json(filtered);
+  return res.json(filtered.map(j => ({
+    ...j,
+    tracking_token: computeTrackingToken(j.company_id, j.job_no),
+  })));
 }));
 
 /* Stats by status (with colors) for dashboard cards */
@@ -807,7 +811,7 @@ router.get("/repair-jobs/:id", wrap(async (req, res) => {
     .where(and(eq(repairStatusHistoryTable.job_id, id), eq(repairStatusHistoryTable.company_id, company_id)))
     .orderBy(desc(repairStatusHistoryTable.created_at));
 
-  return res.json({ ...job, parts, history });
+  return res.json({ ...job, parts, history, tracking_token: computeTrackingToken(job.company_id, job.job_no) });
 }));
 
 router.post("/repair-jobs", wrap(async (req, res) => {

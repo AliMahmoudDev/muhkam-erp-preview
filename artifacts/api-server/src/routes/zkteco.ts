@@ -29,6 +29,13 @@ const router: IRouter = Router();
 
 const ZKTECO_KEY = process.env["ZKTECO_API_KEY"] ?? "";
 
+if (!ZKTECO_KEY) {
+  console.warn(
+    "[zkteco] WARNING: ZKTECO_API_KEY is not set. " +
+    "All ZKTeco attendance endpoints will reject requests until the key is configured."
+  );
+}
+
 /* ── helpers ────────────────────────────────────────────────── */
 function nowDate() { return new Date().toISOString().split("T")[0]; }
 function nowTime() {
@@ -171,8 +178,8 @@ router.post("/iclock/cdata", wrap(async (req, res) => {
   const apiKey = String(req.query["key"] ?? req.query["api_key"] ?? "");
   const companyIdQ = Number(req.query["company_id"] ?? 0);
 
-  // Require api key if set
-  if (ZKTECO_KEY && apiKey !== ZKTECO_KEY) {
+  // SEC: fail-closed — always require API key; reject if unset or wrong
+  if (!ZKTECO_KEY || apiKey !== ZKTECO_KEY) {
     res.status(401).send("UNAUTHORIZED");
     return;
   }
@@ -223,8 +230,9 @@ router.post("/api/attendance/zkteco", wrap(async (req, res) => {
   const { api_key, company_id, employee_code, punch_time, punch_type, punch_date } =
     req.body as Record<string, unknown>;
 
-  if (ZKTECO_KEY && String(api_key ?? "") !== ZKTECO_KEY) {
-    res.status(401).json({ error: "مفتاح API غير صحيح" });
+  // SEC: fail-closed — always require API key; reject if unset or wrong
+  if (!ZKTECO_KEY || String(api_key ?? "") !== ZKTECO_KEY) {
+    res.status(401).json({ error: "مفتاح API مطلوب أو غير صحيح" });
     return;
   }
 
@@ -267,7 +275,7 @@ router.get("/api/attendance/zkteco/info", (_req, res) => {
       punch_date: "YYYY-MM-DD (optional, defaults to today)",
       punch_type: "in | out",
     },
-    note: "Set ZKTECO_API_KEY environment variable on server to enable authentication",
+    note: "ZKTECO_API_KEY environment variable must be set on the server. Authentication is always required.",
   });
 });
 

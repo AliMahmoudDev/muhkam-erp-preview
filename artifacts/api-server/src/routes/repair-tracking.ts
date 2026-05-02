@@ -3,14 +3,16 @@
  * ║  Public Repair Tracking — لتتبّع العميل لطلب الصيانة عبر الـ QR           ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  *
- * مسار مفتوح (بدون مصادقة) يُعيد فقط البيانات الضرورية للعميل:
- *   - رقم الطلب، اسم العميل (للتأكيد فقط)، الجهاز
- *   - الحالة الحالية + تاريخ التحديثات (دون أسماء فنيين / تكاليف داخلية / تقارير المهندس)
+ * مسار مفتوح (بدون مصادقة مستخدم) لكنه يشترط رمز تحقق HMAC لا يمكن تخمينه.
  *
- * الأمان:
- *   - rate-limited عبر generalLimiter العام على /api/*
- *   - يَستخدم company_id + job_no معاً (لأن job_no غير فريد عبر الشركات)
- *   - يُخفي كل البيانات الحساسة (تكاليف، عربون، PIN الجهاز، أرقام التواصل، إلخ)
+ * الحماية:
+ *   - يشترط token = HMAC-SHA256(REPAIR_TRACKING_SECRET, companyId:jobNo)
+ *   - بدون السر يُعاد 503 (إغلاق بالإعداد الافتراضي — fail-closed)
+ *   - rate-limited: 10 طلبات/دقيقة/IP للحدّ من الاستطلاع
+ *   - يُخفي كل البيانات الحساسة (تكاليف، عربون، PIN الجهاز، أرقام التواصل)
+ *
+ * SEC: الرابط القصير /public/repair-track/:jobNo أُزيل لأنه لا يمتلك أي مصادقة
+ *      ولا رمز تحقق، ولا معرّف شركة، مما يسمح بالتعداد عبر jobNo وحده.
  */
 
 import { Router, type IRouter } from "express";
@@ -18,12 +20,12 @@ import { eq, and, asc } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
 import { db, repairJobsTable, repairStatusHistoryTable, repairStatusesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { isTrackingEnabled, verifyTrackingToken } from "../lib/tracking-token";
 
 const router: IRouter = Router();
 
 /**
- * حدّاد طلبات للتتبع العام: 10 طلبات / دقيقة / IP — يحمي من الـ scraping الجماعي
- * لأرقام الطلبات (job_no قابل للتخمين رقمياً).
+ * حدّاد طلبات للتتبع العام: 10 طلبات / دقيقة / IP
  */
 const publicTrackingLimiter = rateLimit({
   windowMs: 60_000,
@@ -35,7 +37,6 @@ const publicTrackingLimiter = rateLimit({
 
 /**
  * Fallback Arabic labels — يُطابق STATUS_MAP في الواجهة (repairs.tsx)
- * يُستخدم عندما لا تُعرّف الشركة الحالة في جدول repair_statuses.
  */
 const FALLBACK_STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending:                    { label: "انتظار",                color: "#f59e0b" },
@@ -60,15 +61,30 @@ const FALLBACK_STATUS_LABELS: Record<string, { label: string; color: string }> =
 };
 
 /**
- * GET /api/public/repair-tracking/:companyId/:jobNo
- * يُعيد بيانات تتبع الطلب الموجزة — متاح للجمهور.
+ * GET /api/public/repair-tracking/:companyId/:jobNo?token=<hmac>
+ *
+ * يُعيد بيانات تتبع الطلب الموجزة — متاح للجمهور بشرط رمز HMAC صحيح.
+ *
+ * الرمز: HMAC-SHA256(REPAIR_TRACKING_SECRET, "${companyId}:${jobNo}") أوّل 32 حرف hex
+ * يتم حساب الرمز على الخادم وإرساله للواجهة مع بيانات الطلب، ثم يُضمَّن في رابط QR.
  */
 router.get("/public/repair-tracking/:companyId/:jobNo", publicTrackingLimiter, wrap(async (req, res) => {
+  /* SEC: fail-closed — إذا لم يُضبط السر يُرفض كل الوصول */
+  if (!isTrackingEnabled()) {
+    return res.status(503).json({ error: "خدمة التتبع غير مُهيَّأة على الخادم" });
+  }
+
   const companyId = Number(req.params.companyId);
   const jobNo = String(req.params.jobNo ?? "").trim();
+  const token = String(req.query["token"] ?? "").trim();
 
   if (!Number.isFinite(companyId) || companyId <= 0 || !jobNo) {
     return res.status(400).json({ error: "بيانات غير صالحة" });
+  }
+
+  /* SEC: التحقق من رمز HMAC قبل أي وصول للقاعدة */
+  if (!verifyTrackingToken(companyId, jobNo, token)) {
+    return res.status(401).json({ error: "رابط التتبع غير صالح أو منتهي الصلاحية" });
   }
 
   /* فلترة صارمة: شركة + رقم طلب — يجب أن يتطابق الاثنان */
@@ -94,7 +110,7 @@ router.get("/public/repair-tracking/:companyId/:jobNo", publicTrackingLimiter, w
     return res.status(404).json({ error: "لم يتم العثور على طلب بهذا الرقم" });
   }
 
-  /* قائمة الحالات المُعرَّفة لهذه الشركة — للحصول على التسميات والألوان الصحيحة */
+  /* قائمة الحالات المُعرَّفة لهذه الشركة */
   const statusRows = await db.select({
     key: repairStatusesTable.key,
     label_ar: repairStatusesTable.label_ar,
@@ -135,104 +151,7 @@ router.get("/public/repair-tracking/:companyId/:jobNo", publicTrackingLimiter, w
       at:   h.created_at,
     }));
 
-  /* إخفاء جزء من اسم العميل لحماية الخصوصية: "أحمد م***" */
-  const maskedName = (() => {
-    const n = (job.customer_name ?? "").trim();
-    if (!n) return "";
-    const parts = n.split(/\s+/);
-    if (parts.length === 1) return parts[0].slice(0, 2) + "***";
-    return parts[0] + " " + (parts[1]?.[0] ?? "") + "***";
-  })();
-
-  return res.json({
-    job_no: job.job_no,
-    customer_name_masked: maskedName,
-    device: `${job.device_brand ?? ""} ${job.device_model ?? ""}`.trim(),
-    status: fmtStatus(job.status),
-    received_at: job.received_at,
-    estimated_delivery: job.estimated_delivery,
-    delivered_at: job.delivered_at,
-    history,
-  });
-}));
-
-/**
- * GET /api/public/repair-track/:jobNo
- *
- * نسخة مُختصَرة من رابط التتبّع تستخدم رقم الطلب فقط — بدون companyId.
- * للحماية: إن وُجدت بطاقات بنفس الرقم في أكثر من شركة، نُرجع 404 (تجنّب
- * كشف وجود الرقم في شركة أخرى).
- *
- * مُحدَّد بمعدّل 10 طلبات/دقيقة/IP.
- */
-router.get("/public/repair-track/:jobNo", publicTrackingLimiter, wrap(async (req, res) => {
-  const jobNo = String(req.params.jobNo ?? "").trim();
-  if (!jobNo) return res.status(400).json({ error: "رقم الطلب مطلوب" });
-
-  /* جلب أوّل بطاقتين فقط — لاكتشاف التضارب دون مسح كل القاعدة */
-  const matches = await db.select({
-    id: repairJobsTable.id,
-    company_id: repairJobsTable.company_id,
-    job_no: repairJobsTable.job_no,
-    customer_name: repairJobsTable.customer_name,
-    device_brand: repairJobsTable.device_brand,
-    device_model: repairJobsTable.device_model,
-    status: repairJobsTable.status,
-    received_at: repairJobsTable.received_at,
-    estimated_delivery: repairJobsTable.estimated_delivery,
-    delivered_at: repairJobsTable.delivered_at,
-  })
-    .from(repairJobsTable)
-    .where(eq(repairJobsTable.job_no, jobNo))
-    .limit(2);
-
-  /* ما لقيناش طلب أو فيه أكثر من شركة بنفس الرقم → 404 (لا نُفصح عن وجود تضارب) */
-  if (matches.length === 0 || matches.length > 1) {
-    return res.status(404).json({ error: "لم يتم العثور على طلب بهذا الرقم" });
-  }
-
-  const job = matches[0];
-  const companyId = job.company_id;
-
-  const statusRows = await db.select({
-    key: repairStatusesTable.key,
-    label_ar: repairStatusesTable.label_ar,
-    color: repairStatusesTable.color,
-  })
-    .from(repairStatusesTable)
-    .where(eq(repairStatusesTable.company_id, companyId));
-  const statusMap = new Map(statusRows.map(s => [s.key, s]));
-
-  const fmtStatus = (key: string | null | undefined) => {
-    if (!key) return null;
-    const s = statusMap.get(key);
-    if (s) return { key, label: s.label_ar, color: s.color ?? "#64748b" };
-    // eslint-disable-next-line security/detect-object-injection
-    const f = FALLBACK_STATUS_LABELS[key];
-    return { key, label: f?.label ?? key, color: f?.color ?? "#64748b" };
-  };
-
-  const historyRows = await db.select({
-    status_to: repairStatusHistoryTable.status_to,
-    status_from: repairStatusHistoryTable.status_from,
-    event_type: repairStatusHistoryTable.event_type,
-    created_at: repairStatusHistoryTable.created_at,
-  })
-    .from(repairStatusHistoryTable)
-    .where(and(
-      eq(repairStatusHistoryTable.job_id, job.id),
-      eq(repairStatusHistoryTable.company_id, companyId),
-    ))
-    .orderBy(asc(repairStatusHistoryTable.created_at));
-
-  const history = historyRows
-    .filter(h => h.event_type !== "engineer_report" && h.status_to)
-    .map(h => ({
-      from: fmtStatus(h.status_from),
-      to:   fmtStatus(h.status_to),
-      at:   h.created_at,
-    }));
-
+  /* إخفاء جزء من اسم العميل لحماية الخصوصية */
   const maskedName = (() => {
     const n = (job.customer_name ?? "").trim();
     if (!n) return "";

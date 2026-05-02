@@ -1651,7 +1651,8 @@ function JobDetail({
       baseUrl = saved.baseUrl ?? "";
     } catch { /* ignore */ }
     const effectiveBase = baseUrl || `${window.location.origin}/track`;
-    const trackingUrl   = `${effectiveBase}/${job.company_id}/${encodeURIComponent(job.job_no)}`;
+    const token = (job as { tracking_token?: string }).tracking_token ?? "";
+    const trackingUrl   = `${effectiveBase}/${job.company_id}/${encodeURIComponent(job.job_no)}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
 
     const svg = document.getElementById(`qr-job-${job.id}`)?.querySelector("svg");
     if (!svg) { toast({ title: "تعذر تحميل الرمز", variant: "destructive" }); return; }
@@ -1717,7 +1718,9 @@ function JobDetail({
       const saved = JSON.parse(localStorage.getItem("repair_qr_settings") ?? "{}") as { baseUrl?: string };
       baseUrl = saved.baseUrl ?? "";
     } catch { /* ignore */ }
-    return `${baseUrl || `${window.location.origin}/track`}/${job.company_id}/${encodeURIComponent(job.job_no)}`;
+    const token = (job as { tracking_token?: string }).tracking_token ?? "";
+    const base = baseUrl || `${window.location.origin}/track`;
+    return `${base}/${job.company_id}/${encodeURIComponent(job.job_no)}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
   })();
 
   return (
