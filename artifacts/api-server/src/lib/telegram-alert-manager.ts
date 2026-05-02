@@ -158,8 +158,7 @@ class AlertManager {
 
   /* ── Persist current state to DB (fire-and-forget) ── */
   private persistState(): void {
-    const snapshot: Record<string, number> = {};
-    for (const [k, v] of this.memState) snapshot[k] = v;
+    const snapshot: Record<string, number> = Object.fromEntries(this.memState);
 
     void (async () => {
       try {

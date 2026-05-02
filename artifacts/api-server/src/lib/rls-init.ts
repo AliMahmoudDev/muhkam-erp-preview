@@ -78,6 +78,7 @@ export const APP_ROLE = "erp_app_role";
 async function ensureAppRole(): Promise<void> {
   /* Create role if missing — DO blocks can't accept bind params, so use raw SQL.
      APP_ROLE is a hard-coded constant (no injection risk). */
+  // nosemgrep: ban-drizzle-sql-raw — PostgreSQL DDL (DO block / GRANT / ALTER) cannot be expressed in Drizzle; APP_ROLE is a hardcoded constant
   await db.execute(sql.raw(`
     DO $$
     BEGIN
@@ -87,17 +88,20 @@ async function ensureAppRole(): Promise<void> {
     END
     $$;
   `));
-  /* Grant the connection role the ability to SET ROLE to erp_app_role */
+  // nosemgrep: ban-drizzle-sql-raw
   await db.execute(sql.raw(`GRANT "${APP_ROLE}" TO CURRENT_USER`));
-  /* Grant minimum required privileges on existing tables/sequences */
+  // nosemgrep: ban-drizzle-sql-raw
   await db.execute(sql.raw(`GRANT USAGE ON SCHEMA public TO "${APP_ROLE}"`));
+  // nosemgrep: ban-drizzle-sql-raw
   await db.execute(sql.raw(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "${APP_ROLE}"`));
+  // nosemgrep: ban-drizzle-sql-raw
   await db.execute(sql.raw(`GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO "${APP_ROLE}"`));
-  /* Apply default privileges so future tables are also accessible */
+  // nosemgrep: ban-drizzle-sql-raw
   await db.execute(sql.raw(`
     ALTER DEFAULT PRIVILEGES IN SCHEMA public
       GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "${APP_ROLE}"
   `));
+  // nosemgrep: ban-drizzle-sql-raw
   await db.execute(sql.raw(`
     ALTER DEFAULT PRIVILEGES IN SCHEMA public
       GRANT USAGE, SELECT ON SEQUENCES TO "${APP_ROLE}"
@@ -167,10 +171,13 @@ export async function initRLS(): Promise<{ enabled: number; skipped: number }> {
       }
 
       /* Enable RLS (idempotent). FORCE makes it apply to table owner too. */
+      // nosemgrep: ban-drizzle-sql-raw — ALTER TABLE DDL not expressible in Drizzle; table name comes from hardcoded RLS_TABLES constant
       await db.execute(sql.raw(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`));
+      // nosemgrep: ban-drizzle-sql-raw
       await db.execute(sql.raw(`ALTER TABLE "${table}" FORCE ROW LEVEL SECURITY`));
 
       /* Recreate policy idempotently inside a single DO block to avoid race conditions */
+      // nosemgrep: ban-drizzle-sql-raw
       await db.execute(sql.raw(
         `DO $$
          BEGIN

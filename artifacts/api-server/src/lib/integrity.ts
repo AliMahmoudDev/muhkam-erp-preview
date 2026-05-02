@@ -41,6 +41,7 @@ export interface IntegrityCheck {
  * يكشف أي قيد مُدخَل يدوياً أو من جيل سابق قبل تطبيق التحقق المركزي.
  * ─────────────────────────────────────────────────────────────────────────── */
 export async function checkJournalEntryBalance(): Promise<IntegrityCheck> {
+  // nosemgrep: ban-drizzle-sql-raw — complex HAVING clause requires raw SQL; no user input
   const rows = await db.execute(sql.raw(`
     SELECT
       je.id,
@@ -87,6 +88,7 @@ export async function checkJournalEntryBalance(): Promise<IntegrityCheck> {
  * إذا كان |انحراف| > TOLERANCE فالحساب مُنحرف.
  * ─────────────────────────────────────────────────────────────────────────── */
 export async function checkAccountBalanceDrift(): Promise<IntegrityCheck> {
+  // nosemgrep: ban-drizzle-sql-raw — complex HAVING clause requires raw SQL; no user input
   const rows = await db.execute(sql.raw(`
     SELECT
       a.id,
@@ -139,6 +141,7 @@ export async function checkAccountBalanceDrift(): Promise<IntegrityCheck> {
  * لكن بعض المسارات القديمة قد تقرأ customers.balance مباشرةً.
  * ─────────────────────────────────────────────────────────────────────────── */
 export async function checkCustomerBalanceDrift(): Promise<IntegrityCheck> {
+  // nosemgrep: ban-drizzle-sql-raw — complex HAVING clause requires raw SQL; no user input
   const rows = await db.execute(sql.raw(`
     SELECT
       c.id,
@@ -180,6 +183,7 @@ export async function checkCustomerBalanceDrift(): Promise<IntegrityCheck> {
  * الكميات السالبة: مبيعات، مرتجعات مشتريات، تسويات سالبة
  * ─────────────────────────────────────────────────────────────────────────── */
 export async function checkInventoryDrift(): Promise<IntegrityCheck> {
+  // nosemgrep: ban-drizzle-sql-raw — complex HAVING clause requires raw SQL; no user input
   const rows = await db.execute(sql.raw(`
     SELECT
       p.id,
@@ -218,6 +222,7 @@ export async function checkInventoryDrift(): Promise<IntegrityCheck> {
  * لا يمس الحسابات التي رصيدها صحيح.
  * ─────────────────────────────────────────────────────────────────────────── */
 export async function repairAccountBalances(): Promise<{ repaired: number }> {
+  // nosemgrep: ban-drizzle-sql-raw — UPDATE…FROM…HAVING not expressible in Drizzle; no user input
   const result = await db.execute(sql.raw(`
     UPDATE accounts a
     SET current_balance = subq.correct_balance
@@ -251,6 +256,7 @@ export async function repairAccountBalances(): Promise<{ repaired: number }> {
  * يُعدِّل customers.balance للعملاء ذوي الانحراف فقط.
  * ─────────────────────────────────────────────────────────────────────────── */
 export async function repairCustomerBalances(): Promise<{ repaired: number }> {
+  // nosemgrep: ban-drizzle-sql-raw — UPDATE…FROM…HAVING not expressible in Drizzle; no user input
   const result = await db.execute(sql.raw(`
     UPDATE customers c
     SET balance = subq.correct_balance::numeric

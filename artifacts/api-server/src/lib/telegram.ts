@@ -55,6 +55,7 @@ async function loadCreds(): Promise<TgCreds | null> {
 export async function sendTelegramAlert(message: string): Promise<void> {
   const creds = await loadCreds();
   if (!creds) {
+    // eslint-disable-next-line no-console
     console.warn("[Telegram] بيانات البوت غير مضبوطة — تم تخطي الإرسال");
     return;
   }
@@ -73,9 +74,11 @@ export async function sendTelegramAlert(message: string): Promise<void> {
 
     if (!res.ok) {
       const body = await res.text().catch(() => "(no body)");
+      // eslint-disable-next-line no-console
       console.warn(`[Telegram] فشل الإرسال — ${res.status}: ${body}`);
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.warn("[Telegram] خطأ أثناء الإرسال:", err);
   }
 }

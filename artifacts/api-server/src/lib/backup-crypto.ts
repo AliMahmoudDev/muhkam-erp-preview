@@ -144,7 +144,7 @@ export function decryptBuffer(data: Buffer): Buffer {
   const ciphertext = data.subarray(off);
 
   const key = deriveKey(salt);
-  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv, { authTagLength: 16 });
   decipher.setAuthTag(authTag);
 
   try {
