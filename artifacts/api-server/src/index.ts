@@ -13,7 +13,7 @@ import { pool } from "@workspace/db";
 import { alertManager, ALERT_TYPES } from "./lib/telegram-alert-manager";
 
 /* ── Startup: validate required environment variables ──────── */
-const REQUIRED_ENV_VARS = ["JWT_SECRET", "JWT_REFRESH_SECRET", "DATABASE_URL"] as const;
+const REQUIRED_ENV_VARS = ["JWT_SECRET", "JWT_REFRESH_SECRET", "TOTP_ENCRYPTION_KEY", "BACKUP_ENCRYPTION_KEY", "DATABASE_URL"] as const;
 for (const key of REQUIRED_ENV_VARS) {
   // eslint-disable-next-line security/detect-object-injection
   if (!process.env[key]) {

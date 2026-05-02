@@ -51,27 +51,22 @@ export async function seedDefaults(): Promise<void> {
       .where(eq(erpUsersTable.role, "super_admin"))
       .limit(1);
 
-    const superAdminPin = process.env.SUPER_ADMIN_PIN ?? "000000";
-
     if (!superAdmin) {
-      const hashed = await hashPin(superAdminPin);
-      await db.insert(erpUsersTable).values({
-        name:       "Super Admin",
-        username:   "superadmin",
-        pin:        hashed,
-        role:       "super_admin",
-        company_id: null,
-        active:     true,
-      });
-      logger.info(`Super admin created — username: superadmin, PIN: ${superAdminPin}`);
-    } else if (process.env.SUPER_ADMIN_PIN) {
-      /* If SUPER_ADMIN_PIN env var is explicitly set, update the PIN on startup */
-      const hashed = await hashPin(superAdminPin);
-      await db
-        .update(erpUsersTable)
-        .set({ pin: hashed, active: true })
-        .where(eq(erpUsersTable.role, "super_admin"));
-      logger.info(`Super admin PIN updated from SUPER_ADMIN_PIN env var`);
+      const superAdminPin = process.env.SUPER_ADMIN_PIN;
+      if (!superAdminPin) {
+        logger.warn("SUPER_ADMIN_PIN is not set — skipping super admin creation. Set the secret to create the account.");
+      } else {
+        const hashed = await hashPin(superAdminPin);
+        await db.insert(erpUsersTable).values({
+          name:       "Super Admin",
+          username:   "superadmin",
+          pin:        hashed,
+          role:       "super_admin",
+          company_id: null,
+          active:     true,
+        });
+        logger.info("Super admin created — username: superadmin");
+      }
     }
 
     /* ── 3. Ensure default company_admin exists (dynamic company ID) */
@@ -82,31 +77,20 @@ export async function seedDefaults(): Promise<void> {
       .limit(1);
 
     if (!companyUsers) {
-      const defaultAdminPin = process.env.DEFAULT_ADMIN_PIN ?? "123456";
-      const hashed = await hashPin(defaultAdminPin);
-      await db.insert(erpUsersTable).values({
-        name:       "المدير الافتراضي",
-        username:   "admin",
-        pin:        hashed,
-        role:       "admin",
-        company_id: defaultCompanyId,
-        active:     true,
-      });
-      logger.info(`Default company admin created — username: admin, PIN: ${defaultAdminPin} (company_id: ${defaultCompanyId})`);
-    } else if (process.env.DEFAULT_ADMIN_PIN) {
-      /* If DEFAULT_ADMIN_PIN env var is explicitly set, update the PIN on startup */
-      const hashed = await hashPin(process.env.DEFAULT_ADMIN_PIN);
-      const [firstCompanyAdmin] = await db
-        .select({ id: erpUsersTable.id })
-        .from(erpUsersTable)
-        .where(eq(erpUsersTable.company_id, defaultCompanyId))
-        .limit(1);
-      if (firstCompanyAdmin) {
-        await db
-          .update(erpUsersTable)
-          .set({ pin: hashed })
-          .where(eq(erpUsersTable.id, firstCompanyAdmin.id));
-        logger.info("Default admin PIN updated from DEFAULT_ADMIN_PIN env var");
+      const defaultAdminPin = process.env.DEFAULT_ADMIN_PIN;
+      if (!defaultAdminPin) {
+        logger.warn("DEFAULT_ADMIN_PIN is not set — skipping default admin creation. Set the secret to create the account.");
+      } else {
+        const hashed = await hashPin(defaultAdminPin);
+        await db.insert(erpUsersTable).values({
+          name:       "المدير الافتراضي",
+          username:   "admin",
+          pin:        hashed,
+          role:       "admin",
+          company_id: defaultCompanyId,
+          active:     true,
+        });
+        logger.info(`Default company admin created — username: admin (company_id: ${defaultCompanyId})`);
       }
     }
 
