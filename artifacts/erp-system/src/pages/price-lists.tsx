@@ -403,15 +403,15 @@ function PriceListCard({
       });
       const rows = d.items.map((item, idx) => {
         const markup = item.markup_percent;
-        const clientPrice = markup != null && item.cost_price > 0
-          ? (item.cost_price * (1 + markup / 100)).toFixed(2)
-          : item.sale_price.toFixed(2);
-        const priceFormatted = Number(clientPrice).toLocaleString("ar-EG", { minimumFractionDigits: 2 });
+        const rawPrice = markup != null && item.cost_price > 0
+          ? item.cost_price * (1 + markup / 100)
+          : item.sale_price;
+        const priceFormatted = formatCurrency(rawPrice);
         return `
           <tr class="${idx % 2 === 0 ? "even" : "odd"}">
             <td class="num">${idx + 1}</td>
             <td class="product-name">${item.product_name}</td>
-            <td class="price">${priceFormatted} ج.م</td>
+            <td class="price">${priceFormatted}</td>
           </tr>`;
       }).join("");
 

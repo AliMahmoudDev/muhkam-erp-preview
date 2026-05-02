@@ -25,30 +25,64 @@ function getSettings(): { companyName: string; phone: string; address: string } 
   return { companyName: 'هالال تك', phone: '', address: '' };
 }
 
-function getCurrencySymbol(): string {
+const STORAGE_KEY = 'halal_erp_settings';
+
+function _toWestern(str: string): string {
+  return str.replace(/[٠-٩]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0x0630));
+}
+function _toArabicIndic(str: string): string {
+  return str.replace(/[0-9]/g, (d) => String.fromCharCode(d.charCodeAt(0) + 0x0630));
+}
+function _applyNumFmt(str: string, fmt: string): string {
+  if (fmt === 'arabic-indic') return _toArabicIndic(_toWestern(str));
+  return _toWestern(str);
+}
+function _applyThousandsSep(str: string, sep: string): string {
+  if (sep === 'comma') return str;
+  return str.replace(/,/g, sep === 'period' ? '.' : sep === 'space' ? '\u00a0' : '،');
+}
+
+function getNumSettings(): {
+  sym: string;
+  numFmt: string;
+  dp: number;
+  tSep: string;
+  dateLocale: string;
+} {
   try {
-    const raw = localStorage.getItem('halal_erp_settings');
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const p = JSON.parse(raw);
-      const map: Record<string, string> = {
-        EGP: 'ج.م',
-        USD: '$',
-        CNY: '¥',
-      };
-      return map[p.currency] ?? 'ج.م';
+      const currMap: Record<string, string> = { EGP: 'ج.م', USD: '$', CNY: '¥' };
+      const numFmt = p.numberFormat === 'arabic-indic' ? 'arabic-indic' : 'western';
+      const dp = [0, 2, 3].includes(p.decimalPlaces) ? p.decimalPlaces : 2;
+      const tSep = ['comma', 'period', 'space', 'arabic-comma'].includes(p.thousandsSeparator)
+        ? p.thousandsSeparator : 'comma';
+      const dateLocale = numFmt === 'arabic-indic' ? 'ar-EG' : 'ar-EG-u-nu-latn';
+      return { sym: currMap[p.currency] ?? 'ج.م', numFmt, dp, tSep, dateLocale };
     }
   } catch {}
-  return 'ج.م';
+  return { sym: 'ج.م', numFmt: 'western', dp: 2, tSep: 'comma', dateLocale: 'ar-EG-u-nu-latn' };
+}
+
+function getCurrencySymbol(): string {
+  return getNumSettings().sym;
 }
 
 function fmtMoney(n: number | null | undefined): string {
-  const sym = getCurrencySymbol();
-  return `${Number(n ?? 0).toFixed(2)} ${sym}`;
+  const { sym, numFmt, dp, tSep } = getNumSettings();
+  const val = Number(n ?? 0);
+  const raw = val.toLocaleString('en-US', {
+    minimumFractionDigits: dp,
+    maximumFractionDigits: dp,
+  });
+  return _applyNumFmt(_applyThousandsSep(raw, tSep), numFmt) + ' ' + sym;
 }
 
 function fmtDate(d: string | null | undefined): string {
   if (!d) return '-';
-  return new Date(d).toLocaleDateString('ar-EG-u-nu-latn', {
+  const { dateLocale } = getNumSettings();
+  return new Date(d).toLocaleDateString(dateLocale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -588,9 +622,9 @@ export interface FullSaleData {
 
 export function printSaleInvoice(sale: FullSaleData): void {
   const s = getSettings();
-  const sym = getCurrencySymbol();
+  const { dateLocale } = getNumSettings();
   const dateStr = sale.date
-    ? new Date(sale.date + 'T12:00:00').toLocaleDateString('ar-EG-u-nu-latn', {
+    ? new Date(sale.date + 'T12:00:00').toLocaleDateString(dateLocale, {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -603,8 +637,8 @@ export function printSaleInvoice(sale: FullSaleData): void {
     <td>${i + 1}</td>
     <td style="font-weight:700">${escapeHtml(it.product_name)}</td>
     <td>${Number(it.quantity)}</td>
-    <td>${Number(it.unit_price).toFixed(2)} ${sym}</td>
-    <td style="font-weight:700;color:#d97706">${Number(it.total_price).toFixed(2)} ${sym}</td>
+    <td>${fmtMoney(it.unit_price)}</td>
+    <td style="font-weight:700;color:#d97706">${fmtMoney(it.total_price)}</td>
   </tr>`
     )
     .join('');
@@ -639,14 +673,14 @@ export function printSaleInvoice(sale: FullSaleData): void {
     <tbody>${rows}</tbody>
     <tfoot><tr>
       <td colspan="4" style="text-align:right;color:#6b7280">الإجمالي الفرعي (${sale.items.length} صنف)</td>
-      <td style="color:#d97706">${subtotal.toFixed(2)} ${sym}</td>
+      <td style="color:#d97706">${fmtMoney(subtotal)}</td>
     </tr></tfoot>
   </table>
   <div class="totals">
     <div class="totals-inner">
-      <div class="t-row grand"><span>الإجمالي الكلي</span><span>${Number(sale.total_amount).toFixed(2)} ${sym}</span></div>
-      <div class="t-row paid"><span>المدفوع ✓</span><span>${Number(sale.paid_amount).toFixed(2)} ${sym}</span></div>
-      ${Number(sale.remaining_amount) > 0 ? `<div class="t-row remaining"><span>المتبقي ⚠</span><span>${Number(sale.remaining_amount).toFixed(2)} ${sym}</span></div>` : ''}
+      <div class="t-row grand"><span>الإجمالي الكلي</span><span>${fmtMoney(sale.total_amount)}</span></div>
+      <div class="t-row paid"><span>المدفوع ✓</span><span>${fmtMoney(sale.paid_amount)}</span></div>
+      ${Number(sale.remaining_amount) > 0 ? `<div class="t-row remaining"><span>المتبقي ⚠</span><span>${fmtMoney(sale.remaining_amount)}</span></div>` : ''}
     </div>
   </div>
   <div class="foot-row">
@@ -692,10 +726,10 @@ export interface FullPurchaseData {
 
 export function printPurchaseInvoice(purchase: FullPurchaseData): void {
   const s = getSettings();
-  const sym = getCurrencySymbol();
+  const { dateLocale } = getNumSettings();
   const party = purchase.supplier_name ?? purchase.customer_name ?? '—';
   const dateStr = purchase.date
-    ? new Date(purchase.date + 'T12:00:00').toLocaleDateString('ar-EG-u-nu-latn', {
+    ? new Date(purchase.date + 'T12:00:00').toLocaleDateString(dateLocale, {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -708,8 +742,8 @@ export function printPurchaseInvoice(purchase: FullPurchaseData): void {
     <td>${i + 1}</td>
     <td style="font-weight:700">${escapeHtml(it.product_name)}</td>
     <td>${Number(it.quantity)}</td>
-    <td>${Number(it.unit_price).toFixed(2)} ${sym}</td>
-    <td style="font-weight:700;color:#2563eb">${Number(it.total_price).toFixed(2)} ${sym}</td>
+    <td>${fmtMoney(it.unit_price)}</td>
+    <td style="font-weight:700;color:#2563eb">${fmtMoney(it.total_price)}</td>
   </tr>`
     )
     .join('');
@@ -743,14 +777,14 @@ export function printPurchaseInvoice(purchase: FullPurchaseData): void {
     <tbody>${rows}</tbody>
     <tfoot><tr>
       <td colspan="4" style="text-align:right;color:#6b7280">إجمالي المشتريات (${purchase.items.length} صنف)</td>
-      <td style="color:#2563eb">${subtotal.toFixed(2)} ${sym}</td>
+      <td style="color:#2563eb">${fmtMoney(subtotal)}</td>
     </tr></tfoot>
   </table>
   <div class="totals">
     <div class="totals-inner">
-      <div class="t-row grand" style="background:#dbeafe"><span>إجمالي قيمة المشتريات</span><span>${Number(purchase.total_amount).toFixed(2)} ${sym}</span></div>
-      <div class="t-row" style="color:#059669;font-weight:700"><span>المبلغ المدفوع ✓</span><span>${Number(purchase.paid_amount).toFixed(2)} ${sym}</span></div>
-      ${Number(purchase.remaining_amount) > 0 ? `<div class="t-row remaining"><span>المتبقي للمورد ⚠</span><span>${Number(purchase.remaining_amount).toFixed(2)} ${sym}</span></div>` : ''}
+      <div class="t-row grand" style="background:#dbeafe"><span>إجمالي قيمة المشتريات</span><span>${fmtMoney(purchase.total_amount)}</span></div>
+      <div class="t-row" style="color:#059669;font-weight:700"><span>المبلغ المدفوع ✓</span><span>${fmtMoney(purchase.paid_amount)}</span></div>
+      ${Number(purchase.remaining_amount) > 0 ? `<div class="t-row remaining"><span>المتبقي للمورد ⚠</span><span>${fmtMoney(purchase.remaining_amount)}</span></div>` : ''}
     </div>
   </div>
   <div class="foot-row">
@@ -861,10 +895,10 @@ const PL_STYLES = `
 
 export function printPLReport(data: PLReportData): void {
   const s = getSettings();
-  const sym = getCurrencySymbol();
-  const m = (n: number | null | undefined) => `${Number(n ?? 0).toFixed(2)} ${sym}`;
+  const { dateLocale } = getNumSettings();
+  const m = fmtMoney;
   const pct = (n: number) => `${n.toFixed(1)}%`;
-  const now = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+  const now = new Date().toLocaleDateString(dateLocale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -1028,16 +1062,16 @@ export interface BalanceSheetPrintData {
 
 export function printBalanceSheet(data: BalanceSheetPrintData): void {
   const s = getSettings();
-  const sym = getCurrencySymbol();
-  const m = (n: number) => `${Number(n ?? 0).toFixed(2)} ${sym}`;
-  const now = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+  const { dateLocale } = getNumSettings();
+  const m = fmtMoney;
+  const now = new Date().toLocaleDateString(dateLocale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
-  const asOf = new Date(data.as_of).toLocaleDateString('ar-EG-u-nu-latn', {
+  const asOf = new Date(data.as_of).toLocaleDateString(dateLocale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -1183,9 +1217,9 @@ export interface CashFlowPrintData {
 
 export function printCashFlow(data: CashFlowPrintData): void {
   const s = getSettings();
-  const sym = getCurrencySymbol();
-  const m = (n: number) => `${Number(n ?? 0).toFixed(2)} ${sym}`;
-  const now = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+  const { dateLocale: dloc2, numFmt: nf2, dp: dp2, tSep: ts2 } = getNumSettings();
+  const m = fmtMoney;
+  const now = new Date().toLocaleDateString(dloc2, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -1200,8 +1234,10 @@ export function printCashFlow(data: CashFlowPrintData): void {
   const closingBal = data.closingBalance ?? null;
   const openingBal = closingBal !== null ? closingBal - data.net_cash_flow : null;
   const fmtN = (n: number) => {
-    const a = Math.abs(n).toFixed(2);
-    return n < 0 ? `(${a})` : a;
+    const abs = Math.abs(n);
+    const raw = abs.toLocaleString('en-US', { minimumFractionDigits: dp2, maximumFractionDigits: dp2 });
+    const formatted = _applyNumFmt(_applyThousandsSep(raw, ts2), nf2);
+    return n < 0 ? `(${formatted})` : formatted;
   };
 
   const investingSection = hasInvesting

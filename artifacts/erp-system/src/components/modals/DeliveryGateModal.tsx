@@ -14,6 +14,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useGetSettingsSafes } from "@workspace/api-client-react";
+import { formatCurrency, formatNumber } from "@/lib/format";
 import {
   PackageCheck, Loader2, X, AlertTriangle,
   Coins, Clock, Plus, Trash2, UserCog,
@@ -79,9 +80,8 @@ interface Props {
   onSaved:  () => void;
 }
 
-const fmtCurrency = (n: number) =>
-  n.toLocaleString("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ج.م";
-const fmt = (n: number) => Number(n ?? 0).toFixed(2);
+const fmtCurrency = (n: number) => formatCurrency(n);
+const fmt = (n: number) => formatNumber(Number(n ?? 0));
 
 /* ══════════════════════════════════════════════
    المكوّن الرئيسي

@@ -18,6 +18,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useGetSettingsSafes } from "@workspace/api-client-react";
+import { formatCurrency } from "@/lib/format";
 import {
   ShieldCheck, Loader2, X, AlertTriangle,
   Check, Minus, XCircle, ThumbsDown, Save,
@@ -163,7 +164,7 @@ function parseSavedQc(raw: unknown): Array<{ id?: string; label?: string; status
 }
 
 function fmtCurrency(n: number) {
-  return n.toLocaleString("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ج.م";
+  return formatCurrency(n);
 }
 
 /* ════════════════════════════════════════════════

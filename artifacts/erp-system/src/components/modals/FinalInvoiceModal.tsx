@@ -10,6 +10,7 @@
  */
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { formatCurrency } from "@/lib/format";
 import {
   FileText, Printer, MessageCircle, Loader2, X, AlertTriangle, Truck, CheckCircle2,
 } from "lucide-react";
@@ -60,7 +61,7 @@ interface Props {
   onSaved:  () => void;
 }
 
-const fmt = (n: number) => Number(n ?? 0).toFixed(2);
+const fmt = (n: number) => formatCurrency(Number(n ?? 0));
 
 export default function FinalInvoiceModal({ job, onClose, onSaved }: Props) {
   const { user }  = useAuth();
