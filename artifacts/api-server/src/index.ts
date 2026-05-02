@@ -1,4 +1,3 @@
-import net from "net";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startBackupScheduler, stopBackupScheduler } from "./lib/backup-scheduler";
@@ -24,40 +23,7 @@ for (const key of REQUIRED_ENV_VARS) {
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
 
-function isPortInUse(port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const tester = net.createServer();
-    tester.once("error", (err: NodeJS.ErrnoException) => {
-      if (err.code === "EADDRINUSE") {
-        resolve(true);
-      } else {
-        resolve(false);
-      }
-    });
-    tester.once("listening", () => {
-      tester.close(() => resolve(false));
-    });
-    tester.listen(port, "0.0.0.0");
-  });
-}
-
-async function waitForPortFree(port: number, retries = 5, delayMs = 1000): Promise<boolean> {
-  for (let i = 0; i < retries; i++) {
-    const inUse = await isPortInUse(port);
-    if (!inUse) return false;
-    logger.warn({ port, attempt: i + 1, retries }, "Port in use — waiting for it to free up...");
-    await new Promise((r) => setTimeout(r, delayMs));
-  }
-  return true;
-}
-
 async function main() {
-  const inUse = await waitForPortFree(PORT);
-  if (inUse) {
-    logger.warn({ port: PORT }, "Duplicate start prevented — port still in use after retries");
-    process.exit(0);
-  }
-
   try {
     await seedDefaults();
   } catch (err) {
@@ -72,11 +38,7 @@ async function main() {
     logger.error({ err }, "[startup] RLS init failed — continuing without RLS");
   }
 
-  const server = app.listen(PORT, "0.0.0.0", (err?: Error) => {
-    if (err) {
-      logger.error({ err }, "Error listening on port");
-      process.exit(1);
-    }
+  const server = app.listen(PORT, "0.0.0.0", () => {
     logger.info(`Backend started on port ${PORT} (0.0.0.0)`);
     void alertManager.send({
       type:    ALERT_TYPES.SERVER_START,
@@ -107,6 +69,15 @@ async function main() {
     /* Purge expired refresh tokens daily */
     void purgeExpiredRefreshTokens();
     setInterval(() => void purgeExpiredRefreshTokens(), 24 * 60 * 60 * 1000);
+  });
+
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      logger.error({ port: PORT }, `[FATAL] Port ${PORT} is already in use — cannot start server`);
+    } else {
+      logger.error({ err }, "[FATAL] Server error");
+    }
+    process.exit(1);
   });
 
   async function cleanup(signal: string) {
