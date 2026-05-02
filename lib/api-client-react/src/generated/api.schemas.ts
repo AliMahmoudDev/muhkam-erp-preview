@@ -317,6 +317,7 @@ export interface CreatePurchaseInput {
   exchange_rate?: number | null;
   is_consignment?: boolean | null;
   consignment_warehouse_id?: number | null;
+  shipping_cost?: number | null;
 }
 
 export interface Expense {

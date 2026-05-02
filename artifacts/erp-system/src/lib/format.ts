@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'halal_erp_settings';
 
 type CurrencyCode = 'EGP' | 'USD' | 'CNY';
-type ThousandsSeparator = 'comma' | 'period' | 'space' | 'arabic-comma';
+type ThousandsSeparator = 'comma' | 'period' | 'space' | 'arabic-comma' | 'none';
 
 const CURRENCY_MAP: Record<CurrencyCode, { locale: string; symbol: string }> = {
   EGP: { locale: 'ar-EG-u-nu-latn', symbol: 'ج.م' },
