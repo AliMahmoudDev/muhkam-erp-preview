@@ -30,6 +30,7 @@ import {
   Smartphone,
   ArrowLeftRight,
   UserCircle,
+  Tags,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -44,6 +45,7 @@ export const ROUTE_PERMISSION: Record<string, string> = {
   '/sales':               'can_access_sales',
   '/purchases':           'can_access_purchases',
   '/products':            'can_access_products',
+  '/price-lists':         'can_access_products',
   '/inventory':           'can_access_inventory',
   '/customers':           'can_access_customers',
   '/returns':             'can_access_returns',
@@ -80,6 +82,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   { name: 'المبيعات',              href: '/sales',               icon: Receipt,         roles: ['admin', 'manager', 'cashier', 'salesperson'] },
   { name: 'المشتريات',             href: '/purchases',           icon: CreditCard,      roles: ['admin', 'manager'] },
   { name: 'المنتجات',              href: '/products',            icon: Package,         roles: ['admin', 'manager', 'cashier', 'salesperson'] },
+  { name: 'قوائم الأسعار',         href: '/price-lists',         icon: Tags,            roles: ['admin', 'manager'] },
   { name: 'المخزون',               href: '/inventory',           icon: ClipboardList,   roles: ['admin', 'manager'] },
   { name: 'التحويلات',             href: '/transfers',           icon: ArrowLeftRight,  roles: ['admin', 'manager'] },
   { name: 'العملاء والموردون',     href: '/customers',           icon: Users,           roles: ['admin', 'manager', 'cashier', 'salesperson'] },

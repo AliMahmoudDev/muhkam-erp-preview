@@ -11,6 +11,7 @@ import {
   HardDrive,
   Cpu,
   Percent,
+  TrendingUp,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
@@ -22,6 +23,7 @@ const CompanyTab        = lazy(() => import('./company-tab'));
 const InvoiceTab        = lazy(() => import('./invoice-tab'));
 const SystemTab         = lazy(() => import('./system-tab'));
 const VatTab            = lazy(() => import('./vat-tab'));
+const PricingTab        = lazy(() => import('./pricing-tab').then(m => ({ default: m.PricingTab })));
 
 /* ─── Tab types ─── */
 type Tab =
@@ -32,6 +34,7 @@ type Tab =
   | 'company'
   | 'invoice'
   | 'vat'
+  | 'pricing'
   | 'system';
 
 /* ─── Section config ─── */
@@ -59,6 +62,7 @@ const TAB_SECTIONS: {
       { id: 'currency', label: 'إعدادات المتجر', icon: Store },
       { id: 'vat', label: 'ضريبة القيمة المضافة', icon: Percent },
       { id: 'invoice', label: 'الفاتورة', icon: FileText },
+      { id: 'pricing', label: 'تسعير المنتجات', icon: TrendingUp },
     ],
   },
   {
@@ -216,6 +220,7 @@ export default function SettingsPage() {
             {activeTab === 'currency' && <CurrencyTab />}
             {activeTab === 'vat' && <VatTab />}
             {activeTab === 'invoice' && <InvoiceTab />}
+            {activeTab === 'pricing' && <PricingTab />}
             {activeTab === 'system' && <SystemTab />}
           </Suspense>
         </div>

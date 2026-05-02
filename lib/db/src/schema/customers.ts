@@ -27,6 +27,8 @@ export const customersTable = pgTable("customers", {
   is_supplier: boolean("is_supplier").notNull().default(false),
   account_id: integer("account_id"),
   classification_id: integer("classification_id").references(() => customerClassificationsTable.id),
+  price_list_id: integer("price_list_id"),
+  price_list_markup: numeric("price_list_markup", { precision: 8, scale: 2 }),
   source: text("source"),
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

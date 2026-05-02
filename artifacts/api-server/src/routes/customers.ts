@@ -59,14 +59,14 @@ router.get("/customers", wrap(async (req, res) => {
     SELECT
       c.id, c.name, c.customer_code, c.phone,
       c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at,
-      c.classification_id, c.source,
+      c.classification_id, c.source, c.price_list_id, c.price_list_markup,
       COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS ledger_balance
     FROM customers c
     LEFT JOIN customer_ledger cl ON cl.customer_id = c.id
     ${companyFilter}
     GROUP BY c.id, c.name, c.customer_code, c.phone,
              c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at,
-             c.classification_id, c.source
+             c.classification_id, c.source, c.price_list_id, c.price_list_markup
     ORDER BY c.customer_code
     LIMIT ${limitC}
   `);
@@ -83,6 +83,8 @@ router.get("/customers", wrap(async (req, res) => {
     source: r.source ?? null,
     normalized_name: r.normalized_name,
     created_at: new Date(String(r.created_at)).toISOString(),
+    price_list_id: r.price_list_id ?? null,
+    price_list_markup: r.price_list_markup != null ? Number(r.price_list_markup) : null,
   }));
   res.json(customers);
 }));
@@ -258,6 +260,8 @@ router.put("/customers/:id", wrap(async (req, res) => {
     is_customer: parsed.data.is_customer !== undefined ? parsed.data.is_customer : undefined,
     is_supplier: parsed.data.is_supplier !== undefined ? parsed.data.is_supplier : undefined,
     ...(classificationId !== undefined ? { classification_id: isNaN(classificationId as number) ? null : classificationId } : {}),
+    ...(req.body.price_list_id !== undefined ? { price_list_id: req.body.price_list_id === null ? null : Number(req.body.price_list_id) } : {}),
+    ...(req.body.price_list_markup !== undefined ? { price_list_markup: req.body.price_list_markup === null ? null : String(req.body.price_list_markup) } : {}),
   }).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!))).returning();
   if (!customer) {
     res.status(404).json({ error: "Customer not found" });

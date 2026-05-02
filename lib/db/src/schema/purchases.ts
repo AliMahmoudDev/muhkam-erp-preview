@@ -21,6 +21,7 @@ export const purchasesTable = pgTable("purchases", {
   tax_rate: numeric("tax_rate", { precision: 5, scale: 2 }).notNull().default("0"),
   currency: text("currency").notNull().default("EGP"),
   exchange_rate: numeric("exchange_rate", { precision: 12, scale: 6 }).notNull().default("1"),
+  shipping_cost: numeric("shipping_cost", { precision: 12, scale: 2 }).notNull().default("0"),
   is_consignment: boolean("is_consignment").notNull().default(false),
   consignment_warehouse_id: integer("consignment_warehouse_id"),
   notes: text("notes"),

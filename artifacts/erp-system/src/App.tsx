@@ -58,6 +58,7 @@ const FiscalYears = lazy(() => import('@/pages/fiscal-years'));
 const AuditLog = lazy(() => import('@/pages/audit-log'));
 const Treasury = lazy(() => import('@/pages/treasury'));
 const Products = lazy(() => import('@/pages/products'));
+const PriceLists = lazy(() => import('@/pages/price-lists'));
 const Inventory = lazy(() => import('@/pages/inventory'));
 const Vouchers = lazy(() => import('@/pages/vouchers'));
 const POS = lazy(() => import('@/pages/pos'));
@@ -230,6 +231,7 @@ function Router() {
         <Route path="/scrap-inventory">{() => <Redirect to="/inventory" />}</Route>
         <Route path="/bad-debts">{() => <Redirect to="/customers" />}</Route>
         <Route path="/products">{() => <Guard path="/products" component={Products} />}</Route>
+        <Route path="/price-lists">{() => <Guard path="/price-lists" component={PriceLists} />}</Route>
         <Route path="/inventory">{() => <Guard path="/inventory" component={Inventory} />}</Route>
         <Route path="/customers">{() => <Guard path="/customers" component={Customers} />}</Route>
         <Route path="/expenses">{() => <Guard path="/expenses" component={Expenses} />}</Route>

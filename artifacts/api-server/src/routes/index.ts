@@ -69,6 +69,7 @@ import stockTransfersRouter from "./stock-transfers";
 import repairTrackingRouter from "./repair-tracking";
 import { deviceCheckRouter } from "./device-check";
 import leavesRouter from "./leaves";
+import priceListsRouter from "./price-lists";
 
 const router: IRouter = Router();
 
@@ -97,6 +98,7 @@ router.use(emailVerifyGuard);
 
 /* ── Protected routes ─────────────────────────────────────────── */
 router.use(productsRouter);
+router.use(priceListsRouter);
 router.use(customersRouter);
 router.use(salesRouter);
 router.use(purchasesRouter);

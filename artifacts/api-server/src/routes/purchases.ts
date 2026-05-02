@@ -35,6 +35,8 @@ function formatPurchase(p: typeof purchasesTable.$inferSelect) {
     exchange_rate: Number((p as any).exchange_rate ?? 1),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     currency: (p as any).currency ?? "EGP",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    shipping_cost: Number((p as any).shipping_cost ?? 0),
     created_at: p.created_at.toISOString(),
   };
 }
@@ -93,6 +95,7 @@ router.post("/purchases", wrap(async (req, res) => {
     date,
     currency,
     exchange_rate,
+    shipping_cost,
     is_consignment,
     consignment_warehouse_id,
   } = parsed.data;
@@ -163,6 +166,7 @@ router.post("/purchases", wrap(async (req, res) => {
       notes: notes ?? null,
       currency: currency ?? "EGP",
       exchange_rate: String(exchange_rate ?? 1),
+      shipping_cost: String(shipping_cost ?? 0),
       is_consignment: is_consignment ?? false,
       consignment_warehouse_id: consignment_warehouse_id ?? null,
       company_id: req.user?.company_id ?? undefined,
@@ -170,6 +174,11 @@ router.post("/purchases", wrap(async (req, res) => {
 
     // حساب ضريبة القيمة المضافة من معدل ضريبة كل منتج
     let totalTaxAmount = 0;
+
+    // توزيع تكلفة الشحن بالتناسب (بعد تحويلها للجنيه المصري إن كانت بعملة أجنبية)
+    const rate = Number(exchange_rate ?? 1);
+    const shippingCostEgp = Number(shipping_cost ?? 0) * rate;
+    const itemsTotalEgp = items.reduce((s, i) => s + Number(i.total_price), 0);
 
     for (const item of items) {
       await tx.insert(purchaseItemsTable).values({
@@ -186,7 +195,11 @@ router.post("/purchases", wrap(async (req, res) => {
       const oldQty = Number(prod.quantity);
       const oldCost = Number(prod.cost_price);
       const newItemQty = Number(item.quantity);
-      const newItemCost = Number(item.unit_price);
+      // نصيب الصنف من الشحن (موزع بالتناسب مع قيمة الصنف)
+      const itemShippingEgp = itemsTotalEgp > 0
+        ? shippingCostEgp * (Number(item.total_price) / itemsTotalEgp)
+        : 0;
+      const newItemCost = Number(item.unit_price) + (newItemQty > 0 ? itemShippingEgp / newItemQty : 0);
       const newTotalQty = oldQty + newItemQty;
       const newAvgCost = newTotalQty > 0
         ? (oldQty * oldCost + newItemQty * newItemCost) / newTotalQty

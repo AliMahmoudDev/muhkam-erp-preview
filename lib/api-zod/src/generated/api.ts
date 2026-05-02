@@ -164,6 +164,8 @@ export const UpdateCustomerBody = zod.object({
   balance: zod.number().optional(),
   is_customer: zod.boolean().optional(),
   is_supplier: zod.boolean().optional(),
+  price_list_id: zod.number().nullish(),
+  price_list_markup: zod.number().nullish(),
 });
 
 export const UpdateCustomerResponse = zod.object({
@@ -414,6 +416,7 @@ export const CreatePurchaseBody = zod.object({
   notes: zod.string().nullish(),
   currency: zod.enum(["EGP", "USD", "CNY", "EUR", "SAR", "AED"]).nullish(),
   exchange_rate: zod.number().nullish(),
+  shipping_cost: zod.number().nullish(),
   is_consignment: zod.boolean().nullish(),
   consignment_warehouse_id: zod.number().nullish(),
   items: zod.array(

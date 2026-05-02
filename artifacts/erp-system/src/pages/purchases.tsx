@@ -86,6 +86,7 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
   const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [currency, setCurrency] = useState<PurchaseCurrency>("EGP");
   const [exchangeRate, setExchangeRate] = useState<string>("1");
+  const [shippingCost, setShippingCost] = useState<string>("0");
   const [isConsignment, setIsConsignment] = useState(false);
   const [consignmentWarehouseId, setConsignmentWarehouseId] = useState<number | null>(null);
 
@@ -118,7 +119,11 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
 
   const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.total_price, 0), [cart]);
   const rate = parseFloat(exchangeRate) || 1;
-  const egpTotal = useMemo(() => (currency === "EGP" ? cartTotal : cartTotal * rate), [cartTotal, currency, rate]);
+  const shippingCostNum = parseFloat(shippingCost) || 0;
+  const egpTotal = useMemo(() => {
+    const itemsTotal = currency === "EGP" ? cartTotal : cartTotal * rate;
+    return itemsTotal + shippingCostNum * rate;
+  }, [cartTotal, currency, rate, shippingCostNum]);
   const currSym = CURRENCY_SYMBOLS[currency];
 
   const partyItems = useMemo(() => {
@@ -237,6 +242,7 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
         paid_amount: actualPaid,
         currency,
         exchange_rate: rate,
+        shipping_cost: shippingCostNum || undefined,
         is_consignment: isConsignment,
         consignment_warehouse_id: isConsignment ? finalConsignmentWarehouseId : null,
         items: convertedItems,
@@ -404,6 +410,26 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
               </div>
             )}
 
+            {/* تكلفة الشحن */}
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-2">
+              <span className="text-amber-300 text-xs font-bold shrink-0">🚢 مصاريف الشحن:</span>
+              <input
+                type="number" step="0.01" min="0"
+                value={shippingCost}
+                onChange={e => setShippingCost(e.target.value)}
+                className="bg-transparent text-amber-200 outline-none text-xs font-bold w-20 text-right flex-1"
+                placeholder="0"
+              />
+              <span className="text-amber-200/60 text-xs shrink-0">
+                {currency !== "EGP" ? currency : "ج.م"}
+              </span>
+              {currency !== "EGP" && shippingCostNum > 0 && (
+                <span className="text-amber-200/40 text-xs">
+                  = {formatCurrency(shippingCostNum * rate)}
+                </span>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 gap-1.5 text-xs">
               {selectRow("المخزن", <Vault className="w-3.5 h-3.5" />,
                 <SearchableSelect
@@ -532,9 +558,15 @@ function NewPurchasePanel({ onDone }: { onDone: () => void }) {
                   <span className="font-bold text-blue-300">{currSym} {cartTotal.toFixed(2)}</span>
                 </div>
               )}
+              {shippingCostNum > 0 && (
+                <div className="flex justify-between text-xs text-amber-300/80">
+                  <span>🚢 مصاريف الشحن</span>
+                  <span>+ {formatCurrency(shippingCostNum * rate)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-white/70 text-sm font-semibold">
-                  {currency !== "EGP" ? `المعادل بالجنيه (× ${rate})` : "إجمالي الفاتورة"}
+                  {currency !== "EGP" ? `الإجمالي بالجنيه المصري` : "إجمالي الفاتورة"}
                 </span>
                 <span className="font-black text-white text-lg">{formatCurrency(egpTotal)}</span>
               </div>

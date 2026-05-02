@@ -242,6 +242,43 @@ router.put("/products/:id", wrap(async (req, res) => {
   res.json(UpdateProductResponse.parse(formatProduct({ ...product, category_name: categoryName })));
 }));
 
+// ── تطبيق هامش ربح عالمي على جميع المنتجات ──────────────────────────────
+router.post("/products/bulk-margin-update", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_products")) {
+    res.status(403).json({ error: "غير مصرح" }); return;
+  }
+  const { margin_percent, category_id } = req.body as { margin_percent: number; category_id?: number };
+  if (typeof margin_percent !== "number" || margin_percent < 0) {
+    res.status(400).json({ error: "نسبة الهامش غير صالحة" }); return;
+  }
+  const companyId = req.user!.company_id!;
+  const multiplier = 1 + margin_percent / 100;
+
+  // جلب المنتجات المعنية
+  let conditions = [eq(productsTable.company_id, companyId)];
+  if (category_id) {
+    conditions = [...conditions, eq(productsTable.category_id, category_id)];
+  }
+  const products = await db
+    .select({ id: productsTable.id, cost_price: productsTable.cost_price })
+    .from(productsTable)
+    .where(and(...conditions));
+
+  // تحديث سعر البيع لكل منتج
+  let updatedCount = 0;
+  for (const prod of products) {
+    const cost = Number(prod.cost_price ?? 0);
+    if (cost <= 0) continue;
+    const newSalePrice = parseFloat((cost * multiplier).toFixed(2));
+    await db.update(productsTable)
+      .set({ sale_price: String(newSalePrice) })
+      .where(eq(productsTable.id, prod.id));
+    updatedCount++;
+  }
+
+  res.json({ success: true, updated: updatedCount, margin_percent });
+}));
+
 router.delete("/products/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_products")) {
     res.status(403).json({ error: "غير مصرح بحذف المنتجات" }); return;

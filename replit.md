@@ -98,3 +98,25 @@ The system is built as a monorepo using pnpm workspaces. The architecture separa
 - **Security**: Helmet.js
 - **API Documentation**: Swagger UI
 - **CI/CD**: GitHub Actions, Docker, Docker Compose, pm2 (for deployment)
+## May 2026 Updates
+
+### Purchase Invoice Shipping Cost (مصاريف الشحن)
+- Added `shipping_cost` column to `purchases` table
+- Added `shipping_cost` field to `CreatePurchaseBody` (api-zod schema)
+- Backend WAC (Weighted Average Cost) calculation now distributes shipping cost proportionally across purchase items by their EGP value
+- Frontend: amber-styled shipping cost input appears in the purchase form (always visible, supports foreign currency with auto-conversion to EGP)
+- Shipping cost breakdown shown in the invoice summary totals
+
+### Global Product Pricing (هامش ربح عالمي)
+- New API endpoint: `POST /api/products/bulk-margin-update` — accepts `margin_percent` and optional `category_id`
+- Updates `sale_price` for all matching products as: `cost_price × (1 + margin/100)`
+- New "تسعير المنتجات" tab added to `/settings` page with confirmation dialog and result feedback
+
+### Customer Price Lists (قوائم أسعار العملاء)
+- New DB tables: `price_lists` and `price_list_items` (with cascade delete)
+- Added `price_list_id` and `price_list_markup` columns to `customers` table
+- Full CRUD API routes at `/api/price-lists` and `/api/price-lists/:id`
+- Customer-specific price lookup: `GET /api/price-lists/customer-price/:customer_id/:product_id`
+- New `/price-lists` page with product picker modal, markup % per product, and expandable detail view
+- Customer edit form now shows price list selector + per-customer markup % override
+- Nav item "قوائم الأسعار" added to sidebar (admin/manager only)

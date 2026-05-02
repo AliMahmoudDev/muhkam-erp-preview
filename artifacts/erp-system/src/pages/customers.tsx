@@ -1599,6 +1599,8 @@ export default function Customers() {
     is_customer: true,
     is_supplier: false,
     classification_id: null as number | null,
+    price_list_id: null as number | null,
+    price_list_markup: '' as string,
   });
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
@@ -1636,6 +1638,15 @@ export default function Customers() {
     },
   });
   const classifications = safeArray(classificationsRaw);
+
+  const { data: priceListsRaw } = useQuery({
+    queryKey: ['/api/price-lists'],
+    queryFn: async () => {
+      const r = await authFetch(api('/api/price-lists'));
+      return (await r.json()) as Array<{ id: number; name: string; is_active: boolean }>;
+    },
+  });
+  const priceLists = safeArray(priceListsRaw).filter(p => p.is_active);
 
   const handleAddClassification = async () => {
     if (!newClassificationName.trim()) return;
@@ -1874,6 +1885,8 @@ export default function Customers() {
           is_customer: data.is_customer,
           is_supplier: data.is_supplier,
           classification_id: data.classification_id,
+          price_list_id: (data as { price_list_id?: number | null }).price_list_id ?? null,
+          price_list_markup: (data as { price_list_markup?: string }).price_list_markup ? parseFloat((data as { price_list_markup?: string }).price_list_markup!) : null,
         }),
       });
       const j = await r.json();
@@ -1902,7 +1915,9 @@ export default function Customers() {
       is_customer: editFormData.is_customer,
       is_supplier: editFormData.is_supplier,
       classification_id: editFormData.classification_id,
-    });
+      price_list_id: editFormData.price_list_id,
+      price_list_markup: editFormData.price_list_markup,
+    } as { id: number; name: string; phone: string; is_customer: boolean; is_supplier: boolean; classification_id: number | null; price_list_id: number | null; price_list_markup: string });
   };
 
   // ─── حذف عميل ───
@@ -2667,6 +2682,36 @@ export default function Customers() {
                   ))}
               </div>
 
+              {/* قائمة الأسعار */}
+              <div>
+                <label className="block text-white/70 text-sm mb-1">قائمة الأسعار</label>
+                <select
+                  className="glass-input w-full appearance-none"
+                  value={editFormData.price_list_id ?? ''}
+                  onChange={e => setEditFormData(f => ({ ...f, price_list_id: e.target.value ? parseInt(e.target.value) : null, price_list_markup: e.target.value ? f.price_list_markup : '' }))}
+                >
+                  <option value="" className="bg-gray-900">-- بدون قائمة أسعار --</option>
+                  {priceLists.map(pl => (
+                    <option key={pl.id} value={pl.id} className="bg-gray-900">{pl.name}</option>
+                  ))}
+                </select>
+                {editFormData.price_list_id && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <label className="text-white/50 text-xs shrink-0">هامش الربح الخاص %</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={editFormData.price_list_markup}
+                      onChange={e => setEditFormData(f => ({ ...f, price_list_markup: e.target.value }))}
+                      placeholder="مثال: 15"
+                      className="glass-input flex-1 text-sm py-1.5"
+                    />
+                    <span className="text-white/40 text-xs shrink-0">%</span>
+                  </div>
+                )}
+              </div>
+
               <div className="border border-white/10 rounded-2xl p-4 bg-white/3 space-y-3">
                 <p className="text-white/50 text-xs font-semibold mb-1">الدور في العمليات</p>
                 <button
@@ -2898,6 +2943,8 @@ export default function Customers() {
                                 is_customer: customer.is_customer ?? true,
                                 is_supplier: customer.is_supplier ?? false,
                                 classification_id: (customer as { classification_id?: number | null }).classification_id ?? null,
+                                price_list_id: (customer as { price_list_id?: number | null }).price_list_id ?? null,
+                                price_list_markup: (customer as { price_list_markup?: number | null }).price_list_markup != null ? String((customer as { price_list_markup?: number | null }).price_list_markup) : '',
                               });
                             }}
                             className="p-1.5 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80 transition-colors border border-white/10"
