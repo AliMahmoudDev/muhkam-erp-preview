@@ -1536,6 +1536,16 @@ router.post("/repair-jobs/:id/customer-return", wrap(async (req, res) => {
     ? (b.parts as Array<{ part_id: number; destination: string }>)
     : [];
 
+  if (!Number.isFinite(refundAmount) || refundAmount < 0) {
+    return res.status(400).json({ error: "المبلغ المسترد غير صحيح" });
+  }
+
+  /* عند وجود مبلغ مسترد > 0 يجب اختيار خزنة لخصمه منها */
+  const refundSafeId = refundAmount > 0 ? Number(b.safe_id) : null;
+  if (refundAmount > 0 && (!Number.isFinite(refundSafeId) || (refundSafeId ?? 0) <= 0)) {
+    return res.status(400).json({ error: "يجب اختيار خزنة لخصم المبلغ المسترد منها" });
+  }
+
   class HttpAbort extends Error {
     constructor(public httpStatus: number, public reason: string) { super(reason); }
   }
@@ -1620,8 +1630,24 @@ router.post("/repair-jobs/:id/customer-return", wrap(async (req, res) => {
         }
       }
 
-      /* معاملة مالية للاسترداد */
-      if (refundAmount > 0) {
+      /* معاملة مالية للاسترداد — خصم ذرّي من الخزنة المختارة */
+      if (refundAmount > 0 && refundSafeId) {
+        const [safe] = await tx.select().from(safesTable)
+          .where(and(eq(safesTable.id, refundSafeId), eq(safesTable.company_id, company_id)));
+        if (!safe) throw new HttpAbort(404, "الخزنة غير موجودة");
+
+        const debited = await tx.update(safesTable)
+          .set({ balance: sql`${safesTable.balance} - ${String(refundAmount)}` })
+          .where(and(
+            eq(safesTable.id, refundSafeId),
+            eq(safesTable.company_id, company_id),
+            sql`${safesTable.balance} >= ${String(refundAmount)}`,
+          ))
+          .returning({ id: safesTable.id });
+        if (debited.length === 0) {
+          throw new HttpAbort(400, `رصيد الخزنة غير كافٍ (المتاح: ${Number(safe.balance).toFixed(2)})`);
+        }
+
         await tx.insert(transactionsTable).values({
           company_id,
           type:           "expense",
@@ -1629,6 +1655,7 @@ router.post("/repair-jobs/:id/customer-return", wrap(async (req, res) => {
           description:    `استرداد مبلغ مرتجع صيانة — ${job.job_no}`,
           reference_type: "repair_return",
           reference_id:   jobId,
+          safe_id:        refundSafeId,
         });
       }
 

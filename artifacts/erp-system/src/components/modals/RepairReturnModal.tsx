@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, RotateCcw, Loader2, AlertTriangle, CheckCircle2, Package, Trash2 } from "lucide-react";
+import { X, RotateCcw, Loader2, AlertTriangle, CheckCircle2, Package, Trash2, Wallet } from "lucide-react";
+import { useGetSettingsSafes } from "@workspace/api-client-react";
+import { safeArray } from "@/lib/safe-data";
+import { useAuth } from "@/contexts/auth";
+
+interface SafeRow { id: number; name: string; balance: string | number; }
 
 interface JobPart {
   id: number;
@@ -29,9 +34,23 @@ export default function RepairReturnModal({
 }: Props) {
   const availableParts = parts.filter((p) => !p.is_returned);
 
+  const { user } = useAuth();
+  const { data: safesRaw } = useGetSettingsSafes();
+  const allSafes: SafeRow[] = safeArray(safesRaw) as SafeRow[];
+  const isScopedRole = user?.role === "cashier" || user?.role === "salesperson";
+  const safes = isScopedRole && user?.safe_id
+    ? allSafes.filter((s) => s.id === user.safe_id)
+    : allSafes;
+
   const [refundAmount, setRefundAmount]   = useState(String(Number(finalCost ?? 0).toFixed(2)));
+  const [safeId, setSafeId]               = useState<string>("");
   const [problemDesc, setProblemDesc]     = useState("");
   const [notes, setNotes]                 = useState("");
+
+  /* Auto-select الخزنة الوحيدة المتاحة */
+  useEffect(() => {
+    if (safes.length === 1 && !safeId) setSafeId(String(safes[0].id));
+  }, [safes.length]);
   const [dispositions, setDispositions]   = useState<Record<number, PartDisposition>>(() => {
     const d: Record<number, PartDisposition> = {};
     for (const p of availableParts) {
@@ -52,6 +71,7 @@ export default function RepairReturnModal({
     if (!problemDesc.trim()) { setError("يرجى وصف سبب الإرجاع"); return; }
     const amount = Number(refundAmount);
     if (isNaN(amount) || amount < 0) { setError("المبلغ المسترد غير صحيح"); return; }
+    if (amount > 0 && !safeId)       { setError("يرجى اختيار الخزنة لخصم المبلغ المسترد منها"); return; }
 
     const partsPayload = availableParts
       .filter((p) => dispositions[p.id] !== "ignore")
@@ -66,6 +86,7 @@ export default function RepairReturnModal({
         credentials: "include",
         body: JSON.stringify({
           refund_amount:       amount,
+          safe_id:             amount > 0 ? Number(safeId) : null,
           problem_description: problemDesc.trim(),
           notes:               notes.trim() || null,
           parts:               partsPayload,
@@ -159,6 +180,32 @@ export default function RepairReturnModal({
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-white/40">ج.م</span>
                 </div>
               </div>
+
+              {/* Safe selector — يظهر فقط عند وجود مبلغ مسترد */}
+              {Number(refundAmount) > 0 && (
+                <div>
+                  <label className="block text-[11px] font-bold text-white/60 mb-1.5 flex items-center gap-1">
+                    <Wallet className="w-3 h-3" />
+                    الخزنة (لخصم المبلغ المسترد منها) <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={safeId}
+                    onChange={(e) => setSafeId(e.target.value)}
+                    className="w-full rounded-xl px-3 py-2.5 text-xs text-white outline-none transition-all"
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(239,68,68,0.3)" }}
+                  >
+                    <option value="" className="bg-[#1a1530]">— اختر الخزنة —</option>
+                    {safes.map((s) => (
+                      <option key={s.id} value={s.id} className="bg-[#1a1530]">
+                        {s.name} — رصيد: {Number(s.balance).toFixed(2)}
+                      </option>
+                    ))}
+                  </select>
+                  {safes.length === 0 && (
+                    <p className="text-[10px] text-amber-400/80 mt-1">⚠ لا توجد خزن متاحة لحسابك</p>
+                  )}
+                </div>
+              )}
 
               {/* Problem description */}
               <div>
