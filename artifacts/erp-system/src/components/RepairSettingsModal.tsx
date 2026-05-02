@@ -1830,7 +1830,7 @@ function DeviceModelsTab() {
 
   const { data: models = [], isLoading } = useQuery<DeviceModel[]>({
     queryKey: ["/api/repair-device-models"],
-    queryFn: () => authFetch(api("/api/repair-device-models")).then(r => r.json()),
+    queryFn: () => authFetch(api("/api/repair-device-models")).then(r => r.json()).then(d => Array.isArray(d) ? d : []),
   });
 
   const cats = selBrand ? (BRAND_CATEGORIES[selBrand] ?? []) : [];
