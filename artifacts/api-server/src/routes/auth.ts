@@ -118,18 +118,18 @@ router.post('/auth/login', async (req, res) => {
         .select({ id: erpUsersTable.id, company_id: erpUsersTable.company_id })
         .from(erpUsersTable)
         .where(
-          loginCompanyId
-            ? and(
-                isEmail
-                  ? eq(erpUsersTable.email, usernameNorm)
-                  : sql`LOWER(${erpUsersTable.username}) = ${usernameNorm}`,
-                eq(erpUsersTable.company_id, loginCompanyId),
-              )
-            : isEmail
-              ? eq(erpUsersTable.email, usernameNorm)
-              : sql`LOWER(${erpUsersTable.username}) = ${usernameNorm}`,
+          isEmail
+            ? eq(erpUsersTable.email, usernameNorm)
+            : sql`LOWER(${erpUsersTable.username}) = ${usernameNorm}`,
         );
       if (!found) {
+        res.status(401).json({ error: 'الحساب غير موجود أو معطل' });
+        return;
+      }
+      /* If a company_id was sent (stored in browser from a previous session),
+         verify it matches — but skip this check for super_admin (company_id = NULL)
+         so they can always log in regardless of what the browser stored. */
+      if (loginCompanyId && found.company_id !== null && found.company_id !== loginCompanyId) {
         res.status(401).json({ error: 'الحساب غير موجود أو معطل' });
         return;
       }
