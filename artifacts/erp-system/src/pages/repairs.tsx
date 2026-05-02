@@ -683,21 +683,6 @@ export default function Repairs() {
             بطاقات الصيانة
           </h1>
           <div className="flex items-center gap-1.5">
-            {/* View toggle — only when no job selected */}
-            {!selectedJob && (
-              <div className="flex gap-0.5 bg-white/4 rounded-xl border border-white/8 p-0.5">
-                <button onClick={() => setViewMode("list")}
-                  title="عرض قائمة"
-                  className={`p-1.5 rounded-lg transition-all ${viewMode === "list" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
-                  <List className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => setViewMode("grid")}
-                  title="عرض شبكة"
-                  className={`p-1.5 rounded-lg transition-all ${viewMode === "grid" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
             <button
               onClick={() => setShowSettings(true)}
               title="إعدادات بنود الفحص"
@@ -726,9 +711,9 @@ export default function Repairs() {
           onStatusClick={(s) => setStatusFilter(prev => (prev === s ? "all" : s))}
         />
 
-        {/* Search row — two equal columns */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="relative">
+        {/* Search row */}
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
             <input
               value={search}
@@ -739,10 +724,24 @@ export default function Repairs() {
           <select
             value={techFilter}
             onChange={(e) => setTechFilter(e.target.value)}
-            className="erp-input text-sm w-full">
+            className="erp-input text-sm flex-1">
             <option value="">— كل الفنيين —</option>
             {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
+          {!selectedJob && (
+            <div className="flex gap-0.5 bg-white/4 rounded-xl border border-white/8 p-0.5 shrink-0">
+              <button onClick={() => setViewMode("list")}
+                title="عرض قائمة"
+                className={`p-1.5 rounded-lg transition-all ${viewMode === "list" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
+                <List className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => setViewMode("grid")}
+                title="عرض شبكة"
+                className={`p-1.5 rounded-lg transition-all ${viewMode === "grid" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Technician performance — collapsible panel, shown only when no job selected */}
