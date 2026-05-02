@@ -188,8 +188,6 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
   }
 
   const partsTotal = partLines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
-  const finalCostBase = Math.max(Number(receiptData?.final_cost ?? job.final_cost) || 0, 0);
-  const grandTotal    = finalCostBase + partsTotal;
 
   /* ── الدفع ── */
   const [payRows, setPayRows]   = useState<PayRow[]>([]);
@@ -198,8 +196,6 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
   const [payAmount, setPayAmount] = useState("");
 
   const paidSoFar = payRows.reduce((s, r) => s + r.amount, 0);
-  const remaining = Math.max(grandTotal - paidSoFar, 0);
-  const payIsDone = grandTotal > 0 && paidSoFar >= grandTotal;
 
   function addPayRow() {
     const amt = parseFloat(payAmount);
@@ -239,13 +235,21 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
   const numericDisc = Number(discount) || 0;
   const needsSafe   = numericCost > 0;
 
-  /* حسابات الفاتورة المحدَّثة */
+  /* حسابات الفاتورة المحدَّثة
+     تكلفة الإصلاح (final_cost) لا تُحتسَب في محاسبة العميل —
+     يُحاسَب العميل على قطع الغيار + الشحن − الخصم فقط. */
   const sc   = Math.max(numericCost, 0);
   const disc = Math.max(numericDisc, 0);
   const dep  = receiptData?.deposit_paid ?? 0;
-  const sub  = finalCostBase + partsTotal + sc;
+  const sub  = partsTotal + sc;
   const total       = Math.max(sub - disc, 0);
   const totalRem    = Math.max(total - dep, 0);
+
+  /* الإجمالي المستحق على العميل (المرجع لإقفال طريقة الدفع) =
+     قطع الغيار + الشحن − الخصم − المدفوع مقدماً. */
+  const grandTotal = totalRem;
+  const remaining  = Math.max(grandTotal - paidSoFar, 0);
+  const payIsDone  = grandTotal > 0 && paidSoFar >= grandTotal;
 
   /* ── الأخطاء والحفظ ── */
   const [errors,  setErrors]  = useState<string[]>([]);
@@ -289,7 +293,6 @@ ${partLines.length > 0 ? `
   <tbody>${partLines.map(p => `<tr><td>${esc(p.product_name)}</td><td>${p.quantity}</td><td>${fmt(p.unit_price)}</td><td>${fmt(p.quantity * p.unit_price)}</td></tr>`).join("")}</tbody>
 </table>` : ""}
 <div class="totals">
-  <div class="row"><span class="label">تكلفة الإصلاح:</span><span>${fmt(finalCostBase)}</span></div>
   ${partsTotal > 0 ? `<div class="row"><span class="label">قطع الغيار:</span><span>${fmt(partsTotal)}</span></div>` : ""}
   ${sc > 0 ? `<div class="row"><span class="label">الشحن:</span><span>${fmt(sc)}</span></div>` : ""}
   ${disc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${fmt(disc)}</span></div>` : ""}
@@ -317,7 +320,6 @@ ${partLines.length > 0 ? `
       `الجهاز: ${[receiptData.device_brand, receiptData.device_model].filter(Boolean).join(" ") || "—"}`,
       receiptData.problem_description ? `المشكلة: ${receiptData.problem_description}` : "",
       ``,
-      `تكلفة الإصلاح: ${fmt(finalCostBase)}`,
       partsTotal > 0 ? `قطع الغيار: ${fmt(partsTotal)}` : "",
       sc > 0 ? `الشحن: ${fmt(sc)}` : "",
       disc > 0 ? `خصم: - ${fmt(disc)}` : "",
@@ -546,20 +548,14 @@ ${partLines.length > 0 ? `
                 )}
               </div>
 
-              {/* ملخص المبلغ */}
+              {/* ملخص المبلغ — يُحاسَب العميل على القطع فقط (تكلفة الإصلاح داخلية) */}
               <div className="px-5 py-3 border-b border-white/5 bg-white/[0.015]">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-white/50">تكلفة الإصلاح المسجّلة</span>
-                  <span className="font-bold text-white">{fmtCurrency(finalCostBase)}</span>
+                  <span className="text-white/50">قطع الغيار المضافة</span>
+                  <span className="font-bold text-blue-300">{fmtCurrency(partsTotal)}</span>
                 </div>
-                {partsTotal > 0 && (
-                  <div className="flex items-center justify-between text-[11px] mt-1">
-                    <span className="text-white/50">قطع مضافة</span>
-                    <span className="font-bold text-blue-300">+ {fmtCurrency(partsTotal)}</span>
-                  </div>
-                )}
                 <div className="flex items-center justify-between text-[12px] font-black mt-2 pt-2 border-t border-white/8">
-                  <span className="text-white">الإجمالي المستحق</span>
+                  <span className="text-white">الإجمالي المستحق على العميل</span>
                   <span className="text-lime-300">{fmtCurrency(grandTotal)}</span>
                 </div>
               </div>
@@ -764,7 +760,6 @@ ${partLines.length > 0 ? `
 
               {/* ملخص الفاتورة النهائي */}
               <div className="px-5 py-4 space-y-1.5 text-[11px]">
-                <div className="flex justify-between"><span className="text-white/50">تكلفة الإصلاح:</span><span className="text-white">{fmtCurrency(finalCostBase)}</span></div>
                 {partsTotal > 0 && <div className="flex justify-between"><span className="text-white/50">قطع الغيار:</span><span className="text-blue-300">{fmtCurrency(partsTotal)}</span></div>}
                 {sc > 0 && <div className="flex justify-between"><span className="text-white/50">الشحن:</span><span className="text-sky-300">{fmtCurrency(sc)}</span></div>}
                 {disc > 0 && <div className="flex justify-between text-red-400"><span>خصم نهائي:</span><span>- {fmtCurrency(disc)}</span></div>}

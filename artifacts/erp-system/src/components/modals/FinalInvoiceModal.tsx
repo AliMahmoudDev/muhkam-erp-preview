@@ -106,17 +106,18 @@ export default function FinalInvoiceModal({ job, onClose, onSaved }: Props) {
     return () => { cancelled = true; };
   }, [job.id]);
 
-  /* حسابات الإجمالي المحدَّثة بناءً على الحقول الحالية */
+  /* حسابات الإجمالي المحدَّثة بناءً على الحقول الحالية
+     ملاحظة: تكلفة الإصلاح (final_cost) لا تُحتسَب في فاتورة العميل —
+     العميل يُحاسَب فقط على قطع الغيار + الشحن − الخصم. */
   function computeTotals() {
-    const fc   = data?.final_cost  ?? 0;
     const pt   = data?.parts_total ?? 0;
     const sc   = Math.max(Number(cost)     || 0, 0);
     const disc = Math.max(Number(discount) || 0, 0);
     const dep  = data?.deposit_paid ?? 0;
-    const sub  = fc + pt + sc;
+    const sub  = pt + sc;
     const total     = Math.max(sub - disc, 0);
     const remaining = Math.max(total - dep, 0);
-    return { fc, pt, sc, disc, dep, sub, total, remaining };
+    return { pt, sc, disc, dep, sub, total, remaining };
   }
 
   const numericCost = Number(cost);
@@ -125,7 +126,7 @@ export default function FinalInvoiceModal({ job, onClose, onSaved }: Props) {
   /* ── طباعة ── */
   function handlePrint() {
     if (!data) return;
-    const { fc, pt, sc, disc, dep, total, remaining } = computeTotals();
+    const { pt, sc, disc, dep, total, remaining } = computeTotals();
     const esc = (v: unknown): string =>
       String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
@@ -162,7 +163,6 @@ ${data.parts.length > 0 ? `
   <tbody>${data.parts.map(p => `<tr><td>${esc(p.product_name)}</td><td>${esc(p.quantity)}</td><td>${esc(fmt(p.unit_price))}</td><td>${esc(fmt(p.total))}</td></tr>`).join("")}</tbody>
 </table>` : ""}
 <div class="totals">
-  <div class="row"><span class="label">تكلفة الإصلاح:</span><span>${esc(fmt(fc))}</span></div>
   ${pt > 0 ? `<div class="row"><span class="label">قطع الغيار:</span><span>${esc(fmt(pt))}</span></div>` : ""}
   ${sc > 0 ? `<div class="row"><span class="label">الشحن:</span><span>${esc(fmt(sc))}</span></div>` : ""}
   ${disc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${esc(fmt(disc))}</span></div>` : ""}
@@ -183,7 +183,7 @@ ${data.parts.length > 0 ? `
   /* ── واتساب ── */
   function handleWhatsapp() {
     if (!data?.customer_phone) { toast({ title: "لا يوجد رقم هاتف للعميل", variant: "destructive" }); return; }
-    const { fc, pt, sc, disc, dep, total, remaining } = computeTotals();
+    const { pt, sc, disc, dep, total, remaining } = computeTotals();
     const lines = [
       `*فاتورة تسليم بطاقة صيانة*`,
       `رقم البطاقة: ${data.job_no}`,
@@ -191,7 +191,6 @@ ${data.parts.length > 0 ? `
       `الجهاز: ${[data.device_brand, data.device_model].filter(Boolean).join(" ") || "—"}`,
       data.problem_description ? `المشكلة: ${data.problem_description}` : "",
       ``,
-      `تكلفة الإصلاح: ${fmt(fc)}`,
       pt > 0 ? `قطع الغيار: ${fmt(pt)}` : "",
       sc > 0 ? `الشحن: ${fmt(sc)}` : "",
       disc > 0 ? `خصم: - ${fmt(disc)}` : "",
@@ -236,7 +235,7 @@ ${data.parts.length > 0 ? `
     }
   }
 
-  const { fc, pt, sc, disc, dep, total, remaining } = computeTotals();
+  const { pt, sc, disc, dep, total, remaining } = computeTotals();
 
   return createPortal(
     <div
@@ -302,9 +301,10 @@ ${data.parts.length > 0 ? `
                 </div>
               )}
 
-              {/* ── Totals (live) ── */}
+              {/* ── Totals (live) ──
+                  ملاحظة: تكلفة الإصلاح (final_cost) محذوفة من الفاتورة بناءً على
+                  متطلب العمل — العميل يُحاسَب فقط على قطع الغيار + الشحن − الخصم. */}
               <div className="mt-2 pt-2 border-t border-white/8 space-y-1">
-                <div className="flex justify-between"><span className="text-white/50">تكلفة الإصلاح:</span><span className="text-white">{fmt(fc)}</span></div>
                 {pt > 0 && <div className="flex justify-between"><span className="text-white/50">قطع الغيار:</span><span className="text-white">{fmt(pt)}</span></div>}
                 {sc > 0 && <div className="flex justify-between"><span className="text-white/50">الشحن:</span><span className="text-white">{fmt(sc)}</span></div>}
                 {disc > 0 && (

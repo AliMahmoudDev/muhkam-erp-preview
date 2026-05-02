@@ -1055,6 +1055,15 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
        من POST /repair-jobs/:id/qa-checklist لمنع تجاوز فحص QC الإلزامي. */
     updates.qa_checklist = JSON.stringify(b.qa_checklist);
   }
+  if (b.status === "ready_for_delivery") {
+    /* GATE: لا يُسمح بالانتقال إلى "جاهز للتسليم" قبل إدخال التكلفة النهائية. */
+    const incomingFinal = "final_cost" in updates ? Number(updates.final_cost ?? 0) : Number(existing.final_cost ?? 0);
+    if (!Number.isFinite(incomingFinal) || incomingFinal <= 0) {
+      return res.status(400).json({
+        error: "يجب إدخال التكلفة النهائية (>0) قبل نقل البطاقة إلى \"جاهز للتسليم\"",
+      });
+    }
+  }
   if (b.status === "delivered") {
     updates.delivered_at = new Date().toISOString().split("T")[0];
     updates.locked = true;
