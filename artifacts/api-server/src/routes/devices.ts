@@ -322,11 +322,11 @@ router.post("/devices/purchase", wrap(async (req, res) => {
         inspector_employee_id = numId;
         const [emp] = await db.select({
           name: sql<string>`${employeesTable.first_name_ar} || ' ' || ${employeesTable.last_name_ar}`,
-        }).from(employeesTable).where(eq(employeesTable.id, numId));
+        }).from(employeesTable).where(and(eq(employeesTable.id, numId), eq(employeesTable.company_id, company_id)));
         inspector_name = emp?.name ?? null;
       } else if (prefix === "u") {
         const [usr] = await db.select({ name: erpUsersTable.name })
-          .from(erpUsersTable).where(eq(erpUsersTable.id, numId));
+          .from(erpUsersTable).where(and(eq(erpUsersTable.id, numId), eq(erpUsersTable.company_id, company_id)));
         inspector_name = usr?.name ?? null;
       }
     }

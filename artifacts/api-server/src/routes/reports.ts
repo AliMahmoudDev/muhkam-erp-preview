@@ -645,6 +645,9 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
  * GET /api/reports/cash-flow?date_from=&date_to=
  * ───────────────────────────────────────────────────────────────────────── */
 router.get("/reports/cash-flow", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_accounts")) {
+    res.status(403).json({ error: "غير مصرح بعرض التقارير المالية" }); return;
+  }
   const { date_from, date_to } = req.query as Record<string, string | undefined>;
   const companyId = getTenant(req);
   const sfrom = safeDate(date_from);
@@ -847,6 +850,9 @@ router.get("/reports/top", wrap(async (req, res) => {
  * GET /api/reports/health-check
  * ─────────────────────────────────────────────────────────────────────────*/
 router.get("/reports/health-check", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_accounts")) {
+    res.status(403).json({ error: "غير مصرح بعرض التقارير المالية" }); return;
+  }
   const companyId = getTenant(req);
 
   const TOL      = 0.02;
@@ -1294,6 +1300,9 @@ router.get("/reports/manager-sales", wrap(async (req, res) => {
  * GET /api/reports/balance-sheet
  * ─────────────────────────────────────────────────────────────────────────*/
 router.get("/reports/balance-sheet", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_accounts")) {
+    res.status(403).json({ error: "غير مصرح بعرض التقارير المالية" }); return;
+  }
   const companyId = getTenant(req);
 
   const [accountRows, inventoryRow, capitalRow] = await Promise.all([
@@ -1420,6 +1429,9 @@ router.get("/reports/balance-sheet", wrap(async (req, res) => {
  * الشرط الأساسي: مجموع المدين = مجموع الدائن
  * ─────────────────────────────────────────────────────────────────────────── */
 router.get("/reports/trial-balance", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_accounts")) {
+    res.status(403).json({ error: "غير مصرح بعرض التقارير المالية" }); return;
+  }
   const companyId = getTenant(req);
 
   const dateFrom = safeDate(req.query.date_from as string | undefined);
@@ -1489,6 +1501,9 @@ router.get("/reports/trial-balance", wrap(async (req, res) => {
  * ضريبة المخرجات (على المبيعات) — ضريبة المدخلات (على المشتريات)
  * ─────────────────────────────────────────────────────────────────────────── */
 router.get("/reports/vat-report", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_accounts")) {
+    res.status(403).json({ error: "غير مصرح بعرض التقارير المالية" }); return;
+  }
   const companyId = getTenant(req);
 
   const dateFrom    = safeDate(req.query.date_from as string | undefined);
@@ -1654,6 +1669,9 @@ router.get("/reports/aging", wrap(async (req, res) => {
    التدفق النقدي - الطريقة غير المباشرة
    ───────────────────────────────────────────────────────────────── */
 router.get("/reports/cash-flow-indirect", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_accounts")) {
+    res.status(403).json({ error: "غير مصرح بعرض التقارير المالية" }); return;
+  }
   const companyId = getTenant(req);
   const { date_from, date_to } = req.query as Record<string, string>;
   if (!date_from || !date_to) { res.status(400).json({ error: "date_from و date_to مطلوبان" }); return; }
