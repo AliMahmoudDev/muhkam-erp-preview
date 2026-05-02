@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Tags, Plus, Edit2, Trash2, ChevronDown, ChevronRight, X, Check, Search, AlertCircle } from "lucide-react";
+import { Tags, Plus, Edit2, Trash2, ChevronDown, ChevronRight, X, Check, Search, AlertCircle, Printer } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
@@ -374,18 +374,111 @@ function PriceListCard({
   const [expanded, setExpanded] = useState(false);
   const [detail, setDetail] = useState<PriceListDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  const fetchDetail = async (): Promise<PriceListDetail> => {
+    if (detail) return detail;
+    const r = await authFetch(api(`/api/price-lists/${list.id}`));
+    const d: PriceListDetail = await r.json();
+    setDetail(d);
+    return d;
+  };
 
   const handleExpand = async () => {
     if (!expanded && !detail) {
       setLoadingDetail(true);
-      try {
-        const r = await authFetch(api(`/api/price-lists/${list.id}`));
-        setDetail(await r.json());
-      } finally {
-        setLoadingDetail(false);
-      }
+      try { setDetail(await fetchDetail()); }
+      finally { setLoadingDetail(false); }
     }
     setExpanded(v => !v);
+  };
+
+  const handlePrint = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPrinting(true);
+    try {
+      const d = await fetchDetail();
+      const dateStr = new Date().toLocaleDateString("ar-EG", {
+        year: "numeric", month: "long", day: "numeric",
+      });
+      const rows = d.items.map(item => {
+        const markup = item.markup_percent;
+        const clientPrice = markup != null && item.cost_price > 0
+          ? (item.cost_price * (1 + markup / 100)).toFixed(2)
+          : item.sale_price.toFixed(2);
+        return `
+          <tr>
+            <td>${item.product_name}</td>
+            <td>${markup != null ? markup + "%" : "—"}</td>
+            <td class="price">${Number(clientPrice).toLocaleString("ar-EG", { minimumFractionDigits: 2 })} ج.م</td>
+          </tr>`;
+      }).join("");
+
+      const html = `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<title>${d.name}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; direction: rtl; color: #111; background: #fff; padding: 32px; }
+  .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 20px; }
+  .header h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .header .meta { font-size: 13px; color: #555; display: flex; justify-content: center; gap: 24px; margin-top: 8px; }
+  .header .meta span strong { color: #222; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: #1a1a2e; color: #fff; padding: 10px 14px; text-align: right; font-weight: 700; }
+  tbody tr:nth-child(even) { background: #f5f5f5; }
+  tbody td { padding: 9px 14px; border-bottom: 1px solid #e0e0e0; }
+  td.price { font-weight: 700; color: #1a1a2e; }
+  .footer { margin-top: 28px; border-top: 1px dashed #ccc; padding-top: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .note { font-size: 11px; color: #888; max-width: 60%; line-height: 1.6; }
+  .note strong { color: #c00; display: block; margin-bottom: 4px; font-size: 12px; }
+  .stamp { font-size: 11px; color: #555; text-align: left; }
+  @media print {
+    body { padding: 16px; }
+    @page { margin: 1cm; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>${d.name}</h1>
+  ${d.description ? `<p style="font-size:13px;color:#666;margin-top:4px">${d.description}</p>` : ""}
+  <div class="meta">
+    <span>تاريخ الإصدار: <strong>${dateStr}</strong></span>
+    <span>عدد المنتجات: <strong>${d.items.length} منتج</strong></span>
+  </div>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th>المنتج</th>
+      <th>نسبة الهامش</th>
+      <th>سعر العميل</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="footer">
+  <div class="note">
+    <strong>⚠ تنبيه هام</strong>
+    هذه الأسعار قابلة للتغيير في أي وقت دون إشعار مسبق.<br/>
+    يُرجى التواصل معنا للتأكد من الأسعار الحالية قبل إتمام أي طلب.
+  </div>
+  <div class="stamp">
+    طُبع بتاريخ: ${dateStr}
+  </div>
+</div>
+<script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+</body>
+</html>`;
+
+      const win = window.open("", "_blank", "width=900,height=700");
+      if (win) { win.document.write(html); win.document.close(); }
+    } finally {
+      setPrinting(false);
+    }
   };
 
   return (
@@ -411,6 +504,14 @@ function PriceListCard({
           {list.description && <p className="text-xs text-white/40 truncate mt-0.5">{list.description}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handlePrint}
+            disabled={printing}
+            title="طباعة قائمة الأسعار"
+            className="p-2 rounded-lg text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-40"
+          >
+            <Printer className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={e => { e.stopPropagation(); onEdit(); }}
             className="p-2 rounded-lg text-white/30 hover:text-amber-400 hover:bg-amber-500/10 transition"
