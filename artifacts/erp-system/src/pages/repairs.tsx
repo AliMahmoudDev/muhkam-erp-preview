@@ -2243,7 +2243,6 @@ function NewJobForm({
   const [customerName, setCustomerName] = useState("");
   const [showAddCust, setShowAddCust]   = useState(false);
   const [newCustName, setNewCustName]   = useState("");
-  const [addingCust, setAddingCust]     = useState(false);
 
   /* ── Branch & Accessories state ── */
   const [branchId, setBranchId]         = useState("");
@@ -2388,40 +2387,12 @@ function NewJobForm({
     }
   }, [phoneDigits, isComplete, customers]);
 
-  const handleAddCustomer = async () => {
+  /* عميل زائر — بدون إنشاء سجل دائم في قاعدة بيانات العملاء */
+  const handleConfirmGuestCustomer = () => {
     if (!newCustName.trim()) { toast({ title: "أدخل اسم العميل", variant: "destructive" }); return; }
-    setAddingCust(true);
-    try {
-      const res = await authFetch(api("/api/repair-customers"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCustName.trim(), phone: phoneDigits }),
-      });
-      const text = await res.text();
-      let data: Record<string, unknown> = {};
-      try { data = JSON.parse(text); } catch {
-        throw new Error(res.ok ? "استجابة غير صحيحة من الخادم" : `خطأ في الخادم (${res.status})`);
-      }
-      if (!res.ok) {
-        // If phone already exists with another name, use that customer
-        if (data.existing) {
-          setCustomerId(Number((data.existing as Record<string, unknown>).id));
-          setCustomerName(String((data.existing as Record<string, unknown>).name));
-          setShowAddCust(false);
-          toast({ title: `تم تحديد العميل الموجود: ${(data.existing as Record<string, unknown>).name}` });
-          return;
-        }
-        throw new Error(String(data.error ?? "خطأ في إضافة العميل"));
-      }
-      setCustomerId(Number(data.id));
-      setCustomerName(String(data.name));
-      setShowAddCust(false);
-      toast({ title: `✅ تمت إضافة العميل: ${data.name}` });
-    } catch (e: unknown) {
-      toast({ title: (e as Error).message, variant: "destructive" });
-    } finally {
-      setAddingCust(false);
-    }
+    setCustomerId(null);
+    setCustomerName(newCustName.trim());
+    setShowAddCust(false);
   };
 
   /* ── Submit ── */
@@ -2513,35 +2484,55 @@ function NewJobForm({
             )}
           </div>
 
-          {/* Found customer */}
+          {/* Found customer — permanent */}
           {isComplete && customerId && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <div>
                 <p className="text-emerald-300 text-sm font-bold">{customerName}</p>
-                <p className="text-[10px] text-emerald-400/60">عميل موجود</p>
+                <p className="text-[10px] text-emerald-400/60">عميل دائم</p>
               </div>
             </div>
           )}
 
-          {/* Not found — add new */}
+          {/* Guest customer confirmed — temporary, not saved to customers list */}
+          {isComplete && !customerId && !showAddCust && customerName && (
+            <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-amber-500/8 border border-amber-500/20">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <div>
+                  <p className="text-amber-300 text-sm font-bold">{customerName}</p>
+                  <p className="text-[10px] text-amber-400/60">عميل مؤقت — لن يُضاف لقائمة العملاء</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setCustomerName(""); setShowAddCust(true); setNewCustName(customerName); }}
+                className="text-[10px] text-amber-400/60 hover:text-amber-300 underline"
+              >
+                تعديل
+              </button>
+            </div>
+          )}
+
+          {/* Not found — guest customer (no permanent record) */}
           {isComplete && showAddCust && (
             <div className="space-y-2 p-2 rounded-xl bg-amber-500/5 border border-amber-500/20">
               <p className="text-[10px] text-amber-400 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> الرقم غير موجود — أضف عميل جديد لقسم الصيانة
+                <AlertCircle className="w-3 h-3" /> الرقم غير موجود في العملاء — سيُحفظ كعميل مؤقت في البطاقة فقط
               </p>
               <input
                 value={newCustName}
                 onChange={(e) => setNewCustName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleConfirmGuestCustomer()}
                 placeholder="اسم العميل *"
                 className="erp-input w-full text-sm"
               />
               <button
-                onClick={handleAddCustomer}
-                disabled={addingCust}
-                className="w-full py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold transition-all disabled:opacity-50"
+                onClick={handleConfirmGuestCustomer}
+                className="w-full py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold transition-all"
               >
-                {addingCust ? "جاري الإضافة..." : "➕ إضافة العميل"}
+                ✓ متابعة — عميل مؤقت
               </button>
             </div>
           )}
