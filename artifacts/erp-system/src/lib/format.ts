@@ -76,6 +76,7 @@ function applyNumberFormat(str: string, fmt: 'western' | 'arabic-indic'): string
 /** Apply custom thousands separator to a formatted number string */
 function applyThousandsSep(str: string, sep: ThousandsSeparator): string {
   if (sep === 'comma') return str; // default Intl output uses comma
+  if (sep === 'none') return str.replace(/,/g, '');
   return str
     .replace(/,/g, sep === 'period' ? '.' : sep === 'space' ? ' ' : '،');
 }

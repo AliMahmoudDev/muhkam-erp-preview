@@ -7,7 +7,7 @@ export type FontSize = 'sm' | 'md' | 'lg' | 'xl';
 export type Theme = 'dark' | 'light';
 export type NumberFormat = 'western' | 'arabic-indic';
 export type DecimalPlaces = 0 | 2 | 3;
-export type ThousandsSeparator = 'comma' | 'period' | 'space' | 'arabic-comma';
+export type ThousandsSeparator = 'comma' | 'period' | 'space' | 'arabic-comma' | 'none';
 export interface AppSettings {
   currency: CurrencyCode;
   numberFormat: NumberFormat;

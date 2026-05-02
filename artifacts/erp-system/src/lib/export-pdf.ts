@@ -39,6 +39,7 @@ function _applyNumFmt(str: string, fmt: string): string {
 }
 function _applyThousandsSep(str: string, sep: string): string {
   if (sep === 'comma') return str;
+  if (sep === 'none') return str.replace(/,/g, '');
   return str.replace(/,/g, sep === 'period' ? '.' : sep === 'space' ? '\u00a0' : '،');
 }
 

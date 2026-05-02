@@ -580,8 +580,9 @@ export default function CurrencyTab() {
 
                   {/* Separator group */}
                   {([
-                    { sep: "comma"  as ThousandsSeparator, label: "بدون نقطة" },
-                    { sep: "period" as ThousandsSeparator, label: "نقطة ."      },
+                    { sep: "none"   as ThousandsSeparator, label: "بدون فاصل" },
+                    { sep: "comma"  as ThousandsSeparator, label: "فاصلة ,"   },
+                    { sep: "period" as ThousandsSeparator, label: "نقطة ."    },
                   ] as const).map(o => (
                     <button
                       key={o.sep}
