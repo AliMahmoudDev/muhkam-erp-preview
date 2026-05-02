@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, type ElementType } from "react";
 import { useAppSettings } from "@/contexts/app-settings";
-import { openPrintWindow } from '@/lib/print-utils';
+import { openPrintWindow, escapeHtml } from '@/lib/print-utils';
 import { useGetCustomers } from "@workspace/api-client-react";
 import { safeArray } from "@/lib/safe-data";
 import { SearchableSelect } from "@/components/searchable-select";
@@ -78,7 +78,7 @@ function printSaleReceipt(d: Device, companyName: string) {
 <html dir="rtl" lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>فاتورة بيع — ${d.brand} ${d.model}</title>
+<title>فاتورة بيع — ${escapeHtml(d.brand)} ${escapeHtml(d.model)}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #fff; color: #111; padding: 20px; font-size: 13px; }
@@ -104,44 +104,44 @@ function printSaleReceipt(d: Device, companyName: string) {
 </head>
 <body>
 <div class="header">
-  <h1>${companyName}</h1>
+  <h1>${escapeHtml(companyName)}</h1>
   <p>نظام إدارة الموبايلات المستعملة</p>
   <span class="badge">فاتورة بيع رسمية</span>
 </div>
 
 <div class="price-box">
-  <div class="amount">${price} ج.م</div>
+  <div class="amount">${escapeHtml(price)} ج.م</div>
   <div class="label2">إجمالي مبلغ الفاتورة</div>
 </div>
 
 <div class="section">
   <div class="section-title">بيانات الجهاز</div>
-  <div class="row"><span class="label">الماركة والموديل</span><span class="value">${d.brand} ${d.model}</span></div>
-  ${d.color ? `<div class="row"><span class="label">اللون</span><span class="value">${d.color}</span></div>` : ""}
-  ${d.storage ? `<div class="row"><span class="label">السعة التخزينية</span><span class="value">${d.storage}</span></div>` : ""}
-  ${d.imei ? `<div class="row"><span class="label">رقم IMEI</span><span class="value" style="direction:ltr;text-align:right">${d.imei}</span></div>` : ""}
-  ${d.serial_no ? `<div class="row"><span class="label">الرقم التسلسلي</span><span class="value" style="direction:ltr;text-align:right">${d.serial_no}</span></div>` : ""}
-  ${d.grade ? `<div class="row"><span class="label">الدرجة</span><span class="value">${d.grade}</span></div>` : ""}
-  ${d.battery_health ? `<div class="row"><span class="label">صحة البطارية</span><span class="value">${d.battery_health}%</span></div>` : ""}
-  <div class="row"><span class="label">رقم الجهاز</span><span class="value" style="direction:ltr;text-align:right">${d.device_no}</span></div>
+  <div class="row"><span class="label">الماركة والموديل</span><span class="value">${escapeHtml(d.brand)} ${escapeHtml(d.model)}</span></div>
+  ${d.color ? `<div class="row"><span class="label">اللون</span><span class="value">${escapeHtml(d.color)}</span></div>` : ""}
+  ${d.storage ? `<div class="row"><span class="label">السعة التخزينية</span><span class="value">${escapeHtml(d.storage)}</span></div>` : ""}
+  ${d.imei ? `<div class="row"><span class="label">رقم IMEI</span><span class="value" style="direction:ltr;text-align:right">${escapeHtml(d.imei)}</span></div>` : ""}
+  ${d.serial_no ? `<div class="row"><span class="label">الرقم التسلسلي</span><span class="value" style="direction:ltr;text-align:right">${escapeHtml(d.serial_no)}</span></div>` : ""}
+  ${d.grade ? `<div class="row"><span class="label">الدرجة</span><span class="value">${escapeHtml(d.grade)}</span></div>` : ""}
+  ${d.battery_health ? `<div class="row"><span class="label">صحة البطارية</span><span class="value">${escapeHtml(String(d.battery_health))}%</span></div>` : ""}
+  <div class="row"><span class="label">رقم الجهاز</span><span class="value" style="direction:ltr;text-align:right">${escapeHtml(d.device_no)}</span></div>
 </div>
 
 <div class="section">
   <div class="section-title">بيانات البيع</div>
-  <div class="row"><span class="label">اسم العميل</span><span class="value">${d.sold_to_customer_name ?? "—"}</span></div>
-  <div class="row"><span class="label">تاريخ البيع</span><span class="value">${date}</span></div>
-  <div class="row"><span class="label">طريقة الدفع</span><span class="value">${payMethods[d.payment_method ?? ""] ?? d.payment_method ?? "—"}</span></div>
-  <div class="row"><span class="label">حالة الدفع</span><span class="value">${payStatuses[d.payment_status ?? ""] ?? d.payment_status ?? "—"}</span></div>
-  ${d.sold_by_user_name ? `<div class="row"><span class="label">البائع</span><span class="value">${d.sold_by_user_name}</span></div>` : ""}
+  <div class="row"><span class="label">اسم العميل</span><span class="value">${escapeHtml(d.sold_to_customer_name) || "—"}</span></div>
+  <div class="row"><span class="label">تاريخ البيع</span><span class="value">${escapeHtml(date)}</span></div>
+  <div class="row"><span class="label">طريقة الدفع</span><span class="value">${escapeHtml(payMethods[d.payment_method ?? ""] ?? d.payment_method ?? "—")}</span></div>
+  <div class="row"><span class="label">حالة الدفع</span><span class="value">${escapeHtml(payStatuses[d.payment_status ?? ""] ?? d.payment_status ?? "—")}</span></div>
+  ${d.sold_by_user_name ? `<div class="row"><span class="label">البائع</span><span class="value">${escapeHtml(d.sold_by_user_name)}</span></div>` : ""}
 </div>
 
 ${d.warranty_months ? `
 <div class="warranty">
-  <strong>ضمان ${d.warranty_months} شهر</strong> — يسري من تاريخ الشراء
+  <strong>ضمان ${escapeHtml(String(d.warranty_months))} شهر</strong> — يسري من تاريخ الشراء
 </div>
 ` : ""}
 
-<div class="stamp">${companyName.split(/[|\-]/)[0].trim()}<br/>ERP</div>
+<div class="stamp">${escapeHtml(companyName.split(/[|\-]/)[0].trim())}<br/>ERP</div>
 
 <div class="footer">
   <p>شكراً لثقتك بنا — MUHKAM Enterprise Solutions</p>

@@ -4,6 +4,7 @@ import { Tags, Plus, Edit2, Trash2, ChevronDown, ChevronRight, X, Check, Search,
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
+import { escapeHtml } from "@/lib/print-utils";
 
 /* ──────────────────────────────── Types ────────────────────────────────── */
 
@@ -410,8 +411,8 @@ function PriceListCard({
         return `
           <tr class="${idx % 2 === 0 ? "even" : "odd"}">
             <td class="num">${idx + 1}</td>
-            <td class="product-name">${item.product_name}</td>
-            <td class="price">${priceFormatted}</td>
+            <td class="product-name">${escapeHtml(item.product_name)}</td>
+            <td class="price">${escapeHtml(priceFormatted)}</td>
           </tr>`;
       }).join("");
 
@@ -419,7 +420,7 @@ function PriceListCard({
 <html dir="rtl" lang="ar">
 <head>
 <meta charset="utf-8"/>
-<title>${d.name}</title>
+<title>${escapeHtml(d.name)}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -550,8 +551,8 @@ function PriceListCard({
 <div class="header">
   <div class="header-left">
     <div class="badge">قائمة أسعار</div>
-    <h1>${d.name}</h1>
-    ${d.description ? `<p>${d.description}</p>` : ""}
+    <h1>${escapeHtml(d.name)}</h1>
+    ${d.description ? `<p>${escapeHtml(d.description)}</p>` : ""}
   </div>
   <div class="header-right">
     <div>تاريخ الإصدار: <strong>${dateStr}</strong></div>

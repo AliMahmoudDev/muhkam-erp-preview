@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 const TOKEN_KEY = "erp_auth_token";
@@ -48,8 +49,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
+        AsyncStorage.removeItem(TOKEN_KEY).catch(() => {});
         const [storedToken, storedUser] = await Promise.all([
-          AsyncStorage.getItem(TOKEN_KEY),
+          SecureStore.getItemAsync(TOKEN_KEY),
           AsyncStorage.getItem(USER_KEY),
         ]);
         if (storedToken && storedUser) {
@@ -85,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       companyId: data.user.company_id ?? null,
     };
     await Promise.all([
-      AsyncStorage.setItem(TOKEN_KEY, data.token),
+      SecureStore.setItemAsync(TOKEN_KEY, data.token),
       AsyncStorage.setItem(USER_KEY, JSON.stringify(authUser)),
     ]);
     setToken(data.token);
@@ -102,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } finally {
       await Promise.all([
-        AsyncStorage.removeItem(TOKEN_KEY),
+        SecureStore.deleteItemAsync(TOKEN_KEY),
         AsyncStorage.removeItem(USER_KEY),
       ]);
       setToken(null);

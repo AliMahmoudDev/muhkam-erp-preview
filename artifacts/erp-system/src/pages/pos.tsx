@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAppSettings } from '@/contexts/app-settings';
 import { useLocation } from 'wouter';
-import { openPrintWindow } from '@/lib/print-utils';
+import { openPrintWindow, escapeHtml } from '@/lib/print-utils';
 import { safeArray } from '@/lib/safe-data';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
@@ -118,25 +118,25 @@ function printReceipt(invoice: SuccessInvoice, companyName: string) {
 </style>
 </head>
 <body>
-<div class="center bold title">${companyName}</div>
+<div class="center bold title">${escapeHtml(companyName)}</div>
 <div class="center" style="font-size:10px;">فاتورة مبيعات</div>
 <div class="sep"></div>
-<div class="row"><span>رقم الفاتورة:</span><span class="bold">${invoice.invoice_no}</span></div>
-<div class="row"><span>التاريخ:</span><span>${dateStr} ${timeStr}</span></div>
-${invoice.cashierName ? `<div class="row"><span>الكاشير:</span><span>${invoice.cashierName}</span></div>` : ''}
-${invoice.warehouseName ? `<div class="row"><span>الفرع:</span><span>${invoice.warehouseName}</span></div>` : ''}
-${invoice.safeName ? `<div class="row"><span>الخزينة:</span><span>${invoice.safeName}</span></div>` : ''}
-${invoice.customer_name ? `<div class="row"><span>العميل:</span><span>${invoice.customer_name}</span></div>` : ''}
+<div class="row"><span>رقم الفاتورة:</span><span class="bold">${escapeHtml(invoice.invoice_no)}</span></div>
+<div class="row"><span>التاريخ:</span><span>${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</span></div>
+${invoice.cashierName ? `<div class="row"><span>الكاشير:</span><span>${escapeHtml(invoice.cashierName)}</span></div>` : ''}
+${invoice.warehouseName ? `<div class="row"><span>الفرع:</span><span>${escapeHtml(invoice.warehouseName)}</span></div>` : ''}
+${invoice.safeName ? `<div class="row"><span>الخزينة:</span><span>${escapeHtml(invoice.safeName)}</span></div>` : ''}
+${invoice.customer_name ? `<div class="row"><span>العميل:</span><span>${escapeHtml(invoice.customer_name)}</span></div>` : ''}
 <div class="sep"></div>
 <table>
   <tr><td class="bold">الصنف</td><td class="bold" style="text-align:center;">كمية</td><td class="bold">سعر</td><td class="bold">إجمالي</td></tr>
-  ${invoice.items.map((i) => `<tr><td>${i.product_name}</td><td style="text-align:center;">${i.quantity}</td><td>${i.unit_price.toFixed(2)}</td><td>${i.total_price.toFixed(2)}</td></tr>`).join('')}
+  ${invoice.items.map((i) => `<tr><td>${escapeHtml(i.product_name)}</td><td style="text-align:center;">${i.quantity}</td><td>${i.unit_price.toFixed(2)}</td><td>${i.total_price.toFixed(2)}</td></tr>`).join('')}
 </table>
 <div class="sep"></div>
 <div class="row total-row"><span>الإجمالي</span><span>${invoice.total_amount.toFixed(2)} ج.م</span></div>
-<div class="row" style="margin-top:3px;"><span>طريقة الدفع:</span><span>${payLabel[invoice.payment_type] ?? invoice.payment_type}</span></div>
+<div class="row" style="margin-top:3px;"><span>طريقة الدفع:</span><span>${escapeHtml(payLabel[invoice.payment_type] ?? invoice.payment_type)}</span></div>
 <div class="sep"></div>
-<div class="footer">شكراً لتعاملكم معنا 🙏<br/>${companyName} © ${now.getFullYear()}</div>
+<div class="footer">شكراً لتعاملكم معنا 🙏<br/>${escapeHtml(companyName)} © ${now.getFullYear()}</div>
 </body></html>`;
 
   openPrintWindow(html, { width: 340, height: 600, delay: 250, autoClose: true });

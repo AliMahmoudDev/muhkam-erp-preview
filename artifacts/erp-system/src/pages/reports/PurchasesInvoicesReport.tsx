@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useGetPurchases } from "@workspace/api-client-react";
 import { Search, FileDown, Printer } from "lucide-react";
 import { formatCurrency, formatDate, TableSkeleton, PaymentBadge, StatusBadge, InvoicePdfButton } from "./shared";
+import { escapeHtml } from "@/lib/print-utils";
 import { useAppSettings } from "@/contexts/app-settings";
 import { exportTableToPDF } from "@/lib/pdf-export";
 
@@ -27,7 +28,7 @@ function exportPurchasesExcel(rows: PurchaseRow[]) {
   const a = document.createElement("a"); a.href=url; a.download="فواتير_المشتريات.csv"; a.click(); URL.revokeObjectURL(url);
 }
 function printPurchasesReport(rows: PurchaseRow[]) {
-  const html = `<html dir="rtl"><head><meta charset="UTF-8"><style>body{font-family:Tajawal,Cairo,Arial;font-size:11px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px;text-align:right}th{background:#f5f5f5}</style></head><body><h2>تقرير فواتير المشتريات</h2><table><thead><tr><th>رقم الفاتورة</th><th>المورد</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>نوع الدفع</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${p.invoice_no}</td><td>${p.customer_name||"—"}</td><td>${formatCurrency(p.total_amount)}</td><td>${formatCurrency(p.paid_amount)}</td><td>${formatCurrency(p.remaining_amount)}</td><td>${PAY_AR[p.payment_type]||p.payment_type}</td><td>${STATUS_AR[p.status]||p.status}</td><td>${formatDate(p.created_at)}</td></tr>`).join("")}</tbody></table></body></html>`;
+  const html = `<html dir="rtl"><head><meta charset="UTF-8"><style>body{font-family:Tajawal,Cairo,Arial;font-size:11px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px;text-align:right}th{background:#f5f5f5}</style></head><body><h2>تقرير فواتير المشتريات</h2><table><thead><tr><th>رقم الفاتورة</th><th>المورد</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>نوع الدفع</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${escapeHtml(p.invoice_no)}</td><td>${escapeHtml(p.customer_name)||"—"}</td><td>${formatCurrency(p.total_amount)}</td><td>${formatCurrency(p.paid_amount)}</td><td>${formatCurrency(p.remaining_amount)}</td><td>${escapeHtml(PAY_AR[p.payment_type]||p.payment_type)}</td><td>${escapeHtml(STATUS_AR[p.status]||p.status)}</td><td>${escapeHtml(formatDate(p.created_at))}</td></tr>`).join("")}</tbody></table></body></html>`;
   const w=window.open("","_blank"); if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
 }
 
