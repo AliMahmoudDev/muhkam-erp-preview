@@ -526,10 +526,30 @@ export default function CurrencyTab() {
       <Section icon={CaseSensitive} title="إعدادات الأرقام">
         <div className="space-y-2">
           {([
-            { fmt: "western"      as NumberFormat, label: "أرقام غربية",       preview: "1٬234" },
-            { fmt: "arabic-indic" as NumberFormat, label: "أرقام عربية-هندية", preview: "١٬٢٣٤" },
+            { fmt: "western"      as NumberFormat, label: "أرقام غربية"       },
+            { fmt: "arabic-indic" as NumberFormat, label: "أرقام عربية-هندية" },
           ] as const).map(row => {
             const active = numFmt === row.fmt;
+
+            /* ── حساب المعاينة الحية ── */
+            const SAMPLE = 1234.5;
+            const rawFmt = SAMPLE.toLocaleString("en-US", {
+              minimumFractionDigits: decimalPlaces,
+              maximumFractionDigits: decimalPlaces,
+            });
+            const withSep = thousandsSep === "none"
+              ? rawFmt.replace(/,/g, "")
+              : thousandsSep === "period"
+                ? rawFmt.replace(/,/g, ".")
+                : thousandsSep === "space"
+                  ? rawFmt.replace(/,/g, "\u00a0")
+                  : thousandsSep === "arabic-comma"
+                    ? rawFmt.replace(/,/g, "،")
+                    : rawFmt;
+            const livePreview = row.fmt === "arabic-indic"
+              ? withSep.replace(/[0-9]/g, d => String.fromCharCode(d.charCodeAt(0) + 0x0630))
+              : withSep;
+
             return (
               <div
                 key={row.fmt}
@@ -542,10 +562,10 @@ export default function CurrencyTab() {
                 {/* ── Left: format type selector ── */}
                 <button
                   onClick={() => setNumFmt(row.fmt)}
-                  className="flex items-center gap-2.5 min-w-[150px] shrink-0 text-right"
+                  className="flex items-center gap-2.5 min-w-[160px] shrink-0 text-right"
                 >
                   <span className={`font-mono text-base font-black tracking-wide ${active ? "text-amber-400" : "text-white/40"}`}>
-                    {row.preview}
+                    {livePreview}
                   </span>
                   <span className={`text-xs font-bold ${active ? "text-amber-300" : "text-white/35"}`}>
                     {row.label}
