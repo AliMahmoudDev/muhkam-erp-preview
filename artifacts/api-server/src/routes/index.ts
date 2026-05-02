@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { authenticate, requireTenant, superAdminIPGuard } from "../middleware/auth";
+import { authenticate, requireTenant } from "../middleware/auth";
 import { tenantGuard } from "../middleware/tenant-guard";
 import { emailVerifyGuard } from "../middleware/email-verify-guard";
 import healthRouter from "./health";
@@ -84,8 +84,8 @@ router.use(authenticate);
 
 /* ── super_admin cross-tenant routes mount BEFORE requireTenant ── */
 router.use(superRouter);
-router.use(superAdminIPGuard, debugRouter);           // /super/trial-check
-router.use(superAdminIPGuard, trialMonitoringRouter); // /super/trial-monitoring
+router.use(debugRouter);           // /super/trial-check
+router.use(trialMonitoringRouter); // /super/trial-monitoring
 
 /* ── Tenant guard — every route below MUST resolve a company_id ── */
 router.use(requireTenant);
