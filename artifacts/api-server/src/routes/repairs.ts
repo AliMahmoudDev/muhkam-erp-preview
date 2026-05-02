@@ -23,7 +23,7 @@ import { notifyUser } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
 import { validateTransition } from "../services/repair-pipeline.service";
 import { writeAuditLog } from "../lib/audit-log";
-import { alertManager } from "../lib/telegram-alert-manager";
+
 import { normalizeName, getNextCustomerCode } from "./customers";
 import { getOrCreateCustomerAccount, getOrCreateSafeAccount, getOrCreateGeneralExpenseAccount, createAutoJournalEntry } from "../lib/auto-account";
 
@@ -1033,12 +1033,6 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
       note: String(b.report_note),
     });
   }
-
-  /* أي تحديث للبطاقة يحلّ تنبيه التأخير المُسجَّل (لو موجود) — يمنع spam التنبيهات */
-  void alertManager.markResolved(
-    `repair_overdue:${id}`,
-    `✅ بطاقة ${existing.job_no} تم تحديثها — تنبيه التأخير لُغي تلقائياً.`,
-  );
 
   return res.json(updated);
 }));
