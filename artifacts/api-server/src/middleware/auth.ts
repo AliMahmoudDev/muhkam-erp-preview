@@ -408,8 +408,18 @@ export const anyAuth      = [authenticate, requireTenant] as const;
 export function superAdminIPGuard(req: Request, res: Response, next: NextFunction): void {
   const allowedIPs = process.env.SUPER_ADMIN_IPS?.split(",").map((ip) => ip.trim()).filter(Boolean);
 
-  /* If no IP list configured — allow all (development default) */
+  /* If no IP list configured:
+   *   - In production: fail-closed — reject all requests.
+   *     An unconfigured allowlist in production is a misconfiguration, not a
+   *     reason to expose super-admin endpoints to every IP.
+   *   - In non-production: allow all (development convenience).
+   */
   if (!allowedIPs || allowedIPs.length === 0) {
+    if (process.env.NODE_ENV === "production") {
+      logger.warn("[superAdminIPGuard] SUPER_ADMIN_IPS is not configured in production — blocking all super-admin access");
+      res.status(403).json({ error: "الوصول مرفوض — قائمة IP المسموح بها غير مضبوطة" });
+      return;
+    }
     next();
     return;
   }

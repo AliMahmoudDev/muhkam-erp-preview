@@ -2,6 +2,8 @@
 /**
  * db-backup.ts — pg_dump → gzip database backup utility.
  * Creates daily compressed SQL backups in BACKUP_DIR.
+ * When BACKUP_ENCRYPTION_KEY is set, backups are AES-256-GCM encrypted
+ * and the plaintext .sql.gz is removed after successful encryption.
  */
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -9,6 +11,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { logger } from "./logger";
+import { encryptFile, isEncryptionEnabled, encryptedExtension } from "./backup-crypto";
 
 const execAsync = promisify(exec);
 
@@ -16,6 +19,16 @@ const BACKUP_DIR  = process.env.BACKUP_DIR ?? "/home/runner/workspace/db-backups
 const MAX_BACKUPS = 30;
 
 export async function createDatabaseBackup(): Promise<string> {
+  /* Refuse to create unencrypted backups — plaintext SQL dumps expose the full
+     multi-tenant database if the backup directory or media is ever compromised.
+     BACKUP_ENCRYPTION_KEY must be configured before backups can be created. */
+  if (!isEncryptionEnabled()) {
+    throw new Error(
+      "Backup creation refused: BACKUP_ENCRYPTION_KEY is not set. " +
+      "Configure the encryption key before creating database backups to prevent plaintext sensitive-data exposure."
+    );
+  }
+
   if (!fs.existsSync(BACKUP_DIR)) {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
   }
@@ -60,17 +73,31 @@ export async function createDatabaseBackup(): Promise<string> {
     try { fs.unlinkSync(pgpassFile); } catch { /* ignore */ }
   }
 
-  const size = fs.statSync(filepath).size;
-  logger.info({ filepath, size }, "Database backup created");
+  /* ── Encrypt the dump (always required — plaintext creation is refused above) ── */
+  const encFilepath = `${filepath}${encryptedExtension()}`;
+  try {
+    await encryptFile(filepath, encFilepath);
+    fs.unlinkSync(filepath); // remove plaintext dump immediately
+    const encSize = fs.statSync(encFilepath).size;
+    logger.info({ filepath: encFilepath, size: encSize }, "Database backup created (encrypted)");
+    await cleanOldBackups();
+    return encFilepath;
+  } catch (err) {
+    /* Encryption failed — remove any partial encrypted file and the plaintext dump */
+    try { fs.unlinkSync(encFilepath); } catch { /* ignore */ }
+    try { fs.unlinkSync(filepath); } catch { /* ignore */ }
+    throw new Error(`Backup encryption failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
 
-  await cleanOldBackups();
-  return filepath;
+function isBackupFile(f: string): boolean {
+  return f.startsWith("backup-") && (f.endsWith(".sql.gz") || f.endsWith(".sql.gz.enc"));
 }
 
 async function cleanOldBackups(): Promise<void> {
   if (!fs.existsSync(BACKUP_DIR)) return;
   const files = fs.readdirSync(BACKUP_DIR)
-    .filter(f => f.startsWith("backup-") && f.endsWith(".sql.gz"))
+    .filter(isBackupFile)
     .map(f => ({ name: f, time: fs.statSync(path.join(BACKUP_DIR, f)).mtime.getTime() }))
     .sort((a, b) => b.time - a.time);
 
@@ -80,16 +107,17 @@ async function cleanOldBackups(): Promise<void> {
   }
 }
 
-export function listBackups(): Array<{ filename: string; size_mb: string; created_at: string }> {
+export function listBackups(): Array<{ filename: string; size_mb: string; created_at: string; encrypted: boolean }> {
   if (!fs.existsSync(BACKUP_DIR)) return [];
   return fs.readdirSync(BACKUP_DIR)
-    .filter(f => f.startsWith("backup-") && f.endsWith(".sql.gz"))
+    .filter(isBackupFile)
     .map(f => {
       const stats = fs.statSync(path.join(BACKUP_DIR, f));
       return {
         filename:   f,
         size_mb:    (stats.size / 1024 / 1024).toFixed(2),
         created_at: stats.mtime.toISOString(),
+        encrypted:  f.endsWith(".enc"),
       };
     })
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
