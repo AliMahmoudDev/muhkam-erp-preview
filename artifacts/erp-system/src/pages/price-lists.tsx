@@ -752,7 +752,16 @@ export default function PriceLists() {
 
   const handleEdit = async (id: number) => {
     const r = await authFetch(api(`/api/price-lists/${id}`));
-    const detail: PriceListDetail = await r.json();
+    const raw = await r.json().catch(() => null);
+    const detail: PriceListDetail = {
+      ...(raw ?? {}),
+      id: raw?.id ?? id,
+      name: raw?.name ?? "",
+      description: raw?.description ?? null,
+      is_active: raw?.is_active ?? true,
+      created_at: raw?.created_at ?? new Date().toISOString(),
+      items: Array.isArray(raw?.items) ? raw.items : [],
+    };
     setEditingList(detail);
   };
 
