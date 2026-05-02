@@ -1966,6 +1966,7 @@ export default function Devices() {
       return authFetch(api(`/api/devices?${p}`)).then(r => r.json() as Promise<Device[]>);
     },
     staleTime: 0,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   const FILTERS: { v: "all" | DeviceStatus; l: string; count: number }[] = [

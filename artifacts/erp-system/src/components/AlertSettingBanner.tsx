@@ -46,11 +46,17 @@ export function AlertSettingBanner({
 
   useEffect(() => {
     authFetch(api('/api/settings/system'))
-      .then(r => r.json())
+      .then(async r => {
+        if (!r.ok) return {};
+        const text = await r.text();
+        if (!text) return {};
+        try { return JSON.parse(text) as Record<string, string>; } catch { return {}; }
+      })
       .then((data: Record<string, string>) => {
         setEnabled(data[enabledKey] !== '0');
         if (thresholdKey && data[thresholdKey]) setThreshold(data[thresholdKey]);
       })
+      .catch(() => { /* ignore — banner stays at defaults */ })
       .finally(() => setLoading(false));
   }, [enabledKey, thresholdKey]);
 

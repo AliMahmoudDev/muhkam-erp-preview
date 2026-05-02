@@ -380,7 +380,16 @@ function PriceListCard({
   const fetchDetail = async (): Promise<PriceListDetail> => {
     if (detail) return detail;
     const r = await authFetch(api(`/api/price-lists/${list.id}`));
-    const d: PriceListDetail = await r.json();
+    const raw = await r.json().catch(() => null);
+    const d: PriceListDetail = {
+      ...(raw ?? {}),
+      id: raw?.id ?? list.id,
+      name: raw?.name ?? list.name,
+      description: raw?.description ?? list.description,
+      is_active: raw?.is_active ?? list.is_active,
+      created_at: raw?.created_at ?? list.created_at,
+      items: Array.isArray(raw?.items) ? raw.items : [],
+    };
     setDetail(d);
     return d;
   };
@@ -705,11 +714,13 @@ export default function PriceLists() {
   const { data: lists = [], isLoading: loadingLists } = useQuery<PriceList[]>({
     queryKey: ["/api/price-lists"],
     queryFn: () => authFetch(api("/api/price-lists")).then(r => r.json()),
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
     queryFn: () => authFetch(api("/api/products")).then(r => r.json()),
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
   const createMutation = useMutation({
