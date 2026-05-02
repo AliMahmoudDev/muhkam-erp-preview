@@ -35,6 +35,7 @@ const router: IRouter = Router();
 const ZKTECO_KEY = process.env["ZKTECO_API_KEY"] ?? "";
 
 if (!ZKTECO_KEY) {
+  // eslint-disable-next-line no-console
   console.warn(
     "[zkteco] WARNING: ZKTECO_API_KEY is not set. " +
     "All ZKTeco attendance endpoints will reject requests until the key is configured."

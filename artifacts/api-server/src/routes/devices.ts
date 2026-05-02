@@ -246,9 +246,11 @@ router.post("/devices", wrap(async (req, res) => {
     "inspector_name", "branch_id",
   ] as const;
   const safeBody: Record<string, unknown> = {};
+  // eslint-disable-next-line security/detect-object-injection
   for (const f of ALLOWED_FIELDS) if (f in b) safeBody[f] = b[f];
+  type DeviceInsert = typeof devicesTable.$inferInsert;
   const [row] = await db.insert(devicesTable).values({
-    ...safeBody,
+    ...(safeBody as unknown as DeviceInsert),
     company_id,
     device_no,
     added_by_user_id: user_id,
@@ -566,6 +568,7 @@ router.patch("/devices/:id", wrap(async (req, res) => {
     "inspector_name", "status", "branch_id",
   ] as const;
   const safeUpdate: Record<string, unknown> = { updated_at: new Date() };
+  // eslint-disable-next-line security/detect-object-injection
   for (const f of PATCH_ALLOWED) if (f in b) safeUpdate[f] = b[f];
   const [row] = await db.update(devicesTable)
     .set(safeUpdate)

@@ -15,6 +15,7 @@ const SECRET = process.env["REPAIR_TRACKING_SECRET"] ?? "";
 const MIN_SECRET_LENGTH = 32;
 
 if (!SECRET) {
+  // eslint-disable-next-line no-console
   console.warn(
     "[tracking-token] WARNING: REPAIR_TRACKING_SECRET is not set. " +
     "Public repair-tracking endpoints will be disabled until the secret is configured."
