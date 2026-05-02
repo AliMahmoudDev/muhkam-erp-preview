@@ -125,7 +125,7 @@ jobs:
             git remote set-url origin "https://x-access-token:${DEPLOY_TOKEN}@github.com/m4elmelegy-hub/MUHKAM-ERP.git"
             git fetch origin main
             git reset --hard origin/main
-            git clean -fd
+            git clean -fd --exclude=.env
             # Remove token from remote URL after pull (security hygiene)
             git remote set-url origin "https://github.com/m4elmelegy-hub/MUHKAM-ERP.git"
 
@@ -157,9 +157,22 @@ jobs:
             sudo cp "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/muhkam
             sudo nginx -t && sudo nginx -s reload
 
-            sleep 8
-            curl -sf http://localhost:8080/api/healthz
-            echo "Deploy complete — halaltec.com is live"
+            echo "--- انتظار تشغيل الـ API (حد أقصى 60 ثانية) ---"
+            MAX=24
+            i=0
+            until curl -sf http://localhost:8080/api/healthz > /dev/null 2>&1; do
+              i=$((i+1))
+              if [ "$i" -ge "$MAX" ]; then
+                echo "❌ فشل التشغيل بعد 60 ثانية — آخر لوجز:"
+                pm2 logs halaltech-api --lines 50 --nostream || true
+                echo "--- متغيرات البيئة المتاحة لـ PM2 ---"
+                pm2 env 0 || true
+                exit 1
+              fi
+              echo "  انتظار... ($((i*3))/60 ثانية)"
+              sleep 3
+            done
+            echo "✅ Deploy complete — halaltec.com is live"
         env:
           DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
 
