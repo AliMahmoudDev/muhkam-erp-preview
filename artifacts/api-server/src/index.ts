@@ -77,7 +77,6 @@ async function main() {
     void alertManager.send({
       type:    ALERT_TYPES.SERVER_START,
       message: `🚀 *مُحكم ERP* بدأ التشغيل\nالبورت: ${PORT}\nالوقت: ${new Date().toLocaleString("ar-EG")}`,
-      once:    true,
     });
     startBackupScheduler();
     startDbBackupScheduler();
