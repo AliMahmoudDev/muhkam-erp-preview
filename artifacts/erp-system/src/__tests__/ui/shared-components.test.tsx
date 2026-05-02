@@ -100,7 +100,7 @@ describe("GhostBtn", () => {
   it("has border styling (ghost style)", () => {
     render(<GhostBtn>إلغاء</GhostBtn>);
     const btn = screen.getByRole("button");
-    expect(btn.className).toContain("border");
+    expect(btn.style.border).toBeTruthy();
   });
 });
 
