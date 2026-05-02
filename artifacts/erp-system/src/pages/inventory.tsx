@@ -78,7 +78,6 @@ export default function Inventory() {
     if (tabFromUrl && VALID_TABS.includes(tabFromUrl) && tabFromUrl !== activeTab) {
       setActiveTab(tabFromUrl);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabFromUrl]);
   const [movementsFilter, setMovementsFilter] = useState<'all' | 'zero' | 'low'>('all');
   /* ── warehouse detail modal ── */

@@ -66,9 +66,6 @@ function getNumSettings(): {
   return { sym: 'ج.م', numFmt: 'western', dp: 2, tSep: 'comma', dateLocale: 'ar-EG-u-nu-latn' };
 }
 
-function getCurrencySymbol(): string {
-  return getNumSettings().sym;
-}
 
 function fmtMoney(n: number | null | undefined): string {
   const { sym, numFmt, dp, tSep } = getNumSettings();

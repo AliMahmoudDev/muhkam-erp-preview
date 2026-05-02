@@ -362,7 +362,7 @@ function PriceListFormModal({
 
 function PriceListCard({
   list,
-  products,
+  products: _products,
   onEdit,
   onDelete,
 }: {

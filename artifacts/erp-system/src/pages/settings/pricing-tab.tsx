@@ -30,7 +30,6 @@ export function PricingTab() {
       .then((data: Category[]) => setCategories(data))
       .catch(() => {})
       .finally(() => setLoadingCats(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const margin = parseFloat(marginPercent);
