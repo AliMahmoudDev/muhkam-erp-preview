@@ -428,11 +428,14 @@ export function superAdminIPGuard(req: Request, res: Response, next: NextFunctio
    * Use req.ip only — Express resolves it correctly via "trust proxy"
    * setting in app.ts (trust proxy = 1), so it reads the real client IP
    * from X-Forwarded-For safely without allowing header spoofing.
-   * Never read X-Forwarded-For manually here — it can be forged.
+   * Normalize IPv6-mapped IPv4 addresses (e.g. ::ffff:1.2.3.4 → 1.2.3.4)
+   * so that IPs configured as plain IPv4 still match when nginx proxies.
    */
-  const clientIP = req.ip || req.socket.remoteAddress;
+  const rawIP = req.ip || req.socket.remoteAddress || "";
+  const clientIP = rawIP.startsWith("::ffff:") ? rawIP.slice(7) : rawIP;
 
   if (!clientIP || !allowedIPs.includes(clientIP)) {
+    logger.warn({ clientIP, allowedIPs }, "[superAdminIPGuard] blocked request from unlisted IP");
     res.status(403).json({ error: "الوصول مرفوض — عنوان IP غير مصرح به" });
     return;
   }
