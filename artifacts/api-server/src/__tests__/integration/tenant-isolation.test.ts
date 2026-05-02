@@ -172,7 +172,7 @@ beforeAll(async () => {
     VALUES ($1, $2, 500, $3)
     RETURNING id
   `,
-    [`${PREFIX}_CustomerB`, `${PREFIX}-CUST-B`, companyBId]
+    [`${PREFIX}_CustomerB`, RUN_ID % 2147483647, companyBId]
   );
   customerBId = custBRes.rows[0].id;
 
