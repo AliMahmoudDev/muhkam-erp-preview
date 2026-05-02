@@ -10,6 +10,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import router from './routes';
+import zktecoRouter from './routes/zkteco';
 import { swaggerSpec } from './lib/swagger-spec';
 import { logger } from './lib/logger';
 import { sanitizeBody } from './middleware/auth';
@@ -198,6 +199,12 @@ app.use('/api/auth/2fa/login', authLimiter);
 
 /* ── Per-tenant rate limiting (after auth routes) ─────────── */
 app.use('/api', perTenantRateLimit);
+
+/* ── ZKTeco routes — mounted directly (NOT under /api) so that:
+   - /iclock/getrequest and /iclock/cdata are reachable by ZKTeco devices
+   - /api/attendance/zkteco resolves at the correct path without double prefix
+   Authentication is handled inside the router via per-company API keys. ── */
+app.use(zktecoRouter);
 
 app.use('/api', router);
 
