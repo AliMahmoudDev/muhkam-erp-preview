@@ -28,6 +28,7 @@ import { writeAuditLog } from "../lib/audit-log";
 
 import { normalizeName, getNextCustomerCode } from "./customers";
 import { getOrCreateCustomerAccount, getOrCreateSafeAccount, getOrCreateGeneralExpenseAccount, createAutoJournalEntry } from "../lib/auto-account";
+import { findOrCreateCustomerByPhone } from "../lib/auto-customer";
 
 const router: IRouter = Router();
 router.use(["/repair-jobs", "/repair-statuses", "/repair-customers", "/repair-checklist-items", "/scrap-items"], requireFeature("maintenance"));
@@ -883,12 +884,33 @@ router.post("/repair-jobs", wrap(async (req, res) => {
   const b = req.body as Record<string, unknown>;
   const job_no = await nextJobNo(company_id);
 
-  const [job] = await db.insert(repairJobsTable).values({
+  const customerNameInput = String(b.customer_name ?? "").trim();
+  const customerPhoneInput = b.customer_phone ? String(b.customer_phone).trim() : null;
+  const incomingCustomerId: number | null = b.customer_id ? Number(b.customer_id) : null;
+
+  /* نلفّ كل العمليات في transaction واحدة حتى لا يبقى عميل يتيم لو فشل
+   * إدراج البطاقة (atomicity). الإشعارات تُرسَل بعد الـ commit. */
+  const job = await db.transaction(async (tx) => {
+    /* 1) إيجاد/إنشاء عميل دائم تلقائياً */
+    let resolvedCustomerId: number | null = incomingCustomerId;
+    if (!resolvedCustomerId && customerNameInput && customerPhoneInput) {
+      const { id } = await findOrCreateCustomerByPhone(tx, company_id, {
+        name: customerNameInput,
+        phone: customerPhoneInput,
+        classificationName: "عميل صيانة",
+        isCustomer: true,
+        source: "repair",
+      });
+      resolvedCustomerId = id;
+    }
+
+    /* 2) إدراج البطاقة */
+    const [createdJob] = await tx.insert(repairJobsTable).values({
     company_id,
     job_no,
-    customer_name:        String(b.customer_name ?? ""),
-    customer_phone:       b.customer_phone ? String(b.customer_phone) : null,
-    customer_id:          b.customer_id ? Number(b.customer_id) : null,
+    customer_name:        customerNameInput,
+    customer_phone:       customerPhoneInput,
+    customer_id:          resolvedCustomerId,
     device_brand:         String(b.device_brand ?? ""),
     device_model:         String(b.device_model ?? ""),
     device_type:          (() => {
@@ -921,20 +943,23 @@ router.post("/repair-jobs", wrap(async (req, res) => {
     device_pin:               b.device_pin ? String(b.device_pin) : null,
     accessories:              b.accessories ? String(b.accessories) : null,
     branch_id:                b.branch_id ? Number(b.branch_id) : null,
-  }).returning();
+    }).returning();
 
-  /* History entry */
-  await db.insert(repairStatusHistoryTable).values({
-    job_id: job.id,
-    company_id,
-    status_to: "received",
-    user_id,
-    user_name,
-    event_type: "created",
-    note: "تم إنشاء بطاقة الصيانة",
+    /* 3) سجل الحالة */
+    await tx.insert(repairStatusHistoryTable).values({
+      job_id: createdJob.id,
+      company_id,
+      status_to: "received",
+      user_id,
+      user_name,
+      event_type: "created",
+      note: "تم إنشاء بطاقة الصيانة",
+    });
+
+    return createdJob;
   });
 
-  /* Notify assigned technicians */
+  /* الإشعارات بعد الـ commit (لا تؤثر على atomicity) */
   for (const tid of [job.technician_id, job.technician_2_id]) {
     if (tid) {
       await notifyUser(company_id, tid, {

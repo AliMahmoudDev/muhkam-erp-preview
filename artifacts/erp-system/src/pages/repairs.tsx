@@ -2416,7 +2416,8 @@ function NewJobForm({
     }
   }, [phoneDigits, isComplete, customers]);
 
-  /* عميل زائر — بدون إنشاء سجل دائم في قاعدة بيانات العملاء */
+  /* عميل جديد — يُنشَأ تلقائياً في قاعدة بيانات العملاء بتصنيف "عميل صيانة"
+     عند حفظ البطاقة (الخادم يتولّى الإضافة). */
   const handleConfirmGuestCustomer = () => {
     if (!newCustName.trim()) { toast({ title: "أدخل اسم العميل", variant: "destructive" }); return; }
     setCustomerId(null);
@@ -2524,31 +2525,31 @@ function NewJobForm({
             </div>
           )}
 
-          {/* Guest customer confirmed — temporary, not saved to customers list */}
+          {/* عميل جديد سيُضاف تلقائياً لقائمة العملاء بتصنيف "عميل صيانة" */}
           {isComplete && !customerId && !showAddCust && customerName && (
-            <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-amber-500/8 border border-amber-500/20">
+            <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-emerald-500/8 border border-emerald-500/20">
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
-                  <p className="text-amber-300 text-sm font-bold">{customerName}</p>
-                  <p className="text-[10px] text-amber-400/60">عميل مؤقت — لن يُضاف لقائمة العملاء</p>
+                  <p className="text-emerald-300 text-sm font-bold">{customerName}</p>
+                  <p className="text-[10px] text-emerald-400/60">عميل صيانة — سيُضاف لقائمة العملاء عند الحفظ</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => { setCustomerName(""); setShowAddCust(true); setNewCustName(customerName); }}
-                className="text-[10px] text-amber-400/60 hover:text-amber-300 underline"
+                className="text-[10px] text-emerald-400/60 hover:text-emerald-300 underline"
               >
                 تعديل
               </button>
             </div>
           )}
 
-          {/* Not found — guest customer (no permanent record) */}
+          {/* رقم غير موجود — اسم العميل سيُحفظ في قاعدة بيانات العملاء بتصنيف "عميل صيانة" */}
           {isComplete && showAddCust && (
-            <div className="space-y-2 p-2 rounded-xl bg-amber-500/5 border border-amber-500/20">
-              <p className="text-[10px] text-amber-400 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> الرقم غير موجود في العملاء — سيُحفظ كعميل مؤقت في البطاقة فقط
+            <div className="space-y-2 p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+              <p className="text-[10px] text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> الرقم غير موجود — سيُضاف كعميل دائم بتصنيف "عميل صيانة"
               </p>
               <input
                 value={newCustName}
@@ -2559,9 +2560,9 @@ function NewJobForm({
               />
               <button
                 onClick={handleConfirmGuestCustomer}
-                className="w-full py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold transition-all"
+                className="w-full py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all"
               >
-                ✓ متابعة — عميل مؤقت
+                ✓ متابعة — حفظ كعميل صيانة
               </button>
             </div>
           )}

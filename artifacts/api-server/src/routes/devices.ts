@@ -11,6 +11,7 @@ import { wrap, httpError } from "../lib/async-handler";
 import type Express from "express";
 import { requireFeature } from "../middleware/feature-guard";
 import { hasPermission } from "../lib/permissions";
+import { findOrCreateCustomerByPhone } from "../lib/auto-customer";
 
 const router = Router();
 router.use("/devices", requireFeature("maintenance"));
@@ -362,8 +363,11 @@ router.post("/devices/purchase", wrap(async (req, res) => {
   const device_no = await nextDeviceNo(company_id);
 
   const result = await db.transaction(async (tx) => {
-    /* ── 1. Create new customer if needed ── */
-    const customer_id: number | null = rawCustomerId ? Number(rawCustomerId) : null;
+    /* ── 1. إيجاد/إنشاء عميل/مورد دائم ──
+     * إن مُرِّر customer_id نستخدمه. وإلا — إن مُرِّر new_customer_name —
+     * نبحث برقم الهاتف داخل نفس الشركة فإن لم يُوجد ننشئ سجلاً دائماً
+     * بتصنيف "عميل جهاز مستعمل" مع is_supplier=true (لأنه باع لنا الجهاز). */
+    let customer_id: number | null = rawCustomerId ? Number(rawCustomerId) : null;
     let customer_name: string | null = null;
 
     if (customer_id) {
@@ -373,9 +377,17 @@ router.post("/devices/purchase", wrap(async (req, res) => {
       if (!c) throw httpError(400, "العميل/المورد غير موجود");
       customer_name = c.name;
     } else if (new_customer_name?.trim()) {
-      /* مورد مؤقت — يُحفظ اسمه نصاً في الجهاز فقط، لا يُضاف لقائمة العملاء */
-      customer_name = new_customer_name.trim();
-      /* customer_id يبقى null */
+      const trimmedName = new_customer_name.trim();
+      const { id } = await findOrCreateCustomerByPhone(tx, company_id, {
+        name: trimmedName,
+        phone: supplier_phone?.trim() || null,
+        classificationName: "عميل جهاز مستعمل",
+        isCustomer: true,
+        isSupplier: true,
+        source: "device_purchase",
+      });
+      customer_id = id;
+      customer_name = trimmedName;
     }
 
     /* ── 2. Find or create product ── */
