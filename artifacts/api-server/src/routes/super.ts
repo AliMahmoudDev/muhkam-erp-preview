@@ -127,7 +127,7 @@ async function cascadeDeleteCompany(id: number): Promise<void> {
     await tx.execute(sql`DELETE FROM companies WHERE id = ${cid}`);
   });
 }
-import { authenticate, requireRole, superAdminIPGuard } from "../middleware/auth";
+import { authenticate, requireRole } from "../middleware/auth";
 import { invalidateTenantCache } from "../middleware/tenant-guard";
 import { invalidateFeatureCache } from "../middleware/feature-guard";
 import { wrap } from "../lib/async-handler";
@@ -141,9 +141,6 @@ import { checkBotStatus, getTgConfigStatus, invalidateTgCredsCache } from "../li
 import { logger } from "../lib/logger";
 
 const router = Router();
-
-/* Apply IP guard to all super-admin routes */
-router.use(superAdminIPGuard);
 
 const superOnly = [authenticate, requireRole("super_admin")];
 
