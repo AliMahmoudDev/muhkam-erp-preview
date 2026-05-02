@@ -46,6 +46,10 @@ let purchaseBId: number;
 
 let saleAInvoice: string;
 let saleBInvoice: string;
+
+/* Voucher cross-tenant isolation fixtures */
+let safeAId: number;
+let customerBId: number;
 let purchaseAInvoice: string;
 let purchaseBInvoice: string;
 
@@ -150,7 +154,29 @@ beforeAll(async () => {
   );
   productBId = pbRes.rows[0].id;
 
-  /* 6. Sign JWT tokens — companyAId captured above, no hardcoded value */
+  /* 6. Create a safe for company A (used by voucher cross-tenant tests) */
+  const safeRes = await pool.query<{ id: number }>(
+    `
+    INSERT INTO safes (name, balance, company_id)
+    VALUES ($1, 10000, $2)
+    RETURNING id
+  `,
+    [`${PREFIX}_SafeA`, companyAId]
+  );
+  safeAId = safeRes.rows[0].id;
+
+  /* 7. Create a customer for company B (the foreign record tenant A will try to tamper) */
+  const custBRes = await pool.query<{ id: number }>(
+    `
+    INSERT INTO customers (name, customer_code, balance, company_id)
+    VALUES ($1, $2, 500, $3)
+    RETURNING id
+  `,
+    [`${PREFIX}_CustomerB`, `${PREFIX}-CUST-B`, companyBId]
+  );
+  customerBId = custBRes.rows[0].id;
+
+  /* 8. Sign JWT tokens — companyAId captured above, no hardcoded value */
   tokenA = jwt.sign({ userId: userAId, role: 'admin', companyId: companyAId }, JWT_SECRET, {
     expiresIn: '1h',
   });
@@ -332,6 +358,21 @@ afterAll(async () => {
     `,
       [[userAId, userBId].filter(Number.isFinite)]
     );
+
+    /* receipt_vouchers and payment_vouchers created during voucher isolation tests */
+    await pool.query(`DELETE FROM receipt_vouchers WHERE company_id = $1`, [companyAId]);
+    await pool.query(`DELETE FROM payment_vouchers WHERE company_id = $1`, [companyAId]);
+
+    /* safes created for voucher tests */
+    if (safeAId) {
+      await pool.query(`DELETE FROM safes WHERE id = $1`, [safeAId]);
+    }
+
+    /* customers created for voucher cross-tenant tests */
+    if (customerBId) {
+      await pool.query(`DELETE FROM customer_ledger WHERE customer_id = $1`, [customerBId]);
+      await pool.query(`DELETE FROM customers WHERE id = $1`, [customerBId]);
+    }
 
     /* warehouses */
     await pool.query(
@@ -676,5 +717,95 @@ describe('Multi-Tenant Isolation — Purchases by ID (cross-tenant blocked)', ()
       .set('Authorization', `Bearer ${tokenA}`);
 
     expect([403, 404], 'cross-tenant access must be blocked').toContain(res.status);
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   VOUCHER CROSS-TENANT customer_id REJECTION
+   An attacker from tenant A must not be able to reference tenant B's
+   customer_id in receipt or payment vouchers. The fix ensures the
+   supplied customer_id is verified to belong to the caller's tenant
+   before the voucher is stored; a foreign ID must be rejected (400).
+   ═══════════════════════════════════════════════════════════════════ */
+
+describe('Voucher Cross-Tenant Isolation — receipt-voucher customer_id rejection', () => {
+  it('POST /api/receipt-vouchers with tokenA and customer_id belonging to company B — rejected (400)', async () => {
+    expect(safeAId, 'safe A must have been created').toBeTruthy();
+    expect(customerBId, 'customer B must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .post('/api/receipt-vouchers')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .set('Content-Type', 'application/json')
+      .send({
+        customer_id: customerBId,
+        customer_name: 'Cross-Tenant Attack',
+        safe_id: safeAId,
+        amount: 100,
+        date: new Date().toISOString().split('T')[0],
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /api/receipt-vouchers with tokenA and own customer_id (undefined) — succeeds (201)', async () => {
+    expect(safeAId, 'safe A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .post('/api/receipt-vouchers')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .set('Content-Type', 'application/json')
+      .send({
+        customer_name: 'Walk-In Customer',
+        safe_id: safeAId,
+        amount: 50,
+        date: new Date().toISOString().split('T')[0],
+      });
+
+    if (res.status !== 201) {
+      console.error('receipt-voucher no customer_id failed:', JSON.stringify(res.body));
+    }
+    expect(res.status).toBe(201);
+  });
+});
+
+describe('Voucher Cross-Tenant Isolation — payment-voucher customer_id rejection', () => {
+  it('POST /api/payment-vouchers with tokenA and customer_id belonging to company B — rejected (400)', async () => {
+    expect(safeAId, 'safe A must have been created').toBeTruthy();
+    expect(customerBId, 'customer B must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .post('/api/payment-vouchers')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .set('Content-Type', 'application/json')
+      .send({
+        customer_id: customerBId,
+        customer_name: 'Cross-Tenant Attack',
+        safe_id: safeAId,
+        amount: 100,
+        date: new Date().toISOString().split('T')[0],
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /api/payment-vouchers with tokenA and no customer_id — succeeds (201)', async () => {
+    expect(safeAId, 'safe A must have been created').toBeTruthy();
+
+    const res = await request(app)
+      .post('/api/payment-vouchers')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .set('Content-Type', 'application/json')
+      .send({
+        customer_name: 'Generic Payee',
+        safe_id: safeAId,
+        amount: 25,
+        date: new Date().toISOString().split('T')[0],
+      });
+
+    if (res.status !== 201) {
+      console.error('payment-voucher no customer_id failed:', JSON.stringify(res.body));
+    }
+    expect(res.status).toBe(201);
   });
 });

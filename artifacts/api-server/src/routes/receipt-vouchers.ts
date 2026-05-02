@@ -63,18 +63,19 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
       .set({ balance: sql`${safesTable.balance} + ${String(amt)}` })
       .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cid)));
 
+    let resolvedCustomerId: number | null = null;
     if (customer_id) {
       const [cust] = await tx.select().from(customersTable).where(and(
         eq(customersTable.id, parseInt(customer_id)),
         eq(customersTable.company_id, cid),
       ));
-      if (cust) {
-        const newBalance = Number(cust.balance) - amt;
-        await tx.update(customersTable).set({ balance: String(newBalance) }).where(and(
-          eq(customersTable.id, cust.id),
-          eq(customersTable.company_id, cid),
-        ));
-      }
+      if (!cust) throw httpError(400, "العميل غير موجود أو لا ينتمي لهذه الشركة");
+      resolvedCustomerId = cust.id;
+      const newBalance = Number(cust.balance) - amt;
+      await tx.update(customersTable).set({ balance: String(newBalance) }).where(and(
+        eq(customersTable.id, cust.id),
+        eq(customersTable.company_id, cid),
+      ));
     }
 
     const voucher_no = `RCV-${Date.now()}`;
@@ -82,7 +83,7 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
       request_id: requestId,
       voucher_no,
       date: date ?? new Date().toISOString().split("T")[0],
-      customer_id: customer_id ? parseInt(customer_id) : null,
+      customer_id: resolvedCustomerId,
       customer_name,
       safe_id: safe.id,
       safe_name: safe.name,
@@ -97,7 +98,7 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
       reference_id: v.id,
       safe_id: safe.id,
       safe_name: safe.name,
-      customer_id: customer_id ? parseInt(customer_id) : null,
+      customer_id: resolvedCustomerId,
       customer_name,
       amount: String(amt),
       direction: "in",
@@ -106,9 +107,9 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
       company_id: cid,
     });
 
-    if (customer_id) {
+    if (resolvedCustomerId) {
       await tx.insert(customerLedgerTable).values({
-        customer_id: parseInt(customer_id),
+        customer_id: resolvedCustomerId,
         type: "receipt_voucher",
         amount: String(-amt),
         reference_type: "receipt_voucher",
@@ -116,6 +117,7 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
         reference_no: voucher_no,
         description: `سند قبض ${voucher_no} — ${customer_name}`,
         date: date ?? new Date().toISOString().split("T")[0],
+        company_id: cid,
       });
     }
 
@@ -126,13 +128,13 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
 }));
 
 /* ── مساعد: جلب حساب العميل من السند ──────────────────────────────────── */
-async function getVoucherCustomerAcct(customerId: number | null): Promise<AccountRef | null> {
+async function getVoucherCustomerAcct(customerId: number | null, companyId: number): Promise<AccountRef | null> {
   if (!customerId) return null;
   const [cust] = await db.select({ account_id: customersTable.account_id, name: customersTable.name })
-    .from(customersTable).where(eq(customersTable.id, customerId));
+    .from(customersTable).where(and(eq(customersTable.id, customerId), eq(customersTable.company_id, companyId)));
   if (!cust?.account_id) return null;
   const [acctRow] = await db.select({ id: accountsTable.id, code: accountsTable.code, name: accountsTable.name })
-    .from(accountsTable).where(eq(accountsTable.id, cust.account_id));
+    .from(accountsTable).where(and(eq(accountsTable.id, cust.account_id), eq(accountsTable.company_id, companyId)));
   return acctRow ?? null;
 }
 
@@ -150,7 +152,7 @@ router.post("/receipt-vouchers/:id/post", wrap(async (req, res) => {
 
   await assertPeriodOpen(v.date, req);
 
-  const custAcct = await getVoucherCustomerAcct(v.customer_id);
+  const custAcct = await getVoucherCustomerAcct(v.customer_id, cid);
   const safeAcct = await getOrCreateSafeAccount(v.safe_id, v.safe_name, cid);
   if (custAcct) {
     await createAutoJournalEntry({
@@ -197,7 +199,7 @@ router.post("/receipt-vouchers/:id/cancel", wrap(async (req, res) => {
   await assertPeriodOpen(v.date, req);
 
   if (v.posting_status === "posted") {
-    const custAcct = await getVoucherCustomerAcct(v.customer_id);
+    const custAcct = await getVoucherCustomerAcct(v.customer_id, cid);
     if (custAcct) {
       const safeAcct = await getOrCreateSafeAccount(v.safe_id, v.safe_name, cid);
       await createAutoJournalEntry({

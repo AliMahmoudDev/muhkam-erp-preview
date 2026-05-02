@@ -70,17 +70,18 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
       .returning();
     if (!debited[0]) throw httpError(400, "رصيد الخزينة غير كافٍ");
 
+    let resolvedCustomerId: number | null = null;
     if (customer_id) {
       const [cust] = await tx.select().from(customersTable).where(and(
         eq(customersTable.id, parseInt(customer_id)),
         eq(customersTable.company_id, cid),
       ));
-      if (cust) {
-        await tx.update(customersTable).set({ balance: String(Number(cust.balance) + amt) }).where(and(
-          eq(customersTable.id, cust.id),
-          eq(customersTable.company_id, cid),
-        ));
-      }
+      if (!cust) throw httpError(400, "العميل غير موجود أو لا ينتمي لهذه الشركة");
+      resolvedCustomerId = cust.id;
+      await tx.update(customersTable).set({ balance: String(Number(cust.balance) + amt) }).where(and(
+        eq(customersTable.id, cust.id),
+        eq(customersTable.company_id, cid),
+      ));
     }
 
     const voucher_no = `PAY-${Date.now()}`;
@@ -88,7 +89,7 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
       request_id: requestId,
       voucher_no,
       date: date ?? new Date().toISOString().split("T")[0],
-      customer_id: customer_id ? parseInt(customer_id) : null,
+      customer_id: resolvedCustomerId,
       customer_name,
       safe_id: safe.id,
       safe_name: safe.name,
@@ -104,7 +105,7 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
       reference_id: v.id,
       safe_id: safe.id,
       safe_name: safe.name,
-      customer_id: customer_id ? parseInt(customer_id) : null,
+      customer_id: resolvedCustomerId,
       customer_name,
       amount: String(amt),
       direction: "out",
@@ -113,9 +114,9 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
       company_id: cid,
     });
 
-    if (customer_id) {
+    if (resolvedCustomerId) {
       await tx.insert(customerLedgerTable).values({
-        customer_id: parseInt(customer_id),
+        customer_id: resolvedCustomerId,
         type: "payment_voucher",
         amount: String(amt),
         reference_type: "payment_voucher",
@@ -123,6 +124,7 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
         reference_no: voucher_no,
         description: `سند دفع ${voucher_no} — ${customer_name}`,
         date: txDate,
+        company_id: cid,
       });
     }
 
@@ -133,13 +135,13 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
 }));
 
 /* ── مساعد: جلب حساب العميل ────────────────────────────────────────────── */
-async function getVoucherCustomerAcct(customerId: number | null): Promise<AccountRef | null> {
+async function getVoucherCustomerAcct(customerId: number | null, companyId: number): Promise<AccountRef | null> {
   if (!customerId) return null;
   const [cust] = await db.select({ account_id: customersTable.account_id, name: customersTable.name })
-    .from(customersTable).where(eq(customersTable.id, customerId));
+    .from(customersTable).where(and(eq(customersTable.id, customerId), eq(customersTable.company_id, companyId)));
   if (!cust?.account_id) return null;
   const [acctRow] = await db.select({ id: accountsTable.id, code: accountsTable.code, name: accountsTable.name })
-    .from(accountsTable).where(eq(accountsTable.id, cust.account_id));
+    .from(accountsTable).where(and(eq(accountsTable.id, cust.account_id), eq(accountsTable.company_id, companyId)));
   return acctRow ?? null;
 }
 
@@ -157,7 +159,7 @@ router.post("/payment-vouchers/:id/post", wrap(async (req, res) => {
 
   await assertPeriodOpen(v.date, req);
 
-  const custAcct = await getVoucherCustomerAcct(v.customer_id);
+  const custAcct = await getVoucherCustomerAcct(v.customer_id, cid);
   const safeAcct = await getOrCreateSafeAccount(v.safe_id, v.safe_name, cid);
   if (custAcct) {
     await createAutoJournalEntry({
@@ -204,7 +206,7 @@ router.post("/payment-vouchers/:id/cancel", wrap(async (req, res) => {
   await assertPeriodOpen(v.date, req);
 
   if (v.posting_status === "posted") {
-    const custAcct = await getVoucherCustomerAcct(v.customer_id);
+    const custAcct = await getVoucherCustomerAcct(v.customer_id, cid);
     if (custAcct) {
       const safeAcct = await getOrCreateSafeAccount(v.safe_id, v.safe_name, cid);
       await createAutoJournalEntry({
@@ -274,6 +276,7 @@ router.delete("/payment-vouchers/:id", wrap(async (req, res) => {
         reference_no: v.voucher_no,
         description: `إلغاء سند دفع ${v.voucher_no}`,
         date: new Date().toISOString().split("T")[0],
+        company_id: cid,
       });
     }
 

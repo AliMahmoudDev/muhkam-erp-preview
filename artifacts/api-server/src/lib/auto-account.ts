@@ -252,7 +252,7 @@ export async function createJournalEntry(
     await runner
       .update(accountsTable)
       .set({ current_balance: sql`current_balance + ${String(delta)}::numeric` })
-      .where(eq(accountsTable.id, l.account.id));
+      .where(and(eq(accountsTable.id, l.account.id), eq(accountsTable.company_id, companyId)));
   }
 }
 
