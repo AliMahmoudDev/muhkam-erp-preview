@@ -78,16 +78,6 @@ interface RepairPart {
   unit_price: string;
 }
 
-interface RepairPayment {
-  id: number;
-  amount: number;
-  payment_method: string;
-  notes?: string;
-  received_by_name?: string;
-  safe_name?: string;
-  created_at: string;
-}
-
 interface Stats {
   total: number; pending: number; in_progress: number;
   done: number; delivered: number; cancelled: number;
@@ -1553,51 +1543,6 @@ function JobDetail({
   const [newReportText, setNewReportText] = useState("");
   const [addingReport, setAddingReport]   = useState(false);
 
-  /* ── Payments ─────────────────────────────────────────────── */
-  const [showAddPayment, setShowAddPayment] = useState(false);
-  const [payAmount, setPayAmount]    = useState("");
-  const [payMethod, setPayMethod]    = useState("cash");
-  const [payNotes, setPayNotes]      = useState("");
-  const [paySafeId, setPaySafeId]    = useState("");
-
-  const paymentsQ = useQuery<RepairPayment[]>({
-    queryKey: [`/api/repair-jobs/${job.id}/payments`],
-    queryFn:  () => authFetch(api(`/api/repair-jobs/${job.id}/payments`)).then(r => r.json()),
-  });
-  const payments = Array.isArray(paymentsQ.data) ? paymentsQ.data : [];
-  const totalPaid = payments.reduce((s, p) => s + Number(p.amount), 0);
-  const finalCostNum = Number(editFinal || editEst || 0);
-  const remaining = Math.max(0, finalCostNum - totalPaid);
-
-  const safesQ = useQuery<{id:number;name:string;balance:string}[]>({
-    queryKey: ["/api/settings/safes"],
-    queryFn:  () => authFetch(api("/api/settings/safes")).then(r => r.json()),
-  });
-  const safesList = Array.isArray(safesQ.data) ? safesQ.data : [];
-
-  const addPayment = useMutation({
-    mutationFn: () => authFetch(api(`/api/repair-jobs/${job.id}/payments`), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: Number(payAmount), payment_method: payMethod, notes: payNotes, safe_id: paySafeId || undefined }),
-    }).then(async r => { if (!r.ok) { const e = await r.json(); throw new Error(e.error); } return r.json(); }),
-    onSuccess: () => {
-      toast({ title: "✓ تم تسجيل الدفعة" });
-      setShowAddPayment(false); setPayAmount(""); setPayNotes("");
-      qc.invalidateQueries({ queryKey: [`/api/repair-jobs/${job.id}/payments`] });
-      qc.invalidateQueries({ queryKey: ["/api/repair-jobs", job.id] });
-    },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
-  });
-
-  const deletePayment = useMutation({
-    mutationFn: (pid: number) => authFetch(api(`/api/repair-jobs/${job.id}/payments/${pid}`), { method: "DELETE" }).then(r => r.json()),
-    onSuccess: () => {
-      toast({ title: "✓ تم حذف الدفعة" });
-      qc.invalidateQueries({ queryKey: [`/api/repair-jobs/${job.id}/payments`] });
-    },
-  });
-
   /* engineer reports = filter from history with event_type="engineer_report" */
   const _safeHistory   = Array.isArray(job.history) ? job.history : [];
   const engineerReports = _safeHistory.filter(h => h.event_type === "engineer_report");
@@ -2071,98 +2016,6 @@ function JobDetail({
           <button onClick={handleSave} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold text-xs transition-all">
             <Save className="w-3.5 h-3.5" /> حفظ التغييرات
           </button>
-        </div>
-
-        {/* ── Payments ──────────────────────────────────────────── */}
-        <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)] space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] erp-label font-bold">المدفوعات</p>
-            <button
-              onClick={() => setShowAddPayment((v) => !v)}
-              className="text-[10px] px-2 py-0.5 rounded-lg border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-all font-bold"
-            >
-              {showAddPayment ? "✕ إلغاء" : "+ إضافة دفعة"}
-            </button>
-          </div>
-
-          {/* Summary row */}
-          <div className="grid grid-cols-3 gap-1.5 text-center">
-            <div className="rounded-xl p-2 border border-white/5" style={{ background: "rgba(255,255,255,0.03)" }}>
-              <p className="text-[9px] erp-label mb-0.5">الإجمالي</p>
-              <p className="text-xs font-black text-white">{formatCurrency(finalCostNum)}</p>
-            </div>
-            <div className="rounded-xl p-2 border border-emerald-500/15" style={{ background: "rgba(16,185,129,0.06)" }}>
-              <p className="text-[9px] text-emerald-400/70 mb-0.5">المحصَّل</p>
-              <p className="text-xs font-black text-emerald-400">{formatCurrency(totalPaid)}</p>
-            </div>
-            <div className={`rounded-xl p-2 border ${remaining > 0 ? "border-amber-500/25" : "border-emerald-500/15"}`}
-              style={{ background: remaining > 0 ? "rgba(245,158,11,0.07)" : "rgba(16,185,129,0.06)" }}>
-              <p className={`text-[9px] mb-0.5 ${remaining > 0 ? "text-amber-400/70" : "text-emerald-400/70"}`}>المتبقي</p>
-              <p className={`text-xs font-black ${remaining > 0 ? "text-amber-400" : "text-emerald-400"}`}>{formatCurrency(remaining)}</p>
-            </div>
-          </div>
-
-          {/* Add-payment form */}
-          {showAddPayment && (
-            <div className="rounded-xl p-2.5 border border-emerald-500/20 space-y-2" style={{ background: "rgba(16,185,129,0.05)" }}>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] erp-label mb-1 block">المبلغ *</label>
-                  <input type="number" min="0.01" step="any" value={payAmount}
-                    onChange={(e) => setPayAmount(e.target.value)}
-                    placeholder="0.00" className="erp-input w-full text-xs" />
-                </div>
-                <div>
-                  <label className="text-[10px] erp-label mb-1 block">طريقة الدفع</label>
-                  <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} className="erp-input w-full text-xs">
-                    <option value="cash">نقداً</option>
-                    <option value="card">بطاقة</option>
-                    <option value="transfer">تحويل</option>
-                    <option value="instapay">InstaPay</option>
-                  </select>
-                </div>
-              </div>
-              {safesList.length > 0 && (
-                <div>
-                  <label className="text-[10px] erp-label mb-1 block">الخزنة</label>
-                  <select value={paySafeId} onChange={(e) => setPaySafeId(e.target.value)} className="erp-input w-full text-xs">
-                    <option value="">— بدون خزنة —</option>
-                    {safesList.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </div>
-              )}
-              <div>
-                <label className="text-[10px] erp-label mb-1 block">ملاحظات</label>
-                <input type="text" value={payNotes} onChange={(e) => setPayNotes(e.target.value)}
-                  placeholder="اختياري" className="erp-input w-full text-xs" />
-              </div>
-              <button
-                onClick={() => addPayment.mutate()}
-                disabled={!payAmount || Number(payAmount) <= 0 || addPayment.isPending}
-                className="w-full py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all disabled:opacity-50"
-              >
-                {addPayment.isPending ? "جاري التسجيل..." : "تسجيل الدفعة"}
-              </button>
-            </div>
-          )}
-
-          {/* Payment rows */}
-          {payments.length === 0 && !showAddPayment && (
-            <p className="text-center text-[10px] erp-label py-2">لا توجد دفعات مسجلة</p>
-          )}
-          {payments.map((p) => (
-            <div key={p.id} className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl border border-white/5" style={{ background: "rgba(255,255,255,0.02)" }}>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-black text-white">{formatCurrency(Number(p.amount))}</p>
-                <p className="text-[10px] erp-label">{p.payment_method} {p.safe_name ? `· ${p.safe_name}` : ""} {p.notes ? `· ${p.notes}` : ""}</p>
-              </div>
-              <p className="text-[9px] erp-label shrink-0">{new Date(p.created_at).toLocaleDateString("ar-EG", { month: "short", day: "numeric" })}</p>
-              <button onClick={() => deletePayment.mutate(p.id)} disabled={deletePayment.isPending}
-                className="w-5 h-5 rounded-lg border border-red-500/15 flex items-center justify-center text-red-400/40 hover:text-red-400 hover:border-red-500/30 transition-all shrink-0">
-                <Trash2 className="w-2.5 h-2.5" />
-              </button>
-            </div>
-          ))}
         </div>
 
         {/* Accessories display */}
