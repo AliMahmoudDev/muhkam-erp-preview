@@ -84,7 +84,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
           command_timeout: 15m
-          envs: DEPLOY_TOKEN
+          envs: DEPLOY_TOKEN,SUPER_ADMIN_PIN
           script: |
             set -euo pipefail
             APP_DIR=/var/www/muhkam-erp
@@ -112,6 +112,15 @@ jobs:
             if ! grep -q "^SUPER_ADMIN_IPS=" "$ENV_FILE" 2>/dev/null; then
               echo "SUPER_ADMIN_IPS=" >> "$ENV_FILE"
               echo "⚠️  SUPER_ADMIN_IPS is empty — super-admin access is BLOCKED in production. Add your IP(s) to .env"
+            fi
+            # Inject SUPER_ADMIN_PIN from GitHub secret (passed via envs:)
+            if [ -n "${SUPER_ADMIN_PIN:-}" ]; then
+              if grep -q "^SUPER_ADMIN_PIN=" "$ENV_FILE" 2>/dev/null; then
+                sed -i "s|^SUPER_ADMIN_PIN=.*|SUPER_ADMIN_PIN=$SUPER_ADMIN_PIN|" "$ENV_FILE"
+              else
+                echo "SUPER_ADMIN_PIN=$SUPER_ADMIN_PIN" >> "$ENV_FILE"
+              fi
+              echo "✓ SUPER_ADMIN_PIN written to .env"
             fi
 
             # Re-source .env to pick up all vars (including newly generated ones)
@@ -164,6 +173,7 @@ jobs:
               TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}" \
               SUPPORT_WHATSAPP="${SUPPORT_WHATSAPP:-}" \
               SUPPORT_EMAIL="${SUPPORT_EMAIL:-}" \
+              SUPER_ADMIN_PIN="${SUPER_ADMIN_PIN:-}" \
               pm2 start dist/index.mjs \
                 --name halaltech-api \
                 --cwd "$APP_DIR/artifacts/api-server"
