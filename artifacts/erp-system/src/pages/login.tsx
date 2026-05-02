@@ -435,7 +435,7 @@ export default function Login() {
             fontWeight: 600,
           }}
         >
-          MUHKAM ERP v2.0 &nbsp;|&nbsp; Cairo, Egypt
+          MUHKAM ERP v2.0 &nbsp;|&nbsp; القاهرة، مصر
         </div>
       </div>
       {/* ════════════════════════════════════════════════════
@@ -712,8 +712,7 @@ export default function Login() {
             opacity: 0.7,
           }}
         >
-          &copy; {new Date().getFullYear()} MUHKAM Enterprise Solutions &nbsp;-&nbsp; جميع الحقوق
-          محفوظة
+          &copy; {new Date().getFullYear()} MUHKAM &nbsp;-&nbsp; جميع الحقوق محفوظة
         </p>
       </div>
       {/* ════════════════════════════════════════════════════

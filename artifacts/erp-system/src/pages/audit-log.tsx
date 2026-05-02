@@ -133,29 +133,156 @@ const RECORD_LABELS: Record<string, string> = {
 
 const ALL_RECORD_TYPES = Object.keys(RECORD_LABELS);
 
-function formatKey(key: string): string {
-  return key
-    .replace(/_/g, " ")
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .split(" ")
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+/* ── ترجمة أسماء الحقول ──────────────────────────────────────────── */
+const FIELD_LABELS: Record<string, string> = {
+  /* هوية وتعريف */
+  id: "المعرف", record_id: "رقم السجل", company_id: "الشركة",
+  branch_id: "الفرع", warehouse_id: "المستودع", user_id: "المستخدم",
+  customer_id: "العميل", supplier_id: "المورد", product_id: "المنتج",
+  category_id: "الفئة", technician_id: "الفني", job_no: "رقم الطلب",
+  invoice_no: "رقم الفاتورة", reference: "المرجع", serial_number: "الرقم التسلسلي",
+  imei: "IMEI", barcode: "باركود",
+  /* بيانات أساسية */
+  name: "الاسم", full_name: "الاسم الكامل", username: "اسم المستخدم",
+  email: "البريد الإلكتروني", phone: "الهاتف", address: "العنوان",
+  description: "الوصف", notes: "الملاحظات", diagnosis: "التشخيص",
+  /* مالي */
+  amount: "المبلغ", price: "السعر", cost: "التكلفة", total: "الإجمالي",
+  subtotal: "المجموع الجزئي", tax: "الضريبة", discount: "الخصم",
+  paid_amount: "المدفوع", remaining: "المتبقي", balance: "الرصيد",
+  credit_limit: "حد الائتمان", repair_cost: "تكلفة الإصلاح",
+  advance_payment: "الدفعة المقدمة", exchange_rate: "سعر الصرف",
+  currency: "العملة", method: "طريقة الدفع",
+  /* حالة */
+  status: "الحالة", type: "النوع", role: "الدور",
+  is_active: "نشط", is_deleted: "محذوف", active: "نشط",
+  /* مخزون */
+  quantity: "الكمية", min_stock: "حد أدنى", max_stock: "حد أقصى",
+  unit: "الوحدة", stock: "المخزون", available: "المتاح",
+  /* أجهزة */
+  device_model: "موديل الجهاز", device_brand: "العلامة التجارية",
+  device_color: "اللون", device_type: "نوع الجهاز",
+  /* أوقات */
+  date: "التاريخ", created_at: "تاريخ الإنشاء", updated_at: "آخر تعديل",
+  estimated_days: "أيام التسليم المتوقعة", expiry_date: "تاريخ الانتهاء",
+  /* موظف / رواتب */
+  national_id: "الرقم الوطني", basic_salary: "الراتب الأساسي",
+  allowances: "البدلات", deductions: "الخصومات", net_salary: "صافي الراتب",
+  job_title: "المسمى الوظيفي", department: "القسم",
+  /* متفرقة */
+  technician_name: "اسم الفني", customer_name: "اسم العميل",
+  assigned_to: "مكلف إلى", category: "الفئة", color: "اللون",
+  size: "الحجم", weight: "الوزن", dimensions: "الأبعاد",
+  warranty_period: "فترة الضمان", warranty_type: "نوع الضمان",
+  password: "كلمة المرور", token: "الرمز",
+};
+
+/* ── ترجمة قيم الحقول ────────────────────────────────────────────── */
+const VALUE_LABELS: Record<string, string> = {
+  /* حالات الصيانة */
+  received:            "مستلم",
+  in_progress:         "قيد التنفيذ",
+  waiting_parts:       "انتظار قطع غيار",
+  ready:               "جاهز للاستلام",
+  delivered:           "تم التسليم",
+  cancelled:           "ملغي",
+  final_quality_check: "فحص الجودة النهائي",
+  diagnosed:           "تم التشخيص",
+  /* حالات عامة */
+  active:    "نشط",
+  inactive:  "غير نشط",
+  suspended: "موقوف",
+  pending:   "معلق",
+  approved:  "موافق عليه",
+  rejected:  "مرفوض",
+  posted:    "مرحّل",
+  draft:     "مسودة",
+  closed:    "مغلق",
+  open:      "مفتوح",
+  paid:      "مدفوع",
+  unpaid:    "غير مدفوع",
+  partial:   "جزئي",
+  refunded:  "مسترد",
+  voided:    "ملغي",
+  /* أدوار */
+  admin:       "مدير",
+  cashier:     "كاشير",
+  technician:  "فني",
+  super_admin: "مدير عام",
+  accountant:  "محاسب",
+  viewer:      "مراقب",
+  /* بوليان */
+  true: "نعم", false: "لا",
+  /* طرق الدفع */
+  cash:         "نقدي",
+  card:         "بطاقة",
+  transfer:     "تحويل بنكي",
+  cheque:       "شيك",
+  /* أنواع */
+  sale:          "بيع",
+  purchase:      "شراء",
+  return:        "مرتجع",
+  expense:       "مصروف",
+  income:        "إيراد",
+  adjustment:    "تسوية",
+  /* متفرقة */
+  male:   "ذكر",
+  female: "أنثى",
+  kg: "كيلوجرام", g: "جرام", l: "لتر", ml: "مليلتر",
+  piece: "قطعة", box: "صندوق", meter: "متر",
+};
+
+/* ── ترجمة قيمة واحدة ───────────────────────────────────────────── */
+function translateValue(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "boolean") return v ? "نعم" : "لا";
+  const s = String(v);
+  return VALUE_LABELS[s] ?? s;
 }
 
-function JsonDiff({ label, data }: { label: string; data: object | null }) {
+/* ── ترجمة مفتاح (حقل) ──────────────────────────────────────────── */
+function translateKey(k: string): string {
+  return FIELD_LABELS[k] ?? k.replace(/_/g, " ");
+}
+
+/* ── مكوّن عرض التفاصيل بشكل بشري مقروء ────────────────────────── */
+function HumanDiff({ label, data, accent }: { label: string; data: object | null; accent: string }) {
   const [open, setOpen] = useState(false);
-  if (!data) return null;
+  if (!data || typeof data !== "object") return null;
+
+  const entries = Object.entries(data).filter(([, v]) =>
+    v !== null && v !== undefined && v !== ""
+  );
+  if (entries.length === 0) return null;
+
   return (
     <div className="mt-1">
-      <button onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-1 text-xs ${accent} hover:opacity-80 transition-opacity`}
+      >
         {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         {label}
       </button>
       {open && (
-        <pre className="mt-1 text-xs bg-white/5 border border-white/8 rounded-xl p-3 overflow-x-auto max-h-40 text-white/60 font-mono leading-relaxed">
-          {JSON.stringify(data, null, 2)}
-        </pre>
+        <div className="mt-1 bg-white/5 border border-white/8 rounded-xl p-2 space-y-1 max-h-52 overflow-y-auto">
+          {entries.map(([k, v]) => {
+            const displayVal = typeof v === "object"
+              ? JSON.stringify(v)
+              : translateValue(v);
+            const isPassword = k === "password" || k === "token";
+            return (
+              <div key={k} className="flex items-start gap-2 text-xs">
+                <span className="text-white/35 shrink-0 min-w-[6rem] text-left font-medium">
+                  {translateKey(k)}
+                </span>
+                <span className="text-white/70 break-all">
+                  {isPassword ? "••••••••" : displayVal}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -308,8 +435,8 @@ export default function AuditLog() {
             </thead>
             <tbody>
               {filtered.map((log, idx) => {
-                const actionMeta = ACTION_LABELS[log.action] ?? { label: formatKey(log.action), color: "text-white/50" };
-                const recordLabel = RECORD_LABELS[log.record_type] ?? formatKey(log.record_type);
+                const actionMeta = ACTION_LABELS[log.action] ?? { label: translateKey(log.action), color: "text-white/50" };
+                const recordLabel = RECORD_LABELS[log.record_type] ?? translateKey(log.record_type);
                 return (
                   <tr key={log.id} className={`border-t border-white/5 hover:bg-white/3 transition-colors ${idx % 2 === 0 ? "" : "bg-white/1"}`}>
                     <td className="p-3">
@@ -342,8 +469,8 @@ export default function AuditLog() {
                       )}
                     </td>
                     <td className="p-3">
-                      <JsonDiff label="القيمة القديمة" data={log.old_value} />
-                      <JsonDiff label="القيمة الجديدة" data={log.new_value} />
+                      <HumanDiff label="قبل التعديل" data={log.old_value} accent="text-red-400/60" />
+                      <HumanDiff label="بعد التعديل" data={log.new_value} accent="text-emerald-400/70" />
                     </td>
                   </tr>
                 );
@@ -362,7 +489,7 @@ export default function AuditLog() {
               return acc;
             }, {})
           ).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([action, count]) => {
-            const meta = ACTION_LABELS[action] ?? { label: formatKey(action), color: "text-white/50" };
+            const meta = ACTION_LABELS[action] ?? { label: translateKey(action), color: "text-white/50" };
             return (
               <div key={action} className="bg-white/3 border border-white/8 rounded-2xl p-4 text-center">
                 <div className={`text-2xl font-bold ${meta.color}`}>{count}</div>

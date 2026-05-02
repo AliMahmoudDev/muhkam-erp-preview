@@ -681,7 +681,7 @@ export default function CurrencyTab() {
                   {FONT_WEIGHT_OPTIONS.map(w => (
                     <option key={w.value} value={w.value}
                       style={{ background: "#0D1117", fontWeight: w.value }}>
-                      {w.label} — {w.labelEn}
+                      {w.label}
                     </option>
                   ))}
                 </select>
