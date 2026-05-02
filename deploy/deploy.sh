@@ -46,7 +46,7 @@ pm2 restart halaltech-api --update-env
 echo "--- انتظار تشغيل الـ API (حد أقصى 60 ثانية) ---"
 MAX=24
 i=0
-until curl -sf http://localhost:3000/api/healthz > /dev/null 2>&1; do
+until curl -sf http://localhost:8080/api/healthz > /dev/null 2>&1; do
   i=$((i+1))
   if [ "$i" -ge "$MAX" ]; then
     echo "فشل التشغيل — آخر لوجز:"
