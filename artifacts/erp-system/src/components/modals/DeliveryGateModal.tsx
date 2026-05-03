@@ -312,7 +312,7 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
       if (d.selectedWarehouseId != null)      setSelectedWarehouseId(d.selectedWarehouseId);
       setDraftRestored(true);
     } catch { /* تجاهل أي خلل في القراءة */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [draftKey]);
 
   const numericCost = Number(cost) || 0;

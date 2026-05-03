@@ -1714,9 +1714,11 @@ export default function Customers() {
       )
       .map((cl: { id: number }) => cl.id)
   );
-  const isMaintenanceCustomer = (c: { classification_id?: number | null; source?: string | null }) =>
-    (c.classification_id != null && maintenanceClassificationIds.has(c.classification_id)) ||
-    c.source === 'repair';
+  const isMaintenanceCustomer = (c: object) => {
+    const x = c as { classification_id?: number | null; source?: string | null };
+    return (x.classification_id != null && maintenanceClassificationIds.has(x.classification_id)) ||
+      x.source === 'repair';
+  };
 
   const filtered = customers.filter((c) => {
     const matchSearch =

@@ -1025,7 +1025,7 @@ export default function DataTab() {
                     </SSelect>
                     <p className="text-white/25 text-[10px]">
                       {selectedWarehouseId
-                        ? `سيتم تفريغ حركات المخزن "${warehousesList.find((w) => w.id === selectedWarehouseId)?.name ?? ''}" فقط`
+                        ? `سيتم تفريغ حركات المخزن "${warehousesList.find((w: { id: number; name: string }) => w.id === selectedWarehouseId)?.name ?? ''}" فقط`
                         : 'سيتم تفريغ حركات جميع المخازن وتصفير الكميات'}
                     </p>
                   </div>

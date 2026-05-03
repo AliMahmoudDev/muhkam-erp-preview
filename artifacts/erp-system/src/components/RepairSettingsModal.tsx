@@ -129,24 +129,6 @@ function saveManufacturers(mfrs: Manufacturer[]) {
   localStorage.setItem(MFR_STORAGE_KEY, JSON.stringify(mfrs));
 }
 
-const PIPELINE_STAGES: Array<{
-  key: string; label: string;
-  color: string; dot: string;
-  desc: string; terminal?: boolean;
-}> = [
-  { key: "received",                  label: "استلام الجهاز",        color: "text-violet-400", dot: "bg-violet-400",   desc: "تسجيل الطلب واستلام الجهاز من العميل" },
-  { key: "initial_inspection",        label: "الفحص الأولي",          color: "text-indigo-400", dot: "bg-indigo-400",   desc: "فحص الجهاز ظاهرياً وتسجيل حالته" },
-  { key: "diagnosis",                 label: "التشخيص",              color: "text-blue-400",   dot: "bg-blue-400",     desc: "تحديد الأعطال وتشخيص المشكلة" },
-  { key: "waiting_customer_approval", label: "انتظار موافقة العميل",  color: "text-amber-400",  dot: "bg-amber-400",    desc: "انتظار قرار العميل بالإصلاح" },
-  { key: "approved",                  label: "تمت الموافقة",          color: "text-emerald-400",dot: "bg-emerald-400",  desc: "وافق العميل على السعر والإجراء" },
-  { key: "in_repair",                 label: "جاري الإصلاح",         color: "text-cyan-400",   dot: "bg-cyan-400",     desc: "الجهاز يُصلَّح حالياً من قِبل الفني" },
-  { key: "repaired",                  label: "تم الإصلاح",           color: "text-teal-400",   dot: "bg-teal-400",     desc: "اكتمل الإصلاح وجاهز للمراجعة" },
-  { key: "final_quality_check",       label: "مراقبة الجودة",         color: "text-purple-400", dot: "bg-purple-400",   desc: "مراجعة الجودة النهائية قبل التسليم" },
-  { key: "ready_for_delivery",        label: "جاهز للتسليم",         color: "text-lime-400",   dot: "bg-lime-400",     desc: "الجهاز جاهز وبانتظار استلام العميل" },
-  { key: "delivered",                 label: "تم التسليم",           color: "text-green-400",  dot: "bg-green-400",    desc: "تم تسليم الجهاز للعميل بنجاح" },
-  { key: "rejected",                  label: "مرفوض",               color: "text-red-400",    dot: "bg-red-400",      desc: "رفض العميل الإصلاح أو التشخيص", terminal: true },
-  { key: "cancelled",                 label: "ملغي",                 color: "text-rose-400",   dot: "bg-rose-400",     desc: "إلغاء الطلب من النظام", terminal: true },
-];
 
 const TABS: Array<{
   id: SettingsTab;
