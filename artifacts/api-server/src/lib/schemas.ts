@@ -44,6 +44,9 @@ export const createUserSchema = z.object({
   active: z.boolean().optional().default(true),
   permissions: z.string().optional(),
   employee_id: z.number().int().positive().optional().nullable(),
+  repair_commission_pct: z.number().int().min(0).max(100).optional(),
+  repair_specialty: z.string().max(120).optional().nullable(),
+  repair_notifications: z.boolean().optional(),
 });
 
 export const updateUserSchema = createUserSchema

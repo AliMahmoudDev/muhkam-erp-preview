@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
 import {
-  X, ClipboardList, GitBranch, Users, QrCode,
+  X, ClipboardList, Users, QrCode,
   Plus, ChevronDown, CheckCircle2, XCircle, Trash2, Pencil,
   Bell, BellOff, Percent, AlertCircle, Zap,
   ArrowLeft, ArrowRight, Copy, Printer,
@@ -25,7 +25,7 @@ type DeviceType =
   | "samsung_phone" | "samsung_tablet"
   | "android_phone" | "android_tablet"
   | "other";
-type SettingsTab = "checklist" | "statuses" | "dashboard-cards" | "technicians" | "qr" | "models";
+type SettingsTab = "checklist" | "dashboard-cards" | "technicians" | "qr" | "models";
 
 interface ChecklistRow {
   id: number;
@@ -40,6 +40,9 @@ interface ERP_User {
   name: string;
   role?: string;
   active?: boolean;
+  repair_commission_pct?: number | null;
+  repair_specialty?: string | null;
+  repair_notifications?: boolean | null;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -141,7 +144,6 @@ const TABS: Array<{
   adminOnly?: boolean;
 }> = [
   { id: "checklist",       label: "بنود الفحص",       sublabel: "قوالب الفحص و QC حسب نوع الجهاز", icon: ClipboardList },
-  { id: "statuses",        label: "حالات الصيانة",    sublabel: "مسار الإصلاح",       icon: GitBranch },
   { id: "dashboard-cards", label: "كروت اللوحة",      sublabel: "تخصيص ملخّص الصفحة", icon: LayoutDashboard, adminOnly: true },
   { id: "technicians",     label: "الفنيين",          sublabel: "إعدادات الموظفين",   icon: Users },
   { id: "qr",              label: "QR والتتبع",       sublabel: "متابعة العميل",      icon: QrCode },
@@ -834,82 +836,9 @@ function ChecklistTab() {
     </div>
   );
 }
-
-/* ══════════════════════════════════════════════════════════════
-   STATUSES TAB
-══════════════════════════════════════════════════════════════ */
-function StatusesTab() {
-  const mainStages  = PIPELINE_STAGES.filter(s => !s.terminal);
-  const termStages  = PIPELINE_STAGES.filter(s =>  s.terminal);
-
-  const StageRow = ({ s, index }: { s: typeof PIPELINE_STAGES[0]; index?: number }) => (
-    <div className="flex items-start gap-3 py-3 px-4 border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors group">
-      {index !== undefined && (
-        <span className="text-[10px] text-white/15 tabular-nums w-4 mt-0.5 shrink-0">{index + 1}</span>
-      )}
-      <div className={`w-2 h-2 rounded-full ${s.dot} mt-1.5 shrink-0`} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={`text-sm font-semibold ${s.color}`}>{s.label}</span>
-          {s.terminal && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-400/70 font-medium">طرفي</span>
-          )}
-        </div>
-        <p className="text-[12px] text-white/35 mt-0.5">{s.desc}</p>
-      </div>
-      <code className="text-[10px] text-white/20 font-mono shrink-0 mt-0.5 hidden group-hover:block">{s.key}</code>
-    </div>
-  );
-
-  return (
-    <div className="h-full overflow-y-auto">
-      <div className="px-5 py-4 border-b border-white/8">
-        <div className="flex items-start gap-3 p-3 rounded-xl bg-blue-500/8 border border-blue-500/15">
-          <Info className="w-4 h-4 text-blue-400/70 shrink-0 mt-0.5" />
-          <p className="text-[12px] text-blue-300/60 leading-relaxed">
-            مسار الصيانة محدد من النظام ولا يمكن تغيير ترتيبه. يمكنك مراجعة تسلسل الحالات والانتقالات المتاحة بين كل مرحلة.
-          </p>
-        </div>
-      </div>
-
-      {/* Main pipeline */}
-      <div className="px-5 pt-4 pb-2">
-        <h3 className="text-[11px] font-bold tracking-widest text-white/25 uppercase mb-1">المسار الرئيسي</h3>
-      </div>
-      <div className="mx-5 rounded-xl border border-white/8 overflow-hidden">
-        {/* Visual flow */}
-        <div className="flex items-center gap-0 px-4 py-3 border-b border-white/8 bg-white/[0.02] overflow-x-auto">
-          {mainStages.map((s, i) => (
-            <div key={s.key} className="flex items-center gap-0 shrink-0">
-              <div className={`flex flex-col items-center gap-1`}>
-                <div className={`w-2 h-2 rounded-full ${s.dot}`} />
-                <span className={`text-[9px] font-medium ${s.color} whitespace-nowrap`}>{s.label}</span>
-              </div>
-              {i < mainStages.length - 1 && (
-                <ArrowLeft className="w-3 h-3 text-white/15 mx-1.5" />
-              )}
-            </div>
-          ))}
-        </div>
-        {mainStages.map((s, i) => <StageRow key={s.key} s={s} index={i} />)}
-      </div>
-
-      {/* Terminal states */}
-      <div className="px-5 pt-4 pb-2">
-        <h3 className="text-[11px] font-bold tracking-widest text-white/25 uppercase mb-1">الحالات الطرفية</h3>
-      </div>
-      <div className="mx-5 mb-5 rounded-xl border border-white/8 overflow-hidden">
-        {termStages.map(s => <StageRow key={s.key} s={s} />)}
-      </div>
-    </div>
-  );
-}
-
 /* ══════════════════════════════════════════════════════════════
    TECHNICIANS TAB
 ══════════════════════════════════════════════════════════════ */
-const TECH_STORAGE_KEY = "repair_tech_settings";
-
 interface TechSettings {
   commission: number;    /* % */
   notifications: boolean;
@@ -918,6 +847,7 @@ interface TechSettings {
 
 function TechniciansTab() {
   const { toast } = useToast();
+  const qc = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery<ERP_User[]>({
     queryKey: ["/api/settings/users"],
@@ -930,35 +860,48 @@ function TechniciansTab() {
     select: (d) => (Array.isArray(d) ? d : []),
   });
 
-  /* settings stored locally per user id */
-  const [settings, setSettings] = useState<Record<number, TechSettings>>(() => {
-    try { return JSON.parse(localStorage.getItem(TECH_STORAGE_KEY) ?? "{}"); }
-    catch { return {}; }
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editBuf, setEditBuf]     = useState<TechSettings>({ commission: 0, notifications: true, specialty: "" });
+  const [saving, setSaving]       = useState(false);
+
+  const getSettings = (u: ERP_User): TechSettings => ({
+    commission:    Number(u.repair_commission_pct ?? 0),
+    notifications: u.repair_notifications ?? true,
+    specialty:     u.repair_specialty ?? "",
   });
-
-  const [editingId, setEditingId]     = useState<number | null>(null);
-  const [editBuf,   setEditBuf]       = useState<TechSettings>({ commission: 0, notifications: true, specialty: "" });
-
-  const persist = (next: Record<number, TechSettings>) => {
-    localStorage.setItem(TECH_STORAGE_KEY, JSON.stringify(next));
-    setSettings(next);
-  };
 
   const startEdit = (u: ERP_User) => {
     setEditingId(u.id);
-    setEditBuf(settings[u.id] ?? { commission: 0, notifications: true, specialty: "" });
+    setEditBuf(getSettings(u));
   };
 
-  const saveEdit = (id: number) => {
-    persist({ ...settings, [id]: editBuf });
-    setEditingId(null);
-    toast({ title: "✓ تم حفظ إعدادات الفني" });
+  const saveEdit = async (id: number) => {
+    setSaving(true);
+    try {
+      const r = await authFetch(api(`/api/settings/users/${id}`), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          repair_commission_pct: Math.max(0, Math.min(100, Math.round(editBuf.commission))),
+          repair_specialty: editBuf.specialty.trim() || null,
+          repair_notifications: editBuf.notifications,
+        }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err?.error || "تعذّر حفظ الإعدادات");
+      }
+      await qc.invalidateQueries({ queryKey: ["/api/settings/users"] });
+      setEditingId(null);
+      toast({ title: "✓ تم حفظ إعدادات الفني" });
+    } catch (e: any) {
+      toast({ title: e?.message || "تعذّر حفظ الإعدادات", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const techUsers = (Array.isArray(users) ? users : []).filter(u => u.active !== false);
-
-  const getSettings = (id: number): TechSettings =>
-    settings[id] ?? { commission: 0, notifications: true, specialty: "" };
 
   return (
     <div className="flex flex-col h-full">
@@ -966,7 +909,7 @@ function TechniciansTab() {
       <div className="flex items-center justify-between px-5 py-3 border-b border-white/8 shrink-0">
         <div className="flex items-center gap-2 text-white/30 text-[12px]">
           <Info className="w-3.5 h-3.5" />
-          <span>الإعدادات تُخزّن محلياً لكل جهاز</span>
+          <span>تُحفظ الإعدادات في قاعدة البيانات لكل المستخدمين</span>
         </div>
         <span className="text-[11px] text-white/20">{techUsers.length} فني</span>
       </div>
@@ -986,7 +929,7 @@ function TechniciansTab() {
         )}
 
         {!isLoading && techUsers.map(u => {
-          const s = getSettings(u.id);
+          const s = getSettings(u);
           const isEdit = editingId === u.id;
           return (
             <div key={u.id}
@@ -1047,12 +990,12 @@ function TechniciansTab() {
                         </button>
                       </div>
                       <div className="flex items-center gap-2 pt-1">
-                        <button onClick={() => saveEdit(u.id)}
-                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[12px] font-semibold hover:bg-emerald-500/20 transition-colors">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> حفظ
+                        <button onClick={() => saveEdit(u.id)} disabled={saving}
+                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[12px] font-semibold hover:bg-emerald-500/20 transition-colors disabled:opacity-40">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> {saving ? "جاري الحفظ..." : "حفظ"}
                         </button>
-                        <button onClick={() => setEditingId(null)}
-                          className="px-3 py-1.5 rounded-lg border border-white/10 text-white/30 text-[12px] hover:border-white/20 hover:text-white/50 transition-colors">
+                        <button onClick={() => setEditingId(null)} disabled={saving}
+                          className="px-3 py-1.5 rounded-lg border border-white/10 text-white/30 text-[12px] hover:border-white/20 hover:text-white/50 transition-colors disabled:opacity-40">
                           إلغاء
                         </button>
                       </div>
@@ -2274,7 +2217,6 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
             }}
           >
             {activeTab === "checklist"        && <ChecklistTab />}
-            {activeTab === "statuses"         && <StatusesTab />}
             {activeTab === "dashboard-cards"  && <DashboardCardsTab />}
             {activeTab === "technicians"      && <TechniciansTab />}
             {activeTab === "qr"               && <QrTrackingTab />}

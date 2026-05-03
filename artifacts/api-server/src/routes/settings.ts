@@ -133,7 +133,7 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
   const id = Number(req.params.id);
   const requesterId = req.user!.id;
   const companyId = getTenant(req);
-  const { name, username, pin, role, permissions, active, warehouse_id, safe_id, employee_id } = v.data;
+  const { name, username, pin, role, permissions, active, warehouse_id, safe_id, employee_id, repair_commission_pct, repair_specialty, repair_notifications } = v.data;
 
   if ((role as string) === "super_admin") {
     res.status(403).json({ error: "لا يمكن تعيين دور المسؤول العام من هنا" }); return;
@@ -162,6 +162,9 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
       warehouse_id: warehouse_id !== undefined ? (warehouse_id ? Number(warehouse_id) : null) : undefined,
       safe_id: safe_id !== undefined ? (safe_id ? Number(safe_id) : null) : undefined,
       employee_id: employee_id !== undefined ? (employee_id ? Number(employee_id) : null) : undefined,
+      ...(repair_commission_pct !== undefined ? { repair_commission_pct: Number(repair_commission_pct) } : {}),
+      ...(repair_specialty !== undefined ? { repair_specialty: repair_specialty ?? null } : {}),
+      ...(repair_notifications !== undefined ? { repair_notifications: Boolean(repair_notifications) } : {}),
     })
     .where(and(eq(erpUsersTable.id, id), eq(erpUsersTable.company_id, companyId)))
     .returning();

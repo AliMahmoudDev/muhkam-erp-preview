@@ -21,6 +21,10 @@ export const erpUsersTable = pgTable("erp_users", {
   totp_enabled:      boolean("totp_enabled").default(false),
   totp_verified:     boolean("totp_verified").default(false),
   trusted_device_id: text("trusted_device_id"),
+  /* Repair-technician settings (per-tenant, replaces previous localStorage prototype) */
+  repair_commission_pct:   integer("repair_commission_pct").notNull().default(0),
+  repair_specialty:        text("repair_specialty"),
+  repair_notifications:    boolean("repair_notifications").notNull().default(true),
 });
 
 export type ErpUser = typeof erpUsersTable.$inferSelect;
