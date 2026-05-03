@@ -147,3 +147,16 @@ Migrated maintenance per-tenant settings off `localStorage` into the existing `s
 - `useAccessoriesList()` hook replaces hardcoded `ACCESSORIES_LIST`
 - `useRepairSettings()` hook reads `system_settings`
 - `printJobQR` and `jobTrackingUrl` in `JobDetail` read base URL from settings (no localStorage)
+
+### E2E Repair Lifecycle Verification (May 2026)
+Full repair pipeline tested end-to-end via API (`/tmp/e2e.mjs`): customer → job → all 11 stages → pre-delivery (parts + payment) → shipping → delivered. **All 100% working.** DB side effects verified:
+- Stock auto-decremented (50 → 49) with `stock_movements` row (`movement_type=repair_part`, ref to `repair_job`)
+- `repair_payments` row inserted; safe balance credited (0 → 1500)
+- `repair_job_parts` row created with correct product/qty/price
+- Job timestamps set: `pre_delivery_reviewed_at`, `shipping_settled_at`, `delivered_at`
+
+**API contract gotchas discovered for callers**:
+- `POST /qa-checklist` body fields: `items` (NOT `qa_checklist`), `notes` (NOT `qa_notes`), each item `{id,label,status:'pass'|'fail'|'n/a'}`
+- `POST /pre-delivery` payment must be **nested**: `{ payment: { payment_type, paid_amount, safe_id, payments: [{type:'cash'|'credit', safe_id, amount}] } }` — flat `payments`/`paid_amount` at root are ignored silently
+- `final_cost` MUST be set via PATCH before transitioning to `repaired`
+- Server stringifies checklist arrays — pass raw arrays, NOT pre-stringified
