@@ -1792,19 +1792,32 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
     .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
   if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
 
-  /* ── القطع المختارة من المخزن ── */
-  type PartInput = { product_id: number; product_name?: string; quantity: number; unit_price: number; warehouse_id?: number | null };
+  /* ── القطع المختارة (داخلية من المخزن) أو بنود إصلاح خارجي ──
+     source = "internal": قطعة من المخزن (تتطلب product_id ويتم خصمها من المخزون)
+     source = "external": بند إصلاح خارجي (product_id = null، مفيش حركة مخزون،
+       product_name يحمل وصف الإصلاح + اسم الورشة) */
+  type PartInput = {
+    product_id:   number | null;
+    product_name: string;
+    quantity:     number;
+    unit_price:   number;
+    warehouse_id: number | null;
+    source:       "internal" | "external";
+  };
   const partsInput: PartInput[] = Array.isArray(b.parts)
     ? (b.parts as unknown[]).map((p) => {
         const o = p as Record<string, unknown>;
+        const src: "internal" | "external" = o.source === "external" ? "external" : "internal";
+        const pid = Number(o.product_id);
         return {
-          product_id:   Number(o.product_id),
+          product_id:   src === "external" ? null : (Number.isFinite(pid) && pid > 0 ? pid : null),
           product_name: String(o.product_name ?? ""),
           quantity:     Math.max(1, Number(o.quantity) || 1),
           unit_price:   Math.max(0, Number(o.unit_price) || 0),
-          warehouse_id: o.warehouse_id ? Number(o.warehouse_id) : null,
+          warehouse_id: src === "external" ? null : (o.warehouse_id ? Number(o.warehouse_id) : null),
+          source:       src,
         };
-      }).filter(p => p.product_id > 0)
+      }).filter(p => p.source === "external" ? !!p.product_name.trim() : (p.product_id !== null))
     : [];
 
   /* ── بيانات الدفع ── */
@@ -1833,13 +1846,16 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
         product_name: part.product_name ?? "",
         quantity:     String(part.quantity),
         unit_price:   String(part.unit_price),
-        source:       "internal",
+        source:       part.source,
         warehouse_id: part.warehouse_id ?? null,
         is_returned:  false,
       });
 
+      /* البنود الخارجية لا تُخصم من المخزن */
+      if (part.source === "external") continue;
+
       /* خصم الكمية من المخزن */
-      if (part.warehouse_id) {
+      if (part.warehouse_id && part.product_id) {
         const [prod] = await tx.select({ id: productsTable.id, quantity: productsTable.quantity })
           .from(productsTable)
           .where(and(eq(productsTable.id, part.product_id), eq(productsTable.company_id, company_id)));

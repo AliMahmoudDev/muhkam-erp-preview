@@ -18,7 +18,7 @@ import { formatCurrency, formatNumber } from "@/lib/format";
 import {
   PackageCheck, Loader2, X, AlertTriangle,
   Coins, Clock, Plus, Trash2, UserCog,
-  FileText, Printer, MessageCircle, CheckCircle2, Truck, Save,
+  FileText, Printer, MessageCircle, CheckCircle2, Truck, Save, Wrench,
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
@@ -40,6 +40,7 @@ interface Warehouse { id: number; name: string; }
 type PayType = "cash" | "credit";
 interface PayRow { id: string; type: PayType; safe_id: number | null; amount: number; }
 type DiscMode = 'amt' | 'pct';
+type PartSource = 'internal' | 'external';
 interface PartLine {
   id: string;
   product_id: number | null;
@@ -49,6 +50,8 @@ interface PartLine {
   warehouse_id: number | null;
   discount_value: number;      /* قيمة الخصم (نسبة أو رقم) */
   discount_mode: DiscMode;     /* 'pct' = نسبة، 'amt' = مبلغ ثابت على السطر */
+  source: PartSource;          /* 'internal' = من المخزن، 'external' = إصلاح خارجي */
+  external_vendor?: string;    /* اسم الورشة الخارجية (للعرض فقط) */
 }
 
 /* احسب مبلغ الخصم على السطر الواحد */
@@ -201,12 +204,41 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
       warehouse_id:   selectedWarehouseId,
       discount_value: 0,
       discount_mode:  'pct',
+      source:         'internal',
     }]);
     setSelectedProduct(null);
     setProductSearch("");
     setAddQty("1");
     setAddPrice("");
     productSearchRef.current?.focus();
+  }
+
+  /* ── إصلاح خارجي ── */
+  const [showExtForm, setShowExtForm]   = useState(false);
+  const [extVendor, setExtVendor]       = useState("");
+  const [extDesc, setExtDesc]           = useState("");
+  const [extPrice, setExtPrice]         = useState("");
+
+  function addExternalLine() {
+    const desc  = extDesc.trim();
+    const price = parseFloat(extPrice) || 0;
+    if (!desc) { toast({ title: "اكتب وصف الإصلاح الخارجي", variant: "destructive" }); return; }
+    if (price <= 0) { toast({ title: "اكتب التكلفة على العميل", variant: "destructive" }); return; }
+    const vendor = extVendor.trim();
+    setPartLines(prev => [...prev, {
+      id:             `${Date.now()}-${Math.random()}`,
+      product_id:     null,
+      product_name:   vendor ? `${desc} — ورشة: ${vendor}` : desc,
+      quantity:       1,
+      unit_price:     price,
+      warehouse_id:   null,
+      discount_value: 0,
+      discount_mode:  'pct',
+      source:         'external',
+      external_vendor: vendor || undefined,
+    }]);
+    setExtVendor(""); setExtDesc(""); setExtPrice("");
+    setShowExtForm(false);
   }
 
   /* تعديل خصم سطر بعد إضافته */
@@ -433,6 +465,7 @@ ${partLines.length > 0 ? `
           quantity:     l.quantity,
           unit_price:   netUnit,
           warehouse_id: l.warehouse_id,
+          source:       l.source,
         };
       }),
       payment: {
@@ -669,14 +702,60 @@ ${partLines.length > 0 ? `
                   </button>
                 </div>
 
+                {/* زرار إضافة بند إصلاح خارجي */}
+                <div className="mt-2">
+                  <button type="button" onClick={() => setShowExtForm(v => !v)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all"
+                    style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(192,132,252,0.3)", color: "#D8B4FE" }}
+                  >
+                    <Wrench className="w-3 h-3" /> {showExtForm ? "إغلاق" : "+ إصلاح خارجي (ورشة برّا)"}
+                  </button>
+                </div>
+
+                {showExtForm && (
+                  <div className="mt-2 p-3 rounded-xl flex flex-wrap gap-2 items-end"
+                    style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)" }}
+                  >
+                    <div className="flex-1 min-w-[150px]">
+                      <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">وصف الإصلاح</label>
+                      <input value={extDesc} onChange={(e) => setExtDesc(e.target.value)}
+                        placeholder="مثلاً: تغيير شاشة"
+                        className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-purple-400/25 text-[11px] text-white focus:outline-none focus:border-purple-400/50"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-[120px]">
+                      <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">اسم الورشة (اختياري)</label>
+                      <input value={extVendor} onChange={(e) => setExtVendor(e.target.value)}
+                        placeholder="ورشة الأمل"
+                        className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-purple-400/25 text-[11px] text-white focus:outline-none focus:border-purple-400/50"
+                      />
+                    </div>
+                    <div style={{ width: 110 }}>
+                      <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">التكلفة على العميل</label>
+                      <input type="number" min={0} step="any" value={extPrice} onChange={(e) => setExtPrice(e.target.value)}
+                        placeholder="0.00" dir="ltr"
+                        className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-purple-400/25 text-[11px] text-white focus:outline-none focus:border-purple-400/50"
+                      />
+                    </div>
+                    <button type="button" onClick={addExternalLine}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0"
+                      style={{ background: "rgba(168,85,247,0.25)", border: "1px solid rgba(192,132,252,0.4)", color: "#E9D5FF" }}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> إضافة
+                    </button>
+                  </div>
+                )}
+
                 {partLines.length > 0 && (
                   <div className="mt-3 space-y-1.5">
                     {partLines.map(l => {
                       const d = lineDiscountAmount(l);
+                      const isExt = l.source === 'external';
+                      const cardStyle = isExt
+                        ? { background: "rgba(168,85,247,0.07)", border: "1px solid rgba(168,85,247,0.22)" }
+                        : { background: "rgba(59,130,246,0.06)",  border: "1px solid rgba(59,130,246,0.15)" };
                       return (
-                        <div key={l.id} className="px-3 py-2 rounded-xl"
-                          style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}
-                        >
+                        <div key={l.id} className="px-3 py-2 rounded-xl" style={cardStyle}>
                           <div className="flex items-center gap-2">
                             <button type="button" onClick={() => setPartLines(prev => prev.filter(x => x.id !== l.id))}
                               className="shrink-0 w-5 h-5 rounded flex items-center justify-center text-red-400/60 hover:text-red-400"
@@ -684,9 +763,16 @@ ${partLines.length > 0 ? `
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
+                            {isExt && (
+                              <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold"
+                                style={{ background: "rgba(168,85,247,0.2)", color: "#E9D5FF", border: "1px solid rgba(192,132,252,0.35)" }}
+                              >
+                                <Wrench className="w-2.5 h-2.5 inline-block ml-0.5" /> خارجي
+                              </span>
+                            )}
                             <span className="flex-1 text-[11px] text-white/80 truncate">{l.product_name}</span>
                             <span className="text-[10px] text-white/50 shrink-0">{l.quantity} × {fmtCurrency(l.unit_price)}</span>
-                            <span className="text-[11px] font-bold text-blue-300 shrink-0">{fmtCurrency(lineNet(l))}</span>
+                            <span className={`text-[11px] font-bold shrink-0 ${isExt ? "text-purple-300" : "text-blue-300"}`}>{fmtCurrency(lineNet(l))}</span>
                           </div>
                           {/* صف الخصم القابل للتعديل بعد الإضافة */}
                           <div className="mt-1.5 flex items-center gap-2 pl-7">
