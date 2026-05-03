@@ -108,7 +108,7 @@ async function increment(key: string, windowMs: number, limit: number): Promise<
 }
 
 /* ── Config ─────────────────────────────────────────────────── */
-const DEV = process.env.NODE_ENV === "development";
+const DEV = (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test");
 const READ_WINDOW_MS = 60_000;  // 1 minute
 const READ_LIMIT     = DEV ? 1_000_000 : 600;     // 600 read req/min per tenant
 const WRITE_WINDOW_MS = 60_000;
