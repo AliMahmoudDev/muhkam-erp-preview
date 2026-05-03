@@ -33,6 +33,7 @@ import {
   Trash2,
   CreditCard,
   BarChart2,
+  Smartphone,
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
@@ -1550,7 +1551,7 @@ export default function Customers() {
 
   const [pageView, setPageView] = useState<'customers' | 'bad-debts'>('customers');
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'customers' | 'suppliers' | 'debtors' | 'creditors'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'customers' | 'suppliers' | 'debtors' | 'creditors' | 'maintenance'>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [showReceipt, setShowReceipt] = useState<{
     id: number;
@@ -1705,6 +1706,18 @@ export default function Customers() {
     }
   };
 
+  // مُعرّفات تصنيف "عميل صيانة" (قد يوجد أكثر من واحد بكتابات مختلفة)
+  const maintenanceClassificationIds = new Set(
+    classifications
+      .filter((cl: { id: number; name: string }) =>
+        cl.name && cl.name.trim().toLowerCase() === 'عميل صيانة'.toLowerCase()
+      )
+      .map((cl: { id: number }) => cl.id)
+  );
+  const isMaintenanceCustomer = (c: { classification_id?: number | null; source?: string | null }) =>
+    (c.classification_id != null && maintenanceClassificationIds.has(c.classification_id)) ||
+    c.source === 'repair';
+
   const filtered = customers.filter((c) => {
     const matchSearch =
       c.name.includes(search) ||
@@ -1716,6 +1729,7 @@ export default function Customers() {
     if (typeFilter === 'suppliers') return !!c.is_supplier;
     if (typeFilter === 'debtors')  return bal > 0.001;           // عليه — ذمم مدينة
     if (typeFilter === 'creditors') return bal < -0.001;          // له — ذمم دائنة
+    if (typeFilter === 'maintenance') return isMaintenanceCustomer(c);
     return true;
   });
 
@@ -2072,11 +2086,12 @@ export default function Customers() {
       {/* فلتر النوع */}
       <div className="flex flex-wrap gap-2">
         {([
-          { key: 'all',       label: 'الكل' },
-          { key: 'customers', label: 'عملاء فقط' },
-          { key: 'suppliers', label: 'موردون فقط' },
-          { key: 'debtors',   label: 'عليهم رصيد (AR)' },
-          { key: 'creditors', label: 'لهم رصيد (AP)' },
+          { key: 'all',         label: 'الكل' },
+          { key: 'customers',   label: 'عملاء فقط' },
+          { key: 'suppliers',   label: 'موردون فقط' },
+          { key: 'debtors',     label: 'عليهم رصيد (AR)' },
+          { key: 'creditors',   label: 'لهم رصيد (AP)' },
+          { key: 'maintenance', label: 'عملاء صيانة' },
         ] as const).map(f => (
           <button
             key={f.key}
@@ -2858,7 +2873,20 @@ export default function Customers() {
                     </td>
                     <td className="p-4 font-bold text-white">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {isMaintenanceCustomer(customer) && (
+                          <span
+                            title="عميل صيانة"
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/40 shrink-0"
+                          >
+                            <Smartphone className="w-3.5 h-3.5" />
+                          </span>
+                        )}
                         {customer.name}
+                        {isMaintenanceCustomer(customer) && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-500/15 text-violet-300 border border-violet-500/30 shrink-0">
+                            عميل صيانة
+                          </span>
+                        )}
                         {customer.is_supplier && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0">
                             يتم الشراء منه
