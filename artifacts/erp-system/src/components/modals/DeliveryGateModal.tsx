@@ -168,8 +168,6 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
   const [showProductDrop, setShowProductDrop] = useState(false);
   const [addQty, setAddQty]                 = useState("1");
   const [addPrice, setAddPrice]             = useState("");
-  const [addDisc, setAddDisc]               = useState("0");
-  const [addDiscMode, setAddDiscMode]       = useState<DiscMode>('pct');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const productSearchRef = useRef<HTMLInputElement>(null);
 
@@ -190,7 +188,6 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
     if (!selectedProduct) return;
     const qty   = Math.max(1, parseInt(addQty) || 1);
     const price = parseFloat(addPrice) || 0;
-    const disc  = Math.max(0, parseFloat(addDisc) || 0);
     setPartLines(prev => [...prev, {
       id:             `${Date.now()}-${Math.random()}`,
       product_id:     selectedProduct.id,
@@ -198,14 +195,13 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
       quantity:       qty,
       unit_price:     price,
       warehouse_id:   selectedWarehouseId,
-      discount_value: disc,
-      discount_mode:  addDiscMode,
+      discount_value: 0,
+      discount_mode:  'pct',
     }]);
     setSelectedProduct(null);
     setProductSearch("");
     setAddQty("1");
     setAddPrice("");
-    setAddDisc("0");
     productSearchRef.current?.focus();
   }
 
@@ -578,21 +574,6 @@ ${partLines.length > 0 ? `
                       className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none focus:border-blue-400/40"
                     />
                   </div>
-                  <div style={{ width: 110 }}>
-                    <label className="text-[10px] font-bold text-white/50 mb-1 block">خصم على الصنف</label>
-                    <div className="flex items-center gap-1">
-                      <input type="number" min={0} step="any" value={addDisc} onChange={(e) => setAddDisc(e.target.value)}
-                        placeholder="0" dir="ltr"
-                        className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white/[0.03] border border-amber-400/20 text-[11px] text-white focus:outline-none focus:border-amber-400/40"
-                      />
-                      <button type="button" onClick={() => setAddDiscMode(m => m === 'pct' ? 'amt' : 'pct')}
-                        className="shrink-0 w-7 h-7 rounded-md text-[10px] font-black text-amber-300 border border-amber-400/30 hover:bg-amber-400/10"
-                        title={addDiscMode === 'pct' ? "تبديل إلى مبلغ" : "تبديل إلى نسبة"}
-                      >
-                        {addDiscMode === 'pct' ? '%' : 'ج'}
-                      </button>
-                    </div>
-                  </div>
                   <button type="button" onClick={addPartLine} disabled={!selectedProduct}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-30 shrink-0"
                     style={{ background: "rgba(59,130,246,0.2)", border: "1px solid rgba(96,165,250,0.3)", color: "#93C5FD" }}
@@ -643,23 +624,13 @@ ${partLines.length > 0 ? `
                         </div>
                       );
                     })}
-                    <div className="flex justify-end pt-1 gap-3 text-[11px]">
-                      {partsDiscSum > 0 && (
-                        <span className="text-red-300">إجمالي خصم القطع: - {fmtCurrency(partsDiscSum)}</span>
-                      )}
-                      <span className="font-bold text-blue-300">صافي القطع: {fmtCurrency(partsTotal)}</span>
-                    </div>
                   </div>
                 )}
               </div>
 
               {/* ملخص المبلغ — يُحاسَب العميل على القطع فقط (تكلفة الإصلاح داخلية) */}
               <div className="px-5 py-3 border-b border-white/5 bg-white/[0.015]">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-white/50">قطع الغيار المضافة</span>
-                  <span className="font-bold text-blue-300">{fmtCurrency(partsTotal)}</span>
-                </div>
-                <div className="flex items-center justify-between text-[12px] font-black mt-2 pt-2 border-t border-white/8">
+                <div className="flex items-center justify-between text-[12px] font-black">
                   <span className="text-white">الإجمالي المستحق على العميل</span>
                   <span className="text-lime-300">{fmtCurrency(grandTotal)}</span>
                 </div>
