@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
@@ -157,7 +157,7 @@ function useRepairSettings() {
 }
 
 function applyTemplate(tpl: string, vars: Record<string, string | number | undefined | null>): string {
-  return tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, k) => {
+  return tpl.replace(/\{\{\s*([^}\s]+?)\s*\}\}/g, (_m, k) => {
     const v = vars[k];
     return v === undefined || v === null ? "" : String(v);
   });
@@ -697,12 +697,12 @@ export default function Repairs() {
   const repairSettings = useRepairSettings();
 
   const buildWaVars = (job: RepairJob) => ({
-    customer_name: job.customer_name,
-    job_no:        job.job_no,
-    device_brand:  job.device_brand,
-    device_model:  job.device_model,
-    status:        STATUS_MAP[job.status]?.label ?? job.status,
-    total_cost:    formatCurrency(Number(job.final_cost ?? job.estimated_cost ?? 0)),
+    اسم_العميل:  job.customer_name,
+    رقم_البطاقة: job.job_no,
+    الماركة:     job.device_brand,
+    الموديل:     job.device_model,
+    الحالة:      STATUS_MAP[job.status]?.label ?? job.status,
+    التكلفة:     formatCurrency(Number(job.final_cost ?? job.estimated_cost ?? 0)),
   });
 
   const whatsAppReady = (job: RepairJob) =>
@@ -2153,7 +2153,6 @@ function NewJobForm({
 }) {
   const { toast } = useToast();
   const accessoriesList = useAccessoriesList();
-  const repairSettings  = useRepairSettings();
 
   /* ── Customer state ── */
   const [phone, setPhone]               = useState("");
@@ -2204,24 +2203,6 @@ function NewJobForm({
     () => deriveDeviceType(brand, category),
     [brand, category],
   );
-
-  /* Prefill estimated cost from configured inspection prices when the device
-     type changes — only if the user hasn't typed a value yet. */
-  const userEditedEstimatedRef = useRef(false);
-  const inspectionPrices = useMemo(() => {
-    try {
-      const raw = repairSettings[REPAIR_SETTING_KEYS.inspectionPrices];
-      if (!raw) return {} as Record<string, number>;
-      const p = JSON.parse(raw);
-      return (p && typeof p === "object") ? p as Record<string, number> : {};
-    } catch { return {}; }
-  }, [repairSettings]);
-
-  useEffect(() => {
-    if (userEditedEstimatedRef.current) return;
-    const price = inspectionPrices[intakeDeviceType];
-    if (typeof price === "number" && price > 0) setEstimated(String(price));
-  }, [intakeDeviceType, inspectionPrices]);
 
   /* ── Custom device models (company-specific additions) ── */
   const qc = useQueryClient();
@@ -2728,7 +2709,7 @@ function NewJobForm({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[10px] text-white/40 mb-1 block">تكلفة تقديرية</label>
-              <input type="number" value={estimated} onChange={(e) => { userEditedEstimatedRef.current = true; setEstimated(e.target.value); }} placeholder="0" className="erp-input w-full text-sm" />
+              <input type="number" value={estimated} onChange={(e) => setEstimated(e.target.value)} placeholder="0" className="erp-input w-full text-sm" />
             </div>
             <div>
               <label className="text-[10px] text-white/40 mb-1 block">عربون مدفوع</label>

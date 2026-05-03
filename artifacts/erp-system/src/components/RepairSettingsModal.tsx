@@ -29,16 +29,15 @@ type SettingsTab = "checklist" | "dashboard-cards" | "technicians" | "qr" | "mod
 
 /* ── system_settings keys (shared across maintenance) ────────── */
 export const REPAIR_SETTING_KEYS = {
-  qrBaseUrl:        "repair.qr_base_url",
-  warrantyDays:     "repair.default_warranty_days",
-  inspectionPrices: "repair.inspection_prices",
-  waReady:          "repair.wa_template_ready",
-  waProgress:       "repair.wa_template_progress",
+  qrBaseUrl:    "repair.qr_base_url",
+  warrantyDays: "repair.default_warranty_days",
+  waReady:      "repair.wa_template_ready",
+  waProgress:   "repair.wa_template_progress",
 } as const;
 
 export const REPAIR_WA_DEFAULTS = {
-  ready:    "✅ عزيزنا {{customer_name}}،\nجهازك {{device_brand}} {{device_model}} جاهز للاستلام.\nبطاقة الصيانة: {{job_no}}\nالتكلفة الإجمالية: {{total_cost}}\n\nشكراً لثقتكم 🙏",
-  progress: "🔧 تحديث صيانة جهازك\nالموديل: {{device_brand}} {{device_model}}\nالرقم: {{job_no}}\nالحالة: {{status}}\n\nللاستفسار تواصل معنا 📱",
+  ready:    "✅ عزيزنا {{اسم_العميل}}،\nجهازك {{الماركة}} {{الموديل}} جاهز للاستلام.\nبطاقة الصيانة: {{رقم_البطاقة}}\nالتكلفة الإجمالية: {{التكلفة}}\n\nشكراً لثقتكم 🙏",
+  progress: "🔧 تحديث صيانة جهازك\nالموديل: {{الماركة}} {{الموديل}}\nالرقم: {{رقم_البطاقة}}\nالحالة: {{الحالة}}\n\nللاستفسار تواصل معنا 📱",
 } as const;
 
 interface ChecklistRow {
@@ -161,7 +160,7 @@ const TABS: Array<{
   { id: "dashboard-cards", label: "كروت اللوحة",      sublabel: "تخصيص ملخّص الصفحة", icon: LayoutDashboard, adminOnly: true },
   { id: "technicians",     label: "الفنيين",          sublabel: "إعدادات الموظفين",   icon: Users },
   { id: "accessories",     label: "الإكسسوارات",      sublabel: "ما يستلم مع الجهاز", icon: Package },
-  { id: "defaults",        label: "الافتراضيات",      sublabel: "أسعار الفحص والضمان", icon: Shield, adminOnly: true },
+  { id: "defaults",        label: "الافتراضيات",      sublabel: "مدة الضمان الافتراضية", icon: Shield, adminOnly: true },
   { id: "wa-templates",    label: "قوالب الواتس",     sublabel: "نص رسائل العميل",    icon: MessageCircle, adminOnly: true },
   { id: "qr",              label: "QR والتتبع",       sublabel: "متابعة العميل",      icon: QrCode },
   { id: "models",          label: "الموديلات",        sublabel: "إضافة موديلات مخصّصة",icon: Smartphone },
@@ -1152,7 +1151,7 @@ function AccessoriesTab() {
               <input value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="الاسم بالعربية (مثال: زجاج حماية)"
                 onKeyDown={e => e.key === "Enter" && createOne()}
                 className="erp-input col-span-7 text-sm py-1.5" />
-              <input value={newKey} onChange={e => setNewKey(e.target.value)} placeholder="key (اختياري)"
+              <input value={newKey} onChange={e => setNewKey(e.target.value)} placeholder="معرّف (اختياري)"
                 className="erp-input col-span-3 text-[11px] py-1.5 font-mono" />
               <button onClick={createOne} disabled={busy || !newLabel.trim()}
                 className="col-span-1 px-2 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/25 transition-all disabled:opacity-30 flex items-center justify-center">
@@ -1198,7 +1197,7 @@ function AccessoriesTab() {
                   <>
                     <span className="flex-1 text-sm text-white/75">{it.label_ar}</span>
                     <code className="text-[10px] text-white/20 font-mono">{it.key_}</code>
-                    {it.is_system && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400/70">system</span>}
+                    {it.is_system && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400/70">افتراضي</span>}
                     <button onClick={() => toggleActive(it)} disabled={busy}
                       className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${it.active ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-white/30"}`}>
                       {it.active ? "مفعّل" : "موقوف"}
@@ -1225,7 +1224,7 @@ function AccessoriesTab() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   DEFAULTS TAB — warranty days + inspection prices per device type
+   DEFAULTS TAB — warranty days
 ══════════════════════════════════════════════════════════════ */
 function DefaultsTab() {
   const { toast } = useToast();
@@ -1238,49 +1237,23 @@ function DefaultsTab() {
   });
 
   const initialWarranty = settings[REPAIR_SETTING_KEYS.warrantyDays] ?? "30";
-  const initialPricesRaw = settings[REPAIR_SETTING_KEYS.inspectionPrices] ?? "";
-  const initialPrices: Record<string, number> = useMemo(() => {
-    try { const p = JSON.parse(initialPricesRaw || "{}"); return typeof p === "object" && p ? p : {}; }
-    catch { return {}; }
-  }, [initialPricesRaw]);
-
   const [warrantyBuf, setWarrantyBuf] = useState(initialWarranty);
-  const [pricesBuf,   setPricesBuf]   = useState<Record<string, string>>(() => {
-    const m: Record<string, string> = {};
-    for (const d of DEVICE_TYPE_META) m[d.key] = String(initialPrices[d.key] ?? "");
-    return m;
-  });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => { setWarrantyBuf(initialWarranty); }, [initialWarranty]);
-  useEffect(() => {
-    const m: Record<string, string> = {};
-    for (const d of DEVICE_TYPE_META) m[d.key] = String(initialPrices[d.key] ?? "");
-    setPricesBuf(m);
-  }, [initialPrices]);
-
-  const upsert = async (key: string, value: string) => {
-    const r = await authFetch(api("/api/settings/system"), {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, value }),
-    });
-    if (!r.ok) {
-      const e = await r.json().catch(() => ({}));
-      throw new Error(e?.error || "تعذّر الحفظ");
-    }
-  };
 
   const save = async () => {
     setSaving(true);
     try {
       const wd = Math.max(0, Math.min(3650, Math.round(Number(warrantyBuf) || 0)));
-      const cleanPrices: Record<string, number> = {};
-      for (const [k, v] of Object.entries(pricesBuf)) {
-        const n = Number(v);
-        if (Number.isFinite(n) && n > 0) cleanPrices[k] = Math.round(n * 100) / 100;
+      const r = await authFetch(api("/api/settings/system"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: REPAIR_SETTING_KEYS.warrantyDays, value: String(wd) }),
+      });
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        throw new Error(e?.error || "تعذّر الحفظ");
       }
-      await upsert(REPAIR_SETTING_KEYS.warrantyDays, String(wd));
-      await upsert(REPAIR_SETTING_KEYS.inspectionPrices, JSON.stringify(cleanPrices));
       await qc.invalidateQueries({ queryKey: ["/api/settings/system"] });
       toast({ title: "✓ تم حفظ الإعدادات" });
     } catch (e: any) {
@@ -1296,12 +1269,11 @@ function DefaultsTab() {
           <div>
             <p className="text-[13px] font-semibold text-emerald-300/80 mb-1">القيم الافتراضية للصيانة</p>
             <p className="text-[12px] text-emerald-300/50 leading-relaxed">
-              هذه القيم تستخدم تلقائياً عند إنشاء بطاقة صيانة جديدة (السعر يظهر كاقتراح لتكلفة الفحص حسب نوع الجهاز).
+              مدة الضمان الافتراضية تظهر تلقائياً في بطاقة الضمان عند تسليم الجهاز للعميل.
             </p>
           </div>
         </div>
 
-        {/* Warranty */}
         <div className="rounded-xl border border-white/10 overflow-hidden">
           <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8">
             <span className="text-[12px] font-semibold text-white/50">مدة الضمان الافتراضية بعد الإصلاح</span>
@@ -1312,26 +1284,6 @@ function DefaultsTab() {
               className="erp-input w-28 text-center text-sm py-1.5" />
             <span className="text-white/45 text-sm">يوم</span>
             <span className="text-[11px] text-white/25 mr-auto">يستخدم في بطاقات الضمان عند تسليم الجهاز</span>
-          </div>
-        </div>
-
-        {/* Inspection prices per device type */}
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8">
-            <span className="text-[12px] font-semibold text-white/50">سعر الفحص الافتراضي لكل نوع جهاز</span>
-          </div>
-          <div className="divide-y divide-white/5">
-            {DEVICE_TYPE_META.map(d => (
-              <div key={d.key} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.02]">
-                <span className="text-lg w-7 text-center">{d.emoji}</span>
-                <span className="text-sm text-white/75 flex-1">{d.label}</span>
-                <input type="number" min={0} step="0.01" value={pricesBuf[d.key] ?? ""}
-                  onChange={e => setPricesBuf(b => ({ ...b, [d.key]: e.target.value }))}
-                  placeholder="—"
-                  className="erp-input w-28 text-center text-sm py-1" />
-                <span className="text-[11px] text-white/35 w-8">ج.م</span>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -1350,12 +1302,12 @@ function DefaultsTab() {
    WHATSAPP TEMPLATES TAB
 ══════════════════════════════════════════════════════════════ */
 const WA_PLACEHOLDERS: Array<{ key: string; desc: string }> = [
-  { key: "{{customer_name}}", desc: "اسم العميل" },
-  { key: "{{job_no}}",        desc: "رقم البطاقة" },
-  { key: "{{device_brand}}",  desc: "ماركة الجهاز" },
-  { key: "{{device_model}}",  desc: "موديل الجهاز" },
-  { key: "{{status}}",        desc: "الحالة الحالية" },
-  { key: "{{total_cost}}",    desc: "التكلفة الإجمالية" },
+  { key: "{{اسم_العميل}}",   desc: "اسم العميل" },
+  { key: "{{رقم_البطاقة}}",  desc: "رقم بطاقة الصيانة" },
+  { key: "{{الماركة}}",      desc: "ماركة الجهاز" },
+  { key: "{{الموديل}}",      desc: "موديل الجهاز" },
+  { key: "{{الحالة}}",       desc: "الحالة الحالية" },
+  { key: "{{التكلفة}}",      desc: "التكلفة الإجمالية" },
 ];
 
 function WhatsAppTemplatesTab() {
@@ -1612,7 +1564,7 @@ function QrTrackingTab() {
               <div className="flex items-center gap-2">
                 <input value={urlBuf} onChange={e => setUrlBuf(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") saveUrl(); if (e.key === "Escape") setEditingUrl(false); }}
-                  placeholder="https://your-domain.com/track"
+                  placeholder="رابط موقعك للتتبع"
                   className="erp-input flex-1 text-sm py-1 font-mono text-[12px]" />
                 <button onClick={saveUrl} disabled={savingUrl}
                   className="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[12px] font-semibold hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5 disabled:opacity-40">
