@@ -162,6 +162,10 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
   });
   const products: Product[] = safeArray(productsRaw) as Product[];
 
+  /* ── مفتاح المسوّدة المحلية لكل بطاقة ── */
+  const draftKey = `delivery-gate-draft:${job.id}`;
+  const [draftRestored, setDraftRestored] = useState(false);
+
   /* ── القطع ── */
   const [partLines, setPartLines]           = useState<PartLine[]>([]);
   const [productSearch, setProductSearch]   = useState("");
@@ -254,6 +258,30 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
   useEffect(() => {
     if (safes.length === 1 && !safeId) setSafeId(String(safes[0].id));
   }, [safes.length]);
+
+  /* ── استعادة المسوّدة المحلية عند فتح المودال ── */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw) as {
+        partLines?: PartLine[]; payRows?: PayRow[];
+        brokerName?: string; brokerComm?: string;
+        cost?: string; safeId?: string; discount?: string;
+        selectedWarehouseId?: number | null;
+      };
+      if (Array.isArray(d.partLines))         setPartLines(d.partLines);
+      if (Array.isArray(d.payRows))           setPayRows(d.payRows);
+      if (typeof d.brokerName === "string")   setBrokerName(d.brokerName);
+      if (typeof d.brokerComm === "string")   setBrokerComm(d.brokerComm);
+      if (typeof d.cost === "string")         setCost(d.cost);
+      if (typeof d.safeId === "string")       setSafeId(d.safeId);
+      if (typeof d.discount === "string")     setDiscount(d.discount);
+      if (d.selectedWarehouseId != null)      setSelectedWarehouseId(d.selectedWarehouseId);
+      setDraftRestored(true);
+    } catch { /* تجاهل أي خلل في القراءة */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey]);
 
   const numericCost = Number(cost) || 0;
   const numericDisc = Number(discount) || 0;
@@ -416,28 +444,32 @@ ${partLines.length > 0 ? `
     };
   }
 
-  /* ── حفظ المحاسبة فقط (بدون تأكيد تسليم نهائي) ── */
-  async function handleSave() {
-    const errs: string[] = [];
-    if (!Number.isFinite(numericDisc) || numericDisc < 0) errs.push("قيمة الخصم غير صحيحة");
-    if (errs.length) { setErrors(errs); return; }
-
-    setSaving(true); setErrors([]);
+  /* ── حفظ مسوّدة الفاتورة محلياً (بدون أي اتصال بالخادم وبدون انتقال للتسليم) ──
+     الفكرة: زرار «حفظ» يخزّن الحالة الحالية للنموذج (قطع/خصومات/دفعات/شحن…)
+     في localStorage لكي تستعيدها الواجهة عند فتح المودال مرة أخرى لنفس البطاقة.
+     هذا يضمن:
+       • عدم تكرار إدخال القطع أو الدفعات في قاعدة البيانات.
+       • عدم انتقال البطاقة لحالة "جاهز للتسليم" قبل أن يأتي العميل فعلاً.
+       • تكلفة الشحن تظل اختيارية تماماً عند الحفظ. */
+  function handleSave() {
+    setErrors([]);
     try {
-      const r1 = await authFetch(api(`/api/repair-jobs/${job.id}/pre-delivery`), {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(buildPreDeliveryBody()),
-      });
-      const d1 = await r1.json().catch(() => ({})) as { error?: string };
-      if (!r1.ok) { setErrors([d1.error ?? "تعذّر حفظ بيانات المحاسبة"]); setSaving(false); return; }
-
-      toast({ title: "✓ تم الحفظ", description: "تمّ حفظ بيانات المحاسبة. عند مجيء العميل اضغط «تأكيد التسليم»" });
-      setSaving(false);
-      onSaved();
+      const draft = {
+        v: 1,
+        savedAt: new Date().toISOString(),
+        partLines,
+        payRows,
+        brokerName,
+        brokerComm,
+        cost,
+        safeId,
+        discount,
+        selectedWarehouseId,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      toast({ title: "✓ تم حفظ بيانات الفاتورة", description: "البيانات محفوظة محلياً. عند مجيء العميل افتح البطاقة واضغط «تأكيد التسليم»" });
     } catch {
-      setErrors(["تعذّر الاتصال بالخادم"]);
-      setSaving(false);
+      toast({ title: "تعذّر حفظ البيانات محلياً", variant: "destructive" });
     }
   }
 
@@ -474,6 +506,9 @@ ${partLines.length > 0 ? `
       });
       const d2 = await r2.json().catch(() => ({})) as { error?: string };
       if (!r2.ok) { setErrors([d2.error ?? "تعذّر تسجيل بيانات الشحن"]); setSaving(false); return; }
+
+      /* امسح المسوّدة المحلية بعد نجاح التسليم */
+      try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
 
       toast({ title: "✓ تم التسليم", description: "تمّت محاسبة العميل وتسجيل التسليم بنجاح" });
       onSaved();
@@ -519,6 +554,31 @@ ${partLines.length > 0 ? `
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {/* تنبيه استعادة المسوّدة */}
+        {draftRestored && (
+          <div className="mx-5 mt-3 p-2.5 rounded-xl flex items-center justify-between gap-2"
+            style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(96,165,250,0.25)" }}
+          >
+            <span className="text-[11px] text-blue-200">
+              تم استعادة بيانات فاتورة محفوظة محلياً لهذه البطاقة. اضغط «حفظ» للتحديث أو «تأكيد التسليم» لإتمام العملية.
+            </span>
+            <button type="button"
+              onClick={() => {
+                try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
+                setPartLines([]); setPayRows([]);
+                setBrokerName(job.broker_name ?? "");
+                setBrokerComm(String(Number(job.broker_commission) || ""));
+                setCost("0"); setDiscount("0");
+                setDraftRestored(false);
+                toast({ title: "تم حذف المسوّدة" });
+              }}
+              className="shrink-0 text-[10px] text-red-300 hover:text-red-200 underline"
+            >
+              حذف المسوّدة
+            </button>
+          </div>
+        )}
 
         {/* ── Body ── */}
         {fetchLoading && (
