@@ -18,7 +18,7 @@ import { formatCurrency, formatNumber } from "@/lib/format";
 import {
   PackageCheck, Loader2, X, AlertTriangle,
   Coins, Clock, Plus, Trash2, UserCog,
-  FileText, Printer, MessageCircle, CheckCircle2, Truck,
+  FileText, Printer, MessageCircle, CheckCircle2, Truck, Save,
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
@@ -385,7 +385,63 @@ ${partLines.length > 0 ? `
     toast({ title: "تم فتح واتساب" });
   }
 
-  /* ── تأكيد التسليم ── */
+  /* بناء جسم طلب pre-delivery (حفظ بيانات المحاسبة) */
+  function buildPreDeliveryBody() {
+    const cashTotal   = payRows.filter(r => r.type === "cash").reduce((s, r) => s + r.amount, 0);
+    const primarySafe = payRows.find(r => r.type === "cash")?.safe_id ?? paySafe ?? null;
+    const pt          = grandTotal > 0 ? (paidSoFar >= grandTotal ? "cash" : paidSoFar > 0 ? "partial" : "credit") : "cash";
+    return {
+      broker_name:       brokerName.trim() || null,
+      broker_commission: Number(brokerComm) || 0,
+      /* عند الإرسال نمرر unit_price = صافي السطر / الكمية (بدقة كاملة)
+         بحيث يحتسب الخادم إجمالي القطعة بعد خصم السطر دون الحاجة لتغيير
+         المخطط، ودون أي انحراف بسبب التقريب. عمود numeric في PostgreSQL
+         يستوعب الكسور العشرية كاملةً. */
+      parts: partLines.map(l => {
+        const netUnit = l.quantity > 0 ? lineNet(l) / l.quantity : 0;
+        return {
+          product_id:   l.product_id,
+          product_name: l.product_name,
+          quantity:     l.quantity,
+          unit_price:   netUnit,
+          warehouse_id: l.warehouse_id,
+        };
+      }),
+      payment: {
+        payment_type: pt,
+        paid_amount:  cashTotal,
+        safe_id:      primarySafe,
+        payments:     payRows.map(r => ({ type: r.type, safe_id: r.safe_id, amount: r.amount })),
+      },
+    };
+  }
+
+  /* ── حفظ المحاسبة فقط (بدون تأكيد تسليم نهائي) ── */
+  async function handleSave() {
+    const errs: string[] = [];
+    if (!Number.isFinite(numericDisc) || numericDisc < 0) errs.push("قيمة الخصم غير صحيحة");
+    if (errs.length) { setErrors(errs); return; }
+
+    setSaving(true); setErrors([]);
+    try {
+      const r1 = await authFetch(api(`/api/repair-jobs/${job.id}/pre-delivery`), {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(buildPreDeliveryBody()),
+      });
+      const d1 = await r1.json().catch(() => ({})) as { error?: string };
+      if (!r1.ok) { setErrors([d1.error ?? "تعذّر حفظ بيانات المحاسبة"]); setSaving(false); return; }
+
+      toast({ title: "✓ تم الحفظ", description: "تمّ حفظ بيانات المحاسبة. عند مجيء العميل اضغط «تأكيد التسليم»" });
+      setSaving(false);
+      onSaved();
+    } catch {
+      setErrors(["تعذّر الاتصال بالخادم"]);
+      setSaving(false);
+    }
+  }
+
+  /* ── تأكيد التسليم النهائي (يُستخدَم لمّا يجي العميل يستلم) ── */
   async function handleConfirm() {
     const errs: string[] = [];
     if (!Number.isFinite(numericCost) || numericCost < 0) errs.push("تكلفة الشحن غير صحيحة");
@@ -397,39 +453,10 @@ ${partLines.length > 0 ? `
 
     try {
       /* ① سجّل المحاسبة (pre-delivery) */
-      const cashTotal    = payRows.filter(r => r.type === "cash").reduce((s, r) => s + r.amount, 0);
-      const primarySafe  = payRows.find(r => r.type === "cash")?.safe_id ?? paySafe ?? null;
-      const pt           = grandTotal > 0 ? (paidSoFar >= grandTotal ? "cash" : paidSoFar > 0 ? "partial" : "credit") : "cash";
-
-      const preDeliveryBody = {
-        broker_name:       brokerName.trim() || null,
-        broker_commission: Number(brokerComm) || 0,
-        /* عند الإرسال نمرر unit_price = صافي السطر / الكمية (بدقة كاملة)
-           بحيث يحتسب الخادم إجمالي القطعة بعد خصم السطر دون الحاجة لتغيير
-           المخطط، ودون أي انحراف بسبب التقريب. عمود numeric في PostgreSQL
-           يستوعب الكسور العشرية كاملةً. */
-        parts: partLines.map(l => {
-          const netUnit = l.quantity > 0 ? lineNet(l) / l.quantity : 0;
-          return {
-            product_id:   l.product_id,
-            product_name: l.product_name,
-            quantity:     l.quantity,
-            unit_price:   netUnit,
-            warehouse_id: l.warehouse_id,
-          };
-        }),
-        payment: {
-          payment_type: pt,
-          paid_amount:  cashTotal,
-          safe_id:      primarySafe,
-          payments:     payRows.map(r => ({ type: r.type, safe_id: r.safe_id, amount: r.amount })),
-        },
-      };
-
       const r1 = await authFetch(api(`/api/repair-jobs/${job.id}/pre-delivery`), {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(preDeliveryBody),
+        body:    JSON.stringify(buildPreDeliveryBody()),
       });
       const d1 = await r1.json().catch(() => ({})) as { error?: string };
       if (!r1.ok) { setErrors([d1.error ?? "تعذّر حفظ بيانات المحاسبة"]); setSaving(false); return; }
@@ -881,9 +908,19 @@ ${partLines.length > 0 ? `
             </button>
           </div>
           <div className="flex gap-2">
+            <button onClick={handleSave} disabled={saving || !receiptData}
+              className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+              style={{ background: "rgba(59,130,246,0.75)", border: "1px solid rgba(96,165,250,0.45)" }}
+              title="حفظ بيانات المحاسبة بدون تأكيد التسليم النهائي"
+            >
+              {saving
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</>
+                : <><Save className="w-3.5 h-3.5" /> حفظ</>}
+            </button>
             <button onClick={handleConfirm} disabled={saving || !receiptData}
               className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
               style={{ background: "rgba(16,185,129,0.75)", border: "1px solid rgba(52,211,153,0.45)" }}
+              title="تأكيد تسليم الجهاز للعميل نهائياً"
             >
               {saving
                 ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</>
