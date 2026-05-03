@@ -1725,9 +1725,9 @@ function JobDetail({
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <button onClick={printJobQR}
-              title="طباعة إيصال QR لمتابعة العميل"
+              title="طباعة إيصال استلام الجهاز للعميل (يحتوي على رمز QR للمتابعة)"
               className="flex items-center gap-1 px-2 py-1 rounded-lg border border-violet-500/25 text-violet-300 text-[10px] font-bold hover:bg-violet-500/10 transition-all">
-              <Printer className="w-3 h-3" /> طباعة QR
+              <Printer className="w-3 h-3" /> طباعة الإيصال
             </button>
             <button onClick={() => onWhatsApp(job, whatsAppProgress(job))}
               title="تحديث الحالة واتساب"
