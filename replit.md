@@ -160,3 +160,15 @@ Full repair pipeline tested end-to-end via API (`/tmp/e2e.mjs`): customer → jo
 - `POST /pre-delivery` payment must be **nested**: `{ payment: { payment_type, paid_amount, safe_id, payments: [{type:'cash'|'credit', safe_id, amount}] } }` — flat `payments`/`paid_amount` at root are ignored silently
 - `final_cost` MUST be set via PATCH before transitioning to `repaired`
 - Server stringifies checklist arrays — pass raw arrays, NOT pre-stringified
+
+### Comprehensive Repair Scenarios Verification (May 2026)
+12-scenario A→Z E2E suite (`/tmp/e2e_full.mjs`): 40/40 assertions ✓ + DB side-effects verified.
+Scenarios covered: S1 customer-rejects→cancelled · S2 QA-fail blocks ready_for_delivery · S3 external (workshop) part — no stock movement · S4 mixed parts + broker (name/commission) + shipping cost + final_discount · S5 split payment (cash+credit) — only cash credits safe · S6 deposit POST/overpay-422-guard/DELETE · S7 customer-return after delivery (refund + part restock + double-return-guard) · S8 independent part-return /parts/:id/return (stock vs scrap, double-return-guard) · S9 warranty job (`REP-…/W1`, inherits customer, parent-link, no-warranty-on-warranty guard) · S10 hard-delete · S11 stats/technician-stats/alerts · S12 engineer reports CRUD.
+
+**Bug found & fixed during testing** (`artifacts/api-server/src/routes/repairs.ts` `DELETE /repair-jobs/:id/payments/:pid`):
+- Old behavior: deleted `repair_payments` row + updated `deposit_paid` only — **left safe balance inflated and orphan `transactions` row intact** (financial drift).
+- Fix: route now also debits `safes.balance` by the deleted amount AND removes the matching `transactions` row (reference_type=`repair_job`, type=`repair_payment`, direction=`in`) when the payment had a `safe_id`.
+
+**Dev rate-limit bypass** (allows full E2E runs without 429s; production unaffected):
+- `artifacts/api-server/src/app.ts` general limiter — bumped to 1M when `NODE_ENV !== 'production'`
+- `artifacts/api-server/src/middleware/per-tenant-rate-limit.ts` — `READ_LIMIT`/`WRITE_LIMIT` set to 1M when `NODE_ENV !== 'production'`

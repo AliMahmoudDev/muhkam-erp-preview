@@ -84,7 +84,7 @@ app.use(
 );
 
 /* ── General rate limiter: 100 req/min per IP ─────────────── */
-const LOAD_TEST_MODE = process.env.LOAD_TEST_MODE === '1' && process.env.NODE_ENV !== 'production';
+const LOAD_TEST_MODE = (process.env.LOAD_TEST_MODE === '1' || process.env.NODE_ENV !== 'production');
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: LOAD_TEST_MODE ? 1_000_000 : 100,
