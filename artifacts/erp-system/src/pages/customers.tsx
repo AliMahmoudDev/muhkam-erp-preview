@@ -1725,11 +1725,13 @@ export default function Customers() {
       (c.customer_code && String(c.customer_code).includes(search));
     if (!matchSearch) return false;
     const bal = Number(c.balance);
+    if (typeFilter === 'maintenance') return isMaintenanceCustomer(c);
+    // عملاء الصيانة لا يظهرون في باقي الفلاتر — فقط في "الكل" أو "عملاء صيانة"
+    if (isMaintenanceCustomer(c)) return false;
     if (typeFilter === 'customers') return !c.is_supplier;
     if (typeFilter === 'suppliers') return !!c.is_supplier;
     if (typeFilter === 'debtors')  return bal > 0.001;           // عليه — ذمم مدينة
     if (typeFilter === 'creditors') return bal < -0.001;          // له — ذمم دائنة
-    if (typeFilter === 'maintenance') return isMaintenanceCustomer(c);
     return true;
   });
 
