@@ -75,16 +75,20 @@ ALTER TABLE trial_abuse_log
 
 -- 5. أعمدة جديدة في erp_users (مطلوبة لعمل تسجيل الدخول)
 ALTER TABLE erp_users
-  ADD COLUMN IF NOT EXISTS email             TEXT,
-  ADD COLUMN IF NOT EXISTS employee_id       INTEGER,
-  ADD COLUMN IF NOT EXISTS warehouse_id      INTEGER,
-  ADD COLUMN IF NOT EXISTS safe_id           INTEGER,
-  ADD COLUMN IF NOT EXISTS login_attempts    INTEGER NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS last_login        TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS totp_secret       TEXT,
-  ADD COLUMN IF NOT EXISTS totp_enabled      BOOLEAN DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS totp_verified     BOOLEAN DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS trusted_device_id TEXT;
+  ADD COLUMN IF NOT EXISTS email                   TEXT,
+  ADD COLUMN IF NOT EXISTS permissions             TEXT DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS employee_id             INTEGER,
+  ADD COLUMN IF NOT EXISTS warehouse_id            INTEGER,
+  ADD COLUMN IF NOT EXISTS safe_id                 INTEGER,
+  ADD COLUMN IF NOT EXISTS login_attempts          INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS last_login              TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS totp_secret             TEXT,
+  ADD COLUMN IF NOT EXISTS totp_enabled            BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS totp_verified           BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS trusted_device_id       TEXT,
+  ADD COLUMN IF NOT EXISTS repair_commission_pct   INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS repair_specialty        TEXT,
+  ADD COLUMN IF NOT EXISTS repair_notifications    BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- =====================================================================
 -- القسم الثالث: إصلاح فحص الاشتراك — أعمدة companies الجديدة
@@ -139,5 +143,49 @@ CREATE INDEX IF NOT EXISTS refresh_tokens_expires_idx  ON refresh_tokens (expire
 ALTER TABLE salary_advances
   ADD COLUMN IF NOT EXISTS safe_id INTEGER;
 
+-- =====================================================================
+-- القسم السادس: جداول المصلّحات الجديدة (v3 — تحديث مايو 2026)
+-- =====================================================================
+
+-- 9. عمود event_type في repair_status_history (أُضيف حديثاً)
+ALTER TABLE repair_status_history
+  ADD COLUMN IF NOT EXISTS event_type TEXT DEFAULT 'status_change';
+
+-- 10. أعمدة reference في transactions (مطلوبة لربط دفعات الصيانة بالحركات المالية)
+ALTER TABLE transactions
+  ADD COLUMN IF NOT EXISTS reference_type TEXT,
+  ADD COLUMN IF NOT EXISTS reference_id   INTEGER;
+CREATE INDEX IF NOT EXISTS transactions_reference_type_idx
+  ON transactions (reference_type);
+
+-- 11. جدول repair_payments (دفعات الصيانة)
+CREATE TABLE IF NOT EXISTS repair_payments (
+  id               SERIAL PRIMARY KEY,
+  company_id       INTEGER NOT NULL,
+  job_id           INTEGER NOT NULL REFERENCES repair_jobs(id) ON DELETE CASCADE,
+  amount           NUMERIC(12,2) NOT NULL,
+  payment_method   TEXT NOT NULL DEFAULT 'cash',
+  notes            TEXT,
+  received_by      INTEGER,
+  received_by_name TEXT,
+  safe_id          INTEGER,
+  safe_name        TEXT,
+  created_at       TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS repair_payments_job_idx     ON repair_payments (job_id);
+CREATE INDEX IF NOT EXISTS repair_payments_company_idx ON repair_payments (company_id);
+
+-- 12. جدول repair_device_models (موديلات الأجهزة)
+CREATE TABLE IF NOT EXISTS repair_device_models (
+  id         SERIAL PRIMARY KEY,
+  company_id INTEGER NOT NULL,
+  brand      TEXT    NOT NULL,
+  category   TEXT    NOT NULL,
+  model      TEXT    NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS repair_device_models_company_idx ON repair_device_models (company_id);
+
 -- تأكيد
-SELECT 'VPS Migration v2 applied successfully ✓' AS status;
+SELECT 'VPS Migration v3 applied successfully ✓' AS status;
