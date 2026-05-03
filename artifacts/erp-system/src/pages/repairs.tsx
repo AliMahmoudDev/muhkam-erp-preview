@@ -1632,7 +1632,7 @@ function JobDetail({
       s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
        .replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
 
-    /* Read saved baseUrl from system_settings (set in RepairSettingsModal QR tab) */
+    /* Read saved baseUrl from system_settings (repair.qr_base_url) */
     const effectiveBase = qrBaseUrlSetting || `${window.location.origin}/track`;
     const token = (job as { tracking_token?: string }).tracking_token ?? "";
     const trackingUrl   = `${effectiveBase}/${job.company_id}/${encodeURIComponent(job.job_no)}${token ? `?token=${encodeURIComponent(token)}` : ""}`;

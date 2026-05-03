@@ -1,12 +1,11 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { QRCodeSVG } from "qrcode.react";
 import {
-  X, ClipboardList, Users, QrCode,
+  X, ClipboardList, Users,
   Plus, ChevronDown, CheckCircle2, XCircle, Trash2, Pencil,
   Bell, BellOff, Percent, AlertCircle, Zap,
-  ArrowLeft, ArrowRight, Copy, Printer,
+  ArrowLeft, ArrowRight, Copy,
   Info, Settings2, Save, LayoutDashboard, Lock,
   Search, Wrench, Smartphone, MessageCircle, Package, Shield,
 } from "lucide-react";
@@ -25,7 +24,7 @@ type DeviceType =
   | "samsung_phone" | "samsung_tablet"
   | "android_phone" | "android_tablet"
   | "other";
-type SettingsTab = "checklist" | "dashboard-cards" | "technicians" | "qr" | "models" | "defaults" | "wa-templates" | "accessories";
+type SettingsTab = "checklist" | "dashboard-cards" | "technicians" | "models" | "defaults" | "wa-templates" | "accessories";
 
 /* ── system_settings keys (shared across maintenance) ────────── */
 export const REPAIR_SETTING_KEYS = {
@@ -162,7 +161,6 @@ const TABS: Array<{
   { id: "accessories",     label: "الإكسسوارات",      sublabel: "ما يستلم مع الجهاز", icon: Package },
   { id: "defaults",        label: "الافتراضيات",      sublabel: "مدة الضمان الافتراضية", icon: Shield, adminOnly: true },
   { id: "wa-templates",    label: "قوالب الواتس",     sublabel: "نص رسائل العميل",    icon: MessageCircle, adminOnly: true },
-  { id: "qr",              label: "QR والتتبع",       sublabel: "متابعة العميل",      icon: QrCode },
   { id: "models",          label: "الموديلات",        sublabel: "إضافة موديلات مخصّصة",icon: Smartphone },
 ];
 
@@ -1419,239 +1417,6 @@ function WhatsAppTemplatesTab() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   QR & TRACKING TAB — uses system_settings
-══════════════════════════════════════════════════════════════ */
-function QrTrackingTab() {
-  const { toast } = useToast();
-  const qc = useQueryClient();
-
-  const { data: settings = {} } = useQuery<Record<string, string>>({
-    queryKey: ["/api/settings/system"],
-    queryFn: async () => {
-      const r = await authFetch(api("/api/settings/system"));
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    },
-    staleTime: 30_000,
-  });
-
-  const baseUrl = settings[REPAIR_SETTING_KEYS.qrBaseUrl] ?? "";
-
-  const [sampleJobNo, setSampleJobNo]   = useState("REP-0001");
-  const [copied, setCopied]             = useState(false);
-  const [editingUrl, setEditingUrl]     = useState(false);
-  const [urlBuf, setUrlBuf]             = useState("");
-  const [savingUrl, setSavingUrl]       = useState(false);
-
-  useEffect(() => { if (!editingUrl) setUrlBuf(baseUrl); }, [baseUrl, editingUrl]);
-
-  const effectiveBase = baseUrl || `${window.location.origin}/track`;
-  const trackingUrl   = `${effectiveBase}/${sampleJobNo}`;
-
-  const saveUrl = async () => {
-    const trimmed = urlBuf.trim().replace(/\/$/, "");
-    setSavingUrl(true);
-    try {
-      const r = await authFetch(api("/api/settings/system"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: REPAIR_SETTING_KEYS.qrBaseUrl, value: trimmed }),
-      });
-      if (!r.ok) {
-        const err = await r.json().catch(() => ({}));
-        throw new Error(err?.error || "تعذّر الحفظ");
-      }
-      await qc.invalidateQueries({ queryKey: ["/api/settings/system"] });
-      setEditingUrl(false);
-      toast({ title: "✓ تم حفظ إعدادات QR" });
-    } catch (e: any) {
-      toast({ title: e?.message || "تعذّر الحفظ", variant: "destructive" });
-    } finally {
-      setSavingUrl(false);
-    }
-  };
-
-  const copyLink = async () => {
-    await navigator.clipboard.writeText(trackingUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const printQR = () => {
-    /* SEC-005: escape HTML entities لمنع أي XSS في نافذة الطباعة */
-    const escHtml = (s: string) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
-
-    /* serialize the QR SVG and open in a print window */
-    const svg = document.getElementById("qr-print-target")?.querySelector("svg");
-    if (!svg) { toast({ title: "تعذر تحميل الرمز", variant: "destructive" }); return; }
-    const svgStr = new XMLSerializer().serializeToString(svg);
-    const win = window.open("", "_blank", "width=420,height=620");
-    if (!win) { toast({ title: "السماح بالنوافذ مطلوب للطباعة", variant: "destructive" }); return; }
-    win.document.write(`<!doctype html>
-<html dir="rtl" lang="ar">
-<head>
-<meta charset="utf-8" />
-<title>QR — ${escHtml(sampleJobNo)}</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, "Segoe UI", "Tahoma", sans-serif; background: #fff; color: #111;
-    display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-  .ticket { border: 2px dashed #999; border-radius: 16px; padding: 28px 32px; text-align: center;
-    width: 320px; }
-  .brand { font-size: 11px; color: #888; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 18px; }
-  .title { font-size: 18px; font-weight: 800; margin-bottom: 4px; color: #111; }
-  .sub { font-size: 13px; color: #555; margin-bottom: 22px; }
-  .qr-box { background: #fff; padding: 8px; border: 1px solid #eee; border-radius: 12px;
-    display: inline-block; margin-bottom: 20px; }
-  .qr-box svg { display: block; width: 200px; height: 200px; }
-  .job-no { font-family: ui-monospace, "SF Mono", monospace; font-size: 16px; font-weight: 700;
-    background: #f3f4f6; padding: 8px 18px; border-radius: 999px; display: inline-block; margin-bottom: 12px; }
-  .url { font-family: ui-monospace, monospace; font-size: 9px; color: #888; word-break: break-all; padding: 0 8px; }
-  .footer { margin-top: 18px; font-size: 11px; color: #666; line-height: 1.6; border-top: 1px solid #eee; padding-top: 14px; }
-  @media print {
-    .ticket { border: 1px solid #000; }
-    @page { size: A6; margin: 0; }
-  }
-</style>
-</head>
-<body>
-  <div class="ticket">
-    <div class="brand">MUHKAM ERP — صيانة</div>
-    <div class="title">تتبع طلب الصيانة</div>
-    <div class="sub">صوّر الرمز لمتابعة حالة جهازك</div>
-    <div class="qr-box">${svgStr}</div>
-    <div class="job-no">${escHtml(sampleJobNo)}</div>
-    <div class="url">${escHtml(trackingUrl)}</div>
-    <div class="footer">شكراً لاختياركم خدمتنا<br/>سيتم تحديثكم بكل مرحلة من الإصلاح</div>
-  </div>
-  <script>
-    window.onload = function() { setTimeout(function(){ window.print(); }, 250); };
-    window.onafterprint = function() { window.close(); };
-  </script>
-</body>
-</html>`);
-    win.document.close();
-  };
-
-  return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-5 space-y-5">
-
-        {/* Info banner */}
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/8 border border-amber-500/20">
-          <QrCode className="w-5 h-5 text-amber-400/85 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-[13px] font-semibold text-amber-300/80 mb-1">تتبع العميل عبر QR</p>
-            <p className="text-[12px] text-amber-300/50 leading-relaxed">
-              كل طلب صيانة يحصل على رمز QR خاص به. العميل يصوّره ويتابع حالة جهازه في أي وقت دون الحاجة لتواصل مباشر.
-            </p>
-          </div>
-        </div>
-
-        {/* Base URL setting */}
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8 flex items-center justify-between">
-            <span className="text-[12px] font-semibold text-white/50">رابط التتبع الأساسي</span>
-            <button onClick={() => { setUrlBuf(baseUrl); setEditingUrl(v => !v); }}
-              className="text-[11px] text-white/25 hover:text-white/50 transition-colors">
-              {editingUrl ? "إلغاء" : "تعديل"}
-            </button>
-          </div>
-          <div className="px-4 py-3">
-            {editingUrl ? (
-              <div className="flex items-center gap-2">
-                <input value={urlBuf} onChange={e => setUrlBuf(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") saveUrl(); if (e.key === "Escape") setEditingUrl(false); }}
-                  placeholder="رابط موقعك للتتبع"
-                  className="erp-input flex-1 text-sm py-1 font-mono text-[12px]" />
-                <button onClick={saveUrl} disabled={savingUrl}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[12px] font-semibold hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5 disabled:opacity-40">
-                  <Save className="w-3.5 h-3.5" /> {savingUrl ? "..." : "حفظ"}
-                </button>
-              </div>
-            ) : (
-              <p className="text-[12px] font-mono text-white/45">{effectiveBase}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Sample job no */}
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8">
-            <span className="text-[12px] font-semibold text-white/50">معاينة QR — رقم الطلب</span>
-          </div>
-          <div className="px-4 py-3">
-            <input value={sampleJobNo} onChange={e => setSampleJobNo(e.target.value)}
-              placeholder="REP-0001"
-              className="erp-input text-sm py-1 w-48 font-mono text-center" />
-          </div>
-        </div>
-
-        {/* QR Preview */}
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8 flex items-center justify-between">
-            <span className="text-[12px] font-semibold text-white/50">معاينة رمز QR</span>
-            <div className="flex items-center gap-2">
-              <button onClick={copyLink}
-                className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 border border-white/8 hover:border-white/20 rounded-lg px-2.5 py-1 transition-all">
-                {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                {copied ? "تم النسخ" : "نسخ الرابط"}
-              </button>
-              <button onClick={printQR}
-                className="flex items-center gap-1.5 text-[11px] text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-lg px-2.5 py-1 transition-all font-semibold">
-                <Printer className="w-3 h-3" /> طباعة
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-col items-center gap-5 py-8 px-4">
-            {/* QR Code */}
-            <div id="qr-print-target" className="p-4 bg-white rounded-2xl shadow-lg shadow-black/30">
-              <QRCodeSVG
-                value={trackingUrl}
-                size={160}
-                level="M"
-                includeMargin={false}
-              />
-            </div>
-            {/* URL display */}
-            <div className="text-center space-y-1">
-              <p className="text-[11px] text-white/25">رابط التتبع</p>
-              <code className="text-[12px] text-white/55 font-mono break-all text-center px-2">{trackingUrl}</code>
-            </div>
-          </div>
-        </div>
-
-        {/* How it works */}
-        <div className="rounded-xl border border-white/8 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8">
-            <span className="text-[12px] font-semibold text-white/50">كيف يعمل النظام</span>
-          </div>
-          <div className="divide-y divide-white/5">
-            {[
-              { step: "١", label: "إنشاء الطلب",   desc: "عند إنشاء طلب صيانة يُنشأ رمز QR تلقائياً" },
-              { step: "٢", label: "طباعة QR",      desc: "اطبع رمز الـ QR وضعه على الجهاز أو الإيصال" },
-              { step: "٣", label: "تصوير العميل",  desc: "العميل يصوّر الكود ويصل لصفحة التتبع فوراً" },
-              { step: "٤", label: "تحديث الحالة",  desc: "كل تحديث في النظام يظهر تلقائياً للعميل" },
-            ].map(s => (
-              <div key={s.step} className="flex items-start gap-3 px-4 py-3">
-                <span className="text-[13px] font-bold text-white/20 w-5 shrink-0 mt-0.5">{s.step}</span>
-                <div>
-                  <p className="text-[12px] font-semibold text-white/55">{s.label}</p>
-                  <p className="text-[11px] text-white/30 mt-0.5">{s.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════
    DASHBOARD CARDS TAB (admin only)
    Manage the customizable summary cards at the top of the
    repairs page: name, statuses grouped, color, icon, alerts.
@@ -2427,7 +2192,7 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
   });
   const totalItemsCount = Array.isArray(allItems) ? allItems.length : 0;
 
-  const activeMeta = TABS.find(t => t.id === activeTab)!;
+  const activeMeta = TABS.find(t => t.id === activeTab) ?? TABS[0];
 
   return createPortal(
     <div
@@ -2644,7 +2409,6 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
             {activeTab === "accessories"      && <AccessoriesTab />}
             {activeTab === "defaults"         && <DefaultsTab />}
             {activeTab === "wa-templates"     && <WhatsAppTemplatesTab />}
-            {activeTab === "qr"               && <QrTrackingTab />}
             {activeTab === "models"           && <DeviceModelsTab />}
           </main>
 
