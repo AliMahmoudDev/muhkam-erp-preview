@@ -2701,7 +2701,8 @@ function NewJobForm({
           onClick={handleSubmit}
           disabled={
             submitting ||
-            !customerId ||
+            !customerName.trim() ||
+            phoneDigits.length !== 11 ||
             devicePowers === null ||
             (devicePowers === "on" && !checklistComplete)
           }
