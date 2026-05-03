@@ -1061,4 +1061,67 @@ router.post('/auth/login/email', async (req, res) => {
   }
 });
 
+/* ── POST /auth/emergency-unlock — clear brute-force lockout without JWT ──
+ *
+ * Protected by SUPER_ADMIN_PIN env var (same secret used to seed the account).
+ * Designed for VPS use via curl when the account is locked and you cannot log in:
+ *
+ *   curl -X POST https://<your-domain>/api/auth/emergency-unlock \
+ *        -H "Content-Type: application/json" \
+ *        -d '{"username":"admin","emergency_key":"<SUPER_ADMIN_PIN value>"}'
+ *
+ * Clears the brute-force lockout (in-memory or Redis) for the given user.
+ * Does NOT change the PIN or issue a token — just lifts the lockout.
+ */
+router.post('/auth/emergency-unlock', async (req, res) => {
+  try {
+    const emergencyKey = process.env.SUPER_ADMIN_PIN;
+    if (!emergencyKey) {
+      res.status(503).json({ error: 'SUPER_ADMIN_PIN غير مضبوط على هذا الخادم' });
+      return;
+    }
+
+    const { username, emergency_key } = req.body as { username?: string; emergency_key?: string };
+
+    if (!username || !emergency_key) {
+      res.status(400).json({ error: 'username و emergency_key مطلوبان' });
+      return;
+    }
+
+    if (emergency_key !== emergencyKey) {
+      logger.warn({ username, ip: req.ip }, '[emergency-unlock] Invalid emergency key attempt');
+      res.status(403).json({ error: 'مفتاح الطوارئ غير صحيح' });
+      return;
+    }
+
+    const usernameNorm = username.trim().toLowerCase();
+    const [found] = await db
+      .select({ id: erpUsersTable.id, username: erpUsersTable.username, role: erpUsersTable.role })
+      .from(erpUsersTable)
+      .where(sql`LOWER(${erpUsersTable.username}) = ${usernameNorm}`);
+
+    if (!found) {
+      res.status(404).json({ error: `المستخدم '${username}' غير موجود` });
+      return;
+    }
+
+    await clearLoginLockout(found.id);
+
+    logger.warn({
+      targetUser: found.username,
+      targetId: found.id,
+      ip: req.ip,
+    }, '[emergency-unlock] Brute-force lockout cleared via emergency endpoint');
+
+    res.json({
+      success: true,
+      message: `تم فك تجميد حساب '${found.username}' — يمكنك تسجيل الدخول الآن`,
+      user: { id: found.id, username: found.username, role: found.role },
+    });
+  } catch (err) {
+    logger.error({ err }, '[emergency-unlock] unexpected error');
+    res.status(500).json({ error: 'خطأ في الخادم' });
+  }
+});
+
 export default router;
