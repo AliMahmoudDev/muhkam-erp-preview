@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatCurrency } from "@/lib/format";
 import {
-  FileText, Printer, MessageCircle, Loader2, X, AlertTriangle, Truck, CheckCircle2,
+  FileText, Printer, MessageCircle, Loader2, X, AlertTriangle, Truck, CheckCircle2, Save,
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
@@ -205,6 +205,34 @@ ${data.parts.length > 0 ? `
     toast({ title: "تم فتح واتساب" });
   }
 
+  /* ── حفظ الفاتورة بدون تأكيد تسليم ── */
+  async function handleSave() {
+    const numCost = Number(cost);
+    const numDisc = Number(discount);
+    if (!Number.isFinite(numCost) || numCost < 0) { setErrors(["تكلفة الشحن غير صحيحة"]); return; }
+    if (!Number.isFinite(numDisc) || numDisc < 0)  { setErrors(["قيمة الخصم غير صحيحة"]); return; }
+    if (numCost > 0 && !safeId) { setErrors(["يجب اختيار خزنة لخصم تكلفة الشحن منها"]); return; }
+    setSaving(true); setErrors([]);
+    try {
+      const res = await authFetch(api(`/api/repair-jobs/${job.id}/shipping`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shipping_cost:  numCost,
+          safe_id:        numCost > 0 ? Number(safeId) : null,
+          final_discount: numDisc,
+          save_only:      true,
+        }),
+      });
+      const body = await res.json() as { error?: string };
+      if (!res.ok) { setErrors([body.error ?? "تعذّر حفظ البيانات"]); setSaving(false); return; }
+      toast({ title: "✓ تم حفظ الفاتورة" });
+      setSaving(false);
+    } catch {
+      setErrors(["تعذّر الاتصال بالخادم"]); setSaving(false);
+    }
+  }
+
   /* ── تأكيد التسليم ── */
   async function handleConfirm() {
     const numCost = Number(cost);
@@ -389,29 +417,36 @@ ${data.parts.length > 0 ? `
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-5 py-4 border-t border-white/8 space-y-2">
-          {/* Print + WhatsApp */}
-          <div className="grid grid-cols-2 gap-2">
+        <div className="px-5 py-4 border-t border-white/8">
+          <div className="flex items-center gap-2">
+            {/* حفظ */}
             <button
-              onClick={handleWhatsapp}
-              disabled={!data || !data.customer_phone}
-              className="py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
-              style={{ background: "rgba(34,197,94,0.7)", border: "1px solid rgba(74,222,128,0.4)" }}
+              onClick={handleSave}
+              disabled={saving || !data}
+              className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+              style={{ background: "rgba(59,130,246,0.7)", border: "1px solid rgba(96,165,250,0.4)" }}
             >
-              <MessageCircle className="w-3.5 h-3.5" /> إرسال واتساب
+              <Save className="w-3.5 h-3.5" /> حفظ
             </button>
+            {/* طباعة */}
             <button
               onClick={handlePrint}
               disabled={!data}
-              className="py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
               style={{ background: "rgba(59,130,246,0.7)", border: "1px solid rgba(96,165,250,0.4)" }}
             >
-              <Printer className="w-3.5 h-3.5" /> طباعة الفاتورة
+              <Printer className="w-3.5 h-3.5" /> طباعة
             </button>
-          </div>
-
-          {/* Confirm → delivered */}
-          <div className="flex gap-2">
+            {/* واتساب */}
+            <button
+              onClick={handleWhatsapp}
+              disabled={!data || !data.customer_phone}
+              className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+              style={{ background: "rgba(34,197,94,0.7)", border: "1px solid rgba(74,222,128,0.4)" }}
+            >
+              <MessageCircle className="w-3.5 h-3.5" /> واتساب
+            </button>
+            {/* تأكيد التسليم */}
             <button
               onClick={handleConfirm}
               disabled={saving || !data}
@@ -419,12 +454,13 @@ ${data.parts.length > 0 ? `
               style={{ background: "rgba(16,185,129,0.75)", border: "1px solid rgba(52,211,153,0.45)" }}
             >
               {saving
-                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</>
-                : <><CheckCircle2 className="w-3.5 h-3.5" /> تأكيد التسليم</>}
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ...</>
+                : <><CheckCircle2 className="w-3.5 h-3.5" /> تسليم</>}
             </button>
+            {/* إلغاء — نص فقط */}
             <button
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white text-xs"
+              className="px-3 py-2.5 text-white/50 hover:text-white text-xs transition-colors shrink-0"
             >
               إلغاء
             </button>

@@ -1972,6 +1972,20 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
     return res.status(400).json({ error: "قيمة الخصم غير صحيحة" });
   }
 
+  /* حفظ مسودة فقط — بدون محاسبة وبدون تغيير الحالة */
+  if (b.save_only === true) {
+    const [saved] = await db.update(repairJobsTable).set({
+      shipping_cost:  String(cost),
+      final_discount: String(discount),
+      updated_at:     new Date(),
+    }).where(and(
+      eq(repairJobsTable.id, id),
+      eq(repairJobsTable.company_id, company_id),
+    )).returning();
+    if (!saved) return res.status(404).json({ error: "البطاقة غير موجودة" });
+    return res.json({ job: saved, saved_only: true });
+  }
+
   const [job] = await db.select().from(repairJobsTable)
     .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
   if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
