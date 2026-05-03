@@ -39,13 +39,29 @@ interface Product {
 interface Warehouse { id: number; name: string; }
 type PayType = "cash" | "credit";
 interface PayRow { id: string; type: PayType; safe_id: number | null; amount: number; }
+type DiscMode = 'amt' | 'pct';
 interface PartLine {
   id: string;
   product_id: number | null;
   product_name: string;
   quantity: number;
-  unit_price: number;
+  unit_price: number;          /* السعر الأصلي قبل الخصم */
   warehouse_id: number | null;
+  discount_value: number;      /* قيمة الخصم (نسبة أو رقم) */
+  discount_mode: DiscMode;     /* 'pct' = نسبة، 'amt' = مبلغ ثابت على السطر */
+}
+
+/* احسب مبلغ الخصم على السطر الواحد */
+function lineDiscountAmount(l: Pick<PartLine, "quantity" | "unit_price" | "discount_value" | "discount_mode">): number {
+  const gross = l.quantity * l.unit_price;
+  if (l.discount_value <= 0 || gross <= 0) return 0;
+  const raw = l.discount_mode === 'pct'
+    ? (gross * Math.min(l.discount_value, 100)) / 100
+    : Math.min(l.discount_value, gross);
+  return Math.max(0, raw);
+}
+function lineNet(l: Pick<PartLine, "quantity" | "unit_price" | "discount_value" | "discount_mode">): number {
+  return Math.max(0, l.quantity * l.unit_price - lineDiscountAmount(l));
 }
 interface ReceiptBase {
   job_no:              string;
@@ -152,6 +168,8 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
   const [showProductDrop, setShowProductDrop] = useState(false);
   const [addQty, setAddQty]                 = useState("1");
   const [addPrice, setAddPrice]             = useState("");
+  const [addDisc, setAddDisc]               = useState("0");
+  const [addDiscMode, setAddDiscMode]       = useState<DiscMode>('pct');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const productSearchRef = useRef<HTMLInputElement>(null);
 
@@ -172,22 +190,32 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
     if (!selectedProduct) return;
     const qty   = Math.max(1, parseInt(addQty) || 1);
     const price = parseFloat(addPrice) || 0;
+    const disc  = Math.max(0, parseFloat(addDisc) || 0);
     setPartLines(prev => [...prev, {
-      id:           `${Date.now()}-${Math.random()}`,
-      product_id:   selectedProduct.id,
-      product_name: selectedProduct.name,
-      quantity:     qty,
-      unit_price:   price,
-      warehouse_id: selectedWarehouseId,
+      id:             `${Date.now()}-${Math.random()}`,
+      product_id:     selectedProduct.id,
+      product_name:   selectedProduct.name,
+      quantity:       qty,
+      unit_price:     price,
+      warehouse_id:   selectedWarehouseId,
+      discount_value: disc,
+      discount_mode:  addDiscMode,
     }]);
     setSelectedProduct(null);
     setProductSearch("");
     setAddQty("1");
     setAddPrice("");
+    setAddDisc("0");
     productSearchRef.current?.focus();
   }
 
-  const partsTotal = partLines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
+  /* تعديل خصم سطر بعد إضافته */
+  function updateLineDiscount(id: string, value: number, mode: DiscMode) {
+    setPartLines(prev => prev.map(l => l.id === id ? { ...l, discount_value: Math.max(0, value), discount_mode: mode } : l));
+  }
+
+  const partsDiscSum = partLines.reduce((s, l) => s + lineDiscountAmount(l), 0);
+  const partsTotal   = partLines.reduce((s, l) => s + lineNet(l), 0);
 
   /* ── الدفع ── */
   const [payRows, setPayRows]   = useState<PayRow[]>([]);
@@ -289,8 +317,14 @@ ${receiptData.technician_name ? `<div class="row"><span class="label">الفني
 ${receiptData.problem_description ? `<div style="margin-top:6px;padding:4px;background:#f5f5f5;border-radius:4px;"><strong>المشكلة:</strong> ${esc(receiptData.problem_description)}</div>` : ""}
 ${partLines.length > 0 ? `
 <table>
-  <thead><tr><th>القطعة</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
-  <tbody>${partLines.map(p => `<tr><td>${esc(p.product_name)}</td><td>${p.quantity}</td><td>${fmt(p.unit_price)}</td><td>${fmt(p.quantity * p.unit_price)}</td></tr>`).join("")}</tbody>
+  <thead><tr><th>القطعة</th><th>الكمية</th><th>السعر</th><th>الخصم</th><th>الإجمالي</th></tr></thead>
+  <tbody>${partLines.map(p => {
+    const d = lineDiscountAmount(p);
+    const discCell = d > 0
+      ? (p.discount_mode === 'pct' ? `${p.discount_value}% (-${fmt(d)})` : `- ${fmt(d)}`)
+      : "—";
+    return `<tr><td>${esc(p.product_name)}</td><td>${p.quantity}</td><td>${fmt(p.unit_price)}</td><td>${discCell}</td><td>${fmt(lineNet(p))}</td></tr>`;
+  }).join("")}</tbody>
 </table>` : ""}
 <div class="totals">
   ${partsTotal > 0 ? `<div class="row"><span class="label">قطع الغيار:</span><span>${fmt(partsTotal)}</span></div>` : ""}
@@ -313,6 +347,26 @@ ${partLines.length > 0 ? `
   /* ── واتساب ── */
   function handleWhatsapp() {
     if (!receiptData?.customer_phone) { toast({ title: "لا يوجد رقم هاتف للعميل", variant: "destructive" }); return; }
+    /* تفاصيل القطع مع خصم كل صنف */
+    const partsBlock: string[] = [];
+    if (partLines.length > 0) {
+      partsBlock.push(`*قطع الغيار:*`);
+      for (const p of partLines) {
+        const d = lineDiscountAmount(p);
+        const base = `• ${p.product_name} — ${p.quantity} × ${fmt(p.unit_price)}`;
+        if (d > 0) {
+          const discTxt = p.discount_mode === 'pct'
+            ? `خصم ${p.discount_value}% (- ${fmt(d)})`
+            : `خصم - ${fmt(d)}`;
+          partsBlock.push(`${base} | ${discTxt} = ${fmt(lineNet(p))}`);
+        } else {
+          partsBlock.push(`${base} = ${fmt(lineNet(p))}`);
+        }
+      }
+      if (partsDiscSum > 0) partsBlock.push(`إجمالي خصم القطع: - ${fmt(partsDiscSum)}`);
+      partsBlock.push(``);
+    }
+
     const lines = [
       `*فاتورة تسليم بطاقة صيانة*`,
       `رقم البطاقة: ${receiptData.job_no}`,
@@ -320,9 +374,10 @@ ${partLines.length > 0 ? `
       `الجهاز: ${[receiptData.device_brand, receiptData.device_model].filter(Boolean).join(" ") || "—"}`,
       receiptData.problem_description ? `المشكلة: ${receiptData.problem_description}` : "",
       ``,
-      partsTotal > 0 ? `قطع الغيار: ${fmt(partsTotal)}` : "",
+      ...partsBlock,
+      partsTotal > 0 ? `إجمالي صافي القطع: ${fmt(partsTotal)}` : "",
       sc > 0 ? `الشحن: ${fmt(sc)}` : "",
-      disc > 0 ? `خصم: - ${fmt(disc)}` : "",
+      disc > 0 ? `خصم إضافي: - ${fmt(disc)}` : "",
       `الإجمالي: ${fmt(total)}`,
       `المدفوع مقدماً: ${fmt(dep)}`,
       `*المتبقي: ${fmt(totalRem)} ج.م*`,
@@ -353,13 +408,20 @@ ${partLines.length > 0 ? `
       const preDeliveryBody = {
         broker_name:       brokerName.trim() || null,
         broker_commission: Number(brokerComm) || 0,
-        parts: partLines.map(l => ({
-          product_id:   l.product_id,
-          product_name: l.product_name,
-          quantity:     l.quantity,
-          unit_price:   l.unit_price,
-          warehouse_id: l.warehouse_id,
-        })),
+        /* عند الإرسال نمرر unit_price = صافي السطر / الكمية (بدقة كاملة)
+           بحيث يحتسب الخادم إجمالي القطعة بعد خصم السطر دون الحاجة لتغيير
+           المخطط، ودون أي انحراف بسبب التقريب. عمود numeric في PostgreSQL
+           يستوعب الكسور العشرية كاملةً. */
+        parts: partLines.map(l => {
+          const netUnit = l.quantity > 0 ? lineNet(l) / l.quantity : 0;
+          return {
+            product_id:   l.product_id,
+            product_name: l.product_name,
+            quantity:     l.quantity,
+            unit_price:   netUnit,
+            warehouse_id: l.warehouse_id,
+          };
+        }),
         payment: {
           payment_type: pt,
           paid_amount:  cashTotal,
@@ -475,8 +537,8 @@ ${partLines.length > 0 ? `
                   </div>
                 )}
 
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1 relative">
+                <div className="flex flex-wrap gap-2 items-end">
+                  <div className="flex-1 min-w-[180px] relative">
                     <label className="text-[10px] font-bold text-white/50 mb-1 block">اختر قطعة من المخزن</label>
                     <input
                       ref={productSearchRef}
@@ -503,18 +565,33 @@ ${partLines.length > 0 ? `
                       </div>
                     )}
                   </div>
-                  <div style={{ width: 64 }}>
+                  <div style={{ width: 56 }}>
                     <label className="text-[10px] font-bold text-white/50 mb-1 block">الكمية</label>
                     <input type="number" min={1} value={addQty} onChange={(e) => setAddQty(e.target.value)}
                       className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none focus:border-blue-400/40 text-center"
                     />
                   </div>
-                  <div style={{ width: 88 }}>
+                  <div style={{ width: 80 }}>
                     <label className="text-[10px] font-bold text-white/50 mb-1 block">السعر (ج.م)</label>
                     <input type="number" min={0} step="any" value={addPrice} onChange={(e) => setAddPrice(e.target.value)}
                       placeholder="0.00" dir="ltr"
                       className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none focus:border-blue-400/40"
                     />
+                  </div>
+                  <div style={{ width: 110 }}>
+                    <label className="text-[10px] font-bold text-white/50 mb-1 block">خصم على الصنف</label>
+                    <div className="flex items-center gap-1">
+                      <input type="number" min={0} step="any" value={addDisc} onChange={(e) => setAddDisc(e.target.value)}
+                        placeholder="0" dir="ltr"
+                        className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white/[0.03] border border-amber-400/20 text-[11px] text-white focus:outline-none focus:border-amber-400/40"
+                      />
+                      <button type="button" onClick={() => setAddDiscMode(m => m === 'pct' ? 'amt' : 'pct')}
+                        className="shrink-0 w-7 h-7 rounded-md text-[10px] font-black text-amber-300 border border-amber-400/30 hover:bg-amber-400/10"
+                        title={addDiscMode === 'pct' ? "تبديل إلى مبلغ" : "تبديل إلى نسبة"}
+                      >
+                        {addDiscMode === 'pct' ? '%' : 'ج'}
+                      </button>
+                    </div>
                   </div>
                   <button type="button" onClick={addPartLine} disabled={!selectedProduct}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-30 shrink-0"
@@ -526,23 +603,51 @@ ${partLines.length > 0 ? `
 
                 {partLines.length > 0 && (
                   <div className="mt-3 space-y-1.5">
-                    {partLines.map(l => (
-                      <div key={l.id} className="flex items-center gap-2 px-3 py-2 rounded-xl"
-                        style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}
-                      >
-                        <button type="button" onClick={() => setPartLines(prev => prev.filter(x => x.id !== l.id))}
-                          className="shrink-0 w-5 h-5 rounded flex items-center justify-center text-red-400/60 hover:text-red-400"
-                          style={{ background: "rgba(239,68,68,0.08)" }}
+                    {partLines.map(l => {
+                      const d = lineDiscountAmount(l);
+                      return (
+                        <div key={l.id} className="px-3 py-2 rounded-xl"
+                          style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}
                         >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                        <span className="flex-1 text-[11px] text-white/80 truncate">{l.product_name}</span>
-                        <span className="text-[10px] text-white/50 shrink-0">{l.quantity} × {fmtCurrency(l.unit_price)}</span>
-                        <span className="text-[11px] font-bold text-blue-300 shrink-0">{fmtCurrency(l.quantity * l.unit_price)}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-end pt-1">
-                      <span className="text-[11px] font-bold text-blue-300">إجمالي القطع: {fmtCurrency(partsTotal)}</span>
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => setPartLines(prev => prev.filter(x => x.id !== l.id))}
+                              className="shrink-0 w-5 h-5 rounded flex items-center justify-center text-red-400/60 hover:text-red-400"
+                              style={{ background: "rgba(239,68,68,0.08)" }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                            <span className="flex-1 text-[11px] text-white/80 truncate">{l.product_name}</span>
+                            <span className="text-[10px] text-white/50 shrink-0">{l.quantity} × {fmtCurrency(l.unit_price)}</span>
+                            <span className="text-[11px] font-bold text-blue-300 shrink-0">{fmtCurrency(lineNet(l))}</span>
+                          </div>
+                          {/* صف الخصم القابل للتعديل بعد الإضافة */}
+                          <div className="mt-1.5 flex items-center gap-2 pl-7">
+                            <span className="text-[10px] text-white/45">خصم على الصنف:</span>
+                            <input
+                              type="number" min={0} step="any"
+                              value={l.discount_value}
+                              onChange={(e) => updateLineDiscount(l.id, parseFloat(e.target.value) || 0, l.discount_mode)}
+                              className="w-20 px-2 py-0.5 rounded-md bg-white/[0.03] border border-amber-400/20 text-[10px] text-white text-center focus:outline-none focus:border-amber-400/40"
+                              dir="ltr"
+                            />
+                            <button type="button"
+                              onClick={() => updateLineDiscount(l.id, l.discount_value, l.discount_mode === 'pct' ? 'amt' : 'pct')}
+                              className="w-6 h-6 rounded-md text-[10px] font-black text-amber-300 border border-amber-400/30 hover:bg-amber-400/10"
+                            >
+                              {l.discount_mode === 'pct' ? '%' : 'ج'}
+                            </button>
+                            {d > 0 && (
+                              <span className="text-[10px] font-bold text-red-300">- {fmtCurrency(d)}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="flex justify-end pt-1 gap-3 text-[11px]">
+                      {partsDiscSum > 0 && (
+                        <span className="text-red-300">إجمالي خصم القطع: - {fmtCurrency(partsDiscSum)}</span>
+                      )}
+                      <span className="font-bold text-blue-300">صافي القطع: {fmtCurrency(partsTotal)}</span>
                     </div>
                   </div>
                 )}
