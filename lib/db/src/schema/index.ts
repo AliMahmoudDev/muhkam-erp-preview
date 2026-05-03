@@ -45,6 +45,7 @@ export * from "./notifications";
 export * from "./plan-settings";
 export * from "./sales-targets";
 export * from "./repairs";
+export * from "./repair-accessories";
 export * from "./devices";
 export * from "./trial-abuse-log";
 export * from "./super-settings";

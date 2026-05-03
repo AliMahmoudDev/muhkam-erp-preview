@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useQuery } from "@tanstack/react-query";
 import { X, ShieldCheck, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
+import { authFetch } from "@/lib/auth-fetch";
+import { api } from "@/lib/api";
+import { REPAIR_SETTING_KEYS } from "@/components/RepairSettingsModal";
 
 interface Props {
   jobId: number;
@@ -21,6 +25,13 @@ export default function WarrantyModal({
   const [loading, setLoading]                       = useState(false);
   const [error, setError]                           = useState<string | null>(null);
   const [created, setCreated]                       = useState<{ id: number; job_no: string } | null>(null);
+
+  const { data: settings = {} } = useQuery<Record<string, string>>({
+    queryKey: ["/api/settings/system"],
+    queryFn: () => authFetch(api("/api/settings/system")).then(r => r.json()),
+    staleTime: 60_000,
+  });
+  const warrantyDays = Number(settings[REPAIR_SETTING_KEYS.warrantyDays] ?? "30") || 30;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,6 +158,8 @@ export default function WarrantyModal({
               <ShieldCheck className="w-3.5 h-3.5 text-violet-400 mt-0.5 shrink-0" />
               <p className="text-[10px] text-violet-300/80 leading-relaxed">
                 ستُنشأ بطاقة صيانة جديدة مرتبطة بالبطاقة الأصلية برقم <strong>{jobNo}/W1</strong>. ستمر البطاقة بالمسار المعتاد من الاستقبال.
+                <br />
+                <span className="text-[10px] text-violet-200/70">مدة الضمان الافتراضية: <strong>{warrantyDays}</strong> يوم من تاريخ التسليم الأصلي.</span>
               </p>
             </div>
 

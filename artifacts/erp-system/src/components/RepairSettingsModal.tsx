@@ -8,7 +8,7 @@ import {
   Bell, BellOff, Percent, AlertCircle, Zap,
   ArrowLeft, ArrowRight, Copy, Printer,
   Info, Settings2, Save, LayoutDashboard, Lock,
-  Search, Wrench, Smartphone,
+  Search, Wrench, Smartphone, MessageCircle, Package, Shield,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
@@ -25,7 +25,21 @@ type DeviceType =
   | "samsung_phone" | "samsung_tablet"
   | "android_phone" | "android_tablet"
   | "other";
-type SettingsTab = "checklist" | "dashboard-cards" | "technicians" | "qr" | "models";
+type SettingsTab = "checklist" | "dashboard-cards" | "technicians" | "qr" | "models" | "defaults" | "wa-templates" | "accessories";
+
+/* ── system_settings keys (shared across maintenance) ────────── */
+export const REPAIR_SETTING_KEYS = {
+  qrBaseUrl:        "repair.qr_base_url",
+  warrantyDays:     "repair.default_warranty_days",
+  inspectionPrices: "repair.inspection_prices",
+  waReady:          "repair.wa_template_ready",
+  waProgress:       "repair.wa_template_progress",
+} as const;
+
+export const REPAIR_WA_DEFAULTS = {
+  ready:    "✅ عزيزنا {{customer_name}}،\nجهازك {{device_brand}} {{device_model}} جاهز للاستلام.\nبطاقة الصيانة: {{job_no}}\nالتكلفة الإجمالية: {{total_cost}}\n\nشكراً لثقتكم 🙏",
+  progress: "🔧 تحديث صيانة جهازك\nالموديل: {{device_brand}} {{device_model}}\nالرقم: {{job_no}}\nالحالة: {{status}}\n\nللاستفسار تواصل معنا 📱",
+} as const;
 
 interface ChecklistRow {
   id: number;
@@ -146,6 +160,9 @@ const TABS: Array<{
   { id: "checklist",       label: "بنود الفحص",       sublabel: "قوالب الفحص و QC حسب نوع الجهاز", icon: ClipboardList },
   { id: "dashboard-cards", label: "كروت اللوحة",      sublabel: "تخصيص ملخّص الصفحة", icon: LayoutDashboard, adminOnly: true },
   { id: "technicians",     label: "الفنيين",          sublabel: "إعدادات الموظفين",   icon: Users },
+  { id: "accessories",     label: "الإكسسوارات",      sublabel: "ما يستلم مع الجهاز", icon: Package },
+  { id: "defaults",        label: "الافتراضيات",      sublabel: "أسعار الفحص والضمان", icon: Shield, adminOnly: true },
+  { id: "wa-templates",    label: "قوالب الواتس",     sublabel: "نص رسائل العميل",    icon: MessageCircle, adminOnly: true },
   { id: "qr",              label: "QR والتتبع",       sublabel: "متابعة العميل",      icon: QrCode },
   { id: "models",          label: "الموديلات",        sublabel: "إضافة موديلات مخصّصة",icon: Smartphone },
 ];
@@ -1019,34 +1036,487 @@ function TechniciansTab() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   QR & TRACKING TAB
+   ACCESSORIES TAB — CRUD on repair_accessories
 ══════════════════════════════════════════════════════════════ */
-const QR_STORAGE_KEY = "repair_qr_settings";
+interface AccessoryRow {
+  id: number;
+  key_: string;
+  label_ar: string;
+  emoji: string | null;
+  sort_order: number;
+  active: boolean;
+  is_system: boolean;
+}
 
+function AccessoriesTab() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const { data: items = [], isLoading } = useQuery<AccessoryRow[]>({
+    queryKey: ["/api/repair-accessories"],
+    queryFn: () => authFetch(api("/api/repair-accessories")).then(r => r.json()).then(d => Array.isArray(d) ? d : []),
+  });
+
+  const [newLabel, setNewLabel] = useState("");
+  const [newKey,   setNewKey]   = useState("");
+  const [newEmoji, setNewEmoji] = useState("");
+  const [busy,     setBusy]     = useState(false);
+  const [editId,   setEditId]   = useState<number | null>(null);
+  const [editBuf,  setEditBuf]  = useState({ label_ar: "", emoji: "" });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/repair-accessories"] });
+
+  const createOne = async () => {
+    if (!newLabel.trim()) { toast({ title: "أدخل الاسم", variant: "destructive" }); return; }
+    const key = newKey.trim() || newLabel.trim().toLowerCase().replace(/[^\w]+/g, "_").slice(0, 30);
+    setBusy(true);
+    try {
+      const r = await authFetch(api("/api/repair-accessories"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key_: key, label_ar: newLabel.trim(), emoji: newEmoji.trim() || null, sort_order: items.length }),
+      });
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        throw new Error(e?.error || "تعذّر الإضافة");
+      }
+      setNewLabel(""); setNewKey(""); setNewEmoji("");
+      await invalidate();
+      toast({ title: "✓ تمت الإضافة" });
+    } catch (e: any) {
+      toast({ title: e?.message, variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  const saveEdit = async (id: number) => {
+    setBusy(true);
+    try {
+      const r = await authFetch(api(`/api/repair-accessories/${id}`), {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label_ar: editBuf.label_ar.trim(), emoji: editBuf.emoji.trim() || null }),
+      });
+      if (!r.ok) throw new Error("تعذّر الحفظ");
+      setEditId(null);
+      await invalidate();
+      toast({ title: "✓ تم الحفظ" });
+    } catch (e: any) {
+      toast({ title: e?.message, variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  const toggleActive = async (it: AccessoryRow) => {
+    setBusy(true);
+    try {
+      await authFetch(api(`/api/repair-accessories/${it.id}`), {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !it.active }),
+      });
+      await invalidate();
+    } finally { setBusy(false); }
+  };
+
+  const removeOne = async (id: number) => {
+    if (!confirm("حذف هذا الإكسسوار نهائياً؟")) return;
+    setBusy(true);
+    try {
+      const r = await authFetch(api(`/api/repair-accessories/${id}`), { method: "DELETE" });
+      if (!r.ok) throw new Error("تعذّر الحذف");
+      await invalidate();
+      toast({ title: "✓ تم الحذف" });
+    } catch (e: any) {
+      toast({ title: e?.message, variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="p-5 space-y-4">
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-violet-500/8 border border-violet-500/20">
+          <Package className="w-5 h-5 text-violet-400/85 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] font-semibold text-violet-300/80 mb-1">الإكسسوارات المستلمة مع الجهاز</p>
+            <p className="text-[12px] text-violet-300/50 leading-relaxed">
+              يظهر اختيارها للموظف عند فتح بطاقة صيانة جديدة لتسجيل ما تسلّمه من العميل (شاحن، علبة، إلخ).
+            </p>
+          </div>
+        </div>
+
+        {/* Add new */}
+        <div className="rounded-xl border border-white/10 overflow-hidden">
+          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8">
+            <span className="text-[12px] font-semibold text-white/50">إضافة إكسسوار جديد</span>
+          </div>
+          <div className="p-3 space-y-2">
+            <div className="grid grid-cols-12 gap-2">
+              <input value={newEmoji} onChange={e => setNewEmoji(e.target.value)} placeholder="🎁"
+                maxLength={2} className="erp-input col-span-1 text-center text-base py-1.5" />
+              <input value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="الاسم بالعربية (مثال: زجاج حماية)"
+                onKeyDown={e => e.key === "Enter" && createOne()}
+                className="erp-input col-span-7 text-sm py-1.5" />
+              <input value={newKey} onChange={e => setNewKey(e.target.value)} placeholder="key (اختياري)"
+                className="erp-input col-span-3 text-[11px] py-1.5 font-mono" />
+              <button onClick={createOne} disabled={busy || !newLabel.trim()}
+                className="col-span-1 px-2 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/25 transition-all disabled:opacity-30 flex items-center justify-center">
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="rounded-xl border border-white/10 overflow-hidden">
+          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8 flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-white/50">الإكسسوارات الحالية</span>
+            <span className="text-[11px] text-white/25">{items.length}</span>
+          </div>
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+            </div>
+          )}
+          {!isLoading && items.length === 0 && (
+            <p className="text-center py-12 text-white/30 text-sm">لا توجد إكسسوارات بعد</p>
+          )}
+          <div className="divide-y divide-white/5">
+            {items.map(it => (
+              <div key={it.id} className={`flex items-center gap-2 px-3 py-2.5 hover:bg-white/[0.02] transition-colors ${!it.active ? "opacity-40" : ""}`}>
+                <span className="text-lg w-7 text-center">{it.emoji ?? "✨"}</span>
+                {editId === it.id ? (
+                  <>
+                    <input value={editBuf.emoji} onChange={e => setEditBuf(b => ({ ...b, emoji: e.target.value }))}
+                      maxLength={2} className="erp-input w-12 text-center py-1 text-sm" placeholder="🔧" />
+                    <input value={editBuf.label_ar} onChange={e => setEditBuf(b => ({ ...b, label_ar: e.target.value }))}
+                      className="erp-input flex-1 py-1 text-sm" />
+                    <button onClick={() => saveEdit(it.id)} disabled={busy}
+                      className="text-emerald-400 hover:text-emerald-300 p-1 disabled:opacity-30">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setEditId(null)} className="text-white/30 hover:text-white/60 p-1">
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex-1 text-sm text-white/75">{it.label_ar}</span>
+                    <code className="text-[10px] text-white/20 font-mono">{it.key_}</code>
+                    {it.is_system && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400/70">system</span>}
+                    <button onClick={() => toggleActive(it)} disabled={busy}
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${it.active ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-white/30"}`}>
+                      {it.active ? "مفعّل" : "موقوف"}
+                    </button>
+                    <button onClick={() => { setEditId(it.id); setEditBuf({ label_ar: it.label_ar, emoji: it.emoji ?? "" }); }}
+                      className="text-white/25 hover:text-white/55 p-1">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    {!it.is_system && (
+                      <button onClick={() => removeOne(it.id)} disabled={busy}
+                        className="text-red-400/50 hover:text-red-400 p-1 disabled:opacity-30">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DEFAULTS TAB — warranty days + inspection prices per device type
+══════════════════════════════════════════════════════════════ */
+function DefaultsTab() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const { data: settings = {}, isLoading } = useQuery<Record<string, string>>({
+    queryKey: ["/api/settings/system"],
+    queryFn: () => authFetch(api("/api/settings/system")).then(r => r.json()),
+    staleTime: 30_000,
+  });
+
+  const initialWarranty = settings[REPAIR_SETTING_KEYS.warrantyDays] ?? "30";
+  const initialPricesRaw = settings[REPAIR_SETTING_KEYS.inspectionPrices] ?? "";
+  const initialPrices: Record<string, number> = useMemo(() => {
+    try { const p = JSON.parse(initialPricesRaw || "{}"); return typeof p === "object" && p ? p : {}; }
+    catch { return {}; }
+  }, [initialPricesRaw]);
+
+  const [warrantyBuf, setWarrantyBuf] = useState(initialWarranty);
+  const [pricesBuf,   setPricesBuf]   = useState<Record<string, string>>(() => {
+    const m: Record<string, string> = {};
+    for (const d of DEVICE_TYPE_META) m[d.key] = String(initialPrices[d.key] ?? "");
+    return m;
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setWarrantyBuf(initialWarranty); }, [initialWarranty]);
+  useEffect(() => {
+    const m: Record<string, string> = {};
+    for (const d of DEVICE_TYPE_META) m[d.key] = String(initialPrices[d.key] ?? "");
+    setPricesBuf(m);
+  }, [initialPrices]);
+
+  const upsert = async (key: string, value: string) => {
+    const r = await authFetch(api("/api/settings/system"), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, value }),
+    });
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({}));
+      throw new Error(e?.error || "تعذّر الحفظ");
+    }
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const wd = Math.max(0, Math.min(3650, Math.round(Number(warrantyBuf) || 0)));
+      const cleanPrices: Record<string, number> = {};
+      for (const [k, v] of Object.entries(pricesBuf)) {
+        const n = Number(v);
+        if (Number.isFinite(n) && n > 0) cleanPrices[k] = Math.round(n * 100) / 100;
+      }
+      await upsert(REPAIR_SETTING_KEYS.warrantyDays, String(wd));
+      await upsert(REPAIR_SETTING_KEYS.inspectionPrices, JSON.stringify(cleanPrices));
+      await qc.invalidateQueries({ queryKey: ["/api/settings/system"] });
+      toast({ title: "✓ تم حفظ الإعدادات" });
+    } catch (e: any) {
+      toast({ title: e?.message || "تعذّر الحفظ", variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="p-5 space-y-5">
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/8 border border-emerald-500/20">
+          <Shield className="w-5 h-5 text-emerald-400/85 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] font-semibold text-emerald-300/80 mb-1">القيم الافتراضية للصيانة</p>
+            <p className="text-[12px] text-emerald-300/50 leading-relaxed">
+              هذه القيم تستخدم تلقائياً عند إنشاء بطاقة صيانة جديدة (السعر يظهر كاقتراح لتكلفة الفحص حسب نوع الجهاز).
+            </p>
+          </div>
+        </div>
+
+        {/* Warranty */}
+        <div className="rounded-xl border border-white/10 overflow-hidden">
+          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8">
+            <span className="text-[12px] font-semibold text-white/50">مدة الضمان الافتراضية بعد الإصلاح</span>
+          </div>
+          <div className="p-4 flex items-center gap-3">
+            <input type="number" min={0} max={3650} value={warrantyBuf}
+              onChange={e => setWarrantyBuf(e.target.value)}
+              className="erp-input w-28 text-center text-sm py-1.5" />
+            <span className="text-white/45 text-sm">يوم</span>
+            <span className="text-[11px] text-white/25 mr-auto">يستخدم في بطاقات الضمان عند تسليم الجهاز</span>
+          </div>
+        </div>
+
+        {/* Inspection prices per device type */}
+        <div className="rounded-xl border border-white/10 overflow-hidden">
+          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8">
+            <span className="text-[12px] font-semibold text-white/50">سعر الفحص الافتراضي لكل نوع جهاز</span>
+          </div>
+          <div className="divide-y divide-white/5">
+            {DEVICE_TYPE_META.map(d => (
+              <div key={d.key} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.02]">
+                <span className="text-lg w-7 text-center">{d.emoji}</span>
+                <span className="text-sm text-white/75 flex-1">{d.label}</span>
+                <input type="number" min={0} step="0.01" value={pricesBuf[d.key] ?? ""}
+                  onChange={e => setPricesBuf(b => ({ ...b, [d.key]: e.target.value }))}
+                  placeholder="—"
+                  className="erp-input w-28 text-center text-sm py-1" />
+                <span className="text-[11px] text-white/35 w-8">ج.م</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button onClick={save} disabled={saving || isLoading}
+            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-bold hover:bg-emerald-500/25 transition-all disabled:opacity-40">
+            <Save className="w-4 h-4" /> {saving ? "جاري الحفظ..." : "حفظ الإعدادات"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   WHATSAPP TEMPLATES TAB
+══════════════════════════════════════════════════════════════ */
+const WA_PLACEHOLDERS: Array<{ key: string; desc: string }> = [
+  { key: "{{customer_name}}", desc: "اسم العميل" },
+  { key: "{{job_no}}",        desc: "رقم البطاقة" },
+  { key: "{{device_brand}}",  desc: "ماركة الجهاز" },
+  { key: "{{device_model}}",  desc: "موديل الجهاز" },
+  { key: "{{status}}",        desc: "الحالة الحالية" },
+  { key: "{{total_cost}}",    desc: "التكلفة الإجمالية" },
+];
+
+function WhatsAppTemplatesTab() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const { data: settings = {}, isLoading } = useQuery<Record<string, string>>({
+    queryKey: ["/api/settings/system"],
+    queryFn: () => authFetch(api("/api/settings/system")).then(r => r.json()),
+    staleTime: 30_000,
+  });
+
+  const [readyBuf, setReadyBuf]       = useState("");
+  const [progressBuf, setProgressBuf] = useState("");
+  const [saving, setSaving]           = useState(false);
+
+  useEffect(() => {
+    setReadyBuf(settings[REPAIR_SETTING_KEYS.waReady] || REPAIR_WA_DEFAULTS.ready);
+    setProgressBuf(settings[REPAIR_SETTING_KEYS.waProgress] || REPAIR_WA_DEFAULTS.progress);
+  }, [settings]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      for (const [k, v] of [
+        [REPAIR_SETTING_KEYS.waReady, readyBuf] as const,
+        [REPAIR_SETTING_KEYS.waProgress, progressBuf] as const,
+      ]) {
+        const r = await authFetch(api("/api/settings/system"), {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: k, value: v }),
+        });
+        if (!r.ok) {
+          const e = await r.json().catch(() => ({}));
+          throw new Error(e?.error || "تعذّر الحفظ");
+        }
+      }
+      await qc.invalidateQueries({ queryKey: ["/api/settings/system"] });
+      toast({ title: "✓ تم حفظ القوالب" });
+    } catch (e: any) {
+      toast({ title: e?.message || "تعذّر الحفظ", variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  const resetTo = (which: "ready" | "progress") => {
+    if (which === "ready")    setReadyBuf(REPAIR_WA_DEFAULTS.ready);
+    if (which === "progress") setProgressBuf(REPAIR_WA_DEFAULTS.progress);
+  };
+
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="p-5 space-y-5">
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-green-500/8 border border-green-500/20">
+          <MessageCircle className="w-5 h-5 text-green-400/85 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] font-semibold text-green-300/80 mb-1">قوالب رسائل الواتساب</p>
+            <p className="text-[12px] text-green-300/50 leading-relaxed">
+              عدّل نص الرسائل التي تُرسل للعميل من بطاقة الصيانة. استخدم المتغيّرات أدناه وستُستبدل تلقائياً.
+            </p>
+          </div>
+        </div>
+
+        {/* Placeholders cheat sheet */}
+        <div className="rounded-xl border border-white/8 overflow-hidden bg-white/[0.02]">
+          <div className="px-4 py-2 border-b border-white/8">
+            <span className="text-[11px] font-bold text-white/40 tracking-widest uppercase">المتغيّرات المتاحة</span>
+          </div>
+          <div className="px-3 py-2 flex flex-wrap gap-1.5">
+            {WA_PLACEHOLDERS.map(p => (
+              <span key={p.key} title={p.desc}
+                className="text-[11px] px-2 py-1 rounded-md bg-white/5 text-amber-300/80 font-mono border border-white/8">
+                {p.key}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Ready template */}
+        <div className="rounded-xl border border-white/10 overflow-hidden">
+          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8 flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-white/50">رسالة "الجهاز جاهز للاستلام"</span>
+            <button onClick={() => resetTo("ready")} className="text-[10px] text-white/30 hover:text-white/60">↺ افتراضي</button>
+          </div>
+          <textarea value={readyBuf} onChange={e => setReadyBuf(e.target.value)}
+            rows={6} dir="rtl"
+            className="erp-input w-full text-sm py-2.5 leading-relaxed font-sans border-0 rounded-none bg-transparent" />
+        </div>
+
+        {/* Progress template */}
+        <div className="rounded-xl border border-white/10 overflow-hidden">
+          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8 flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-white/50">رسالة "تحديث الحالة"</span>
+            <button onClick={() => resetTo("progress")} className="text-[10px] text-white/30 hover:text-white/60">↺ افتراضي</button>
+          </div>
+          <textarea value={progressBuf} onChange={e => setProgressBuf(e.target.value)}
+            rows={6} dir="rtl"
+            className="erp-input w-full text-sm py-2.5 leading-relaxed font-sans border-0 rounded-none bg-transparent" />
+        </div>
+
+        <div className="flex justify-end">
+          <button onClick={save} disabled={saving || isLoading}
+            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-bold hover:bg-emerald-500/25 transition-all disabled:opacity-40">
+            <Save className="w-4 h-4" /> {saving ? "جاري الحفظ..." : "حفظ القوالب"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   QR & TRACKING TAB — uses system_settings
+══════════════════════════════════════════════════════════════ */
 function QrTrackingTab() {
   const { toast } = useToast();
+  const qc = useQueryClient();
 
-  const [baseUrl, setBaseUrl] = useState<string>(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(QR_STORAGE_KEY) ?? "{}");
-      return saved.baseUrl ?? "";
-    } catch { return ""; }
+  const { data: settings = {} } = useQuery<Record<string, string>>({
+    queryKey: ["/api/settings/system"],
+    queryFn: async () => {
+      const r = await authFetch(api("/api/settings/system"));
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    },
+    staleTime: 30_000,
   });
+
+  const baseUrl = settings[REPAIR_SETTING_KEYS.qrBaseUrl] ?? "";
 
   const [sampleJobNo, setSampleJobNo]   = useState("REP-0001");
   const [copied, setCopied]             = useState(false);
   const [editingUrl, setEditingUrl]     = useState(false);
-  const [urlBuf, setUrlBuf]             = useState(baseUrl);
+  const [urlBuf, setUrlBuf]             = useState("");
+  const [savingUrl, setSavingUrl]       = useState(false);
+
+  useEffect(() => { if (!editingUrl) setUrlBuf(baseUrl); }, [baseUrl, editingUrl]);
 
   const effectiveBase = baseUrl || `${window.location.origin}/track`;
   const trackingUrl   = `${effectiveBase}/${sampleJobNo}`;
 
-  const saveUrl = () => {
+  const saveUrl = async () => {
     const trimmed = urlBuf.trim().replace(/\/$/, "");
-    localStorage.setItem(QR_STORAGE_KEY, JSON.stringify({ baseUrl: trimmed }));
-    setBaseUrl(trimmed);
-    setEditingUrl(false);
-    toast({ title: "✓ تم حفظ إعدادات QR" });
+    setSavingUrl(true);
+    try {
+      const r = await authFetch(api("/api/settings/system"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: REPAIR_SETTING_KEYS.qrBaseUrl, value: trimmed }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err?.error || "تعذّر الحفظ");
+      }
+      await qc.invalidateQueries({ queryKey: ["/api/settings/system"] });
+      setEditingUrl(false);
+      toast({ title: "✓ تم حفظ إعدادات QR" });
+    } catch (e: any) {
+      toast({ title: e?.message || "تعذّر الحفظ", variant: "destructive" });
+    } finally {
+      setSavingUrl(false);
+    }
   };
 
   const copyLink = async () => {
@@ -1144,9 +1614,9 @@ function QrTrackingTab() {
                   onKeyDown={e => { if (e.key === "Enter") saveUrl(); if (e.key === "Escape") setEditingUrl(false); }}
                   placeholder="https://your-domain.com/track"
                   className="erp-input flex-1 text-sm py-1 font-mono text-[12px]" />
-                <button onClick={saveUrl}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[12px] font-semibold hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5">
-                  <Save className="w-3.5 h-3.5" /> حفظ
+                <button onClick={saveUrl} disabled={savingUrl}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[12px] font-semibold hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5 disabled:opacity-40">
+                  <Save className="w-3.5 h-3.5" /> {savingUrl ? "..." : "حفظ"}
                 </button>
               </div>
             ) : (
@@ -2219,6 +2689,9 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
             {activeTab === "checklist"        && <ChecklistTab />}
             {activeTab === "dashboard-cards"  && <DashboardCardsTab />}
             {activeTab === "technicians"      && <TechniciansTab />}
+            {activeTab === "accessories"      && <AccessoriesTab />}
+            {activeTab === "defaults"         && <DefaultsTab />}
+            {activeTab === "wa-templates"     && <WhatsAppTemplatesTab />}
             {activeTab === "qr"               && <QrTrackingTab />}
             {activeTab === "models"           && <DeviceModelsTab />}
           </main>

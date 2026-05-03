@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
@@ -16,7 +16,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency } from "@/lib/format";
 import { api } from '@/lib/api';
 import RepairPipeline from "@/components/RepairPipeline";
-import RepairSettingsModal from "@/components/RepairSettingsModal";
+import RepairSettingsModal, { REPAIR_SETTING_KEYS, REPAIR_WA_DEFAULTS } from "@/components/RepairSettingsModal";
 import { deriveDeviceType } from "@/lib/repairConstants";
 import { REPAIR_CATALOG as DEVICE_CATALOG } from "@/lib/device-catalog";
 
@@ -124,15 +124,44 @@ interface ChecklistItem {
 
 
 /* ── Constants ──────────────────────────────────────────────── */
-const ACCESSORIES_LIST = [
-  { key: "charger",   label: "شاحن" },
-  { key: "box",       label: "علبة" },
-  { key: "case",      label: "جراب" },
-  { key: "sim_tray",  label: "درج SIM" },
-  { key: "earphones", label: "سماعة" },
-  { key: "cable",     label: "كابل" },
-  { key: "other",     label: "أخرى" },
+/* Fallback list — used until API loads or if API call fails.
+   Real list is fetched from /api/repair-accessories (see useAccessoriesList hook). */
+const ACCESSORIES_FALLBACK: Array<{ key: string; label: string; emoji?: string }> = [
+  { key: "charger",   label: "شاحن",     emoji: "🔌" },
+  { key: "box",       label: "علبة",     emoji: "📦" },
+  { key: "case",      label: "جراب",     emoji: "🛡️" },
+  { key: "sim_tray",  label: "درج SIM",  emoji: "📇" },
+  { key: "earphones", label: "سماعة",    emoji: "🎧" },
+  { key: "cable",     label: "كابل",     emoji: "🔗" },
+  { key: "other",     label: "أخرى",     emoji: "✨" },
 ];
+
+interface AccessoryOption { key: string; label: string; emoji?: string | null }
+
+function useAccessoriesList(): AccessoryOption[] {
+  const { data } = useQuery<Array<{ key_: string; label_ar: string; emoji: string | null; active: boolean }>>({
+    queryKey: ["/api/repair-accessories"],
+    queryFn: () => authFetch(api("/api/repair-accessories")).then(r => r.json()).then(d => Array.isArray(d) ? d : []),
+    staleTime: 60_000,
+  });
+  if (!data || data.length === 0) return ACCESSORIES_FALLBACK;
+  return data.filter(d => d.active).map(d => ({ key: d.key_, label: d.label_ar, emoji: d.emoji }));
+}
+
+function useRepairSettings() {
+  return useQuery<Record<string, string>>({
+    queryKey: ["/api/settings/system"],
+    queryFn: () => authFetch(api("/api/settings/system")).then(r => r.json()),
+    staleTime: 60_000,
+  }).data ?? {};
+}
+
+function applyTemplate(tpl: string, vars: Record<string, string | number | undefined | null>): string {
+  return tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, k) => {
+    const v = vars[k];
+    return v === undefined || v === null ? "" : String(v);
+  });
+}
 
 const DEFAULT_CHECKLIST: ChecklistItem[] = [
   { id: "screen",       label: "الشاشة والعرض",      status: null },
@@ -665,11 +694,22 @@ export default function Repairs() {
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
+  const repairSettings = useRepairSettings();
+
+  const buildWaVars = (job: RepairJob) => ({
+    customer_name: job.customer_name,
+    job_no:        job.job_no,
+    device_brand:  job.device_brand,
+    device_model:  job.device_model,
+    status:        STATUS_MAP[job.status]?.label ?? job.status,
+    total_cost:    formatCurrency(Number(job.final_cost ?? job.estimated_cost ?? 0)),
+  });
+
   const whatsAppReady = (job: RepairJob) =>
-    `✅ عزيزنا ${job.customer_name}،\nجهازك ${job.device_brand} ${job.device_model} جاهز للاستلام.\nبطاقة الصيانة: ${job.job_no}\nالتكلفة الإجمالية: ${formatCurrency(Number(job.final_cost ?? job.estimated_cost))}\n\nشكراً لثقتكم 🙏`;
+    applyTemplate(repairSettings[REPAIR_SETTING_KEYS.waReady] || REPAIR_WA_DEFAULTS.ready, buildWaVars(job));
 
   const whatsAppProgress = (job: RepairJob) =>
-    `🔧 تحديث صيانة جهازك\nالموديل: ${job.device_brand} ${job.device_model}\nالرقم: ${job.job_no}\nالحالة: ${STATUS_MAP[job.status]?.label ?? job.status}\n\nللاستفسار تواصل معنا 📱`;
+    applyTemplate(repairSettings[REPAIR_SETTING_KEYS.waProgress] || REPAIR_WA_DEFAULTS.progress, buildWaVars(job));
 
   return (
     <div className="flex h-full gap-0" dir="rtl">
@@ -1530,6 +1570,9 @@ function JobDetail({
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const accessoriesList = useAccessoriesList();
+  const repairSettings  = useRepairSettings();
+  const qrBaseUrlSetting = repairSettings[REPAIR_SETTING_KEYS.qrBaseUrl] ?? "";
   const [editEst, setEditEst]       = useState(job.estimated_cost ?? "0");
   const [editFinal, setEditFinal]   = useState(job.final_cost ?? "0");
   const [editDeposit] = useState(job.deposit_paid ?? "0");
@@ -1589,13 +1632,8 @@ function JobDetail({
       s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
        .replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
 
-    /* Read saved baseUrl from localStorage (set in RepairSettingsModal QR tab) */
-    let baseUrl = "";
-    try {
-      const saved = JSON.parse(localStorage.getItem("repair_qr_settings") ?? "{}") as { baseUrl?: string };
-      baseUrl = saved.baseUrl ?? "";
-    } catch { /* ignore */ }
-    const effectiveBase = baseUrl || `${window.location.origin}/track`;
+    /* Read saved baseUrl from system_settings (set in RepairSettingsModal QR tab) */
+    const effectiveBase = qrBaseUrlSetting || `${window.location.origin}/track`;
     const token = (job as { tracking_token?: string }).tracking_token ?? "";
     const trackingUrl   = `${effectiveBase}/${job.company_id}/${encodeURIComponent(job.job_no)}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
 
@@ -1658,13 +1696,8 @@ function JobDetail({
 
   /* compose tracking URL for the hidden QR SVG */
   const jobTrackingUrl = (() => {
-    let baseUrl = "";
-    try {
-      const saved = JSON.parse(localStorage.getItem("repair_qr_settings") ?? "{}") as { baseUrl?: string };
-      baseUrl = saved.baseUrl ?? "";
-    } catch { /* ignore */ }
     const token = (job as { tracking_token?: string }).tracking_token ?? "";
-    const base = baseUrl || `${window.location.origin}/track`;
+    const base = qrBaseUrlSetting || `${window.location.origin}/track`;
     return `${base}/${job.company_id}/${encodeURIComponent(job.job_no)}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
   })();
 
@@ -2026,10 +2059,11 @@ function JobDetail({
             </p>
             <div className="flex flex-wrap gap-1.5">
               {(typeof job.accessories === "string" ? job.accessories.split(",") : []).map((key) => {
-                const acc = ACCESSORIES_LIST.find((a) => a.key === key.trim());
+                const trimmed = key.trim();
+                const acc = accessoriesList.find((a) => a.key === trimmed);
                 return (
                   <span key={key} className="px-2.5 py-1 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/30 text-violet-300">
-                    ✓ {acc?.label ?? key}
+                    {acc?.emoji ? `${acc.emoji} ` : "✓ "}{acc?.label ?? trimmed}
                   </span>
                 );
               })}
@@ -2118,6 +2152,8 @@ function NewJobForm({
   onCreated: (job: RepairJob) => void;
 }) {
   const { toast } = useToast();
+  const accessoriesList = useAccessoriesList();
+  const repairSettings  = useRepairSettings();
 
   /* ── Customer state ── */
   const [phone, setPhone]               = useState("");
@@ -2168,6 +2204,24 @@ function NewJobForm({
     () => deriveDeviceType(brand, category),
     [brand, category],
   );
+
+  /* Prefill estimated cost from configured inspection prices when the device
+     type changes — only if the user hasn't typed a value yet. */
+  const userEditedEstimatedRef = useRef(false);
+  const inspectionPrices = useMemo(() => {
+    try {
+      const raw = repairSettings[REPAIR_SETTING_KEYS.inspectionPrices];
+      if (!raw) return {} as Record<string, number>;
+      const p = JSON.parse(raw);
+      return (p && typeof p === "object") ? p as Record<string, number> : {};
+    } catch { return {}; }
+  }, [repairSettings]);
+
+  useEffect(() => {
+    if (userEditedEstimatedRef.current) return;
+    const price = inspectionPrices[intakeDeviceType];
+    if (typeof price === "number" && price > 0) setEstimated(String(price));
+  }, [intakeDeviceType, inspectionPrices]);
 
   /* ── Custom device models (company-specific additions) ── */
   const qc = useQueryClient();
@@ -2588,7 +2642,7 @@ function NewJobForm({
             <Package className="w-3 h-3" /> الإكسسوارات المستلمة مع الجهاز
           </p>
           <div className="flex flex-wrap gap-2">
-            {ACCESSORIES_LIST.map((acc) => (
+            {accessoriesList.map((acc) => (
               <button
                 key={acc.key}
                 type="button"
@@ -2599,7 +2653,7 @@ function NewJobForm({
                     : "border-white/10 text-white/40 hover:border-white/25 hover:text-white/60"
                 }`}
               >
-                {selectedAccessories.includes(acc.key) ? "✓ " : ""}{acc.label}
+                {selectedAccessories.includes(acc.key) ? "✓ " : (acc.emoji ? `${acc.emoji} ` : "")}{acc.label}
               </button>
             ))}
           </div>
@@ -2674,7 +2728,7 @@ function NewJobForm({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[10px] text-white/40 mb-1 block">تكلفة تقديرية</label>
-              <input type="number" value={estimated} onChange={(e) => setEstimated(e.target.value)} placeholder="0" className="erp-input w-full text-sm" />
+              <input type="number" value={estimated} onChange={(e) => { userEditedEstimatedRef.current = true; setEstimated(e.target.value); }} placeholder="0" className="erp-input w-full text-sm" />
             </div>
             <div>
               <label className="text-[10px] text-white/40 mb-1 block">عربون مدفوع</label>

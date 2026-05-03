@@ -120,3 +120,30 @@ The system is built as a monorepo using pnpm workspaces. The architecture separa
 - New `/price-lists` page with product picker modal, markup % per product, and expandable detail view
 - Customer edit form now shows price list selector + per-customer markup % override
 - Nav item "قوائم الأسعار" added to sidebar (admin/manager only)
+
+### Maintenance Module Settings (May 2026 — wave 2)
+Migrated maintenance per-tenant settings off `localStorage` into the existing `system_settings` table, plus a new dedicated CRUD table for accessories.
+
+**New DB table** — `repair_accessories` (`lib/db/src/schema/repair-accessories.ts`):
+- `id`, `company_id` (FK), `key_`, `label_ar`, `emoji`, `sort_order`, `active`, `is_system`
+- Unique on `(company_id, key)`
+
+**New API route** — `/api/repair-accessories` (`artifacts/api-server/src/routes/repair-accessories.ts`):
+- `GET` (auto-seeds 7 defaults: charger/box/case/sim_tray/earphones/cable/other)
+- `POST` / `PATCH` / `DELETE` (admin/super_admin only)
+
+**`system_settings` keys reused** (defined in `RepairSettingsModal.tsx` → `REPAIR_SETTING_KEYS`):
+- `repair.qr_base_url` — base URL for customer tracking QR (replaces `localStorage.repair_qr_settings`)
+- `repair.default_warranty_days` — shown in `WarrantyModal` info banner
+- `repair.inspection_prices` — JSON `{ device_type: price }`; prefills `estimated` in `NewJobForm` (gated by `useRef` so user edits stick)
+- `repair.wa_template_ready` / `repair.wa_template_progress` — WhatsApp templates with `{{customer_name}}`, `{{job_no}}`, `{{device_brand}}`, `{{device_model}}`, `{{status}}`, `{{total_cost}}` placeholders; substituted via `applyTemplate()` in `repairs.tsx`
+
+**New tabs in `RepairSettingsModal.tsx`**:
+- `الإكسسوارات` — CRUD UI for `repair_accessories` (anyone), edit/toggle/delete with `is_system` protection
+- `الافتراضيات` — warranty days + per-device-type inspection price grid (admin)
+- `قوالب الواتس` — editable Ready/Progress templates with placeholder cheat-sheet (admin)
+
+**Frontend wiring in `repairs.tsx`**:
+- `useAccessoriesList()` hook replaces hardcoded `ACCESSORIES_LIST` (with fallback)
+- `useRepairSettings()` hook reads `system_settings`
+- `printJobQR` and `jobTrackingUrl` in `JobDetail` now read base URL from settings (no more localStorage)
