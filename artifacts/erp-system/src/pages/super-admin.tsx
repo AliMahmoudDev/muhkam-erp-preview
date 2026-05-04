@@ -279,6 +279,28 @@ export default function SuperAdmin() {
     });
   }
 
+  function downloadEncKey() {
+    if (!encKey) return;
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+    const content = [
+      '# مفتاح تشفير النسخ الاحتياطية — MUHKAM ERP',
+      `# تاريخ التصدير: ${now.toLocaleString('ar-EG')}`,
+      '# ⚠️ احتفظ بهذا الملف في مكان آمن — بدونه لا يمكن فك تشفير أي نسخة احتياطية',
+      '',
+      encKey,
+    ].join('\n');
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `muhkam-backup-key-${dateStr}.key`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   function emailEncKey() {
     if (!encKey) return;
     const subject = encodeURIComponent('مفتاح تشفير النسخ الاحتياطية — MUHKAM ERP');
@@ -2245,6 +2267,7 @@ export default function SuperAdmin() {
             encKeyCopied={encKeyCopied}
             loadEncKey={loadEncKey}
             copyEncKey={copyEncKey}
+            downloadEncKey={downloadEncKey}
             emailEncKey={emailEncKey}
             totpStatus={totpStatus}
             totpSetupData={totpSetupData}

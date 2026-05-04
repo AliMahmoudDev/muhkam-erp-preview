@@ -824,14 +824,14 @@ router.get("/super/backup/list", ...superOnly, wrap(async (_req, res) => {
   res.json({ backups, total: backups.length });
 }));
 
-/* ── GET /super/encryption-key — return backup encryption status (key is NEVER exposed) ── */
+/* ── GET /super/encryption-key — return backup encryption key (super admin only) ── */
 router.get("/super/encryption-key", ...superOnly, wrap(async (_req, res) => {
   const key = process.env.BACKUP_ENCRYPTION_KEY ?? null;
   if (!key) {
-    res.json({ enabled: false });
+    res.json({ enabled: false, key: null });
     return;
   }
-  res.json({ enabled: true, length: key.length });
+  res.json({ enabled: true, length: key.length, key });
 }));
 
 /* ── GET /super/backup/download/:filename — stream a backup file ── */

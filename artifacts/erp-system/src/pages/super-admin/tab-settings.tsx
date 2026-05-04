@@ -55,6 +55,7 @@ interface Props {
   encKeyCopied: boolean;
   loadEncKey: () => void;
   copyEncKey: () => void;
+  downloadEncKey: () => void;
   emailEncKey: () => void;
 
   /* Security / 2FA */
@@ -116,7 +117,7 @@ export function TabSettings({
   restoreModal, setRestoreModal, pendingRestoreFile, setPendingRestoreFile,
   restoreCode, setRestoreCode, confirmRestore,
   encEnabled, encKey, encKeyLoading, encKeyVisible, encKeyCopied,
-  loadEncKey, copyEncKey, emailEncKey,
+  loadEncKey, copyEncKey, downloadEncKey, emailEncKey,
   totpStatus, totpSetupData, totpInput, setTotpInput,
   disableTotpInput, setDisableTotpInput, secLoading, secMsg, setSecMsg,
   showDisable, setShowDisable, startTotpSetup, confirmTotpSetup, confirmDisableTotp,
@@ -480,6 +481,15 @@ export function TabSettings({
                           cursor: 'pointer', fontFamily: FONT,
                         }}>
                           {encKeyCopied ? '✅ تم النسخ' : '📋 نسخ'}
+                        </button>
+                        <button onClick={downloadEncKey} style={{
+                          padding: '8px 16px', borderRadius: '10px',
+                          border: '1px solid rgba(245,158,11,0.3)',
+                          background: 'rgba(245,158,11,0.1)',
+                          color: '#F59E0B', fontSize: '13px', fontWeight: 700,
+                          cursor: 'pointer', fontFamily: FONT,
+                        }}>
+                          💾 حفظ كملف .key
                         </button>
                         <button onClick={emailEncKey} style={{
                           padding: '8px 16px', borderRadius: '10px',
