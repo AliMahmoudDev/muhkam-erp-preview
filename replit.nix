@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.zip
     pkgs.libgbm
     pkgs.libGLU
     pkgs.libGL
