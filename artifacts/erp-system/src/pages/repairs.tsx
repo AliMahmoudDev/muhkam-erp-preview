@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { PaginationBar } from "@/components/PaginationBar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Wrench, Plus, Search, Phone, Smartphone, CheckCircle2, XCircle,
@@ -499,6 +500,8 @@ export default function Repairs() {
   const [search, setSearch] = useState("");
   const [techFilter, setTechFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [repairPage, setRepairPage] = useState(1);
+  const REPAIR_PAGE_SIZE = 30;
   const [selectedJob, setSelectedJob] = useState<RepairJob | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -548,6 +551,13 @@ export default function Repairs() {
     },
     select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  useEffect(() => { setRepairPage(1); }, [search, techFilter, statusFilter]);
+
+  const paginatedJobs = useMemo(
+    () => jobs.slice((repairPage - 1) * REPAIR_PAGE_SIZE, repairPage * REPAIR_PAGE_SIZE),
+    [jobs, repairPage, REPAIR_PAGE_SIZE]
+  );
 
   const { data: users = [] } = useQuery<{ id: number; name: string }[]>({
     queryKey: ["/api/repair-jobs/technicians"],
@@ -969,7 +979,7 @@ export default function Repairs() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/4">
-                  {jobs.map((job) => {
+                  {paginatedJobs.map((job) => {
                     const barColor = STATUS_BAR_COLOR[job.status] ?? "bg-white/10";
                     return (
                       <tr key={job.id}
@@ -1009,7 +1019,7 @@ export default function Repairs() {
         {/* GRID VIEW — 3-4 cols, premium cards */}
         {!isLoading && jobs.length > 0 && viewMode === "grid" && !selectedJob && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {jobs.map((job) => {
+            {paginatedJobs.map((job) => {
               const s = STATUS_MAP[job.status] ?? { label: job.status, color: "text-white/60", bg: "bg-white/5 border-white/10", icon: AlertCircle };
               const StatusIcon = s.icon;
               const barColor = STATUS_BAR_COLOR[job.status] ?? "bg-white/10";
@@ -1069,6 +1079,17 @@ export default function Repairs() {
               );
             })}
           </div>
+        )}
+
+        {/* Pagination — shown below both list and grid views */}
+        {!isLoading && jobs.length > 0 && !selectedJob && (
+          <PaginationBar
+            page={repairPage}
+            totalItems={jobs.length}
+            pageSize={REPAIR_PAGE_SIZE}
+            onPageChange={setRepairPage}
+            itemLabel="بطاقة إصلاح"
+          />
         )}
       </div>
 

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, type ElementType } from "react";
+import { PaginationBar } from "@/components/PaginationBar";
 import { useAppSettings } from "@/contexts/app-settings";
 import { openPrintWindow, escapeHtml } from '@/lib/print-utils';
 import { useGetCustomers } from "@workspace/api-client-react";
@@ -1768,6 +1769,8 @@ export default function Devices() {
   const [pageView, setPageView] = useState<"devices" | "warranty">("devices");
   const [statusFilter, setStatusFilter] = useState<"all" | DeviceStatus>("all");
   const [search, setSearch] = useState("");
+  const [devicePage, setDevicePage] = useState(1);
+  const DEVICE_PAGE_SIZE = 30;
   const [showAdd, setShowAdd] = useState(false);
   const [selected, setSelected] = useState<Device | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -1794,6 +1797,13 @@ export default function Devices() {
     staleTime: 30_000,
     select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  useEffect(() => { setDevicePage(1); }, [search, statusFilter]);
+
+  const paginatedDevices = useMemo(
+    () => allDevices.slice((devicePage - 1) * DEVICE_PAGE_SIZE, devicePage * DEVICE_PAGE_SIZE),
+    [allDevices, devicePage, DEVICE_PAGE_SIZE]
+  );
 
   const FILTERS: { v: "all" | DeviceStatus; l: string; count: number }[] = [
     { v: "all",        l: "الكل",   count: stats?.total ?? 0 },
@@ -1983,7 +1993,7 @@ export default function Devices() {
               </tr>
             </thead>
             <tbody>
-              {allDevices.map((d, idx) => (
+              {paginatedDevices.map((d, idx) => (
                 <tr key={d.id}
                   className={`border-b border-white/4 hover:bg-white/3 transition-colors group ${idx % 2 === 0 ? "" : "bg-white/1"}`}>
                   {/* Device */}
@@ -2052,7 +2062,7 @@ export default function Devices() {
       ) : (
         /* ── GRID VIEW ── */
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {allDevices.map(d => {
+          {paginatedDevices.map(d => {
             const sellP = parseFloat(d.status === "sold" && d.sold_price ? d.sold_price : d.sale_price);
             const buyP  = parseFloat(d.purchase_price);
             const prof  = sellP - buyP;
@@ -2106,6 +2116,17 @@ export default function Devices() {
             );
           })}
         </div>
+      )}
+
+      {/* Pagination */}
+      {!isLoading && allDevices.length > 0 && (
+        <PaginationBar
+          page={devicePage}
+          totalItems={allDevices.length}
+          pageSize={DEVICE_PAGE_SIZE}
+          onPageChange={setDevicePage}
+          itemLabel="جهاز"
+        />
       )}
 
       </>}

@@ -1,3 +1,6 @@
+import { CustomerList } from './customers/CustomerList';
+import { CustomerForm } from './customers/CustomerForm';
+import { CustomerDetail } from './customers/CustomerDetail';
 import { safeArray } from '@/lib/safe-data';
 import { openPrintWindow } from '@/lib/print-utils';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
@@ -17,8 +20,6 @@ import { authFetch } from '@/lib/auth-fetch';
 import {
   Plus,
   Search,
-  DollarSign,
-  FileText,
   X,
   TrendingUp,
   TrendingDown,
@@ -29,13 +30,10 @@ import {
   MessageCircle,
   Vault,
   FileDown,
-  Pencil,
   Trash2,
   CreditCard,
   BarChart2,
-  Smartphone,
 } from 'lucide-react';
-import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { exportCustomersExcel } from '@/lib/export-excel';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
@@ -1744,7 +1742,6 @@ export default function Customers() {
     () => filtered.slice((custPage - 1) * CUST_PAGE_SIZE, custPage * CUST_PAGE_SIZE),
     [filtered, custPage, CUST_PAGE_SIZE]
   );
-  const custTotalPages = Math.max(1, Math.ceil(filtered.length / CUST_PAGE_SIZE));
 
   // إحصائيات AR/AP
   const totalAR = customers.filter(c => Number(c.balance) > 0.001).reduce((s, c) => s + Number(c.balance), 0);
@@ -2145,196 +2142,22 @@ export default function Customers() {
       )}
 
       {/* إضافة عميل */}
-      {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay">
-          <form
-            onSubmit={handleAdd}
-            className="glass-panel rounded-3xl p-8 w-full max-w-md border border-white/10"
-          >
-            <h3 className="text-2xl font-bold text-white mb-6">عميل جديد</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-white/70 text-sm mb-1">اسم العميل *</label>
-                <input
-                  required
-                  type="text"
-                  className="glass-input"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-white/70 text-sm mb-1">رقم الهاتف * <span className="text-white/30 text-xs">(11 رقم)</span></label>
-                <input
-                  required
-                  type="text"
-                  inputMode="numeric"
-                  className="glass-input"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })}
-                  maxLength={11}
-                  placeholder="01xxxxxxxxx"
-                />
-              </div>
-              <div>
-                <label className="block text-white/70 text-sm mb-1">رصيد ابتدائي (عليه)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="glass-input"
-                  value={formData.balance || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })
-                  }
-                />
-              </div>
-
-              {/* تصنيف العميل */}
-              <div>
-                <label className="block text-white/70 text-sm mb-1">تصنيف العميل</label>
-                <div className="flex items-center gap-2">
-                  <select
-                    className="glass-input flex-1 appearance-none"
-                    value={formData.classification_id ?? ''}
-                    onChange={(e) =>
-                      setFormData((f) => ({
-                        ...f,
-                        classification_id: e.target.value ? parseInt(e.target.value) : null,
-                      }))
-                    }
-                  >
-                    <option value="" className="bg-gray-900">
-                      -- بدون تصنيف --
-                    </option>
-                    {classifications.map((c) => (
-                      <option key={c.id} value={c.id} className="bg-gray-900">
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  {formData.classification_id && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDeleteClassificationId(formData.classification_id!)}
-                      className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors shrink-0"
-                      title="حذف التصنيف نهائياً"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                {canManageCustomers &&
-                  (showNewClassification ? (
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <input
-                        type="text"
-                        autoFocus
-                        className="glass-input flex-1 text-sm py-1.5"
-                        placeholder="اسم التصنيف الجديد"
-                        value={newClassificationName}
-                        onChange={(e) => setNewClassificationName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddClassification();
-                          }
-                          if (e.key === 'Escape') {
-                            setShowNewClassification(false);
-                            setNewClassificationName('');
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddClassification}
-                        className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors shrink-0"
-                      >
-                        حفظ
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowNewClassification(false);
-                          setNewClassificationName('');
-                        }}
-                        className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors shrink-0"
-                      >
-                        إلغاء
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowNewClassification(true)}
-                      className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1.5 transition-colors"
-                    >
-                      <Plus className="w-3 h-3" /> إضافة تصنيف جديد
-                    </button>
-                  ))}
-              </div>
-
-              {/* أدوار الطرف الآخر */}
-              <div className="border border-white/10 rounded-2xl p-4 bg-white/3 space-y-3">
-                <p className="text-white/50 text-xs font-semibold mb-1">الدور في العمليات</p>
-                <button
-                  type="button"
-                  onClick={() => setFormData((f) => ({ ...f, is_customer: !f.is_customer }))}
-                  className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${formData.is_customer ? 'text-green-400' : 'text-white/50 hover:text-white/70'}`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${formData.is_customer ? 'bg-green-500 border-green-500' : 'border-white/30'}`}
-                  >
-                    {formData.is_customer && (
-                      <span className="text-white text-xs font-black">✓</span>
-                    )}
-                  </div>
-                  🛒 عميل — يمكن البيع له
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData((f) => ({ ...f, is_supplier: !f.is_supplier }))}
-                  className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${formData.is_supplier ? 'text-blue-400' : 'text-white/50 hover:text-white/70'}`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${formData.is_supplier ? 'bg-blue-500 border-blue-500' : 'border-white/30'}`}
-                  >
-                    {formData.is_supplier && (
-                      <span className="text-white text-xs font-black">✓</span>
-                    )}
-                  </div>
-                  🔄 مورد — يمكن الشراء منه
-                </button>
-              </div>
-            </div>
-            <div className="flex gap-4 mt-8">
-              <button
-                type="submit"
-                disabled={createMutation.isPending}
-                className="flex-1 btn-primary py-3"
-              >
-                حفظ
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAdd(false);
-                  setFormData({
-                    name: '',
-                    phone: '',
-                    balance: 0,
-                    is_customer: true,
-                    is_supplier: false,
-                    classification_id: null,
-                  });
-                }}
-                className="flex-1 btn-secondary py-3"
-              >
-                إلغاء
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <CustomerForm
+        showAdd={showAdd}
+        formData={formData}
+        setFormData={setFormData}
+        classifications={classifications}
+        canManageCustomers={canManageCustomers}
+        showNewClassification={showNewClassification}
+        setShowNewClassification={setShowNewClassification}
+        newClassificationName={newClassificationName}
+        setNewClassificationName={setNewClassificationName}
+        handleAdd={handleAdd}
+        handleAddClassification={handleAddClassification}
+        setConfirmDeleteClassificationId={setConfirmDeleteClassificationId}
+        createMutationIsPending={createMutation.isPending}
+        onClose={() => setShowAdd(false)}
+      />
 
       {/* سند قبض */}
       {showReceipt !== null && (
@@ -2593,204 +2416,23 @@ export default function Customers() {
       )}
 
       {/* ─── تعديل عميل ─── */}
-      {showEdit !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay">
-          <form
-            onSubmit={handleEdit}
-            className="glass-panel rounded-3xl p-8 w-full max-w-md border border-white/10"
-          >
-            <h3 className="text-2xl font-bold text-white mb-6">تعديل بيانات العميل</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-white/70 text-sm mb-1">اسم العميل *</label>
-                <input
-                  required
-                  type="text"
-                  className="glass-input"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData((f) => ({ ...f, name: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-white/70 text-sm mb-1">رقم الهاتف * <span className="text-white/30 text-xs">(11 رقم)</span></label>
-                <input
-                  required
-                  type="text"
-                  inputMode="numeric"
-                  className="glass-input"
-                  value={editFormData.phone}
-                  onChange={(e) => setEditFormData((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 11) }))}
-                  maxLength={11}
-                  placeholder="01xxxxxxxxx"
-                />
-              </div>
-              {/* تصنيف العميل */}
-              <div>
-                <label className="block text-white/70 text-sm mb-1">تصنيف العميل</label>
-                <div className="flex items-center gap-2">
-                  <select
-                    className="glass-input flex-1 appearance-none"
-                    value={editFormData.classification_id ?? ''}
-                    onChange={(e) =>
-                      setEditFormData((f) => ({
-                        ...f,
-                        classification_id: e.target.value ? parseInt(e.target.value) : null,
-                      }))
-                    }
-                  >
-                    <option value="" className="bg-gray-900">
-                      -- بدون تصنيف --
-                    </option>
-                    {classifications.map((c) => (
-                      <option key={c.id} value={c.id} className="bg-gray-900">
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  {editFormData.classification_id && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setConfirmDeleteClassificationId(editFormData.classification_id!)
-                      }
-                      className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors shrink-0"
-                      title="حذف التصنيف نهائياً"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                {canManageCustomers &&
-                  (showNewClassification ? (
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <input
-                        type="text"
-                        autoFocus
-                        className="glass-input flex-1 text-sm py-1.5"
-                        placeholder="اسم التصنيف الجديد"
-                        value={newClassificationName}
-                        onChange={(e) => setNewClassificationName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddClassification();
-                          }
-                          if (e.key === 'Escape') {
-                            setShowNewClassification(false);
-                            setNewClassificationName('');
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddClassification}
-                        className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors shrink-0"
-                      >
-                        حفظ
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowNewClassification(false);
-                          setNewClassificationName('');
-                        }}
-                        className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors shrink-0"
-                      >
-                        إلغاء
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowNewClassification(true)}
-                      className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1.5 transition-colors"
-                    >
-                      <Plus className="w-3 h-3" /> إضافة تصنيف جديد
-                    </button>
-                  ))}
-              </div>
-
-              {/* قائمة الأسعار */}
-              <div>
-                <label className="block text-white/70 text-sm mb-1">قائمة الأسعار</label>
-                <select
-                  className="glass-input w-full appearance-none"
-                  value={editFormData.price_list_id ?? ''}
-                  onChange={e => setEditFormData(f => ({ ...f, price_list_id: e.target.value ? parseInt(e.target.value) : null, price_list_markup: e.target.value ? f.price_list_markup : '' }))}
-                >
-                  <option value="" className="bg-gray-900">-- بدون قائمة أسعار --</option>
-                  {priceLists.map(pl => (
-                    <option key={pl.id} value={pl.id} className="bg-gray-900">{pl.name}</option>
-                  ))}
-                </select>
-                {editFormData.price_list_id && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <label className="text-white/50 text-xs shrink-0">هامش الربح الخاص %</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={editFormData.price_list_markup}
-                      onChange={e => setEditFormData(f => ({ ...f, price_list_markup: e.target.value }))}
-                      placeholder="مثال: 15"
-                      className="glass-input flex-1 text-sm py-1.5"
-                    />
-                    <span className="text-white/40 text-xs shrink-0">%</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="border border-white/10 rounded-2xl p-4 bg-white/3 space-y-3">
-                <p className="text-white/50 text-xs font-semibold mb-1">الدور في العمليات</p>
-                <button
-                  type="button"
-                  onClick={() => setEditFormData((f) => ({ ...f, is_customer: !f.is_customer }))}
-                  className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${editFormData.is_customer ? 'text-green-400' : 'text-white/50 hover:text-white/70'}`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${editFormData.is_customer ? 'bg-green-500 border-green-500' : 'border-white/30'}`}
-                  >
-                    {editFormData.is_customer && (
-                      <span className="text-white text-xs font-black">✓</span>
-                    )}
-                  </div>
-                  🛒 عميل — يمكن البيع له
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditFormData((f) => ({ ...f, is_supplier: !f.is_supplier }))}
-                  className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${editFormData.is_supplier ? 'text-blue-400' : 'text-white/50 hover:text-white/70'}`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${editFormData.is_supplier ? 'bg-blue-500 border-blue-500' : 'border-white/30'}`}
-                  >
-                    {editFormData.is_supplier && (
-                      <span className="text-white text-xs font-black">✓</span>
-                    )}
-                  </div>
-                  🔄 مورد — يمكن الشراء منه
-                </button>
-              </div>
-            </div>
-            <div className="flex gap-4 mt-8">
-              <button
-                type="submit"
-                disabled={updateMutation.isPending}
-                className="flex-1 btn-primary py-3"
-              >
-                {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowEdit(null)}
-                className="flex-1 btn-secondary py-3"
-              >
-                إلغاء
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <CustomerDetail
+        showEdit={showEdit}
+        editFormData={editFormData}
+        setEditFormData={setEditFormData}
+        classifications={classifications}
+        priceLists={priceLists}
+        canManageCustomers={canManageCustomers}
+        showNewClassification={showNewClassification}
+        setShowNewClassification={setShowNewClassification}
+        newClassificationName={newClassificationName}
+        setNewClassificationName={setNewClassificationName}
+        handleEdit={handleEdit}
+        handleAddClassification={handleAddClassification}
+        setConfirmDeleteClassificationId={setConfirmDeleteClassificationId}
+        updateMutationIsPending={updateMutation.isPending}
+        onClose={() => setShowEdit(null)}
+      />
 
       {/* ─── تأكيد حذف التصنيف ─── */}
       {confirmDeleteClassificationId !== null && (
@@ -2852,207 +2494,24 @@ export default function Customers() {
       )}
 
       {/* جدول العملاء */}
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-white/80 whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10">
-              <tr>
-                <th className="p-4 font-semibold text-white/60">الكود</th>
-                <th className="p-4 font-semibold text-white/60">العميل</th>
-                <th className="p-4 font-semibold text-white/60">رقم الهاتف</th>
-                <th className="p-4 font-semibold text-white/60">
-                  الرصيد
-                  <span className="text-white/25 text-xs font-normal mr-1">(+ عليه | − له)</span>
-                </th>
-                <th className="p-4 font-semibold text-white/60">الإجراءات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <TableSkeleton cols={5} rows={5} />
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-12 text-center text-white/40">
-                    لا يوجد عملاء
-                  </td>
-                </tr>
-              ) : (
-                paginatedCustomers.map((customer) => (
-                  <tr key={customer.id} className="border-b border-white/5 erp-table-row">
-                    <td className="p-4">
-                      <span className="font-mono text-xs font-bold px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        {customer.customer_code ?? '—'}
-                      </span>
-                    </td>
-                    <td className="p-4 font-bold text-white">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {isMaintenanceCustomer(customer) && (
-                          <span
-                            title="عميل صيانة"
-                            className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/40 shrink-0"
-                          >
-                            <Smartphone className="w-3.5 h-3.5" />
-                          </span>
-                        )}
-                        {customer.name}
-                        {isMaintenanceCustomer(customer) && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-500/15 text-violet-300 border border-violet-500/30 shrink-0">
-                            عميل صيانة
-                          </span>
-                        )}
-                        {customer.is_supplier && (
-                          <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0">
-                            يتم الشراء منه
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-white/60">{customer.phone || '-'}</td>
-                    <td className="p-4 font-bold">
-                      {Number(customer.balance) > 0 ? (
-                        <span className="text-amber-400 flex items-center gap-1.5">
-                          {formatCurrency(Number(customer.balance))}
-                          <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/20">AR عليه</span>
-                        </span>
-                      ) : Number(customer.balance) < 0 ? (
-                        <span className="text-red-400 flex items-center gap-1.5">
-                          {formatCurrency(Math.abs(Number(customer.balance)))}
-                          <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-red-500/15 text-red-400 border border-red-500/20">AP له</span>
-                        </span>
-                      ) : (
-                        <span className="text-white/30">متسوّى</span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <button
-                          onClick={() =>
-                            setShowStatement({
-                              id: customer.id,
-                              name: customer.name,
-                              phone: customer.phone || '',
-                              balance: Number(customer.balance),
-                              isSupplier: customer.is_supplier ?? false,
-                            })
-                          }
-                          className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-blue-500/30"
-                        >
-                          <FileText className="w-3.5 h-3.5" /> كشف حساب
-                        </button>
-                        <button
-                          onClick={() => {
-                            setReceiptData({ amount: '', notes: '', safe_id: '' });
-                            setShowReceipt({
-                              id: customer.id,
-                              name: customer.name,
-                              balance: Number(customer.balance),
-                            });
-                          }}
-                          className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-emerald-500/30"
-                        >
-                          <DollarSign className="w-3.5 h-3.5" /> قبض دفعة
-                        </button>
-                        {customer.is_supplier && (
-                          <button
-                            onClick={() => {
-                              setSupplierPaymentData({ amount: '', notes: '', safe_id: '' });
-                              setShowSupplierPayment({
-                                id: customer.id,
-                                name: customer.name,
-                                balance: Number(customer.balance),
-                              });
-                            }}
-                            className="flex items-center gap-1.5 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-cyan-500/30"
-                          >
-                            <CreditCard className="w-3.5 h-3.5" /> تسديد دفعة
-                          </button>
-                        )}
-                        {canManageCustomers && (
-                          <button
-                            onClick={() => {
-                              setShowEdit({
-                                id: customer.id,
-                                name: customer.name,
-                                phone: customer.phone || '',
-                                is_customer: customer.is_customer ?? true,
-                                is_supplier: customer.is_supplier ?? false,
-                                classification_id: (customer as { classification_id?: number | null }).classification_id ?? null,
-                              });
-                              setEditFormData({
-                                name: customer.name,
-                                phone: customer.phone || '',
-                                is_customer: customer.is_customer ?? true,
-                                is_supplier: customer.is_supplier ?? false,
-                                classification_id: (customer as { classification_id?: number | null }).classification_id ?? null,
-                                price_list_id: (customer as { price_list_id?: number | null }).price_list_id ?? null,
-                                price_list_markup: (customer as { price_list_markup?: number | null }).price_list_markup != null ? String((customer as { price_list_markup?: number | null }).price_list_markup) : '',
-                              });
-                            }}
-                            className="p-1.5 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80 transition-colors border border-white/10"
-                            title="تعديل"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {canManageCustomers && (
-                          <button
-                            onClick={() => setDeleteConfirmId(customer.id)}
-                            className="p-1.5 rounded-lg bg-red-500/5 text-red-400/50 hover:bg-red-500/15 hover:text-red-400 transition-colors border border-red-500/10"
-                            title="حذف"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        {/* Pagination */}
-        {custTotalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
-            <span className="text-xs text-white/40">
-              {filtered.length} عميل — صفحة {custPage} من {custTotalPages}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCustPage(p => Math.max(1, p - 1))}
-                disabled={custPage === 1}
-                className="px-3 py-1 rounded-lg text-xs font-bold bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                السابق
-              </button>
-              {Array.from({ length: Math.min(5, custTotalPages) }, (_, i) => {
-                const start = Math.max(1, Math.min(custPage - 2, custTotalPages - 4));
-                const page = start + i;
-                return (
-                  <button
-                    key={page}
-                    onClick={() => setCustPage(page)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
-                      page === custPage
-                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                        : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => setCustPage(p => Math.min(custTotalPages, p + 1))}
-                disabled={custPage === custTotalPages}
-                className="px-3 py-1 rounded-lg text-xs font-bold bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                التالي
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <CustomerList
+        isLoading={isLoading}
+        filtered={filtered}
+        paginatedCustomers={paginatedCustomers}
+        custPage={custPage}
+        CUST_PAGE_SIZE={CUST_PAGE_SIZE}
+        setCustPage={setCustPage}
+        canManageCustomers={canManageCustomers}
+        isMaintenanceCustomer={isMaintenanceCustomer}
+        setShowStatement={setShowStatement}
+        setReceiptData={setReceiptData}
+        setShowReceipt={setShowReceipt}
+        setSupplierPaymentData={setSupplierPaymentData}
+        setShowSupplierPayment={setShowSupplierPayment}
+        setShowEdit={setShowEdit}
+        setEditFormData={setEditFormData}
+        setDeleteConfirmId={setDeleteConfirmId}
+      />
 
       {/* ───── مودال تقارير العملاء ───── */}
       {showReports && (
