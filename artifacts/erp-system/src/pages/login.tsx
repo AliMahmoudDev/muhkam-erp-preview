@@ -383,9 +383,6 @@ export default function Login() {
       minHeight:'100vh', display:'flex', flexDirection:'row',
       background:'#000', fontFamily:'Tajawal,sans-serif',
     }}>
-      {/* Brand panel */}
-      <BrandPanel />
-
       {/* Form panel */}
       <div className="ll-form-panel" style={{
         flex:1, display:'flex', flexDirection:'column',
@@ -525,6 +522,9 @@ export default function Login() {
           © 2026 مُحكم ERP · جميع الحقوق محفوظة
         </div>
       </div>
+
+      {/* Brand panel */}
+      <BrandPanel />
     </div>
   );
 }
