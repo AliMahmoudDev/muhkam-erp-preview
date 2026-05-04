@@ -34,6 +34,7 @@ import { db, companiesTable } from "@workspace/db";
 import { logger } from "./logger";
 import { scoreAllTrialCompanies } from "./trial-scoring";
 import { alertManager, ALERT_TYPES } from "./telegram-alert-manager";
+import { sendEmail } from "./email";
 
 const TICK_MS = 60 * 60 * 1000; // every hour
 
@@ -88,11 +89,19 @@ async function processVerificationReminders(): Promise<void> {
           "[trial-scheduler] Email verification expired — write-lock will be enforced"
         );
 
-        /* TODO: replace with actual email send when email provider is configured */
-        logger.info(
-          { companyId: company.id, name: company.name },
-          "[trial-scheduler] [EXPIRED] email not verified after 48h — write-lock enforced"
-        );
+        if (company.admin_email) await sendEmail({
+          to: company.admin_email,
+          subject: '🔒 انتهت تجربتك — بياناتك محفوظة',
+          html: `
+            <div dir="rtl" style="font-family: Arial; padding: 20px;">
+              <h2>انتهت فترة التجربة المجانية</h2>
+              <p>بياناتك محفوظة بأمان. تواصل معنا لإعادة التفعيل.</p>
+              <a href="https://halaltec.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                تواصل معنا ←
+              </a>
+            </div>
+          `,
+        });
 
       } else if (ageMs >= WARNING_AFTER_MS) {
         /* ── 24–48 hours: urgent warning ── */
@@ -101,11 +110,19 @@ async function processVerificationReminders(): Promise<void> {
           "[trial-scheduler] Email verification: LAST CHANCE warning"
         );
 
-        /* TODO: replace with email send */
-        logger.warn(
-          { companyId: company.id, email: company.admin_email, name: company.name },
-          "[trial-scheduler] [LAST CHANCE] email verification warning sent"
-        );
+        if (company.admin_email) await sendEmail({
+          to: company.admin_email,
+          subject: '⏰ تجربتك تنتهي غداً — استمر الآن',
+          html: `
+            <div dir="rtl" style="font-family: Arial; padding: 20px;">
+              <h2>تجربتك المجانية تنتهي غداً</h2>
+              <p>لا تفقد بياناتك — تواصل معنا لتفعيل اشتراكك.</p>
+              <a href="https://halaltec.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                فعّل اشتراكك الآن ←
+              </a>
+            </div>
+          `,
+        });
 
       } else if (ageMs >= REMINDER_AFTER_MS) {
         /* ── 10 min – 24 hours: initial reminder ── */
@@ -114,11 +131,11 @@ async function processVerificationReminders(): Promise<void> {
           "[trial-scheduler] Email verification: sending reminder"
         );
 
-        /* TODO: replace with email send */
         logger.info(
           { companyId: company.id, email: company.admin_email },
           "[trial-scheduler] [REMINDER] email verification reminder sent"
         );
+        /* Verification reminder email is handled by the email-verify flow — no extra send needed here */
       }
     } catch (err) {
       /* Fail open: log and continue to next company */
@@ -164,11 +181,24 @@ async function processConversionTriggers(): Promise<void> {
           { companyId: company.id, dayElapsed },
           "[trial-scheduler] Conversion trigger: early feature nudge"
         );
-        /* TODO: replace with email/in-app notification */
-        logger.info(
-          { companyId: company.id, email: company.admin_email, dayElapsed },
-          "[trial-scheduler] [CONVERSION] early feature nudge notification"
-        );
+        if (company.admin_email) await sendEmail({
+          to: company.admin_email,
+          subject: '💡 اكتشف قوة مُحكم ERP',
+          html: `
+            <div dir="rtl" style="font-family: Arial; padding: 20px;">
+              <h2>مرحباً بك في مُحكم ERP</h2>
+              <p>لقد مضى 3 أيام على تجربتك — هل جربت هذه المميزات؟</p>
+              <ul>
+                <li>📊 المحاسبة الكاملة بالقيد المزدوج</li>
+                <li>🔧 وحدة الصيانة وتتبع الأجهزة</li>
+                <li>📱 تطبيق الموبايل للموظفين</li>
+              </ul>
+              <a href="https://halaltec.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                استمر في التجربة ←
+              </a>
+            </div>
+          `,
+        });
 
       } else if (dayElapsed >= CONV_LATE_START && dayElapsed <= CONV_LATE_END) {
         /* Day 5–6: expiry warning */
@@ -176,11 +206,19 @@ async function processConversionTriggers(): Promise<void> {
           { companyId: company.id, dayElapsed, daysLeft },
           "[trial-scheduler] Conversion trigger: trial ending soon"
         );
-        /* TODO: replace with email/in-app notification */
-        logger.warn(
-          { companyId: company.id, email: company.admin_email, dayElapsed, daysLeft },
-          "[trial-scheduler] [EXPIRY] trial ending soon notification"
-        );
+        if (company.admin_email) await sendEmail({
+          to: company.admin_email,
+          subject: '⏰ تجربتك تنتهي غداً — استمر الآن',
+          html: `
+            <div dir="rtl" style="font-family: Arial; padding: 20px;">
+              <h2>تجربتك المجانية تنتهي غداً</h2>
+              <p>لا تفقد بياناتك — تواصل معنا لتفعيل اشتراكك.</p>
+              <a href="https://halaltec.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                فعّل اشتراكك الآن ←
+              </a>
+            </div>
+          `,
+        });
       }
 
       /* Alert 5 — Telegram: اشتراك على وشك الانتهاء (3 أيام أو أقل) */
