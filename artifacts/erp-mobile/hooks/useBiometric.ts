@@ -30,14 +30,14 @@ export async function getBiometricStatus(): Promise<BiometricStatus> {
     type = "iris";
   }
 
-  const enabledFlag = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
+  const enabledFlag = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
   const enabled = enabledFlag === "true" && hasHardware && isEnrolled;
 
   return { available: hasHardware, enrolled: isEnrolled, type, enabled };
 }
 
 export async function setBiometricEnabled(enabled: boolean): Promise<void> {
-  await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, enabled ? "true" : "false");
+  await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, enabled ? "true" : "false");
 }
 
 export async function saveBiometricCredentials(username: string, pin: string): Promise<void> {
@@ -65,10 +65,11 @@ export async function getBiometricCredentials(): Promise<{ username: string; pin
 }
 
 export async function clearBiometricCredentials(): Promise<void> {
-  await AsyncStorage.removeItem(BIOMETRIC_ENABLED_KEY);
   if (Platform.OS !== "web") {
+    await SecureStore.deleteItemAsync(BIOMETRIC_ENABLED_KEY);
     await SecureStore.deleteItemAsync(BIOMETRIC_CREDS_KEY);
   } else {
+    await AsyncStorage.removeItem(BIOMETRIC_ENABLED_KEY);
     await AsyncStorage.removeItem(BIOMETRIC_CREDS_KEY);
   }
 }

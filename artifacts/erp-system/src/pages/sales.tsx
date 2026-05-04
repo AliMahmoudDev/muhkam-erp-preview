@@ -1974,7 +1974,7 @@ function NewSalePanel({ onDone }: { onDone: () => void }) {
     }
     setQuickCustLoading(true);
     try {
-      const res = await fetch('/api/customers', {
+      const res = await authFetch(api('/api/customers'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

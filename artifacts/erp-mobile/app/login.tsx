@@ -85,8 +85,8 @@ export default function LoginScreen() {
       } else {
         router.replace("/(tabs)");
       }
-    } catch (e: any) {
-      setError(e.message || "اسم المستخدم أو كلمة المرور غير صحيحة");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "اسم المستخدم أو كلمة المرور غير صحيحة");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setLoading(false);

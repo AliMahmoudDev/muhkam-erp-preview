@@ -14,7 +14,19 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("[ErrorBoundary]", error, info.componentStack);
+    const entry = { msg: "[ErrorBoundary] Uncaught React error", error: error.message, stack: info.componentStack };
+    if (typeof window !== "undefined") {
+      fetch("/api/health/client-error", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry),
+        keepalive: true,
+      }).catch(() => {});
+    }
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.error("[ErrorBoundary]", error, info.componentStack);
+    }
   }
 
   handleReset = () => this.setState({ hasError: false, error: null });

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NotificationBell } from '@/components/NotificationBell';
+import { NotificationBell } from '@/components/notification-bell';
 import { authFetch } from '@/lib/auth-fetch';
 
 vi.mock('@/lib/auth-fetch', () => ({

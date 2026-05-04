@@ -4,6 +4,7 @@
  * Login lockout: max 5 failed attempts → 15-minute lockout per userId.
  */
 import { Router } from 'express';
+import { timingSafeEqual } from 'crypto';
 import { eq, and, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 import { db, erpUsersTable, companiesTable } from '@workspace/db';
@@ -1088,7 +1089,12 @@ router.post('/auth/emergency-unlock', async (req, res) => {
       return;
     }
 
-    if (emergency_key !== emergencyKey) {
+    const aKey = Buffer.alloc(64);
+    const bKey = Buffer.alloc(64);
+    Buffer.from(emergency_key).copy(aKey);
+    Buffer.from(emergencyKey).copy(bKey);
+    const keyMatch = timingSafeEqual(aKey, bKey);
+    if (!keyMatch) {
       logger.warn({ username, ip: req.ip }, '[emergency-unlock] Invalid emergency key attempt');
       res.status(403).json({ error: 'مفتاح الطوارئ غير صحيح' });
       return;

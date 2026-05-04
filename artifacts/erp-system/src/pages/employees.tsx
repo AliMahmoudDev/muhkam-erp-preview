@@ -276,6 +276,8 @@ export default function Employees() {
   /* ── List state ─────────────────────────────────────────────── */
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState<number | ''>('');
+  const [empPage, setEmpPage] = useState(1);
+  const EMP_PAGE_SIZE = 50;
   const [selected, setSelected] = useState<Employee | null>(null);
   const [detailTab, setDetailTab] = useState<
     'info' | 'loans' | 'deductions' | 'reports' | 'docs' | 'bonuses' | 'custody'
@@ -800,6 +802,7 @@ export default function Employees() {
   const filtered = useMemo(
     () =>
       employees.filter((e) => {
+        if (deptFilter !== '' && e.department_id !== deptFilter) return false;
         if (!search) return true;
         const q = search.toLowerCase();
         return (
@@ -811,8 +814,16 @@ export default function Employees() {
           (e.national_id ?? '').includes(search)
         );
       }),
-    [employees, search]
+    [employees, search, deptFilter]
   );
+
+  useEffect(() => { setEmpPage(1); }, [search, deptFilter]);
+
+  const paginatedEmps = useMemo(
+    () => filtered.slice((empPage - 1) * EMP_PAGE_SIZE, empPage * EMP_PAGE_SIZE),
+    [filtered, empPage, EMP_PAGE_SIZE]
+  );
+  const empTotalPages = Math.max(1, Math.ceil(filtered.length / EMP_PAGE_SIZE));
 
   /* ── Helpers ─────────────────────────────────────────────── */
   const set = (k: keyof Employee, v: unknown) => setEditEmp((prev) => ({ ...prev, [k]: v }));
@@ -1001,7 +1012,7 @@ export default function Employees() {
                       </td>
                     </tr>
                   )}
-                  {filtered.map((emp) => (
+                  {paginatedEmps.map((emp) => (
                     <tr
                       key={emp.id}
                       className={`erp-table-row cursor-pointer ${selected?.id === emp.id ? 'bg-amber-500/10' : ''}`}
@@ -1071,6 +1082,45 @@ export default function Employees() {
                   ))}
                 </tbody>
               </table>
+            )}
+            {/* Pagination */}
+            {empTotalPages > 1 && (
+              <div className="flex items-center justify-between px-3 py-2 border-t border-white/5 mt-1">
+                <span className="text-xs text-white/40">
+                  {filtered.length} موظف — صفحة {empPage} من {empTotalPages}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setEmpPage(p => Math.max(1, p - 1))}
+                    disabled={empPage === 1}
+                    className="erp-btn erp-btn-ghost text-xs px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    السابق
+                  </button>
+                  {Array.from({ length: Math.min(5, empTotalPages) }, (_, i) => {
+                    const start = Math.max(1, Math.min(empPage - 2, empTotalPages - 4));
+                    const page = start + i;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setEmpPage(page)}
+                        className={`erp-btn text-xs px-2 py-1 ${
+                          page === empPage ? 'erp-btn-primary' : 'erp-btn-ghost'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => setEmpPage(p => Math.min(empTotalPages, p + 1))}
+                    disabled={empPage === empTotalPages}
+                    className="erp-btn erp-btn-ghost text-xs px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    التالي
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

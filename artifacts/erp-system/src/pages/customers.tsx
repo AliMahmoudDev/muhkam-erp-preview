@@ -2,7 +2,7 @@ import { safeArray } from '@/lib/safe-data';
 import { openPrintWindow } from '@/lib/print-utils';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
 import BadDebts from '@/pages/bad-debts';
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import {
@@ -1552,6 +1552,8 @@ export default function Customers() {
   const [pageView, setPageView] = useState<'customers' | 'bad-debts'>('customers');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'customers' | 'suppliers' | 'debtors' | 'creditors' | 'maintenance'>('all');
+  const [custPage, setCustPage] = useState(1);
+  const CUST_PAGE_SIZE = 50;
   const [showAdd, setShowAdd] = useState(false);
   const [showReceipt, setShowReceipt] = useState<{
     id: number;
@@ -1720,7 +1722,7 @@ export default function Customers() {
       x.source === 'repair';
   };
 
-  const filtered = customers.filter((c) => {
+  const filtered = useMemo(() => customers.filter((c) => {
     const matchSearch =
       c.name.includes(search) ||
       (c.phone && c.phone.includes(search)) ||
@@ -1728,14 +1730,21 @@ export default function Customers() {
     if (!matchSearch) return false;
     const bal = Number(c.balance);
     if (typeFilter === 'maintenance') return isMaintenanceCustomer(c);
-    // عملاء الصيانة لا يظهرون في باقي الفلاتر — فقط في "الكل" أو "عملاء صيانة"
     if (isMaintenanceCustomer(c)) return false;
     if (typeFilter === 'customers') return !c.is_supplier;
     if (typeFilter === 'suppliers') return !!c.is_supplier;
-    if (typeFilter === 'debtors')  return bal > 0.001;           // عليه — ذمم مدينة
-    if (typeFilter === 'creditors') return bal < -0.001;          // له — ذمم دائنة
+    if (typeFilter === 'debtors')  return bal > 0.001;
+    if (typeFilter === 'creditors') return bal < -0.001;
     return true;
-  });
+  }), [customers, search, typeFilter]);
+
+  useEffect(() => { setCustPage(1); }, [search, typeFilter]);
+
+  const paginatedCustomers = useMemo(
+    () => filtered.slice((custPage - 1) * CUST_PAGE_SIZE, custPage * CUST_PAGE_SIZE),
+    [filtered, custPage, CUST_PAGE_SIZE]
+  );
+  const custTotalPages = Math.max(1, Math.ceil(filtered.length / CUST_PAGE_SIZE));
 
   // إحصائيات AR/AP
   const totalAR = customers.filter(c => Number(c.balance) > 0.001).reduce((s, c) => s + Number(c.balance), 0);
@@ -2868,7 +2877,7 @@ export default function Customers() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((customer) => (
+                paginatedCustomers.map((customer) => (
                   <tr key={customer.id} className="border-b border-white/5 erp-table-row">
                     <td className="p-4">
                       <span className="font-mono text-xs font-bold px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -3002,6 +3011,47 @@ export default function Customers() {
             </tbody>
           </table>
         </div>
+        {/* Pagination */}
+        {custTotalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
+            <span className="text-xs text-white/40">
+              {filtered.length} عميل — صفحة {custPage} من {custTotalPages}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCustPage(p => Math.max(1, p - 1))}
+                disabled={custPage === 1}
+                className="px-3 py-1 rounded-lg text-xs font-bold bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                السابق
+              </button>
+              {Array.from({ length: Math.min(5, custTotalPages) }, (_, i) => {
+                const start = Math.max(1, Math.min(custPage - 2, custTotalPages - 4));
+                const page = start + i;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCustPage(page)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      page === custPage
+                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                        : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setCustPage(p => Math.min(custTotalPages, p + 1))}
+                disabled={custPage === custTotalPages}
+                className="px-3 py-1 rounded-lg text-xs font-bold bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                التالي
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ───── مودال تقارير العملاء ───── */}

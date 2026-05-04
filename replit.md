@@ -233,3 +233,23 @@ Extended `invoice-no.ts` with sequential generators for all user-facing document
 **TypeScript Zero-Error Build**
 - Fixed `purchases.ts` missing `return` statement in paginated GET handler
 - All `tsc --noEmit` checks pass with zero errors across the entire API codebase
+
+## Quality Roadmap Sprint — 10/10 (May 2026)
+
+### Security Fixes
+- `sales.tsx:1977` — Raw `fetch('/api/customers', ...)` replaced with `authFetch(api('/api/customers'), ...)` (missing auth header bug)
+- `auth.ts` `/auth/emergency-unlock` — Timing-safe string comparison using Node built-in `timingSafeEqual` from `crypto` module (imported properly at top, no `require()`)
+- Mobile `login.tsx` — `catch (e: any)` → `catch (e: unknown)` with `instanceof Error` guard
+
+### Type Safety
+- `inventory-control.ts:78` — Last `as any` removed; explicit `Array<{product_id: number; wh_qty: number}>` typed cast
+- `mobile/hooks/useBiometric.ts` — `biometric_enabled` flag moved from `AsyncStorage` to `SecureStore` (both read/write/delete); `clearBiometricCredentials` updated to delete from SecureStore on native
+
+### Code Quality
+- `error-boundary.tsx` — `console.error` replaced with silent `fetch('/api/health/client-error', ...)` (DEV-only `console.error` fallback kept)
+- `consignment.ts` — `sql.raw(purchaseIds.join(","))` → proper typed `db.select().from(purchaseItemsTable).where(inArray(...))` Drizzle query; `warehousesTable` query also switched from `sql.raw` to `inArray()`
+- Deleted duplicate `NotificationBell.tsx` (290-line old version); test file updated to import from correct `@/components/notification-bell`
+
+### Performance
+- `customers.tsx` — Client-side pagination added: `custPage` state + `paginatedCustomers` useMemo (50/page); pagination controls rendered below table; page resets on search/typeFilter change; `filtered` wrapped in `useMemo`
+- `employees.tsx` — Client-side pagination added: `empPage` state + `paginatedEmps` useMemo (50/page); pagination controls rendered below table; deptFilter now also applied client-side in `filtered` useMemo

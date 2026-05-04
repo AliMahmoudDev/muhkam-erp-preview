@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql } from "drizzle-orm";
-import { db, purchasesTable, warehousesTable } from "@workspace/db";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { db, purchasesTable, purchaseItemsTable, warehousesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
 
@@ -44,11 +44,11 @@ router.get("/consignment/report", wrap(async (req, res) => {
   const purchaseIds = purchases.map(p => p.id);
 
   /* 2) بنود الفواتير */
-  const items = await db.execute(sql`
-    SELECT * FROM purchase_items
-    WHERE purchase_id = ANY(ARRAY[${sql.raw(purchaseIds.join(","))}]::int[])
-  `);
-  const itemRows = items.rows as {
+  const items = await db
+    .select()
+    .from(purchaseItemsTable)
+    .where(inArray(purchaseItemsTable.purchase_id, purchaseIds));
+  const itemRows = items as {
     purchase_id: number; product_id: number; product_name: string;
     quantity: string; unit_price: string; total_price: string;
     quantity_returned?: string;
@@ -64,7 +64,7 @@ router.get("/consignment/report", wrap(async (req, res) => {
     const stockRows = await db.execute(sql`
       SELECT warehouse_id, product_id, COALESCE(SUM(CAST(quantity AS FLOAT8)), 0) AS remaining_qty
       FROM stock_movements
-      WHERE warehouse_id = ANY(ARRAY[${sql.raw(consWHIds.join(","))}]::int[])
+      WHERE warehouse_id = ANY(ARRAY[${sql.raw(consWHIds.map(Number).join(","))}]::int[])
       GROUP BY warehouse_id, product_id
     `);
     for (const row of stockRows.rows as { warehouse_id: number; product_id: number; remaining_qty: number }[]) {
@@ -78,7 +78,7 @@ router.get("/consignment/report", wrap(async (req, res) => {
     const whRows = await db
       .select({ id: warehousesTable.id, name: warehousesTable.name, supplier_id: warehousesTable.supplier_id })
       .from(warehousesTable)
-      .where(sql`${warehousesTable.id} = ANY(ARRAY[${sql.raw(consWHIds.join(","))}]::int[])`);
+      .where(inArray(warehousesTable.id, consWHIds));
     for (const w of whRows) warehouseMap[w.id] = { name: w.name, supplier_id: w.supplier_id };
   }
 
