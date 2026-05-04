@@ -167,13 +167,15 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
   <script>window.addEventListener('load', () => { window.print(); setTimeout(() => window.close(), 1000); });</script>
 </body>
 </html>`;
-    const w = window.open("", "_blank", "width=400,height=700");
+    const _blob = new Blob([html], { type: 'text/html' });
+    const _url = URL.createObjectURL(_blob);
+    const w = window.open(_url, '_blank', 'width=400,height=700');
     if (!w) {
+      URL.revokeObjectURL(_url);
       toast({ title: "تعذّر فتح نافذة الطباعة", description: "تأكد من السماح للنوافذ المنبثقة", variant: "destructive" });
       return;
     }
-    w.document.write(html);
-    w.document.close();
+    setTimeout(() => URL.revokeObjectURL(_url), 2000);
     void recordDelivered("print");
     toast({ title: "جارٍ تجهيز الطباعة..." });
   }

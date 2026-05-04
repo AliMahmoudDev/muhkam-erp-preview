@@ -22,12 +22,83 @@ import { wrap } from "../lib/async-handler";
 import { notifyUser } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
 import { hasPermission } from "../lib/permissions";
+import { z } from "zod";
 import { logger } from "../lib/logger";
 import { computeTrackingToken } from "../lib/tracking-token";
 import { validateTransition } from "../services/repair-pipeline.service";
 import { writeAuditLog } from "../lib/audit-log";
 
 import { normalizeName, getNextCustomerCode } from "./customers";
+
+/* ── Zod schemas ──────────────────────────────────────────── */
+const createRepairStatusSchema = z.object({
+  label_ar: z.string({ required_error: "الاسم مطلوب" }).min(1, "الاسم مطلوب").max(100),
+  key: z.string().max(80).optional(),
+  color: z.string().max(20).optional(),
+  sort_order: z.number().int().optional(),
+});
+
+const updateRepairStatusSchema = z.object({
+  label_ar: z.string().min(1).max(100).optional(),
+  color: z.string().max(20).optional(),
+  sort_order: z.number().int().optional(),
+});
+
+const createChecklistItemSchema = z.object({
+  label_ar: z.string({ required_error: "اسم العنصر مطلوب" }).min(1, "اسم العنصر مطلوب").max(200),
+  device_type: z.string().max(50).optional(),
+  sort_order: z.number().int().optional(),
+});
+
+const createRepairJobSchema = z.object({
+  customer_name: z.string().min(1, "اسم العميل مطلوب").max(200),
+  customer_phone: z.string().max(20).optional().nullable(),
+  customer_id: z.number().int().positive().optional().nullable(),
+  device_brand: z.string({ required_error: "الشركة المصنعة مطلوبة" }).min(1).max(100),
+  device_model: z.string({ required_error: "الموديل مطلوب" }).min(1).max(100),
+  device_type: z.string().max(50).optional(),
+  imei: z.string().max(50).optional().nullable(),
+  serial_no: z.string().max(100).optional().nullable(),
+  color: z.string().max(50).optional().nullable(),
+  storage: z.string().max(50).optional().nullable(),
+  problem_description: z.string().max(1000).optional().nullable(),
+  technician_id: z.number().int().positive().optional().nullable(),
+  technician_name: z.string().max(200).optional().nullable(),
+  technician_2_id: z.number().int().positive().optional().nullable(),
+  technician_2_name: z.string().max(200).optional().nullable(),
+  technician_2_section: z.string().max(200).optional().nullable(),
+  estimated_cost: z.number().min(0).optional(),
+  deposit_paid: z.number().min(0).optional(),
+  received_at: z.string().optional(),
+  estimated_delivery: z.string().optional().nullable(),
+  notes: z.string().max(1000).optional().nullable(),
+  checklist: z.unknown().optional(),
+  alert_days_threshold: z.number().int().positive().optional().nullable(),
+  external_workshop: z.boolean().optional(),
+  external_workshop_name: z.string().max(200).optional().nullable(),
+  external_workshop_cost: z.number().min(0).optional(),
+  broker_name: z.string().max(200).optional().nullable(),
+  broker_commission: z.number().min(0).optional(),
+  device_pin: z.string().max(100).optional().nullable(),
+  accessories: z.string().max(500).optional().nullable(),
+  branch_id: z.number().int().positive().optional().nullable(),
+});
+
+const addRepairPartSchema = z.object({
+  product_name: z.string({ required_error: "اسم القطعة مطلوب" }).min(1).max(200),
+  product_id: z.number().int().positive().optional().nullable(),
+  quantity: z.number().positive("الكمية يجب أن تكون أكبر من صفر").optional().default(1),
+  unit_price: z.number().min(0).optional().default(0),
+  source: z.enum(["internal", "external"]).optional().default("internal"),
+  warehouse_id: z.number().int().positive().optional().nullable(),
+});
+
+const repairPaymentSchema = z.object({
+  amount: z.number({ required_error: "المبلغ مطلوب", invalid_type_error: "المبلغ يجب أن يكون رقماً" }).positive("المبلغ يجب أن يكون أكبر من صفر"),
+  payment_method: z.string().max(50).optional().default("cash"),
+  notes: z.string().max(500).optional().nullable(),
+  safe_id: z.number().int().positive().optional().nullable(),
+});
 import { getOrCreateCustomerAccount, getOrCreateSafeAccount, getOrCreateGeneralExpenseAccount, createAutoJournalEntry } from "../lib/auto-account";
 import { findOrCreateCustomerByPhone } from "../lib/auto-customer";
 
@@ -418,16 +489,16 @@ router.post("/repair-statuses", wrap(async (req, res) => {
     return res.status(403).json({ error: "غير مصرح" });
   }
   const { company_id } = ctx(req);
-  const b = req.body as Record<string, unknown>;
-  const label = String(b.label_ar ?? "").trim();
-  if (!label) return res.status(400).json({ error: "الاسم مطلوب" });
-  const key = String(b.key ?? `custom_${Date.now()}`).trim();
+  const v = createRepairStatusSchema.safeParse(req.body);
+  if (!v.success) return res.status(400).json({ error: v.error.errors[0]?.message ?? "بيانات غير صالحة" });
+  const { label_ar, key: rawKey, color, sort_order } = v.data;
+  const key = rawKey ?? `custom_${Date.now()}`;
   const [row] = await db.insert(repairStatusesTable).values({
     company_id,
     key,
-    label_ar: label,
-    color: String(b.color ?? "#64748b"),
-    sort_order: Number(b.sort_order ?? 99),
+    label_ar,
+    color: color ?? "#64748b",
+    sort_order: sort_order ?? 99,
     is_system: false,
   }).returning();
   return res.status(201).json(row);
@@ -439,11 +510,13 @@ router.patch("/repair-statuses/:id", wrap(async (req, res) => {
   }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
-  const b = req.body as Record<string, unknown>;
+  const v = updateRepairStatusSchema.safeParse(req.body);
+  if (!v.success) return res.status(400).json({ error: v.error.errors[0]?.message ?? "بيانات غير صالحة" });
+  const { label_ar, color, sort_order } = v.data;
   const updates: Record<string, unknown> = {};
-  if ("label_ar" in b)   updates.label_ar = String(b.label_ar);
-  if ("color" in b)      updates.color = String(b.color);
-  if ("sort_order" in b) updates.sort_order = Number(b.sort_order);
+  if (label_ar   !== undefined) updates.label_ar   = label_ar;
+  if (color      !== undefined) updates.color      = color;
+  if (sort_order !== undefined) updates.sort_order = sort_order;
   const [row] = await db.update(repairStatusesTable).set(updates)
     .where(and(eq(repairStatusesTable.id, id), eq(repairStatusesTable.company_id, company_id)))
     .returning();
@@ -490,11 +563,12 @@ router.post("/repair-checklist-items", wrap(async (req, res) => {
     return res.status(403).json({ error: "غير مصرح" });
   }
   const { company_id } = ctx(req);
+  const v = createChecklistItemSchema.safeParse(req.body);
+  if (!v.success) return res.status(400).json({ error: v.error.errors[0]?.message ?? "بيانات غير صالحة" });
+  const { label_ar: label, device_type: rawDeviceType, sort_order: _sort_order } = v.data;
   const b = req.body as Record<string, unknown>;
-  const label = String(b.label_ar ?? "").trim();
-  if (!label) return res.status(400).json({ error: "الاسم مطلوب" });
   const category = String(b.category ?? "عام").trim() || "عام";
-  const device_type = String(b.device_type ?? "general").trim() || "general";
+  const device_type = rawDeviceType ?? (String(b.device_type ?? "general").trim() || "general");
   const existing = await db.select({ s: repairChecklistItemsTable.sort_order })
     .from(repairChecklistItemsTable)
     .where(and(
@@ -804,7 +878,8 @@ router.get("/repair-jobs/alerts", wrap(async (req, res) => {
       sql`${repairJobsTable.status} NOT IN ('delivered','cancelled')`,
       sql`${repairJobsTable.received_at} <= ${cutoff.toISOString().slice(0,10)}`
     ))
-    .orderBy(repairJobsTable.received_at);
+    .orderBy(repairJobsTable.received_at)
+    .limit(200);
   return res.json(rows);
 }));
 
@@ -890,6 +965,8 @@ router.post("/repair-jobs", wrap(async (req, res) => {
     return res.status(403).json({ error: "غير مصرح بإنشاء بطاقات الصيانة" });
   }
   const { company_id, user_id, user_name } = ctx(req);
+  const vj = createRepairJobSchema.safeParse(req.body);
+  if (!vj.success) return res.status(400).json({ error: vj.error.errors[0]?.message ?? "بيانات غير صالحة" });
   const b = req.body as Record<string, unknown>;
   const job_no = await nextJobNo(company_id);
 
@@ -1290,16 +1367,18 @@ router.post("/repair-jobs/:id/parts", wrap(async (req, res) => {
   }
   const { company_id } = ctx(req);
   const job_id = Number(req.params.id);
-  const b = req.body as Record<string, unknown>;
+  const vp = addRepairPartSchema.safeParse(req.body);
+  if (!vp.success) return res.status(400).json({ error: vp.error.errors[0]?.message ?? "بيانات غير صالحة" });
+  const { product_name, product_id, quantity, unit_price, source, warehouse_id } = vp.data;
   const [part] = await db.insert(repairJobPartsTable).values({
     job_id,
     company_id,
-    product_id:    b.product_id ? Number(b.product_id) : null,
-    product_name:  String(b.product_name ?? ""),
-    quantity:      String(b.quantity ?? "1"),
-    unit_price:    String(b.unit_price ?? "0"),
-    source:        String(b.source ?? "internal"),
-    warehouse_id:  b.warehouse_id ? Number(b.warehouse_id) : null,
+    product_id:    product_id ?? null,
+    product_name,
+    quantity:      String(quantity),
+    unit_price:    String(unit_price),
+    source,
+    warehouse_id:  warehouse_id ?? null,
   }).returning();
   return res.status(201).json(part);
 }));
@@ -2388,10 +2467,9 @@ router.post("/repair-jobs/:id/payments", wrap(async (req, res) => {
   const userId = req.user?.id;
   const userName = req.user?.username ?? "";
   const jobId = parseInt(String(req.params["id"]), 10);
-  const { amount, payment_method, notes, safe_id } = req.body as Record<string, unknown>;
-
-  const numAmount = Number(amount);
-  if (!numAmount || numAmount <= 0) { res.status(400).json({ error: "المبلغ يجب أن يكون أكبر من صفر" }); return; }
+  const vPay = repairPaymentSchema.safeParse(req.body);
+  if (!vPay.success) { res.status(400).json({ error: vPay.error.errors[0]?.message ?? "بيانات غير صالحة" }); return; }
+  const { amount: numAmount, payment_method, notes, safe_id } = vPay.data;
 
   const [job] = await db.select()
     .from(repairJobsTable)

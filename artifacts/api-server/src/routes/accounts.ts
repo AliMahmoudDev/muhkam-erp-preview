@@ -1,9 +1,45 @@
 import { Router, type IRouter, type Request } from "express";
 import { eq, asc, and } from "drizzle-orm";
+import { z } from "zod";
 import { db, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
 import { setCache, getCache, deleteCache } from "../lib/cache";
+
+const ACCOUNT_TYPES = ["asset", "liability", "equity", "revenue", "expense"] as const;
+
+const createAccountSchema = z.object({
+  code: z.string({ required_error: "رمز الحساب مطلوب" }).min(1).max(50),
+  name: z.string({ required_error: "اسم الحساب مطلوب" }).min(1).max(200),
+  type: z.enum(ACCOUNT_TYPES, { errorMap: () => ({ message: "نوع الحساب غير صحيح" }) }),
+  parent_id: z.number().int().positive().optional().nullable(),
+  level: z.number().int().min(1).max(10).optional(),
+  is_posting: z.boolean().optional(),
+  opening_balance: z.number().optional(),
+});
+
+const updateAccountSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  is_active: z.boolean().optional(),
+  is_posting: z.boolean().optional(),
+});
+
+const journalLineSchema = z.object({
+  account_id: z.number().int().positive({ message: "معرّف الحساب مطلوب" }),
+  account_name: z.string().optional(),
+  account_code: z.string().optional(),
+  debit: z.number().min(0).optional().default(0),
+  credit: z.number().min(0).optional().default(0),
+  description: z.string().max(500).optional().nullable(),
+});
+
+const createJournalEntrySchema = z.object({
+  date: z.string({ required_error: "تاريخ القيد مطلوب" }).min(1),
+  description: z.string({ required_error: "وصف القيد مطلوب" }).min(1).max(500),
+  reference: z.string().max(100).optional().nullable(),
+  status: z.enum(["draft", "posted"]).optional().default("draft"),
+  lines: z.array(journalLineSchema).min(2, "يجب إضافة سطرين على الأقل"),
+});
 
 const router: IRouter = Router();
 router.use("/accounts", requireFeature("accounting"));
@@ -41,11 +77,9 @@ router.get("/accounts", wrap(async (req, res) => {
 
 router.post("/accounts", wrap(async (req, res) => {
   const cid = getCid(req);
-  const { code, name, type, parent_id, level, is_posting, opening_balance } = req.body;
-  if (!code || !name || !type) {
-    res.status(400).json({ error: "code/name/type مطلوبة" });
-    return;
-  }
+  const v = createAccountSchema.safeParse(req.body);
+  if (!v.success) { res.status(400).json({ error: v.error.errors[0]?.message ?? "بيانات غير صالحة" }); return; }
+  const { code, name, type, parent_id, level, is_posting, opening_balance } = v.data;
   const [acc] = await db.insert(accountsTable).values({
     code, name, type,
     parent_id: parent_id ?? null,
@@ -63,7 +97,9 @@ router.put("/accounts/:id", wrap(async (req, res) => {
   const cid = getCid(req);
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const { name, is_active, is_posting } = req.body;
+  const v = updateAccountSchema.safeParse(req.body);
+  if (!v.success) { res.status(400).json({ error: v.error.errors[0]?.message ?? "بيانات غير صالحة" }); return; }
+  const { name, is_active, is_posting } = v.data;
   const [acc] = await db.update(accountsTable)
     .set({ name, is_active, is_posting })
     .where(and(eq(accountsTable.id, id), eq(accountsTable.company_id, cid))).returning();
@@ -107,11 +143,9 @@ router.get("/journal-entries/:id", wrap(async (req, res) => {
 
 router.post("/journal-entries", wrap(async (req, res) => {
   const cid = getCid(req);
-  const { date, description, reference, lines, status } = req.body;
-  if (!date || !description || !lines?.length) {
-    res.status(400).json({ error: "البيانات غير مكتملة" });
-    return;
-  }
+  const v = createJournalEntrySchema.safeParse(req.body);
+  if (!v.success) { res.status(400).json({ error: v.error.errors[0]?.message ?? "بيانات غير صالحة" }); return; }
+  const { date, description, reference, lines, status } = v.data;
   const totalDebit = lines.reduce((s: number, l: { debit?: number }) => s + (l.debit ?? 0), 0);
   const totalCredit = lines.reduce((s: number, l: { credit?: number }) => s + (l.credit ?? 0), 0);
   if (Math.abs(totalDebit - totalCredit) > 0.01) {

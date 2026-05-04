@@ -29,7 +29,10 @@ function exportPurchasesExcel(rows: PurchaseRow[]) {
 }
 function printPurchasesReport(rows: PurchaseRow[]) {
   const html = `<html dir="rtl"><head><meta charset="UTF-8"><style>body{font-family:Tajawal,Cairo,Arial;font-size:11px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px;text-align:right}th{background:#f5f5f5}</style></head><body><h2>تقرير فواتير المشتريات</h2><table><thead><tr><th>رقم الفاتورة</th><th>المورد</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>نوع الدفع</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${escapeHtml(p.invoice_no)}</td><td>${escapeHtml(p.customer_name)||"—"}</td><td>${formatCurrency(p.total_amount)}</td><td>${formatCurrency(p.paid_amount)}</td><td>${formatCurrency(p.remaining_amount)}</td><td>${escapeHtml(PAY_AR[p.payment_type]||p.payment_type)}</td><td>${escapeHtml(STATUS_AR[p.status]||p.status)}</td><td>${escapeHtml(formatDate(p.created_at))}</td></tr>`).join("")}</tbody></table></body></html>`;
-  const w=window.open("","_blank"); if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
+  const _blob = new Blob([html], { type: 'text/html' });
+  const _url = URL.createObjectURL(_blob);
+  const w = window.open(_url, '_blank');
+  setTimeout(() => { w?.print(); URL.revokeObjectURL(_url); }, 500);
 }
 
 export default function PurchasesInvoicesReport() {

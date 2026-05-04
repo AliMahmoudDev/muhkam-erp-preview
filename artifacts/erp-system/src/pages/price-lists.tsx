@@ -599,8 +599,10 @@ function PriceListCard({
 </body>
 </html>`;
 
-      const win = window.open("", "_blank", "width=900,height=700");
-      if (win) { win.document.write(html); win.document.close(); }
+      const _plBlob = new Blob([html], { type: 'text/html' });
+      const _plUrl = URL.createObjectURL(_plBlob);
+      window.open(_plUrl, '_blank', 'width=900,height=700');
+      setTimeout(() => URL.revokeObjectURL(_plUrl), 2000);
     } finally {
       setPrinting(false);
     }

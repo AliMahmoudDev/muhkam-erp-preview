@@ -1,9 +1,24 @@
 import { Router, type IRouter } from "express";
 import { eq, and, count, sql, desc } from "drizzle-orm";
+import { z } from "zod";
 import { db, fixedAssetsTable, depreciationRunsTable, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { getOrCreateAccount } from "../lib/auto-account";
 import { requireFeature } from "../middleware/feature-guard";
+
+const DEP_METHODS = ["straight_line", "declining_balance"] as const;
+
+const createFixedAssetSchema = z.object({
+  name: z.string({ required_error: "اسم الأصل مطلوب" }).min(1).max(200),
+  code: z.string().max(50).optional().nullable(),
+  category: z.string().max(100).optional(),
+  description: z.string().max(500).optional().nullable(),
+  purchase_date: z.string({ required_error: "تاريخ الشراء مطلوب" }).min(1),
+  purchase_cost: z.number({ required_error: "تكلفة الشراء مطلوبة", invalid_type_error: "تكلفة الشراء يجب أن تكون رقماً" }).positive("تكلفة الشراء يجب أن تكون أكبر من صفر"),
+  residual_value: z.number().min(0).optional().default(0),
+  useful_life_months: z.number({ required_error: "العمر الإنتاجي مطلوب" }).int().min(1, "العمر الإنتاجي يجب أن يكون شهراً على الأقل"),
+  depreciation_method: z.enum(DEP_METHODS).optional().default("straight_line"),
+});
 
 const router: IRouter = Router();
 router.use("/fixed-assets", requireFeature("fixed_assets"));
@@ -139,13 +154,9 @@ router.get("/fixed-assets", wrap(async (req, res) => {
 /* POST /api/fixed-assets */
 router.post("/fixed-assets", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
-  const { name, code, category, description, purchase_date, purchase_cost, residual_value, useful_life_months, depreciation_method } = req.body;
-
-  if (!name || !purchase_date || !purchase_cost || !useful_life_months) {
-    throw httpError(400, "البيانات الأساسية ناقصة");
-  }
-  if (Number(useful_life_months) < 1) throw httpError(400, "العمر الإنتاجي يجب أن يكون شهراً واحداً على الأقل");
-  if (Number(purchase_cost) <= 0) throw httpError(400, "تكلفة الشراء يجب أن تكون أكبر من صفر");
+  const v = createFixedAssetSchema.safeParse(req.body);
+  if (!v.success) throw httpError(400, v.error.errors[0]?.message ?? "بيانات غير صالحة");
+  const { name, code, category, description, purchase_date, purchase_cost, residual_value, useful_life_months, depreciation_method } = v.data;
 
   const safeCode = (code || name).replace(/\s+/g, "-").toUpperCase().slice(0, 20);
 

@@ -459,7 +459,7 @@ export default function SuperAdmin() {
   const { data: redisHealth } = useQuery<RedisHealthData>({
     queryKey: ['/api/super/health/redis'],
     queryFn: () =>
-      fetch('/api/super/health/redis', { headers: authHeaders() })
+      authFetch('/api/super/health/redis')
         .then(r => r.json() as Promise<RedisHealthData>)
         .catch(() => ({ status: 'down' as const })),
     refetchInterval: 10_000,

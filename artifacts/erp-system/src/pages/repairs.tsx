@@ -1640,9 +1640,7 @@ function JobDetail({
     const svg = document.getElementById(`qr-job-${job.id}`)?.querySelector("svg");
     if (!svg) { toast({ title: "تعذر تحميل الرمز", variant: "destructive" }); return; }
     const svgStr = new XMLSerializer().serializeToString(svg);
-    const win = window.open("", "_blank", "width=420,height=720");
-    if (!win) { toast({ title: "السماح بالنوافذ مطلوب للطباعة", variant: "destructive" }); return; }
-    win.document.write(`<!doctype html>
+    const _qrHtml = `<!doctype html>
 <html dir="rtl" lang="ar">
 <head>
 <meta charset="utf-8" />
@@ -1690,8 +1688,12 @@ function JobDetail({
     window.onafterprint = function() { window.close(); };
   </script>
 </body>
-</html>`);
-    win.document.close();
+</html>`;
+    const _qrBlob = new Blob([_qrHtml], { type: 'text/html' });
+    const _qrUrl = URL.createObjectURL(_qrBlob);
+    const win = window.open(_qrUrl, '_blank', 'width=420,height=720');
+    if (!win) { URL.revokeObjectURL(_qrUrl); toast({ title: "السماح بالنوافذ مطلوب للطباعة", variant: "destructive" }); return; }
+    setTimeout(() => URL.revokeObjectURL(_qrUrl), 2000);
   };
 
   /* compose tracking URL for the hidden QR SVG */

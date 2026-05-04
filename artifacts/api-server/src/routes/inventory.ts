@@ -1,10 +1,17 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
+import { z } from "zod";
 import { db, stockMovementsTable, productsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { getTenant } from "../middleware/auth";
 import { writeAuditLog } from "../lib/audit-log";
+
+const inventoryAdjustmentSchema = z.object({
+  product_id: z.number({ required_error: "معرّف المنتج مطلوب", invalid_type_error: "معرّف المنتج يجب أن يكون رقماً" }).int().positive(),
+  new_quantity: z.number({ required_error: "الكمية الجديدة مطلوبة", invalid_type_error: "الكمية يجب أن تكون رقماً" }).min(0, "الكمية لا يمكن أن تكون سالبة"),
+  notes: z.string().max(500).optional().nullable(),
+});
 
 interface AuditRow {
   id: unknown;
@@ -226,15 +233,11 @@ router.post("/inventory/adjustment", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_adjust_inventory")) {
     res.status(403).json({ error: "ليس لديك صلاحية تسوية المخزون" }); return;
   }
-  const { product_id, new_quantity, notes } = req.body;
-  if (product_id === undefined || new_quantity === undefined) {
-    res.status(400).json({ error: "يجب تحديد المنتج والكمية الجديدة" }); return;
-  }
-  const prodId = parseInt(product_id);
-  const newQty = Number(new_quantity);
-  if (isNaN(prodId) || isNaN(newQty) || newQty < 0) {
-    res.status(400).json({ error: "بيانات غير صالحة" }); return;
-  }
+  const v = inventoryAdjustmentSchema.safeParse(req.body);
+  if (!v.success) { res.status(400).json({ error: v.error.errors[0]?.message ?? "بيانات غير صالحة" }); return; }
+  const { product_id, new_quantity, notes } = v.data;
+  const prodId = product_id;
+  const newQty = new_quantity;
 
   const [product] = await db.select().from(productsTable).where(and(eq(productsTable.id, prodId), eq(productsTable.company_id, req.user!.company_id!)));
   if (!product) { res.status(404).json({ error: "المنتج غير موجود" }); return; }

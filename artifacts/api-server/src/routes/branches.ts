@@ -8,6 +8,7 @@
  */
 import { Router } from "express";
 import { eq, and, sql } from "drizzle-orm";
+import { z } from "zod";
 import {
   db,
   branchesTable,
@@ -21,6 +22,16 @@ import {
 } from "@workspace/db";
 import { authenticate, requireRole, getTenant } from "../middleware/auth";
 import { wrap } from "../lib/async-handler";
+
+const createBranchSchema = z.object({
+  name: z.string({ required_error: "اسم الفرع مطلوب" }).min(1, "اسم الفرع مطلوب").max(100, "الاسم طويل جداً"),
+  address: z.string().max(300).optional().nullable(),
+  phone: z.string().max(20).optional().nullable(),
+});
+
+const updateBranchSchema = createBranchSchema.extend({
+  is_active: z.boolean().optional(),
+}).partial();
 
 const router = Router();
 
@@ -192,18 +203,17 @@ router.get("/branches/:id/overview", authenticate, wrap(async (req, res) => {
 router.post("/branches", authenticate, requireRole("admin"), wrap(async (req, res) => {
   const companyId = getTenant(req);
 
-  const { name, address, phone } = req.body;
-  if (!name || !String(name).trim()) {
-    res.status(400).json({ error: "اسم الفرع مطلوب" }); return;
-  }
+  const v = createBranchSchema.safeParse(req.body);
+  if (!v.success) { res.status(400).json({ error: v.error.errors[0]?.message ?? "بيانات غير صالحة" }); return; }
+  const { name, address, phone } = v.data;
 
   const [branch] = await db
     .insert(branchesTable)
     .values({
       company_id: companyId,
-      name:       String(name).trim(),
-      address:    address ? String(address).trim() : null,
-      phone:      phone   ? String(phone).trim()   : null,
+      name:       name.trim(),
+      address:    address ? address.trim() : null,
+      phone:      phone   ? phone.trim()   : null,
       is_active:  true,
     })
     .returning();
@@ -214,12 +224,14 @@ router.patch("/branches/:id", authenticate, requireRole("admin"), wrap(async (re
   const id        = parseInt(String(req.params.id), 10);
   const companyId = getTenant(req);
 
-  const { name, address, phone, is_active } = req.body;
+  const v = updateBranchSchema.safeParse(req.body);
+  if (!v.success) { res.status(400).json({ error: v.error.errors[0]?.message ?? "بيانات غير صالحة" }); return; }
+  const { name, address, phone, is_active } = v.data;
   const updates: Record<string, unknown> = {};
-  if (name      !== undefined) updates.name      = String(name).trim();
-  if (address   !== undefined) updates.address   = address ? String(address).trim() : null;
-  if (phone     !== undefined) updates.phone     = phone   ? String(phone).trim()   : null;
-  if (is_active !== undefined) updates.is_active = Boolean(is_active);
+  if (name      !== undefined) updates.name      = name.trim();
+  if (address   !== undefined) updates.address   = address ? address.trim() : null;
+  if (phone     !== undefined) updates.phone     = phone   ? phone.trim()   : null;
+  if (is_active !== undefined) updates.is_active = is_active;
 
   const [branch] = await db
     .update(branchesTable)

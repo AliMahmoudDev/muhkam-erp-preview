@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
+import { z } from "zod";
 import {
   devicesTable, customersTable, productsTable, safesTable,
   warehousesTable, purchasesTable, purchaseItemsTable,
@@ -14,6 +15,61 @@ import type Express from "express";
 import { requireFeature } from "../middleware/feature-guard";
 import { hasPermission } from "../lib/permissions";
 import { findOrCreateCustomerByPhone } from "../lib/auto-customer";
+
+const PAYMENT_TYPES = ["cash", "credit", "partial"] as const;
+
+const createDeviceSchema = z.object({
+  brand: z.string({ required_error: "الشركة المصنعة مطلوبة" }).min(1).max(100),
+  model: z.string({ required_error: "الموديل مطلوب" }).min(1).max(100),
+  color: z.string().max(50).optional().nullable(),
+  storage: z.string().max(50).optional().nullable(),
+  grade: z.string().max(20).optional().nullable(),
+  imei: z.string().max(50).optional().nullable(),
+  serial_no: z.string().max(100).optional().nullable(),
+  battery_health: z.number().int().min(0).max(100).optional().nullable(),
+  condition_notes: z.string().max(500).optional().nullable(),
+  purchase_price: z.number().min(0).optional().nullable(),
+  sale_price: z.number().min(0).optional().nullable(),
+  dual_sim: z.boolean().optional(),
+  with_box: z.boolean().optional(),
+  icloud_locked: z.boolean().optional(),
+  network_locked: z.boolean().optional(),
+  previously_opened: z.boolean().optional(),
+  mdm_locked: z.boolean().optional(),
+  supplier_name: z.string().max(200).optional().nullable(),
+  supplier_phone: z.string().max(20).optional().nullable(),
+  branch_id: z.number().int().positive().optional().nullable(),
+});
+
+const purchaseDeviceSchema = z.object({
+  brand: z.string({ required_error: "الشركة المصنعة مطلوبة" }).min(1).max(100),
+  model: z.string({ required_error: "الموديل مطلوب" }).min(1).max(100),
+  purchase_price: z.number({ required_error: "سعر الشراء مطلوب", invalid_type_error: "سعر الشراء يجب أن يكون رقماً" }).positive("سعر الشراء يجب أن يكون أكبر من صفر"),
+  payment_type: z.enum(PAYMENT_TYPES, { errorMap: () => ({ message: "طريقة الدفع غير صحيحة" }) }),
+  sale_price: z.number().min(0).optional(),
+  customer_id: z.number().int().positive().optional().nullable(),
+  new_customer_name: z.string().max(200).optional().nullable(),
+  safe_id: z.number().int().positive().optional().nullable(),
+  warehouse_id: z.number().int().positive().optional().nullable(),
+  paid_amount: z.number().min(0).optional(),
+  color: z.string().max(50).optional().nullable(),
+  storage: z.string().max(50).optional().nullable(),
+  grade: z.string().max(20).optional().nullable(),
+  imei: z.string().max(50).optional().nullable(),
+  battery_health: z.number().int().min(0).max(100).optional().nullable(),
+  supplier_phone: z.string().max(20).optional().nullable(),
+  id_card_data: z.string().max(500).optional().nullable(),
+  condition_notes: z.string().max(500).optional().nullable(),
+});
+
+const sellDeviceSchema = z.object({
+  sold_price: z.number({ required_error: "سعر البيع مطلوب" }).positive("سعر البيع يجب أن يكون أكبر من صفر"),
+  payment_method: z.string().max(50).optional().default("cash"),
+  payment_status: z.string().max(50).optional().default("paid"),
+  customer_id: z.number().int().positive().optional().nullable(),
+  customer_name: z.string().max(200).optional().nullable(),
+  warranty_months: z.number().int().min(0).optional().default(0),
+});
 
 const router = Router();
 router.use("/devices", requireFeature("maintenance"));
@@ -262,6 +318,8 @@ router.post("/devices", wrap(async (req, res) => {
     return res.status(403).json({ error: "غير مصرح بإضافة الأجهزة" });
   }
   const { company_id, user_id, user_name } = ctx(req);
+  const vd = createDeviceSchema.safeParse(req.body);
+  if (!vd.success) return res.status(400).json({ error: vd.error.errors[0]?.message ?? "بيانات غير صالحة" });
   const device_no = await nextDeviceNo(company_id);
   const b = req.body as Record<string, unknown>;
   const ALLOWED_FIELDS = [
@@ -311,6 +369,9 @@ router.post("/devices/purchase", wrap(async (req, res) => {
   }
   const { company_id, user_id, user_name, role, warehouse_id: userWarehouseId } = ctx(req);
 
+  const vPurch = purchaseDeviceSchema.safeParse(req.body);
+  if (!vPurch.success) throw httpError(400, vPurch.error.errors[0]?.message ?? "بيانات غير صالحة");
+
   const {
     /* device */
     brand, model, color, storage, grade, imei, battery_health,
@@ -336,11 +397,8 @@ router.post("/devices/purchase", wrap(async (req, res) => {
     safe_id?: number; warehouse_id?: number; paid_amount?: number;
   };
 
-  /* ── Validation ── */
-  if (!brand || !model) throw httpError(400, "الشركة المصنعة والموديل مطلوبان");
+  /* ── Validation (Zod already validated above) ── */
   const purchase_price = Number(rawPurchase ?? 0);
-  if (purchase_price <= 0) throw httpError(400, "سعر الشراء مطلوب وأكبر من صفر");
-  if (!payment_type) throw httpError(400, "طريقة الدفع مطلوبة");
 
   const sale_price  = Number(rawSale ?? 0);
   const safe_id     = rawSafeId ? Number(rawSafeId) : null;
@@ -598,11 +656,13 @@ router.post("/devices/:id/sell", wrap(async (req, res) => {
   }
   const { company_id, user_id, user_name } = ctx(req);
   const id = Number(req.params.id);
+  const vs = sellDeviceSchema.safeParse(req.body);
+  if (!vs.success) return res.status(400).json({ error: vs.error.errors[0]?.message ?? "بيانات غير صالحة" });
   const {
     customer_id, customer_name,
     sold_price, payment_method, payment_status,
     warranty_months,
-  } = req.body;
+  } = vs.data;
 
   const [existing] = await db.select().from(devicesTable)
     .where(and(eq(devicesTable.id, id), eq(devicesTable.company_id, company_id)));
@@ -615,7 +675,7 @@ router.post("/devices/:id/sell", wrap(async (req, res) => {
     status: "sold",
     sold_to_customer_id: customer_id ?? null,
     sold_to_customer_name: customer_name ?? null,
-    sold_price: sold_price ?? existing.sale_price,
+    sold_price: String(sold_price ?? existing.sale_price ?? 0),
     sold_at: soldAt,
     sold_by_user_id: user_id,
     sold_by_user_name: user_name,

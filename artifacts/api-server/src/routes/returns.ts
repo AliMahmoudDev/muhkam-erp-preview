@@ -1,11 +1,44 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
+import { z } from "zod";
 import {
   db, salesReturnsTable, saleReturnItemsTable,
   purchaseReturnsTable, purchaseReturnItemsTable,
   productsTable, customersTable, safesTable, transactionsTable, stockMovementsTable,
   saleItemsTable, purchaseItemsTable, customerLedgerTable, salesTable, purchasesTable,
 } from "@workspace/db";
+
+const returnItemSchema = z.object({
+  product_id: z.number().int().positive(),
+  quantity: z.number().positive("الكمية يجب أن تكون أكبر من صفر"),
+  unit_price: z.number().min(0),
+  total_price: z.number().min(0),
+});
+
+const createSaleReturnSchema = z.object({
+  items: z.array(returnItemSchema).min(1, "أضف أصناف المرتجع"),
+  sale_id: z.number().int().positive().optional().nullable(),
+  customer_id: z.number().int().positive().optional().nullable(),
+  customer_name: z.string().max(200).optional().nullable(),
+  reason: z.string().max(500).optional().nullable(),
+  notes: z.string().max(500).optional().nullable(),
+  date: z.string().optional().nullable(),
+  refund_type: z.enum(["cash", "credit"]).optional().default("credit"),
+  safe_id: z.number().int().positive().optional().nullable(),
+});
+
+const createPurchaseReturnSchema = z.object({
+  items: z.array(returnItemSchema).min(1, "أضف أصناف المرتجع"),
+  purchase_id: z.number().int().positive().optional().nullable(),
+  customer_id: z.number().int().positive().optional().nullable(),
+  customer_name: z.string().max(200).optional().nullable(),
+  supplier_name: z.string().max(200).optional().nullable(),
+  reason: z.string().max(500).optional().nullable(),
+  notes: z.string().max(500).optional().nullable(),
+  date: z.string().optional().nullable(),
+  refund_type: z.enum(["cash", "balance_credit"]).optional().default("balance_credit"),
+  safe_id: z.number().int().positive().optional().nullable(),
+});
 import { nextSaleReturnNo, nextPurchaseReturnNo } from "../lib/invoice-no";
 
 import { wrap, httpError } from "../lib/async-handler";
@@ -89,8 +122,9 @@ router.post("/sales-returns", wrap(async (req, res) => {
     res.status(403).json({ error: "غير مصرح بتسجيل المرتجعات" }); return;
   }
 
+  const vr = createSaleReturnSchema.safeParse(req.body);
+  if (!vr.success) { return res.status(400).json({ error: vr.error.errors[0]?.message ?? "بيانات غير صالحة" }); }
   const { sale_id, customer_id, customer_name, items, reason, notes, date, refund_type, safe_id } = req.body;
-  if (!items?.length) { return res.status(400).json({ error: "أضف أصناف المرتجع" }); }
 
   // Tenant validation: customer_id must belong to my company if provided
   if (customer_id) {
@@ -657,13 +691,13 @@ router.get("/purchase-returns/:id", wrap(async (req, res) => {
  * لأن التكلفة الأصلية مخزّنة في purchase_items.unit_price.
  */
 router.post("/purchase-returns", wrap(async (req, res) => {
+  const vpr = createPurchaseReturnSchema.safeParse(req.body);
+  if (!vpr.success) { return res.status(400).json({ error: vpr.error.errors[0]?.message ?? "بيانات غير صالحة" }); }
   const {
     purchase_id, customer_id, customer_name, supplier_name,
     items, reason, notes, date,
     refund_type, safe_id,
   } = req.body;
-
-  if (!items?.length) { return res.status(400).json({ error: "أضف أصناف المرتجع" }); }
 
   // Tenant validation: if linked to a parent purchase, ensure it belongs to my company
   if (purchase_id) {

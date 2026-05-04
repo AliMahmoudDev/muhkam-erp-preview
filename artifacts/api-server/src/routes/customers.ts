@@ -361,7 +361,8 @@ router.get("/customers/:id/ledger", wrap(async (req, res) => {
     .select()
     .from(customerLedgerTable)
     .where(eq(customerLedgerTable.customer_id, id))
-    .orderBy(asc(customerLedgerTable.date), asc(customerLedgerTable.created_at));
+    .orderBy(asc(customerLedgerTable.date), asc(customerLedgerTable.created_at))
+    .limit(500);
 
   let running = 0;
   const rows = entries.map(e => {
@@ -529,7 +530,8 @@ router.get("/customer-classifications", wrap(async (req, res) => {
     .select()
     .from(customerClassificationsTable)
     .where(eq(customerClassificationsTable.company_id, companyId))
-    .orderBy(asc(customerClassificationsTable.name));
+    .orderBy(asc(customerClassificationsTable.name))
+    .limit(500);
   res.json(rows);
 }));
 
