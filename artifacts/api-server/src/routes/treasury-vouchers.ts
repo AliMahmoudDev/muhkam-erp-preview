@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { db, treasuryVouchersTable, safesTable, transactionsTable } from "@workspace/db";
+import { nextTreasuryReceiptNo, nextTreasuryPaymentNo } from "../lib/invoice-no";
 
 import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
@@ -60,7 +61,9 @@ router.post("/treasury-vouchers", wrap(async (req, res) => {
   ));
   if (!safe) { res.status(404).json({ error: "الخزانة غير موجودة" }); return; }
 
-  const voucher_no = `${type === "receipt" ? "RV" : "PV"}-${Date.now()}`;
+  const voucher_no = type === "receipt"
+    ? await nextTreasuryReceiptNo(cid)
+    : await nextTreasuryPaymentNo(cid);
 
   const voucher = await db.transaction(async (tx) => {
     // تحديث ذرّي مع شرط كفاية الرصيد للسحب

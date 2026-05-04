@@ -284,7 +284,7 @@ router.post("/settings/safes/:id/close", authenticate, requireRole("admin"), req
   if (!safe) { res.status(404).json({ error: "الخزينة غير موجودة" }); return; }
 
   const systemBalance = Number(safe.balance);
-  const closing_no = `CLO-${id}-${Date.now()}`;
+  const closing_no = `CLO-${id}-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
 
   const todayTx = await db.select().from(transactionsTable)
     .where(and(eq(transactionsTable.safe_id, id), eq(transactionsTable.company_id, tenant)))

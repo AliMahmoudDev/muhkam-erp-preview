@@ -5,6 +5,7 @@
  */
 import { eq, and, sql } from "drizzle-orm";
 import { db, notificationsTable, erpUsersTable } from "@workspace/db";
+import { logger } from "./logger";
 
 export interface NotifyPayload {
   type: string;
@@ -27,9 +28,7 @@ export async function notifyUser(companyId: number, userId: number, p: NotifyPay
       reference_id: p.reference_id ?? null,
     });
   } catch (e) {
-    // Silent — notifications are best-effort
-    // eslint-disable-next-line no-console
-    console.warn("[notify] failed for user", userId, e);
+    logger.warn({ err: e, userId }, "[notify] failed for user");
   }
 }
 
@@ -51,8 +50,7 @@ export async function notifyEmployee(companyId: number, employeeId: number, p: N
       })),
     );
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.warn("[notify] failed for employee", employeeId, e);
+    logger.warn({ err: e, employeeId }, "[notify] failed for employee");
   }
 }
 
@@ -72,8 +70,7 @@ export async function notifyManagers(companyId: number, permissionKey: string, p
           OR (permissions::jsonb ->> ${permissionKey}::text)::boolean = true
         )
     `);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userIds: number[] = ((rows as any).rows ?? rows).map((r: any) => r.id);
+    const userIds: number[] = (rows.rows as Array<{ id: number }>).map((r) => r.id);
     if (userIds.length === 0) return;
     await db.insert(notificationsTable).values(
       userIds.map(id => ({
@@ -87,7 +84,6 @@ export async function notifyManagers(companyId: number, permissionKey: string, p
       })),
     );
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.warn("[notify] failed for managers", e);
+    logger.warn({ err: e }, "[notify] failed for managers");
   }
 }

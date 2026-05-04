@@ -193,8 +193,7 @@ router.get("/customers/:id", wrap(async (req, res) => {
   if (!rows.rows.length) {
     res.status(404).json({ error: "العميل غير موجود" }); return;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const r = rows.rows[0] as any;
+  const r = rows.rows[0] as Record<string, unknown>;
   res.json({
     id: r.id,
     name: r.name,
@@ -402,7 +401,7 @@ router.post("/customers/:id/payment", wrap(async (req, res) => {
   if (!amt || amt <= 0) throw httpError(400, "أدخل مبلغاً صحيحاً");
 
   const txDate = date ?? new Date().toISOString().split("T")[0];
-  const paymentNo = `PAY-${Date.now()}`;
+  const paymentNo = `PAY-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
 
   const cidPay = req.user!.company_id!;
   await db.transaction(async (tx) => {
@@ -470,7 +469,7 @@ router.post("/customers/:id/supplier-payment", wrap(async (req, res) => {
   if (isNaN(safeId)) throw httpError(400, "اختر الخزينة");
 
   const txDate = date ?? new Date().toISOString().split("T")[0];
-  const paymentNo = `SPAY-${Date.now()}`;
+  const paymentNo = `SPAY-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
   let resultCustomer: typeof customersTable.$inferSelect | undefined;
 
   const cidSPay = req.user!.company_id!;

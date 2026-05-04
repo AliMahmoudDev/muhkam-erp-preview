@@ -256,7 +256,7 @@ router.post("/inventory/adjustment", wrap(async (req, res) => {
       quantity_after: String(newQty),
       unit_cost: product.cost_price,
       reference_type: "adjustment",
-      reference_no: `ADJ-${Date.now()}`,
+      reference_no: `ADJ-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`,
       notes: notes ?? "تسوية يدوية",
       date: new Date().toISOString().split("T")[0],
       company_id: req.user?.company_id ?? undefined,

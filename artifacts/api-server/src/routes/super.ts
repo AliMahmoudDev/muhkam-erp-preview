@@ -1183,8 +1183,7 @@ router.post("/super/announcements", ...superOnly, wrap(async (req, res) => {
     target: target ?? (company_id ? String(company_id) : "all"),
     company_id: company_id ?? null,
     is_active: true,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    created_by: (req.user as any)?.username ?? "super_admin",
+    created_by: (req.user as unknown as Record<string, unknown>)?.username as string ?? "super_admin",
     expires_at: expires_at ? new Date(expires_at) : null,
   }).returning();
   void writeAuditLog({

@@ -159,8 +159,7 @@ router.post("/products", wrap(async (req, res) => {
     : 0;
 
   const resolvedCategoryId = await resolveCategoryId(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (parsed.data as any).category_id,
+    (parsed.data as Record<string, unknown>).category_id as number | null | undefined,
     parsed.data.category,
     companyId,
   );
@@ -214,8 +213,7 @@ router.put("/products/:id", wrap(async (req, res) => {
 
   const companyId = req.user!.company_id!;
   const resolvedCategoryId = await resolveCategoryId(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (parsed.data as any).category_id,
+    (parsed.data as Record<string, unknown>).category_id as number | null | undefined,
     parsed.data.category,
     companyId,
   );

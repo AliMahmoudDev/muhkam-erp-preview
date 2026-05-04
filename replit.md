@@ -201,6 +201,35 @@ Scenarios covered: S1 customer-rejects→cancelled · S2 QA-fail blocks ready_fo
 - Added `import { logger } from "../lib/logger"` to both files
 - Replaced all `console.error(...)` calls with `logger.error({err}, msg)` (pino structured logging)
 
-**TypeScript `as any` Elimination (`reports.ts`)**
-- Replaced all 7+ `as any` casts with `Record<string, unknown>` in: customer statement row, supplier statement row, daily profit loops (`retRows`, `expRows`), health-check profit/cash rows, balance-sheet inventory/capital rows
+**TypeScript `as any` Elimination (`reports.ts`, and routes)**
+- `reports.ts` — Replaced all 7+ `as any` casts with `Record<string, unknown>` in: customer/supplier statement rows, daily profit loops, health-check rows, balance-sheet rows
+- `purchases.ts` — `formatPurchase()` `exchange_rate`/`currency`/`shipping_cost` and `buildPurchaseJournalLines()` `tax_amount` → `Record<string, unknown>`
+- `sales.ts` — `buildSaleJournalLines()` `tax_amount` → `Record<string, unknown>`
+- `customers.ts` — raw SQL result row → `Record<string, unknown>`
+- `attendance.ts` — `.set(updates as any)` → `.set(updates as Partial<typeof attendanceRecordsTable.$inferInsert>)`
+- `employees.ts` — `.set(updates as any)` → `.set(updates as Partial<typeof employeesTable.$inferInsert>)`
+- `products.ts` — `(parsed.data as any).category_id` → typed cast with `Record<string, unknown>`
+- `salary-advances.ts` — `(rawLock as any).rows` → `rawLock.rows` (Drizzle execute result has `.rows` directly)
+- `super.ts` — `(req.user as any)?.username` → double-cast via `unknown`
+- `notify.ts` — `(rows as any).rows.map((r: any) => r.id)` → `rows.rows as Array<{id:number}>`
 - Removed all associated `// eslint-disable-next-line @typescript-eslint/no-explicit-any` comments
+
+**Logger Migration (lib files)**
+- `audit-log.ts` — `console.error` → `logger.error({ err }, msg)`
+- `notify.ts` — all 3 `console.warn` → `logger.warn({ err, userId/employeeId }, msg)`
+- `telegram.ts` — all 3 `console.warn` → `logger.warn({ ... }, msg)`
+- `tracking-token.ts` — `console.warn` → `logger.warn(msg)` (module-level startup warning)
+
+**Document Number Collision — Extended Coverage**
+Extended `invoice-no.ts` with sequential generators for all user-facing document types:
+- `nextReceiptVoucherNo` → `RCV-YYYY-NNNN` (receipt-vouchers.ts)
+- `nextPaymentVoucherNo` → `PAY-YYYY-NNNN` (payment-vouchers.ts)
+- `nextDepositVoucherNo` → `DEP-YYYY-NNNN` (deposit-vouchers.ts)
+- `nextTreasuryReceiptNo` / `nextTreasuryPaymentNo` → `RV/PV-YYYY-NNNN` (treasury-vouchers.ts)
+- `nextSaleReturnNo` → `SR-YYYY-NNNN` (returns.ts)
+- `nextPurchaseReturnNo` → `PR-YYYY-NNNN` (returns.ts)
+- Internal refs (WH-TRF, ADJ, OB, CLO, PAY, SPAY) — upgraded to `PREFIX-YYYY-BASE36TIMESTAMP` format (collision-resistant without sequential DB query overhead)
+
+**TypeScript Zero-Error Build**
+- Fixed `purchases.ts` missing `return` statement in paginated GET handler
+- All `tsc --noEmit` checks pass with zero errors across the entire API codebase

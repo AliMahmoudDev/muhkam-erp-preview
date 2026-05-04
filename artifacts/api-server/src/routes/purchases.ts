@@ -32,12 +32,9 @@ function formatPurchase(p: typeof purchasesTable.$inferSelect) {
     total_amount: Number(p.total_amount),
     paid_amount: Number(p.paid_amount),
     remaining_amount: Number(p.remaining_amount),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    exchange_rate: Number((p as any).exchange_rate ?? 1),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    currency: (p as any).currency ?? "EGP",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    shipping_cost: Number((p as any).shipping_cost ?? 0),
+    exchange_rate: Number((p as Record<string, unknown>).exchange_rate ?? 1),
+    currency: String((p as Record<string, unknown>).currency ?? "EGP"),
+    shipping_cost: Number((p as Record<string, unknown>).shipping_cost ?? 0),
     created_at: p.created_at.toISOString(),
   };
 }
@@ -90,7 +87,7 @@ router.get("/purchases", wrap(async (req, res) => {
     .where(eq(purchasesTable.company_id, companyId))
     .orderBy(desc(purchasesTable.created_at))
     .limit(500);
-  res.json(GetPurchasesResponse.parse(purchases.map(formatPurchase)));
+  return res.json(GetPurchasesResponse.parse(purchases.map(formatPurchase)));
 }));
 
 router.post("/purchases", wrap(async (req, res) => {
@@ -387,8 +384,7 @@ async function buildPurchaseJournalLines(
   const total        = Number(purchase.total_amount);
   const paid         = Number(purchase.paid_amount);
   const supplierDebt = total - paid;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const taxAmount    = Number((purchase as any).tax_amount ?? 0);
+  const taxAmount    = Number((purchase as Record<string, unknown>).tax_amount ?? 0);
   const netCost      = total - taxAmount;  // تكلفة المخزون صافي بدون ضريبة
   const lines: JournalLine[] = [];
 

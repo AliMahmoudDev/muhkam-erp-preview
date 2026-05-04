@@ -403,7 +403,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
   const transferId = await db.transaction(async (tx) => {
     const today = new Date().toISOString().split("T")[0];
     // رقم مرجعي مؤقت بناءً على الوقت (سيُستبدل بـ id الفعلي بعد الإدراج)
-    const tempRef = `WH-TRF-${Date.now()}`;
+    const tempRef = `WH-TRF-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
 
     for (const item of aggregatedItems) {
       const product = productMap.get(item.product_id)!;

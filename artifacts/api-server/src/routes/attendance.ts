@@ -276,8 +276,7 @@ router.put("/attendance/records/:id", wrap(async (req, res) => {
   if (working_hours  !== undefined) updates["working_hours"]  = String(Number(working_hours));
   if (late_minutes   !== undefined) updates["late_minutes"]   = Number(late_minutes);
   if (overtime_hours !== undefined) updates["overtime_hours"] = String(Number(overtime_hours));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [record] = await db.update(attendanceRecordsTable).set(updates as any).where(eq(attendanceRecordsTable.id, id)).returning();
+  const [record] = await db.update(attendanceRecordsTable).set(updates as Partial<typeof attendanceRecordsTable.$inferInsert>).where(eq(attendanceRecordsTable.id, id)).returning();
   if (!record) { res.status(404).json({ error: "السجل غير موجود" }); return; }
   res.json({ ...record, working_hours: record.working_hours != null ? Number(record.working_hours) : null, overtime_hours: record.overtime_hours != null ? Number(record.overtime_hours) : null, created_at: fmt(record.created_at), updated_at: fmt(record.updated_at) });
 }));

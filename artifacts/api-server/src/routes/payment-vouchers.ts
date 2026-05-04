@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { db, paymentVouchersTable, safesTable, customersTable, transactionsTable, accountsTable, customerLedgerTable } from "@workspace/db";
+import { nextPaymentVoucherNo } from "../lib/invoice-no";
 
 import { wrap, httpError } from "../lib/async-handler";
 import { assertPeriodOpen } from "../lib/period-lock";
@@ -84,7 +85,7 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
       ));
     }
 
-    const voucher_no = `PAY-${Date.now()}`;
+    const voucher_no = await nextPaymentVoucherNo(cid);
     const [v] = await tx.insert(paymentVouchersTable).values({
       request_id: requestId,
       voucher_no,

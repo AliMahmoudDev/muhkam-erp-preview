@@ -6,6 +6,7 @@
  */
 
 import { db, auditLogsTable } from "@workspace/db";
+import { logger } from "./logger";
 
 export type AuditAction =
   | "create"
@@ -120,7 +121,6 @@ export async function writeAuditLog(opts: {
       company_id: opts.company_id ?? null,
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[audit-log] failed to write log:", err);
+    logger.error({ err }, "[audit-log] failed to write log");
   }
 }

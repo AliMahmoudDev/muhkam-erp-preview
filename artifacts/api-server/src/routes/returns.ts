@@ -6,6 +6,7 @@ import {
   productsTable, customersTable, safesTable, transactionsTable, stockMovementsTable,
   saleItemsTable, purchaseItemsTable, customerLedgerTable, salesTable, purchasesTable,
 } from "@workspace/db";
+import { nextSaleReturnNo, nextPurchaseReturnNo } from "../lib/invoice-no";
 
 import { wrap, httpError } from "../lib/async-handler";
 import { assertPeriodOpen } from "../lib/period-lock";
@@ -119,7 +120,7 @@ router.post("/sales-returns", wrap(async (req, res) => {
   }
 
   const total: number = items.reduce((s: number, i: { total_price: number }) => s + Number(i.total_price), 0);
-  const return_no = `SR-${Date.now()}`;
+  const return_no = await nextSaleReturnNo(req.user!.company_id!);
   const rtype: string = refund_type === "cash" ? "cash" : "credit";
   const txDate = date ?? new Date().toISOString().split("T")[0];
 
@@ -702,7 +703,7 @@ router.post("/purchase-returns", wrap(async (req, res) => {
   }
 
   const total: number = items.reduce((s: number, i: { total_price: number }) => s + Number(i.total_price), 0);
-  const return_no = `PR-${Date.now()}`;
+  const return_no = await nextPurchaseReturnNo(req.user!.company_id!);
   const txDate = date ?? new Date().toISOString().split("T")[0];
   const rtype: string = refund_type === "cash" ? "cash" : "balance_credit";
 

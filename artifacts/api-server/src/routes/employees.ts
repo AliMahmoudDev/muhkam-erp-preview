@@ -649,8 +649,7 @@ router.put(
 
     const [emp] = await db
       .update(employeesTable)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .set(updates as any)
+      .set(updates as Partial<typeof employeesTable.$inferInsert>)
       .where(and(eq(employeesTable.id, id), eq(employeesTable.company_id, companyId)))
       .returning();
 
