@@ -349,6 +349,7 @@ const PARTICLES = [
 ];
 
 const NAV_LINKS = [['features','الميزات'],['pricing','الأسعار']];
+const LOGO_SRC = `${import.meta.env.BASE_URL}muhkam-logo-main.png`;
 
 /* ══════════════════════════════════════════════
    Shared style helpers
@@ -469,13 +470,7 @@ export default function LandingPage() {
       }}>
         <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 28px', height:68, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{
-              width:38, height:38, borderRadius:11, flexShrink:0,
-              background:'linear-gradient(135deg,#f59e0b,#f97316)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontWeight:900, fontSize:20, color:'#000',
-              boxShadow:'0 0 20px rgba(245,158,11,.45)',
-            }}>م</div>
+            <img src={LOGO_SRC} alt="مُحكم" style={{ width:40, height:40, borderRadius:10, objectFit:'cover', flexShrink:0, boxShadow:'0 0 18px rgba(245,158,11,.5)' }} />
             <div>
               <div style={{ fontWeight:900, fontSize:19, lineHeight:1, color:'#fff', ...mono }}>مُحكم</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,.38)', lineHeight:1, marginTop:2 }}>نظام ERP عربي</div>
@@ -633,7 +628,7 @@ export default function LandingPage() {
             <div style={{ display:'flex', height:290 }}>
               <div style={{ width:170, borderLeft:'1px solid rgba(255,255,255,.055)', padding:'16px 12px', display:'flex', flexDirection:'column', gap:5, flexShrink:0 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-                  <div style={{ width:26, height:26, borderRadius:7, background:'linear-gradient(135deg,#f59e0b,#f97316)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:900, color:'#000', flexShrink:0 }}>م</div>
+                  <img src={LOGO_SRC} alt="مُحكم" style={{ width:26, height:26, borderRadius:7, objectFit:'cover', flexShrink:0 }} />
                   <span style={{ fontSize:12, fontWeight:800, color:'#fff', ...mono }}>مُحكم ERP</span>
                 </div>
                 {([['🏠','لوحة التحكم',true],['💰','المبيعات',false],['📦','المخزون',false],['🔧','الصيانة',false],['👥','الموظفون',false]] as [string,string,boolean][]).map(([icon,lbl,active], i) => (
@@ -933,7 +928,7 @@ export default function LandingPage() {
         <div style={{ position:'absolute', top:0, left:0, right:0, height:1, background:'linear-gradient(90deg,transparent,rgba(245,158,11,.45),transparent)' }} />
         <div style={{ maxWidth:1100, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:18 }}>
           <div style={{ display:'flex', alignItems:'center', gap:11 }}>
-            <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,#f59e0b,#f97316)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:17, color:'#000', boxShadow:'0 0 14px rgba(245,158,11,.35)' }}>م</div>
+            <img src={LOGO_SRC} alt="مُحكم" style={{ width:36, height:36, borderRadius:10, objectFit:'cover', boxShadow:'0 0 14px rgba(245,158,11,.35)' }} />
             <div>
               <div style={{ fontWeight:900, color:'#fff', fontSize:16 }}>مُحكم ERP</div>
               <div style={{ fontSize:11, color:'rgba(255,255,255,.3)' }}>نظام إدارة عربي متكامل</div>

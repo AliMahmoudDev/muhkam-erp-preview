@@ -125,6 +125,8 @@ const PARTICLES = [
   {top:'82%',left:'38%',s:6, d:'2.4s', dur:'8.5s'},
 ];
 
+const LOGO_SRC = `${import.meta.env.BASE_URL}muhkam-logo-main.png`;
+
 const FEATURES_LEFT = [
   { icon:'📊', label:'محاسبة كاملة', desc:'قيد مزدوج تلقائي' },
   { icon:'🛒', label:'مبيعات وPOS',  desc:'فواتير لحظية' },
@@ -317,14 +319,11 @@ export default function Login() {
       {/* Content */}
       <div style={{ position:'relative', zIndex:10, display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center', padding:'0 48px', maxWidth:420 }} dir="rtl">
         {/* Logo */}
-        <div style={{
-          width:88, height:88, borderRadius:24, flexShrink:0,
-          background:'linear-gradient(135deg,#f59e0b,#f97316)',
-          display:'flex', alignItems:'center', justifyContent:'center',
-          fontWeight:900, fontSize:46, color:'#000',
+        <img src={LOGO_SRC} alt="مُحكم" style={{
+          width:108, height:108, borderRadius:24, objectFit:'cover', flexShrink:0,
           boxShadow:'0 0 60px rgba(245,158,11,.55), 0 20px 60px rgba(0,0,0,.5)',
           marginBottom:22, animation:'ll-pulse 3s ease-in-out infinite',
-        }}>م</div>
+        }} />
 
         <div style={{ fontSize:30, fontWeight:900, color:'#fff', marginBottom:6, letterSpacing:'-.01em', animation:'ll-slide-up .7s ease both', ...mono }}>مُحكم ERP</div>
         <div style={{ fontSize:14, color:'rgba(255,255,255,.4)', marginBottom:48, lineHeight:1.7, animation:'ll-slide-up .75s .05s ease both', ...mono }}>نظام إدارة عربي متكامل<br/>لمستقبل أكثر ذكاءً</div>
@@ -408,7 +407,7 @@ export default function Login() {
           display:'none', flexDirection:'column', alignItems:'center', marginBottom:32,
           animation:'ll-slide-up .6s ease both',
         }}>
-          <div style={{ width:58, height:58, borderRadius:16, background:'linear-gradient(135deg,#f59e0b,#f97316)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:900, color:'#000', boxShadow:'0 0 28px rgba(245,158,11,.45)', marginBottom:10 }}>م</div>
+          <img src={LOGO_SRC} alt="مُحكم" style={{ width:58, height:58, borderRadius:16, objectFit:'cover', boxShadow:'0 0 28px rgba(245,158,11,.45)', marginBottom:10 }} />
           <div style={{ fontSize:18, fontWeight:900, color:'#fff', ...mono }}>مُحكم ERP</div>
         </div>
 
@@ -472,7 +471,7 @@ export default function Login() {
               {/* Logo inside card (mobile) + heading */}
               <div style={{ textAlign:'center', marginBottom:26 }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:14 }}>
-                  <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#f59e0b,#f97316)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:20, color:'#000', boxShadow:'0 0 20px rgba(245,158,11,.45)' }}>م</div>
+                  <img src={LOGO_SRC} alt="مُحكم" style={{ width:38, height:38, borderRadius:11, objectFit:'cover', boxShadow:'0 0 20px rgba(245,158,11,.45)' }} />
                   <div style={{ fontWeight:900, fontSize:18, color:'#fff', ...mono }}>مُحكم ERP</div>
                 </div>
                 <h1 style={{ fontSize:22, fontWeight:900, color:'#fff', marginBottom:4, ...mono }}>
