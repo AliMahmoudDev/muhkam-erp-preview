@@ -215,6 +215,23 @@ router.get("/devices", wrap(async (req, res) => {
     );
   }
 
+  /* Enrich purchase_invoice_no for old devices that have purchase_id but no invoice_no saved */
+  const missingInvoice = rows.filter(d => !d.purchase_invoice_no && d.purchase_id);
+  if (missingInvoice.length > 0) {
+    const ids = missingInvoice.map(d => d.purchase_id as number);
+    const invoices = await db.select({ id: purchasesTable.id, invoice_no: purchasesTable.invoice_no })
+      .from(purchasesTable)
+      .where(sql`${purchasesTable.id} = ANY(${ids})`);
+    const invoiceMap: Record<number, string> = {};
+    for (const inv of invoices) invoiceMap[inv.id] = inv.invoice_no;
+    rows = rows.map(d => {
+      if (!d.purchase_invoice_no && d.purchase_id && invoiceMap[d.purchase_id]) {
+        return { ...d, purchase_invoice_no: invoiceMap[d.purchase_id], purchase_invoice_ref: invoiceMap[d.purchase_id] };
+      }
+      return d;
+    });
+  }
+
   return res.json(rows);
 }));
 
@@ -228,6 +245,17 @@ router.get("/devices/:id", wrap(async (req, res) => {
   const [row] = await db.select().from(devicesTable)
     .where(and(eq(devicesTable.id, id), eq(devicesTable.company_id, company_id)));
   if (!row) return res.status(404).json({ error: "not found" });
+
+  /* Enrich purchase_invoice_no for old devices */
+  if (!row.purchase_invoice_no && row.purchase_id) {
+    const [inv] = await db.select({ invoice_no: purchasesTable.invoice_no })
+      .from(purchasesTable).where(eq(purchasesTable.id, row.purchase_id));
+    if (inv) {
+      (row as Record<string, unknown>).purchase_invoice_no = inv.invoice_no;
+      (row as Record<string, unknown>).purchase_invoice_ref = inv.invoice_no;
+    }
+  }
+
   return res.json(row);
 }));
 
