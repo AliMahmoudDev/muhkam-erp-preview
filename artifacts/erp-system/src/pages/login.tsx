@@ -553,7 +553,7 @@ function LoginFormFields({
     <form onSubmit={handleSubmit} noValidate aria-label="نموذج تسجيل الدخول">
       {/* Username */}
       <div style={{ marginBottom:18 }}>
-        <label style={labelStyle}>اسم المستخدم</label>
+        <label htmlFor="username" style={labelStyle}>اسم المستخدم أو البريد الإلكتروني</label>
         <div style={{ position:'relative' }}>
           <span style={{ position:'absolute', top:'50%', right:16, transform:'translateY(-50%)', fontSize:16, pointerEvents:'none' }}>👤</span>
           <input
@@ -569,7 +569,7 @@ function LoginFormFields({
             onChange={e => { setUsername(e.target.value); setError(''); }}
             onFocus={() => setFocused('username')}
             onBlur={() => setFocused(null)}
-            aria-label="اسم المستخدم"
+            aria-label="اسم المستخدم أو البريد الإلكتروني"
             aria-describedby="login-error"
           />
         </div>
