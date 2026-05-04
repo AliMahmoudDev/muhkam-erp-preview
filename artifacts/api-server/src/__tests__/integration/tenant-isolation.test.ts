@@ -44,14 +44,9 @@ let saleBId: number;
 let purchaseAId: number;
 let purchaseBId: number;
 
-let saleAInvoice: string;
-let saleBInvoice: string;
-
 /* Voucher cross-tenant isolation fixtures */
 let safeAId: number;
 let customerBId: number;
-let purchaseAInvoice: string;
-let purchaseBInvoice: string;
 
 /* ── Helper: extract id list from GET /sales or /purchases ── */
 interface InvoiceItem {
@@ -430,7 +425,6 @@ describe('Multi-Tenant Isolation — Sales', () => {
     expect(res.status).toBe(201);
     expect(res.body.invoice_no).toBeTruthy();
     saleAId = res.body.id as number;
-    saleAInvoice = res.body.invoice_no as string;
   });
 
   it('POST /api/sales — company B creates a sale (201)', async () => {
@@ -461,7 +455,6 @@ describe('Multi-Tenant Isolation — Sales', () => {
     expect(res.status).toBe(201);
     expect(res.body.invoice_no).toBeTruthy();
     saleBId = res.body.id as number;
-    saleBInvoice = res.body.invoice_no as string;
   });
 
   it('GET /api/sales with tokenA — returns own sale, NEVER company B sale', async () => {
@@ -523,7 +516,6 @@ describe('Multi-Tenant Isolation — Purchases', () => {
     expect(res.status).toBe(201);
     expect(res.body.invoice_no).toBeTruthy();
     purchaseAId = res.body.id as number;
-    purchaseAInvoice = res.body.invoice_no as string;
   });
 
   it('POST /api/purchases — company B creates a purchase (201)', async () => {
@@ -555,7 +547,6 @@ describe('Multi-Tenant Isolation — Purchases', () => {
     expect(res.status).toBe(201);
     expect(res.body.invoice_no).toBeTruthy();
     purchaseBId = res.body.id as number;
-    purchaseBInvoice = res.body.invoice_no as string;
   });
 
   it('GET /api/purchases with tokenA — returns own purchase, NEVER company B purchase', async () => {
