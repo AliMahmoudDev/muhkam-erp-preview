@@ -190,8 +190,8 @@ export default function ConsignmentPage() {
                 { label: "المباع", val: `${sup.total_sold_qty} قطعة`, sub: formatCurrency(sup.total_sold_value), color: "text-green-400" },
                 { label: "المتبقي في المخزن", val: `${sup.total_remaining_qty} قطعة`, sub: "", color: "text-amber-400" },
                 { label: "المستحق للمورد", val: formatCurrency(sup.total_owed), sub: `${soldPct}% مُباع`, color: sup.total_owed > 0 ? "text-red-400" : "text-green-400" },
-              ].map((s, i) => (
-                <div key={i} className="p-4 text-center">
+              ].map((s) => (
+                <div key={s.label} className="p-4 text-center">
                   <p className={`font-black text-lg ${s.color}`}>{s.val}</p>
                   {s.sub && <p className="text-xs text-white/40 mt-0.5">{s.sub}</p>}
                   <p className="text-xs text-white/30 mt-1">{s.label}</p>

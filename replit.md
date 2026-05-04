@@ -250,6 +250,13 @@ Extended `invoice-no.ts` with sequential generators for all user-facing document
 - `consignment.ts` — `sql.raw(purchaseIds.join(","))` → proper typed `db.select().from(purchaseItemsTable).where(inArray(...))` Drizzle query; `warehousesTable` query also switched from `sql.raw` to `inArray()`
 - Deleted duplicate `NotificationBell.tsx` (290-line old version); test file updated to import from correct `@/components/notification-bell`
 
+### God Component Split — super-admin.tsx (T10)
+`super-admin.tsx` reduced from **5169 → 2945 lines** by extracting three inline tab blocks into dedicated components under `src/pages/super-admin/`:
+- `tab-companies.tsx` (~946 lines) — `TabCompanies`: Stats grid, expiry alerts, monthly signups chart, companies table/cards, create form, pagination
+- `tab-managers.tsx` (~366 lines) — `TabManagers`: Manager list table with toggle/edit/delete actions
+- `tab-settings.tsx` (~1073 lines) — `TabSettings`: Support settings, backup/restore/encryption, 2FA security, Telegram alert rules, audit log
+- All props are strictly typed with dedicated interfaces; `tsc --noEmit` passes with 0 errors after refactor
+
 ### Performance
 - `customers.tsx` — Client-side pagination added: `custPage` state + `paginatedCustomers` useMemo (50/page); pagination controls rendered below table; page resets on search/typeFilter change; `filtered` wrapped in `useMemo`
 - `employees.tsx` — Client-side pagination added: `empPage` state + `paginatedEmps` useMemo (50/page); pagination controls rendered below table; deptFilter now also applied client-side in `filtered` useMemo

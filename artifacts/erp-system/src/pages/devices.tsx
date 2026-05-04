@@ -1780,7 +1780,7 @@ export default function Devices() {
   const { data: stats } = useQuery<Stats>({
     queryKey: ["/api/devices/stats"],
     queryFn: () => authFetch(api("/api/devices/stats")).then(r => r.json() as Promise<Stats>),
-    staleTime: 0,
+    staleTime: 30_000,
   });
 
   const { data: allDevices = [], isLoading } = useQuery<Device[]>({
@@ -1791,7 +1791,7 @@ export default function Devices() {
       if (search.trim()) p.set("search", search.trim());
       return authFetch(api(`/api/devices?${p}`)).then(r => r.json() as Promise<Device[]>);
     },
-    staleTime: 0,
+    staleTime: 30_000,
     select: (d) => (Array.isArray(d) ? d : []),
   });
 

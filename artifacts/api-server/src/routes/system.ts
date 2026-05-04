@@ -39,8 +39,9 @@ const router: IRouter = Router();
 router.post("/system/backup", authenticate, requireRole("admin"), requireTenant,
   wrap(async (req, res) => {
   const companyId: number = req.user!.company_id!;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cEq = <T extends { company_id: unknown }>(t: T) => eq((t as any).company_id, companyId);
+  // Drizzle's eq() requires the exact column type; we use a cast to keep the generic helper lean.
+  const cEq = <T extends { company_id: unknown }>(t: T) =>
+    eq(t.company_id as Parameters<typeof eq>[0], companyId);
 
   const [
     products, customers,
@@ -295,8 +296,9 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
      other tenants' rows to whoever holds this tenant's filesystem. */
   let snapshotPath: string | null = null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cEq = <T extends { company_id: unknown }>(t: T) => eq((t as any).company_id, companyId);
+    // Drizzle eq() requires the exact column type; cast keeps the generic helper lean.
+    const cEq = <T extends { company_id: unknown }>(t: T) =>
+      eq(t.company_id as Parameters<typeof eq>[0], companyId);
     const [
       products, customers, sales, purchases,
       salesReturns, purchaseReturns, journalEntries,
@@ -410,11 +412,11 @@ router.post("/system/restore", authenticate, requireRole("admin"), requireTenant
       const tenantJeIds = (await tx.select({ id: journalEntriesTable.id }).from(journalEntriesTable)
         .where(eq(journalEntriesTable.company_id, companyId))).map(r => r.id);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tenantOnly = (col: any) => eq(col, companyId);
+      const tenantOnly = (col: Parameters<typeof eq>[0]) => eq(col, companyId);
       const ins = async <T>(tbl: Parameters<typeof tx.insert>[0], rows: T[]) => {
+        // Drizzle insert values() is typed per-table; cast is unavoidable for generic helper.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (rows.length > 0) await tx.insert(tbl).values(rows as any);
+        if (rows.length > 0) await tx.insert(tbl).values(rows as any[]);
       };
 
       /* ── Module: sales ── */

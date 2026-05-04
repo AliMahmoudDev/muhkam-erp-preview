@@ -4,6 +4,7 @@
  */
 import { Router, type IRouter } from "express";
 import { eq, and, desc, gte, lte, sql, isNull } from "drizzle-orm";
+import { z } from "zod";
 import {
   db,
   attendanceRecordsTable, shiftSchedulesTable, employeeShiftAssignmentsTable,
@@ -13,6 +14,63 @@ import {
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { requireFeature } from "../middleware/feature-guard";
+
+/* ── Zod schemas for mutation bodies ── */
+const shiftSchema = z.object({
+  name_ar:         z.string().min(1, "اسم الوردية مطلوب"),
+  name_en:         z.string().optional(),
+  start_time:      z.string().regex(/^\d{2}:\d{2}$/, "صيغة الوقت غير صحيحة"),
+  end_time:        z.string().regex(/^\d{2}:\d{2}$/, "صيغة الوقت غير صحيحة"),
+  break_duration:  z.number().int().min(0).optional().default(60),
+  grace_minutes:   z.number().int().min(0).optional().default(5),
+  weekly_hours:    z.number().min(0).max(168).optional().default(40),
+  working_days:    z.string().optional().default("0,1,2,3,4"),
+  is_active:       z.boolean().optional().default(true),
+});
+
+const employeeShiftSchema = z.object({
+  employee_id:       z.number().int().positive("معرّف الموظف مطلوب"),
+  shift_schedule_id: z.number().int().positive("معرّف الوردية مطلوب"),
+  assigned_date:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "صيغة التاريخ غير صحيحة"),
+  end_date:          z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+});
+
+const checkInSchema = z.object({
+  employee_id:      z.number().int().positive().optional(),
+  attendance_date:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  check_in_time:    z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  notes:            z.string().max(500).nullable().optional(),
+});
+
+const checkOutSchema = z.object({
+  employee_id:      z.number().int().positive().optional(),
+  attendance_date:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  check_out_time:   z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  notes:            z.string().max(500).nullable().optional(),
+});
+
+const attendanceEditSchema = z.object({
+  check_in_time:   z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  check_out_time:  z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  status:          z.enum(["present","absent","late","half_day","leave","holiday"]).optional(),
+  notes:           z.string().max(500).nullable().optional(),
+  working_hours:   z.number().min(0).max(24).optional(),
+  late_minutes:    z.number().int().min(0).optional(),
+  overtime_hours:  z.number().min(0).max(24).optional(),
+});
+
+const overtimeSchema = z.object({
+  employee_id: z.number().int().positive("معرّف الموظف مطلوب"),
+  date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "صيغة التاريخ غير صحيحة"),
+  hours:       z.number().min(0.25).max(24, "عدد الساعات لا يمكن أن يتجاوز 24"),
+  reason:      z.string().max(500).nullable().optional(),
+});
+
+const holidaySchema = z.object({
+  holiday_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "صيغة التاريخ غير صحيحة"),
+  name_ar:      z.string().min(1, "اسم الإجازة مطلوب").max(200),
+  name_en:      z.string().max(200).optional(),
+});
 
 const router: IRouter = Router();
 router.use(["/attendance", "/shifts", "/employee-shifts", "/public-holidays"], requireFeature("hr"));
@@ -33,13 +91,14 @@ router.get("/shifts", wrap(async (req, res) => {
 router.post("/shifts", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
-  const { name_ar, name_en, start_time, end_time, break_duration, grace_minutes, weekly_hours, working_days } = req.body as Record<string, unknown>;
-  if (!name_ar || !start_time || !end_time) { res.status(400).json({ error: "بيانات الوردية غير مكتملة" }); return; }
+  const parsed = shiftSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الوردية غير صحيحة", details: parsed.error.errors }); return; }
+  const { name_ar, name_en, start_time, end_time, break_duration, grace_minutes, weekly_hours, working_days } = parsed.data;
   const [row] = await db.insert(shiftSchedulesTable).values({
-    company_id: companyId, name_ar: String(name_ar), name_en: String(name_en ?? name_ar),
-    start_time: String(start_time), end_time: String(end_time),
-    break_duration: Number(break_duration) || 60, grace_minutes: Number(grace_minutes) || 5,
-    weekly_hours: String(Number(weekly_hours) || 40), working_days: String(working_days ?? "0,1,2,3,4"),
+    company_id: companyId, name_ar, name_en: name_en ?? name_ar,
+    start_time, end_time,
+    break_duration, grace_minutes,
+    weekly_hours: String(weekly_hours), working_days,
   }).returning();
   res.status(201).json({ ...row, weekly_hours: Number(row.weekly_hours), created_at: fmt(row.created_at) });
 }));
@@ -48,9 +107,11 @@ router.put("/shifts/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
-  const { name_ar, name_en, start_time, end_time, break_duration, grace_minutes, weekly_hours, working_days, is_active } = req.body as Record<string, unknown>;
+  const parsed = shiftSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الوردية غير صحيحة", details: parsed.error.errors }); return; }
+  const { name_ar, name_en, start_time, end_time, break_duration, grace_minutes, weekly_hours, working_days, is_active } = parsed.data;
   const [row] = await db.update(shiftSchedulesTable)
-    .set({ name_ar: String(name_ar ?? ""), name_en: String(name_en ?? name_ar ?? ""), start_time: String(start_time ?? ""), end_time: String(end_time ?? ""), break_duration: Number(break_duration) || 60, grace_minutes: Number(grace_minutes) || 5, weekly_hours: String(Number(weekly_hours) || 40), working_days: String(working_days ?? "0,1,2,3,4"), is_active: Boolean(is_active !== false) })
+    .set({ name_ar, name_en: name_en ?? name_ar, start_time, end_time, break_duration, grace_minutes, weekly_hours: String(weekly_hours), working_days, is_active: is_active ?? true })
     .where(and(eq(shiftSchedulesTable.id, id), eq(shiftSchedulesTable.company_id, companyId)))
     .returning();
   if (!row) { res.status(404).json({ error: "الوردية غير موجودة" }); return; }
@@ -68,11 +129,11 @@ router.delete("/shifts/:id", wrap(async (req, res) => {
 /* ── Employee Shift Assignments ───────────────────────────────── */
 router.post("/employee-shifts", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const { employee_id, shift_schedule_id, assigned_date, end_date } = req.body as Record<string, unknown>;
-  if (!employee_id || !shift_schedule_id || !assigned_date) { res.status(400).json({ error: "بيانات تعيين الوردية غير مكتملة" }); return; }
+  const parsed = employeeShiftSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات تعيين الوردية غير صحيحة", details: parsed.error.errors }); return; }
+  const { employee_id, shift_schedule_id, assigned_date, end_date } = parsed.data;
   const [row] = await db.insert(employeeShiftAssignmentsTable).values({
-    employee_id: Number(employee_id), shift_schedule_id: Number(shift_schedule_id),
-    assigned_date: String(assigned_date), end_date: end_date ? String(end_date) : null,
+    employee_id, shift_schedule_id, assigned_date, end_date: end_date ?? null,
   }).returning();
   res.status(201).json({ ...row, created_at: fmt(row.created_at) });
 }));
@@ -150,31 +211,31 @@ router.get("/attendance/records", wrap(async (req, res) => {
 router.post("/attendance/check-in", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
-  const { employee_id, attendance_date, check_in_time, notes } = req.body as Record<string, unknown>;
+  const parsed = checkInSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الحضور غير صحيحة", details: parsed.error.errors }); return; }
+  const { employee_id, attendance_date, check_in_time, notes } = parsed.data;
 
   // Resolve employee: explicit id → linked employee_id on user → error
-  const empId = employee_id
-    ? Number(employee_id)
-    : (req.user?.employee_id ?? null);
+  const empId = employee_id ?? (req.user?.employee_id ?? null);
   if (!empId) { res.status(400).json({ error: "الحساب غير مرتبط بموظف — يرجى مراجعة المدير لربط حسابك بسجل الموظف" }); return; }
 
   // Verify employee belongs to company
   const [emp] = await db.select({ id: employeesTable.id }).from(employeesTable)
-    .where(and(eq(employeesTable.id, Number(empId)), eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at)));
+    .where(and(eq(employeesTable.id, empId), eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at)));
   if (!emp) { res.status(404).json({ error: "الموظف غير موجود" }); return; }
 
-  const date = String(attendance_date ?? new Date().toISOString().split("T")[0]);
-  const time = String(check_in_time ?? new Date().toTimeString().substring(0, 5));
+  const date = attendance_date ?? new Date().toISOString().split("T")[0];
+  const time = check_in_time ?? new Date().toTimeString().substring(0, 5);
 
   const existing = await db.select({ id: attendanceRecordsTable.id }).from(attendanceRecordsTable)
-    .where(and(eq(attendanceRecordsTable.employee_id, Number(empId)), eq(attendanceRecordsTable.attendance_date, date)));
+    .where(and(eq(attendanceRecordsTable.employee_id, empId), eq(attendanceRecordsTable.attendance_date, date)));
   if (existing.length > 0) { res.status(409).json({ error: "تم تسجيل الحضور لهذا اليوم مسبقاً" }); return; }
 
   // Get shift to calculate late minutes
   const [assignment] = await db.select({ shift_schedule_id: employeeShiftAssignmentsTable.shift_schedule_id, start_time: shiftSchedulesTable.start_time, grace_minutes: shiftSchedulesTable.grace_minutes })
     .from(employeeShiftAssignmentsTable)
     .leftJoin(shiftSchedulesTable, eq(employeeShiftAssignmentsTable.shift_schedule_id, shiftSchedulesTable.id))
-    .where(and(eq(employeeShiftAssignmentsTable.employee_id, Number(empId)), lte(employeeShiftAssignmentsTable.assigned_date, date)))
+    .where(and(eq(employeeShiftAssignmentsTable.employee_id, empId), lte(employeeShiftAssignmentsTable.assigned_date, date)))
     .orderBy(desc(employeeShiftAssignmentsTable.assigned_date))
     .limit(1);
 
@@ -193,8 +254,8 @@ router.post("/attendance/check-in", wrap(async (req, res) => {
   }
 
   const [record] = await db.insert(attendanceRecordsTable).values({
-    employee_id: Number(empId), attendance_date: date, check_in_time: time,
-    status, late_minutes: lateMinutes, notes: (notes as string) ?? null,
+    employee_id: empId, attendance_date: date, check_in_time: time,
+    status, late_minutes: lateMinutes, notes: notes ?? null,
     submitted_by: userId,
   }).returning();
 
@@ -205,20 +266,20 @@ router.post("/attendance/check-in", wrap(async (req, res) => {
 router.post("/attendance/check-out", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
-  const { employee_id, attendance_date, check_out_time, notes } = req.body as Record<string, unknown>;
-  const empId = employee_id
-    ? Number(employee_id)
-    : (req.user?.employee_id ?? null);
+  const parsed = checkOutSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الانصراف غير صحيحة", details: parsed.error.errors }); return; }
+  const { employee_id, attendance_date, check_out_time, notes } = parsed.data;
+  const empId = employee_id ?? (req.user?.employee_id ?? null);
   if (!empId) { res.status(400).json({ error: "الحساب غير مرتبط بموظف — يرجى مراجعة المدير" }); return; }
-  const date = String(attendance_date ?? new Date().toISOString().split("T")[0]);
-  const time = String(check_out_time ?? new Date().toTimeString().substring(0, 5));
+  const date = attendance_date ?? new Date().toISOString().split("T")[0];
+  const time = check_out_time ?? new Date().toTimeString().substring(0, 5);
 
   const [emp] = await db.select({ id: employeesTable.id }).from(employeesTable)
-    .where(and(eq(employeesTable.id, Number(empId)), eq(employeesTable.company_id, companyId)));
+    .where(and(eq(employeesTable.id, empId), eq(employeesTable.company_id, companyId)));
   if (!emp) { res.status(404).json({ error: "الموظف غير موجود" }); return; }
 
   const [existing] = await db.select().from(attendanceRecordsTable)
-    .where(and(eq(attendanceRecordsTable.employee_id, Number(empId)), eq(attendanceRecordsTable.attendance_date, date)));
+    .where(and(eq(attendanceRecordsTable.employee_id, empId), eq(attendanceRecordsTable.attendance_date, date)));
   if (!existing) { res.status(404).json({ error: "لا يوجد تسجيل حضور لهذا اليوم" }); return; }
   if (existing.check_out_time) { res.status(409).json({ error: "تم تسجيل الانصراف مسبقاً" }); return; }
 
@@ -234,7 +295,7 @@ router.post("/attendance/check-out", wrap(async (req, res) => {
     const [assignment] = await db.select({ end_time: shiftSchedulesTable.end_time })
       .from(employeeShiftAssignmentsTable)
       .leftJoin(shiftSchedulesTable, eq(employeeShiftAssignmentsTable.shift_schedule_id, shiftSchedulesTable.id))
-      .where(and(eq(employeeShiftAssignmentsTable.employee_id, Number(empId)), lte(employeeShiftAssignmentsTable.assigned_date, date)))
+      .where(and(eq(employeeShiftAssignmentsTable.employee_id, empId), lte(employeeShiftAssignmentsTable.assigned_date, date)))
       .orderBy(desc(employeeShiftAssignmentsTable.assigned_date)).limit(1);
 
     if (assignment?.end_time) {
@@ -267,15 +328,17 @@ router.post("/attendance/check-out", wrap(async (req, res) => {
 router.put("/attendance/records/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const id = parseInt(String(req.params["id"]), 10);
-  const { check_in_time, check_out_time, status, notes, working_hours, late_minutes, overtime_hours } = req.body as Record<string, unknown>;
+  const parsed = attendanceEditSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات التعديل غير صحيحة", details: parsed.error.errors }); return; }
+  const { check_in_time, check_out_time, status, notes, working_hours, late_minutes, overtime_hours } = parsed.data;
   const updates: Record<string, unknown> = { updated_at: new Date(), verified_by: req.user?.id };
   if (check_in_time  !== undefined) updates["check_in_time"]  = check_in_time;
   if (check_out_time !== undefined) updates["check_out_time"] = check_out_time;
   if (status         !== undefined) updates["status"]         = status;
   if (notes          !== undefined) updates["notes"]          = notes;
-  if (working_hours  !== undefined) updates["working_hours"]  = String(Number(working_hours));
-  if (late_minutes   !== undefined) updates["late_minutes"]   = Number(late_minutes);
-  if (overtime_hours !== undefined) updates["overtime_hours"] = String(Number(overtime_hours));
+  if (working_hours  !== undefined) updates["working_hours"]  = String(working_hours);
+  if (late_minutes   !== undefined) updates["late_minutes"]   = late_minutes;
+  if (overtime_hours !== undefined) updates["overtime_hours"] = String(overtime_hours);
   const [record] = await db.update(attendanceRecordsTable).set(updates as Partial<typeof attendanceRecordsTable.$inferInsert>).where(eq(attendanceRecordsTable.id, id)).returning();
   if (!record) { res.status(404).json({ error: "السجل غير موجود" }); return; }
   res.json({ ...record, working_hours: record.working_hours != null ? Number(record.working_hours) : null, overtime_hours: record.overtime_hours != null ? Number(record.overtime_hours) : null, created_at: fmt(record.created_at), updated_at: fmt(record.updated_at) });
@@ -335,11 +398,12 @@ router.get("/attendance/overtime", wrap(async (req, res) => {
 router.post("/attendance/overtime", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const userId = req.user?.id ?? null;
-  const { employee_id, date, hours, reason } = req.body as Record<string, unknown>;
-  if (!employee_id || !date || !hours) { res.status(400).json({ error: "بيانات العمل الإضافي غير مكتملة" }); return; }
+  const parsed = overtimeSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات العمل الإضافي غير صحيحة", details: parsed.error.errors }); return; }
+  const { employee_id, date, hours, reason } = parsed.data;
   const [row] = await db.insert(overtimeRecordsTable).values({
-    employee_id: Number(employee_id), date: String(date), hours: String(Number(hours)),
-    reason: (reason as string) ?? null, approved_by: userId, status: "approved",
+    employee_id, date, hours: String(hours),
+    reason: reason ?? null, approved_by: userId, status: "approved",
   }).returning();
   res.status(201).json({ ...row, hours: Number(row.hours), created_at: fmt(row.created_at) });
 }));
@@ -359,10 +423,11 @@ router.get("/public-holidays", wrap(async (req, res) => {
 router.post("/public-holidays", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
-  const { holiday_date, name_ar, name_en } = req.body as Record<string, string>;
-  if (!holiday_date || !name_ar) { res.status(400).json({ error: "تاريخ ومسمى الإجازة مطلوبان" }); return; }
+  const parsed = holidaySchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الإجازة غير صحيحة", details: parsed.error.errors }); return; }
+  const { holiday_date, name_ar, name_en } = parsed.data;
   const [row] = await db.insert(publicHolidaysTable).values({
-    company_id: companyId, holiday_date, name_ar: name_ar.trim(), name_en: name_en?.trim() ?? name_ar.trim(),
+    company_id: companyId, holiday_date, name_ar: name_ar.trim(), name_en: (name_en?.trim() ?? name_ar.trim()),
   }).returning();
   res.status(201).json({ ...row, created_at: fmt(row.created_at) });
 }));

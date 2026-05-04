@@ -76,8 +76,9 @@ router.post("/repair-accessories", requireRole("admin", "super_admin"), wrap(asy
       is_system: false,
     }).returning();
     res.json(row);
-  } catch (e: any) {
-    if (String(e?.message ?? e).includes("unique")) {
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("unique")) {
       res.status(409).json({ error: "هذا المفتاح موجود بالفعل" }); return;
     }
     throw e;

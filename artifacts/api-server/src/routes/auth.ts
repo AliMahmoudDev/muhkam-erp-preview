@@ -4,6 +4,7 @@
  * Login lockout: max 5 failed attempts → 15-minute lockout per userId.
  */
 import { Router } from 'express';
+import { wrap } from '../lib/async-handler';
 import { timingSafeEqual } from 'crypto';
 import { eq, and, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
@@ -98,7 +99,7 @@ function daysRemaining(endDate: string): number {
 const router = Router();
 
 /* ── POST /auth/login — validate PIN server-side, return JWT ─ */
-router.post('/auth/login', async (req, res) => {
+router.post('/auth/login', wrap(async (req, res) => {
   try {
     /* Zod validation */
     const v = validate(loginSchema, req.body);
@@ -274,10 +275,10 @@ router.post('/auth/login', async (req, res) => {
     logger.error({ err }, '[auth/login] unexpected error during login');
     res.status(500).json({ error: 'فشل تسجيل الدخول' });
   }
-});
+}));
 
 /* ── POST /auth/refresh — rotate refresh token + issue new access token ─ */
-router.post('/auth/refresh', async (req, res) => {
+router.post('/auth/refresh', wrap(async (req, res) => {
   try {
     /* Read from httpOnly cookie first, fall back to body (backward compat) */
     const refreshToken: string | undefined =
@@ -325,10 +326,10 @@ router.post('/auth/refresh', async (req, res) => {
   } catch {
     res.status(500).json({ error: 'فشل تجديد الجلسة' });
   }
-});
+}));
 
 /* ── GET /auth/subscription — subscription status for current company ─ */
-router.get('/auth/subscription', authenticate, async (req, res) => {
+router.get('/auth/subscription', authenticate, wrap(async (req, res) => {
   try {
     if (req.user?.role === 'super_admin') {
       res.json({ unlimited: true });
@@ -360,7 +361,7 @@ router.get('/auth/subscription', authenticate, async (req, res) => {
   } catch {
     res.status(500).json({ error: 'فشل جلب بيانات الاشتراك' });
   }
-});
+}));
 
 /* ── POST /auth/logout — blacklist access token + revoke refresh tokens ─ */
 router.post('/auth/logout', authenticate, async (req, res) => {
@@ -386,7 +387,7 @@ router.post('/auth/logout', authenticate, async (req, res) => {
 });
 
 /* ── GET /auth/2fa/setup — generate TOTP secret + QR for super_admin ─── */
-router.get('/auth/2fa/setup', authenticate, async (req, res) => {
+router.get('/auth/2fa/setup', authenticate, wrap(async (req, res) => {
   try {
     if (req.user?.role !== 'super_admin') {
       res.status(403).json({ error: 'للمسؤول العام فقط' });
@@ -415,10 +416,10 @@ router.get('/auth/2fa/setup', authenticate, async (req, res) => {
   } catch {
     res.status(500).json({ error: 'فشل إعداد المصادقة الثنائية' });
   }
-});
+}));
 
 /* ── POST /auth/2fa/verify — confirm TOTP setup, enable 2FA ─── */
-router.post('/auth/2fa/verify', authenticate, async (req, res) => {
+router.post('/auth/2fa/verify', authenticate, wrap(async (req, res) => {
   try {
     if (req.user?.role !== 'super_admin') {
       res.status(403).json({ error: 'للمسؤول العام فقط' });
@@ -453,10 +454,10 @@ router.post('/auth/2fa/verify', authenticate, async (req, res) => {
   } catch {
     res.status(500).json({ error: 'فشل التحقق' });
   }
-});
+}));
 
 /* ── POST /auth/2fa/disable — disable 2FA (requires valid TOTP) ─── */
-router.post('/auth/2fa/disable', authenticate, async (req, res) => {
+router.post('/auth/2fa/disable', authenticate, wrap(async (req, res) => {
   try {
     if (req.user?.role !== 'super_admin') {
       res.status(403).json({ error: 'للمسؤول العام فقط' });
@@ -491,10 +492,10 @@ router.post('/auth/2fa/disable', authenticate, async (req, res) => {
   } catch {
     res.status(500).json({ error: 'فشل إيقاف المصادقة الثنائية' });
   }
-});
+}));
 
 /* ── GET /auth/2fa/status — check if 2FA is enabled for current user ─── */
-router.get('/auth/2fa/status', authenticate, async (req, res) => {
+router.get('/auth/2fa/status', authenticate, wrap(async (req, res) => {
   try {
     const [user] = await db
       .select({ totp_enabled: erpUsersTable.totp_enabled })
@@ -505,10 +506,10 @@ router.get('/auth/2fa/status', authenticate, async (req, res) => {
   } catch {
     res.status(500).json({ error: 'فشل جلب حالة 2FA' });
   }
-});
+}));
 
 /* ── POST /auth/2fa/login — complete login after TOTP check ─── */
-router.post('/auth/2fa/login', async (req, res) => {
+router.post('/auth/2fa/login', wrap(async (req, res) => {
   try {
     /* ── Brute-force guard: max 5 attempts / IP / 15 min ── */
     const clientIP = req.ip || req.socket.remoteAddress || 'unknown';
@@ -580,7 +581,7 @@ router.post('/auth/2fa/login', async (req, res) => {
   } catch {
     res.status(500).json({ error: 'فشل إتمام تسجيل الدخول' });
   }
-});
+}));
 
 /* ── GET /auth/me — verify token + return fresh user data ─── */
 router.get('/auth/me', authenticate, (req, res) => {
@@ -617,7 +618,7 @@ router.get('/auth/me', authenticate, (req, res) => {
  *  4. Generates email verification token and logs the verification link
  *  5. Records signup permanently in trial_abuse_log (all IPs, including private)
  */
-router.post('/auth/register', ipRegistrationLimiter, async (req, res) => {
+router.post('/auth/register', ipRegistrationLimiter, wrap(async (req, res) => {
   try {
     const { company_name, admin_name, email, password } = req.body as {
       company_name?: string;
@@ -839,7 +840,7 @@ router.post('/auth/register', ipRegistrationLimiter, async (req, res) => {
     logger.error({ err }, '[register] Unexpected error during account creation');
     res.status(500).json({ error: 'فشل إنشاء الحساب — حاول مجدداً' });
   }
-});
+}));
 
 /* ── GET /auth/verify-email — confirm email via token ───────────────────
  *
@@ -847,7 +848,7 @@ router.post('/auth/register', ipRegistrationLimiter, async (req, res) => {
  * Marks the company as email_verified=true and clears the token.
  * Returns a simple HTML page so it works directly in a browser.
  */
-router.get('/auth/verify-email', async (req, res) => {
+router.get('/auth/verify-email', wrap(async (req, res) => {
   try {
     const { token } = req.query as { token?: string };
     if (!token || typeof token !== 'string' || token.length < 10) {
@@ -911,7 +912,7 @@ router.get('/auth/verify-email', async (req, res) => {
   } catch {
     res.status(500).send('<h2>خطأ في التحقق — حاول مجدداً أو تواصل مع الدعم</h2>');
   }
-});
+}));
 
 /* ── POST /auth/resend-verification — resend verification email ─────────
  *
@@ -919,7 +920,7 @@ router.get('/auth/verify-email', async (req, res) => {
  * Rate-limited to prevent abuse: only works if email is not yet verified
  * and token has expired OR user explicitly requests resend.
  */
-router.post('/auth/resend-verification', authenticate, async (req, res) => {
+router.post('/auth/resend-verification', authenticate, wrap(async (req, res) => {
   try {
     const companyId = req.user?.company_id;
     if (!companyId) {
@@ -964,10 +965,10 @@ router.post('/auth/resend-verification', authenticate, async (req, res) => {
   } catch {
     res.status(500).json({ error: 'فشل إعادة الإرسال' });
   }
-});
+}));
 
 /* ── POST /auth/login/email — email + password SaaS login ─── */
-router.post('/auth/login/email', async (req, res) => {
+router.post('/auth/login/email', wrap(async (req, res) => {
   try {
     const { email, password } = req.body as { email?: string; password?: string };
 
@@ -1060,7 +1061,7 @@ router.post('/auth/login/email', async (req, res) => {
     logger.error({ err }, '[auth/login/email] unexpected error during login');
     res.status(500).json({ error: 'فشل تسجيل الدخول' });
   }
-});
+}));
 
 /* ── POST /auth/emergency-unlock — clear brute-force lockout without JWT ──
  *
@@ -1074,7 +1075,7 @@ router.post('/auth/login/email', async (req, res) => {
  * Clears the brute-force lockout (in-memory or Redis) for the given user.
  * Does NOT change the PIN or issue a token — just lifts the lockout.
  */
-router.post('/auth/emergency-unlock', async (req, res) => {
+router.post('/auth/emergency-unlock', wrap(async (req, res) => {
   try {
     const emergencyKey = process.env.SUPER_ADMIN_PIN;
     if (!emergencyKey) {
@@ -1128,6 +1129,6 @@ router.post('/auth/emergency-unlock', async (req, res) => {
     logger.error({ err }, '[emergency-unlock] unexpected error');
     res.status(500).json({ error: 'خطأ في الخادم' });
   }
-});
+}));
 
 export default router;
