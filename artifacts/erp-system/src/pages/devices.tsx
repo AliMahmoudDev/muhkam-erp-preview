@@ -201,28 +201,6 @@ function StatusBadge({ status }: { status: DeviceStatus }) {
   );
 }
 
-/* ════════════════════════════════════════════════════════
-   INSPECTION TYPES & ITEMS
-════════════════════════════════════════════════════════ */
-type InspectionStatus = "pending" | "ok" | "fail";
-type InspectionResult = { id: string; label: string; status: InspectionStatus; note: string };
-
-type ChecklistItem = { id: number; label_ar: string; category: string; device_type: string };
-
-/** Map brand + category selection to repair checklist device_type key */
-function brandCatToDeviceType(brand: string, cat: string): string {
-  const b = brand.toLowerCase();
-  const c = cat.toLowerCase();
-  if (b === "apple") {
-    if (c.includes("ipad"))    return "ipad";
-    if (c.includes("mac"))     return "mac";
-    if (c.includes("airpod"))  return "airpods";
-    if (c.includes("watch"))   return "watch";
-    return "iphone";
-  }
-  if (b === "samsung") return "samsung_phone";
-  return "general";
-}
 
 /* ════════════════════════════════════════════════════════
    ADD DEVICE MODAL  — 4-level cascade: Brand → Category → Model → Color/Storage
@@ -274,19 +252,8 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   const [warehouses, setWarehouses] = useState<{ id: number; name: string }[]>([]);
   const [saving,     setSaving]     = useState(false);
 
-  /* ── employees ── */
-  const [employees,          setEmployees]         = useState<{ id: number; name: string }[]>([]);
-  const [inspEmployeeId,     setInspEmployeeId]    = useState<string>("");
-
-  /* ── inspection wizard ── */
-  const [checklistItems,     setChecklistItems]    = useState<ChecklistItem[]>([]);
-  const [checklistLoading,   setChecklistLoading]  = useState(false);
-  const [inspResults,        setInspResults]       = useState<InspectionResult[]>([]);
-  const [inspIdx,            setInspIdx]           = useState(0);
-  const [inspStarted,        setInspStarted]       = useState(false);
-  const [inspDone,           setInspDone]          = useState(false);
-  const [awaitingFailNote,   setAwaitingFailNote]  = useState(false);
-  const [failNote,           setFailNote]          = useState("");
+  /* ── documents / condition notes ── */
+  const [conditionNotes, setConditionNotes] = useState("");
 
   /* cascade derived */
   const isOtherBrand   = brandSel === OTHER;
@@ -350,38 +317,6 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     return () => clearTimeout(t);
   }, [supplierPhone]);
 
-  /* Load employees once on mount */
-  useEffect(() => {
-    authFetch(api("/api/devices/employees")).then(r => r.json() as Promise<{ id: number; name: string }[]>)
-      .then(setEmployees).catch(() => setEmployees([]));
-  }, []);
-
-  /* Load checklist items from the shared repairs checklist — updates when brand/category changes */
-  useEffect(() => {
-    setChecklistLoading(true);
-    const effectiveBrandLocal = brandSel === OTHER ? "" : brandSel;
-    const deviceType = (effectiveBrandLocal && catSel && catSel !== OTHER)
-      ? brandCatToDeviceType(effectiveBrandLocal, catSel)
-      : "";
-    const url = deviceType
-      ? api(`/api/devices/checklist-items?device_type=${encodeURIComponent(deviceType)}`)
-      : api("/api/devices/checklist-items");
-    authFetch(url)
-      .then(r => r.ok ? r.json() as Promise<ChecklistItem[]> : Promise.resolve([]))
-      .then(items => {
-        setChecklistItems(items);
-        /* Reset inspection whenever items change */
-        setInspResults(items.map(it => ({ id: String(it.id), label: it.label_ar, status: "pending", note: "" })));
-        setInspIdx(0);
-        setInspStarted(false);
-        setInspDone(false);
-        setAwaitingFailNote(false);
-        setFailNote("");
-      })
-      .catch(() => setChecklistItems([]))
-      .finally(() => setChecklistLoading(false));
-  }, [brandSel, catSel]);
-
   /* Load safes + warehouses when entering step 2 */
   useEffect(() => {
     if (step !== 2) return;
@@ -390,31 +325,6 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     authFetch(api("/api/devices/warehouses")).then(r => r.json() as Promise<{ id: number; name: string }[]>)
       .then(setWarehouses).catch(() => setWarehouses([]));
   }, [step]);
-
-  /* ── Inspection Handlers ── */
-  const handleInspPass = () => {
-    const updated = inspResults.map((r, i) => i === inspIdx ? { ...r, status: "ok" as InspectionStatus } : r);
-    setInspResults(updated);
-    setFailNote("");
-    setAwaitingFailNote(false);
-    if (inspIdx + 1 >= checklistItems.length) { setInspDone(true); }
-    else { setInspIdx(inspIdx + 1); }
-  };
-
-  const handleInspFail = () => {
-    setAwaitingFailNote(true);
-  };
-
-  const handleInspFailConfirm = () => {
-    const updated = inspResults.map((r, i) =>
-      i === inspIdx ? { ...r, status: "fail" as InspectionStatus, note: failNote.trim() } : r
-    );
-    setInspResults(updated);
-    setFailNote("");
-    setAwaitingFailNote(false);
-    if (inspIdx + 1 >= checklistItems.length) { setInspDone(true); }
-    else { setInspIdx(inspIdx + 1); }
-  };
 
   /* ID card file handler */
   const handleIdFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -443,14 +353,9 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     const cleanPhone = supplierPhone.replace(/\D/g, '');
     if (cleanPhone.length !== 11) e.phone = true;
     if (isNewSupplier && !supplierName.trim()) e.supplierName = true;
-    if (!inspEmployeeId) e.employee = true;
-    /* inspection required only when checklist items exist */
-    if (checklistItems.length > 0 && !inspDone) e.inspection = true;
     setErrors(e);
     if (Object.keys(e).length > 0) {
-      const inspMsg = (checklistItems.length > 0 && !inspDone) ? " — أكمل الفحص أولاً" : "";
-      const empMsg  = !inspEmployeeId ? " — اختر الموظف الفاحص" : "";
-      toast({ title: `يرجى تعبئة الحقول المطلوبة${empMsg}${inspMsg}`, variant: "destructive" });
+      toast({ title: "يرجى تعبئة الحقول المطلوبة", variant: "destructive" });
       return;
     }
     setStep(2);
@@ -496,9 +401,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
         battery_health: form.battery_health ? Math.min(100, parseInt(form.battery_health)) : null,
         supplier_phone: supplierPhone.trim() || undefined,
         id_card_data:   idCardData,
-        /* inspection */
-        inspection_data:        JSON.stringify(inspResults),
-        inspector_employee_id:  inspEmployeeId || undefined,
+        condition_notes: conditionNotes.trim() || undefined,
         /* supplier / customer */
         customer_id:        foundCustomer ? foundCustomer.id : undefined,
         new_customer_name:  isNewSupplier && supplierName.trim() ? supplierName.trim() : undefined,
@@ -767,156 +670,26 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                 )}
               </div>
 
-              {/* ─ Inspector selector (users + employees) ─ */}
+              {/* ─ Documents / Condition Notes ─ */}
               <div>
-                <label className={`${lReq} ${errors.employee ? "text-red-400" : ""}`}>الفاحص (مستخدم أو موظف) *</label>
-                <select
-                  value={inspEmployeeId}
-                  onChange={e => setInspEmployeeId(e.target.value)}
-                  className={sCls("employee")}
-                >
-                  <option value="">— اختر الفاحص —</option>
-                  {employees.filter(em => String(em.id).startsWith("u_")).length > 0 && (
-                    <optgroup label="مستخدمو النظام">
-                      {employees.filter(em => String(em.id).startsWith("u_")).map(em => (
-                        <option key={em.id} value={em.id}>{em.name}</option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {employees.filter(em => String(em.id).startsWith("e_")).length > 0 && (
-                    <optgroup label="الموظفون">
-                      {employees.filter(em => String(em.id).startsWith("e_")).map(em => (
-                        <option key={em.id} value={em.id}>{em.name}</option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-                {employees.length === 0 && (
-                  <p className="text-[10px] text-amber-400/60 mt-1 flex items-center gap-1">
-                    <Info className="w-3 h-3" /> لا يوجد مستخدمون أو موظفون نشطون في النظام
-                  </p>
-                )}
-              </div>
-
-              {/* ─ Inspection Wizard ─ */}
-              <div className={`rounded-xl border p-4 space-y-3 transition-all ${
-                errors.inspection
-                  ? "border-red-500/40 bg-red-500/5"
-                  : inspDone
-                  ? "border-emerald-500/30 bg-emerald-500/5"
-                  : "border-white/10 bg-white/3"
-              }`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-semibold text-white/80">فحص الجهاز</span>
-                  {checklistLoading ? (
-                    <span className="text-[10px] text-white/30">جارٍ التحميل...</span>
-                  ) : inspDone ? (
-                    <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> مكتمل
-                    </span>
-                  ) : inspStarted ? (
-                    <span className="text-[11px] text-white/40">{inspIdx + 1} / {checklistItems.length}</span>
-                  ) : (
-                    <span className="text-[10px] text-white/30">{checklistItems.length} عنصر</span>
-                  )}
-                </div>
-
-                {!inspStarted && !inspDone && checklistItems.length === 0 && !checklistLoading && (
-                  <p className="text-[11px] text-amber-400/70 flex items-center gap-1.5">
-                    <Info className="w-3.5 h-3.5 shrink-0" />
-                    لا توجد بنود فحص — أضفها من إعدادات الصيانة
-                  </p>
-                )}
-
-                {!inspStarted && !inspDone && checklistItems.length > 0 && (
-                  <button
-                    onClick={() => setInspStarted(true)}
-                    disabled={!inspEmployeeId || checklistLoading}
-                    className="w-full py-2 rounded-lg text-sm font-medium bg-violet-500/15 border border-violet-500/25 text-violet-300 hover:bg-violet-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    ابدأ الفحص
-                  </button>
-                )}
-
-                {inspStarted && !inspDone && inspResults[inspIdx] && (
-                  <div className="space-y-3">
-                    {/* Progress bar */}
-                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-violet-500 rounded-full transition-all"
-                        style={{ width: `${(inspIdx / checklistItems.length) * 100}%` }}
-                      />
-                    </div>
-
-                    {/* Current item */}
-                    <div className="text-center py-2">
-                      <p className="text-white/50 text-[10px] mb-1">العنصر {inspIdx + 1}</p>
-                      <p className="text-white font-semibold text-base">{inspResults[inspIdx].label}</p>
-                    </div>
-
-                    {!awaitingFailNote ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={handleInspPass}
-                          className="py-2 rounded-lg text-sm font-medium bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 transition-all"
-                        >
-                          ✓ يعمل
-                        </button>
-                        <button
-                          onClick={handleInspFail}
-                          className="py-2 rounded-lg text-sm font-medium bg-red-500/15 border border-red-500/30 text-red-300 hover:bg-red-500/25 transition-all"
-                        >
-                          ✕ لا يعمل
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <p className="text-[11px] text-red-300/70">وصف العطل (اختياري)</p>
-                        <textarea
-                          value={failNote}
-                          onChange={e => setFailNote(e.target.value)}
-                          placeholder="اكتب ملاحظة..."
-                          rows={2}
-                          className="erp-input w-full text-sm resize-none"
-                        />
-                        <button
-                          onClick={handleInspFailConfirm}
-                          className="w-full py-2 rounded-lg text-sm font-medium bg-white/8 border border-white/10 text-white/70 hover:bg-white/12 transition-all"
-                        >
-                          التالي
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {inspDone && (
-                  <div className="space-y-1.5">
-                    {inspResults.map(r => (
-                      <div key={r.id} className="flex items-center justify-between text-[11px]">
-                        <span className="text-white/60">{r.label}</span>
-                        {r.status === "ok" ? (
-                          <span className="text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> يعمل</span>
-                        ) : (
-                          <span className="text-red-400 flex items-center gap-1">
-                            <XCircle className="w-3 h-3" />
-                            {r.note ? `${r.note}` : "لا يعمل"}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => {
-                        setInspDone(false); setInspStarted(false); setInspIdx(0);
-                        setInspResults(checklistItems.map(it => ({ id: String(it.id), label: it.label_ar, status: "pending", note: "" })));
-                        setAwaitingFailNote(false); setFailNote("");
-                      }}
-                      className="mt-2 text-[10px] text-violet-400/60 hover:text-violet-300 transition-colors"
-                    >
-                      إعادة الفحص
-                    </button>
-                  </div>
-                )}
+                <label className={lCls}>
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3 h-3 text-white/30" />
+                    المستندات وحالة الجهاز
+                    <span className="text-white/20">(اختياري — يُحفظ كمرجع دائم)</span>
+                  </span>
+                </label>
+                <textarea
+                  value={conditionNotes}
+                  onChange={e => setConditionNotes(e.target.value)}
+                  placeholder={"مثال: الجهاز يعمل بشكل طبيعي، شاشة سليمة، بدون كسور\nرقم بطاقة البائع: 123456789\nالجهاز مفتوح من البائع ولم يُعاد تهيئته..."}
+                  rows={4}
+                  className="erp-input w-full text-sm resize-none leading-relaxed"
+                />
+                <p className="text-[10px] text-white/20 mt-1 flex items-center gap-1">
+                  <Info className="w-3 h-3" />
+                  يظهر في تبويب "المصدر" بصفحة الجهاز — مرجع دائم في حالة وجود نزاع لاحقاً
+                </p>
               </div>
             </>
           )}

@@ -289,13 +289,10 @@ router.post("/devices/purchase", wrap(async (req, res) => {
   const {
     /* device */
     brand, model, color, storage, grade, imei, battery_health,
-    supplier_phone, id_card_data,
+    supplier_phone, id_card_data, condition_notes,
     /* supplier */
     customer_id: rawCustomerId,
     new_customer_name,
-    /* inspection */
-    inspection_data,
-    inspector_employee_id: rawInspectorId,
     /* financial */
     purchase_price: rawPurchase,
     sale_price: rawSale,
@@ -308,33 +305,11 @@ router.post("/devices/purchase", wrap(async (req, res) => {
     grade?: string; imei?: string; battery_health?: number;
     supplier_phone?: string; id_card_data?: string;
     customer_id?: number; new_customer_name?: string;
-    inspection_data?: string;
-    inspector_employee_id?: string;
+    condition_notes?: string;
     purchase_price: number; sale_price?: number;
     payment_type: "cash" | "credit" | "partial";
     safe_id?: number; warehouse_id?: number; paid_amount?: number;
   };
-
-  /* Resolve inspector: format is "u_<id>" (user) or "e_<id>" (employee) */
-  let inspector_employee_id: number | null = null;
-  let inspector_name: string | null = null;
-  if (rawInspectorId) {
-    const [prefix, numStr] = rawInspectorId.split("_");
-    const numId = parseInt(numStr ?? "", 10);
-    if (!isNaN(numId)) {
-      if (prefix === "e") {
-        inspector_employee_id = numId;
-        const [emp] = await db.select({
-          name: sql<string>`${employeesTable.first_name_ar} || ' ' || ${employeesTable.last_name_ar}`,
-        }).from(employeesTable).where(and(eq(employeesTable.id, numId), eq(employeesTable.company_id, company_id)));
-        inspector_name = emp?.name ?? null;
-      } else if (prefix === "u") {
-        const [usr] = await db.select({ name: erpUsersTable.name })
-          .from(erpUsersTable).where(and(eq(erpUsersTable.id, numId), eq(erpUsersTable.company_id, company_id)));
-        inspector_name = usr?.name ?? null;
-      }
-    }
-  }
 
   /* ── Validation ── */
   if (!brand || !model) throw httpError(400, "الشركة المصنعة والموديل مطلوبان");
@@ -421,9 +396,9 @@ router.post("/devices/purchase", wrap(async (req, res) => {
       supplier_name: customer_name ?? null,
       supplier_phone: supplier_phone ?? null,
       id_card_data: id_card_data ?? null,
-      inspection_data: inspection_data ?? null,
-      inspector_employee_id,
-      inspector_name: inspector_name ?? null,
+      condition_notes: condition_notes ?? null,
+      purchase_invoice_no: invoiceNo,
+      purchase_invoice_ref: invoiceNo,
       status: "available",
       product_id: newProduct.id,
       added_by_user_id: user_id,
