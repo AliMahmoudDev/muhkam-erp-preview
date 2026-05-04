@@ -9,6 +9,7 @@ import {
 } from "@workspace/db";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { wrap, httpError } from "../lib/async-handler";
+import { nextDevicePurchaseInvoiceNo } from "../lib/invoice-no";
 import type Express from "express";
 import { requireFeature } from "../middleware/feature-guard";
 import { hasPermission } from "../lib/permissions";
@@ -40,10 +41,6 @@ async function nextDeviceNo(company_id: number): Promise<string> {
   return `${prefix}${String(seq + 1).padStart(4, "0")}`;
 }
 
-/* Auto-generate purchase invoice no */
-function nextInvoiceNo(): string {
-  return `DEV-PUR-${Date.now()}`;
-}
 
 /* ─── STATS ─── */
 router.get("/devices/stats", wrap(async (req, res) => {
@@ -363,7 +360,7 @@ router.post("/devices/purchase", wrap(async (req, res) => {
   if (paid_amount > 0 && !safe_id) throw httpError(400, "يجب اختيار الخزينة للمدفوعات النقدية أو الجزئية");
 
   const today = new Date().toISOString().split("T")[0];
-  const invoiceNo = nextInvoiceNo();
+  const invoiceNo = await nextDevicePurchaseInvoiceNo(company_id);
   const device_no = await nextDeviceNo(company_id);
 
   const result = await db.transaction(async (tx) => {

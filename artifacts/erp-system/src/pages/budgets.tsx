@@ -148,7 +148,7 @@ export default function BudgetsPage() {
                       {rows.map((r, i) => {
                         const good = r.account_type === 'revenue' ? r.variance >= 0 : r.variance <= 0;
                         return (
-                          <tr key={i} className="hover:bg-white/[0.02]">
+                          <tr key={`${r.account_code ?? ''}-${r.period ?? ''}-${i}`} className="hover:bg-white/[0.02]">
                             <td className="px-4 py-2.5">
                               <p className="text-white font-medium">{r.account_name}</p>
                               <p className="text-xs text-white/40 font-mono">{r.account_code}</p>

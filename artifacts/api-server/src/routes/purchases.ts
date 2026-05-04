@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gt, not, inArray, sql } from "drizzle-orm";
+import { eq, and, gt, not, inArray, sql, desc } from "drizzle-orm";
 import { db, purchasesTable, purchaseItemsTable, productsTable, customersTable, safesTable, transactionsTable, stockMovementsTable, accountsTable, purchaseReturnsTable, journalEntriesTable, journalEntryLinesTable, customerLedgerTable } from "@workspace/db";
 import {
   GetPurchasesResponse,
@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-zod";
 import { wrap, httpError } from "../lib/async-handler";
 import { triggerBackup } from "../lib/backup-service";
+import { nextPurchaseInvoiceNo } from "../lib/invoice-no";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { runAllChecks } from "../lib/alert-service";
 import { hasPermission } from "../lib/permissions";
@@ -56,9 +57,39 @@ router.get("/purchases", wrap(async (req, res) => {
     res.status(403).json({ error: "غير مصرح بعرض المشتريات" }); return;
   }
   const companyId = getTenant(req);
+
+  const hasPagination = req.query.page !== undefined || req.query.limit !== undefined;
+  const rawLimit = parseInt(String(req.query.limit ?? "200"), 10);
+  const pageLimit = Math.min(Math.max(isNaN(rawLimit) ? 200 : rawLimit, 1), 1000);
+  const rawPage = parseInt(String(req.query.page ?? "1"), 10);
+  const pageNum = Math.max(isNaN(rawPage) ? 1 : rawPage, 1);
+  const offset = (pageNum - 1) * pageLimit;
+
+  if (hasPagination) {
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(purchasesTable)
+      .where(eq(purchasesTable.company_id, companyId));
+
+    const purchases = await db.select().from(purchasesTable)
+      .where(eq(purchasesTable.company_id, companyId))
+      .orderBy(desc(purchasesTable.created_at))
+      .limit(pageLimit)
+      .offset(offset);
+
+    return res.json({
+      data: GetPurchasesResponse.parse(purchases.map(formatPurchase)),
+      total: Number(total),
+      page: pageNum,
+      pages: Math.ceil(Number(total) / pageLimit),
+      limit: pageLimit,
+    });
+  }
+
   const purchases = await db.select().from(purchasesTable)
     .where(eq(purchasesTable.company_id, companyId))
-    .orderBy(purchasesTable.created_at);
+    .orderBy(desc(purchasesTable.created_at))
+    .limit(500);
   res.json(GetPurchasesResponse.parse(purchases.map(formatPurchase)));
 }));
 
@@ -130,7 +161,6 @@ router.post("/purchases", wrap(async (req, res) => {
   if (payment_type === "credit") status = "unpaid";
   else if (remaining > 0) status = "partial";
 
-  const invoiceNo = `PUR-${Date.now()}`;
   const today = date ?? new Date().toISOString().split("T")[0];
   const displayName = customer_name ?? supplier_name ?? null;
 
@@ -139,6 +169,7 @@ router.post("/purchases", wrap(async (req, res) => {
   }
 
   const cidPurchase = req.user!.company_id!;
+  const invoiceNo = await nextPurchaseInvoiceNo(cidPurchase);
 
   // Validate FK ownership before mutation
   if (customer_id) {

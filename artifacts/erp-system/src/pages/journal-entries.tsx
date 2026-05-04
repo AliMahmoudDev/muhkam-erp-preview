@@ -109,7 +109,7 @@ function EntryDetailModal({ entryId, onClose }: { entryId: number; onClose: () =
                   </thead>
                   <tbody>
                     {entry.lines.map((line, i) => (
-                      <tr key={i} className="border-b border-white/5">
+                      <tr key={`${line.account_code ?? ''}-${i}`} className="border-b border-white/5">
                         <td className="p-3 font-mono text-xs text-white/50">{line.account_code}</td>
                         <td className="p-3 text-white">{line.account_name}</td>
                         <td className="p-3 font-bold text-blue-400">{line.debit > 0 ? formatCurrency(line.debit) : "—"}</td>
@@ -212,7 +212,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
               </thead>
               <tbody>
                 {lines.map((line, i) => (
-                  <tr key={i} className="border-b border-white/5">
+                  <tr key={`form-line-${i}`} className="border-b border-white/5">
                     <td className="p-2">
                       <select className="glass-input text-sm appearance-none w-full" value={line.account_id} onChange={e => updateLine(i, "account_id", e.target.value)}>
                         <option value="" className="bg-gray-900">اختر الحساب</option>

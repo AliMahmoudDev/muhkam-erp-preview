@@ -1283,7 +1283,7 @@ function CustomerStatementModal({
                       {rowsWithBalance.map((r, i) => {
                         const cfg = typeConfig[r.type] || typeConfig['sale'];
                         return (
-                          <tr key={i} className="border-b border-white/5 erp-table-row">
+                          <tr key={`${r.type}-${r.ref ?? ''}-${i}`} className="border-b border-white/5 erp-table-row">
                             <td className="p-3 text-white/50 text-xs whitespace-nowrap">
                               {r.date ? r.date.split('T')[0] : '—'}
                             </td>
@@ -1473,7 +1473,7 @@ function CustomerStatementModal({
                             cls: 'text-white/50',
                           };
                           return (
-                            <tr key={i} className="border-b border-white/5 erp-table-row">
+                            <tr key={`${row.date ?? ''}-${row.type}-${row.reference_no ?? ''}-${i}`} className="border-b border-white/5 erp-table-row">
                               <td className="p-3 font-mono text-white/60 text-xs">{row.date}</td>
                               <td className="p-3">
                                 <span className={`text-xs font-bold ${meta.cls}`}>

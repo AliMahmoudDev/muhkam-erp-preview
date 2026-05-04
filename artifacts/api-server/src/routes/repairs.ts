@@ -22,6 +22,7 @@ import { wrap } from "../lib/async-handler";
 import { notifyUser } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
 import { hasPermission } from "../lib/permissions";
+import { logger } from "../lib/logger";
 import { computeTrackingToken } from "../lib/tracking-token";
 import { validateTransition } from "../services/repair-pipeline.service";
 import { writeAuditLog } from "../lib/audit-log";
@@ -40,13 +41,20 @@ function ctx(req: Express.Request) {
 }
 
 async function nextJobNo(companyId: number): Promise<string> {
-  const result = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(repairJobsTable)
-    .where(eq(repairJobsTable.company_id, companyId));
-  const n = (Number(result[0]?.count ?? 0) + 1).toString().padStart(4, "0");
   const year = new Date().getFullYear();
-  return `REP-${year}-${n}`;
+  const prefix = `REP-${year}-`;
+  const [row] = await db
+    .select({ no: repairJobsTable.job_no })
+    .from(repairJobsTable)
+    .where(and(
+      eq(repairJobsTable.company_id, companyId),
+      sql`${repairJobsTable.job_no} LIKE ${prefix + "%"}`,
+    ))
+    .orderBy(desc(repairJobsTable.id))
+    .limit(1);
+  if (!row) return `${prefix}0001`;
+  const seq = parseInt(row.no.split("-").pop() ?? "0", 10);
+  return `${prefix}${String(isNaN(seq) ? 1 : seq + 1).padStart(4, "0")}`;
 }
 
 const SYSTEM_STATUSES = [
@@ -698,7 +706,8 @@ router.get("/repair-jobs", wrap(async (req, res) => {
 
   const jobs = await db.select().from(repairJobsTable)
     .where(and(...conds))
-    .orderBy(desc(repairJobsTable.created_at));
+    .orderBy(desc(repairJobsTable.created_at))
+    .limit(1000);
 
   let filtered = jobs;
   if (search?.trim()) {
@@ -2143,8 +2152,7 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
         companyId:   company_id,
       });
     } catch (jErr) {
-      // eslint-disable-next-line no-console
-      console.error("[repair-shipping] auto-journal failed for job", id, jErr);
+      logger.error({ jobId: id, err: jErr }, "[repair-shipping] auto-journal failed");
     }
   }
 

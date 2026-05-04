@@ -1285,7 +1285,7 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
                     </thead>
                     <tbody>
                       {(sale.items || []).map((item, i) => (
-                        <tr key={i} className="border-b border-white/5">
+                        <tr key={item.id ?? `sale-item-${i}`} className="border-b border-white/5">
                           <td className="p-3 font-bold text-white">{item.product_name}</td>
                           <td className="p-3 text-white/70">{item.quantity}</td>
                           <td className="p-3 text-white/70">{formatCurrency(item.unit_price)}</td>

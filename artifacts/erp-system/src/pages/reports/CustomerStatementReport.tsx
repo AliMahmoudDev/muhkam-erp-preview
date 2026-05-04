@@ -69,7 +69,7 @@ export default function CustomerStatementReport() {
                    stmt.map((row,i)=>{
                     const meta=STMT_TYPE_MAP[row.type]??{label:row.type,cls:"text-white/50"};
                     return (
-                      <tr key={i} className="border-b border-white/5 erp-table-row">
+                      <tr key={`${row.date ?? ''}-${row.type}-${i}`} className="border-b border-white/5 erp-table-row">
                         <td className="p-3 font-mono text-white/60 text-xs">{row.date}</td>
                         <td className="p-3"><span className={`text-xs font-bold ${meta.cls}`}>{meta.label}</span></td>
                         <td className="p-3 text-white/70">{row.description}{row.reference_no&&<span className="text-white/30 text-xs mr-2">{row.reference_no}</span>}</td>

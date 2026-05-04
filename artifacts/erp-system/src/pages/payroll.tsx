@@ -417,7 +417,7 @@ export default function Payroll() {
                                     </thead>
                                     <tbody>
                                       {expandedLineItems.map((li, i) => (
-                                        <tr key={i} className="border-t border-white/5">
+                                        <tr key={`${String(li.component_name ?? '')}-${String(li.component_type ?? '')}-${i}`} className="border-t border-white/5">
                                           <td className="py-1 text-white/80">{String(li.component_name ?? '')}</td>
                                           <td className="py-1 text-white/50">{lineTypeLabel(String(li.component_type ?? ''))}</td>
                                           <td className={`py-1 font-mono ${Number(li.amount) < 0 ? 'text-red-400' : 'text-emerald-400'}`}>

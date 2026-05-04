@@ -33,7 +33,7 @@ export default function TopReportsTab() {
           {isLoading ? <TableSkeleton cols={cols.length+1} rows={5}/> :
            rows.length===0 ? <tr><td colSpan={cols.length+1} className="p-8 text-center text-white/30 text-xs">لا توجد بيانات</td></tr> :
            rows.map((row,i)=>(
-            <tr key={i} className="border-b border-white/5 erp-table-row">
+            <tr key={`top-row-${i}`} className="border-b border-white/5 erp-table-row">
               <td className="p-3"><span className="text-base">{["🥇","🥈","🥉"][i]??<span className="text-white/30 text-xs font-bold">#{i+1}</span>}</span></td>
               {cols.map(c=>(<td key={c.key} className={`p-3 font-bold ${c.cls??"text-white"}`}>{c.fmt?c.fmt(row[c.key]):row[c.key]}</td>))}
             </tr>

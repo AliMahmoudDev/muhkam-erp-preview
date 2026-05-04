@@ -553,11 +553,11 @@ function AssetDetailModal({ assetId, onClose }: { assetId: number; onClose: () =
                             </tr>
                           </thead>
                           <tbody>
-                            {asset.schedule.map((row, i) => {
+                            {asset.schedule.map((row) => {
                               const done = completedPeriods.has(row.period);
                               return (
                                 <tr
-                                  key={i}
+                                  key={row.period}
                                   className={`border-t border-white/5 ${done ? 'bg-emerald-500/5' : ''}`}
                                 >
                                   <td className="px-4 py-2 text-white/70 font-mono text-xs">

@@ -10,6 +10,7 @@ import {
 import { wrap, httpError } from "../lib/async-handler";
 import { triggerBackup } from "../lib/backup-service";
 import { assertPeriodOpen } from "../lib/period-lock";
+import { nextSaleInvoiceNo } from "../lib/invoice-no";
 import { getCustomerLedgerBalance } from "../lib/ledger-balance";
 import { runAllChecks } from "../lib/alert-service";
 import { writeAuditLog } from "../lib/audit-log";
@@ -264,9 +265,8 @@ router.post("/sales", wrap(async (req, res) => {
 
   await assertPeriodOpen(date, req);
 
-  const invoiceNo = `INV-${Date.now()}`;
-
   const cidSale = req.user!.company_id!;
+  const invoiceNo = await nextSaleInvoiceNo(cidSale);
   const sale = await db.transaction(async (tx) => {
       // 1. جلب بيانات الخزن المطلوبة والتحقق من وجودها
       const safeRecords: Map<number, typeof safesTable.$inferSelect> = new Map();

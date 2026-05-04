@@ -165,7 +165,7 @@ export default function RepairTrack() {
                       </div>
                     </li>
                     {history.map((h, i) => (
-                      <li key={i} className="flex items-start gap-3">
+                      <li key={h.at ?? `history-${i}`} className="flex items-start gap-3">
                         <div className="w-2 h-2 rounded-full mt-1.5 shrink-0"
                           style={{ background: h.to?.color ?? "#888" }} />
                         <div className="flex-1 min-w-0">

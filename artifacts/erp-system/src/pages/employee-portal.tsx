@@ -705,7 +705,7 @@ export default function EmployeePortal() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
             {advances.map((a, i) => (
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 13px', borderRadius:10,
+              <div key={(a as {id?:number}).id ?? `adv-${i}`} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 13px', borderRadius:10,
                 background:isDark?'rgba(255,255,255,0.03)':'rgba(0,0,0,0.025)', border:`1px solid ${border}` }}>
                 <Wallet size={13} style={{ color:'#f59e0b', flexShrink:0 }}/>
                 <div style={{ flex:1, minWidth:0 }}>
@@ -737,7 +737,7 @@ export default function EmployeePortal() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {deductions.map((d, i) => (
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 13px', borderRadius:10,
+              <div key={(d as {id?:number}).id ?? `ded-${i}`} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 13px', borderRadius:10,
                 background:'rgba(248,113,113,0.05)', border:'1px solid rgba(248,113,113,0.14)' }}>
                 <TrendingDown size={13} style={{ color:'#f87171', flexShrink:0 }}/>
                 <div style={{ flex:1 }}>
@@ -765,7 +765,7 @@ export default function EmployeePortal() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {bonuses.map((b, i) => (
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 13px', borderRadius:10,
+              <div key={(b as {id?:number}).id ?? `bon-${i}`} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 13px', borderRadius:10,
                 background:'rgba(52,211,153,0.05)', border:'1px solid rgba(52,211,153,0.14)' }}>
                 <Gift size={13} style={{ color:'#34d399', flexShrink:0 }}/>
                 <div style={{ flex:1 }}>
@@ -786,7 +786,7 @@ export default function EmployeePortal() {
         {leavesBal.length > 0 && (
           <div style={{ display:'flex', gap:9, flexWrap:'wrap', marginBottom:12, paddingBottom:12, borderBottom:`1px solid ${border}` }}>
             {leavesBal.map((lb, i) => (
-              <div key={i} style={{ borderRadius:10, padding:'7px 13px', background:'rgba(96,165,250,0.08)', border:'1px solid rgba(96,165,250,0.15)' }}>
+              <div key={String((lb as {leave_type_code?:string}).leave_type_code ?? i)} style={{ borderRadius:10, padding:'7px 13px', background:'rgba(96,165,250,0.08)', border:'1px solid rgba(96,165,250,0.15)' }}>
                 <p style={{ fontSize:10, color:'#60a5fa', fontWeight:600, marginBottom:1 }}>{fmt(lb.leave_type_name_ar ?? lb.leave_type_code)}</p>
                 <p style={{ fontSize:16, fontWeight:900, color:'#60a5fa' }}>{Number(lb.balance_days ?? 0).toFixed(0)} يوم</p>
                 <p style={{ fontSize:10, color:textMuted }}>رصيد متاح</p>
@@ -799,7 +799,7 @@ export default function EmployeePortal() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {leaves.map((l, i) => (
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 13px', borderRadius:10,
+              <div key={(l as {id?:number}).id ?? `leave-${i}`} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 13px', borderRadius:10,
                 background:isDark?'rgba(255,255,255,0.03)':'rgba(0,0,0,0.025)', border:`1px solid ${border}` }}>
                 <FileText size={13} style={{ color:'#60a5fa', flexShrink:0 }}/>
                 <div style={{ flex:1 }}>
@@ -825,7 +825,7 @@ export default function EmployeePortal() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {payslips.map((p, i) => (
-              <div key={i} style={{ borderRadius:10, border:`1px solid ${border}`, padding:'12px 14px',
+              <div key={(p as {id?:number}).id ?? `payslip-${i}`} style={{ borderRadius:10, border:`1px solid ${border}`, padding:'12px 14px',
                 background: isDark ? 'rgba(52,211,153,0.05)' : 'rgba(52,211,153,0.04)' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
                   <span style={{ fontSize:13, fontWeight:800 }}>
@@ -873,7 +873,7 @@ export default function EmployeePortal() {
               </thead>
               <tbody>
                 {[...recentRecs].reverse().map((rec, i) => (
-                  <tr key={i} style={{ borderTop:`1px solid ${border}`, background: i%2===0?'transparent':isDark?'rgba(255,255,255,0.012)':'rgba(0,0,0,0.012)' }}>
+                  <tr key={(rec as {id?:number}).id ?? `att-${rec.date ?? i}`} style={{ borderTop:`1px solid ${border}`, background: i%2===0?'transparent':isDark?'rgba(255,255,255,0.012)':'rgba(0,0,0,0.012)' }}>
                     <td style={{ padding:'7px 10px', whiteSpace:'nowrap', fontWeight:600 }}>{fmtDate(rec.date)}</td>
                     <td style={{ padding:'7px 10px', color:'#34d399', fontWeight:600, whiteSpace:'nowrap' }}>{fmtTime(rec.check_in_time)}</td>
                     <td style={{ padding:'7px 10px', color:'#f87171', fontWeight:600, whiteSpace:'nowrap' }}>{fmtTime(rec.check_out_time)}</td>

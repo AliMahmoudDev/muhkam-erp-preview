@@ -172,3 +172,35 @@ Scenarios covered: S1 customer-rejects→cancelled · S2 QA-fail blocks ready_fo
 **Dev rate-limit bypass** (allows full E2E runs without 429s; production unaffected):
 - `artifacts/api-server/src/app.ts` general limiter — bumped to 1M when `NODE_ENV !== 'production'`
 - `artifacts/api-server/src/middleware/per-tenant-rate-limit.ts` — `READ_LIMIT`/`WRITE_LIMIT` set to 1M when `NODE_ENV !== 'production'`
+
+---
+
+## Bug-Fix Sprint (May 2026) — Phases 1 & 2
+
+### Phase 1 — Critical Fixes
+
+**Invoice Number Collision (`artifacts/api-server/src/lib/invoice-no.ts`)**
+- Created shared utility with `nextSaleInvoiceNo`, `nextPurchaseInvoiceNo`, `nextDevicePurchaseInvoiceNo`
+- Replaces old `Date.now()` timestamp-based IDs with sequential DB-query numbers: `INV/PUR/DEV-PUR-YYYY-NNNN` scoped per company
+- Used in `sales.ts`, `purchases.ts`, `devices.ts`
+
+**Repair Job Number Race Condition (`repairs.ts`)**
+- Fixed `nextJobNo` from COUNT(*) pattern to MAX+LIKE pattern (`SELECT job_no LIKE 'REP-YYYY-%' ORDER BY id DESC LIMIT 1`) — eliminates collision under concurrent creates
+
+**Missing Pagination / Unbounded Queries**
+- `GET /purchases` — added backward-compatible pagination: returns plain array when no `page` param, paginated `{data, total, page, limit}` when `page`/`limit` provided; hard cap of 500 records without params
+- `GET /repair-jobs` — added `.limit(1000)` safety cap to prevent memory exhaustion on large datasets
+
+**React `key={index}` Anti-pattern (10+ files)**
+- Fixed in all real-data tables: `customers.tsx`, `budgets.tsx`, `journal-entries.tsx`, `payroll.tsx`, `repairs.tsx`, `CustomerStatementReport.tsx`, `repair-track.tsx`, `TopReportsTab.tsx`, `sales.tsx` (sale items), `employee-portal.tsx` (advances/deductions/bonuses/leaves/payslips/attendance), `fixed-assets.tsx` (depreciation schedule)
+- Skeleton loaders intentionally left with index keys (no real data, no reorder risk)
+
+### Phase 2 — Medium Improvements
+
+**Logger (`repairs.ts`, `expenses.ts`)**
+- Added `import { logger } from "../lib/logger"` to both files
+- Replaced all `console.error(...)` calls with `logger.error({err}, msg)` (pino structured logging)
+
+**TypeScript `as any` Elimination (`reports.ts`)**
+- Replaced all 7+ `as any` casts with `Record<string, unknown>` in: customer statement row, supplier statement row, daily profit loops (`retRows`, `expRows`), health-check profit/cash rows, balance-sheet inventory/capital rows
+- Removed all associated `// eslint-disable-next-line @typescript-eslint/no-explicit-any` comments
