@@ -207,10 +207,21 @@ function StatusBadge({ status }: { status: DeviceStatus }) {
 type InspectionStatus = "pending" | "ok" | "fail";
 type InspectionResult = { id: string; label: string; status: InspectionStatus; note: string };
 
-const INSPECTION_ITEMS: { id: string; label: string }[] = [];
+type ChecklistItem = { id: number; label_ar: string; category: string; device_type: string };
 
-function initInspection(): InspectionResult[] {
-  return INSPECTION_ITEMS.map(item => ({ ...item, status: "pending", note: "" }));
+/** Map brand + category selection to repair checklist device_type key */
+function brandCatToDeviceType(brand: string, cat: string): string {
+  const b = brand.toLowerCase();
+  const c = cat.toLowerCase();
+  if (b === "apple") {
+    if (c.includes("ipad"))    return "ipad";
+    if (c.includes("mac"))     return "mac";
+    if (c.includes("airpod"))  return "airpods";
+    if (c.includes("watch"))   return "watch";
+    return "iphone";
+  }
+  if (b === "samsung") return "samsung_phone";
+  return "general";
 }
 
 /* ════════════════════════════════════════════════════════
@@ -268,7 +279,9 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   const [inspEmployeeId,     setInspEmployeeId]    = useState<string>("");
 
   /* ── inspection wizard ── */
-  const [inspResults,        setInspResults]       = useState<InspectionResult[]>(initInspection);
+  const [checklistItems,     setChecklistItems]    = useState<ChecklistItem[]>([]);
+  const [checklistLoading,   setChecklistLoading]  = useState(false);
+  const [inspResults,        setInspResults]       = useState<InspectionResult[]>([]);
   const [inspIdx,            setInspIdx]           = useState(0);
   const [inspStarted,        setInspStarted]       = useState(false);
   const [inspDone,           setInspDone]          = useState(false);
@@ -343,6 +356,32 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
       .then(setEmployees).catch(() => setEmployees([]));
   }, []);
 
+  /* Load checklist items from the shared repairs checklist — updates when brand/category changes */
+  useEffect(() => {
+    setChecklistLoading(true);
+    const effectiveBrandLocal = brandSel === OTHER ? "" : brandSel;
+    const deviceType = (effectiveBrandLocal && catSel && catSel !== OTHER)
+      ? brandCatToDeviceType(effectiveBrandLocal, catSel)
+      : "";
+    const url = deviceType
+      ? api(`/api/devices/checklist-items?device_type=${encodeURIComponent(deviceType)}`)
+      : api("/api/devices/checklist-items");
+    authFetch(url)
+      .then(r => r.ok ? r.json() as Promise<ChecklistItem[]> : Promise.resolve([]))
+      .then(items => {
+        setChecklistItems(items);
+        /* Reset inspection whenever items change */
+        setInspResults(items.map(it => ({ id: String(it.id), label: it.label_ar, status: "pending", note: "" })));
+        setInspIdx(0);
+        setInspStarted(false);
+        setInspDone(false);
+        setAwaitingFailNote(false);
+        setFailNote("");
+      })
+      .catch(() => setChecklistItems([]))
+      .finally(() => setChecklistLoading(false));
+  }, [brandSel, catSel]);
+
   /* Load safes + warehouses when entering step 2 */
   useEffect(() => {
     if (step !== 2) return;
@@ -358,7 +397,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     setInspResults(updated);
     setFailNote("");
     setAwaitingFailNote(false);
-    if (inspIdx + 1 >= INSPECTION_ITEMS.length) { setInspDone(true); }
+    if (inspIdx + 1 >= checklistItems.length) { setInspDone(true); }
     else { setInspIdx(inspIdx + 1); }
   };
 
@@ -373,7 +412,7 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     setInspResults(updated);
     setFailNote("");
     setAwaitingFailNote(false);
-    if (inspIdx + 1 >= INSPECTION_ITEMS.length) { setInspDone(true); }
+    if (inspIdx + 1 >= checklistItems.length) { setInspDone(true); }
     else { setInspIdx(inspIdx + 1); }
   };
 
@@ -405,10 +444,11 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
     if (cleanPhone.length !== 11) e.phone = true;
     if (isNewSupplier && !supplierName.trim()) e.supplierName = true;
     if (!inspEmployeeId) e.employee = true;
-    if (!inspDone) e.inspection = true;
+    /* inspection required only when checklist items exist */
+    if (checklistItems.length > 0 && !inspDone) e.inspection = true;
     setErrors(e);
     if (Object.keys(e).length > 0) {
-      const inspMsg = !inspDone ? " — أكمل الفحص أولاً" : "";
+      const inspMsg = (checklistItems.length > 0 && !inspDone) ? " — أكمل الفحص أولاً" : "";
       const empMsg  = !inspEmployeeId ? " — اختر الموظف الفاحص" : "";
       toast({ title: `يرجى تعبئة الحقول المطلوبة${empMsg}${inspMsg}`, variant: "destructive" });
       return;
@@ -768,41 +808,50 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
               }`}>
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] font-semibold text-white/80">فحص الجهاز</span>
-                  {inspDone ? (
+                  {checklistLoading ? (
+                    <span className="text-[10px] text-white/30">جارٍ التحميل...</span>
+                  ) : inspDone ? (
                     <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
                       <CheckCircle2 className="w-3.5 h-3.5" /> مكتمل
                     </span>
                   ) : inspStarted ? (
-                    <span className="text-[11px] text-white/40">{inspIdx + 1} / {INSPECTION_ITEMS.length}</span>
+                    <span className="text-[11px] text-white/40">{inspIdx + 1} / {checklistItems.length}</span>
                   ) : (
-                    <span className="text-[10px] text-white/30">{INSPECTION_ITEMS.length} عناصر</span>
+                    <span className="text-[10px] text-white/30">{checklistItems.length} عنصر</span>
                   )}
                 </div>
 
-                {!inspStarted && !inspDone && (
+                {!inspStarted && !inspDone && checklistItems.length === 0 && !checklistLoading && (
+                  <p className="text-[11px] text-amber-400/70 flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 shrink-0" />
+                    لا توجد بنود فحص — أضفها من إعدادات الصيانة
+                  </p>
+                )}
+
+                {!inspStarted && !inspDone && checklistItems.length > 0 && (
                   <button
                     onClick={() => setInspStarted(true)}
-                    disabled={!inspEmployeeId}
+                    disabled={!inspEmployeeId || checklistLoading}
                     className="w-full py-2 rounded-lg text-sm font-medium bg-violet-500/15 border border-violet-500/25 text-violet-300 hover:bg-violet-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     ابدأ الفحص
                   </button>
                 )}
 
-                {inspStarted && !inspDone && (
+                {inspStarted && !inspDone && inspResults[inspIdx] && (
                   <div className="space-y-3">
                     {/* Progress bar */}
                     <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-violet-500 rounded-full transition-all"
-                        style={{ width: `${(inspIdx / INSPECTION_ITEMS.length) * 100}%` }}
+                        style={{ width: `${(inspIdx / checklistItems.length) * 100}%` }}
                       />
                     </div>
 
                     {/* Current item */}
                     <div className="text-center py-2">
                       <p className="text-white/50 text-[10px] mb-1">العنصر {inspIdx + 1}</p>
-                      <p className="text-white font-semibold text-base">{INSPECTION_ITEMS[inspIdx].label}</p>
+                      <p className="text-white font-semibold text-base">{inspResults[inspIdx].label}</p>
                     </div>
 
                     {!awaitingFailNote ? (
@@ -857,7 +906,11 @@ function AddDeviceModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
                       </div>
                     ))}
                     <button
-                      onClick={() => { setInspDone(false); setInspStarted(false); setInspIdx(0); setInspResults(initInspection()); setAwaitingFailNote(false); setFailNote(""); }}
+                      onClick={() => {
+                        setInspDone(false); setInspStarted(false); setInspIdx(0);
+                        setInspResults(checklistItems.map(it => ({ id: String(it.id), label: it.label_ar, status: "pending", note: "" })));
+                        setAwaitingFailNote(false); setFailNote("");
+                      }}
                       className="mt-2 text-[10px] text-violet-400/60 hover:text-violet-300 transition-colors"
                     >
                       إعادة الفحص

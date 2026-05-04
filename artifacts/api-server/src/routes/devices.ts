@@ -5,6 +5,7 @@ import {
   warehousesTable, purchasesTable, purchaseItemsTable,
   stockMovementsTable, transactionsTable, customerLedgerTable,
   employeesTable, erpUsersTable, warrantyTable,
+  repairChecklistItemsTable,
 } from "@workspace/db";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { wrap, httpError } from "../lib/async-handler";
@@ -720,6 +721,29 @@ router.post("/devices/:id/return", wrap(async (req, res) => {
     .returning();
 
   return res.json(row);
+}));
+
+/* ─── CHECKLIST ITEMS (shared with repairs — no maintenance feature required) ─── */
+router.get("/devices/checklist-items", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_view_devices")) {
+    return res.status(403).json({ error: "غير مصرح" });
+  }
+  const { company_id } = ctx(req);
+  const deviceType = req.query.device_type as string | undefined;
+  const where = deviceType
+    ? and(eq(repairChecklistItemsTable.company_id, company_id), eq(repairChecklistItemsTable.device_type, deviceType))
+    : eq(repairChecklistItemsTable.company_id, company_id);
+  const rows = await db
+    .select({
+      id:       repairChecklistItemsTable.id,
+      label_ar: repairChecklistItemsTable.label_ar,
+      category: repairChecklistItemsTable.category,
+      device_type: repairChecklistItemsTable.device_type,
+    })
+    .from(repairChecklistItemsTable)
+    .where(where)
+    .orderBy(repairChecklistItemsTable.sort_order);
+  return res.json(rows);
 }));
 
 /* ─── DELETE ─── */
