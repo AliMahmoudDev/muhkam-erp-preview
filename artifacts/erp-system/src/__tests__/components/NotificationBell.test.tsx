@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotificationBell } from '@/components/notification-bell';
 import { authFetch } from '@/lib/auth-fetch';
 
@@ -27,38 +26,30 @@ const unreadNotification: TestNotification = {
   created_at: new Date().toISOString(),
 };
 
-function makeQueryClient(): QueryClient {
-  return new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-    },
-  });
+function makeCountResponse(count: number): Response {
+  return new Response(JSON.stringify({ count }), { status: 200 });
+}
+
+function makeListResponse(items: TestNotification[]): Response {
+  return new Response(JSON.stringify(items), { status: 200 });
 }
 
 function renderBell(): ReturnType<typeof render> {
-  return render(
-    <QueryClientProvider client={makeQueryClient()}>
-      <NotificationBell />
-    </QueryClientProvider>
-  );
+  return render(<NotificationBell />);
 }
 
 describe('NotificationBell', () => {
   beforeEach(() => {
-    vi.mocked(authFetch).mockResolvedValue(
-      new Response(JSON.stringify([]), { status: 200 })
-    );
+    vi.mocked(authFetch).mockResolvedValue(makeCountResponse(0));
   });
 
   it('يظهر أيقونة الجرس بدون أخطاء', () => {
     renderBell();
-    expect(screen.getByTitle('الإشعارات')).toBeTruthy();
+    expect(screen.getByTitle('رسائلي')).toBeTruthy();
   });
 
   it('يظهر شارة العدد عند وجود إشعارات غير مقروءة', async () => {
-    vi.mocked(authFetch).mockResolvedValue(
-      new Response(JSON.stringify([unreadNotification]), { status: 200 })
-    );
+    vi.mocked(authFetch).mockResolvedValue(makeCountResponse(1));
     renderBell();
     await waitFor(() => {
       expect(screen.getByText('1')).toBeTruthy();
@@ -66,21 +57,18 @@ describe('NotificationBell', () => {
   });
 
   it('لا تظهر شارة العدد عندما لا توجد إشعارات غير مقروءة', async () => {
-    vi.mocked(authFetch).mockResolvedValue(
-      new Response(JSON.stringify([]), { status: 200 })
-    );
+    vi.mocked(authFetch).mockResolvedValue(makeCountResponse(0));
     renderBell();
     await waitFor(() => {
-      expect(screen.getByTitle('الإشعارات')).toBeTruthy();
+      expect(screen.getByTitle('رسائلي')).toBeTruthy();
     });
     expect(screen.queryByText('1')).toBeNull();
   });
 
-  it('النقر على زر "تحديد الكل كمقروء" يستدعي API التحديد الجماعي', async () => {
+  it('النقر على زر "قراءة الكل" يستدعي API التحديد الجماعي', async () => {
     vi.mocked(authFetch)
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify([unreadNotification]), { status: 200 })
-      )
+      .mockResolvedValueOnce(makeCountResponse(1))
+      .mockResolvedValueOnce(makeListResponse([unreadNotification]))
       .mockResolvedValue(new Response('{}', { status: 200 }));
 
     renderBell();
@@ -89,14 +77,18 @@ describe('NotificationBell', () => {
       expect(screen.getByText('1')).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByTitle('الإشعارات'));
+    fireEvent.click(screen.getByTitle('رسائلي'));
 
-    fireEvent.click(screen.getByText('تحديد الكل كمقروء'));
+    await waitFor(() => {
+      expect(screen.getByText('قراءة الكل')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByText('قراءة الكل'));
 
     await waitFor(() => {
       expect(vi.mocked(authFetch)).toHaveBeenCalledWith(
-        expect.stringContaining('/api/notifications/read-all'),
-        expect.objectContaining({ method: 'PATCH' })
+        expect.stringContaining('/api/notifications/mark-all-read'),
+        expect.objectContaining({ method: 'POST' })
       );
     });
   });

@@ -53,7 +53,7 @@ let customerBId: number;
 let purchaseAInvoice: string;
 let purchaseBInvoice: string;
 
-/* ── Helper: extract invoice_no list from GET /sales or /purchases ── */
+/* ── Helper: extract id list from GET /sales or /purchases ── */
 interface InvoiceItem {
   id: number;
   invoice_no: string;
@@ -62,6 +62,9 @@ function extractInvoices(body: unknown): InvoiceItem[] {
   if (Array.isArray(body)) return body as InvoiceItem[];
   const wrapped = body as { data?: InvoiceItem[] };
   return wrapped.data ?? [];
+}
+function extractIds(body: unknown): number[] {
+  return extractInvoices(body).map((r) => r.id);
 }
 
 /* ── Setup ──────────────────────────────────────────────────────── */
@@ -462,31 +465,31 @@ describe('Multi-Tenant Isolation — Sales', () => {
   });
 
   it('GET /api/sales with tokenA — returns own sale, NEVER company B sale', async () => {
-    expect(saleAInvoice, 'POST company A sale must have succeeded first').toBeTruthy();
-    expect(saleBInvoice, 'POST company B sale must have succeeded first').toBeTruthy();
+    expect(saleAId, 'POST company A sale must have succeeded first').toBeTruthy();
+    expect(saleBId, 'POST company B sale must have succeeded first').toBeTruthy();
 
     const res = await request(app).get('/api/sales').set('Authorization', `Bearer ${tokenA}`);
 
     expect(res.status).toBe(200);
 
-    const invoices = extractInvoices(res.body).map((s) => s.invoice_no);
+    const ids = extractIds(res.body);
 
-    expect(invoices, 'company A token must see its own sale').toContain(saleAInvoice);
-    expect(invoices, 'company A token must NOT see company B sale').not.toContain(saleBInvoice);
+    expect(ids, 'company A token must see its own sale').toContain(saleAId);
+    expect(ids, 'company A token must NOT see company B sale').not.toContain(saleBId);
   });
 
   it('GET /api/sales with tokenB — returns own sale, NEVER company A sale', async () => {
-    expect(saleAInvoice, 'POST company A sale must have succeeded first').toBeTruthy();
-    expect(saleBInvoice, 'POST company B sale must have succeeded first').toBeTruthy();
+    expect(saleAId, 'POST company A sale must have succeeded first').toBeTruthy();
+    expect(saleBId, 'POST company B sale must have succeeded first').toBeTruthy();
 
     const res = await request(app).get('/api/sales').set('Authorization', `Bearer ${tokenB}`);
 
     expect(res.status).toBe(200);
 
-    const invoices = extractInvoices(res.body).map((s) => s.invoice_no);
+    const ids = extractIds(res.body);
 
-    expect(invoices, 'company B token must see its own sale').toContain(saleBInvoice);
-    expect(invoices, 'company B token must NOT see company A sale').not.toContain(saleAInvoice);
+    expect(ids, 'company B token must see its own sale').toContain(saleBId);
+    expect(ids, 'company B token must NOT see company A sale').not.toContain(saleAId);
   });
 });
 
@@ -556,35 +559,31 @@ describe('Multi-Tenant Isolation — Purchases', () => {
   });
 
   it('GET /api/purchases with tokenA — returns own purchase, NEVER company B purchase', async () => {
-    expect(purchaseAInvoice, 'POST company A purchase must have succeeded first').toBeTruthy();
-    expect(purchaseBInvoice, 'POST company B purchase must have succeeded first').toBeTruthy();
+    expect(purchaseAId, 'POST company A purchase must have succeeded first').toBeTruthy();
+    expect(purchaseBId, 'POST company B purchase must have succeeded first').toBeTruthy();
 
     const res = await request(app).get('/api/purchases').set('Authorization', `Bearer ${tokenA}`);
 
     expect(res.status).toBe(200);
 
-    const invoices = extractInvoices(res.body).map((p) => p.invoice_no);
+    const ids = extractIds(res.body);
 
-    expect(invoices, 'company A token must see its own purchase').toContain(purchaseAInvoice);
-    expect(invoices, 'company A token must NOT see company B purchase').not.toContain(
-      purchaseBInvoice
-    );
+    expect(ids, 'company A token must see its own purchase').toContain(purchaseAId);
+    expect(ids, 'company A token must NOT see company B purchase').not.toContain(purchaseBId);
   });
 
   it('GET /api/purchases with tokenB — returns own purchase, NEVER company A purchase', async () => {
-    expect(purchaseAInvoice, 'POST company A purchase must have succeeded first').toBeTruthy();
-    expect(purchaseBInvoice, 'POST company B purchase must have succeeded first').toBeTruthy();
+    expect(purchaseAId, 'POST company A purchase must have succeeded first').toBeTruthy();
+    expect(purchaseBId, 'POST company B purchase must have succeeded first').toBeTruthy();
 
     const res = await request(app).get('/api/purchases').set('Authorization', `Bearer ${tokenB}`);
 
     expect(res.status).toBe(200);
 
-    const invoices = extractInvoices(res.body).map((p) => p.invoice_no);
+    const ids = extractIds(res.body);
 
-    expect(invoices, 'company B token must see its own purchase').toContain(purchaseBInvoice);
-    expect(invoices, 'company B token must NOT see company A purchase').not.toContain(
-      purchaseAInvoice
-    );
+    expect(ids, 'company B token must see its own purchase').toContain(purchaseBId);
+    expect(ids, 'company B token must NOT see company A purchase').not.toContain(purchaseAId);
   });
 });
 
