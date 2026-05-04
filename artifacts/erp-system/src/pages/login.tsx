@@ -1,66 +1,200 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/auth';
-
 import { useLocation } from 'wouter';
 import { RegisterForm } from './login/RegisterForm';
 import { api } from '@/lib/api';
 
+/* ══════════════════════════════════════════════
+   CSS — injected once, matches landing page
+══════════════════════════════════════════════ */
+const LOGIN_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
 
-const FEATURES = [
-  { icon: '⚡', label: 'مبيعات فورية', desc: 'وحماية منكاملة' },
-  { icon: '📊', label: 'تحليلات ذكية', desc: 'ونوقعات دقيقة' },
-  { icon: '🔑', label: 'أمان متطور', desc: 'وصلاحيات مخصصة' },
-  { icon: '📦', label: 'إدارة المخزون', desc: 'والخدمات اللوجستية' },
+.lp-login *, .lp-login *::before, .lp-login *::after { box-sizing: border-box; }
+
+@keyframes ll-float {
+  0%,100% { transform: translateY(0) scale(1);    opacity:.5; }
+  50%      { transform: translateY(-20px) scale(1.1); opacity:.9; }
+}
+@keyframes ll-breathe {
+  0%,100% { opacity: .04; }
+  50%      { opacity: .10; }
+}
+@keyframes ll-gradient-pan {
+  0%,100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+@keyframes ll-pulse {
+  0%,100% { box-shadow: 0 0 32px rgba(245,158,11,.5), 0 8px 40px rgba(0,0,0,.4); }
+  50%      { box-shadow: 0 0 64px rgba(245,158,11,.8), 0 16px 60px rgba(0,0,0,.5); }
+}
+@keyframes ll-slide-up {
+  from { opacity:0; transform:translateY(24px); }
+  to   { opacity:1; transform:none; }
+}
+@keyframes ll-shake {
+  0%,100% { transform:translateX(0); }
+  20%     { transform:translateX(-8px); }
+  40%     { transform:translateX(8px); }
+  60%     { transform:translateX(-5px); }
+  80%     { transform:translateX(5px); }
+}
+@keyframes ll-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes ll-fade-in {
+  from { opacity:0; } to { opacity:1; }
+}
+@keyframes ll-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+.ll-input {
+  width:100%; padding:15px 50px 15px 18px;
+  border-radius:14px;
+  background: rgba(255,255,255,.06);
+  border: 1.5px solid rgba(255,255,255,.1);
+  color:#fff; font-size:14.5px; font-family:Tajawal,sans-serif;
+  outline:none; transition: border-color .25s, box-shadow .25s, background .25s;
+  height:54px; direction:ltr;
+}
+.ll-input::placeholder { color: rgba(255,255,255,.28); direction:rtl; }
+.ll-input:focus {
+  border-color: rgba(245,158,11,.7);
+  box-shadow: 0 0 0 4px rgba(245,158,11,.12);
+  background: rgba(255,255,255,.09);
+}
+.ll-input:disabled { opacity:.5; cursor:not-allowed; }
+
+.ll-input-rtl { direction:rtl !important; }
+
+.ll-btn-primary {
+  width:100%; height:54px; border-radius:14px; border:none; cursor:pointer;
+  background: linear-gradient(135deg,#f59e0b,#f97316);
+  color:#000; font-size:15px; font-weight:900; font-family:Tajawal,sans-serif;
+  box-shadow: 0 0 28px rgba(245,158,11,.45), 0 8px 24px rgba(0,0,0,.3);
+  transition: transform .2s, box-shadow .2s;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  position:relative; overflow:hidden;
+}
+.ll-btn-primary::after {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(105deg,transparent 35%,rgba(255,255,255,.28) 50%,transparent 65%);
+  background-size:200% 100%; background-position:-200% center; pointer-events:none;
+}
+.ll-btn-primary:hover:not(:disabled)::after { animation:ll-shimmer .5s ease forwards; }
+.ll-btn-primary:hover:not(:disabled) {
+  transform:translateY(-2px);
+  box-shadow: 0 0 48px rgba(245,158,11,.65), 0 16px 40px rgba(0,0,0,.4);
+}
+.ll-btn-primary:disabled { opacity:.55; cursor:not-allowed; transform:none !important; }
+
+.ll-tab {
+  flex:1; padding:10px; border-radius:10px; border:none; cursor:pointer;
+  font-size:13px; font-weight:700; font-family:Tajawal,sans-serif;
+  transition: all .25s;
+}
+.ll-tab-active {
+  background: rgba(245,158,11,.18);
+  border: 1px solid rgba(245,158,11,.35);
+  color:#f59e0b;
+}
+.ll-tab-inactive {
+  background:transparent; border:1px solid transparent;
+  color:rgba(255,255,255,.38);
+}
+.ll-tab-inactive:hover { color:rgba(255,255,255,.65); }
+
+@media(max-width:900px) {
+  .ll-brand-panel { display:none !important; }
+  .ll-form-panel   { width:100% !important; }
+}
+`;
+
+/* ══════════════════════════════════════════════
+   Particles config
+══════════════════════════════════════════════ */
+const PARTICLES = [
+  {top:'12%',left:'8%', s:4, d:'0s',   dur:'6.5s'},
+  {top:'28%',left:'88%',s:6, d:'1.1s', dur:'8s'  },
+  {top:'55%',left:'5%', s:3, d:'2s',   dur:'7s'  },
+  {top:'75%',left:'80%',s:5, d:'.7s',  dur:'9s'  },
+  {top:'20%',left:'62%',s:3, d:'3.2s', dur:'6s'  },
+  {top:'42%',left:'92%',s:4, d:'1.8s', dur:'7.5s'},
+  {top:'82%',left:'38%',s:6, d:'2.4s', dur:'8.5s'},
 ];
 
+const FEATURES_LEFT = [
+  { icon:'📊', label:'محاسبة كاملة', desc:'قيد مزدوج تلقائي' },
+  { icon:'🛒', label:'مبيعات وPOS',  desc:'فواتير لحظية' },
+  { icon:'🔧', label:'وحدة صيانة',  desc:'تتبع IMEI' },
+  { icon:'👥', label:'موارد بشرية',  desc:'رواتب وحضور' },
+];
+
+/* ══════════════════════════════════════════════
+   Component
+══════════════════════════════════════════════ */
 export default function Login() {
   const { login } = useAuth();
   const [, setLocation] = useLocation();
 
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [username, setUsername] = useState('');
-  const [pin, setPin] = useState('');
-  const [showPin, setShowPin] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [focused, setFocused] = useState<'username' | 'pin' | null>(null);
+  const defaultTab = new URLSearchParams(window.location.search).get('tab') === 'register' ? 'register' : 'login';
+  const [mode, setMode] = useState<'login' | 'register'>(defaultTab);
 
-  /* ── 2FA state ─── */
+  const [username, setUsername] = useState('');
+  const [pin, setPin]           = useState('');
+  const [showPin, setShowPin]   = useState(false);
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [focused, setFocused]   = useState<'username' | 'pin' | null>(null);
+
+  /* 2FA state */
   const [requires2FA, setRequires2FA] = useState(false);
-  const [tempToken, setTempToken] = useState('');
-  const [totpCode, setTotpCode] = useState('');
+  const [tempToken, setTempToken]     = useState('');
+  const [totpCode, setTotpCode]       = useState('');
   const [totpLoading, setTotpLoading] = useState(false);
 
-  const handleRegisterSuccess = useCallback(
-    (
-      user: {
-        id: number;
-        name: string;
-        username: string;
-        role: string;
-        active?: boolean;
-        warehouse_id?: number | null;
-        safe_id?: number | null;
-        permissions?: Record<string, boolean>;
-      },
-      companyId: number
-    ) => {
-      if (companyId) {
-        localStorage.setItem('erp_company_id', String(companyId));
-      }
-      login(user);
-      setLocation('/');
-    },
-    [login, setLocation]
-  );
+  /* Mouse parallax */
+  const [mx, setMx] = useState(50);
+  const [my, setMy] = useState(42);
 
   const usernameRef = useRef<HTMLInputElement>(null);
-  const pinRef = useRef<HTMLInputElement>(null);
+  const pinRef      = useRef<HTMLInputElement>(null);
+  const errorRef    = useRef<HTMLDivElement>(null);
 
-  const logoSrc = `${import.meta.env.BASE_URL}muhkam-logo.png`;
+  /* Inject CSS */
+  useEffect(() => {
+    const s = document.createElement('style');
+    s.id = 'muhkam-login-css';
+    s.textContent = LOGIN_CSS;
+    document.head.appendChild(s);
+    return () => { s.remove(); };
+  }, []);
 
-  /* company_id: explicit URL param ONLY. NEVER fall back to a hard-coded
-     company id — that silently routes credentials to the wrong tenant. */
+  /* Mouse move */
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      setMx((e.clientX / window.innerWidth)  * 100);
+      setMy((e.clientY / window.innerHeight) * 100);
+    };
+    window.addEventListener('mousemove', onMove, { passive:true });
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
+
+  useEffect(() => {
+    if (mode === 'login') setTimeout(() => usernameRef.current?.focus(), 400);
+  }, [mode]);
+
+  /* Shake error */
+  useEffect(() => {
+    if (!error || !errorRef.current) return;
+    const el = errorRef.current;
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'll-shake .5s ease';
+  }, [error]);
+
   const storedCompanyId: number | null = (() => {
     if (typeof window === 'undefined') return null;
     const fromUrl = Number(new URLSearchParams(window.location.search).get('company_id'));
@@ -70,1059 +204,444 @@ export default function Login() {
     return null;
   })();
 
-  useEffect(() => {
-    setTimeout(() => usernameRef.current?.focus(), 400);
-  }, []);
+  const handleRegisterSuccess = useCallback((
+    user: { id:number; name:string; username:string; role:string; active?:boolean; warehouse_id?:number|null; safe_id?:number|null; permissions?:Record<string,boolean>; },
+    companyId: number
+  ) => {
+    if (companyId) localStorage.setItem('erp_company_id', String(companyId));
+    login(user);
+    setLocation('/');
+  }, [login, setLocation]);
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      setError('');
-      const trimmed = username.trim();
-      if (!trimmed) {
-        setError('أدخل اسم المستخدم');
-        usernameRef.current?.focus();
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const trimmed = username.trim();
+    if (!trimmed) { setError('أدخل اسم المستخدم'); usernameRef.current?.focus(); return; }
+    if (!pin)     { setError('أدخل الرقم السري');  pinRef.current?.focus(); return; }
+
+    setLoading(true);
+    try {
+      const body = { username: trimmed.toLowerCase(), pin, ...(storedCompanyId ? { company_id: storedCompanyId } : {}) };
+      const res = await fetch(api('/api/auth/login'), {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body), credentials:'include',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'الرقم السري غير صحيح');
+        setPin(''); pinRef.current?.focus();
         return;
       }
-      if (!pin) {
-        setError('أدخل الرقم السري');
-        pinRef.current?.focus();
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const body = { username: trimmed.toLowerCase(), pin, ...(storedCompanyId ? { company_id: storedCompanyId } : {}) };
-        const res = await fetch(api('/api/auth/login'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-          credentials: 'include',
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setError(data.error || 'الرقم السري غير صحيح');
-          setPin('');
-          pinRef.current?.focus();
-          return;
-        }
-        const responseData = (await res.json()) as {
-          requires_2fa?: boolean;
-          temp_token?: string;
-          message?: string;
-          user?: {
-            id: number;
-            name: string;
-            username: string;
-            role: string;
-            active?: boolean;
-            warehouse_id?: number | null;
-            safe_id?: number | null;
-            permissions?: Record<string, boolean>;
-            company_id?: number | null;
-          };
-        };
-
-        /* ── 2FA required — switch to TOTP step ─── */
-        if (responseData.requires_2fa && responseData.temp_token) {
-          setTempToken(responseData.temp_token);
-          setRequires2FA(true);
-          setLoading(false);
-          return;
-        }
-
-        const authedUser = responseData.user!;
-        if (authedUser.role === 'cashier' || authedUser.role === 'salesperson') {
-          if (!authedUser.warehouse_id) {
-            setError('هذا المستخدم غير مرتبط بمخزن — راجع المدير');
-            setLoading(false);
-            return;
-          }
-          if (!authedUser.safe_id) {
-            setError('هذا المستخدم غير مرتبط بخزنة — راجع المدير');
-            setLoading(false);
-            return;
-          }
-        }
-        /* Store company_id for future login-page user-list fetches */
-        if (authedUser.company_id) {
-          localStorage.setItem('erp_company_id', String(authedUser.company_id));
-        }
-        login(authedUser);
-        setLocation('/');
-      } catch {
-        setError('تعذّر الاتصال بالخادم');
-      } finally {
+      const responseData = await res.json() as {
+        requires_2fa?:boolean; temp_token?:string; message?:string;
+        user?:{ id:number; name:string; username:string; role:string; active?:boolean; warehouse_id?:number|null; safe_id?:number|null; permissions?:Record<string,boolean>; company_id?:number|null; };
+      };
+      if (responseData.requires_2fa && responseData.temp_token) {
+        setTempToken(responseData.temp_token);
+        setRequires2FA(true);
         setLoading(false);
-      }
-    },
-    [username, pin, storedCompanyId, login, setLocation]
-  );
-
-  const handleTotpSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (totpCode.length !== 6) {
-        setError('أدخل 6 أرقام');
         return;
       }
-      setTotpLoading(true);
-      setError('');
-      try {
-        const res = await fetch(api('/api/auth/2fa/login'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ temp_token: tempToken, totp_code: totpCode }),
-          credentials: 'include',
-        });
-        const data = (await res.json()) as {
-          user?: {
-            id: number;
-            name: string;
-            username: string;
-            role: string;
-            company_id?: number | null;
-          };
-          error?: string;
-        };
-        if (!res.ok || !data.user) {
-          setError(data.error ?? 'رمز التحقق غير صحيح');
-          setTotpCode('');
-          return;
-        }
-        login(data.user as Parameters<typeof login>[0]);
-        setLocation('/');
-      } catch {
-        setError('تعذّر الاتصال بالخادم');
-      } finally {
-        setTotpLoading(false);
+      const authedUser = responseData.user!;
+      if (authedUser.role === 'cashier' || authedUser.role === 'salesperson') {
+        if (!authedUser.warehouse_id) { setError('هذا المستخدم غير مرتبط بمخزن — راجع المدير'); setLoading(false); return; }
+        if (!authedUser.safe_id)      { setError('هذا المستخدم غير مرتبط بخزنة — راجع المدير'); setLoading(false); return; }
       }
-    },
-    [totpCode, tempToken, login, setLocation]
-  );
+      if (authedUser.company_id) localStorage.setItem('erp_company_id', String(authedUser.company_id));
+      login(authedUser);
+      setLocation('/');
+    } catch {
+      setError('تعذّر الاتصال بالخادم');
+    } finally {
+      setLoading(false);
+    }
+  }, [username, pin, storedCompanyId, login, setLocation]);
 
-  return (
-    <div
-      dir="rtl"
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'row-reverse',
-        fontFamily: 'inherit',
-        background: '#f8faff',
-      }}
-    >
-      {/* ════════════════════════════════════════════════════
-          BRAND PANEL  (deep purple + Islamic geometric)
-      ════════════════════════════════════════════════════ */}
-      <div
-        className="hidden lg:flex"
-        style={{
-          width: '46%',
-          position: 'relative',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          background: 'linear-gradient(160deg, #1a0a3c 0%, #2d1060 35%, #3d1878 65%, #1f0a40 100%)',
-        }}
-      >
-        {/* ── Islamic arabesque pattern overlay ─────────── */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-            opacity: 0.12,
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M40 0 L80 40 L40 80 L0 40Z' fill='none' stroke='%23d4af37' stroke-width='0.8'/%3E%3Cpath d='M40 10 L70 40 L40 70 L10 40Z' fill='none' stroke='%23d4af37' stroke-width='0.6'/%3E%3Ccircle cx='40' cy='40' r='12' fill='none' stroke='%23d4af37' stroke-width='0.5'/%3E%3Cpath d='M0 0 L20 20 M80 0 L60 20 M0 80 L20 60 M80 80 L60 60' stroke='%23d4af37' stroke-width='0.5'/%3E%3C/svg%3E")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
+  const handleTotpSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (totpCode.length !== 6) { setError('أدخل 6 أرقام'); return; }
+    setTotpLoading(true); setError('');
+    try {
+      const res = await fetch(api('/api/auth/2fa/login'), {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ temp_token:tempToken, totp_code:totpCode }), credentials:'include',
+      });
+      const data = await res.json() as { user?:{ id:number; name:string; username:string; role:string; company_id?:number|null; }; error?:string; };
+      if (!res.ok || !data.user) { setError(data.error ?? 'رمز التحقق غير صحيح'); setTotpCode(''); return; }
+      login(data.user as Parameters<typeof login>[0]);
+      setLocation('/');
+    } catch {
+      setError('تعذّر الاتصال بالخادم');
+    } finally {
+      setTotpLoading(false);
+    }
+  }, [totpCode, tempToken, login, setLocation]);
 
-        {/* ── Glowing blobs ─────────────────────────────── */}
-        <div className="lp-blob lp-blob-1" />
-        <div className="lp-blob lp-blob-2" />
-        <div className="lp-blob lp-blob-3" />
+  const mono: React.CSSProperties = { fontFamily:'Tajawal,sans-serif' };
 
-        {/* ── Gold radial glow center ───────────────────── */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '30%',
-            left: '50%',
-            transform: 'translate(-50%,-50%)',
-            width: '380px',
-            height: '380px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }}
-        />
+  /* ══ Brand left panel ══ */
+  const BrandPanel = () => (
+    <div className="ll-brand-panel" style={{
+      width:'46%', minHeight:'100vh', position:'relative',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      overflow:'hidden', background:'#000',
+      borderLeft:'1px solid rgba(255,255,255,.06)',
+    }}>
+      {/* Grid */}
+      <div style={{
+        position:'absolute', inset:0, pointerEvents:'none',
+        backgroundImage:'linear-gradient(rgba(245,158,11,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(245,158,11,.03) 1px,transparent 1px)',
+        backgroundSize:'56px 56px', animation:'ll-breathe 7s ease-in-out infinite',
+      }} />
+      {/* Amber orb */}
+      <div style={{
+        position:'absolute', inset:0, pointerEvents:'none', transition:'background .3s ease',
+        background:`radial-gradient(ellipse 70% 55% at ${mx}% ${my}%,rgba(245,158,11,.16) 0%,rgba(249,115,22,.07) 42%,transparent 68%)`,
+      }} />
+      {/* Indigo orb */}
+      <div style={{
+        position:'absolute', inset:0, pointerEvents:'none',
+        background:`radial-gradient(ellipse 50% 40% at ${100-mx}% ${100-my}%,rgba(99,102,241,.09) 0%,transparent 58%)`,
+      }} />
+      {/* Particles */}
+      {PARTICLES.map((p, i) => (
+        <div key={i} style={{
+          position:'absolute', top:p.top, left:p.left, width:p.s, height:p.s,
+          borderRadius:'50%', pointerEvents:'none',
+          background: i%3===0 ? '#f59e0b' : i%3===1 ? '#f97316' : '#fbbf24',
+          animation:`ll-float ${p.dur} ${p.d} ease-in-out infinite`,
+        }} />
+      ))}
 
-        {/* ── Content ───────────────────────────────────── */}
-        <div
-          className="relative z-10 flex flex-col items-center text-center px-10"
-          style={{ maxWidth: '420px', width: '100%' }}
-          dir="rtl"
-        >
-          {/* Logo */}
-          <div
-            style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              background:
-                'radial-gradient(circle at 30% 30%, rgba(212,175,55,0.25), rgba(0,0,0,0.4))',
-              border: '2px solid rgba(212,175,55,0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '22px',
-              boxShadow:
-                '0 0 0 8px rgba(212,175,55,0.08),' +
-                '0 0 50px rgba(212,175,55,0.3),' +
-                '0 20px 60px rgba(0,0,0,0.5)',
+      {/* Content */}
+      <div style={{ position:'relative', zIndex:10, display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center', padding:'0 48px', maxWidth:420 }} dir="rtl">
+        {/* Logo */}
+        <div style={{
+          width:88, height:88, borderRadius:24, flexShrink:0,
+          background:'linear-gradient(135deg,#f59e0b,#f97316)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontWeight:900, fontSize:46, color:'#000',
+          boxShadow:'0 0 60px rgba(245,158,11,.55), 0 20px 60px rgba(0,0,0,.5)',
+          marginBottom:22, animation:'ll-pulse 3s ease-in-out infinite',
+        }}>م</div>
+
+        <div style={{ fontSize:30, fontWeight:900, color:'#fff', marginBottom:6, letterSpacing:'-.01em', animation:'ll-slide-up .7s ease both', ...mono }}>مُحكم ERP</div>
+        <div style={{ fontSize:14, color:'rgba(255,255,255,.4)', marginBottom:48, lineHeight:1.7, animation:'ll-slide-up .75s .05s ease both', ...mono }}>نظام إدارة عربي متكامل<br/>لمستقبل أكثر ذكاءً</div>
+
+        {/* Feature cards 2×2 */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, width:'100%' }}>
+          {FEATURES_LEFT.map((f, i) => (
+            <div key={f.label} style={{
+              background:'rgba(255,255,255,.04)', backdropFilter:'blur(20px)',
+              border:'1px solid rgba(255,255,255,.08)', borderRadius:16, padding:'16px 14px',
+              textAlign:'center', transition:'all .25s', cursor:'default',
+              animation:`ll-slide-up .8s ${.1+i*.07}s ease both`,
             }}
-          >
-            <img
-              src={logoSrc}
-              alt="MUHKAM Logo"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                const p = (e.target as HTMLImageElement).parentElement;
-                if (p) p.innerHTML = '<span style="font-size:52px">🛡️</span>';
-              }}
-              style={{
-                width: '80px',
-                height: '80px',
-                objectFit: 'contain',
-                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5)) brightness(1.1)',
-              }}
-              className="border-t-[0px] border-r-[0px] border-b-[0px] border-l-[0px]"
-            />
-          </div>
-
-          {/* Brand name */}
-          <h1
-            style={{
-              fontSize: '32px',
-              fontWeight: 900,
-              color: '#f5e09a',
-              marginBottom: '6px',
-              letterSpacing: '0.5px',
-              textShadow: '0 2px 20px rgba(212,175,55,0.6), 0 0 60px rgba(212,175,55,0.2)',
-              lineHeight: 1.1,
-              fontFamily: 'inherit',
-            }}
-          >
-            {'مُحكم | MUHKAM'}
-          </h1>
-
-          {/* Subtitle */}
-          <p
-            style={{
-              fontSize: '14px',
-              color: 'rgba(212,175,55,0.75)',
-              marginBottom: '38px',
-              lineHeight: 1.7,
-              fontWeight: 500,
-            }}
-          >
-            {'نظام إدارة مُحكم، لمستقبل أحكم'}
-          </p>
-
-          {/* Feature 2×2 grid */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '12px',
-              width: '100%',
-            }}
-          >
-            {FEATURES.map((f) => (
-              <div
-                key={f.label}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  background: 'rgba(255,255,255,0.05)',
-                  backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(212,175,55,0.2)',
-                  borderRadius: '18px',
-                  padding: '18px 12px',
-                  textAlign: 'center',
-                  transition: 'background 0.25s, border-color 0.25s, transform 0.25s',
-                  cursor: 'default',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(212,175,55,0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(212,175,55,0.45)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                  e.currentTarget.style.borderColor = 'rgba(212,175,55,0.2)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '28px',
-                    filter: 'drop-shadow(0 4px 10px rgba(212,175,55,0.6))',
-                    display: 'block',
-                  }}
-                >
-                  {f.icon}
-                </span>
-                <div>
-                  <div
-                    style={{ fontSize: '13px', fontWeight: 800, color: '#f5e09a', lineHeight: 1.3 }}
-                  >
-                    {f.label}
-                  </div>
-                  <div
-                    style={{ fontSize: '11px', color: 'rgba(212,175,55,0.6)', marginTop: '3px' }}
-                  >
-                    {f.desc}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(245,158,11,.08)'; e.currentTarget.style.borderColor='rgba(245,158,11,.25)'; e.currentTarget.style.transform='translateY(-3px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,.04)'; e.currentTarget.style.borderColor='rgba(255,255,255,.08)'; e.currentTarget.style.transform='translateY(0)'; }}
+            >
+              <div style={{ fontSize:26, marginBottom:7, filter:'drop-shadow(0 3px 8px rgba(245,158,11,.5))' }}>{f.icon}</div>
+              <div style={{ fontSize:12, fontWeight:800, color:'rgba(255,255,255,.85)', ...mono, lineHeight:1.3 }}>{f.label}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,.3)', marginTop:3, ...mono }}>{f.desc}</div>
+            </div>
+          ))}
         </div>
 
-        {/* Version badge */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '22px',
-            fontSize: '11px',
-            color: 'rgba(212,175,55,0.4)',
-            letterSpacing: '0.18em',
-            fontWeight: 600,
-          }}
-        >
-          MUHKAM ERP v2.0 &nbsp;|&nbsp; القاهرة، مصر
+        {/* Trust badges */}
+        <div style={{ marginTop:36, display:'flex', gap:16, flexWrap:'wrap', justifyContent:'center' }}>
+          {['✓ 7 أيام مجاناً','✓ دعم عربي 24/7','✓ بدون بطاقة'].map(t => (
+            <span key={t} style={{ fontSize:11, color:'rgba(255,255,255,.28)', fontWeight:600, ...mono }}>{t}</span>
+          ))}
         </div>
       </div>
-      {/* ════════════════════════════════════════════════════
-          FORM PANEL  (right in LTR, left in RTL)
-      ════════════════════════════════════════════════════ */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px 20px',
-          minHeight: '100vh',
-          background: 'linear-gradient(160deg, #fffdf5 0%, #fef9e7 35%, #fff8e1 65%, #fdf6e3 100%)',
-          colorScheme: 'light',
-          color: '#0f0c29',
-        }}
-      >
-        {/* Mobile logo */}
-        <div className="flex lg:hidden flex-col items-center" style={{ marginBottom: '32px' }}>
-          <div
-            style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: 'linear-gradient(145deg, #2d1060, #3d1878)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '12px',
-              border: '2px solid rgba(212,175,55,0.4)',
-              boxShadow: '0 0 30px rgba(212,175,55,0.25),' + '0 8px 24px rgba(0,0,0,0.15)',
-            }}
-          >
-            <img
-              src={logoSrc}
-              alt="Logo"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                const p = (e.target as HTMLImageElement).parentElement;
-                if (p) p.innerHTML = '<span style="font-size:32px">🛡️</span>';
-              }}
-              style={{ width: '52px', height: '52px', objectFit: 'contain' }}
-            />
-          </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#3d1878' }}>
-            {'مُحكم | MUHKAM'}
-          </div>
+
+      {/* Version badge */}
+      <div style={{ position:'absolute', bottom:22, fontSize:11, color:'rgba(255,255,255,.18)', letterSpacing:'.15em', fontWeight:600 }}>
+        MUHKAM ERP v2.0 · القاهرة، مصر
+      </div>
+    </div>
+  );
+
+  /* ══ Form card ══ */
+  const cardStyle: React.CSSProperties = {
+    width:'100%', maxWidth:460,
+    background:'rgba(255,255,255,.05)',
+    backdropFilter:'blur(32px)',
+    borderRadius:28, border:'1px solid rgba(255,255,255,.1)',
+    boxShadow:'0 0 0 1px rgba(245,158,11,.06), 0 40px 100px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08)',
+    padding:'38px 36px',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display:'block', fontSize:12.5, fontWeight:700,
+    color:'rgba(255,255,255,.55)', marginBottom:7, ...mono,
+  };
+
+  /* ══ RENDER ══ */
+  return (
+    <div className="lp-login" dir="rtl" style={{
+      minHeight:'100vh', display:'flex', flexDirection:'row',
+      background:'#000', fontFamily:'Tajawal,sans-serif',
+    }}>
+      {/* Brand panel */}
+      <BrandPanel />
+
+      {/* Form panel */}
+      <div className="ll-form-panel" style={{
+        flex:1, display:'flex', flexDirection:'column',
+        alignItems:'center', justifyContent:'center',
+        padding:'40px 24px', minHeight:'100vh', position:'relative', overflow:'hidden',
+      }}>
+        {/* Subtle grid */}
+        <div style={{
+          position:'absolute', inset:0, pointerEvents:'none',
+          backgroundImage:'linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px)',
+          backgroundSize:'48px 48px',
+        }} />
+        {/* Amber glow */}
+        <div style={{ position:'absolute', inset:0, pointerEvents:'none', background:'radial-gradient(ellipse 60% 50% at 50% 50%,rgba(245,158,11,.07) 0%,transparent 65%)' }} />
+
+        {/* Mobile logo (hidden on desktop) */}
+        <div className="ll-brand-panel" style={{ display:'none' }} />
+        <div style={{
+          display:'none', flexDirection:'column', alignItems:'center', marginBottom:32,
+          animation:'ll-slide-up .6s ease both',
+        }}>
+          <div style={{ width:58, height:58, borderRadius:16, background:'linear-gradient(135deg,#f59e0b,#f97316)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:900, color:'#000', boxShadow:'0 0 28px rgba(245,158,11,.45)', marginBottom:10 }}>م</div>
+          <div style={{ fontSize:18, fontWeight:900, color:'#fff', ...mono }}>مُحكم ERP</div>
         </div>
 
-        {/* ── Card ──────────────────────────────────────── */}
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '460px',
-            background: 'rgba(255,255,255,0.88)',
-            backdropFilter: 'blur(20px)',
-            borderRadius: '28px',
-            border: '1px solid rgba(212,175,55,0.25)',
-            boxShadow:
-              '0 0 0 1px rgba(212,175,55,0.08),' +
-              '0 4px 8px rgba(0,0,0,0.04),' +
-              '0 28px 80px rgba(61,24,120,0.12),' +
-              '0 8px 40px rgba(0,0,0,0.06)',
-            padding: '40px 38px',
-          }}
-        >
-          {/* ── 2FA Step ─── */}
+        {/* Card */}
+        <div style={{ ...cardStyle, position:'relative', zIndex:10, animation:'ll-slide-up .65s .08s ease both' }}>
+
+          {/* ─── 2FA STEP ─── */}
           {requires2FA ? (
             <form onSubmit={handleTotpSubmit} noValidate aria-label="نموذج التحقق الثنائي">
-              <div style={{ marginBottom: '28px', textAlign: 'center' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔐</div>
-                <h2
-                  style={{
-                    fontSize: '22px',
-                    fontWeight: 900,
-                    color: '#0f0c29',
-                    marginBottom: '8px',
-                  }}
-                >
-                  التحقق الثنائي
-                </h2>
-                <p style={{ fontSize: '13px', color: '#7c6fa0', lineHeight: 1.6 }}>
-                  افتح تطبيق <strong>Google Authenticator</strong> أو <strong>Authy</strong>
-                  <br />
-                  وأدخل الرمز المكون من 6 أرقام
+              <div style={{ textAlign:'center', marginBottom:28 }}>
+                <div style={{ fontSize:48, marginBottom:14 }}>🔐</div>
+                <h2 style={{ fontSize:22, fontWeight:900, color:'#fff', marginBottom:8, ...mono }}>التحقق الثنائي</h2>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,.42)', lineHeight:1.7, ...mono }}>
+                  افتح <strong style={{ color:'rgba(255,255,255,.65)' }}>Google Authenticator</strong> أو <strong style={{ color:'rgba(255,255,255,.65)' }}>Authy</strong>
+                  <br />وأدخل الرمز المكون من 6 أرقام
                 </p>
               </div>
 
               {error && (
-                <div
-                  id="totp-error"
-                  role="alert"
-                  aria-live="polite"
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    marginBottom: '16px',
-                    background: 'rgba(239,68,68,0.08)',
-                    border: '1px solid rgba(239,68,68,0.25)',
-                    color: '#EF4444',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    textAlign: 'center',
-                  }}
-                >
-                  {error}
-                </div>
+                <div ref={errorRef} role="alert" aria-live="polite" style={{
+                  padding:'11px 14px', borderRadius:12, marginBottom:16,
+                  background:'rgba(239,68,68,.1)', border:'1px solid rgba(239,68,68,.25)',
+                  color:'#f87171', fontSize:13, fontWeight:700, textAlign:'center', ...mono,
+                }}>{error}</div>
               )}
 
               <input
                 value={totpCode}
-                onChange={(e) => {
-                  setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6));
-                  setError('');
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && totpCode.length === 6)
-                    void handleTotpSubmit(e as unknown as React.FormEvent);
-                }}
+                onChange={e => { setTotpCode(e.target.value.replace(/\D/g,'').slice(0,6)); setError(''); }}
+                onKeyDown={e => { if (e.key==='Enter' && totpCode.length===6) void handleTotpSubmit(e as unknown as React.FormEvent); }}
                 placeholder="• • • • • •"
                 inputMode="numeric"
                 autoFocus
                 aria-label="رمز التحقق الثنائي"
-                aria-describedby="totp-error"
                 style={{
-                  width: '100%',
-                  padding: '16px',
-                  borderRadius: '14px',
-                  border: '1.5px solid rgba(124,58,237,0.3)',
-                  fontSize: '32px',
-                  letterSpacing: '14px',
-                  textAlign: 'center',
-                  fontFamily: 'monospace',
-                  color: '#0f0c29',
-                  background: '#fdfbff',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  marginBottom: '16px',
+                  width:'100%', padding:'16px', borderRadius:14,
+                  border:`1.5px solid ${totpCode.length===6?'rgba(245,158,11,.6)':'rgba(255,255,255,.12)'}`,
+                  fontSize:30, letterSpacing:16, textAlign:'center', fontFamily:'monospace',
+                  color:'#fff', background:'rgba(255,255,255,.06)', outline:'none',
+                  boxSizing:'border-box', marginBottom:16, transition:'border-color .25s',
                 }}
                 maxLength={6}
               />
-
-              <button
-                type="submit"
-                disabled={totpLoading || totpCode.length !== 6}
-                className="lp-btn-primary"
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  borderRadius: '14px',
-                  border: 'none',
-                  background:
-                    totpCode.length === 6 ? 'linear-gradient(135deg, #f97316, #ea580c)' : '#e5e7eb',
-                  color: totpCode.length === 6 ? '#fff' : '#9ca3af',
-                  fontSize: '15px',
-                  fontWeight: 800,
-                  cursor: totpCode.length !== 6 ? 'not-allowed' : 'pointer',
-                  marginBottom: '14px',
-                }}
-              >
-                {totpLoading ? 'جاري التحقق...' : 'تحقق →'}
+              <button type="submit" disabled={totpLoading || totpCode.length!==6} className="ll-btn-primary" style={{ marginBottom:12 }}>
+                {totpLoading
+                  ? <><span style={{ width:18,height:18,border:'2.5px solid rgba(0,0,0,.25)',borderTopColor:'#000',borderRadius:'50%',display:'inline-block',animation:'ll-spin .7s linear infinite' }} /><span style={{ ...mono }}>جاري التحقق...</span></>
+                  : <span style={{ ...mono }}>تحقق ←</span>}
               </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setRequires2FA(false);
-                  setTempToken('');
-                  setTotpCode('');
-                  setError('');
-                  setPin('');
-                }}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '12px',
-                  border: '1px solid #e0d9f0',
-                  background: 'transparent',
-                  color: '#7c6fa0',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                ← رجوع لإدخال الرقم السري
-              </button>
+              <button type="button" onClick={() => { setRequires2FA(false); setTempToken(''); setTotpCode(''); setError(''); setPin(''); }} style={{
+                width:'100%', padding:'10px', borderRadius:12,
+                border:'1px solid rgba(255,255,255,.1)', background:'transparent',
+                color:'rgba(255,255,255,.4)', fontSize:13, fontWeight:700, cursor:'pointer', ...mono,
+                transition:'all .2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color='rgba(255,255,255,.7)'; e.currentTarget.style.borderColor='rgba(255,255,255,.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,.4)'; e.currentTarget.style.borderColor='rgba(255,255,255,.1)'; }}
+              >← رجوع</button>
             </form>
           ) : (
             <>
+              {/* Logo inside card (mobile) + heading */}
+              <div style={{ textAlign:'center', marginBottom:26 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:14 }}>
+                  <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#f59e0b,#f97316)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:20, color:'#000', boxShadow:'0 0 20px rgba(245,158,11,.45)' }}>م</div>
+                  <div style={{ fontWeight:900, fontSize:18, color:'#fff', ...mono }}>مُحكم ERP</div>
+                </div>
+                <h1 style={{ fontSize:22, fontWeight:900, color:'#fff', marginBottom:4, ...mono }}>
+                  {mode==='login' ? 'أهلاً بعودتك' : 'إنشاء حساب جديد'}
+                </h1>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,.38)', ...mono }}>
+                  {mode==='login' ? 'سجّل دخولك للمتابعة' : 'تجربة مجانية 7 أيام — بلا بطاقة'}
+                </p>
+              </div>
+
               {/* Tab toggle */}
-              <div
-                style={{
-                  display: 'flex',
-                  background: 'rgba(61,24,120,0.08)',
-                  borderRadius: '14px',
-                  padding: '5px',
-                  marginBottom: '28px',
-                  gap: '5px',
-                  border: '1px solid rgba(212,175,55,0.15)',
-                }}
-              >
-                {(
-                  [
-                    ['login', 'تسجيل الدخول'],
-                    ['register', 'مستخدم جديد'],
-                  ] as const
-                ).map(([m, label]) => (
-                  <button
-                    key={m}
-                    onClick={() => {
-                      setMode(m);
-                      setError('');
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: '10px 0',
-                      borderRadius: '10px',
-                      fontSize: '13.5px',
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.25s ease',
-                      background:
-                        mode === m
-                          ? 'linear-gradient(135deg, #2d1060 0%, #4a1a90 100%)'
-                          : 'transparent',
-                      color: mode === m ? '#f5e09a' : '#8b6914',
-                      boxShadow:
-                        mode === m
-                          ? '0 4px 12px rgba(61,24,120,0.3), 0 1px 4px rgba(0,0,0,0.1)'
-                          : 'none',
-                    }}
-                  >
-                    {label}
+              <div style={{
+                display:'flex', background:'rgba(255,255,255,.05)',
+                borderRadius:14, padding:'4px', marginBottom:28, gap:4,
+                border:'1px solid rgba(255,255,255,.08)',
+              }}>
+                {(['login','register'] as const).map(m => (
+                  <button key={m} onClick={() => { setMode(m); setError(''); }} className={`ll-tab ${mode===m?'ll-tab-active':'ll-tab-inactive'}`}>
+                    {m==='login' ? 'تسجيل الدخول' : 'مستخدم جديد'}
                   </button>
                 ))}
               </div>
 
-              {mode === 'login' ? (
-                <LoginForm
-                  username={username}
-                  setUsername={setUsername}
-                  pin={pin}
-                  setPin={setPin}
-                  showPin={showPin}
-                  setShowPin={setShowPin}
-                  error={error}
-                  setError={setError}
-                  loading={loading}
-                  focused={focused}
-                  setFocused={setFocused}
-                  usernameRef={usernameRef}
-                  pinRef={pinRef}
-                  onSubmit={handleSubmit}
+              {/* Register form */}
+              {mode === 'register' ? (
+                <RegisterForm
+                  onSuccess={handleRegisterSuccess}
+                  onSwitch={() => { setMode('login'); setError(''); }}
                 />
               ) : (
-                <RegisterForm onSuccess={handleRegisterSuccess} onSwitch={() => setMode('login')} />
+                /* Login form */
+                <LoginFormFields
+                  username={username} setUsername={setUsername}
+                  pin={pin} setPin={setPin}
+                  showPin={showPin} setShowPin={setShowPin}
+                  focused={focused} setFocused={setFocused}
+                  error={error} setError={setError}
+                  loading={loading}
+                  usernameRef={usernameRef} pinRef={pinRef} errorRef={errorRef}
+                  handleSubmit={handleSubmit}
+                  labelStyle={labelStyle}
+                  mono={mono}
+                />
               )}
             </>
           )}
         </div>
 
         {/* Footer */}
-        <p
-          style={{
-            marginTop: '24px',
-            fontSize: '11.5px',
-            color: '#b8860b',
-            textAlign: 'center',
-            letterSpacing: '0.02em',
-            opacity: 0.7,
-          }}
-        >
-          &copy; {new Date().getFullYear()} MUHKAM &nbsp;-&nbsp; جميع الحقوق محفوظة
-        </p>
+        <div style={{ position:'relative', zIndex:10, marginTop:22, fontSize:11, color:'rgba(255,255,255,.18)', letterSpacing:'.12em', textAlign:'center', animation:'ll-fade-in 1s .5s ease both', opacity:0 }}>
+          © 2026 مُحكم ERP · جميع الحقوق محفوظة
+        </div>
       </div>
-      {/* ════════════════════════════════════════════════════
-          Global styles
-      ════════════════════════════════════════════════════ */}
-      <style>{`
-        @keyframes lp-shake {
-          0%,100% { transform: translateX(0); }
-          15%      { transform: translateX(-8px); }
-          30%      { transform: translateX(7px); }
-          45%      { transform: translateX(-6px); }
-          60%      { transform: translateX(5px); }
-          75%      { transform: translateX(-3px); }
-          90%      { transform: translateX(2px); }
-        }
-        @keyframes lp-float-1 {
-          0%,100% { transform: translate(0,0) scale(1); }
-          33%     { transform: translate(30px,-40px) scale(1.08); }
-          66%     { transform: translate(-20px,20px) scale(0.95); }
-        }
-        @keyframes lp-float-2 {
-          0%,100% { transform: translate(0,0) scale(1); }
-          40%     { transform: translate(-40px,30px) scale(1.1); }
-          70%     { transform: translate(20px,-20px) scale(0.92); }
-        }
-        @keyframes lp-float-3 {
-          0%,100% { transform: translate(0,0) scale(1); }
-          50%     { transform: translate(20px,40px) scale(1.06); }
-        }
-        @keyframes lp-spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-
-        .lp-blob {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(60px);
-          pointer-events: none;
-        }
-        .lp-blob-1 {
-          width: 420px; height: 420px;
-          top: -120px; right: -80px;
-          background: radial-gradient(circle, rgba(124,58,237,0.45) 0%, transparent 70%);
-          animation: lp-float-1 12s ease-in-out infinite;
-        }
-        .lp-blob-2 {
-          width: 360px; height: 360px;
-          bottom: -100px; left: -80px;
-          background: radial-gradient(circle, rgba(79,70,229,0.4) 0%, transparent 70%);
-          animation: lp-float-2 15s ease-in-out infinite;
-        }
-        .lp-blob-3 {
-          width: 260px; height: 260px;
-          top: 45%; left: 30%;
-          background: radial-gradient(circle, rgba(167,139,250,0.25) 0%, transparent 70%);
-          animation: lp-float-3 10s ease-in-out infinite;
-        }
-
-        /* Input base */
-        .lp-input {
-          transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
-          color: #0f0c29 !important;
-          -webkit-text-fill-color: #0f0c29 !important;
-          caret-color: #4a1a90;
-          color-scheme: light;
-        }
-        .lp-input:focus {
-          outline: none;
-          border-color: #4a1a90 !important;
-          box-shadow: 0 0 0 4px rgba(61,24,120,0.12), 0 4px 20px rgba(212,175,55,0.08) !important;
-          background: #fffdf8 !important;
-        }
-        .lp-input::placeholder {
-          color: #9a8fb8 !important;
-          opacity: 1;
-        }
-        /* Override browser autofill styling that turns text white */
-        .lp-input:-webkit-autofill,
-        .lp-input:-webkit-autofill:hover,
-        .lp-input:-webkit-autofill:focus,
-        .lp-input:-webkit-autofill:active {
-          -webkit-text-fill-color: #0f0c29 !important;
-          -webkit-box-shadow: 0 0 0 1000px #fefcff inset !important;
-          box-shadow: 0 0 0 1000px #fefcff inset !important;
-          caret-color: #0f0c29 !important;
-          transition: background-color 9999s ease-in-out 0s;
-        }
-
-        /* Primary button */
-        .lp-btn-primary {
-          position: relative;
-          overflow: hidden;
-          transition: transform 0.18s cubic-bezier(.34,1.56,.64,1),
-                      box-shadow 0.20s ease,
-                      filter 0.18s ease;
-        }
-        .lp-btn-primary::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(255,255,255,0.22) 40%,
-            rgba(255,255,255,0.36) 50%,
-            rgba(255,255,255,0.22) 60%,
-            transparent 100%
-          );
-          transform: translateX(-150%);
-          transition: transform 0s;
-          pointer-events: none;
-        }
-        .lp-btn-primary:hover:not(:disabled)::after {
-          transform: translateX(150%);
-          transition: transform 0.55s ease;
-        }
-        .lp-btn-primary:hover:not(:disabled) {
-          transform: translateY(-3px);
-          box-shadow: 0 16px 40px rgba(99,57,206,0.55), 0 4px 16px rgba(0,0,0,0.12) !important;
-          filter: brightness(1.06);
-        }
-        .lp-btn-primary:active:not(:disabled) {
-          transform: translateY(0) scale(0.97);
-          box-shadow: 0 4px 12px rgba(99,57,206,0.28) !important;
-          filter: brightness(0.96);
-        }
-        .lp-btn-primary:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
-        }
-
-        @keyframes lp-spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-        .lp-spinner {
-          animation: lp-spin 0.75s linear infinite;
-        }
-      `}</style>
     </div>
   );
 }
 
-/* ──────────────────────────────────────────────────────────
-   LOGIN FORM
-────────────────────────────────────────────────────────── */
-interface LoginFormProps {
-  username: string;
-  setUsername: (v: string) => void;
-  pin: string;
-  setPin: (v: string) => void;
-  showPin: boolean;
-  setShowPin: (v: boolean) => void;
-  error: string;
-  setError: (v: string) => void;
-  loading: boolean;
-  focused: 'username' | 'pin' | null;
-  setFocused: (v: 'username' | 'pin' | null) => void;
-  usernameRef: React.RefObject<HTMLInputElement | null>;
-  pinRef: React.RefObject<HTMLInputElement | null>;
-  onSubmit: (e: React.FormEvent) => void;
-}
-
-function LoginForm({
-  username,
-  setUsername,
-  pin,
-  setPin,
-  showPin,
-  setShowPin,
-  error,
-  setError,
-  loading,
-  focused,
-  setFocused,
-  usernameRef,
-  pinRef,
-  onSubmit,
-}: LoginFormProps) {
-  const errorRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!error) return;
-    const el = errorRef.current;
-    if (el) {
-      el.style.animation = 'none';
-      void el.offsetWidth;
-      el.style.animation = 'lp-shake 0.5s ease';
-    }
-  }, [error]);
-
+/* ═══════════════════════════════════════════════
+   Login form sub-component (keeps render clean)
+═══════════════════════════════════════════════ */
+function LoginFormFields({
+  username, setUsername, pin, setPin,
+  showPin, setShowPin, focused, setFocused,
+  error, setError, loading,
+  usernameRef, pinRef, errorRef,
+  handleSubmit, labelStyle, mono,
+}: {
+  username:string; setUsername:(v:string)=>void;
+  pin:string; setPin:(v:string)=>void;
+  showPin:boolean; setShowPin:(v:boolean)=>void;
+  focused:'username'|'pin'|null; setFocused:(v:'username'|'pin'|null)=>void;
+  error:string; setError:(v:string)=>void;
+  loading:boolean;
+  usernameRef:React.RefObject<HTMLInputElement|null>; pinRef:React.RefObject<HTMLInputElement|null>; errorRef:React.RefObject<HTMLDivElement|null>;
+  handleSubmit:(e:React.FormEvent)=>Promise<void>;
+  labelStyle:React.CSSProperties; mono:React.CSSProperties;
+}) {
   return (
-    <form onSubmit={onSubmit} noValidate aria-label="نموذج تسجيل الدخول">
-      {/* Heading */}
-      <div style={{ marginBottom: '28px', textAlign: 'center' }}>
-        <div style={{ fontSize: '36px', marginBottom: '6px' }}>🤩</div>
-        <h2
-          style={{
-            fontSize: '22px',
-            fontWeight: 900,
-            color: '#2d1060',
-            marginBottom: '6px',
-            letterSpacing: '-0.3px',
-            lineHeight: 1.2,
-          }}
-        >
-          ابدأ رحلة النجاح معنا!
-        </h2>
-        <p style={{ fontSize: '13px', color: '#8b6914', lineHeight: 1.6, opacity: 0.8 }}>
-          سجّل دخولك للوصول إلى لوحة التحكم
-        </p>
-      </div>
-      {/* ── Username ─────────────────────────────────── */}
-      <div style={{ marginBottom: '18px' }}>
-        <label
-          style={{
-            display: 'block',
-            fontSize: '13px',
-            fontWeight: 700,
-            color: '#3b2d6e',
-            marginBottom: '8px',
-          }}
-        >
-          اسم المستخدم أو البريد الإلكتروني
-        </label>
-        <div style={{ position: 'relative' }}>
-          {/* Icon */}
-          <span
-            style={{
-              position: 'absolute',
-              top: '50%',
-              right: '16px',
-              transform: 'translateY(-50%)',
-              fontSize: '17px',
-              color: focused === 'username' ? '#7c3aed' : '#c4b5fd',
-              pointerEvents: 'none',
-              transition: 'color 0.2s',
-            }}
-          >
-            👤
-          </span>
+    <form onSubmit={handleSubmit} noValidate aria-label="نموذج تسجيل الدخول">
+      {/* Username */}
+      <div style={{ marginBottom:18 }}>
+        <label style={labelStyle}>اسم المستخدم</label>
+        <div style={{ position:'relative' }}>
+          <span style={{ position:'absolute', top:'50%', right:16, transform:'translateY(-50%)', fontSize:16, pointerEvents:'none' }}>👤</span>
           <input
-            id="login-username"
             ref={usernameRef}
+            id="username"
             type="text"
-            value={username}
             autoComplete="username"
-            placeholder="اسم المستخدم أو البريد الإلكتروني"
-            aria-label="اسم المستخدم أو البريد الإلكتروني"
-            aria-describedby="login-error"
+            value={username}
+            placeholder="admin"
             disabled={loading}
-            onChange={(e) => {
-              setUsername(e.target.value);
-              setError('');
-            }}
+            className={`ll-input ll-input-rtl${focused==='username'?' ll-focused':''}`}
+            style={{ paddingRight:48, direction:'ltr', textAlign:'right' }}
+            onChange={e => { setUsername(e.target.value); setError(''); }}
             onFocus={() => setFocused('username')}
             onBlur={() => setFocused(null)}
-            className="lp-input"
-            style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              padding: '15px 50px 15px 46px',
-              borderRadius: '14px',
-              border: `1.5px solid ${focused === 'username' ? '#7c3aed' : '#e5e0f8'}`,
-              fontSize: '14.5px',
-              color: '#0f0c29',
-              WebkitTextFillColor: '#0f0c29',
-              background: loading ? '#f9f8ff' : '#fefcff',
-              backgroundColor: loading ? '#f9f8ff' : '#fefcff',
-              fontFamily: 'inherit',
-              direction: 'rtl',
-              height: '54px',
-              colorScheme: 'light',
-            }}
+            aria-label="اسم المستخدم"
+            aria-describedby="login-error"
           />
         </div>
       </div>
-      {/* ── PIN ──────────────────────────────────────── */}
-      <div style={{ marginBottom: '22px' }}>
-        <label
-          style={{
-            display: 'block',
-            fontSize: '13px',
-            fontWeight: 700,
-            color: '#3b2d6e',
-            marginBottom: '8px',
-          }}
-        >
-          الرقم السري
-        </label>
-        <div style={{ position: 'relative' }}>
-          <span
-            style={{
-              position: 'absolute',
-              top: '50%',
-              right: '16px',
-              transform: 'translateY(-50%)',
-              fontSize: '17px',
-              color: focused === 'pin' ? '#7c3aed' : '#c4b5fd',
-              pointerEvents: 'none',
-              transition: 'color 0.2s',
-            }}
-          >
-            🔒
-          </span>
+
+      {/* PIN */}
+      <div style={{ marginBottom:24 }}>
+        <label style={labelStyle}>الرقم السري</label>
+        <div style={{ position:'relative' }}>
+          <span style={{ position:'absolute', top:'50%', right:16, transform:'translateY(-50%)', fontSize:16, pointerEvents:'none' }}>🔒</span>
           <input
-            id="login-pin"
             ref={pinRef}
+            id="pin"
             type={showPin ? 'text' : 'password'}
-            value={pin}
             autoComplete="current-password"
-            placeholder="أدخل الرقم السري"
-            aria-label="الرقم السري"
-            aria-describedby="login-error"
+            value={pin}
+            placeholder="••••••"
             disabled={loading}
-            onChange={(e) => {
-              setPin(e.target.value);
-              setError('');
+            className="ll-input"
+            style={{
+              paddingRight:48, paddingLeft:48, direction:'ltr',
+              letterSpacing: pin && !showPin ? '.35em' : 'normal',
             }}
+            onChange={e => { setPin(e.target.value); setError(''); }}
             onFocus={() => setFocused('pin')}
             onBlur={() => setFocused(null)}
-            className="lp-input"
-            style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              padding: '15px 50px 15px 50px',
-              borderRadius: '14px',
-              border: `1.5px solid ${focused === 'pin' ? '#7c3aed' : '#e5e0f8'}`,
-              fontSize: '14.5px',
-              color: '#0f0c29',
-              WebkitTextFillColor: '#0f0c29',
-              background: loading ? '#f9f8ff' : '#fefcff',
-              backgroundColor: loading ? '#f9f8ff' : '#fefcff',
-              fontFamily: 'inherit',
-              direction: 'ltr',
-              letterSpacing: pin && !showPin ? '0.35em' : 'normal',
-              height: '54px',
-              colorScheme: 'light',
-            }}
+            aria-label="الرقم السري"
+            aria-describedby="login-error"
           />
-          {/* Show/hide */}
           <button
             type="button"
-            onClick={() => setShowPin(!showPin)}
             tabIndex={-1}
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '16px',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '17px',
-              color: '#c4b5fd',
-              padding: '2px',
-              lineHeight: 1,
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#7c3aed')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#c4b5fd')}
+            onClick={() => setShowPin(!showPin)}
+            style={{ position:'absolute', top:'50%', left:16, transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:16, color:'rgba(255,255,255,.35)', padding:2, lineHeight:1, transition:'color .2s' }}
+            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,.65)'}
+            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,.35)'}
             title={showPin ? 'إخفاء' : 'إظهار'}
-          >
-            {showPin ? '🙈' : '👁'}
-          </button>
+          >{showPin ? '🙈' : '👁'}</button>
         </div>
       </div>
-      {/* ── Error ────────────────────────────────────── */}
+
+      {/* Error */}
       {error && (
-        <div
-          id="login-error"
-          role="alert"
-          aria-live="polite"
-          ref={errorRef}
-          style={{
-            marginBottom: '18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '12px 16px',
-            background: '#fff5f5',
-            border: '1.5px solid #fecaca',
-            borderRadius: '12px',
-            fontSize: '13.5px',
-            color: '#dc2626',
-            fontWeight: 600,
-          }}
-        >
-          <span style={{ flexShrink: 0, fontSize: '16px' }}>⚠️</span>
-          <span>{error}</span>
+        <div id="login-error" role="alert" aria-live="polite" ref={errorRef} style={{
+          marginBottom:18, display:'flex', alignItems:'center', gap:10,
+          padding:'12px 16px', background:'rgba(239,68,68,.1)',
+          border:'1px solid rgba(239,68,68,.25)', borderRadius:12,
+          fontSize:13, color:'#f87171', fontWeight:600, ...mono,
+        }}>
+          <span style={{ flexShrink:0 }}>⚠️</span><span>{error}</span>
         </div>
       )}
-      {/* ── Submit button ─────────────────────────────── */}
-      <button
-        type="submit"
-        disabled={loading}
-        className="lp-btn-primary"
-        style={{
-          width: '100%',
-          height: '54px',
-          borderRadius: '14px',
-          border: '1px solid rgba(212,175,55,0.3)',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          fontSize: '15.5px',
-          fontWeight: 800,
-          color: '#fff',
-          background: 'linear-gradient(135deg, #2d1060 0%, #4a1a90 50%, #3d1878 100%)',
-          boxShadow: '0 6px 20px rgba(61,24,120,0.4), 0 2px 6px rgba(0,0,0,0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '10px',
-          marginBottom: '22px',
-          letterSpacing: '0.02em',
-        }}
-      >
-        {loading ? (
-          <>
-            <span
-              className="lp-spinner"
-              style={{
-                width: '20px',
-                height: '20px',
-                border: '2.5px solid rgba(255,255,255,0.25)',
-                borderTopColor: '#fff',
-                borderRadius: '50%',
-                display: 'inline-block',
-              }}
-            />
-            <span>جاري التحقق...</span>
-          </>
-        ) : (
-          <span>🔐 دخول آمن (مُحكم) ←</span>
-        )}
+
+      {/* Submit */}
+      <button type="submit" disabled={loading} className="ll-btn-primary" style={{ marginBottom:20 }}>
+        {loading
+          ? <><span style={{ width:20,height:20,border:'2.5px solid rgba(0,0,0,.25)',borderTopColor:'#000',borderRadius:'50%',display:'inline-block',animation:'ll-spin .7s linear infinite' }} /><span style={{ ...mono }}>جاري التحقق...</span></>
+          : <span style={{ ...mono }}>دخول آمن ←</span>}
       </button>
+
+      {/* Register link */}
+      <div style={{ textAlign:'center' }}>
+        <span style={{ fontSize:13, color:'rgba(255,255,255,.3)', ...mono }}>ليس لديك حساب؟ </span>
+        <button type="button" style={{ background:'none', border:'none', cursor:'pointer', fontSize:13, color:'#f59e0b', fontWeight:800, padding:0, ...mono, transition:'color .2s' }}
+          onMouseEnter={e => e.currentTarget.style.color='#fbbf24'}
+          onMouseLeave={e => e.currentTarget.style.color='#f59e0b'}
+          onClick={() => { /* switch to register tab handled by parent */ window.history.pushState({}, '', '/login?tab=register'); window.dispatchEvent(new Event('popstate')); location.href='/login?tab=register'; }}
+        >ابدأ مجاناً ←</button>
+      </div>
     </form>
   );
 }
 
-/* ──────────────────────────────────────────────────────────
-   REGISTER FORM — imported from login/RegisterForm.tsx
-────────────────────────────────────────────────────────── */
 export { RegisterForm } from './login/RegisterForm';
