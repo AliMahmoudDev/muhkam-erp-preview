@@ -42,6 +42,7 @@ const ROUTE_FEATURES: Partial<Record<string, keyof CompanyFeatures>> = {
 };
 
 /* ── Lazy-loaded pages ─────────────────────────────────── */
+const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const Login = lazy(() => import('@/pages/login'));
 const RepairTrack = lazy(() => import('@/pages/repair-track'));
 const Dashboard = lazy(() => import('@/pages/dashboard'));
@@ -146,13 +147,21 @@ function Router() {
   }
 
   if (!user) {
-    return location === '/login' ? (
-      <Suspense fallback={<PageFallback />}>
-        <Login />
-      </Suspense>
-    ) : (
-      <Redirect to="/login" />
-    );
+    if (location === '/login') {
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <Login />
+        </Suspense>
+      );
+    }
+    if (location === '/') {
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <LandingPage />
+        </Suspense>
+      );
+    }
+    return <Redirect to="/" />;
   }
   if (location === '/login') {
     return user.role === 'super_admin' ? <Redirect to="/super-admin" /> : <Redirect to="/" />;
