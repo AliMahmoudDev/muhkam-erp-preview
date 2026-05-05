@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "PORT=8081 BASE_PATH=/__mockup vite dev",
+    "dev": "PORT=9000 BASE_PATH=/__mockup node scripts/dev-wrapper.cjs",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit"

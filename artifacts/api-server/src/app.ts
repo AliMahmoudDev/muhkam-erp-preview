@@ -1,4 +1,6 @@
 import express, { type Express, type ErrorRequestHandler } from 'express';
+import http from 'http';
+import net from 'net';
 import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -174,6 +176,35 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+/* ── Dev-only reverse proxy: /erp-mobile/* → Metro (8082), /__mockup/* → Vite (8083) ── */
+if (process.env.NODE_ENV !== 'production') {
+  const DEV_PROXIES: Array<{ prefix: string; target: number; strip: boolean }> = [
+    { prefix: '/erp-mobile', target: 8082, strip: true },
+    { prefix: '/__mockup',   target: 8083, strip: false },
+  ];
+
+  for (const { prefix, target, strip } of DEV_PROXIES) {
+    app.use(prefix, (req, res) => {
+      const targetPath = strip ? (req.url || '/') : `${prefix}${req.url || '/'}`;
+      const opts: http.RequestOptions = {
+        hostname: '127.0.0.1',
+        port: target,
+        path: targetPath,
+        method: req.method,
+        headers: { ...req.headers, host: `localhost:${target}` },
+      };
+      const proxyReq = http.request(opts, (proxyRes) => {
+        res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
+        proxyRes.pipe(res, { end: true });
+      });
+      proxyReq.on('error', () => {
+        if (!res.headersSent) res.status(502).end('Dev service not ready — please wait');
+      });
+      req.pipe(proxyReq, { end: true });
+    });
+  }
+}
 
 /* Apply general limiter to all API routes */
 app.use('/api', generalLimiter);

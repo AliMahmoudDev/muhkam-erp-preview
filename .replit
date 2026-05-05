@@ -20,6 +20,44 @@ modules = ["nodejs-20", "web", "bash", "python-3.11", "postgresql-16"]
   env = { "CI" = "true" }
 
   [workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Mockup Dev Server"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "ERP Mobile"
+
+[[workflows.workflow]]
+name = "Mockup Dev Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/mockup-sandbox run dev"
+waitForPort = 9000
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "ERP Mobile"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/erp-mobile run dev"
+waitForPort = 8099
+
+[workflows.workflow.metadata]
+outputType = "console"
 
   [agent]
   stack = "BEST_EFFORT_FALLBACK"
