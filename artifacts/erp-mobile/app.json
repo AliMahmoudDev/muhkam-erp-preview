@@ -3,6 +3,7 @@
     "name": "مُحكم ERP",
     "slug": "erp-mobile",
     "version": "1.0.0",
+    "owner": "mohamedelmelegy",
     "orientation": "portrait",
     "icon": "./assets/images/muhkam-logo.png",
     "scheme": "erp-mobile",
@@ -14,10 +15,16 @@
       "backgroundColor": "#090c14"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mohamedelmelegy.muhkamerp"
     },
     "android": {
-      "backgroundColor": "#090c14"
+      "backgroundColor": "#090c14",
+      "package": "com.mohamedelmelegy.muhkamerp",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/muhkam-logo.png",
+        "backgroundColor": "#000000"
+      }
     },
     "web": {
       "favicon": "./assets/images/muhkam-logo.png"
@@ -35,6 +42,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "888ce3d3-645a-42cc-96ce-b5ac141e2e2b"
+      }
     }
   }
 }
