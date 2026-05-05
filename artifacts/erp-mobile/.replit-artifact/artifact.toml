@@ -3,14 +3,13 @@ previewPath = "/erp-mobile/"
 title = "ERP Mobile"
 version = "1.0.0"
 id = "artifacts/erp-mobile"
-router = "expo-domain"
+router = "path"
 
 [[integratedSkills]]
 name = "expo"
 version = "1.0.0"
 
 [[services]]
-ensurePreviewReachable = "/status"
 name = "expo"
 paths = [ "/erp-mobile/" ]
 localPort = 8099

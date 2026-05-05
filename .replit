@@ -1,46 +1,58 @@
 modules = ["nodejs-20", "web", "bash", "python-3.11", "postgresql-16"]
 
-[[artifacts]]
-id = "artifacts/api-server"
+  [[artifacts]]
+  id = "artifacts/api-server"
 
-[[artifacts]]
-id = "artifacts/mockup-sandbox"
+  [[artifacts]]
+  id = "artifacts/mockup-sandbox"
 
-[deployment]
-router = "application"
-deploymentTarget = "autoscale"
-run = ["bash", "-c", "NODE_ENV=production node --enable-source-maps ./artifacts/api-server/dist/index.mjs"]
-build = ["bash", "-c", "pnpm --filter @workspace/erp-system run build && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/db run push-force"]
+  [[artifacts]]
+  id = "artifacts/erp-mobile"
 
-[deployment.postBuild]
-args = ["pnpm", "store", "prune"]
-env = { "CI" = "true" }
+  [deployment]
+  router = "application"
+  deploymentTarget = "autoscale"
+  run = ["bash", "-c", "NODE_ENV=production node --enable-source-maps ./artifacts/api-server/dist/index.mjs"]
+  build = ["bash", "-c", "pnpm --filter @workspace/erp-system run build && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/db run push-force"]
 
-[workflows]
+  [deployment.postBuild]
+  args = ["pnpm", "store", "prune"]
+  env = { "CI" = "true" }
 
-[agent]
-stack = "BEST_EFFORT_FALLBACK"
-expertMode = true
-integrations = ["github:1.0.0"]
+  [workflows]
 
-[postMerge]
-path = "scripts/post-merge.sh"
-timeoutMs = 20000
+  [agent]
+  stack = "BEST_EFFORT_FALLBACK"
+  expertMode = true
+  integrations = ["github:1.0.0"]
 
-[nix]
-channel = "stable-25_05"
-packages = ["gh", "pm2"]
+  [postMerge]
+  path = "scripts/post-merge.sh"
+  timeoutMs = 20000
 
-[userenv]
+  [nix]
+  channel = "stable-25_05"
+  packages = ["gh", "pm2"]
 
-[userenv.shared]
-NODE_ENV = "development"
-ALLOWED_ORIGINS = ""
+  [userenv]
 
-[[ports]]
-localPort = 5000
-externalPort = 80
+  [userenv.shared]
+  NODE_ENV = "development"
+  ALLOWED_ORIGINS = ""
 
-[[ports]]
-localPort = 8080
-externalPort = 8080
+  [[ports]]
+  localPort = 5000
+  externalPort = 80
+
+  [[ports]]
+  localPort = 8080
+  externalPort = 8080
+
+  [[ports]]
+  localPort = 8081
+  externalPort = 8081
+
+  [[ports]]
+  localPort = 8099
+  externalPort = 8099
+  

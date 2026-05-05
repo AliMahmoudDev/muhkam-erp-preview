@@ -7,8 +7,8 @@ const http = require("http");
 const net  = require("net");
 const { spawn } = require("child_process");
 
-const PORT       = parseInt(process.env.PORT || "20384", 10);
-const METRO_PORT = 8081;
+const PORT       = parseInt(process.env.PORT || "8099", 10);
+const METRO_PORT = parseInt(process.env.METRO_PORT || "8082", 10);
 
 let metroReady = false;
 
