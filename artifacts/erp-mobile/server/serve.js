@@ -133,3 +133,16 @@ const port = parseInt(process.env.PORT || "3000", 10);
 server.listen(port, "0.0.0.0", () => {
   console.log(`Serving static Expo build on port ${port}`);
 });
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.log(`Port ${port} already in use, waiting for it to be available...`);
+    setTimeout(() => {
+      server.close();
+      server.listen(port, "0.0.0.0");
+    }, 2000);
+  } else {
+    console.error("Server error:", err.message);
+    process.exit(1);
+  }
+});
