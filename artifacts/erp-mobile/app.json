@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "مُحكم ERP",
-    "slug": "erp-mobile",
+    "slug": "muhkam-erp",
     "version": "1.0.0",
     "owner": "mohamedelmelegy",
     "orientation": "portrait",
@@ -16,11 +16,11 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.mohamedelmelegy.muhkamerp"
+      "bundleIdentifier": "com.halaltec.muhkam"
     },
     "android": {
       "backgroundColor": "#090c14",
-      "package": "com.mohamedelmelegy.muhkamerp",
+      "package": "com.halaltec.muhkam",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/muhkam-logo.png",
         "backgroundColor": "#000000"
@@ -44,6 +44,7 @@
       "reactCompiler": true
     },
     "extra": {
+      "apiUrl": "https://halaltec.com",
       "eas": {
         "projectId": "888ce3d3-645a-42cc-96ce-b5ac141e2e2b"
       }
