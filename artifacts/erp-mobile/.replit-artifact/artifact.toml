@@ -3,7 +3,7 @@ previewPath = "/erp-mobile/"
 title = "ERP Mobile"
 version = "1.0.0"
 id = "artifacts/erp-mobile"
-router = "path"
+router = "expo-domain"
 
 [[integratedSkills]]
 name = "expo"
