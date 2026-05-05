@@ -1,5 +1,4 @@
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -50,11 +49,10 @@ function SaleCard({ item }: { item: Sale }) {
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: c.card, borderColor: c.cardBorder }]}
+      style={[styles.card, { backgroundColor: c.card, borderColor: c.cardBorder, borderLeftColor: st.color }]}
       onPress={() => router.push({ pathname: "/sale-details", params: { id: String(item.id) } })}
       activeOpacity={0.8}
     >
-      <View style={[styles.cardTopLine, { backgroundColor: st.color }]} />
       <View style={styles.cardHeader}>
         <View style={[styles.badge, { backgroundColor: st.color + "18" }]}>
           <Text style={[styles.badgeText, { color: st.color }]}>{st.label}</Text>
@@ -70,7 +68,7 @@ function SaleCard({ item }: { item: Sale }) {
       <View style={[styles.divider, { backgroundColor: c.border }]} />
 
       <View style={styles.amountRow}>
-        <View style={[styles.paymentType, { backgroundColor: AMBER + "18" }]}>
+        <View style={[styles.paymentType, { backgroundColor: AMBER + "15" }]}>
           <Text style={[styles.paymentText, { color: AMBER }]}>{PAYMENT[item.payment_type] || item.payment_type}</Text>
         </View>
         <View style={styles.amounts}>
@@ -91,11 +89,19 @@ function SaleCard({ item }: { item: Sale }) {
   );
 }
 
+const FILTER_OPTIONS = [
+  { key: "all",     label: "الكل"        },
+  { key: "paid",    label: "مدفوع"       },
+  { key: "partial", label: "جزئي"        },
+  { key: "unpaid",  label: "غير مدفوع"  },
+] as const;
+
 export default function SalesScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all"|"paid"|"partial"|"unpaid">("all");
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["sales"],
@@ -103,69 +109,72 @@ export default function SalesScreen() {
     staleTime: 30_000,
   });
 
-  const [statusFilter, setStatusFilter] = useState<"all"|"paid"|"partial"|"unpaid">("all");
-
   const filtered = (data || []).filter((s) => {
     const matchSearch = !search || s.invoice_no.includes(search) || (s.customer_name || "").includes(search);
     const matchStatus = statusFilter === "all" || s.status === statusFilter;
     return matchSearch && matchStatus;
   });
 
-  const filteredTotal = filtered.reduce((sum, s) => sum + s.total_amount, 0);
+  const filteredTotal  = filtered.reduce((sum, s) => sum + s.total_amount, 0);
   const filteredUnpaid = filtered.reduce((sum, s) => sum + s.remaining_amount, 0);
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <LinearGradient
-        colors={["#0A0E1F", "#111628"]}
-        style={[styles.header, { paddingTop: isWeb ? 64 : insets.top + 14 }]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.headerLine} />
+      {/* Header */}
+      <View style={[styles.header, {
+        backgroundColor: c.isDark ? "#000000" : "#FFFFFF",
+        paddingTop: isWeb ? 64 : insets.top + 14,
+        borderBottomColor: c.border,
+      }]}>
+        {/* amber top line */}
+        <View style={styles.headerAccentLine} />
+
         <View style={styles.headerRow}>
           <View style={styles.headerStats}>
-            <Text style={styles.headerStatVal}>{formatCurrency(filteredTotal)}</Text>
-            <Text style={styles.headerStatLbl}>إجمالي ج.م</Text>
+            <Text style={[styles.headerStatVal, { color: filteredUnpaid > 0 ? "#EF4444" : "#10B981" }]}>
+              {formatCurrency(filteredUnpaid)}
+            </Text>
+            <Text style={[styles.headerStatLbl, { color: c.mutedForeground }]}>متبقي ج.م</Text>
           </View>
-          <Text style={styles.headerTitle}>المبيعات</Text>
+          <Text style={[styles.headerTitle, { color: c.text }]}>المبيعات</Text>
           <View style={styles.headerStats}>
-            <Text style={[styles.headerStatVal, { color: filteredUnpaid > 0 ? "#EF4444" : "#10B981" }]}>{formatCurrency(filteredUnpaid)}</Text>
-            <Text style={styles.headerStatLbl}>متبقي ج.م</Text>
+            <Text style={[styles.headerStatVal, { color: AMBER }]}>{formatCurrency(filteredTotal)}</Text>
+            <Text style={[styles.headerStatLbl, { color: c.mutedForeground }]}>إجمالي ج.م</Text>
           </View>
         </View>
-        <Text style={styles.headerSub}>{filtered.length} فاتورة{data && data.length !== filtered.length ? ` من ${data.length}` : ""}</Text>
 
-        <View style={[styles.searchBox, { backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.1)" }]}>
-          <Feather name="search" size={15} color="rgba(255,255,255,0.4)" />
+        <Text style={[styles.headerSub, { color: c.mutedForeground }]}>
+          {filtered.length} فاتورة{data && data.length !== filtered.length ? ` من ${data.length}` : ""}
+        </Text>
+
+        <View style={[styles.searchBox, { backgroundColor: c.isDark ? "#1C1C1E" : "#F2F2F7", borderColor: c.border }]}>
+          <Feather name="search" size={15} color={c.mutedForeground} />
           <TextInput
-            style={[styles.searchInput, { color: "#F0F7FF" }]}
+            style={[styles.searchInput, { color: c.text }]}
             placeholder="بحث برقم الفاتورة أو العميل..."
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={c.mutedForeground}
             value={search}
             onChangeText={setSearch}
             textAlign="right"
           />
-          {search ? <Feather name="x" size={16} color="rgba(255,255,255,0.4)" onPress={() => setSearch("")} /> : null}
+          {search ? <Feather name="x-circle" size={16} color={c.mutedForeground} onPress={() => setSearch("")} /> : null}
         </View>
-      </LinearGradient>
+      </View>
 
-      <View style={[styles.statusFilters, { backgroundColor: c.background }]}>
-        {([
-          { key: "all",     label: "الكل"         },
-          { key: "paid",    label: "مدفوع"        },
-          { key: "partial", label: "جزئي"         },
-          { key: "unpaid",  label: "غير مدفوع"   },
-        ] as const).map(f => (
+      {/* Filter chips */}
+      <View style={[styles.statusFilters, { backgroundColor: c.background, borderBottomColor: c.border }]}>
+        {FILTER_OPTIONS.map(f => (
           <TouchableOpacity
             key={f.key}
             style={[styles.statusChip, {
-              backgroundColor: statusFilter === f.key ? (STATUS[f.key]?.color ?? AMBER) : c.card,
-              borderColor:     statusFilter === f.key ? (STATUS[f.key]?.color ?? AMBER) : c.border,
+              backgroundColor: statusFilter === f.key ? (STATUS[f.key]?.color ?? AMBER) : c.isDark ? "#1C1C1E" : "#F2F2F7",
+              borderColor: statusFilter === f.key ? (STATUS[f.key]?.color ?? AMBER) : c.border,
             }]}
             onPress={() => setStatusFilter(f.key)}
           >
-            <Text style={[styles.statusChipText, { color: statusFilter === f.key ? "#fff" : c.mutedForeground }]}>{f.label}</Text>
+            <Text style={[styles.statusChipText, {
+              color: statusFilter === f.key ? "#fff" : c.mutedForeground,
+            }]}>{f.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -182,7 +191,8 @@ export default function SalesScreen() {
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={AMBER} />}
           ListEmptyComponent={
             <EmptyState
-              icon="shopping-cart" title="لا توجد مبيعات"
+              icon="shopping-cart"
+              title="لا توجد مبيعات"
               subtitle={search ? "لا نتائج للبحث" : "اضغط + لإنشاء أول فاتورة بيع"}
             />
           }
@@ -194,7 +204,7 @@ export default function SalesScreen() {
         onPress={() => router.push("/new-sale")}
         activeOpacity={0.85}
       >
-        <Feather name="plus" size={26} color="#0a0500" />
+        <Feather name="plus" size={26} color="#000000" />
       </TouchableOpacity>
     </View>
   );
@@ -202,37 +212,81 @@ export default function SalesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingBottom: 14, paddingHorizontal: 20, position: "relative" },
-  headerLine: { position: "absolute", top: 0, left: 0, right: 0, height: 2, backgroundColor: AMBER },
-  headerRow: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", marginBottom: 4, marginTop: 4 },
-  headerStats: { alignItems: "center" },
-  headerStatVal: { fontSize: 15, fontFamily: "Tajawal_700Bold", color: AMBER, textAlign: "center" },
-  headerStatLbl: { fontSize: 10, fontFamily: "Tajawal_400Regular", color: "rgba(255,255,255,0.4)", marginTop: 1, textAlign: "center" },
-  headerTitle: { fontSize: 20, fontFamily: "Tajawal_700Bold", color: "#F0F7FF", textAlign: "center" },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Tajawal_400Regular", textAlign: "center", marginBottom: 10 },
-  statusFilters: { flexDirection: "row-reverse", gap: 8, paddingHorizontal: 16, paddingVertical: 10 },
-  statusChip: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
-  statusChipText: { fontSize: 12, fontFamily: "Tajawal_500Medium" },
-  searchBox: {
-    flexDirection: "row-reverse", alignItems: "center",
-    marginHorizontal: 16, marginTop: 12, marginBottom: 4,
-    borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, gap: 10,
+  header: {
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+    position: "relative",
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  searchInput: { flex: 1, fontSize: 14, fontFamily: "Tajawal_400Regular" },
+  headerAccentLine: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: AMBER,
+  },
+  headerRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+    marginTop: 4,
+  },
+  headerStats: { alignItems: "center" },
+  headerStatVal: { fontSize: 15, fontFamily: "Tajawal_700Bold", textAlign: "center" },
+  headerStatLbl: { fontSize: 10, fontFamily: "Tajawal_400Regular", marginTop: 1, textAlign: "center" },
+  headerTitle: { fontSize: 22, fontFamily: "Tajawal_700Bold", textAlign: "center", letterSpacing: -0.4 },
+  headerSub: { fontSize: 12, fontFamily: "Tajawal_400Regular", textAlign: "center", marginBottom: 12 },
+  searchBox: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    gap: 10,
+  },
+  searchInput: { flex: 1, fontSize: 15, fontFamily: "Tajawal_400Regular" },
+  statusFilters: {
+    flexDirection: "row-reverse",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  statusChip: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 7 },
+  statusChipText: { fontSize: 12, fontFamily: "Tajawal_500Medium" },
   list: { padding: 16, gap: 12 },
   emptyList: { flex: 1 },
   fab: {
-    position: "absolute", right: 20,
-    width: 58, height: 58, borderRadius: 29,
-    backgroundColor: AMBER, justifyContent: "center", alignItems: "center",
-    shadowColor: AMBER, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+    position: "absolute",
+    right: 20,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: AMBER,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: AMBER,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   card: {
-    borderRadius: 16, padding: 16, borderWidth: 1, overflow: "hidden",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderLeftWidth: 3,
+    overflow: "hidden",
   },
-  cardTopLine: { position: "absolute", top: 0, left: 0, right: 0, height: 2 },
-  cardHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  cardHeader: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
   invoiceRow: { flexDirection: "row-reverse", alignItems: "center", gap: 8 },
   invoice: { fontSize: 14, fontFamily: "Tajawal_700Bold" },
   date: { fontSize: 12, fontFamily: "Tajawal_400Regular" },

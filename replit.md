@@ -94,7 +94,7 @@ The system is built as a monorepo using pnpm workspaces. The architecture separa
 - **Testing (Backend)**: Vitest + Supertest
 - **Testing (Frontend)**: Vitest + React Testing Library
 - **Mobile App Framework**: Expo 54 + expo-router v6
-- **Mobile UI**: `@tanstack/react-query`, `@expo-google-fonts/inter`, `react-native-safe-area-context`
+- **Mobile UI**: `@tanstack/react-query`, `@expo-google-fonts/tajawal`, `react-native-safe-area-context`, expo-linear-gradient, expo-blur, expo-haptics
 - **Security**: Helmet.js
 - **API Documentation**: Swagger UI
 - **CI/CD**: GitHub Actions, Docker, Docker Compose, pm2 (for deployment)

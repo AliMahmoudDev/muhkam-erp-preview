@@ -20,14 +20,13 @@ import { apiFetch, formatCurrency } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 const AMBER = "#F59E0B";
-const AMBER_DARK = "#D97706";
 
 interface Safe { id: number; name: string; balance: number; }
 interface Expense { id: number; amount: number; }
 
 function ThemeSwitcher() {
   const c = useColors();
-  const { mode, isDark, setMode } = useTheme();
+  const { mode, setMode } = useTheme();
 
   const options: { key: ThemeMode; label: string; icon: keyof typeof Feather.glyphMap }[] = [
     { key: "light",  label: "فاتح",   icon: "sun" },
@@ -36,7 +35,10 @@ function ThemeSwitcher() {
   ];
 
   return (
-    <View style={[styles.themeSwitcher, { backgroundColor: c.muted, borderColor: c.border }]}>
+    <View style={[styles.themeSwitcher, {
+      backgroundColor: c.isDark ? "#0A0A0A" : "#F2F2F7",
+      borderColor: c.border,
+    }]}>
       {options.map((opt) => {
         const active = mode === opt.key;
         return (
@@ -45,7 +47,7 @@ function ThemeSwitcher() {
             style={[
               styles.themeOption,
               active && {
-                backgroundColor: isDark ? "#1C2340" : "#FFFFFF",
+                backgroundColor: c.isDark ? "#1C1C1E" : "#FFFFFF",
                 shadowColor: AMBER,
                 shadowOpacity: 0.2,
                 shadowRadius: 8,
@@ -69,7 +71,7 @@ function ThemeSwitcher() {
 function SectionHeader({ title, color }: { title: string; color?: string }) {
   return (
     <View style={styles.sectionHeaderRow}>
-      <View style={[styles.sectionDot, { backgroundColor: color || AMBER }]} />
+      <View style={[styles.sectionAccent, { backgroundColor: color || AMBER }]} />
       <Text style={styles.sectionLabel}>{title}</Text>
     </View>
   );
@@ -100,12 +102,12 @@ function MenuRow({
       <Feather name="chevron-left" size={15} color={c.mutedForeground} />
       {value && <Text style={[styles.menuValue, { color: col }]}>{value}</Text>}
       {badge && (
-        <View style={[styles.badge, { backgroundColor: col + "20" }]}>
-          <Text style={[styles.badgeText, { color: col }]}>{badge}</Text>
+        <View style={[styles.badgePill, { backgroundColor: col + "18" }]}>
+          <Text style={[styles.badgePillText, { color: col }]}>{badge}</Text>
         </View>
       )}
       <Text style={[styles.menuLabel, { color: c.text }]}>{label}</Text>
-      <View style={[styles.menuIcon, { backgroundColor: col + "18", borderColor: col + "28" }]}>
+      <View style={[styles.menuIcon, { backgroundColor: col + "15" }]}>
         <Feather name={icon} size={15} color={col} />
       </View>
     </TouchableOpacity>
@@ -130,7 +132,7 @@ function PurchasesMenuItem() {
     <View style={[styles.menuRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}>
       <View style={styles.purchaseActions}>
         <TouchableOpacity
-          style={[styles.purchaseBtn, { backgroundColor: "#7C3AED18", borderColor: "#7C3AED30" }]}
+          style={[styles.purchaseBtn, { backgroundColor: "#7C3AED15", borderColor: "#7C3AED28" }]}
           onPress={() => router.push("/new-purchase")}
           activeOpacity={0.7}
         >
@@ -138,7 +140,7 @@ function PurchasesMenuItem() {
           <Text style={[styles.purchaseBtnText, { color: "#7C3AED" }]}>فاتورة جديدة</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.purchaseBtn, { backgroundColor: "#7C3AED18", borderColor: "#7C3AED30" }]}
+          style={[styles.purchaseBtn, { backgroundColor: "#7C3AED15", borderColor: "#7C3AED28" }]}
           onPress={() => router.push("/purchases")}
           activeOpacity={0.7}
         >
@@ -147,7 +149,7 @@ function PurchasesMenuItem() {
         </TouchableOpacity>
       </View>
       <Text style={[styles.menuLabel, { color: c.text }]}>المشتريات</Text>
-      <View style={[styles.menuIcon, { backgroundColor: "#7C3AED18", borderColor: "#7C3AED28" }]}>
+      <View style={[styles.menuIcon, { backgroundColor: "#7C3AED15" }]}>
         <Feather name="shopping-bag" size={15} color="#7C3AED" />
       </View>
     </View>
@@ -201,27 +203,30 @@ export default function MoreScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: isWeb ? 34 : insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Hero Banner */}
         <LinearGradient
-          colors={["#0A0E1F", "#1A1040", "#0D1028"]}
-          style={[styles.heroBanner, { paddingTop: isWeb ? 60 : insets.top + 16 }]}
+          colors={["#0A0A0A", "#111111", "#000000"]}
+          style={[styles.heroBanner, { paddingTop: isWeb ? 60 : insets.top + 20 }]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <View style={styles.heroStars}>
-            {[...Array(6)].map((_, i) => (
+          {/* Decorative dots */}
+          <View style={styles.heroDots} pointerEvents="none">
+            {[...Array(5)].map((_, i) => (
               <View
                 key={i}
                 style={[
-                  styles.star,
-                  { left: `${10 + i * 15}%` as any, top: `${20 + (i % 3) * 25}%` as any, opacity: 0.3 + (i % 3) * 0.15 }
+                  styles.dot,
+                  { left: `${8 + i * 18}%` as any, top: `${15 + (i % 3) * 28}%` as any, opacity: 0.2 + (i % 3) * 0.12 }
                 ]}
               />
             ))}
           </View>
 
+          {/* User info */}
           <View style={styles.heroContent}>
             <LinearGradient
-              colors={[AMBER, AMBER_DARK]}
+              colors={[AMBER, "#D97706"]}
               style={styles.heroAvatar}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -231,8 +236,8 @@ export default function MoreScreen() {
 
             <View style={styles.heroInfo}>
               <Text style={styles.heroName}>{user?.name}</Text>
-              <View style={[styles.roleBadge, { backgroundColor: AMBER + "25", borderColor: AMBER + "40" }]}>
-                <Text style={[styles.roleBadgeText, { color: AMBER }]}>{roleLabel}</Text>
+              <View style={styles.roleBadge}>
+                <Text style={styles.roleBadgeText}>{roleLabel}</Text>
               </View>
               <Text style={styles.heroUsername}>@{user?.username}</Text>
             </View>
@@ -246,16 +251,20 @@ export default function MoreScreen() {
             </View>
           </View>
 
+          {/* Stats */}
           <View style={styles.heroStats}>
-            {[
-              { label: "الخزائن", value: `${formatCurrency(totalSafesBalance)} ج.م`, color: totalSafesBalance >= 0 ? "#10B981" : "#EF4444" },
-              { label: "المصروفات", value: `${formatCurrency(totalExpenses)} ج.م`, color: "#F97316" },
-            ].map((s) => (
-              <View key={s.label} style={[styles.heroStat, { backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.1)" }]}>
-                <Text style={[styles.heroStatVal, { color: s.color }]}>{s.value}</Text>
-                <Text style={styles.heroStatLabel}>{s.label}</Text>
-              </View>
-            ))}
+            <View style={[styles.heroStat, { backgroundColor: "rgba(16,185,129,0.08)", borderColor: "rgba(16,185,129,0.2)" }]}>
+              <Text style={[styles.heroStatVal, { color: totalSafesBalance >= 0 ? "#10B981" : "#EF4444" }]}>
+                {formatCurrency(totalSafesBalance)} ج.م
+              </Text>
+              <Text style={styles.heroStatLabel}>الخزائن</Text>
+            </View>
+            <View style={[styles.heroStat, { backgroundColor: "rgba(249,115,22,0.08)", borderColor: "rgba(249,115,22,0.2)" }]}>
+              <Text style={[styles.heroStatVal, { color: "#F97316" }]}>
+                {formatCurrency(totalExpenses)} ج.م
+              </Text>
+              <Text style={styles.heroStatLabel}>المصروفات</Text>
+            </View>
           </View>
         </LinearGradient>
 
@@ -335,15 +344,10 @@ export default function MoreScreen() {
           </SectionCard>
 
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
-            <LinearGradient
-              colors={["#7F1D1D", "#991B1B"]}
-              style={styles.logoutGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              <Feather name="log-out" size={18} color="#FFFFFF" />
+            <View style={[styles.logoutInner, { backgroundColor: "#EF44441A", borderColor: "rgba(239,68,68,0.2)" }]}>
+              <Feather name="log-out" size={17} color="#EF4444" />
               <Text style={styles.logoutText}>تسجيل الخروج</Text>
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
 
           <Text style={[styles.version, { color: c.mutedForeground }]}>مُحكم ERP v2.0</Text>
@@ -362,12 +366,12 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
-  heroStars: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
-  star: {
+  heroDots: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
+  dot: {
     position: "absolute",
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: AMBER,
   },
   heroContent: {
@@ -377,91 +381,60 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   heroAvatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
   },
-  heroAvatarText: {
-    color: "#0A0500",
-    fontFamily: "Tajawal_700Bold",
-    fontSize: 20,
-  },
+  heroAvatarText: { color: "#000000", fontFamily: "Tajawal_700Bold", fontSize: 21 },
   heroInfo: { flex: 1, alignItems: "flex-end", gap: 5 },
-  heroName: {
-    fontSize: 18,
-    fontFamily: "Tajawal_700Bold",
-    color: "#F0F7FF",
-    textAlign: "right",
-  },
+  heroName: { fontSize: 19, fontFamily: "Tajawal_700Bold", color: "#FFFFFF", textAlign: "right" },
   roleBadge: {
+    backgroundColor: "rgba(245,158,11,0.2)",
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderWidth: 1,
+    borderColor: "rgba(245,158,11,0.35)",
   },
-  roleBadgeText: {
-    fontSize: 11,
-    fontFamily: "Tajawal_700Bold",
-  },
-  heroUsername: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.5)",
-    fontFamily: "Tajawal_400Regular",
-  },
+  roleBadgeText: { fontSize: 11, fontFamily: "Tajawal_700Bold", color: AMBER },
+  heroUsername: { fontSize: 12, color: "rgba(255,255,255,0.45)", fontFamily: "Tajawal_400Regular" },
   heroLogoWrap: {
-    width: 46,
-    height: 46,
+    width: 48,
+    height: 48,
     borderRadius: 14,
-    backgroundColor: "rgba(245,158,11,0.15)",
+    backgroundColor: "rgba(245,158,11,0.12)",
     borderWidth: 1,
-    borderColor: "rgba(245,158,11,0.25)",
+    borderColor: "rgba(245,158,11,0.22)",
     justifyContent: "center",
     alignItems: "center",
   },
-  heroLogo: { width: 32, height: 32 },
-  heroStats: {
-    flexDirection: "row-reverse",
-    gap: 10,
-  },
+  heroLogo: { width: 34, height: 34 },
+  heroStats: { flexDirection: "row-reverse", gap: 10 },
   heroStat: {
     flex: 1,
     borderRadius: 14,
     borderWidth: 1,
-    padding: 12,
+    padding: 14,
     alignItems: "flex-end",
   },
-  heroStatVal: {
-    fontSize: 14,
-    fontFamily: "Tajawal_700Bold",
-    marginBottom: 2,
-  },
-  heroStatLabel: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.5)",
-    fontFamily: "Tajawal_400Regular",
-  },
+  heroStatVal: { fontSize: 14, fontFamily: "Tajawal_700Bold", marginBottom: 3 },
+  heroStatLabel: { fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "Tajawal_400Regular" },
+
   body: { padding: 16, gap: 4 },
   section: { marginBottom: 14 },
   sectionHeaderRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: 8,
-    marginBottom: 7,
+    marginBottom: 8,
     paddingRight: 2,
   },
-  sectionDot: { width: 3, height: 14, borderRadius: 2 },
-  sectionLabel: {
-    fontSize: 12,
-    fontFamily: "Tajawal_500Medium",
-    color: "#94A3B8",
-  },
-  sectionCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
+  sectionAccent: { width: 3, height: 15, borderRadius: 2 },
+  sectionLabel: { fontSize: 12, fontFamily: "Tajawal_500Medium", color: "#8E8E93" },
+  sectionCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+
   menuRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -473,35 +446,16 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  menuLabel: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: "Tajawal_500Medium",
-    textAlign: "right",
-  },
-  menuValue: {
-    fontSize: 12,
-    fontFamily: "Tajawal_700Bold",
-  },
-  badge: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontFamily: "Tajawal_700Bold",
-  },
+  menuLabel: { flex: 1, fontSize: 14, fontFamily: "Tajawal_500Medium", textAlign: "right" },
+  menuValue: { fontSize: 13, fontFamily: "Tajawal_700Bold" },
+  badgePill: { borderRadius: 8, paddingHorizontal: 9, paddingVertical: 3 },
+  badgePillText: { fontSize: 11, fontFamily: "Tajawal_700Bold" },
+
   themePad: { padding: 14, gap: 10 },
-  themeHint: {
-    fontSize: 12,
-    fontFamily: "Tajawal_400Regular",
-    textAlign: "center",
-  },
+  themeHint: { fontSize: 12, fontFamily: "Tajawal_400Regular", textAlign: "center" },
   themeSwitcher: {
     flexDirection: "row-reverse",
     borderRadius: 14,
@@ -518,14 +472,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 10,
   },
-  themeLabel: {
-    fontSize: 12,
-    fontFamily: "Tajawal_700Bold",
-  },
-  purchaseActions: {
-    flexDirection: "row-reverse",
-    gap: 6,
-  },
+  themeLabel: { fontSize: 12, fontFamily: "Tajawal_700Bold" },
+
+  purchaseActions: { flexDirection: "row-reverse", gap: 6 },
   purchaseBtn: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -535,28 +484,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  purchaseBtnText: {
-    fontSize: 11,
-    fontFamily: "Tajawal_700Bold",
-  },
-  logoutBtn: {
-    borderRadius: 16,
-    overflow: "hidden",
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  logoutGradient: {
+  purchaseBtnText: { fontSize: 11, fontFamily: "Tajawal_700Bold" },
+
+  logoutBtn: { borderRadius: 16, overflow: "hidden", marginTop: 8, marginBottom: 4 },
+  logoutInner: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
     paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1,
   },
-  logoutText: {
-    fontSize: 15,
-    fontFamily: "Tajawal_700Bold",
-    color: "#FFFFFF",
-  },
+  logoutText: { fontSize: 15, fontFamily: "Tajawal_700Bold", color: "#EF4444" },
   version: {
     fontSize: 11,
     fontFamily: "Tajawal_400Regular",

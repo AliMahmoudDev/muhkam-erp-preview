@@ -1,5 +1,4 @@
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
   Platform,
@@ -8,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
@@ -44,19 +44,15 @@ export function ScreenHeader({
   const isWeb = Platform.OS === "web";
 
   return (
-    <View>
-      <LinearGradient
-        colors={["#0A0E1F", "#111628"]}
-        style={[styles.hero, { paddingTop: isWeb ? 64 : insets.top + 14 }]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={[styles.accentLine, { backgroundColor: accentColor }]} />
-
+    <View style={[styles.wrapper, { backgroundColor: c.isDark ? "#000000" : "#FFFFFF" }]}>
+      <View style={[styles.hero, { paddingTop: isWeb ? 60 : insets.top + 14 }]}>
         <View style={styles.heroRow}>
           {rightAction && (
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: accentColor + "20", borderColor: accentColor + "35" }]}
+              style={[styles.actionBtn, {
+                backgroundColor: accentColor + "18",
+                borderColor: accentColor + "30",
+              }]}
               onPress={rightAction.onPress}
               activeOpacity={0.8}
             >
@@ -64,28 +60,43 @@ export function ScreenHeader({
             </TouchableOpacity>
           )}
           <View style={styles.heroTexts}>
-            <Text style={styles.heroTitle}>{title}</Text>
-            {subtitle && <Text style={[styles.heroSub, { color: accentColor }]}>{subtitle}</Text>}
+            <Text style={[styles.heroTitle, { color: c.text }]}>{title}</Text>
+            {subtitle && (
+              <Text style={[styles.heroSub, { color: c.mutedForeground }]}>{subtitle}</Text>
+            )}
           </View>
         </View>
 
         {onSearchChange && (
-          <View style={[styles.search, { backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.1)" }]}>
-            <Feather name="search" size={15} color="rgba(255,255,255,0.4)" />
+          <View style={[styles.search, {
+            backgroundColor: c.isDark ? "#1C1C1E" : "#F2F2F7",
+            borderColor: c.border,
+          }]}>
+            <Feather name="search" size={15} color={c.mutedForeground} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: c.text }]}
               placeholder={searchPlaceholder}
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor={c.mutedForeground}
               value={searchValue}
               onChangeText={onSearchChange}
               textAlign="right"
             />
+            {searchValue ? (
+              <TouchableOpacity onPress={() => onSearchChange?.("")}>
+                <Feather name="x-circle" size={16} color={c.mutedForeground} />
+              </TouchableOpacity>
+            ) : null}
           </View>
         )}
-      </LinearGradient>
+      </View>
 
       {filters && filters.length > 0 && (
-        <View style={[styles.filters, { backgroundColor: c.background }]}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.filters, { paddingHorizontal: 16 }]}
+          style={{ backgroundColor: c.isDark ? "#000000" : "#FFFFFF" }}
+        >
           {filters.map((f) => {
             const active = activeFilter === f.key;
             return (
@@ -94,54 +105,50 @@ export function ScreenHeader({
                 style={[
                   styles.chip,
                   {
-                    backgroundColor: active ? accentColor : c.card,
+                    backgroundColor: active ? accentColor : c.isDark ? "#1C1C1E" : "#F2F2F7",
                     borderColor: active ? accentColor : c.border,
                   },
                 ]}
                 onPress={() => onFilterChange?.(f.key)}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.chipText, { color: active ? "#0a0500" : c.mutedForeground }]}>
+                <Text style={[styles.chipText, {
+                  color: active ? (accentColor === AMBER ? "#000000" : "#FFFFFF") : c.mutedForeground,
+                }]} >
                   {f.label}
                 </Text>
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
       )}
+
+      <View style={[styles.divider, { backgroundColor: c.border }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {},
   hero: {
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    position: "relative",
-    overflow: "hidden",
-  },
-  accentLine: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 2,
+    paddingBottom: 14,
   },
   heroRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   heroTexts: { flex: 1, alignItems: "flex-end" },
   heroTitle: {
-    fontSize: 22,
+    fontSize: 28,
     fontFamily: "Tajawal_700Bold",
-    color: "#F0F7FF",
     textAlign: "right",
+    letterSpacing: -0.5,
   },
   heroSub: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "Tajawal_400Regular",
     textAlign: "right",
     marginTop: 2,
@@ -159,20 +166,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 12,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     gap: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: "Tajawal_400Regular",
-    color: "#F0F7FF",
   },
   filters: {
     flexDirection: "row-reverse",
     gap: 8,
-    paddingHorizontal: 16,
     paddingVertical: 10,
   },
   chip: {
@@ -184,5 +189,8 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 13,
     fontFamily: "Tajawal_500Medium",
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
   },
 });

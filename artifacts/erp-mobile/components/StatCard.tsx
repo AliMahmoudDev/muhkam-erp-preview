@@ -1,7 +1,6 @@
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, StyleSheet, Text, View } from "react-native";
 import { useColors } from "@/hooks/useColors";
 
 interface StatCardProps {
@@ -17,36 +16,57 @@ export function StatCard({ title, value, subtitle, icon, color, trend }: StatCar
   const c = useColors();
   const iconColor = color || "#F59E0B";
 
-  return (
-    <View style={[styles.card, { borderColor: iconColor + "30" }]}>
-      <LinearGradient
-        colors={c.isDark ? ["#1C2340", "#141828"] : ["#FFFFFF", "#F8FAFC"]}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      <View style={[styles.glow, { backgroundColor: iconColor + "18" }]} />
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(8)).current;
 
-      <View style={[styles.iconWrap, { backgroundColor: iconColor + "20", borderColor: iconColor + "35" }]}>
-        <Feather name={icon} size={18} color={iconColor} />
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.card,
+        {
+          backgroundColor: c.isDark ? "#111111" : "#FFFFFF",
+          borderColor: c.cardBorder,
+          borderLeftColor: iconColor,
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <View style={styles.topRow}>
+        <View style={[styles.iconWrap, { backgroundColor: iconColor + "18" }]}>
+          <Feather name={icon} size={16} color={iconColor} />
+        </View>
+        {trend === "up" && (
+          <View style={[styles.trendBadge, { backgroundColor: "#10B98118" }]}>
+            <Feather name="trending-up" size={11} color="#10B981" />
+          </View>
+        )}
+        {trend === "down" && (
+          <View style={[styles.trendBadge, { backgroundColor: "#EF444418" }]}>
+            <Feather name="trending-down" size={11} color="#EF4444" />
+          </View>
+        )}
       </View>
 
-      <Text style={[styles.value, { color: c.text }]}>{value}</Text>
+      <Text style={[styles.value, { color: c.text }]} numberOfLines={1}>{value}</Text>
       <Text style={[styles.title, { color: c.mutedForeground }]}>{title}</Text>
 
       {subtitle && (
-        <View style={styles.trendRow}>
-          {trend === "up" && <Feather name="trending-up" size={10} color="#10B981" />}
-          {trend === "down" && <Feather name="trending-down" size={10} color="#EF4444" />}
-          <Text style={[
-            styles.subtitle,
-            { color: trend === "up" ? "#10B981" : trend === "down" ? "#EF4444" : c.mutedForeground }
-          ]}>{subtitle}</Text>
-        </View>
+        <Text style={[
+          styles.subtitle,
+          { color: trend === "up" ? "#10B981" : trend === "down" ? "#EF4444" : c.mutedForeground }
+        ]}>
+          {subtitle}
+        </Text>
       )}
-
-      <View style={[styles.bar, { backgroundColor: iconColor }]} />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -54,58 +74,50 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: "45%",
-    borderRadius: 18,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
+    borderLeftWidth: 3,
     alignItems: "flex-end",
     overflow: "hidden",
-    position: "relative",
   },
-  glow: {
-    position: "absolute",
-    top: -18,
-    right: -18,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  topRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 14,
   },
   iconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    borderWidth: 1,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+  },
+  trendBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
   value: {
-    fontSize: 22,
+    fontSize: 21,
     fontFamily: "Tajawal_700Bold",
     textAlign: "right",
-    marginBottom: 3,
-    letterSpacing: -0.3,
+    marginBottom: 2,
+    letterSpacing: -0.5,
   },
   title: {
     fontSize: 11,
     fontFamily: "Tajawal_500Medium",
     textAlign: "right",
   },
-  trendRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 3,
-    marginTop: 4,
-  },
   subtitle: {
     fontSize: 10,
     fontFamily: "Tajawal_500Medium",
-  },
-  bar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2.5,
-    opacity: 0.8,
+    marginTop: 3,
+    textAlign: "right",
   },
 });
