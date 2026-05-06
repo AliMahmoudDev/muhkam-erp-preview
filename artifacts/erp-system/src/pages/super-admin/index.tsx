@@ -11,21 +11,21 @@ import { useLocation } from 'wouter';
 import {
   type BackupFile, type Company, type CompanyFeatures, type Stats, type Manager,
   STATUS, translatePlan, C, FONT, authHeaders,
-} from './super-admin/types';
+} from './types';
 import {
   Toast, DarkInput, Modal, ConfirmDeleteModal,
-} from './super-admin/ui';
-import { TabOverview } from './super-admin/tab-overview';
-import { TabRevenue } from './super-admin/tab-revenue';
-import { TabAlerts } from './super-admin/tab-alerts';
-import { TabAuditLog } from './super-admin/tab-audit-log';
-import { TabAnnouncements } from './super-admin/tab-announcements';
-import { TabHealth } from './super-admin/tab-health';
-import { TabPlans } from './super-admin/tab-plans';
-import { TabMonitoring } from './super-admin/tab-monitoring';
-import { TabCompanies } from './super-admin/tab-companies';
-import { TabManagers } from './super-admin/tab-managers';
-import { TabSettings } from './super-admin/tab-settings';
+} from './ui';
+import { TabOverview } from './tab-overview';
+import { TabRevenue } from './tab-revenue';
+import { TabAlerts } from './tab-alerts';
+import { TabAuditLog } from './tab-audit-log';
+import { TabAnnouncements } from './tab-announcements';
+import { TabHealth } from './tab-health';
+import { TabPlans } from './tab-plans';
+import { TabMonitoring } from './tab-monitoring';
+import { TabCompanies } from './tab-companies';
+import { TabManagers } from './tab-managers';
+import { TabSettings } from './tab-settings';
 
 
 /* ══════════════════════════════════════════════════
