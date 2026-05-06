@@ -1,0 +1,599 @@
+import { useState, useMemo, useEffect } from "react";
+import { safeArray } from "@/lib/safe-data";
+import { useCreatePurchase, useGetProducts, useGetCustomers, useCreateProduct, useGetSettingsSafes, useGetSettingsWarehouses, useGetCategories } from "@workspace/api-client-react";
+import { formatCurrency } from "@/lib/format";
+import { Search, Plus, Minus, Trash2, ShoppingBag, Package, User, Vault } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { authFetch } from "@/lib/auth-fetch";
+import { useToast } from "@/hooks/use-toast";
+import { SearchableSelect } from "@/components/searchable-select";
+import { ProductFormModal, ProductFormData } from "@/components/product-form-modal";
+import { useAuth } from "@/contexts/auth";
+import { hasPermission } from "@/lib/permissions";
+import { api } from '@/lib/api';
+
+type PurchaseCurrency = "EGP" | "USD" | "CNY";
+
+const CURRENCY_SYMBOLS: Record<PurchaseCurrency, string> = {
+  EGP: "ج.م", USD: "$", CNY: "¥",
+};
+
+const CURRENCY_LABELS: Record<PurchaseCurrency, string> = {
+  EGP: "جنيه مصري", USD: "دولار أمريكي", CNY: "يوان صيني",
+};
+
+interface Safe      { id: number; name: string; balance?: number | string }
+interface Warehouse { id: number; name: string }
+interface Customer  {
+  id:            number;
+  name:          string;
+  customer_code?: string | null;
+  balance?:      number | string | null;
+  is_supplier?:  boolean;
+}
+
+interface CartItem {
+  product_id: number;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
+
+/* ─── فاتورة شراء جديدة ─── */
+export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
+  const { user } = useAuth();
+  const canCreate = hasPermission(user, "can_create_purchase");
+
+  const { data: productsRaw } = useGetProducts();
+  const products = safeArray(productsRaw);
+  const { data: customersRaw } = useGetCustomers();
+  const customers = safeArray<Customer>(customersRaw);
+  const suppliers = customers.filter(c => c.is_supplier);
+  const { data: safesRaw } = useGetSettingsSafes();
+  const safes = safeArray<Safe>(safesRaw);
+  const { data: warehousesRaw } = useGetSettingsWarehouses();
+  const warehouses = safeArray<Warehouse>(warehousesRaw);
+  const createMutation = useCreatePurchase();
+  const createProductMutation = useCreateProduct();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { data: categoriesRaw } = useGetCategories();
+  const categories = safeArray(categoriesRaw);
+
+  const isScopedRole = user?.role === "cashier" || user?.role === "salesperson";
+  const filteredSafes = isScopedRole && user?.safe_id
+    ? safes.filter((s) => s.id === user.safe_id)
+    : safes;
+  const filteredWarehouses = isScopedRole && user?.warehouse_id
+    ? warehouses.filter((w) => w.id === user.warehouse_id)
+    : warehouses;
+
+  const [search, setSearch] = useState("");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [paymentType, setPaymentType] = useState<"cash" | "credit" | "partial">("cash");
+  const [paidAmount, setPaidAmount] = useState<string>("");
+  const [partyKey, setPartyKey] = useState<string>("");
+  const [customerId, setCustomerId] = useState<string>("");
+  const [safeId, setSafeId] = useState<string>("");
+  const [warehouseId, setWarehouseId] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
+  const [currency, setCurrency] = useState<PurchaseCurrency>("EGP");
+  const [exchangeRate, setExchangeRate] = useState<string>("1");
+  const [shippingCost, setShippingCost] = useState<string>("0");
+  const [isConsignment, setIsConsignment] = useState(false);
+  const [consignmentWarehouseId, setConsignmentWarehouseId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (filteredWarehouses.length > 0 && !warehouseId) setWarehouseId(String(filteredWarehouses[0].id));
+  }, [filteredWarehouses, warehouseId]);
+
+  useEffect(() => {
+    if (isScopedRole && user?.safe_id && !safeId) setSafeId(String(user.safe_id));
+  }, [isScopedRole, user?.safe_id, safeId]);
+
+  useEffect(() => {
+    if (currency === "EGP") { setExchangeRate("1"); return; }
+    authFetch(api(`/api/exchange-rates/latest?currency=${currency}`))
+      .then(r => r.ok ? r.json() : null)
+      .then((data: Record<string, number> | null) => {
+        if (data && data[currency]) setExchangeRate(String(data[currency]));
+      })
+      .catch(() => {});
+  }, [currency]);
+
+  const filteredProducts = products.filter(p => {
+    const matchS = p.name.toLowerCase().includes(search.toLowerCase()) || (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()));
+    const matchC = !categoryFilter || p.category_name === categoryFilter || p.category === categoryFilter;
+    return matchS && matchC;
+  });
+
+  const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.total_price, 0), [cart]);
+  const rate = parseFloat(exchangeRate) || 1;
+  const shippingCostNum = parseFloat(shippingCost) || 0;
+  const egpTotal = useMemo(() => {
+    const itemsTotal = currency === "EGP" ? cartTotal : cartTotal * rate;
+    return itemsTotal + shippingCostNum * rate;
+  }, [cartTotal, currency, rate, shippingCostNum]);
+  const currSym = CURRENCY_SYMBOLS[currency];
+
+  const partyItems = useMemo(() => {
+    return suppliers.map(s => ({
+      value: `c:${s.id}`,
+      label: `${s.customer_code ? `[${s.customer_code}] ` : ""}${s.name}${Number(s.balance) !== 0 ? ` (رصيد: ${Number(s.balance).toFixed(0)})` : ""}`,
+      searchKeys: [String(s.customer_code ?? ""), s.name],
+      group: "العملاء (يُشترى منهم)",
+    }));
+  }, [suppliers]);
+
+  const selectedParty = useMemo(() => {
+    if (!partyKey) return null;
+    if (partyKey.startsWith("c:")) {
+      const id = parseInt(partyKey.slice(2));
+      const c = customers.find(x => x.id === id);
+      return c ? { type: "customer" as const, id: c.id, name: c.name, balance: Number(c.balance) } : null;
+    }
+    return null;
+  }, [partyKey, customers]);
+
+  const customerImpact = useMemo(() => {
+    const cid = selectedParty?.type === "customer" ? selectedParty.id : parseInt(customerId);
+    if (!cid) return 0;
+    if (paymentType === "cash") return 0;
+    if (paymentType === "credit") return -egpTotal;
+    return -(egpTotal - (parseFloat(paidAmount) || 0));
+  }, [selectedParty, customerId, paymentType, paidAmount, egpTotal]);
+
+  const addToCart = (product: typeof products[0]) => {
+    setCart(prev => {
+      const ex = prev.find(i => i.product_id === product.id);
+      if (ex) return prev.map(i => i.product_id === product.id ? { ...i, quantity: i.quantity + 1, total_price: (i.quantity + 1) * i.unit_price } : i);
+      return [...prev, { product_id: product.id, product_name: product.name, quantity: 1, unit_price: product.cost_price, total_price: product.cost_price }];
+    });
+  };
+
+  const updateQty = (pid: number, delta: number) => setCart(prev => prev.map(i => {
+    if (i.product_id !== pid) return i;
+    const newQ = Math.max(1, i.quantity + delta);
+    return { ...i, quantity: newQ, total_price: newQ * i.unit_price };
+  }));
+
+  const updatePrice = (pid: number, price: number) => setCart(prev => prev.map(i =>
+    i.product_id !== pid ? i : { ...i, unit_price: price, total_price: i.quantity * price }
+  ));
+
+  const handleCheckout = async () => {
+    if (cart.length === 0) { toast({ title: "السلة فارغة", variant: "destructive" }); return; }
+    if (isConsignment && !partyKey) {
+      toast({ title: "يجب اختيار المورد لفاتورة الائتمان", variant: "destructive" }); return;
+    }
+    if (!isConsignment && (paymentType === "credit" || paymentType === "partial") && !partyKey) {
+      toast({ title: "يجب اختيار الطرف الآخر للآجل أو الجزئي", variant: "destructive" }); return;
+    }
+    if (!isConsignment && (paymentType === "cash" || paymentType === "partial") && !safeId) {
+      toast({ title: "يجب اختيار الخزينة للدفع النقدي", variant: "destructive" }); return;
+    }
+
+    const actualPaid = isConsignment ? 0 : (paymentType === "cash" ? egpTotal : paymentType === "credit" ? 0 : parseFloat(paidAmount) || 0);
+
+    let finalCustomerId: number | null = null;
+    let finalCustomerName: string | null = null;
+    if (selectedParty?.type === "customer") {
+      finalCustomerId = selectedParty.id;
+      finalCustomerName = selectedParty.name;
+    } else if (selectedParty?.type === "manual") {
+      finalCustomerName = selectedParty.name;
+    }
+
+    let finalConsignmentWarehouseId: number | null = consignmentWarehouseId;
+    if (isConsignment && selectedParty) {
+      try {
+        const whRes = await authFetch(api("/api/consignment/warehouses/ensure"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            supplier_name: selectedParty.name,
+            supplier_id: selectedParty.type === "customer" ? selectedParty.id : undefined,
+          }),
+        });
+        if (whRes.ok) {
+          const wh = await whRes.json();
+          finalConsignmentWarehouseId = wh.id;
+          setConsignmentWarehouseId(wh.id);
+        }
+      } catch {
+        toast({ title: "فشل إنشاء مخزن الائتمان", variant: "destructive" });
+        return;
+      }
+    }
+
+    const convertedItems = cart.map(item => ({
+      product_id: item.product_id,
+      product_name: item.product_name,
+      quantity: item.quantity,
+      unit_price: currency === "EGP" ? item.unit_price : parseFloat((item.unit_price * rate).toFixed(4)),
+      total_price: currency === "EGP" ? item.total_price : parseFloat((item.total_price * rate).toFixed(4)),
+      unit_price_foreign: currency !== "EGP" ? item.unit_price : undefined,
+    }));
+
+    const effectivePaymentType = isConsignment ? "credit" : paymentType;
+    const effectiveWarehouseId = isConsignment && finalConsignmentWarehouseId
+      ? finalConsignmentWarehouseId
+      : (warehouseId ? parseInt(warehouseId) : null);
+
+    createMutation.mutate({
+      data: {
+        customer_id: finalCustomerId,
+        customer_name: finalCustomerName,
+        safe_id: isConsignment ? null : (safeId ? parseInt(safeId) : null),
+        warehouse_id: effectiveWarehouseId,
+        payment_type: effectivePaymentType,
+        total_amount: egpTotal,
+        paid_amount: actualPaid,
+        currency,
+        exchange_rate: rate,
+        shipping_cost: shippingCostNum || undefined,
+        is_consignment: isConsignment,
+        consignment_warehouse_id: isConsignment ? finalConsignmentWarehouseId : null,
+        items: convertedItems,
+      }
+    }, {
+      onSuccess: () => {
+        const msg = isConsignment
+          ? "✅ تم تسجيل فاتورة الائتمان — البضاعة في مخزن الائتمان"
+          : "✅ تم تسجيل فاتورة الشراء — تم تحديث المخزن والخزينة";
+        toast({ title: msg });
+        queryClient.invalidateQueries({ queryKey: ["/api/purchases"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/settings/safes"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/settings/warehouses"] });
+        authFetch(api("/api/exchange-rates"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currency, rate, date: new Date().toISOString().split("T")[0] }),
+        }).catch(() => {});
+        setCart([]); setPaidAmount(""); setPartyKey(""); setCustomerId(""); setSafeId("");
+        if (!isConsignment) setPaymentType("cash");
+        setConsignmentWarehouseId(null);
+        onDone();
+      },
+      onError: (e: Error) => toast({ title: e.message, variant: "destructive" })
+    });
+  };
+
+  const handleCreateProduct = (data: ProductFormData) => {
+    createProductMutation.mutate({ data }, {
+      onSuccess: (newProduct: unknown) => {
+        toast({ title: "✅ تم إضافة المنتج بنجاح" });
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+        setShowCreateProduct(false);
+        setSearch("");
+        const created = newProduct as { id?: number; cost_price?: unknown; sale_price?: unknown; quantity?: unknown } | null;
+        if (created?.id) {
+          addToCart({ ...created, cost_price: Number(created.cost_price), sale_price: Number(created.sale_price), quantity: Number(created.quantity) });
+        }
+      },
+      onError: () => toast({ title: "حدث خطأ أثناء إضافة المنتج", variant: "destructive" }),
+    });
+  };
+
+  const selectRow = (label: string, icon: React.ReactNode, children: React.ReactNode) => (
+    <div className="purch-row flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+      <span className="text-white/40 shrink-0">{icon}</span>
+      <span className="text-white/40 text-xs w-14 shrink-0">{label}</span>
+      {children}
+    </div>
+  );
+
+  return (
+    <>
+      {showCreateProduct && (
+        <ProductFormModal
+          title="إضافة منتج جديد"
+          onSave={handleCreateProduct}
+          onClose={() => setShowCreateProduct(false)}
+          isPending={createProductMutation.isPending}
+        />
+      )}
+
+      <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-220px)]">
+        {/* شبكة المنتجات */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="glass-panel rounded-2xl p-3 mb-3 shrink-0 flex flex-wrap gap-2 items-center">
+            <div className="purch-search-wrap flex items-center gap-2 flex-1 min-w-0">
+              <Search className="w-4 h-4 text-white/40 shrink-0" />
+              <input
+                type="text"
+                placeholder="ابحث عن منتج..."
+                className="bg-transparent text-white outline-none text-sm w-full placeholder:text-white/30"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <select
+              className="bg-black/30 text-white/70 border border-white/10 rounded-xl px-3 py-1.5 text-sm outline-none appearance-none"
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+            >
+              <option value="">كل الأصناف</option>
+              {categories.map(cat => <option key={cat.id} value={cat.name} className="bg-gray-900">{cat.name}</option>)}
+            </select>
+          </div>
+          <div className="flex-1 overflow-y-auto glass-panel rounded-2xl p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+              {filteredProducts.map(product => (
+                <button key={product.id} onClick={() => addToCart(product)}
+                  className="glass-panel rounded-2xl p-3 text-right transition-all hover:-translate-y-0.5 hover:border-amber-500/40">
+                  <div className="h-14 bg-white/5 rounded-xl mb-3 flex items-center justify-center border border-white/5">
+                    <Package className="w-6 h-6 text-white/30" />
+                  </div>
+                  <p className="font-bold text-white text-sm truncate">{product.name}</p>
+                  {(product.category_name || product.category) && <p className="text-xs text-amber-400/70 mt-0.5">{product.category_name || product.category}</p>}
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-blue-400 font-bold text-sm">{formatCurrency(product.cost_price)}</span>
+                    <span className="text-xs text-white/40">{product.quantity}</span>
+                  </div>
+                </button>
+              ))}
+
+              {search && filteredProducts.length === 0 && (
+                <button
+                  onClick={() => setShowCreateProduct(true)}
+                  className="glass-panel rounded-2xl p-3 text-right border border-dashed border-violet-500/40 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/60 transition-all flex flex-col items-center justify-center gap-2 min-h-[110px]"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
+                    <Plus className="w-5 h-5 text-violet-400" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-violet-300 text-xs font-bold">إضافة منتج جديد</p>
+                    <p className="text-white/30 text-xs mt-0.5 truncate max-w-[120px]">«{search}»</p>
+                  </div>
+                </button>
+              )}
+
+              {!search && filteredProducts.length === 0 && (
+                <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-white/25">
+                  <Package className="w-10 h-10 mb-3 opacity-20" />
+                  <p className="text-sm">لا توجد منتجات — اذهب إلى قسم المنتجات لإضافتها</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* سلة الشراء */}
+        <div className="w-full lg:w-[400px] flex flex-col glass-panel rounded-2xl overflow-hidden shrink-0">
+          <div className="px-4 py-3 border-b border-white/10 bg-white/5">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-bold text-white flex items-center gap-2 text-base">
+                <ShoppingBag className="w-5 h-5 text-amber-400" /> فاتورة مشتريات
+              </h3>
+              <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-xs font-bold">{cart.length} صنف</span>
+            </div>
+
+            <div className="flex gap-1 mb-2 flex-wrap">
+              {(Object.keys(CURRENCY_SYMBOLS) as PurchaseCurrency[]).map(cur => (
+                <button key={cur} onClick={() => setCurrency(cur)}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-all ${currency === cur ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}`}>
+                  {CURRENCY_SYMBOLS[cur]} {cur}
+                </button>
+              ))}
+            </div>
+
+            {currency !== "EGP" && (
+              <div className="purch-exchange-wrap flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 mb-2">
+                <span className="text-blue-300 text-xs font-bold shrink-0">سعر الصرف:</span>
+                <span className="text-blue-200/60 text-xs shrink-0">1 {currency} =</span>
+                <input
+                  type="number" step="0.01" min="0.01"
+                  value={exchangeRate}
+                  onChange={e => setExchangeRate(e.target.value)}
+                  className="bg-transparent text-blue-200 outline-none text-xs font-bold w-20 text-right"
+                />
+                <span className="text-blue-200/60 text-xs shrink-0">ج.م</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-2">
+              <span className="text-amber-300 text-xs font-bold shrink-0">🚢 مصاريف الشحن:</span>
+              <input
+                type="number" step="0.01" min="0"
+                value={shippingCost}
+                onChange={e => setShippingCost(e.target.value)}
+                className="bg-transparent text-amber-200 outline-none text-xs font-bold w-20 text-right flex-1"
+                placeholder="0"
+              />
+              <span className="text-amber-200/60 text-xs shrink-0">
+                {currency !== "EGP" ? currency : "ج.م"}
+              </span>
+              {currency !== "EGP" && shippingCostNum > 0 && (
+                <span className="text-amber-200/40 text-xs">
+                  = {formatCurrency(shippingCostNum * rate)}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-1.5 text-xs">
+              {selectRow("المخزن", <Vault className="w-3.5 h-3.5" />,
+                <SearchableSelect
+                  items={filteredWarehouses.map(w => ({ value: String(w.id), label: w.name, searchKeys: [w.name] }))}
+                  value={warehouseId}
+                  onChange={setWarehouseId}
+                  placeholder="-- مخزن --"
+                  emptyLabel="-- مخزن --"
+                  clearable={false}
+                  className="w-full"
+                  inputClassName="w-full"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
+            {cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-white/20 gap-3 py-10">
+                <ShoppingBag className="w-12 h-12 opacity-30" />
+                <p className="text-sm">اضغط على منتج لإضافته</p>
+              </div>
+            ) : cart.map(item => (
+              <div key={item.product_id} className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="font-bold text-white text-sm flex-1 ml-2 truncate">{item.product_name}</p>
+                  <button onClick={() => setCart(prev => prev.filter(i => i.product_id !== item.product_id))} className="text-red-400/70 hover:text-red-400 p-0.5"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => updateQty(item.product_id, -1)} className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20"><Minus className="w-3 h-3 text-white" /></button>
+                    <span className="text-white font-bold text-sm w-5 text-center">{item.quantity}</span>
+                    <button onClick={() => updateQty(item.product_id, 1)} className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20"><Plus className="w-3 h-3 text-white" /></button>
+                  </div>
+                  <div className="flex items-center gap-1 flex-1 min-w-0">
+                    <span className="text-white/30 text-xs shrink-0">×</span>
+                    <input
+                      type="number" step="0.01" min="0"
+                      value={item.unit_price}
+                      onChange={e => updatePrice(item.product_id, parseFloat(e.target.value) || 0)}
+                      className="bg-white/10 border border-white/10 rounded-lg px-2 py-1 text-xs text-white outline-none w-full text-right"
+                    />
+                    <span className="text-white/30 text-xs shrink-0">{currSym}</span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-bold text-blue-400 text-sm">{currSym} {item.total_price.toFixed(2)}</div>
+                    {currency !== "EGP" && <div className="text-xs text-white/30">{formatCurrency(item.total_price * rate)}</div>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-3 border-t border-white/10 bg-black/40 space-y-2">
+            <div className="grid grid-cols-1 gap-1.5">
+              {selectRow("العميل / الطرف", <User className="w-3.5 h-3.5" />,
+                <SearchableSelect
+                  items={partyItems}
+                  value={partyKey}
+                  onChange={setPartyKey}
+                  placeholder="ابحث باسم أو كود..."
+                  emptyLabel="-- اختر الطرف --"
+                  className="w-full min-w-0"
+                  inputClassName="bg-transparent text-xs"
+                />
+              )}
+              {selectedParty?.type === "customer" && (
+                <div className="text-xs text-blue-400/80 bg-blue-500/5 border border-blue-500/20 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
+                  🔄 عميل-مورد — الفاتورة ستُسجَّل في حساب هذا العميل مباشرةً
+                </div>
+              )}
+              {(paymentType === "cash" || paymentType === "partial") && (
+                selectRow("الخزينة", <Vault className="w-3.5 h-3.5 text-amber-400/70" />,
+                  <SearchableSelect
+                    items={filteredSafes.map(s => ({ value: String(s.id), label: `${s.name} (${formatCurrency(Number(s.balance))})`, searchKeys: [s.name] }))}
+                    value={safeId}
+                    onChange={setSafeId}
+                    placeholder="-- اختر الخزينة --"
+                    emptyLabel="-- اختر الخزينة --"
+                    className="w-full"
+                    inputClassName="w-full"
+                  />
+                )
+              )}
+            </div>
+
+            <button
+              onClick={() => setIsConsignment(v => !v)}
+              className={`w-full py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                isConsignment
+                  ? 'bg-violet-500/20 text-violet-300 border-violet-500/40'
+                  : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 hover:text-white/60'
+              }`}
+            >
+              <span className="text-base leading-none">📦</span>
+              {isConsignment ? "ائتمان مفعّل — البضاعة للعرض فقط" : "ائتمان (بضاعة أمانة)"}
+            </button>
+
+            {!isConsignment && (
+              <div className="flex gap-1">
+                {[{ v: "cash", l: "نقدي" }, { v: "credit", l: "آجل" }, { v: "partial", l: "جزئي" }].map(opt => (
+                  <button key={opt.v} onClick={() => setPaymentType(opt.v as "cash" | "credit" | "partial")}
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${paymentType === opt.v ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}>
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {isConsignment && (
+              <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-2 text-xs text-violet-300/90 space-y-1">
+                <p className="font-bold">📋 فاتورة ائتمان</p>
+                <p className="text-violet-300/60">البضاعة تُودَع في مخزن الائتمان الخاص بالمورد ولا تُحسب مبيعاً حتى تُباع. اختر المورد من الحقل أعلاه.</p>
+              </div>
+            )}
+
+            {paymentType === "partial" && (
+              <input type="number" step="0.01" placeholder="المبلغ المدفوع نقداً الآن..." className="glass-input text-xs py-2" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />
+            )}
+
+            <div className="bg-white/5 rounded-xl p-3 border border-white/10 space-y-1.5">
+              {currency !== "EGP" && (
+                <div className="flex justify-between text-xs border-b border-white/10 pb-1.5">
+                  <span className="text-blue-300/80">الإجمالي بـ {CURRENCY_LABELS[currency]}</span>
+                  <span className="font-bold text-blue-300">{currSym} {cartTotal.toFixed(2)}</span>
+                </div>
+              )}
+              {shippingCostNum > 0 && (
+                <div className="flex justify-between text-xs text-amber-300/80">
+                  <span>🚢 مصاريف الشحن</span>
+                  <span>+ {formatCurrency(shippingCostNum * rate)}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-white/70 text-sm font-semibold">
+                  {currency !== "EGP" ? `الإجمالي بالجنيه المصري` : "إجمالي الفاتورة"}
+                </span>
+                <span className="font-black text-white text-lg">{formatCurrency(egpTotal)}</span>
+              </div>
+              {paymentType === "cash" && (
+                <div className="flex justify-between text-xs border-t border-white/10 pt-1.5">
+                  <span className="text-white/60">يُخصم من الخزينة</span>
+                  <span className="text-red-400 font-bold">− {formatCurrency(egpTotal)}</span>
+                </div>
+              )}
+              {paymentType === "partial" && paidAmount && (
+                <>
+                  <div className="flex justify-between text-xs border-t border-white/10 pt-1.5">
+                    <span className="text-white/60">نقدي من الخزينة</span>
+                    <span className="text-red-400 font-bold">− {formatCurrency(parseFloat(paidAmount) || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-white/60">على حساب العميل</span>
+                    <span className="text-orange-400 font-bold">− {formatCurrency(egpTotal - (parseFloat(paidAmount) || 0))}</span>
+                  </div>
+                </>
+              )}
+              {partyKey && customerImpact !== 0 && (
+                <div className="flex justify-between text-xs border-t border-white/10 pt-1.5">
+                  <span className="text-white/60">أثر على حساب {selectedParty?.name}</span>
+                  <span className="text-orange-400 font-bold">{formatCurrency(Math.abs(customerImpact))} (علينا)</span>
+                </div>
+              )}
+              {paymentType === "credit" && partyKey && (
+                <p className="text-xs text-orange-400/80 bg-orange-500/5 border border-orange-500/20 rounded-lg px-2 py-1.5">
+                  ⚠ الفاتورة ستُرحَّل على حساب الطرف الآخر — نحن المدينون
+                </p>
+              )}
+            </div>
+
+            <button onClick={handleCheckout} disabled={createMutation.isPending || cart.length === 0 || !canCreate}
+              className="w-full btn-primary py-3 text-sm disabled:opacity-50 font-bold"
+              title={!canCreate ? "ليس لديك صلاحية إنشاء فاتورة شراء" : undefined}>
+              {createMutation.isPending ? "جاري التسجيل..." : "✦ تسجيل فاتورة الشراء"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

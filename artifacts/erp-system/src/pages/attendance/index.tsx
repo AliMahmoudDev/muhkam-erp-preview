@@ -5,7 +5,6 @@ import { hasPermission } from '@/lib/permissions';
 import { authFetch } from '@/lib/auth-fetch';
 import { safeArray } from '@/lib/safe-data';
 import { useToast } from '@/hooks/use-toast';
-import { TableSkeleton } from '@/components/skeletons';
 import {
   Clock,
   Plus,
@@ -25,39 +24,12 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import AttendanceSummary from './AttendanceSummary';
+import AttendanceList from './AttendanceList';
+import { CheckInModal, CheckOutModal, EditRecordModal } from './AttendanceFormModal';
 
 type AnyRec = Record<string, unknown>;
 
-function statusBadge(s: string) {
-  switch (s) {
-    case 'present':
-      return 'erp-badge erp-badge-success';
-    case 'late':
-      return 'erp-badge erp-badge-warning';
-    case 'absent':
-      return 'erp-badge erp-badge-danger';
-    case 'on_leave':
-      return 'erp-badge erp-badge-info';
-    case 'holiday':
-      return 'erp-badge erp-badge-pending';
-    case 'excused':
-      return 'erp-badge erp-badge-info';
-    default:
-      return 'erp-badge erp-badge-neutral';
-  }
-}
-function statusAr(s: string) {
-  const m: Record<string, string> = {
-    present: 'حاضر',
-    late: 'متأخر',
-    absent: 'غائب',
-    on_leave: 'إجازة',
-    holiday: 'إجازة رسمية',
-    weekend: 'عطلة',
-    excused: 'استأذن',
-  };
-  return m[s] ?? s;
-}
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
@@ -84,13 +56,11 @@ export default function Attendance() {
   const [empSearch, setEmpSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Modals state
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [showCheckOut, setShowCheckOut] = useState(false);
   const [showEditRecord, setShowEditRecord] = useState(false);
   const [showDedSettings, setShowDedSettings] = useState(false);
 
-  // Form states
   const [checkInForm, setCheckInForm] = useState({
     employee_id: '',
     attendance_date: today,
@@ -144,7 +114,6 @@ export default function Attendance() {
     queryFn: () => f('/api/shifts'),
   });
 
-  // ── Shifts tab state ──
   const blankShift = { name_ar: '', start_time: '08:00', end_time: '17:00', break_duration: 60, grace_minutes: 10, working_days: '0,1,2,3,4', weekly_hours: 40 };
   const [shiftForm, setShiftForm] = useState<AnyRec>(blankShift);
   const [editShiftId, setEditShiftId] = useState<number | null>(null);
@@ -242,7 +211,6 @@ export default function Attendance() {
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
-  // ── Shift mutations ──
   const doAddShift = useMutation({
     mutationFn: (d: AnyRec) => f('/api/shifts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }),
     ...mutOpts('shifts', 'تم إضافة المناوبة'),
@@ -276,7 +244,6 @@ export default function Attendance() {
   const allRecords = safeArray(records.data);
   const empList = safeArray(employees.data);
 
-  // Filter records by employee name search
   const recordsList = empSearch
     ? allRecords.filter((r) => {
         const name = `${r.first_name_ar ?? ''} ${r.last_name_ar ?? ''}`;
@@ -340,20 +307,12 @@ export default function Attendance() {
         )}
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: 'إجمالي السجلات', val: allRecords.length, color: 'text-white' },
-          { label: 'حاضر', val: present, color: 'text-emerald-300' },
-          { label: 'غائب', val: absent, color: 'text-red-400' },
-          { label: 'متأخر', val: late, color: 'text-amber-300' },
-        ].map((s) => (
-          <div key={s.label} className="erp-card p-4 text-center">
-            <div className={`text-2xl font-bold ${s.color}`}>{s.val}</div>
-            <div className="text-xs text-white/40 mt-1">{s.label}</div>
-          </div>
-        ))}
-      </div>
+      <AttendanceSummary
+        total={allRecords.length}
+        present={present}
+        absent={absent}
+        late={late}
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-white/10 mb-2 flex-wrap">
@@ -368,145 +327,28 @@ export default function Attendance() {
         ))}
       </div>
 
-      {/* ── سجلات الحضور ── */}
       {activeTab === 'records' && (
-        <div className="space-y-4">
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-white/50">من:</label>
-              <input
-                type="date"
-                className="erp-input"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-white/50">إلى:</label>
-              <input
-                type="date"
-                className="erp-input"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-              />
-            </div>
-            <input
-              className="erp-input"
-              placeholder="بحث بالاسم أو الرمز"
-              value={empSearch}
-              onChange={(e) => setEmpSearch(e.target.value)}
-            />
-            <select
-              className="erp-input"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">كل الحالات</option>
-              <option value="present">حاضر</option>
-              <option value="late">متأخر</option>
-              <option value="absent">غائب</option>
-              <option value="on_leave">إجازة</option>
-              <option value="holiday">إجازة رسمية</option>
-            </select>
-          </div>
-
-          {/* Summary row */}
-          <div className="text-xs text-white/40 flex gap-4">
-            <span>
-              إجمالي ساعات العمل:{' '}
-              <span className="text-amber-300 font-bold">{totalHours.toFixed(1)} س</span>
-            </span>
-            <span>
-              السجلات الظاهرة: <span className="text-white/60">{recordsList.length}</span>
-            </span>
-          </div>
-
-          <div className="erp-card overflow-x-auto">
-            {records.isLoading ? (
-              <table className="erp-table w-full"><tbody><TableSkeleton /></tbody></table>
-            ) : recordsList.length === 0 ? (
-              <div className="erp-empty-state">
-                <Clock size={36} className="erp-empty-icon mb-2" />
-                <p className="erp-empty-label">لا توجد سجلات حضور للفترة المحددة</p>
-              </div>
-            ) : (
-              <table className="erp-table w-full">
-                <thead>
-                  <tr className="erp-table-header">
-                    <th className="p-3 text-right text-xs">الموظف</th>
-                    <th className="p-3 text-right text-xs">التاريخ</th>
-                    <th className="p-3 text-right text-xs">الحضور</th>
-                    <th className="p-3 text-right text-xs">الانصراف</th>
-                    <th className="p-3 text-right text-xs">ساعات</th>
-                    <th className="p-3 text-right text-xs">تأخير</th>
-                    <th className="p-3 text-right text-xs">الحالة</th>
-                    {canManage && <th className="p-3 text-right text-xs">إجراءات</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {recordsList.map((r) => (
-                    <tr key={String(r.id)} className="erp-table-row">
-                      <td className="p-3 text-sm">
-                        {String(r.first_name_ar ?? '')} {String(r.last_name_ar ?? '')}
-                        <span className="text-white/30 text-xs mr-1">
-                          {String(r.employee_code ?? '')}
-                        </span>
-                      </td>
-                      <td className="p-3 text-sm text-white/60 font-mono">
-                        {String(r.attendance_date)}
-                      </td>
-                      <td className="p-3 text-sm text-emerald-300 font-mono">
-                        {r.check_in_time ? String(r.check_in_time).substring(0, 5) : '—'}
-                      </td>
-                      <td className="p-3 text-sm text-red-400 font-mono">
-                        {r.check_out_time ? String(r.check_out_time).substring(0, 5) : '—'}
-                      </td>
-                      <td className="p-3 text-sm font-mono">
-                        {r.working_hours ? `${Number(r.working_hours).toFixed(1)}س` : '—'}
-                      </td>
-                      <td className="p-3 text-sm text-amber-300 font-mono">
-                        {r.late_minutes ? `${r.late_minutes}د` : '—'}
-                      </td>
-                      <td className="p-3">
-                        <span className={statusBadge(String(r.status))}>
-                          {statusAr(String(r.status))}
-                        </span>
-                      </td>
-                      {canManage && (
-                        <td className="p-3">
-                          <div className="flex gap-1">
-                            {r.check_in_time && !r.check_out_time && (
-                              <button
-                                onClick={() => openCheckOut(r)}
-                                title="تسجيل انصراف"
-                                className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                              >
-                                <LogOut size={13} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => openEdit(r)}
-                              title="تعديل"
-                              className="p-1.5 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
-                            >
-                              <Pencil size={13} />
-                            </button>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
+        <AttendanceList
+          isLoading={records.isLoading}
+          recordsList={recordsList}
+          totalHours={totalHours}
+          from={from}
+          setFrom={setFrom}
+          to={to}
+          setTo={setTo}
+          empSearch={empSearch}
+          setEmpSearch={setEmpSearch}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          canManage={canManage}
+          openCheckOut={openCheckOut}
+          openEdit={openEdit}
+        />
       )}
 
       {/* ══ تبويب المناوبات ══ */}
       {activeTab === 'shifts' && (
         <div className="space-y-6">
-          {/* بطاقة أضف/عدّل مناوبة */}
           <div className="erp-card p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-white flex items-center gap-2">
@@ -519,7 +361,6 @@ export default function Attendance() {
               )}
             </div>
 
-            {/* قائمة المناوبات */}
             {shiftsQuery.isLoading ? (
               <div className="text-white/40 text-sm text-center py-6">جاري التحميل...</div>
             ) : safeArray(shiftsQuery.data).length === 0 ? (
@@ -559,7 +400,6 @@ export default function Attendance() {
             )}
           </div>
 
-          {/* بطاقة تعيين موظف على مناوبة */}
           {canManage && safeArray(shiftsQuery.data).length > 0 && (
             <div className="erp-card p-5 space-y-4">
               <div className="flex items-center justify-between">
@@ -632,7 +472,6 @@ export default function Attendance() {
 
       {/* ══ MODALS ══ */}
 
-      {/* مودال إضافة/تعديل مناوبة */}
       {showShiftForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-lg" dir="rtl">
@@ -681,299 +520,96 @@ export default function Attendance() {
         </div>
       )}
 
-      {/* تسجيل حضور */}
       {showCheckIn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2">
-                <LogIn size={16} className="text-emerald-400" /> تسجيل حضور
-              </h2>
-              <button
-                onClick={() => setShowCheckIn(false)}
-                className="text-white/40 hover:text-white"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-5 space-y-3">
-              <Field label="الموظف *">
-                <select
-                  className="erp-input w-full"
-                  value={checkInForm.employee_id}
-                  onChange={(e) => setCheckInForm((p) => ({ ...p, employee_id: e.target.value }))}
-                >
-                  <option value="">اختر الموظف</option>
-                  {empList.map((e) => (
-                    <option key={String(e.id)} value={String(e.id)}>
-                      {String(e.first_name_ar)} {String(e.last_name_ar)} — {String(e.employee_code)}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="التاريخ">
-                  <input
-                    type="date"
-                    value={checkInForm.attendance_date}
-                    onChange={(e) =>
-                      setCheckInForm((p) => ({ ...p, attendance_date: e.target.value }))
-                    }
-                    className="erp-input w-full"
-                  />
-                </Field>
-                <Field label="وقت الحضور">
-                  <input
-                    type="time"
-                    value={checkInForm.check_in_time}
-                    onChange={(e) =>
-                      setCheckInForm((p) => ({ ...p, check_in_time: e.target.value }))
-                    }
-                    className="erp-input w-full"
-                  />
-                </Field>
-              </div>
-              <Field label="ملاحظات">
-                <input
-                  value={checkInForm.notes}
-                  onChange={(e) => setCheckInForm((p) => ({ ...p, notes: e.target.value }))}
-                  className="erp-input w-full"
-                  placeholder="اختياري"
-                />
-              </Field>
-            </div>
-            <div className="flex gap-2 p-5 border-t border-white/10">
-              <button
-                onClick={() => {
-                  if (!checkInForm.employee_id) {
-                    toast({ title: 'يرجى اختيار الموظف', variant: 'destructive' });
-                    return;
-                  }
-                  doCheckIn.mutate(
-                    {
-                      ...checkInForm,
-                      attendance_date: checkInForm.attendance_date || today,
-                      check_in_time:
-                        checkInForm.check_in_time || new Date().toTimeString().substring(0, 5),
-                    },
-                    {
-                      onSuccess: () => {
-                        setShowCheckIn(false);
-                        setCheckInForm({
-                          employee_id: '',
-                          attendance_date: today,
-                          check_in_time: '',
-                          notes: '',
-                        });
-                      },
-                    }
-                  );
-                }}
-                disabled={doCheckIn.isPending}
-                className="erp-btn erp-btn-primary flex-1"
-              >
-                {doCheckIn.isPending ? 'جاري التسجيل...' : 'تسجيل'}
-              </button>
-              <button onClick={() => setShowCheckIn(false)} className="erp-btn erp-btn-ghost">
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
+        <CheckInModal
+          empList={empList}
+          form={checkInForm}
+          setForm={setCheckInForm}
+          today={today}
+          isPending={doCheckIn.isPending}
+          onClose={() => setShowCheckIn(false)}
+          onSubmit={() => {
+            if (!checkInForm.employee_id) {
+              toast({ title: 'يرجى اختيار الموظف', variant: 'destructive' });
+              return;
+            }
+            doCheckIn.mutate(
+              {
+                ...checkInForm,
+                attendance_date: checkInForm.attendance_date || today,
+                check_in_time:
+                  checkInForm.check_in_time || new Date().toTimeString().substring(0, 5),
+              },
+              {
+                onSuccess: () => {
+                  setShowCheckIn(false);
+                  setCheckInForm({
+                    employee_id: '',
+                    attendance_date: today,
+                    check_in_time: '',
+                    notes: '',
+                  });
+                },
+              }
+            );
+          }}
+        />
       )}
 
-      {/* تسجيل انصراف */}
       {showCheckOut && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2">
-                <LogOut size={16} className="text-red-400" /> تسجيل انصراف
-              </h2>
-              <button
-                onClick={() => setShowCheckOut(false)}
-                className="text-white/40 hover:text-white"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-5 space-y-3">
-              <Field label="الموظف *">
-                <select
-                  className="erp-input w-full"
-                  value={checkOutForm.employee_id}
-                  onChange={(e) => setCheckOutForm((p) => ({ ...p, employee_id: e.target.value }))}
-                >
-                  <option value="">اختر الموظف</option>
-                  {empList.map((e) => (
-                    <option key={String(e.id)} value={String(e.id)}>
-                      {String(e.first_name_ar)} {String(e.last_name_ar)} — {String(e.employee_code)}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="التاريخ">
-                  <input
-                    type="date"
-                    value={checkOutForm.attendance_date}
-                    onChange={(e) =>
-                      setCheckOutForm((p) => ({ ...p, attendance_date: e.target.value }))
-                    }
-                    className="erp-input w-full"
-                  />
-                </Field>
-                <Field label="وقت الانصراف">
-                  <input
-                    type="time"
-                    value={checkOutForm.check_out_time}
-                    onChange={(e) =>
-                      setCheckOutForm((p) => ({ ...p, check_out_time: e.target.value }))
-                    }
-                    className="erp-input w-full"
-                  />
-                </Field>
-              </div>
-            </div>
-            <div className="flex gap-2 p-5 border-t border-white/10">
-              <button
-                onClick={() => {
-                  if (!checkOutForm.employee_id) {
-                    toast({ title: 'يرجى اختيار الموظف', variant: 'destructive' });
-                    return;
-                  }
-                  doCheckOut.mutate(
-                    { ...checkOutForm },
-                    {
-                      onSuccess: () => {
-                        setShowCheckOut(false);
-                        setCheckOutForm({
-                          employee_id: '',
-                          attendance_date: today,
-                          check_out_time: '',
-                        });
-                      },
-                    }
-                  );
-                }}
-                disabled={doCheckOut.isPending}
-                className="erp-btn erp-btn-primary flex-1"
-              >
-                {doCheckOut.isPending ? 'جاري التسجيل...' : 'تسجيل'}
-              </button>
-              <button onClick={() => setShowCheckOut(false)} className="erp-btn erp-btn-ghost">
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
+        <CheckOutModal
+          empList={empList}
+          form={checkOutForm}
+          setForm={setCheckOutForm}
+          isPending={doCheckOut.isPending}
+          onClose={() => setShowCheckOut(false)}
+          onSubmit={() => {
+            if (!checkOutForm.employee_id) {
+              toast({ title: 'يرجى اختيار الموظف', variant: 'destructive' });
+              return;
+            }
+            doCheckOut.mutate(
+              { ...checkOutForm },
+              {
+                onSuccess: () => {
+                  setShowCheckOut(false);
+                  setCheckOutForm({
+                    employee_id: '',
+                    attendance_date: today,
+                    check_out_time: '',
+                  });
+                },
+              }
+            );
+          }}
+        />
       )}
 
-      {/* تعديل سجل */}
       {showEditRecord && editForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2">
-                <Pencil size={16} className="text-amber-400" /> تعديل سجل الحضور
-              </h2>
-              <button
-                onClick={() => setShowEditRecord(false)}
-                className="text-white/40 hover:text-white"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-5 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="وقت الحضور">
-                  <input
-                    type="time"
-                    value={editForm.check_in_time}
-                    onChange={(e) =>
-                      setEditForm((p) => (p ? { ...p, check_in_time: e.target.value } : p))
-                    }
-                    className="erp-input w-full"
-                  />
-                </Field>
-                <Field label="وقت الانصراف">
-                  <input
-                    type="time"
-                    value={editForm.check_out_time}
-                    onChange={(e) =>
-                      setEditForm((p) => (p ? { ...p, check_out_time: e.target.value } : p))
-                    }
-                    className="erp-input w-full"
-                  />
-                </Field>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="الحالة">
-                  <select
-                    className="erp-input w-full"
-                    value={editForm.status}
-                    onChange={(e) => setEditForm((p) => (p ? { ...p, status: e.target.value } : p))}
-                  >
-                    <option value="present">حاضر</option>
-                    <option value="late">متأخر</option>
-                    <option value="absent">غائب</option>
-                    <option value="excused">استأذن (بدون خصم)</option>
-                    <option value="on_leave">إجازة</option>
-                    <option value="holiday">إجازة رسمية</option>
-                  </select>
-                </Field>
-                <Field label="ساعات العمل">
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={editForm.working_hours}
-                    onChange={(e) =>
-                      setEditForm((p) => (p ? { ...p, working_hours: e.target.value } : p))
-                    }
-                    className="erp-input w-full"
-                  />
-                </Field>
-              </div>
-              <Field label="ملاحظات">
-                <input
-                  value={editForm.notes}
-                  onChange={(e) => setEditForm((p) => (p ? { ...p, notes: e.target.value } : p))}
-                  className="erp-input w-full"
-                />
-              </Field>
-            </div>
-            <div className="flex gap-2 p-5 border-t border-white/10">
-              <button
-                onClick={() => {
-                  doEditRecord.mutate(
-                    {
-                      ...editForm,
-                      working_hours: editForm.working_hours
-                        ? Number(editForm.working_hours)
-                        : undefined,
-                    },
-                    {
-                      onSuccess: () => {
-                        setShowEditRecord(false);
-                        setEditForm(null);
-                      },
-                    }
-                  );
-                }}
-                disabled={doEditRecord.isPending}
-                className="erp-btn erp-btn-primary flex-1"
-              >
-                {doEditRecord.isPending ? 'جاري الحفظ...' : 'حفظ'}
-              </button>
-              <button onClick={() => setShowEditRecord(false)} className="erp-btn erp-btn-ghost">
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditRecordModal
+          form={editForm}
+          setForm={setEditForm}
+          isPending={doEditRecord.isPending}
+          onClose={() => setShowEditRecord(false)}
+          onSubmit={() => {
+            doEditRecord.mutate(
+              {
+                ...editForm,
+                working_hours: editForm.working_hours
+                  ? Number(editForm.working_hours)
+                  : undefined,
+              },
+              {
+                onSuccess: () => {
+                  setShowEditRecord(false);
+                  setEditForm(null);
+                },
+              }
+            );
+          }}
+        />
       )}
 
-      {/* ═══ إعدادات الخصم ═══ */}
       {showDedSettings && canManage && (
         <DeductionSettingsModal
           settings={dedSettings.data as AnyRec | undefined}
@@ -1154,7 +790,6 @@ function DeductionSettingsModal({
         </div>
 
         <div className="p-5 space-y-5 max-h-[75vh] overflow-y-auto">
-          {/* General settings */}
           <section className="space-y-3">
             <h4 className="text-sm font-bold text-amber-300">إعدادات عامة</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1242,7 +877,6 @@ function DeductionSettingsModal({
 
           <div className="border-t border-white/10" />
 
-          {/* Tiers */}
           <section className="space-y-3">
             <h4 className="text-sm font-bold text-amber-300">شرائح خصم التأخير</h4>
             <div className="text-[11px] text-white/40">
@@ -1368,7 +1002,6 @@ function DeductionCalcModal({
         </div>
 
         <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
-          {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
             <Field label="الشهر">
               <input
@@ -1404,7 +1037,6 @@ function DeductionCalcModal({
             </button>
           </div>
 
-          {/* Summary */}
           {previewData && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-white/5 rounded-lg border border-white/10">
               <div>
@@ -1432,7 +1064,6 @@ function DeductionCalcModal({
             </div>
           )}
 
-          {/* Items list */}
           {previewData && items.length === 0 && (
             <div className="erp-empty-state">
               <CheckCircle2 size={36} className="erp-empty-icon mb-2 text-emerald-300" />
