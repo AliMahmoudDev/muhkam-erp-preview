@@ -93,6 +93,18 @@ const migrations: { name: string; sql: string }[] = [
         ADD COLUMN IF NOT EXISTS registration_count  INTEGER DEFAULT 0;
     `,
   },
+  {
+    name: "customers — تحويل قيد customer_code من عالمي إلى per-tenant",
+    sql: `
+      ALTER TABLE customers
+        DROP CONSTRAINT IF EXISTS customers_customer_code_unique;
+      ALTER TABLE customers
+        DROP CONSTRAINT IF EXISTS customers_company_customer_code_unique;
+      ALTER TABLE customers
+        ADD CONSTRAINT customers_company_customer_code_unique
+        UNIQUE (company_id, customer_code);
+    `,
+  },
 ];
 
 async function runMigrations() {

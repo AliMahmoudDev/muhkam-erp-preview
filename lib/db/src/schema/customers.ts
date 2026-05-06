@@ -33,7 +33,7 @@ export const customersTable = pgTable("customers", {
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
-  unique("customers_customer_code_unique").on(t.customer_code),
+  unique("customers_company_customer_code_unique").on(t.company_id, t.customer_code),
   index("customers_company_id_idx").on(t.company_id),
   index("customers_company_phone_idx").on(t.company_id, t.phone),
   index("customers_company_name_idx").on(t.company_id, t.name),
