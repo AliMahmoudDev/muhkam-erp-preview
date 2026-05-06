@@ -1,9 +1,7 @@
 import { api } from '@/lib/api';
 // ✔ POS UX CLEANED — SINGLE ENTRY POINT
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useAppSettings } from '@/contexts/app-settings';
 import { useLocation } from 'wouter';
-import { openPrintWindow, escapeHtml } from '@/lib/print-utils';
 import { safeArray } from '@/lib/safe-data';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
@@ -15,49 +13,27 @@ import { formatCurrency } from '@/lib/format';
 import { SearchableSelect } from '@/components/searchable-select';
 import { SplitPaymentModal, type SplitPaymentEntry } from '@/components/SplitPaymentModal';
 import {
-  ShoppingCart,
   Search,
-  Plus,
-  Minus,
-  Trash2,
-  Receipt,
   AlertTriangle,
   Zap,
   X,
   Store,
   Vault,
-  CheckCircle2,
-  Printer,
   RotateCcw,
   RefreshCw,
   Settings,
 } from 'lucide-react';
-
+import {
+  type CartItem,
+  type SuccessInvoice,
+  SuccessModal,
+} from './PosReceipt';
+import { PosCart } from './PosCart';
+import { PosPayment } from './PosPayment';
 
 /* ─────────────────────────────────────────────────────────────
-   TYPES
+   RETURN-ONLY TYPES (cart/invoice types live in PosReceipt)
 ───────────────────────────────────────────────────────────── */
-interface CartItem {
-  product_id: number;
-  product_name: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-  stock: number;
-}
-
-interface SuccessInvoice {
-  invoice_no: string;
-  total_amount: number;
-  customer_name: string | null;
-  customer_phone: string | null;
-  payment_type: string;
-  items: CartItem[];
-  warehouseName?: string;
-  safeName?: string;
-  cashierName?: string;
-}
-
 interface ReturnSaleItem {
   id: number;
   product_id: number;
@@ -86,166 +62,6 @@ interface ReturnItem {
   max_qty: number;
   return_qty: number;
   unit_price: number;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   THERMAL RECEIPT PRINT
-───────────────────────────────────────────────────────────── */
-function printReceipt(invoice: SuccessInvoice, companyName: string) {
-  const payLabel: Record<string, string> = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('ar-EG-u-nu-latn');
-  const timeStr = now.toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' });
-
-  const html = `<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head>
-<meta charset="utf-8"/>
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Courier New', monospace; font-size: 12px; width: 80mm; max-width: 80mm; padding: 4mm; color: #000; }
-  .center { text-align:center; }
-  .bold { font-weight:bold; }
-  .title { font-size:14px; font-weight:900; margin-bottom:2px; }
-  .sep { border-top: 1px dashed #000; margin: 4px 0; }
-  .row { display:flex; justify-content:space-between; margin: 2px 0; }
-  .total-row { font-size:14px; font-weight:900; border-top:2px solid #000; padding-top:4px; margin-top:4px; }
-  .footer { text-align:center; margin-top:6px; font-size:10px; }
-  table { width:100%; border-collapse:collapse; }
-  td { padding: 1px 0; vertical-align:top; }
-  td:last-child { text-align:left; white-space:nowrap; }
-  @media print { @page { margin:0; size: 80mm auto; } }
-</style>
-</head>
-<body>
-<div class="center bold title">${escapeHtml(companyName)}</div>
-<div class="center" style="font-size:10px;">فاتورة مبيعات</div>
-<div class="sep"></div>
-<div class="row"><span>رقم الفاتورة:</span><span class="bold">${escapeHtml(invoice.invoice_no)}</span></div>
-<div class="row"><span>التاريخ:</span><span>${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</span></div>
-${invoice.cashierName ? `<div class="row"><span>الكاشير:</span><span>${escapeHtml(invoice.cashierName)}</span></div>` : ''}
-${invoice.warehouseName ? `<div class="row"><span>الفرع:</span><span>${escapeHtml(invoice.warehouseName)}</span></div>` : ''}
-${invoice.safeName ? `<div class="row"><span>الخزينة:</span><span>${escapeHtml(invoice.safeName)}</span></div>` : ''}
-${invoice.customer_name ? `<div class="row"><span>العميل:</span><span>${escapeHtml(invoice.customer_name)}</span></div>` : ''}
-<div class="sep"></div>
-<table>
-  <tr><td class="bold">الصنف</td><td class="bold" style="text-align:center;">كمية</td><td class="bold">سعر</td><td class="bold">إجمالي</td></tr>
-  ${invoice.items.map((i) => `<tr><td>${escapeHtml(i.product_name)}</td><td style="text-align:center;">${i.quantity}</td><td>${i.unit_price.toFixed(2)}</td><td>${i.total_price.toFixed(2)}</td></tr>`).join('')}
-</table>
-<div class="sep"></div>
-<div class="row total-row"><span>الإجمالي</span><span>${invoice.total_amount.toFixed(2)} ج.م</span></div>
-<div class="row" style="margin-top:3px;"><span>طريقة الدفع:</span><span>${escapeHtml(payLabel[invoice.payment_type] ?? invoice.payment_type)}</span></div>
-<div class="sep"></div>
-<div class="footer">شكراً لتعاملكم معنا 🙏<br/>${escapeHtml(companyName)} © ${now.getFullYear()}</div>
-</body></html>`;
-
-  openPrintWindow(html, { width: 340, height: 600, delay: 250, autoClose: true });
-}
-
-/* ─────────────────────────────────────────────────────────────
-   SUCCESS MODAL
-───────────────────────────────────────────────────────────── */
-function SuccessModal({ invoice, onClose }: { invoice: SuccessInvoice; onClose: () => void }) {
-  const { settings } = useAppSettings();
-  const payLabel: Record<string, string> = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
-
-  const waMsg = () => {
-    const lines = [
-      `🧾 *فاتورة مبيعات - ${settings.companyName}*`,
-      `رقم الفاتورة: ${invoice.invoice_no}`,
-      ``,
-      `*الأصناف:*`,
-      ...invoice.items.map(
-        (i) => `• ${i.product_name} × ${i.quantity} = ${i.total_price.toFixed(2)} ج.م`
-      ),
-      ``,
-      `*الإجمالي: ${invoice.total_amount.toFixed(2)} ج.م*`,
-      `طريقة الدفع: ${payLabel[invoice.payment_type] || invoice.payment_type}`,
-      ``,
-      `شكراً لتعاملكم معنا 🙏`,
-    ];
-    return encodeURIComponent(lines.join('\n'));
-  };
-
-  const phoneRaw = invoice.customer_phone?.replace(/\D/g, '') ?? '';
-  const phone = phoneRaw.startsWith('0')
-    ? '2' + phoneRaw
-    : phoneRaw.startsWith('2')
-      ? phoneRaw
-      : '2' + phoneRaw;
-  const waUrl = `https://wa.me/${phone}?text=${waMsg()}`;
-
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'F9' || e.key === 'Enter') {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', h);
-    return () => document.removeEventListener('keydown', h);
-  }, [onClose]);
-
-  return (
-    <div className="erp-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="erp-modal w-full max-w-sm text-center space-y-5">
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
-          style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.30)' }}
-        >
-          <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-        </div>
-        <div>
-          <h3 className="erp-title text-2xl">تم إصدار الفاتورة</h3>
-          <p className="text-amber-500 font-bold text-xl mt-1">{invoice.invoice_no}</p>
-          <p className="erp-text-muted text-sm mt-2">
-            الإجمالي:{' '}
-            <span className="erp-number text-lg">{formatCurrency(invoice.total_amount)}</span>
-          </p>
-          {invoice.customer_name && (
-            <p className="erp-label mt-1">
-              العميل: <span className="erp-text font-semibold">{invoice.customer_name}</span>
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-2.5">
-          {/* Print receipt */}
-          <button
-            onClick={() => printReceipt(invoice, settings.companyName)}
-            className="erp-btn-secondary w-full py-3 rounded-2xl font-bold flex items-center justify-center gap-2"
-          >
-            <Printer className="w-4 h-4" />
-            طباعة الفاتورة
-          </button>
-
-          {/* WhatsApp */}
-          {invoice.customer_phone && (
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full py-3 rounded-2xl font-bold transition-all"
-              style={{
-                background: 'rgba(37,211,102,0.12)',
-                border: '1px solid rgba(37,211,102,0.30)',
-                color: '#25D366',
-              }}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
-              إرسال واتساب
-            </a>
-          )}
-
-          <button onClick={onClose} className="erp-btn-ghost w-full py-3 rounded-2xl font-bold">
-            فاتورة جديدة (Enter / F9)
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1561,239 +1377,34 @@ function POSBody({
               borderBottom: 'none',
             }}
           >
-            {/* Cart header */}
-            <div
-              className="px-4 py-3 flex items-center justify-between shrink-0"
-              style={{ borderBottom: '1px solid var(--erp-border)' }}
-            >
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-amber-500" />
-                <span className="erp-subtitle">السلة</span>
-                {cart.length > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-amber-500 text-black text-[11px] font-black flex items-center justify-center">
-                    {cart.length}
-                  </span>
-                )}
-              </div>
-              {cart.length > 0 && (
-                <button
-                  onClick={() => setCart([])}
-                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-bold transition-all bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/40"
-                >
-                  <Trash2 className="w-3 h-3" /> مسح السلة
-                </button>
-              )}
-            </div>
+            <PosCart
+              cart={cart}
+              canEditPrice={canEditPrice}
+              editingPriceId={editingPriceId}
+              editingPriceVal={editingPriceVal}
+              setEditingPriceId={setEditingPriceId}
+              setEditingPriceVal={setEditingPriceVal}
+              commitPrice={commitPrice}
+              updateQty={updateQty}
+              removeItem={removeItem}
+              clearCart={() => setCart([])}
+            />
 
-            {/* Cart items */}
-            <div className="flex-1 overflow-y-auto">
-              {cart.length === 0 ? (
-                <div className="erp-empty h-full">
-                  <ShoppingCart className="w-10 h-10" style={{ color: 'var(--erp-text-4)' }} />
-                  <p className="erp-text-muted">السلة فارغة</p>
-                  <p className="erp-label text-[11px]">اضغط Enter لإضافة أول صنف</p>
-                </div>
-              ) : (
-                <div className="p-2 space-y-1.5">
-                  {cart.map((item) => (
-                    <div
-                      key={item.product_id}
-                      className="erp-card flex items-center gap-2 px-3 py-2.5"
-                      style={{ borderRadius: '0.75rem' }}
-                    >
-                      {/* Name + Price */}
-                      <div className="flex-1 min-w-0">
-                        <p className="erp-text text-xs font-bold leading-snug line-clamp-1">
-                          {item.product_name}
-                        </p>
-                        {canEditPrice && editingPriceId === item.product_id ? (
-                          <input
-                            autoFocus
-                            type="number"
-                            step="0.01"
-                            value={editingPriceVal}
-                            onChange={(e) => setEditingPriceVal(e.target.value)}
-                            onBlur={() => commitPrice(item.product_id, editingPriceVal)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') commitPrice(item.product_id, editingPriceVal);
-                              if (e.key === 'Escape') setEditingPriceId(null);
-                            }}
-                            className="erp-input text-xs mt-0.5 py-0.5 px-1.5"
-                            style={{ borderColor: 'rgba(245,158,11,0.5)' }}
-                          />
-                        ) : (
-                          <p
-                            className={`text-amber-500 text-xs mt-0.5 ${canEditPrice ? 'cursor-pointer hover:underline' : ''}`}
-                            onClick={() => {
-                              if (!canEditPrice) return;
-                              setEditingPriceId(item.product_id);
-                              setEditingPriceVal(String(item.unit_price));
-                            }}
-                          >
-                            {formatCurrency(item.unit_price)}
-                            {canEditPrice && <span className="erp-label text-[10px] mr-1">✏</span>}
-                          </p>
-                        )}
-                      </div>
-                      {/* Qty controls */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => updateQty(item.product_id, -1)}
-                          className="erp-btn-secondary w-7 h-7 p-0 rounded-lg"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="erp-number w-7 text-center text-sm">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQty(item.product_id, 1)}
-                          className="erp-btn-secondary w-7 h-7 p-0 rounded-lg"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                      {/* Line total */}
-                      <p className="erp-number text-sm w-16 text-left shrink-0">
-                        {formatCurrency(item.total_price)}
-                      </p>
-                      {/* Remove */}
-                      <button
-                        onClick={() => removeItem(item.product_id)}
-                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-all shrink-0 erp-btn-danger p-0"
-                        style={{ padding: 0 }}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* ════ PAYMENT PANEL ════ */}
-            <div
-              className="erp-divider p-3 space-y-3 shrink-0"
-              style={{
-                borderBottom: 'none',
-                borderLeft: 'none',
-                borderRight: 'none',
-                background: 'var(--erp-bg-panel)',
-              }}
-            >
-              {/* Discount */}
-              <div className="flex items-center gap-2">
-                <label className="erp-label shrink-0 text-xs">خصم %</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={discountPct}
-                  onChange={(e) => setDiscountPct(e.target.value)}
-                  placeholder="0"
-                  className="erp-input flex-1 text-center text-sm"
-                  style={{ padding: '0.375rem 0.5rem' }}
-                />
-                {discountAmt > 0 && (
-                  <span className="text-red-500 text-xs font-bold shrink-0">
-                    -{formatCurrency(discountAmt)}
-                  </span>
-                )}
-              </div>
-
-              {/* Customer select — always visible for convenience */}
-              <div
-                className="erp-card flex items-center gap-2 px-3 py-1.5"
-                style={{ borderRadius: '0.75rem' }}
-              >
-                <span className="erp-label shrink-0 text-xs">العميل</span>
-                <SearchableSelect
-                  items={customerItems}
-                  value={customerId}
-                  onChange={setCustomerId}
-                  placeholder="عميل نقدي / اختر..."
-                  emptyLabel="عميل نقدي"
-                  className="flex-1"
-                />
-              </div>
-
-              {/* Totals */}
-              <div
-                className="space-y-1.5 pt-2 erp-divider"
-                style={{ borderBottom: 'none', borderLeft: 'none', borderRight: 'none' }}
-              >
-                {discountAmt > 0 && (
-                  <>
-                    <div className="flex justify-between items-center">
-                      <span className="erp-label">المجموع قبل الخصم</span>
-                      <span className="erp-text text-sm">{formatCurrency(cartSubtotal)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="erp-label text-red-500">خصم {discountPct}%</span>
-                      <span className="text-red-500 text-sm font-bold">
-                        -{formatCurrency(discountAmt)}
-                      </span>
-                    </div>
-                  </>
-                )}
-                <div className="flex justify-between items-center">
-                  <span className="erp-subtitle">الإجمالي</span>
-                  <span
-                    className="erp-number text-amber-500"
-                    style={{ fontSize: cm ? '2rem' : '1.5rem' }}
-                  >
-                    {formatCurrency(cartTotal)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Error */}
-              {checkoutError && (
-                <div
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs"
-                  style={{
-                    color: '#ef4444',
-                    background: 'rgba(239,68,68,0.10)',
-                    border: '1px solid rgba(239,68,68,0.20)',
-                  }}
-                >
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                  {checkoutError}
-                </div>
-              )}
-
-              {/* CHECKOUT BUTTON */}
-              <button
-                onClick={handleCheckout}
-                disabled={cart.length === 0}
-                className={`w-full rounded-2xl font-black flex items-center justify-center gap-3 transition-all ${
-                  cart.length === 0 ? 'erp-btn-disabled' : 'erp-btn-primary'
-                }`}
-                style={{
-                  paddingTop: cm ? '1.125rem' : '0.875rem',
-                  paddingBottom: cm ? '1.125rem' : '0.875rem',
-                  fontSize: cm ? '1.0625rem' : '0.9375rem',
-                  boxShadow:
-                    cart.length > 0 && !checkoutMutation.isPending
-                      ? '0 4px 18px rgba(245,158,11,0.30)'
-                      : undefined,
-                }}
-              >
-                {checkoutMutation.isPending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin opacity-60" />
-                    جارٍ التسجيل...
-                  </>
-                ) : (
-                  <>
-                    <Receipt className={cm ? 'w-6 h-6' : 'w-5 h-5'} />
-                    إصدار الفاتورة
-                    <kbd className="text-[11px] font-bold opacity-50 bg-black/10 px-1.5 py-0.5 rounded">
-                      F9
-                    </kbd>
-                  </>
-                )}
-              </button>
-            </div>
+            <PosPayment
+              cm={cm}
+              cartLength={cart.length}
+              cartSubtotal={cartSubtotal}
+              cartTotal={cartTotal}
+              discountPct={discountPct}
+              setDiscountPct={setDiscountPct}
+              discountAmt={discountAmt}
+              customerItems={customerItems}
+              customerId={customerId}
+              setCustomerId={setCustomerId}
+              checkoutError={checkoutError}
+              isPending={checkoutMutation.isPending}
+              onCheckout={handleCheckout}
+            />
           </div>
         )}
       </div>
