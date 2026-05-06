@@ -1,6 +1,5 @@
 import express, { type Express, type ErrorRequestHandler } from 'express';
 import http from 'http';
-import net from 'net';
 import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
