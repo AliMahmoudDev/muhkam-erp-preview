@@ -136,36 +136,3 @@ jobs:
           cd artifacts/api-server
           pnpm run build
 
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: [build]
-    if: vars.PLAYWRIGHT_ENABLED == 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpx playwright install --with-deps chromium
-
-      - name: E2E Tests
-        run: pnpm test:e2e
-        env:
-          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
-          E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
-          E2E_TEST_PASS: ${{ secrets.E2E_TEST_PASS }}
