@@ -95,12 +95,13 @@ export async function findOrCreateCustomerByPhone(
    *    يتطلّب أن يُستدعى الـ helper داخل db.transaction. */
   await client.execute(sql`SELECT pg_advisory_xact_lock(987651)`);
 
-  /* 4) حساب customer_code التالي */
+  /* 4) حساب customer_code التالي (مُحَصَّر صراحةً بالشركة الحالية كـ defense-in-depth بجانب الـ RLS) */
   const codeRow = await client
     .select({
       maxCode: sql<number>`COALESCE(MAX(${customersTable.customer_code}), 1000)`,
     })
-    .from(customersTable);
+    .from(customersTable)
+    .where(eq(customersTable.company_id, companyId));
   const customer_code = Number(codeRow[0]?.maxCode ?? 1000) + 1;
 
   /* 4) إنشاء العميل */
