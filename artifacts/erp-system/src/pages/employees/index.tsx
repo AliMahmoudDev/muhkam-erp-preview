@@ -18,14 +18,14 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { EmployeeList } from './employees/EmployeeList';
-import { EmployeeDetail } from './employees/EmployeeDetail';
-import { EmployeeForm } from './employees/EmployeeForm';
-import type { Employee, Department, JobTitle, Branch, EmpDocument, AnyRec } from './employees/types';
+import { EmployeeList } from './EmployeeList';
+import { EmployeeDetail } from './EmployeeDetail';
+import { EmployeeForm } from './EmployeeForm';
+import type { Employee, Department, JobTitle, Branch, EmpDocument, AnyRec } from './types';
 
 /* ── Lazy-loaded sub-page tabs ───────────────────────────────── */
-const AdvanceSettingsTab = lazy(() => import('./employees/advance-settings-tab'));
-const SalesTargetsTab    = lazy(() => import('./employees/sales-targets-tab'));
+const AdvanceSettingsTab = lazy(() => import('./advance-settings-tab'));
+const SalesTargetsTab    = lazy(() => import('./sales-targets-tab'));
 
 type PageTab = 'list' | 'advance-settings' | 'sales-targets';
 
