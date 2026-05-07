@@ -1,7 +1,5 @@
-import "./lib/sentry"; // must be first — initialises Sentry before any other module
 import app from "./app";
 import { logger } from "./lib/logger";
-import { Sentry, sentryEnabled } from "./lib/sentry";
 import { startBackupScheduler, stopBackupScheduler } from "./lib/backup-scheduler";
 import { startTrialScheduler, stopTrialScheduler } from "./lib/trial-scheduler";
 import { startDbBackupScheduler } from "./lib/db-backup";
@@ -106,24 +104,18 @@ async function main() {
   process.on("SIGINT",  () => cleanup("SIGINT"));
 }
 
-/* ── Capture unhandled exceptions / rejections via Sentry ── */
-if (sentryEnabled) {
-  process.on("uncaughtException", (err) => {
-    Sentry.captureException(err);
-    logger.error({ err }, "[FATAL] Uncaught exception — flushing Sentry then exiting");
-    void Sentry.flush(2000).finally(() => process.exit(1));
-  });
+process.on("uncaughtException", (err) => {
+  logger.error({ err }, "[FATAL] Uncaught exception — exiting");
+  process.exit(1);
+});
 
-  process.on("unhandledRejection", (reason) => {
-    const err = reason instanceof Error ? reason : new Error(String(reason));
-    Sentry.captureException(err);
-    logger.error({ err }, "[FATAL] Unhandled promise rejection — flushing Sentry then exiting");
-    void Sentry.flush(2000).finally(() => process.exit(1));
-  });
-}
+process.on("unhandledRejection", (reason) => {
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  logger.error({ err }, "[FATAL] Unhandled promise rejection — exiting");
+  process.exit(1);
+});
 
 main().catch((err) => {
-  if (sentryEnabled) Sentry.captureException(err);
   logger.error({ err }, "[FATAL] Unhandled error in main() — process exiting");
-  void Sentry.flush(2000).finally(() => process.exit(1));
+  process.exit(1);
 });

@@ -1,5 +1,5 @@
 import express, { type Express, type ErrorRequestHandler } from 'express';
-import { Sentry, sentryEnabled } from './lib/sentry';
+
 import http from 'http';
 import compression from 'compression';
 import cors from 'cors';
@@ -271,10 +271,6 @@ if (process.env.NODE_ENV === 'production') {
   logger.info({ frontendDist }, 'Serving MuhKam ERP frontend at /');
 }
 
-/* ── Sentry Express error handler — must come before our error handler ── */
-if (sentryEnabled) {
-  Sentry.setupExpressErrorHandler(app);
-}
 
 /* ── Global error handler — no stack traces in responses ───── */
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
