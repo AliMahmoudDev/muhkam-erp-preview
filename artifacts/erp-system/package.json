@@ -95,6 +95,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@sentry/react": "^10.51.0",
     "@tanstack/react-virtual": "^3.13.24",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
