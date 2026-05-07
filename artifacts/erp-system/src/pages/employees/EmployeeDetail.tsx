@@ -8,6 +8,7 @@ import {
   Plus, Pencil, Trash2, Printer, Download, X, CheckCircle,
 } from 'lucide-react';
 import type { Employee, AnyRec, EmpDocument, DetailTab } from './types';
+import { EmployeeDocuments } from './EmployeeDocuments';
 
 /* ── Local helpers (only used in this component) ── */
 function fmt(v: unknown) {
@@ -513,28 +514,7 @@ export function EmployeeDetail({
 
       {/* ── Documents Tab ── */}
       {detailTab === 'docs' && (
-        <div className="space-y-2">
-          {selected.national_id_image && (
-            <div className="bg-white/5 rounded-lg p-2 space-y-2">
-              <div className="flex items-center gap-1 text-xs font-semibold text-white">
-                <IdCard size={12} className="text-amber-400" /> صورة البطاقة الشخصية
-              </div>
-              <a href={selected.national_id_image} target="_blank" rel="noopener noreferrer" className="block">
-                <img src={selected.national_id_image} alt="بطاقة شخصية" className="rounded max-h-48 w-auto border border-white/10" />
-              </a>
-            </div>
-          )}
-          {documents.length === 0 && !selected.national_id_image && (
-            <p className="text-white/40 text-xs text-center py-4">لا توجد مستندات</p>
-          )}
-          {documents.map((doc) => (
-            <div key={doc.id} className="bg-white/5 rounded-lg p-2">
-              <div className="text-xs font-semibold text-white">{doc.file_name}</div>
-              <div className="text-xs text-white/50">{doc.document_type}</div>
-              {doc.expiry_date && <div className="text-xs text-amber-300">ينتهي: {doc.expiry_date}</div>}
-            </div>
-          ))}
-        </div>
+        <EmployeeDocuments selected={selected} documents={documents} />
       )}
 
       {/* ── Bonuses Tab ── */}
