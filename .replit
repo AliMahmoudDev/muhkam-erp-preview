@@ -35,6 +35,14 @@ args = "Mockup Dev Server"
 task = "workflow.run"
 args = "ERP Mobile"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "API Server"
+
 [[workflows.workflow]]
 name = "Mockup Dev Server"
 author = "agent"
@@ -55,6 +63,30 @@ author = "agent"
 task = "shell.exec"
 args = "pnpm --filter @workspace/erp-mobile run dev"
 waitForPort = 8099
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/erp-system run dev"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "API Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/api-server run start"
+waitForPort = 8080
 
 [workflows.workflow.metadata]
 outputType = "console"
