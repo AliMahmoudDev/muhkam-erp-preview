@@ -58,6 +58,108 @@ export interface Manager {
   created_at: string;
 }
 
+/* ── Shared form / result types ─────────────────── */
+
+export interface SubForm {
+  plan_type: string;
+  edition: 'advanced' | 'ultimate';
+  extend_mode: 'days' | 'date';
+  extend_days: number;
+  end_date: string;
+  is_active: boolean;
+  features: CompanyFeatures;
+}
+
+export interface CreateResult {
+  company_name: string;
+  username: string;
+  admin_name: string;
+  temp_password: string;
+}
+
+export interface ResetPassResult {
+  company_name: string;
+  username: string;
+  name: string;
+  temp_password: string;
+}
+
+/* ── Company panel detail types ─────────────────── */
+
+export interface PanelUser {
+  id: number;
+  name: string;
+  username: string;
+  email: string | null;
+  role: string;
+  active: boolean;
+}
+
+export interface PanelCompanyDetail extends Company {
+  users: PanelUser[];
+}
+
+export interface AuditEntry {
+  id: number;
+  action: string;
+  record_type: string | null;
+  record_id: number | null;
+  note: string | null;
+  username: string | null;
+  created_at: string;
+}
+
+export interface AuditLogResp {
+  count: number;
+  rows: AuditEntry[];
+}
+
+export interface AuditRow {
+  id: number;
+  action: string;
+  record_type: string;
+  record_id: number;
+  user_id: number | null;
+  username: string | null;
+  note: string | null;
+  company_id: number | null;
+  created_at: string;
+}
+
+/* ── Company snapshot types ─────────────────────── */
+
+export interface SnapshotData {
+  company: Company;
+  admins: { id: number; name: string; username: string; role: string; active: boolean; last_login: string | null }[];
+  recentAudit: { id: number; action: string; note: string | null; username: string | null; created_at: string }[];
+  stats: { salesCount: number; salesRevenue: number; purchasesCount: number };
+}
+
+/* ── Telegram types ─────────────────────────────── */
+
+export interface TgAlertRule { enabled: boolean; cooldownHours: number; label: string; }
+export interface TgConfig    { enabled: boolean; alerts: Record<string, TgAlertRule>; }
+export interface TgBotStatus {
+  connected: boolean; token_set: boolean; chat_id_set: boolean;
+  bot_username?: string; bot_name?: string; error?: string;
+  token_masked: string | null; chat_id: string | null; source: 'db' | 'env' | 'none';
+}
+
+/* ── Plan settings type ─────────────────────────── */
+
+export interface PlanSetting {
+  id: number; key: string; name_ar: string; description: string | null;
+  price: number; includes_mobile: boolean; is_active: boolean;
+  created_at: string; updated_at: string;
+}
+
+/* ── ActiveTab union ─────────────────────────────── */
+
+export type ActiveTab =
+  | 'overview' | 'companies' | 'managers' | 'settings'
+  | 'revenue' | 'alerts' | 'announcements' | 'health' | 'plans'
+  | 'monitoring' | 'audit_log';
+
 /* ── Constants ───────────────────────────────────── */
 export const STATUS: Record<string, { bg: string; text: string; border: string; label: string }> = {
   active:    { bg: 'rgba(34,197,94,0.12)',   text: '#22C55E', border: 'rgba(34,197,94,0.3)',   label: 'نشط' },
@@ -104,6 +206,18 @@ export const C = {
 
 export const PER_PAGE = 10;
 export const FONT = "'Tajawal','Cairo',sans-serif";
+
+export const DEFAULT_FEATS_ULTIMATE: CompanyFeatures = {
+  accounting: false, hr: true, pos: true, warranty: true,
+  consignment: true, fixed_assets: false, maintenance: false,
+  budgets: false, bank_reconciliation: false,
+};
+
+export const DEFAULT_FEATS_ADVANCED: CompanyFeatures = {
+  accounting: true, hr: true, pos: true, warranty: true,
+  consignment: true, fixed_assets: true, maintenance: false,
+  budgets: true, bank_reconciliation: true,
+};
 
 export function authHeaders(_ignored?: string) {
   return { 'Content-Type': 'application/json' };
