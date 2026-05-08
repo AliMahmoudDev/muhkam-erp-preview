@@ -10,8 +10,42 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
+
+const OpeningBalanceProductBody = z.object({
+  product_id:  z.coerce.number().int().positive("معرف المنتج مطلوب"),
+  quantity:    z.coerce.number().positive("الكمية يجب أن تكون رقماً موجباً"),
+  cost_price:  z.coerce.number().min(0, "سعر التكلفة غير صحيح"),
+  date:        z.string().optional(),
+  notes:       z.string().optional(),
+});
+
+const OpeningBalanceTreasuryBody = z.object({
+  safe_id: z.coerce.number().int().positive("معرف الخزينة مطلوب"),
+  amount:  z.coerce.number().positive("المبلغ يجب أن يكون رقماً موجباً"),
+  date:    z.string().optional(),
+  notes:   z.string().optional(),
+});
+
+const OpeningBalanceCustomerBody = z.object({
+  customer_id: z.coerce.number().int().positive("معرف العميل مطلوب"),
+  amount:      z.coerce.number().positive("المبلغ يجب أن يكون رقماً موجباً"),
+  date:        z.string().optional(),
+  notes:       z.string().optional(),
+});
+
+const OpeningBalanceSupplierBody = z.object({
+  supplier_id: z.coerce.number().int().positive().optional(),
+  customer_id: z.coerce.number().int().positive().optional(),
+  amount:      z.coerce.number().positive("المبلغ يجب أن يكون رقماً موجباً"),
+  date:        z.string().optional(),
+  notes:       z.string().optional(),
+}).refine(
+  data => data.supplier_id != null || data.customer_id != null,
+  { message: "المورد مطلوب" }
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRODUCT OPENING BALANCE
@@ -39,25 +73,13 @@ router.get("/opening-balance/product", wrap(async (req, res) => {
 }));
 
 router.post("/inventory/opening-balance", wrap(async (req, res) => {
-  const { product_id, quantity, cost_price, date, notes } = req.body;
-
-  if (product_id === undefined || quantity === undefined || cost_price === undefined) {
-    res.status(400).json({ error: "بيانات غير مكتملة — المنتج والكمية والتكلفة مطلوبة" });
+  const parsed = OpeningBalanceProductBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات رصيد أول المدة غير صحيحة", details: parsed.error.issues.map(i => i.message) });
     return;
   }
 
-  const qty = Number(quantity);
-  const cost = Number(cost_price);
-  const prodId = parseInt(product_id);
-
-  if (isNaN(qty) || qty <= 0) {
-    res.status(400).json({ error: "الكمية يجب أن تكون رقماً موجباً" });
-    return;
-  }
-  if (isNaN(cost) || cost < 0) {
-    res.status(400).json({ error: "سعر التكلفة غير صحيح" });
-    return;
-  }
+  const { product_id: prodId, quantity: qty, cost_price: cost, date, notes } = parsed.data;
 
   const role = req.user?.role ?? "cashier";
   const queryWarehouseId = req.query.warehouse_id ? parseInt(String(req.query.warehouse_id), 10) : null;
@@ -159,24 +181,20 @@ router.get("/opening-balance/treasury", wrap(async (req, res) => {
 }));
 
 router.post("/opening-balance/treasury", wrap(async (req, res) => {
-  const { safe_id, amount, date, notes } = req.body;
   const companyId: number = req.user!.company_id!;
 
-  if (!safe_id || amount === undefined) {
-    res.status(400).json({ error: "الخزينة والمبلغ مطلوبان" });
+  const parsed = OpeningBalanceTreasuryBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات رصيد أول المدة للخزينة غير صحيحة", details: parsed.error.issues.map(i => i.message) });
     return;
   }
 
-  const amt = Number(amount);
-  if (isNaN(amt) || amt <= 0) {
-    res.status(400).json({ error: "المبلغ يجب أن يكون رقماً موجباً" });
-    return;
-  }
+  const { safe_id, amount: amt, date, notes } = parsed.data;
 
   const [safe] = await db
     .select()
     .from(safesTable)
-    .where(and(eq(safesTable.id, parseInt(safe_id)), eq(safesTable.company_id, companyId)));
+    .where(and(eq(safesTable.id, safe_id), eq(safesTable.company_id, companyId)));
   if (!safe) {
     res.status(404).json({ error: "الخزينة غير موجودة" });
     return;
@@ -228,21 +246,16 @@ router.get("/opening-balance/customer", wrap(async (req, res) => {
 }));
 
 router.post("/opening-balance/customer", wrap(async (req, res) => {
-  const { customer_id, amount, date, notes } = req.body;
   const companyId: number = req.user!.company_id!;
 
-  if (!customer_id || amount === undefined) {
-    res.status(400).json({ error: "العميل والمبلغ مطلوبان" });
+  const parsed = OpeningBalanceCustomerBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات رصيد أول المدة للعميل غير صحيحة", details: parsed.error.issues.map(i => i.message) });
     return;
   }
 
-  const amt = Number(amount);
-  if (isNaN(amt) || amt <= 0) {
-    res.status(400).json({ error: "المبلغ يجب أن يكون رقماً موجباً" });
-    return;
-  }
+  const { customer_id: custId, amount: amt, date, notes } = parsed.data;
 
-  const custId = parseInt(customer_id);
   const [customer] = await db
     .select()
     .from(customersTable)
@@ -298,22 +311,17 @@ router.get("/opening-balance/supplier", wrap(async (req, res) => {
 }));
 
 router.post("/opening-balance/supplier", wrap(async (req, res) => {
-  const { supplier_id, customer_id: qCustId, amount, date, notes } = req.body;
-  const rawId = supplier_id ?? qCustId;
   const companyId: number = req.user!.company_id!;
 
-  if (!rawId || amount === undefined) {
-    res.status(400).json({ error: "المورد والمبلغ مطلوبان" });
+  const parsed = OpeningBalanceSupplierBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات رصيد أول المدة للمورد غير صحيحة", details: parsed.error.issues.map(i => i.message) });
     return;
   }
 
-  const amt = Number(amount);
-  if (isNaN(amt) || amt <= 0) {
-    res.status(400).json({ error: "المبلغ يجب أن يكون رقماً موجباً" });
-    return;
-  }
+  const { supplier_id, customer_id: qCustId, amount: amt, date, notes } = parsed.data;
+  const custId = supplier_id ?? qCustId!;
 
-  const custId = parseInt(rawId);
   const [customer] = await db
     .select()
     .from(customersTable)

@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db, badDebtsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
 
@@ -9,6 +10,25 @@ function ctx(req: Express.Request) {
   const u = (req as unknown as { user: { company_id: number; id: number; name: string } }).user;
   return { company_id: u.company_id, user_id: u.id, user_name: u.name };
 }
+
+const CreateBadDebtBody = z.object({
+  customer_name:        z.string().min(1, "اسم العميل مطلوب"),
+  amount:               z.number().positive("المبلغ يجب أن يكون رقماً موجباً"),
+  customer_id:          z.number().int().positive().nullish(),
+  reason:               z.string().nullish(),
+  account_id:           z.number().int().positive().nullish(),
+  status:               z.enum(["open", "written_off", "recovered"]).optional().default("open"),
+  source_invoice_id:    z.number().int().positive().nullish(),
+  source_repair_job_id: z.number().int().positive().nullish(),
+  notes:                z.string().nullish(),
+});
+
+const UpdateBadDebtBody = z.object({
+  status: z.enum(["open", "written_off", "recovered"]).optional(),
+  amount: z.number().positive("المبلغ يجب أن يكون رقماً موجباً").optional(),
+  reason: z.string().nullish(),
+  notes:  z.string().nullish(),
+});
 
 router.get("/bad-debts", wrap(async (req, res) => {
   const { company_id } = ctx(req);
@@ -40,21 +60,26 @@ router.get("/bad-debts/stats", wrap(async (req, res) => {
 
 router.post("/bad-debts", wrap(async (req, res) => {
   const { company_id, user_id, user_name } = ctx(req);
-  const b = req.body as Record<string, unknown>;
-  if (!b.customer_name) return res.status(400).json({ error: "اسم العميل مطلوب" });
-  if (!b.amount) return res.status(400).json({ error: "المبلغ مطلوب" });
+
+  const parsed = CreateBadDebtBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "بيانات الديون المعدومة غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+  }
+
+  const { customer_name, amount, customer_id, reason, account_id, status, source_invoice_id, source_repair_job_id, notes } = parsed.data;
+
   const [row] = await db.insert(badDebtsTable).values({
     company_id,
-    customer_id:          b.customer_id ? Number(b.customer_id) : null,
-    customer_name:        String(b.customer_name),
-    amount:               String(b.amount),
-    reason:               b.reason ? String(b.reason) : null,
-    account_id:           b.account_id ? Number(b.account_id) : null,
-    status:               String(b.status ?? "open"),
-    source_invoice_id:    b.source_invoice_id ? Number(b.source_invoice_id) : null,
-    source_repair_job_id: b.source_repair_job_id ? Number(b.source_repair_job_id) : null,
-    notes:                b.notes ? String(b.notes) : null,
-    written_off_at:       b.status === "written_off" ? new Date().toISOString().split("T")[0] : null,
+    customer_id:          customer_id ?? null,
+    customer_name,
+    amount:               String(amount),
+    reason:               reason ?? null,
+    account_id:           account_id ?? null,
+    status,
+    source_invoice_id:    source_invoice_id ?? null,
+    source_repair_job_id: source_repair_job_id ?? null,
+    notes:                notes ?? null,
+    written_off_at:       status === "written_off" ? new Date().toISOString().split("T")[0] : null,
     created_by:           user_id,
     created_by_name:      user_name,
   }).returning();
@@ -64,18 +89,22 @@ router.post("/bad-debts", wrap(async (req, res) => {
 router.patch("/bad-debts/:id", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
-  const b = req.body as Record<string, unknown>;
-  const updates: Record<string, unknown> = {};
-  if (typeof b.status === "string") {
-    if (!["open", "written_off", "recovered"].includes(b.status)) {
-      return res.status(400).json({ error: "حالة غير صالحة" });
-    }
-    updates.status = b.status;
-    if (b.status === "written_off") updates.written_off_at = new Date().toISOString().split("T")[0];
+
+  const parsed = UpdateBadDebtBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "بيانات التحديث غير صحيحة", details: parsed.error.issues.map(i => i.message) });
   }
-  if (typeof b.amount !== "undefined") updates.amount = String(b.amount);
-  if (typeof b.reason !== "undefined") updates.reason = b.reason ? String(b.reason) : null;
-  if (typeof b.notes !== "undefined")  updates.notes  = b.notes ? String(b.notes) : null;
+
+  const { status, amount, reason, notes } = parsed.data;
+  const updates: Record<string, unknown> = {};
+
+  if (status !== undefined) {
+    updates.status = status;
+    if (status === "written_off") updates.written_off_at = new Date().toISOString().split("T")[0];
+  }
+  if (amount !== undefined) updates.amount = String(amount);
+  if (reason !== undefined) updates.reason = reason ?? null;
+  if (notes  !== undefined) updates.notes  = notes  ?? null;
 
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: "لا توجد تغييرات" });
 

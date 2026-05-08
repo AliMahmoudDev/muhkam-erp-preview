@@ -3,9 +3,15 @@ import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { db, purchasesTable, purchaseItemsTable, warehousesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
 router.use("/consignment", requireFeature("consignment"));
+
+const EnsureConsignmentWarehouseBody = z.object({
+  supplier_name: z.string().min(1, "اسم المورد مطلوب"),
+  supplier_id:   z.number().int().positive().optional(),
+});
 
 /* ─── تقرير الائتمان الكامل ─────────────────────────────── */
 router.get("/consignment/report", wrap(async (req, res) => {
@@ -178,9 +184,13 @@ router.post("/consignment/warehouses/ensure", wrap(async (req, res) => {
   const companyId = req.user?.company_id;
   if (!companyId) { res.status(400).json({ error: "company_id مطلوب" }); return; }
 
-  const { supplier_name, supplier_id } = req.body as { supplier_name: string; supplier_id?: number };
-  if (!supplier_name) { res.status(400).json({ error: "supplier_name مطلوب" }); return; }
+  const parsed = EnsureConsignmentWarehouseBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات مخزن الائتمان غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
+  }
 
+  const { supplier_name, supplier_id } = parsed.data;
   const warehouseName = `ائتمان — ${supplier_name}`;
 
   const existing = await db

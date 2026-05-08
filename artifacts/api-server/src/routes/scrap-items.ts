@@ -3,6 +3,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import { db, scrapItemsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
 router.use("/scrap-items", requireFeature("maintenance"));
@@ -11,6 +12,17 @@ function ctx(req: Express.Request) {
   const u = (req as unknown as { user: { company_id: number; id: number; name: string } }).user;
   return { company_id: u.company_id, user_id: u.id, user_name: u.name };
 }
+
+const CreateScrapItemBody = z.object({
+  product_name: z.string().min(1, "اسم المنتج مطلوب"),
+  product_id:   z.number().int().positive().nullish(),
+  quantity:     z.number().positive("الكمية يجب أن تكون رقماً موجباً").optional().default(1),
+  unit_cost:    z.number().min(0, "التكلفة يجب أن تكون صفراً أو أكثر").optional().default(0),
+  warehouse_id: z.number().int().positive().nullish(),
+  reason:       z.string().nullish(),
+  source_type:  z.string().optional().default("manual"),
+  source_id:    z.number().int().positive().nullish(),
+});
 
 router.get("/scrap-items", wrap(async (req, res) => {
   const { company_id } = ctx(req);
@@ -34,18 +46,24 @@ router.get("/scrap-items/stats", wrap(async (req, res) => {
 
 router.post("/scrap-items", wrap(async (req, res) => {
   const { company_id, user_id, user_name } = ctx(req);
-  const b = req.body as Record<string, unknown>;
-  if (!b.product_name) return res.status(400).json({ error: "اسم المنتج مطلوب" });
+
+  const parsed = CreateScrapItemBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "بيانات المخلفات غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+  }
+
+  const { product_name, product_id, quantity, unit_cost, warehouse_id, reason, source_type, source_id } = parsed.data;
+
   const [row] = await db.insert(scrapItemsTable).values({
     company_id,
-    product_id:    b.product_id ? Number(b.product_id) : null,
-    product_name:  String(b.product_name),
-    quantity:      String(b.quantity ?? "1"),
-    unit_cost:     String(b.unit_cost ?? "0"),
-    warehouse_id:  b.warehouse_id ? Number(b.warehouse_id) : null,
-    reason:        b.reason ? String(b.reason) : null,
-    source_type:   b.source_type ? String(b.source_type) : "manual",
-    source_id:     b.source_id ? Number(b.source_id) : null,
+    product_id:    product_id ?? null,
+    product_name,
+    quantity:      String(quantity),
+    unit_cost:     String(unit_cost),
+    warehouse_id:  warehouse_id ?? null,
+    reason:        reason ?? null,
+    source_type,
+    source_id:     source_id ?? null,
     created_by:    user_id,
     created_by_name: user_name,
   }).returning();

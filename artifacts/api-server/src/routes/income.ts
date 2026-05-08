@@ -26,7 +26,7 @@ router.get("/income", wrap(async (req, res) => {
 
 router.post("/income", wrap(async (req, res) => {
   const parsed = CreateIncomeBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  if (!parsed.success) { res.status(400).json({ error: "بيانات الإيراد غير صحيحة", details: parsed.error.issues.map(i => i.message) }); return; }
 
   const safe_id: number | undefined = req.body.safe_id ? parseInt(req.body.safe_id) : undefined;
   const amt = parsed.data.amount;
@@ -68,7 +68,7 @@ router.post("/income", wrap(async (req, res) => {
 
 router.delete("/income/:id", wrap(async (req, res) => {
   const params = DeleteIncomeParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  if (!params.success) { res.status(400).json({ error: "معرف الإيراد غير صحيح", details: params.error.issues.map(i => i.message) }); return; }
   const cid = req.user!.company_id!;
   await db.transaction(async (tx) => {
     const [inc] = await tx.select().from(incomeTable)

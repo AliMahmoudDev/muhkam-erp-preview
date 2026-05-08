@@ -16,16 +16,25 @@ import {
 } from "@workspace/db";
 
 import { wrap } from "../lib/async-handler";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
 
+const ProfitsQueryParams = z.object({
+  date_from:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "تنسيق التاريخ غير صحيح، المطلوب YYYY-MM-DD").optional(),
+  date_to:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "تنسيق التاريخ غير صحيح، المطلوب YYYY-MM-DD").optional(),
+  product_id:    z.string().regex(/^\d+$/, "معرف المنتج يجب أن يكون رقماً").optional(),
+  warehouse_ids: z.string().regex(/^[\d,]+$/, "معرفات المخازن يجب أن تكون أرقاماً مفصولة بفواصل").optional(),
+});
+
 router.get("/profits", wrap(async (req, res) => {
-  const { date_from, date_to, product_id, warehouse_ids } = req.query as {
-    date_from?:    string;
-    date_to?:      string;
-    product_id?:   string;
-    warehouse_ids?: string;
-  };
+  const parsedQuery = ProfitsQueryParams.safeParse(req.query);
+  if (!parsedQuery.success) {
+    res.status(400).json({ error: "معاملات الاستعلام غير صحيحة", details: parsedQuery.error.issues.map(i => i.message) });
+    return;
+  }
+
+  const { date_from, date_to, product_id, warehouse_ids } = parsedQuery.data;
 
   // ── Parse warehouse_ids filter ─────────────────────────────────────────────
   const warehouseIdList: number[] = warehouse_ids
