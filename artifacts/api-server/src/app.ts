@@ -17,7 +17,12 @@ import { swaggerSpec } from './lib/swagger-spec';
 import { logger } from './lib/logger';
 import { sanitizeBody } from './middleware/auth';
 import { makeRateLimitStore } from './lib/rate-limit-store';
-import { recordRequest } from './lib/request-counter';
+import {
+  recordRequest,
+  incrementActiveConnections,
+  decrementActiveConnections,
+  normalizePath,
+} from './lib/request-counter';
 import { alertManager, ALERT_TYPES } from './lib/telegram-alert-manager';
 import { requestTimeout } from './middleware/request-timeout';
 import { perTenantRateLimit } from './middleware/per-tenant-rate-limit';
@@ -154,9 +159,14 @@ app.use(hpp());
 app.use(requestTimeout);
 
 /* ── Request metrics collector ──────────────────────────────── */
-app.use((_req, res, next) => {
+app.use((req, res, next) => {
+  incrementActiveConnections();
   const start = Date.now();
-  res.on('finish', () => recordRequest(res.statusCode, Date.now() - start));
+  res.on('finish', () => {
+    decrementActiveConnections();
+    const routeKey = `${req.method} ${normalizePath(req.path)}`;
+    recordRequest(res.statusCode, Date.now() - start, routeKey);
+  });
   next();
 });
 
