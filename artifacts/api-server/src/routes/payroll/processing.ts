@@ -1,16 +1,11 @@
 /**
- * /api/payroll, /api/salary-structures, /api/tax-brackets, /api/statutory-contributions
- * Full payroll processing system with salary structures, tax calculation, and period management.
+ * Payroll processing — process/approve/pay periods, async jobs, records, and employee payslips.
  */
 import { Router, type IRouter } from "express";
-import { z } from "zod";
 import { eq, and, desc, sql, isNull, gte, lte, ilike, inArray } from "drizzle-orm";
 import {
   db,
-  salaryStructuresTable, salaryComponentsTable,
-  taxBracketsTable, statutoryContributionsTable,
   payrollPeriodsTable, payrollRecordsTable, payrollLineItemsTable,
-  salaryHistoryTable,
   employeesTable,
   monthlyIncentiveSummaryTable,
   salaryAdvancesTable,
@@ -20,311 +15,16 @@ import {
   salesTable, saleItemsTable,
   repairJobsTable, repairJobPartsTable,
   departmentsTable,
+  taxBracketsTable, statutoryContributionsTable,
 } from "@workspace/db";
-import { wrap } from "../lib/async-handler";
-import { hasPermission } from "../lib/permissions";
-import { writeAuditLog } from "../lib/audit-log";
-import { enqueueJob, getJobStatus } from "../lib/job-queue";
-import { requireFeature } from "../middleware/feature-guard";
+import { wrap } from "../../lib/async-handler";
+import { hasPermission } from "../../lib/permissions";
+import { writeAuditLog } from "../../lib/audit-log";
+import { enqueueJob, getJobStatus } from "../../lib/job-queue";
 
 const router: IRouter = Router();
-router.use(["/payroll", "/salary-structures", "/salary-history", "/statutory-contributions", "/tax-brackets"], requireFeature("hr"));
-
-/* ── Zod schemas for payroll mutation bodies ── */
-const salaryStructureSchema = z.object({
-  name_ar:     z.string().min(1, "اسم الهيكل مطلوب").max(200),
-  name_en:     z.string().max(200).optional(),
-  base_salary: z.number().min(0, "الراتب الأساسي لا يمكن أن يكون سالباً").optional().default(0),
-  description: z.string().max(1000).nullable().optional(),
-  is_active:   z.boolean().optional().default(true),
-});
-
-const salaryComponentSchema = z.object({
-  component_type:      z.enum(["allowance","deduction","overtime","bonus","commission","other"]),
-  name_ar:             z.string().min(1, "اسم العنصر مطلوب").max(200),
-  name_en:             z.string().max(200).optional(),
-  amount:              z.number().min(0).nullable().optional(),
-  percentage_of_base:  z.number().min(0).max(100).nullable().optional(),
-  is_mandatory:        z.boolean().optional().default(false),
-  is_taxable:          z.boolean().optional().default(true),
-  sequence:            z.number().int().min(0).optional().default(0),
-});
-
-const taxBracketSchema = z.object({
-  fiscal_year: z.string().regex(/^\d{4}$/, "السنة المالية يجب أن تكون 4 أرقام"),
-  min_salary:  z.number().min(0, "الحد الأدنى لا يمكن أن يكون سالباً"),
-  max_salary:  z.number().positive().nullable().optional(),
-  tax_rate:    z.number().min(0).max(100, "نسبة الضريبة يجب أن تكون بين 0 و100"),
-});
-
-const statutoryContributionSchema = z.object({
-  contribution_type:    z.string().min(1, "نوع الاشتراك مطلوب"),
-  name_ar:              z.string().min(1, "اسم الاشتراك مطلوب").max(200),
-  name_en:              z.string().max(200).optional(),
-  employee_percentage:  z.number().min(0).max(100).optional().default(0),
-  employer_percentage:  z.number().min(0).max(100).optional().default(0),
-  is_mandatory:         z.boolean().optional().default(true),
-  is_active:            z.boolean().optional().default(true),
-});
-
-const payrollPeriodSchema = z.object({
-  name:       z.string().min(1, "اسم الفترة مطلوب").max(200),
-  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "صيغة تاريخ البداية غير صحيحة"),
-  end_date:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "صيغة تاريخ النهاية غير صحيحة"),
-  notes:      z.string().max(1000).nullable().optional(),
-}).refine(d => new Date(d.start_date) < new Date(d.end_date), {
-  message: "تاريخ البداية يجب أن يكون قبل تاريخ النهاية",
-  path: ["end_date"],
-});
 
 function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOString() : (v ?? null); }
-function numOrNull(v: string | null | undefined) { return v != null ? Number(v) : null; }
-
-/* ═══════════════════════════════════════════════════════════════════
-   SALARY STRUCTURES
-══════════════════════════════════════════════════════════════════════ */
-
-router.get("/salary-structures", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
-  const rows = await db.select().from(salaryStructuresTable)
-    .where(eq(salaryStructuresTable.company_id, companyId))
-    .orderBy(salaryStructuresTable.name_ar);
-  res.json(rows.map(r => ({ ...r, base_salary: Number(r.base_salary), created_at: fmt(r.created_at), updated_at: fmt(r.updated_at) })));
-}));
-
-router.post("/salary-structures", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const parsed = salaryStructureSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الهيكل غير صحيحة", details: parsed.error.errors }); return; }
-  const { name_ar, name_en, base_salary, description } = parsed.data;
-  const [row] = await db.insert(salaryStructuresTable).values({
-    company_id: companyId, name_ar: name_ar.trim(), name_en: (name_en?.trim() ?? name_ar.trim()),
-    base_salary: String(base_salary ?? 0), description: description ?? null,
-  }).returning();
-  res.status(201).json({ ...row, base_salary: Number(row.base_salary), created_at: fmt(row.created_at), updated_at: fmt(row.updated_at) });
-}));
-
-router.put("/salary-structures/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const id = parseInt(String(req.params["id"]), 10);
-  const parsed = salaryStructureSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الهيكل غير صحيحة", details: parsed.error.errors }); return; }
-  const { name_ar, name_en, base_salary, description, is_active } = parsed.data;
-  const [row] = await db.update(salaryStructuresTable)
-    .set({ name_ar: name_ar.trim(), name_en: (name_en?.trim() ?? name_ar.trim()), base_salary: String(base_salary ?? 0), description: description ?? null, is_active: is_active ?? true, updated_at: new Date() })
-    .where(and(eq(salaryStructuresTable.id, id), eq(salaryStructuresTable.company_id, companyId)))
-    .returning();
-  if (!row) { res.status(404).json({ error: "الهيكل غير موجود" }); return; }
-  res.json({ ...row, base_salary: Number(row.base_salary), created_at: fmt(row.created_at), updated_at: fmt(row.updated_at) });
-}));
-
-router.delete("/salary-structures/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const id = parseInt(String(req.params["id"]), 10);
-  await db.delete(salaryComponentsTable).where(eq(salaryComponentsTable.salary_structure_id, id));
-  await db.delete(salaryStructuresTable).where(and(eq(salaryStructuresTable.id, id), eq(salaryStructuresTable.company_id, companyId)));
-  res.json({ ok: true });
-}));
-
-/* ── Salary Components ────────────────────────────────────────── */
-router.get("/salary-structures/:id/components", wrap(async (req, res) => {
-  const id = parseInt(String(req.params["id"]), 10);
-  const rows = await db.select().from(salaryComponentsTable)
-    .where(eq(salaryComponentsTable.salary_structure_id, id))
-    .orderBy(salaryComponentsTable.sequence);
-  res.json(rows.map(r => ({ ...r, amount: numOrNull(r.amount), percentage_of_base: numOrNull(r.percentage_of_base), created_at: fmt(r.created_at) })));
-}));
-
-router.post("/salary-structures/:id/components", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const id = parseInt(String(req.params["id"]), 10);
-  const parsed = salaryComponentSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات العنصر غير صحيحة", details: parsed.error.errors }); return; }
-  const { component_type, name_ar, name_en, amount, percentage_of_base, is_mandatory, is_taxable, sequence } = parsed.data;
-  const [row] = await db.insert(salaryComponentsTable).values({
-    salary_structure_id: id, component_type, name_ar,
-    name_en: name_en ?? name_ar, amount: amount != null ? String(amount) : null,
-    percentage_of_base: percentage_of_base != null ? String(percentage_of_base) : null,
-    is_mandatory, is_taxable, sequence,
-  }).returning();
-  res.status(201).json({ ...row, amount: numOrNull(row.amount), percentage_of_base: numOrNull(row.percentage_of_base), created_at: fmt(row.created_at) });
-}));
-
-router.delete("/salary-structures/:structId/components/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const id = parseInt(String(req.params["id"]), 10);
-  await db.delete(salaryComponentsTable).where(eq(salaryComponentsTable.id, id));
-  res.json({ ok: true });
-}));
-
-/* ═══════════════════════════════════════════════════════════════════
-   TAX BRACKETS
-══════════════════════════════════════════════════════════════════════ */
-
-router.get("/tax-brackets", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
-  const year = String(req.query["year"] ?? new Date().getFullYear());
-  const rows = await db.select().from(taxBracketsTable)
-    .where(and(eq(taxBracketsTable.company_id, companyId), eq(taxBracketsTable.fiscal_year, year)))
-    .orderBy(taxBracketsTable.min_salary);
-  res.json(rows.map(r => ({ ...r, min_salary: Number(r.min_salary), max_salary: numOrNull(r.max_salary), tax_rate: Number(r.tax_rate), created_at: fmt(r.created_at) })));
-}));
-
-router.post("/tax-brackets", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const parsed = taxBracketSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الشريحة الضريبية غير صحيحة", details: parsed.error.errors }); return; }
-  const { fiscal_year, min_salary, max_salary, tax_rate } = parsed.data;
-  const [row] = await db.insert(taxBracketsTable).values({
-    company_id: companyId, fiscal_year,
-    min_salary: String(min_salary), max_salary: max_salary != null ? String(max_salary) : null,
-    tax_rate: String(tax_rate),
-  }).returning();
-  res.status(201).json({ ...row, min_salary: Number(row.min_salary), max_salary: numOrNull(row.max_salary), tax_rate: Number(row.tax_rate), created_at: fmt(row.created_at) });
-}));
-
-router.put("/tax-brackets/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const id = parseInt(String(req.params["id"]), 10);
-  const parsed = taxBracketSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الشريحة الضريبية غير صحيحة", details: parsed.error.errors }); return; }
-  const { fiscal_year, min_salary, max_salary, tax_rate } = parsed.data;
-  const [row] = await db.update(taxBracketsTable)
-    .set({ fiscal_year, min_salary: String(min_salary), max_salary: max_salary != null ? String(max_salary) : null, tax_rate: String(tax_rate) })
-    .where(and(eq(taxBracketsTable.id, id), eq(taxBracketsTable.company_id, companyId)))
-    .returning();
-  if (!row) { res.status(404).json({ error: "الشريحة الضريبية غير موجودة" }); return; }
-  res.json({ ...row, min_salary: Number(row.min_salary), max_salary: numOrNull(row.max_salary), tax_rate: Number(row.tax_rate), created_at: fmt(row.created_at) });
-}));
-
-router.delete("/tax-brackets/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const id = parseInt(String(req.params["id"]), 10);
-  await db.delete(taxBracketsTable).where(and(eq(taxBracketsTable.id, id), eq(taxBracketsTable.company_id, companyId)));
-  res.json({ ok: true });
-}));
-
-/* ═══════════════════════════════════════════════════════════════════
-   STATUTORY CONTRIBUTIONS
-══════════════════════════════════════════════════════════════════════ */
-
-router.get("/statutory-contributions", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
-  const rows = await db.select().from(statutoryContributionsTable)
-    .where(eq(statutoryContributionsTable.company_id, companyId))
-    .orderBy(statutoryContributionsTable.name_ar);
-  res.json(rows.map(r => ({ ...r, employee_percentage: Number(r.employee_percentage), employer_percentage: Number(r.employer_percentage), created_at: fmt(r.created_at) })));
-}));
-
-router.post("/statutory-contributions", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const parsed = statutoryContributionSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الاشتراك غير صحيحة", details: parsed.error.errors }); return; }
-  const { contribution_type, name_ar, name_en, employee_percentage, employer_percentage, is_mandatory } = parsed.data;
-  const [row] = await db.insert(statutoryContributionsTable).values({
-    company_id: companyId, contribution_type,
-    name_ar, name_en: name_en ?? name_ar,
-    employee_percentage: String(employee_percentage ?? 0),
-    employer_percentage: String(employer_percentage ?? 0),
-    is_mandatory: is_mandatory ?? true,
-  }).returning();
-  res.status(201).json({ ...row, employee_percentage: Number(row.employee_percentage), employer_percentage: Number(row.employer_percentage), created_at: fmt(row.created_at) });
-}));
-
-router.put("/statutory-contributions/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const id = parseInt(String(req.params["id"]), 10);
-  const parsed = statutoryContributionSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الاشتراك غير صحيحة", details: parsed.error.errors }); return; }
-  const { name_ar, name_en, employee_percentage, employer_percentage, is_mandatory, is_active } = parsed.data;
-  const [row] = await db.update(statutoryContributionsTable)
-    .set({ name_ar, name_en: name_en ?? name_ar, employee_percentage: String(employee_percentage ?? 0), employer_percentage: String(employer_percentage ?? 0), is_mandatory: is_mandatory ?? true, is_active: is_active ?? true })
-    .where(and(eq(statutoryContributionsTable.id, id), eq(statutoryContributionsTable.company_id, companyId)))
-    .returning();
-  if (!row) { res.status(404).json({ error: "الاشتراك غير موجود" }); return; }
-  res.json({ ...row, employee_percentage: Number(row.employee_percentage), employer_percentage: Number(row.employer_percentage), created_at: fmt(row.created_at) });
-}));
-
-router.delete("/statutory-contributions/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const id = parseInt(String(req.params["id"]), 10);
-  await db.delete(statutoryContributionsTable).where(and(eq(statutoryContributionsTable.id, id), eq(statutoryContributionsTable.company_id, companyId)));
-  res.json({ ok: true });
-}));
-
-/* ═══════════════════════════════════════════════════════════════════
-   PAYROLL PERIODS
-══════════════════════════════════════════════════════════════════════ */
-
-router.get("/payroll/periods", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const rows = await db.select().from(payrollPeriodsTable)
-    .where(eq(payrollPeriodsTable.company_id, companyId))
-    .orderBy(desc(payrollPeriodsTable.start_date));
-  res.json(rows.map(r => ({ ...r, created_at: fmt(r.created_at), updated_at: fmt(r.updated_at), processed_at: fmt(r.processed_at) })));
-}));
-
-router.post("/payroll/periods", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const userId = req.user?.id ?? null;
-  const parsed = payrollPeriodSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الفترة غير صحيحة", details: parsed.error.errors }); return; }
-  const { name, start_date, end_date, notes } = parsed.data;
-  // Check no overlapping active period
-  const overlap = await db.select({ id: payrollPeriodsTable.id }).from(payrollPeriodsTable)
-    .where(and(eq(payrollPeriodsTable.company_id, companyId), sql`status NOT IN ('cancelled','paid')`,
-      sql`(start_date <= ${end_date} AND end_date >= ${start_date})`));
-  if (overlap.length > 0) { res.status(409).json({ error: "توجد فترة مرتبات نشطة تتداخل مع هذه الفترة" }); return; }
-  const [row] = await db.insert(payrollPeriodsTable).values({ company_id: companyId, name: name.trim(), start_date, end_date, notes: notes ?? null, processed_by: userId }).returning();
-  res.status(201).json({ ...row, created_at: fmt(row.created_at), updated_at: fmt(row.updated_at), processed_at: fmt(row.processed_at) });
-}));
-
-router.get("/payroll/periods/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const id = parseInt(String(req.params["id"]), 10);
-  const [period] = await db.select().from(payrollPeriodsTable)
-    .where(and(eq(payrollPeriodsTable.id, id), eq(payrollPeriodsTable.company_id, companyId)));
-  if (!period) { res.status(404).json({ error: "الفترة غير موجودة" }); return; }
-  const records = await db.select({
-    id: payrollRecordsTable.id, employee_id: payrollRecordsTable.employee_id,
-    gross_salary: payrollRecordsTable.gross_salary, net_salary: payrollRecordsTable.net_salary,
-    status: payrollRecordsTable.status, currency: payrollRecordsTable.currency,
-    first_name_ar: employeesTable.first_name_ar, last_name_ar: employeesTable.last_name_ar,
-    employee_code: employeesTable.employee_code,
-  })
-    .from(payrollRecordsTable)
-    .leftJoin(employeesTable, eq(payrollRecordsTable.employee_id, employeesTable.id))
-    .where(eq(payrollRecordsTable.payroll_period_id, id));
-  res.json({
-    ...period, created_at: fmt(period.created_at), updated_at: fmt(period.updated_at), processed_at: fmt(period.processed_at),
-    records: records.map(r => ({ ...r, gross_salary: Number(r.gross_salary), net_salary: Number(r.net_salary) })),
-  });
-}));
-
-router.put("/payroll/periods/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
-  const id = parseInt(String(req.params["id"]), 10);
-  const { name, notes } = req.body as Record<string, string>;
-  const [row] = await db.update(payrollPeriodsTable)
-    .set({ name: name?.trim() ?? "", notes: notes ?? null, updated_at: new Date() })
-    .where(and(eq(payrollPeriodsTable.id, id), eq(payrollPeriodsTable.company_id, companyId), eq(payrollPeriodsTable.status, "draft")))
-    .returning();
-  if (!row) { res.status(404).json({ error: "الفترة غير موجودة أو لا يمكن تعديلها" }); return; }
-  res.json({ ...row, created_at: fmt(row.created_at), updated_at: fmt(row.updated_at), processed_at: fmt(row.processed_at) });
-}));
 
 /* ── Process Payroll ──────────────────────────────────────────── */
 router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
@@ -338,17 +38,13 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   if (!period) { res.status(404).json({ error: "الفترة غير موجودة" }); return; }
   if (period.status !== "draft") { res.status(409).json({ error: "تمت معالجة هذه الفترة مسبقاً" }); return; }
 
-  // Fetch all active employees
   const employees = await db.select().from(employeesTable)
     .where(and(eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at), eq(employeesTable.employment_status, "active")));
 
-  // Fetch tax brackets for current year
   const year = new Date().getFullYear().toString();
   const taxBrackets = await db.select().from(taxBracketsTable)
     .where(and(eq(taxBracketsTable.company_id, companyId), eq(taxBracketsTable.fiscal_year, year)))
     .orderBy(taxBracketsTable.min_salary);
-
-  // Fetch statutory contributions
   const contributions = await db.select().from(statutoryContributionsTable)
     .where(and(eq(statutoryContributionsTable.company_id, companyId), eq(statutoryContributionsTable.is_active, true)));
 
@@ -370,9 +66,6 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   const salesGross = Number(salesRevRow?.gross_revenue ?? 0);
   const salesCost  = Number(salesRevRow?.cost_total ?? 0);
 
-  // إيرادات الصيانة (التذاكر المُسلَّمة في الفترة)
-  // ملاحظة على التسمية: العمود external_workshop_cost = تكلفة ورشة خارجية،
-  // و broker_commission = عمولة وسيط — كلاهما يُخصم من إيراد الصيانة الصافي.
   const [repairRevRow] = await db.select({
     gross_revenue:    sql<string>`COALESCE(SUM(CAST(${repairJobsTable.final_cost} AS numeric)), 0)`,
     workshop_cost:    sql<string>`COALESCE(SUM(CAST(${repairJobsTable.external_workshop_cost} AS numeric)), 0)`,
@@ -384,11 +77,10 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       sql`${repairJobsTable.delivered_at} >= ${period.start_date}`,
       sql`${repairJobsTable.delivered_at} <= ${period.end_date}`,
     ));
-  const repairGross         = Number(repairRevRow?.gross_revenue ?? 0);
-  const repairWorkshopCost  = Number(repairRevRow?.workshop_cost ?? 0);
-  const repairBrokerComm    = Number(repairRevRow?.broker_comm_sum ?? 0);
+  const repairGross        = Number(repairRevRow?.gross_revenue ?? 0);
+  const repairWorkshopCost = Number(repairRevRow?.workshop_cost ?? 0);
+  const repairBrokerComm   = Number(repairRevRow?.broker_comm_sum ?? 0);
 
-  // قطع الغيار للصيانة
   const [repairPartsCostRow] = await db.select({
     parts_cost: sql<string>`COALESCE(SUM(CAST(${repairJobPartsTable.unit_price} AS numeric) * CAST(${repairJobPartsTable.quantity} AS numeric)), 0)`,
   }).from(repairJobPartsTable)
@@ -404,7 +96,6 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   const repairPartsCost = Number(repairPartsCostRow?.parts_cost ?? 0);
 
   const companyGrossRevenue = salesGross + repairGross;
-  // صافي الشركة = صافي المبيعات + صافي الصيانة (إجمالي − تكلفة ورشة خارجية − قطع غيار − عمولة وسيط)
   const companyNetRevenue   = Math.max(
     0,
     (salesGross - salesCost) + (repairGross - repairWorkshopCost - repairPartsCost - repairBrokerComm)
@@ -413,17 +104,14 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   const processedRecords: Array<Record<string, unknown>> = [];
 
   for (const emp of employees) {
-    // Check not already processed for this period
     const existing = await db.select({ id: payrollRecordsTable.id }).from(payrollRecordsTable)
       .where(and(eq(payrollRecordsTable.payroll_period_id, id), eq(payrollRecordsTable.employee_id, emp.id)));
     if (existing.length > 0) continue;
 
-    const baseSalary = Number(emp.salary ?? 0);
+    const baseSalary     = Number(emp.salary ?? 0);
     const commissionRate = Number(emp.commission_rate ?? 0);
-    // Allow employees with commission even if base salary is 0
     if (baseSalary <= 0 && commissionRate <= 0) continue;
 
-    // Calculate gross salary (base + allowances from structure — simplified: use base salary)
     const grossSalary = baseSalary;
     const lineItems: Array<{ component_name: string; component_type: string; amount: number; description?: string }> = [];
 
@@ -431,21 +119,16 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       lineItems.push({ component_name: "الراتب الأساسي", component_type: "base", amount: baseSalary });
     }
 
-    // ── Commission / profit share ──────────────────────────────────
     let commissionAmount = 0;
     if (commissionRate > 0) {
       const commissionBasis = (emp.commission_basis ?? 'gross') as 'gross' | 'net';
       const scopeDeptId     = emp.commission_scope_dept_id;
-
       let revenueBase = 0;
 
       if (scopeDeptId) {
-        // Dept-scoped: fetch revenue only from sales linked to that department's employees
-        // (sales don't have dept_id directly — use salesperson_id from employees in that dept)
         const deptEmpIds = await db.select({ id: employeesTable.id }).from(employeesTable)
           .where(and(eq(employeesTable.company_id, companyId), eq(employeesTable.department_id, scopeDeptId), isNull(employeesTable.deleted_at)));
         const ids = deptEmpIds.map(e => e.id);
-
         if (ids.length > 0) {
           const [deptRevRow] = await db.select({
             gross: sql<string>`COALESCE(SUM(${salesTable.total_amount}), 0)`,
@@ -467,7 +150,6 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
           revenueBase = commissionBasis === 'net' ? Math.max(0, deptGross - deptCost) : deptGross;
         }
       } else {
-        // Company-wide
         revenueBase = commissionBasis === 'net' ? companyNetRevenue : companyGrossRevenue;
       }
 
@@ -486,7 +168,6 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       }
     }
 
-    // Statutory deductions
     let totalDeductions = 0;
     for (const contrib of contributions) {
       const empDeduction = grossSalary * Number(contrib.employee_percentage) / 100;
@@ -496,11 +177,10 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       }
     }
 
-    // Tax calculation using progressive brackets
     let taxAmount = 0;
     for (const bracket of taxBrackets) {
-      const min = Number(bracket.min_salary);
-      const max = bracket.max_salary != null ? Number(bracket.max_salary) : Infinity;
+      const min  = Number(bracket.min_salary);
+      const max  = bracket.max_salary != null ? Number(bracket.max_salary) : Infinity;
       const rate = Number(bracket.tax_rate);
       if (grossSalary > min) {
         const taxable = Math.min(grossSalary, max) - min;
@@ -511,7 +191,6 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       lineItems.push({ component_name: "ضريبة الدخل", component_type: "tax", amount: -taxAmount });
     }
 
-    // Salary advance deductions
     const advances = await db.select().from(salaryAdvancesTable)
       .where(and(eq(salaryAdvancesTable.employee_id, emp.id), eq(salaryAdvancesTable.status, "active")));
     let advanceDeductions = 0;
@@ -523,7 +202,6 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       }
     }
 
-    // Attendance & manual deductions in the payroll period
     const empDeductions = await db.select().from(employeeDeductionsTable)
       .where(and(
         eq(employeeDeductionsTable.employee_id, emp.id),
@@ -540,7 +218,6 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       }
     }
 
-    // Incentives
     const periodMonth = period.start_date.substring(0, 7);
     const [incentiveSummary] = await db.select().from(monthlyIncentiveSummaryTable)
       .where(and(eq(monthlyIncentiveSummaryTable.employee_id, emp.id), eq(monthlyIncentiveSummaryTable.month, periodMonth)));
@@ -564,12 +241,10 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
       status: "draft",
     }).returning();
 
-    // Insert line items
     await db.insert(payrollLineItemsTable).values(
       lineItems.map(li => ({ payroll_record_id: record.id, component_name: li.component_name, component_type: li.component_type, amount: String(li.amount), description: li.description ?? null }))
     );
 
-    // Update incentive summary
     if (incentiveSummary && incentiveAmount > 0) {
       await db.update(monthlyIncentiveSummaryTable)
         .set({ status: "included_in_payroll", included_in_payroll_record_id: record.id, updated_at: new Date() })
@@ -579,7 +254,6 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
     processedRecords.push({ ...record, net_salary: Math.max(0, netSalary), gross_salary: grossSalary });
   }
 
-  // Update period status
   await db.update(payrollPeriodsTable)
     .set({ status: "processing", processed_by: userId, processed_at: new Date(), updated_at: new Date() })
     .where(eq(payrollPeriodsTable.id, id));
@@ -606,7 +280,6 @@ router.post("/payroll/periods/:id/approve", wrap(async (req, res) => {
   if (!row) { res.status(409).json({ error: "لا يمكن اعتماد هذه الفترة في حالتها الحالية" }); return; }
   await db.update(payrollRecordsTable).set({ status: "approved", updated_at: new Date() }).where(eq(payrollRecordsTable.payroll_period_id, id));
 
-  // ── قيد يومي تلقائي للرواتب ──
   try {
     const records = await db.select({ net_salary: payrollRecordsTable.net_salary })
       .from(payrollRecordsTable).where(eq(payrollRecordsTable.payroll_period_id, id));
@@ -649,17 +322,14 @@ router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
   const rawSafeId = safe_id ? parseInt(String(safe_id), 10) : NaN;
   if (!rawSafeId || isNaN(rawSafeId)) { res.status(400).json({ error: "يجب اختيار الخزانة لصرف الرواتب" }); return; }
 
-  // Fetch period
   const [period] = await db.select().from(payrollPeriodsTable)
     .where(and(eq(payrollPeriodsTable.id, id), eq(payrollPeriodsTable.company_id, companyId)));
   if (!period) { res.status(404).json({ error: "الفترة غير موجودة" }); return; }
   if (period.status !== "approved") { res.status(409).json({ error: "يجب اعتماد الفترة أولاً قبل الصرف" }); return; }
 
-  // Only fetch UNPAID records (skip employees already paid individually)
   const unpaidRecords = await db.select({ net_salary: payrollRecordsTable.net_salary, id: payrollRecordsTable.id })
     .from(payrollRecordsTable)
     .where(and(eq(payrollRecordsTable.payroll_period_id, id), sql`${payrollRecordsTable.status} != 'paid'`));
-
   if (unpaidRecords.length === 0) {
     res.status(409).json({ error: "جميع الرواتب في هذه الفترة تم صرفها مسبقاً" }); return;
   }
@@ -668,9 +338,7 @@ router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
   if (totalNet <= 0) { res.status(400).json({ error: "لا يوجد مبلغ للصرف" }); return; }
   const unpaidIds = unpaidRecords.map(r => r.id);
 
-  // Run in transaction
   const result = await db.transaction(async (tx) => {
-    // 1. Fetch & validate safe
     const [safe] = await tx.select().from(safesTable)
       .where(and(eq(safesTable.id, rawSafeId), eq(safesTable.company_id, companyId)));
     if (!safe) return { error: { status: 404, message: "الخزانة المحددة غير موجودة" } };
@@ -678,12 +346,10 @@ router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
       return { error: { status: 422, message: `رصيد الخزانة "${safe.name}" غير كافٍ — المتاح: ${Number(safe.balance).toFixed(2)} والمطلوب: ${totalNet.toFixed(2)}` } };
     }
 
-    // 2. Deduct from safe
     await tx.update(safesTable)
       .set({ balance: sql`${safesTable.balance} - ${String(totalNet)}` })
       .where(eq(safesTable.id, rawSafeId));
 
-    // 3. Record treasury transaction
     await tx.insert(transactionsTable).values({
       type:           "payroll_disbursement",
       reference_type: "payroll_period",
@@ -697,7 +363,6 @@ router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
       company_id:     companyId,
     });
 
-    // 4. Journal entry: رواتب مستحقة (DR) / الخزانة (CR)
     try {
       const [liabAcc] = await tx.select().from(accountsTable)
         .where(and(eq(accountsTable.company_id, companyId), eq(accountsTable.type, "liability"), eq(accountsTable.is_posting, true), ilike(accountsTable.name, "%رواتب%")))
@@ -721,7 +386,6 @@ router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
       }
     } catch { /* القيد اختياري */ }
 
-    // 5. Update ONLY unpaid records → paid, then update period
     await tx.update(payrollRecordsTable)
       .set({ status: "paid", updated_at: new Date() })
       .where(inArray(payrollRecordsTable.id, unpaidIds));
@@ -805,14 +469,13 @@ router.post("/payroll/periods/:id/process-async", wrap(async (req, res) => {
   if (period.status !== "draft") { res.status(409).json({ error: "تمت معالجة هذه الفترة مسبقاً" }); return; }
 
   const jobId = enqueueJob("payroll_process", { periodId, companyId, userId }, async (_job, updateProgress) => {
-    // Delegate to the synchronous processor by calling the shared payroll logic
     const employees = await db.select().from(employeesTable)
       .where(and(eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at), eq(employeesTable.employment_status, "active")));
 
     updateProgress(5);
 
     const year = new Date().getFullYear().toString();
-    const [taxBrackets, contributions] = await Promise.all([
+    const [taxBracketsAsync, contributionsAsync] = await Promise.all([
       db.select().from(taxBracketsTable)
         .where(and(eq(taxBracketsTable.company_id, companyId), eq(taxBracketsTable.fiscal_year, year)))
         .orderBy(taxBracketsTable.min_salary),
@@ -836,7 +499,7 @@ router.post("/payroll/periods/:id/process-async", wrap(async (req, res) => {
       lineItems.push({ component_name: "الراتب الأساسي", component_type: "base", amount: baseSalary });
 
       let totalDeductions = 0;
-      for (const contrib of contributions) {
+      for (const contrib of contributionsAsync) {
         const empDeduction = grossSalary * Number(contrib.employee_percentage) / 100;
         if (empDeduction > 0) {
           lineItems.push({ component_name: contrib.name_ar, component_type: "deduction", amount: -empDeduction });
@@ -845,9 +508,9 @@ router.post("/payroll/periods/:id/process-async", wrap(async (req, res) => {
       }
 
       let taxAmount = 0;
-      for (const bracket of taxBrackets) {
-        const min = Number(bracket.min_salary);
-        const max = bracket.max_salary != null ? Number(bracket.max_salary) : Infinity;
+      for (const bracket of taxBracketsAsync) {
+        const min  = Number(bracket.min_salary);
+        const max  = bracket.max_salary != null ? Number(bracket.max_salary) : Infinity;
         const rate = Number(bracket.tax_rate);
         if (grossSalary > min) taxAmount += (Math.min(grossSalary, max) - min) * rate / 100;
       }
@@ -917,7 +580,7 @@ router.get("/payroll/jobs/:jobId", wrap(async (req, res) => {
   res.json(job);
 }));
 
-/* ─ Payroll Record ────────────────────────────────────────────── */
+/* ── Payroll Record ───────────────────────────────────────────── */
 router.get("/payroll/records/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const id = parseInt(String(req.params["id"]), 10);
@@ -968,7 +631,6 @@ router.post("/payroll/records/:id/pay", wrap(async (req, res) => {
   const rawSafeId = safe_id ? parseInt(String(safe_id), 10) : NaN;
   if (!rawSafeId || isNaN(rawSafeId)) { res.status(400).json({ error: "يجب اختيار الخزانة لصرف الراتب" }); return; }
 
-  // Fetch record with employee & period info
   const [record] = await db.select({
     id: payrollRecordsTable.id,
     net_salary: payrollRecordsTable.net_salary,
@@ -996,7 +658,6 @@ router.post("/payroll/records/:id/pay", wrap(async (req, res) => {
   if (amount <= 0) { res.status(400).json({ error: "لا يوجد مبلغ للصرف" }); return; }
 
   const result = await db.transaction(async (tx) => {
-    // 1. Fetch & validate safe
     const [safe] = await tx.select().from(safesTable)
       .where(and(eq(safesTable.id, rawSafeId), eq(safesTable.company_id, companyId)));
     if (!safe) return { error: { status: 404, message: "الخزانة المحددة غير موجودة" } };
@@ -1004,12 +665,10 @@ router.post("/payroll/records/:id/pay", wrap(async (req, res) => {
       return { error: { status: 422, message: `رصيد الخزانة "${safe.name}" غير كافٍ — المتاح: ${Number(safe.balance).toFixed(2)} والمطلوب: ${amount.toFixed(2)}` } };
     }
 
-    // 2. Deduct from safe
     await tx.update(safesTable)
       .set({ balance: sql`${safesTable.balance} - ${String(amount)}` })
       .where(eq(safesTable.id, rawSafeId));
 
-    // 3. Record treasury transaction
     const empName = `${record.first_name_ar ?? ''} ${record.last_name_ar ?? ''}`.trim();
     await tx.insert(transactionsTable).values({
       type:           "payroll_disbursement",
@@ -1024,12 +683,10 @@ router.post("/payroll/records/:id/pay", wrap(async (req, res) => {
       company_id:     companyId,
     });
 
-    // 4. Update record status → paid
     await tx.update(payrollRecordsTable)
       .set({ status: "paid", updated_at: new Date() })
       .where(eq(payrollRecordsTable.id, id));
 
-    // 5. Check if ALL records in the period are now paid → update period to paid
     const remaining = await tx.select({ id: payrollRecordsTable.id })
       .from(payrollRecordsTable)
       .where(and(
@@ -1059,29 +716,6 @@ router.post("/payroll/records/:id/reject", wrap(async (req, res) => {
   const { reason } = req.body as { reason?: string };
   await db.update(payrollRecordsTable).set({ status: "rejected", notes: reason ?? "مرفوض", updated_at: new Date() }).where(eq(payrollRecordsTable.id, id));
   res.json({ ok: true });
-}));
-
-/* ── Salary History ───────────────────────────────────────────── */
-router.get("/salary-history/:employeeId", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const empId = parseInt(String(req.params["employeeId"]), 10);
-  const rows = await db.select().from(salaryHistoryTable)
-    .where(eq(salaryHistoryTable.employee_id, empId))
-    .orderBy(desc(salaryHistoryTable.effective_date));
-  res.json(rows.map(r => ({ ...r, salary_amount: Number(r.salary_amount), created_at: fmt(r.created_at) })));
-}));
-
-router.post("/salary-history", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const userId = req.user?.id ?? null;
-  const { employee_id, salary_amount, currency, effective_date, reason } = req.body as Record<string, unknown>;
-  if (!employee_id || !salary_amount || !effective_date) { res.status(400).json({ error: "بيانات التاريخ الوظيفي غير مكتملة" }); return; }
-  const [row] = await db.insert(salaryHistoryTable).values({
-    employee_id: Number(employee_id), salary_amount: String(Number(salary_amount)),
-    currency: String(currency ?? "EGP"), effective_date: String(effective_date),
-    reason: (reason as string) ?? null, created_by: userId,
-  }).returning();
-  res.status(201).json({ ...row, salary_amount: Number(row.salary_amount), created_at: fmt(row.created_at) });
 }));
 
 export default router;
