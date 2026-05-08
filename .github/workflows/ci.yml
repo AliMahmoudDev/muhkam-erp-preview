@@ -68,6 +68,45 @@ jobs:
           NODE_ENV: test
         run: pnpm --filter @workspace/api-server test
 
+      - name: Check coverage (backend)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          JWT_SECRET: ci-unit-test-jwt-secret-minimum-32chars!!
+          JWT_REFRESH_SECRET: ci-unit-test-jwt-refresh-secret-min-32chars!!
+          NODE_ENV: test
+        run: pnpm --filter @workspace/api-server test:coverage
+
+  test-frontend:
+    name: Frontend Tests & Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared libraries
+        run: pnpm --filter @workspace/api-client-react build
+
+      - name: Run frontend tests
+        run: pnpm --filter @workspace/erp-system test
+
+      - name: Check coverage (frontend)
+        run: pnpm --filter @workspace/erp-system test:coverage
+
   lint:
     name: Lint & Type Check
     runs-on: ubuntu-latest
@@ -108,7 +147,7 @@ jobs:
     name: Build Check
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [test-backend, lint]
+    needs: [test-backend, test-frontend, lint]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
