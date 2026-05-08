@@ -11,29 +11,29 @@
  */
 
 interface Bucket {
-  count:    number;
+  count: number;
   latencies: number[];
-  errors:   number;
+  errors: number;
 }
 
 interface RouteStats {
-  count:    number;
-  totalMs:  number;
-  errors:   number;
-  latencies: number[];    // capped at ROUTE_SAMPLE per route
+  count: number;
+  totalMs: number;
+  errors: number;
+  latencies: number[]; // capped at ROUTE_SAMPLE per route
 }
 
-const WINDOW_MAX   = 10_000; // global latency window
-const ROUTE_SAMPLE = 500;    // latency samples kept per route
-const MINUTE_MS    = 60_000;
+const WINDOW_MAX = 10_000; // global latency window
+const ROUTE_SAMPLE = 500; // latency samples kept per route
+const MINUTE_MS = 60_000;
 
 const bucket: Bucket = { count: 0, latencies: [], errors: 0 };
-const statusCodes: Record<string, number>    = {};
+const statusCodes: Record<string, number> = {};
 const routeMap = new Map<string, RouteStats>();
 const recentTs: number[] = []; // timestamps for req/min sliding window
 
 let activeConnections = 0;
-let startedAt         = Date.now();
+let startedAt = Date.now();
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
 
@@ -52,9 +52,15 @@ function percentile(sorted: number[], p: number): number {
 
 /* ── Active-connection gauge ────────────────────────────────────────── */
 
-export function incrementActiveConnections(): void { activeConnections++; }
-export function decrementActiveConnections(): void { if (activeConnections > 0) activeConnections--; }
-export function getActiveConnections(): number     { return activeConnections; }
+export function incrementActiveConnections(): void {
+  activeConnections++;
+}
+export function decrementActiveConnections(): void {
+  if (activeConnections > 0) activeConnections--;
+}
+export function getActiveConnections(): number {
+  return activeConnections;
+}
 
 /* ── Core recorder (called per response) ───────────────────────────── */
 
@@ -65,14 +71,9 @@ export function getActiveConnections(): number     { return activeConnections; }
  * @param durationMs  Total response time in milliseconds
  * @param routeKey    Optional normalised "METHOD /path" string for per-route stats
  */
-export function recordRequest(
-  statusCode:  number,
-  durationMs:  number,
-  routeKey?:   string,
-): void {
+export function recordRequest(statusCode: number, durationMs: number, routeKey?: string): void {
   const isError = statusCode >= 400;
 
-  /* global bucket */
   bucket.count++;
   if (isError) bucket.errors++;
   statusCodes[String(statusCode)] = (statusCodes[String(statusCode)] ?? 0) + 1;
@@ -82,7 +83,7 @@ export function recordRequest(
     bucket.latencies.splice(0, bucket.latencies.length - WINDOW_MAX);
 
   /* sliding-minute window */
-  const now    = Date.now();
+  const now = Date.now();
   const cutoff = now - MINUTE_MS;
   recentTs.push(now);
   while (recentTs.length && recentTs[0] < cutoff) recentTs.shift();
@@ -94,8 +95,7 @@ export function recordRequest(
     r.totalMs += durationMs;
     if (isError) r.errors++;
     r.latencies.push(durationMs);
-    if (r.latencies.length > ROUTE_SAMPLE)
-      r.latencies.splice(0, r.latencies.length - ROUTE_SAMPLE);
+    if (r.latencies.length > ROUTE_SAMPLE) r.latencies.splice(0, r.latencies.length - ROUTE_SAMPLE);
     routeMap.set(routeKey, r);
   }
 }
@@ -107,11 +107,11 @@ export function getMetrics() {
   return {
     uptime_seconds: Math.round((Date.now() - startedAt) / 1000),
     total_requests: bucket.count,
-    status_codes:   statusCodes,
+    status_codes: statusCodes,
     latency_ms: {
-      p50:     percentile(sorted, 50),
-      p95:     percentile(sorted, 95),
-      p99:     percentile(sorted, 99),
+      p50: percentile(sorted, 50),
+      p95: percentile(sorted, 95),
+      p99: percentile(sorted, 99),
       samples: sorted.length,
     },
     memory_mb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
@@ -131,17 +131,19 @@ export function getErrorRate(): number {
 }
 
 /** Raw total error count (status ≥ 400). */
-export function getTotalErrors(): number { return bucket.errors; }
+export function getTotalErrors(): number {
+  return bucket.errors;
+}
 
 /**
  * Top `limit` slowest routes by average response time.
  * Returns route key, avg latency, p95 latency, request count, and error count.
  */
 export function getSlowestEndpoints(limit = 5): Array<{
-  route:  string;
+  route: string;
   avg_ms: number;
   p95_ms: number;
-  count:  number;
+  count: number;
   errors: number;
 }> {
   return Array.from(routeMap.entries())
@@ -149,10 +151,10 @@ export function getSlowestEndpoints(limit = 5): Array<{
       const sorted = [...s.latencies].sort((a, b) => a - b);
       return {
         route,
-        avg_ms:  s.count ? Math.round(s.totalMs / s.count) : 0,
-        p95_ms:  percentile(sorted, 95),
-        count:   s.count,
-        errors:  s.errors,
+        avg_ms: s.count ? Math.round(s.totalMs / s.count) : 0,
+        p95_ms: percentile(sorted, 95),
+        count: s.count,
+        errors: s.errors,
       };
     })
     .sort((a, b) => b.avg_ms - a.avg_ms)
@@ -165,32 +167,32 @@ export function getSlowestEndpoints(limit = 5): Array<{
  */
 export function getPrometheusSnapshot() {
   const sorted = [...bucket.latencies].sort((a, b) => a - b);
-  const sum    = bucket.latencies.reduce((acc, v) => acc + v, 0);
+  const sum = bucket.latencies.reduce((acc, v) => acc + v, 0);
   return {
-    total_requests:    bucket.count,
-    error_count:       bucket.errors,
+    total_requests: bucket.count,
+    error_count: bucket.errors,
     active_connections: activeConnections,
-    uptime_seconds:    Math.round((Date.now() - startedAt) / 1000),
-    memory_bytes:      process.memoryUsage().heapUsed,
+    uptime_seconds: Math.round((Date.now() - startedAt) / 1000),
+    memory_bytes: process.memoryUsage().heapUsed,
     latency: {
-      p50:   percentile(sorted, 50),
-      p95:   percentile(sorted, 95),
-      p99:   percentile(sorted, 99),
+      p50: percentile(sorted, 50),
+      p95: percentile(sorted, 95),
+      p99: percentile(sorted, 99),
       count: sorted.length,
-      sum:   Math.round(sum),
+      sum: Math.round(sum),
     },
   };
 }
 
 /** Reset all counters — used in tests. */
 export function resetMetrics(): void {
-  bucket.count            = 0;
+  bucket.count = 0;
   bucket.latencies.length = 0;
-  bucket.errors           = 0;
+  bucket.errors = 0;
   // eslint-disable-next-line security/detect-object-injection
   Object.keys(statusCodes).forEach((k) => delete statusCodes[k]);
   routeMap.clear();
-  recentTs.length  = 0;
+  recentTs.length = 0;
   activeConnections = 0;
-  startedAt         = Date.now();
+  startedAt = Date.now();
 }
