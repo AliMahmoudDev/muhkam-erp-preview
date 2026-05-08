@@ -6,9 +6,14 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db, notificationsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
 const fmt = (v: Date | null | undefined) => (v instanceof Date ? v.toISOString() : (v ?? null));
+
+const NotificationIdParam = z.object({
+  id: z.coerce.number().int().positive("معرف الإشعار يجب أن يكون رقماً موجباً"),
+});
 
 /**
  * GET /api/notifications — جلب إشعارات المستخدم الحالي (الأحدث أولاً، بحد أقصى 20 إشعاراً).
@@ -84,8 +89,9 @@ router.patch("/notifications/:id/read", wrap(async (req, res) => {
   const userId = req.user?.id;
   const companyId = req.user?.company_id;
   if (!userId || !companyId) { res.status(401).json({ error: "غير مصرح" }); return; }
-  const id = parseInt(String(req.params["id"]), 10);
-  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
+  const parsed = NotificationIdParam.safeParse(req.params);
+  if (!parsed.success) { res.status(400).json({ error: "معرف الإشعار غير صحيح" }); return; }
+  const { id } = parsed.data;
   await db.update(notificationsTable)
     .set({ is_read: true, read_at: new Date() })
     .where(and(
@@ -106,8 +112,9 @@ router.post("/notifications/:id/read", wrap(async (req, res) => {
   const userId = req.user?.id;
   const companyId = req.user?.company_id;
   if (!userId || !companyId) { res.status(401).json({ error: "غير مصرح" }); return; }
-  const id = parseInt(String(req.params["id"]), 10);
-  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
+  const parsed = NotificationIdParam.safeParse(req.params);
+  if (!parsed.success) { res.status(400).json({ error: "معرف الإشعار غير صحيح" }); return; }
+  const { id } = parsed.data;
   await db.update(notificationsTable)
     .set({ is_read: true, read_at: new Date() })
     .where(and(
@@ -148,8 +155,9 @@ router.delete("/notifications/:id", wrap(async (req, res) => {
   const userId = req.user?.id;
   const companyId = req.user?.company_id;
   if (!userId || !companyId) { res.status(401).json({ error: "غير مصرح" }); return; }
-  const id = parseInt(String(req.params["id"]), 10);
-  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
+  const parsed = NotificationIdParam.safeParse(req.params);
+  if (!parsed.success) { res.status(400).json({ error: "معرف الإشعار غير صحيح" }); return; }
+  const { id } = parsed.data;
   await db.delete(notificationsTable)
     .where(and(
       eq(notificationsTable.id, id),

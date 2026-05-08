@@ -57,7 +57,7 @@ const UpsertExchangeRateBody = z.object({
 
 router.post("/exchange-rates", wrap(async (req, res) => {
   const parsed = UpsertExchangeRateBody.safeParse(req.body);
-  if (!parsed.success) throw httpError(400, parsed.error.message);
+  if (!parsed.success) { res.status(400).json({ error: "بيانات سعر الصرف غير صحيحة", details: parsed.error.issues.map(i => i.message) }); return; }
 
   const companyId = req.user?.company_id;
   if (!companyId) throw httpError(400, "company_id مطلوب");

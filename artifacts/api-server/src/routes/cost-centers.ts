@@ -6,6 +6,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { db, costCentersTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
 router.use("/cost-centers", requireFeature("accounting"));
@@ -13,6 +14,19 @@ router.use("/cost-centers", requireFeature("accounting"));
 function fmt(c: typeof costCentersTable.$inferSelect) {
   return { ...c, created_at: c.created_at.toISOString() };
 }
+
+const CreateCostCenterBody = z.object({
+  code:        z.string().min(1, "كود مركز التكلفة مطلوب"),
+  name:        z.string().min(1, "اسم مركز التكلفة مطلوب"),
+  description: z.string().nullish(),
+});
+
+const UpdateCostCenterBody = z.object({
+  code:        z.string().min(1, "كود مركز التكلفة مطلوب").optional(),
+  name:        z.string().min(1, "اسم مركز التكلفة مطلوب").optional(),
+  description: z.string().nullish(),
+  is_active:   z.boolean().optional(),
+});
 
 /* GET /api/cost-centers */
 router.get("/cost-centers", wrap(async (req, res) => {
@@ -26,11 +40,17 @@ router.get("/cost-centers", wrap(async (req, res) => {
 /* POST /api/cost-centers */
 router.post("/cost-centers", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
-  const { code, name, description } = req.body;
-  if (!code || !name) throw httpError(400, "الكود والاسم مطلوبان");
+
+  const parsed = CreateCostCenterBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات مركز التكلفة غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
+  }
+
+  const { code, name, description } = parsed.data;
 
   const [row] = await db.insert(costCentersTable).values({
-    code, name, description: description || null, is_active: true, company_id: cid,
+    code, name, description: description ?? null, is_active: true, company_id: cid,
   }).returning();
 
   res.status(201).json(fmt(row));
@@ -39,11 +59,25 @@ router.post("/cost-centers", wrap(async (req, res) => {
 /* PUT /api/cost-centers/:id */
 router.put("/cost-centers/:id", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
-  const { code, name, description, is_active } = req.body;
+  const id = Number(req.params.id);
+  if (!id) throw httpError(400, "معرف مركز التكلفة غير صالح");
+
+  const parsed = UpdateCostCenterBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات مركز التكلفة غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
+  }
+
+  const { code, name, description, is_active } = parsed.data;
 
   const [row] = await db.update(costCentersTable)
-    .set({ code, name, description: description || null, is_active: is_active !== false })
-    .where(and(eq(costCentersTable.id, Number(req.params.id)), eq(costCentersTable.company_id, cid)))
+    .set({
+      code,
+      name,
+      description: description ?? null,
+      is_active: is_active !== false,
+    })
+    .where(and(eq(costCentersTable.id, id), eq(costCentersTable.company_id, cid)))
     .returning();
 
   if (!row) throw httpError(404, "مركز التكلفة غير موجود");

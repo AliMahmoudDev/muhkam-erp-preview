@@ -10,9 +10,20 @@ import { requireTenant, getTenant } from "../middleware/auth";
 import { writeAuditLog } from "../lib/audit-log";
 import { getOrCreateAccount } from "../lib/auto-account";
 import { requireFeature } from "../middleware/feature-guard";
+import { z } from "zod/v4";
 
 const router = Router();
 router.use("/fiscal-years", requireFeature("accounting"));
+
+const CreateFiscalYearBody = z.object({
+  year_label: z.string().min(1, "اسم السنة المالية مطلوب"),
+  start_date: z.string().min(1, "تاريخ البداية مطلوب"),
+  end_date:   z.string().min(1, "تاريخ النهاية مطلوب"),
+  notes:      z.string().optional(),
+}).refine(
+  data => new Date(data.end_date) > new Date(data.start_date),
+  { message: "تاريخ النهاية يجب أن يكون بعد تاريخ البداية" }
+);
 
 /* ── GET /fiscal-years ─── */
 router.get("/fiscal-years", requireTenant, wrap(async (req, res) => {
@@ -28,15 +39,14 @@ router.get("/fiscal-years", requireTenant, wrap(async (req, res) => {
 /* ── POST /fiscal-years ─── */
 router.post("/fiscal-years", requireTenant, wrap(async (req, res) => {
   const companyId = getTenant(req);
-  const { year_label, start_date, end_date, notes } = req.body as {
-    year_label?: string; start_date?: string; end_date?: string; notes?: string;
-  };
 
-  if (!year_label?.trim()) { res.status(400).json({ error: "اسم السنة المالية مطلوب" }); return; }
-  if (!start_date || !end_date) { res.status(400).json({ error: "تاريخ البداية والنهاية مطلوبان" }); return; }
-  if (new Date(end_date) <= new Date(start_date)) {
-    res.status(400).json({ error: "تاريخ النهاية يجب أن يكون بعد تاريخ البداية" }); return;
+  const parsed = CreateFiscalYearBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات السنة المالية غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
   }
+
+  const { year_label, start_date, end_date, notes } = parsed.data;
 
   const [row] = await db.insert(fiscalYearsTable).values({
     company_id: companyId, year_label: year_label.trim(),

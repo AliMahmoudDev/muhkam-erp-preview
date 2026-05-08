@@ -75,7 +75,7 @@ router.post("/price-lists", wrap(async (req, res) => {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
   const parsed = CreatePriceListBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  if (!parsed.success) { res.status(400).json({ error: "بيانات قائمة الأسعار غير صحيحة", details: parsed.error.issues.map(i => i.message) }); return; }
 
   const companyId = req.user!.company_id!;
   const { name, description, is_active, items } = parsed.data;
@@ -120,7 +120,7 @@ router.put("/price-lists/:id", wrap(async (req, res) => {
   if (!id) throw httpError(400, "معرف القائمة غير صالح");
 
   const parsed = UpdatePriceListBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  if (!parsed.success) { res.status(400).json({ error: "بيانات قائمة الأسعار غير صحيحة", details: parsed.error.issues.map(i => i.message) }); return; }
 
   const [existing] = await db.select().from(priceListsTable)
     .where(and(eq(priceListsTable.id, id), eq(priceListsTable.company_id, companyId)));
