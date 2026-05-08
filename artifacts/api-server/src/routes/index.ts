@@ -42,6 +42,7 @@ import debugRouter from "./debug";
 import trialMonitoringRouter from "./trial-monitoring";
 import branchesRouter from "./branches";
 import employeesRouter from "./employees";
+import suppliersRouter from "./suppliers";
 import payrollRouter from "./payroll";
 import attendanceRouter from "./attendance";
 
@@ -133,6 +134,7 @@ router.use(integrityRouter);
 router.use(inventoryControlRouter);
 router.use(categoriesRouter);
 router.use(branchesRouter);
+router.use(suppliersRouter);
 router.use(employeesRouter);
 router.use(payrollRouter);
 router.use(attendanceRouter);
