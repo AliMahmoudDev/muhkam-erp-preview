@@ -23,6 +23,7 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { requireRole } from "../middleware/auth";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
 
@@ -30,6 +31,26 @@ const ctx = (req: unknown) => {
   const u = (req as { user: { company_id: number; id: number; role: string } }).user;
   return { company_id: u.company_id, user_id: u.id, role: u.role };
 };
+
+const CreateDashboardCardBody = z.object({
+  name:            z.string().min(1, "اسم الكارت مطلوب"),
+  statuses:        z.union([z.array(z.string()), z.string()]),
+  color:           z.string().optional().default("#8b5cf6"),
+  icon:            z.string().optional().default("Wrench"),
+  alert_threshold: z.number().int().positive().nullish(),
+});
+
+const UpdateDashboardCardBody = z.object({
+  name:            z.string().min(1, "اسم الكارت لا يمكن أن يكون فارغاً").optional(),
+  statuses:        z.union([z.array(z.string()), z.string()]).optional(),
+  color:           z.string().optional(),
+  icon:            z.string().optional(),
+  alert_threshold: z.number().int().positive().nullish(),
+});
+
+const ReorderDashboardCardsBody = z.object({
+  ids: z.array(z.number().int().positive()).min(1, "ids مطلوبة"),
+});
 
 /* ── Defaults seeded on first GET when empty ─────────────────────── */
 const DEFAULT_CARDS: Array<{
@@ -186,11 +207,15 @@ router.get("/repair-dashboard", wrap(async (req, res) => {
 /* ── Create (admin only) ─────────────────────────────────────────── */
 router.post("/repair-dashboard-cards", requireRole("admin", "super_admin"), wrap(async (req, res) => {
   const { company_id } = ctx(req);
-  const b = req.body as Record<string, unknown>;
 
-  const name = String(b.name ?? "").trim();
-  const statuses = parseStatuses(b.statuses);
-  if (!name || statuses.length === 0) {
+  const parsed = CreateDashboardCardBody.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: "بيانات الكارت غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+  }
+
+  const { name, statuses: rawStatuses, color, icon, alert_threshold } = parsed.data;
+  const statuses = parseStatuses(rawStatuses);
+  if (statuses.length === 0) {
     return res.status(400).json({ error: "الاسم وحالة واحدة على الأقل مطلوبان" });
   }
 
@@ -203,10 +228,10 @@ router.post("/repair-dashboard-cards", requireRole("admin", "super_admin"), wrap
     company_id,
     name,
     statuses: JSON.stringify(statuses),
-    color: typeof b.color === "string" ? b.color : "#8b5cf6",
-    icon:  typeof b.icon  === "string" ? b.icon  : "Wrench",
+    color,
+    icon,
     sort_order: nextOrder,
-    alert_threshold: b.alert_threshold == null ? null : Number(b.alert_threshold),
+    alert_threshold: alert_threshold ?? null,
     is_system: false,
   }).returning();
 
@@ -217,22 +242,28 @@ router.post("/repair-dashboard-cards", requireRole("admin", "super_admin"), wrap
 router.patch("/repair-dashboard-cards/:id", requireRole("admin", "super_admin"), wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
-  const b = req.body as Record<string, unknown>;
 
   const [existing] = await db.select().from(repairDashboardCardsTable)
     .where(and(eq(repairDashboardCardsTable.id, id), eq(repairDashboardCardsTable.company_id, company_id)));
   if (!existing) return res.status(404).json({ error: "الكارت غير موجود" });
 
+  const parsed = UpdateDashboardCardBody.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: "بيانات تحديث الكارت غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+  }
+
+  const { name, statuses: rawStatuses, color, icon, alert_threshold } = parsed.data;
   const patch: Record<string, unknown> = { updated_at: new Date() };
-  if (typeof b.name === "string" && b.name.trim()) patch.name = b.name.trim();
-  if (b.statuses != null) {
-    const s = parseStatuses(b.statuses);
+
+  if (typeof name === "string" && name.trim()) patch.name = name.trim();
+  if (rawStatuses != null) {
+    const s = parseStatuses(rawStatuses);
     if (s.length === 0) return res.status(400).json({ error: "حالة واحدة على الأقل مطلوبة" });
     patch.statuses = JSON.stringify(s);
   }
-  if (typeof b.color === "string") patch.color = b.color;
-  if (typeof b.icon === "string") patch.icon = b.icon;
-  if (b.alert_threshold !== undefined) patch.alert_threshold = b.alert_threshold == null ? null : Number(b.alert_threshold);
+  if (typeof color === "string") patch.color = color;
+  if (typeof icon === "string")  patch.icon  = icon;
+  if (alert_threshold !== undefined) patch.alert_threshold = alert_threshold ?? null;
 
   const [row] = await db.update(repairDashboardCardsTable).set(patch)
     .where(and(eq(repairDashboardCardsTable.id, id), eq(repairDashboardCardsTable.company_id, company_id)))
@@ -261,9 +292,13 @@ router.delete("/repair-dashboard-cards/:id", requireRole("admin", "super_admin")
 /* ── Reorder (admin only) ────────────────────────────────────────── */
 router.post("/repair-dashboard-cards/reorder", requireRole("admin", "super_admin"), wrap(async (req, res) => {
   const { company_id } = ctx(req);
-  const b = req.body as { ids?: unknown };
-  const ids = Array.isArray(b.ids) ? b.ids.map(Number).filter(Number.isFinite) : [];
-  if (ids.length === 0) return res.status(400).json({ error: "ids مطلوبة" });
+
+  const parsed = ReorderDashboardCardsBody.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: "بيانات إعادة الترتيب غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+  }
+
+  const { ids } = parsed.data;
 
   await Promise.all(ids.map((id, order) =>
     db.update(repairDashboardCardsTable)

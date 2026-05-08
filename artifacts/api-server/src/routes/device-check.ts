@@ -9,15 +9,30 @@ import { Router } from "express";
 import { db, erpUsersTable, notificationsTable } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import { wrap } from "../lib/async-handler";
+import { z } from "zod/v4";
 
 const router = Router();
+
+const DeviceCheckBody = z.object({
+  device_id: z.string().min(1, "device_id مطلوب"),
+});
+
+const DeviceApproveBody = z.object({
+  target_user_id: z.number().int().positive("معرف المستخدم المستهدف مطلوب"),
+  device_id:      z.string().min(1, "device_id مطلوب"),
+});
 
 router.post("/auth/device-check", wrap(async (req, res) => {
   const user = req.user;
   if (!user) { res.status(401).json({ error: "غير مصرح" }); return; }
 
-  const { device_id } = req.body as { device_id?: string };
-  if (!device_id) { res.status(400).json({ error: "device_id مطلوب" }); return; }
+  const parsed = DeviceCheckBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات التحقق من الجهاز غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
+  }
+
+  const { device_id } = parsed.data;
 
   const [dbUser] = await db.select({
     id: erpUsersTable.id,
@@ -80,8 +95,14 @@ router.post("/auth/device-approve", wrap(async (req, res) => {
   if (!user || !["admin", "manager", "super_admin"].includes(user.role ?? "")) {
     res.status(403).json({ error: "غير مصرح — المدراء فقط" }); return;
   }
-  const { target_user_id, device_id } = req.body as { target_user_id?: number; device_id?: string };
-  if (!target_user_id || !device_id) { res.status(400).json({ error: "البيانات غير مكتملة" }); return; }
+
+  const parsed = DeviceApproveBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات الموافقة على الجهاز غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
+  }
+
+  const { target_user_id, device_id } = parsed.data;
 
   await db.update(erpUsersTable)
     .set({ trusted_device_id: device_id })

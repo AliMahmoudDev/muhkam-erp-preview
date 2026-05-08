@@ -14,8 +14,16 @@ import { sql, eq, inArray, and } from "drizzle-orm";
 import { wrap } from "../lib/async-handler";
 import { authenticate, requireRole } from "../middleware/auth";
 import { getOrCreateCustomerAccount, getOrCreateCustomerPayableAccount } from "../lib/auto-account";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
+
+const VALID_TABLES = ["sales", "purchases", "expenses", "income", "vouchers_treasury", "products", "warehouse", "customers"] as const;
+
+const AdminClearBody = z.object({
+  tables:      z.array(z.string()).min(1, "حدد الجداول المطلوب مسحها"),
+  warehouse_id: z.number().int().positive().optional(),
+});
 
 /* ──────────────────────────────────────────────────────────────────────────────
    جدول التنظيف — كل مفتاح = دالة تمسح بيانات الشركة
@@ -90,10 +98,13 @@ const TABLES: Record<string, (companyId: number, extra?: { warehouseId?: number 
 };
 
 router.post("/admin/clear", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const { tables, warehouse_id } = req.body as { tables: string[]; warehouse_id?: number };
-  if (!tables || !Array.isArray(tables) || tables.length === 0) {
-    res.status(400).json({ error: "حدد الجداول المطلوب مسحها" }); return;
+  const parsed = AdminClearBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات الطلب غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
   }
+
+  const { tables, warehouse_id } = parsed.data;
 
   // eslint-disable-next-line security/detect-object-injection
   const invalid = tables.filter(t => !TABLES[t]);
@@ -103,10 +114,7 @@ router.post("/admin/clear", authenticate, requireRole("admin"), wrap(async (req,
 
   const companyId: number = req.user!.company_id!;
 
-  const ORDER = [
-    "sales", "purchases", "expenses", "income",
-    "vouchers_treasury", "products", "warehouse", "customers",
-  ];
+  const ORDER = VALID_TABLES as readonly string[];
   const sorted = ORDER.filter(t => tables.includes(t));
   const extra  = { warehouseId: warehouse_id };
 

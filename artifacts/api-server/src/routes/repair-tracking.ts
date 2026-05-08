@@ -21,8 +21,13 @@ import rateLimit from "express-rate-limit";
 import { db, repairJobsTable, repairStatusHistoryTable, repairStatusesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { isTrackingEnabled, verifyTrackingToken } from "../lib/tracking-token";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
+
+const RepairTrackingQuery = z.object({
+  token: z.string().min(1, "رمز التتبع مطلوب"),
+});
 
 /**
  * حدّاد طلبات للتتبع العام: 10 طلبات / دقيقة / IP
@@ -76,11 +81,17 @@ router.get("/public/repair-tracking/:companyId/:jobNo", publicTrackingLimiter, w
 
   const companyId = Number(req.params.companyId);
   const jobNo = String(req.params.jobNo ?? "").trim();
-  const token = String(req.query["token"] ?? "").trim();
 
   if (!Number.isFinite(companyId) || companyId <= 0 || !jobNo) {
     return res.status(400).json({ error: "بيانات غير صالحة" });
   }
+
+  const parsedQuery = RepairTrackingQuery.safeParse(req.query);
+  if (!parsedQuery.success) {
+    return res.status(400).json({ error: "معاملات الاستعلام غير صحيحة", details: parsedQuery.error.issues.map(i => i.message) });
+  }
+
+  const token = parsedQuery.data.token;
 
   /* SEC: التحقق من رمز HMAC قبل أي وصول للقاعدة */
   if (!verifyTrackingToken(companyId, jobNo, token)) {

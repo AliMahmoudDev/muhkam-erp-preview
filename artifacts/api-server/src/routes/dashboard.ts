@@ -8,12 +8,23 @@ import { GetDashboardStatsResponse } from "@workspace/api-zod";
 import { wrap } from "../lib/async-handler";
 import { getTotalCustomerLedgerBalance, getTotalSupplierLedgerBalance } from "../lib/ledger-balance";
 import { getTenant } from "../middleware/auth";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
 
+const DashboardStatsQuery = z.object({
+  warehouse_id: z.string().regex(/^\d+$/, "معرف المخزن يجب أن يكون رقماً صحيحاً").optional(),
+});
+
 router.get("/dashboard/stats", wrap(async (req, res) => {
+  const parsedQuery = DashboardStatsQuery.safeParse(req.query);
+  if (!parsedQuery.success) {
+    res.status(400).json({ error: "معاملات الاستعلام غير صحيحة", details: parsedQuery.error.issues.map(i => i.message) });
+    return;
+  }
+
   const role = req.user?.role ?? "cashier";
-  const queryWarehouseId = req.query.warehouse_id ? parseInt(String(req.query.warehouse_id), 10) : null;
+  const queryWarehouseId = parsedQuery.data.warehouse_id ? parseInt(parsedQuery.data.warehouse_id, 10) : null;
   const effectiveWarehouseId = (role === "admin" || role === "manager")
     ? queryWarehouseId
     : (req.user?.warehouse_id ?? null);

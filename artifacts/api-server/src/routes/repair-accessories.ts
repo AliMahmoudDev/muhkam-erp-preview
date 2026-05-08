@@ -13,6 +13,7 @@ import { eq, and, asc } from "drizzle-orm";
 import { db, repairAccessoriesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { requireRole } from "../middleware/auth";
+import { z } from "zod/v4";
 
 const router: IRouter = Router();
 
@@ -20,6 +21,20 @@ const ctx = (req: unknown) => {
   const u = (req as { user: { company_id: number; id: number; role: string } }).user;
   return { company_id: u.company_id, user_id: u.id, role: u.role };
 };
+
+const CreateRepairAccessoryBody = z.object({
+  key_:       z.string().min(1, "key مطلوب"),
+  label_ar:   z.string().min(1, "label_ar مطلوب"),
+  emoji:      z.string().optional(),
+  sort_order: z.number().optional().default(999),
+});
+
+const UpdateRepairAccessoryBody = z.object({
+  label_ar:   z.string().min(1, "label_ar لا يمكن أن يكون فارغاً").optional(),
+  emoji:      z.string().nullish(),
+  sort_order: z.number().optional(),
+  active:     z.boolean().optional(),
+});
 
 const DEFAULT_ACCESSORIES = [
   { key_: "charger",   label_ar: "شاحن",     emoji: "🔌" },
@@ -61,17 +76,24 @@ router.get("/repair-accessories", wrap(async (req, res) => {
 
 router.post("/repair-accessories", requireRole("admin", "super_admin"), wrap(async (req, res) => {
   const { company_id } = ctx(req);
-  const { key_, label_ar, emoji, sort_order } = req.body ?? {};
-  if (!key_ || !label_ar) { res.status(400).json({ error: "key و label_ar مطلوبان" }); return; }
+
+  const parsed = CreateRepairAccessoryBody.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات الإكسسوار غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
+  }
+
+  const { key_, label_ar, emoji, sort_order } = parsed.data;
   const cleanKey = String(key_).trim().toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 40);
   if (!cleanKey) { res.status(400).json({ error: "key غير صالح" }); return; }
+
   try {
     const [row] = await db.insert(repairAccessoriesTable).values({
       company_id,
       key_: cleanKey,
       label_ar: String(label_ar).trim().slice(0, 80),
       emoji: emoji ? String(emoji).slice(0, 8) : null,
-      sort_order: Number(sort_order ?? 999),
+      sort_order,
       active: true,
       is_system: false,
     }).returning();
@@ -88,13 +110,22 @@ router.post("/repair-accessories", requireRole("admin", "super_admin"), wrap(asy
 router.patch("/repair-accessories/:id", requireRole("admin", "super_admin"), wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
-  const { label_ar, emoji, sort_order, active } = req.body ?? {};
+
+  const parsed = UpdateRepairAccessoryBody.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات تحديث الإكسسوار غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
+  }
+
+  const { label_ar, emoji, sort_order, active } = parsed.data;
   const patch: Record<string, unknown> = {};
-  if (label_ar !== undefined) patch.label_ar = String(label_ar).trim().slice(0, 80);
-  if (emoji !== undefined)    patch.emoji = emoji ? String(emoji).slice(0, 8) : null;
+  if (label_ar !== undefined)   patch.label_ar   = String(label_ar).trim().slice(0, 80);
+  if (emoji !== undefined)      patch.emoji      = emoji ? String(emoji).slice(0, 8) : null;
   if (sort_order !== undefined) patch.sort_order = Number(sort_order);
-  if (active !== undefined)   patch.active = Boolean(active);
+  if (active !== undefined)     patch.active     = Boolean(active);
+
   if (Object.keys(patch).length === 0) { res.status(400).json({ error: "لا يوجد ما يُحدّث" }); return; }
+
   const [row] = await db.update(repairAccessoriesTable).set(patch)
     .where(and(eq(repairAccessoriesTable.id, id), eq(repairAccessoriesTable.company_id, company_id)))
     .returning();
