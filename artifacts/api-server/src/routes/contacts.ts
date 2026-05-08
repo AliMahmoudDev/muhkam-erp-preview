@@ -14,6 +14,7 @@ import {
   purchaseReturnsTable,
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { idParamSchema, firstZodError } from "../lib/schemas";
 
 const router: IRouter = Router();
 
@@ -29,8 +30,12 @@ type StatRow = {
 
 router.get("/contacts/:id/full-statement", wrap(async (req, res) => {
   const cid: number = req.user!.company_id!;
-  const id = parseInt(req.params.id as string);
-  if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
+
+  const paramsResult = idParamSchema.safeParse(req.params);
+  if (!paramsResult.success) {
+    res.status(400).json({ error: firstZodError(paramsResult.error) }); return;
+  }
+  const id = paramsResult.data.id;
 
   const [c] = await db.select().from(customersTable)
     .where(and(eq(customersTable.id, id), eq(customersTable.company_id, cid)));
@@ -123,10 +128,10 @@ router.get("/contacts/:id/full-statement", wrap(async (req, res) => {
     return { ...row, balance: runningBalance };
   });
 
-  const totalSales = statement.filter(r => r.type === "sale").reduce((s, r) => s + r.credit, 0);
+  const totalSales     = statement.filter(r => r.type === "sale").reduce((s, r) => s + r.credit, 0);
   const totalPurchases = statement.filter(r => r.type === "purchase").reduce((s, r) => s + r.credit, 0);
-  const totalReceipts = statement.filter(r => r.type === "receipt_voucher").reduce((s, r) => s + r.debit, 0);
-  const totalPayments = statement.filter(r => r.type === "supplier_payment").reduce((s, r) => s + r.debit, 0);
+  const totalReceipts  = statement.filter(r => r.type === "receipt_voucher").reduce((s, r) => s + r.debit, 0);
+  const totalPayments  = statement.filter(r => r.type === "supplier_payment").reduce((s, r) => s + r.debit, 0);
 
   res.json({
     contact: {
@@ -137,10 +142,10 @@ router.get("/contacts/:id/full-statement", wrap(async (req, res) => {
       customer_id: id,
     },
     summary: {
-      total_sales: totalSales,
+      total_sales:     totalSales,
       total_purchases: totalPurchases,
-      total_receipts: totalReceipts,
-      total_payments: totalPayments,
+      total_receipts:  totalReceipts,
+      total_payments:  totalPayments,
       closing_balance: runningBalance,
     },
     statement,

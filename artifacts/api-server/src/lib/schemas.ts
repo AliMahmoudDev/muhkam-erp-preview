@@ -148,3 +148,89 @@ export function validate<T>(
   );
   return { success: false, errors };
 }
+
+/** Extract the first human-readable message from a ZodError. */
+export function firstZodError(err: z.ZodError): string {
+  return err.errors[0]?.message ?? "بيانات غير صحيحة";
+}
+
+/* ─── Shared param schemas ───────────────────────────────────────────────── */
+
+/** Generic positive-integer :id route param. */
+export const idParamSchema = z.object({
+  id: z.coerce
+    .number({ invalid_type_error: "المعرّف يجب أن يكون رقماً" })
+    .int()
+    .positive("المعرّف يجب أن يكون رقماً موجباً"),
+});
+
+/* ─── Categories (products & expenses) ──────────────────────────────────── */
+
+export const categoryBodySchema = z.object({
+  name: z
+    .string({ required_error: "اسم التصنيف مطلوب" })
+    .min(1, "اسم التصنيف مطلوب")
+    .max(100, "اسم التصنيف طويل جداً")
+    .transform((s) => s.trim()),
+});
+
+/* ─── Safe transfers ─────────────────────────────────────────────────────── */
+
+export const safeTransferBodySchema = z.object({
+  from_safe_id: z.coerce
+    .number({ required_error: "خزينة المصدر مطلوبة" })
+    .int()
+    .positive("from_safe_id يجب أن يكون رقماً موجباً"),
+  to_safe_id: z.coerce
+    .number({ required_error: "خزينة الوجهة مطلوبة" })
+    .int()
+    .positive("to_safe_id يجب أن يكون رقماً موجباً"),
+  amount: z
+    .number({
+      required_error: "المبلغ مطلوب",
+      invalid_type_error: "المبلغ يجب أن يكون رقماً",
+    })
+    .positive("المبلغ يجب أن يكون أكبر من صفر"),
+  notes: z.string().max(500).optional().nullable(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "تنسيق التاريخ غير صحيح (YYYY-MM-DD)")
+    .optional(),
+  fee_type: z.enum(["none", "fixed", "percentage"]).optional().default("none"),
+  fee_rate: z.number().min(0).optional().default(0),
+});
+
+/* ─── Stock (branch) transfers ───────────────────────────────────────────── */
+
+export const stockTransferRequestSchema = z
+  .object({
+    product_id: z.coerce
+      .number({ required_error: "معرّف المنتج مطلوب" })
+      .int()
+      .positive("product_id يجب أن يكون رقماً موجباً"),
+    from_branch_id: z.coerce
+      .number({ required_error: "فرع الإرسال مطلوب" })
+      .int()
+      .positive("from_branch_id يجب أن يكون رقماً موجباً"),
+    to_branch_id: z.coerce
+      .number({ required_error: "فرع الاستلام مطلوب" })
+      .int()
+      .positive("to_branch_id يجب أن يكون رقماً موجباً"),
+    quantity: z
+      .number({
+        required_error: "الكمية مطلوبة",
+        invalid_type_error: "الكمية يجب أن تكون رقماً",
+      })
+      .positive("الكمية يجب أن تكون أكبر من صفر"),
+    notes: z.string().max(500).optional().nullable(),
+  })
+  .refine((d) => d.from_branch_id !== d.to_branch_id, {
+    message: "فرع الإرسال وفرع الاستلام يجب أن يكونا مختلفَين",
+    path: ["to_branch_id"],
+  });
+
+export const stockTransferConfirmSchema = z.object({
+  verification_code: z
+    .string({ required_error: "رمز التحقق مطلوب" })
+    .min(1, "رمز التحقق مطلوب"),
+});

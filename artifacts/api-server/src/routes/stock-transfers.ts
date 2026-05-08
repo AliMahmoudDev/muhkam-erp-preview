@@ -23,6 +23,12 @@ import {
 import { wrap, httpError } from "../lib/async-handler";
 import { getTenant } from "../middleware/auth";
 import { hasPermission } from "../lib/permissions";
+import {
+  stockTransferRequestSchema,
+  stockTransferConfirmSchema,
+  idParamSchema,
+  firstZodError,
+} from "../lib/schemas";
 
 // ─── مساعد: إشعار صامت (fire-and-forget) ────────────────────────────────────
 function notify(
@@ -115,31 +121,23 @@ router.post("/transfers/request", wrap(async (req, res) => {
   const companyId = getTenant(req);
   const userId    = req.user!.id;
 
-  const { product_id, from_branch_id, to_branch_id, quantity, notes } = req.body;
-
-  // ── التحقق من صحة المدخلات ──
-  const qty = Number(quantity);
-  if (!product_id || !from_branch_id || !to_branch_id) {
-    throw httpError(400, "product_id و from_branch_id و to_branch_id مطلوبة");
+  const bodyResult = stockTransferRequestSchema.safeParse(req.body);
+  if (!bodyResult.success) {
+    throw httpError(400, firstZodError(bodyResult.error));
   }
-  if (isNaN(qty) || qty <= 0) {
-    throw httpError(400, "الكمية يجب أن تكون أكبر من صفر");
-  }
-  if (Number(from_branch_id) === Number(to_branch_id)) {
-    throw httpError(400, "فرع الإرسال وفرع الاستلام يجب أن يكونا مختلفَين");
-  }
+  const { product_id, from_branch_id, to_branch_id, quantity: qty, notes } = bodyResult.data;
 
   // ── التحقق من ملكية الفروع ──
   const [fromBranch, toBranch] = await Promise.all([
-    assertBranchOwnership(Number(from_branch_id), companyId, "فرع الإرسال"),
-    assertBranchOwnership(Number(to_branch_id),   companyId, "فرع الاستلام"),
+    assertBranchOwnership(from_branch_id, companyId, "فرع الإرسال"),
+    assertBranchOwnership(to_branch_id,   companyId, "فرع الاستلام"),
   ]);
 
   // ── التحقق من وجود المنتج ──
   const [product] = await db
     .select({ id: productsTable.id, name: productsTable.name })
     .from(productsTable)
-    .where(and(eq(productsTable.id, Number(product_id)), eq(productsTable.company_id, companyId)));
+    .where(and(eq(productsTable.id, product_id), eq(productsTable.company_id, companyId)));
   if (!product) throw httpError(404, "المنتج غير موجود أو لا ينتمي لشركتك");
 
   // ── التحقق من توفر المخزون في فرع المصدر ──
@@ -345,12 +343,14 @@ router.post("/transfers/confirm/:id", wrap(async (req, res) => {
 
   const companyId  = getTenant(req);
   const userId     = req.user!.id;
-  const transferId = Number(req.params.id);
 
-  if (isNaN(transferId)) throw httpError(400, "معرّف التحويل غير صالح");
+  const paramsResult = idParamSchema.safeParse(req.params);
+  if (!paramsResult.success) throw httpError(400, firstZodError(paramsResult.error));
+  const transferId = paramsResult.data.id;
 
-  const { verification_code } = req.body;
-  if (!verification_code) throw httpError(400, "رمز التحقق مطلوب");
+  const bodyResult = stockTransferConfirmSchema.safeParse(req.body);
+  if (!bodyResult.success) throw httpError(400, firstZodError(bodyResult.error));
+  const { verification_code } = bodyResult.data;
 
   // ── جلب التحويل ──
   const [transfer] = await db
@@ -367,7 +367,7 @@ router.post("/transfers/confirm/:id", wrap(async (req, res) => {
   }
 
   // ── التحقق من رمز التحقق ──
-  if (String(verification_code).trim() !== String(transfer.verification_code)) {
+  if (verification_code.trim() !== String(transfer.verification_code)) {
     throw httpError(400, "رمز التحقق غير صحيح");
   }
 

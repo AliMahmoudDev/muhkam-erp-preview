@@ -4,6 +4,11 @@ import { db, categoriesTable, productsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { authenticate } from "../middleware/auth";
 import { hasPermission } from "../lib/permissions";
+import {
+  categoryBodySchema,
+  idParamSchema,
+  firstZodError,
+} from "../lib/schemas";
 
 const router: IRouter = Router();
 
@@ -39,8 +44,12 @@ router.post("/categories", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_products")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const name = String(req.body?.name ?? "").trim();
-  if (!name) { res.status(400).json({ error: "اسم التصنيف مطلوب" }); return; }
+
+  const bodyResult = categoryBodySchema.safeParse(req.body);
+  if (!bodyResult.success) {
+    res.status(400).json({ error: firstZodError(bodyResult.error) }); return;
+  }
+  const { name } = bodyResult.data;
   const companyId = req.user!.company_id!;
 
   const [existing] = await db
@@ -65,10 +74,19 @@ router.put("/categories/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_products")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const id = parseInt(String(req.params.id), 10);
-  const name = String(req.body?.name ?? "").trim();
-  if (!name || isNaN(id)) { res.status(400).json({ error: "بيانات غير صحيحة" }); return; }
 
+  const paramsResult = idParamSchema.safeParse(req.params);
+  const bodyResult   = categoryBodySchema.safeParse(req.body);
+
+  if (!paramsResult.success || !bodyResult.success) {
+    const msg = !paramsResult.success
+      ? firstZodError(paramsResult.error)
+      : firstZodError(bodyResult.error as import("zod").ZodError);
+    res.status(400).json({ error: msg }); return;
+  }
+
+  const id   = paramsResult.data.id;
+  const name = bodyResult.data.name;
   const companyId = req.user!.company_id!;
 
   const [duplicate] = await db
@@ -100,10 +118,14 @@ router.delete("/categories/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_products")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const id = parseInt(String(req.params.id), 10);
-  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
 
+  const paramsResult = idParamSchema.safeParse(req.params);
+  if (!paramsResult.success) {
+    res.status(400).json({ error: firstZodError(paramsResult.error) }); return;
+  }
+  const id = paramsResult.data.id;
   const companyId = req.user!.company_id!;
+
   const [purchaseCategory] = await db
     .select({ id: productsTable.id })
     .from(productsTable)

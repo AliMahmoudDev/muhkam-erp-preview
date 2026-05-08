@@ -15,6 +15,7 @@ import {
   executeSafeTransfer,
   type FeeType,
 } from "../services/safe-transfer.service";
+import { safeTransferBodySchema, firstZodError } from "../lib/schemas";
 
 const router: IRouter = Router();
 
@@ -50,17 +51,19 @@ router.post("/safe-transfers", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية لتحويل الخزائن — يُسمح للمدير فقط" }); return;
   }
 
-  const { from_safe_id, to_safe_id, amount, notes, date, fee_type, fee_rate } = req.body as {
-    from_safe_id?: unknown; to_safe_id?: unknown; amount?: unknown; notes?: unknown;
-    date?: unknown; fee_type?: unknown; fee_rate?: unknown;
-  };
+  const bodyResult = safeTransferBodySchema.safeParse(req.body);
+  if (!bodyResult.success) {
+    res.status(400).json({ error: firstZodError(bodyResult.error) }); return;
+  }
 
-  const txDate    = (typeof date     === "string" && date)     ? date     : new Date().toISOString().split("T")[0];
-  const feeType   = (fee_type === "fixed" || fee_type === "percentage") ? fee_type as FeeType : "none";
-  const feeRate   = Math.max(0, Number(fee_rate ?? 0));
-  const amt       = Number(amount ?? 0);
-  const fromId    = parseInt(String(from_safe_id ?? ""), 10);
-  const toId      = parseInt(String(to_safe_id   ?? ""), 10);
+  const { from_safe_id, to_safe_id, amount, notes, date, fee_type, fee_rate } = bodyResult.data;
+
+  const txDate  = date ?? new Date().toISOString().split("T")[0];
+  const feeType = fee_type as FeeType;
+  const amt     = amount;
+  const fromId  = from_safe_id;
+  const toId    = to_safe_id;
+  const feeRate = fee_rate;
 
   await assertPeriodOpen(txDate, req);
 
@@ -85,7 +88,7 @@ router.post("/safe-transfers", wrap(async (req, res) => {
     amount:       amt,
     fee_type:     feeType,
     fee_rate:     feeRate,
-    notes:        typeof notes === "string" ? notes : undefined,
+    notes:        notes ?? undefined,
     date:         txDate,
     company_id:   companyId,
     user:         req.user!,

@@ -13,6 +13,7 @@ import { logger } from "../lib/logger";
 import { getTenant } from "../middleware/auth";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { getOrCreateSafeAccount, getOrCreateGeneralExpenseAccount, createAutoJournalEntry } from "../lib/auto-account";
+import { categoryBodySchema, firstZodError } from "../lib/schemas";
 
 const router: IRouter = Router();
 
@@ -40,8 +41,12 @@ router.post("/expense-categories", wrap(async (req, res) => {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
   const companyId = req.user!.company_id!;
-  const name = String(req.body.name ?? "").trim();
-  if (!name) { res.status(400).json({ error: "اسم التصنيف مطلوب" }); return; }
+
+  const bodyResult = categoryBodySchema.safeParse(req.body);
+  if (!bodyResult.success) {
+    res.status(400).json({ error: firstZodError(bodyResult.error) }); return;
+  }
+  const { name } = bodyResult.data;
 
   const [existing] = await db.select().from(expenseCategoriesTable)
     .where(and(eq(expenseCategoriesTable.company_id, companyId), eq(expenseCategoriesTable.name, name)));
