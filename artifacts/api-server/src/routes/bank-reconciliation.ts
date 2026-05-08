@@ -3,12 +3,30 @@
  */
 import { Router, type IRouter } from "express";
 import { eq, and, desc } from "drizzle-orm";
+import { z } from "zod/v4";
 import { db, bankAccountsTable, bankStatementLinesTable, journalEntriesTable, safesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
 router.use(["/bank-accounts", "/bank-statement-lines"], requireFeature("bank_reconciliation"));
+
+const createBankAccountSchema = z.object({
+  name: z.string().min(1, "اسم الحساب البنكي مطلوب"),
+  bank_name: z.string().min(1, "اسم البنك مطلوب"),
+  account_number: z.string().optional().nullable(),
+  currency: z.string().optional(),
+  safe_id: z.number().optional().nullable(),
+  opening_balance: z.number().optional(),
+});
+
+const bankLineItemSchema = z.object({
+  date: z.string().min(1, "التاريخ مطلوب لكل سطر"),
+  description: z.string().min(1, "الوصف مطلوب لكل سطر"),
+  amount: z.number({ error: "المبلغ يجب أن يكون رقماً" }).positive("مبلغ كل سطر يجب أن يكون أكبر من صفر"),
+  type: z.enum(["credit", "debit"], { error: "نوع السطر يجب أن يكون credit أو debit" }),
+  reference: z.string().optional().nullable(),
+});
 
 function fmtBank(b: typeof bankAccountsTable.$inferSelect) {
   return { ...b, opening_balance: Number(b.opening_balance), created_at: b.created_at.toISOString() };
@@ -29,8 +47,11 @@ router.get("/bank-accounts", wrap(async (req, res) => {
 
 router.post("/bank-accounts", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
-  const { name, account_number, bank_name, currency, safe_id, opening_balance } = req.body;
-  if (!name || !bank_name) throw httpError(400, "الاسم واسم البنك مطلوبان");
+  const parsed = createBankAccountSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات الحساب البنكي غير صالحة", details: parsed.error.issues.map(i => i.message) }); return;
+  }
+  const { name, account_number, bank_name, currency, safe_id, opening_balance } = parsed.data;
   const [row] = await db.insert(bankAccountsTable).values({
     name, account_number: account_number || null, bank_name,
     currency: currency || "EGP",
@@ -72,16 +93,17 @@ router.post("/bank-accounts/:id/lines", wrap(async (req, res) => {
     .where(and(eq(bankAccountsTable.id, bankId), eq(bankAccountsTable.company_id, cid)));
   if (!bank) throw httpError(404, "الحساب البنكي غير موجود");
 
-  const lines = Array.isArray(req.body) ? req.body : [req.body];
-  if (lines.length === 0) throw httpError(400, "لا توجد سطور للإضافة");
-  for (const l of lines) {
-    if (!["credit", "debit"].includes(l.type)) throw httpError(400, `نوع السطر "${l.type}" غير صحيح — يجب أن يكون credit أو debit`);
-    if (!isFinite(Number(l.amount)) || Number(l.amount) <= 0) throw httpError(400, "مبلغ كل سطر يجب أن يكون أكبر من صفر");
-    if (!l.date || !l.description) throw httpError(400, "التاريخ والوصف مطلوبان لكل سطر");
+  const rawLines = Array.isArray(req.body) ? req.body : [req.body];
+  if (rawLines.length === 0) throw httpError(400, "لا توجد سطور للإضافة");
+
+  const parsedLines = bankLineItemSchema.array().safeParse(rawLines);
+  if (!parsedLines.success) {
+    res.status(400).json({ error: "بيانات السطور البنكية غير صالحة", details: parsedLines.error.issues.map(i => i.message) }); return;
   }
+  const lines = parsedLines.data;
 
   const inserted = await db.insert(bankStatementLinesTable).values(
-    lines.map((l: { date: string; description: string; amount: number; type: string; reference?: string }) => ({
+    lines.map(l => ({
       bank_account_id: bankId,
       date: l.date,
       description: l.description,

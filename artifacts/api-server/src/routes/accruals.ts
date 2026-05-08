@@ -3,6 +3,7 @@
  */
 import { Router, type IRouter } from "express";
 import { eq, and, desc, sql, count } from "drizzle-orm";
+import { z } from "zod/v4";
 import { db, accrualsTable, accrualRunsTable, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { getOrCreateAccount } from "../lib/auto-account";
@@ -10,6 +11,20 @@ import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
 router.use("/accruals", requireFeature("accounting"));
+
+const createAccrualSchema = z.object({
+  type: z.enum(["prepayment", "accrual"], { error: "النوع يجب أن يكون prepayment أو accrual" }),
+  category: z.enum(["expense", "revenue"], { error: "التصنيف يجب أن يكون expense أو revenue" }),
+  description: z.string().min(1, "الوصف مطلوب"),
+  total_amount: z.number({ error: "المبلغ الإجمالي يجب أن يكون رقماً" }).positive("المبلغ يجب أن يكون أكبر من صفر"),
+  months_total: z.number({ error: "عدد الأشهر يجب أن يكون رقماً" }).int().min(1, "عدد الأشهر يجب أن يكون شهراً على الأقل"),
+  start_date: z.string().min(1, "تاريخ البداية مطلوب"),
+  end_date: z.string().min(1, "تاريخ النهاية مطلوب"),
+});
+
+const recognizeSchema = z.object({
+  period: z.string().regex(/^\d{4}-\d{2}$/, "الفترة مطلوبة بصيغة YYYY-MM"),
+});
 
 function fmt(a: typeof accrualsTable.$inferSelect) {
   return {
@@ -56,12 +71,11 @@ router.get("/accruals", wrap(async (req, res) => {
 /* POST /api/accruals */
 router.post("/accruals", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
-  const { type, category, description, total_amount, months_total, start_date, end_date } = req.body;
-
-  if (!type || !category || !description || !total_amount || !months_total || !start_date || !end_date)
-    throw httpError(400, "جميع الحقول مطلوبة");
-  if (!["prepayment", "accrual"].includes(type)) throw httpError(400, "النوع غير صحيح");
-  if (!["expense", "revenue"].includes(category)) throw httpError(400, "التصنيف غير صحيح");
+  const parsed = createAccrualSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات الاستحقاق غير صالحة", details: parsed.error.issues.map(i => i.message) }); return;
+  }
+  const { type, category, description, total_amount, months_total, start_date, end_date } = parsed.data;
 
   const accounts = await getAccrualAccounts(type, category, description, cid);
 
@@ -83,8 +97,11 @@ router.post("/accruals", wrap(async (req, res) => {
 /* POST /api/accruals/:id/recognize — تسجيل الاستحقاق الشهري */
 router.post("/accruals/:id/recognize", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
-  const { period } = req.body;
-  if (!period || !/^\d{4}-\d{2}$/.test(period)) throw httpError(400, "الفترة مطلوبة بصيغة YYYY-MM");
+  const recParsed = recognizeSchema.safeParse(req.body);
+  if (!recParsed.success) {
+    res.status(400).json({ error: "الفترة مطلوبة بصيغة YYYY-MM", details: recParsed.error.issues.map(i => i.message) }); return;
+  }
+  const { period } = recParsed.data;
 
   const [accrual] = await db.select().from(accrualsTable)
     .where(and(eq(accrualsTable.id, Number(req.params.id)), eq(accrualsTable.company_id, cid)));

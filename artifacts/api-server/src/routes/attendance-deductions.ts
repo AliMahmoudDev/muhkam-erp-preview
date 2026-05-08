@@ -13,9 +13,19 @@ import {
   employeesTable,
   employeeDeductionsTable,
 } from "@workspace/db";
+import { z } from "zod/v4";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { requireFeature } from "../middleware/feature-guard";
+
+const previewBodySchema = z.object({
+  month: z.string().min(1, "الشهر مطلوب").regex(/^\d{4}-\d{2}$/, "صيغة الشهر يجب أن تكون YYYY-MM"),
+  employee_id: z.number().optional().nullable(),
+});
+
+const applyBodySchema = z.object({
+  items: z.array(z.record(z.string(), z.unknown())).min(1, "لا توجد بنود للحفظ"),
+});
 
 const router: IRouter = Router();
 router.use("/attendance-deductions", requireFeature("hr"));
@@ -171,10 +181,9 @@ function pickTier(
 router.post("/attendance-deductions/preview", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
-  const b = req.body as Record<string, unknown>;
-  const month = String(b["month"] ?? "").trim(); // YYYY-MM
-  if (!/^\d{4}-\d{2}$/.test(month)) { res.status(400).json({ error: "صيغة الشهر يجب أن تكون YYYY-MM" }); return; }
-  const empIdFilter = b["employee_id"] ? parseInt(String(b["employee_id"]), 10) : null;
+  const previewParsed = previewBodySchema.safeParse(req.body);
+  if (!previewParsed.success) { res.status(400).json({ error: "صيغة الشهر يجب أن تكون YYYY-MM", details: previewParsed.error.issues.map(i => i.message) }); return; }
+  const { month, employee_id: empIdFilter } = previewParsed.data;
 
   const [year, mon] = month.split("-").map(Number) as [number, number];
   const start = `${month}-01`;
@@ -378,13 +387,9 @@ router.post("/attendance-deductions/apply", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
-  const itemsIn = Array.isArray((req.body as Record<string, unknown>)["items"])
-    ? ((req.body as Record<string, unknown>)["items"] as Array<Record<string, unknown>>)
-    : [];
-
-  if (itemsIn.length === 0) {
-    res.status(400).json({ error: "لا توجد بنود للحفظ" }); return;
-  }
+  const applyParsed = applyBodySchema.safeParse(req.body);
+  if (!applyParsed.success) { res.status(400).json({ error: "لا توجد بنود للحفظ", details: applyParsed.error.issues.map(i => i.message) }); return; }
+  const itemsIn = applyParsed.data.items as Array<Record<string, unknown>>;
 
   let inserted = 0;
   let skipped = 0;

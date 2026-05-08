@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, count, sql, desc } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { db, fixedAssetsTable, depreciationRunsTable, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { getOrCreateAccount } from "../lib/auto-account";
@@ -9,15 +9,24 @@ import { requireFeature } from "../middleware/feature-guard";
 const DEP_METHODS = ["straight_line", "declining_balance"] as const;
 
 const createFixedAssetSchema = z.object({
-  name: z.string({ required_error: "اسم الأصل مطلوب" }).min(1).max(200),
+  name: z.string().min(1, "اسم الأصل مطلوب").max(200),
   code: z.string().max(50).optional().nullable(),
   category: z.string().max(100).optional(),
   description: z.string().max(500).optional().nullable(),
-  purchase_date: z.string({ required_error: "تاريخ الشراء مطلوب" }).min(1),
-  purchase_cost: z.number({ required_error: "تكلفة الشراء مطلوبة", invalid_type_error: "تكلفة الشراء يجب أن تكون رقماً" }).positive("تكلفة الشراء يجب أن تكون أكبر من صفر"),
+  purchase_date: z.string().min(1, "تاريخ الشراء مطلوب"),
+  purchase_cost: z.number({ error: "تكلفة الشراء يجب أن تكون رقماً" }).positive("تكلفة الشراء يجب أن تكون أكبر من صفر"),
   residual_value: z.number().min(0).optional().default(0),
-  useful_life_months: z.number({ required_error: "العمر الإنتاجي مطلوب" }).int().min(1, "العمر الإنتاجي يجب أن يكون شهراً على الأقل"),
+  useful_life_months: z.number({ error: "العمر الإنتاجي يجب أن يكون رقماً" }).int().min(1, "العمر الإنتاجي يجب أن يكون شهراً على الأقل"),
   depreciation_method: z.enum(DEP_METHODS).optional().default("straight_line"),
+});
+
+const depreciateSchema = z.object({
+  period: z.string().regex(/^\d{4}-\d{2}$/, "الفترة مطلوبة بصيغة YYYY-MM"),
+});
+
+const disposeSchema = z.object({
+  disposal_date: z.string().min(1, "تاريخ الاستبعاد مطلوب"),
+  disposal_proceeds: z.number().optional(),
 });
 
 const router: IRouter = Router();
@@ -155,7 +164,7 @@ router.get("/fixed-assets", wrap(async (req, res) => {
 router.post("/fixed-assets", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
   const v = createFixedAssetSchema.safeParse(req.body);
-  if (!v.success) throw httpError(400, v.error.errors[0]?.message ?? "بيانات غير صالحة");
+  if (!v.success) { res.status(400).json({ error: "بيانات الأصل الثابت غير صالحة", details: v.error.issues.map(i => i.message) }); return; }
   const { name, code, category, description, purchase_date, purchase_cost, residual_value, useful_life_months, depreciation_method } = v.data;
 
   const safeCode = (code || name).replace(/\s+/g, "-").toUpperCase().slice(0, 20);
@@ -212,9 +221,9 @@ router.get("/fixed-assets/:id", wrap(async (req, res) => {
 /* POST /api/fixed-assets/:id/depreciate */
 router.post("/fixed-assets/:id/depreciate", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
-  const { period } = req.body;
-
-  if (!period || !/^\d{4}-\d{2}$/.test(period)) throw httpError(400, "الفترة مطلوبة بصيغة YYYY-MM");
+  const depParsed = depreciateSchema.safeParse(req.body);
+  if (!depParsed.success) { res.status(400).json({ error: "الفترة مطلوبة بصيغة YYYY-MM", details: depParsed.error.issues.map(i => i.message) }); return; }
+  const { period } = depParsed.data;
 
   const [asset] = await db.select().from(fixedAssetsTable)
     .where(and(eq(fixedAssetsTable.id, Number(req.params.id)), eq(fixedAssetsTable.company_id, cid)));
@@ -267,9 +276,9 @@ router.post("/fixed-assets/:id/depreciate", wrap(async (req, res) => {
 /* POST /api/fixed-assets/:id/dispose */
 router.post("/fixed-assets/:id/dispose", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
-  const { disposal_date, disposal_proceeds } = req.body;
-
-  if (!disposal_date) throw httpError(400, "تاريخ الاستبعاد مطلوب");
+  const disParsed = disposeSchema.safeParse(req.body);
+  if (!disParsed.success) { res.status(400).json({ error: "بيانات الاستبعاد غير صالحة", details: disParsed.error.issues.map(i => i.message) }); return; }
+  const { disposal_date, disposal_proceeds } = disParsed.data;
 
   const [asset] = await db.select().from(fixedAssetsTable)
     .where(and(eq(fixedAssetsTable.id, Number(req.params.id)), eq(fixedAssetsTable.company_id, cid)));

@@ -3,12 +3,27 @@
  */
 import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { z } from "zod/v4";
 import { db, budgetsTable, budgetLinesTable, accountsTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
 
 const router: IRouter = Router();
 router.use("/budgets", requireFeature("budgets"));
+
+const createBudgetSchema = z.object({
+  name: z.string().min(1, "اسم الميزانية مطلوب"),
+  fiscal_year: z.number({ error: "السنة المالية يجب أن تكون رقماً" }).int().min(2000, "السنة المالية غير صحيحة"),
+  date_from: z.string().min(1, "تاريخ البداية مطلوب"),
+  date_to: z.string().min(1, "تاريخ النهاية مطلوب"),
+  notes: z.string().optional().nullable(),
+});
+
+const budgetLineItemSchema = z.object({
+  account_id: z.number({ error: "معرف الحساب يجب أن يكون رقماً" }).int().positive("معرف الحساب مطلوب"),
+  period: z.string().min(1, "الفترة مطلوبة"),
+  budgeted_amount: z.number({ error: "المبلغ المقدر يجب أن يكون رقماً" }),
+});
 
 function fmtBudget(b: typeof budgetsTable.$inferSelect) {
   return { ...b, created_at: b.created_at.toISOString() };
@@ -26,8 +41,11 @@ router.get("/budgets", wrap(async (req, res) => {
 /* POST /api/budgets */
 router.post("/budgets", wrap(async (req, res) => {
   const cid = req.user!.company_id!;
-  const { name, fiscal_year, date_from, date_to, notes } = req.body;
-  if (!name || !fiscal_year || !date_from || !date_to) throw httpError(400, "البيانات الأساسية ناقصة");
+  const parsed = createBudgetSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات الميزانية غير صالحة", details: parsed.error.issues.map(i => i.message) }); return;
+  }
+  const { name, fiscal_year, date_from, date_to, notes } = parsed.data;
 
   const [budget] = await db.insert(budgetsTable).values({
     name, fiscal_year: Number(fiscal_year), date_from, date_to,
@@ -60,11 +78,15 @@ router.put("/budgets/:id/lines", wrap(async (req, res) => {
     .where(and(eq(budgetsTable.id, budgetId), eq(budgetsTable.company_id, cid)));
   if (!budget) throw httpError(404, "الميزانية غير موجودة");
 
-  const items = Array.isArray(req.body) ? req.body : [req.body];
+  const rawItems = Array.isArray(req.body) ? req.body : [req.body];
+  const parsedItems = budgetLineItemSchema.array().safeParse(rawItems);
+  if (!parsedItems.success) {
+    res.status(400).json({ error: "بيانات سطور الميزانية غير صالحة", details: parsedItems.error.issues.map(i => i.message) }); return;
+  }
+  const items = parsedItems.data;
 
   for (const item of items) {
     const { account_id, period, budgeted_amount } = item;
-    if (!account_id || !period || budgeted_amount === undefined) continue;
 
     const [account] = await db.select().from(accountsTable)
       .where(and(eq(accountsTable.id, Number(account_id)), eq(accountsTable.company_id, cid)));

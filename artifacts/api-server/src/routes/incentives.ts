@@ -11,9 +11,50 @@ import {
   monthlyIncentiveSummaryTable, incentiveMetricsTable,
   employeesTable,
 } from "@workspace/db";
+import { z } from "zod/v4";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { requireFeature } from "../middleware/feature-guard";
+
+const createSchemeSchema = z.object({
+  name_ar: z.string().min(1, "اسم مخطط الحوافز مطلوب"),
+  name_en: z.string().optional(),
+  description: z.string().optional().nullable(),
+});
+
+const createRuleSchema = z.object({
+  incentive_scheme_id: z.number({ error: "معرف المخطط يجب أن يكون رقماً" }).int().positive("معرف المخطط مطلوب"),
+  metric_type: z.string().min(1, "نوع المقياس مطلوب"),
+  target_value: z.number({ error: "القيمة المستهدفة يجب أن تكون رقماً" }).positive("القيمة المستهدفة يجب أن تكون أكبر من صفر"),
+  incentive_amount: z.number().optional().nullable(),
+  incentive_type: z.string().optional(),
+  calculation_method: z.string().optional(),
+  currency: z.string().optional(),
+});
+
+const createSlabSchema = z.object({
+  incentive_rule_id: z.number({ error: "معرف القاعدة يجب أن يكون رقماً" }).int().positive("معرف القاعدة مطلوب"),
+  slab_number: z.number().optional(),
+  from_percentage: z.number({ error: "نسبة البداية يجب أن تكون رقماً" }).min(0, "نسبة البداية يجب أن تكون صفراً أو أكبر"),
+  to_percentage: z.number().optional().nullable(),
+  incentive_value: z.number({ error: "قيمة الحافز يجب أن تكون رقماً" }),
+});
+
+const createAssignmentSchema = z.object({
+  employee_id: z.number({ error: "معرف الموظف يجب أن يكون رقماً" }).int().positive("معرف الموظف مطلوب"),
+  incentive_scheme_id: z.number({ error: "معرف المخطط يجب أن يكون رقماً" }).int().positive("معرف المخطط مطلوب"),
+  assigned_date: z.string().min(1, "تاريخ التعيين مطلوب"),
+  end_date: z.string().optional().nullable(),
+});
+
+const recordMetricSchema = z.object({
+  employee_id: z.number({ error: "معرف الموظف يجب أن يكون رقماً" }).int().positive("معرف الموظف مطلوب"),
+  incentive_rule_id: z.number({ error: "معرف القاعدة يجب أن يكون رقماً" }).int().positive("معرف القاعدة مطلوب"),
+  metric_date: z.string().min(1, "تاريخ المقياس مطلوب"),
+  metric_value: z.number({ error: "قيمة المقياس يجب أن تكون رقماً" }),
+  source_type: z.string().optional(),
+  source_document_id: z.number().optional().nullable(),
+});
 
 const router: IRouter = Router();
 router.use(["/incentive-schemes", "/incentive-slabs", "/incentive-rules", "/incentive-metrics", "/employee-incentive-assignments", "/incentive-tracking", "/daily-accrual", "/monthly-incentive-summary"], requireFeature("hr"));
@@ -62,8 +103,9 @@ router.get("/incentive-schemes", wrap(async (req, res) => {
 router.post("/incentive-schemes", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
-  const { name_ar, name_en, description } = req.body as Record<string, string>;
-  if (!name_ar?.trim()) { res.status(400).json({ error: "اسم مخطط الحوافز مطلوب" }); return; }
+  const schemeParsed = createSchemeSchema.safeParse(req.body);
+  if (!schemeParsed.success) { res.status(400).json({ error: "بيانات مخطط الحوافز غير صالحة", details: schemeParsed.error.issues.map(i => i.message) }); return; }
+  const { name_ar, name_en, description } = schemeParsed.data;
   const [row] = await db.insert(incentiveSchemesTable).values({
     company_id: companyId, name_ar: name_ar.trim(), name_en: name_en?.trim() ?? name_ar.trim(),
     description: description ?? null,
@@ -104,8 +146,9 @@ router.get("/incentive-rules/:schemeId", wrap(async (req, res) => {
 router.post("/incentive-rules", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
-  const { incentive_scheme_id, metric_type, target_value, incentive_amount, incentive_type, calculation_method, currency } = req.body as Record<string, unknown>;
-  if (!incentive_scheme_id || !metric_type || !target_value) { res.status(400).json({ error: "بيانات القاعدة غير مكتملة" }); return; }
+  const ruleParsed = createRuleSchema.safeParse(req.body);
+  if (!ruleParsed.success) { res.status(400).json({ error: "بيانات القاعدة غير صالحة", details: ruleParsed.error.issues.map(i => i.message) }); return; }
+  const { incentive_scheme_id, metric_type, target_value, incentive_amount, incentive_type, calculation_method, currency } = ruleParsed.data;
   if (!await assertSchemeOwnership(Number(incentive_scheme_id), companyId, res)) return;
   const [row] = await db.insert(incentiveRulesTable).values({
     incentive_scheme_id: Number(incentive_scheme_id), metric_type: String(metric_type),
@@ -133,8 +176,9 @@ router.put("/incentive-rules/:id", wrap(async (req, res) => {
 router.post("/incentive-slabs", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
-  const { incentive_rule_id, slab_number, from_percentage, to_percentage, incentive_value } = req.body as Record<string, unknown>;
-  if (!incentive_rule_id || from_percentage == null || incentive_value == null) { res.status(400).json({ error: "بيانات الشريحة غير مكتملة" }); return; }
+  const slabParsed = createSlabSchema.safeParse(req.body);
+  if (!slabParsed.success) { res.status(400).json({ error: "بيانات الشريحة غير صالحة", details: slabParsed.error.issues.map(i => i.message) }); return; }
+  const { incentive_rule_id, slab_number, from_percentage, to_percentage, incentive_value } = slabParsed.data;
   if (!await assertRuleOwnership(Number(incentive_rule_id), companyId, res)) return;
   const [row] = await db.insert(incentiveSlabsTable).values({
     incentive_rule_id: Number(incentive_rule_id), slab_number: Number(slab_number) || 1,
@@ -179,8 +223,9 @@ router.delete("/incentive-slabs/:id", wrap(async (req, res) => {
 router.post("/employee-incentive-assignments", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const companyId = req.user!.company_id!;
-  const { employee_id, incentive_scheme_id, assigned_date, end_date } = req.body as Record<string, unknown>;
-  if (!employee_id || !incentive_scheme_id || !assigned_date) { res.status(400).json({ error: "بيانات التعيين غير مكتملة" }); return; }
+  const assignParsed = createAssignmentSchema.safeParse(req.body);
+  if (!assignParsed.success) { res.status(400).json({ error: "بيانات التعيين غير صالحة", details: assignParsed.error.issues.map(i => i.message) }); return; }
+  const { employee_id, incentive_scheme_id, assigned_date, end_date } = assignParsed.data;
   if (!await assertEmployeeOwnership(Number(employee_id), companyId, res)) return;
   if (!await assertSchemeOwnership(Number(incentive_scheme_id), companyId, res)) return;
   const [row] = await db.insert(employeeIncentiveAssignmentsTable).values({
@@ -228,8 +273,9 @@ router.get("/daily-accrual/:employeeId/:date", wrap(async (req, res) => {
 /* ── Record Metric & Calculate Accrual ────────────────────────── */
 router.post("/incentive-metrics/record", wrap(async (req, res) => {
   const companyId = req.user!.company_id!;
-  const { employee_id, incentive_rule_id, metric_date, metric_value, source_type, source_document_id } = req.body as Record<string, unknown>;
-  if (!employee_id || !incentive_rule_id || !metric_date || metric_value == null) { res.status(400).json({ error: "بيانات المقياس غير مكتملة" }); return; }
+  const metricParsed = recordMetricSchema.safeParse(req.body);
+  if (!metricParsed.success) { res.status(400).json({ error: "بيانات المقياس غير صالحة", details: metricParsed.error.issues.map(i => i.message) }); return; }
+  const { employee_id, incentive_rule_id, metric_date, metric_value, source_type, source_document_id } = metricParsed.data;
   if (!await assertEmployeeOwnership(Number(employee_id), companyId, res)) return;
   if (!await assertRuleOwnership(Number(incentive_rule_id), companyId, res)) return;
 

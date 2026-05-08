@@ -10,12 +10,23 @@ import {
   salaryAdvanceSettingsTable, salaryAdvanceHistoryTable, salaryAdvanceLedgerTable,
   employeesTable, safesTable, transactionsTable,
 } from "@workspace/db";
+import { z } from "zod/v4";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+
 import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { writeAuditLog } from "../lib/audit-log";
 import { notifyEmployee, notifyManagers } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
+
+const createAdvanceSchema = z.object({
+  employee_id: z.number({ error: "معرف الموظف يجب أن يكون رقماً" }).int().positive("معرف الموظف مطلوب"),
+  requested_amount: z.number({ error: "المبلغ المطلوب يجب أن يكون رقماً" }).positive("المبلغ المطلوب يجب أن يكون أكبر من صفر"),
+  advance_type: z.string().min(1, "نوع السلفة مطلوب"),
+  reason: z.string().optional().nullable(),
+  deduct_from: z.enum(["fixed", "commission", "both"], { error: "قيمة الخصم يجب أن تكون fixed أو commission أو both" }).optional().default("fixed"),
+  safe_id: z.number().optional().nullable(),
+});
 
 const router: IRouter = Router();
 router.use("/salary-advances", requireFeature("hr"));
@@ -120,18 +131,12 @@ router.post("/salary-advances", wrap(async (req, res) => {
   const userId    = req.user?.id ?? null;
   const isSelf    = isSelfServiceUser(req);
   const selfId    = selfEmployeeId(req);
-  const body      = req.body as Record<string, unknown>;
   // Self-service: force employee_id to caller's own, ignore safe_id, force pending.
-  let { employee_id, safe_id } = body;
-  const { requested_amount, advance_type, reason, deduct_from } = body;
-  if (isSelf) {
-    if (!selfId || selfId === -1) { res.status(403).json({ error: "حساب الموظف غير مرتبط بسجل موظف" }); return; }
-    employee_id = selfId;
-    safe_id = null;
-  }
-  if (!employee_id || !requested_amount || !advance_type) { res.status(400).json({ error: "الموظف والمبلغ ونوع السلفة مطلوبون" }); return; }
-  const df = String(deduct_from ?? "fixed");
-  if (!["fixed", "commission", "both"].includes(df)) { res.status(400).json({ error: "قيمة الخصم غير صحيحة" }); return; }
+  if (isSelf && (!selfId || selfId === -1)) { res.status(403).json({ error: "حساب الموظف غير مرتبط بسجل موظف" }); return; }
+  const bodyToValidate = isSelf ? { ...req.body, employee_id: selfId, safe_id: null } : req.body;
+  const advParsed = createAdvanceSchema.safeParse(bodyToValidate);
+  if (!advParsed.success) { res.status(400).json({ error: "بيانات السلفة غير صالحة", details: advParsed.error.issues.map(i => i.message) }); return; }
+  const { employee_id, requested_amount, advance_type, reason, deduct_from: df, safe_id } = advParsed.data;
 
   // Verify employee and minimum salary
   const [emp] = await db.select().from(employeesTable)
@@ -165,7 +170,7 @@ router.post("/salary-advances", wrap(async (req, res) => {
     employee_id: Number(employee_id), requested_date: new Date().toISOString().split("T")[0],
     requested_amount: String(reqAmt), advance_type: String(advance_type),
     reason: reason ? String(reason) : null, deduct_from: df, status: requiresApproval ? "pending" : "approved",
-    safe_id: safe_id != null && safe_id !== "" ? Number(safe_id) : null,
+    safe_id: safe_id != null ? Number(safe_id) : null,
     currency: emp.currency ?? "EGP",
     approved_amount: !requiresApproval ? String(reqAmt) : null,
     approved_at: !requiresApproval ? new Date() : null,
