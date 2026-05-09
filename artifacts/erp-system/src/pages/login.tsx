@@ -109,14 +109,24 @@ const LOGIN_CSS = `
 .ent-link:hover { color: #1D4ED8; text-decoration: underline; }
 
 .ent-pw-toggle {
-  position: absolute; top: 50%; left: 10px; transform: translateY(-50%);
-  width: 30px; height: 30px;
+  position: absolute; top: 50%; left: 14px; transform: translateY(-50%);
+  width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; cursor: pointer;
-  color: #64748B; border-radius: 6px;
+  color: #94A3B8; border-radius: 6px;
   transition: color .15s ease, background .15s ease;
 }
-.ent-pw-toggle:hover { color: #0F172A; background: #F1F5F9; }
+.ent-pw-toggle:hover { color: #334155; background: #F1F5F9; }
+
+/* Override browser autofill background */
+.ent-input:-webkit-autofill,
+.ent-input:-webkit-autofill:hover,
+.ent-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset;
+  -webkit-text-fill-color: #0F172A;
+  box-shadow: 0 0 0 1000px #FFFFFF inset;
+  transition: background-color 99999s ease-in-out 0s;
+}
 
 @media (max-width: 900px) {
   .ent-brand-panel { display: none !important; }
@@ -655,7 +665,6 @@ function LoginFormFields({
             onClick={() => setShowPin(!showPin)}
             className="ent-pw-toggle"
             aria-label={showPin ? 'إخفاء الرقم السري' : 'إظهار الرقم السري'}
-            title={showPin ? 'إخفاء' : 'إظهار'}
           >
             <EyeIcon open={showPin} />
           </button>

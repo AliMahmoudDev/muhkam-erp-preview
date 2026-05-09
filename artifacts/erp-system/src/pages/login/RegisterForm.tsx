@@ -191,7 +191,6 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
               onClick={() => setShowPw(!showPw)}
               className="ent-pw-toggle"
               aria-label={showPw ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
-              title={showPw ? 'إخفاء' : 'إظهار'}
             ><EyeIcon open={showPw} /></button>
           </div>
           {/* Strength indicator */}
