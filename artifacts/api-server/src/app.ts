@@ -35,11 +35,15 @@ import {
 import { alertManager, ALERT_TYPES } from './lib/telegram-alert-manager';
 import { requestTimeout } from './middleware/request-timeout';
 import { perTenantRateLimit } from './middleware/per-tenant-rate-limit';
+import { requestId } from './middleware/request-id';
 
 const app: Express = express();
 
 /* ── Trust proxy (Replit runs behind a reverse proxy) ───────── */
 app.set('trust proxy', 1);
+
+/* ── Request ID — first middleware so every log line carries it ── */
+app.use(requestId);
 
 /* ── Security headers ──────────────────────────────────────── */
 app.use(

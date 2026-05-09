@@ -10,6 +10,10 @@ import { initRLS } from "./lib/rls-init";
 import { purgeExpiredRefreshTokens } from "./lib/refresh-token-store";
 import { pool } from "@workspace/db";
 import { alertManager, ALERT_TYPES } from "./lib/telegram-alert-manager";
+import { instrumentSlowQueryLogging } from "./lib/slow-query";
+
+/* ── Slow query logging — instrument pool before any queries run ── */
+instrumentSlowQueryLogging(pool);
 
 /* ── Startup: validate required environment variables ──────── */
 const REQUIRED_ENV_VARS = ["JWT_SECRET", "JWT_REFRESH_SECRET", "TOTP_ENCRYPTION_KEY", "BACKUP_ENCRYPTION_KEY", "DATABASE_URL"] as const;
