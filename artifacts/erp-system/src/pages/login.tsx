@@ -45,8 +45,8 @@ const LOGIN_CSS = `
   font-family: inherit;
   outline: none;
   transition: border-color .15s ease, box-shadow .15s ease;
-  direction: ltr;
-  text-align: left;
+  direction: rtl;
+  text-align: right;
 }
 .ent-input::placeholder { color: #94A3B8; }
 .ent-input:hover:not(:disabled):not(:focus) { border-color: #94A3B8; }
@@ -60,7 +60,7 @@ const LOGIN_CSS = `
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
 }
 
-.ent-input-pw { padding-right: 44px; font-family: 'Inter', monospace; letter-spacing: .04em; }
+.ent-input-pw { padding-right: 44px; padding-left: 14px; font-family: 'Inter', monospace; letter-spacing: .04em; }
 
 /* ── Primary button (light surface) ── */
 .ent-btn-primary {
@@ -109,7 +109,7 @@ const LOGIN_CSS = `
 .ent-link:hover { color: #1D4ED8; text-decoration: underline; }
 
 .ent-pw-toggle {
-  position: absolute; top: 50%; left: 14px; transform: translateY(-50%);
+  position: absolute; top: 50%; right: 14px; transform: translateY(-50%);
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; cursor: pointer;
