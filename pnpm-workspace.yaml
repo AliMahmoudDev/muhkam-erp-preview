@@ -10,6 +10,9 @@ packageExtensions:
   '@expo/metro-config@*':
     dependencies:
       postcss: '^8.5.10'
+  'drizzle-orm@*':
+    peerDependencies:
+      '@opentelemetry/api': '>=1'
 
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.1
@@ -47,6 +50,8 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
+  # Collapse duplicate drizzle-orm instances caused by prom-client -> @opentelemetry/api peer
+  '@opentelemetry/api': '^1.9.1'
   # Security fixes for vulnerable transitive dependencies
   postcss: '^8.5.10'
   '@expo/metro-config>postcss': '^8.5.10'

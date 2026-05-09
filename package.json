@@ -42,7 +42,8 @@
       "@expo/metro-config>postcss": "^8.5.10",
       "jspdf": "^4.2.1",
       "dompurify": "^3.4.2",
-      "ip-address": "^10.1.1"
+      "ip-address": "^10.1.1",
+      "@opentelemetry/api": "^1.9.1"
     },
     "patchedDependencies": {
       "@expo/metro-config@54.0.14": "patches/@expo__metro-config@54.0.14.patch"
