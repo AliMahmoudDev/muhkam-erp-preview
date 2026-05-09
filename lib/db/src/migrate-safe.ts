@@ -105,6 +105,13 @@ const migrations: { name: string; sql: string }[] = [
         UNIQUE (company_id, customer_code);
     `,
   },
+  {
+    name: "erp_users — إضافة عمود dashboard_shortcuts",
+    sql: `
+      ALTER TABLE erp_users
+        ADD COLUMN IF NOT EXISTS dashboard_shortcuts JSONB NOT NULL DEFAULT '[]'::jsonb;
+    `,
+  },
 ];
 
 async function runMigrations() {

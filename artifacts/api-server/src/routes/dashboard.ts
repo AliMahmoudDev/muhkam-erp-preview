@@ -2,13 +2,25 @@ import { Router, type IRouter } from "express";
 import { gte, sum, desc, inArray, and, eq, sql } from "drizzle-orm";
 import {
   db, salesTable, saleItemsTable, expensesTable, incomeTable,
-  productsTable, transactionsTable,
+  productsTable, transactionsTable, erpUsersTable,
 } from "@workspace/db";
 import { GetDashboardStatsResponse } from "@workspace/api-zod";
 import { wrap } from "../lib/async-handler";
 import { getTotalCustomerLedgerBalance, getTotalSupplierLedgerBalance } from "../lib/ledger-balance";
 import { getTenant } from "../middleware/auth";
 import { z } from "zod/v4";
+
+/* Default shortcuts for new users */
+const DEFAULT_SHORTCUTS = [
+  "new-sale",
+  "new-receipt",
+  "new-repair",
+  "new-purchase",
+];
+
+const ShortcutsBody = z.object({
+  shortcuts: z.array(z.string()).max(8),
+});
 
 const router: IRouter = Router();
 
@@ -136,6 +148,39 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
     low_stock_products,
     recent_transactions,
   }));
+}));
+
+/* ── GET /dashboard/shortcuts ─────────────────────────────────── */
+router.get("/dashboard/shortcuts", wrap(async (req, res) => {
+  const userId = req.user!.id;
+  const companyId = getTenant(req);
+
+  const [row] = await db
+    .select({ dashboard_shortcuts: erpUsersTable.dashboard_shortcuts })
+    .from(erpUsersTable)
+    .where(and(eq(erpUsersTable.id, userId), eq(erpUsersTable.company_id, companyId)));
+
+  const shortcuts = (row?.dashboard_shortcuts as string[] | null) ?? DEFAULT_SHORTCUTS;
+  res.json({ shortcuts });
+}));
+
+/* ── PUT /dashboard/shortcuts ─────────────────────────────────── */
+router.put("/dashboard/shortcuts", wrap(async (req, res) => {
+  const parsed = ShortcutsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
+  }
+
+  const userId = req.user!.id;
+  const companyId = getTenant(req);
+
+  await db
+    .update(erpUsersTable)
+    .set({ dashboard_shortcuts: parsed.data.shortcuts })
+    .where(and(eq(erpUsersTable.id, userId), eq(erpUsersTable.company_id, companyId)));
+
+  res.json({ shortcuts: parsed.data.shortcuts });
 }));
 
 export default router;

@@ -1,10 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { type DashboardStats } from '@workspace/api-client-react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useWarehouse } from '@/contexts/warehouse';
 import { useAppSettings } from '@/contexts/app-settings';
 import { formatCurrency } from '@/lib/format';
 import { OnboardingPanel } from '@/components/onboarding';
+import ShortcutsCustomizer, { ALL_SHORTCUTS } from '@/components/ShortcutsCustomizer';
+import { useLocation } from 'wouter';
 import {
   TrendingUp,
   TrendingDown,
@@ -22,6 +25,7 @@ import {
   Truck,
   Target,
   Trophy,
+  Settings2,
 } from 'lucide-react';
 import {
   XAxis,
@@ -90,11 +94,51 @@ const TX_IS_INCOME = new Set([
 ]);
 
 /* ─────────────────────────────────────────────────────────── */
+const DEFAULT_SHORTCUTS = ['new-sale', 'new-receipt', 'new-repair', 'new-purchase'];
+
 export default function Dashboard() {
   const { currentWarehouseId } = useWarehouse();
   const { settings } = useAppSettings();
   const isDark = (settings.theme ?? 'dark') === 'dark';
   const warehouseParam = currentWarehouseId ? `?warehouse_id=${currentWarehouseId}` : '';
+  const [, navigate] = useLocation();
+  const [customizerOpen, setCustomizerOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  /* ── Shortcuts query ─────────────────────────────────────── */
+  const { data: shortcutsData } = useQuery<{ shortcuts: string[] }>({
+    queryKey: ['/api/dashboard/shortcuts'],
+    queryFn: () =>
+      authFetch(api('/api/dashboard/shortcuts')).then(r => {
+        if (!r.ok) throw new Error('خطأ في جلب الاختصارات');
+        return r.json();
+      }),
+    staleTime: 1000 * 60 * 5,
+  });
+  const shortcuts = shortcutsData?.shortcuts ?? DEFAULT_SHORTCUTS;
+
+  /* ── Save shortcuts mutation ──────────────────────────────── */
+  const saveMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const r = await authFetch(api('/api/dashboard/shortcuts'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shortcuts: ids }),
+      });
+      if (!r.ok) throw new Error('فشل الحفظ');
+      return r.json() as Promise<{ shortcuts: string[] }>;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['/api/dashboard/shortcuts'], data);
+      setCustomizerOpen(false);
+    },
+  });
+
+  const handleSaveShortcuts = useCallback(
+    (ids: string[]) => saveMutation.mutateAsync(ids),
+    [saveMutation],
+  );
+
   const {
     data: stats,
     isLoading,
@@ -239,6 +283,96 @@ export default function Dashboard() {
   return (
     <div dir="rtl" className="page-enter">
       <OnboardingPanel />
+
+      {/* ══════════════════════════════════════════════════════
+          QUICK ACTIONS
+      ══════════════════════════════════════════════════════ */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 20,
+          flexWrap: 'wrap',
+        }}
+      >
+        {shortcuts.map(id => {
+          const def = ALL_SHORTCUTS.find(s => s.id === id);
+          if (!def) return null;
+          const Icon = def.icon;
+          return (
+            <button
+              key={id}
+              onClick={() => navigate(def.path)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '9px 16px',
+                borderRadius: 12,
+                border: `1px solid ${def.color}33`,
+                background: isDark ? `${def.color}14` : `${def.color}11`,
+                cursor: 'pointer',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                fontSize: 13,
+                fontWeight: 600,
+                transition: 'all 0.18s',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = `${def.color}28`;
+                (e.currentTarget as HTMLButtonElement).style.borderColor = `${def.color}66`;
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = isDark ? `${def.color}14` : `${def.color}11`;
+                (e.currentTarget as HTMLButtonElement).style.borderColor = `${def.color}33`;
+              }}
+            >
+              <Icon style={{ width: 15, height: 15, color: def.color }} />
+              {def.label}
+            </button>
+          );
+        })}
+        <button
+          onClick={() => setCustomizerOpen(true)}
+          title="تخصيص الاختصارات"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '9px 14px',
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.04)',
+            cursor: 'pointer',
+            color: 'rgba(255,255,255,0.45)',
+            fontSize: 12,
+            transition: 'all 0.18s',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.75)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.45)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)';
+          }}
+        >
+          <Settings2 style={{ width: 14, height: 14 }} />
+          تخصيص
+        </button>
+      </div>
+
+      {/* Shortcuts customizer modal */}
+      {customizerOpen && (
+        <ShortcutsCustomizer
+          current={shortcuts}
+          onSave={handleSaveShortcuts}
+          onClose={() => setCustomizerOpen(false)}
+          saving={saveMutation.isPending}
+        />
+      )}
 
       {/* ══════════════════════════════════════════════════════
           HERO SUMMARY STRIP

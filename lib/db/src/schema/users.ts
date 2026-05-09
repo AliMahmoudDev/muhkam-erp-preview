@@ -1,4 +1,4 @@
-import { pgTable, serial, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, boolean, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
 import { companiesTable } from "./companies";
 
 export const erpUsersTable = pgTable("erp_users", {
@@ -25,6 +25,7 @@ export const erpUsersTable = pgTable("erp_users", {
   repair_commission_pct:   integer("repair_commission_pct").notNull().default(0),
   repair_specialty:        text("repair_specialty"),
   repair_notifications:    boolean("repair_notifications").notNull().default(true),
+  dashboard_shortcuts:     jsonb("dashboard_shortcuts").$type<string[]>().default([]),
 });
 
 export type ErpUser = typeof erpUsersTable.$inferSelect;
