@@ -5,17 +5,29 @@
  */
 import { Router, type IRouter } from "express";
 import { sql } from "drizzle-orm";
+import { z } from "zod/v4";
 import { db } from "@workspace/db";
 import { wrap } from "../../lib/async-handler";
 import { hasPermission } from "../../lib/permissions";
 import { getTenant } from "../../middleware/auth";
 import { checkHealthCritical } from "../../lib/alert-service";
+import { firstZodError } from "../../lib/schemas";
 import {
   safeDate, r2, buildValidation, TOLERANCE,
   cfSql, cfSimpleSql,
 } from "./shared";
 
 const router: IRouter = Router();
+
+const dateRangeQuerySchema = z.object({
+  date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date_from يجب أن يكون YYYY-MM-DD").optional(),
+  date_to:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date_to يجب أن يكون YYYY-MM-DD").optional(),
+});
+
+const dateRangeRequiredQuerySchema = z.object({
+  date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date_from يجب أن يكون YYYY-MM-DD"),
+  date_to:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date_to يجب أن يكون YYYY-MM-DD"),
+});
 
 /* ─────────────────────────────────────────────────────────────────────────
  * 6. تقرير التدفق النقدي
@@ -25,7 +37,9 @@ router.get("/reports/cash-flow", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_accounts")) {
     res.status(403).json({ error: "غير مصرح بعرض التقارير المالية" }); return;
   }
-  const { date_from, date_to } = req.query as Record<string, string | undefined>;
+  const qp = dateRangeQuerySchema.safeParse(req.query);
+  if (!qp.success) { res.status(400).json({ error: firstZodError(qp.error) }); return; }
+  const { date_from, date_to } = qp.data;
   const companyId = getTenant(req);
   const sfrom = safeDate(date_from);
   const sto   = safeDate(date_to);
@@ -617,10 +631,12 @@ router.get("/reports/trial-balance", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_accounts")) {
     res.status(403).json({ error: "غير مصرح بعرض التقارير المالية" }); return;
   }
+  const qp = dateRangeQuerySchema.safeParse(req.query);
+  if (!qp.success) { res.status(400).json({ error: firstZodError(qp.error) }); return; }
   const companyId = getTenant(req);
 
-  const dateFrom = safeDate(req.query.date_from as string | undefined);
-  const dateTo   = safeDate(req.query.date_to   as string | undefined);
+  const dateFrom = safeDate(qp.data.date_from);
+  const dateTo   = safeDate(qp.data.date_to);
 
   const dateFilter = dateFrom && dateTo
     ? sql`AND je.date BETWEEN ${dateFrom} AND ${dateTo}`
@@ -687,9 +703,10 @@ router.get("/reports/cash-flow-indirect", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_accounts")) {
     res.status(403).json({ error: "غير مصرح بعرض التقارير المالية" }); return;
   }
+  const qp = dateRangeRequiredQuerySchema.safeParse(req.query);
+  if (!qp.success) { res.status(400).json({ error: firstZodError(qp.error) }); return; }
   const companyId = getTenant(req);
-  const { date_from, date_to } = req.query as Record<string, string>;
-  if (!date_from || !date_to) { res.status(400).json({ error: "date_from و date_to مطلوبان" }); return; }
+  const { date_from, date_to } = qp.data;
 
   // ─── 1. صافي الربح (إيرادات - مصروفات) ───
   const incomeData = await db.execute(sql`

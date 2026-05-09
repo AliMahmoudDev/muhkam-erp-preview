@@ -15,6 +15,7 @@ import type Express from "express";
 import { requireFeature } from "../middleware/feature-guard";
 import { hasPermission } from "../lib/permissions";
 import { findOrCreateCustomerByPhone } from "../lib/auto-customer";
+import { firstZodError } from "../lib/schemas";
 
 const PAYMENT_TYPES = ["cash", "credit", "partial"] as const;
 
@@ -69,6 +70,10 @@ const sellDeviceSchema = z.object({
   customer_id: z.number().int().positive().optional().nullable(),
   customer_name: z.string().max(200).optional().nullable(),
   warranty_months: z.number().int().min(0).optional().default(0),
+});
+
+const returnDeviceSchema = z.object({
+  return_reason: z.string().max(500).optional().nullable(),
 });
 
 const router = Router();
@@ -751,7 +756,9 @@ router.post("/devices/:id/return", wrap(async (req, res) => {
   }
   const { company_id } = ctx(req);
   const id = Number(req.params.id);
-  const { return_reason } = req.body as { return_reason?: string };
+  const vrd = returnDeviceSchema.safeParse(req.body);
+  if (!vrd.success) { return res.status(400).json({ error: firstZodError(vrd.error) }); }
+  const { return_reason } = vrd.data;
 
   const [existing] = await db.select().from(devicesTable)
     .where(and(eq(devicesTable.id, id), eq(devicesTable.company_id, company_id)));
