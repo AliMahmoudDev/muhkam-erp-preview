@@ -94,14 +94,9 @@ export interface AuthUser {
   employee_id: number | null;
 }
 
-/* Extend Express Request and Locals */
+/* Locals augmentation — stays here because PinnedClient is a local type alias */
 declare global {
   namespace Express {
-    interface Request {
-      user?: AuthUser;
-      role?: string;
-      companyId?: number | null;
-    }
     interface Locals {
       /** عميل pg مُثبَّت لطلب RLS (دفاع في العمق) — غير مضمون الوجود */
       pgClient?: PinnedClient;

@@ -15,6 +15,7 @@ import { assertPeriodOpen } from "../../lib/period-lock";
 import { writeAuditLog } from "../../lib/audit-log";
 import { hasPermission } from "../../lib/permissions";
 import { resolveTenantWarehouseId } from "../../lib/warehouse-guard";
+import { getTenant } from "../../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -43,7 +44,7 @@ const createPurchaseReturnSchema = z.object({
 // ══════════════════════════════════════════════════════════════════════════════
 
 router.get("/purchase-returns", wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId = getTenant(req);
   const items = await db
     .select({
       id: purchaseReturnsTable.id,
@@ -69,7 +70,8 @@ router.get("/purchase-returns", wrap(async (req, res) => {
 router.get("/purchase-returns/:id", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const [ret] = await db.select().from(purchaseReturnsTable).where(and(eq(purchaseReturnsTable.id, id), eq(purchaseReturnsTable.company_id, req.user!.company_id!)));
+  const companyId = getTenant(req);
+  const [ret] = await db.select().from(purchaseReturnsTable).where(and(eq(purchaseReturnsTable.id, id), eq(purchaseReturnsTable.company_id, companyId)));
   if (!ret) { res.status(404).json({ error: "غير موجود" }); return; }
   const items = await db.select().from(purchaseReturnItemsTable).where(eq(purchaseReturnItemsTable.return_id, id));
   res.json({
@@ -103,23 +105,25 @@ router.post("/purchase-returns", wrap(async (req, res) => {
     refund_type, safe_id,
   } = req.body;
 
+  const companyId = getTenant(req);
+
   if (purchase_id) {
     const [origPurch] = await db.select({ id: purchasesTable.id })
       .from(purchasesTable)
-      .where(and(eq(purchasesTable.id, parseInt(purchase_id)), eq(purchasesTable.company_id, req.user!.company_id!)));
+      .where(and(eq(purchasesTable.id, parseInt(purchase_id)), eq(purchasesTable.company_id, companyId)));
     if (!origPurch) { res.status(400).json({ error: "فاتورة الشراء الأصلية غير موجودة" }); return; }
   }
 
   if (customer_id) {
     const [ownC] = await db.select({ id: customersTable.id }).from(customersTable)
-      .where(and(eq(customersTable.id, parseInt(customer_id)), eq(customersTable.company_id, req.user!.company_id!)));
+      .where(and(eq(customersTable.id, parseInt(customer_id)), eq(customersTable.company_id, companyId)));
     if (!ownC) { res.status(400).json({ error: "المورد غير موجود" }); return; }
   }
 
   const reqProductIds2 = Array.from(new Set(items.map((i: { product_id: number }) => Number(i.product_id))));
   if (reqProductIds2.length > 0) {
     const ownedProducts2 = await db.select({ id: productsTable.id }).from(productsTable)
-      .where(and(inArray(productsTable.id, reqProductIds2 as number[]), eq(productsTable.company_id, req.user!.company_id!)));
+      .where(and(inArray(productsTable.id, reqProductIds2 as number[]), eq(productsTable.company_id, companyId)));
     if (ownedProducts2.length !== reqProductIds2.length) {
       res.status(400).json({ error: "أحد المنتجات غير موجود" }); return;
     }
@@ -128,33 +132,33 @@ router.post("/purchase-returns", wrap(async (req, res) => {
   const requestId = req.headers["x-request-id"] ? String(req.headers["x-request-id"]) : null;
   if (requestId) {
     const [existing] = await db.select().from(purchaseReturnsTable)
-      .where(and(eq(purchaseReturnsTable.request_id, requestId), eq(purchaseReturnsTable.company_id, req.user!.company_id!))).limit(1);
+      .where(and(eq(purchaseReturnsTable.request_id, requestId), eq(purchaseReturnsTable.company_id, companyId))).limit(1);
     if (existing) return res.json({ ...existing, total_amount: Number(existing.total_amount), created_at: existing.created_at.toISOString() });
   }
 
   const total: number = items.reduce((s: number, i: { total_price: number }) => s + Number(i.total_price), 0);
-  const return_no = await nextPurchaseReturnNo(req.user!.company_id!);
+  const return_no = await nextPurchaseReturnNo(companyId);
   const txDate = date ?? new Date().toISOString().split("T")[0];
   const rtype: string = refund_type === "cash" ? "cash" : "balance_credit";
 
   await assertPeriodOpen(txDate, req);
 
   const effectiveWarehouseId = req.user?.warehouse_id ?? null;
-  const tenantWarehouseId = await resolveTenantWarehouseId(effectiveWarehouseId, req.user!.company_id!);
+  const tenantWarehouseId = await resolveTenantWarehouseId(effectiveWarehouseId, companyId);
 
   const ret = await db.transaction(async (tx) => {
     let safeIdInt: number | null = null;
     let safeNameStr: string | null = null;
     if (rtype === "cash") {
       if (!safe_id) throw httpError(400, "يجب اختيار الخزينة للاسترداد النقدي");
-      const [safe] = await tx.select().from(safesTable).where(and(eq(safesTable.id, parseInt(safe_id)), eq(safesTable.company_id, req.user!.company_id!)));
+      const [safe] = await tx.select().from(safesTable).where(and(eq(safesTable.id, parseInt(safe_id)), eq(safesTable.company_id, companyId)));
       if (!safe) throw httpError(400, "الخزينة غير موجودة");
       safeIdInt   = safe.id;
       safeNameStr = safe.name;
 
       await tx.update(safesTable)
         .set({ balance: String(Number(safe.balance) + total) })
-        .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, req.user!.company_id!)));
+        .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, companyId)));
 
       await tx.insert(transactionsTable).values({
         type: "purchase_return",
@@ -165,16 +169,16 @@ router.post("/purchase-returns", wrap(async (req, res) => {
         direction: "in",
         description: `مرتجع مشتريات نقدي ${return_no}${supplier_name ? ` — ${supplier_name}` : ""}`,
         date: txDate,
-        company_id: req.user!.company_id!,
+        company_id: companyId,
       });
     } else {
       if (customer_id) {
         const custId = parseInt(customer_id);
-        const [cust] = await tx.select().from(customersTable).where(and(eq(customersTable.id, custId), eq(customersTable.company_id, req.user!.company_id!)));
+        const [cust] = await tx.select().from(customersTable).where(and(eq(customersTable.id, custId), eq(customersTable.company_id, companyId)));
         if (cust) {
           await tx.update(customersTable)
             .set({ balance: String(Number(cust.balance) + total) })
-            .where(and(eq(customersTable.id, custId), eq(customersTable.company_id, req.user!.company_id!)));
+            .where(and(eq(customersTable.id, custId), eq(customersTable.company_id, companyId)));
         }
         await tx.insert(customerLedgerTable).values({
           customer_id: custId,
@@ -185,7 +189,7 @@ router.post("/purchase-returns", wrap(async (req, res) => {
           reference_no: return_no,
           description: `مرتجع مشتريات ${return_no}${customer_name ? ` — ${customer_name}` : ""}`,
           date: txDate,
-          company_id: req.user!.company_id!,
+          company_id: companyId,
         });
       }
     }
@@ -203,7 +207,7 @@ router.post("/purchase-returns", wrap(async (req, res) => {
       date: txDate,
       reason: reason ?? null,
       notes: notes ?? null,
-      company_id: req.user!.company_id!,
+      company_id: companyId,
     }).returning();
 
     for (const item of items) {
@@ -265,7 +269,7 @@ router.post("/purchase-returns", wrap(async (req, res) => {
         total_cost_at_return:      String(totalCostAtReturn),
       });
 
-      const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, req.user!.company_id!)));
+      const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, companyId)));
       if (prod) {
         const oldQty  = Number(prod.quantity);
         const oldWAC  = Number(prod.cost_price);
@@ -278,7 +282,7 @@ router.post("/purchase-returns", wrap(async (req, res) => {
         }
         await tx.update(productsTable)
           .set({ quantity: String(newQty), cost_price: String(newWAC.toFixed(4)) })
-          .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, req.user!.company_id!)));
+          .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, companyId)));
         await tx.insert(stockMovementsTable).values({
           product_id:      item.product_id,
           product_name:    item.product_name,
@@ -293,7 +297,7 @@ router.post("/purchase-returns", wrap(async (req, res) => {
           notes: supplier_name ? `مرتجع مشتريات لـ ${supplier_name}` : "مرتجع مشتريات",
           date: txDate,
           warehouse_id: tenantWarehouseId,
-          company_id:   req.user!.company_id!,
+          company_id:   companyId,
         });
       }
     }
@@ -317,16 +321,17 @@ router.delete("/purchase-returns/:id", wrap(async (req, res) => {
     res.status(403).json({ error: "غير مصرح بحذف مرتجعات المشتريات" }); return;
   }
   const id = parseInt(req.params.id as string);
+  const companyId = getTenant(req);
   const [preCheck] = await db.select({ date: purchaseReturnsTable.date })
-    .from(purchaseReturnsTable).where(and(eq(purchaseReturnsTable.id, id), eq(purchaseReturnsTable.company_id, req.user!.company_id!)));
+    .from(purchaseReturnsTable).where(and(eq(purchaseReturnsTable.id, id), eq(purchaseReturnsTable.company_id, companyId)));
   if (!preCheck) throw httpError(404, "غير موجود");
   await assertPeriodOpen(preCheck.date, req);
 
   const effectiveWarehouseId = req.user?.warehouse_id ?? null;
-  const tenantWarehouseId = await resolveTenantWarehouseId(effectiveWarehouseId, req.user!.company_id!);
+  const tenantWarehouseId = await resolveTenantWarehouseId(effectiveWarehouseId, companyId);
 
   await db.transaction(async (tx) => {
-    const [ret] = await tx.select().from(purchaseReturnsTable).where(and(eq(purchaseReturnsTable.id, id), eq(purchaseReturnsTable.company_id, req.user!.company_id!)));
+    const [ret] = await tx.select().from(purchaseReturnsTable).where(and(eq(purchaseReturnsTable.id, id), eq(purchaseReturnsTable.company_id, companyId)));
     if (!ret) throw httpError(400, "غير موجود");
 
     const retItems = await tx.select().from(purchaseReturnItemsTable).where(eq(purchaseReturnItemsTable.return_id, id));
@@ -346,7 +351,7 @@ router.delete("/purchase-returns/:id", wrap(async (req, res) => {
         }
       }
 
-      const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, req.user!.company_id!)));
+      const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, companyId)));
       if (prod) {
         const oldQty = Number(prod.quantity);
         const oldWAC = Number(prod.cost_price);
@@ -356,7 +361,7 @@ router.delete("/purchase-returns/:id", wrap(async (req, res) => {
           : unitCostUsed;
         await tx.update(productsTable)
           .set({ quantity: String(newQty), cost_price: String(newWAC.toFixed(4)) })
-          .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, req.user!.company_id!)));
+          .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, companyId)));
         await tx.insert(stockMovementsTable).values({
           product_id:      item.product_id,
           product_name:    item.product_name,
@@ -371,7 +376,7 @@ router.delete("/purchase-returns/:id", wrap(async (req, res) => {
           notes:           `إلغاء مرتجع مشتريات ${ret.return_no}`,
           date:            new Date().toISOString().split("T")[0],
           warehouse_id:    tenantWarehouseId,
-          company_id:      req.user!.company_id!,
+          company_id:      companyId,
         });
       }
     }
@@ -379,19 +384,19 @@ router.delete("/purchase-returns/:id", wrap(async (req, res) => {
     const total = Number(ret.total_amount);
 
     if (ret.refund_type === "cash" && ret.safe_id) {
-      const [safe] = await tx.select().from(safesTable).where(and(eq(safesTable.id, ret.safe_id), eq(safesTable.company_id, req.user!.company_id!)));
+      const [safe] = await tx.select().from(safesTable).where(and(eq(safesTable.id, ret.safe_id), eq(safesTable.company_id, companyId)));
       if (safe) {
         await tx.update(safesTable)
           .set({ balance: String(Number(safe.balance) - total) })
-          .where(and(eq(safesTable.id, ret.safe_id), eq(safesTable.company_id, req.user!.company_id!)));
+          .where(and(eq(safesTable.id, ret.safe_id), eq(safesTable.company_id, companyId)));
       }
     } else if (ret.refund_type === "balance_credit" || !ret.refund_type) {
       if (ret.customer_id) {
-        const [cust] = await tx.select().from(customersTable).where(and(eq(customersTable.id, ret.customer_id), eq(customersTable.company_id, req.user!.company_id!)));
+        const [cust] = await tx.select().from(customersTable).where(and(eq(customersTable.id, ret.customer_id), eq(customersTable.company_id, companyId)));
         if (cust) {
           await tx.update(customersTable)
             .set({ balance: String(Number(cust.balance) - total) })
-            .where(and(eq(customersTable.id, ret.customer_id), eq(customersTable.company_id, req.user!.company_id!)));
+            .where(and(eq(customersTable.id, ret.customer_id), eq(customersTable.company_id, companyId)));
         }
         await tx.insert(customerLedgerTable).values({
           customer_id: ret.customer_id,
@@ -402,7 +407,7 @@ router.delete("/purchase-returns/:id", wrap(async (req, res) => {
           reference_no: ret.return_no,
           description: `إلغاء مرتجع مشتريات ${ret.return_no}`,
           date: new Date().toISOString().split("T")[0],
-          company_id: req.user!.company_id!,
+          company_id: companyId,
         });
       }
     }

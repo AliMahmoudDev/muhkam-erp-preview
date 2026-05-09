@@ -18,6 +18,9 @@ import {
 import { wrap, httpError } from "../lib/async-handler";
 import { getOrCreateCustomerAccount } from "../lib/auto-account";
 import { getTenant } from "../middleware/auth";
+import { getCache, setCache, deleteCache } from "../lib/cache";
+
+const CACHE_TTL = 60;
 
 const router: IRouter = Router();
 
@@ -52,6 +55,11 @@ router.get("/customers", wrap(async (req, res) => {
   // الرصيد = SUM(amount) لكل عميل
   // موجب = العميل مدين لنا (عليه) — سالب = نحن مدينون له (له علينا)
   const companyId = getTenant(req);
+  const cacheKey = `customers:${companyId}`;
+
+  const cached = await getCache<object[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
   const companyFilter = sql` WHERE c.company_id = ${companyId}`;
   const rawLimitC = parseInt(String(req.query.limit ?? "500"), 10);
   const limitC = Math.min(Math.max(isNaN(rawLimitC) ? 500 : rawLimitC, 1), 2000);
@@ -86,6 +94,7 @@ router.get("/customers", wrap(async (req, res) => {
     price_list_id: r.price_list_id ?? null,
     price_list_markup: r.price_list_markup != null ? Number(r.price_list_markup) : null,
   }));
+  await setCache(cacheKey, customers, CACHE_TTL);
   res.json(customers);
 }));
 
@@ -169,6 +178,7 @@ router.post("/customers", wrap(async (req, res) => {
     user: req.user ? { id: req.user.id, username: req.user.username } : null,
   });
 
+  await deleteCache(`customers:${req.user?.company_id}`);
   res.status(201).json(formatCustomer(updated));
 }));
 
@@ -276,6 +286,7 @@ router.put("/customers/:id", wrap(async (req, res) => {
     user: req.user ? { id: req.user.id, username: req.user.username } : null,
   });
 
+  await deleteCache(`customers:${companyIdPut}`);
   res.json(UpdateCustomerResponse.parse(formatCustomer(customer)));
 }));
 
@@ -314,6 +325,7 @@ router.delete("/customers/:id", wrap(async (req, res) => {
     user: req.user ? { id: req.user.id, username: req.user.username } : null,
   });
 
+  await deleteCache(`customers:${req.user?.company_id}`);
   res.json(DeleteCustomerResponse.parse({ success: true, message: "Customer deleted" }));
 }));
 

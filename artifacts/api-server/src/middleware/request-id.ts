@@ -1,18 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { Logger } from 'pino';
 import { logger } from '../lib/logger';
-
-/* Extend Express Request so every handler can read req.requestId and req.log */
-declare global {
-  namespace Express {
-    interface Request {
-      /** Server-generated UUID v4 for this request — echoed in X-Request-Id header */
-      requestId?: string;
-      /** Pino child logger bound to { requestId } — use instead of the root logger */
-      log?: Logger;
-    }
-  }
-}
 
 /**
  * requestId middleware — must be the very first app.use() call.

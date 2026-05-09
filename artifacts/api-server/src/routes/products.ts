@@ -14,6 +14,9 @@ import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
 import { getTenant } from "../middleware/auth";
+import { getCache, setCache, deleteCache } from "../lib/cache";
+
+const CACHE_TTL = 120;
 
 const router: IRouter = Router();
 
@@ -43,6 +46,7 @@ router.get("/products", wrap(async (req, res) => {
   const warehouseIdParam = req.query.warehouse_id ? parseInt(String(req.query.warehouse_id), 10) : null;
 
   if (warehouseIdParam && !isNaN(warehouseIdParam)) {
+    // Warehouse-filtered results are specific — skip cache to avoid key explosion
     const warehouseStock = await db
       .select({
         product_id: stockMovementsTable.product_id,
@@ -90,6 +94,11 @@ router.get("/products", wrap(async (req, res) => {
     res.json(GetProductsResponse.parse(enriched)); return;
   }
 
+  // Standard (non-warehouse) listing — cacheable
+  const cacheKey = `products:${companyId}`;
+  const cached = await getCache<object[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
   const rawLimitP = parseInt(String(req.query.limit ?? "1000"), 10);
   const limitP = Math.min(Math.max(isNaN(rawLimitP) ? 1000 : rawLimitP, 1), 2000);
 
@@ -114,7 +123,9 @@ router.get("/products", wrap(async (req, res) => {
     .orderBy(productsTable.created_at)
     .limit(limitP);
 
-  res.json(GetProductsResponse.parse(rows.map(formatProduct)));
+  const result = GetProductsResponse.parse(rows.map(formatProduct));
+  await setCache(cacheKey, result, CACHE_TTL);
+  res.json(result);
 }));
 
 async function resolveCategoryId(
@@ -199,6 +210,7 @@ router.post("/products", wrap(async (req, res) => {
     categoryName = cat?.name ?? null;
   }
 
+  await deleteCache(`products:${companyId}`);
   res.status(201).json(formatProduct({ ...product, category_name: categoryName }));
 }));
 
@@ -237,6 +249,7 @@ router.put("/products/:id", wrap(async (req, res) => {
     categoryName = cat?.name ?? null;
   }
 
+  await deleteCache(`products:${companyId}`);
   res.json(UpdateProductResponse.parse(formatProduct({ ...product, category_name: categoryName })));
 }));
 
@@ -249,7 +262,7 @@ router.post("/products/bulk-margin-update", wrap(async (req, res) => {
   if (typeof margin_percent !== "number" || margin_percent < 0) {
     res.status(400).json({ error: "نسبة الهامش غير صالحة" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const multiplier = 1 + margin_percent / 100;
 
   // جلب المنتجات المعنية
@@ -274,6 +287,7 @@ router.post("/products/bulk-margin-update", wrap(async (req, res) => {
     updatedCount++;
   }
 
+  await deleteCache(`products:${companyId}`);
   res.json({ success: true, updated: updatedCount, margin_percent });
 }));
 
@@ -283,8 +297,10 @@ router.delete("/products/:id", wrap(async (req, res) => {
   }
   const params = DeleteProductParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const result = await db.delete(productsTable).where(and(eq(productsTable.id, params.data.id), eq(productsTable.company_id, req.user!.company_id!))).returning({ id: productsTable.id });
+  const companyId = getTenant(req);
+  const result = await db.delete(productsTable).where(and(eq(productsTable.id, params.data.id), eq(productsTable.company_id, companyId))).returning({ id: productsTable.id });
   if (result.length === 0) { res.status(404).json({ error: "Product not found" }); return; }
+  await deleteCache(`products:${companyId}`);
   res.json(DeleteProductResponse.parse({ success: true, message: "Product deleted" }));
 }));
 

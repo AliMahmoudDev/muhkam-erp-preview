@@ -1,15 +1,23 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc, type SQLWrapper } from "drizzle-orm";
+import { z } from "zod/v4";
 import { db, exchangeRatesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { getTenant } from "../middleware/auth";
-import { z } from "zod/v4";
+import { getCache, setCache, deleteCachePattern } from "../lib/cache";
+
+const CACHE_TTL = 600;
 
 const router: IRouter = Router();
 
 router.get("/exchange-rates", wrap(async (req, res) => {
   const companyId = getTenant(req);
   const { currency, date } = req.query as { currency?: string; date?: string };
+
+  // Include query params in the key so different filter combinations are cached independently
+  const cacheKey = `exchange-rates:${companyId}:${currency ?? ""}:${date ?? ""}`;
+  const cached = await getCache<object[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
 
   const conditions: SQLWrapper[] = [eq(exchangeRatesTable.company_id, companyId)];
   if (currency) conditions.push(eq(exchangeRatesTable.currency, currency));
@@ -19,10 +27,9 @@ router.get("/exchange-rates", wrap(async (req, res) => {
     .where(and(...conditions))
     .orderBy(desc(exchangeRatesTable.date), desc(exchangeRatesTable.created_at));
 
-  res.json(rows.map(r => ({
-    ...r,
-    rate: Number(r.rate),
-  })));
+  const result = rows.map(r => ({ ...r, rate: Number(r.rate) }));
+  await setCache(cacheKey, result, CACHE_TTL);
+  res.json(result);
 }));
 
 router.get("/exchange-rates/latest", wrap(async (req, res) => {
@@ -74,23 +81,27 @@ router.post("/exchange-rates", wrap(async (req, res) => {
     ))
     .limit(1);
 
+  let responseRow;
   if (existing.length > 0) {
     const [updated] = await db.update(exchangeRatesTable)
       .set({ rate: String(rate), notes: notes ?? null })
       .where(eq(exchangeRatesTable.id, existing[0].id))
       .returning();
-    res.json({ ...updated, rate: Number(updated.rate) }); return;
+    responseRow = { ...updated, rate: Number(updated.rate) };
+  } else {
+    const [inserted] = await db.insert(exchangeRatesTable).values({
+      currency,
+      rate: String(rate),
+      date,
+      company_id: companyId,
+      notes: notes ?? null,
+    }).returning();
+    responseRow = { ...inserted, rate: Number(inserted.rate) };
   }
 
-  const [inserted] = await db.insert(exchangeRatesTable).values({
-    currency,
-    rate: String(rate),
-    date,
-    company_id: companyId,
-    notes: notes ?? null,
-  }).returning();
-
-  res.status(201).json({ ...inserted, rate: Number(inserted.rate) });
+  // Invalidate all cached exchange-rate keys for this company (any currency/date combo)
+  await deleteCachePattern(`exchange-rates:${companyId}:*`);
+  res.status(existing.length > 0 ? 200 : 201).json(responseRow);
 }));
 
 export default router;

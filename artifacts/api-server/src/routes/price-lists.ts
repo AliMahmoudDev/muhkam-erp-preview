@@ -1,10 +1,13 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod/v4";
 import { db, priceListsTable, priceListItemsTable, productsTable, customersTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { getTenant } from "../middleware/auth";
-import { z } from "zod/v4";
+import { getCache, setCache, deleteCache } from "../lib/cache";
+
+const CACHE_TTL = 300;
 
 const router: IRouter = Router();
 
@@ -14,9 +17,16 @@ router.get("/price-lists", wrap(async (req, res) => {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
   const companyId = getTenant(req);
+  const cacheKey = `price-lists:${companyId}`;
+
+  const cached = await getCache<object[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
   const lists = await db.select().from(priceListsTable)
     .where(eq(priceListsTable.company_id, companyId))
     .orderBy(priceListsTable.created_at);
+
+  await setCache(cacheKey, lists, CACHE_TTL);
   res.json(lists);
 }));
 
@@ -77,7 +87,7 @@ router.post("/price-lists", wrap(async (req, res) => {
   const parsed = CreatePriceListBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "بيانات قائمة الأسعار غير صحيحة", details: parsed.error.issues.map(i => i.message) }); return; }
 
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const { name, description, is_active, items } = parsed.data;
 
   const [newList] = await db.insert(priceListsTable).values({
@@ -97,6 +107,7 @@ router.post("/price-lists", wrap(async (req, res) => {
     );
   }
 
+  await deleteCache(`price-lists:${companyId}`);
   res.status(201).json(newList);
 }));
 
@@ -115,7 +126,7 @@ router.put("/price-lists/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_products")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = Number(req.params.id);
   if (!id) throw httpError(400, "معرف القائمة غير صالح");
 
@@ -137,7 +148,6 @@ router.put("/price-lists/:id", wrap(async (req, res) => {
     .where(and(eq(priceListsTable.id, id), eq(priceListsTable.company_id, companyId)))
     .returning();
 
-  // إعادة بناء العناصر إن أُرسلت
   if (items !== undefined) {
     await db.delete(priceListItemsTable).where(eq(priceListItemsTable.price_list_id, id));
     if (items.length > 0) {
@@ -151,6 +161,7 @@ router.put("/price-lists/:id", wrap(async (req, res) => {
     }
   }
 
+  await deleteCache(`price-lists:${companyId}`);
   res.json(updated);
 }));
 
@@ -159,7 +170,7 @@ router.delete("/price-lists/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_products")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = Number(req.params.id);
   if (!id) throw httpError(400, "معرف القائمة غير صالح");
 
@@ -167,7 +178,6 @@ router.delete("/price-lists/:id", wrap(async (req, res) => {
     .where(and(eq(priceListsTable.id, id), eq(priceListsTable.company_id, companyId)));
   if (!existing) throw httpError(404, "القائمة غير موجودة");
 
-  // إلغاء الربط من العملاء
   await db.update(customersTable)
     .set({ price_list_id: null, price_list_markup: null })
     .where(eq(customersTable.price_list_id, id));
@@ -175,6 +185,7 @@ router.delete("/price-lists/:id", wrap(async (req, res) => {
   await db.delete(priceListsTable)
     .where(and(eq(priceListsTable.id, id), eq(priceListsTable.company_id, companyId)));
 
+  await deleteCache(`price-lists:${companyId}`);
   res.json({ success: true });
 }));
 
@@ -199,7 +210,6 @@ router.get("/price-lists/customer-price/:customer_id/:product_id", wrap(async (r
     return res.json({ price: defaultPrice, source: "default" });
   }
 
-  // تحقق أن المنتج موجود في قائمة أسعار هذا العميل
   const [listItem] = await db.select().from(priceListItemsTable)
     .where(and(
       eq(priceListItemsTable.price_list_id, customer.price_list_id),
@@ -210,7 +220,6 @@ router.get("/price-lists/customer-price/:customer_id/:product_id", wrap(async (r
     return res.json({ price: defaultPrice, source: "default" });
   }
 
-  // الأولوية: markup الخاص بالعميل > markup القائمة > السعر الافتراضي
   const markupPercent = customer.price_list_markup != null
     ? Number(customer.price_list_markup)
     : (listItem.markup_percent != null ? Number(listItem.markup_percent) : null);

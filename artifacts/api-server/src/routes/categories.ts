@@ -2,13 +2,16 @@ import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
 import { db, categoriesTable, productsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
-import { authenticate } from "../middleware/auth";
+import { authenticate, getTenant } from "../middleware/auth";
 import { hasPermission } from "../lib/permissions";
+import { getCache, setCache, deleteCache } from "../lib/cache";
 import {
   categoryBodySchema,
   idParamSchema,
   firstZodError,
 } from "../lib/schemas";
+
+const CACHE_TTL = 300;
 
 const router: IRouter = Router();
 
@@ -18,7 +21,12 @@ router.get("/categories", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_products")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
+  const cacheKey = `categories:${companyId}`;
+
+  const cached = await getCache<object[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
   const rows = await db
     .select({
       id: categoriesTable.id,
@@ -37,6 +45,8 @@ router.get("/categories", wrap(async (req, res) => {
     .where(eq(categoriesTable.company_id, companyId))
     .groupBy(categoriesTable.id, categoriesTable.name, categoriesTable.company_id)
     .orderBy(categoriesTable.name);
+
+  await setCache(cacheKey, rows, CACHE_TTL);
   res.json(rows);
 }));
 
@@ -50,7 +60,7 @@ router.post("/categories", wrap(async (req, res) => {
     res.status(400).json({ error: firstZodError(bodyResult.error) }); return;
   }
   const { name } = bodyResult.data;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
 
   const [existing] = await db
     .select()
@@ -58,6 +68,7 @@ router.post("/categories", wrap(async (req, res) => {
     .where(and(eq(categoriesTable.name, name), eq(categoriesTable.company_id, companyId)));
 
   if (existing) {
+    await deleteCache(`categories:${companyId}`);
     res.json({ ...existing, product_count: 0 });
     return;
   }
@@ -67,6 +78,7 @@ router.post("/categories", wrap(async (req, res) => {
     .values({ name, company_id: companyId })
     .returning();
 
+  await deleteCache(`categories:${companyId}`);
   res.status(201).json({ ...cat, product_count: 0 });
 }));
 
@@ -87,7 +99,7 @@ router.put("/categories/:id", wrap(async (req, res) => {
 
   const id   = paramsResult.data.id;
   const name = bodyResult.data.name;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
 
   const [duplicate] = await db
     .select()
@@ -111,6 +123,8 @@ router.put("/categories/:id", wrap(async (req, res) => {
     .returning();
 
   if (!cat) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
+
+  await deleteCache(`categories:${companyId}`);
   res.json({ ...cat, product_count: productCount?.c ?? 0 });
 }));
 
@@ -124,7 +138,7 @@ router.delete("/categories/:id", wrap(async (req, res) => {
     res.status(400).json({ error: firstZodError(paramsResult.error) }); return;
   }
   const id = paramsResult.data.id;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
 
   const [purchaseCategory] = await db
     .select({ id: productsTable.id })
@@ -144,6 +158,8 @@ router.delete("/categories/:id", wrap(async (req, res) => {
   if (result.length === 0) {
     res.status(404).json({ error: "التصنيف غير موجود" }); return;
   }
+
+  await deleteCache(`categories:${companyId}`);
   res.json({ success: true, message: "تم حذف التصنيف" });
 }));
 
