@@ -23,6 +23,15 @@ import {
   decrementActiveConnections,
   normalizePath,
 } from './lib/request-counter';
+import {
+  httpRequestsTotal,
+  httpRequestDurationSeconds,
+  activeConnectionsGauge,
+  requestCountTotal,
+  responseTimeSummary,
+  errorCountTotal,
+  updateLiveGauges,
+} from './lib/prom-metrics';
 import { alertManager, ALERT_TYPES } from './lib/telegram-alert-manager';
 import { requestTimeout } from './middleware/request-timeout';
 import { perTenantRateLimit } from './middleware/per-tenant-rate-limit';
@@ -161,11 +170,29 @@ app.use(requestTimeout);
 /* ── Request metrics collector ──────────────────────────────── */
 app.use((req, res, next) => {
   incrementActiveConnections();
+  activeConnectionsGauge.inc();
   const start = Date.now();
   res.on('finish', () => {
     decrementActiveConnections();
+    activeConnectionsGauge.dec();
+
+    const durationMs = Date.now() - start;
     const routeKey = `${req.method} ${normalizePath(req.path)}`;
-    recordRequest(res.statusCode, Date.now() - start, routeKey);
+    const normalRoute = normalizePath(req.path);
+
+    /* hand-rolled counters (keep for JSON endpoint) */
+    recordRequest(res.statusCode, durationMs, routeKey);
+
+    /* prom-client — standard metrics */
+    httpRequestsTotal.labels(req.method, normalRoute, String(res.statusCode)).inc();
+    httpRequestDurationSeconds.labels(req.method, normalRoute).observe(durationMs / 1000);
+
+    /* prom-client — legacy aliases */
+    requestCountTotal.inc();
+    responseTimeSummary.observe(durationMs);
+    if (res.statusCode >= 400) errorCountTotal.inc();
+
+    updateLiveGauges();
   });
   next();
 });
