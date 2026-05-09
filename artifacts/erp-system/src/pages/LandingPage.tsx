@@ -296,11 +296,15 @@ const BENTO: BentoItem[] = [
   { title: 'تطبيق موبايل لفريقك بالكامل', desc: 'iOS و Android — حضور GPS، بطاقات صيانة، فواتير، ومتابعة الأداء.', cls: 'lp-full', mockup: <MiniMobile /> },
 ];
 
-const STATS = [
-  { end: 500, suffix: '+', label: 'شركة تثق بنا' },
-  { end: 99.9, suffix: '%', label: 'وقت التشغيل' },
-  { end: 7, suffix: '', label: 'أيام تجريبية مجانية' },
-  { end: 24, suffix: '/7', label: 'دعم عربي متواصل' },
+type StatItem =
+  | { kind: 'text'; text: string; label: string }
+  | { kind: 'num'; end: number; suffix: string; label: string };
+
+const STATS: StatItem[] = [
+  { kind: 'text', text: 'نظام متكامل',  label: 'حلّ موحّد لكل أقسام شركتك' },
+  { kind: 'text', text: 'دعم عربي كامل', label: 'واجهة عربية أصيلة من البداية' },
+  { kind: 'num',  end: 7,  suffix: '',   label: 'أيام تجريبية مجانية' },
+  { kind: 'num',  end: 24, suffix: '/7', label: 'دعم متواصل' },
 ];
 
 const TICKER = [
@@ -329,7 +333,7 @@ export default function LandingPage() {
   const [, navigate] = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [counts, setCounts] = useState([0, 0, 0, 0]);
+  const [counts, setCounts] = useState<number[]>(() => STATS.map(s => s.kind === 'num' ? 0 : 0));
   const countDone = useRef(false);
   const statsEl = useRef<HTMLDivElement>(null);
   const chartEl = useRef<HTMLDivElement>(null);
@@ -353,7 +357,7 @@ export default function LandingPage() {
   const startCount = useCallback(() => {
     if (countDone.current) return;
     countDone.current = true;
-    const targets = [500, 99.9, 7, 24];
+    const targets = STATS.map(s => s.kind === 'num' ? s.end : 0);
     const dur = 1800;
     const t0 = performance.now();
     const tick = (now: number) => {
@@ -395,7 +399,7 @@ export default function LandingPage() {
     setMenuOpen(false);
   };
 
-  const fmtCount = (i: number) => (i === 1 ? counts[i].toFixed(1) : String(Math.floor(counts[i])));
+  const fmtCount = (i: number) => String(Math.floor(counts[i]));
 
   return (
     <div style={{ background: '#0F172A', color: '#F8FAFC', minHeight: '100vh', ...mono }}>
@@ -467,7 +471,7 @@ export default function LandingPage() {
       <section dir="rtl" style={{
         minHeight: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: '108px 28px 72px', textAlign: 'center',
+        padding: '128px 28px 96px', textAlign: 'center',
         position: 'relative', overflow: 'hidden',
         background: 'linear-gradient(180deg, #0F172A 0%, #0B1220 100%)',
       }}>
@@ -492,13 +496,13 @@ export default function LandingPage() {
             animation: 'lp-fade-up .5s ease both',
           }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B82F6' }} />
-            <span>نظام ERP عربي · موثوق به من 500+ شركة</span>
+            <span>نظام ERP عربي متكامل</span>
           </div>
 
           {/* Headline */}
           <h1 style={{
-            fontSize: 'clamp(2.5rem, 6.5vw, 4.6rem)',
-            fontWeight: 800, lineHeight: 1.1, marginBottom: 22,
+            fontSize: 'clamp(2.1rem, 5.4vw, 3.9rem)',
+            fontWeight: 800, lineHeight: 1.12, marginBottom: 24,
             letterSpacing: '-0.025em',
             animation: 'lp-fade-up .55s .05s ease both',
           }}>
@@ -633,13 +637,19 @@ export default function LandingPage() {
       </div>
 
       {/* ═══════════════ STATS ═══════════════ */}
-      <section dir="rtl" ref={statsEl} style={{ background: '#0F172A', borderBottom: '1px solid #1E293B', padding: '72px 28px' }}>
+      <section dir="rtl" ref={statsEl} style={{ background: '#0F172A', borderBottom: '1px solid #1E293B', padding: '96px 28px' }}>
         <div className="lp-grid-4" style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 28, textAlign: 'center' }}>
           {STATS.map((s, i) => (
             <div key={i} className={`lp-fade lp-d${i + 1}`}>
-              <div style={{ fontSize: 'clamp(2rem, 4.5vw, 3.4rem)', fontWeight: 800, lineHeight: 1, marginBottom: 8, letterSpacing: '-0.02em' }}>
-                <span className="lp-stat-num" style={{ color: '#F8FAFC', animationDelay: `${i * 0.1}s` }}>{fmtCount(i)}</span>
-                <span style={{ color: '#3B82F6', fontSize: '0.65em' }}>{s.suffix}</span>
+              <div style={{ fontSize: 'clamp(1.6rem, 3.6vw, 2.6rem)', fontWeight: 800, lineHeight: 1.15, marginBottom: 10, letterSpacing: '-0.02em' }}>
+                {s.kind === 'num' ? (
+                  <>
+                    <span className="lp-stat-num" style={{ color: '#F8FAFC', animationDelay: `${i * 0.1}s` }}>{fmtCount(i)}</span>
+                    <span style={{ color: '#3B82F6', fontSize: '0.65em' }}>{s.suffix}</span>
+                  </>
+                ) : (
+                  <span style={{ color: '#F8FAFC' }}>{s.text}</span>
+                )}
               </div>
               <div style={{ fontSize: 14, color: '#94A3B8', fontWeight: 500 }}>{s.label}</div>
             </div>
@@ -648,7 +658,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══════════════ BENTO FEATURES ═══════════════ */}
-      <section id="features" dir="rtl" style={{ padding: '110px 28px', background: '#0F172A' }}>
+      <section id="features" dir="rtl" style={{ padding: '136px 28px', background: '#0F172A' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
           <div className="lp-fade" style={{ textAlign: 'center', marginBottom: 64 }}>
@@ -878,7 +888,7 @@ export default function LandingPage() {
 
       {/* ═══════════════ FINAL CTA ═══════════════ */}
       <section dir="rtl" style={{
-        padding: '120px 28px', textAlign: 'center',
+        padding: '144px 28px', textAlign: 'center',
         background: 'linear-gradient(180deg, #0F172A 0%, #0B1220 100%)',
         borderTop: '1px solid #1E293B',
         position: 'relative', overflow: 'hidden',
@@ -897,7 +907,7 @@ export default function LandingPage() {
             جاهز لتحويل <span style={{ color: '#60A5FA' }}>شركتك؟</span>
           </h2>
           <p style={{ color: '#94A3B8', fontSize: 17, marginBottom: 36, lineHeight: 1.6 }}>
-            انضم إلى أكثر من 500 شركة تثق في مُحكم يومياً.
+            ابدأ رحلتك مع نظام ERP عربي متكامل — كل ما تحتاجه شركتك في منصة واحدة.
           </p>
           <button onClick={goRegister} className="lp-btn-primary" style={{ padding: '16px 40px', fontSize: 16 }}>
             ابدأ تجربتك المجانية الآن
