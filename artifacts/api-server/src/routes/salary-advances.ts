@@ -13,6 +13,7 @@ import {
 import { z } from "zod/v4";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { firstZodError } from "../lib/schemas";
 
 import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { writeAuditLog } from "../lib/audit-log";
@@ -26,6 +27,29 @@ const createAdvanceSchema = z.object({
   reason: z.string().optional().nullable(),
   deduct_from: z.enum(["fixed", "commission", "both"], { error: "قيمة الخصم يجب أن تكون fixed أو commission أو both" }).optional().default("fixed"),
   safe_id: z.number().optional().nullable(),
+});
+
+const advanceSettingsSchema = z.object({
+  max_advance_percentage: z.number().min(1).max(100).optional(),
+  max_concurrent_advances: z.number().int().min(1).max(50).optional(),
+  min_salary_for_advance: z.number().min(0).optional(),
+  repayment_tenure_months: z.number().int().min(1).max(120).optional(),
+  requires_approval: z.boolean().optional(),
+});
+
+const approveAdvanceSchema = z.object({
+  approved_amount: z.number().positive("مبلغ الاعتماد يجب أن يكون موجباً").optional(),
+  safe_id: z.union([z.number(), z.string()]).optional().nullable(),
+  notes: z.string().max(500).optional().nullable(),
+});
+
+const rejectAdvanceSchema = z.object({
+  reason: z.string().max(500).optional().nullable(),
+});
+
+const manualPaymentSchema = z.object({
+  amount: z.number({ error: "مبلغ السداد يجب أن يكون رقماً" }).positive("مبلغ السداد يجب أن يكون موجباً"),
+  notes: z.string().max(500).optional().nullable(),
 });
 
 const router: IRouter = Router();
@@ -72,8 +96,10 @@ router.get("/salary-advances/settings", wrap(async (req, res) => {
 
 router.put("/salary-advances/settings", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedSettings = advanceSettingsSchema.safeParse(req.body);
+  if (!parsedSettings.success) { res.status(400).json({ error: firstZodError(parsedSettings.error) }); return; }
   const companyId = req.user!.company_id!;
-  const { max_advance_percentage, max_concurrent_advances, min_salary_for_advance, repayment_tenure_months, requires_approval } = req.body as Record<string, unknown>;
+  const { max_advance_percentage, max_concurrent_advances, min_salary_for_advance, repayment_tenure_months, requires_approval } = parsedSettings.data;
   const [existing] = await db.select().from(salaryAdvanceSettingsTable).where(eq(salaryAdvanceSettingsTable.company_id, companyId));
   if (existing) {
     const [row] = await db.update(salaryAdvanceSettingsTable)
@@ -249,10 +275,12 @@ router.get("/salary-advances/:id", wrap(async (req, res) => {
 /* ── Approve ──────────────────────────────────────────────────── */
 router.post("/salary-advances/:id/approve", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح بالاعتماد" }); return; }
+  const parsedApprove = approveAdvanceSchema.safeParse(req.body);
+  if (!parsedApprove.success) { res.status(400).json({ error: firstZodError(parsedApprove.error) }); return; }
   const companyId = req.user!.company_id!;
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
-  const body      = req.body as { approved_amount?: number; safe_id?: number | string; notes?: string };
+  const body      = parsedApprove.data;
 
   const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
@@ -355,15 +383,17 @@ router.post("/salary-advances/:id/approve", wrap(async (req, res) => {
 /* ── Reject ───────────────────────────────────────────────────── */
 router.post("/salary-advances/:id/reject", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedReject = rejectAdvanceSchema.safeParse(req.body);
+  if (!parsedReject.success) { res.status(400).json({ error: firstZodError(parsedReject.error) }); return; }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
-  const { reason } = req.body as { reason?: string };
+  const { reason } = parsedReject.data;
   const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
   if (advance.status !== "pending") { res.status(409).json({ error: "لا يمكن رفض سلفة غير معلّقة" }); return; }
   await db.update(salaryAdvancesTable).set({ status: "rejected", rejection_reason: reason ?? "مرفوض", updated_at: new Date() }).where(eq(salaryAdvancesTable.id, id));
-  await logHistory(id, "pending", "rejected", userId, reason);
+  await logHistory(id, "pending", "rejected", userId, reason ?? undefined);
 
   // Notify the employee about the rejection.
   await notifyEmployee(companyId, advance.employee_id, {
@@ -406,11 +436,12 @@ router.get("/salary-advances/:id/deductions", wrap(async (req, res) => {
 /* ── Manual Payment ───────────────────────────────────────────── */
 router.post("/salary-advances/:id/manual-payment", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedPayment = manualPaymentSchema.safeParse(req.body);
+  if (!parsedPayment.success) { res.status(400).json({ error: firstZodError(parsedPayment.error) }); return; }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
-  const { amount, notes } = req.body as { amount?: number; notes?: string };
-  if (!amount || amount <= 0) { res.status(400).json({ error: "مبلغ السداد يجب أن يكون موجباً" }); return; }
+  const { amount, notes } = parsedPayment.data;
 
   const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
