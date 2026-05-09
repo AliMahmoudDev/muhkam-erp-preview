@@ -379,7 +379,7 @@ export default function Login() {
           fontSize: 12, color: '#475569', fontWeight: 500,
         }}
         className="text-center">
-        <span>© 2026 جميع الحقوق محفوظة MUHKAM ERP · v2.0 </span>
+        <span className="text-center">مٌحـكم جميع الحقوق محفوظة MUHKAM © 2026</span>
         <span>© 2026 جميع الحقوق محفوظة</span>
       </div>
     </div>
