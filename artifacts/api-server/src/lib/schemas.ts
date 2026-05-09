@@ -150,8 +150,8 @@ export function validate<T>(
 }
 
 /** Extract the first human-readable message from a ZodError. */
-export function firstZodError(err: z.ZodError): string {
-  return err.errors[0]?.message ?? "بيانات غير صحيحة";
+export function firstZodError(err: { issues: Array<{ message: string }> }): string {
+  return err.issues[0]?.message ?? "بيانات غير صحيحة";
 }
 
 /* ─── Shared param schemas ───────────────────────────────────────────────── */

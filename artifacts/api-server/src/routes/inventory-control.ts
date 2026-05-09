@@ -12,7 +12,29 @@
 
 import { Router, type IRouter } from "express";
 import { eq, and, inArray, sql } from "drizzle-orm";
+import { z } from "zod/v4";
+import { firstZodError } from "../lib/schemas";
 import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
+
+const createCountSessionSchema = z.object({
+  warehouse_id: z.number().int().positive().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  items: z.array(z.object({
+    product_id: z.number().int().positive(),
+    physical_qty: z.number().finite(),
+    notes: z.string().optional().nullable(),
+  })).min(1),
+});
+
+const createTransferSchema = z.object({
+  from_warehouse_id: z.number().int().positive(),
+  to_warehouse_id: z.number().int().positive(),
+  notes: z.string().optional().nullable(),
+  items: z.array(z.object({
+    product_id: z.number().int().positive(),
+    quantity: z.number().positive(),
+  })).min(1),
+});
 import {
   db,
   productsTable,
@@ -42,15 +64,10 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية إجراء جرد المخزون" }); return;
   }
 
-  const { warehouse_id, notes, items } = req.body as {
-    warehouse_id?: number;
-    notes?: string;
-    items: Array<{ product_id: number; physical_qty: number; notes?: string }>;
-  };
+  const parsedSession = createCountSessionSchema.safeParse(req.body);
+  if (!parsedSession.success) { res.status(400).json({ error: firstZodError(parsedSession.error) }); return; }
 
-  if (!Array.isArray(items) || items.length === 0) {
-    res.status(400).json({ error: "يجب تحديد منتج واحد على الأقل في الجرد" }); return;
-  }
+  const { warehouse_id, notes, items } = parsedSession.data;
 
   const companyId = req.user!.company_id!;
   const tenantWarehouseId = await resolveTenantWarehouseId(warehouse_id ?? null, companyId);
@@ -309,20 +326,14 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية تحويل المخزون" }); return;
   }
 
-  const { from_warehouse_id, to_warehouse_id, items } = req.body as {
-    from_warehouse_id: number;
-    to_warehouse_id:   number;
-    notes?:            string;
-    items: Array<{ product_id: number; quantity: number }>;
-  };
+  const parsedTransfer = createTransferSchema.safeParse(req.body);
+  if (!parsedTransfer.success) { res.status(400).json({ error: firstZodError(parsedTransfer.error) }); return; }
+
+  const { from_warehouse_id, to_warehouse_id, items } = parsedTransfer.data;
 
   // التحقق من عدم التحويل لنفس المخزن
-  if (Number(from_warehouse_id) === Number(to_warehouse_id)) {
+  if (from_warehouse_id === to_warehouse_id) {
     res.status(400).json({ error: "لا يمكن التحويل من مخزن إلى نفس المخزن" }); return;
-  }
-
-  if (!Array.isArray(items) || items.length === 0) {
-    res.status(400).json({ error: "يجب تحديد منتج واحد على الأقل" }); return;
   }
 
   // ── Aggregate duplicate product lines to prevent stock-check bypass ──────

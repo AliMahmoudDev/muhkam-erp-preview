@@ -10,12 +10,46 @@ import {
   employeesTable, safesTable, transactionsTable, expensesTable,
 } from "@workspace/db";
 import { isNull } from "drizzle-orm";
+import { z } from "zod/v4";
+import { firstZodError } from "../lib/schemas";
 import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { notifyEmployee } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
+
+const createBonusSchema = z.object({
+  employee_id: z.union([z.string(), z.number()]).refine(v => Number(v) > 0),
+  amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, { message: "المبلغ يجب أن يكون أكبر من صفر" }),
+  reason: z.string().optional().nullable(),
+  granted_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  currency: z.string().optional().nullable(),
+});
+
+const createDeductionSchema = z.object({
+  employee_id: z.union([z.string(), z.number()]).refine(v => Number(v) > 0),
+  amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, { message: "المبلغ يجب أن يكون أكبر من صفر" }),
+  reason: z.string().optional().nullable(),
+  deduction_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  deduction_type: z.string().optional().nullable(),
+  currency: z.string().optional().nullable(),
+});
+
+const createCustodySchema = z.object({
+  employee_id: z.union([z.string(), z.number()]).refine(v => Number(v) > 0),
+  amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, { message: "المبلغ يجب أن يكون أكبر من صفر" }),
+  purpose: z.string().optional().nullable(),
+  granted_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  currency: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  safe_id: z.union([z.string(), z.number()]).optional().nullable(),
+});
+
+const reimburseSchema = z.object({
+  safe_id: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, { message: "اختر خزينة الصرف" }),
+  notes: z.string().optional().nullable(),
+});
 
 const router: IRouter = Router();
 router.use(["/employee-bonuses", "/employee-custody", "/employee-deductions"], requireFeature("hr"));
@@ -43,12 +77,11 @@ router.get("/employee-bonuses", wrap(async (req, res) => {
 router.post("/employee-bonuses", wrap(async (req, res) => {
   if (isSelfServiceUser(req)) { res.status(403).json({ error: "غير مصرح" }); return; }
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedBonus = createBonusSchema.safeParse(req.body);
+  if (!parsedBonus.success) { res.status(400).json({ error: firstZodError(parsedBonus.error) }); return; }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
-  const { employee_id, amount, reason, granted_date, currency } = req.body as Record<string, unknown>;
-  if (!employee_id || amount == null || Number(amount) <= 0) {
-    res.status(400).json({ error: "بيانات الحافز غير مكتملة" }); return;
-  }
+  const { employee_id, amount, reason, granted_date, currency } = parsedBonus.data;
   const [emp] = await db.select().from(employeesTable)
     .where(and(eq(employeesTable.id, Number(employee_id)), eq(employeesTable.company_id, companyId)));
   if (!emp) { res.status(404).json({ error: "الموظف غير موجود" }); return; }
@@ -111,12 +144,11 @@ router.get("/employee-deductions", wrap(async (req, res) => {
 router.post("/employee-deductions", wrap(async (req, res) => {
   if (isSelfServiceUser(req)) { res.status(403).json({ error: "غير مصرح" }); return; }
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedDeduction = createDeductionSchema.safeParse(req.body);
+  if (!parsedDeduction.success) { res.status(400).json({ error: firstZodError(parsedDeduction.error) }); return; }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
-  const { employee_id, amount, reason, deduction_date, deduction_type, currency } = req.body as Record<string, unknown>;
-  if (!employee_id || amount == null || Number(amount) <= 0) {
-    res.status(400).json({ error: "بيانات الخصم غير مكتملة" }); return;
-  }
+  const { employee_id, amount, reason, deduction_date, deduction_type, currency } = parsedDeduction.data;
   const dtype = String(deduction_type ?? "other");
   if (!DEDUCTION_TYPES.has(dtype)) { res.status(400).json({ error: "نوع الخصم غير صحيح" }); return; }
   const [emp] = await db.select().from(employeesTable)
@@ -191,12 +223,11 @@ router.get("/employee-custody/:id/lines", wrap(async (req, res) => {
 router.post("/employee-custody", wrap(async (req, res) => {
   if (isSelfServiceUser(req)) { res.status(403).json({ error: "غير مصرح" }); return; }
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedCustody = createCustodySchema.safeParse(req.body);
+  if (!parsedCustody.success) { res.status(400).json({ error: firstZodError(parsedCustody.error) }); return; }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
-  const { employee_id, amount, purpose, granted_date, currency, notes, safe_id } = req.body as Record<string, unknown>;
-  if (!employee_id || amount == null || Number(amount) <= 0) {
-    res.status(400).json({ error: "بيانات العهدة غير مكتملة" }); return;
-  }
+  const { employee_id, amount, purpose, granted_date, currency, notes, safe_id } = parsedCustody.data;
   const amt = Number(amount);
   const safeIdNum = safe_id != null && safe_id !== "" ? Number(safe_id) : null;
   const dateStr = String(granted_date ?? new Date().toISOString().split("T")[0]);
@@ -495,12 +526,11 @@ router.post("/employee-custody/:id/reimburse", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
+  const parsedReimburse = reimburseSchema.safeParse(req.body);
+  if (!parsedReimburse.success) { res.status(400).json({ error: firstZodError(parsedReimburse.error) }); return; }
   const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
-  const { safe_id, notes } = req.body as { safe_id?: number; notes?: string };
-  if (!safe_id || Number(safe_id) <= 0) {
-    res.status(400).json({ error: "اختر خزينة الصرف" }); return;
-  }
+  const { safe_id, notes } = parsedReimburse.data;
 
   const today = new Date().toISOString().split("T")[0];
   await assertPeriodOpen(today, req);

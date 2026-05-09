@@ -10,10 +10,78 @@ import {
   leaveRequestsTable, leaveApprovalsTable, leaveAccrualHistoryTable,
   leaveBlackoutDatesTable, employeesTable,
 } from "@workspace/db";
+import { z } from "zod/v4";
+import { firstZodError } from "../lib/schemas";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { requireFeature } from "../middleware/feature-guard";
+
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+const createLeaveTypeSchema = z.object({
+  name_ar: z.string().min(1),
+  code: z.string().min(1),
+  name_en: z.string().optional().nullable(),
+  is_paid: z.boolean().optional(),
+  requires_approval: z.boolean().optional(),
+  carryover_allowed: z.boolean().optional(),
+  carryover_limit: z.number().optional().nullable(),
+});
+
+const updateLeaveTypeSchema = z.object({
+  name_ar: z.string().min(1).optional(),
+  name_en: z.string().optional().nullable(),
+  is_paid: z.boolean().optional(),
+  requires_approval: z.boolean().optional(),
+  carryover_allowed: z.boolean().optional(),
+  carryover_limit: z.number().optional().nullable(),
+  is_active: z.boolean().optional(),
+});
+
+const createLeavePolicySchema = z.object({
+  leave_type_id: z.union([z.string(), z.number()]).refine(v => Number(v) > 0),
+  entitlement_days_per_year: z.number().optional(),
+  accrual_method: z.string().optional().nullable(),
+  min_duration: z.number().optional().nullable(),
+  max_consecutive_days: z.number().optional().nullable(),
+  probation_days: z.number().optional(),
+});
+
+const updateLeavePolicySchema = z.object({
+  entitlement_days_per_year: z.number().optional(),
+  accrual_method: z.string().optional().nullable(),
+  min_duration: z.number().optional().nullable(),
+  max_consecutive_days: z.number().optional().nullable(),
+  probation_days: z.number().optional(),
+});
+
+const createLeaveRequestSchema = z.object({
+  leave_type_id: z.union([z.string(), z.number()]).refine(v => Number(v) > 0),
+  start_date: z.string().regex(dateRegex),
+  end_date: z.string().regex(dateRegex),
+  employee_id: z.union([z.string(), z.number()]).optional().nullable(),
+  reason: z.string().optional().nullable(),
+});
+
+const approveLeaveSchema = z.object({
+  comment: z.string().optional().nullable(),
+});
+
+const rejectLeaveSchema = z.object({
+  reason: z.string().optional().nullable(),
+});
+
+const accrualRunSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/).optional().nullable(),
+});
+
+const createBlackoutSchema = z.object({
+  start_date: z.string().regex(dateRegex),
+  end_date: z.string().regex(dateRegex),
+  reason_ar: z.string().optional().nullable(),
+  reason_en: z.string().optional().nullable(),
+});
 
 const router: IRouter = Router();
 router.use(["/leave-types", "/leave-policies", "/leave-requests", "/leave-accrual", "/leave-blackout-dates", "/employee-leave-balance"], requireFeature("hr"));
@@ -34,9 +102,10 @@ router.get("/leave-types", wrap(async (req, res) => {
 
 router.post("/leave-types", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedLT = createLeaveTypeSchema.safeParse(req.body);
+  if (!parsedLT.success) { res.status(400).json({ error: firstZodError(parsedLT.error) }); return; }
   const companyId = req.user!.company_id!;
-  const { name_ar, name_en, code, is_paid, requires_approval, carryover_allowed, carryover_limit } = req.body as Record<string, unknown>;
-  if (!name_ar || !code) { res.status(400).json({ error: "اسم ورمز نوع الإجازة مطلوبان" }); return; }
+  const { name_ar, name_en, code, is_paid, requires_approval, carryover_allowed, carryover_limit } = parsedLT.data;
   const [row] = await db.insert(leaveTypesTable).values({
     company_id: companyId, name_ar: String(name_ar), name_en: String(name_en ?? name_ar),
     code: String(code).toUpperCase(), is_paid: Boolean(is_paid !== false),
@@ -49,9 +118,11 @@ router.post("/leave-types", wrap(async (req, res) => {
 
 router.put("/leave-types/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedLTU = updateLeaveTypeSchema.safeParse(req.body);
+  if (!parsedLTU.success) { res.status(400).json({ error: firstZodError(parsedLTU.error) }); return; }
   const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
-  const { name_ar, name_en, is_paid, requires_approval, carryover_allowed, carryover_limit, is_active } = req.body as Record<string, unknown>;
+  const { name_ar, name_en, is_paid, requires_approval, carryover_allowed, carryover_limit, is_active } = parsedLTU.data;
   const [row] = await db.update(leaveTypesTable)
     .set({ name_ar: String(name_ar ?? ""), name_en: String(name_en ?? name_ar ?? ""), is_paid: Boolean(is_paid !== false), requires_approval: Boolean(requires_approval !== false), carryover_allowed: Boolean(carryover_allowed), carryover_limit: carryover_allowed ? (Number(carryover_limit) || 0) : null, is_active: Boolean(is_active !== false) })
     .where(and(eq(leaveTypesTable.id, id), eq(leaveTypesTable.company_id, companyId)))
@@ -81,9 +152,10 @@ router.get("/leave-policies", wrap(async (req, res) => {
 
 router.post("/leave-policies", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedLP = createLeavePolicySchema.safeParse(req.body);
+  if (!parsedLP.success) { res.status(400).json({ error: firstZodError(parsedLP.error) }); return; }
   const companyId = req.user!.company_id!;
-  const { leave_type_id, entitlement_days_per_year, accrual_method, min_duration, max_consecutive_days, probation_days } = req.body as Record<string, unknown>;
-  if (!leave_type_id) { res.status(400).json({ error: "نوع الإجازة مطلوب" }); return; }
+  const { leave_type_id, entitlement_days_per_year, accrual_method, min_duration, max_consecutive_days, probation_days } = parsedLP.data;
   const [row] = await db.insert(leavePoliciesTable).values({
     company_id: companyId, leave_type_id: Number(leave_type_id),
     entitlement_days_per_year: Number(entitlement_days_per_year) || 21,
@@ -97,9 +169,11 @@ router.post("/leave-policies", wrap(async (req, res) => {
 
 router.put("/leave-policies/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedLPU = updateLeavePolicySchema.safeParse(req.body);
+  if (!parsedLPU.success) { res.status(400).json({ error: firstZodError(parsedLPU.error) }); return; }
   const companyId = req.user!.company_id!;
   const id = parseInt(String(req.params["id"]), 10);
-  const { entitlement_days_per_year, accrual_method, min_duration, max_consecutive_days, probation_days } = req.body as Record<string, unknown>;
+  const { entitlement_days_per_year, accrual_method, min_duration, max_consecutive_days, probation_days } = parsedLPU.data;
   const [row] = await db.update(leavePoliciesTable)
     .set({ entitlement_days_per_year: Number(entitlement_days_per_year) || 21, accrual_method: String(accrual_method ?? "fixed"), min_duration: String(Number(min_duration) || 1), max_consecutive_days: max_consecutive_days ? Number(max_consecutive_days) : null, probation_days: Number(probation_days) || 90, updated_at: new Date() })
     .where(and(eq(leavePoliciesTable.id, id), eq(leavePoliciesTable.company_id, companyId)))
@@ -183,11 +257,13 @@ router.post("/leave-requests", wrap(async (req, res) => {
   const isSelf    = isSelfServiceUser(req);
   const selfId    = selfEmployeeId(req);
   if (isSelf && (!selfId || selfId === -1)) { res.status(403).json({ error: "حساب الموظف غير مرتبط بسجل موظف" }); return; }
-  let { employee_id } = req.body as Record<string, unknown>;
-  const { leave_type_id, start_date, end_date, reason } = req.body as Record<string, unknown>;
+  const parsedLR = createLeaveRequestSchema.safeParse(req.body);
+  if (!parsedLR.success) { res.status(400).json({ error: firstZodError(parsedLR.error) }); return; }
+  let { employee_id } = parsedLR.data;
+  const { leave_type_id, start_date, end_date, reason } = parsedLR.data;
   // Self-service: always restrict to own employee_id
   if (isSelf) employee_id = selfId;
-  if (!employee_id || !leave_type_id || !start_date || !end_date) { res.status(400).json({ error: "جميع بيانات الإجازة مطلوبة" }); return; }
+  if (!employee_id) { res.status(400).json({ error: "معرف الموظف مطلوب" }); return; }
   if (new Date(String(start_date)) > new Date(String(end_date))) { res.status(400).json({ error: "تاريخ البداية يجب أن يكون قبل تاريخ النهاية" }); return; }
 
   // Verify employee belongs to this company
@@ -274,10 +350,12 @@ router.get("/leave-requests/:id", wrap(async (req, res) => {
 /* ── Approve / Reject ─────────────────────────────────────────── */
 router.post("/leave-requests/:id/approve", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح بالاعتماد" }); return; }
+  const parsedApprove = approveLeaveSchema.safeParse(req.body);
+  if (!parsedApprove.success) { res.status(400).json({ error: firstZodError(parsedApprove.error) }); return; }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
-  const { comment } = req.body as { comment?: string };
+  const { comment } = parsedApprove.data;
 
   const [request] = await db.select({ lr: leaveRequestsTable }).from(leaveRequestsTable)
     .innerJoin(employeesTable, and(eq(leaveRequestsTable.employee_id, employeesTable.id), eq(employeesTable.company_id, companyId)))
@@ -309,10 +387,12 @@ router.post("/leave-requests/:id/approve", wrap(async (req, res) => {
 
 router.post("/leave-requests/:id/reject", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedReject = rejectLeaveSchema.safeParse(req.body);
+  if (!parsedReject.success) { res.status(400).json({ error: firstZodError(parsedReject.error) }); return; }
   const companyId = req.user!.company_id!;
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
-  const { reason } = req.body as { reason?: string };
+  const { reason } = parsedReject.data;
 
   const [request] = await db.select({ lr: leaveRequestsTable }).from(leaveRequestsTable)
     .innerJoin(employeesTable, and(eq(leaveRequestsTable.employee_id, employeesTable.id), eq(employeesTable.company_id, companyId)))
@@ -333,8 +413,10 @@ router.post("/leave-requests/:id/reject", wrap(async (req, res) => {
 /* ── Accrual Run ──────────────────────────────────────────────── */
 router.post("/leave-accrual/run", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedAccrual = accrualRunSchema.safeParse(req.body);
+  if (!parsedAccrual.success) { res.status(400).json({ error: firstZodError(parsedAccrual.error) }); return; }
   const companyId = req.user!.company_id!;
-  const month = String(req.body?.month ?? new Date().toISOString().substring(0, 7));
+  const month = parsedAccrual.data.month ?? new Date().toISOString().substring(0, 7);
 
   // Get all active employees
   const employees = await db.select().from(employeesTable)
@@ -392,9 +474,10 @@ router.get("/leave-blackout-dates", wrap(async (req, res) => {
 
 router.post("/leave-blackout-dates", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
+  const parsedBlackout = createBlackoutSchema.safeParse(req.body);
+  if (!parsedBlackout.success) { res.status(400).json({ error: firstZodError(parsedBlackout.error) }); return; }
   const companyId = req.user!.company_id!;
-  const { start_date, end_date, reason_ar, reason_en } = req.body as Record<string, string>;
-  if (!start_date || !end_date) { res.status(400).json({ error: "تواريخ الفترة المحظورة مطلوبة" }); return; }
+  const { start_date, end_date, reason_ar, reason_en } = parsedBlackout.data;
   const [row] = await db.insert(leaveBlackoutDatesTable).values({
     company_id: companyId, start_date, end_date, reason_ar: reason_ar ?? null, reason_en: reason_en ?? null,
   }).returning();

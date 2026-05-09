@@ -2,11 +2,21 @@ import { Router, type IRouter } from "express";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { db, receiptVouchersTable, customersTable, safesTable, transactionsTable, accountsTable, customerLedgerTable } from "@workspace/db";
 import { nextReceiptVoucherNo } from "../lib/invoice-no";
-
+import { z } from "zod/v4";
+import { firstZodError } from "../lib/schemas";
 import { wrap, httpError } from "../lib/async-handler";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { getOrCreateSafeAccount, getOrCreateMiscRevenueAccount, createAutoJournalEntry, type AccountRef } from "../lib/auto-account";
 import { hasPermission } from "../lib/permissions";
+
+const createReceiptVoucherSchema = z.object({
+  customer_name: z.string().min(1),
+  safe_id: z.union([z.string().min(1), z.number().int().positive()]),
+  amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, { message: "المبلغ يجب أن يكون أكبر من صفر" }),
+  customer_id: z.union([z.string(), z.number()]).optional().nullable(),
+  notes: z.string().optional().nullable(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+});
 
 const router: IRouter = Router();
 
@@ -34,13 +44,12 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
     res.status(403).json({ error: "غير مصرح بإضافة سندات قبض" }); return;
   }
 
+  const parsed = createReceiptVoucherSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: firstZodError(parsed.error) }); return; }
+
   const cid = getCid(req);
-  const { customer_id, customer_name, safe_id, amount, notes, date } = req.body;
-  if (!customer_name || !safe_id || !amount) {
-    return res.status(400).json({ error: "البيانات غير مكتملة" });
-  }
+  const { customer_id, customer_name, safe_id, amount, notes, date } = parsed.data;
   const amt = Number(amount);
-  if (isNaN(amt) || amt <= 0) { return res.status(400).json({ error: "المبلغ غير صحيح" }); }
 
   const requestId = req.headers["x-request-id"]
     ? String(req.headers["x-request-id"])
@@ -56,7 +65,7 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
 
   const voucher = await db.transaction(async (tx) => {
     const [safe] = await tx.select().from(safesTable).where(and(
-      eq(safesTable.id, parseInt(safe_id)),
+      eq(safesTable.id, Number(safe_id)),
       eq(safesTable.company_id, cid),
     ));
     if (!safe) throw httpError(400, "الخزينة غير موجودة");
@@ -67,7 +76,7 @@ router.post("/receipt-vouchers", wrap(async (req, res) => {
     let resolvedCustomerId: number | null = null;
     if (customer_id) {
       const [cust] = await tx.select().from(customersTable).where(and(
-        eq(customersTable.id, parseInt(customer_id)),
+        eq(customersTable.id, Number(customer_id)),
         eq(customersTable.company_id, cid),
       ));
       if (!cust) throw httpError(400, "العميل غير موجود أو لا ينتمي لهذه الشركة");

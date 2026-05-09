@@ -3,8 +3,55 @@ import { eq, desc, or, count, and, ne, inArray } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { authenticate, requireRole, requireTenantStrict, getTenant } from "../middleware/auth";
 import { hashPin } from "../lib/hash";
-import { createUserSchema, updateUserSchema, validate } from "../lib/schemas";
+import { z } from "zod/v4";
+import { createUserSchema, updateUserSchema, validate, firstZodError } from "../lib/schemas";
 import { wrap } from "../lib/async-handler";
+
+const createSafeSchema = z.object({
+  name: z.string().min(1),
+  balance: z.union([z.string(), z.number()]).optional().nullable(),
+  branch_id: z.union([z.string(), z.number()]).optional().nullable(),
+});
+
+const updateSafeSchema = z.object({
+  name: z.string().min(1).optional(),
+  balance: z.union([z.string(), z.number()]).optional(),
+  branch_id: z.union([z.string(), z.number()]).optional().nullable(),
+});
+
+const closeSafeSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  actual_balance: z.union([z.string(), z.number()]).optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
+const createWarehouseSchema = z.object({
+  name: z.string().min(1),
+  address: z.string().optional().nullable(),
+  branch_id: z.union([z.string(), z.number()]).optional().nullable(),
+});
+
+const updateWarehouseSchema = z.object({
+  name: z.string().min(1).optional(),
+  address: z.string().optional().nullable(),
+  branch_id: z.union([z.string(), z.number()]).optional().nullable(),
+});
+
+const periodSchema = z.object({
+  closing_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  unlock_reason: z.string().optional().nullable(),
+  lock_mode: z.string().optional().nullable(),
+});
+
+const systemSettingSchema = z.object({
+  key: z.string().min(1),
+  value: z.string().optional().nullable(),
+  company_id: z.union([z.string(), z.number()]).optional().nullable(),
+});
+
+const resetSchema = z.object({
+  confirm: z.string(),
+});
 import {
   erpUsersTable,
   safesTable,
@@ -211,7 +258,9 @@ router.get("/settings/safes", wrap(async (req, res) => {
 }));
 
 router.post("/settings/safes", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const { name, balance, branch_id } = req.body;
+  const parsedSafe = createSafeSchema.safeParse(req.body);
+  if (!parsedSafe.success) { res.status(400).json({ error: firstZodError(parsedSafe.error) }); return; }
+  const { name, balance, branch_id } = parsedSafe.data;
   const companyId = req.user?.company_id ?? undefined;
   const [safe] = await db.insert(safesTable)
     .values({ name, balance: String(balance || 0), company_id: companyId, branch_id: branch_id ? Number(branch_id) : null })
@@ -220,9 +269,11 @@ router.post("/settings/safes", authenticate, requireRole("admin"), wrap(async (r
 }));
 
 router.put("/settings/safes/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
+  const parsedSafeU = updateSafeSchema.safeParse(req.body);
+  if (!parsedSafeU.success) { res.status(400).json({ error: firstZodError(parsedSafeU.error) }); return; }
   const id = Number(req.params.id);
   const tenant = req.user!.company_id!;
-  const { name, balance, branch_id } = req.body;
+  const { name, balance, branch_id } = parsedSafeU.data;
   const updates: Record<string, unknown> = {};
   if (name !== undefined) updates.name = String(name).trim();
   if (balance !== undefined) updates.balance = String(balance);
@@ -274,9 +325,11 @@ router.delete("/settings/safes/:id", authenticate, requireRole("admin"), require
    admin role to prevent any authenticated tenant user from mutating
    treasury balances. */
 router.post("/settings/safes/:id/close", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
+  const parsedClose = closeSafeSchema.safeParse(req.body);
+  if (!parsedClose.success) { res.status(400).json({ error: firstZodError(parsedClose.error) }); return; }
   const id = Number(req.params.id);
   const tenant = req.user!.company_id!;
-  const { date, actual_balance, notes } = req.body;
+  const { date, actual_balance, notes } = parsedClose.data;
   const closeDate = date ?? new Date().toISOString().split("T")[0];
 
   const [safe] = await db.select().from(safesTable)
@@ -410,7 +463,9 @@ router.get("/settings/warehouses", wrap(async (req, res) => {
 }));
 
 router.post("/settings/warehouses", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const { name, address, branch_id } = req.body;
+  const parsedWH = createWarehouseSchema.safeParse(req.body);
+  if (!parsedWH.success) { res.status(400).json({ error: firstZodError(parsedWH.error) }); return; }
+  const { name, address, branch_id } = parsedWH.data;
   const companyId = req.user?.company_id ?? undefined;
   const [warehouse] = await db.insert(warehousesTable)
     .values({ name, address: address || null, company_id: companyId, branch_id: branch_id ? Number(branch_id) : null })
@@ -419,9 +474,11 @@ router.post("/settings/warehouses", authenticate, requireRole("admin"), wrap(asy
 }));
 
 router.put("/settings/warehouses/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
+  const parsedWHU = updateWarehouseSchema.safeParse(req.body);
+  if (!parsedWHU.success) { res.status(400).json({ error: firstZodError(parsedWHU.error) }); return; }
   const id = Number(req.params.id);
   const tenant = req.user!.company_id!;
-  const { name, address, branch_id } = req.body;
+  const { name, address, branch_id } = parsedWHU.data;
   const updates: Record<string, unknown> = {};
   if (name    !== undefined) updates.name      = String(name).trim();
   if (address !== undefined) updates.address   = address ? String(address).trim() : null;
@@ -472,7 +529,9 @@ router.get("/settings/period", wrap(async (req, res) => {
 }));
 
 router.put("/settings/period", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const { closing_date, unlock_reason, lock_mode } = req.body;
+  const parsedPeriod = periodSchema.safeParse(req.body);
+  if (!parsedPeriod.success) { res.status(400).json({ error: firstZodError(parsedPeriod.error) }); return; }
+  const { closing_date, unlock_reason, lock_mode } = parsedPeriod.data;
   const username  = req.user?.username  ?? "مجهول";
   const userId    = req.user?.id        ?? null;
   const companyId = req.user!.company_id!;
@@ -541,7 +600,9 @@ router.get("/settings/audit-logs", authenticate, requireRole("admin"), wrap(asyn
 // ─── RESET DATABASE ───────────────────────────────────────────────────────────
 
 router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const { confirm } = req.body;
+  const parsedReset = resetSchema.safeParse(req.body);
+  if (!parsedReset.success) { res.status(400).json({ error: firstZodError(parsedReset.error) }); return; }
+  const { confirm } = parsedReset.data;
   if (confirm !== "إعادة تعيين كاملة") {
     res.status(400).json({ error: "يجب كتابة عبارة التأكيد بشكل صحيح" }); return;
   }
@@ -675,8 +736,10 @@ router.post("/settings/system", authenticate, wrap(async (req, res) => {
   if (!["admin", "super_admin"].includes(role)) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const { key, value } = req.body as { key?: string; value?: string };
-  if (!key?.trim()) { res.status(400).json({ error: "المفتاح مطلوب" }); return; }
+  const parsedSys = systemSettingSchema.safeParse(req.body);
+  if (!parsedSys.success) { res.status(400).json({ error: firstZodError(parsedSys.error) }); return; }
+  const { key, value } = parsedSys.data;
+  if (!key.trim()) { res.status(400).json({ error: "المفتاح مطلوب" }); return; }
   const companyId = role === "super_admin"
     ? Number(req.body?.company_id ?? req.query.company_id)
     : req.user?.company_id;

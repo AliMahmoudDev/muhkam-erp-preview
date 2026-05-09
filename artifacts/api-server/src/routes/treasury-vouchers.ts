@@ -2,9 +2,19 @@ import { Router, type IRouter } from "express";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { db, treasuryVouchersTable, safesTable, transactionsTable } from "@workspace/db";
 import { nextTreasuryReceiptNo, nextTreasuryPaymentNo } from "../lib/invoice-no";
-
+import { z } from "zod/v4";
+import { firstZodError } from "../lib/schemas";
 import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+
+const createTreasuryVoucherSchema = z.object({
+  type: z.enum(["receipt", "payment"]),
+  safe_id: z.union([z.string().min(1), z.number().int().positive()]),
+  amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, { message: "المبلغ يجب أن يكون أكبر من صفر" }),
+  description: z.string().min(1),
+  party_name: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+});
 
 const router: IRouter = Router();
 
@@ -42,21 +52,15 @@ router.get("/treasury-vouchers/safe/:safeId", wrap(async (req, res) => {
 }));
 
 router.post("/treasury-vouchers", wrap(async (req, res) => {
+  const parsed = createTreasuryVoucherSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: firstZodError(parsed.error) }); return; }
+
   const cid = getCid(req);
-  const { type, safe_id, amount, party_name, description, category } = req.body;
-  if (!type || !safe_id || !amount || !description) {
-    res.status(400).json({ error: "البيانات غير مكتملة" }); return;
-  }
-  if (!["receipt", "payment"].includes(type)) {
-    res.status(400).json({ error: "نوع السند غير صحيح" }); return;
-  }
+  const { type, safe_id, amount, party_name, description, category } = parsed.data;
   const amt = Number(amount);
-  if (!isFinite(amt) || amt <= 0) {
-    res.status(400).json({ error: "المبلغ يجب أن يكون أكبر من صفر" }); return;
-  }
 
   const [safe] = await db.select().from(safesTable).where(and(
-    eq(safesTable.id, parseInt(safe_id)),
+    eq(safesTable.id, Number(safe_id)),
     eq(safesTable.company_id, cid),
   ));
   if (!safe) { res.status(404).json({ error: "الخزانة غير موجودة" }); return; }
