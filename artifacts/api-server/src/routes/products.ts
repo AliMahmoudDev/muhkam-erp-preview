@@ -1,3 +1,24 @@
+/**
+ * @module routes/products
+ * @description Product (inventory item) management routes for MUHKAM ERP.
+ *
+ * Endpoints:
+ *   GET    /products         List all products for the tenant, optionally filtered by warehouse_id
+ *                            (Redis cached when no warehouse filter; key: `products:{companyId}`, TTL 120s)
+ *   POST   /products         Create a new product with optional category linkage
+ *   PUT    /products/:id     Update product details (name, prices, SKU, category, thresholds)
+ *   DELETE /products/:id     Delete a product (does not cascade stock movements)
+ *
+ * WAC note: cost_price is the Weighted Average Cost (WAC). It is updated automatically
+ * by the purchase and sale cancellation flows — do not update it directly via this route
+ * unless performing a manual cost correction with an audit trail.
+ *
+ * Cache invalidation: every POST/PUT/DELETE calls deleteCache(`products:{companyId}`).
+ * Warehouse-filtered GET requests bypass cache to avoid key-space explosion.
+ *
+ * Multi-tenant: all queries are scoped by company_id via getTenant(req).
+ * @access All endpoints require valid JWT + company_id tenant resolution.
+ */
 import { Router, type IRouter } from "express";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { db, productsTable, stockMovementsTable, categoriesTable } from "@workspace/db";

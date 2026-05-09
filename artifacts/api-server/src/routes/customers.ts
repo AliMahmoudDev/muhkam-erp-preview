@@ -1,3 +1,21 @@
+/**
+ * @module routes/customers
+ * @description Customer management routes for MUHKAM ERP.
+ *
+ * Endpoints:
+ *   GET    /customers                     List all customers with live ledger balances (Redis cached, TTL 60s)
+ *   POST   /customers                     Create a new customer with auto chart-of-accounts linkage
+ *   PUT    /customers/:id                 Update customer name, phone, classification, or account
+ *   DELETE /customers/:id                 Delete a customer (blocked if outstanding ledger balance > 0)
+ *   GET    /customers/:id/receipt-history Paginated payment/receipt history for a customer
+ *   POST   /customers/:id/receipt         Record a cash receipt against customer balance + safe + ledger
+ *
+ * Multi-tenant: all queries are scoped by company_id via getTenant(req).
+ * Cache: GET /customers uses Redis (key: `customers:{companyId}`, TTL 60s).
+ *        POST/PUT/DELETE invalidate via deleteCache.
+ *
+ * @access All endpoints require valid JWT + company_id tenant resolution.
+ */
 import { Router, type IRouter } from "express";
 import { eq, and, max, asc, sql } from "drizzle-orm";
 import { db, customersTable, transactionsTable, safesTable, customerLedgerTable, customerClassificationsTable } from "@workspace/db";

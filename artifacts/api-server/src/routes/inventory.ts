@@ -1,3 +1,27 @@
+/**
+ * @module routes/inventory
+ * @description Inventory management and audit routes for MUHKAM ERP.
+ *
+ * Endpoints:
+ *   GET  /inventory/audit              Full inventory audit — compares actual product.quantity
+ *                                      against calculated quantity from all stock movements.
+ *                                      Identifies discrepancies for stocktake reconciliation.
+ *   GET  /inventory/movements          Paginated stock movement history (purchases, sales, adjustments,
+ *                                      transfers, returns). Filterable by product, date range, type.
+ *   GET  /inventory/movements/:id      Single stock movement record.
+ *   POST /inventory/adjustment         Manual quantity adjustment (stocktake correction).
+ *                                      Creates a stock movement of type "adjustment" and
+ *                                      updates product.quantity atomically. Writes audit log.
+ *   GET  /inventory/low-stock          Products with quantity below their low_stock_threshold.
+ *                                      Used by the alerts system and dashboard cards.
+ *
+ * Warehouse scoping:
+ *   - admin/manager: can view all warehouses or filter by warehouse_id query param.
+ *   - cashier/salesperson: restricted to their assigned warehouse (req.user.warehouse_id).
+ *
+ * Multi-tenant: all queries are scoped by company_id via getTenant(req).
+ * @access All endpoints require valid JWT + company_id tenant resolution.
+ */
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
