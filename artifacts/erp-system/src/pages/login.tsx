@@ -372,11 +372,13 @@ export default function Login() {
       </div>
 
       {/* Bottom — version */}
-      <div style={{
-        position: 'relative', zIndex: 1,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        fontSize: 12, color: '#475569', fontWeight: 500,
-      }}>
+      <div
+        style={{
+          position: 'relative', zIndex: 1,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          fontSize: 12, color: '#475569', fontWeight: 500,
+        }}
+        className="text-center">
         <span>MUHKAM ERP · v2.0</span>
         <span>© 2026 جميع الحقوق محفوظة</span>
       </div>
@@ -531,7 +533,6 @@ export default function Login() {
           </div>
         </div>
       </div>
-
       {/* Brand panel */}
       <BrandPanel />
     </div>
