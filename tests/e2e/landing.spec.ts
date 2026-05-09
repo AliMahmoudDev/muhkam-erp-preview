@@ -6,7 +6,7 @@ test('قسم الهيرو مرئي عند زيارة الصفحة الرئيسي
   await expect(page.locator('h1').first()).toBeVisible({ timeout: 10000 });
 });
 
-test('شريط الإحصاءات يعرض +500 شركة', async ({ page }) => {
+test('شريط الإحصاءات يعرض محتوى صحيحاً', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
 
@@ -15,12 +15,16 @@ test('شريط الإحصاءات يعرض +500 شركة', async ({ page }) => {
   // page.locator('section').nth(1) is the stats <section ref={statsEl}>.
   await page.locator('section').nth(1).scrollIntoViewIfNeeded();
 
-  // The label "شركة تثق بنا" is always rendered statically.
-  await expect(page.getByText('شركة تثق بنا').first()).toBeVisible({ timeout: 10000 });
+  // First stat is text-only: "نظام متكامل" — always rendered statically.
+  await expect(page.getByText('نظام متكامل').first()).toBeVisible({ timeout: 10000 });
 
-  // After the observer fires the counter animates from 0 → 500 over ~2.2 s.
+  // The label beneath the first text stat is always rendered statically.
+  await expect(page.getByText('حلّ موحّد لكل أقسام شركتك').first()).toBeVisible({ timeout: 10000 });
+
+  // Third stat (index 2) is numeric and animates 0 → 7 over ~1.8 s.
+  // .lp-stat-num elements only appear for numeric stats (indices 2 & 3).
   // Allow 8 s total to cover animation + any CI scheduling jitter.
-  await expect(page.locator('.lp-stat-num').first()).toHaveText('500', { timeout: 8000 });
+  await expect(page.locator('.lp-stat-num').first()).toHaveText('7', { timeout: 8000 });
 });
 
 test('شبكة الميزات تحتوي على 8 بطاقات', async ({ page }) => {
