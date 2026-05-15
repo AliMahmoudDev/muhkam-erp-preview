@@ -4428,7 +4428,7 @@ html.light .erp-row:hover .erp-td { background: var(--erp-bg-soft) !important; }
 .sale-cart-header { background: rgba(255,255,255,0.03); }
 .sale-border { border-color: rgba(255,255,255,0.08); }
 input.sale-border:focus, textarea.sale-border:focus { border-color: rgba(245,158,11,0.55) !important; outline: none !important; }
-.sale-cart-footer { background: hsla(225,25%,5%,0.97); border-top: 1px solid rgba(255,255,255,0.07); }
+.sale-cart-footer { background: hsla(225,25%,5%,0.97); border-top: 1px solid rgba(255,255,255,0.07); max-height: min(420px, calc(100vh - 295px)); overflow-y: auto; }
 .sale-badge-empty { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.08); }
 .sale-empty-icon-bg { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
 
@@ -4498,6 +4498,37 @@ input.sale-border:focus, textarea.sale-border:focus { border-color: rgba(245,158
 .sale-price-input { background: rgba(255,255,255,0.09); border: 1px solid rgba(245,158,11,0.40); color: rgba(255,255,255,0.92); transition: border-color 0.2s, box-shadow 0.2s; }
 .sale-price-input:focus { border-color: rgba(245,158,11,0.65) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.13) !important; outline: none !important; }
 
+/* ── POS redesign — new cart item + quantity/delete buttons ── */
+.pos-cart-item {
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 14px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.pos-cart-item:hover { background: rgba(255,255,255,0.085); border-color: rgba(255,255,255,0.14); }
+
+.pos-qty-btn {
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.60);
+  cursor: pointer; flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.pos-qty-btn:hover { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.90); }
+.pos-qty-btn-add { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.26); color: #F59E0B; }
+.pos-qty-btn-add:hover { background: rgba(245,158,11,0.22); color: #FBBF24; }
+
+.pos-del-btn {
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.18);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pos-del-btn:hover { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.20); color: #F87171; }
+
 /* ════ LIGHT MODE overrides ════ */
 html.light .sale-text-primary  { color: #0D1117; }
 html.light .sale-muted-text    { color: #64748B; }
@@ -4557,6 +4588,15 @@ html.light .sale-pay-fill { background: rgba(245,158,11,0.07); border-color: rgb
 
 html.light .sale-qty-btn { background: #F1F5F9; border-color: #CBD5E1; }
 html.light .sale-qty-btn:hover { background: #E2E8F0; }
+
+html.light .pos-cart-item { background: #F8FAFC; border-color: #E8ECF0; }
+html.light .pos-cart-item:hover { background: #F1F5F9; border-color: #D4DCE8; }
+html.light .pos-qty-btn { background: #F1F5F9; border-color: #CBD5E1; color: #475569; }
+html.light .pos-qty-btn:hover { background: #E2E8F0; color: #0D1117; }
+html.light .pos-qty-btn-add { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.25); color: #D97706; }
+html.light .pos-qty-btn-add:hover { background: rgba(245,158,11,0.16); }
+html.light .pos-del-btn { color: rgba(0,0,0,0.15); }
+html.light .pos-del-btn:hover { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.20); color: #DC2626; }
 html.light .sale-price-input { background: #FFFFFF; border-color: rgba(245,158,11,0.38); color: #0D1117; }
 html.light .sale-price-input:focus { border-color: #D97706 !important; box-shadow: 0 0 0 3px rgba(217,119,6,0.12) !important; }
 html.light .sale-pay-safe:focus { border-color: #D97706 !important; box-shadow: 0 0 0 3px rgba(217,119,6,0.12) !important; }

@@ -119,7 +119,7 @@ export function SalePaymentSection({
   handleCheckout,
 }: SalePaymentSectionProps) {
   return (
-    <div className="sale-cart-footer p-3 space-y-2 shrink-0 overflow-y-auto" style={{ maxHeight: 'min(380px, calc(100vh - 320px))' }}>
+    <div className="sale-cart-footer p-3 space-y-2 shrink-0 overflow-y-auto">
       {/* ─── العميل ─── */}
       <div className="sale-field-row flex items-center gap-2 rounded-xl px-3 py-2">
         <User className="w-3.5 h-3.5 sale-muted-text shrink-0" />
@@ -278,27 +278,34 @@ export function SalePaymentSection({
       </div>
 
       {/* ─── إجمالي الفاتورة ─── */}
-      <div className="sale-total-box rounded-2xl px-4 py-3 flex items-center justify-between">
-        {discountAmount > 0 ? (
-          <div className="text-left">
-            <p className="text-[10px] sale-muted-text line-through tabular-nums">
-              {formatCurrency(cartSubtotal)}
-            </p>
-            <p className="text-[10px] sale-label-text">
-              {discountMode === 'pct'
-                ? `بعد خصم ${discountPct}%`
-                : `بعد خصم ${formatCurrency(discountAmount)}`}
-            </p>
-          </div>
-        ) : (
-          <span className="text-xs sale-label-text font-medium">إجمالي الفاتورة</span>
+      <div className="sale-total-box rounded-2xl overflow-hidden">
+        {discountAmount > 0 && (
+          <>
+            <div className="flex items-center justify-between px-4 py-2 border-b sale-border">
+              <span className="text-[10px] sale-muted-text">قبل الخصم</span>
+              <span className="text-[10px] sale-muted-text tabular-nums line-through">
+                {formatCurrency(cartSubtotal)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-2 border-b sale-border">
+              <span className="text-[10px] text-rose-400/80">
+                {discountMode === 'pct' ? `خصم ${discountPct}%` : 'خصم (مبلغ)'}
+              </span>
+              <span className="text-[10px] font-bold text-rose-400 tabular-nums">
+                -{formatCurrency(discountAmount)}
+              </span>
+            </div>
+          </>
         )}
-        <span
-          className="font-black sale-text-primary tabular-nums"
-          style={{ fontSize: '1.5rem', letterSpacing: '-0.5px', lineHeight: 1 }}
-        >
-          {formatCurrency(cartTotal)}
-        </span>
+        <div className="flex items-center justify-between px-4 py-3">
+          <span className="text-xs sale-label-text font-medium">إجمالي الفاتورة</span>
+          <span
+            className="font-black sale-text-primary tabular-nums"
+            style={{ fontSize: '1.5rem', letterSpacing: '-0.5px', lineHeight: 1 }}
+          >
+            {formatCurrency(cartTotal)}
+          </span>
+        </div>
       </div>
 
       {/* ─── قسم الدفع ─── */}
@@ -376,13 +383,13 @@ export function SalePaymentSection({
             <div className="flex gap-1.5 mb-2">
               <button
                 onClick={() => setPayType('cash')}
-                className={`sale-pay-btn flex-1 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 ${payType === 'cash' ? 'sale-pay-btn-cash-active' : 'sale-pay-btn-inactive'}`}
+                className={`sale-pay-btn flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 ${payType === 'cash' ? 'sale-pay-btn-cash-active' : 'sale-pay-btn-inactive'}`}
               >
                 <Coins className="w-3 h-3" /> نقدي
               </button>
               <button
                 onClick={() => setPayType('credit')}
-                className={`sale-pay-btn flex-1 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 ${payType === 'credit' ? 'sale-pay-btn-credit-active' : 'sale-pay-btn-inactive'}`}
+                className={`sale-pay-btn flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 ${payType === 'credit' ? 'sale-pay-btn-credit-active' : 'sale-pay-btn-inactive'}`}
               >
                 <Clock className="w-3 h-3" /> آجل
               </button>
@@ -478,7 +485,7 @@ export function SalePaymentSection({
       <button
         onClick={handleCheckout}
         disabled={!canCheckout}
-        className="w-full py-3.5 rounded-xl font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+        className="w-full py-4 rounded-2xl font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
         style={{
           background: canCheckout
             ? 'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)'

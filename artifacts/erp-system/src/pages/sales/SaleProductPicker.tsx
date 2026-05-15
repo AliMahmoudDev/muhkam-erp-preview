@@ -118,7 +118,7 @@ export function SaleProductPicker({
 
       {/* شبكة المنتجات */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5 pb-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pb-1">
           {filteredProducts.map((product) => {
             const outOfStock = product.quantity <= 0;
             const lowStock = !outOfStock && product.quantity <= 5;
@@ -128,12 +128,23 @@ export function SaleProductPicker({
                 key={product.id}
                 onClick={() => onAddToCart(product)}
                 disabled={outOfStock}
-                className={`sale-product-card group rounded-2xl p-3.5 text-right overflow-hidden ${isFlashing ? 'pos-card-flash' : ''}`}
+                className={`sale-product-card group relative rounded-2xl p-3.5 text-right overflow-hidden ${isFlashing ? 'pos-card-flash' : ''}`}
               >
+                <span
+                  className={`absolute top-2 start-2 text-[9px] font-bold tabular-nums px-1.5 py-0.5 rounded-md sale-stock-badge ${
+                    outOfStock
+                      ? '!bg-red-500/15 !text-red-400'
+                      : lowStock
+                        ? '!bg-orange-500/15 !text-orange-400'
+                        : ''
+                  }`}
+                >
+                  {outOfStock ? 'نفد' : lowStock ? `${product.quantity} ⚠` : product.quantity}
+                </span>
                 <div className="sale-product-icon-bg h-12 rounded-xl mb-3 flex items-center justify-center">
                   <Package className="sale-product-icon w-5 h-5" />
                 </div>
-                <p className="sale-product-name font-bold text-sm truncate leading-tight">
+                <p className="sale-product-name font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
                   {product.name}
                 </p>
                 {product.category && (
@@ -141,25 +152,14 @@ export function SaleProductPicker({
                     {product.category}
                   </span>
                 )}
-                <div className="flex items-center justify-between mt-2.5">
+                <div className="mt-2.5">
                   <span className="text-emerald-400 font-black text-sm tabular-nums">
                     {formatCurrency(product.sale_price)}
-                  </span>
-                  <span
-                    className={`sale-stock-badge text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-md ${
-                      outOfStock
-                        ? '!bg-red-500/15 !text-red-400'
-                        : lowStock
-                          ? '!bg-orange-500/15 !text-orange-400'
-                          : ''
-                    }`}
-                  >
-                    {outOfStock ? 'نفد' : lowStock ? `${product.quantity} ⚠` : product.quantity}
                   </span>
                 </div>
                 {!outOfStock && (
                   <div
-                    className="mt-2 py-1 rounded-lg text-[11px] font-black text-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="mt-2 py-1 rounded-lg text-[11px] font-black text-center opacity-0 group-hover:opacity-100 transition-all duration-150 scale-95 group-hover:scale-100"
                     style={{
                       background: 'rgba(245,158,11,0.11)',
                       color: '#F59E0B',

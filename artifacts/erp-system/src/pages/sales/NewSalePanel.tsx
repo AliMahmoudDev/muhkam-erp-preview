@@ -249,7 +249,7 @@ export function NewSalePanel({ onDone }: { onDone: () => void }) {
         />
 
         {/* ═══ يمين — لوحة الفاتورة ═══ */}
-        <div className="w-full lg:w-[385px] flex flex-col sale-cart-panel rounded-2xl overflow-hidden shrink-0">
+        <div className="w-full lg:w-[420px] flex flex-col sale-cart-panel rounded-2xl overflow-hidden shrink-0">
           <SaleCartItems
             cart={cart}
             setCart={setCart}

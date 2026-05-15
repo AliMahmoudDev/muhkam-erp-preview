@@ -206,7 +206,7 @@ export function SaleCartItems({
 
             <div className="sale-invoice-header flex items-center gap-1 px-3 py-1.5 shrink-0">
               <span className="sale-muted-text text-[10px] font-bold flex-1">المنتج</span>
-              <span className="sale-muted-text text-[10px] font-bold w-[58px] text-center">
+              <span className="sale-muted-text text-[10px] font-bold w-[66px] text-center">
                 الكمية
               </span>
               <span className="sale-muted-text text-[10px] font-bold w-[46px] text-center">
@@ -234,7 +234,7 @@ export function SaleCartItems({
                 return (
                   <div
                     key={item.product_id}
-                    className="sale-cart-item sale-invoice-row group flex items-center gap-1 px-2 py-2 rounded-xl"
+                    className="pos-cart-item flex items-center gap-1 px-2 py-2.5 rounded-xl"
                   >
                     <div className="flex-1 min-w-0 flex items-center gap-1.5">
                       <span className="sale-row-num">{index + 1}</span>
@@ -250,21 +250,21 @@ export function SaleCartItems({
                       </div>
                     </div>
 
-                    <div className="w-[58px] flex items-center justify-center gap-0.5 shrink-0">
+                    <div className="w-[66px] flex items-center justify-center gap-0.5 shrink-0">
                       <button
                         onClick={() => updateQty(item.product_id, -1)}
-                        className="sale-qty-btn-sm w-[20px] h-[20px] rounded-md flex items-center justify-center"
+                        className="pos-qty-btn w-6 h-6 rounded-lg flex items-center justify-center"
                       >
-                        <Minus className="w-2.5 h-2.5 sale-text-primary" />
+                        <Minus className="w-3 h-3" />
                       </button>
                       <span className="sale-text-primary font-black text-xs w-[18px] text-center tabular-nums">
                         {item.quantity}
                       </span>
                       <button
                         onClick={() => updateQty(item.product_id, 1)}
-                        className="sale-qty-btn-sm-amber w-[20px] h-[20px] rounded-md flex items-center justify-center"
+                        className="pos-qty-btn pos-qty-btn-add w-6 h-6 rounded-lg flex items-center justify-center"
                       >
-                        <Plus className="w-2.5 h-2.5 text-amber-400" />
+                        <Plus className="w-3 h-3" />
                       </button>
                     </div>
 
@@ -385,7 +385,7 @@ export function SaleCartItems({
                           prev.filter((i) => i.product_id !== item.product_id)
                         )
                       }
-                      className="w-5 h-5 shrink-0 rounded-lg flex items-center justify-center transition-all text-transparent group-hover:text-red-400/50 hover:!text-red-400 hover:bg-red-500/15"
+                      className="pos-del-btn w-6 h-6 shrink-0 flex items-center justify-center"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
