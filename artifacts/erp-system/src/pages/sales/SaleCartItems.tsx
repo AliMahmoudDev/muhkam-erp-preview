@@ -234,7 +234,7 @@ export function SaleCartItems({
                 return (
                   <div
                     key={item.product_id}
-                    className="sale-invoice-row group flex items-center gap-1 px-2 py-2"
+                    className="sale-cart-item sale-invoice-row group flex items-center gap-1 px-2 py-2 rounded-xl"
                   >
                     <div className="flex-1 min-w-0 flex items-center gap-1.5">
                       <span className="sale-row-num">{index + 1}</span>

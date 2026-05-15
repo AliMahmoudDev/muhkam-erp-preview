@@ -4399,24 +4399,25 @@ html.light .erp-row:hover .erp-td { background: var(--erp-bg-soft) !important; }
 
 /* ── Product card ── */
 .sale-product-card {
-  background: hsla(225,22%,11%,0.82);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: hsla(225,22%,13%,0.90);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.20);
   transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
   cursor: pointer;
 }
 .sale-product-card:not(:disabled):hover {
-  border-color: rgba(245,158,11,0.45);
-  background: hsla(38,95%,55%,0.05);
+  border-color: rgba(245,158,11,0.55);
+  background: hsla(38,95%,55%,0.07);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(245,158,11,0.12), 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 28px rgba(245,158,11,0.16), 0 2px 10px rgba(0,0,0,0.20);
 }
 .sale-product-card:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
-.sale-product-icon-bg { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
-.sale-product-icon { color: rgba(255,255,255,0.18); transition: color 0.15s; }
-.sale-product-card:not(:disabled):hover .sale-product-icon { color: #F59E0B; opacity: 0.7; }
-.sale-product-card:not(:disabled):hover .sale-product-icon-bg { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.18); }
-.sale-product-name { color: rgba(255,255,255,0.90); }
-.sale-stock-badge { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.32); }
+.sale-product-icon-bg { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.11); }
+.sale-product-icon { color: rgba(255,255,255,0.42); transition: color 0.15s; }
+.sale-product-card:not(:disabled):hover .sale-product-icon { color: #F59E0B; opacity: 0.85; }
+.sale-product-card:not(:disabled):hover .sale-product-icon-bg { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.28); }
+.sale-product-name { color: rgba(255,255,255,0.94); }
+.sale-stock-badge { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.50); }
 
 /* ── Cart panel ── */
 .sale-cart-panel {
@@ -4432,8 +4433,8 @@ input.sale-border:focus, textarea.sale-border:focus { border-color: rgba(245,158
 .sale-empty-icon-bg { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
 
 /* ── Cart items ── */
-.sale-cart-item { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); transition: background 0.15s; }
-.sale-cart-item:hover { background: rgba(255,255,255,0.067); }
+.sale-cart-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.11); transition: background 0.15s, border-color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+.sale-cart-item:hover { background: rgba(255,255,255,0.11); border-color: rgba(255,255,255,0.16); }
 
 /* ── Field rows ── */
 .sale-field-row { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
@@ -4564,7 +4565,7 @@ html.light input.sale-border:focus, html.light textarea.sale-border:focus { bord
 }
 
 /* Item row */
-.sale-invoice-row { transition: background 0.12s ease; border-radius: 10px; }
+.sale-invoice-row { transition: background 0.12s ease, border-color 0.12s ease; border-radius: 10px; }
 .sale-invoice-row:hover { background: rgba(255,255,255,0.055); }
 .sale-invoice-row:nth-child(even) { background: rgba(255,255,255,0.018); }
 .sale-invoice-row:nth-child(even):hover { background: rgba(255,255,255,0.055); }
