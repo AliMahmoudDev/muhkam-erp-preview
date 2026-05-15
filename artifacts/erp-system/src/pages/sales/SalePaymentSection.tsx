@@ -119,7 +119,7 @@ export function SalePaymentSection({
   handleCheckout,
 }: SalePaymentSectionProps) {
   return (
-    <div className="sale-cart-footer p-3 space-y-2 shrink-0">
+    <div className="sale-cart-footer p-3 space-y-2 shrink-0 overflow-y-auto" style={{ maxHeight: 'min(380px, calc(100vh - 320px))' }}>
       {/* ─── العميل ─── */}
       <div className="sale-field-row flex items-center gap-2 rounded-xl px-3 py-2">
         <User className="w-3.5 h-3.5 sale-muted-text shrink-0" />
