@@ -26,6 +26,7 @@ export const erpUsersTable = pgTable("erp_users", {
   repair_specialty:        text("repair_specialty"),
   repair_notifications:    boolean("repair_notifications").notNull().default(true),
   dashboard_shortcuts:     jsonb("dashboard_shortcuts").$type<string[]>().default([]),
+  mobile_nav_tabs:         jsonb("mobile_nav_tabs").$type<string[]>().default([]),
 });
 
 export type ErpUser = typeof erpUsersTable.$inferSelect;

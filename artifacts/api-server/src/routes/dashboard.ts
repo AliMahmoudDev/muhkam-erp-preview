@@ -22,6 +22,13 @@ const ShortcutsBody = z.object({
   shortcuts: z.array(z.string()).max(8),
 });
 
+/* Default mobile nav tabs */
+const DEFAULT_MOBILE_NAV = ["/", "/sales", "/purchases", "/pos", "/treasury"];
+
+const MobileNavBody = z.object({
+  tabs: z.array(z.string().min(1)).max(5),
+});
+
 const router: IRouter = Router();
 
 const DashboardStatsQuery = z.object({
@@ -181,6 +188,39 @@ router.put("/dashboard/shortcuts", wrap(async (req, res) => {
     .where(and(eq(erpUsersTable.id, userId), eq(erpUsersTable.company_id, companyId)));
 
   res.json({ shortcuts: parsed.data.shortcuts });
+}));
+
+/* ── GET /dashboard/mobile-nav ────────────────────────────── */
+router.get("/dashboard/mobile-nav", wrap(async (req, res) => {
+  const userId = req.user!.id;
+  const companyId = getTenant(req);
+
+  const [row] = await db
+    .select({ mobile_nav_tabs: erpUsersTable.mobile_nav_tabs })
+    .from(erpUsersTable)
+    .where(and(eq(erpUsersTable.id, userId), eq(erpUsersTable.company_id, companyId)));
+
+  const tabs = (row?.mobile_nav_tabs as string[] | null) ?? [];
+  res.json({ tabs: tabs.length > 0 ? tabs : DEFAULT_MOBILE_NAV });
+}));
+
+/* ── PUT /dashboard/mobile-nav ────────────────────────────── */
+router.put("/dashboard/mobile-nav", wrap(async (req, res) => {
+  const parsed = MobileNavBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات غير صحيحة", details: parsed.error.issues.map(i => i.message) });
+    return;
+  }
+
+  const userId = req.user!.id;
+  const companyId = getTenant(req);
+
+  await db
+    .update(erpUsersTable)
+    .set({ mobile_nav_tabs: parsed.data.tabs })
+    .where(and(eq(erpUsersTable.id, userId), eq(erpUsersTable.company_id, companyId)));
+
+  res.json({ tabs: parsed.data.tabs });
 }));
 
 export default router;

@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'wouter';
+import { MobileNav } from '@/components/MobileNav';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { useSubscription } from '@/contexts/subscription';
@@ -568,42 +569,9 @@ export function AppLayout({ children }: LayoutProps) {
       </aside>
 
       {/* ══════════════════════════════════════════
-          MOBILE BOTTOM NAV
+          MOBILE BOTTOM NAV (customisable)
       ══════════════════════════════════════════ */}
-      <nav
-        role="navigation"
-        aria-label="قائمة التنقل السريع"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-2"
-        style={{
-          height: 56,
-          background: isDark ? 'hsla(225,28%,7%,0.96)' : 'rgba(255,255,255,0.96)',
-          borderTop: topbarBdr,
-          backdropFilter: 'blur(20px)',
-        }}
-      >
-        {visibleNav.slice(0, 5).map((item) => {
-          const active = location === item.href;
-          return (
-            <Link key={item.href} href={item.href}>
-              <div
-                className="flex flex-col items-center gap-1 rounded-xl px-3 py-2"
-                style={{
-                  color: active
-                    ? '#f59e0b'
-                    : isDark
-                      ? 'rgba(255,255,255,0.32)'
-                      : 'rgba(0,0,0,0.38)',
-                  background: active ? 'rgba(245,158,11,0.08)' : 'transparent',
-                  transition: 'color 0.15s ease, background 0.15s ease',
-                }}
-              >
-                <item.icon style={{ width: 18, height: 18 }} />
-                <span style={{ fontSize: 10, fontWeight: 600 }}>{item.name.split(' ')[0]}</span>
-              </div>
-            </Link>
-          );
-        })}
-      </nav>
+      <MobileNav visibleNav={visibleNav} isDark={isDark} />
 
       {/* ══════════════════════════════════════════
           MAIN CONTENT COLUMN
