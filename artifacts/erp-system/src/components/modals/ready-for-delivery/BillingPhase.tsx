@@ -1,6 +1,7 @@
 import { useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGetSettingsSafes } from "@workspace/api-client-react";
+import { useWarehouses } from "@/hooks/useWarehouses";
 import { formatCurrency } from "@/lib/format";
 import {
   Loader2, X, PackageCheck, Coins, Clock, Plus, Trash2, UserCog, ChevronLeft,
@@ -64,11 +65,8 @@ export default function BillingPhase({
   const { data: safesRaw } = useGetSettingsSafes();
   const safes = safeArray(safesRaw) as { id: number; name: string }[];
 
-  const { data: warehousesRaw } = useQuery<Warehouse[]>({
-    queryKey: ["/api/settings/warehouses"],
-    queryFn: () => authFetch(api("/api/settings/warehouses")).then(r => r.json()),
-  });
-  const warehouses: Warehouse[] = safeArray(warehousesRaw) as Warehouse[];
+  const { warehouses: warehousesRaw } = useWarehouses();
+  const warehouses = warehousesRaw as Warehouse[];
 
   const { data: productsRaw } = useQuery<Product[]>({
     queryKey: ["/api/products", selectedWarehouseId],

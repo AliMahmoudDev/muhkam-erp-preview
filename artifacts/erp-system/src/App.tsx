@@ -12,6 +12,7 @@ import { AppSettingsProvider } from '@/contexts/app-settings';
 import { WarehouseProvider } from '@/contexts/warehouse';
 import { canAccess, ROUTE_PERMISSION, type UserRole } from '@/lib/rbac';
 import { hasPermission } from '@/lib/permissions';
+import { Role } from '@/lib/roles';
 import { Spinner } from '@/components/ui/spinner';
 import NotFound from '@/pages/not-found';
 import AccessDenied from '@/pages/access-denied';
@@ -164,7 +165,7 @@ function Router() {
     return <Redirect to="/" />;
   }
   if (location === '/login') {
-    return user.role === 'super_admin' ? <Redirect to="/super-admin" /> : <Redirect to="/" />;
+    return user.role === Role.SuperAdmin ? <Redirect to="/super-admin" /> : <Redirect to="/" />;
   }
 
   /* ── Subscription expired: full-screen block ─────────── */
@@ -173,7 +174,7 @@ function Router() {
   }
 
   /* ── Super admin: isolated full-screen panel ─────────── */
-  if (user.role === 'super_admin') {
+  if (user.role === Role.SuperAdmin) {
     return (
       <Suspense fallback={<PageFallback />}>
         <SuperAdmin />
@@ -194,7 +195,7 @@ function Router() {
   }
 
   /* ── Employee role: redirect root to personal portal (no dashboard access) ── */
-  if (user.role === 'employee' && location === '/') {
+  if (user.role === Role.Employee && location === '/') {
     return <Redirect to="/my-portal" />;
   }
 

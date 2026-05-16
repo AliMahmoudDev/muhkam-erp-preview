@@ -7,6 +7,8 @@ import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { safeArray } from '@/lib/safe-data';
 import { api } from '@/lib/api';
+import { useBranches } from '@/hooks/useBranches';
+import { useSafes } from '@/hooks/useSafes';
 import type { Employee, Department, JobTitle, Branch, EmpDocument, AnyRec, DetailTab } from '../types';
 
 interface UseEmployeeDataParams {
@@ -39,18 +41,11 @@ export function useEmployeeData({ search, deptFilter, selected, detailTab }: Use
   });
   const jobTitles: JobTitle[] = safeArray(jtsRaw);
 
-  const { data: branchesRaw } = useQuery({
-    queryKey: ['/api/branches'],
-    queryFn: () => authFetch(api('/api/branches')).then((r) => r.json()),
-  });
-  const branches: Branch[] = safeArray(branchesRaw);
+  const { branches: _branchesRaw } = useBranches();
+  const branches = _branchesRaw as Branch[];
 
   /* All safes (خزائن) — بدون تصفية حسب الدور */
-  const { data: safesRaw } = useQuery({
-    queryKey: ['/api/settings/safes'],
-    queryFn: () => authFetch(api('/api/settings/safes')).then((r) => r.json()),
-  });
-  const safes: AnyRec[] = safeArray(safesRaw);
+  const { safes } = useSafes();
 
   const { data: expCatsRaw } = useQuery({
     queryKey: ['/api/expense-categories'],

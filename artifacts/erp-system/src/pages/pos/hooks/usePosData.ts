@@ -3,6 +3,7 @@ import { safeArray } from '@/lib/safe-data';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 import { useGetCustomers, useGetSettingsSafes } from '@workspace/api-client-react';
+import { useWarehouses } from '@/hooks/useWarehouses';
 import type { PosCustomer } from '../pos-types';
 
 export interface PosProduct {
@@ -32,17 +33,7 @@ export function usePosData({ warehouseId, safeId }: { warehouseId: number; safeI
   const { data: safesBodyRaw } = useGetSettingsSafes();
   const safes = safeArray(safesBodyRaw) as { id: number; name: string }[];
 
-  const { data: warehousesRaw } = useQuery<{ id: number; name: string }[]>({
-    queryKey: ['/api/settings/warehouses'],
-    queryFn: () =>
-      authFetch(api('/api/settings/warehouses')).then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const j = await r.json();
-        return safeArray(j);
-      }),
-    staleTime: 5 * 60_000,
-  });
-  const warehouses = safeArray(warehousesRaw) as { id: number; name: string }[];
+  const { warehouses } = useWarehouses();
 
   const warehouseName =
     warehouses.find((w) => w.id === warehouseId)?.name ?? `فرع ${warehouseId}`;

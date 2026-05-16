@@ -1,23 +1,12 @@
 import { useState, useMemo } from 'react';
-import { api } from '@/lib/api';
 import { safeArray } from '@/lib/safe-data';
-import { authFetch } from '@/lib/auth-fetch';
 import { useGetSettingsSafes } from '@workspace/api-client-react';
-import { useQuery } from '@tanstack/react-query';
+import { useWarehouses } from '@/hooks/useWarehouses';
 import { SearchableSelect } from '@/components/searchable-select';
 import { Store, Vault, Zap } from 'lucide-react';
 
 export default function AdminPOSSetup({ onStart }: { onStart: (w: number, s: number) => void }) {
-  const { data: warehousesRaw } = useQuery<{ id: number; name: string }[]>({
-    queryKey: ['/api/settings/warehouses'],
-    queryFn: () =>
-      authFetch(api('/api/settings/warehouses')).then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const j = await r.json();
-        return safeArray(j);
-      }),
-  });
-  const warehouses = safeArray(warehousesRaw);
+  const { warehouses } = useWarehouses();
   const { data: rawSafesData } = useGetSettingsSafes();
   const rawSafes = safeArray(rawSafesData);
   const safes = rawSafes as { id: number; name: string }[];

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { Role } from "@/lib/roles";
 
 export interface AuthUser {
   id: number;
@@ -31,7 +32,7 @@ const AuthContext = createContext<AuthContextType>({
 const USER_KEY = "erp_current_user";
 
 function isValidForRole(u: AuthUser): boolean {
-  if (u.role === "cashier" || u.role === "salesperson") {
+  if (u.role === Role.Cashier || u.role === "salesperson") {
     return !!u.warehouse_id && !!u.safe_id;
   }
   return true;
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /* Listen for subscription:expired events fired by authFetch */
   useEffect(() => {
     const handler = () => {
-      if (user && user.role !== "super_admin") {
+      if (user && user.role !== Role.SuperAdmin) {
         setSubscriptionExpired(true);
       }
     };

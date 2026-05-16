@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useGetSettingsSafes } from "@workspace/api-client-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
+import { useWarehouses } from "@/hooks/useWarehouses";
 import { useToast } from "@/hooks/use-toast";
 import { safeArray } from "@/lib/safe-data";
 import { useAuth } from "@/contexts/auth";
@@ -49,11 +50,8 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
   }, [job.id]);
 
   /* ── Warehouses ── */
-  const { data: warehousesRaw } = useQuery<Warehouse[]>({
-    queryKey: ["/api/settings/warehouses"],
-    queryFn: () => authFetch(api("/api/settings/warehouses")).then(r => r.json()),
-  });
-  const warehouses: Warehouse[] = safeArray(warehousesRaw) as Warehouse[];
+  const { warehouses: warehousesRaw } = useWarehouses();
+  const warehouses = warehousesRaw as Warehouse[];
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
   useEffect(() => {
     if (warehouses.length === 1 && !selectedWarehouseId) setSelectedWarehouseId(warehouses[0].id);

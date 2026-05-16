@@ -15,6 +15,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 import { db, erpUsersTable, companiesTable } from '@workspace/db';
 import { logger } from '../../lib/logger';
+import { Role } from '../../lib/roles';
 import { authenticate, signToken, signRefreshToken, verifyRefreshToken } from '../../middleware/auth';
 import { blacklistToken } from '../../lib/session-blacklist';
 import { storeRefreshToken, consumeRefreshToken, revokeUserRefreshTokens } from '../../lib/refresh-token-store';
@@ -112,7 +113,7 @@ router.post('/auth/login', wrap(async (req, res) => {
       }
     }
 
-    if (user.company_id && user.role !== 'super_admin') {
+    if (user.company_id && user.role !== Role.SuperAdmin) {
       const [company] = await db
         .select()
         .from(companiesTable)
@@ -135,7 +136,7 @@ router.post('/auth/login', wrap(async (req, res) => {
       }
     }
 
-    if (user.role === 'cashier' || user.role === 'salesperson') {
+    if (user.role === Role.Cashier || user.role === "salesperson") {
       if (!user.warehouse_id) {
         res.status(403).json({ error: 'هذا الحساب غير مرتبط بفرع/مخزن — تواصل مع المدير' });
         return;
@@ -148,7 +149,7 @@ router.post('/auth/login', wrap(async (req, res) => {
 
     await clearLoginLockout(uid);
 
-    if (user.totp_enabled && user.role === 'super_admin') {
+    if (user.totp_enabled && user.role === Role.SuperAdmin) {
       const tempToken = jwt.sign({ userId: user.id, requires_2fa: true }, JWT_SECRET, {
         expiresIn: '5m',
       });

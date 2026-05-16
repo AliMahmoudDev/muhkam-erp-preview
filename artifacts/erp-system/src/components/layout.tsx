@@ -7,16 +7,15 @@ import { useSubscription } from '@/contexts/subscription';
 import { useAppSettings } from '@/contexts/app-settings';
 import { useWarehouse } from '@/contexts/warehouse';
 import { authFetch } from '@/lib/auth-fetch';
-import { safeArray } from '@/lib/safe-data';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NAV_ITEMS, canAccess, ROUTE_PERMISSION, type UserRole } from '@/lib/rbac';
 import { hasPermission } from '@/lib/permissions';
-import { translateRole } from '@/lib/roles';
+import { translateRole, Role } from '@/lib/roles';
+import { useWarehouses } from '@/hooks/useWarehouses';
 import { LogOut, Warehouse, Search, X, ChevronDown, UserCircle } from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 import { NotificationBell } from '@/components/notification-bell';
-import { api } from '@/lib/api';
 import { useIdleTimeout } from '@/hooks/use-idle-timeout';
 import LogoutCheckoutModal from '@/components/logout-checkout-modal';
 import IdleCheckoutModal from '@/components/idle-checkout-modal';
@@ -222,20 +221,10 @@ export function AppLayout({ children }: LayoutProps) {
     },
   });
 
-  const { data: warehousesRaw } = useQuery<{ id: number; name: string }[]>({
-    queryKey: ['/api/settings/warehouses'],
-    queryFn: () =>
-      authFetch(api('/api/settings/warehouses')).then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const j = await r.json();
-        return safeArray(j);
-      }),
-    staleTime: 5 * 60_000,
-  });
-  const warehouses = safeArray(warehousesRaw);
+  const { warehouses } = useWarehouses();
 
-  const role = (user?.role ?? 'cashier') as UserRole;
-  const canSelectWarehouse = role === 'admin' || role === 'manager';
+  const role = (user?.role ?? Role.Cashier) as UserRole;
+  const canSelectWarehouse = role === Role.Admin || role === Role.Manager;
 
   useEffect(() => {
     if (!canSelectWarehouse && warehouses.length > 0) {

@@ -6,6 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { isTokenBlacklisted } from "../lib/session-blacklist";
 import { sanitizeObject } from "../lib/sanitize";
 import { logger } from "../lib/logger";
+import { Role } from "../lib/roles";
 
 /** نوع عميل pg المُثبَّت من تجمُّع الاتصالات */
 type PinnedClient = PoolClient;
@@ -28,7 +29,7 @@ async function setDbContext(
   client?: PinnedClient,
 ): Promise<void> {
   const companyId = user.company_id ? String(user.company_id) : "";
-  const isSuperAdmin = user.role === "super_admin" ? "true" : "false";
+  const isSuperAdmin = user.role === Role.SuperAdmin ? "true" : "false";
   try {
     if (client) {
       await client.query("SET ROLE erp_app_role");
@@ -205,7 +206,7 @@ export async function authenticate(
   }
 
   /* cashier/salesperson must have warehouse_id AND safe_id configured */
-  if (user.role === "cashier" || user.role === "salesperson") {
+  if (user.role === Role.Cashier || user.role === "salesperson") {
     if (!user.warehouse_id || !user.safe_id) {
       res.status(400).json({ error: "يجب تحديد المخزن والخزنة لهذا المستخدم — يرجى مراجعة المدير" });
       return;
@@ -213,7 +214,7 @@ export async function authenticate(
   }
 
   /* Non-super_admin must belong to a company */
-  if (user.role !== "super_admin" && !user.company_id) {
+  if (user.role !== Role.SuperAdmin && !user.company_id) {
     res.status(403).json({ error: "حساب غير مرتبط بشركة — تواصل مع المدير" });
     return;
   }
@@ -350,7 +351,7 @@ export function requireTenant(req: Request, res: Response, next: NextFunction): 
     return;
   }
   // super_admin operates across tenants — must explicitly pass company_id when needed
-  if (req.user.role === "super_admin") {
+  if (req.user.role === Role.SuperAdmin) {
     next();
     return;
   }
@@ -373,7 +374,7 @@ export function requireTenant(req: Request, res: Response, next: NextFunction): 
 export function getTenant(req: Request): number {
   const cid = req.user?.company_id;
   if (typeof cid === "number" && cid > 0) return cid;
-  if (req.user?.role === "super_admin") {
+  if (req.user?.role === Role.SuperAdmin) {
     const q = Number(req.query?.company_id ?? req.body?.company_id);
     if (Number.isFinite(q) && q > 0) return q;
     const err = Object.assign(new Error("super_admin must provide company_id"), { status: 400 });
