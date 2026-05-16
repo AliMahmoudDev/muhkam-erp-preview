@@ -367,119 +367,120 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
           </div>
         </div>
 
-        {/* سلة الشراء */}
-        <div className="w-full lg:w-[400px] flex flex-col glass-panel rounded-2xl overflow-hidden shrink-0">
-          <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold text-white flex items-center gap-2 text-base">
-                <ShoppingBag className="w-5 h-5 text-amber-400" /> فاتورة مشتريات
+        {/* ═══ سلة الشراء ═══ */}
+        <div className="w-full lg:w-[380px] flex flex-col purch-cart-panel rounded-2xl overflow-hidden shrink-0">
+          {/* ─── رأس لوحة الشراء (مدمج) ─── */}
+          <div className="purch-cart-header px-3 pt-3 pb-2.5 shrink-0">
+            {/* عنوان + عداد */}
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-black text-white flex items-center gap-1.5 text-sm">
+                <ShoppingBag className="w-4 h-4 text-amber-400" /> فاتورة مشتريات
               </h3>
-              <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-xs font-bold">{cart.length} صنف</span>
+              <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${cart.length > 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-white/[0.06] text-white/30 border border-white/[0.08]'}`}>
+                {cart.length} صنف
+              </span>
             </div>
 
-            <div className="flex gap-1 mb-2 flex-wrap">
+            {/* اختيار العملة */}
+            <div className="flex gap-1 mb-1.5">
               {(Object.keys(CURRENCY_SYMBOLS) as PurchaseCurrency[]).map(cur => (
                 <button key={cur} onClick={() => setCurrency(cur)}
-                  className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-all ${currency === cur ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}`}>
+                  className={`flex-1 py-1 rounded-lg text-[10px] font-bold border transition-all ${currency === cur ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' : 'bg-white/5 text-white/35 border-white/10 hover:bg-white/10 hover:text-white/60'}`}>
                   {CURRENCY_SYMBOLS[cur]} {cur}
                 </button>
               ))}
             </div>
 
+            {/* المخزن + مصاريف الشحن في صف واحد */}
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="flex items-center gap-1.5 bg-white/[0.055] border border-white/[0.1] rounded-xl px-2.5 py-1.5 focus-within:border-amber-500/40 transition-all">
+                <Vault className="w-3 h-3 text-white/35 shrink-0" />
+                <select
+                  className="bg-transparent text-white/80 outline-none text-[10px] w-full appearance-none font-bold truncate"
+                  value={warehouseId}
+                  onChange={e => setWarehouseId(e.target.value)}
+                >
+                  {filteredWarehouses.map(w => (
+                    <option key={w.id} value={String(w.id)} className="bg-slate-900">{w.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-1 bg-white/[0.055] border border-white/[0.1] rounded-xl px-2.5 py-1.5 focus-within:border-amber-500/40 transition-all">
+                <span className="text-[11px] shrink-0">🚢</span>
+                <input
+                  type="number" step="0.01" min="0"
+                  value={shippingCost}
+                  onChange={e => setShippingCost(e.target.value)}
+                  className="bg-transparent text-amber-200/80 outline-none text-[10px] font-bold w-full text-right"
+                  placeholder="شحن 0"
+                />
+                <span className="text-white/30 text-[10px] shrink-0">{currency !== "EGP" ? currency : "ج"}</span>
+              </div>
+            </div>
+
+            {/* سعر الصرف — يظهر فقط عند عملة أجنبية */}
             {currency !== "EGP" && (
-              <div className="purch-exchange-wrap flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 mb-2">
-                <span className="text-blue-300 text-xs font-bold shrink-0">سعر الصرف:</span>
-                <span className="text-blue-200/60 text-xs shrink-0">1 {currency} =</span>
+              <div className="mt-1.5 flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-2.5 py-1.5">
+                <span className="text-blue-300 text-[10px] font-bold shrink-0">صرف: 1 {currency} =</span>
                 <input
                   type="number" step="0.01" min="0.01"
                   value={exchangeRate}
                   onChange={e => setExchangeRate(e.target.value)}
-                  className="bg-transparent text-blue-200 outline-none text-xs font-bold w-20 text-right"
+                  className="bg-transparent text-blue-200 outline-none text-[10px] font-bold flex-1 text-right"
                 />
-                <span className="text-blue-200/60 text-xs shrink-0">ج.م</span>
+                <span className="text-blue-200/50 text-[10px] shrink-0">ج.م</span>
               </div>
             )}
-
-            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-2">
-              <span className="text-amber-300 text-xs font-bold shrink-0">🚢 مصاريف الشحن:</span>
-              <input
-                type="number" step="0.01" min="0"
-                value={shippingCost}
-                onChange={e => setShippingCost(e.target.value)}
-                className="bg-transparent text-amber-200 outline-none text-xs font-bold w-20 text-right flex-1"
-                placeholder="0"
-              />
-              <span className="text-amber-200/60 text-xs shrink-0">
-                {currency !== "EGP" ? currency : "ج.م"}
-              </span>
-              {currency !== "EGP" && shippingCostNum > 0 && (
-                <span className="text-amber-200/40 text-xs">
-                  = {formatCurrency(shippingCostNum * rate)}
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 gap-1.5 text-xs">
-              {selectRow("المخزن", <Vault className="w-3.5 h-3.5" />,
-                <SearchableSelect
-                  items={filteredWarehouses.map(w => ({ value: String(w.id), label: w.name, searchKeys: [w.name] }))}
-                  value={warehouseId}
-                  onChange={setWarehouseId}
-                  placeholder="-- مخزن --"
-                  emptyLabel="-- مخزن --"
-                  clearable={false}
-                  className="w-full"
-                  inputClassName="w-full"
-                />
-              )}
-            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
+          {/* ─── أصناف السلة ─── */}
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 min-h-[80px]">
             {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-white/20 gap-3 py-10">
-                <ShoppingBag className="w-12 h-12 opacity-30" />
-                <p className="text-sm">اضغط على منتج لإضافته</p>
+              <div className="h-full min-h-[80px] flex flex-col items-center justify-center text-white/20 gap-2 py-6">
+                <ShoppingBag className="w-10 h-10 opacity-25" />
+                <p className="text-xs font-bold">اضغط على منتج لإضافته</p>
               </div>
             ) : cart.map(item => (
-              <div key={item.product_id} className="bg-white/[0.08] border border-white/[0.14] rounded-xl p-3 hover:bg-white/[0.12] hover:border-white/[0.20] transition-all shadow-sm">
-                <div className="flex justify-between items-start mb-2.5">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0">
-                      <Package className="w-3.5 h-3.5 text-amber-400/80" />
-                    </div>
-                    <p className="font-bold text-white text-sm flex-1 truncate">{item.product_name}</p>
-                  </div>
-                  <button onClick={() => setCart(prev => prev.filter(i => i.product_id !== item.product_id))} className="text-red-400/50 hover:text-red-400 p-0.5 transition-colors shrink-0 mr-1"><Trash2 className="w-3.5 h-3.5" /></button>
+              <div key={item.product_id} className="pos-cart-item flex items-center gap-1.5 px-2.5 py-2 rounded-xl">
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-bold text-xs truncate leading-tight">{item.product_name}</p>
+                  <p className="text-white/40 text-[10px] tabular-nums">{item.unit_price.toFixed(2)} {currSym}</p>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 shrink-0 bg-white/5 rounded-lg px-1.5 py-1 border border-white/10">
-                    <button onClick={() => updateQty(item.product_id, -1)} className="w-5 h-5 rounded-md bg-white/10 flex items-center justify-center hover:bg-white/25 transition-colors"><Minus className="w-2.5 h-2.5 text-white" /></button>
-                    <span className="text-white font-black text-sm w-6 text-center tabular-nums">{item.quantity}</span>
-                    <button onClick={() => updateQty(item.product_id, 1)} className="w-5 h-5 rounded-md bg-amber-500/20 border border-amber-500/30 flex items-center justify-center hover:bg-amber-500/35 transition-colors"><Plus className="w-2.5 h-2.5 text-amber-400" /></button>
-                  </div>
-                  <div className="flex items-center gap-1 flex-1 min-w-0">
-                    <span className="text-white/40 text-xs shrink-0">×</span>
-                    <input
-                      type="number" step="0.01" min="0"
-                      value={item.unit_price}
-                      onChange={e => updatePrice(item.product_id, parseFloat(e.target.value) || 0)}
-                      className="bg-white/10 border border-amber-500/30 rounded-lg px-2 py-1.5 text-xs text-white/90 outline-none w-full text-right font-bold focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 transition-colors"
-                    />
-                    <span className="text-white/40 text-xs shrink-0">{currSym}</span>
-                  </div>
-                  <div className="text-right shrink-0 min-w-[70px]">
-                    <div className="font-black text-blue-300 text-sm tabular-nums">{currSym} {item.total_price.toFixed(2)}</div>
-                    {currency !== "EGP" && <div className="text-[10px] text-white/35 tabular-nums">{formatCurrency(item.total_price * rate)}</div>}
-                  </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button onClick={() => updateQty(item.product_id, -1)} className="pos-qty-btn w-6 h-6 rounded-lg flex items-center justify-center">
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="text-white font-black text-xs w-5 text-center tabular-nums">{item.quantity}</span>
+                  <button onClick={() => updateQty(item.product_id, 1)} className="pos-qty-btn pos-qty-btn-add w-6 h-6 rounded-lg flex items-center justify-center">
+                    <Plus className="w-3 h-3" />
+                  </button>
                 </div>
+                <div className="shrink-0 w-[68px]">
+                  <input
+                    type="number" step="0.01" min="0"
+                    value={item.unit_price}
+                    onChange={e => updatePrice(item.product_id, parseFloat(e.target.value) || 0)}
+                    className="bg-white/10 border border-amber-500/25 rounded-lg px-1.5 py-1 text-[10px] text-amber-200 outline-none w-full text-right font-bold focus:border-amber-500/55 transition-colors"
+                  />
+                  <p className="text-blue-300 font-black text-[10px] text-right tabular-nums mt-0.5">
+                    {item.total_price.toFixed(currency === "EGP" ? 0 : 2)}
+                    {currency !== "EGP" && <span className="text-white/30 text-[9px] mr-0.5">{currSym}</span>}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCart(prev => prev.filter(i => i.product_id !== item.product_id))}
+                  className="pos-del-btn w-6 h-6 shrink-0 flex items-center justify-center"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
               </div>
             ))}
           </div>
 
-          <div className="p-3 border-t border-white/10 bg-black/40 space-y-2">
+          {/* ─── تذييل الدفع ─── */}
+          <div className="purch-cart-footer p-3 space-y-2">
             <div className="grid grid-cols-1 gap-1.5">
-              {selectRow("العميل / الطرف", <User className="w-3.5 h-3.5" />,
+              {selectRow("المورد / الطرف", <User className="w-3.5 h-3.5" />,
                 <SearchableSelect
                   items={partyItems}
                   value={partyKey}
@@ -491,8 +492,8 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                 />
               )}
               {selectedParty?.type === "customer" && (
-                <div className="text-xs text-blue-400/80 bg-blue-500/5 border border-blue-500/20 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
-                  🔄 عميل-مورد — الفاتورة ستُسجَّل في حساب هذا العميل مباشرةً
+                <div className="text-[10px] text-blue-400/80 bg-blue-500/5 border border-blue-500/20 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5">
+                  🔄 عميل-مورد — يُسجَّل في حسابه مباشرةً
                 </div>
               )}
               {(paymentType === "cash" || paymentType === "partial") && (
@@ -534,68 +535,70 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
             )}
 
             {isConsignment && (
-              <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-2 text-xs text-violet-300/90 space-y-1">
-                <p className="font-bold">📋 فاتورة ائتمان</p>
-                <p className="text-violet-300/60">البضاعة تُودَع في مخزن الائتمان الخاص بالمورد ولا تُحسب مبيعاً حتى تُباع. اختر المورد من الحقل أعلاه.</p>
+              <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-2 text-[10px] text-violet-300/90">
+                <p className="font-bold">📋 ائتمان — البضاعة في مخزن المورد حتى تُباع</p>
               </div>
             )}
 
-            {paymentType === "partial" && (
+            {paymentType === "partial" && !isConsignment && (
               <input type="number" step="0.01" placeholder="المبلغ المدفوع نقداً الآن..." className="glass-input text-xs py-2" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />
             )}
 
-            <div className="bg-white/5 rounded-xl p-3 border border-white/10 space-y-1.5">
-              {currency !== "EGP" && (
-                <div className="flex justify-between text-xs border-b border-white/10 pb-1.5">
-                  <span className="text-blue-300/80">الإجمالي بـ {CURRENCY_LABELS[currency]}</span>
-                  <span className="font-bold text-blue-300">{currSym} {cartTotal.toFixed(2)}</span>
+            {/* إجمالي الفاتورة */}
+            <div className="sale-total-box rounded-2xl overflow-hidden">
+              <div className="px-3 py-2.5 space-y-1.5">
+                {currency !== "EGP" && (
+                  <div className="flex justify-between text-[10px] border-b border-white/10 pb-1.5">
+                    <span className="text-blue-300/80">إجمالي بـ {CURRENCY_LABELS[currency]}</span>
+                    <span className="font-bold text-blue-300">{currSym} {cartTotal.toFixed(2)}</span>
+                  </div>
+                )}
+                {shippingCostNum > 0 && (
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-amber-300/80">🚢 مصاريف الشحن</span>
+                    <span className="text-amber-300">+ {formatCurrency(shippingCostNum * rate)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-white/70 text-sm font-semibold">
+                    {currency !== "EGP" ? "الإجمالي بالجنيه" : "إجمالي الفاتورة"}
+                  </span>
+                  <span className="font-black text-white text-lg tabular-nums">{formatCurrency(egpTotal)}</span>
                 </div>
-              )}
-              {shippingCostNum > 0 && (
-                <div className="flex justify-between text-xs text-amber-300/80">
-                  <span>🚢 مصاريف الشحن</span>
-                  <span>+ {formatCurrency(shippingCostNum * rate)}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-white/70 text-sm font-semibold">
-                  {currency !== "EGP" ? `الإجمالي بالجنيه المصري` : "إجمالي الفاتورة"}
-                </span>
-                <span className="font-black text-white text-lg">{formatCurrency(egpTotal)}</span>
+                {paymentType === "cash" && (
+                  <div className="flex justify-between text-[10px] border-t border-white/10 pt-1.5">
+                    <span className="text-white/60">يُخصم من الخزينة</span>
+                    <span className="text-red-400 font-bold">− {formatCurrency(egpTotal)}</span>
+                  </div>
+                )}
+                {paymentType === "partial" && paidAmount && (
+                  <>
+                    <div className="flex justify-between text-[10px] border-t border-white/10 pt-1.5">
+                      <span className="text-white/60">نقدي من الخزينة</span>
+                      <span className="text-red-400 font-bold">− {formatCurrency(parseFloat(paidAmount) || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-white/60">على حساب العميل</span>
+                      <span className="text-orange-400 font-bold">− {formatCurrency(egpTotal - (parseFloat(paidAmount) || 0))}</span>
+                    </div>
+                  </>
+                )}
+                {partyKey && customerImpact !== 0 && (
+                  <div className="flex justify-between text-[10px] border-t border-white/10 pt-1.5">
+                    <span className="text-white/60">أثر على حساب {selectedParty?.name}</span>
+                    <span className="text-orange-400 font-bold">{formatCurrency(Math.abs(customerImpact))} (علينا)</span>
+                  </div>
+                )}
+                {paymentType === "credit" && partyKey && (
+                  <p className="text-[10px] text-orange-400/80 bg-orange-500/5 border border-orange-500/20 rounded-lg px-2 py-1.5">
+                    ⚠ الفاتورة ستُرحَّل على حساب الطرف الآخر — نحن المدينون
+                  </p>
+                )}
               </div>
-              {paymentType === "cash" && (
-                <div className="flex justify-between text-xs border-t border-white/10 pt-1.5">
-                  <span className="text-white/60">يُخصم من الخزينة</span>
-                  <span className="text-red-400 font-bold">− {formatCurrency(egpTotal)}</span>
-                </div>
-              )}
-              {paymentType === "partial" && paidAmount && (
-                <>
-                  <div className="flex justify-between text-xs border-t border-white/10 pt-1.5">
-                    <span className="text-white/60">نقدي من الخزينة</span>
-                    <span className="text-red-400 font-bold">− {formatCurrency(parseFloat(paidAmount) || 0)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-white/60">على حساب العميل</span>
-                    <span className="text-orange-400 font-bold">− {formatCurrency(egpTotal - (parseFloat(paidAmount) || 0))}</span>
-                  </div>
-                </>
-              )}
-              {partyKey && customerImpact !== 0 && (
-                <div className="flex justify-between text-xs border-t border-white/10 pt-1.5">
-                  <span className="text-white/60">أثر على حساب {selectedParty?.name}</span>
-                  <span className="text-orange-400 font-bold">{formatCurrency(Math.abs(customerImpact))} (علينا)</span>
-                </div>
-              )}
-              {paymentType === "credit" && partyKey && (
-                <p className="text-xs text-orange-400/80 bg-orange-500/5 border border-orange-500/20 rounded-lg px-2 py-1.5">
-                  ⚠ الفاتورة ستُرحَّل على حساب الطرف الآخر — نحن المدينون
-                </p>
-              )}
             </div>
 
             <button onClick={handleCheckout} disabled={createMutation.isPending || cart.length === 0 || !canCreate}
-              className="w-full btn-primary py-3 text-sm disabled:opacity-50 font-bold"
+              className="w-full btn-primary py-3 text-sm disabled:opacity-50 font-bold rounded-2xl"
               title={!canCreate ? "ليس لديك صلاحية إنشاء فاتورة شراء" : undefined}>
               {createMutation.isPending ? "جاري التسجيل..." : "✦ تسجيل فاتورة الشراء"}
             </button>
