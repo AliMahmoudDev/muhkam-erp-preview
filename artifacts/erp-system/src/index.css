@@ -4419,6 +4419,19 @@ html.light .erp-row:hover .erp-td { background: var(--erp-bg-soft) !important; }
 .sale-product-name { color: rgba(255,255,255,0.94); }
 .sale-stock-badge { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.50); }
 
+/* ── Cart layout — responsive height foundations ── */
+:root {
+  --cart-footer-max-h: 340px;
+  --purch-footer-max-h: 300px;
+  --cart-items-min-h: 200px;
+}
+@media (max-height: 900px) {
+  :root { --cart-footer-max-h: 280px; --purch-footer-max-h: 240px; }
+}
+@media (max-height: 800px) {
+  :root { --cart-footer-max-h: 220px; --purch-footer-max-h: 180px; }
+}
+
 /* ── Cart panel ── */
 .sale-cart-panel {
   background: hsla(225,25%,8%,0.88);
@@ -4428,17 +4441,26 @@ html.light .erp-row:hover .erp-td { background: var(--erp-bg-soft) !important; }
 .sale-cart-header { background: rgba(255,255,255,0.03); }
 .sale-border { border-color: rgba(255,255,255,0.08); }
 input.sale-border:focus, textarea.sale-border:focus { border-color: rgba(245,158,11,0.55) !important; outline: none !important; }
-.sale-cart-footer { background: hsla(225,25%,5%,0.97); border-top: 1px solid rgba(255,255,255,0.07); max-height: min(380px, calc(100vh - 380px)); overflow-y: auto; }
+.sale-cart-footer { background: hsla(225,25%,5%,0.97); border-top: 1px solid rgba(255,255,255,0.07); max-height: var(--cart-footer-max-h); overflow-y: auto; }
 .sale-badge-empty { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.08); }
 .sale-empty-icon-bg { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
 
 /* ── Purchase cart panel (universal design) ── */
 .purch-cart-panel { background: hsla(225,25%,8%,0.88); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(24px); }
 .purch-cart-header { background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); }
-.purch-cart-footer { background: hsla(225,25%,5%,0.97); border-top: 1px solid rgba(255,255,255,0.07); max-height: min(340px, calc(100vh - 430px)); overflow-y: auto; }
+.purch-cart-footer { background: hsla(225,25%,5%,0.97); border-top: 1px solid rgba(255,255,255,0.07); max-height: var(--purch-footer-max-h); overflow-y: auto; }
 html.light .purch-cart-panel { background: rgba(255,255,255,0.98); border-color: #E2E8F0; }
 html.light .purch-cart-header { background: rgba(248,250,252,0.8); border-bottom-color: #E2E8F0; }
 html.light .purch-cart-footer { background: rgba(248,250,252,0.97); border-top-color: #E2E8F0; }
+
+/* ── Cart items scrollable area — guaranteed minimum height ── */
+.cart-items-area { min-height: var(--cart-items-min-h); }
+
+/* ── Compact mode for small-height screens (≤ 800px viewport height) ── */
+@media (max-height: 800px) {
+  .pos-cart-item { padding-top: 0.375rem !important; padding-bottom: 0.375rem !important; max-height: 52px; overflow: hidden; }
+  .purch-cart-header { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+}
 
 /* ── Cart items ── */
 .sale-cart-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.11); transition: background 0.15s, border-color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
@@ -4517,6 +4539,7 @@ html.light .purch-cart-footer { background: rgba(248,250,252,0.97); border-top-c
 
 .pos-qty-btn {
   display: flex; align-items: center; justify-content: center;
+  min-width: 28px; min-height: 28px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.10);
   color: rgba(255,255,255,0.60);
@@ -4529,6 +4552,7 @@ html.light .purch-cart-footer { background: rgba(248,250,252,0.97); border-top-c
 
 .pos-del-btn {
   display: flex; align-items: center; justify-content: center;
+  min-width: 28px; min-height: 28px;
   color: rgba(255,255,255,0.18);
   border: 1px solid transparent;
   border-radius: 8px;

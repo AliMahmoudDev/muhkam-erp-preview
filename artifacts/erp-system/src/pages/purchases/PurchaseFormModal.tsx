@@ -434,7 +434,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
           </div>
 
           {/* ─── أصناف السلة ─── */}
-          <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 min-h-[80px]">
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 cart-items-area">
             {cart.length === 0 ? (
               <div className="h-full min-h-[80px] flex flex-col items-center justify-center text-white/20 gap-2 py-6">
                 <ShoppingBag className="w-10 h-10 opacity-25" />

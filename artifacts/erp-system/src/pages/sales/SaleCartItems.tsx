@@ -222,7 +222,7 @@ export function SaleCartItems({
               <span className="w-5 shrink-0" />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+            <div className="flex-1 overflow-y-auto cart-items-area px-2 py-1 space-y-0.5">
               {cart.map((item, index) => {
                 const origPrice =
                   products.find((p) => p.id === item.product_id)?.sale_price ?? item.unit_price;
