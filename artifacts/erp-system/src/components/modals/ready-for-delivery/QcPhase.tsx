@@ -1,4 +1,4 @@
-import { Check, Minus, XCircle, ThumbsDown, Save, Loader2, AlertTriangle, MessageSquare, ClipboardList, ClipboardCheck } from "lucide-react";
+import { Check, Minus, XCircle, ThumbsDown, Save, Loader2, AlertTriangle, MessageSquare, ClipboardList, ClipboardCheck, Wrench } from "lucide-react";
 import { QcItem, QcStatus, IntakeItem } from "./types";
 
 const QC_BTN: Record<QcStatus, { label: string; bg: string; ring: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -18,6 +18,8 @@ const INTAKE_BADGE: Record<string, { txt: string; cls: string; bg: string }> = {
 interface QcPhaseProps {
   items: QcItem[];
   intakeItems: IntakeItem[];
+  isFallback?: boolean;
+  templateLoading?: boolean;
   openNotes: Set<number>;
   rejectMode: boolean;
   rejectReason: string;
@@ -41,7 +43,8 @@ interface QcPhaseProps {
 }
 
 export default function QcPhase({
-  items, intakeItems, openNotes, rejectMode, rejectReason,
+  items, intakeItems, isFallback = false, templateLoading = false,
+  openNotes, rejectMode, rejectReason,
   qcLoading, qcErrors, passCount, failCount, naCount, pendingCount,
   allDecided, qcOnly,
   onSetItems, onToggleNotes, onSetRejectMode, onSetRejectReason,
@@ -61,11 +64,16 @@ export default function QcPhase({
         )}
       </div>
 
-      {items.length === 0 ? (
+      {templateLoading ? (
+        <div className="px-5 py-12 text-center">
+          <Loader2 className="w-8 h-8 text-purple-400/60 mx-auto mb-3 animate-spin" />
+          <p className="text-[12px] text-white/50">جارٍ تحميل قالب الفحص...</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="px-5 py-10 text-center">
           <AlertTriangle className="w-10 h-10 text-amber-400/60 mx-auto mb-2" />
-          <p className="text-sm text-white/70 font-bold mb-1">لا توجد بنود فحص أولي</p>
-          <p className="text-[11px] text-white/40">لم يُسجَّل فحص عند الاستلام — يمكنك المتابعة مباشرةً.</p>
+          <p className="text-sm text-white/70 font-bold mb-1">لا توجد بنود فحص</p>
+          <p className="text-[11px] text-white/40">تعذّر تحميل القالب — يمكنك المتابعة مباشرةً.</p>
           <button
             onClick={() => qcOnly ? onSaved() : setPhase("billing")}
             className="mt-4 px-5 py-2 rounded-xl text-white text-xs font-bold"
@@ -74,7 +82,107 @@ export default function QcPhase({
             {qcOnly ? "تأكيد الانتقال لجاهز للتسليم" : "المتابعة لمحاسبة العميل"}
           </button>
         </div>
+      ) : isFallback ? (
+        /* ── وضع القالب الافتراضي: عمود واحد للفحص + لافتة إشعار ── */
+        <div className="max-h-[55vh] overflow-y-auto" dir="rtl">
+          <div className="mx-4 mt-3 mb-2 px-3 py-2 rounded-xl border border-violet-500/25 bg-violet-500/8 flex items-start gap-2">
+            <Wrench className="w-3.5 h-3.5 text-violet-300 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-violet-200/80">
+              الجهاز استُلم وهو لا يعمل — يُستخدم قالب الفحص الافتراضي للتحقق من سلامة الإصلاح.
+            </p>
+          </div>
+          <div className="bg-purple-500/[0.03]">
+            <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-white/5 bg-purple-500/10 backdrop-blur">
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-purple-300" />
+                <p className="text-[12px] font-black text-purple-200">فحص الجهاز بعد الإصلاح</p>
+                <span className="text-[9px] text-violet-300/60 font-bold px-1.5 py-0.5 rounded-full border border-violet-500/25 bg-violet-500/10">قالب افتراضي</span>
+              </div>
+            </div>
+            <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {items.map((it, idx) => {
+                const cardCls =
+                  it.status === "pass" ? "border-emerald-500/30 bg-emerald-500/[0.04]" :
+                  it.status === "fail" ? "border-red-500/30 bg-red-500/[0.04]" :
+                  it.status === "n/a"  ? "border-zinc-500/25 bg-zinc-500/[0.03]" :
+                                         "border-white/8 bg-white/[0.02]";
+                const notesOpen = openNotes.has(idx);
+                const hasNote   = (it.notes ?? "").trim().length > 0;
+                return (
+                  <div key={`f-${it.id}-${idx}`} className={`rounded-xl border transition-colors ${cardCls}`}>
+                    <div className="flex items-center gap-1.5 px-2.5 py-2">
+                      <button
+                        type="button"
+                        onClick={() => onToggleNotes(idx)}
+                        className={[
+                          "shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-colors",
+                          hasNote
+                            ? "bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
+                            : notesOpen
+                              ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
+                              : "bg-white/[0.04] text-white/40 border border-white/10 hover:text-white/70 hover:bg-white/[0.08]",
+                        ].join(" ")}
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                      </button>
+                      <p
+                        className="flex-1 min-w-0 text-[11.5px] font-bold text-white truncate cursor-pointer"
+                        onClick={() => onToggleNotes(idx)}
+                      >
+                        {it.label}
+                      </p>
+                      {it.category && <span className="text-[9px] text-white/30 shrink-0">{it.category}</span>}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {(["pass", "fail", "n/a"] as QcStatus[]).map(st => {
+                          const cfg    = QC_BTN[st];
+                          const Icon   = cfg.icon;
+                          const active = it.status === st;
+                          return (
+                            <button
+                              key={st}
+                              type="button"
+                              onClick={() => onSetItems(prev => prev.map((x, i) => i === idx ? { ...x, status: st } : x))}
+                              disabled={qcLoading}
+                              title={cfg.label}
+                              className={[
+                                "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all",
+                                active
+                                  ? `${cfg.bg} text-white ring-2 ${cfg.ring} shadow-md`
+                                  : "bg-white/[0.04] text-white/50 border border-white/10 hover:bg-white/[0.08] hover:text-white",
+                              ].join(" ")}
+                            >
+                              <Icon className="w-3 h-3" />
+                              <span className="hidden sm:inline">{cfg.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {notesOpen && (
+                      <div className="px-2.5 pb-2 pt-0">
+                        <input
+                          value={it.notes ?? ""}
+                          onChange={(e) => onSetItems(prev => prev.map((x, i) => i === idx ? { ...x, notes: e.target.value } : x))}
+                          placeholder="ملاحظة (اختيارية)"
+                          disabled={qcLoading}
+                          autoFocus
+                          className={[
+                            "w-full px-2.5 py-1 rounded-md text-[10.5px] text-white placeholder:text-white/25 focus:outline-none transition-colors",
+                            it.status === "fail"
+                              ? "bg-red-500/8 border border-red-500/25 focus:border-red-400/45"
+                              : "bg-white/[0.03] border border-white/8 focus:border-purple-400/35",
+                          ].join(" ")}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       ) : (
+        /* ── وضع بنود الاستلام: عمودان (استلام + قرار) ── */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0 max-h-[55vh] overflow-y-auto" dir="rtl">
           <div className="border-l border-white/5 bg-indigo-500/[0.03]">
             <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-white/5 bg-indigo-500/10 backdrop-blur">

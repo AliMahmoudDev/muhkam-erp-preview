@@ -8,7 +8,7 @@ import { ShieldCheck, X, PackageCheck } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { JobLite, QcItem, PartLine, PayRow, PayType, parseChecklist, parseSavedQc } from "./ready-for-delivery/types";
+import { JobLite, QcItem, PartLine, PayRow, PayType, parseChecklist, parseSavedQc, getDefaultQcItems } from "./ready-for-delivery/types";
 import QcPhase from "./ready-for-delivery/QcPhase";
 import BillingPhase from "./ready-for-delivery/BillingPhase";
 
@@ -26,31 +26,80 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
 
   /* ── Phase 1: QC ── */
   const intakeItems = useMemo(() => parseChecklist(job.checklist), [job.checklist]);
-  const initialItems = useMemo<QcItem[]>(() => {
-    const savedRaw  = parseSavedQc(job.qa_checklist);
-    const savedById = new Map<string, { status?: string; notes?: string }>();
-    savedRaw.forEach((s, i) => savedById.set(String(s.id ?? s.label ?? `item-${i}`), { status: s.status, notes: s.notes }));
-    return intakeItems.map(it => {
+
+  /* مساعد: بناء QcItem[] من مصدر بنود */
+  function buildQcItems(
+    sources: Array<{ id: string; label: string; category?: string; intake_status?: string | null; intake_notes?: string | null }>,
+    savedById: Map<string, { status?: string; notes?: string }>,
+  ): QcItem[] {
+    return sources.map(it => {
       const saved = savedById.get(it.id) ?? savedById.get(it.label);
       const st    = saved?.status;
       return {
         id:            it.id,
         label:         it.label,
         category:      it.category,
-        intake_status: it.status,
-        intake_notes:  it.notes,
+        intake_status: it.intake_status ?? null,
+        intake_notes:  it.intake_notes ?? null,
         status:        (st === "pass" || st === "fail" || st === "n/a") ? st : null,
         notes:         typeof saved?.notes === "string" ? saved.notes : "",
       };
     });
-  }, [intakeItems, job.qa_checklist]);
+  }
+
+  const initialItems = useMemo<QcItem[]>(() => {
+    const savedRaw  = parseSavedQc(job.qa_checklist);
+    const savedById = new Map<string, { status?: string; notes?: string }>();
+    savedRaw.forEach((s, i) => savedById.set(String(s.id ?? s.label ?? `item-${i}`), { status: s.status, notes: s.notes }));
+
+    if (intakeItems.length > 0) {
+      /* بنود استلام حقيقية — نبني منها */
+      return buildQcItems(
+        intakeItems.map(it => ({ ...it, intake_status: it.status, intake_notes: it.notes })),
+        savedById,
+      );
+    }
+
+    /* لا يوجد فحص استلام حقيقي (جهاز معطوب من البداية / __power_off__)
+       → نستخدم القالب الافتراضي حسب نوع الجهاز */
+    const deviceType = (job.device_type ?? "").trim() || "general";
+    return buildQcItems(getDefaultQcItems(deviceType), savedById);
+  }, [intakeItems, job.qa_checklist, job.device_type]);
 
   const [items, setItems]               = useState<QcItem[]>(initialItems);
+  const [isFallback, setIsFallback]     = useState(() => intakeItems.length === 0);
+  const [templateLoading, setTemplateLoading] = useState(false);
   const [openNotes, setOpenNotes]       = useState<Set<number>>(new Set());
   const [rejectMode, setRejectMode]     = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [qcLoading, setQcLoading]       = useState(false);
   const [qcErrors, setQcErrors]         = useState<string[]>([]);
+
+  /* ── محاولة تحميل قالب مخصّص من قاعدة البيانات بعد الـ render ──
+     إن وُجدت بنود مخصّصة للجهاز تحل محل الافتراضية.
+     تُستدعى فقط عند الجهاز بلا فحص استلام (isFallback). */
+  useEffect(() => {
+    if (intakeItems.length > 0) return;
+    const deviceType = (job.device_type ?? "").trim() || "general";
+    setTemplateLoading(true);
+    authFetch(api(`/api/repair-checklist-items?device_type=${encodeURIComponent(deviceType)}`))
+      .then(res => res.json())
+      .then((data: Array<{ id?: number; label_ar?: string; label?: string; category?: string }>) => {
+        if (!Array.isArray(data) || data.length === 0) return;
+        const savedRaw  = parseSavedQc(job.qa_checklist);
+        const savedById = new Map<string, { status?: string; notes?: string }>();
+        savedRaw.forEach((s, i) => savedById.set(String(s.id ?? s.label ?? `item-${i}`), { status: s.status, notes: s.notes }));
+        const dbSources = data.map((item, i) => ({
+          id:       String(item.id ?? `tpl-${i}`),
+          label:    String(item.label_ar ?? item.label ?? `بند ${i + 1}`),
+          category: item.category,
+        }));
+        setItems(buildQcItems(dbSources, savedById));
+        setIsFallback(true);
+      })
+      .catch(() => { /* نبقى على القالب الافتراضي المحدد مسبقاً */ })
+      .finally(() => setTemplateLoading(false));
+  }, []);
 
   const passCount    = items.filter(i => i.status === "pass").length;
   const failCount    = items.filter(i => i.status === "fail").length;
@@ -140,7 +189,6 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
 
   // initialise paySafe once safes load — done inside BillingPhase via effect; here we just ensure
   // the prop chain works. BillingPhase manages its own safe init.
-  void useEffect; // keep import
 
   async function handleBillingSave() {
     const errs: string[] = [];
@@ -229,6 +277,8 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
           <QcPhase
             items={items}
             intakeItems={intakeItems}
+            isFallback={isFallback}
+            templateLoading={templateLoading}
             openNotes={openNotes}
             rejectMode={rejectMode}
             rejectReason={rejectReason}
