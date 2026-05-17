@@ -116,6 +116,19 @@ export function validateTransition(
       continue;
     }
 
+    /* ── إعفاء qa_completed_at إن لم يكن هناك فحص استلام أولي ──
+          الجهاز الذي سُلِّم معطوباً من البداية (checklist = null / [])
+          لا يملك بنوداً للمقارنة، لذا يُعفى من شرط إكمال QC. */
+    if (req.field === 'qa_completed_at') {
+      const rawChecklist = jobData['checklist'];
+      let hasIntakeItems = false;
+      try {
+        const parsed = typeof rawChecklist === 'string' ? JSON.parse(rawChecklist) : rawChecklist;
+        hasIntakeItems = Array.isArray(parsed) && parsed.length > 0;
+      } catch { /* ignore parse error — treat as no checklist */ }
+      if (!hasIntakeItems) continue; // لا فحص أولي → QC اختياري
+    }
+
     if (!value || String(value).trim() === '') {
       errors.push(req.label_ar);
     }
