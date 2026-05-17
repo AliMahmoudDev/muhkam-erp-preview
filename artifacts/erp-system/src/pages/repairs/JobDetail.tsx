@@ -480,6 +480,46 @@ export function JobDetail({
           )}
         </div>
 
+        {/* Parts Used */}
+        {job.parts && job.parts.length > 0 && (
+          <div className="glass-panel rounded-2xl p-3 border border-cyan-500/20 bg-cyan-500/[0.02] space-y-2">
+            <p className="text-[10px] erp-label font-bold flex items-center gap-1.5">
+              <Package className="w-3.5 h-3.5 text-cyan-400/70" />
+              القطع المستخدمة في الإصلاح
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400/80 border border-cyan-500/20 tabular-nums">{job.parts.length}</span>
+            </p>
+            <div className="space-y-1">
+              {job.parts.map((p) => {
+                const qty   = Number(p.quantity)   || 1;
+                const price = Number(p.unit_price) || 0;
+                const line  = qty * price;
+                return (
+                  <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 border border-white/5 bg-white/[0.02]">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-bold text-white/85 truncate">{p.product_name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 text-[10px]">
+                      <span className="text-white/35">×{qty}</span>
+                      {price > 0 && (
+                        <span className="text-cyan-300/70 font-mono">{line.toLocaleString('ar-EG')} ر.س</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {(() => {
+              const total = job.parts.reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
+              return total > 0 ? (
+                <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                  <span className="text-[10px] text-white/40">إجمالي القطع</span>
+                  <span className="text-[11px] font-black text-cyan-300 font-mono">{total.toLocaleString('ar-EG')} ر.س</span>
+                </div>
+              ) : null;
+            })()}
+          </div>
+        )}
+
         {/* Technician & Costs */}
         <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)] space-y-3">
           <p className="text-[10px] erp-label font-bold">الفني والتكاليف</p>

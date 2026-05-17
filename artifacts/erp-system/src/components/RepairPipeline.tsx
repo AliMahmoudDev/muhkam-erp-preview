@@ -303,6 +303,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
     qa_checklist:           jobData.qa_checklist,
     qa_notes:               jobData.qa_notes as string | null | undefined,
     device_score:           jobData.device_score as number | null | undefined,
+    parts:                  jobData.parts as Array<{ id: number; product_name: string; quantity: string; unit_price: string }> | undefined,
     external_workshop:      jobData.external_workshop as boolean | null | undefined,
     external_workshop_name: jobData.external_workshop_name as string | null | undefined,
     external_workshop_cost: jobData.external_workshop_cost as string | number | null | undefined,

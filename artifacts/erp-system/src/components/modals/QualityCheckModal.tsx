@@ -50,6 +50,13 @@ interface QcItem {
   notes: string;                 // ملاحظات الفني
 }
 
+interface RepairPartLite {
+  id: number;
+  product_name: string;
+  quantity: string;
+  unit_price: string;
+}
+
 interface JobLite {
   id: number;
   job_no: string;
@@ -60,6 +67,7 @@ interface JobLite {
   qa_checklist?: unknown;
   qa_notes?: string | null;
   device_score?: number | null;
+  parts?: RepairPartLite[];
 }
 
 interface Props {
@@ -243,6 +251,8 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
   const [errors, setErrors]       = useState<string[]>([]);
   const [templateLoading, setTemplateLoading] = useState(false);
   const [isFallback, _setIsFallback] = useState(() => intakeItems.length === 0);
+  /* تقرير المهندس — إجباري قبل إتمام الفحص */
+  const [engineerNote, setEngineerNote] = useState("");
 
   /* ── محاولة تحميل بنود أفضل من DB (إن وجدت) بعد الـ render ── */
   useEffect(() => {
@@ -305,21 +315,28 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
       حين لا توجد بنود استلام ولا قالب (items.length === 0) نُرسل علم no_intake_checklist=true. */
   async function handleApprove() {
     const noIntakeChecklist = items.length === 0 && !templateLoading;
+    const errs: string[] = [];
 
-    if (!noIntakeChecklist) {
-      if (!allDecided) {
-        setErrors([`يجب اتخاذ قرار لكل بند — متبقي ${pendingCount} بند`]);
-        return;
-      }
-      if (failCount > 0) {
-        setErrors([`لا يمكن قبول الفحص ووجود ${failCount} بند مرفوض — استخدم زر "رفض الفحص" لإعادة البطاقة للإصلاح`]);
-        return;
-      }
+    /* تقرير المهندس إجباري دائماً */
+    if (engineerNote.trim().length < 5) {
+      errs.push("تقرير المهندس إجباري (5 أحرف على الأقل) — صِف ما تم إصلاحه");
     }
+    if (!noIntakeChecklist) {
+      if (!allDecided) errs.push(`يجب اتخاذ قرار لكل بند — متبقي ${pendingCount} بند`);
+      if (failCount > 0) errs.push(`لا يمكن قبول الفحص ووجود ${failCount} بند مرفوض — استخدم زر "رفض الفحص"`);
+    }
+    if (errs.length) { setErrors(errs); return; }
 
     setLoading(true);
     setErrors([]);
     try {
+      /* حفظ تقرير المهندس أولاً */
+      await authFetch(api(`/api/repair-jobs/${job.id}/engineer-reports`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: engineerNote.trim() }),
+      });
+
       const body = noIntakeChecklist
         ? { items: [], no_intake_checklist: true, notes: "", device_score: score.trim() === "" ? null : Number(score) }
         : {
@@ -459,6 +476,42 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
             </span>
           )}
         </div>
+
+        {/* ── القطع المستخدمة في الإصلاح (للمراجعة فقط) ── */}
+        {job.parts && job.parts.length > 0 && (
+          <div className="px-5 py-2.5 border-b border-white/5 bg-cyan-500/[0.03]">
+            <p className="text-[10px] font-black text-cyan-300/80 mb-2 flex items-center gap-1.5">
+              <Package className="w-3.5 h-3.5" />
+              القطع المستخدمة في الإصلاح ({job.parts.length})
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {job.parts.map((p) => {
+                const qty  = Number(p.quantity)   || 1;
+                const price = Number(p.unit_price) || 0;
+                return (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.05] text-[10.5px]"
+                  >
+                    <span className="text-white/80 font-bold">{p.product_name}</span>
+                    <span className="text-white/35">×{qty}</span>
+                    {price > 0 && (
+                      <span className="text-cyan-300/70">{(qty * price).toLocaleString("ar-EG")} ر.س</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {(() => {
+              const total = job.parts.reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
+              return total > 0 ? (
+                <p className="mt-1.5 text-[10px] text-cyan-300/60">
+                  إجمالي تكلفة القطع: <span className="font-bold text-cyan-200">{total.toLocaleString("ar-EG")} ر.س</span>
+                </p>
+              ) : null;
+            })()}
+          </div>
+        )}
 
         {/* ── Two-column layout: intake (right) ↔ QC decisions (left) ── */}
         {templateLoading ? (
@@ -653,6 +706,29 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
           </div>
         )}
 
+        {/* ── تقرير المهندس (إجباري دائماً) ── */}
+        {!rejectMode && (
+          <div className="px-5 py-3 border-t border-white/5 bg-violet-500/[0.03]">
+            <label className="text-[11px] font-black text-violet-300 mb-1.5 flex items-center gap-1.5">
+              <ClipboardList className="w-3.5 h-3.5" />
+              تقرير المهندس
+              <span className="text-[9px] font-bold text-red-400 bg-red-500/10 border border-red-500/25 px-1.5 py-0.5 rounded-full">إجباري</span>
+            </label>
+            <textarea
+              value={engineerNote}
+              onChange={(e) => setEngineerNote(e.target.value)}
+              rows={3}
+              disabled={loading}
+              autoFocus={items.length === 0}
+              className="w-full px-3 py-2 rounded-lg bg-violet-500/5 border border-violet-500/20 text-[12px] text-white placeholder:text-white/25 focus:outline-none focus:border-violet-400/45 resize-y"
+              placeholder="صِف ما تم إصلاحه — مثلاً: تم تغيير الشاشة وإصلاح منفذ الشحن..."
+            />
+            {engineerNote.trim().length > 0 && engineerNote.trim().length < 5 && (
+              <p className="mt-1 text-[10px] text-amber-300/70">يجب كتابة 5 أحرف على الأقل</p>
+            )}
+          </div>
+        )}
+
         {/* ── تقييم الجهاز (يظهر في وضع القبول فقط) ── */}
         {!rejectMode && items.length > 0 && (
           <div className="px-5 py-3 border-t border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
@@ -695,7 +771,7 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
             <>
               <button
                 onClick={handleApprove}
-                disabled={loading || (items.length > 0 && (!allDecided || failCount > 0))}
+                disabled={loading || engineerNote.trim().length < 5 || (items.length > 0 && (!allDecided || failCount > 0))}
                 className="flex-1 min-w-[220px] py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
                 style={{ background: "rgba(16,185,129,0.85)", border: "1px solid rgba(52,211,153,0.5)" }}
               >
