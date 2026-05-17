@@ -78,6 +78,8 @@ The project is a pnpm monorepo.
 
 I prefer iterative development with a focus on core features first. I value clear, detailed explanations for complex architectural decisions and new functionalities. Please ask before implementing any major changes or refactoring large portions of the codebase. I expect the agent to prioritize fixing critical bugs and stabilizing existing features before developing new ones. I prefer a communication style that is direct and technical, but also open to discussing alternative approaches.
 
+**IMPORTANT — Verification rule:** After every task or change, the agent MUST verify the implementation actually works (build check, HMR success, screenshot, or log check) before declaring the task done. Never mark a task complete without confirming it.
+
 ## Gotchas
 
 -   `POST /qa-checklist` requires body fields `items` (array of `{id,label,status}`) and `notes`.
