@@ -116,17 +116,23 @@ export function validateTransition(
       continue;
     }
 
-    /* ── إعفاء qa_completed_at إن لم يكن هناك فحص استلام أولي ──
-          الجهاز الذي سُلِّم معطوباً من البداية (checklist = null / [])
-          لا يملك بنوداً للمقارنة، لذا يُعفى من شرط إكمال QC. */
+    /* ── إعفاء qa_completed_at إن لم تكن هناك بنود استلام حقيقية ──
+          الجهاز الذي سُلِّم معطوباً من البداية يحصل على بند __power_off__ فقط،
+          وهذا البند يُخفيه النظام من شاشة QC تماماً (مثل checklist فارغ).
+          لذلك إن كانت كل بنود الفحص هي __power_off__ أو لم يكن هناك بنود أصلاً،
+          يُعفى شرط qa_completed_at لأنه ما في ما يُفحص فعلياً. */
     if (req.field === 'qa_completed_at') {
       const rawChecklist = jobData['checklist'];
-      let hasIntakeItems = false;
+      let hasRealIntakeItems = false;
       try {
         const parsed = typeof rawChecklist === 'string' ? JSON.parse(rawChecklist) : rawChecklist;
-        hasIntakeItems = Array.isArray(parsed) && parsed.length > 0;
+        if (Array.isArray(parsed)) {
+          hasRealIntakeItems = parsed.some(
+            (i: unknown) => (i as { id?: string }).id !== '__power_off__'
+          );
+        }
       } catch { /* ignore parse error — treat as no checklist */ }
-      if (!hasIntakeItems) continue; // لا فحص أولي → QC اختياري
+      if (!hasRealIntakeItems) continue; // لا بنود حقيقية → QC اختياري
     }
 
     if (!value || String(value).trim() === '') {

@@ -291,16 +291,20 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
         error: "يجب إدخال التكلفة النهائية (>0) قبل نقل البطاقة إلى \"جاهز للتسليم\"",
       });
     }
-    /* إن لم يكن هناك فحص استلام (checklist = null / []) ولم يُكتمل QC بعد،
-       نضبط qa_completed_at تلقائياً لأن الجهاز المعطوب من البداية لا يحتاج QC. */
+    /* إن لم تكن هناك بنود استلام حقيقية (null / [] / __power_off__ فقط) ولم يُكتمل QC،
+       نضبط qa_completed_at تلقائياً — الجهاز المعطوب من البداية لا يحتاج QC. */
     if (!existing.qa_completed_at) {
-      let hasIntakeItems = false;
+      let hasRealIntakeItems = false;
       try {
         const raw = existing.checklist;
         const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        hasIntakeItems = Array.isArray(parsed) && parsed.length > 0;
+        if (Array.isArray(parsed)) {
+          hasRealIntakeItems = parsed.some(
+            (i: unknown) => (i as { id?: string }).id !== '__power_off__'
+          );
+        }
       } catch { /* ignore */ }
-      if (!hasIntakeItems) {
+      if (!hasRealIntakeItems) {
         updates.qa_completed_at = new Date();
       }
     }
