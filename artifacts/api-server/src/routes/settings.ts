@@ -597,7 +597,11 @@ router.get("/settings/audit-logs", authenticate, requireRole("admin"), wrap(asyn
   res.json(filtered.map(r => ({ ...r, created_at: r.created_at.toISOString() })));
 }));
 
-// ─── RESET DATABASE ───────────────────────────────────────────────────────────
+// ─── RESET DATABASE (Full Factory Reset) ──────────────────────────────────────
+// يحذف كل بيانات الشركة بالكامل (من A إلى Z) مع الحفاظ على:
+// 1. سجل الشركة نفسه (companies row)
+// 2. المستخدم الحالي (admin الذي ينفّذ العملية)
+// يستخدم نفس منهجية cascadeDeleteCompany لكن بدون حذف الشركة نفسها.
 
 router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (req, res) => {
   const parsedReset = resetSchema.safeParse(req.body);
@@ -607,50 +611,142 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
     res.status(400).json({ error: "يجب كتابة عبارة التأكيد بشكل صحيح" }); return;
   }
 
-  const companyId    = req.user!.company_id!;
+  const companyId     = req.user!.company_id!;
   const currentUserId = req.user!.id;
 
-  const saleIds = (await db.select({ id: salesTable.id }).from(salesTable).where(eq(salesTable.company_id, companyId))).map(r => r.id);
-  const purIds  = (await db.select({ id: purchasesTable.id }).from(purchasesTable).where(eq(purchasesTable.company_id, companyId))).map(r => r.id);
-  const sRetIds = (await db.select({ id: salesReturnsTable.id }).from(salesReturnsTable).where(eq(salesReturnsTable.company_id, companyId))).map(r => r.id);
-  const pRetIds = (await db.select({ id: purchaseReturnsTable.id }).from(purchaseReturnsTable).where(eq(purchaseReturnsTable.company_id, companyId))).map(r => r.id);
-  const jrnIds  = (await db.select({ id: journalEntriesTable.id }).from(journalEntriesTable).where(eq(journalEntriesTable.company_id, companyId))).map(r => r.id);
+  await db.transaction(async (tx) => {
+    const cid = companyId;
 
-  if (jrnIds.length > 0)  await db.delete(journalEntryLinesTable).where(inArray(journalEntryLinesTable.entry_id, jrnIds));
-  await db.delete(journalEntriesTable).where(eq(journalEntriesTable.company_id, companyId));
-  if (sRetIds.length > 0) await db.delete(saleReturnItemsTable).where(inArray(saleReturnItemsTable.return_id, sRetIds));
-  await db.delete(salesReturnsTable).where(eq(salesReturnsTable.company_id, companyId));
-  if (pRetIds.length > 0) await db.delete(purchaseReturnItemsTable).where(inArray(purchaseReturnItemsTable.return_id, pRetIds));
-  await db.delete(purchaseReturnsTable).where(eq(purchaseReturnsTable.company_id, companyId));
-  if (saleIds.length > 0) await db.delete(saleItemsTable).where(inArray(saleItemsTable.sale_id, saleIds));
-  await db.delete(salesTable).where(eq(salesTable.company_id, companyId));
-  if (purIds.length > 0)  await db.delete(purchaseItemsTable).where(inArray(purchaseItemsTable.purchase_id, purIds));
-  await db.delete(purchasesTable).where(eq(purchasesTable.company_id, companyId));
-  await db.delete(expensesTable).where(eq(expensesTable.company_id, companyId));
-  await db.delete(incomeTable).where(eq(incomeTable.company_id, companyId));
-  await db.delete(receiptVouchersTable).where(eq(receiptVouchersTable.company_id, companyId));
-  await db.delete(depositVouchersTable).where(eq(depositVouchersTable.company_id, companyId));
-  await db.delete(paymentVouchersTable).where(eq(paymentVouchersTable.company_id, companyId));
-  await db.delete(treasuryVouchersTable).where(eq(treasuryVouchersTable.company_id, companyId));
-  await db.delete(safeTransfersTable).where(eq(safeTransfersTable.company_id, companyId));
-  await db.delete(transactionsTable).where(eq(transactionsTable.company_id, companyId));
-  await db.delete(accountsTable).where(eq(accountsTable.company_id, companyId));
-  await db.delete(stockMovementsTable).where(eq(stockMovementsTable.company_id, companyId));
+    /* ── Level 3: deepest children (via subquery on employee/user) ── */
+    await tx.execute(sql`DELETE FROM refresh_tokens          WHERE user_id IN (SELECT id FROM erp_users WHERE company_id = ${cid} AND id != ${currentUserId})`);
+    await tx.execute(sql`DELETE FROM leave_approvals         WHERE leave_request_id IN (SELECT id FROM leave_requests WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid}))`);
+    await tx.execute(sql`DELETE FROM attendance_records      WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM attendance_summary      WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM employee_contacts       WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM employee_documents      WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM employee_status_history WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM salary_history          WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM leave_accrual_history   WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM overtime_records        WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM monthly_incentive_summary WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM daily_incentive_accrual WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM incentive_metrics       WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM employee_leave_balances WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM employee_shift_assignments WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM employee_incentive_assignments WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM salary_advance_deductions WHERE salary_advance_id IN (SELECT id FROM salary_advances WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM salary_advance_history   WHERE salary_advance_id IN (SELECT id FROM salary_advances WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM salary_advance_ledger    WHERE advance_id IN (SELECT id FROM salary_advances WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM payroll_adjustments   WHERE payroll_record_id IN (SELECT id FROM payroll_records WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid}))`);
+    await tx.execute(sql`DELETE FROM payroll_line_items    WHERE payroll_record_id IN (SELECT id FROM payroll_records WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid}))`);
+    await tx.execute(sql`DELETE FROM incentive_slabs  WHERE incentive_rule_id IN (SELECT id FROM incentive_rules WHERE incentive_scheme_id IN (SELECT id FROM incentive_schemes WHERE company_id = ${cid}))`);
+    await tx.execute(sql`DELETE FROM incentive_rules  WHERE incentive_scheme_id IN (SELECT id FROM incentive_schemes WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM salary_components WHERE salary_structure_id IN (SELECT id FROM salary_structures WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM journal_entry_lines WHERE entry_id IN (SELECT id FROM journal_entries WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM sale_items          WHERE sale_id IN (SELECT id FROM sales WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM sale_return_items   WHERE return_id IN (SELECT id FROM sales_returns WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM purchase_items      WHERE purchase_id IN (SELECT id FROM purchases WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM purchase_return_items WHERE return_id IN (SELECT id FROM purchase_returns WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM stock_count_items   WHERE session_id IN (SELECT id FROM stock_count_sessions WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM stock_transfer_items WHERE transfer_id IN (SELECT id FROM stock_transfers WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM leave_requests      WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM payroll_records     WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
 
-  await db.update(customersTable).set({ balance: "0" }).where(eq(customersTable.company_id, companyId));
-  await db.update(productsTable).set({ quantity: "0" }).where(eq(productsTable.company_id, companyId));
-  await db.update(safesTable).set({ balance: "0" }).where(eq(safesTable.company_id, companyId));
+    /* ── Accounting, banking, HR extras ── */
+    await tx.execute(sql`DELETE FROM accrual_runs              WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM bank_statement_lines      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM depreciation_runs         WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM budget_lines              WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM employee_deductions       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM warranty_records          WHERE company_id = ${cid}`);
 
-  /* حذف جميع مستخدمي الشركة ما عدا المستخدم الحالي */
-  await db.delete(erpUsersTable).where(
-    and(
-      eq(erpUsersTable.company_id, companyId),
-      ne(erpUsersTable.id, currentUserId),
-      ne(erpUsersTable.role, "super_admin")
-    )
-  );
+    /* ── Repair module ── */
+    await tx.execute(sql`DELETE FROM repair_payments           WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_job_parts          WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_status_history     WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_jobs               WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_statuses           WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_checklist_items    WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_pipeline_config    WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_dashboard_cards    WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_device_models      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_accessories        WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM scrap_items               WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM bad_debts                 WHERE company_id = ${cid}`);
 
-  res.json({ success: true, message: "تم تصفير قاعدة البيانات بنجاح" });
+    /* ── Devices, suppliers, price lists ── */
+    await tx.execute(sql`DELETE FROM devices                   WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM suppliers                 WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM price_list_items WHERE price_list_id IN (SELECT id FROM price_lists WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM price_lists               WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM sales_targets             WHERE company_id = ${cid}`);
+
+    /* ── Level 2: all direct company_id tables ── */
+    await tx.execute(sql`DELETE FROM journal_entries       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM sales_returns         WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM purchase_returns      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM sales                 WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM purchases             WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM receipt_vouchers      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM deposit_vouchers      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM payment_vouchers      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM treasury_vouchers     WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM safe_transfers        WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM stock_movements       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM stock_count_sessions  WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM stock_transfers       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM expenses              WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM income                WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM transactions          WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM customer_ledger       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM salary_advances       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM employee_bonuses      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM employee_custody_lines WHERE custody_id IN (SELECT id FROM employee_custody WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM employee_custody      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM salary_structures     WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM payroll_periods       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM statutory_contributions WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM tax_brackets          WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM incentive_schemes     WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM salary_advance_settings WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM leave_policies        WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM leave_blackout_dates  WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM leave_types           WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM public_holidays       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM shift_schedules       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM employees             WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM job_titles            WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM departments           WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM branches              WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM products              WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM customers             WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM categories            WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM customer_classifications WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM expense_categories    WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM accounts              WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM safes                 WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM warehouses            WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM fiscal_years          WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM alerts                WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM system_settings       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM idempotency_keys      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM audit_logs            WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM accruals              WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM bank_accounts         WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM budgets               WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM fixed_assets          WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM cost_centers          WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM exchange_rates        WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM announcements         WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM notifications         WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM attendance_deduction_tiers    WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM attendance_deduction_settings WHERE company_id = ${cid}`);
+
+    /* ── Users: حذف الكل ما عدا المستخدم الحالي ── */
+    await tx.execute(sql`DELETE FROM erp_users WHERE company_id = ${cid} AND id != ${currentUserId}`);
+  });
+
+  res.json({ success: true, message: "تم إعادة تعيين قاعدة البيانات بالكامل — تم حذف جميع البيانات" });
 }));
 
 // ─── CUSTOMER STATEMENT ───────────────────────────────────────────────────────
