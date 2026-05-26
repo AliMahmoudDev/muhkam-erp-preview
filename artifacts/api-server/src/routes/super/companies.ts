@@ -13,6 +13,7 @@ import { wrap } from "../../lib/async-handler";
 import { hashPin } from "../../lib/hash";
 import { createCompanySchema, validate } from "../../lib/schemas";
 import { writeAuditLog } from "../../lib/audit-log";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 const superOnly = [authenticate, requireRole("super_admin")];
@@ -66,6 +67,31 @@ async function cascadeDeleteCompany(id: number): Promise<void> {
     await tx.execute(sql`DELETE FROM budget_lines              WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM employee_deductions       WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM warranty_records          WHERE company_id = ${cid}`);
+
+    /* ── Repair module (children first, then parents) ── */
+    await tx.execute(sql`DELETE FROM repair_payments           WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_job_parts          WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_status_history     WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_jobs               WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_statuses           WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_checklist_items    WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_pipeline_config    WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_dashboard_cards    WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_device_models      WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM repair_accessories        WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM scrap_items               WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM bad_debts                 WHERE company_id = ${cid}`);
+
+    /* ── Devices & suppliers ── */
+    await tx.execute(sql`DELETE FROM devices                   WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM suppliers                 WHERE company_id = ${cid}`);
+
+    /* ── Price lists (items reference products — must delete before products) ── */
+    await tx.execute(sql`DELETE FROM price_list_items WHERE price_list_id IN (SELECT id FROM price_lists WHERE company_id = ${cid})`);
+    await tx.execute(sql`DELETE FROM price_lists               WHERE company_id = ${cid}`);
+
+    /* ── Sales targets ── */
+    await tx.execute(sql`DELETE FROM sales_targets             WHERE company_id = ${cid}`);
 
     /* ── Level 2: tables with direct company_id ── */
     await tx.execute(sql`DELETE FROM journal_entries       WHERE company_id = ${cid}`);
@@ -488,7 +514,22 @@ router.delete("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
     }
   }
 
-  await cascadeDeleteCompany(id);
+  try {
+    await cascadeDeleteCompany(id);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const isPgFk = typeof (err as Record<string, unknown>)?.code === "string" &&
+      ((err as Record<string, unknown>).code as string).startsWith("23");
+    logger.error({ err, companyId: id }, "[super/companies] cascade delete failed");
+    if (isPgFk) {
+      res.status(409).json({
+        error: "فشل حذف الشركة — يوجد بيانات مرتبطة لم يتم حذفها بالكامل. يرجى التواصل مع الدعم الفني.",
+        details: process.env.NODE_ENV !== "production" ? msg : undefined,
+      });
+      return;
+    }
+    throw err;
+  }
 
   await writeAuditLog({
     action: "COMPANY_DELETED", record_type: "company", record_id: id,
