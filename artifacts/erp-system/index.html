@@ -33,7 +33,38 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- ⚡ Inline loading screen — visible until React mounts and removes it -->
+      <div id="initial-loader" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0e1a;">
+        <!-- Ambient glow -->
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;border-radius:50%;background:rgba(245,158,11,0.04);filter:blur(100px);"></div>
+        <!-- Logo -->
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:24px;">
+          <div style="width:80px;height:80px;border-radius:16px;background:linear-gradient(135deg,#0F172A,#1e293b);border:1px solid rgba(245,158,11,0.2);display:flex;align-items:center;justify-content:center;box-shadow:0 25px 50px -12px rgba(245,158,11,0.1);animation:ldr-breathe 2.5s ease-in-out infinite;">
+            <svg width="48" height="48" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="16" width="140" height="4" rx="2" fill="#F59E0B"/>
+              <text x="90" y="115" font-family="Arial,sans-serif" font-size="88" font-weight="bold" text-anchor="middle" fill="#F59E0B">م</text>
+              <circle cx="90" cy="148" r="6" fill="#F59E0B" opacity="0.7"/>
+            </svg>
+          </div>
+          <!-- Brand -->
+          <div style="text-align:center;">
+            <h1 style="margin:0;font-size:24px;font-weight:700;color:rgba(255,255,255,0.9);font-family:Tajawal,sans-serif;letter-spacing:0.5px;">مُحكم</h1>
+            <p style="margin:4px 0 0;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:3px;text-transform:uppercase;">MUHKAM ERP</p>
+          </div>
+          <!-- Progress bar -->
+          <div style="width:192px;height:4px;border-radius:4px;background:rgba(255,255,255,0.05);overflow:hidden;margin-top:8px;">
+            <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#f59e0b,#fbbf24);animation:ldr-slide 1.8s ease-in-out infinite;"></div>
+          </div>
+          <!-- Text -->
+          <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.3);font-family:Tajawal,sans-serif;">جارِ التحميل...</p>
+        </div>
+        <style>
+          @keyframes ldr-breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.04);opacity:.92}}
+          @keyframes ldr-slide{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
