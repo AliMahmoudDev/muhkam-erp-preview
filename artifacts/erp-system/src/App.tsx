@@ -18,6 +18,7 @@ import NotFound from '@/pages/not-found';
 import AccessDenied from '@/pages/access-denied';
 import SubscriptionExpired from '@/pages/subscription-expired';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { LoadingPage } from '@/components/loading-page';
 import { OfflineBanner } from '@/components/offline-banner';
 import EmployeeGateway from '@/components/employee-gateway';
 
@@ -93,11 +94,7 @@ const queryClient = new QueryClient({
 
 /* ── Page suspense wrapper ───────────────────────────────── */
 function PageFallback() {
-  return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <Spinner className="w-8 h-8 text-amber-500" />
-    </div>
-  );
+  return <LoadingPage />;
 }
 
 function Guard({ path, component: Component }: { path: string; component: React.ComponentType }) {

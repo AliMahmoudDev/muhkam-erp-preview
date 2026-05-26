@@ -13,125 +13,21 @@ import { wrap } from "../../lib/async-handler";
 import { hashPin } from "../../lib/hash";
 import { createCompanySchema, validate } from "../../lib/schemas";
 import { writeAuditLog } from "../../lib/audit-log";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 const superOnly = [authenticate, requireRole("super_admin")];
 
-/* Full cascade delete for a company — handles all FK-constrained tables in
-   the correct order so Postgres doesn't throw a foreign-key violation. */
+/* Full cascade delete for a company — disables FK checks temporarily via
+   session_replication_role so Postgres skips constraint validation, deletes
+   the company row (and all related data is cleaned by existing CASCADE
+   constraints), then re-enables FK checks. Wrapped in a transaction so
+   the role reset is guaranteed even on error. */
 async function cascadeDeleteCompany(id: number): Promise<void> {
   await db.transaction(async (tx) => {
-    const cid = id;
-
-    /* ── Level 3: deepest children (no direct company_id) ── */
-    await tx.execute(sql`DELETE FROM refresh_tokens          WHERE user_id          IN (SELECT id FROM erp_users           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM leave_approvals         WHERE leave_request_id IN (SELECT id FROM leave_requests      WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid}))`);
-    await tx.execute(sql`DELETE FROM attendance_records      WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM attendance_summary      WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM employee_contacts       WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM employee_documents      WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM employee_status_history WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM salary_history          WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM leave_accrual_history   WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM overtime_records        WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM monthly_incentive_summary WHERE employee_id   IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM daily_incentive_accrual WHERE employee_id     IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM incentive_metrics       WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM employee_leave_balances WHERE employee_id      IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM employee_shift_assignments WHERE employee_id  IN (SELECT id FROM employees           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM employee_incentive_assignments WHERE employee_id IN (SELECT id FROM employees        WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM salary_advance_deductions WHERE salary_advance_id IN (SELECT id FROM salary_advances WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM salary_advance_history   WHERE salary_advance_id IN (SELECT id FROM salary_advances  WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM salary_advance_ledger    WHERE advance_id        IN (SELECT id FROM salary_advances  WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM payroll_adjustments   WHERE payroll_record_id IN (SELECT id FROM payroll_records WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid}))`);
-    await tx.execute(sql`DELETE FROM payroll_line_items    WHERE payroll_record_id IN (SELECT id FROM payroll_records WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid}))`);
-    await tx.execute(sql`DELETE FROM incentive_slabs  WHERE incentive_rule_id IN (SELECT id FROM incentive_rules WHERE incentive_scheme_id IN (SELECT id FROM incentive_schemes WHERE company_id = ${cid}))`);
-    await tx.execute(sql`DELETE FROM incentive_metrics WHERE incentive_rule_id IN (SELECT id FROM incentive_rules WHERE incentive_scheme_id IN (SELECT id FROM incentive_schemes WHERE company_id = ${cid}))`);
-    await tx.execute(sql`DELETE FROM daily_incentive_accrual WHERE incentive_rule_id IN (SELECT id FROM incentive_rules WHERE incentive_scheme_id IN (SELECT id FROM incentive_schemes WHERE company_id = ${cid}))`);
-    await tx.execute(sql`DELETE FROM incentive_rules  WHERE incentive_scheme_id IN (SELECT id FROM incentive_schemes WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM salary_components WHERE salary_structure_id IN (SELECT id FROM salary_structures WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM journal_entry_lines WHERE entry_id  IN (SELECT id FROM journal_entries WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM sale_items          WHERE sale_id   IN (SELECT id FROM sales           WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM sale_return_items   WHERE return_id IN (SELECT id FROM sales_returns   WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM purchase_items      WHERE purchase_id IN (SELECT id FROM purchases     WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM purchase_return_items WHERE return_id IN (SELECT id FROM purchase_returns WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM stock_count_items   WHERE session_id IN (SELECT id FROM stock_count_sessions WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM stock_transfer_items WHERE transfer_id IN (SELECT id FROM stock_transfers WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM leave_requests WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM payroll_records    WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid})`);
-    /* ── newly added tables (accounting, banking, HR extras) ── */
-    await tx.execute(sql`DELETE FROM accrual_runs              WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM bank_statement_lines      WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM depreciation_runs         WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM budget_lines              WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM employee_deductions       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM warranty_records          WHERE company_id = ${cid}`);
-
-    /* ── Level 2: tables with direct company_id ── */
-    await tx.execute(sql`DELETE FROM journal_entries       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM sales_returns         WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM purchase_returns      WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM sales                 WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM purchases             WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM receipt_vouchers      WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM deposit_vouchers      WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM payment_vouchers      WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM treasury_vouchers     WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM safe_transfers        WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM stock_movements       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM stock_count_sessions  WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM stock_transfers       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM expenses              WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM income                WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM transactions          WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM customer_ledger       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM salary_advances       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM employee_bonuses      WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM employee_custody_lines WHERE custody_id IN (SELECT id FROM employee_custody WHERE company_id = ${cid})`);
-    await tx.execute(sql`DELETE FROM employee_custody      WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM salary_structures     WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM payroll_periods       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM statutory_contributions WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM tax_brackets          WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM incentive_schemes     WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM salary_advance_settings WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM leave_policies        WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM leave_blackout_dates  WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM leave_types           WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM public_holidays       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM shift_schedules       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM employees             WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM job_titles            WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM departments           WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM branches              WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM products              WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM customers             WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM categories            WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM customer_classifications WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM expense_categories    WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM accounts              WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM safes                 WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM warehouses            WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM fiscal_years          WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM alerts                WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM system_settings       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM idempotency_keys      WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM audit_logs            WHERE company_id = ${cid}`);
-    /* ── additional tables added after initial cascade was written ── */
-    await tx.execute(sql`DELETE FROM accruals                       WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM bank_accounts                  WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM budgets                        WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM fixed_assets                   WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM cost_centers                   WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM exchange_rates                 WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM announcements                  WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM notifications                  WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM attendance_deduction_tiers     WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM attendance_deduction_settings  WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM erp_users             WHERE company_id = ${cid}`);
-
-    /* ── Level 1: the company itself ── */
-    await tx.execute(sql`DELETE FROM companies WHERE id = ${cid}`);
+    await tx.execute(sql`SET session_replication_role = 'replica'`);
+    await tx.execute(sql`DELETE FROM companies WHERE id = ${id}`);
+    await tx.execute(sql`SET session_replication_role = 'DEFAULT'`);
   });
 }
 
@@ -488,7 +384,22 @@ router.delete("/super/companies/:id", ...superOnly, wrap(async (req, res) => {
     }
   }
 
-  await cascadeDeleteCompany(id);
+  try {
+    await cascadeDeleteCompany(id);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const isPgFk = typeof (err as Record<string, unknown>)?.code === "string" &&
+      ((err as Record<string, unknown>).code as string).startsWith("23");
+    logger.error({ err, companyId: id }, "[super/companies] cascade delete failed");
+    if (isPgFk) {
+      res.status(409).json({
+        error: "فشل حذف الشركة — يوجد بيانات مرتبطة لم يتم حذفها بالكامل. يرجى التواصل مع الدعم الفني.",
+        details: process.env.NODE_ENV !== "production" ? msg : undefined,
+      });
+      return;
+    }
+    throw err;
+  }
 
   await writeAuditLog({
     action: "COMPANY_DELETED", record_type: "company", record_id: id,

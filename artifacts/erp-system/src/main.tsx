@@ -12,6 +12,9 @@ window.addEventListener("vite:preloadError", () => {
 
 const rootEl = document.getElementById("root")!;
 
+/* Remove the inline HTML loading screen once React takes over */
+document.getElementById("initial-loader")?.remove();
+
 if (sentryEnabled) {
   createRoot(rootEl).render(
     <Sentry.ErrorBoundary
