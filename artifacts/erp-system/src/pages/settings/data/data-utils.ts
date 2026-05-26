@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import ExcelJS from 'exceljs';
+import type ExcelJSType from 'exceljs';
+
+async function getExcelJS(): Promise<typeof ExcelJSType> {
+  const mod = await import('exceljs');
+  return mod.default ?? mod;
+}
 
 export const ACTIVITY_KEY = 'halal_erp_activity_log';
 
@@ -76,6 +81,7 @@ export function useCountdown(trigger: boolean, seconds: number) {
 }
 
 export async function readSheetRows(buffer: ArrayBuffer): Promise<Record<string, unknown>[]> {
+  const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
   const ws = wb.worksheets[0];
@@ -103,6 +109,7 @@ export async function writeXlsxBlob(
   data: Record<string, unknown>[],
   sheetName: string
 ): Promise<Blob> {
+  const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(sheetName);
   ws.columns = columns.map((c) => ({ header: c.header, key: c.key, width: c.width ?? 20 }));

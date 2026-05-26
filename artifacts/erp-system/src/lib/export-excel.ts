@@ -1,4 +1,9 @@
-import ExcelJS from 'exceljs';
+import type ExcelJSType from 'exceljs';
+
+async function getExcelJS(): Promise<typeof ExcelJSType> {
+  const mod = await import('exceljs');
+  return mod.default ?? mod;
+}
 import type { Customer, Product, Sale, Purchase } from '@workspace/api-client-react';
 
 function fmtNum(v: number | null | undefined): number {
@@ -35,6 +40,7 @@ async function downloadXlsx(
   filename: string,
   sheetName: string
 ) {
+  const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(sheetName);
 

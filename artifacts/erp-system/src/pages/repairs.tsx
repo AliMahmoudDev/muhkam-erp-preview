@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, lazy, Suspense } from "react";
 import { PaginationBar } from "@/components/PaginationBar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -7,7 +7,7 @@ import {
   LayoutGrid, List,
   ChevronRight, ScanLine,
 } from "lucide-react";
-import { BarcodeScanner } from "@/components/BarcodeScanner";
+const BarcodeScanner = lazy(() => import("@/components/BarcodeScanner"));
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
 import { formatCurrency } from "@/lib/format";
@@ -275,11 +275,13 @@ export default function Repairs() {
 
         {showSettings && <RepairSettingsModal onClose={() => setShowSettings(false)} />}
 
-        <BarcodeScanner
-          open={showScanner}
-          onClose={() => setShowScanner(false)}
-          onDetected={handleQrDetected}
-        />
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            open={showScanner}
+            onClose={() => setShowScanner(false)}
+            onDetected={handleQrDetected}
+          />
+        </Suspense>
 
         {/* Dashboard cards */}
         <DashboardCardsSection

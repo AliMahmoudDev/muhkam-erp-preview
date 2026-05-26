@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
@@ -6,7 +6,7 @@ import { TableSkeleton } from '@/components/skeletons';
 import { safeArray } from '@/lib/safe-data';
 import { useDebouncedValue } from '@/hooks/use-debounce';
 import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
-import { BarcodeScanner } from '@/components/BarcodeScanner';
+const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'));
 import { TrendingUp, Search, X, ClipboardList, Plus, CheckCircle, Warehouse, Loader2, Filter, Camera, FileSpreadsheet, FileText } from 'lucide-react';
 import { api, today, nowTime } from './_shared';
 import type {
@@ -888,11 +888,13 @@ function CountTab({
           })}
         </div>
       )}
-      <BarcodeScanner
-        open={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onDetected={handleBarcode}
-      />
+      <Suspense fallback={null}>
+        <BarcodeScanner
+          open={scannerOpen}
+          onClose={() => setScannerOpen(false)}
+          onDetected={handleBarcode}
+        />
+      </Suspense>
     </div>
   );
 }

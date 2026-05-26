@@ -1,4 +1,9 @@
-import ExcelJS from 'exceljs';
+import type ExcelJSNS from 'exceljs';
+
+async function getExcelJS(): Promise<typeof ExcelJSNS> {
+  const mod = await import('exceljs');
+  return mod.default ?? mod;
+}
 import { openPrintWindow } from './print-utils';
 
 export interface ExportColumn<T> {
@@ -15,6 +20,7 @@ export async function exportToExcel<T>(opts: {
   columns: ExportColumn<T>[];
   rows: T[];
 }): Promise<void> {
+  const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
   wb.creator = 'MUHKAM ERP';
   wb.created = new Date();
@@ -35,7 +41,7 @@ export async function exportToExcel<T>(opts: {
     type: 'pattern',
     pattern: 'solid',
     fgColor: { argb: 'FF4C1D95' },
-  } as ExcelJS.Fill;
+  } as ExcelJSNS.Fill;
   ws.getRow(2).alignment = { horizontal: 'center', vertical: 'middle' };
   opts.columns.forEach((c, i) => {
     ws.getColumn(i + 1).width = c.width ?? 18;
@@ -55,7 +61,7 @@ export async function exportToExcel<T>(opts: {
         type: 'pattern',
         pattern: 'solid',
         fgColor: { argb: 'FFF5F3FF' },
-      } as ExcelJS.Fill;
+      } as ExcelJSNS.Fill;
     }
   }
 
@@ -122,9 +128,8 @@ export async function exportToExcelMulti(opts: {
   filename: string;
   sheets: MultiSheetExport[];
 }): Promise<void> {
+  const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'MUHKAM ERP';
-  wb.created = new Date();
 
   for (const sheet of opts.sheets) {
     const ws = wb.addWorksheet(sheet.sheetName, { views: [{ rightToLeft: true }] });
@@ -132,13 +137,13 @@ export async function exportToExcelMulti(opts: {
     const titleCell = ws.getCell(1, 1);
     titleCell.value = sheet.title;
     titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
-    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6D28D9' } } as ExcelJS.Fill;
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6D28D9' } } as ExcelJSNS.Fill;
     titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
     ws.getRow(1).height = 26;
 
     ws.getRow(2).values = sheet.columns.map(c => c.header);
     ws.getRow(2).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    ws.getRow(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4C1D95' } } as ExcelJS.Fill;
+    ws.getRow(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4C1D95' } } as ExcelJSNS.Fill;
     ws.getRow(2).alignment = { horizontal: 'center', vertical: 'middle' };
     sheet.columns.forEach((c, i) => { ws.getColumn(i + 1).width = c.width ?? 18; });
 
@@ -150,7 +155,7 @@ export async function exportToExcelMulti(opts: {
     }
     for (let r = 3; r <= ws.rowCount; r++) {
       ws.getRow(r).alignment = { horizontal: 'center', vertical: 'middle' };
-      if (r % 2 === 0) ws.getRow(r).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } } as ExcelJS.Fill;
+      if (r % 2 === 0) ws.getRow(r).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } } as ExcelJSNS.Fill;
     }
   }
 
