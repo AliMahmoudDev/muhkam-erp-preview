@@ -9,7 +9,7 @@
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src --max-warnings=1000",
+    "lint": "eslint src --max-warnings=500",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src/**/*.{ts,tsx}",
     "test": "vitest run",

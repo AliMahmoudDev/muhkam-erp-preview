@@ -9,7 +9,7 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src --max-warnings=1000",
+    "lint": "eslint src --max-warnings=500",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src/**/*.ts",
     "test": "NODE_ENV=test vitest run",
