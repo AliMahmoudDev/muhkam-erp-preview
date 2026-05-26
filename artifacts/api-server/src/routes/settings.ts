@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, desc, or, count, and, ne, inArray } from "drizzle-orm";
+import { eq, desc, or, count, and, ne, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { authenticate, requireRole, requireTenantStrict, getTenant } from "../middleware/auth";
 import { hashPin } from "../lib/hash";
@@ -65,18 +65,10 @@ import {
   expensesTable,
   incomeTable,
   transactionsTable,
-  productsTable,
   receiptVouchersTable,
   depositVouchersTable,
   paymentVouchersTable,
   salesReturnsTable,
-  saleReturnItemsTable,
-  purchaseReturnsTable,
-  purchaseReturnItemsTable,
-  treasuryVouchersTable,
-  journalEntriesTable,
-  journalEntryLinesTable,
-  accountsTable,
   systemSettingsTable,
   stockMovementsTable,
   stockCountSessionsTable,
