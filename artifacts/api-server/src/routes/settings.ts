@@ -609,6 +609,10 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
   await db.transaction(async (tx) => {
     const cid = companyId;
 
+    // تعطيل فحص المفاتيح الأجنبية مؤقتاً داخل هذه المعاملة
+    // هذا آمن: لو حصل خطأ، الـ rollback يعيد كل شيء كما كان
+    await tx.execute(sql`SET session_replication_role = 'replica'`);
+
     /* ── Level 3: deepest children (via subquery on employee/user) ── */
     await tx.execute(sql`DELETE FROM refresh_tokens          WHERE user_id IN (SELECT id FROM erp_users WHERE company_id = ${cid} AND id != ${currentUserId})`);
     await tx.execute(sql`DELETE FROM leave_approvals         WHERE leave_request_id IN (SELECT id FROM leave_requests WHERE employee_id IN (SELECT id FROM employees WHERE company_id = ${cid}))`);
@@ -734,8 +738,14 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
     await tx.execute(sql`DELETE FROM attendance_deduction_tiers    WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM attendance_deduction_settings WHERE company_id = ${cid}`);
 
+    /* ── Tables added later (trial, consignment, etc.) ── */
+    await tx.execute(sql`DELETE FROM trial_abuse_log WHERE company_id = ${cid}`);
+
     /* ── Users: حذف الكل ما عدا المستخدم الحالي ── */
     await tx.execute(sql`DELETE FROM erp_users WHERE company_id = ${cid} AND id != ${currentUserId}`);
+
+    // إعادة تفعيل فحص المفاتيح الأجنبية
+    await tx.execute(sql`SET session_replication_role = 'origin'`);
   });
 
   res.json({ success: true, message: "تم إعادة تعيين قاعدة البيانات بالكامل — تم حذف جميع البيانات" });
