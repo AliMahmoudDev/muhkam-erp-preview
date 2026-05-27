@@ -5,7 +5,7 @@ import { openPrintWindow } from '@/lib/print-utils';
 import {
   IdCard, Banknote, MinusCircle, Award, Package, BarChart2, FileText,
   Phone, Building2, Briefcase, CalendarDays, Wallet, Percent,
-  Plus, Pencil, Trash2, Printer, Download, X, CheckCircle,
+  Plus, Pencil, Trash2, Printer, Download, X, CheckCircle, Wrench,
 } from 'lucide-react';
 import type { Employee, AnyRec, EmpDocument, DetailTab } from './types';
 import { EmployeeDocuments } from './EmployeeDocuments';
@@ -87,6 +87,60 @@ function CustodyLinesPanel({ custodyId }: { custodyId: number }) {
 }
 
 /* ── Callbacks passed from parent (avoids threading many setters) ── */
+
+/* ── Employee Repairs Tab ── */
+function EmployeeRepairsTab({ employeeId }: { employeeId: number }) {
+  const { data, isLoading } = useQuery<{
+    employee_id: number;
+    jobs_count: number;
+    total_revenue: number;
+    jobs: Array<{
+      id: number; job_no: string; customer_name: string;
+      device_brand: string; device_model: string; status: string;
+      final_cost: number; received_at: string; delivered_at?: string;
+    }>;
+  }>({
+    queryKey: ['/api/employees', employeeId, 'repair-stats'],
+    queryFn: async () => {
+      const r = await authFetch(`/api/employees/${employeeId}/repair-stats`);
+      if (!r.ok) throw new Error('failed');
+      return r.json();
+    },
+    enabled: !!employeeId,
+  });
+
+  if (isLoading) return <div className="text-xs text-white/40 text-center py-6">جارِ تحميل بيانات الصيانة…</div>;
+  if (!data || data.jobs_count === 0) return <div className="text-xs text-white/40 text-center py-6 bg-white/5 rounded-xl">لا توجد بطاقات صيانة لهذا الفني</div>;
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-white/5 rounded-xl p-3 text-center border border-white/8">
+          <div className="text-lg font-bold text-amber-300 font-mono">{data.jobs_count}</div>
+          <div className="text-[10px] text-white/40">بطاقات الصيانة</div>
+        </div>
+        <div className="bg-white/5 rounded-xl p-3 text-center border border-white/8">
+          <div className="text-lg font-bold text-emerald-300 font-mono">{fmt(data.total_revenue)}</div>
+          <div className="text-[10px] text-white/40">إجمالي الإيرادات</div>
+        </div>
+      </div>
+      <div className="space-y-1.5 max-h-64 overflow-y-auto">
+        {data.jobs.map((j) => (
+          <div key={j.id} className="flex items-center justify-between bg-white/[0.03] rounded-lg px-3 py-2 border border-white/6 text-xs">
+            <div>
+              <span className="text-white/80 font-bold font-mono">{j.job_no}</span>
+              <span className="text-white/40 mr-2">{j.customer_name}</span>
+            </div>
+            <div className="text-left">
+              <span className="text-amber-300 font-mono">{fmt(j.final_cost)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface EmployeeDetailCallbacks {
   onAddLoan: () => void;
   onApproveLoan: (data: { id: number; requestedAmount: number; currency: string; safeId: unknown }) => void;
@@ -164,6 +218,7 @@ export function EmployeeDetail({
             { key: 'deductions', label: 'الخصومات', icon: MinusCircle },
             { key: 'bonuses', label: 'الحافز', icon: Award },
             { key: 'custody', label: 'عهدة', icon: Package },
+            { key: 'repairs', label: 'الصيانة', icon: Wrench },
             { key: 'reports', label: 'التقارير', icon: BarChart2 },
             { key: 'docs', label: 'مستندات', icon: FileText },
           ] as const
@@ -643,6 +698,11 @@ export function EmployeeDetail({
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Repairs Tab ── */}
+      {detailTab === 'repairs' && (
+        <EmployeeRepairsTab employeeId={selected.id} />
       )}
     </div>
   );
