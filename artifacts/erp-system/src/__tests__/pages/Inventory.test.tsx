@@ -73,19 +73,19 @@ vi.mock("@workspace/api-client-react", () => ({
 }));
 
 // Mock sub-tabs to isolate the Inventory page tab logic
-vi.mock("./inventory/ReviewTab", () => ({
+vi.mock("@/pages/inventory/ReviewTab", () => ({
   __esModule: true,
   default: () => <div data-testid="review-tab">Review Tab</div>,
 }));
-vi.mock("./inventory/CountTab", () => ({
+vi.mock("@/pages/inventory/CountTab", () => ({
   __esModule: true,
   default: () => <div data-testid="count-tab">Count Tab</div>,
 }));
-vi.mock("./inventory/AlertsTab", () => ({
+vi.mock("@/pages/inventory/AlertsTab", () => ({
   __esModule: true,
   default: () => <div data-testid="alerts-tab">Alerts Tab</div>,
 }));
-vi.mock("./reports/InventoryReport", () => ({
+vi.mock("@/pages/reports/InventoryReport", () => ({
   __esModule: true,
   default: () => <div data-testid="report-tab">Report Tab</div>,
 }));
@@ -142,7 +142,7 @@ describe("Inventory _shared — movementTypeLabel", () => {
   // These are already covered in inventory-shared.test.ts but let's add a
   // quick integration check that types are used correctly
   it("all movement type entries have label and color", () => {
-    const { movementTypeLabel } = require("../pages/inventory/_shared");
+    const { movementTypeLabel } = require("@/pages/inventory/_shared");
     for (const [_key, value] of Object.entries(movementTypeLabel)) {
       const v = value as { label: string; color: string };
       expect(v.label).toBeTruthy();
@@ -153,7 +153,7 @@ describe("Inventory _shared — movementTypeLabel", () => {
 
 describe("Inventory _shared — today/nowTime", () => {
   it("today returns current date in ISO format", () => {
-    const { today } = require("../pages/inventory/_shared");
+    const { today } = require("@/pages/inventory/_shared");
     const result = today();
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     // Should be today's date
@@ -161,7 +161,7 @@ describe("Inventory _shared — today/nowTime", () => {
   });
 
   it("nowTime returns current time HH:MM", () => {
-    const { nowTime } = require("../pages/inventory/_shared");
+    const { nowTime } = require("@/pages/inventory/_shared");
     const result = nowTime();
     expect(result).toMatch(/^\d{2}:\d{2}$/);
   });
