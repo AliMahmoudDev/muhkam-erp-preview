@@ -35,6 +35,7 @@ import { db, systemSettingsTable } from "@workspace/db";
 import { httpError } from "./async-handler";
 import { writeAuditLog } from "./audit-log";
 import type { Request } from "express";
+import { getTenant } from "../middleware/auth";
 
 /** Short-lived in-process cache to avoid a DB round-trip on every request */
 const CACHE_TTL_MS = 5_000; // Re-read from DB at most every 5 seconds
@@ -98,7 +99,7 @@ export async function assertPeriodOpen(
   docDate: string | null | undefined,
   req: Request,
 ): Promise<void> {
-  const companyId  = req.user!.company_id!;
+  const companyId  = getTenant(req);
   const closingDate = await getClosingDate(companyId);
 
   // Case (a): No period lock configured for this company — allow all writes

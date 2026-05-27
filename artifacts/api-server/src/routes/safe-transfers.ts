@@ -16,6 +16,7 @@ import {
   type FeeType,
 } from "../services/safe-transfer.service";
 import { safeTransferBodySchema, firstZodError } from "../lib/schemas";
+import { requireUser } from "../lib/tenant";
 
 const router: IRouter = Router();
 
@@ -91,7 +92,7 @@ router.post("/safe-transfers", wrap(async (req, res) => {
     notes:        notes ?? undefined,
     date:         txDate,
     company_id:   companyId,
-    user:         req.user!,
+    user:         requireUser(req),
   });
 
   res.status(201).json(result);

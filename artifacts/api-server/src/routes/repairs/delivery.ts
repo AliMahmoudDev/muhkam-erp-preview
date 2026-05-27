@@ -432,7 +432,7 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
   type PayInput = { type: "cash" | "credit"; safe_id?: number | null; amount: number };
   const paymentInfo = b.payment as Record<string, unknown> | undefined;
   const payRows: PayInput[] = Array.isArray(paymentInfo?.payments)
-    ? (paymentInfo!.payments as unknown[]).map((r) => {
+    ? (paymentInfo.payments as unknown[]).map((r) => {
         const o = r as Record<string, unknown>;
         return {
           type:    String(o.type ?? "cash") as "cash" | "credit",

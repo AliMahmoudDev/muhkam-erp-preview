@@ -8,6 +8,7 @@ import { db, accrualsTable, accrualRunsTable, accountsTable, journalEntriesTable
 import { wrap, httpError } from "../lib/async-handler";
 import { getOrCreateAccount } from "../lib/auto-account";
 import { requireFeature } from "../middleware/feature-guard";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 router.use("/accruals", requireFeature("accounting"));
@@ -61,7 +62,7 @@ async function getAccrualAccounts(type: string, category: string, _description: 
 
 /* GET /api/accruals */
 router.get("/accruals", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const rows = await db.select().from(accrualsTable)
     .where(eq(accrualsTable.company_id, cid))
     .orderBy(desc(accrualsTable.created_at));
@@ -70,7 +71,7 @@ router.get("/accruals", wrap(async (req, res) => {
 
 /* POST /api/accruals */
 router.post("/accruals", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const parsed = createAccrualSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "بيانات الاستحقاق غير صالحة", details: parsed.error.issues.map(i => i.message) }); return;
@@ -96,7 +97,7 @@ router.post("/accruals", wrap(async (req, res) => {
 
 /* POST /api/accruals/:id/recognize — تسجيل الاستحقاق الشهري */
 router.post("/accruals/:id/recognize", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const recParsed = recognizeSchema.safeParse(req.body);
   if (!recParsed.success) {
     res.status(400).json({ error: "الفترة مطلوبة بصيغة YYYY-MM", details: recParsed.error.issues.map(i => i.message) }); return;
@@ -121,10 +122,14 @@ router.post("/accruals/:id/recognize", wrap(async (req, res) => {
   const amount = Math.min(monthly, remaining);
   if (amount < 0.001) throw httpError(400, "لا يوجد مبلغ متبقي للتسجيل");
 
+  if (!accrual.expense_account_id || !accrual.prepaid_account_id) {
+    throw httpError(400, "حسابات المصروف والمدفوع مقدماً مطلوبة — يرجى تحديث سجل الاستحقاق");
+  }
+
   const expenseAcc = await db.select().from(accountsTable)
-    .where(and(eq(accountsTable.id, accrual.expense_account_id!), eq(accountsTable.company_id, cid))).then(r => r[0]);
+    .where(and(eq(accountsTable.id, accrual.expense_account_id), eq(accountsTable.company_id, cid))).then(r => r[0]);
   const prepaidAcc = await db.select().from(accountsTable)
-    .where(and(eq(accountsTable.id, accrual.prepaid_account_id!), eq(accountsTable.company_id, cid))).then(r => r[0]);
+    .where(and(eq(accountsTable.id, accrual.prepaid_account_id), eq(accountsTable.company_id, cid))).then(r => r[0]);
 
   // القيد: من مصروف / إلى مدفوع مقدماً (أو العكس)
   let debitAcc = expenseAcc, creditAcc = prepaidAcc;
@@ -178,7 +183,7 @@ router.post("/accruals/:id/recognize", wrap(async (req, res) => {
 
 /* DELETE /api/accruals/:id */
 router.delete("/accruals/:id", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const [row] = await db.select().from(accrualsTable)
     .where(and(eq(accrualsTable.id, Number(req.params.id)), eq(accrualsTable.company_id, cid)));
   if (!row) throw httpError(404, "غير موجود");

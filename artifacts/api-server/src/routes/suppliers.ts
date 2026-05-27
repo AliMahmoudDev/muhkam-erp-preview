@@ -31,7 +31,7 @@ router.post("/suppliers", wrap(async (req, res) => {
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const newCode = await getNextCustomerCode();
   const normalized = normalizeName(parsed.data.name);
 

@@ -213,7 +213,7 @@ router.get("/inventory/product/:id", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
-  const [product] = await db.select().from(productsTable).where(and(eq(productsTable.id, id), eq(productsTable.company_id, req.user!.company_id!)));
+  const [product] = await db.select().from(productsTable).where(and(eq(productsTable.id, id), eq(productsTable.company_id, getTenant(req))));
   if (!product) { res.status(404).json({ error: "المنتج غير موجود" }); return; }
 
   const movements = await db
@@ -263,7 +263,7 @@ router.post("/inventory/adjustment", wrap(async (req, res) => {
   const prodId = product_id;
   const newQty = new_quantity;
 
-  const [product] = await db.select().from(productsTable).where(and(eq(productsTable.id, prodId), eq(productsTable.company_id, req.user!.company_id!)));
+  const [product] = await db.select().from(productsTable).where(and(eq(productsTable.id, prodId), eq(productsTable.company_id, getTenant(req))));
   if (!product) { res.status(404).json({ error: "المنتج غير موجود" }); return; }
 
   const oldQty = Number(product.quantity);
@@ -547,7 +547,7 @@ router.get("/inventory/reorder-suggestions", wrap(async (req, res) => {
         : lowFlag
           ? 'تحت الحد الأدنى'
           : trendingOut
-            ? `سينفد خلال ${Math.round(coverageDays!)} يوم`
+            ? `سينفد خلال ${Math.round(coverageDays ?? 0)} يوم`
             : null;
       return {
         product_id: Number(r.product_id),

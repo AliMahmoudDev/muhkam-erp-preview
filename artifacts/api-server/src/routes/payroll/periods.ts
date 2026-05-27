@@ -10,6 +10,7 @@ import {
 } from "@workspace/db";
 import { wrap } from "../../lib/async-handler";
 import { hasPermission } from "../../lib/permissions";
+import { getTenant } from "../../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -21,7 +22,7 @@ function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOStr
 
 router.get("/payroll/periods", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select().from(payrollPeriodsTable)
     .where(eq(payrollPeriodsTable.company_id, companyId))
     .orderBy(desc(payrollPeriodsTable.start_date));
@@ -30,7 +31,7 @@ router.get("/payroll/periods", wrap(async (req, res) => {
 
 router.post("/payroll/periods", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id ?? null;
   const { z } = await import("zod");
   const payrollPeriodSchema = z.object({
@@ -55,7 +56,7 @@ router.post("/payroll/periods", wrap(async (req, res) => {
 
 router.get("/payroll/periods/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const [period] = await db.select().from(payrollPeriodsTable)
     .where(and(eq(payrollPeriodsTable.id, id), eq(payrollPeriodsTable.company_id, companyId)));
@@ -78,7 +79,7 @@ router.get("/payroll/periods/:id", wrap(async (req, res) => {
 
 router.put("/payroll/periods/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const { name, notes } = req.body as Record<string, string>;
   const [row] = await db.update(payrollPeriodsTable)

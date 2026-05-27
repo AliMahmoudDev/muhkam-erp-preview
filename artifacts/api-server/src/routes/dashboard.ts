@@ -9,6 +9,7 @@ import { wrap } from "../lib/async-handler";
 import { getTotalCustomerLedgerBalance, getTotalSupplierLedgerBalance } from "../lib/ledger-balance";
 import { getTenant } from "../middleware/auth";
 import { z } from "zod/v4";
+import { requireUser } from "../lib/tenant";
 
 /* Default shortcuts for new users */
 const DEFAULT_SHORTCUTS = [
@@ -159,7 +160,7 @@ router.get("/dashboard/stats", wrap(async (req, res) => {
 
 /* ── GET /dashboard/shortcuts ─────────────────────────────────── */
 router.get("/dashboard/shortcuts", wrap(async (req, res) => {
-  const userId = req.user!.id;
+  const userId = requireUser(req).id;
   const companyId = getTenant(req);
 
   const [row] = await db
@@ -179,7 +180,7 @@ router.put("/dashboard/shortcuts", wrap(async (req, res) => {
     return;
   }
 
-  const userId = req.user!.id;
+  const userId = requireUser(req).id;
   const companyId = getTenant(req);
 
   await db
@@ -192,7 +193,7 @@ router.put("/dashboard/shortcuts", wrap(async (req, res) => {
 
 /* ── GET /dashboard/mobile-nav ────────────────────────────── */
 router.get("/dashboard/mobile-nav", wrap(async (req, res) => {
-  const userId = req.user!.id;
+  const userId = requireUser(req).id;
   const companyId = getTenant(req);
 
   const [row] = await db
@@ -212,7 +213,7 @@ router.put("/dashboard/mobile-nav", wrap(async (req, res) => {
     return;
   }
 
-  const userId = req.user!.id;
+  const userId = requireUser(req).id;
   const companyId = getTenant(req);
 
   await db

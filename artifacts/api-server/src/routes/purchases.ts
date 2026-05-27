@@ -106,7 +106,7 @@ router.post("/purchases", wrap(async (req, res) => {
 
   if (requestId) {
     const [existing] = await db.select().from(purchasesTable)
-      .where(and(eq(purchasesTable.request_id, requestId), eq(purchasesTable.company_id, req.user!.company_id!))).limit(1);
+      .where(and(eq(purchasesTable.request_id, requestId), eq(purchasesTable.company_id, getTenant(req)))).limit(1);
     if (existing) return res.json(formatPurchase(existing));
   }
 
@@ -151,7 +151,7 @@ router.post("/purchases", wrap(async (req, res) => {
 
   const tenantWarehouseId = await resolveTenantWarehouseId(
     effectiveWarehouseId,
-    req.user!.company_id!,
+    getTenant(req),
   );
 
   let status = "paid";
@@ -165,7 +165,7 @@ router.post("/purchases", wrap(async (req, res) => {
     return res.status(400).json({ error: "يجب اختيار الخزينة للمدفوعات النقدية أو الجزئية" });
   }
 
-  const cidPurchase = req.user!.company_id!;
+  const cidPurchase = getTenant(req);
   const invoiceNo = await nextPurchaseInvoiceNo(cidPurchase);
 
   // Validate FK ownership before mutation
@@ -385,7 +385,7 @@ router.get("/purchases/:id", wrap(async (req, res) => {
     return;
   }
 
-  const [purchase] = await db.select().from(purchasesTable).where(and(eq(purchasesTable.id, params.data.id), eq(purchasesTable.company_id, req.user!.company_id!)));
+  const [purchase] = await db.select().from(purchasesTable).where(and(eq(purchasesTable.id, params.data.id), eq(purchasesTable.company_id, getTenant(req))));
   if (!purchase) {
     res.status(404).json({ error: "Purchase not found" });
     return;
@@ -474,14 +474,14 @@ router.post("/purchases/:id/post", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
-  const [purchase] = await db.select().from(purchasesTable).where(and(eq(purchasesTable.id, id), eq(purchasesTable.company_id, req.user!.company_id!)));
+  const [purchase] = await db.select().from(purchasesTable).where(and(eq(purchasesTable.id, id), eq(purchasesTable.company_id, getTenant(req))));
   if (!purchase) throw httpError(404, "الفاتورة غير موجودة");
   if (purchase.posting_status === "posted")    throw httpError(400, "الفاتورة مرحَّلة بالفعل");
   if (purchase.posting_status === "cancelled") throw httpError(400, "لا يمكن ترحيل فاتورة ملغاة");
 
   await assertPeriodOpen(purchase.date, req);
 
-  const cidPost = req.user!.company_id!;
+  const cidPost = getTenant(req);
   const lines = await buildPurchaseJournalLines(purchase, cidPost);
 
   const updated = await db.transaction(async (tx) => {
@@ -522,7 +522,7 @@ router.post("/purchases/:id/cancel", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
-  const [purchase] = await db.select().from(purchasesTable).where(and(eq(purchasesTable.id, id), eq(purchasesTable.company_id, req.user!.company_id!)));
+  const [purchase] = await db.select().from(purchasesTable).where(and(eq(purchasesTable.id, id), eq(purchasesTable.company_id, getTenant(req))));
   if (!purchase) throw httpError(404, "الفاتورة غير موجودة");
   if (purchase.posting_status === "cancelled") throw httpError(400, "الفاتورة ملغاة بالفعل");
 
@@ -588,12 +588,12 @@ router.post("/purchases/:id/cancel", wrap(async (req, res) => {
   const effectiveWarehouseId = req.user?.warehouse_id ?? null;
   const tenantWarehouseId = await resolveTenantWarehouseId(
     (purchase as { warehouse_id?: number | null }).warehouse_id ?? effectiveWarehouseId,
-    req.user!.company_id!,
+    getTenant(req),
   );
 
   const today = new Date().toISOString().split("T")[0];
 
-  const cidCancel = req.user!.company_id!;
+  const cidCancel = getTenant(req);
   await db.transaction(async (tx) => {
     // 1. عكس القيد المحاسبي
     if (purchase.posting_status === "posted") {

@@ -23,6 +23,7 @@ import {
 import { wrap, httpError } from "../lib/async-handler";
 import { getTenant } from "../middleware/auth";
 import { hasPermission } from "../lib/permissions";
+import { requireUser } from "../lib/tenant";
 import {
   stockTransferRequestSchema,
   stockTransferConfirmSchema,
@@ -119,7 +120,7 @@ router.post("/transfers/request", wrap(async (req, res) => {
   }
 
   const companyId = getTenant(req);
-  const userId    = req.user!.id;
+  const userId    = requireUser(req).id;
 
   const bodyResult = stockTransferRequestSchema.safeParse(req.body);
   if (!bodyResult.success) {
@@ -178,7 +179,7 @@ router.post("/transfers/request", wrap(async (req, res) => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 router.post("/transfers/approve/:id", wrap(async (req, res) => {
   const companyId   = getTenant(req);
-  const userId      = req.user!.id;
+  const userId      = requireUser(req).id;
   const transferId  = Number(req.params.id);
 
   if (isNaN(transferId)) throw httpError(400, "معرّف التحويل غير صالح");
@@ -234,7 +235,7 @@ router.post("/transfers/ship/:id", wrap(async (req, res) => {
   }
 
   const companyId  = getTenant(req);
-  const userId     = req.user!.id;
+  const userId     = requireUser(req).id;
   const transferId = Number(req.params.id);
 
   if (isNaN(transferId)) throw httpError(400, "معرّف التحويل غير صالح");
@@ -254,7 +255,10 @@ router.post("/transfers/ship/:id", wrap(async (req, res) => {
   }
 
   const qty            = Number(transfer.quantity);
-  const fromBranchId   = transfer.from_branch_id!;
+  if (!transfer.from_branch_id) {
+    throw httpError(400, "فرع المصدر غير مُحدد في طلب التحويل");
+  }
+  const fromBranchId   = transfer.from_branch_id;
   const today          = new Date().toISOString().split("T")[0];
 
   const updated = await db.transaction(async (tx) => {
@@ -342,7 +346,7 @@ router.post("/transfers/confirm/:id", wrap(async (req, res) => {
   }
 
   const companyId  = getTenant(req);
-  const userId     = req.user!.id;
+  const userId     = requireUser(req).id;
 
   const paramsResult = idParamSchema.safeParse(req.params);
   if (!paramsResult.success) throw httpError(400, firstZodError(paramsResult.error));
@@ -372,7 +376,10 @@ router.post("/transfers/confirm/:id", wrap(async (req, res) => {
   }
 
   const qty          = Number(transfer.quantity);
-  const toBranchId   = transfer.to_branch_id!;
+  if (!transfer.to_branch_id) {
+    throw httpError(400, "فرع الوجهة غير مُحدد في طلب التحويل");
+  }
+  const toBranchId   = transfer.to_branch_id;
   const today        = new Date().toISOString().split("T")[0];
 
   const updated = await db.transaction(async (tx) => {
@@ -478,7 +485,10 @@ router.post("/transfers/cancel/:id", wrap(async (req, res) => {
     ))
     .returning();
 
-  res.json({ ...formatTransfer(updated!), message: "تم إلغاء طلب التحويل" });
+  if (!updated) {
+    throw httpError(404, "لم يتم العثور على طلب التحويل أو تعذّر التحديث");
+  }
+  res.json({ ...formatTransfer(updated), message: "تم إلغاء طلب التحويل" });
 }));
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

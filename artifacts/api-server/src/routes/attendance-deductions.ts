@@ -17,6 +17,7 @@ import { z } from "zod/v4";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { requireFeature } from "../middleware/feature-guard";
+import { getTenant } from "../middleware/auth";
 
 const previewBodySchema = z.object({
   month: z.string().min(1, "الشهر مطلوب").regex(/^\d{4}-\d{2}$/, "صيغة الشهر يجب أن تكون YYYY-MM"),
@@ -43,12 +44,15 @@ async function getOrCreateSettings(companyId: number) {
   const [created] = await db.insert(attendanceDeductionSettingsTable)
     .values({ company_id: companyId })
     .returning();
-  return created!;
+  if (!created) {
+    throw new Error("فشل في إنشاء إعدادات الخصومات الافتراضية");
+  }
+  return created;
 }
 
 router.get("/attendance-deductions/settings", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const s = await getOrCreateSettings(companyId);
   res.json({
     ...s,
@@ -60,7 +64,7 @@ router.get("/attendance-deductions/settings", wrap(async (req, res) => {
 
 router.put("/attendance-deductions/settings", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const b = req.body as Record<string, unknown>;
 
   await getOrCreateSettings(companyId);
@@ -80,11 +84,16 @@ router.put("/attendance-deductions/settings", wrap(async (req, res) => {
     .where(eq(attendanceDeductionSettingsTable.company_id, companyId))
     .returning();
 
+  if (!row) {
+    res.status(404).json({ error: "لم يتم العثور على إعدادات الخصومات" });
+    return;
+  }
+
   res.json({
-    ...row!,
-    absence_full_day_amount: n(row!.absence_full_day_amount),
-    absence_half_day_amount: n(row!.absence_half_day_amount),
-    updated_at: fmtTs(row!.updated_at),
+    ...row,
+    absence_full_day_amount: n(row.absence_full_day_amount),
+    absence_half_day_amount: n(row.absence_half_day_amount),
+    updated_at: fmtTs(row.updated_at),
   });
 }));
 
@@ -94,7 +103,7 @@ router.put("/attendance-deductions/settings", wrap(async (req, res) => {
 
 router.get("/attendance-deductions/tiers", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select().from(attendanceDeductionTiersTable)
     .where(eq(attendanceDeductionTiersTable.company_id, companyId))
     .orderBy(attendanceDeductionTiersTable.applies_to, attendanceDeductionTiersTable.sort_order, attendanceDeductionTiersTable.min_minutes);
@@ -107,7 +116,7 @@ router.get("/attendance-deductions/tiers", wrap(async (req, res) => {
  */
 router.post("/attendance-deductions/tiers", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const tiers = Array.isArray((req.body as Record<string, unknown>)["tiers"])
     ? ((req.body as Record<string, unknown>)["tiers"] as Array<Record<string, unknown>>)
     : [];
@@ -180,7 +189,7 @@ function pickTier(
 
 router.post("/attendance-deductions/preview", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const previewParsed = previewBodySchema.safeParse(req.body);
   if (!previewParsed.success) { res.status(400).json({ error: "صيغة الشهر يجب أن تكون YYYY-MM", details: previewParsed.error.issues.map(i => i.message) }); return; }
   const { month, employee_id: empIdFilter } = previewParsed.data;
@@ -385,7 +394,7 @@ router.post("/attendance-deductions/preview", wrap(async (req, res) => {
 
 router.post("/attendance-deductions/apply", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id ?? null;
   const applyParsed = applyBodySchema.safeParse(req.body);
   if (!applyParsed.success) { res.status(400).json({ error: "لا توجد بنود للحفظ", details: applyParsed.error.issues.map(i => i.message) }); return; }

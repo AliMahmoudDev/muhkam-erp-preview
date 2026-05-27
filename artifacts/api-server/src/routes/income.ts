@@ -32,7 +32,7 @@ router.post("/income", wrap(async (req, res) => {
   const amt = parsed.data.amount;
   if (amt <= 0) throw httpError(400, "المبلغ يجب أن يكون أكبر من صفر");
 
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const income = await db.transaction(async (tx) => {
     let safe: typeof safesTable.$inferSelect | null = null;
     if (safe_id) {
@@ -69,7 +69,7 @@ router.post("/income", wrap(async (req, res) => {
 router.delete("/income/:id", wrap(async (req, res) => {
   const params = DeleteIncomeParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "معرف الإيراد غير صحيح", details: params.error.issues.map(i => i.message) }); return; }
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   await db.transaction(async (tx) => {
     const [inc] = await tx.select().from(incomeTable)
       .where(and(eq(incomeTable.id, params.data.id), eq(incomeTable.company_id, cid)));

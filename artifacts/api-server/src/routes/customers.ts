@@ -127,7 +127,7 @@ router.post("/customers", wrap(async (req, res) => {
   }
 
   const normalized = normalizeName(parsed.data.name);
-  const companyIdPost = req.user!.company_id!;
+  const companyIdPost = getTenant(req);
 
   const phonePost = String(parsed.data.phone ?? "").trim();
 
@@ -168,7 +168,7 @@ router.post("/customers", wrap(async (req, res) => {
     company_id: req.user?.company_id ?? undefined,
   }).returning();
 
-  const acct = await getOrCreateCustomerAccount(newCode, parsed.data.name.trim(), req.user!.company_id!);
+  const acct = await getOrCreateCustomerAccount(newCode, parsed.data.name.trim(), getTenant(req));
   const [updated] = await db.update(customersTable)
     .set({ account_id: acct.id })
     .where(eq(customersTable.id, customer.id))
@@ -250,7 +250,7 @@ router.put("/customers/:id", wrap(async (req, res) => {
   }
 
   const normalized = normalizeName(parsed.data.name);
-  const companyIdPut = req.user!.company_id!;
+  const companyIdPut = getTenant(req);
 
   // رقم الهاتف إلزامي
   const phonePut = String(parsed.data.phone ?? "").trim();
@@ -272,7 +272,7 @@ router.put("/customers/:id", wrap(async (req, res) => {
     res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${dup.name}"` }); return;
   }
 
-  const [before] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!)));
+  const [before] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req))));
   if (!before) { res.status(404).json({ error: "Customer not found" }); return; }
 
   const classificationId = req.body.classification_id !== undefined
@@ -289,7 +289,7 @@ router.put("/customers/:id", wrap(async (req, res) => {
     ...(classificationId !== undefined ? { classification_id: isNaN(classificationId as number) ? null : classificationId } : {}),
     ...(req.body.price_list_id !== undefined ? { price_list_id: req.body.price_list_id === null ? null : Number(req.body.price_list_id) } : {}),
     ...(req.body.price_list_markup !== undefined ? { price_list_markup: req.body.price_list_markup === null ? null : String(req.body.price_list_markup) } : {}),
-  }).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!))).returning();
+  }).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req)))).returning();
   if (!customer) {
     res.status(404).json({ error: "Customer not found" });
     return;
@@ -330,9 +330,9 @@ router.delete("/customers/:id", wrap(async (req, res) => {
     return;
   }
 
-  const [before] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!)));
+  const [before] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req))));
   if (!before) { res.status(404).json({ error: "Customer not found" }); return; }
-  await db.delete(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!)));
+  await db.delete(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req))));
 
   void writeAuditLog({
     action: "delete",
@@ -359,7 +359,7 @@ router.post("/customers/:id/receipt", wrap(async (req, res) => {
     return;
   }
 
-  const [customer] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!)));
+  const [customer] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req))));
   if (!customer) {
     res.status(404).json({ error: "Customer not found" });
     return;
@@ -367,7 +367,7 @@ router.post("/customers/:id/receipt", wrap(async (req, res) => {
 
   const newBalance = Number(customer.balance) - parsed.data.amount;
   const [updated] = await db.update(customersTable).set({ balance: String(newBalance) })
-    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, req.user!.company_id!))).returning();
+    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req)))).returning();
 
   await db.insert(transactionsTable).values({
     type: "receipt",
@@ -384,7 +384,7 @@ router.get("/customers/:id/ledger", wrap(async (req, res) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
-  const [customer] = await db.select().from(customersTable).where(and(eq(customersTable.id, id), eq(customersTable.company_id, req.user!.company_id!)));
+  const [customer] = await db.select().from(customersTable).where(and(eq(customersTable.id, id), eq(customersTable.company_id, getTenant(req))));
   if (!customer) throw httpError(404, "العميل غير موجود");
 
   const entries = await db
@@ -434,7 +434,7 @@ router.post("/customers/:id/payment", wrap(async (req, res) => {
   const txDate = date ?? new Date().toISOString().split("T")[0];
   const paymentNo = `PAY-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
 
-  const cidPay = req.user!.company_id!;
+  const cidPay = getTenant(req);
   await db.transaction(async (tx) => {
     const [customer] = await tx.select().from(customersTable).where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidPay)));
     if (!customer) throw httpError(404, "العميل غير موجود");
@@ -503,7 +503,7 @@ router.post("/customers/:id/supplier-payment", wrap(async (req, res) => {
   const paymentNo = `SPAY-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
   let resultCustomer: typeof customersTable.$inferSelect | undefined;
 
-  const cidSPay = req.user!.company_id!;
+  const cidSPay = getTenant(req);
   await db.transaction(async (tx) => {
     const [customer] = await tx.select().from(customersTable).where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidSPay)));
     if (!customer) throw httpError(404, "العميل غير موجود");
@@ -549,13 +549,16 @@ router.post("/customers/:id/supplier-payment", wrap(async (req, res) => {
     resultCustomer = updated;
   });
 
-  res.json({ success: true, customer: formatCustomer(resultCustomer!) });
+  if (!resultCustomer) {
+    throw httpError(500, "فشل في تحديث بيانات العميل");
+  }
+  res.json({ success: true, customer: formatCustomer(resultCustomer) });
 }));
 
 /* ─── تصنيفات العملاء ─── */
 
 router.get("/customer-classifications", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db
     .select()
     .from(customerClassificationsTable)
@@ -571,7 +574,7 @@ router.post("/customer-classifications", wrap(async (req, res) => {
   }
   const name = String(req.body.name ?? "").trim();
   if (!name) { res.status(400).json({ error: "أدخل اسم التصنيف" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   // تحقق من تكرار اسم التصنيف
   const dupClass = await db.execute(sql`SELECT id FROM customer_classifications WHERE LOWER(name) = LOWER(${name}) AND company_id = ${companyId} LIMIT 1`);
   if ((dupClass.rows as Record<string, unknown>[]).length > 0) {
@@ -592,7 +595,7 @@ router.put("/customer-classifications/:id", wrap(async (req, res) => {
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   const name = String(req.body.name ?? "").trim();
   if (!name) { res.status(400).json({ error: "أدخل اسم التصنيف" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const [updated] = await db
     .update(customerClassificationsTable)
     .set({ name })
@@ -608,7 +611,7 @@ router.delete("/customer-classifications/:id", wrap(async (req, res) => {
   }
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
-  const cidCC = req.user!.company_id!;
+  const cidCC = getTenant(req);
   const [linkedCustomer] = await db.select({ id: customersTable.id }).from(customersTable).where(and(eq(customersTable.classification_id, id), eq(customersTable.company_id, cidCC))).limit(1);
   if (linkedCustomer) { res.status(400).json({ error: "لا يمكن حذف التصنيف لأنه مرتبط بعملاء" }); return; }
   const result = await db
@@ -623,7 +626,7 @@ router.get("/customer-reports", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_customers")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const customerId  = req.query.customer_id  ? parseInt(String(req.query.customer_id),  10) : null;
   const classId     = req.query.classification_id ? parseInt(String(req.query.classification_id), 10) : null;
   const dateFrom    = req.query.date_from ? String(req.query.date_from) : null;

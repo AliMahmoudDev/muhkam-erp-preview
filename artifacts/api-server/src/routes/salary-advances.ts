@@ -19,6 +19,7 @@ import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { writeAuditLog } from "../lib/audit-log";
 import { notifyEmployee, notifyManagers } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
+import { getTenant } from "../middleware/auth";
 
 const createAdvanceSchema = z.object({
   employee_id: z.number({ error: "معرف الموظف يجب أن يكون رقماً" }).int().positive("معرف الموظف مطلوب"),
@@ -84,7 +85,7 @@ async function getAdvanceForCompany(advanceId: number, companyId: number) {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/salary-advances/settings", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const [settings] = await db.select().from(salaryAdvanceSettingsTable)
     .where(eq(salaryAdvanceSettingsTable.company_id, companyId));
   if (!settings) {
@@ -98,7 +99,7 @@ router.put("/salary-advances/settings", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const parsedSettings = advanceSettingsSchema.safeParse(req.body);
   if (!parsedSettings.success) { res.status(400).json({ error: firstZodError(parsedSettings.error) }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const { max_advance_percentage, max_concurrent_advances, min_salary_for_advance, repayment_tenure_months, requires_approval } = parsedSettings.data;
   const [existing] = await db.select().from(salaryAdvanceSettingsTable).where(eq(salaryAdvanceSettingsTable.company_id, companyId));
   if (existing) {
@@ -121,7 +122,7 @@ router.put("/salary-advances/settings", wrap(async (req, res) => {
 router.get("/salary-advances", wrap(async (req, res) => {
   const selfId = selfEmployeeId(req);
   if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
   const status = String(req.query["status"] ?? "");
   // If caller has an employee_id, always restrict to own records; admins use query param
@@ -153,7 +154,7 @@ router.get("/salary-advances", wrap(async (req, res) => {
 }));
 
 router.post("/salary-advances", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const isSelf    = isSelfServiceUser(req);
   const selfId    = selfEmployeeId(req);
@@ -232,7 +233,7 @@ router.post("/salary-advances", wrap(async (req, res) => {
 /* ── Pending Approvals (MUST be before /:id) ──────────────────── */
 router.get("/salary-advances/pending-approvals", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select({
     id: salaryAdvancesTable.id, employee_id: salaryAdvancesTable.employee_id,
     requested_date: salaryAdvancesTable.requested_date, requested_amount: salaryAdvancesTable.requested_amount,
@@ -251,7 +252,7 @@ router.get("/salary-advances/pending-approvals", wrap(async (req, res) => {
 /* ── Single Advance ───────────────────────────────────────────── */
 router.get("/salary-advances/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرف غير صحيح" }); return; }
   const [advance] = await db.select({
@@ -277,7 +278,7 @@ router.post("/salary-advances/:id/approve", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح بالاعتماد" }); return; }
   const parsedApprove = approveAdvanceSchema.safeParse(req.body);
   if (!parsedApprove.success) { res.status(400).json({ error: firstZodError(parsedApprove.error) }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
   const body      = parsedApprove.data;
@@ -377,7 +378,7 @@ router.post("/salary-advances/:id/approve", wrap(async (req, res) => {
     reference_id: id,
   });
 
-  res.json({ ok: true, approved_amount: amount, remaining_balance: n(result.row!.remaining_balance), safe_name: result.safeName });
+  res.json({ ok: true, approved_amount: amount, remaining_balance: result.row ? n(result.row.remaining_balance) : 0, safe_name: result.safeName });
 }));
 
 /* ── Reject ───────────────────────────────────────────────────── */
@@ -385,7 +386,7 @@ router.post("/salary-advances/:id/reject", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const parsedReject = rejectAdvanceSchema.safeParse(req.body);
   if (!parsedReject.success) { res.status(400).json({ error: firstZodError(parsedReject.error) }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
   const { reason } = parsedReject.data;
@@ -410,7 +411,7 @@ router.post("/salary-advances/:id/reject", wrap(async (req, res) => {
 /* ── Cancel ───────────────────────────────────────────────────── */
 router.post("/salary-advances/:id/cancel", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
   const advance = await getAdvanceForCompany(id, companyId);
@@ -423,7 +424,7 @@ router.post("/salary-advances/:id/cancel", wrap(async (req, res) => {
 /* ── Deductions ───────────────────────────────────────────────── */
 router.get("/salary-advances/:id/deductions", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const advance = await getAdvanceForCompany(id, companyId);
   if (!advance) { res.status(404).json({ error: "السلفة غير موجودة" }); return; }
@@ -438,7 +439,7 @@ router.post("/salary-advances/:id/manual-payment", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const parsedPayment = manualPaymentSchema.safeParse(req.body);
   if (!parsedPayment.success) { res.status(400).json({ error: firstZodError(parsedPayment.error) }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id ?? null;
   const id = parseInt(String(req.params["id"]), 10);
   const { amount, notes } = parsedPayment.data;
@@ -502,7 +503,7 @@ async function employeeBelongsToCompany(empId: number, companyId: number) {
 /* ── Outstanding Balance ──────────────────────────────────────── */
 router.get("/salary-advances/:employeeId/balance", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const empId = parseInt(String(req.params["employeeId"]), 10);
   if (!(await employeeBelongsToCompany(empId, companyId))) {
     res.status(404).json({ error: "الموظف غير موجود" }); return;
@@ -521,7 +522,7 @@ router.get("/salary-advances/:employeeId/balance", wrap(async (req, res) => {
 /* ── Ledger ───────────────────────────────────────────────────── */
 router.get("/salary-advances/:employeeId/ledger", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const empId = parseInt(String(req.params["employeeId"]), 10);
   if (!(await employeeBelongsToCompany(empId, companyId))) {
     res.status(404).json({ error: "الموظف غير موجود" }); return;

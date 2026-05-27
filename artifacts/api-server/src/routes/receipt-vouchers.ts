@@ -8,6 +8,7 @@ import { wrap, httpError } from "../lib/async-handler";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { getOrCreateSafeAccount, getOrCreateMiscRevenueAccount, createAutoJournalEntry, type AccountRef } from "../lib/auto-account";
 import { hasPermission } from "../lib/permissions";
+import { getTenant } from "../middleware/auth";
 
 const createReceiptVoucherSchema = z.object({
   customer_name: z.string().min(1),
@@ -22,7 +23,7 @@ const router: IRouter = Router();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCid(req: any): number {
-  return req.user!.company_id!;
+  return getTenant(req);
 }
 
 function fmt(v: typeof receiptVouchersTable.$inferSelect) {

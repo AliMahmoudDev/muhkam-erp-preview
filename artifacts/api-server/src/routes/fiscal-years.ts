@@ -11,6 +11,7 @@ import { writeAuditLog } from "../lib/audit-log";
 import { getOrCreateAccount } from "../lib/auto-account";
 import { requireFeature } from "../middleware/feature-guard";
 import { z } from "zod/v4";
+import { requireUser } from "../lib/tenant";
 
 const router = Router();
 router.use("/fiscal-years", requireFeature("accounting"));
@@ -55,7 +56,7 @@ router.post("/fiscal-years", requireTenant, wrap(async (req, res) => {
 
   void writeAuditLog({
     action: "create", record_type: "fiscal_year", record_id: row.id,
-    new_value: row, user: { id: req.user!.id, username: req.user!.username }, company_id: companyId,
+    new_value: row, user: { id: requireUser(req).id, username: requireUser(req).username }, company_id: companyId,
   });
 
   res.status(201).json(row);
@@ -80,7 +81,7 @@ router.patch("/fiscal-years/:id/set-current", requireTenant, wrap(async (req, re
 
   void writeAuditLog({
     action: "update", record_type: "fiscal_year", record_id: id,
-    new_value: { is_current: true }, user: { id: req.user!.id, username: req.user!.username }, company_id: companyId,
+    new_value: { is_current: true }, user: { id: requireUser(req).id, username: requireUser(req).username }, company_id: companyId,
   });
 
   res.json({ message: "تم تعيين السنة المالية الحالية بنجاح" });
@@ -89,7 +90,7 @@ router.patch("/fiscal-years/:id/set-current", requireTenant, wrap(async (req, re
 /* ── PATCH /fiscal-years/:id/close ─── */
 router.patch("/fiscal-years/:id/close", requireTenant, wrap(async (req, res) => {
   const companyId = getTenant(req);
-  const userId = req.user!.id;
+  const userId = requireUser(req).id;
   const id = parseInt(String(req.params.id));
   if (isNaN(id)) { res.status(400).json({ error: "id غير صحيح" }); return; }
 
@@ -106,7 +107,7 @@ router.patch("/fiscal-years/:id/close", requireTenant, wrap(async (req, res) => 
   void writeAuditLog({
     action: "update", record_type: "fiscal_year", record_id: id,
     old_value: { is_open: true }, new_value: { is_open: false, closed_at: updated.closed_at },
-    user: { id: userId, username: req.user!.username }, company_id: companyId,
+    user: { id: userId, username: requireUser(req).username }, company_id: companyId,
   });
 
   res.json({ message: "تم إقفال السنة المالية بنجاح", fiscal_year: updated });
@@ -135,7 +136,7 @@ router.patch("/fiscal-years/:id/reopen", requireTenant, wrap(async (req, res) =>
 
   void writeAuditLog({
     action: "update", record_type: "fiscal_year", record_id: id,
-    new_value: { is_open: true }, user: { id: req.user!.id, username: req.user!.username }, company_id: companyId,
+    new_value: { is_open: true }, user: { id: requireUser(req).id, username: requireUser(req).username }, company_id: companyId,
   });
 
   res.json({ message: "تم إعادة فتح السنة المالية بنجاح", fiscal_year: updated });
@@ -163,7 +164,7 @@ router.delete("/fiscal-years/:id", requireTenant, wrap(async (req, res) => {
 
   void writeAuditLog({
     action: "delete", record_type: "fiscal_year", record_id: id,
-    old_value: fy, user: { id: req.user!.id, username: req.user!.username }, company_id: companyId,
+    old_value: fy, user: { id: requireUser(req).id, username: requireUser(req).username }, company_id: companyId,
   });
 
   res.json({ message: "تم حذف السنة المالية بنجاح" });

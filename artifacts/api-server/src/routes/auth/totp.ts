@@ -25,6 +25,7 @@ import {
   check2FAAllowed,
   reset2FALockout,
 } from '../../lib/brute-force-store';
+import { requireUser } from "../../lib/tenant";
 import {
   JWT_SECRET,
   setAuthCookies,
@@ -44,11 +45,15 @@ router.get('/auth/2fa/setup', authenticate, wrap(async (req, res) => {
       .from(erpUsersTable)
       .where(eq(erpUsersTable.id, req.user.id))
       .limit(1);
-    if (user?.totp_enabled) {
+    if (!user) {
+      res.status(401).json({ error: "المستخدم غير موجود" });
+      return;
+    }
+    if (user.totp_enabled) {
       res.status(400).json({ error: 'المصادقة الثنائية مفعلة بالفعل' });
       return;
     }
-    const { secret, otpauth_url } = generateTOTPSecret(user!.username);
+    const { secret, otpauth_url } = generateTOTPSecret(user.username);
     const qrCode = await generateQRCode(otpauth_url);
     await db
       .update(erpUsersTable)
@@ -123,9 +128,13 @@ router.post('/auth/2fa/disable', authenticate, wrap(async (req, res) => {
       res.status(400).json({ error: 'المصادقة الثنائية غير مفعلة' });
       return;
     }
-    const rawSecret2 = isEncrypted(user.totp_secret!)
-      ? decryptSecret(user.totp_secret!)
-      : user.totp_secret!;
+    if (!user.totp_secret) {
+      res.status(400).json({ error: "لم يتم العثور على مفتاح TOTP — يرجى إعادة التفعيل" });
+      return;
+    }
+    const rawSecret2 = isEncrypted(user.totp_secret)
+      ? decryptSecret(user.totp_secret)
+      : user.totp_secret;
     if (!verifyTOTP(rawSecret2, token)) {
       res.status(400).json({ error: 'رمز التحقق غير صحيح' });
       return;
@@ -146,7 +155,7 @@ router.get('/auth/2fa/status', authenticate, wrap(async (req, res) => {
     const [user] = await db
       .select({ totp_enabled: erpUsersTable.totp_enabled })
       .from(erpUsersTable)
-      .where(eq(erpUsersTable.id, req.user!.id))
+      .where(eq(erpUsersTable.id, requireUser(req).id))
       .limit(1);
     res.json({ totp_enabled: user?.totp_enabled ?? false });
   } catch {

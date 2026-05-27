@@ -7,6 +7,7 @@ import { db, costCentersTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
 import { z } from "zod/v4";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 router.use("/cost-centers", requireFeature("accounting"));
@@ -30,7 +31,7 @@ const UpdateCostCenterBody = z.object({
 
 /* GET /api/cost-centers */
 router.get("/cost-centers", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const rows = await db.select().from(costCentersTable)
     .where(eq(costCentersTable.company_id, cid))
     .orderBy(costCentersTable.code);
@@ -39,7 +40,7 @@ router.get("/cost-centers", wrap(async (req, res) => {
 
 /* POST /api/cost-centers */
 router.post("/cost-centers", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
 
   const parsed = CreateCostCenterBody.safeParse(req.body);
   if (!parsed.success) {
@@ -58,7 +59,7 @@ router.post("/cost-centers", wrap(async (req, res) => {
 
 /* PUT /api/cost-centers/:id */
 router.put("/cost-centers/:id", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const id = Number(req.params.id);
   if (!id) throw httpError(400, "معرف مركز التكلفة غير صالح");
 
@@ -86,7 +87,7 @@ router.put("/cost-centers/:id", wrap(async (req, res) => {
 
 /* DELETE /api/cost-centers/:id */
 router.delete("/cost-centers/:id", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   await db.delete(costCentersTable)
     .where(and(eq(costCentersTable.id, Number(req.params.id)), eq(costCentersTable.company_id, cid)));
   res.json({ message: "تم الحذف" });
@@ -94,7 +95,7 @@ router.delete("/cost-centers/:id", wrap(async (req, res) => {
 
 /* GET /api/cost-centers/:id/report — تقرير الإيرادات والمصروفات بمركز التكلفة */
 router.get("/cost-centers/:id/report", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const ccId = Number(req.params.id);
   const { date_from, date_to } = req.query as Record<string, string>;
 

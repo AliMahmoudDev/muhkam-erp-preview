@@ -14,6 +14,7 @@ import {
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { requireFeature } from "../middleware/feature-guard";
+import { getTenant } from "../middleware/auth";
 
 /* ── Zod schemas for mutation bodies ── */
 const shiftSchema = z.object({
@@ -81,7 +82,7 @@ function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOStr
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/shifts", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select().from(shiftSchedulesTable)
     .where(eq(shiftSchedulesTable.company_id, companyId))
     .orderBy(shiftSchedulesTable.name_ar);
@@ -90,7 +91,7 @@ router.get("/shifts", wrap(async (req, res) => {
 
 router.post("/shifts", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const parsed = shiftSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الوردية غير صحيحة", details: parsed.error.errors }); return; }
   const { name_ar, name_en, start_time, end_time, break_duration, grace_minutes, weekly_hours, working_days } = parsed.data;
@@ -105,7 +106,7 @@ router.post("/shifts", wrap(async (req, res) => {
 
 router.put("/shifts/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const parsed = shiftSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الوردية غير صحيحة", details: parsed.error.errors }); return; }
@@ -120,7 +121,7 @@ router.put("/shifts/:id", wrap(async (req, res) => {
 
 router.delete("/shifts/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(shiftSchedulesTable).where(and(eq(shiftSchedulesTable.id, id), eq(shiftSchedulesTable.company_id, companyId)));
   res.json({ ok: true });
@@ -167,7 +168,7 @@ router.get("/attendance/records", wrap(async (req, res) => {
   const isSelf        = selfEmpId !== null && requestedEmpId !== null && selfEmpId === requestedEmpId;
   if (!canViewAll && !isSelf) { res.status(403).json({ error: "غير مصرح" }); return; }
 
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const from   = String(req.query["from"] ?? "");
   const to     = String(req.query["to"] ?? "");
   const status = String(req.query["status"] ?? "");
@@ -209,7 +210,7 @@ router.get("/attendance/records", wrap(async (req, res) => {
 
 /* ── Check In ─────────────────────────────────────────────────── */
 router.post("/attendance/check-in", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const parsed = checkInSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الحضور غير صحيحة", details: parsed.error.errors }); return; }
@@ -264,7 +265,7 @@ router.post("/attendance/check-in", wrap(async (req, res) => {
 
 /* ── Check Out ────────────────────────────────────────────────── */
 router.post("/attendance/check-out", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const parsed = checkOutSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الانصراف غير صحيحة", details: parsed.error.errors }); return; }
@@ -379,7 +380,7 @@ router.get("/attendance/summary/:employeeId", wrap(async (req, res) => {
 
 router.get("/attendance/overtime", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select({
     id: overtimeRecordsTable.id, employee_id: overtimeRecordsTable.employee_id,
     date: overtimeRecordsTable.date, hours: overtimeRecordsTable.hours,
@@ -413,7 +414,7 @@ router.post("/attendance/overtime", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/public-holidays", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select().from(publicHolidaysTable)
     .where(eq(publicHolidaysTable.company_id, companyId))
     .orderBy(publicHolidaysTable.holiday_date);
@@ -422,7 +423,7 @@ router.get("/public-holidays", wrap(async (req, res) => {
 
 router.post("/public-holidays", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const parsed = holidaySchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الإجازة غير صحيحة", details: parsed.error.errors }); return; }
   const { holiday_date, name_ar, name_en } = parsed.data;
@@ -434,7 +435,7 @@ router.post("/public-holidays", wrap(async (req, res) => {
 
 router.delete("/public-holidays/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(publicHolidaysTable).where(and(eq(publicHolidaysTable.id, id), eq(publicHolidaysTable.company_id, companyId)));
   res.json({ ok: true });

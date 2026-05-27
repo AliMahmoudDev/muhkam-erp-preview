@@ -15,6 +15,7 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { idParamSchema, firstZodError } from "../lib/schemas";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -29,7 +30,7 @@ type StatRow = {
 };
 
 router.get("/contacts/:id/full-statement", wrap(async (req, res) => {
-  const cid: number = req.user!.company_id!;
+  const cid: number = getTenant(req);
 
   const paramsResult = idParamSchema.safeParse(req.params);
   if (!paramsResult.success) {

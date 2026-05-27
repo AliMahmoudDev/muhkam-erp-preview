@@ -13,6 +13,7 @@ import {
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { fmtTs, requireHrAccess } from './helpers';
+import { getTenant } from "../../middleware/auth";
 
 const router = Router();
 
@@ -20,7 +21,7 @@ const router = Router();
 
 router.get('/employees/:id/documents', wrap(async (req, res) => {
   if (!hasPermission(req.user, 'can_view_employees')) { res.status(403).json({ error: 'غير مصرح' }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params['id']), 10);
   const emp = await db.select({ id: employeesTable.id }).from(employeesTable)
     .where(and(eq(employeesTable.id, id), eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at)));
@@ -33,7 +34,7 @@ router.get('/employees/:id/documents', wrap(async (req, res) => {
 
 router.post('/employees/:id/documents', wrap(async (req, res) => {
   if (!hasPermission(req.user, 'can_manage_employees')) { res.status(403).json({ error: 'غير مصرح' }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params['id']), 10);
   const { document_type, file_name, file_path, expiry_date, notes } = req.body as Record<string, string>;
   if (!document_type || !file_name) { res.status(400).json({ error: 'نوع المستند واسم الملف مطلوبان' }); return; }
@@ -49,7 +50,7 @@ router.post('/employees/:id/documents', wrap(async (req, res) => {
 
 router.patch('/employees/:id/documents/:docId/verify', wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const id    = parseInt(String(req.params['id']), 10);
   const docId = parseInt(String(req.params['docId']), 10);
@@ -66,7 +67,7 @@ router.patch('/employees/:id/documents/:docId/verify', wrap(async (req, res) => 
 
 router.delete('/employees/:id/documents/:docId', wrap(async (req, res) => {
   if (!hasPermission(req.user, 'can_manage_employees')) { res.status(403).json({ error: 'غير مصرح' }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id    = parseInt(String(req.params['id']), 10);
   const docId = parseInt(String(req.params['docId']), 10);
   const emp = await db.select({ id: employeesTable.id }).from(employeesTable)
@@ -81,7 +82,7 @@ router.delete('/employees/:id/documents/:docId', wrap(async (req, res) => {
 
 router.get('/employees/:id/contacts', wrap(async (req, res) => {
   if (!hasPermission(req.user, 'can_view_employees')) { res.status(403).json({ error: 'غير مصرح' }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params['id']), 10);
   const emp = await db.select({ id: employeesTable.id }).from(employeesTable)
     .where(and(eq(employeesTable.id, id), eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at)));
@@ -94,7 +95,7 @@ router.get('/employees/:id/contacts', wrap(async (req, res) => {
 
 router.post('/employees/:id/contacts', wrap(async (req, res) => {
   if (!hasPermission(req.user, 'can_manage_employees')) { res.status(403).json({ error: 'غير مصرح' }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params['id']), 10);
   const { contact_type, name, relationship, phone, email } = req.body as Record<string, string>;
   if (!name?.trim()) { res.status(400).json({ error: 'اسم جهة الاتصال مطلوب' }); return; }
@@ -125,7 +126,7 @@ router.delete('/employees/:id/contacts/:cid', wrap(async (req, res) => {
 
 router.get('/employees/:id/history', wrap(async (req, res) => {
   if (!hasPermission(req.user, 'can_view_employees')) { res.status(403).json({ error: 'غير مصرح' }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params['id']), 10);
   const emp = await db.select({ id: employeesTable.id }).from(employeesTable)
     .where(and(eq(employeesTable.id, id), eq(employeesTable.company_id, companyId)));

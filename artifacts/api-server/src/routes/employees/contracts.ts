@@ -11,13 +11,14 @@ import {
 } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { fmtTs, requireHrAccess } from './helpers';
+import { getTenant } from "../../middleware/auth";
 
 const router = Router();
 
 /* ═══ DEPARTMENTS ═══════════════════════════════════════════════════ */
 
 router.get('/departments', wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select().from(departmentsTable)
     .where(eq(departmentsTable.company_id, companyId))
     .orderBy(departmentsTable.name_ar);
@@ -26,7 +27,7 @@ router.get('/departments', wrap(async (req, res) => {
 
 router.post('/departments', wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const { name_en, name_ar, description_en, description_ar } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: 'اسم القسم (عربي) مطلوب' }); return; }
   const [dep] = await db.insert(departmentsTable).values({
@@ -41,7 +42,7 @@ router.post('/departments', wrap(async (req, res) => {
 
 router.put('/departments/:id', wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params['id']), 10);
   const { name_en, name_ar, description_en, description_ar } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: 'اسم القسم (عربي) مطلوب' }); return; }
@@ -55,7 +56,7 @@ router.put('/departments/:id', wrap(async (req, res) => {
 
 router.delete('/departments/:id', wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params['id']), 10);
   const active = await db.select({ count: sql<number>`COUNT(*)::int` }).from(employeesTable)
     .where(and(eq(employeesTable.department_id, id), eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at), eq(employeesTable.employment_status, 'active')));
@@ -67,7 +68,7 @@ router.delete('/departments/:id', wrap(async (req, res) => {
 /* ═══ JOB TITLES ════════════════════════════════════════════════════ */
 
 router.get('/job-titles', wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select().from(jobTitlesTable)
     .where(eq(jobTitlesTable.company_id, companyId))
     .orderBy(jobTitlesTable.name_ar);
@@ -76,7 +77,7 @@ router.get('/job-titles', wrap(async (req, res) => {
 
 router.post('/job-titles', wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const { name_en, name_ar } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: 'المسمى الوظيفي (عربي) مطلوب' }); return; }
   const [jt] = await db.insert(jobTitlesTable).values({
@@ -89,7 +90,7 @@ router.post('/job-titles', wrap(async (req, res) => {
 
 router.put('/job-titles/:id', wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params['id']), 10);
   const { name_en, name_ar } = req.body as Record<string, string>;
   if (!name_ar?.trim()) { res.status(400).json({ error: 'المسمى الوظيفي (عربي) مطلوب' }); return; }
@@ -103,7 +104,7 @@ router.put('/job-titles/:id', wrap(async (req, res) => {
 
 router.delete('/job-titles/:id', wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params['id']), 10);
   const active = await db.select({ count: sql<number>`COUNT(*)::int` }).from(employeesTable)
     .where(and(eq(employeesTable.job_title_id, id), eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at)));

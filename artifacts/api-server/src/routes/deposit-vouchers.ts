@@ -7,6 +7,7 @@ import { firstZodError } from "../lib/schemas";
 import { wrap, httpError } from "../lib/async-handler";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { getOrCreateSafeAccount, getOrCreateMiscRevenueAccount, createAutoJournalEntry, type AccountRef } from "../lib/auto-account";
+import { getTenant } from "../middleware/auth";
 
 const createDepositVoucherSchema = z.object({
   safe_id: z.union([z.string().min(1), z.number().int().positive()]),
@@ -22,7 +23,7 @@ const router: IRouter = Router();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCid(req: any): number {
-  return req.user!.company_id!;
+  return getTenant(req);
 }
 
 function fmt(v: typeof depositVouchersTable.$inferSelect) {

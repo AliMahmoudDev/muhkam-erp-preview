@@ -1,6 +1,9 @@
 import type { Response } from 'express';
 
-export const JWT_SECRET: string = process.env.JWT_SECRET!;
+if (!process.env.JWT_SECRET) {
+  throw new Error("[FATAL] JWT_SECRET غير مضبوط — لا يمكن تشغيل الخادم بأمان");
+}
+export const JWT_SECRET: string = process.env.JWT_SECRET;
 export const IS_PROD = process.env.NODE_ENV === 'production';
 
 export function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
