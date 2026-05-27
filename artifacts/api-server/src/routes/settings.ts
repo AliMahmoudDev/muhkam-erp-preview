@@ -609,9 +609,8 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
   await db.transaction(async (tx) => {
     const cid = companyId;
 
-    // تعطيل فحص المفاتيح الأجنبية مؤقتاً داخل هذه المعاملة
-    // هذا آمن: لو حصل خطأ، الـ rollback يعيد كل شيء كما كان
-    await tx.execute(sql`SET session_replication_role = 'replica'`);
+    // ملاحظة: ترتيب الحذف مهم لتجنب FK violations
+    // نحذف من الأعمق للأبسط
 
     /* ── Level 3: deepest children (via subquery on employee/user) ── */
     await tx.execute(sql`DELETE FROM refresh_tokens          WHERE user_id IN (SELECT id FROM erp_users WHERE company_id = ${cid} AND id != ${currentUserId})`);
@@ -670,9 +669,8 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
     await tx.execute(sql`DELETE FROM scrap_items               WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM bad_debts                 WHERE company_id = ${cid}`);
 
-    /* ── Devices, suppliers, price lists ── */
+    /* ── Devices, price lists ── */
     await tx.execute(sql`DELETE FROM devices                   WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM suppliers                 WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM price_list_items WHERE price_list_id IN (SELECT id FROM price_lists WHERE company_id = ${cid})`);
     await tx.execute(sql`DELETE FROM price_lists               WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM sales_targets             WHERE company_id = ${cid}`);
@@ -683,6 +681,7 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
     await tx.execute(sql`DELETE FROM purchase_returns      WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM sales                 WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM purchases             WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM suppliers             WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM receipt_vouchers      WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM deposit_vouchers      WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM payment_vouchers      WHERE company_id = ${cid}`);
@@ -743,9 +742,6 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
 
     /* ── Users: حذف الكل ما عدا المستخدم الحالي ── */
     await tx.execute(sql`DELETE FROM erp_users WHERE company_id = ${cid} AND id != ${currentUserId}`);
-
-    // إعادة تفعيل فحص المفاتيح الأجنبية
-    await tx.execute(sql`SET session_replication_role = 'origin'`);
   });
 
   res.json({ success: true, message: "تم إعادة تعيين قاعدة البيانات بالكامل — تم حذف جميع البيانات" });
