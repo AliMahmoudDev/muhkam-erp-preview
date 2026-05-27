@@ -27,6 +27,7 @@ import {
   clearLoginLockout,
   MAX_ATTEMPTS,
 } from '../../lib/brute-force-store';
+import { requireUser } from "../../lib/tenant";
 import {
   JWT_SECRET,
   setAuthCookies,
@@ -50,7 +51,11 @@ router.post('/auth/login', wrap(async (req, res) => {
     if (userId !== undefined) {
       uid = userId;
     } else {
-      const usernameNorm = username!.trim().toLowerCase();
+      if (!username) {
+        res.status(400).json({ error: "اسم المستخدم مطلوب" });
+        return;
+      }
+      const usernameNorm = username.trim().toLowerCase();
       const isEmail = usernameNorm.includes('@');
       const [found] = await db
         .select({ id: erpUsersTable.id, company_id: erpUsersTable.company_id })
@@ -304,7 +309,7 @@ router.post('/auth/logout', authenticate, async (req, res) => {
 
 /* ── GET /auth/me — verify token + return fresh user data ─── */
 router.get('/auth/me', authenticate, (req, res) => {
-  const u = req.user!;
+  const u = requireUser(req);
   let parsedPerms: Record<string, boolean> = {};
   try {
     parsedPerms = JSON.parse(u.permissions ?? '{}') as Record<string, boolean>;

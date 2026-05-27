@@ -18,6 +18,7 @@ import { selfEmployeeId, isSelfServiceUser } from "../lib/employee-self";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { notifyEmployee } from "../lib/notify";
 import { requireFeature } from "../middleware/feature-guard";
+import { getTenant } from "../middleware/auth";
 
 const createBonusSchema = z.object({
   employee_id: z.union([z.string(), z.number()]).refine(v => Number(v) > 0),
@@ -63,7 +64,7 @@ const n = (v: unknown) => (v != null ? Number(v) : 0);
 router.get("/employee-bonuses", wrap(async (req, res) => {
   const selfId = selfEmployeeId(req);
   if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
   const empId = selfId !== null ? selfId : queryEmpId;
   const conditions = [eq(employeeBonusesTable.company_id, companyId)];
@@ -79,7 +80,7 @@ router.post("/employee-bonuses", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const parsedBonus = createBonusSchema.safeParse(req.body);
   if (!parsedBonus.success) { res.status(400).json({ error: firstZodError(parsedBonus.error) }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id ?? null;
   const { employee_id, amount, reason, granted_date, currency } = parsedBonus.data;
   const [emp] = await db.select().from(employeesTable)
@@ -109,7 +110,7 @@ router.post("/employee-bonuses", wrap(async (req, res) => {
 router.delete("/employee-bonuses/:id", wrap(async (req, res) => {
   if (isSelfServiceUser(req)) { res.status(403).json({ error: "غير مصرح" }); return; }
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(employeeBonusesTable)
     .where(and(eq(employeeBonusesTable.id, id), eq(employeeBonusesTable.company_id, companyId)));
@@ -125,7 +126,7 @@ const DEDUCTION_TYPES = new Set(["late", "absence", "damage", "other"]);
 router.get("/employee-deductions", wrap(async (req, res) => {
   const selfId = selfEmployeeId(req);
   if (selfId === -1) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
   const empId = selfId !== null ? selfId : queryEmpId;
   const type = req.query["deduction_type"] ? String(req.query["deduction_type"]) : null;
@@ -146,7 +147,7 @@ router.post("/employee-deductions", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const parsedDeduction = createDeductionSchema.safeParse(req.body);
   if (!parsedDeduction.success) { res.status(400).json({ error: firstZodError(parsedDeduction.error) }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id ?? null;
   const { employee_id, amount, reason, deduction_date, deduction_type, currency } = parsedDeduction.data;
   const dtype = String(deduction_type ?? "other");
@@ -170,7 +171,7 @@ router.post("/employee-deductions", wrap(async (req, res) => {
 router.delete("/employee-deductions/:id", wrap(async (req, res) => {
   if (isSelfServiceUser(req)) { res.status(403).json({ error: "غير مصرح" }); return; }
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   await db.update(employeeDeductionsTable)
     .set({ deleted_at: new Date() })
@@ -184,7 +185,7 @@ router.delete("/employee-deductions/:id", wrap(async (req, res) => {
 
 router.get("/employee-custody", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const queryEmpId = req.query["employee_id"] ? parseInt(String(req.query["employee_id"]), 10) : null;
   const selfId = selfEmployeeId(req);
   const empId = selfId !== null ? selfId : queryEmpId;
@@ -206,7 +207,7 @@ router.get("/employee-custody", wrap(async (req, res) => {
 /* GET بنود تسوية عهدة معينة */
 router.get("/employee-custody/:id/lines", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const [parent] = await db.select().from(employeeCustodyTable)
     .where(and(eq(employeeCustodyTable.id, id), eq(employeeCustodyTable.company_id, companyId)));
@@ -225,7 +226,7 @@ router.post("/employee-custody", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
   const parsedCustody = createCustodySchema.safeParse(req.body);
   if (!parsedCustody.success) { res.status(400).json({ error: firstZodError(parsedCustody.error) }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id ?? null;
   const { employee_id, amount, purpose, granted_date, currency, notes, safe_id } = parsedCustody.data;
   const amt = Number(amount);
@@ -307,7 +308,7 @@ router.post("/employee-custody", wrap(async (req, res) => {
 router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
   if (isSelfServiceUser(req)) { res.status(403).json({ error: "غير مصرح" }); return; }
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const body = req.body as Record<string, unknown>;
   const settledDate = String(body["settled_date"] ?? new Date().toISOString().split("T")[0]);
@@ -477,7 +478,7 @@ router.post("/employee-custody/:id/settle", wrap(async (req, res) => {
 router.delete("/employee-custody/:id", wrap(async (req, res) => {
   if (isSelfServiceUser(req)) { res.status(403).json({ error: "غير مصرح" }); return; }
   if (!hasPermission(req.user, "can_manage_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
 
   const [existing] = await db.select().from(employeeCustodyTable)
@@ -528,7 +529,7 @@ router.post("/employee-custody/:id/reimburse", wrap(async (req, res) => {
   }
   const parsedReimburse = reimburseSchema.safeParse(req.body);
   if (!parsedReimburse.success) { res.status(400).json({ error: firstZodError(parsedReimburse.error) }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const { safe_id, notes } = parsedReimburse.data;
 

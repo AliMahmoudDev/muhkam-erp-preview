@@ -5,6 +5,7 @@ import { db, accountsTable, journalEntriesTable, journalEntryLinesTable } from "
 import { wrap } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
 import { setCache, getCache, deleteCache } from "../lib/cache";
+import { getTenant } from "../middleware/auth";
 
 const ACCOUNT_TYPES = ["asset", "liability", "equity", "revenue", "expense"] as const;
 
@@ -45,7 +46,7 @@ const router: IRouter = Router();
 router.use("/accounts", requireFeature("accounting"));
 
 function getCid(req: Request): number {
-  return req.user!.company_id!;
+  return getTenant(req);
 }
 
 function fmt(a: typeof accountsTable.$inferSelect) {

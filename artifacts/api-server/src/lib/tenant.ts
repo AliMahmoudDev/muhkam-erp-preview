@@ -49,3 +49,20 @@ export function tenantFilter(column: PgColumn, companyId: number): SQL<unknown> 
  * @throws {Error} with `.status` 400 | 403 — caught by the async wrapper.
  */
 export { getTenant as requireCompanyId } from "../middleware/auth";
+
+/**
+ * requireUser — strict authenticated-user guard for route handlers.
+ *
+ * Returns the full AuthUser object after the `authenticate` middleware has run.
+ * Throws HTTP 401 if no user is attached — caught by the async wrapper.
+ *
+ * @throws {Error} with `.status` 401
+ */
+export function requireUser(req: import("express").Request): import("../middleware/auth").AuthUser {
+  const user = req.user;
+  if (!user) {
+    const err = Object.assign(new Error("غير مصرح: يلزم تسجيل الدخول أولاً"), { status: 401 });
+    throw err;
+  }
+  return user;
+}

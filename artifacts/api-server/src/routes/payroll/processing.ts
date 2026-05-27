@@ -21,6 +21,7 @@ import { wrap } from "../../lib/async-handler";
 import { hasPermission } from "../../lib/permissions";
 import { writeAuditLog } from "../../lib/audit-log";
 import { enqueueJob, getJobStatus } from "../../lib/job-queue";
+import { getTenant } from "../../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -29,7 +30,7 @@ function fmt(v: Date | null | undefined) { return v instanceof Date ? v.toISOStr
 /* ── Process Payroll ──────────────────────────────────────────── */
 router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
 
@@ -270,7 +271,7 @@ router.post("/payroll/periods/:id/process", wrap(async (req, res) => {
 /* ── Approve Period ───────────────────────────────────────────── */
 router.post("/payroll/periods/:id/approve", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_approve_payroll")) { res.status(403).json({ error: "غير مصرح بالاعتماد" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
   const [row] = await db.update(payrollPeriodsTable)
@@ -314,7 +315,7 @@ router.post("/payroll/periods/:id/approve", wrap(async (req, res) => {
 /* ── Pay Period (صرف الرواتب من الخزانة) ─────────────────────── */
 router.post("/payroll/periods/:id/pay", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_approve_payroll")) { res.status(403).json({ error: "غير مصرح بصرف الرواتب" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
   const { safe_id, notes } = req.body as { safe_id?: number | string; notes?: string };
@@ -458,7 +459,7 @@ router.get("/payroll/my-payslips/:id/lines", wrap(async (req, res) => {
 /* ── Async payroll processing (fire & forget) ─────────────────── */
 router.post("/payroll/periods/:id/process-async", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const periodId  = parseInt(String(req.params["id"]), 10);
 
@@ -623,7 +624,7 @@ router.post("/payroll/records/:id/approve", wrap(async (req, res) => {
 /* ── Pay individual record (صرف راتب موظف منفرد) ──────────────── */
 router.post("/payroll/records/:id/pay", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_approve_payroll")) { res.status(403).json({ error: "غير مصرح بصرف الراتب" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const id        = parseInt(String(req.params["id"]), 10);
   const { safe_id, notes } = req.body as { safe_id?: number | string; notes?: string };
@@ -683,6 +684,10 @@ router.post("/payroll/records/:id/pay", wrap(async (req, res) => {
       company_id:     companyId,
     });
 
+    if (!record.payroll_period_id) {
+      throw Object.assign(new Error("سجل الراتب غير مرتبط بفترة رواتب"), { status: 400 });
+    }
+
     await tx.update(payrollRecordsTable)
       .set({ status: "paid", updated_at: new Date() })
       .where(eq(payrollRecordsTable.id, id));
@@ -690,13 +695,13 @@ router.post("/payroll/records/:id/pay", wrap(async (req, res) => {
     const remaining = await tx.select({ id: payrollRecordsTable.id })
       .from(payrollRecordsTable)
       .where(and(
-        eq(payrollRecordsTable.payroll_period_id, record.payroll_period_id!),
+        eq(payrollRecordsTable.payroll_period_id, record.payroll_period_id),
         sql`status != 'paid'`,
       ));
     if (remaining.length === 0) {
       await tx.update(payrollPeriodsTable)
         .set({ status: "paid", processed_by: userId, updated_at: new Date() })
-        .where(eq(payrollPeriodsTable.id, record.payroll_period_id!));
+        .where(eq(payrollPeriodsTable.id, record.payroll_period_id));
     }
 
     return { ok: true, safeName: safe.name, empName };

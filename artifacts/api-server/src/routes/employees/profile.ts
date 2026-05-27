@@ -16,6 +16,7 @@ import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { selfEmployeeId } from '../../lib/employee-self';
 import { writeAuditLog } from '../../lib/audit-log';
+import { getTenant } from "../../middleware/auth";
 import {
   fmtTs, formatEmployee, generateEmployeeCode, requireHrAccess, employeeCreateSchema,
 } from './helpers';
@@ -28,7 +29,7 @@ router.get('/employees', wrap(async (req, res) => {
   const canViewAll = hasPermission(req.user, 'can_view_employees');
   if (!canViewAll && selfId === -1) { res.status(403).json({ error: 'غير مصرح بعرض الموظفين' }); return; }
 
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const search = String(req.query['search'] ?? '').trim();
   const deptId = req.query['department_id'] ? parseInt(String(req.query['department_id']), 10) : null;
   const status = String(req.query['status'] ?? '');
@@ -91,7 +92,7 @@ router.get('/employees', wrap(async (req, res) => {
 /* ── POST /employees ─────────────────────────────────────────── */
 router.post('/employees', wrap(async (req, res) => {
   if (!hasPermission(req.user, 'can_manage_employees')) { res.status(403).json({ error: 'غير مصرح بإضافة موظفين' }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
 
   const parsed = employeeCreateSchema.safeParse(req.body);
@@ -140,7 +141,7 @@ router.post('/employees', wrap(async (req, res) => {
 
 /* ── GET /employees/:id ──────────────────────────────────────── */
 router.get('/employees/:id', wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id        = parseInt(String(req.params['id']), 10);
   const selfId    = selfEmployeeId(req);
   const canViewAll = hasPermission(req.user, 'can_view_employees');
@@ -187,7 +188,7 @@ router.get('/employees/:id', wrap(async (req, res) => {
 /* ── PUT /employees/:id ──────────────────────────────────────── */
 router.put('/employees/:id', wrap(async (req, res) => {
   if (!hasPermission(req.user, 'can_manage_employees')) { res.status(403).json({ error: 'غير مصرح بتعديل الموظف' }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const id = parseInt(String(req.params['id']), 10);
 
@@ -239,7 +240,7 @@ router.put('/employees/:id', wrap(async (req, res) => {
 /* ── PATCH /employees/:id/status ─────────────────────────────── */
 router.patch('/employees/:id/status', wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const id = parseInt(String(req.params['id']), 10);
   const { new_status, reason } = req.body as { new_status: string; reason?: string };
@@ -261,7 +262,7 @@ router.patch('/employees/:id/status', wrap(async (req, res) => {
 /* ── DELETE /employees/:id ───────────────────────────────────── */
 router.delete('/employees/:id', wrap(async (req, res) => {
   if (!requireHrAccess(req, res)) return;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId    = req.user?.id ?? null;
   const id = parseInt(String(req.params['id']), 10);
 
@@ -281,7 +282,7 @@ router.get('/employees/:id/repair-stats', wrap(async (req, res) => {
   const canView = hasPermission(req.user, 'can_view_employees') || hasPermission(req.user, 'can_view_repairs');
   if (!canView) { res.status(403).json({ error: 'غير مصرح' }); return; }
 
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const empId = parseInt(String(req.params['id']), 10);
   if (!Number.isFinite(empId) || empId <= 0) { res.status(400).json({ error: 'معرّف الموظف غير صحيح' }); return; }
 

@@ -183,7 +183,7 @@ router.post("/products", wrap(async (req, res) => {
   const role = req.user?.role ?? "cashier";
   const queryWarehouseId = req.query.warehouse_id ? parseInt(String(req.query.warehouse_id), 10) : null;
   const effectiveWarehouseId = (role === "admin" || role === "manager") ? queryWarehouseId : (req.user?.warehouse_id ?? null);
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
 
   // Resolve warehouse only if opening stock will be inserted (avoids 400 for zero-qty products).
   const tenantWarehouseId = parsed.data.quantity > 0
@@ -244,7 +244,7 @@ router.put("/products/:id", wrap(async (req, res) => {
   const parsed = UpdateProductBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const resolvedCategoryId = await resolveCategoryId(
     (parsed.data as Record<string, unknown>).category_id as number | null | undefined,
     parsed.data.category,

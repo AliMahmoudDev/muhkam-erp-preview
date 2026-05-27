@@ -340,11 +340,16 @@ router.post("/super/trial-abuse/bulk-override", ...superOnly, wrap(async (req, r
   const normalIP    = ip    ? ip.trim().toLowerCase()    : undefined;
   const normalEmail = email ? email.trim().toLowerCase() : undefined;
 
+  if (!normalIP && !normalEmail) {
+    res.status(400).json({ error: "يجب تحديد IP أو البريد الإلكتروني" });
+    return;
+  }
+
   const whereClause = normalIP && normalEmail
     ? sql`(${trialAbuseLogTable.ip} = ${normalIP} OR ${trialAbuseLogTable.email} = ${normalEmail})`
     : normalIP
       ? eq(trialAbuseLogTable.ip, normalIP)
-      : eq(trialAbuseLogTable.email, normalEmail!);
+      : eq(trialAbuseLogTable.email, normalEmail as string);
 
   const updated = await db
     .update(trialAbuseLogTable)

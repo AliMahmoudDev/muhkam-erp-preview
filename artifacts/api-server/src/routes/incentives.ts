@@ -15,6 +15,7 @@ import { z } from "zod/v4";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { requireFeature } from "../middleware/feature-guard";
+import { getTenant } from "../middleware/auth";
 
 const createSchemeSchema = z.object({
   name_ar: z.string().min(1, "اسم مخطط الحوافز مطلوب"),
@@ -93,7 +94,7 @@ async function assertRuleOwnership(ruleId: number, companyId: number, res: Respo
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/incentive-schemes", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select().from(incentiveSchemesTable)
     .where(eq(incentiveSchemesTable.company_id, companyId))
     .orderBy(incentiveSchemesTable.name_ar);
@@ -102,7 +103,7 @@ router.get("/incentive-schemes", wrap(async (req, res) => {
 
 router.post("/incentive-schemes", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const schemeParsed = createSchemeSchema.safeParse(req.body);
   if (!schemeParsed.success) { res.status(400).json({ error: "بيانات مخطط الحوافز غير صالحة", details: schemeParsed.error.issues.map(i => i.message) }); return; }
   const { name_ar, name_en, description } = schemeParsed.data;
@@ -115,7 +116,7 @@ router.post("/incentive-schemes", wrap(async (req, res) => {
 
 router.put("/incentive-schemes/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const { name_ar, name_en, description, status } = req.body as Record<string, string>;
   const [row] = await db.update(incentiveSchemesTable)
@@ -128,7 +129,7 @@ router.put("/incentive-schemes/:id", wrap(async (req, res) => {
 
 /* ─ Incentive Rules ───────────────────────────────────────────── */
 router.get("/incentive-rules/:schemeId", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const schemeId = parseInt(String(req.params["schemeId"]), 10);
   if (!await assertSchemeOwnership(schemeId, companyId, res)) return;
   const rows = await db.select().from(incentiveRulesTable)
@@ -145,7 +146,7 @@ router.get("/incentive-rules/:schemeId", wrap(async (req, res) => {
 
 router.post("/incentive-rules", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const ruleParsed = createRuleSchema.safeParse(req.body);
   if (!ruleParsed.success) { res.status(400).json({ error: "بيانات القاعدة غير صالحة", details: ruleParsed.error.issues.map(i => i.message) }); return; }
   const { incentive_scheme_id, metric_type, target_value, incentive_amount, incentive_type, calculation_method, currency } = ruleParsed.data;
@@ -161,7 +162,7 @@ router.post("/incentive-rules", wrap(async (req, res) => {
 
 router.put("/incentive-rules/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   if (!await assertRuleOwnership(id, companyId, res)) return;
   const { metric_type, target_value, incentive_amount, incentive_type, calculation_method, is_active } = req.body as Record<string, unknown>;
@@ -175,7 +176,7 @@ router.put("/incentive-rules/:id", wrap(async (req, res) => {
 /* ─ Incentive Slabs ───────────────────────────────────────────── */
 router.post("/incentive-slabs", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const slabParsed = createSlabSchema.safeParse(req.body);
   if (!slabParsed.success) { res.status(400).json({ error: "بيانات الشريحة غير صالحة", details: slabParsed.error.issues.map(i => i.message) }); return; }
   const { incentive_rule_id, slab_number, from_percentage, to_percentage, incentive_value } = slabParsed.data;
@@ -190,7 +191,7 @@ router.post("/incentive-slabs", wrap(async (req, res) => {
 
 router.put("/incentive-slabs/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const [slab] = await db.select({ rule_id: incentiveSlabsTable.incentive_rule_id })
     .from(incentiveSlabsTable).where(eq(incentiveSlabsTable.id, id));
@@ -206,7 +207,7 @@ router.put("/incentive-slabs/:id", wrap(async (req, res) => {
 
 router.delete("/incentive-slabs/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const [slab] = await db.select({ rule_id: incentiveSlabsTable.incentive_rule_id })
     .from(incentiveSlabsTable).where(eq(incentiveSlabsTable.id, id));
@@ -222,7 +223,7 @@ router.delete("/incentive-slabs/:id", wrap(async (req, res) => {
 
 router.post("/employee-incentive-assignments", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const assignParsed = createAssignmentSchema.safeParse(req.body);
   if (!assignParsed.success) { res.status(400).json({ error: "بيانات التعيين غير صالحة", details: assignParsed.error.issues.map(i => i.message) }); return; }
   const { employee_id, incentive_scheme_id, assigned_date, end_date } = assignParsed.data;
@@ -236,7 +237,7 @@ router.post("/employee-incentive-assignments", wrap(async (req, res) => {
 }));
 
 router.get("/employee-incentive-assignments/:employeeId", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const empId = parseInt(String(req.params["employeeId"]), 10);
   if (!await assertEmployeeOwnership(empId, companyId, res)) return;
   const rows = await db.select({
@@ -261,7 +262,7 @@ router.get("/employee-incentive-assignments/:employeeId", wrap(async (req, res) 
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/daily-accrual/:employeeId/:date", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const empId = parseInt(String(req.params["employeeId"]), 10);
   const date  = String(req.params["date"]);
   if (!await assertEmployeeOwnership(empId, companyId, res)) return;
@@ -272,7 +273,7 @@ router.get("/daily-accrual/:employeeId/:date", wrap(async (req, res) => {
 
 /* ── Record Metric & Calculate Accrual ────────────────────────── */
 router.post("/incentive-metrics/record", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const metricParsed = recordMetricSchema.safeParse(req.body);
   if (!metricParsed.success) { res.status(400).json({ error: "بيانات المقياس غير صالحة", details: metricParsed.error.issues.map(i => i.message) }); return; }
   const { employee_id, incentive_rule_id, metric_date, metric_value, source_type, source_document_id } = metricParsed.data;
@@ -348,7 +349,7 @@ router.post("/incentive-metrics/record", wrap(async (req, res) => {
 
 /* ─ Monthly Summary ───────────────────────────────────────────── */
 router.get("/monthly-incentive-summary/:employeeId/:month", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const empId = parseInt(String(req.params["employeeId"]), 10);
   const month = String(req.params["month"]);
   if (!await assertEmployeeOwnership(empId, companyId, res)) return;
@@ -361,7 +362,7 @@ router.get("/monthly-incentive-summary/:employeeId/:month", wrap(async (req, res
 /* ─ Incentive Tracking ────────────────────────────────────────── */
 router.get("/incentive-tracking/:employeeId", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_employees")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const empId = parseInt(String(req.params["employeeId"]), 10);
   const month = String(req.query["month"] ?? new Date().toISOString().substring(0, 7));
   if (!await assertEmployeeOwnership(empId, companyId, res)) return;

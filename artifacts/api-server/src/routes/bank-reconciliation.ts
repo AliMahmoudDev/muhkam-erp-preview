@@ -7,6 +7,7 @@ import { z } from "zod/v4";
 import { db, bankAccountsTable, bankStatementLinesTable, journalEntriesTable, safesTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 router.use(["/bank-accounts", "/bank-statement-lines"], requireFeature("bank_reconciliation"));
@@ -38,7 +39,7 @@ function fmtLine(l: typeof bankStatementLinesTable.$inferSelect) {
 /* ═══════ Bank Accounts ═══════ */
 
 router.get("/bank-accounts", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const rows = await db.select().from(bankAccountsTable)
     .where(eq(bankAccountsTable.company_id, cid))
     .orderBy(desc(bankAccountsTable.created_at));
@@ -46,7 +47,7 @@ router.get("/bank-accounts", wrap(async (req, res) => {
 }));
 
 router.post("/bank-accounts", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const parsed = createBankAccountSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "بيانات الحساب البنكي غير صالحة", details: parsed.error.issues.map(i => i.message) }); return;
@@ -64,7 +65,7 @@ router.post("/bank-accounts", wrap(async (req, res) => {
 }));
 
 router.delete("/bank-accounts/:id", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   await db.delete(bankAccountsTable)
     .where(and(eq(bankAccountsTable.id, Number(req.params.id)), eq(bankAccountsTable.company_id, cid)));
   res.json({ message: "تم الحذف" });
@@ -73,7 +74,7 @@ router.delete("/bank-accounts/:id", wrap(async (req, res) => {
 /* ═══════ Bank Statement Lines ═══════ */
 
 router.get("/bank-accounts/:id/lines", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const bankId = Number(req.params.id);
   const [bank] = await db.select().from(bankAccountsTable)
     .where(and(eq(bankAccountsTable.id, bankId), eq(bankAccountsTable.company_id, cid)));
@@ -87,7 +88,7 @@ router.get("/bank-accounts/:id/lines", wrap(async (req, res) => {
 }));
 
 router.post("/bank-accounts/:id/lines", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const bankId = Number(req.params.id);
   const [bank] = await db.select().from(bankAccountsTable)
     .where(and(eq(bankAccountsTable.id, bankId), eq(bankAccountsTable.company_id, cid)));
@@ -120,7 +121,7 @@ router.post("/bank-accounts/:id/lines", wrap(async (req, res) => {
 
 /* PATCH /api/bank-statement-lines/:id/match */
 router.patch("/bank-statement-lines/:id/match", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const { entry_id } = req.body;
 
   const [line] = await db.select().from(bankStatementLinesTable)
@@ -144,7 +145,7 @@ router.patch("/bank-statement-lines/:id/match", wrap(async (req, res) => {
 
 /* PATCH /api/bank-statement-lines/:id/unmatch */
 router.patch("/bank-statement-lines/:id/unmatch", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const [updated] = await db.update(bankStatementLinesTable)
     .set({ status: "unmatched", matched_entry_id: null })
     .where(and(eq(bankStatementLinesTable.id, Number(req.params.id)), eq(bankStatementLinesTable.company_id, cid)))
@@ -155,7 +156,7 @@ router.patch("/bank-statement-lines/:id/unmatch", wrap(async (req, res) => {
 
 /* GET /api/bank-accounts/:id/reconciliation — ملخص المطابقة */
 router.get("/bank-accounts/:id/reconciliation", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const bankId = Number(req.params.id);
 
   const [bank] = await db.select().from(bankAccountsTable)

@@ -29,7 +29,7 @@ router.get("/expense-categories", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_expenses")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const cats = await db.select().from(expenseCategoriesTable)
     .where(eq(expenseCategoriesTable.company_id, companyId))
     .orderBy(expenseCategoriesTable.name);
@@ -40,7 +40,7 @@ router.post("/expense-categories", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_add_expense")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
 
   const bodyResult = categoryBodySchema.safeParse(req.body);
   if (!bodyResult.success) {
@@ -62,7 +62,7 @@ router.delete("/expense-categories/:id", wrap(async (req, res) => {
   }
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرف غير صالح" }); return; }
-  const cidExp = req.user!.company_id!;
+  const cidExp = getTenant(req);
   const [cat] = await db.select({ name: expenseCategoriesTable.name }).from(expenseCategoriesTable).where(and(eq(expenseCategoriesTable.id, id), eq(expenseCategoriesTable.company_id, cidExp))).limit(1);
   if (!cat) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
   const [linkedExpense] = await db.select({ id: expensesTable.id }).from(expensesTable).where(and(eq(expensesTable.category, cat.name), eq(expensesTable.company_id, cidExp))).limit(1);
@@ -79,7 +79,7 @@ router.get("/expense-reports", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_expenses")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const category  = req.query.category  ? String(req.query.category)  : null;
   const dateFrom  = req.query.date_from ? String(req.query.date_from) : null;
   const dateTo    = req.query.date_to   ? String(req.query.date_to)   : null;
@@ -184,7 +184,7 @@ router.post("/expenses", wrap(async (req, res) => {
   const { exp: expense, safe } = result;
   if (safe) {
     try {
-      const cidExp = req.user!.company_id!;
+      const cidExp = getTenant(req);
       const expAcct  = await getOrCreateGeneralExpenseAccount(cidExp);
       const safeAcct = await getOrCreateSafeAccount(safe.id, safe.name, cidExp);
       const todayStr = new Date().toISOString().split("T")[0];
@@ -207,7 +207,7 @@ router.post("/expenses", wrap(async (req, res) => {
 router.delete("/expenses/:id", wrap(async (req, res) => {
   const params = DeleteExpenseParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const [preCheck] = await db.select().from(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, req.user!.company_id!)));
+  const [preCheck] = await db.select().from(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, getTenant(req))));
   if (!preCheck) { res.status(404).json({ error: "المصروف غير موجود" }); return; }
   await assertPeriodOpen(preCheck.created_at?.toISOString().split("T")[0] ?? null, req);
 
@@ -217,9 +217,9 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
   let deletedCategory: string        = "";
 
   await db.transaction(async (tx) => {
-    const [exp] = await tx.select().from(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, req.user!.company_id!)));
+    const [exp] = await tx.select().from(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, getTenant(req))));
     if (exp?.safe_id) {
-      const cidGuard = req.user!.company_id!;
+      const cidGuard = getTenant(req);
       const [safe] = await tx.select().from(safesTable).where(and(
         eq(safesTable.id, exp.safe_id),
         eq(safesTable.company_id, cidGuard),
@@ -236,12 +236,12 @@ router.delete("/expenses/:id", wrap(async (req, res) => {
       deletedAmount   = Number(exp.amount);
       deletedCategory = exp.category ?? "مصروف محذوف";
     }
-    await tx.delete(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, req.user!.company_id!)));
+    await tx.delete(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, getTenant(req))));
   });
 
   if (deletedSafeId !== null && deletedAmount > 0) {
     try {
-      const cidDel = req.user!.company_id!;
+      const cidDel = getTenant(req);
       const safeAcct = await getOrCreateSafeAccount(deletedSafeId, deletedSafeName ?? `خزينة ${deletedSafeId}`, cidDel);
       const expAcct  = await getOrCreateGeneralExpenseAccount(cidDel);
       const todayStr = new Date().toISOString().split("T")[0];

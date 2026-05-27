@@ -12,6 +12,7 @@ import {
 } from "@workspace/db";
 import { wrap } from "../../lib/async-handler";
 import { hasPermission } from "../../lib/permissions";
+import { getTenant } from "../../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -60,7 +61,7 @@ const statutoryContributionSchema = z.object({
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/salary-structures", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select().from(salaryStructuresTable)
     .where(eq(salaryStructuresTable.company_id, companyId))
     .orderBy(salaryStructuresTable.name_ar);
@@ -69,7 +70,7 @@ router.get("/salary-structures", wrap(async (req, res) => {
 
 router.post("/salary-structures", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const parsed = salaryStructureSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الهيكل غير صحيحة", details: parsed.error.errors }); return; }
   const { name_ar, name_en, base_salary, description } = parsed.data;
@@ -82,7 +83,7 @@ router.post("/salary-structures", wrap(async (req, res) => {
 
 router.put("/salary-structures/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const parsed = salaryStructureSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الهيكل غير صحيحة", details: parsed.error.errors }); return; }
@@ -97,7 +98,7 @@ router.put("/salary-structures/:id", wrap(async (req, res) => {
 
 router.delete("/salary-structures/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(salaryComponentsTable).where(eq(salaryComponentsTable.salary_structure_id, id));
   await db.delete(salaryStructuresTable).where(and(eq(salaryStructuresTable.id, id), eq(salaryStructuresTable.company_id, companyId)));
@@ -140,7 +141,7 @@ router.delete("/salary-structures/:structId/components/:id", wrap(async (req, re
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/tax-brackets", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const year = String(req.query["year"] ?? new Date().getFullYear());
   const rows = await db.select().from(taxBracketsTable)
     .where(and(eq(taxBracketsTable.company_id, companyId), eq(taxBracketsTable.fiscal_year, year)))
@@ -150,7 +151,7 @@ router.get("/tax-brackets", wrap(async (req, res) => {
 
 router.post("/tax-brackets", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const parsed = taxBracketSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الشريحة الضريبية غير صحيحة", details: parsed.error.errors }); return; }
   const { fiscal_year, min_salary, max_salary, tax_rate } = parsed.data;
@@ -164,7 +165,7 @@ router.post("/tax-brackets", wrap(async (req, res) => {
 
 router.put("/tax-brackets/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const parsed = taxBracketSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الشريحة الضريبية غير صحيحة", details: parsed.error.errors }); return; }
@@ -179,7 +180,7 @@ router.put("/tax-brackets/:id", wrap(async (req, res) => {
 
 router.delete("/tax-brackets/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(taxBracketsTable).where(and(eq(taxBracketsTable.id, id), eq(taxBracketsTable.company_id, companyId)));
   res.json({ ok: true });
@@ -190,7 +191,7 @@ router.delete("/tax-brackets/:id", wrap(async (req, res) => {
 ══════════════════════════════════════════════════════════════════════ */
 
 router.get("/statutory-contributions", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db.select().from(statutoryContributionsTable)
     .where(eq(statutoryContributionsTable.company_id, companyId))
     .orderBy(statutoryContributionsTable.name_ar);
@@ -199,7 +200,7 @@ router.get("/statutory-contributions", wrap(async (req, res) => {
 
 router.post("/statutory-contributions", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const parsed = statutoryContributionSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الاشتراك غير صحيحة", details: parsed.error.errors }); return; }
   const { contribution_type, name_ar, name_en, employee_percentage, employer_percentage, is_mandatory } = parsed.data;
@@ -215,7 +216,7 @@ router.post("/statutory-contributions", wrap(async (req, res) => {
 
 router.put("/statutory-contributions/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   const parsed = statutoryContributionSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors[0]?.message ?? "بيانات الاشتراك غير صحيحة", details: parsed.error.errors }); return; }
@@ -230,7 +231,7 @@ router.put("/statutory-contributions/:id", wrap(async (req, res) => {
 
 router.delete("/statutory-contributions/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_payroll")) { res.status(403).json({ error: "غير مصرح" }); return; }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(String(req.params["id"]), 10);
   await db.delete(statutoryContributionsTable).where(and(eq(statutoryContributionsTable.id, id), eq(statutoryContributionsTable.company_id, companyId)));
   res.json({ ok: true });

@@ -12,7 +12,7 @@ import { db,
 } from "@workspace/db";
 import { sql, eq, inArray, and } from "drizzle-orm";
 import { wrap } from "../lib/async-handler";
-import { authenticate, requireRole } from "../middleware/auth";
+import { authenticate, requireRole, getTenant } from "../middleware/auth";
 import { getOrCreateCustomerAccount, getOrCreateCustomerPayableAccount } from "../lib/auto-account";
 import { z } from "zod/v4";
 
@@ -112,7 +112,7 @@ router.post("/admin/clear", authenticate, requireRole("admin"), wrap(async (req,
     res.status(400).json({ error: `جداول غير معروفة: ${invalid.join(", ")}` }); return;
   }
 
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
 
   const ORDER = VALID_TABLES as readonly string[];
   const sorted = ORDER.filter(t => tables.includes(t));
@@ -125,7 +125,7 @@ router.post("/admin/clear", authenticate, requireRole("admin"), wrap(async (req,
 
 /* ── ربط تلقائي: إنشاء حسابات للعملاء الموجودين ──────────────────────────── */
 router.post("/admin/backfill-accounts", [authenticate, requireRole("admin", "manager")], wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
   const customers = await db.select().from(customersTable)
     .where(sql`${customersTable.account_id} IS NULL AND ${customersTable.company_id} = ${companyId}`);
 

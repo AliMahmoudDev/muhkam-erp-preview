@@ -8,6 +8,7 @@ import { db, companiesTable, erpUsersTable } from "@workspace/db";
 import { authenticate, requireRole } from "../middleware/auth";
 import { wrap } from "../lib/async-handler";
 import { alertManager, ALERT_TYPES } from "../lib/telegram-alert-manager";
+import { requireUser } from "../lib/tenant";
 
 const router = Router();
 
@@ -40,7 +41,7 @@ router.get("/subscription/status", authenticate, wrap(async (req, res) => {
   const [user] = await db
     .select()
     .from(erpUsersTable)
-    .where(eq(erpUsersTable.id, req.user!.id));
+    .where(eq(erpUsersTable.id, requireUser(req).id));
 
   if (!user?.company_id) { res.json({ hasSubscription: false }); return; }
 

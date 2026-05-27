@@ -289,7 +289,10 @@ export async function triggerBackup(trigger: string): Promise<typeof backupsTabl
       ALERT_TYPES.BACKUP_FAILED,
       "النسخة الاحتياطية تعمل بشكل طبيعي"
     );
-    return record!;
+    if (!record) {
+      throw new Error("فشل في تسجيل النسخة الاحتياطية في قاعدة البيانات");
+    }
+    return record;
   } catch (err) {
     logger.error({ trigger, err }, "Backup failed");
     void alertManager.send({

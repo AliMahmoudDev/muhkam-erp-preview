@@ -19,6 +19,7 @@ import {
 import { wrap } from "../../../lib/async-handler";
 import { hasPermission } from "../../../lib/permissions";
 import { ctx, ensureCompanyDefaults } from "../_shared";
+import { getTenant } from "../../../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -138,7 +139,7 @@ router.get("/repair-jobs/reports/technicians", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_repairs")) {
     res.status(403).json({ error: "غير مصرح بعرض تقارير الفنيين" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const { from, to } = req.query as { from?: string; to?: string };
 
   const conditions = [eq(repairJobsTable.company_id, companyId)];
@@ -169,7 +170,7 @@ router.get("/repair-jobs/reports/revenue", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_repairs")) {
     res.status(403).json({ error: "غير مصرح بعرض تقارير الإيرادات" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const { from, to } = req.query as { from?: string; to?: string };
 
   const conditions = [

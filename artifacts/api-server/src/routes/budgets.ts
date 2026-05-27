@@ -7,6 +7,7 @@ import { z } from "zod/v4";
 import { db, budgetsTable, budgetLinesTable, accountsTable } from "@workspace/db";
 import { wrap, httpError } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 router.use("/budgets", requireFeature("budgets"));
@@ -31,7 +32,7 @@ function fmtBudget(b: typeof budgetsTable.$inferSelect) {
 
 /* GET /api/budgets */
 router.get("/budgets", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const budgets = await db.select().from(budgetsTable)
     .where(eq(budgetsTable.company_id, cid))
     .orderBy(desc(budgetsTable.created_at));
@@ -40,7 +41,7 @@ router.get("/budgets", wrap(async (req, res) => {
 
 /* POST /api/budgets */
 router.post("/budgets", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const parsed = createBudgetSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "بيانات الميزانية غير صالحة", details: parsed.error.issues.map(i => i.message) }); return;
@@ -57,7 +58,7 @@ router.post("/budgets", wrap(async (req, res) => {
 
 /* GET /api/budgets/:id */
 router.get("/budgets/:id", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const [budget] = await db.select().from(budgetsTable)
     .where(and(eq(budgetsTable.id, Number(req.params.id)), eq(budgetsTable.company_id, cid)));
   if (!budget) throw httpError(404, "الميزانية غير موجودة");
@@ -71,7 +72,7 @@ router.get("/budgets/:id", wrap(async (req, res) => {
 
 /* PUT /api/budgets/:id/lines — تحديث سطر الميزانية */
 router.put("/budgets/:id/lines", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const budgetId = Number(req.params.id);
 
   const [budget] = await db.select().from(budgetsTable)
@@ -125,7 +126,7 @@ router.put("/budgets/:id/lines", wrap(async (req, res) => {
 
 /* GET /api/budgets/:id/actual-vs-budget */
 router.get("/budgets/:id/actual-vs-budget", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   const [budget] = await db.select().from(budgetsTable)
     .where(and(eq(budgetsTable.id, Number(req.params.id)), eq(budgetsTable.company_id, cid)));
   if (!budget) throw httpError(404, "الميزانية غير موجودة");
@@ -200,7 +201,7 @@ router.get("/budgets/:id/actual-vs-budget", wrap(async (req, res) => {
 
 /* DELETE /api/budgets/:id */
 router.delete("/budgets/:id", wrap(async (req, res) => {
-  const cid = req.user!.company_id!;
+  const cid = getTenant(req);
   await db.delete(budgetLinesTable)
     .where(and(eq(budgetLinesTable.budget_id, Number(req.params.id)), eq(budgetLinesTable.company_id, cid)));
   await db.delete(budgetsTable)

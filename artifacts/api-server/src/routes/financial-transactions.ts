@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, desc, and, gte, lte, or, ilike } from "drizzle-orm";
 import { db, transactionsTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -10,7 +11,7 @@ function fmt(t: typeof transactionsTable.$inferSelect) {
 }
 
 router.get("/financial-transactions", wrap(async (req, res) => {
-  const cid: number = req.user!.company_id!;
+  const cid: number = getTenant(req);
   const { safe_id, direction, type, from, to, search } = req.query as Record<string, string>;
   const conditions = [eq(transactionsTable.company_id, cid)];
 

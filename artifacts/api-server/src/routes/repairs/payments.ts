@@ -11,6 +11,7 @@ import {
 import { wrap } from "../../lib/async-handler";
 import { hasPermission } from "../../lib/permissions";
 import { repairPaymentSchema } from "./_shared";
+import { getTenant } from "../../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -23,7 +24,7 @@ router.get("/repair-jobs/:id/payments", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_repairs")) {
     res.status(403).json({ error: "غير مصرح بعرض دفعات الصيانة" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const jobId = parseInt(String(req.params["id"]), 10);
 
   const [job] = await db.select({ id: repairJobsTable.id })
@@ -43,7 +44,7 @@ router.post("/repair-jobs/:id/payments", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_repairs")) {
     res.status(403).json({ error: "غير مصرح بتسجيل دفعات الصيانة" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id;
   const userName = req.user?.username ?? "";
   const jobId = parseInt(String(req.params["id"]), 10);
@@ -91,6 +92,10 @@ router.post("/repair-jobs/:id/payments", wrap(async (req, res) => {
       safe_name: safeName,
     }).returning();
 
+    if (!pmt) {
+      throw new Error("فشل في تسجيل الدفعة — لم تُرجع قاعدة البيانات سجلاً");
+    }
+
     /* 2) قيد الخزنة + سطر معاملة مرتبط بـ payment.id (ربط 1:1 محكم) */
     if (safe_id && safeName) {
       const safeIdNum = Number(safe_id);
@@ -100,13 +105,13 @@ router.post("/repair-jobs/:id/payments", wrap(async (req, res) => {
       await tx.insert(transactionsTable).values({
         type: "repair_payment",
         reference_type: "repair_payment",
-        reference_id: pmt!.id,
+        reference_id: pmt.id,
         safe_id: safeIdNum,
         safe_name: safeName,
         amount: String(numAmount),
         direction: "in",
         description: `دفعة صيانة — بطاقة ${job.job_no}`,
-        date: new Date().toISOString().split("T")[0]!,
+        date: new Date().toISOString().split("T")[0] ?? new Date().toISOString().slice(0, 10),
         company_id: companyId,
       });
     }
@@ -129,7 +134,7 @@ router.post("/repair-jobs/:id/payments", wrap(async (req, res) => {
       status_to: job.status,
     });
 
-    return pmt!;
+    return pmt;
   });
 
   res.status(201).json({ ...payment, amount: Number(payment.amount) });
@@ -140,7 +145,7 @@ router.delete("/repair-jobs/:id/payments/:pid", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_repairs")) {
     res.status(403).json({ error: "غير مصرح بحذف دفعات الصيانة" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const userId = req.user?.id;
   const userName = req.user?.username ?? "";
   const jobId = parseInt(String(req.params["id"]), 10);

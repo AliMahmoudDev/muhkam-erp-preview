@@ -11,6 +11,7 @@ import {
 import { wrap } from "../lib/async-handler";
 import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
 import { z } from "zod/v4";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -52,7 +53,7 @@ const OpeningBalanceSupplierBody = z.object({
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get("/opening-balance/product", wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
   const movements = await db
     .select()
     .from(stockMovementsTable)
@@ -85,7 +86,7 @@ router.post("/inventory/opening-balance", wrap(async (req, res) => {
   const queryWarehouseId = req.query.warehouse_id ? parseInt(String(req.query.warehouse_id), 10) : null;
   const effectiveWarehouseId = (role === "admin" || role === "manager") ? queryWarehouseId : (req.user?.warehouse_id ?? null);
 
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
 
   const tenantWarehouseId = await resolveTenantWarehouseId(effectiveWarehouseId, companyId);
 
@@ -163,7 +164,7 @@ router.post("/inventory/opening-balance", wrap(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get("/opening-balance/treasury", wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
   const txns = await db
     .select()
     .from(transactionsTable)
@@ -181,7 +182,7 @@ router.get("/opening-balance/treasury", wrap(async (req, res) => {
 }));
 
 router.post("/opening-balance/treasury", wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
 
   const parsed = OpeningBalanceTreasuryBody.safeParse(req.body);
   if (!parsed.success) {
@@ -228,7 +229,7 @@ router.post("/opening-balance/treasury", wrap(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get("/opening-balance/customer", wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
   const txns = await db
     .select()
     .from(transactionsTable)
@@ -246,7 +247,7 @@ router.get("/opening-balance/customer", wrap(async (req, res) => {
 }));
 
 router.post("/opening-balance/customer", wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
 
   const parsed = OpeningBalanceCustomerBody.safeParse(req.body);
   if (!parsed.success) {
@@ -293,7 +294,7 @@ router.post("/opening-balance/customer", wrap(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get("/opening-balance/supplier", wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
   const txns = await db
     .select()
     .from(transactionsTable)
@@ -311,7 +312,7 @@ router.get("/opening-balance/supplier", wrap(async (req, res) => {
 }));
 
 router.post("/opening-balance/supplier", wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
 
   const parsed = OpeningBalanceSupplierBody.safeParse(req.body);
   if (!parsed.success) {
@@ -320,7 +321,11 @@ router.post("/opening-balance/supplier", wrap(async (req, res) => {
   }
 
   const { supplier_id, customer_id: qCustId, amount: amt, date, notes } = parsed.data;
-  const custId = supplier_id ?? qCustId!;
+  const custId = supplier_id ?? qCustId;
+  if (!custId) {
+    res.status(400).json({ error: "يجب تحديد المورد أو العميل" });
+    return;
+  }
 
   const [customer] = await db
     .select()

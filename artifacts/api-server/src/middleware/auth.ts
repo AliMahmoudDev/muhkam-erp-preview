@@ -313,7 +313,7 @@ export function sanitizeBody(req: Request, _res: Response, next: NextFunction): 
    requireTenant — MANDATORY tenant resolution guard.
    Must run AFTER `authenticate`. Rejects any non-super_admin
    request that has no company_id. Eliminates `?? 1` fallbacks
-   completely — every route can safely use req.user!.company_id!
+   completely — every route can safely use getTenant(req)
    after this middleware passes.
    ───────────────────────────────────────────────────────── */
 /**

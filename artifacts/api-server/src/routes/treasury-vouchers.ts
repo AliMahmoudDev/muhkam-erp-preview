@@ -6,6 +6,7 @@ import { z } from "zod/v4";
 import { firstZodError } from "../lib/schemas";
 import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { getTenant } from "../middleware/auth";
 
 const createTreasuryVoucherSchema = z.object({
   type: z.enum(["receipt", "payment"]),
@@ -20,7 +21,7 @@ const router: IRouter = Router();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCid(req: any): number {
-  return req.user!.company_id!;
+  return getTenant(req);
 }
 
 function fmt(v: typeof treasuryVouchersTable.$inferSelect) {

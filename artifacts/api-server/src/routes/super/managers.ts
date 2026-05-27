@@ -9,6 +9,7 @@ import { authenticate, requireRole } from "../../middleware/auth";
 import { wrap } from "../../lib/async-handler";
 import { hashPin } from "../../lib/hash";
 import { writeAuditLog } from "../../lib/audit-log";
+import { requireUser } from "../../lib/tenant";
 
 const router = Router();
 const superOnly = [authenticate, requireRole("super_admin")];
@@ -109,7 +110,7 @@ router.patch("/super/managers/:id", ...superOnly, wrap(async (req, res) => {
 /* ── PATCH /super/managers/:id/toggle — toggle active status ── */
 router.patch("/super/managers/:id/toggle", ...superOnly, wrap(async (req, res) => {
   const id = Number(req.params.id);
-  if (id === req.user!.id) { res.status(400).json({ error: "لا يمكن إيقاف حسابك الحالي" }); return; }
+  if (id === requireUser(req).id) { res.status(400).json({ error: "لا يمكن إيقاف حسابك الحالي" }); return; }
 
   const [manager] = await db.select().from(erpUsersTable).where(eq(erpUsersTable.id, id));
   if (!manager || manager.role !== "super_admin") { res.status(404).json({ error: "المدير غير موجود" }); return; }
@@ -131,7 +132,7 @@ router.patch("/super/managers/:id/toggle", ...superOnly, wrap(async (req, res) =
 /* ── DELETE /super/managers/:id — remove a super_admin ── */
 router.delete("/super/managers/:id", ...superOnly, wrap(async (req, res) => {
   const id = Number(req.params.id);
-  if (id === req.user!.id) { res.status(400).json({ error: "لا يمكن حذف حسابك الحالي" }); return; }
+  if (id === requireUser(req).id) { res.status(400).json({ error: "لا يمكن حذف حسابك الحالي" }); return; }
 
   const allManagers = await db
     .select({ id: erpUsersTable.id })

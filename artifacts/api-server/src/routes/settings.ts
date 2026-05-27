@@ -77,6 +77,7 @@ import { invalidateClosingDateCache } from "../lib/period-lock";
 import { writeAuditLog } from "../lib/audit-log";
 import { auditLogsTable } from "@workspace/db";
 import { setCache, getCache, deleteCache } from "../lib/cache";
+import { requireUser } from "../lib/tenant";
 
 const router = Router();
 
@@ -132,7 +133,7 @@ router.post("/settings/users", authenticate, requireRole("admin"), wrap(async (r
   if (!v.success) { res.status(400).json({ error: "بيانات غير صحيحة", details: v.errors }); return; }
 
   const { name, username, pin, role, permissions, warehouse_id, safe_id, active, employee_id } = v.data;
-  const companyId = req.user!.company_id ?? undefined;
+  const companyId = requireUser(req).company_id ?? undefined;
 
   if ((role as string) === "super_admin") {
     res.status(403).json({ error: "لا يمكن إنشاء حساب مسؤول عام من هنا" }); return;
@@ -158,10 +159,10 @@ router.post("/settings/users", authenticate, requireRole("admin"), wrap(async (r
     record_type: "user",
     record_id: user.id,
     new_value: { name: user.name, username: user.username, role: user.role },
-    user: { id: req.user!.id, username: req.user!.username },
+    user: { id: requireUser(req).id, username: requireUser(req).username },
     company_id: companyId,
   });
-  await deleteCache(`users:${req.user!.company_id}`);
+  await deleteCache(`users:${requireUser(req).company_id}`);
   res.json({ ...user, pin: "****" });
 }));
 
@@ -170,7 +171,7 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
   if (!v.success) { res.status(400).json({ error: "بيانات غير صحيحة", details: v.errors }); return; }
 
   const id = Number(req.params.id);
-  const requesterId = req.user!.id;
+  const requesterId = requireUser(req).id;
   const companyId = getTenant(req);
   const { name, username, pin, role, permissions, active, warehouse_id, safe_id, employee_id, repair_commission_pct, repair_specialty, repair_notifications } = v.data;
 
@@ -184,7 +185,7 @@ router.put("/settings/users/:id", authenticate, requireRole("admin"), wrap(async
   if (target.role === "super_admin") {
     res.status(403).json({ error: "لا يمكن تعديل حساب المسؤول العام من هنا" }); return;
   }
-  if (requesterId === id && role !== undefined && role !== req.user!.role) {
+  if (requesterId === id && role !== undefined && role !== requireUser(req).role) {
     res.status(403).json({ error: "لا يمكنك تغيير دورك الخاص" }); return;
   }
 
@@ -214,7 +215,7 @@ router.delete("/settings/users/:id", authenticate, requireRole("admin"), wrap(as
   const id = Number(req.params.id);
   const companyId = getTenant(req);
 
-  if (req.user!.id === id) {
+  if (requireUser(req).id === id) {
     res.status(403).json({ error: "لا يمكنك حذف حسابك الخاص" }); return;
   }
 
@@ -232,7 +233,7 @@ router.delete("/settings/users/:id", authenticate, requireRole("admin"), wrap(as
     record_type: "user",
     record_id: id,
     old_value: { name: target.name, username: target.username, role: target.role },
-    user: { id: req.user!.id, username: req.user!.username },
+    user: { id: requireUser(req).id, username: requireUser(req).username },
     company_id: companyId,
   });
   await deleteCache(`users:${companyId}`);
@@ -264,7 +265,7 @@ router.put("/settings/safes/:id", authenticate, requireRole("admin"), requireTen
   const parsedSafeU = updateSafeSchema.safeParse(req.body);
   if (!parsedSafeU.success) { res.status(400).json({ error: firstZodError(parsedSafeU.error) }); return; }
   const id = Number(req.params.id);
-  const tenant = req.user!.company_id!;
+  const tenant = getTenant(req);
   const { name, balance, branch_id } = parsedSafeU.data;
   const updates: Record<string, unknown> = {};
   if (name !== undefined) updates.name = String(name).trim();
@@ -280,7 +281,7 @@ router.put("/settings/safes/:id", authenticate, requireRole("admin"), requireTen
 
 router.delete("/settings/safes/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const tenant = req.user!.company_id!;
+  const tenant = getTenant(req);
   const [safe] = await db.select().from(safesTable)
     .where(and(eq(safesTable.id, id), eq(safesTable.company_id, tenant)));
   if (!safe) { res.status(404).json({ error: "الخزينة غير موجودة" }); return; }
@@ -320,7 +321,7 @@ router.post("/settings/safes/:id/close", authenticate, requireRole("admin"), req
   const parsedClose = closeSafeSchema.safeParse(req.body);
   if (!parsedClose.success) { res.status(400).json({ error: firstZodError(parsedClose.error) }); return; }
   const id = Number(req.params.id);
-  const tenant = req.user!.company_id!;
+  const tenant = getTenant(req);
   const { date, actual_balance, notes } = parsedClose.data;
   const closeDate = date ?? new Date().toISOString().split("T")[0];
 
@@ -400,7 +401,7 @@ router.post("/settings/safes/:id/close", authenticate, requireRole("admin"), req
 
 router.get("/settings/safes/:id/statement", authenticate, requireTenantStrict, wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const tenant = req.user!.company_id!;
+  const tenant = getTenant(req);
   const { date_from, date_to } = req.query as { date_from?: string; date_to?: string };
 
   const [safe] = await db.select().from(safesTable)
@@ -469,7 +470,7 @@ router.put("/settings/warehouses/:id", authenticate, requireRole("admin"), requi
   const parsedWHU = updateWarehouseSchema.safeParse(req.body);
   if (!parsedWHU.success) { res.status(400).json({ error: firstZodError(parsedWHU.error) }); return; }
   const id = Number(req.params.id);
-  const tenant = req.user!.company_id!;
+  const tenant = getTenant(req);
   const { name, address, branch_id } = parsedWHU.data;
   const updates: Record<string, unknown> = {};
   if (name    !== undefined) updates.name      = String(name).trim();
@@ -485,7 +486,7 @@ router.put("/settings/warehouses/:id", authenticate, requireRole("admin"), requi
 
 router.delete("/settings/warehouses/:id", authenticate, requireRole("admin"), requireTenantStrict, wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const tenant = req.user!.company_id!;
+  const tenant = getTenant(req);
   const [wh] = await db.select().from(warehousesTable)
     .where(and(eq(warehousesTable.id, id), eq(warehousesTable.company_id, tenant)));
   if (!wh) { res.status(404).json({ error: "المخزن غير موجود" }); return; }
@@ -509,7 +510,7 @@ router.delete("/settings/warehouses/:id", authenticate, requireRole("admin"), re
 // ─── PERIOD LOCK ──────────────────────────────────────────────────────────────
 
 router.get("/settings/period", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const s = await readSettings(["closing_date", "lock_locked_by", "lock_locked_at", "lock_mode"], companyId);
   res.json({
     closing_date: s["closing_date"],
@@ -526,7 +527,7 @@ router.put("/settings/period", authenticate, requireRole("admin"), wrap(async (r
   const { closing_date, unlock_reason, lock_mode } = parsedPeriod.data;
   const username  = req.user?.username  ?? "مجهول";
   const userId    = req.user?.id        ?? null;
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
 
   if (closing_date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(closing_date)) {
@@ -603,8 +604,8 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
     res.status(400).json({ error: "يجب كتابة عبارة التأكيد بشكل صحيح" }); return;
   }
 
-  const companyId     = req.user!.company_id!;
-  const currentUserId = req.user!.id;
+  const companyId     = getTenant(req);
+  const currentUserId = requireUser(req).id;
 
   await db.transaction(async (tx) => {
     const cid = companyId;
@@ -751,7 +752,7 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
 
 router.get("/customers/:id/statement", authenticate, wrap(async (req, res) => {
   const customerId = Number(req.params.id as string);
-  const companyId  = req.user!.company_id!;
+  const companyId  = getTenant(req);
 
   const [customer] = await db.select().from(customersTable)
     .where(and(eq(customersTable.id, customerId), eq(customersTable.company_id, companyId)));

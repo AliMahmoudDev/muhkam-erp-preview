@@ -40,9 +40,12 @@ export function generateTOTPSecret(username: string) {
     issuer: APP_NAME,
     length: 32,
   });
+  if (!secret.otpauth_url) {
+    throw new Error("فشل في إنشاء رابط TOTP — لم يُنتج المكتبة otpauth_url");
+  }
   return {
     secret:       secret.base32,
-    otpauth_url:  secret.otpauth_url!,
+    otpauth_url:  secret.otpauth_url,
   };
 }
 

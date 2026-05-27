@@ -46,6 +46,7 @@ import {
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
 import { writeAuditLog } from "../lib/audit-log";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -69,7 +70,7 @@ router.post("/inventory/count-sessions", wrap(async (req, res) => {
 
   const { warehouse_id, notes, items } = parsedSession.data;
 
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const tenantWarehouseId = await resolveTenantWarehouseId(warehouse_id ?? null, companyId);
 
   const productIds = items.map(i => i.product_id);
@@ -138,7 +139,7 @@ router.get("/inventory/count-sessions", wrap(async (req, res) => {
   }
 
   const sessions = await db.select().from(stockCountSessionsTable)
-    .where(eq(stockCountSessionsTable.company_id, req.user!.company_id!))
+    .where(eq(stockCountSessionsTable.company_id, getTenant(req)))
     .orderBy(stockCountSessionsTable.created_at);
 
   res.json(sessions.map(s => ({
@@ -159,7 +160,7 @@ router.get("/inventory/count-sessions/:id", wrap(async (req, res) => {
 
   const sessionId = parseInt(String(req.params.id));
   const [session] = await db.select().from(stockCountSessionsTable)
-    .where(and(eq(stockCountSessionsTable.id, sessionId), eq(stockCountSessionsTable.company_id, req.user!.company_id!)));
+    .where(and(eq(stockCountSessionsTable.id, sessionId), eq(stockCountSessionsTable.company_id, getTenant(req))));
 
   if (!session) { res.status(404).json({ error: "جلسة الجرد غير موجودة" }); return; }
 
@@ -208,7 +209,7 @@ router.post("/inventory/count-sessions/:id/apply", wrap(async (req, res) => {
 
   const sessionId = parseInt(String(req.params.id));
   const [session] = await db.select().from(stockCountSessionsTable)
-    .where(and(eq(stockCountSessionsTable.id, sessionId), eq(stockCountSessionsTable.company_id, req.user!.company_id!)));
+    .where(and(eq(stockCountSessionsTable.id, sessionId), eq(stockCountSessionsTable.company_id, getTenant(req))));
 
   if (!session) { res.status(404).json({ error: "جلسة الجرد غير موجودة" }); return; }
   if (session.status === "applied") {
@@ -231,7 +232,7 @@ router.post("/inventory/count-sessions/:id/apply", wrap(async (req, res) => {
   }
 
   const productIds = items.map(i => i.product_id);
-  const products = await db.select().from(productsTable).where(and(inArray(productsTable.id, productIds), eq(productsTable.company_id, req.user!.company_id!)));
+  const products = await db.select().from(productsTable).where(and(inArray(productsTable.id, productIds), eq(productsTable.company_id, getTenant(req))));
   const productMap = new Map(products.map(p => [p.id, p]));
   const missingProd = productIds.filter(pid => !productMap.has(pid));
   if (missingProd.length > 0) {
@@ -255,7 +256,7 @@ router.post("/inventory/count-sessions/:id/apply", wrap(async (req, res) => {
       // تحديث كمية المنتج
       await tx.update(productsTable)
         .set({ quantity: String(newQty) })
-        .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, req.user!.company_id!)));
+        .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, getTenant(req))));
 
       // تسجيل حركة المخزون
       const refNo = `CNT-${session.id}-${item.product_id}`;
@@ -282,7 +283,7 @@ router.post("/inventory/count-sessions/:id/apply", wrap(async (req, res) => {
     // تحديث حالة الجلسة
     await tx.update(stockCountSessionsTable)
       .set({ status: "applied", applied_at: new Date() })
-      .where(and(eq(stockCountSessionsTable.id, sessionId), eq(stockCountSessionsTable.company_id, req.user!.company_id!)));
+      .where(and(eq(stockCountSessionsTable.id, sessionId), eq(stockCountSessionsTable.company_id, getTenant(req))));
   });
 
   // سجل audit
@@ -346,7 +347,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
   const aggregatedItems = Array.from(aggregatedMap.entries()).map(([pid, qty]) => ({ product_id: pid, quantity: qty }));
 
   // التحقق من أن المخازن موجودة وتنتمي للشركة
-  const companyIdT = req.user!.company_id!;
+  const companyIdT = getTenant(req);
   const [fromWH] = await db.select().from(warehousesTable).where(and(eq(warehousesTable.id, Number(from_warehouse_id)), eq(warehousesTable.company_id, companyIdT)));
   const [toWH]   = await db.select().from(warehousesTable).where(and(eq(warehousesTable.id, Number(to_warehouse_id)), eq(warehousesTable.company_id, companyIdT)));
   if (!fromWH) { res.status(404).json({ error: `مخزن المصدر غير موجود: ${from_warehouse_id}` }); return; }
@@ -438,7 +439,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
         notes: `تحويل مخزن خروج → ${toWH.name}`,
         date:  today,
         warehouse_id:  Number(from_warehouse_id),
-        company_id:    req.user!.company_id!,
+        company_id:    getTenant(req),
       });
 
       // حركة دخول إلى المخزن الهدف
@@ -455,7 +456,7 @@ router.post("/inventory/transfers", wrap(async (req, res) => {
         notes: `تحويل مخزن دخول ← ${fromWH.name}`,
         date:  today,
         warehouse_id:  Number(to_warehouse_id),
-        company_id:    req.user!.company_id!,
+        company_id:    getTenant(req),
       });
     }
 
@@ -497,7 +498,7 @@ router.get("/inventory/transfers", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_inventory")) {
     res.status(403).json({ error: "ليس لديك صلاحية عرض التحويلات" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const rows = await db
     .select()
     .from(stockMovementsTable)
@@ -524,7 +525,7 @@ router.get("/inventory/count-sessions-enriched", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية عرض الجرد" }); return;
   }
 
-  const cidEnriched = req.user!.company_id!;
+  const cidEnriched = getTenant(req);
   const rows = await db.execute(sql`
     SELECT
       s.id,
@@ -570,7 +571,7 @@ router.get("/inventory/transfers-enriched", wrap(async (req, res) => {
     res.status(403).json({ error: "ليس لديك صلاحية عرض التحويلات" }); return;
   }
 
-  const cidT = req.user!.company_id!;
+  const cidT = getTenant(req);
   const rows = await db.execute(sql`
     SELECT
       t.id,

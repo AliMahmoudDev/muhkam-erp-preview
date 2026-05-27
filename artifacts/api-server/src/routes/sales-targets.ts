@@ -5,6 +5,7 @@ import {
 } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -24,7 +25,7 @@ function monthRange(yearMonth: string): { start: string; end: string } {
 
 /* ── GET /api/sales-targets?month=YYYY-MM ──────────────────────────── */
 router.get("/sales-targets", wrap(async (req, res) => {
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const month = (req.query.month as string) || currentYearMonth();
 
   const [users, targets, achievements] = await Promise.all([
@@ -81,7 +82,7 @@ router.post("/sales-targets", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_users")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const { user_id, year_month, target_amount } = req.body as {
     user_id: number; year_month: string; target_amount: number;
   };
@@ -126,7 +127,7 @@ router.delete("/sales-targets/:id", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_manage_users")) {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
-  const companyId = req.user!.company_id!;
+  const companyId = getTenant(req);
   const id = parseInt(req.params.id as string);
 
   await db.delete(salesTargetsTable).where(and(

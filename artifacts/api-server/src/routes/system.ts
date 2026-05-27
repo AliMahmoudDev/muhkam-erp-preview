@@ -16,7 +16,7 @@ import { db,
   alertsTable, auditLogsTable,
   idempotencyKeysTable,
 } from "@workspace/db";
-import { authenticate, requireRole, requireTenant } from "../middleware/auth";
+import { authenticate, requireRole, requireTenant, getTenant } from "../middleware/auth";
 import { wrap } from "../lib/async-handler";
 import { writeAuditLog } from "../lib/audit-log";
 import { BACKUP_DIR } from "../lib/backup-service";
@@ -38,7 +38,7 @@ const router: IRouter = Router();
    ══════════════════════════════════════════════════════════════════════════ */
 router.post("/system/backup", authenticate, requireRole("admin"), requireTenant,
   wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
   // Drizzle's eq() requires the exact column type; we use a cast to keep the generic helper lean.
   const cEq = <T extends { company_id: unknown }>(t: T) =>
     eq(t.company_id as Parameters<typeof eq>[0], companyId);
@@ -182,7 +182,7 @@ async function claimIdempotency(
 
 router.post("/system/restore", authenticate, requireRole("admin"), requireTenant,
   wrap(async (req, res) => {
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
 
   /* ── -1. Body parsing: raw bytes → JSON object ──────────────────────────
      The /api/system/restore endpoint uses express.raw() (see app.ts) to support

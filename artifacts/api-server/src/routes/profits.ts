@@ -17,6 +17,7 @@ import {
 
 import { wrap } from "../lib/async-handler";
 import { z } from "zod/v4";
+import { getTenant } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -41,7 +42,7 @@ router.get("/profits", wrap(async (req, res) => {
     ? warehouse_ids.split(",").map(Number).filter(n => !isNaN(n) && n > 0)
     : [];
 
-  const companyId: number = req.user!.company_id!;
+  const companyId: number = getTenant(req);
 
   // ── Sale conditions ─────────────────────────────────────────────────────────
   const saleConditions = [ne(salesTable.posting_status, "cancelled"), eq(salesTable.company_id, companyId)];
