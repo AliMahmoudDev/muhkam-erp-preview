@@ -1,5 +1,4 @@
 import { CheckCircle, Loader2, X, FileSpreadsheet, FileText } from 'lucide-react';
-import type { AuditProduct } from '../_shared';
 import type { VarianceData } from './types';
 
 export function CountVarianceSummary({
