@@ -681,13 +681,13 @@ router.post("/settings/reset", authenticate, requireRole("admin"), wrap(async (r
     await tx.execute(sql`DELETE FROM purchase_returns      WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM sales                 WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM purchases             WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM suppliers             WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM receipt_vouchers      WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM deposit_vouchers      WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM payment_vouchers      WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM treasury_vouchers     WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM safe_transfers        WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM stock_movements       WHERE company_id = ${cid}`);
+    await tx.execute(sql`DELETE FROM suppliers             WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM stock_count_sessions  WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM stock_transfers       WHERE company_id = ${cid}`);
     await tx.execute(sql`DELETE FROM expenses              WHERE company_id = ${cid}`);
