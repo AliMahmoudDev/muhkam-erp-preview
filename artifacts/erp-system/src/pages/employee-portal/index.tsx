@@ -15,7 +15,7 @@ import {
 import type { AnyRec } from './types';
 import { fmt, fmtTime, fmtDate, fmtCurrency, todayStr, nDaysAgo, greetingText, calcDuration } from './helpers';
 import { ADVANCE_STATUS, LEAVE_STATUS } from './constants';
-import { Badge, AttBadge, StatusBadge } from './Badge';
+import { AttBadge, StatusBadge } from './Badge';
 import { SectionCard } from './SectionCard';
 import { StatCard } from './StatCard';
 import { AdvanceRequestModal } from './AdvanceRequestModal';
