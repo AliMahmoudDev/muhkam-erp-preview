@@ -1,337 +1,24 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
 import { useAppSettings } from '@/contexts/app-settings';
 import { useToast } from '@/hooks/use-toast';
 import {
   Clock, Calendar, Briefcase, Building2, CheckCircle2,
-  XCircle, Loader2, Sun, Moon, Coffee, TrendingDown,
+  XCircle, Loader2, TrendingDown,
   Gift, FileText, Wallet, UserCheck, AlertCircle,
   Users, MapPin, RotateCcw, LogOut, LogIn,
-  PlusCircle, X, ChevronDown, ChevronUp,
+  PlusCircle,
 } from 'lucide-react';
 
-/* ══════════════════════════════════════════════════
-   HELPERS
-══════════════════════════════════════════════════ */
-type AnyRec = Record<string, unknown>;
-
-function fmt(v: unknown): string {
-  if (v === null || v === undefined || v === '') return '—';
-  return String(v);
-}
-
-function fmtTime(val: unknown): string {
-  if (!val) return '—';
-  const s = String(val);
-  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
-    const [h, m] = s.split(':').map(Number);
-    const d = new Date(); d.setHours(h, m, 0, 0);
-    return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
-  }
-  const d = new Date(s);
-  if (isNaN(d.getTime())) return s;
-  return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
-}
-
-function fmtDate(val: unknown, showWeekday = true): string {
-  if (!val) return '—';
-  const s = String(val);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    const [y, mo, day] = s.split('-').map(Number);
-    return new Date(y, mo - 1, day).toLocaleDateString('ar-EG', {
-      ...(showWeekday ? { weekday: 'short' } : {}),
-      day: 'numeric', month: 'short', year: showWeekday ? undefined : 'numeric',
-    });
-  }
-  const d = new Date(s);
-  if (isNaN(d.getTime())) return s;
-  return d.toLocaleDateString('ar-EG', { ...(showWeekday ? { weekday: 'short' } : {}), day: 'numeric', month: 'short' });
-}
-
-function fmtCurrency(val: unknown, currency = 'EGP'): string {
-  const n = parseFloat(String(val ?? '0'));
-  if (isNaN(n)) return '—';
-  return n.toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ' + currency;
-}
-
-function todayStr() { return new Date().toISOString().split('T')[0]; }
-function nDaysAgo(n: number): string {
-  const d = new Date(); d.setDate(d.getDate() - n);
-  return d.toISOString().split('T')[0];
-}
-
-function greetingText(): { text: string; Icon: typeof Sun } {
-  const h = new Date().getHours();
-  if (h < 12) return { text: 'صباح الخير', Icon: Sun };
-  if (h < 17) return { text: 'مساء الخير', Icon: Coffee };
-  return { text: 'مساء النور', Icon: Moon };
-}
-
-function calcDuration(checkIn: unknown, checkOut: unknown): string {
-  if (!checkIn) return '—';
-  const parse = (v: unknown) => {
-    const s = String(v ?? '');
-    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
-      const [h, m, sec = 0] = s.split(':').map(Number);
-      const d = new Date(); d.setHours(h, m, sec, 0); return d;
-    }
-    return new Date(s);
-  };
-  const inD = parse(checkIn);
-  const outD = checkOut ? parse(checkOut) : new Date();
-  const mins = Math.max(0, Math.round((outD.getTime() - inD.getTime()) / 60000));
-  return `${Math.floor(mins / 60)}س ${mins % 60}د`;
-}
-
-/* ══════════════════════════════════════════════════
-   BADGES
-══════════════════════════════════════════════════ */
-function Badge({ label, color, bg }: { label: string; color: string; bg: string }) {
-  return <span style={{ display:'inline-flex', padding:'2px 9px', borderRadius:6, fontSize:11, fontWeight:700, background:bg, color }}>{label}</span>;
-}
-
-function AttBadge({ s }: { s: string }) {
-  const M: Record<string, [string, string, string]> = {
-    present:  ['حاضر',         '#34d399', 'rgba(52,211,153,0.13)'],
-    absent:   ['غائب',         '#f87171', 'rgba(248,113,113,0.13)'],
-    late:     ['متأخر',        '#fbbf24', 'rgba(251,191,36,0.13)'],
-    on_leave: ['إجازة',        '#60a5fa', 'rgba(96,165,250,0.13)'],
-    holiday:  ['إجازة رسمية', '#a78bfa', 'rgba(167,139,250,0.13)'],
-    half_day: ['نصف يوم',     '#fb923c', 'rgba(251,146,60,0.13)'],
-  };
-  const [label, color, bg] = M[s] ?? [s||'—', '#94a3b8', 'rgba(148,163,184,0.1)'];
-  return <Badge label={label} color={color} bg={bg} />;
-}
-
-function StatusBadge({ s, map }: { s: string; map: Record<string, [string, string, string]> }) {
-  const [label, color, bg] = map[s] ?? [s, '#94a3b8', 'rgba(148,163,184,0.1)'];
-  return <Badge label={label} color={color} bg={bg} />;
-}
-
-const ADVANCE_STATUS: Record<string, [string, string, string]> = {
-  pending:  ['قيد المراجعة', '#fbbf24', 'rgba(251,191,36,0.13)'],
-  approved: ['موافق عليه',   '#34d399', 'rgba(52,211,153,0.13)'],
-  rejected: ['مرفوض',        '#f87171', 'rgba(248,113,113,0.13)'],
-  paid:     ['مدفوع',        '#60a5fa', 'rgba(96,165,250,0.13)'],
-  active:   ['نشط',          '#a78bfa', 'rgba(167,139,250,0.13)'],
-  settled:  ['مسدد',         '#34d399', 'rgba(52,211,153,0.13)'],
-  cancelled:['ملغى',         '#94a3b8', 'rgba(148,163,184,0.1)'],
-};
-const LEAVE_STATUS: Record<string, [string, string, string]> = {
-  pending:  ['قيد الانتظار', '#fbbf24', 'rgba(251,191,36,0.13)'],
-  approved: ['موافق عليه',   '#34d399', 'rgba(52,211,153,0.13)'],
-  rejected: ['مرفوض',        '#f87171', 'rgba(248,113,113,0.13)'],
-  cancelled:['ملغى',         '#94a3b8', 'rgba(148,163,184,0.1)'],
-};
-
-/* ══════════════════════════════════════════════════
-   SECTION CARD
-══════════════════════════════════════════════════ */
-function SectionCard({ icon, title, accent = '#f59e0b', children, isDark, border, cardBg, actions, defaultOpen = true }: {
-  icon: React.ReactNode; title: string; accent?: string; children: React.ReactNode;
-  isDark: boolean; border: string; cardBg: string; actions?: React.ReactNode; defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div style={{ borderRadius:16, border:`1px solid ${border}`, background:cardBg, overflow:'hidden', marginBottom:18 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 18px' }}>
-        <button onClick={() => setOpen(o => !o)} style={{ display:'flex', alignItems:'center', gap:12, flex:1, background:'transparent', border:'none', cursor:'pointer', textAlign:'right', padding:0 }}>
-          <span style={{ width:34, height:34, borderRadius:9, background:`${accent}22`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:accent }}>
-            {icon}
-          </span>
-          <span style={{ fontSize:14, fontWeight:800, color:isDark?'#f1f5f9':'#0f172a', flex:1 }}>{title}</span>
-          <span style={{ color:isDark?'rgba(255,255,255,0.3)':'rgba(0,0,0,0.28)', flexShrink:0 }}>
-            {open ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
-          </span>
-        </button>
-        {actions && <div style={{ flexShrink:0 }}>{actions}</div>}
-      </div>
-      {open && (
-        <div style={{ borderTop:`1px solid ${border}`, padding:'14px 18px' }}>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════
-   STAT CARD
-══════════════════════════════════════════════════ */
-function StatCard({ label, value, icon, color, bg }: { label: string; value: string|number; icon: React.ReactNode; color: string; bg: string }) {
-  return (
-    <div style={{ borderRadius:12, padding:'12px 16px', background:bg, display:'flex', flexDirection:'column', gap:6, flex:1, minWidth:110 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-        <span style={{ color, opacity:0.8 }}>{icon}</span>
-        <span style={{ fontSize:11, color, fontWeight:600, opacity:0.8 }}>{label}</span>
-      </div>
-      <span style={{ fontSize:26, fontWeight:900, color, fontVariantNumeric:'tabular-nums' }}>{value}</span>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════
-   SALARY ADVANCE REQUEST MODAL
-══════════════════════════════════════════════════ */
-const ADVANCE_TYPES = [
-  ['personal',    'شخصي'],
-  ['emergency',   'طارئ'],
-  ['medical',     'علاجي'],
-  ['educational', 'تعليمي'],
-  ['other',       'أخرى'],
-] as const;
-
-function AdvanceRequestModal({ empId, currency, isDark, border, onClose }: {
-  empId: number; currency: string; isDark: boolean; border: string; onClose: () => void;
-}) {
-  const { toast } = useToast();
-  const qc = useQueryClient();
-  const [form, setForm] = useState({
-    requested_amount: '',
-    advance_type: 'personal',
-    reason: '',
-    deduct_from: 'fixed' as 'fixed' | 'commission' | 'both',
-  });
-  const bg = isDark ? 'rgba(8,14,26,0.98)' : '#ffffff';
-  const textMain = isDark ? '#f1f5f9' : '#0f172a';
-  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const inputBg = isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc';
-  const inputStyle = {
-    width:'100%', padding:'10px 14px', borderRadius:10,
-    border:`1px solid ${border}`, background:inputBg, color:textMain,
-    fontSize:14, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const,
-  };
-  const labelStyle = { fontSize:12, fontWeight:700 as const, color:textMain, display:'block' as const, marginBottom:6 };
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: async () => {
-      const res = await authFetch('/api/salary-advances', {
-        method: 'POST',
-        body: JSON.stringify({
-          employee_id: empId,
-          requested_amount: parseFloat(form.requested_amount),
-          advance_type: form.advance_type,
-          reason: form.reason,
-          deduct_from: form.deduct_from,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as Record<string, unknown>;
-        throw new Error(String(j.message ?? j.error ?? 'فشل إرسال الطلب'));
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: 'تم إرسال طلب السلفة ✓', description: 'سيتم مراجعته من قِبل المدير وإشعارك بالنتيجة' });
-      qc.invalidateQueries({ queryKey: ['portal-advances'] });
-      onClose();
-    },
-    onError: (e: Error) => {
-      toast({ title: 'فشل إرسال الطلب', description: e.message, variant: 'destructive' });
-    },
-  });
-
-  return (
-    <div style={{ position:'fixed', inset:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.55)', backdropFilter:'blur(4px)' }}>
-      <div dir="rtl" style={{ width:'100%', maxWidth:460, borderRadius:20, background:bg, border:`1px solid ${border}`, padding:28, position:'relative', boxShadow:'0 20px 60px rgba(0,0,0,0.35)' }}>
-        <button onClick={onClose} style={{ position:'absolute', top:16, left:16, background:'transparent', border:'none', cursor:'pointer', color:isDark?'rgba(255,255,255,0.5)':'rgba(0,0,0,0.4)' }}>
-          <X size={18} />
-        </button>
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:22 }}>
-          <span style={{ width:42, height:42, borderRadius:12, background:'rgba(245,158,11,0.18)', display:'flex', alignItems:'center', justifyContent:'center', color:'#f59e0b', flexShrink:0 }}>
-            <Wallet size={21} />
-          </span>
-          <div>
-            <p style={{ fontSize:16, fontWeight:900, color:textMain }}>طلب سلفة مالية</p>
-            <p style={{ fontSize:12, color:textMuted }}>سيُرسَل للمدير للموافقة</p>
-          </div>
-        </div>
-
-        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-          {/* Amount */}
-          <div>
-            <label style={labelStyle}>المبلغ المطلوب ({currency}) *</label>
-            <input
-              type="number" min="1"
-              value={form.requested_amount}
-              onChange={e => setForm(p => ({ ...p, requested_amount: e.target.value }))}
-              placeholder="أدخل المبلغ..."
-              style={inputStyle}
-            />
-          </div>
-
-          {/* Advance type */}
-          <div>
-            <label style={labelStyle}>نوع السلفة</label>
-            <select
-              value={form.advance_type}
-              onChange={e => setForm(p => ({ ...p, advance_type: e.target.value }))}
-              style={inputStyle}
-            >
-              {ADVANCE_TYPES.map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Deduct from */}
-          <div>
-            <label style={labelStyle}>خصم السلفة من</label>
-            <select
-              value={form.deduct_from}
-              onChange={e => setForm(p => ({ ...p, deduct_from: e.target.value as 'fixed' | 'commission' | 'both' }))}
-              style={inputStyle}
-            >
-              <option value="fixed">الراتب الثابت</option>
-              <option value="commission">العمولة</option>
-              <option value="both">من الراتب الثابت والعمولة معاً</option>
-            </select>
-          </div>
-
-          {/* Reason */}
-          <div>
-            <label style={labelStyle}>سبب الطلب (اختياري)</label>
-            <textarea
-              value={form.reason}
-              onChange={e => setForm(p => ({ ...p, reason: e.target.value }))}
-              placeholder="اكتب سبب السلفة..."
-              rows={3}
-              style={{ ...inputStyle, resize:'vertical' }}
-            />
-          </div>
-
-          {/* Info note */}
-          <div style={{ fontSize:12, color:'#f59e0b', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.20)', borderRadius:9, padding:'10px 14px', lineHeight:1.6 }}>
-            سيصلك إشعار بالنتيجة فور مراجعة الطلب من قِبل المدير
-          </div>
-        </div>
-
-        <div style={{ display:'flex', gap:10, marginTop:22 }}>
-          <button
-            onClick={() => mutate()}
-            disabled={!form.requested_amount || parseFloat(form.requested_amount) <= 0 || isPending}
-            style={{ flex:1, padding:'11px 0', borderRadius:11, border:'none', cursor:'pointer',
-              background:'linear-gradient(135deg, #b45309, #f59e0b)', color:'#fff',
-              fontWeight:800, fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', gap:7,
-              opacity: (!form.requested_amount || parseFloat(form.requested_amount) <= 0 || isPending) ? 0.6 : 1 }}
-          >
-            {isPending ? <Loader2 size={15} className="animate-spin" /> : <PlusCircle size={15} />}
-            {isPending ? 'جاري الإرسال...' : 'إرسال طلب السلفة'}
-          </button>
-          <button
-            onClick={onClose}
-            style={{ padding:'11px 18px', borderRadius:11, border:`1px solid ${border}`, cursor:'pointer',
-              background:'transparent', color:isDark?'rgba(255,255,255,0.6)':'rgba(0,0,0,0.5)', fontWeight:600, fontSize:13 }}
-          >
-            إلغاء
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import type { AnyRec } from './types';
+import { fmt, fmtTime, fmtDate, fmtCurrency, todayStr, nDaysAgo, greetingText, calcDuration } from './helpers';
+import { ADVANCE_STATUS, LEAVE_STATUS } from './constants';
+import { Badge, AttBadge, StatusBadge } from './Badge';
+import { SectionCard } from './SectionCard';
+import { StatCard } from './StatCard';
+import { AdvanceRequestModal } from './AdvanceRequestModal';
 
 /* ══════════════════════════════════════════════════
    MAIN PAGE
@@ -357,6 +44,7 @@ export default function EmployeePortal() {
   const [showAdvanceModal, setShowAdvanceModal] = useState(false);
   const [checkingIn,  setCheckingIn]  = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+
 
   /* ── Queries ── */
   const { data: empRaw } = useQuery<AnyRec>({
@@ -410,6 +98,7 @@ export default function EmployeePortal() {
     enabled: !!empId,
   });
 
+
   const { data: deductionsRaw } = useQuery<AnyRec[]>({
     queryKey: ['portal-deductions', empId],
     queryFn: async () => {
@@ -457,6 +146,7 @@ export default function EmployeePortal() {
       return r.ok ? r.json() : [];
     },
   });
+
 
   /* ── Derived ── */
   const emp       = (empRaw ?? {}) as AnyRec;
@@ -515,6 +205,7 @@ export default function EmployeePortal() {
     return ({ late:'تأخر', absence:'غياب', damage:'تلف', other:'أخرى' }[t] ?? t);
   }
 
+
   if (!empId) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:300, flexDirection:'column', gap:12, color:textMuted }}>
@@ -569,6 +260,7 @@ export default function EmployeePortal() {
           </div>
         </div>
       </div>
+
 
       {/* ── TODAY + JOB INFO ROW ── */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:18, marginBottom:18 }}>
@@ -642,6 +334,7 @@ export default function EmployeePortal() {
           </div>
         </div>
 
+
         {/* Job Info */}
         <div style={{ borderRadius:16, border:`1px solid ${border}`, background:cardBg, padding:18 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
@@ -685,6 +378,7 @@ export default function EmployeePortal() {
           <StatCard label="ساعات"       value={`${Number(summary.total_hours ?? 0).toFixed(0)}س`} icon={<Clock size={15}/>} color="#a78bfa" bg="rgba(167,139,250,0.10)"/>
         </div>
       </div>
+
 
       {/* ── SALARY ADVANCES ── */}
       <SectionCard
@@ -757,6 +451,7 @@ export default function EmployeePortal() {
         )}
       </SectionCard>
 
+
       {/* ── BONUSES ── */}
       <SectionCard icon={<Gift size={17}/>} title={`الحوافز والمكافآت (${bonuses.length})`}
         accent="#34d399" isDark={isDark} border={border} cardBg={cardBg}>
@@ -816,6 +511,7 @@ export default function EmployeePortal() {
           </div>
         )}
       </SectionCard>
+
 
       {/* ── PAYSLIPS ── */}
       <SectionCard icon={<Wallet size={17}/>} title={`قسائم الرواتب (${payslips.length})`}
