@@ -18,7 +18,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, asc } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
-import { db, repairJobsTable, repairStatusHistoryTable, repairStatusesTable } from "@workspace/db";
+import { db, repairJobsTable, repairStatusHistoryTable, repairStatusesTable, repairDevicePhotosTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
 import { isTrackingEnabled, verifyTrackingToken } from "../lib/tracking-token";
 import { z } from "zod/v4";
@@ -110,6 +110,8 @@ router.get("/public/repair-tracking/:companyId/:jobNo", publicTrackingLimiter, w
     estimated_delivery: repairJobsTable.estimated_delivery,
     delivered_at: repairJobsTable.delivered_at,
     company_id: repairJobsTable.company_id,
+    qa_report: repairJobsTable.qa_report,
+    qa_inspector_name: repairJobsTable.qa_inspector_name,
   })
     .from(repairJobsTable)
     .where(and(
@@ -171,6 +173,16 @@ router.get("/public/repair-tracking/:companyId/:jobNo", publicTrackingLimiter, w
     return parts[0] + " " + (parts[1]?.[0] ?? "") + "***";
   })();
 
+  /* صور الجهاز (قبل/بعد) — متاحة للعميل */
+  const photos = await db.select({
+    photo_url: repairDevicePhotosTable.photo_url,
+    photo_type: repairDevicePhotosTable.photo_type,
+    uploaded_at: repairDevicePhotosTable.uploaded_at,
+  })
+    .from(repairDevicePhotosTable)
+    .where(eq(repairDevicePhotosTable.repair_job_id, job.id))
+    .orderBy(asc(repairDevicePhotosTable.uploaded_at));
+
   return res.json({
     job_no: job.job_no,
     customer_name_masked: maskedName,
@@ -179,6 +191,9 @@ router.get("/public/repair-tracking/:companyId/:jobNo", publicTrackingLimiter, w
     received_at: job.received_at,
     estimated_delivery: job.estimated_delivery,
     delivered_at: job.delivered_at,
+    qa_report: job.qa_report ?? null,
+    qa_inspector_name: job.qa_inspector_name ?? null,
+    photos,
     history,
   });
 }));

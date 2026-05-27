@@ -37,6 +37,7 @@ export interface RepairJob {
   problem_description?: string;
   technician_id?: number;
   technician_name?: string;
+  responsible_technician_id?: number;
   status: string;
   checklist?: string;
   device_score?: number;
@@ -53,8 +54,12 @@ export interface RepairJob {
   parts?: RepairPart[];
   history?: HistoryEntry[];
   qa_notes?: string | null;
+  qa_report?: string | null;
+  qa_inspector_name?: string | null;
   qa_checklist?: unknown;
   qa_completed_at?: string | null;
+  delivery_payment_type?: string | null;
+  delivery_safe_id?: number | null;
 }
 
 export interface RepairPart {

@@ -65,4 +65,4 @@ export interface EmpDocument {
 
 export type AnyRec = Record<string, unknown>;
 export type SettleLine = { amount: string; category: string; description: string; date: string };
-export type DetailTab = 'info' | 'loans' | 'deductions' | 'reports' | 'docs' | 'bonuses' | 'custody';
+export type DetailTab = 'info' | 'loans' | 'deductions' | 'reports' | 'docs' | 'bonuses' | 'custody' | 'repairs';

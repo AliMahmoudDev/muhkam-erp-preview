@@ -10,6 +10,7 @@ import {
   departmentsTable,
   jobTitlesTable,
   branchesTable,
+  repairJobsTable,
 } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
@@ -273,6 +274,50 @@ router.delete('/employees/:id', wrap(async (req, res) => {
   await db.insert(employeeStatusHistoryTable).values({ employee_id: id, old_status: 'active', new_status: 'terminated', reason: 'حذف من النظام', changed_by: userId });
   await writeAuditLog({ action: 'delete', record_type: 'employee', record_id: id, new_value: { name: `${emp.first_name_ar} ${emp.last_name_ar}` }, user: { id: userId ?? undefined, username: req.user?.username } });
   res.json({ ok: true });
+}));
+
+/* ── GET /employees/:id/repair-stats — إحصائيات إصلاح الفني ── */
+router.get('/employees/:id/repair-stats', wrap(async (req, res) => {
+  const canView = hasPermission(req.user, 'can_view_employees') || hasPermission(req.user, 'can_view_repairs');
+  if (!canView) { res.status(403).json({ error: 'غير مصرح' }); return; }
+
+  const companyId = req.user!.company_id!;
+  const empId = parseInt(String(req.params['id']), 10);
+  if (!Number.isFinite(empId) || empId <= 0) { res.status(400).json({ error: 'معرّف الموظف غير صحيح' }); return; }
+
+  const jobs = await db.select({
+    id: repairJobsTable.id,
+    job_no: repairJobsTable.job_no,
+    customer_name: repairJobsTable.customer_name,
+    device_brand: repairJobsTable.device_brand,
+    device_model: repairJobsTable.device_model,
+    status: repairJobsTable.status,
+    final_cost: repairJobsTable.final_cost,
+    received_at: repairJobsTable.received_at,
+    delivered_at: repairJobsTable.delivered_at,
+  }).from(repairJobsTable)
+    .where(and(
+      eq(repairJobsTable.company_id, companyId),
+      or(
+        eq(repairJobsTable.technician_id, empId),
+        eq(repairJobsTable.technician_2_id, empId),
+        eq(repairJobsTable.responsible_technician_id, empId),
+      ),
+    ))
+    .orderBy(desc(repairJobsTable.created_at))
+    .limit(200);
+
+  const totalRevenue = jobs.reduce((sum, j) => sum + Number(j.final_cost ?? 0), 0);
+
+  res.json({
+    employee_id: empId,
+    jobs_count: jobs.length,
+    total_revenue: totalRevenue,
+    jobs: jobs.map(j => ({
+      ...j,
+      final_cost: Number(j.final_cost ?? 0),
+    })),
+  });
 }));
 
 export default router;

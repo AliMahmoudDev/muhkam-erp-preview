@@ -252,6 +252,7 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
     "broker_name","alert_days_threshold","qa_notes",
     "accessories","branch_id","device_pin",
     "device_brand","device_model",
+    "qa_report","qa_inspector_name",
   ];
   // eslint-disable-next-line security/detect-object-injection
   for (const f of FIELDS) if (f in b) updates[f] = (b as Record<string, unknown>)[f];
@@ -280,6 +281,7 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
   }
 
   if ("device_score" in b) updates.device_score = b.device_score ? Number(b.device_score) : null;
+  if ("responsible_technician_id" in b) updates.responsible_technician_id = b.responsible_technician_id ? Number(b.responsible_technician_id) : null;
   if ("checklist" in b)    updates.checklist = JSON.stringify(b.checklist);
   if ("qa_checklist" in b) {
     updates.qa_checklist = JSON.stringify(b.qa_checklist);

@@ -850,4 +850,97 @@ router.post("/repair-jobs/:id/delivery-receipt", wrap(async (req, res) => {
   return res.json(updated);
 }));
 
+/* ══════════════════════════════════════════════════════════════
+   DELIVERY PAYMENT — تسجيل طريقة الدفع عند التسليم
+══════════════════════════════════════════════════════════════ */
+
+/**
+ * POST /repair-jobs/:id/delivery-payment
+ *
+ * يُسجّل طريقة الدفع عند تسليم الجهاز:
+ * - cash / instant_transfer: يُضاف المبلغ المتبقي إلى الخزنة المختارة
+ * - deferred: يُنشئ ذمّة مدينة (لا يُعدّل رصيد الخزنة)
+ *
+ * Body: { payment_type: 'cash'|'deferred'|'instant_transfer', safe_id?: number }
+ */
+router.post("/repair-jobs/:id/delivery-payment", wrap(async (req, res) => {
+  if (!hasPermission(req.user, "can_manage_repairs")) {
+    return res.status(403).json({ error: "غير مصرح بتسجيل دفعات التسليم" });
+  }
+  const { company_id, user_id, user_name } = ctx(req);
+  const id = Number(req.params.id);
+  const b = req.body as Record<string, unknown>;
+
+  const paymentType = String(b.payment_type ?? "").trim();
+  if (!["cash", "deferred", "instant_transfer"].includes(paymentType)) {
+    return res.status(400).json({ error: "نوع الدفع غير صحيح — يجب أن يكون: cash أو deferred أو instant_transfer" });
+  }
+
+  const safeId = b.safe_id ? Number(b.safe_id) : null;
+  if ((paymentType === "cash" || paymentType === "instant_transfer") && (!safeId || safeId <= 0)) {
+    return res.status(400).json({ error: "يجب اختيار خزنة عند الدفع النقدي أو التحويل الفوري" });
+  }
+
+  const [job] = await db.select().from(repairJobsTable)
+    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)));
+  if (!job) return res.status(404).json({ error: "البطاقة غير موجودة" });
+
+  /* حساب المتبقي */
+  const finalCost = Number(job.final_cost ?? 0);
+  const depositPaid = Number(job.deposit_paid ?? 0);
+  const shipping = Number(job.shipping_cost ?? 0);
+  const discount = Number(job.final_discount ?? 0);
+  const totalDue = finalCost + shipping - discount;
+  const remaining = Math.max(0, totalDue - depositPaid);
+
+  const updated = await db.transaction(async (tx) => {
+    /* تسجيل نوع الدفع والخزنة في البطاقة */
+    const [upd] = await tx.update(repairJobsTable).set({
+      delivery_payment_type: paymentType,
+      delivery_safe_id: safeId,
+      updated_at: new Date(),
+    }).where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
+      .returning();
+
+    /* إذا كان الدفع نقدي أو تحويل فوري والمتبقي > 0: أضف للخزنة */
+    if ((paymentType === "cash" || paymentType === "instant_transfer") && remaining > 0 && safeId) {
+      await tx.update(safesTable)
+        .set({ balance: sql`${safesTable.balance} + ${String(remaining)}` })
+        .where(and(eq(safesTable.id, safeId), eq(safesTable.company_id, company_id)));
+
+      await tx.insert(transactionsTable).values({
+        type: "repair_payment",
+        reference_type: "repair_delivery",
+        reference_id: id,
+        safe_id: safeId,
+        amount: String(remaining),
+        direction: "in",
+        description: `دفعة تسليم صيانة — بطاقة ${job.job_no} (${paymentType === "cash" ? "نقدي" : "تحويل فوري"})`,
+        date: new Date().toISOString().split("T")[0]!,
+        company_id,
+      });
+
+      /* تحديث deposit_paid */
+      await tx.update(repairJobsTable).set({
+        deposit_paid: String(depositPaid + remaining),
+      }).where(eq(repairJobsTable.id, id));
+    }
+
+    /* سجل في التاريخ */
+    const typeLabel = paymentType === "cash" ? "نقدي" : paymentType === "instant_transfer" ? "تحويل فوري" : "آجل";
+    await tx.insert(repairStatusHistoryTable).values({
+      job_id: id,
+      company_id,
+      user_id,
+      user_name,
+      event_type: "delivery_payment",
+      note: `تسجيل دفعة تسليم: ${typeLabel}${remaining > 0 ? ` — ${remaining.toFixed(2)}` : ""}`,
+    });
+
+    return upd;
+  });
+
+  return res.json(updated);
+}));
+
 export default router;

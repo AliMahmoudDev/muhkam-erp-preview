@@ -13,6 +13,9 @@ interface TrackData {
   received_at: string | null;
   estimated_delivery: string | null;
   delivered_at: string | null;
+  qa_report: string | null;
+  qa_inspector_name: string | null;
+  photos: Array<{ photo_url: string; photo_type: string; uploaded_at: string }>;
   history: TrackHistory[];
 }
 
@@ -181,6 +184,46 @@ export default function RepairTrack() {
                 })()}
               </div>
             </div>
+
+            {/* QA Report */}
+            {data.qa_report && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                <div className="px-5 py-3 bg-white/[0.02] border-b border-white/8">
+                  <span className="text-[12px] text-white/50 font-semibold">تقرير مراقبة الجودة</span>
+                </div>
+                <div className="px-5 py-4 space-y-2">
+                  <p className="text-[13px] text-white/70 whitespace-pre-wrap leading-relaxed">{data.qa_report}</p>
+                  {data.qa_inspector_name && (
+                    <p className="text-[11px] text-white/40 border-t border-white/6 pt-2 mt-2">
+                      الفاحص: <span className="text-white/60 font-medium">{data.qa_inspector_name}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Device Photos */}
+            {data.photos && data.photos.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                <div className="px-5 py-3 bg-white/[0.02] border-b border-white/8">
+                  <span className="text-[12px] text-white/50 font-semibold">صور الجهاز</span>
+                </div>
+                <div className="px-5 py-4 grid grid-cols-2 gap-2">
+                  {data.photos.map((photo, idx) => (
+                    <div key={`photo-${idx}`} className="relative">
+                      <img
+                        src={photo.photo_url}
+                        alt={photo.photo_type === 'intake' ? 'صورة الاستلام' : 'صورة التسليم'}
+                        className="w-full h-24 object-cover rounded-lg border border-white/10"
+                      />
+                      <span className="absolute bottom-1 right-1 text-[9px] bg-black/70 text-white/80 px-1.5 py-0.5 rounded">
+                        {photo.photo_type === 'intake' ? 'استلام' : 'تسليم'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <p className="text-center text-[11px] text-white/30 pt-2">
               للاستفسار، تواصل مع المتجر مباشرةً
