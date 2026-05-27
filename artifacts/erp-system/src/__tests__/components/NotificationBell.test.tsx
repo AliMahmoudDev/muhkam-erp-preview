@@ -8,6 +8,27 @@ vi.mock('@/lib/auth-fetch', () => ({
   authFetch: vi.fn(),
 }));
 
+vi.mock('@/contexts/app-settings', () => ({
+  useAppSettings: () => ({ settings: { theme: 'dark' }, update: vi.fn() }),
+}));
+
+vi.mock('@/contexts/auth', () => ({
+  useAuth: () => ({ user: { id: 1, name: 'Admin', username: 'admin', role: 'admin', permissions: {} } }),
+}));
+
+vi.mock('@/lib/permissions', () => ({
+  hasPermission: () => false,
+}));
+
+vi.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({ toast: vi.fn() }),
+}));
+
+vi.mock('@/lib/api', () => ({
+  api: (path: string) => path,
+  BASE: '',
+}));
+
 interface TestNotification {
   id: number;
   type: string;
