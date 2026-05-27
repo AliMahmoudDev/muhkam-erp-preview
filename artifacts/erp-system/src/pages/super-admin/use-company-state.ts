@@ -208,7 +208,7 @@ export function useCompanyState(
 
   const resetPassword = useMutation({
     mutationFn: ({ id, company_name }: { id: number; company_name: string }) =>
-      fetch(api(`/api/super/companies/${id}/reset-admin-password`), { method: 'POST', headers: authHeaders() })
+      authFetch(api(`/api/super/companies/${id}/reset-admin-password`), { method: 'POST' })
         .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error ?? 'خطأ في إعادة التعيين'); return { ...d, company_name }; }),
     onSuccess: (data) => { setResetPassResult(data as ResetPassResult); setResetPassCopied(false); },
     onError: (e: Error) => showToast(e.message, 'error'),
