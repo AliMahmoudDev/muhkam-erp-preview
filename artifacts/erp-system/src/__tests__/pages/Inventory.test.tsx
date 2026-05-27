@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 /* ── Mocks ─────────────────────────────────────────────────── */
@@ -143,7 +143,7 @@ describe("Inventory _shared — movementTypeLabel", () => {
   // quick integration check that types are used correctly
   it("all movement type entries have label and color", () => {
     const { movementTypeLabel } = require("../pages/inventory/_shared");
-    for (const [key, value] of Object.entries(movementTypeLabel)) {
+    for (const [_key, value] of Object.entries(movementTypeLabel)) {
       const v = value as { label: string; color: string };
       expect(v.label).toBeTruthy();
       expect(v.color).toContain("bg-");
