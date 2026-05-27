@@ -36,6 +36,7 @@ import { alertManager, ALERT_TYPES } from './lib/telegram-alert-manager';
 import { requestTimeout } from './middleware/request-timeout';
 import { perTenantRateLimit } from './middleware/per-tenant-rate-limit';
 import { requestId } from './middleware/request-id';
+import { csrfProtection } from './middleware/csrf';
 
 const app: Express = express();
 
@@ -167,6 +168,9 @@ app.use(sanitizeBody);
 
 /* ── HTTP Parameter Pollution prevention ───────────────────── */
 app.use(hpp());
+
+/* ── CSRF protection (double-submit cookie) ────────────────── */
+app.use(csrfProtection);
 
 /* ── Request timeout: abort after 30 s ─────────────────────── */
 app.use(requestTimeout);
