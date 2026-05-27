@@ -60,6 +60,12 @@ export const repairJobsTable = pgTable("repair_jobs", {
   warranty_of:              integer("warranty_of"),                        // FK → parent job id
   is_customer_returned:     boolean("is_customer_returned").default(false),
   customer_return_amount:   numeric("customer_return_amount", { precision: 12, scale: 2 }).default("0"),
+  /* ── الفني المسؤول + فحص الجودة + طريقة الدفع عند التسليم ── */
+  responsible_technician_id: integer("responsible_technician_id"),
+  qa_report:                text("qa_report"),
+  qa_inspector_name:        text("qa_inspector_name"),
+  delivery_payment_type:    text("delivery_payment_type"),   // 'cash' | 'deferred' | 'instant_transfer'
+  delivery_safe_id:         integer("delivery_safe_id"),
   created_at:               timestamp("created_at").defaultNow().notNull(),
   updated_at:               timestamp("updated_at").defaultNow().notNull(),
 }, (t) => [
@@ -236,6 +242,31 @@ export const repairDeviceModelsTable = pgTable("repair_device_models", {
   index("repair_device_models_company_idx").on(t.company_id),
 ]);
 
+/* ── إيصالات الفنيين لكل بطاقة صيانة ── */
+export const repairReceiptTechniciansTable = pgTable("repair_receipt_technicians", {
+  id:             serial("id").primaryKey(),
+  repair_job_id:  integer("repair_job_id").notNull().references(() => repairJobsTable.id, { onDelete: "cascade" }),
+  technician_id:  integer("technician_id").notNull(),
+  item_name:      text("item_name").notNull(),
+  amount:         numeric("amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  created_at:     timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  index("repair_receipt_tech_job_idx").on(t.repair_job_id),
+  index("repair_receipt_tech_tech_idx").on(t.technician_id),
+]);
+
+/* ── صور الجهاز (استلام / تسليم) ── */
+export const repairDevicePhotosTable = pgTable("repair_device_photos", {
+  id:             serial("id").primaryKey(),
+  repair_job_id:  integer("repair_job_id").notNull().references(() => repairJobsTable.id, { onDelete: "cascade" }),
+  photo_url:      text("photo_url").notNull(),
+  photo_type:     text("photo_type").notNull().default("intake"), // 'intake' | 'delivery'
+  uploaded_at:    timestamp("uploaded_at").defaultNow().notNull(),
+  uploaded_by:    integer("uploaded_by"),
+}, (t) => [
+  index("repair_device_photos_job_idx").on(t.repair_job_id),
+]);
+
 export const insertRepairJobSchema = createInsertSchema(repairJobsTable).omit({ id: true, created_at: true, updated_at: true });
 export const insertRepairJobPartSchema = createInsertSchema(repairJobPartsTable).omit({ id: true, created_at: true });
 export const insertRepairStatusSchema = createInsertSchema(repairStatusesTable).omit({ id: true, created_at: true });
@@ -253,3 +284,5 @@ export type BadDebt = typeof badDebtsTable.$inferSelect;
 export type RepairPipelineConfig = typeof repairPipelineConfigTable.$inferSelect;
 export type RepairDashboardCard = typeof repairDashboardCardsTable.$inferSelect;
 export type RepairDeviceModel = typeof repairDeviceModelsTable.$inferSelect;
+export type RepairReceiptTechnician = typeof repairReceiptTechniciansTable.$inferSelect;
+export type RepairDevicePhoto = typeof repairDevicePhotosTable.$inferSelect;
