@@ -7,7 +7,7 @@
  * @access Requires can_create_sale permission.
  */
 import { Router, type IRouter } from "express";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import {
   db, salesTable, saleItemsTable, productsTable, customersTable,
   transactionsTable, safesTable, warehousesTable, erpUsersTable,
@@ -152,14 +152,15 @@ router.post("/sales", wrap(async (req, res) => {
 
   const invoiceNo = await nextSaleInvoiceNo(companyId);
   const sale = await db.transaction(async (tx) => {
-    // 1. جلب بيانات الخزن والتحقق من وجودها
+    // 1. جلب بيانات الخزن والتحقق من وجودها (batch prefetch — N+1 fix)
     const safeRecords: Map<number, typeof safesTable.$inferSelect> = new Map();
-    for (const p of cashPayments) {
-      if (!p.safe_id) continue;
-      if (safeRecords.has(p.safe_id)) continue;
-      const [s] = await tx.select().from(safesTable).where(and(eq(safesTable.id, p.safe_id), eq(safesTable.company_id, companyId)));
-      if (!s) throw httpError(400, `الخزينة رقم ${p.safe_id} غير موجودة`);
-      safeRecords.set(p.safe_id, s);
+    const uniqueSafeIds = [...new Set(cashPayments.map(p => p.safe_id).filter((id): id is number => id != null))];
+    if (uniqueSafeIds.length > 0) {
+      const safes = await tx.select().from(safesTable).where(and(inArray(safesTable.id, uniqueSafeIds), eq(safesTable.company_id, companyId)));
+      for (const s of safes) safeRecords.set(s.id, s);
+      for (const sid of uniqueSafeIds) {
+        if (!safeRecords.has(sid)) throw httpError(400, `الخزينة رقم ${sid} غير موجودة`);
+      }
     }
     const primarySafe = primarySafeId ? safeRecords.get(primarySafeId) ?? null : null;
 
@@ -206,10 +207,20 @@ router.post("/sales", wrap(async (req, res) => {
     }).returning();
 
     // 3. البنود: خصم المخزون (atomic) + تسجيل التكلفة + حركة مخزون
-    let totalTaxAmount = 0;
+    // ── Prefetch all products in ONE query (N+1 fix) ──
+    const productIds = [...new Set(items.map(i => i.product_id))];
+    const productRows = await tx.select().from(productsTable).where(and(inArray(productsTable.id, productIds), eq(productsTable.company_id, companyId)));
+    const productMap = new Map(productRows.map(p => [p.id, p]));
     for (const item of items) {
-      const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, companyId)));
-      if (!prod) throw httpError(400, `المنتج "${item.product_name}" غير موجود`);
+      if (!productMap.has(item.product_id)) throw httpError(400, `المنتج "${item.product_name}" غير موجود`);
+    }
+
+    let totalTaxAmount = 0;
+    const saleItemValues: Array<typeof saleItemsTable.$inferInsert> = [];
+    const stockMovementValues: Array<typeof stockMovementsTable.$inferInsert> = [];
+
+    for (const item of items) {
+      const prod = productMap.get(item.product_id)!;
       const costAtSale = Number(prod.cost_price);
       const costTotal  = costAtSale * item.quantity;
       const itemTaxRate = Number(prod.tax_rate ?? 0);
@@ -217,6 +228,7 @@ router.post("/sales", wrap(async (req, res) => {
       totalTaxAmount  += itemTax;
       const qtyStr     = String(item.quantity);
 
+      // Stock decrement MUST stay per-item (atomic CAS — correctness requirement)
       const updated = await tx.update(productsTable)
         .set({ quantity: sql`${productsTable.quantity}::numeric - ${qtyStr}::numeric` })
         .where(and(
@@ -234,7 +246,7 @@ router.post("/sales", wrap(async (req, res) => {
       const oldQty = Number(prod.quantity);
       const newQty = Number(updated[0].quantity);
 
-      await tx.insert(saleItemsTable).values({
+      saleItemValues.push({
         sale_id:      newSale.id,
         product_id:   item.product_id,
         product_name: item.product_name,
@@ -245,7 +257,7 @@ router.post("/sales", wrap(async (req, res) => {
         cost_total:   String(costTotal),
       });
 
-      await tx.insert(stockMovementsTable).values({
+      stockMovementValues.push({
         product_id:      item.product_id,
         product_name:    item.product_name,
         movement_type:   "sale",
@@ -261,6 +273,14 @@ router.post("/sales", wrap(async (req, res) => {
         warehouse_id:    tenantWarehouseId,
         company_id:      companyId,
       });
+    }
+
+    // ── Batch-insert sale items and stock movements (N+1 fix) ──
+    if (saleItemValues.length > 0) {
+      await tx.insert(saleItemsTable).values(saleItemValues);
+    }
+    if (stockMovementValues.length > 0) {
+      await tx.insert(stockMovementsTable).values(stockMovementValues);
     }
 
     // 3.5 ضريبة القيمة المضافة
@@ -314,7 +334,7 @@ router.post("/sales", wrap(async (req, res) => {
       }
     }
 
-    // 7. الحركات المالية المركزية
+    // 7. الحركات المالية المركزية (batch-insert — N+1 fix)
     const txBase = {
       reference_type: "sale" as const,
       reference_id: newSale.id,
@@ -324,27 +344,31 @@ router.post("/sales", wrap(async (req, res) => {
       date: new Date().toISOString().split("T")[0],
       company_id: companyId,
     };
+    const transactionValues: Array<typeof transactionsTable.$inferInsert> = [];
     for (const p of cashPayments) {
       const safeRec = p.safe_id ? safeRecords.get(p.safe_id) : null;
-      await tx.insert(transactionsTable).values({
+      transactionValues.push({
         ...txBase, type: "sale_cash",
         safe_id: p.safe_id ?? null, safe_name: safeRec?.name ?? null,
         amount: String(p.amount), direction: "in",
       });
     }
     if (effectiveCreditAmount > 0) {
-      await tx.insert(transactionsTable).values({
+      transactionValues.push({
         ...txBase, type: "sale_credit",
         safe_id: null, safe_name: null,
         amount: String(effectiveCreditAmount), direction: "none",
       });
     }
     if (cashPayments.length === 0 && effectiveCreditAmount === 0) {
-      await tx.insert(transactionsTable).values({
+      transactionValues.push({
         ...txBase, type: "sale_cash",
         safe_id: null, safe_name: null,
         amount: String(total_amount), direction: "none",
       });
+    }
+    if (transactionValues.length > 0) {
+      await tx.insert(transactionsTable).values(transactionValues);
     }
 
     return newSale;

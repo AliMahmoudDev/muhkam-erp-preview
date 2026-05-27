@@ -7,20 +7,15 @@
  * via forwardRef so the parent (index.tsx) stays thin.
  */
 import { useState, forwardRef, useImperativeHandle } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
 import {
   X, Banknote, MinusCircle, Award, Package, CheckCircle, UserX,
 } from 'lucide-react';
 import type { Employee, AnyRec, SettleLine } from './types';
+import { fmt, dedLabel, blankSettleLine } from './salary-modal';
+import { useSalaryMutations } from './salary-modal';
 
 /* ── Local helpers ──────────────────────────────────────────── */
-function fmt(v: unknown) {
-  return v != null ? Number(Number(v).toFixed(2)).toLocaleString('ar-EG-u-nu-latn') : '0';
-}
-
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
@@ -28,18 +23,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
-}
-
-const DEDUCTION_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  late:    { label: 'تأخير',      color: 'text-amber-300', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-  absence: { label: 'غياب',      color: 'text-red-300',   bg: 'bg-red-500/10',   border: 'border-red-500/20' },
-  damage:  { label: 'تلف/خسائر', color: 'text-rose-300',  bg: 'bg-rose-500/10',  border: 'border-rose-500/20' },
-  other:   { label: 'أخرى',      color: 'text-white/70',  bg: 'bg-white/5',      border: 'border-white/10' },
-};
-function dedLabel(t: string) { return DEDUCTION_LABELS[t] ?? DEDUCTION_LABELS['other']; }
-
-function blankSettleLine(): SettleLine {
-  return { amount: '', category: '', description: '', date: new Date().toISOString().split('T')[0] };
 }
 
 /* ── Public ref interface ───────────────────────────────────── */
@@ -72,7 +55,6 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
     { selected, safes, expenseCategories, custody, isSelfService, onEmployeeDeleted },
     ref,
   ) {
-    const qc = useQueryClient();
     const { toast } = useToast();
 
     /* ── Modal state ──────────────────────────────────────────── */
@@ -156,238 +138,23 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
       deleteCustody:   (id) => deleteCustody.mutate(id),
     }));
 
-    /* ── Employee delete mutation ─────────────────────────────── */
-    const deleteEmp = useMutation({
-      mutationFn: (id: number) =>
-        authFetch(api(`/api/employees/${id}`), { method: 'DELETE' }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/employees'] });
-        setDeleteId(null);
-        onEmployeeDeleted();
-        toast({ title: 'تم حذف الموظف' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    /* ── Loan mutations ───────────────────────────────────────── */
-    const createLoan = useMutation({
-      mutationFn: (data: AnyRec) =>
-        authFetch(api('/api/salary-advances'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id] });
-        setShowLoanForm(false);
-        setLoanForm({ requested_amount: '', advance_type: 'personal', reason: '', deduct_from: 'fixed', safe_id: '' });
-        toast({ title: 'تم تقديم طلب السلفة' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    const approveLoan = useMutation({
-      mutationFn: ({ id, approved_amount, safe_id, notes }: { id: number; approved_amount?: number; safe_id?: number | null; notes?: string }) =>
-        authFetch(api(`/api/salary-advances/${id}/approve`), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ approved_amount, safe_id: safe_id || undefined, notes }),
-        }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id] });
-        qc.invalidateQueries({ queryKey: ['/api/settings/safes'] });
-        setApproveModal(null);
-        setApproveForm({ approved_amount: '', safe_id: '', notes: '' });
-        toast({ title: 'تم اعتماد السلفة ✓' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    const manualPay = useMutation({
-      mutationFn: ({ id, amount }: { id: number; amount: number }) =>
-        authFetch(api(`/api/salary-advances/${id}/manual-payment`), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount }),
-        }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id] });
-        qc.invalidateQueries({ queryKey: ['/api/salary-advances', selected?.id, 'ledger'] });
-        setShowPayModal(null);
-        setPayAmount('');
-        toast({ title: 'تم تسجيل الدفعة / الخصم' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    /* ── Deduction mutations ──────────────────────────────────── */
-    const createDeduction = useMutation({
-      mutationFn: (payload: { amount: number; reason: string; deduction_type: string; deduction_date: string }) =>
-        authFetch(api('/api/employee-deductions'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...payload, employee_id: selected?.id }),
-        }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error ?? 'فشل تسجيل الخصم');
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/employee-deductions', selected?.id] });
-        setShowDeductForm(false);
-        setDeductForm({ amount: '', reason: '', deduction_type: 'late', deduction_date: new Date().toISOString().split('T')[0] });
-        toast({ title: 'تم تسجيل الخصم' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    const deleteDeduction = useMutation({
-      mutationFn: (id: number) =>
-        authFetch(api(`/api/employee-deductions/${id}`), { method: 'DELETE' }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error ?? 'فشل الحذف');
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/employee-deductions', selected?.id] });
-        toast({ title: 'تم حذف الخصم' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    /* ── Bonus mutations ──────────────────────────────────────── */
-    const createBonus = useMutation({
-      mutationFn: (data: AnyRec) =>
-        authFetch(api('/api/employee-bonuses'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/employee-bonuses', selected?.id] });
-        setShowBonusForm(false);
-        setBonusForm({ amount: '', reason: '', granted_date: new Date().toISOString().split('T')[0] });
-        toast({ title: 'تمت إضافة الحافز' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    const deleteBonus = useMutation({
-      mutationFn: (id: number) =>
-        authFetch(api(`/api/employee-bonuses/${id}`), { method: 'DELETE' }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/employee-bonuses', selected?.id] });
-        toast({ title: 'تم حذف الحافز' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    /* ── Custody mutations ────────────────────────────────────── */
-    const createCustody = useMutation({
-      mutationFn: (data: AnyRec) =>
-        authFetch(api('/api/employee-custody'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/employee-custody', selected?.id] });
-        setShowCustodyForm(false);
-        setCustodyForm({ amount: '', purpose: '', granted_date: new Date().toISOString().split('T')[0], notes: '', safe_id: '' });
-        toast({ title: 'تمت إضافة العهدة' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    const settleCustody = useMutation({
-      mutationFn: (payload: {
-        id: number;
-        lines: { amount: number; category: string; description: string | null; date: string }[];
-        returned_amount: number;
-        notes: string | null;
-      }) =>
-        authFetch(api(`/api/employee-custody/${payload.id}/settle`), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lines: payload.lines, returned_amount: payload.returned_amount, notes: payload.notes }),
-        }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/employee-custody', selected?.id] });
-        qc.invalidateQueries({ queryKey: ['/api/settings/safes'] });
-        setShowSettleCustody(null);
-        setSettleLines([blankSettleLine()]);
-        setSettleNotes('');
-        toast({ title: 'تم تسوية العهدة' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    const reimburseCustody = useMutation({
-      mutationFn: (vars: { id: number; safe_id: number; notes?: string }) =>
-        authFetch(api(`/api/employee-custody/${vars.id}/reimburse`), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ safe_id: vars.safe_id, notes: vars.notes }),
-        }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/employee-custody', selected?.id] });
-        qc.invalidateQueries({ queryKey: ['/api/settings/safes'] });
-        setShowReimburseCustody(null);
-        setReimburseSafeId('');
-        setReimburseNotes('');
-        toast({ title: 'تم صرف المستحقات' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
-    });
-
-    const deleteCustody = useMutation({
-      mutationFn: (id: number) =>
-        authFetch(api(`/api/employee-custody/${id}`), { method: 'DELETE' }).then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error);
-          return d;
-        }),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['/api/employee-custody', selected?.id] });
-        toast({ title: 'تم حذف العهدة' });
-      },
-      onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
+    /* ── Mutations (extracted to hook) ────────────────────────── */
+    const {
+      deleteEmp, createLoan, approveLoan, manualPay,
+      createDeduction, deleteDeduction,
+      createBonus, deleteBonus,
+      createCustody, settleCustody, reimburseCustody, deleteCustody,
+    } = useSalaryMutations({
+      selectedId: selected?.id,
+      onDeleteSuccess: () => { setDeleteId(null); onEmployeeDeleted(); },
+      onLoanCreated: () => { setShowLoanForm(false); setLoanForm({ requested_amount: '', advance_type: 'personal', reason: '', deduct_from: 'fixed', safe_id: '' }); },
+      onLoanApproved: () => { setApproveModal(null); setApproveForm({ approved_amount: '', safe_id: '', notes: '' }); },
+      onPaySuccess: () => { setShowPayModal(null); setPayAmount(''); },
+      onDeductCreated: () => { setShowDeductForm(false); setDeductForm({ amount: '', reason: '', deduction_type: 'late', deduction_date: new Date().toISOString().split('T')[0] }); },
+      onBonusCreated: () => { setShowBonusForm(false); setBonusForm({ amount: '', reason: '', granted_date: new Date().toISOString().split('T')[0] }); },
+      onCustodyCreated: () => { setShowCustodyForm(false); setCustodyForm({ amount: '', purpose: '', granted_date: new Date().toISOString().split('T')[0], notes: '', safe_id: '' }); },
+      onSettleSuccess: () => { setShowSettleCustody(null); setSettleLines([blankSettleLine()]); setSettleNotes(''); },
+      onReimburseSuccess: () => { setShowReimburseCustody(null); setReimburseSafeId(''); setReimburseNotes(''); },
     });
 
     /* ── Render all modals ────────────────────────────────────── */

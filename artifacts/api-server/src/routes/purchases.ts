@@ -208,8 +208,19 @@ router.post("/purchases", wrap(async (req, res) => {
     const shippingCostEgp = Number(shipping_cost ?? 0) * rate;
     const itemsTotalEgp = items.reduce((s, i) => s + Number(i.total_price), 0);
 
+    // ── Prefetch all products in ONE query (N+1 fix) ──
+    const productIds = [...new Set(items.map(i => i.product_id))];
+    const productRows = await tx.select().from(productsTable).where(and(inArray(productsTable.id, productIds), eq(productsTable.company_id, cidPurchase)));
+    const productMap = new Map(productRows.map(p => [p.id, { qty: Number(p.quantity), cost: Number(p.cost_price), taxRate: Number(p.tax_rate ?? 0) }]));
     for (const item of items) {
-      await tx.insert(purchaseItemsTable).values({
+      if (!productMap.has(item.product_id)) throw httpError(400, `المنتج "${item.product_name}" غير موجود`);
+    }
+
+    const purchaseItemValues: Array<typeof purchaseItemsTable.$inferInsert> = [];
+    const stockMovementValues: Array<typeof stockMovementsTable.$inferInsert> = [];
+
+    for (const item of items) {
+      purchaseItemValues.push({
         purchase_id: newPurchase.id,
         product_id: item.product_id,
         product_name: item.product_name,
@@ -218,10 +229,9 @@ router.post("/purchases", wrap(async (req, res) => {
         total_price: String(item.total_price),
       });
 
-      const [prod] = await tx.select().from(productsTable).where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidPurchase)));
-      if (!prod) throw httpError(400, `المنتج "${item.product_name}" غير موجود`);
-      const oldQty = Number(prod.quantity);
-      const oldCost = Number(prod.cost_price);
+      const prodState = productMap.get(item.product_id)!;
+      const oldQty = prodState.qty;
+      const oldCost = prodState.cost;
       const newItemQty = Number(item.quantity);
       // نصيب الصنف من الشحن (موزع بالتناسب مع قيمة الصنف)
       const itemShippingEgp = itemsTotalEgp > 0
@@ -234,13 +244,14 @@ router.post("/purchases", wrap(async (req, res) => {
         : newItemCost;
 
       // تراكم ضريبة القيمة المضافة من معدل ضريبة المنتج
-      const itemTaxRate = Number(prod.tax_rate ?? 0);
+      const itemTaxRate = prodState.taxRate;
       if (itemTaxRate > 0) {
         const itemNetPrice = Number(item.unit_price) / (1 + itemTaxRate / 100);
         const itemTax = (Number(item.unit_price) - itemNetPrice) * Number(item.quantity);
         totalTaxAmount += itemTax;
       }
 
+      // Product UPDATE stays sequential (WAC depends on running state)
       await tx.update(productsTable)
         .set({
           quantity: String(newTotalQty),
@@ -248,7 +259,11 @@ router.post("/purchases", wrap(async (req, res) => {
         })
         .where(and(eq(productsTable.id, item.product_id), eq(productsTable.company_id, cidPurchase)));
 
-      await tx.insert(stockMovementsTable).values({
+      // Update local map for next iteration (same product may appear twice)
+      prodState.qty = newTotalQty;
+      prodState.cost = newAvgCost;
+
+      stockMovementValues.push({
         product_id: item.product_id,
         product_name: item.product_name,
         movement_type: "purchase",
@@ -264,6 +279,14 @@ router.post("/purchases", wrap(async (req, res) => {
         warehouse_id: tenantWarehouseId,
         company_id: cidPurchase,
       });
+    }
+
+    // ── Batch-insert purchase items and stock movements (N+1 fix) ──
+    if (purchaseItemValues.length > 0) {
+      await tx.insert(purchaseItemsTable).values(purchaseItemValues);
+    }
+    if (stockMovementValues.length > 0) {
+      await tx.insert(stockMovementsTable).values(stockMovementValues);
     }
 
     // تحديث فاتورة المشتريات بضريبة القيمة المضافة المحسوبة تلقائياً

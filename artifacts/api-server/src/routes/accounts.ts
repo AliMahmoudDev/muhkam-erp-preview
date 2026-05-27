@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request } from "express";
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
 import { wrap } from "../lib/async-handler";
@@ -164,10 +164,17 @@ router.post("/journal-entries", wrap(async (req, res) => {
     company_id: cid,
   }).returning();
 
-  for (const line of lines) {
-    const [acc] = await db.select().from(accountsTable)
-      .where(and(eq(accountsTable.id, line.account_id), eq(accountsTable.company_id, cid)));
-    await db.insert(journalEntryLinesTable).values({
+  // ── Prefetch all referenced accounts in ONE query (N+1 fix) ──
+  const accountIds = [...new Set(lines.map(l => l.account_id))];
+  const accountRows = accountIds.length > 0
+    ? await db.select().from(accountsTable).where(and(inArray(accountsTable.id, accountIds), eq(accountsTable.company_id, cid)))
+    : [];
+  const accountMap = new Map(accountRows.map(a => [a.id, a]));
+
+  // ── Batch-insert all journal entry lines ──
+  const lineValues = lines.map(line => {
+    const acc = accountMap.get(line.account_id);
+    return {
       entry_id: entry.id,
       account_id: line.account_id,
       account_name: acc?.name ?? line.account_name ?? "",
@@ -175,16 +182,30 @@ router.post("/journal-entries", wrap(async (req, res) => {
       debit: String(line.debit ?? 0),
       credit: String(line.credit ?? 0),
       description: line.description ?? null,
-    });
-    if (acc && status === "posted") {
+    };
+  });
+  if (lineValues.length > 0) {
+    await db.insert(journalEntryLinesTable).values(lineValues);
+  }
+
+  // ── Update account balances if posted ──
+  if (status === "posted") {
+    for (const line of lines) {
+      const acc = accountMap.get(line.account_id);
+      if (!acc) continue;
       const impact = (acc.type === "asset" || acc.type === "expense")
         ? (line.debit ?? 0) - (line.credit ?? 0)
         : (line.credit ?? 0) - (line.debit ?? 0);
-      await db.update(accountsTable)
-        .set({ current_balance: String(Number(acc.current_balance) + impact) })
-        .where(eq(accountsTable.id, acc.id));
+      if (impact !== 0) {
+        await db.update(accountsTable)
+          .set({ current_balance: String(Number(acc.current_balance) + impact) })
+          .where(eq(accountsTable.id, acc.id));
+        // Update local map for potential duplicate account_ids in same entry
+        acc.current_balance = String(Number(acc.current_balance) + impact);
+      }
     }
   }
+
   res.status(201).json(fmtEntry(entry));
 }));
 
@@ -198,15 +219,27 @@ router.patch("/journal-entries/:id/post", wrap(async (req, res) => {
   if (!entry) { res.status(404).json({ error: "غير موجود" }); return; }
 
   const lines = await db.select().from(journalEntryLinesTable).where(eq(journalEntryLinesTable.entry_id, id));
+
+  // ── Prefetch all accounts referenced by lines in ONE query (N+1 fix) ──
+  const accountIds = [...new Set(lines.map(l => l.account_id))];
+  const accountRows = accountIds.length > 0
+    ? await db.select().from(accountsTable).where(inArray(accountsTable.id, accountIds))
+    : [];
+  const accountMap = new Map(accountRows.map(a => [a.id, a]));
+
+  // ── Compute and apply balance impacts ──
   for (const line of lines) {
-    const [acc] = await db.select().from(accountsTable).where(eq(accountsTable.id, line.account_id));
-    if (acc) {
-      const impact = (acc.type === "asset" || acc.type === "expense")
-        ? Number(line.debit) - Number(line.credit)
-        : Number(line.credit) - Number(line.debit);
+    const acc = accountMap.get(line.account_id);
+    if (!acc) continue;
+    const impact = (acc.type === "asset" || acc.type === "expense")
+      ? Number(line.debit) - Number(line.credit)
+      : Number(line.credit) - Number(line.debit);
+    if (impact !== 0) {
       await db.update(accountsTable)
         .set({ current_balance: String(Number(acc.current_balance) + impact) })
         .where(eq(accountsTable.id, acc.id));
+      // Update local map for duplicate account_ids
+      acc.current_balance = String(Number(acc.current_balance) + impact);
     }
   }
   res.json(fmtEntry(entry));
@@ -256,31 +289,44 @@ router.post("/journal-entries/:id/reverse", wrap(async (req, res) => {
       company_id:   cid,
     }).returning();
 
-    // 2. عكس بنود القيد (قلب الدائن والمدين)
-    for (const line of origLines) {
-      await tx.insert(journalEntryLinesTable).values({
-        entry_id:     rev.id,
-        account_id:   line.account_id,
-        account_name: line.account_name,
-        account_code: line.account_code,
-        debit:        line.credit,
-        credit:       line.debit,
-        description:  line.description,
-      });
+    // 2. Prefetch all accounts referenced by lines in ONE query (N+1 fix)
+    const accountIds = [...new Set(origLines.map(l => l.account_id))];
+    const accountRows = accountIds.length > 0
+      ? await tx.select().from(accountsTable).where(inArray(accountsTable.id, accountIds))
+      : [];
+    const accountMap = new Map(accountRows.map(a => [a.id, a]));
 
-      // تحديث رصيد الحساب عكسياً
-      const [acc] = await tx.select().from(accountsTable).where(eq(accountsTable.id, line.account_id));
-      if (acc) {
-        const reverseImpact = (acc.type === "asset" || acc.type === "expense")
-          ? Number(line.credit) - Number(line.debit)
-          : Number(line.debit) - Number(line.credit);
+    // 3. Batch-insert all reversal lines
+    const reversalLineValues = origLines.map(line => ({
+      entry_id:     rev.id,
+      account_id:   line.account_id,
+      account_name: line.account_name,
+      account_code: line.account_code,
+      debit:        line.credit,
+      credit:       line.debit,
+      description:  line.description,
+    }));
+    if (reversalLineValues.length > 0) {
+      await tx.insert(journalEntryLinesTable).values(reversalLineValues);
+    }
+
+    // 4. Update account balances (reverse impacts)
+    for (const line of origLines) {
+      const acc = accountMap.get(line.account_id);
+      if (!acc) continue;
+      const reverseImpact = (acc.type === "asset" || acc.type === "expense")
+        ? Number(line.credit) - Number(line.debit)
+        : Number(line.debit) - Number(line.credit);
+      if (reverseImpact !== 0) {
         await tx.update(accountsTable)
           .set({ current_balance: String(Number(acc.current_balance) + reverseImpact) })
           .where(eq(accountsTable.id, acc.id));
+        // Update local map for duplicate account_ids
+        acc.current_balance = String(Number(acc.current_balance) + reverseImpact);
       }
     }
 
-    // 3. تعيين القيد الأصلي كمعكوس
+    // 5. تعيين القيد الأصلي كمعكوس
     await tx.update(journalEntriesTable)
       .set({ status: "reversed", reference: `REVERSED-BY-${rev.id}` })
       .where(eq(journalEntriesTable.id, id));
