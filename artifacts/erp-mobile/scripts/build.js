@@ -67,6 +67,12 @@ function getDeploymentDomain() {
     return stripProtocol(process.env.EXPO_PUBLIC_DOMAIN);
   }
 
+  // In CI or non-Replit environments, skip the mobile build gracefully
+  if (process.env.CI || process.env.GITHUB_ACTIONS) {
+    console.log("SKIP: erp-mobile build skipped (no deployment domain in CI)");
+    process.exit(0);
+  }
+
   console.error(
     "ERROR: No deployment domain found. Set REPLIT_INTERNAL_APP_DOMAIN, REPLIT_DEV_DOMAIN, or EXPO_PUBLIC_DOMAIN",
   );
