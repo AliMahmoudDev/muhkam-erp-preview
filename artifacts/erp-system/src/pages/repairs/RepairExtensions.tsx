@@ -11,7 +11,7 @@
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Camera, Upload, Trash2, User, DollarSign, CreditCard, Banknote } from 'lucide-react';
+import { Camera, Upload, User, DollarSign, CreditCard, Banknote } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 
