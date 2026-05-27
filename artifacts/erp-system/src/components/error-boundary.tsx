@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }).catch(() => {});
     }
     if (import.meta.env.DEV) {
-      console.error("[ErrorBoundary]", error, info.componentStack); // eslint-disable-line no-console
+      console.error("[ErrorBoundary]", error, info.componentStack);
     }
   }
 
