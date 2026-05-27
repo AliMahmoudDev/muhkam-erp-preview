@@ -1,0 +1,113 @@
+import { ClipboardList, Plus, CheckCircle, Warehouse, Loader2 } from 'lucide-react';
+import type { CountSessionEnriched } from '../_shared';
+
+export function CountHistory({
+  sessions,
+  warehouses,
+  applyingId,
+  isPending,
+  onApply,
+  onSwitchToNew,
+}: {
+  sessions: CountSessionEnriched[];
+  warehouses: { id: number; name: string }[];
+  applyingId: number | null;
+  isPending: boolean;
+  onApply: (id: number) => void;
+  onSwitchToNew: () => void;
+}) {
+  if (sessions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center bg-white/3 border border-white/5 rounded-2xl">
+        <ClipboardList className="w-10 h-10 text-white/10 mb-3" />
+        <p className="text-white/40 font-bold mb-1">لا توجد جلسات جرد سابقة</p>
+        <p className="text-white/25 text-xs mb-4">ابدأ جلسة جديدة لتسجيل الكميات الفعلية</p>
+        <button
+          onClick={onSwitchToNew}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
+        >
+          <Plus className="w-4 h-4" /> بدء جرد جديد
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {sessions.map((s) => {
+        const whName =
+          warehouses.find((w) => w.id === s.warehouse_id)?.name ?? `مخزن #${s.warehouse_id}`;
+        const dateStr = new Date(s.created_at).toLocaleDateString('ar-EG-u-nu-latn', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+        const timeStr = new Date(s.created_at).toLocaleTimeString('ar-EG-u-nu-latn', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        return (
+          <div key={s.id} className="bg-[#111827] border border-white/8 rounded-2xl p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-white font-bold">جلسة #{s.id}</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-xs font-bold ${s.status === 'applied' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}
+                  >
+                    {s.status === 'applied' ? '✓ مطبّق' : 'مسودة'}
+                  </span>
+                  {s.items_count > 0 && (
+                    <span className="px-2 py-0.5 rounded-lg text-xs bg-white/5 text-white/50">
+                      {s.items_count} منتج
+                    </span>
+                  )}
+                  {s.adjustments_count > 0 && (
+                    <span className="px-2 py-0.5 rounded-lg text-xs bg-amber-500/10 text-amber-400">
+                      {s.adjustments_count} تسوية
+                    </span>
+                  )}
+                  {s.items_count > 0 && s.adjustments_count === 0 && s.status === 'applied' && (
+                    <span className="px-2 py-0.5 rounded-lg text-xs bg-emerald-500/10 text-emerald-400">
+                      لا فروق
+                    </span>
+                  )}
+                </div>
+                <div className="text-white/50 text-xs flex items-center gap-2">
+                  <Warehouse className="w-3 h-3 shrink-0" />
+                  <span>{whName}</span>
+                  <span className="text-white/20">·</span>
+                  <span>
+                    {dateStr} الساعة {timeStr}
+                  </span>
+                </div>
+                {s.notes && (
+                  <div className="text-white/30 text-xs truncate max-w-xs">{s.notes}</div>
+                )}
+                {s.applied_at && (
+                  <div className="text-emerald-400/50 text-xs">
+                    طُبِّق: {new Date(s.applied_at).toLocaleDateString('ar-EG-u-nu-latn')}
+                  </div>
+                )}
+              </div>
+              {s.status === 'draft' && (
+                <button
+                  onClick={() => onApply(s.id)}
+                  disabled={isPending && applyingId === s.id}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                >
+                  {isPending && applyingId === s.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-3 h-3" />
+                  )}
+                  تطبيق
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -77,7 +77,7 @@ vi.mock("@/pages/inventory/ReviewTab", () => ({
   __esModule: true,
   default: () => <div data-testid="review-tab">Review Tab</div>,
 }));
-vi.mock("@/pages/inventory/CountTab", () => ({
+vi.mock("@/pages/inventory/count", () => ({
   __esModule: true,
   default: () => <div data-testid="count-tab">Count Tab</div>,
 }));
