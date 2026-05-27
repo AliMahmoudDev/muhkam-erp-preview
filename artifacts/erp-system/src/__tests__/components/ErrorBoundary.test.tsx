@@ -12,6 +12,8 @@ function ThrowingChild({ shouldThrow }: { shouldThrow: boolean }) {
 /* Suppress React error boundary console.error noise in test output */
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
+  // Ensure fetch returns a resolved promise (ErrorBoundary calls fetch(...).catch())
+  vi.mocked(global.fetch).mockResolvedValue(new Response("{}", { status: 200 }));
 });
 
 describe("ErrorBoundary", () => {
