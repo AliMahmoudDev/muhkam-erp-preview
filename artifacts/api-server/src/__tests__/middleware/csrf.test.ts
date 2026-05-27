@@ -372,6 +372,40 @@ describe("CSRF Middleware", () => {
   });
 
   /* ════════════════════════════════════════════════════════════════
+     Unauthenticated requests — should pass to auth middleware
+  ════════════════════════════════════════════════════════════════ */
+
+  describe("Unauthenticated requests (no cookie, no Bearer)", () => {
+    it("allows PATCH without any auth credentials (defers to auth middleware)", () => {
+      const req = mockReq({
+        method: "PATCH",
+        path: "/api/notifications/5/read",
+        cookies: {},
+        headers: {},
+      });
+      const res = mockRes();
+
+      csrfProtection(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+    });
+
+    it("allows POST without any auth credentials (defers to auth middleware)", () => {
+      const req = mockReq({
+        method: "POST",
+        path: "/api/products",
+        cookies: {},
+        headers: {},
+      });
+      const res = mockRes();
+
+      csrfProtection(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+    });
+  });
+
+  /* ════════════════════════════════════════════════════════════════
      Arabic error message
   ════════════════════════════════════════════════════════════════ */
 

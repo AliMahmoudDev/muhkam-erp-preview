@@ -141,6 +141,14 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
     return;
   }
 
+  /* ── 5b. تخطّي الطلبات التي لا تحمل أي بيانات مصادقة (ستُرفض لاحقاً بـ 401) ── */
+  const hasAccessCookie = !!(req.cookies as Record<string, string> | undefined)?.access_token;
+  const hasAuthHeader = !!req.headers.authorization;
+  if (!hasAccessCookie && !hasAuthHeader) {
+    next();
+    return;
+  }
+
   /* ── 6. التحقق من رمز CSRF ── */
   const cookieToken = existingToken;
   const headerToken = req.headers[CSRF_HEADER_NAME] as string | undefined;
