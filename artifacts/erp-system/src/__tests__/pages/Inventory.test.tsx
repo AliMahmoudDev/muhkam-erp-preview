@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 /* ── Mocks ─────────────────────────────────────────────────── */
@@ -73,19 +73,19 @@ vi.mock("@workspace/api-client-react", () => ({
 }));
 
 // Mock sub-tabs to isolate the Inventory page tab logic
-vi.mock("./inventory/ReviewTab", () => ({
+vi.mock("@/pages/inventory/ReviewTab", () => ({
   __esModule: true,
   default: () => <div data-testid="review-tab">Review Tab</div>,
 }));
-vi.mock("./inventory/CountTab", () => ({
+vi.mock("@/pages/inventory/CountTab", () => ({
   __esModule: true,
   default: () => <div data-testid="count-tab">Count Tab</div>,
 }));
-vi.mock("./inventory/AlertsTab", () => ({
+vi.mock("@/pages/inventory/AlertsTab", () => ({
   __esModule: true,
   default: () => <div data-testid="alerts-tab">Alerts Tab</div>,
 }));
-vi.mock("./reports/InventoryReport", () => ({
+vi.mock("@/pages/reports/InventoryReport", () => ({
   __esModule: true,
   default: () => <div data-testid="report-tab">Report Tab</div>,
 }));
@@ -141,9 +141,9 @@ describe("Inventory page — tabs", () => {
 describe("Inventory _shared — movementTypeLabel", () => {
   // These are already covered in inventory-shared.test.ts but let's add a
   // quick integration check that types are used correctly
-  it("all movement type entries have label and color", () => {
-    const { movementTypeLabel } = require("../pages/inventory/_shared");
-    for (const [key, value] of Object.entries(movementTypeLabel)) {
+  it("all movement type entries have label and color", async () => {
+    const { movementTypeLabel } = await import("@/pages/inventory/_shared");
+    for (const [_key, value] of Object.entries(movementTypeLabel)) {
       const v = value as { label: string; color: string };
       expect(v.label).toBeTruthy();
       expect(v.color).toContain("bg-");
@@ -152,16 +152,16 @@ describe("Inventory _shared — movementTypeLabel", () => {
 });
 
 describe("Inventory _shared — today/nowTime", () => {
-  it("today returns current date in ISO format", () => {
-    const { today } = require("../pages/inventory/_shared");
+  it("today returns current date in ISO format", async () => {
+    const { today } = await import("@/pages/inventory/_shared");
     const result = today();
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     // Should be today's date
     expect(result).toBe(new Date().toISOString().slice(0, 10));
   });
 
-  it("nowTime returns current time HH:MM", () => {
-    const { nowTime } = require("../pages/inventory/_shared");
+  it("nowTime returns current time HH:MM", async () => {
+    const { nowTime } = await import("@/pages/inventory/_shared");
     const result = nowTime();
     expect(result).toMatch(/^\d{2}:\d{2}$/);
   });

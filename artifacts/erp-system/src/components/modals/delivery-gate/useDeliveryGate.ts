@@ -187,7 +187,7 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
 
   useEffect(() => {
     if (safes.length === 1 && !safeId) setSafeId(String(safes[0].id));
-  }, [safes.length]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [safes.length, safeId]);
 
   /* ── Draft restore ── */
   useEffect(() => {

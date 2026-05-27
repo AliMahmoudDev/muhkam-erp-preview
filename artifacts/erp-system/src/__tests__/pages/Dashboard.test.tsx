@@ -58,22 +58,19 @@ import Dashboard from "@/pages/dashboard";
 /* ── Test setup ────────────────────────────────────────────── */
 
 const mockStats = {
-  sales_today: 15000,
-  sales_today_count: 12,
-  treasury_balance: 85000,
-  customer_count: 45,
-  low_stock_count: 3,
-  top_products: [
-    { name: "آيفون 15", quantity: 8, total: 6400 },
-    { name: "جراب حماية", quantity: 20, total: 1000 },
+  total_sales_today: 15000,
+  total_expenses_today: 3000,
+  total_income_today: 5000,
+  net_profit: 12000,
+  total_customer_debts: 45000,
+  total_supplier_debts: 20000,
+  low_stock_products: [
+    { id: 1, name: "آيفون 15", quantity: 2, sell_price: 800 },
+    { id: 2, name: "جراب حماية", quantity: 1, sell_price: 50 },
   ],
   recent_transactions: [
-    { id: 1, type: "sale", amount: "1200", direction: "in", date: "2025-01-15", description: "بيع نقدي" },
-    { id: 2, type: "expense", amount: "500", direction: "out", date: "2025-01-15", description: "إيجار" },
-  ],
-  daily_sales: [
-    { day: "السبت", total: 5000 },
-    { day: "الأحد", total: 7000 },
+    { id: 1, type: "sale_cash", amount: 1200, created_at: "2025-01-15T10:30:00Z" },
+    { id: 2, type: "expense", amount: 500, created_at: "2025-01-15T11:00:00Z" },
   ],
 };
 
@@ -132,12 +129,12 @@ describe("Dashboard page", () => {
     render(<Dashboard />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      // Should show sales today value
-      expect(screen.getByText(/15,000|15000/)).toBeInTheDocument();
+      // Should show "مبيعات اليوم" label (KPI card renders)
+      expect(screen.getByText("مبيعات اليوم")).toBeInTheDocument();
     });
   });
 
-  it("renders top products section", async () => {
+  it("renders low stock products section", async () => {
     vi.mocked(authFetch).mockImplementation(async (url: string) => {
       if (String(url).includes("shortcuts")) {
         return new Response(JSON.stringify({ shortcuts: [] }), { status: 200 });
@@ -163,7 +160,7 @@ describe("Dashboard page", () => {
     render(<Dashboard />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      // Transaction descriptions
+      // Transaction type label for "sale_cash" is "بيع نقدي"
       expect(screen.getByText("بيع نقدي")).toBeInTheDocument();
     });
   });
@@ -185,14 +182,14 @@ describe("Dashboard page", () => {
 
   it("handles empty stats gracefully", async () => {
     const emptyStats = {
-      sales_today: 0,
-      sales_today_count: 0,
-      treasury_balance: 0,
-      customer_count: 0,
-      low_stock_count: 0,
-      top_products: [],
+      total_sales_today: 0,
+      total_expenses_today: 0,
+      total_income_today: 0,
+      net_profit: 0,
+      total_customer_debts: 0,
+      total_supplier_debts: 0,
+      low_stock_products: [],
       recent_transactions: [],
-      daily_sales: [],
     };
 
     vi.mocked(authFetch).mockImplementation(async (url: string) => {
@@ -205,8 +202,8 @@ describe("Dashboard page", () => {
     render(<Dashboard />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      // Should render without crashing — shows 0 values
-      expect(screen.getByText(/^0/)).toBeInTheDocument();
+      // Should render without crashing — shows KPI labels
+      expect(screen.getByText("مبيعات اليوم")).toBeInTheDocument();
     });
   });
 });

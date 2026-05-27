@@ -56,21 +56,21 @@ vi.mock("@/contexts/app-settings", () => ({
 }));
 
 // Mock sub-panels to isolate the Sales page tab logic
-vi.mock("./sales/SalesReturnsPanel", () => ({
+vi.mock("@/pages/sales/SalesReturnsPanel", () => ({
   __esModule: true,
   default: () => <div data-testid="returns-panel">Returns Panel</div>,
 }));
 
-vi.mock("./sales/SaleDetailModal", () => ({
+vi.mock("@/pages/sales/SaleDetailModal", () => ({
   __esModule: true,
   default: () => null,
 }));
 
-vi.mock("./sales/NewSalePanel", () => ({
+vi.mock("@/pages/sales/NewSalePanel", () => ({
   NewSalePanel: () => <div data-testid="new-sale-panel">New Sale Panel</div>,
 }));
 
-vi.mock("./sales/SalesHistoryPanel", () => ({
+vi.mock("@/pages/sales/SalesHistoryPanel", () => ({
   SalesHistoryPanel: () => <div data-testid="history-panel">History Panel</div>,
 }));
 

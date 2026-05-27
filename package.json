@@ -11,9 +11,13 @@
     "lint:fix": "pnpm --filter @workspace/api-server lint:fix && pnpm --filter @workspace/erp-system lint:fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test": "pnpm --filter @workspace/api-server test && pnpm --filter @workspace/erp-system test",
     "test:all": "pnpm --filter @workspace/api-server test && pnpm --filter @workspace/erp-system test",
     "test:e2e": "playwright test",
     "type-check": "pnpm --filter @workspace/api-server type-check && pnpm --filter @workspace/erp-system type-check",
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test",
+    "fix": "pnpm run lint:fix && pnpm run format",
+    "ci:local": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build",
     "sync-pages": "pnpm --filter @workspace/scripts sync-pages",
     "prepare": "husky"
   },

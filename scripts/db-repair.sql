@@ -338,6 +338,219 @@ BEGIN
     RAISE NOTICE 'db-repair: incentive_schemes orphans fixed';
   END IF;
 
+  -- ── HR — attendance deductions ────────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'attendance_deduction_settings') THEN
+    UPDATE attendance_deduction_settings SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: attendance_deduction_settings orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'attendance_deduction_tiers') THEN
+    UPDATE attendance_deduction_tiers SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: attendance_deduction_tiers orphans fixed';
+  END IF;
+
+  -- ── HR — salary advances ──────────────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'salary_advances') THEN
+    UPDATE salary_advances SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: salary_advances orphans fixed';
+  END IF;
+
+  -- ── HR — employee bonuses & deductions ────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employee_bonuses') THEN
+    UPDATE employee_bonuses SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: employee_bonuses orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employee_deductions') THEN
+    UPDATE employee_deductions SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: employee_deductions orphans fixed';
+  END IF;
+
+  -- ── HR — custody ──────────────────────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employee_custody') THEN
+    UPDATE employee_custody SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: employee_custody orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employee_custody_lines') THEN
+    UPDATE employee_custody_lines SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: employee_custody_lines orphans fixed';
+  END IF;
+
+  -- ── HR — accruals ─────────────────────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'accrual_runs') THEN
+    UPDATE accrual_runs SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: accrual_runs orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'accruals') THEN
+    UPDATE accruals SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: accruals orphans fixed';
+  END IF;
+
+  -- ── Accounting — budgets & cost centers ───────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'budgets') THEN
+    UPDATE budgets SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: budgets orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'budget_lines') THEN
+    UPDATE budget_lines SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: budget_lines orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'cost_centers') THEN
+    UPDATE cost_centers SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: cost_centers orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'fiscal_years') THEN
+    UPDATE fiscal_years SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: fiscal_years orphans fixed';
+  END IF;
+
+  -- ── Accounting — bank ─────────────────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'bank_accounts') THEN
+    UPDATE bank_accounts SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: bank_accounts orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'bank_statement_lines') THEN
+    UPDATE bank_statement_lines SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: bank_statement_lines orphans fixed';
+  END IF;
+
+  -- ── Accounting — bad debts & exchange rates ───────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'bad_debts') THEN
+    UPDATE bad_debts SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: bad_debts orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'exchange_rates') THEN
+    UPDATE exchange_rates SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: exchange_rates orphans fixed';
+  END IF;
+
+  -- ── Fixed assets & depreciation ───────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'fixed_assets') THEN
+    UPDATE fixed_assets SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: fixed_assets orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'depreciation_runs') THEN
+    UPDATE depreciation_runs SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: depreciation_runs orphans fixed';
+  END IF;
+
+  -- ── Sales — targets & price lists ─────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'sales_targets') THEN
+    UPDATE sales_targets SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: sales_targets orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'price_lists') THEN
+    UPDATE price_lists SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: price_lists orphans fixed';
+  END IF;
+
+  -- ── Repair / maintenance ──────────────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_jobs') THEN
+    UPDATE repair_jobs SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_jobs orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_job_parts') THEN
+    UPDATE repair_job_parts SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_job_parts orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_payments') THEN
+    UPDATE repair_payments SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_payments orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_statuses') THEN
+    UPDATE repair_statuses SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_statuses orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_status_history') THEN
+    UPDATE repair_status_history SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_status_history orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_accessories') THEN
+    UPDATE repair_accessories SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_accessories orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_checklist_items') THEN
+    UPDATE repair_checklist_items SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_checklist_items orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_dashboard_cards') THEN
+    UPDATE repair_dashboard_cards SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_dashboard_cards orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_device_models') THEN
+    UPDATE repair_device_models SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_device_models orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_pipeline_config') THEN
+    UPDATE repair_pipeline_config SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_pipeline_config orphans fixed';
+  END IF;
+
+  -- ── Warranty ──────────────────────────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'warranty_records') THEN
+    UPDATE warranty_records SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: warranty_records orphans fixed';
+  END IF;
+
+  -- ── Inventory — scrap ─────────────────────────────────────────────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'scrap_items') THEN
+    UPDATE scrap_items SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: scrap_items orphans fixed';
+  END IF;
+
+  -- ── Misc — notifications, announcements, devices, trial abuse ─────────────
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'notifications') THEN
+    UPDATE notifications SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: notifications orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'announcements') THEN
+    UPDATE announcements SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: announcements orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'devices') THEN
+    UPDATE devices SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: devices orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'trial_abuse_log') THEN
+    UPDATE trial_abuse_log SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: trial_abuse_log orphans fixed';
+  END IF;
+
   RAISE NOTICE 'db-repair: completed successfully — all orphaned rows re-pointed to company 1';
 
   EXCEPTION

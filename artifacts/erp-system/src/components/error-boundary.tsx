@@ -15,16 +15,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     const entry = { msg: "[ErrorBoundary] Uncaught React error", error: error.message, stack: info.componentStack };
-    if (typeof window !== "undefined") {
-      fetch("/api/health/client-error", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entry),
-        keepalive: true,
-      }).catch(() => {});
+    if (typeof window !== "undefined" && typeof fetch === "function") {
+      try {
+        const p = fetch("/api/health/client-error", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(entry),
+          keepalive: true,
+        });
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch { /* ignore reporting failures */ }
     }
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
       console.error("[ErrorBoundary]", error, info.componentStack);
     }
   }

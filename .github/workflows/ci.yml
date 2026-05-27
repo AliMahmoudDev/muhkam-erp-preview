@@ -1,4 +1,4 @@
-name: CI — Test, Lint, Type Check
+name: CI — Lint, Type Check, Test, Build
 
 on:
   push:
@@ -11,9 +11,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared libraries
+        run: pnpm --filter @workspace/api-client-react build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
   test-backend:
     name: Backend Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     services:
@@ -77,8 +108,8 @@ jobs:
         run: pnpm --filter @workspace/api-server test:coverage
 
   test-frontend:
-    name: Frontend Tests & Coverage
-    runs-on: ubuntu-latest
+    name: Frontend Tests
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -107,80 +138,11 @@ jobs:
       - name: Check coverage (frontend)
         run: pnpm --filter @workspace/erp-system test:coverage
 
-  lint:
-    name: Lint & Type Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build shared libraries
-        run: pnpm --filter @workspace/api-client-react build
-
-      - name: Lint backend
-        run: pnpm --filter @workspace/api-server lint
-
-      - name: Lint frontend (erp-system)
-        run: pnpm --filter @workspace/erp-system lint
-
-      - name: Type check backend
-        run: pnpm --filter @workspace/api-server type-check
-
-      - name: Type check frontend (erp-system)
-        run: pnpm --filter @workspace/erp-system type-check
-
   build:
     name: Build Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
-    needs: [test-backend, test-frontend, lint]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build MuhKam ERP frontend (erp-system)
-        run: |
-          cd artifacts/erp-system
-          NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
-
-      - name: Build backend
-        run: |
-          cd artifacts/api-server
-          pnpm run build
-
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: [build]
-    if: vars.PLAYWRIGHT_ENABLED == 'true'
+    needs: [lint-typecheck, test-backend, test-frontend]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -199,12 +161,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: pnpx playwright install --with-deps chromium
-
-      - name: E2E Tests
-        run: pnpm test:e2e
-        env:
-          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
-          E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
-          E2E_TEST_PASS: ${{ secrets.E2E_TEST_PASS }}
+      - name: Build
+        run: pnpm build

@@ -322,7 +322,7 @@ export function SalePaymentSection({
                 ? '✓ مكتمل'
                 : cart.length === 0
                   ? 'أضف منتجاً للبدء'
-                  : payPaidSoFar > 0 // eslint-disable-line no-constant-binary-expression
+                  : payPaidSoFar > 0
                     ? `متبقي: ${formatCurrency(payRemaining)}`
                     : 'اختر طريقة الدفع'}
             </span>
