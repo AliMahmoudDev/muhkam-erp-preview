@@ -412,7 +412,7 @@ describe('D. Tenant Isolation — Stock & Cost', () => {
     const beforeProd = await getProduct(prodA1Id);
 
     // Company B tries to purchase on prodA1 (belongs to Company A)
-    const res = await request(app)
+    await request(app)
       .post('/api/purchases')
       .set('Authorization', `Bearer ${tokenB}`)
       .send({
