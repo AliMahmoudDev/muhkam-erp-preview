@@ -42,10 +42,9 @@ export default function WarrantyModal({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/repair-jobs/${jobId}/create-warranty`, {
+      const res = await authFetch(`/api/repair-jobs/${jobId}/create-warranty`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ problem_description: problemDescription.trim(), notes: notes.trim() || null }),
       });
       const data = await res.json() as { error?: string; id?: number; job_no?: string };
