@@ -309,3 +309,13 @@ Use this before going to production:
 - [ ] 2FA enabled on the super admin account
 - [ ] Default PINs changed (never use `693014` or `202576` in production)
 - [ ] `NODE_ENV=production` set on the server
+
+
+
+---
+
+## Related Security Documents
+
+| Document | Description |
+|----------|-------------|
+| [docs/security/csrf-authfetch.md](docs/security/csrf-authfetch.md) | CSRF protection rules, authFetch usage guide, and PR review checklist for frontend HTTP requests |
