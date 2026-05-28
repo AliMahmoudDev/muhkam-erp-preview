@@ -10,7 +10,8 @@
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "node migrate-safe.mjs && drizzle-kit push --force --config ./drizzle.config.ts",
-    "migrate-safe": "node migrate-safe.mjs"
+    "migrate-safe": "node migrate-safe.mjs",
+    "generate": "drizzle-kit generate --config ./drizzle.config.ts"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
