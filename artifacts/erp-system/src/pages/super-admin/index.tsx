@@ -19,7 +19,7 @@ import { TabAnnouncements } from './tab-announcements';
 import { TabHealth }        from './tab-health';
 import { TabPlans }         from './tab-plans';
 import { TabMonitoring }    from './tab-monitoring';
-import { TabCompanies }     from './tab-companies';
+import { TabCompanies }     from './companies';
 import { TabManagers }      from './tab-managers';
 import { TabSettings }      from './tab-settings';
 import { SAHeader }         from './layout/sa-header';
