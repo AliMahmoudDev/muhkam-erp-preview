@@ -1,5 +1,4 @@
 import { C, FONT } from '../types';
-import type { Company, CompanyFeatures } from '../types';
 import type { TabCompaniesProps } from './types';
 import { StatsCards } from './StatsCards';
 import { ExpiringAlert } from './ExpiringAlert';

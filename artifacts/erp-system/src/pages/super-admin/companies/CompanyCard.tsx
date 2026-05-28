@@ -1,7 +1,7 @@
 import { C, STATUS, translatePlan } from '../types';
 import type { Company, CompanyFeatures } from '../types';
 import { ActionBtn } from '../ui';
-import type { CoMutate, SubForm } from './types';
+import type { SubForm } from './types';
 
 export function CompanyCard({
   co,
