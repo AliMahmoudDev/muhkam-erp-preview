@@ -232,6 +232,7 @@ export function JobDetail({
           jobId={job.id}
           jobData={job as unknown as { id: number; status: string; [key: string]: unknown }}
           onStatusChange={(s) => { onPatch({ status: s }); refreshJob(); }}
+          technicians={users}
         />
       </div>
 
