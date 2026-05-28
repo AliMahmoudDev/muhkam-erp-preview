@@ -147,7 +147,7 @@ export function useCompanyState(
   /* ── Mutations ── */
   const coMutate = useMutation({
     mutationFn: ({ url, method = 'POST', body }: CoMutateArgs) =>
-      fetch(api(url), {
+      authFetch(api(url), {
         method, headers: authHeaders(), body: body ? JSON.stringify(body) : undefined,
       }).then(r => r.json()),
     onSuccess: () => {
@@ -158,7 +158,7 @@ export function useCompanyState(
 
   const coDelete = useMutation({
     mutationFn: ({ id, force, confirm_code, expected_code }: { id: number; force?: boolean; confirm_code?: string; expected_code?: string }) =>
-      fetch(api(`/api/super/companies/${id}`), {
+      authFetch(api(`/api/super/companies/${id}`), {
         method: 'DELETE', headers: authHeaders(),
         body: JSON.stringify({ force, confirm_code, expected_code }),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw Object.assign(new Error(d.error ?? 'خطأ'), { data: d }); return d; }),

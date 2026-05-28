@@ -56,7 +56,7 @@ export function useManagerState(showToast: (msg: string, type?: 'success' | 'err
   /* ── Mutations ── */
   const mgCreate = useMutation({
     mutationFn: (body: object) =>
-      fetch(api('/api/super/managers'), {
+      authFetch(api('/api/super/managers'), {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
     onSuccess: () => {
@@ -70,7 +70,7 @@ export function useManagerState(showToast: (msg: string, type?: 'success' | 'err
 
   const mgUpdate = useMutation({
     mutationFn: ({ id, body }: { id: number; body: object }) =>
-      fetch(api(`/api/super/managers/${id}`), {
+      authFetch(api(`/api/super/managers/${id}`), {
         method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
     onSuccess: () => {
@@ -84,7 +84,7 @@ export function useManagerState(showToast: (msg: string, type?: 'success' | 'err
 
   const mgToggle = useMutation({
     mutationFn: (id: number) =>
-      fetch(api(`/api/super/managers/${id}/toggle`), {
+      authFetch(api(`/api/super/managers/${id}/toggle`), {
         method: 'PATCH', headers: authHeaders(),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['/api/super/managers'] }); showToast('تم تحديث حالة المدير'); },
@@ -93,7 +93,7 @@ export function useManagerState(showToast: (msg: string, type?: 'success' | 'err
 
   const mgDelete = useMutation({
     mutationFn: (id: number) =>
-      fetch(api(`/api/super/managers/${id}`), {
+      authFetch(api(`/api/super/managers/${id}`), {
         method: 'DELETE', headers: authHeaders(),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
     onSuccess: () => {
