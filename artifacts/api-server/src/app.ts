@@ -126,6 +126,16 @@ const authLimiter = rateLimit({
   message: { error: 'تجاوزت محاولات تسجيل الدخول، حاول مجدداً بعد دقيقة' },
 });
 
+/* ── Super-admin rate limiter: 30 req/min per IP ───────────── */
+const superAdminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: LOAD_TEST_MODE ? 1_000_000 : 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  store: makeRateLimitStore('rl:super:'),
+  message: { error: 'طلبات كثيرة جداً على عمليات المشرف العام — يرجى الانتظار قليلاً ثم المحاولة مرة أخرى' },
+});
+
 /* ── Compression: gzip responses > 1kb ─────────────────────── */
 app.use(compression({ level: 6, threshold: 1024 }));
 
@@ -273,6 +283,9 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login/email', authLimiter);
 app.use('/api/auth/refresh', authLimiter);
 app.use('/api/auth/2fa/login', authLimiter);
+
+/* ── Super-admin rate limiting (stricter for privileged operations) ── */
+app.use('/api/super', superAdminLimiter);
 
 /* ── Per-tenant rate limiting (after auth routes) ─────────── */
 app.use('/api', perTenantRateLimit);
