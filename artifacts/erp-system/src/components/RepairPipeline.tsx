@@ -108,6 +108,8 @@ interface Props {
   jobId: number;
   jobData: RepairJobData;
   onStatusChange: (newStatus: string) => void;
+  /** قائمة الفنيين — تُمرَّر إلى QualityCheckModal لاختيار فاحص الجودة */
+  technicians?: Array<{ id: number; name: string }>;
 }
 
 /**
@@ -144,7 +146,7 @@ interface ConfirmState {
 /** أي بوّابة (gated target) فُتح لها modal مخصّص — تُعالَج خارج الـ confirm العام */
 type GatedKey = "final_quality_check" | "ready_for_delivery" | "delivered" | null;
 
-export default function RepairPipeline({ currentStatus, jobData, onStatusChange }: Props) {
+export default function RepairPipeline({ currentStatus, jobData, onStatusChange, technicians = [] }: Props) {
   const [confirm, setConfirm]         = useState<ConfirmState | null>(null);
   const [gated, setGated]             = useState<GatedKey>(null);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -318,6 +320,7 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
         <QualityCheckModal
           job={jobLite}
           onClose={() => setGated(null)}
+          technicians={technicians}
           onSaved={(outcome) => {
             if (outcome === "approve") {
               /* حفظ QC بنجاح → ننقل البطاقة إلى "مراقبة الجودة" (final_quality_check)
