@@ -1,6 +1,7 @@
 import { Coins, Clock, Plus, Trash2, UserCog, Wrench, X } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { PartLine, PayRow, PayType, Warehouse, Product, DiscMode, lineDiscountAmount, lineNet } from "./types";
+import { DeliveryPaymentSection } from "@/pages/repairs/RepairExtensions";
 
 const fmtCurrency = (n: number) => formatCurrency(n);
 
@@ -58,6 +59,9 @@ interface Props {
   setBrokerName: (v: string) => void;
   brokerComm: string;
   setBrokerComm: (v: string) => void;
+  /* Delivery Payment (from RepairExtensions) */
+  deliveryPayment: { payment_type: string; safe_id: number | null };
+  setDeliveryPayment: (v: { payment_type: string; safe_id: number | null }) => void;
 }
 
 export default function DeliveryGateForm({
@@ -69,6 +73,7 @@ export default function DeliveryGateForm({
   safes, payRows, setPayRows, payType, setPayType, paySafe, setPaySafe, payAmount, setPayAmount,
   paidSoFar, grandTotal, remaining, payIsDone, addPayRow, fillAll,
   brokerName, setBrokerName, brokerComm, setBrokerComm,
+  deliveryPayment, setDeliveryPayment,
 }: Props) {
   return (
     <div className="overflow-y-auto max-h-[65vh]">
@@ -319,6 +324,15 @@ export default function DeliveryGateForm({
               className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none" />
           </div>
         </div>
+      </div>
+
+      {/* طريقة الدفع عند التسليم (من RepairExtensions) */}
+      <div className="px-5 pt-3 pb-4 border-t border-white/5">
+        <DeliveryPaymentSection
+          value={deliveryPayment}
+          onChange={setDeliveryPayment}
+          safes={safes}
+        />
       </div>
     </div>
   );
