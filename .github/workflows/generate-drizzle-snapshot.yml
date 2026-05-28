@@ -13,6 +13,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
 
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+      JWT_SECRET: ci-snapshot-jwt-secret-minimum-32chars!!
+      JWT_REFRESH_SECRET: ci-snapshot-refresh-secret-min-32chars!!
+
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -34,7 +40,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate Drizzle migration snapshot
-        run: DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy pnpm --filter @workspace/db run generate
+        run: pnpm --filter @workspace/db run generate
 
       - name: Verify drizzle folder was created
         run: |
