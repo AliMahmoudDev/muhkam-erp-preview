@@ -49,7 +49,7 @@ import ScrapInventory from '@/pages/scrap-inventory';
   } from './inventory/_shared';
   import { TabBtn, TabBtnBadge, StatCard } from './inventory/_components';
   import ReviewTab from './inventory/ReviewTab';
-  import CountTab from './inventory/CountTab';
+  import CountTab from './inventory/count';
     import AlertsTab from './inventory/AlertsTab';
 
   /* ═══════════════════════════════════════════════════════════════════════════
