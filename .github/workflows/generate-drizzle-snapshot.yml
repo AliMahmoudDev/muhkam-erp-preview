@@ -1,0 +1,134 @@
+name: Generate Drizzle Snapshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-snapshot:
+    name: Generate Initial Migration Snapshot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Drizzle migration snapshot
+        run: DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy pnpm --filter @workspace/db run generate
+
+      - name: Verify drizzle folder was created
+        run: |
+          if [ ! -d "lib/db/drizzle" ]; then
+            echo "ERROR: lib/db/drizzle was not created by drizzle-kit generate"
+            exit 1
+          fi
+          echo "lib/db/drizzle/ exists"
+          find lib/db/drizzle -type f | sort
+
+      - name: Scan for dangerous SQL statements
+        run: |
+          echo "Scanning generated SQL for dangerous statements..."
+          DANGEROUS=""
+
+          if grep -rn "DROP TABLE" lib/db/drizzle/ 2>/dev/null; then
+            DANGEROUS="$DANGEROUS DROP_TABLE"
+          fi
+          if grep -rn "DROP COLUMN" lib/db/drizzle/ 2>/dev/null; then
+            DANGEROUS="$DANGEROUS DROP_COLUMN"
+          fi
+          if grep -rn "TRUNCATE" lib/db/drizzle/ 2>/dev/null; then
+            DANGEROUS="$DANGEROUS TRUNCATE"
+          fi
+          if grep -rn "DELETE FROM" lib/db/drizzle/ 2>/dev/null; then
+            DANGEROUS="$DANGEROUS DELETE_FROM"
+          fi
+
+          if [ -n "$DANGEROUS" ]; then
+            echo ""
+            echo "FATAL: Dangerous SQL detected in generated migration!"
+            echo "Found: $DANGEROUS"
+            echo ""
+            echo "Generated SQL contains destructive statements."
+            echo "This snapshot will NOT be committed."
+            echo "Review the schema files for issues."
+            exit 1
+          fi
+
+          echo "OK — No dangerous statements found (no DROP TABLE/COLUMN, TRUNCATE, DELETE FROM)"
+
+      - name: Create branch and commit snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          BRANCH_NAME="chore/generated-initial-drizzle-snapshot"
+
+          # Delete remote branch if it already exists (idempotent)
+          git push origin --delete "$BRANCH_NAME" 2>/dev/null || true
+
+          git checkout -b "$BRANCH_NAME"
+          git add lib/db/drizzle/
+          git commit -m "chore: generate initial drizzle migration snapshot
+
+          Generated from current TypeScript schema using drizzle-kit generate.
+          This snapshot was NOT applied to any database.
+          It must be reviewed before merge.
+          Dangerous SQL scan: PASSED (no DROP/TRUNCATE/DELETE)"
+
+          git push origin "$BRANCH_NAME"
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SQL_FILES=$(find lib/db/drizzle -name "*.sql" | sort | head -20)
+          SQL_COUNT=$(find lib/db/drizzle -name "*.sql" | wc -l)
+
+          gh pr create \
+            --base main \
+            --head "chore/generated-initial-drizzle-snapshot" \
+            --title "chore: generate initial drizzle migration snapshot" \
+            --body "## Initial Drizzle Migration Snapshot
+
+          This PR contains the initial migration snapshot generated from the current TypeScript schema.
+
+          ### Important
+          - This was generated from the current TypeScript schema using \`drizzle-kit generate\`
+          - **It was NOT applied to any database**
+          - **It should be reviewed before merge**
+          - **It must NOT be applied blindly to an existing production database**
+          - Dangerous SQL scan: **PASSED** (no DROP TABLE, DROP COLUMN, TRUNCATE, or DELETE FROM)
+
+          ### Generated files
+          - SQL migration files: ${SQL_COUNT}
+
+          \`\`\`
+          ${SQL_FILES}
+          \`\`\`
+
+          ### Usage after merge
+          This snapshot establishes version 0 of the schema. Future schema changes will produce incremental migrations that can be reviewed as SQL diffs before deployment.
+
+          ### Safety
+          - This snapshot is safe to apply to an **empty database** only
+          - For existing production databases, a baseline adoption strategy must be documented first (mark this migration as already-applied without executing it)"
