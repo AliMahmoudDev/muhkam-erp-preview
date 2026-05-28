@@ -4,6 +4,7 @@ import { X, RotateCcw, Loader2, AlertTriangle, CheckCircle2, Package, Trash2, Wa
 import { useGetSettingsSafes } from "@workspace/api-client-react";
 import { safeArray } from "@/lib/safe-data";
 import { useAuth } from "@/contexts/auth";
+import { authFetch } from "@/lib/auth-fetch";
 
 interface SafeRow { id: number; name: string; balance: string | number; }
 
@@ -80,10 +81,9 @@ export default function RepairReturnModal({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/repair-jobs/${jobId}/customer-return`, {
+      const res = await authFetch(`/api/repair-jobs/${jobId}/customer-return`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
           refund_amount:       amount,
           safe_id:             amount > 0 ? Number(safeId) : null,

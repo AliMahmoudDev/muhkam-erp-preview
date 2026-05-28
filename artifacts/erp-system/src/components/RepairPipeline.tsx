@@ -5,6 +5,7 @@ import {
   PauseCircle, Ban, XCircle, ChevronRight, ChevronLeft, Loader2,
   AlertTriangle, FileText, RotateCcw,
 } from "lucide-react";
+import { authFetch } from "@/lib/auth-fetch";
 import type { LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import QualityCheckModal from "@/components/modals/QualityCheckModal";
@@ -184,10 +185,9 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
     if (!confirm) return;
     setConfirm(c => c ? { ...c, loading: true } : null);
     try {
-      const res = await fetch(`/api/repair-jobs/${jobData.id}`, {
+      const res = await authFetch(`/api/repair-jobs/${jobData.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ status: confirm.target }),
       });
       const data = await res.json() as { error?: string };
@@ -210,10 +210,9 @@ export default function RepairPipeline({ currentStatus, jobData, onStatusChange 
    *  يكون أنشأ مصروفاً أو حركة مخزون لا يمكن التراجع عنها بأمان من العميل. */
   async function applyGatedTransition(target: Exclude<GatedKey, null>) {
     try {
-      const res = await fetch(`/api/repair-jobs/${jobData.id}`, {
+      const res = await authFetch(`/api/repair-jobs/${jobData.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ status: target }),
       });
       if (res.ok) {
