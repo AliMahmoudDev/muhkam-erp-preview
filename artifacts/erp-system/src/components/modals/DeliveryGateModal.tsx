@@ -168,6 +168,7 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
               addPayRow={g.addPayRow} fillAll={g.fillAll}
               brokerName={g.brokerName} setBrokerName={g.setBrokerName}
               brokerComm={g.brokerComm} setBrokerComm={g.setBrokerComm}
+              deliveryPayment={g.deliveryPayment} setDeliveryPayment={g.setDeliveryPayment}
             />
 
             {/* Right: invoice summary */}

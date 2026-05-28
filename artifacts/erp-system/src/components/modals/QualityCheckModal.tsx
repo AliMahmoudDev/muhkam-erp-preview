@@ -26,6 +26,7 @@ import {
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { QAReportFields, TechnicianSelector } from "@/pages/repairs/RepairExtensions";
 
 type QcStatus = "pass" | "fail" | "n/a";
 type Outcome  = "approve" | "reject";
@@ -75,6 +76,8 @@ interface Props {
   onClose: () => void;
   /** يستدعى بعد الحفظ مع نتيجة الفحص. الأب يقرّر النقل بناءً على outcome. */
   onSaved: (outcome: Outcome) => void;
+  /** قائمة الفنيين لاختيار فاحص الجودة (اختياري) */
+  technicians?: Array<{ id: number; name: string }>;
 }
 
 /* ─── ألوان أزرار القرار ─── */
@@ -194,8 +197,13 @@ function parseSavedQc(raw: unknown): Array<{ id?: string; label?: string; status
 
 /* ═════════════════════════════════════════════════════════════════════ */
 
-export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
+export default function QualityCheckModal({ job, onClose, onSaved, technicians = [] }: Props) {
   const { toast } = useToast();
+
+  /* ── QA Report & Inspector state (from RepairExtensions) ── */
+  const [qaReport, setQaReport]           = useState("");
+  const [inspectorName, setInspectorName] = useState("");
+  const [qcTechnicianId, setQcTechnicianId] = useState<number | null>(null);
 
   /* بنود الاستلام — تُمثّل المرجع وتُستخدم لبناء بنود الفحص */
   const intakeItems = useMemo(() => parseChecklist(job.checklist), [job.checklist]);
@@ -338,7 +346,7 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
       });
 
       const body = noIntakeChecklist
-        ? { items: [], no_intake_checklist: true, notes: "", device_score: score.trim() === "" ? null : Number(score) }
+        ? { items: [], no_intake_checklist: true, notes: "", device_score: score.trim() === "" ? null : Number(score), qa_report: qaReport.trim() || null, qa_inspector_name: inspectorName.trim() || null, qa_technician_id: qcTechnicianId }
         : {
             items: items.map(i => ({
               id:       i.id,
@@ -350,6 +358,9 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
             })),
             notes: "",
             device_score: score.trim() === "" ? null : Number(score),
+            qa_report: qaReport.trim() || null,
+            qa_inspector_name: inspectorName.trim() || null,
+            qa_technician_id: qcTechnicianId,
           };
 
       const res = await authFetch(api(`/api/repair-jobs/${job.id}/qa-checklist`), {
@@ -702,6 +713,28 @@ export default function QualityCheckModal({ job, onClose, onSaved }: Props) {
               <p className="mt-2 text-[10px] text-red-300/80">
                 ⓘ سيُسجَّل تلقائياً تفصيل البنود المرفوضة ({failCount} بند) في تقرير الفني.
               </p>
+            )}
+          </div>
+        )}
+
+        {/* ── تقرير مراقبة الجودة + فاحص الجودة (من RepairExtensions) ── */}
+        {!rejectMode && (
+          <div className="px-5 py-3 border-t border-white/5 bg-purple-500/[0.02]">
+            <QAReportFields
+              qaReport={qaReport}
+              inspectorName={inspectorName}
+              onChangeReport={setQaReport}
+              onChangeInspector={setInspectorName}
+            />
+            {technicians.length > 0 && (
+              <div className="mt-3">
+                <TechnicianSelector
+                  label="الفني المسؤول عن فحص الجودة"
+                  value={qcTechnicianId}
+                  onChange={setQcTechnicianId}
+                  technicians={technicians}
+                />
+              </div>
             )}
           </div>
         )}
