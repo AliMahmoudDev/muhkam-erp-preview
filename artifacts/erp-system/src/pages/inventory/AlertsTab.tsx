@@ -11,7 +11,6 @@ import type {
   TransferPrefill,
 } from './_shared';
 import type { ReorderSuggestion } from './alerts/types';
-import { PRIORITY_COLORS, PRIORITY_LABELS } from './alerts/constants';
 import { POModal } from './alerts/components/POModal';
 import { AlertStatsCards } from './alerts/components/AlertStatsCards';
 import { AlertsTable } from './alerts/components/AlertsTable';
