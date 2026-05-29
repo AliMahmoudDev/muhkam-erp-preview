@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
-import { AlertTriangle, TrendingDown, RefreshCw, CheckCircle, Filter, Bell, ArrowRightLeft, FileSpreadsheet, FileText, ShoppingCart, TrendingUp, ClipboardList, X } from 'lucide-react';
+import { AlertTriangle, TrendingDown, RefreshCw, CheckCircle, Filter, ArrowRightLeft, FileSpreadsheet, FileText, ShoppingCart, TrendingUp, ClipboardList, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
 import { api } from './_shared';
@@ -13,6 +13,7 @@ import type {
 import type { ReorderSuggestion } from './alerts/types';
 import { PRIORITY_COLORS, PRIORITY_LABELS } from './alerts/constants';
 import { POModal } from './alerts/components/POModal';
+import { AlertStatsCards } from './alerts/components/AlertStatsCards';
 
 function AlertsTab({
   warehouses: _warehouses,
@@ -159,83 +160,13 @@ function AlertsTab({
       />
 
       {/* إحصائيات سريعة — قابلة للضغط للتصفية */}
-      <div className="grid grid-cols-3 gap-4">
-        <div
-          role="button"
-          tabIndex={0}
-          title="اضغط لعرض المنتجات النافدة فقط"
-          onClick={() => { setShowZeroOnly(true); }}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowZeroOnly(true); }}
-          className={`rounded-2xl p-4 border flex items-center gap-3 transition-all cursor-pointer select-none hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_6px_24px_rgba(0,0,0,0.35)] ${
-            showZeroOnly
-              ? 'bg-red-500/20 border-red-500/40 shadow-[0_0_16px_rgba(239,68,68,0.15)]'
-              : zeroCount > 0
-              ? 'bg-red-500/10 border-red-500/20'
-              : 'bg-white/5 border-white/5'
-          }`}
-        >
-          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-            <TrendingDown className={`w-5 h-5 ${zeroCount > 0 ? 'text-red-400' : 'text-white/20'}`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white/40 text-xs">نفد المخزون</p>
-            <p className={`text-2xl font-bold ${zeroCount > 0 ? 'text-red-400' : 'text-white/30'}`}>{zeroCount}</p>
-            <p className="text-white/20 text-[10px] mt-0.5">انقر للتصفية</p>
-          </div>
-          {showZeroOnly && (
-            <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          )}
-        </div>
-        <div
-          role="button"
-          tabIndex={0}
-          title="اضغط لعرض المنتجات تحت حد الطلب"
-          onClick={() => { setShowZeroOnly(false); }}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowZeroOnly(false); }}
-          className={`rounded-2xl p-4 border flex items-center gap-3 transition-all cursor-pointer select-none hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_6px_24px_rgba(0,0,0,0.35)] ${
-            !showZeroOnly
-              ? 'bg-amber-500/20 border-amber-500/40 shadow-[0_0_16px_rgba(245,158,11,0.15)]'
-              : lowCount > 0
-              ? 'bg-amber-500/10 border-amber-500/20'
-              : 'bg-white/5 border-white/5'
-          }`}
-        >
-          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-            <AlertTriangle className={`w-5 h-5 ${lowCount > 0 ? 'text-amber-400' : 'text-white/20'}`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white/40 text-xs">تحت حد الطلب</p>
-            <p className={`text-2xl font-bold ${lowCount > 0 ? 'text-amber-400' : 'text-white/30'}`}>{lowCount}</p>
-            <p className="text-white/20 text-[10px] mt-0.5">انقر للتصفية</p>
-          </div>
-          {!showZeroOnly && (
-            <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          )}
-        </div>
-        <div
-          role="button"
-          tabIndex={0}
-          title="عرض جميع التنبيهات"
-          onClick={() => { setShowZeroOnly(false); setFilterWH('all'); }}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setShowZeroOnly(false); setFilterWH('all'); } }}
-          className="rounded-2xl p-4 border bg-white/5 border-white/5 flex items-center gap-3 transition-all cursor-pointer select-none hover:-translate-y-0.5 hover:brightness-110 hover:bg-white/8 hover:shadow-[0_6px_24px_rgba(0,0,0,0.35)]"
-        >
-          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-            <Bell className={`w-5 h-5 ${zeroCount + lowCount > 0 ? 'text-white/40' : 'text-white/20'}`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white/40 text-xs">إجمالي التنبيهات</p>
-            <p className={`text-2xl font-bold ${zeroCount + lowCount > 0 ? 'text-white' : 'text-white/30'}`}>
-              {zeroCount + lowCount}
-            </p>
-            <p className="text-white/20 text-[10px] mt-0.5">إعادة تعيين الفلاتر</p>
-          </div>
-        </div>
-      </div>
+      <AlertStatsCards
+        zeroCount={zeroCount}
+        lowCount={lowCount}
+        showZeroOnly={showZeroOnly}
+        setShowZeroOnly={setShowZeroOnly}
+        setFilterWH={setFilterWH}
+      />
 
       {allItems.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
