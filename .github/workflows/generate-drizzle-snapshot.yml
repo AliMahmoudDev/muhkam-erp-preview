@@ -63,7 +63,11 @@ jobs:
           fi
           echo "OK — no dangerous statements found"
 
+      # Husky hooks are disabled here because CI validates generated PRs
+      # separately, and this workflow should only generate the snapshot PR.
       - name: Create branch and commit
+        env:
+          HUSKY: "0"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -71,12 +75,12 @@ jobs:
           git push origin --delete "$BRANCH" 2>/dev/null || true
           git checkout -b "$BRANCH"
           git add lib/db/drizzle/
-          git commit -m "chore: generate initial drizzle migration snapshot
+          git commit --no-verify -m "chore: generate initial drizzle migration snapshot
 
           Generated from current TypeScript schema using drizzle-kit generate.
           Not applied to any database. Must be reviewed before merge.
           Dangerous SQL scan: PASSED"
-          git push origin "$BRANCH"
+          git push --no-verify origin "$BRANCH"
 
       - name: Open Pull Request
         env:
