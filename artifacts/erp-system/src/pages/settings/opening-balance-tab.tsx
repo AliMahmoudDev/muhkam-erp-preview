@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { safeArray } from '@/lib/safe-data';
 import { useGetSettingsSafes, useGetProducts, useGetCustomers } from '@workspace/api-client-react';
 import { authFetch } from '@/lib/auth-fetch';
@@ -18,94 +18,11 @@ import {
 } from 'lucide-react';
 import { PageHeader, FieldLabel, SInput, SSelect, PrimaryBtn } from './_shared';
 import { api } from '@/lib/api';
+import type { OBSubTab, SafeItem, ProductItem, CustomerItem, OBEntry } from './opening-balance/types';
+import { OB_TABS } from './opening-balance/constants';
+import { useOBQuery } from './opening-balance/hooks/useOBQuery';
+import { OBEntryTable } from './opening-balance/components/OBEntryTable';
 
-
-/* ─── Types ─── */
-type OBSubTab = 'treasury' | 'products' | 'customers' | 'suppliers';
-
-interface SafeItem      { id: number; name: string; balance?: number | string }
-interface ProductItem   { id: number; name: string; sku?: string | null; cost_price?: number | string; quantity?: number | string }
-interface CustomerItem  { id: number; name: string; is_supplier?: boolean }
-
-interface OBEntry {
-  id: number;
-  amount?: number;
-  quantity?: number;
-  unit_cost?: number;
-  description?: string;
-  customer_name?: string;
-  safe_name?: string;
-  product_name?: string;
-  date?: string;
-  created_at: string;
-  notes?: string;
-}
-
-/* ─── Sub-tab config (Lucide icons instead of emoji) ─── */
-const OB_TABS: { id: OBSubTab; label: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: 'treasury', label: 'الخزائن', icon: Banknote },
-  { id: 'products', label: 'المنتجات', icon: Package },
-  { id: 'customers', label: 'العملاء', icon: Users },
-  { id: 'suppliers', label: 'عملاء (يُشترى منهم)', icon: Truck },
-];
-
-/* ─── React Query hook replacing useOBData ─── */
-function useOBQuery(path: string) {
-  return useQuery<OBEntry[]>({
-    queryKey: [`ob${path}`],
-    queryFn: async () => {
-      const res = await authFetch(api(`/api${path}`));
-      if (!res.ok) throw new Error('فشل تحميل القيود');
-      return res.json();
-    },
-    staleTime: 15_000,
-  });
-}
-
-/* ─── Entry Table ─── */
-function OBEntryTable({
-  data,
-  isLoading,
-  columns,
-}: {
-  data: OBEntry[];
-  isLoading: boolean;
-  columns: { label: string; render: (e: OBEntry) => React.ReactNode }[];
-}) {
-  if (isLoading)
-    return (
-      <div className="p-8 text-center text-white/40 text-sm">
-        <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
-        جاري التحميل...
-      </div>
-    );
-  if (data.length === 0)
-    return <div className="p-8 text-center text-white/25 text-sm">لا توجد قيود مسجلة</div>;
-  return (
-    <table className="w-full text-right text-sm">
-      <thead className="bg-white/3 border-b border-white/8">
-        <tr>
-          {columns.map((c) => (
-            <th key={c.label} className="p-3 text-white/40 text-xs font-medium">
-              {c.label}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((e) => (
-          <tr key={e.id} className="border-b border-white/5 hover:bg-white/2 transition-colors">
-            {columns.map((c) => (
-              <td key={c.label} className="p-3 text-white/70 text-sm">
-                {c.render(e)}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
 
 /* ─── Treasury Sub-tab ─── */
 function OBTreasuryTab() {
