@@ -19,73 +19,9 @@ import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { api } from '@/lib/api';
-
-
-interface FixedAsset {
-  id: number;
-  code: string;
-  name: string;
-  description: string | null;
-  category: string;
-  purchase_date: string;
-  purchase_cost: number;
-  residual_value: number;
-  useful_life_months: number;
-  depreciation_method: string;
-  accumulated_depreciation: number;
-  book_value: number;
-  status: string;
-  disposal_date: string | null;
-  disposal_proceeds: number | null;
-}
-
-interface ScheduleRow {
-  period: string;
-  depreciation: number;
-  accumulated: number;
-  book_value: number;
-}
-
-interface DeprecRunRow {
-  id: number;
-  period: string;
-  amount: number;
-  entry_id: number | null;
-}
-
-interface AssetDetail extends FixedAsset {
-  schedule: ScheduleRow[];
-  runs: DeprecRunRow[];
-}
-
-const CATEGORIES: Record<string, string> = {
-  equipment: 'معدات',
-  vehicle: 'مركبات',
-  furniture: 'أثاث ومفروشات',
-  electronics: 'أجهزة إلكترونية',
-  building: 'مباني',
-  land: 'أراضي',
-  other: 'أخرى',
-};
-
-const METHODS: Record<string, string> = {
-  straight_line: 'القسط الثابت',
-  reducing_balance: 'القسط المتناقص',
-};
-
-function StatusBadge({ status }: { status: string }) {
-  if (status === 'active')
-    return (
-      <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-        <CheckCircle className="w-3 h-3" /> نشط
-      </span>
-    );
-  return (
-    <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1">
-      <X className="w-3 h-3" /> مستبعد
-    </span>
-  );
-}
+import type { FixedAsset, AssetDetail } from './fixed-assets/types';
+import { CATEGORIES, METHODS } from './fixed-assets/constants';
+import { StatusBadge } from './fixed-assets/components/StatusBadge';
 
 /* ─── Add Asset Modal ─── */
 function AddAssetModal({ onClose }: { onClose: () => void }) {
