@@ -6,12 +6,7 @@ import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import {
   useGetProducts,
-  useCreateProduct,
-  useDeleteProduct,
   useGetCategories,
-  useUpdateCategory,
-  useDeleteCategory,
-  useCreateCategory,
 } from '@workspace/api-client-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency } from '@/lib/format';
@@ -60,8 +55,26 @@ function ProductsTab() {
   const { user } = useAuth();
   const canViewProducts = hasPermission(user, 'can_view_products') === true;
   const canManageProducts = hasPermission(user, 'can_manage_products') === true;
-  const createMutation = useCreateProduct();
-  const deleteMutation = useDeleteProduct();
+  const createMutation = useMutation({
+    mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
+      const r = await authFetch(api('/api/products'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id }: { id: number }) => {
+      const r = await authFetch(api(`/api/products/${id}`), { method: 'DELETE' });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -406,9 +419,38 @@ function CategoriesTab() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const updateMutation = useUpdateCategory();
-  const deleteMutation = useDeleteCategory();
-  const createMutation = useCreateCategory();
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Record<string, unknown> }) => {
+      const r = await authFetch(api(`/api/categories/${id}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id }: { id: number }) => {
+      const r = await authFetch(api(`/api/categories/${id}`), { method: 'DELETE' });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
+  const createMutation = useMutation({
+    mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
+      const r = await authFetch(api('/api/categories'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');

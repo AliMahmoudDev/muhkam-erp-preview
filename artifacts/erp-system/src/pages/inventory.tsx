@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
   import { authFetch } from '@/lib/auth-fetch';
-  import { useQuery, useQueryClient } from '@tanstack/react-query';
+  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
   import { useWarehouse } from '@/contexts/warehouse';
   import { useAuth } from '@/contexts/auth';
   import { hasPermission } from '@/lib/permissions';
@@ -33,8 +33,6 @@ import { useState, useEffect } from 'react';
   import { safeArray } from '@/lib/safe-data';
   import {
     useGetSettingsWarehouses,
-    useCreateSettingsWarehouse,
-    useDeleteSettingsWarehouse,
   } from '@workspace/api-client-react';
   import InventoryReport from './reports/InventoryReport';
 import ConsignmentPage from '@/pages/consignment';
@@ -93,8 +91,26 @@ export default function Inventory() {
   const warehouses = safeArray(warehousesRaw) as {
     id: number; name: string; address: string | null; branch_id: number | null; created_at: string;
   }[];
-  const createWH = useCreateSettingsWarehouse();
-  const deleteWH = useDeleteSettingsWarehouse();
+  const createWH = useMutation({
+    mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
+      const r = await authFetch(api('/api/settings/warehouses'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
+  const deleteWH = useMutation({
+    mutationFn: async (id: number) => {
+      const r = await authFetch(api(`/api/settings/warehouses/${id}`), { method: 'DELETE' });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
 
   /* branches for warehouse assignment */
   const { data: branchesRaw } = useQuery<{ id: number; name: string }[]>({

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useGetProducts, useGetSettingsWarehouses, useCreateProduct } from "@workspace/api-client-react";
+import { useGetProducts, useGetSettingsWarehouses } from "@workspace/api-client-react";
 import { safeArray } from "@/lib/safe-data";
 import { authFetch } from "@/lib/auth-fetch";
 import { Link } from "wouter";
@@ -34,7 +34,18 @@ export function OnboardingPanel() {
   const isReady = !loadingProducts && !loadingWarehouses && !loadingSales;
 
   const [showProductModal, setShowProductModal] = useState(false);
-  const createProduct = useCreateProduct();
+  const createProduct = useMutation({
+    mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
+      const r = await authFetch(api('/api/products'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
   const handleSaveProduct = (data: ProductFormData) => {
     createProduct.mutate({ data }, {
       onSuccess: () => {
