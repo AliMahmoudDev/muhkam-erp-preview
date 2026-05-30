@@ -446,7 +446,7 @@ export default function Expenses() {
       <ExpensesTable
         filtered={filtered}
         filteredTotal={filteredTotal}
-        hasFilter={hasFilter}
+        hasFilter={!!hasFilter}
         isLoading={isLoading}
         canDelete={canAdd}
         onViewDetail={(exp) => setDetailItem(exp)}
