@@ -4,7 +4,7 @@ import { useLocation, useSearch } from 'wouter';
 import { openPrintWindow } from '@/lib/print-utils';
 import { authFetch } from '@/lib/auth-fetch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useDeleteExpense, useGetSettingsSafes } from '@workspace/api-client-react';
+import { useGetSettingsSafes } from '@workspace/api-client-react';
 import { formatCurrency, formatDate } from '@/lib/format';
 import {
   Plus, Trash2, ShieldOff, BarChart2, X, Printer, Search, Tag,
@@ -214,7 +214,14 @@ export default function Expenses() {
   const categories: ExpenseCategory[] = safeArray(categoriesRaw);
   const { data: safesRaw } = useGetSettingsSafes();
   const safes = safeArray(safesRaw);
-  const deleteMutation = useDeleteExpense();
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const r = await authFetch(api(`/api/expenses/${id}`), { method: 'DELETE' });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ في حذف المصروف');
+      return j;
+    },
+  });
 
   /* ─── States ─── */
   const searchStr = useSearch();
@@ -352,7 +359,7 @@ export default function Expenses() {
   };
 
   const handleDelete = (id: number) => {
-    deleteMutation.mutate({ id }, {
+    deleteMutation.mutate(id, {
       onSuccess: () => {
         toast({ title: 'تم حذف المصروف بنجاح' });
         queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
