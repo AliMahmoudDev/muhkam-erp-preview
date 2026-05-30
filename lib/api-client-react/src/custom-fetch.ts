@@ -370,6 +370,21 @@ export async function customFetch<T = unknown>(
     headers.set("x-request-id", generateRequestId());
   }
 
+  // Attach CSRF token for mutating requests (browser only).
+  // Reads the csrf_token cookie set by the server and sends it as
+  // X-CSRF-Token header. Guarded by typeof document check so it is
+  // a no-op in Node/SSR/React Native environments.
+  if (MUTATING_METHODS.has(method) && !headers.has("x-csrf-token")) {
+    if (typeof document !== "undefined") {
+      const match = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("csrf_token="));
+      if (match) {
+        headers.set("x-csrf-token", decodeURIComponent(match.split("=")[1] ?? ""));
+      }
+    }
+  }
+
   const requestInfo = { method, url: resolveUrl(input) };
 
   const response = await fetch(input, { ...init, method, headers, credentials: 'include' });
