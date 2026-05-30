@@ -4,9 +4,8 @@ import { useLocation, useSearch } from 'wouter';
 import { authFetch } from '@/lib/auth-fetch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGetSettingsSafes } from '@workspace/api-client-react';
-import { formatCurrency } from '@/lib/format';
 import {
-  Plus, ShieldOff, BarChart2, X,
+  Plus, ShieldOff, BarChart2,
   TrendingDown, Ban,
 } from 'lucide-react';
 import BadDebts from './bad-debts';
@@ -22,6 +21,7 @@ import { AddExpenseModal } from './expenses/components/AddExpenseModal';
 import { ExpensesTable } from './expenses/components/ExpensesTable';
 import { ExpensesFilterToolbar } from './expenses/components/ExpensesFilterToolbar';
 import { ExpensesSummaryCards } from './expenses/components/ExpensesSummaryCards';
+import { ExpenseCategoryPills } from './expenses/components/ExpenseCategoryPills';
 
 function AccessDenied({ msg }: { msg: string }) {
   return (
@@ -289,39 +289,11 @@ export default function Expenses() {
         totalRecords={expenses.length}
       />
 
-      {/* ─── Category quick-filter pills ─── */}
-      {categoryBreakdown.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-white/25 text-xs font-medium shrink-0 ml-1">اختصارات الشهر:</span>
-          {categoryBreakdown.slice(0, 6).map(({ cat, amt }) => {
-            const active = catFilter === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setCatFilter(active ? '' : cat)}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
-                  active
-                    ? 'bg-orange-500/25 text-orange-200 border-orange-400/40 shadow-[0_0_12px_rgba(249,115,22,0.2)]'
-                    : 'bg-white/[0.04] text-white/55 border-white/[0.08] hover:bg-white/[0.08] hover:text-white/80 hover:border-white/15'
-                }`}
-              >
-                <span>{cat}</span>
-                <span className={`font-black tabular-nums ${active ? 'text-orange-300' : 'text-red-400/60'}`}>
-                  {formatCurrency(amt)}
-                </span>
-              </button>
-            );
-          })}
-          {catFilter && (
-            <button
-              onClick={() => setCatFilter('')}
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs text-white/30 hover:text-white/60 border border-white/8 hover:border-white/15 transition-all"
-            >
-              <X className="w-3 h-3" /> إلغاء
-            </button>
-          )}
-        </div>
-      )}
+      <ExpenseCategoryPills
+        categoryBreakdown={categoryBreakdown}
+        catFilter={catFilter}
+        setCatFilter={setCatFilter}
+      />
 
       <ExpensesFilterToolbar
         search={search}
