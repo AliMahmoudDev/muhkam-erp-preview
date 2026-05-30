@@ -11,20 +11,15 @@ import { useLocation } from 'wouter';
 import {
   TrendingUp,
   TrendingDown,
-  Wallet,
   Users,
   AlertTriangle,
   PackageX,
   ShoppingCart,
-  ReceiptText,
   DollarSign,
-  Landmark,
   ArrowUpRight,
   ArrowDownRight,
   Package,
   Truck,
-  Target,
-  Trophy,
   Settings2,
 } from 'lucide-react';
 import {
@@ -38,63 +33,10 @@ import {
   Cell,
 } from 'recharts';
 import { api } from '@/lib/api';
-
-
-/* ── Transaction meta ─────────────────────────────────────── */
-const TX_LABELS: Record<string, string> = {
-  /* مبيعات */
-  sale: 'مبيعة',
-  sale_cash: 'بيع نقدي',
-  sale_credit: 'بيع آجل',
-  sale_partial: 'بيع جزئي',
-  sale_cancel: 'إلغاء بيع',
-  sale_return: 'مرتجع مبيعات',
-  sales_return: 'مرتجع مبيعات',
-  sale_return_cancel: 'إلغاء مرتجع مبيعات',
-  /* مشتريات */
-  purchase: 'فاتورة شراء',
-  purchase_cash: 'شراء نقدي',
-  purchase_credit: 'شراء آجل',
-  purchase_partial: 'شراء جزئي',
-  purchase_return: 'مرتجع مشتريات',
-  purchase_cancel: 'إلغاء شراء',
-  /* مصروفات وإيرادات */
-  expense: 'مصروف',
-  income: 'إيراد',
-  /* سندات */
-  receipt: 'سند قبض',
-  receipt_voucher: 'سند قبض',
-  payment: 'سند صرف',
-  payment_voucher: 'سند صرف',
-  deposit: 'سند توريد',
-  /* خزينة */
-  transfer: 'تحويل خزينة',
-  customer_payment: 'سداد عميل',
-  supplier_payment: 'تسديد دفعة',
-  customer_opening: 'رصيد أول مدة عميل',
-  supplier_opening: 'رصيد أول مدة مورد',
-};
-const TX_ICONS: Record<string, typeof ShoppingCart> = {
-  sale: ShoppingCart,
-  purchase: Landmark,
-  expense: TrendingDown,
-  income: TrendingUp,
-  receipt: ReceiptText,
-  deposit: DollarSign,
-};
-const TX_IS_INCOME = new Set([
-  'sale',
-  'receipt',
-  'income',
-  'deposit',
-  'sale_cash',
-  'sale_credit',
-  'sale_partial',
-  'receipt_voucher',
-]);
-
-/* ─────────────────────────────────────────────────────────── */
-const DEFAULT_SHORTCUTS = ['new-sale', 'new-receipt', 'new-repair', 'new-purchase'];
+import { TX_LABELS, TX_ICONS, TX_IS_INCOME, DEFAULT_SHORTCUTS } from './dashboard/constants';
+import { KpiCard, type KpiDef } from './dashboard/KpiCard';
+import { SalesTargetsWidget } from './dashboard/SalesTargetsWidget';
+import { EmptyState } from './dashboard/EmptyState';
 
 export default function Dashboard() {
   const { currentWarehouseId } = useWarehouse();
@@ -688,169 +630,3 @@ export default function Dashboard() {
   );
 }
 
-/* ──────────────────────────────────────────────────────────
-   KPI CARD
-────────────────────────────────────────────────────────── */
-interface KpiDef {
-  label: string;
-  value: number;
-  icon: typeof ShoppingCart;
-  gradient: string;
-  glow: string;
-  iconBg: string;
-  iconClr: string;
-  badge: { up: boolean; label: string };
-  rawValue?: boolean;
-}
-
-function KpiCard({ card, index }: { card: KpiDef; index: number }) {
-  const Icon = card.icon;
-  return (
-    <div
-      className="db-kpi-card db-kpi-hover"
-      style={{
-        background: card.gradient,
-        boxShadow: `0 10px 40px rgba(0,0,0,0.34), 0 0 0 1px rgba(255,255,255,0.10), inset 0 1px 0 rgba(255,255,255,0.12)`,
-        animationDelay: `${index * 0.08}s`,
-      }}
-    >
-      <div className="db-kpi-shimmer" />
-
-      <div className="db-kpi-glow" style={{ background: card.glow }} />
-
-      <div className="db-kpi-dots" />
-
-      <div className="db-kpi-content">
-        <div className="db-kpi-header">
-          <p className="db-kpi-label">{card.label}</p>
-          <div className="db-kpi-icon" style={{ background: card.iconBg }}>
-            <Icon style={{ width: 21, height: 21, color: card.iconClr }} />
-          </div>
-        </div>
-
-        <p className="db-kpi-value">
-          {card.rawValue ? String(card.value) : formatCurrency(card.value)}
-        </p>
-
-        <div
-          className="inline-flex items-center gap-1"
-          style={{
-            padding: '4px 10px',
-            borderRadius: '20px',
-            background: card.badge.up ? 'rgba(52,211,153,0.20)' : 'rgba(248,113,113,0.20)',
-            border: `1px solid ${card.badge.up ? 'rgba(52,211,153,0.30)' : 'rgba(248,113,113,0.30)'}`,
-            fontSize: '11px',
-            fontWeight: 700,
-            color: card.badge.up ? '#6ee7b7' : '#fca5a5',
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          {card.badge.up ? (
-            <ArrowUpRight style={{ width: 12, height: 12 }} />
-          ) : (
-            <ArrowDownRight style={{ width: 12, height: 12 }} />
-          )}
-          <span>{card.badge.label}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ──────────────────────────────────────────────────────────
-   SALES TARGETS WIDGET
-────────────────────────────────────────────────────────── */
-interface TargetItem {
-  user_id: number; user_name: string; role: string;
-  target_amount: number; achieved_amount: number;
-}
-
-function SalesTargetsWidget() {
-  const ym = new Date().toISOString().slice(0, 7);
-  const { data, isLoading } = useQuery<{ month: string; items: TargetItem[] }>({
-    queryKey: ['/api/sales-targets', ym],
-    queryFn: () => authFetch(api(`/api/sales-targets?month=${ym}`)).then(r => r.json()),
-    staleTime: 60_000,
-  });
-
-  const active = (data?.items ?? []).filter(r => r.target_amount > 0);
-
-  if (!isLoading && active.length === 0) return null;
-
-  const monthLabel = new Date(ym + '-01').toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
-
-  return (
-    <div className="db-card mt-0">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h3 className="db-card-title">أهداف المبيعات</h3>
-          <p className="db-card-sub">{monthLabel}</p>
-        </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-          style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.22)', color: '#f59e0b' }}>
-          <Target style={{ width: 12, height: 12 }} />
-          {active.length} مستخدم
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-14 rounded-xl bg-white/[0.03] animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {active.map(row => {
-            const pct     = Math.min(100, (row.achieved_amount / row.target_amount) * 100);
-            const color   = pct >= 100 ? '#34d399' : pct >= 60 ? '#f59e0b' : '#f87171';
-            const bgColor = pct >= 100 ? 'rgba(52,211,153,0.08)' : pct >= 60 ? 'rgba(245,158,11,0.08)' : 'rgba(248,113,113,0.06)';
-            return (
-              <div key={row.user_id} className="p-3 rounded-xl space-y-2"
-                style={{ background: bgColor, border: `1px solid ${color}22` }}>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: `${color}20` }}>
-                      <Trophy style={{ width: 14, height: 14, color }} />
-                    </div>
-                    <span className="text-white/80 text-sm font-semibold truncate">{row.user_name}</span>
-                  </div>
-                  <span className="text-xs font-black shrink-0" style={{ color }}>
-                    {pct.toFixed(0)}%
-                  </span>
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--erp-bg-hover)' }}>
-                  <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%`, background: color }} />
-                </div>
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-white/35">
-                    {row.achieved_amount.toLocaleString('ar-EG-u-nu-latn')} ج.م
-                  </span>
-                  <span className="text-white/25">
-                    الهدف: {row.target_amount.toLocaleString('ar-EG-u-nu-latn')} ج.م
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ──────────────────────────────────────────────────────────
-   EMPTY STATE
-────────────────────────────────────────────────────────── */
-function EmptyState({ msg, height = 160 }: { msg: string; height?: number }) {
-  return (
-    <div className="erp-empty-state" style={{ height }}>
-      <div className="erp-empty-icon">
-        <Wallet style={{ width: 22, height: 22 }} />
-      </div>
-      <p className="erp-empty-label">{msg}</p>
-    </div>
-  );
-}
