@@ -13,7 +13,6 @@ import {
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import {
   useGetCustomers,
-  useCreateCustomer,
   useGetSettingsSafes,
 } from '@workspace/api-client-react';
 
@@ -71,7 +70,24 @@ export default function Customers() {
   const { user } = useAuth();
   const canViewCustomers = hasPermission(user, 'can_view_customers') === true;
   const canManageCustomers = hasPermission(user, 'can_manage_customers') === true;
-  const createMutation = useCreateCustomer();
+  const createMutation = useMutation({
+    mutationFn: async (data: {
+      name: string;
+      phone: string;
+      balance: number;
+      is_customer: boolean;
+      is_supplier: boolean;
+      classification_id: number | null;
+    }) => {
+      const r = await authFetch(api('/api/customers'), {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ في إضافة العميل');
+      return j;
+    },
+  });
   const { data: safesRaw } = useGetSettingsSafes();
   const safes = safeArray(safesRaw);
   const queryClient = useQueryClient();
@@ -275,7 +291,7 @@ export default function Customers() {
       return;
     }
     createMutation.mutate(
-      { data: formData as never },
+      formData,
       {
         onSuccess: () => {
           toast({ title: '✅ تم إضافة العميل بنجاح' });
