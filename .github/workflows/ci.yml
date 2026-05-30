@@ -11,6 +11,59 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  migration-safety-check:
+    name: Migration SQL Safety Scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan migration SQL for dangerous statements
+        run: |
+          if [ ! -d "lib/db/drizzle" ]; then
+            echo "No migration folder found — skipping scan"
+            exit 0
+          fi
+
+          SQL_FILES=$(find lib/db/drizzle -maxdepth 1 -name "*.sql" -type f)
+          if [ -z "$SQL_FILES" ]; then
+            echo "No .sql files in lib/db/drizzle — skipping scan"
+            exit 0
+          fi
+
+          DANGEROUS=""
+
+          check_pattern() {
+            local pattern="$1"
+            local label="$2"
+            local matches
+            matches=$(grep -rn -E "$pattern" lib/db/drizzle/*.sql \
+              | grep -v "^\s*--" \
+              | grep -v "\-\-.*$pattern" || true)
+            if [ -n "$matches" ]; then
+              echo "::error::DANGEROUS SQL DETECTED — $label"
+              echo "$matches"
+              DANGEROUS="$DANGEROUS $label"
+            fi
+          }
+
+          check_pattern "DROP TABLE"          "DROP_TABLE"
+          check_pattern "DROP COLUMN"         "DROP_COLUMN"
+          check_pattern "ALTER TABLE .* DROP"  "ALTER_TABLE_DROP"
+          check_pattern "TRUNCATE"            "TRUNCATE"
+          check_pattern "DELETE FROM"         "DELETE_FROM"
+
+          if [ -n "$DANGEROUS" ]; then
+            echo ""
+            echo "FATAL: Dangerous SQL detected:$DANGEROUS"
+            echo "If intentional, document the risk and request manual merge approval."
+            exit 1
+          fi
+
+          echo "✅ No dangerous migration SQL detected"
+
   lint-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-24.04
