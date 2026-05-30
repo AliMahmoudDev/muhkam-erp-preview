@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGetSettingsSafes } from '@workspace/api-client-react';
 import { formatCurrency } from '@/lib/format';
 import {
-  Plus, ShieldOff, BarChart2, X, Search, Tag,
+  Plus, ShieldOff, BarChart2, X, Tag,
   TrendingDown, AlertCircle, Calendar, Ban,
 } from 'lucide-react';
 import BadDebts from './bad-debts';
@@ -20,6 +20,7 @@ import { ExpenseDetailModal } from './expenses/components/ExpenseDetailModal';
 import { ExpenseReportsModal } from './expenses/components/ExpenseReportsModal';
 import { AddExpenseModal } from './expenses/components/AddExpenseModal';
 import { ExpensesTable } from './expenses/components/ExpensesTable';
+import { ExpensesFilterToolbar } from './expenses/components/ExpensesFilterToolbar';
 
 function AccessDenied({ msg }: { msg: string }) {
   return (
@@ -365,65 +366,19 @@ export default function Expenses() {
         </div>
       )}
 
-      {/* ─── Filters Row ─── */}
-      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
-        {/* Search */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-white/30 text-xs font-medium pr-1">بحث</label>
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 pointer-events-none" />
-            <input
-              type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="بحث بالتصنيف أو التفاصيل..."
-              className="glass-input w-full icon-pr text-sm py-2.5"
-            />
-            {search && (
-              <button onClick={() => setSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Category */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-white/30 text-xs font-medium pr-1">التصنيف</label>
-          <select
-            value={catFilter} onChange={e => setCatFilter(e.target.value)}
-            className="glass-input text-sm py-2.5 w-36"
-          >
-            <option value="" className="bg-gray-900">الكل</option>
-            {categories.map(c => <option key={c.id} value={c.name} className="bg-gray-900">{c.name}</option>)}
-          </select>
-        </div>
-
-        {/* Date range */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-white/30 text-xs font-medium pr-1">من تاريخ</label>
-          <input
-            type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="glass-input text-sm py-2.5 w-36 [color-scheme:dark]"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-white/30 text-xs font-medium pr-1">إلى تاريخ</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-              className="glass-input text-sm py-2.5 w-36 [color-scheme:dark]"
-            />
-            {hasFilter && (
-              <button
-                onClick={() => { setSearch(''); setCatFilter(''); setDateFrom(''); setDateTo(''); }}
-                title="مسح كل الفلاتر"
-                className="flex-shrink-0 w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      <ExpensesFilterToolbar
+        search={search}
+        setSearch={setSearch}
+        catFilter={catFilter}
+        setCatFilter={setCatFilter}
+        dateFrom={dateFrom}
+        setDateFrom={setDateFrom}
+        dateTo={dateTo}
+        setDateTo={setDateTo}
+        categories={categories}
+        hasFilter={!!hasFilter}
+        onClearAll={() => { setSearch(''); setCatFilter(''); setDateFrom(''); setDateTo(''); }}
+      />
 
       <AddExpenseModal
         show={showAdd}
