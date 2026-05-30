@@ -9,10 +9,9 @@ import {
   useGetProducts,
   useGetCustomers,
   useGetSettingsSafes,
-  useCreateProduct,
   useGetCategories,
 } from '@workspace/api-client-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
 export function useNewSaleData() {
@@ -28,7 +27,18 @@ export function useNewSaleData() {
   const { data: categoriesRaw } = useGetCategories();
   const categories = safeArray(categoriesRaw);
 
-  const createProductMutation = useCreateProduct();
+  const createProductMutation = useMutation({
+    mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
+      const r = await authFetch(api('/api/products'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ في إضافة المنتج');
+      return j;
+    },
+  });
 
   const { data: warehousesRaw } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['/api/settings/warehouses'],
