@@ -1,5 +1,4 @@
 import { X, Search, Receipt } from 'lucide-react';
-import { formatCurrency } from '@/lib/format';
 import type { InvoiceSummary } from '../salesTypes';
 
 interface InvoiceSearchModalProps {
