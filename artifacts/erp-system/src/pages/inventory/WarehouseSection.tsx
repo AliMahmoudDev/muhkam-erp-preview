@@ -63,7 +63,7 @@ interface WarehouseSectionProps {
   deleteWH: { mutate: (id: number, opts: { onSuccess: () => void; onError: (e: unknown) => void }) => void; isPending: boolean };
   invalidateWH: () => void;
   qc: ReturnType<typeof useQueryClient>;
-  toast: (opts: { title: string; variant?: string }) => void;
+  toast: (opts: { title: string; variant?: 'default' | 'destructive' | 'warning' | 'info' | null }) => void;
   handleOverviewExport: () => void;
   showAddWH: boolean;
   setShowAddWH: (v: boolean) => void;
