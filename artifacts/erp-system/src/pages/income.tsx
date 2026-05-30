@@ -2,7 +2,7 @@ import { safeArray } from "@/lib/safe-data";
 import { useState, useMemo } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useDeleteIncome, useGetSettingsSafes } from "@workspace/api-client-react";
+import { useGetSettingsSafes } from "@workspace/api-client-react";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Plus, Trash2, Search, X, TrendingUp, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -75,7 +75,14 @@ export default function Income() {
   });
   const { data: safesRaw } = useGetSettingsSafes();
   const safes = safeArray(safesRaw);
-  const deleteMutation = useDeleteIncome();
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id }: { id: number }) => {
+      const r = await authFetch(api(`/api/income/${id}`), { method: 'DELETE' });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { safeArray } from "@/lib/safe-data";
 import { authFetch } from "@/lib/auth-fetch";
 import {
-  useGetSettingsUsers, useCreateSettingsUser, useUpdateSettingsUser, useDeleteSettingsUser,
+  useGetSettingsUsers,
   useGetSettingsSafes, useGetSettingsWarehouses,
 } from "@workspace/api-client-react";
 
@@ -81,9 +81,38 @@ export default function UsersTab() {
     },
   });
   const empOptions = safeArray<EmployeeItem>(empRaw);
-  const createUser = useCreateSettingsUser();
-  const updateUser = useUpdateSettingsUser();
-  const deleteUser = useDeleteSettingsUser();
+  const createUser = useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const r = await authFetch(api('/api/settings/users'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
+  const updateUser = useMutation({
+    mutationFn: async ({ id, body }: { id: number; body: Record<string, unknown> }) => {
+      const r = await authFetch(api(`/api/settings/users/${id}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
+  const deleteUser = useMutation({
+    mutationFn: async (id: number) => {
+      const r = await authFetch(api(`/api/settings/users/${id}`), { method: 'DELETE' });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 

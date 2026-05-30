@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { safeArray } from "@/lib/safe-data";
-import { useCreatePurchase, useGetProducts, useGetCustomers, useCreateProduct, useGetSettingsSafes, useGetSettingsWarehouses, useGetCategories } from "@workspace/api-client-react";
+import { useGetProducts, useGetCustomers, useGetSettingsSafes, useGetSettingsWarehouses, useGetCategories } from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/format";
 import { Search, Plus, Minus, Trash2, ShoppingBag, Package, User, Vault } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authFetch } from "@/lib/auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { SearchableSelect } from "@/components/searchable-select";
@@ -54,8 +54,30 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
   const safes = safeArray<Safe>(safesRaw);
   const { data: warehousesRaw } = useGetSettingsWarehouses();
   const warehouses = safeArray<Warehouse>(warehousesRaw);
-  const createMutation = useCreatePurchase();
-  const createProductMutation = useCreateProduct();
+  const createMutation = useMutation({
+    mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
+      const r = await authFetch(api('/api/purchases'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
+  const createProductMutation = useMutation({
+    mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
+      const r = await authFetch(api('/api/products'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: categoriesRaw } = useGetCategories();

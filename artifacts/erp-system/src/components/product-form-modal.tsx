@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Plus, RefreshCw, Tag, ChevronDown, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
-import { useGetCategories, useCreateCategory } from '@workspace/api-client-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useGetCategories } from '@workspace/api-client-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { safeArray } from '@/lib/safe-data';
 import { useVatSettings } from '@/hooks/useVatSettings';
+import { authFetch } from '@/lib/auth-fetch';
+import { api } from '@/lib/api';
 
 export type ProductFormData = {
   name: string;
@@ -56,7 +58,18 @@ export function ProductFormModal({
   const queryClient = useQueryClient();
   const { data: catsRaw } = useGetCategories();
   const categories = safeArray(catsRaw);
-  const createCategoryMutation = useCreateCategory();
+  const createCategoryMutation = useMutation({
+    mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
+      const r = await authFetch(api('/api/categories'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
   const { data: vatSettings } = useVatSettings();
   const vatEnabled = vatSettings?.vatEnabled ?? false;
   const vatRate = vatSettings?.vatRate ?? 14;

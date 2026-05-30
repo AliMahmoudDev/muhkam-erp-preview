@@ -3,11 +3,9 @@ import { useState } from 'react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   useGetSettingsSafes,
-  useCreateSettingsSafe,
-  useDeleteSettingsSafe,
 } from '@workspace/api-client-react';
 import { formatCurrency } from '@/lib/format';
 import {
@@ -56,8 +54,26 @@ export default function Treasury() {
   const [editSaving, setEditSaving] = useState(false);
 
   const queryClient = useQueryClient();
-  const createSafe = useCreateSettingsSafe();
-  const deleteSafe = useDeleteSettingsSafe();
+  const createSafe = useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const r = await authFetch(api('/api/settings/safes'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
+  const deleteSafe = useMutation({
+    mutationFn: async (id: number) => {
+      const r = await authFetch(api(`/api/settings/safes/${id}`), { method: 'DELETE' });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'خطأ');
+      return j;
+    },
+  });
   const { toast } = useToast();
   const { user } = useAuth();
 
