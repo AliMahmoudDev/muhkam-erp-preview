@@ -34,7 +34,7 @@ import {
 } from 'recharts';
 import { api } from '@/lib/api';
 import { TX_LABELS, TX_ICONS, TX_IS_INCOME, DEFAULT_SHORTCUTS } from './dashboard/constants';
-import { KpiCard, type KpiDef } from './dashboard/KpiCard';
+import { KpiCard } from './dashboard/KpiCard';
 import { SalesTargetsWidget } from './dashboard/SalesTargetsWidget';
 import { EmptyState } from './dashboard/EmptyState';
 
