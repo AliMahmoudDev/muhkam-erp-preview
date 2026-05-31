@@ -1,33 +1,29 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useAppSettings } from "@/contexts/app-settings";
-import { useGetCustomers } from "@workspace/api-client-react";
-import { safeArray } from "@/lib/safe-data";
-import { SearchableSelect } from "@/components/searchable-select";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Smartphone, Plus, CheckCircle2, XCircle,
+  Smartphone, Plus, CheckCircle2,
   ShoppingCart, Wrench,
   Trash2, RotateCcw, Package,
-  User, TrendingUp, Banknote, Printer,
-  MoreVertical, Eye, Percent, Shield,
+  TrendingUp, Banknote, Printer,
+  MoreVertical, Eye, Shield,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authFetch } from "@/lib/auth-fetch";
-import { useAuth } from "@/contexts/auth";
 import { api } from '@/lib/api';
 import Warranty from '@/pages/warranty';
 import { DeviceFormModal } from './DeviceFormModal';
 import { DeviceDetails } from './DeviceDetails';
 import { DeviceList } from './DeviceList';
 import { SellModal } from './SellModal';
-import { ReturnModal, RETURN_REASONS } from './ReturnModal';
+import { ReturnModal } from './ReturnModal';
 import { printSaleReceipt } from './printSaleReceipt';
 
 /* ── Re-export types from shared types file ── */
 export type { DeviceStatus, PaymentMethod, PaymentStatus, Device } from './types';
 export type { Stats } from './types';
-import type { Device, DeviceStatus, PaymentMethod, PaymentStatus } from './types';
+import type { Device, DeviceStatus } from './types';
 import type { Stats } from './types';
 
 /* ── Re-export extracted modules for backward compatibility ── */
