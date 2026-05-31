@@ -6,12 +6,13 @@ import { api } from '@/lib/api';
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Inbox, RefreshCw, Check, X, Wallet } from 'lucide-react';
+import { Inbox, RefreshCw, Check, X } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAppSettings } from '@/contexts/app-settings';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
+import { NotificationList } from './notifications/NotificationList';
 
 interface AppNotification {
   id: number;
@@ -32,48 +33,6 @@ interface SafeOption {
 }
 
 const POLL_MS = 60_000;
-
-const TYPE_ICON: Record<string, string> = {
-  advance_pending:   '⏳',
-  advance_approved:  '✅',
-  advance_rejected:  '❌',
-  bonus_granted:     '🎁',
-  deduction_added:   '➖',
-  custody_settled:   '📦',
-  custody_assigned:  '📤',
-  transfer_request:  '🔄',
-  transfer_approved: '✅',
-  transfer_shipped:  '🚚',
-  transfer_received: '📦',
-  generic:           '🔔',
-};
-
-const TYPE_COLOR: Record<string, string> = {
-  advance_pending:   '#f59e0b',
-  advance_approved:  '#22c55e',
-  advance_rejected:  '#ef4444',
-  bonus_granted:     '#22c55e',
-  deduction_added:   '#ef4444',
-  custody_settled:   '#3b82f6',
-  custody_assigned:  '#a78bfa',
-  transfer_request:  '#a78bfa',
-  transfer_approved: '#3b82f6',
-  transfer_shipped:  '#f59e0b',
-  transfer_received: '#22c55e',
-  generic:           '#94a3b8',
-};
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60_000);
-  if (m < 1) return 'الآن';
-  if (m < 60) return `قبل ${m} د`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `قبل ${h} س`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `قبل ${d} ي`;
-  return new Date(iso).toLocaleDateString('ar-EG-u-nu-latn', { month: 'short', day: 'numeric' });
-}
 
 export function NotificationBell() {
   const [items, setItems] = useState<AppNotification[]>([]);
@@ -332,143 +291,23 @@ export function NotificationBell() {
 
           {/* List */}
           <div style={{ overflowY: 'auto', flex: 1 }}>
-            {items.length === 0 ? (
-              <div style={{ padding: '36px 16px', textAlign: 'center', color: textSub, fontSize: 13 }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>📭</div>
-                لا توجد رسائل
-              </div>
-            ) : items.map(n => {
-              const color = TYPE_COLOR[n.type] ?? '#94a3b8';
-              const isRejectOpen = rejectTarget?.id === n.id;
-              return (
-                <div
-                  key={n.id}
-                  onClick={() => !isRejectOpen && handleClick(n)}
-                  style={{
-                    padding: '10px 14px',
-                    borderBottom: `1px solid ${border}`,
-                    background: n.is_read ? 'transparent' : (isDark ? 'rgba(245,158,11,0.05)' : 'rgba(245,158,11,0.05)'),
-                    display: 'flex', gap: 10, alignItems: 'flex-start',
-                    cursor: isRejectOpen ? 'default' : 'pointer',
-                  }}
-                  onMouseEnter={(e) => { if (!isRejectOpen) (e.currentTarget as HTMLDivElement).style.background = rowHover; }}
-                  onMouseLeave={(e) => {
-                    if (!isRejectOpen) (e.currentTarget as HTMLDivElement).style.background = n.is_read ? 'transparent' : (isDark ? 'rgba(245,158,11,0.05)' : 'rgba(245,158,11,0.05)');
-                  }}
-                >
-                  <div style={{
-                    flexShrink: 0, width: 30, height: 30, borderRadius: 8,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: `${color}22`, fontSize: 14,
-                  }}>{TYPE_ICON[n.type] ?? '🔔'}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'baseline' }}>
-                      <div style={{
-                        fontSize: 12.5, fontWeight: 700,
-                        color: n.is_read ? textSub : textMain,
-                      }}>{n.title}</div>
-                      <span style={{ fontSize: 10, color: textSub, flexShrink: 0 }}>{timeAgo(n.created_at)}</span>
-                    </div>
-                    <div style={{
-                      fontSize: 11.5, color: textSub, marginTop: 2, lineHeight: 1.4,
-                      wordBreak: 'break-word',
-                    }}>{n.message}</div>
-                    {!n.is_read && !isRejectOpen && (
-                      <span style={{
-                        display: 'inline-block', marginTop: 4,
-                        fontSize: 9, color: '#f59e0b', fontWeight: 700,
-                      }}>● جديد</span>
-                    )}
-
-                    {/* Inline approve/reject for advance_pending */}
-                    {n.type === 'advance_pending' && canApproveAdvances && n.reference_id && !isRejectOpen && (
-                      <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); void openAdvanceApproveModal(n); }}
-                          disabled={actingId === n.id}
-                          style={{
-                            padding: '3px 8px', borderRadius: 5,
-                            border: 'none', cursor: 'pointer',
-                            background: '#22c55e', color: '#fff',
-                            fontSize: 10, fontWeight: 700,
-                            display: 'inline-flex', alignItems: 'center', gap: 3,
-                            opacity: actingId === n.id ? 0.6 : 1,
-                          }}
-                        >
-                          <Wallet style={{ width: 10, height: 10 }} />
-                          اعتماد وصرف
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setRejectTarget(n); setRejectReason(''); }}
-                          disabled={actingId === n.id}
-                          style={{
-                            padding: '3px 8px', borderRadius: 5,
-                            border: 'none', cursor: 'pointer',
-                            background: '#ef4444', color: '#fff',
-                            fontSize: 10, fontWeight: 700,
-                            display: 'inline-flex', alignItems: 'center', gap: 3,
-                            opacity: actingId === n.id ? 0.6 : 1,
-                          }}
-                        >
-                          <X style={{ width: 10, height: 10 }} />
-                          رفض
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Inline reject reason form */}
-                    {isRejectOpen && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ marginTop: 8 }}
-                      >
-                        <textarea
-                          autoFocus
-                          placeholder="سبب الرفض (اختياري)"
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          rows={2}
-                          style={{
-                            width: '100%', borderRadius: 6, padding: '5px 8px',
-                            fontSize: 11, resize: 'none',
-                            background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                            border: `1px solid ${border}`,
-                            color: textMain, outline: 'none', direction: 'rtl',
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                          <button
-                            onClick={confirmReject}
-                            disabled={actingId === n.id}
-                            style={{
-                              flex: 1, padding: '3px 8px', borderRadius: 4,
-                              border: 'none', cursor: 'pointer',
-                              background: '#ef4444', color: '#fff',
-                              fontSize: 10, fontWeight: 700,
-                              opacity: actingId === n.id ? 0.6 : 1,
-                            }}
-                          >
-                            {actingId === n.id ? 'جارٍ…' : 'تأكيد الرفض'}
-                          </button>
-                          <button
-                            onClick={() => { setRejectTarget(null); setRejectReason(''); }}
-                            style={{
-                              padding: '3px 8px', borderRadius: 4,
-                              border: `1px solid ${border}`, cursor: 'pointer',
-                              background: 'transparent', color: textSub,
-                              fontSize: 10,
-                            }}
-                          >
-                            إلغاء
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            <NotificationList
+              items={items}
+              isDark={isDark}
+              border={border}
+              textMain={textMain}
+              textSub={textSub}
+              rowHover={rowHover}
+              canApproveAdvances={canApproveAdvances}
+              actingId={actingId}
+              rejectTarget={rejectTarget}
+              rejectReason={rejectReason}
+              onSetRejectReason={setRejectReason}
+              onSetRejectTarget={setRejectTarget}
+              onConfirmReject={confirmReject}
+              onOpenAdvanceApproveModal={openAdvanceApproveModal}
+              onClick={handleClick}
+            />
           </div>
         </div>
       )}
