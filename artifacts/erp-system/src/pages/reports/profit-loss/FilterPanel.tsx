@@ -8,7 +8,7 @@ import {
   Building2, ChevronDown, FileDown, Printer,
 } from "lucide-react";
 import {
-  DATE_MODES, DateMode, ProfitsData, formatCurrency,
+  DATE_MODES, DateMode, ProfitsData,
 } from "../shared";
 
 /* ── Types ────────────────────────────────────────────────────────────────── */

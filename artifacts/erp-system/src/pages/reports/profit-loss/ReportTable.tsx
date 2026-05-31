@@ -6,9 +6,9 @@ import React, { useState, useMemo } from "react";
 import { useAppSettings } from "@/contexts/app-settings";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BarChart3, TrendingUp, DollarSign,
+  BarChart3, DollarSign,
   Building2, ChevronDown, Lightbulb,
-  HandCoins, CreditCard, Package, ArrowUpRight, ArrowDownRight,
+  HandCoins, CreditCard, Package,
   Minus, RotateCcw,
 } from "lucide-react";
 import {
@@ -16,7 +16,7 @@ import {
   PieChart, Pie, Cell, AreaChart, Area, LabelList, ReferenceLine,
 } from "recharts";
 import {
-  formatCurrency, useCountUp,
+  formatCurrency,
   ProfitsData, fmtMonth, fmtDay,
   ChartTooltip,
 } from "../shared";
