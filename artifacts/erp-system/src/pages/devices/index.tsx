@@ -23,7 +23,7 @@ import { printSaleReceipt } from './printSaleReceipt';
 /* ── Re-export types from shared types file ── */
 export type { DeviceStatus, PaymentMethod, PaymentStatus, Device } from './types';
 export type { Stats } from './types';
-import type { Device, DeviceStatus } from './types';
+import type { Device, DeviceStatus, PaymentMethod } from './types';
 import type { Stats } from './types';
 
 /* ── Re-export extracted modules for backward compatibility ── */
