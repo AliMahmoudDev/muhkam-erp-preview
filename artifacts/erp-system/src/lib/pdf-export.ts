@@ -1,6 +1,3 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-
 /**
  * تصدير جدول بيانات إلى ملف PDF بتنسيق A4 أفقي.
  *
@@ -10,14 +7,19 @@ import autoTable from 'jspdf-autotable';
  * @param options.filename    - اسم ملف الإخراج بدون الامتداد .pdf
  * @param options.companyName - اسم الشركة الاختياري يُعرض في أعلى يمين الصفحة
  */
-export function exportTableToPDF(options: {
+export async function exportTableToPDF(options: {
   title: string;
   columns: string[];
   rows: (string | number)[][];
   filename: string;
   companyName?: string;
-}): void {
+}): Promise<void> {
   const { title, columns, rows, filename, companyName } = options;
+
+  // Lazy-load the PDF libraries so they are not statically bundled into the
+  // report chunks; they load only when a PDF export is actually triggered.
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
