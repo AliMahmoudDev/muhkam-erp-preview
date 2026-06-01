@@ -1,5 +1,4 @@
 import { Moon, Sun } from "lucide-react";
-import { motion } from "framer-motion";
 import { useAppSettings } from "@/contexts/app-settings";
 
 export function ThemeToggle() {
@@ -7,25 +6,22 @@ export function ThemeToggle() {
   const isDark = (settings.theme ?? "dark") === "dark";
 
   return (
-    <motion.button
+    <button
       onClick={() => update({ theme: isDark ? "light" : "dark" })}
-      whileTap={{ scale: 0.92 }}
       dir="ltr"
       aria-label={isDark ? "تفعيل الوضع النهاري" : "تفعيل الوضع الليلي"}
       title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
-      className="relative flex items-center select-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-full"
+      className="relative flex items-center select-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-full transition-transform duration-150 active:scale-[0.92]"
       style={{ width: 80, height: 36 }}
     >
       {/* Track */}
-      <motion.div
-        className="absolute inset-0 rounded-full transition-colors duration-500"
-        animate={{
-          backgroundColor: isDark ? "rgba(15,23,42,0.85)" : "rgba(241,245,249,0.92)",
-          borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)",
-        }}
-        transition={{ duration: 0.35 }}
+      <div
+        className="absolute inset-0 rounded-full"
         style={{
+          backgroundColor: isDark ? "rgba(15,23,42,0.85)" : "rgba(241,245,249,0.92)",
           border: "1.5px solid",
+          borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)",
+          transition: "background-color 0.35s, border-color 0.35s",
           boxShadow: isDark
             ? "inset 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)"
             : "inset 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.08)",
@@ -33,11 +29,9 @@ export function ThemeToggle() {
       />
 
       {/* Moon icon — left */}
-      <motion.div
+      <div
         className="relative z-10 flex items-center justify-center"
-        style={{ width: 36, height: 36 }}
-        animate={{ opacity: isDark ? 1 : 0.35 }}
-        transition={{ duration: 0.3 }}
+        style={{ width: 36, height: 36, opacity: isDark ? 1 : 0.35, transition: "opacity 0.3s" }}
       >
         <Moon
           size={14}
@@ -45,14 +39,12 @@ export function ThemeToggle() {
           style={{ color: isDark ? "#fcd34d" : "#94a3b8" }}
           strokeWidth={2.2}
         />
-      </motion.div>
+      </div>
 
       {/* Sun icon — right */}
-      <motion.div
+      <div
         className="relative z-10 flex items-center justify-center"
-        style={{ width: 36, height: 36 }}
-        animate={{ opacity: isDark ? 0.35 : 1 }}
-        transition={{ duration: 0.3 }}
+        style={{ width: 36, height: 36, opacity: isDark ? 0.35 : 1, transition: "opacity 0.3s" }}
       >
         <Sun
           size={14}
@@ -60,23 +52,23 @@ export function ThemeToggle() {
           style={{ color: isDark ? "#64748b" : "#f59e0b" }}
           strokeWidth={2.2}
         />
-      </motion.div>
+      </div>
 
       {/* Sliding knob */}
-      <motion.div
+      <div
         className="absolute z-20 rounded-full"
-        animate={{ left: isDark ? 3 : 43 }}
-        transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.75 }}
         style={{
           top: 3,
+          left: isDark ? 3 : 43,
           width: 28,
           height: 28,
           background: "white",
+          transition: "left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
           boxShadow: isDark
             ? "0 2px 10px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.35)"
             : "0 2px 8px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.10)",
         }}
       />
-    </motion.button>
+    </button>
   );
 }
