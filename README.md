@@ -9,7 +9,7 @@
 ---
 
 [![CI — Test, Lint, Type Check](https://github.com/your-org/muhkam-erp/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/muhkam-erp/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-359%20passing-brightgreen?style=flat-square&logo=vitest)](https://github.com/your-org/muhkam-erp)
+[![Tests](https://img.shields.io/badge/tests-440%20passing-brightgreen?style=flat-square&logo=vitest)](https://github.com/your-org/muhkam-erp)
 [![TypeScript](https://img.shields.io/badge/TypeScript-zero%20errors-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Security Score](https://img.shields.io/badge/security%20score-9.3%2F10-success?style=flat-square&logo=shield)](docs/ADR/ADR-001-jwt-httponly-cookies.md)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
@@ -90,17 +90,17 @@ Target market: retail and services companies in KSA and the GCC.
 
 | المقياس | القيمة | التفاصيل |
 |---|---|---|
-| 🧪 **Automated Tests** | **359 passing** | 39 test files · 15,818 lines of test code |
+| 🧪 **Automated Tests** | **440 passing** | 42 test files · 15,818 lines of test code |
 | 🔒 **Security Score** | **9.3 / 10** | Helmet · JWT httpOnly · TOTP 2FA · RLS · 3-tier rate limiting |
 | 🌿 **Branch Coverage** | **68%+ enforced** | Vitest v8 · CI-gated thresholds on critical modules |
 | ⚡ **TypeScript Errors** | **Zero** | Strict mode · `tsc --noEmit` runs on every CI push |
 | 🔁 **CI/CD Pipelines** | **3 workflows** | Test + Lint · Production Deploy · Playwright E2E |
 | ✅ **Zod Validations** | **631 usages** | Every route input validated · `@workspace/api-zod` |
-| 🗄️ **Database Schema** | **173 table definitions** | Drizzle ORM · PostgreSQL 16 · type-safe queries |
+| 🗄️ **Database Schema** | **123 table definitions** | Drizzle ORM · PostgreSQL 16 · type-safe queries |
 | 📐 **ADRs Documented** | **7 decisions** | Auth · WAC · RLS · Monorepo · Redis · Zod · Testing |
-| 📡 **API Route Modules** | **65 modules** | Express 5 · multi-tenant scoped · Zod-validated |
+| 📡 **API Route Modules** | **116 modules** | Express 5 · multi-tenant scoped · Zod-validated |
 | 📋 **Audit Log Calls** | **89 in routes** | Every financial mutation is permanently traceable |
-| 🚀 **Source Lines** | **37,971** | Across API, frontend, and mobile (excl. tests) |
+| 🚀 **Source Lines** | **~137,700** | Across API, frontend, mobile, and DB schema (excl. tests) |
 | 📱 **Mobile Screens** | **24** | Expo 54 · iOS & Android POS |
 
 </div>
@@ -189,8 +189,8 @@ Target market: retail and services companies in KSA and the GCC.
 [![Supertest](https://img.shields.io/badge/Supertest-7-blue?style=for-the-badge)](https://github.com/ladjs/supertest)
 
 ```
-359 Integration Tests  →  Supertest + Vitest  (real PostgreSQL, no mocks)
- 39 Test Files         →  15,818 lines of test code
+440 Integration Tests  →  Supertest + Vitest  (real PostgreSQL, no mocks)
+ 42 Test Files         →  15,818 lines of test code
   3 CI/CD Pipelines    →  GitHub Actions (test · deploy · e2e)
  E2E Suite             →  Playwright (locale: ar-EG, viewport: 1280×720)
 ```
@@ -218,7 +218,7 @@ Target market: retail and services companies in KSA and the GCC.
                              │  └────────────┬────────────┘  │
                              │               │               │
                              │  ┌────────────▼────────────┐  │
-                             │  │     65 Route Modules    │  │
+                             │  │    116 Route Modules    │  │
                              │  │  Zod-validated · multi- │  │
                              │  │  tenant · audit-logged  │  │
                              │  └────────────┬────────────┘  │
@@ -321,7 +321,7 @@ pnpm --filter @workspace/erp-mobile start
 ### الاختبارات — Running Tests
 
 ```bash
-# تشغيل جميع الاختبارات — Run all 359 tests
+# تشغيل جميع الاختبارات — Run all 440 tests
 pnpm --filter @workspace/api-server test
 
 # مع تقرير التغطية — With coverage report
@@ -390,7 +390,7 @@ muhkam-erp/
 │   │
 │   ├── api-server/                    # 🖥️  Express 5 API (Node.js + TypeScript)
 │   │   └── src/
-│   │       ├── routes/                # 65 route modules
+│   │       ├── routes/                # 116 route modules
 │   │       │   ├── sales/             #   └─ Sales (create · reports · returns)
 │   │       │   ├── devices/           #   └─ Device workshop (CRUD · repairs · returns)
 │   │       │   ├── payroll/           #   └─ HR & Payroll (salary · periods · processing)
@@ -422,7 +422,7 @@ muhkam-erp/
 │   │       │   ├── permissions.ts     #   └─ Role-based access control
 │   │       │   └── ...
 │   │       │
-│   │       └── __tests__/             # 39 test files · 359 tests · 15,818 LOC
+│   │       └── __tests__/             # 42 test files · 440 tests · 15,818 LOC
 │   │
 │   ├── erp-system/                    # ⚛️  React 19 Web Frontend
 │   │   └── src/                       # 297 TypeScript + TSX files
@@ -436,7 +436,7 @@ muhkam-erp/
 │
 ├── lib/
 │   └── db/                            # @workspace/db — Drizzle schema package
-│       └── src/                       # 173 table definitions (pgTable)
+│       └── src/                       # 123 table definitions (pgTable)
 │
 ├── docs/
 │   ├── ADR/                           # Architecture Decision Records
@@ -503,7 +503,7 @@ We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before 
 pnpm typecheck      # Zero TypeScript errors required across all packages
 pnpm lint           # ESLint must pass clean
 pnpm format:check   # Prettier formatting enforced
-pnpm test:all       # All 359 tests must pass
+pnpm test:all       # All 440 tests must pass
 ```
 
 **Branch strategy:**

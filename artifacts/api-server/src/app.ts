@@ -81,19 +81,35 @@ app.use((_req, res, next) => {
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
   : [];
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
-  logger.warn(
-    '[SECURITY] ALLOWED_ORIGINS is not set in production — all origins are allowed. ' +
-      'Set ALLOWED_ORIGINS to your domain(s) for tighter security.'
+if (IS_PRODUCTION && allowedOrigins.length === 0) {
+  logger.error(
+    '[SECURITY] ALLOWED_ORIGINS is not set in production — CORS will reject all cross-origin requests. ' +
+      'Set ALLOWED_ORIGINS to your domain(s) to allow legitimate traffic.'
   );
 }
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      /* allow server-to-server (no Origin header) or whitelisted origins */
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      /* allow server-to-server (no Origin header) */
+      if (!origin) {
+        cb(null, true);
+        return;
+      }
+      /* In production: require explicit whitelist (fail-closed) */
+      if (IS_PRODUCTION) {
+        if (allowedOrigins.length > 0 && allowedOrigins.includes(origin)) {
+          cb(null, true);
+        } else {
+          logger.warn({ origin }, '[CORS] Blocked request from disallowed origin');
+          cb(null, false);
+        }
+        return;
+      }
+      /* In development/test: allow all origins for convenience */
+      if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
         cb(null, true);
       } else {
         logger.warn({ origin }, '[CORS] Blocked request from disallowed origin');
