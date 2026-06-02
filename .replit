@@ -109,12 +109,4 @@ expertMode = true
   [userenv.shared]
   NODE_ENV = "development"
   ALLOWED_ORIGINS = ""
-
-[[ports]]
-localPort = 5000
-externalPort = 80
-
-[[ports]]
-localPort = 8080
-externalPort = 8080
   
