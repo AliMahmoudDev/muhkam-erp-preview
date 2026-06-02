@@ -24,6 +24,7 @@ export default function TopReportsTab() {
   const topCustomers = data?.top_customers ?? [];
   const topSuppliers = data?.top_suppliers ?? [];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const TopTable = ({ title, icon, rows, cols }: { title:string; icon:React.ReactNode; rows:any[]; cols:{key:string;label:string;fmt?:(v:any)=>string;cls?:string}[] }) => (
     <div className="glass-panel rounded-2xl overflow-hidden border border-white/5">
       <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">{icon}<h3 className="text-white font-bold text-sm">{title}</h3></div>

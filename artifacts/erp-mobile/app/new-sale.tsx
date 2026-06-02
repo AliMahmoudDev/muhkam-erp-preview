@@ -163,7 +163,11 @@ export default function NewSaleScreen() {
         paymentType === "credit" ? 0 :
         Number(paidAmount) || 0;
 
-      const effectiveWarehouse = selectedWarehouse || warehouses?.[0]?.id || 1;
+      const effectiveWarehouse = selectedWarehouse ?? warehouses?.[0]?.id;
+      if (!effectiveWarehouse) {
+        Alert.alert("تنبيه", "الرجاء اختيار المستودع قبل إتمام البيع");
+        return;
+      }
       const effectiveSafe = selectedSafe || safes?.[0]?.id;
 
       const body = {

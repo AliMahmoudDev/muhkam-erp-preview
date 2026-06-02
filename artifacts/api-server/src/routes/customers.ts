@@ -359,24 +359,57 @@ router.post("/customers/:id/receipt", wrap(async (req, res) => {
     return;
   }
 
-  const [customer] = await db.select().from(customersTable).where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req))));
+  const cid = getTenant(req);
+  const amt = parsed.data.amount;
+  const receiptNo = `RCP-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
+  const txDate = new Date().toISOString().split("T")[0];
+
+  /* ── fetch customer first (outside tx so 404 is returned cleanly) ── */
+  const [customer] = await db.select().from(customersTable)
+    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, cid)));
   if (!customer) {
     res.status(404).json({ error: "Customer not found" });
     return;
   }
 
-  const newBalance = Number(customer.balance) - parsed.data.amount;
-  const [updated] = await db.update(customersTable).set({ balance: String(newBalance) })
-    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req)))).returning();
+  /* ── atomic write: ledger + transaction + balance ─────────────────── */
+  await db.transaction(async (tx) => {
+    /* 1. دفتر الأستاذ — amount سالب يُقلّل الدين على العميل */
+    await tx.insert(customerLedgerTable).values({
+      customer_id: params.data.id,
+      type: "receipt",
+      amount: String(-amt),
+      reference_type: "manual_receipt",
+      reference_no: receiptNo,
+      description: parsed.data.description ?? `سند قبض ${receiptNo} — ${customer.name}`,
+      date: txDate,
+      company_id: cid,
+    });
 
-  await db.insert(transactionsTable).values({
-    type: "receipt",
-    amount: String(parsed.data.amount),
-    description: parsed.data.description ?? `سند قبض - ${customer.name}`,
+    /* 2. سجل الحركة المالية المركزية — مع company_id للعزل الصحيح */
+    await tx.insert(transactionsTable).values({
+      type: "receipt",
+      reference_type: "manual_receipt",
+      customer_id: params.data.id,
+      customer_name: customer.name,
+      amount: String(amt),
+      direction: "in",
+      description: parsed.data.description ?? `سند قبض ${receiptNo} — ${customer.name}`,
+      date: txDate,
+      company_id: cid,
+    });
+
+    /* 3. تحديث رصيد العميل المحفوظ */
+    const newBalance = Number(customer.balance) - amt;
+    await tx.update(customersTable)
+      .set({ balance: String(newBalance) })
+      .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, cid)));
   });
 
-  const ledgerBal = await getCustomerLedgerBalance(updated.account_id);
-  res.json(CreateCustomerReceiptResponse.parse(formatCustomer(updated, ledgerBal)));
+  const [updated] = await db.select().from(customersTable)
+    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, cid)));
+  const ledgerBal = await getCustomerLedgerBalance((updated ?? customer).account_id);
+  res.json(CreateCustomerReceiptResponse.parse(formatCustomer(updated ?? customer, ledgerBal)));
 }));
 
 /* ── دفتر أستاذ العميل — جلب كل الحركات مع الرصيد المتراكم ──────────────── */

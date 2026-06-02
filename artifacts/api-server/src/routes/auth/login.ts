@@ -428,7 +428,7 @@ router.post('/auth/emergency-unlock', wrap(async (req, res) => {
   try {
     const emergencyKey = process.env.SUPER_ADMIN_PIN;
     if (!emergencyKey) {
-      res.status(503).json({ error: 'SUPER_ADMIN_PIN غير مضبوط على هذا الخادم' });
+      res.status(404).json({ error: 'المورد المطلوب غير موجود' });
       return;
     }
 
