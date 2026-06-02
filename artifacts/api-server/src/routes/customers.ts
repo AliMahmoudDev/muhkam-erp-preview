@@ -361,6 +361,10 @@ router.post("/customers/:id/receipt", wrap(async (req, res) => {
 
   const cid = getTenant(req);
   const amt = parsed.data.amount;
+  if (amt <= 0) {
+    res.status(400).json({ error: "المبلغ يجب أن يكون أكبر من صفر" });
+    return;
+  }
   const receiptNo = `RCP-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
   const txDate = new Date().toISOString().split("T")[0];
 

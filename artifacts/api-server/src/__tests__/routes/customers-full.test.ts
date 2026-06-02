@@ -555,7 +555,7 @@ describe('POST /api/customers/:id/receipt', () => {
     expect(res.body).toHaveProperty('error');
   });
 
-  it('يجب أن يرجع 400 عند إرسال amount سالب أو صفر', async () => {
+  it('يجب أن يرجع 400 عند إرسال amount كـ string غير رقمي', async () => {
     const request = (await import('supertest')).default;
     const app = (await import('../../app')).default;
 
@@ -563,6 +563,32 @@ describe('POST /api/customers/:id/receipt', () => {
       .post('/api/customers/1/receipt')
       .set('Authorization', 'Bearer test-token')
       .send({ amount: 'not-a-number' });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 400 عند إرسال amount سالب — يحمي من عكس المحاسبة', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/1/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({ amount: -100 });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 400 عند إرسال amount = 0', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/1/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({ amount: 0 });
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error');
