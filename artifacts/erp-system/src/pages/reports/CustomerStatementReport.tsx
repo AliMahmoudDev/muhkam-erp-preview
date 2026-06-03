@@ -8,6 +8,7 @@ interface CustomerStatementData {
   customer: { id:number; name:string; balance:number; customer_code:number };
   opening_balance:number; statement:StatementRow[]; closing_balance:number;
 }
+interface CustomerOption { id: number; name: string }
 const STMT_TYPE_MAP: Record<string,{label:string;cls:string}> = {
   opening_balance: {label:"رصيد أول المدة",cls:"text-amber-400"},
   sale:            {label:"فاتورة مبيعات",cls:"text-blue-400"},
@@ -22,7 +23,7 @@ export default function CustomerStatementReport() {
   const [customTo,setCustomTo]     = useState(todayStr());
   const [dateFrom,dateTo]          = getDateRange(mode,customFrom,customTo);
 
-  const { data:customers=[] } = useQuery<any[]>({
+  const { data:customers=[] } = useQuery<CustomerOption[]>({
     queryKey: ["/api/customers"],
     queryFn:()=>authFetch(api("/api/customers")).then(async r=>{ if(!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); }),
     staleTime:120_000,
@@ -40,7 +41,7 @@ export default function CustomerStatementReport() {
       <div className="flex flex-wrap gap-3 items-center">
         <select value={customerId} onChange={e=>setCustomerId(e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm text-white min-w-[200px]">
           <option value="">اختر العميل...</option>
-          {customers.map((c:any)=><option key={c.id} value={String(c.id)}>{c.name}</option>)}
+          {customers.map((c: CustomerOption)=><option key={c.id} value={String(c.id)}>{c.name}</option>)}
         </select>
         <DateFilterBar mode={mode} setMode={setMode} customFrom={customFrom} setCustomFrom={setCustomFrom} customTo={customTo} setCustomTo={setCustomTo}/>
       </div>

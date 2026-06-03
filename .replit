@@ -20,76 +20,6 @@ modules = ["nodejs-20", "web", "bash", "python-3.11", "postgresql-16"]
   env = { "CI" = "true" }
 
   [workflows]
-runButton = "Project"
-
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Mockup Dev Server"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "ERP Mobile"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "API Server"
-
-[[workflows.workflow]]
-name = "Mockup Dev Server"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @workspace/mockup-sandbox run dev"
-waitForPort = 9000
-
-[[workflows.workflow]]
-name = "ERP Mobile"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @workspace/erp-mobile run dev"
-waitForPort = 8099
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @workspace/erp-system run dev"
-waitForPort = 5000
-
-[[workflows.workflow]]
-name = "API Server"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/api-server run start"
-waitForPort = 8080
 
   [agent]
 stack = "BEST_EFFORT_FALLBACK"
@@ -109,12 +39,4 @@ expertMode = true
   [userenv.shared]
   NODE_ENV = "development"
   ALLOWED_ORIGINS = ""
-
-[[ports]]
-localPort = 5000
-externalPort = 80
-
-[[ports]]
-localPort = 8080
-externalPort = 8080
   

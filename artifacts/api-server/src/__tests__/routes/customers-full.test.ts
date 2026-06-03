@@ -519,3 +519,160 @@ describe('GET /api/customers/:id', () => {
     expect(res.status).toBe(401);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/customers/:id/receipt
+//
+// Verifies Phase-2/3 fixes:
+//   • 400 on missing body fields
+//   • 403 for users without company_id
+//   • 404 when customer not found in tenant scope (tenant isolation)
+//   • 200 happy path — db.transaction is called (atomic write)
+//   • 404 when caller is from a different company (cross-tenant guard)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('POST /api/customers/:id/receipt', () => {
+  beforeEach(() => {
+    mockChainData.mockResolvedValue([]);
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يرجع 400 عند إرسال body فارغ بدون amount', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/1/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 400 عند إرسال amount كـ string غير رقمي', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/1/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({ amount: 'not-a-number' });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 400 عند إرسال amount سالب — يحمي من عكس المحاسبة', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/1/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({ amount: -100 });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 400 عند إرسال amount = 0', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/1/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({ amount: 0 });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 403 للمستخدم بدون company_id (requireTenant يقاطع)', async () => {
+    vi.mocked(authenticate).mockImplementationOnce(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = noCompanyUser;
+        next();
+      },
+    );
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/1/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({ amount: 100 });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('يجب أن يرجع 404 عند عدم وجود العميل في نفس الشركة', async () => {
+    // mockChainData defaults to [] → customer not found → 404
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/99999/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({ amount: 100 });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 200 ويستدعي db.transaction للكتابة الذرية', async () => {
+    const { db } = await import('@workspace/db');
+    const dbAny = db as unknown as Record<string, ReturnType<typeof vi.fn>>;
+
+    // Clear call count from any previous tests
+    dbAny.transaction.mockClear();
+
+    // First chain call → initial customer SELECT → [mockCustomer]
+    // Second chain call → post-transaction customer SELECT → [mockCustomer]
+    mockChainData
+      .mockResolvedValueOnce([mockCustomer])
+      .mockResolvedValueOnce([mockCustomer]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/1/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({ amount: 150, description: 'دفعة جزئية' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('id', 1);
+    expect(res.body).toHaveProperty('name', 'أحمد التجاري');
+    expect(res.body).toHaveProperty('balance');
+    // التحقق من أن db.transaction استُدعي — يثبت أن العملية ذرية
+    expect(dbAny.transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('يجب أن يعزل العملية — عميل شركة أخرى غير مرئي (tenant isolation)', async () => {
+    vi.mocked(authenticate).mockImplementationOnce(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserB; // company_id: 2
+        next();
+      },
+    );
+    // mockChainData returns [] → customer with company_id=1 not visible to company 2 → 404
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/customers/1/receipt')
+      .set('Authorization', 'Bearer test-token')
+      .send({ amount: 100 });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('error');
+  });
+});

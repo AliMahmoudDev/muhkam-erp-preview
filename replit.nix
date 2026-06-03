@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.undollar
     pkgs.zip
     pkgs.libgbm
     pkgs.libGLU
