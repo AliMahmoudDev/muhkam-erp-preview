@@ -7,19 +7,33 @@
  *
  * Requires REPAIR_TRACKING_SECRET env variable (minimum 32 characters).
  * The endpoint fails CLOSED (503) if the secret is absent.
+ *
+ * Production behaviour when secret is absent:
+ *   - isTrackingEnabled() → false
+ *   - computeTrackingToken() → throws (no token is generated with an empty key)
+ *   - verifyTrackingToken() → false (no token is accepted)
  */
 import { createHmac } from "node:crypto";
 import { logger } from "./logger";
 
 const SECRET = process.env["REPAIR_TRACKING_SECRET"] ?? "";
+const IS_PROD = process.env.NODE_ENV === "production";
 
 const MIN_SECRET_LENGTH = 32;
 
 if (!SECRET) {
-  logger.warn(
-    "[tracking-token] WARNING: REPAIR_TRACKING_SECRET is not set. " +
-    "Public repair-tracking endpoints will be disabled until the secret is configured."
-  );
+  if (IS_PROD) {
+    logger.error(
+      "[tracking-token] REPAIR_TRACKING_SECRET is not set in production. " +
+      "Public repair-tracking endpoints will return 503. " +
+      "Set a 32+ character secret in .env to enable repair tracking."
+    );
+  } else {
+    logger.warn(
+      "[tracking-token] WARNING: REPAIR_TRACKING_SECRET is not set. " +
+      "Public repair-tracking endpoints will be disabled until the secret is configured."
+    );
+  }
 } else if (SECRET.length < MIN_SECRET_LENGTH) {
   throw new Error(
     `[tracking-token] FATAL: REPAIR_TRACKING_SECRET is too short (${SECRET.length} chars). ` +
@@ -37,10 +51,20 @@ export function isTrackingEnabled(): boolean {
 /**
  * Computes the HMAC-SHA256 token for a given company + job number pair.
  * Returns the first 32 hex characters of the digest (128 bits of entropy).
- * Returns an empty string when the secret is not configured.
+ *
+ * Throws in production when the secret is not configured (fail-closed).
+ * Returns an empty string in non-production environments for graceful degradation.
  */
 export function computeTrackingToken(companyId: number, jobNo: string): string {
-  if (!SECRET) return "";
+  if (!SECRET) {
+    if (IS_PROD) {
+      throw new Error(
+        "[tracking-token] Cannot generate tracking token: " +
+        "REPAIR_TRACKING_SECRET is not configured in production."
+      );
+    }
+    return "";
+  }
   return createHmac("sha256", SECRET)
     .update(`${companyId}:${jobNo}`)
     .digest("hex")

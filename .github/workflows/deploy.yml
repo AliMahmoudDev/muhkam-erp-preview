@@ -75,8 +75,20 @@ jobs:
     needs: [integration-test]
     if: |
       always() &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') &&
-      (needs.integration-test.result == 'success' || github.event_name == 'workflow_dispatch')
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          needs.integration-test.result == 'success' &&
+          (
+            github.event_name == 'schedule' ||
+            (
+              github.event_name == 'workflow_run' &&
+              github.event.workflow_run.conclusion == 'success' &&
+              github.event.workflow_run.head_branch == 'main'
+            )
+          )
+        )
+      )
 
     steps:
       - name: Checkout
