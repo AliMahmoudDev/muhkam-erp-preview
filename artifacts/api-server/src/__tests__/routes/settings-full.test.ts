@@ -327,3 +327,135 @@ describe('POST /api/settings/system', () => {
     expect(res.body).toHaveProperty('error');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tenant Isolation Security Tests
+// يتحقق أن company_id لا يُقرأ من body تحت أي ظرف للمستخدم العادي
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('POST /api/settings/system — Tenant Isolation', () => {
+  const { mockDb } = vi.hoisted(() => ({ mockDb: { upsertCalls: [] as Array<{ companyId: number }> } }));
+
+  beforeEach(() => {
+    mockChainData.mockResolvedValue([]);
+  });
+
+  it('يجب تجاهل company_id في body للمستخدم العادي واستخدام company_id من JWT', async () => {
+    // المستخدم ينتمي للشركة 1 (من JWT) لكن يرسل company_id: 999 في body
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA; // company_id = 1
+        next();
+      },
+    );
+
+    const { db } = await import('@workspace/db');
+    const insertMock = vi.mocked(db.insert);
+    mockDb.upsertCalls = [];
+    insertMock.mockImplementation((..._args: unknown[]) => {
+      const chain = {
+        values: vi.fn((_vals: Record<string, unknown>) => {
+          if (_vals && typeof _vals === 'object' && 'company_id' in _vals) {
+            mockDb.upsertCalls.push({ companyId: _vals.company_id as number });
+          }
+          return { onConflictDoUpdate: vi.fn().mockResolvedValue([]) };
+        }),
+      };
+      return chain as ReturnType<typeof db.insert>;
+    });
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/settings/system')
+      .set('Authorization', 'Bearer test-token')
+      .send({ key: 'company_name', value: 'شركة مخترقة', company_id: 999 });
+
+    // يجب أن ينجح الطلب (لكن يحفظ للشركة 1 من JWT)
+    expect(res.status).toBe(200);
+
+    // يجب أن يُكتب للشركة 1 (JWT) وليس 999 (body)
+    if (mockDb.upsertCalls.length > 0) {
+      for (const call of mockDb.upsertCalls) {
+        expect(call.companyId).not.toBe(999);
+        expect(call.companyId).toBe(1);
+      }
+    }
+  });
+
+  it('يجب أن يرجع 400 للـ super_admin الذي يرسل company_id في body فقط (بدون query param)', async () => {
+    const superAdminUser: AuthUser = {
+      id: 99, name: 'Super Admin', username: 'superadmin',
+      role: 'super_admin', permissions: '{}', active: true,
+      warehouse_id: null, safe_id: null, company_id: null, employee_id: null,
+    };
+
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = superAdminUser;
+        next();
+      },
+    );
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    // super_admin يرسل company_id في body فقط، بدون ?company_id= في URL
+    const res = await request(app)
+      .post('/api/settings/system')
+      .set('Authorization', 'Bearer test-token')
+      .send({ key: 'company_name', value: 'شركة', company_id: 5 });
+
+    // يجب أن يُرفض لأن company_id يجب أن يأتي من query param
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يُقبل للـ super_admin الذي يرسل company_id في query param', async () => {
+    const superAdminUser: AuthUser = {
+      id: 99, name: 'Super Admin', username: 'superadmin',
+      role: 'super_admin', permissions: '{}', active: true,
+      warehouse_id: null, safe_id: null, company_id: null, employee_id: null,
+    };
+
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = superAdminUser;
+        next();
+      },
+    );
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    // super_admin يرسل company_id في query param (النمط الصحيح)
+    const res = await request(app)
+      .post('/api/settings/system?company_id=5')
+      .set('Authorization', 'Bearer test-token')
+      .send({ key: 'company_name', value: 'شركة تجريبية' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+  });
+
+  it('يجب أن يرجع 403 لأي دور غير admin أو super_admin حتى لو أرسل company_id في body', async () => {
+    const setEmployee = (req: Request, _res: Response, next: NextFunction) => {
+      (req as Request & { user: AuthUser }).user = employeeUser;
+      next();
+    };
+    vi.mocked(authenticate)
+      .mockImplementationOnce(setEmployee)
+      .mockImplementationOnce(setEmployee);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/settings/system')
+      .set('Authorization', 'Bearer test-token')
+      .send({ key: 'company_name', value: 'قيمة', company_id: 1 });
+
+    expect(res.status).toBe(403);
+  });
+});

@@ -24,7 +24,6 @@ import { requireUser } from "../../lib/tenant";
 const systemSettingSchema = z.object({
   key: z.string().min(1),
   value: z.string().optional().nullable(),
-  company_id: z.union([z.string(), z.number()]).optional().nullable(),
 });
 
 const resetSchema = z.object({
@@ -309,7 +308,7 @@ router.post("/settings/system", authenticate, wrap(async (req, res) => {
   const { key, value } = parsedSys.data;
   if (!key.trim()) { res.status(400).json({ error: "المفتاح مطلوب" }); return; }
   const companyId = role === "super_admin"
-    ? Number(req.body?.company_id ?? req.query.company_id)
+    ? Number(req.query.company_id)
     : req.user?.company_id;
   if (!companyId || !Number.isFinite(companyId)) {
     res.status(role === "super_admin" ? 400 : 403)
