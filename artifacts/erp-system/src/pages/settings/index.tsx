@@ -9,21 +9,23 @@ import {
   Building2,
   FileText,
   HardDrive,
+  Database,
   Cpu,
   Percent,
   TrendingUp,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
-const UsersTab          = lazy(() => import('./users-tab'));
+const UsersTab = lazy(() => import('./users-tab'));
 const OpeningBalanceTab = lazy(() => import('./opening-balance-tab'));
-const FinancialLockTab  = lazy(() => import('./financial-lock-tab'));
-const CurrencyTab       = lazy(() => import('./currency-tab'));
-const CompanyTab        = lazy(() => import('./company-tab'));
-const InvoiceTab        = lazy(() => import('./invoice-tab'));
-const SystemTab         = lazy(() => import('./system-tab'));
-const VatTab            = lazy(() => import('./vat-tab'));
-const PricingTab        = lazy(() => import('./pricing-tab').then(m => ({ default: m.PricingTab })));
+const FinancialLockTab = lazy(() => import('./financial-lock-tab'));
+const CurrencyTab = lazy(() => import('./currency-tab'));
+const CompanyTab = lazy(() => import('./company-tab'));
+const InvoiceTab = lazy(() => import('./invoice-tab'));
+const BackupTab = lazy(() => import('./backup-tab'));
+const DataTab = lazy(() => import('./data-tab'));
+const VatTab = lazy(() => import('./vat-tab'));
+const PricingTab = lazy(() => import('./pricing-tab').then((m) => ({ default: m.PricingTab })));
 
 /* ─── Tab types ─── */
 type Tab =
@@ -35,6 +37,7 @@ type Tab =
   | 'invoice'
   | 'vat'
   | 'pricing'
+  | 'backup'
   | 'system';
 
 /* ─── Section config ─── */
@@ -67,7 +70,10 @@ const TAB_SECTIONS: {
   },
   {
     section: 'النظام',
-    tabs: [{ id: 'system', label: 'النسخ والبيانات', icon: HardDrive }],
+    tabs: [
+      { id: 'backup', label: 'النسخ الاحتياطي', icon: HardDrive },
+      { id: 'system', label: 'إدارة البيانات', icon: Database },
+    ],
   },
 ];
 
@@ -130,9 +136,7 @@ export default function SettingsPage() {
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden" dir="rtl">
       {/* ─────────── Sidebar ─────────── */}
-      <aside
-        className="settings-sidebar hidden lg:flex flex-col w-56 shrink-0 border-l border-white/8 overflow-y-auto"
-      >
+      <aside className="settings-sidebar hidden lg:flex flex-col w-56 shrink-0 border-l border-white/8 overflow-y-auto">
         <div className="px-4 pt-6 pb-2 flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
             <Settings className="w-3.5 h-3.5 text-amber-400" />
@@ -180,9 +184,7 @@ export default function SettingsPage() {
       </aside>
 
       {/* ─────────── Mobile Tab Bar ─────────── */}
-      <div
-        className="settings-sidebar lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/8 px-2 py-1 flex gap-1 overflow-x-auto"
-      >
+      <div className="settings-sidebar lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/8 px-2 py-1 flex gap-1 overflow-x-auto">
         {allTabs.map((tab) => {
           const active = activeTab === tab.id;
           const Icon = tab.icon;
@@ -204,9 +206,7 @@ export default function SettingsPage() {
       {/* ─────────── Main Content ─────────── */}
       <main className="flex-1 overflow-y-auto pb-24 lg:pb-8">
         {/* Mobile header */}
-        <div
-          className="settings-sidebar-main lg:hidden sticky top-0 z-30 px-4 py-3 border-b border-white/8 flex items-center gap-2"
-        >
+        <div className="settings-sidebar-main lg:hidden sticky top-0 z-30 px-4 py-3 border-b border-white/8 flex items-center gap-2">
           <Settings className="w-4 h-4 text-amber-400" />
           <p className="text-white font-bold text-sm">{activeLabel}</p>
         </div>
@@ -221,7 +221,8 @@ export default function SettingsPage() {
             {activeTab === 'vat' && <VatTab />}
             {activeTab === 'invoice' && <InvoiceTab />}
             {activeTab === 'pricing' && <PricingTab />}
-            {activeTab === 'system' && <SystemTab />}
+            {activeTab === 'backup' && <BackupTab />}
+            {activeTab === 'system' && <DataTab />}
           </Suspense>
         </div>
       </main>

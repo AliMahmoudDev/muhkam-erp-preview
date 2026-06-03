@@ -1,4 +1,4 @@
-import { HardDrive, Download, Server, Shield } from 'lucide-react';
+import { HardDrive, Download, Server, Shield, Lock } from 'lucide-react';
 import { useBackupActions } from './hooks/useBackupActions';
 import BackupLocalTab from './BackupLocalTab';
 import BackupServerTab from './BackupServerTab';
@@ -27,10 +27,12 @@ export default function BackupTab() {
 
       {/* Mode tabs */}
       <div className="flex border-b border-white/5">
-        {([
-          ['local',  <Download className="w-3.5 h-3.5" />,  'نسخ محلي',  'على جهازك'   ],
-          ['server', <Server className="w-3.5 h-3.5" />,    'خادم SaaS', 'تلقائي ومجدول'],
-        ] as const).map(([id, icon, label, sub]) => (
+        {(
+          [
+            ['local', <Download className="w-3.5 h-3.5" />, 'نسخ محلي', 'على جهازك'],
+            ['server', <Server className="w-3.5 h-3.5" />, 'خادم SaaS', 'تلقائي ومجدول'],
+          ] as const
+        ).map(([id, icon, label, sub]) => (
           <button
             key={id}
             onClick={() => bk.setBkMode(id)}
@@ -38,7 +40,11 @@ export default function BackupTab() {
           >
             <span className={bk.bkMode === id ? 'text-amber-400' : 'text-white/30'}>{icon}</span>
             <div>
-              <p className={`text-sm font-bold ${bk.bkMode === id ? 'text-amber-400' : 'text-white/50'}`}>{label}</p>
+              <p
+                className={`text-sm font-bold ${bk.bkMode === id ? 'text-amber-400' : 'text-white/50'}`}
+              >
+                {label}
+              </p>
               <p className="text-white/25 text-xs">{sub}</p>
             </div>
           </button>
@@ -68,7 +74,22 @@ export default function BackupTab() {
         />
       )}
 
-      {bk.bkMode === 'server' && (
+      {bk.bkMode === 'server' && !bk.isSuperAdmin && (
+        <div className="flex flex-col items-center justify-center gap-4 py-16 px-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center">
+            <Lock className="w-6 h-6 text-white/25" />
+          </div>
+          <div>
+            <p className="text-white/60 text-sm font-bold mb-1">هذه الميزة للمسؤول العام فقط</p>
+            <p className="text-white/25 text-xs leading-relaxed max-w-xs">
+              نسخ الخادم والجدولة التلقائية متاحة حصراً للمسؤول العام (super_admin). يمكنك استخدام
+              تبويب "نسخ محلي" لتصدير بياناتك وتنزيلها مباشرةً.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {bk.bkMode === 'server' && bk.isSuperAdmin && (
         <BackupServerTab
           schedule={bk.schedule}
           lastScheduled={bk.lastScheduled}
@@ -97,7 +118,8 @@ export default function BackupTab() {
           onToggleMod={(key) =>
             bk.setSelectedRestoreMods((prev) => {
               const s = new Set(prev);
-              if (s.has(key)) s.delete(key); else s.add(key);
+              if (s.has(key)) s.delete(key);
+              else s.add(key);
               return s;
             })
           }
@@ -109,7 +131,10 @@ export default function BackupTab() {
             )
           }
           onClose={() => bk.setShowModSelect(false)}
-          onContinue={() => { bk.setShowModSelect(false); bk.setModal(true); }}
+          onContinue={() => {
+            bk.setShowModSelect(false);
+            bk.setModal(true);
+          }}
         />
       )}
 
