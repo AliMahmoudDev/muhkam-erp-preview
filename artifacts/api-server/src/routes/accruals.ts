@@ -144,39 +144,43 @@ router.post("/accruals/:id/recognize", wrap(async (req, res) => {
     .from(journalEntriesTable).where(eq(journalEntriesTable.company_id, cid));
   const entryNo = `JE-${String(Number(total) + 1).padStart(5, "0")}`;
 
-  const [entry] = await db.insert(journalEntriesTable).values({
-    entry_no: entryNo,
-    date: `${period}-01`,
-    description: `${accrual.type === "prepayment" ? "استحقاق مدفوع مقدماً" : "مصروف/إيراد مستحق"} - ${accrual.description} - ${period}`,
-    status: "posted",
-    reference: `ACC-${accrual.id}-${period}`,
-    total_debit: String(amount),
-    total_credit: String(amount),
-    company_id: cid,
-  }).returning();
-
-  await db.insert(journalEntryLinesTable).values([
-    { entry_id: entry.id, account_id: debitAcc.id, account_code: debitAcc.code, account_name: debitAcc.name, debit: String(amount), credit: "0" },
-    { entry_id: entry.id, account_id: creditAcc.id, account_code: creditAcc.code, account_name: creditAcc.name, debit: "0", credit: String(amount) },
-  ]);
-
-  for (const [acc, sign] of [[debitAcc, 1], [creditAcc, -1]] as [typeof expenseAcc, number][]) {
-    await db.update(accountsTable)
-      .set({ current_balance: sql`current_balance + ${String(amount * sign)}::numeric` })
-      .where(eq(accountsTable.id, acc.id));
-  }
-
   const newRecognized = Number(accrual.amount_recognized) + amount;
   const newStatus = newRecognized >= Number(accrual.total_amount) - 0.001 ? "completed" : "active";
 
-  await db.update(accrualsTable)
-    .set({ amount_recognized: String(newRecognized), status: newStatus })
-    .where(and(eq(accrualsTable.id, accrual.id), eq(accrualsTable.company_id, cid)));
+  const run = await db.transaction(async (tx) => {
+    const [entry] = await tx.insert(journalEntriesTable).values({
+      entry_no: entryNo,
+      date: `${period}-01`,
+      description: `${accrual.type === "prepayment" ? "استحقاق مدفوع مقدماً" : "مصروف/إيراد مستحق"} - ${accrual.description} - ${period}`,
+      status: "posted",
+      reference: `ACC-${accrual.id}-${period}`,
+      total_debit: String(amount),
+      total_credit: String(amount),
+      company_id: cid,
+    }).returning();
 
-  const [run] = await db.insert(accrualRunsTable).values({
-    accrual_id: accrual.id, period, amount: String(amount),
-    entry_id: entry.id, company_id: cid,
-  }).returning();
+    await tx.insert(journalEntryLinesTable).values([
+      { entry_id: entry.id, account_id: debitAcc.id, account_code: debitAcc.code, account_name: debitAcc.name, debit: String(amount), credit: "0" },
+      { entry_id: entry.id, account_id: creditAcc.id, account_code: creditAcc.code, account_name: creditAcc.name, debit: "0", credit: String(amount) },
+    ]);
+
+    for (const [acc, sign] of [[debitAcc, 1], [creditAcc, -1]] as [typeof expenseAcc, number][]) {
+      await tx.update(accountsTable)
+        .set({ current_balance: sql`current_balance + ${String(amount * sign)}::numeric` })
+        .where(eq(accountsTable.id, acc.id));
+    }
+
+    await tx.update(accrualsTable)
+      .set({ amount_recognized: String(newRecognized), status: newStatus })
+      .where(and(eq(accrualsTable.id, accrual.id), eq(accrualsTable.company_id, cid)));
+
+    const [accrualRun] = await tx.insert(accrualRunsTable).values({
+      accrual_id: accrual.id, period, amount: String(amount),
+      entry_id: entry.id, company_id: cid,
+    }).returning();
+
+    return accrualRun;
+  });
 
   res.json({ ...run, amount: Number(run.amount), created_at: run.created_at.toISOString() });
 }));
