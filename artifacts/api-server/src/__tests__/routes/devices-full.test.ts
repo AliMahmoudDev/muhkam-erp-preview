@@ -50,6 +50,7 @@ vi.mock('@workspace/db', () => {
     select:      vi.fn(() => makeChain()),
     insert:      vi.fn().mockReturnThis(),
     values:      vi.fn().mockReturnThis(),
+    onConflictDoUpdate: vi.fn().mockResolvedValue([]),
     returning:   vi.fn().mockResolvedValue([{
       id: 55, device_no: 'DEV-2024-0055', brand: 'Apple', model: 'iPhone 14',
       color: null, storage: '128GB', grade: 'A', imei: null, serial_no: null,
@@ -60,6 +61,7 @@ vi.mock('@workspace/db', () => {
     }]),
     update:      vi.fn().mockReturnThis(),
     set:         vi.fn().mockReturnThis(),
+    where:       vi.fn().mockReturnThis(),
     delete:      vi.fn().mockReturnThis(),
     execute:     vi.fn().mockResolvedValue({ rows: [] }),
     transaction: vi.fn(async (fn: (tx: typeof txMock) => Promise<unknown>) => fn(txMock)),
@@ -411,5 +413,223 @@ describe('POST /api/devices', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('id');
     expect(res.body).toHaveProperty('brand', 'Apple');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/devices/:id/sell — Transaction + Tenant Isolation
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('POST /api/devices/:id/sell', () => {
+  const soldDevice = {
+    ...mockDeviceA,
+    status: 'available',
+    sale_price: '1500',
+  };
+
+  beforeEach(() => {
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يبيع الجهاز بنجاح بدون ضمان (كتابة واحدة داخل transaction)', async () => {
+    mockChainData.mockResolvedValueOnce([soldDevice]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const { db } = await import('@workspace/db');
+
+    const res = await request(app)
+      .post('/api/devices/55/sell')
+      .set('Authorization', 'Bearer test-token')
+      .send({ sold_price: 1600, payment_method: 'cash', warranty_months: 0 });
+
+    expect(res.status).toBe(200);
+    // transaction must have been called
+    expect(vi.mocked(db.transaction)).toHaveBeenCalledTimes(1);
+  });
+
+  it('يجب أن ينشئ ضمان وجهاز معاً داخل transaction واحدة (warranty_months > 0)', async () => {
+    mockChainData.mockResolvedValueOnce([soldDevice]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const { db } = await import('@workspace/db');
+
+    vi.mocked(db.transaction).mockClear();
+
+    const res = await request(app)
+      .post('/api/devices/55/sell')
+      .set('Authorization', 'Bearer test-token')
+      .send({ sold_price: 1600, warranty_months: 12, customer_name: 'أحمد' });
+
+    expect(res.status).toBe(200);
+    // Exactly one transaction wrapping both writes
+    expect(vi.mocked(db.transaction)).toHaveBeenCalledTimes(1);
+  });
+
+  it('يجب أن يرجع 403 للمستخدم بدون صلاحية can_manage_devices', async () => {
+    const setEmployee = (req: Request, _res: Response, next: NextFunction) => {
+      (req as Request & { user: AuthUser }).user = employeeUser;
+      next();
+    };
+    vi.mocked(authenticate)
+      .mockImplementationOnce(setEmployee)
+      .mockImplementationOnce(setEmployee);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const { db } = await import('@workspace/db');
+    vi.mocked(db.transaction).mockClear();
+
+    const res = await request(app)
+      .post('/api/devices/55/sell')
+      .set('Authorization', 'Bearer test-token')
+      .send({ sold_price: 1600 });
+
+    expect(res.status).toBe(403);
+    // No DB write should have happened
+    expect(vi.mocked(db.transaction)).not.toHaveBeenCalled();
+  });
+
+  it('يجب أن يرجع 400 عند غياب sold_price (validation)', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const { db } = await import('@workspace/db');
+    vi.mocked(db.transaction).mockClear();
+
+    const res = await request(app)
+      .post('/api/devices/55/sell')
+      .set('Authorization', 'Bearer test-token')
+      .send({ warranty_months: 6 }); // missing sold_price
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+    expect(vi.mocked(db.transaction)).not.toHaveBeenCalled();
+  });
+
+  it('يجب أن يرجع 404 إذا الجهاز غير موجود في الشركة (tenant isolation)', async () => {
+    // device not found for this company
+    mockChainData.mockResolvedValueOnce([]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const { db } = await import('@workspace/db');
+    vi.mocked(db.transaction).mockClear();
+
+    const res = await request(app)
+      .post('/api/devices/55/sell')
+      .set('Authorization', 'Bearer test-token')
+      .send({ sold_price: 1600 });
+
+    expect(res.status).toBe(404);
+    // No transaction should run if device not found
+    expect(vi.mocked(db.transaction)).not.toHaveBeenCalled();
+  });
+
+  it('شركة B لا تستطيع بيع جهاز شركة A', async () => {
+    // Company B's query returns empty (device belongs to company A)
+    mockChainData.mockResolvedValueOnce([]);
+
+    vi.mocked(authenticate).mockImplementationOnce(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserB; // company_id = 2
+        next();
+      },
+    );
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/devices/55/sell')
+      .set('Authorization', 'Bearer test-token')
+      .send({ sold_price: 1600 });
+
+    expect(res.status).toBe(404);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/devices/:id/return — State Transitions + Isolation
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('POST /api/devices/:id/return', () => {
+  const soldDevice = { ...mockDeviceA, status: 'sold' };
+
+  beforeEach(() => {
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يُرجع الجهاز إلى available بنجاح', async () => {
+    mockChainData.mockResolvedValueOnce([soldDevice]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/devices/55/return')
+      .set('Authorization', 'Bearer test-token')
+      .send({ return_reason: 'عيب مصنعي' });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('يجب أن يرجع 400 إذا الجهاز ليس في حالة sold', async () => {
+    mockChainData.mockResolvedValueOnce([{ ...mockDeviceA, status: 'available' }]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/devices/55/return')
+      .set('Authorization', 'Bearer test-token')
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 404 إذا الجهاز غير موجود (tenant isolation)', async () => {
+    mockChainData.mockResolvedValueOnce([]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/devices/55/return')
+      .set('Authorization', 'Bearer test-token')
+      .send({});
+
+    expect(res.status).toBe(404);
+  });
+
+  it('يجب أن يرجع 403 للمستخدم بدون صلاحية can_manage_devices', async () => {
+    const setEmployee = (req: Request, _res: Response, next: NextFunction) => {
+      (req as Request & { user: AuthUser }).user = employeeUser;
+      next();
+    };
+    vi.mocked(authenticate)
+      .mockImplementationOnce(setEmployee)
+      .mockImplementationOnce(setEmployee);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/devices/55/return')
+      .set('Authorization', 'Bearer test-token')
+      .send({});
+
+    expect(res.status).toBe(403);
   });
 });
