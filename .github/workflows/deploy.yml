@@ -214,8 +214,8 @@ jobs:
               if [ "$i" -ge "$MAX" ]; then
                 echo "❌ فشل التشغيل بعد 60 ثانية — آخر لوجز:"
                 pm2 logs halaltech-api --lines 50 --nostream || true
-                echo "--- متغيرات البيئة المتاحة لـ PM2 ---"
-                pm2 env 0 || true
+                echo "--- أسماء متغيرات البيئة المتاحة لـ PM2 (الأسماء فقط، بدون قيم) ---"
+                pm2 env 0 2>/dev/null | sed -E 's/=.*/=<redacted>/' || true
                 exit 1
               fi
               echo "  انتظار... ($((i*3))/60 ثانية)"
