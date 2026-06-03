@@ -12,7 +12,7 @@ import { getTenant } from "../../../middleware/auth";
 import { firstZodError } from "../../../lib/schemas";
 import {
   safeDate, r2, buildValidation, TOLERANCE,
-  cfSql, cfSimpleSql,
+  cfSql,
 } from "../shared";
 
 const router: IRouter = Router();

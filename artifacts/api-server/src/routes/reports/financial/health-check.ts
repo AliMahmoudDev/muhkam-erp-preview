@@ -9,7 +9,7 @@ import { wrap } from "../../../lib/async-handler";
 import { hasPermission } from "../../../lib/permissions";
 import { getTenant } from "../../../middleware/auth";
 import { checkHealthCritical } from "../../../lib/alert-service";
-import { r2, TOLERANCE, cfSql, cfSimpleSql } from "../shared";
+import { r2, cfSql, cfSimpleSql } from "../shared";
 
 const router: IRouter = Router();
 

@@ -25,24 +25,61 @@ vi.mock('@workspace/db', () => {
     update: vi.fn().mockReturnThis(), set: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(), execute: vi.fn().mockResolvedValue({ rows: [] }),
   };
+  const returningFn = vi.fn().mockResolvedValue([]);
+  const makeWhereResult = (): Record<string, unknown> => ({
+    returning: returningFn,
+    execute: vi.fn().mockResolvedValue({ rows: [] }),
+    then: (onF: (v: unknown) => unknown, onR?: (e: unknown) => unknown) => Promise.resolve(undefined).then(onF, onR),
+    catch: (fn: (e: unknown) => unknown) => Promise.resolve(undefined).catch(fn),
+    finally: (fn: () => void) => Promise.resolve(undefined).finally(fn),
+  });
   const db = {
     select: vi.fn(() => makeChain()), insert: vi.fn().mockReturnThis(),
-    values: vi.fn().mockReturnThis(), returning: vi.fn().mockResolvedValue([]),
+    values: vi.fn().mockReturnThis(), returning: returningFn,
     update: vi.fn().mockReturnThis(), set: vi.fn().mockReturnThis(),
-    where: vi.fn().mockResolvedValue(undefined), delete: vi.fn().mockReturnThis(),
+    where: vi.fn(() => makeWhereResult()), delete: vi.fn().mockReturnThis(),
     execute: vi.fn().mockResolvedValue({ rows: [] }),
     transaction: vi.fn(async (fn: (tx: typeof txMock) => Promise<unknown>) => fn(txMock)),
   };
   return {
     db, pool: { end: vi.fn(), query: vi.fn(), connect: vi.fn().mockResolvedValue({ query: vi.fn().mockResolvedValue({ rows: [] }), release: vi.fn() }) },
-    attendanceDeductionSettingsTable: {}, attendanceDeductionTiersTable: {},
-    attendanceRecordsTable: {}, publicHolidaysTable: {}, employeesTable: {},
-    employeeDeductionsTable: {}, accountsTable: {}, auditLogsTable: {},
-    companiesTable: {}, branchesTable: {}, productsTable: {}, categoriesTable: {},
-    customersTable: {}, warehousesTable: {}, stockMovementsTable: {}, salesTable: {},
-    saleItemsTable: {}, purchasesTable: {}, purchaseItemsTable: {}, expensesTable: {},
-    suppliersTable: {}, journalEntriesTable: {}, journalEntryLinesTable: {},
-    erpUsersTable: {}, systemSettingsTable: {}, devicesTable: {},
+    accountsTable: {}, accrualRunsTable: {}, accrualsTable: {}, alertsTable: {}, announcementsTable: {},
+    attendanceDeductionSettingsTable: {}, attendanceDeductionTiersTable: {}, attendanceRecordsTable: {},
+    attendanceSummaryTable: {}, auditLogsTable: {}, backupsTable: {}, badDebtsTable: {},
+    bankAccountsTable: {}, bankStatementLinesTable: {}, branchesTable: {}, budgetLinesTable: {},
+    budgetsTable: {}, categoriesTable: {}, companiesTable: {}, costCentersTable: {},
+    customerClassificationsTable: {}, customerLedgerTable: {}, customersTable: {},
+    dailyIncentiveAccrualTable: {}, departmentsTable: {}, depositVouchersTable: {},
+    depreciationRunsTable: {}, devicesTable: {}, employeeBonusesTable: {},
+    employeeContactsTable: {}, employeeCustodyLinesTable: {}, employeeCustodyTable: {},
+    employeeDeductionsTable: {}, employeeDocumentsTable: {}, employeeIncentiveAssignmentsTable: {},
+    employeeLeaveBalancesTable: {}, employeeShiftAssignmentsTable: {}, employeesTable: {},
+    employeeStatusHistoryTable: {}, erpUsersTable: {}, exchangeRatesTable: {},
+    expenseCategoriesTable: {}, expensesTable: {}, fiscalYearsTable: {}, fixedAssetsTable: {},
+    idempotencyKeysTable: {}, incentiveMetricsTable: {}, incentiveRulesTable: {},
+    incentiveSchemesTable: {}, incentiveSlabsTable: {}, incomeTable: {}, jobTitlesTable: {},
+    journalEntriesTable: {}, journalEntryLinesTable: {}, leaveAccrualHistoryTable: {},
+    leaveApprovalsTable: {}, leaveBlackoutDatesTable: {}, leavePoliciesTable: {},
+    leaveRequestsTable: {}, leaveTypesTable: {}, monthlyIncentiveSummaryTable: {},
+    notificationsTable: {}, overtimeRecordsTable: {}, paymentVouchersTable: {},
+    payrollAdjustmentsTable: {}, payrollLineItemsTable: {}, payrollPeriodsTable: {},
+    payrollRecordsTable: {}, planSettingsTable: {}, priceListItemsTable: {}, priceListsTable: {},
+    productsTable: {}, publicHolidaysTable: {}, purchaseItemsTable: {},
+    purchaseReturnItemsTable: {}, purchaseReturnsTable: {}, purchasesTable: {},
+    receiptVouchersTable: {}, refreshTokensTable: {}, repairAccessoriesTable: {},
+    repairChecklistItemsTable: {}, repairDashboardCardsTable: {}, repairDeviceModelsTable: {},
+    repairDevicePhotosTable: {}, repairJobPartsTable: {}, repairJobsTable: {},
+    repairPaymentsTable: {}, repairPipelineConfigTable: {}, repairReceiptTechniciansTable: {},
+    repairStatusesTable: {}, repairStatusHistoryTable: {}, safesTable: {}, safeTransfersTable: {},
+    salaryAdvanceDeductionsTable: {}, salaryAdvanceHistoryTable: {}, salaryAdvanceLedgerTable: {},
+    salaryAdvanceSettingsTable: {}, salaryAdvancesTable: {}, salaryComponentsTable: {},
+    salaryHistoryTable: {}, salaryStructuresTable: {}, saleItemsTable: {},
+    saleReturnItemsTable: {}, salesReturnsTable: {}, salesTable: {}, salesTargetsTable: {},
+    scrapItemsTable: {}, shiftSchedulesTable: {}, statutoryContributionsTable: {},
+    stockCountItemsTable: {}, stockCountSessionsTable: {}, stockMovementsTable: {},
+    stockTransferItemsTable: {}, stockTransfersTable: {}, superSettingsTable: {},
+    suppliersTable: {}, systemSettingsTable: {}, taxBracketsTable: {}, transactionsTable: {},
+    treasuryVouchersTable: {}, trialAbuseLogTable: {}, warehousesTable: {}, warrantyTable: {},
   };
 });
 
@@ -73,7 +110,7 @@ import { db } from '@workspace/db';
 const dbMock = db as unknown as { execute: ReturnType<typeof vi.fn>; returning: ReturnType<typeof vi.fn>; transaction: ReturnType<typeof vi.fn> };
 
 const adminUser: AuthUser = { id: 1, name: 'Admin', username: 'admin', role: 'admin', permissions: '{}', active: true, warehouse_id: 1, safe_id: 1, company_id: 1, employee_id: null };
-const adminUserB: AuthUser = { id: 2, name: 'Admin B', username: 'admin_b', role: 'admin', permissions: '{}', active: true, warehouse_id: 2, safe_id: 2, company_id: 2, employee_id: null };
+const _adminUserB: AuthUser = { id: 2, name: 'Admin B', username: 'admin_b', role: 'admin', permissions: '{}', active: true, warehouse_id: 2, safe_id: 2, company_id: 2, employee_id: null };
 
 
 // ═══════════════════════════════════════════════════════════════════

@@ -1,7 +1,9 @@
 name: Deploy to Production
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI — Lint, Type Check, Test, Build"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
   schedule:
@@ -16,6 +18,10 @@ jobs:
     name: Multi-Tenant Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
 
     services:
       postgres:

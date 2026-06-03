@@ -253,7 +253,7 @@ const adminUserB: AuthUser = {
   warehouse_id: 2, safe_id: 2, company_id: 2, employee_id: null,
 };
 
-const employeeUser: AuthUser = {
+const _employeeUser: AuthUser = {
   id: 3, name: 'Employee', username: 'emp',
   role: 'employee', permissions: '{}', active: true,
   warehouse_id: null, safe_id: null, company_id: 1, employee_id: 10,

@@ -35,14 +35,43 @@ vi.mock('@workspace/db', () => {
   };
   return {
     db, pool: { end: vi.fn(), query: vi.fn(), connect: vi.fn().mockResolvedValue({ query: vi.fn().mockResolvedValue({ rows: [] }), release: vi.fn() }) },
-    productsTable: {}, stockMovementsTable: {}, safesTable: {},
-    transactionsTable: {}, customersTable: {}, accountsTable: {},
-    auditLogsTable: {}, companiesTable: {}, branchesTable: {},
-    categoriesTable: {}, warehousesTable: {}, salesTable: {},
-    saleItemsTable: {}, purchasesTable: {}, purchaseItemsTable: {},
-    expensesTable: {}, suppliersTable: {}, journalEntriesTable: {},
-    journalEntryLinesTable: {}, erpUsersTable: {}, systemSettingsTable: {},
-    devicesTable: {}, employeesTable: {},
+    accountsTable: {}, accrualRunsTable: {}, accrualsTable: {}, alertsTable: {}, announcementsTable: {},
+    attendanceDeductionSettingsTable: {}, attendanceDeductionTiersTable: {}, attendanceRecordsTable: {},
+    attendanceSummaryTable: {}, auditLogsTable: {}, backupsTable: {}, badDebtsTable: {},
+    bankAccountsTable: {}, bankStatementLinesTable: {}, branchesTable: {}, budgetLinesTable: {},
+    budgetsTable: {}, categoriesTable: {}, companiesTable: {}, costCentersTable: {},
+    customerClassificationsTable: {}, customerLedgerTable: {}, customersTable: {},
+    dailyIncentiveAccrualTable: {}, departmentsTable: {}, depositVouchersTable: {},
+    depreciationRunsTable: {}, devicesTable: {}, employeeBonusesTable: {},
+    employeeContactsTable: {}, employeeCustodyLinesTable: {}, employeeCustodyTable: {},
+    employeeDeductionsTable: {}, employeeDocumentsTable: {}, employeeIncentiveAssignmentsTable: {},
+    employeeLeaveBalancesTable: {}, employeeShiftAssignmentsTable: {}, employeesTable: {},
+    employeeStatusHistoryTable: {}, erpUsersTable: {}, exchangeRatesTable: {},
+    expenseCategoriesTable: {}, expensesTable: {}, fiscalYearsTable: {}, fixedAssetsTable: {},
+    idempotencyKeysTable: {}, incentiveMetricsTable: {}, incentiveRulesTable: {},
+    incentiveSchemesTable: {}, incentiveSlabsTable: {}, incomeTable: {}, jobTitlesTable: {},
+    journalEntriesTable: {}, journalEntryLinesTable: {}, leaveAccrualHistoryTable: {},
+    leaveApprovalsTable: {}, leaveBlackoutDatesTable: {}, leavePoliciesTable: {},
+    leaveRequestsTable: {}, leaveTypesTable: {}, monthlyIncentiveSummaryTable: {},
+    notificationsTable: {}, overtimeRecordsTable: {}, paymentVouchersTable: {},
+    payrollAdjustmentsTable: {}, payrollLineItemsTable: {}, payrollPeriodsTable: {},
+    payrollRecordsTable: {}, planSettingsTable: {}, priceListItemsTable: {}, priceListsTable: {},
+    productsTable: {}, publicHolidaysTable: {}, purchaseItemsTable: {},
+    purchaseReturnItemsTable: {}, purchaseReturnsTable: {}, purchasesTable: {},
+    receiptVouchersTable: {}, refreshTokensTable: {}, repairAccessoriesTable: {},
+    repairChecklistItemsTable: {}, repairDashboardCardsTable: {}, repairDeviceModelsTable: {},
+    repairDevicePhotosTable: {}, repairJobPartsTable: {}, repairJobsTable: {},
+    repairPaymentsTable: {}, repairPipelineConfigTable: {}, repairReceiptTechniciansTable: {},
+    repairStatusesTable: {}, repairStatusHistoryTable: {}, safesTable: {}, safeTransfersTable: {},
+    salaryAdvanceDeductionsTable: {}, salaryAdvanceHistoryTable: {}, salaryAdvanceLedgerTable: {},
+    salaryAdvanceSettingsTable: {}, salaryAdvancesTable: {}, salaryComponentsTable: {},
+    salaryHistoryTable: {}, salaryStructuresTable: {}, saleItemsTable: {},
+    saleReturnItemsTable: {}, salesReturnsTable: {}, salesTable: {}, salesTargetsTable: {},
+    scrapItemsTable: {}, shiftSchedulesTable: {}, statutoryContributionsTable: {},
+    stockCountItemsTable: {}, stockCountSessionsTable: {}, stockMovementsTable: {},
+    stockTransferItemsTable: {}, stockTransfersTable: {}, superSettingsTable: {},
+    suppliersTable: {}, systemSettingsTable: {}, taxBracketsTable: {}, transactionsTable: {},
+    treasuryVouchersTable: {}, trialAbuseLogTable: {}, warehousesTable: {}, warrantyTable: {},
   };
 });
 
@@ -70,7 +99,7 @@ import { authenticate } from '../../middleware/auth';
 import type { AuthUser } from '../../middleware/auth';
 import { db } from '@workspace/db';
 
-const dbMock = db as unknown as { execute: ReturnType<typeof vi.fn>; returning: ReturnType<typeof vi.fn>; transaction: ReturnType<typeof vi.fn> };
+const _dbMock = db as unknown as { execute: ReturnType<typeof vi.fn>; returning: ReturnType<typeof vi.fn>; transaction: ReturnType<typeof vi.fn> };
 
 const adminUser: AuthUser = { id: 1, name: 'Admin', username: 'admin', role: 'admin', permissions: '{}', active: true, warehouse_id: 1, safe_id: 1, company_id: 1, employee_id: null };
 

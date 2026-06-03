@@ -5,7 +5,6 @@ import {
   repairJobsTable,
   repairJobPartsTable,
   repairStatusHistoryTable,
-  repairPaymentsTable,
   expensesTable,
   expenseCategoriesTable,
   safesTable,
