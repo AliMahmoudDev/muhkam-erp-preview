@@ -6,6 +6,7 @@ import { wrap } from "../lib/async-handler";
 import { requireFeature } from "../middleware/feature-guard";
 import { setCache, getCache, deleteCache } from "../lib/cache";
 import { getTenant } from "../middleware/auth";
+import { writeAuditLog } from "../lib/audit-log";
 
 const ACCOUNT_TYPES = ["asset", "liability", "equity", "revenue", "expense"] as const;
 
@@ -91,6 +92,7 @@ router.post("/accounts", wrap(async (req, res) => {
     company_id: cid,
   }).returning();
   await deleteCache(`coa:${cid}`);
+  void writeAuditLog({ action: "create", record_type: "account", record_id: acc.id, new_value: { code: acc.code, name: acc.name, type: acc.type }, user: req.user, company_id: cid });
   res.status(201).json(fmt(acc));
 }));
 
@@ -106,6 +108,7 @@ router.put("/accounts/:id", wrap(async (req, res) => {
     .where(and(eq(accountsTable.id, id), eq(accountsTable.company_id, cid))).returning();
   if (!acc) { res.status(404).json({ error: "الحساب غير موجود" }); return; }
   await deleteCache(`coa:${cid}`);
+  void writeAuditLog({ action: "update", record_type: "account", record_id: id, new_value: v.data, user: req.user, company_id: cid });
   res.json(fmt(acc));
 }));
 
@@ -115,6 +118,7 @@ router.delete("/accounts/:id", wrap(async (req, res) => {
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   await db.delete(accountsTable).where(and(eq(accountsTable.id, id), eq(accountsTable.company_id, cid)));
   await deleteCache(`coa:${cid}`);
+  void writeAuditLog({ action: "delete", record_type: "account", record_id: id, user: req.user, company_id: cid });
   res.json({ success: true });
 }));
 
@@ -207,6 +211,7 @@ router.post("/journal-entries", wrap(async (req, res) => {
     }
   }
 
+  void writeAuditLog({ action: "create", record_type: "journal_entry", record_id: entry.id, new_value: { entry_no: entry.entry_no, description, total_debit: totalDebit, total_credit: totalCredit, status }, user: req.user, company_id: cid });
   res.status(201).json(fmtEntry(entry));
 }));
 
@@ -243,6 +248,7 @@ router.patch("/journal-entries/:id/post", wrap(async (req, res) => {
       acc.current_balance = String(Number(acc.current_balance) + impact);
     }
   }
+  void writeAuditLog({ action: "update", record_type: "journal_entry", record_id: id, new_value: { status: "posted" }, user: req.user, company_id: cid });
   res.json(fmtEntry(entry));
 }));
 
@@ -257,6 +263,7 @@ router.delete("/journal-entries/:id", wrap(async (req, res) => {
   if (entry.status === "posted") { res.status(400).json({ error: "لا يمكن حذف قيد منشور — استخدم عكس القيد" }); return; }
   await db.delete(journalEntryLinesTable).where(eq(journalEntryLinesTable.entry_id, id));
   await db.delete(journalEntriesTable).where(eq(journalEntriesTable.id, id));
+  void writeAuditLog({ action: "delete", record_type: "journal_entry", record_id: id, user: req.user, company_id: cid });
   res.json({ success: true });
 }));
 
@@ -335,6 +342,7 @@ router.post("/journal-entries/:id/reverse", wrap(async (req, res) => {
     return rev;
   });
 
+  void writeAuditLog({ action: "reversal_created", record_type: "journal_entry", record_id: id, new_value: { reversal_entry_id: reversalEntry.id, entry_no: reversalEntry.entry_no }, user: req.user, company_id: cid });
   res.json({ success: true, reversal_entry: fmtEntry(reversalEntry) });
 }));
 

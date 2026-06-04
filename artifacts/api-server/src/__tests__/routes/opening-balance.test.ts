@@ -96,12 +96,11 @@ vi.mock('../../lib/backup-service', () => ({ triggerBackup: vi.fn(), scheduleBac
 vi.mock('../../lib/alert-service', () => ({ runAllChecks: vi.fn(), checkHealthCritical: vi.fn().mockResolvedValue([]) }));
 
 import { authenticate } from '../../middleware/auth';
+import { writeAuditLog } from '../../lib/audit-log';
 import type { AuthUser } from '../../middleware/auth';
-import { db } from '@workspace/db';
-
-const _dbMock = db as unknown as { execute: ReturnType<typeof vi.fn>; returning: ReturnType<typeof vi.fn>; transaction: ReturnType<typeof vi.fn> };
 
 const adminUser: AuthUser = { id: 1, name: 'Admin', username: 'admin', role: 'admin', permissions: '{}', active: true, warehouse_id: 1, safe_id: 1, company_id: 1, employee_id: null };
+const noCompanyUser: AuthUser = { id: 99, name: 'No Company', username: 'nocompany', role: 'cashier', permissions: '{}', active: true, warehouse_id: null, safe_id: null, company_id: null, employee_id: null };
 
 
 // ═══════════════════════════════════════════════════════════════════
@@ -121,6 +120,14 @@ describe('GET /api/opening-balance/product', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body[0].quantity).toBe(10);
+  });
+
+  it('يجب أن يرجع 403 للمستخدم بدون company_id', async () => {
+    vi.mocked(authenticate).mockImplementationOnce((req: Request, _res: Response, next: NextFunction) => { (req as Request & { user: AuthUser }).user = noCompanyUser; next(); });
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const res = await request(app).get('/api/opening-balance/product').set('Authorization', 'Bearer test-token');
+    expect(res.status).toBe(403);
   });
 });
 
@@ -153,8 +160,8 @@ describe('POST /api/inventory/opening-balance', () => {
 
   it('يجب أن يرجع 409 إذا كان رصيد أول المدة مسجل مسبقاً', async () => {
     mockChainData
-      .mockResolvedValueOnce([{ id: 1, name: 'منتج', quantity: '0', cost_price: '0', company_id: 1 }]) // product found
-      .mockResolvedValueOnce([{ id: 1, movement_type: 'opening_balance' }]); // existing movement
+      .mockResolvedValueOnce([{ id: 1, name: 'منتج', quantity: '0', cost_price: '0', company_id: 1 }])
+      .mockResolvedValueOnce([{ id: 1, movement_type: 'opening_balance' }]);
     const request = (await import('supertest')).default;
     const app = (await import('../../app')).default;
     const res = await request(app).post('/api/inventory/opening-balance').set('Authorization', 'Bearer test-token')
@@ -165,8 +172,8 @@ describe('POST /api/inventory/opening-balance', () => {
 
   it('يجب أن يسجل رصيد أول المدة بنجاح ويرجع 201', async () => {
     mockChainData
-      .mockResolvedValueOnce([{ id: 1, name: 'منتج', quantity: '0', cost_price: '0', company_id: 1 }]) // product found
-      .mockResolvedValueOnce([]); // no existing movement
+      .mockResolvedValueOnce([{ id: 1, name: 'منتج', quantity: '0', cost_price: '0', company_id: 1 }])
+      .mockResolvedValueOnce([]);
     const request = (await import('supertest')).default;
     const app = (await import('../../app')).default;
     const res = await request(app).post('/api/inventory/opening-balance').set('Authorization', 'Bearer test-token')
@@ -175,11 +182,52 @@ describe('POST /api/inventory/opening-balance', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.new_qty).toBe(10);
   });
+
+  it('يجب أن يسجّل writeAuditLog عند تسجيل رصيد المنتج بنجاح', async () => {
+    mockChainData
+      .mockResolvedValueOnce([{ id: 1, name: 'منتج', quantity: '0', cost_price: '0', company_id: 1 }])
+      .mockResolvedValueOnce([]);
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    await request(app).post('/api/inventory/opening-balance').set('Authorization', 'Bearer test-token')
+      .send({ product_id: 1, quantity: 10, cost_price: 100 });
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'create', record_type: 'opening_balance', record_id: 1 }),
+    );
+  });
 });
 
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION C — POST /api/opening-balance/treasury
+// SECTION C — GET /api/opening-balance/treasury
+// ═══════════════════════════════════════════════════════════════════
+describe('GET /api/opening-balance/treasury', () => {
+  beforeEach(() => {
+    vi.clearAllMocks(); mockChainData.mockResolvedValue([]); mockHasPermission.mockReturnValue(true);
+    vi.mocked(authenticate).mockImplementation((req: Request, _res: Response, next: NextFunction) => { (req as Request & { user: AuthUser }).user = adminUser; next(); });
+  });
+
+  it('يجب أن يرجع 200 وقائمة رصيد الخزائن', async () => {
+    mockChainData.mockResolvedValue([{ id: 1, amount: '5000', reference_type: 'treasury_opening', created_at: new Date() }]);
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const res = await request(app).get('/api/opening-balance/treasury').set('Authorization', 'Bearer test-token');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body[0].amount).toBe(5000);
+  });
+
+  it('يجب أن يرجع 403 للمستخدم بدون company_id', async () => {
+    vi.mocked(authenticate).mockImplementationOnce((req: Request, _res: Response, next: NextFunction) => { (req as Request & { user: AuthUser }).user = noCompanyUser; next(); });
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const res = await request(app).get('/api/opening-balance/treasury').set('Authorization', 'Bearer test-token');
+    expect(res.status).toBe(403);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SECTION D — POST /api/opening-balance/treasury
 // ═══════════════════════════════════════════════════════════════════
 describe('POST /api/opening-balance/treasury', () => {
   beforeEach(() => {
@@ -215,10 +263,21 @@ describe('POST /api/opening-balance/treasury', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.amount).toBe(5000);
   });
+
+  it('يجب أن يسجّل writeAuditLog عند تسجيل رصيد الخزينة بنجاح', async () => {
+    mockChainData.mockResolvedValue([{ id: 1, name: 'خزينة رئيسية', balance: '0', company_id: 1 }]);
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    await request(app).post('/api/opening-balance/treasury').set('Authorization', 'Bearer test-token')
+      .send({ safe_id: 1, amount: 5000 });
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'create', record_type: 'opening_balance', record_id: 1 }),
+    );
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION D — POST /api/opening-balance/customer
+// SECTION E — POST /api/opening-balance/customer
 // ═══════════════════════════════════════════════════════════════════
 describe('POST /api/opening-balance/customer', () => {
   beforeEach(() => {
@@ -253,5 +312,78 @@ describe('POST /api/opening-balance/customer', () => {
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.amount).toBe(3000);
+  });
+
+  it('يجب أن يسجّل writeAuditLog عند تسجيل رصيد العميل بنجاح', async () => {
+    mockChainData.mockResolvedValue([{ id: 1, name: 'عميل تجريبي', balance: '0', company_id: 1 }]);
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    await request(app).post('/api/opening-balance/customer').set('Authorization', 'Bearer test-token')
+      .send({ customer_id: 1, amount: 3000 });
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'create', record_type: 'opening_balance', record_id: 1 }),
+    );
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SECTION F — POST /api/opening-balance/supplier
+// ═══════════════════════════════════════════════════════════════════
+describe('POST /api/opening-balance/supplier', () => {
+  beforeEach(() => {
+    vi.clearAllMocks(); mockChainData.mockResolvedValue([]); mockHasPermission.mockReturnValue(true);
+    vi.mocked(authenticate).mockImplementation((req: Request, _res: Response, next: NextFunction) => { (req as Request & { user: AuthUser }).user = adminUser; next(); });
+  });
+
+  it('يجب أن يرجع 400 عند إرسال body فارغ (لا supplier_id ولا customer_id)', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const res = await request(app).post('/api/opening-balance/supplier').set('Authorization', 'Bearer test-token').send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('بيانات رصيد أول المدة للمورد غير صحيحة');
+  });
+
+  it('يجب أن يرجع 404 عند مورد غير موجود', async () => {
+    mockChainData.mockResolvedValue([]);
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const res = await request(app).post('/api/opening-balance/supplier').set('Authorization', 'Bearer test-token')
+      .send({ supplier_id: 999, amount: 2000 });
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('المورد غير موجود');
+  });
+
+  it('يجب أن يسجل رصيد أول المدة للمورد بنجاح ويرجع 201 (باستخدام supplier_id)', async () => {
+    mockChainData.mockResolvedValue([{ id: 5, name: 'مورد اختبار', balance: '0', company_id: 1 }]);
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const res = await request(app).post('/api/opening-balance/supplier').set('Authorization', 'Bearer test-token')
+      .send({ supplier_id: 5, amount: 2000 });
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.supplier_id).toBe(5);
+    expect(res.body.amount).toBe(2000);
+  });
+
+  it('يجب أن يسجل رصيد أول المدة للمورد بنجاح ويرجع 201 (باستخدام customer_id)', async () => {
+    mockChainData.mockResolvedValue([{ id: 7, name: 'مورد عبر customer_id', balance: '0', company_id: 1 }]);
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    const res = await request(app).post('/api/opening-balance/supplier').set('Authorization', 'Bearer test-token')
+      .send({ customer_id: 7, amount: 1500 });
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.amount).toBe(1500);
+  });
+
+  it('يجب أن يسجّل writeAuditLog عند تسجيل رصيد المورد بنجاح', async () => {
+    mockChainData.mockResolvedValue([{ id: 5, name: 'مورد اختبار', balance: '0', company_id: 1 }]);
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+    await request(app).post('/api/opening-balance/supplier').set('Authorization', 'Bearer test-token')
+      .send({ supplier_id: 5, amount: 2000 });
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'create', record_type: 'opening_balance', record_id: 5 }),
+    );
   });
 });
