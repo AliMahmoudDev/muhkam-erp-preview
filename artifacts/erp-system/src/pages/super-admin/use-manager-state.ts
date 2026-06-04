@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 import { type Manager, authHeaders } from './types';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useManagerState(showToast: (msg: string, type?: 'success' | 'error') => void) {
   const qc = useQueryClient();
@@ -47,7 +48,7 @@ export function useManagerState(showToast: (msg: string, type?: 'success' | 'err
     isError: mgError,
     refetch: mgRefetch,
   } = useQuery<Manager[]>({
-    queryKey: ['/api/super/managers'],
+    queryKey: queryKeys.super.managers.all,
     queryFn: () => fetcher('/api/super/managers'),
     staleTime: 30_000,
     refetchOnMount: 'always',
@@ -60,7 +61,7 @@ export function useManagerState(showToast: (msg: string, type?: 'success' | 'err
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/super/managers'] });
+      qc.invalidateQueries({ queryKey: queryKeys.super.managers.all });
       setShowAddMgr(false);
       resetAddForm();
       showToast('تم إضافة المدير بنجاح');
@@ -74,7 +75,7 @@ export function useManagerState(showToast: (msg: string, type?: 'success' | 'err
         method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/super/managers'] });
+      qc.invalidateQueries({ queryKey: queryKeys.super.managers.all });
       setEditMgr(null);
       resetEditForm();
       showToast('تم تحديث بيانات المدير');
@@ -87,7 +88,7 @@ export function useManagerState(showToast: (msg: string, type?: 'success' | 'err
       authFetch(api(`/api/super/managers/${id}/toggle`), {
         method: 'PATCH', headers: authHeaders(),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['/api/super/managers'] }); showToast('تم تحديث حالة المدير'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.super.managers.all }); showToast('تم تحديث حالة المدير'); },
     onError: (e: Error) => showToast(e.message, 'error'),
   });
 
@@ -97,7 +98,7 @@ export function useManagerState(showToast: (msg: string, type?: 'success' | 'err
         method: 'DELETE', headers: authHeaders(),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/super/managers'] });
+      qc.invalidateQueries({ queryKey: queryKeys.super.managers.all });
       setDeleteMgr(null); setDeleteMgrErr('');
       showToast('تم حذف المدير بنجاح');
     },

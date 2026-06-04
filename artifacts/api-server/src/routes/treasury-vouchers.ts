@@ -6,6 +6,7 @@ import { z } from "zod/v4";
 import { firstZodError } from "../lib/schemas";
 import { wrap, httpError } from "../lib/async-handler";
 import { hasPermission } from "../lib/permissions";
+import { writeAuditLog } from "../lib/audit-log";
 import { getTenant } from "../middleware/auth";
 
 const createTreasuryVoucherSchema = z.object({
@@ -107,6 +108,22 @@ router.post("/treasury-vouchers", wrap(async (req, res) => {
     });
     return v;
   });
+
+  void writeAuditLog({
+    action: "create",
+    record_type: "treasury_voucher",
+    record_id: voucher.id,
+    new_value: {
+      voucher_no: voucher.voucher_no,
+      type: voucher.type,
+      amount: Number(voucher.amount),
+      safe_id: voucher.safe_id,
+    },
+    user: req.user,
+    company_id: cid,
+    note: "إنشاء سند خزينة",
+  });
+
   res.status(201).json(fmt(voucher));
 }));
 
@@ -136,6 +153,16 @@ router.delete("/treasury-vouchers/:id", wrap(async (req, res) => {
     }
     await tx.delete(treasuryVouchersTable).where(and(eq(treasuryVouchersTable.id, id), eq(treasuryVouchersTable.company_id, cid)));
   });
+
+  void writeAuditLog({
+    action: "delete",
+    record_type: "treasury_voucher",
+    record_id: id,
+    user: req.user,
+    company_id: cid,
+    note: "حذف سند خزينة",
+  });
+
   res.json({ success: true });
 }));
 

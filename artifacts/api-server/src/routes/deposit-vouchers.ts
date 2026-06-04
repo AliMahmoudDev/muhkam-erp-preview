@@ -7,6 +7,7 @@ import { firstZodError } from "../lib/schemas";
 import { wrap, httpError } from "../lib/async-handler";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { getOrCreateSafeAccount, getOrCreateMiscRevenueAccount, createAutoJournalEntry, type AccountRef } from "../lib/auto-account";
+import { writeAuditLog } from "../lib/audit-log";
 import { getTenant } from "../middleware/auth";
 
 const createDepositVoucherSchema = z.object({
@@ -139,6 +140,21 @@ router.post("/deposit-vouchers", wrap(async (req, res) => {
     return v;
   });
 
+  void writeAuditLog({
+    action: "create",
+    record_type: "deposit_voucher",
+    record_id: voucher.id,
+    new_value: {
+      voucher_no: voucher.voucher_no,
+      amount: Number(voucher.amount),
+      customer_name: voucher.customer_name,
+      safe_id: voucher.safe_id,
+    },
+    user: req.user,
+    company_id: cid,
+    note: "إنشاء سند إيداع",
+  });
+
   return res.status(201).json(fmt(voucher));
 }));
 
@@ -197,6 +213,17 @@ router.post("/deposit-vouchers/:id/post", wrap(async (req, res) => {
     .where(and(eq(depositVouchersTable.id, id), eq(depositVouchersTable.company_id, cid)))
     .returning();
 
+  void writeAuditLog({
+    action: "update",
+    record_type: "deposit_voucher",
+    record_id: id,
+    old_value: { posting_status: v.posting_status },
+    new_value: { posting_status: "posted" },
+    user: req.user,
+    company_id: cid,
+    note: "ترحيل سند إيداع (draft → posted)",
+  });
+
   res.json(fmt(updated));
 }));
 
@@ -233,6 +260,17 @@ router.post("/deposit-vouchers/:id/cancel", wrap(async (req, res) => {
     .set({ posting_status: "cancelled" })
     .where(and(eq(depositVouchersTable.id, id), eq(depositVouchersTable.company_id, cid)))
     .returning();
+
+  void writeAuditLog({
+    action: "cancel",
+    record_type: "deposit_voucher",
+    record_id: id,
+    old_value: { posting_status: v.posting_status },
+    new_value: { posting_status: "cancelled" },
+    user: req.user,
+    company_id: cid,
+    note: "إلغاء سند إيداع",
+  });
 
   res.json(fmt(updated));
 }));
@@ -296,6 +334,16 @@ router.delete("/deposit-vouchers/:id", wrap(async (req, res) => {
 
     await tx.delete(depositVouchersTable).where(eq(depositVouchersTable.id, id));
   });
+
+  void writeAuditLog({
+    action: "delete",
+    record_type: "deposit_voucher",
+    record_id: id,
+    user: req.user,
+    company_id: cid,
+    note: "حذف سند إيداع (مسودة)",
+  });
+
   res.json({ success: true });
 }));
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
+import { queryKeys } from '@/lib/queryKeys';
 import {
   type Company, type Stats, type SubForm, type CreateResult, type ResetPassResult,
   type PanelCompanyDetail, type AuditLogResp, type SnapshotData, type ActiveTab,
@@ -62,27 +63,27 @@ export function useCompanyState(
 
   /* ── Queries ── */
   const { data: companies = [], isLoading: coLoading } = useQuery<Company[]>({
-    queryKey: ['/api/super/companies'],
+    queryKey: queryKeys.super.companies.all,
     queryFn: () => fetcher('/api/super/companies') as Promise<Company[]>,
     staleTime: 30_000,
   });
 
   const { data: panelCompanyDetail, isLoading: panelDetailLoading } = useQuery<PanelCompanyDetail>({
-    queryKey: ['/api/super/companies', subModal?.id, 'panel-detail'],
+    queryKey: queryKeys.super.companies.detail(subModal?.id),
     queryFn: () => fetcher(`/api/super/companies/${subModal!.id}`) as Promise<PanelCompanyDetail>,
     enabled: subModal !== null && panelTab === 2,
     staleTime: 30_000,
   });
 
   const { data: panelAuditResp, isLoading: panelAuditLoading } = useQuery<AuditLogResp>({
-    queryKey: ['/api/super/audit-log', 'company-type', subModal?.id],
+    queryKey: queryKeys.super.auditLog.forCompany(subModal?.id),
     queryFn: () => fetcher('/api/super/audit-log?record_type=company&limit=500') as Promise<AuditLogResp>,
     enabled: subModal !== null && panelTab === 3,
     staleTime: 60_000,
   });
 
   const { data: snapshotData, isLoading: snapshotLoading } = useQuery<SnapshotData>({
-    queryKey: ['/api/super/companies', snapshotCompany, 'snapshot'],
+    queryKey: queryKeys.super.companies.snapshot(snapshotCompany ?? undefined),
     queryFn: () => fetcher(`/api/super/companies/${snapshotCompany}/snapshot`) as Promise<SnapshotData>,
     enabled: snapshotCompany !== null,
     staleTime: 30_000,
@@ -151,8 +152,8 @@ export function useCompanyState(
         method, headers: authHeaders(), body: body ? JSON.stringify(body) : undefined,
       }).then(r => r.json()),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/super/companies'] });
-      qc.invalidateQueries({ queryKey: ['/api/super/stats'] });
+      qc.invalidateQueries({ queryKey: queryKeys.super.companies.all });
+      qc.invalidateQueries({ queryKey: queryKeys.super.stats });
     },
   });
 
@@ -163,8 +164,8 @@ export function useCompanyState(
         body: JSON.stringify({ force, confirm_code, expected_code }),
       }).then(async (r) => { const d = await r.json(); if (!r.ok) throw Object.assign(new Error(d.error ?? 'خطأ'), { data: d }); return d; }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/super/companies'] });
-      qc.invalidateQueries({ queryKey: ['/api/super/stats'] });
+      qc.invalidateQueries({ queryKey: queryKeys.super.companies.all });
+      qc.invalidateQueries({ queryKey: queryKeys.super.stats });
       setDeleteTarget(null); setDeleteCoErr(''); setDeleteStep('confirm'); setGeneratedCode(''); setEnteredCode('');
       showToast('تم حذف الشركة بنجاح');
     },
@@ -198,8 +199,8 @@ export function useCompanyState(
           body: JSON.stringify({ plan_type: subForm.plan_type, edition: subForm.edition, end_date: subForm.end_date, is_active: subForm.is_active, features: subForm.features }),
         });
       }
-      qc.invalidateQueries({ queryKey: ['/api/super/companies'] });
-      qc.invalidateQueries({ queryKey: ['/api/super/stats'] });
+      qc.invalidateQueries({ queryKey: queryKeys.super.companies.all });
+      qc.invalidateQueries({ queryKey: queryKeys.super.stats });
       showToast('✅ تم تحديث الاشتراك بنجاح');
       setSubModal(null);
     } catch { showToast('حدث خطأ أثناء الحفظ'); }

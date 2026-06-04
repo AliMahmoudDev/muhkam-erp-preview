@@ -9,6 +9,7 @@ import {
   type ActiveTab,
   authHeaders,
 } from './types';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useSettingsState(
   showToast: (msg: string, type?: 'success' | 'error') => void,
@@ -75,7 +76,7 @@ export function useSettingsState(
 
   /* Auto-fetch encryption status (no key exposed) on settings tab */
   const { data: encStatusData } = useQuery<{ enabled: boolean }>({
-    queryKey: ['/api/super/encryption-status'],
+    queryKey: queryKeys.super.encryptionStatus,
     queryFn: () => fetcher('/api/super/encryption-status') as Promise<{ enabled: boolean }>,
     enabled: activeTab === 'settings',
     staleTime: 300_000,
@@ -96,7 +97,7 @@ export function useSettingsState(
 
   /* ── Queries ── */
   const { data: sysSettings, refetch: refetchSupportSettings } = useQuery<Record<string, string>>({
-    queryKey: ['/api/super/support-settings'],
+    queryKey: queryKeys.super.supportSettings,
     queryFn: () => fetcher('/api/super/support-settings') as Promise<Record<string, string>>,
     staleTime: 60_000,
   });
@@ -112,7 +113,7 @@ export function useSettingsState(
     backups: BackupFile[];
     total: number;
   }>({
-    queryKey: ['/api/super/backup/list'],
+    queryKey: queryKeys.super.backupList,
     queryFn: () =>
       fetcher('/api/super/backup/list') as Promise<{ backups: BackupFile[]; total: number }>,
     enabled: activeTab === 'settings',
@@ -120,7 +121,7 @@ export function useSettingsState(
   });
 
   const { data: totpStatus, refetch: refetchTotpStatus } = useQuery<{ totp_enabled: boolean }>({
-    queryKey: ['/api/auth/2fa/status'],
+    queryKey: queryKeys.auth.twoFaStatus,
     queryFn: () => fetcher('/api/auth/2fa/status') as Promise<{ totp_enabled: boolean }>,
     enabled: activeTab === 'settings',
     staleTime: 10_000,
@@ -135,7 +136,7 @@ export function useSettingsState(
     error: tgErrorObj,
     refetch: tgRefetch,
   } = useQuery<TgConfig, Error>({
-    queryKey: ['/api/super/telegram-settings'],
+    queryKey: queryKeys.super.telegramSettings,
     queryFn: () => fetcher('/api/super/telegram-settings') as Promise<TgConfig>,
     enabled: isTgOpen,
     staleTime: 30_000,
@@ -150,7 +151,7 @@ export function useSettingsState(
     isLoading: tgBotLoading,
     refetch: tgBotRefetch,
   } = useQuery<TgBotStatus, Error>({
-    queryKey: ['/api/super/telegram-config'],
+    queryKey: queryKeys.super.telegramConfig,
     queryFn: () => fetcher('/api/super/telegram-config') as Promise<TgBotStatus>,
     enabled: isTgOpen,
     staleTime: 20_000,
