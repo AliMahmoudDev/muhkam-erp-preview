@@ -90,7 +90,10 @@ export type AuditRecordType =
   | "announcement"           // super-admin announcements
   | "warranty"              // warranty records
   | "trial_monitoring"      // trial registration monitoring actions
-  | "repair_job";           // بطاقة صيانة
+  | "repair_job"            // بطاقة صيانة
+  | "account"               // دليل الحسابات
+  | "journal_entry"         // القيود اليومية
+  | "opening_balance";      // رصيد أول المدة
 
 interface AuditUser {
   id?: number;

@@ -44,6 +44,11 @@ const adminUserA: AuthUser = {
   role: 'admin', permissions: '{}', active: true,
   warehouse_id: 1, safe_id: 1, company_id: 1, employee_id: null,
 };
+const adminUserB: AuthUser = {
+  id: 2, name: 'Admin B', username: 'admin_b',
+  role: 'admin', permissions: '{}', active: true,
+  warehouse_id: 2, safe_id: 2, company_id: 2, employee_id: null,
+};
 const noCompanyUser: AuthUser = {
   id: 99, name: 'No Company', username: 'nocompany',
   role: 'cashier', permissions: '{}', active: true,
@@ -129,7 +134,31 @@ describe('GET /api/financial-transactions', () => {
     const res = await request(buildApp(adminUserA))
       .get('/api/financial-transactions?safe_id=5&direction=in&type=sale&from=2024-01-01&to=2024-12-31&search=عميل');
     expect(res.status).toBe(200);
-    // تم تمرير شرط where مُجمّع (and(...conditions)) إلى الاستعلام
     expect(captureArgs.whereArg).toBeDefined();
+  });
+
+  it('يعزل بيانات المستأجر — company B تحصل على استعلام مختلف عن company A', async () => {
+    mockRows.mockResolvedValue([sampleRow]);
+    const request = (await import('supertest')).default;
+
+    const resA = await request(buildApp(adminUserA)).get('/api/financial-transactions');
+    const whereArgA = captureArgs.whereArg;
+
+    captureArgs.whereArg = undefined;
+
+    const resB = await request(buildApp(adminUserB)).get('/api/financial-transactions');
+    const whereArgB = captureArgs.whereArg;
+
+    expect(resA.status).toBe(200);
+    expect(resB.status).toBe(200);
+    expect(whereArgA).toBeDefined();
+    expect(whereArgB).toBeDefined();
+    expect(JSON.stringify(whereArgA)).not.toEqual(JSON.stringify(whereArgB));
+  });
+
+  it('يرجع 403 عند عدم تمرير مستخدم (req.user غير موجود)', async () => {
+    const request = (await import('supertest')).default;
+    const res = await request(buildApp(null)).get('/api/financial-transactions');
+    expect(res.status).toBe(403);
   });
 });

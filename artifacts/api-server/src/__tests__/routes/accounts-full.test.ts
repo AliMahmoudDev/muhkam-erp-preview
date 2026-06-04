@@ -46,7 +46,7 @@ vi.mock('@workspace/db', () => {
     returning:   vi.fn().mockResolvedValue([]),
     update:      vi.fn().mockReturnThis(),
     set:         vi.fn().mockReturnThis(),
-    where:       vi.fn().mockResolvedValue(undefined),
+    where:       vi.fn().mockReturnThis(),
     delete:      vi.fn().mockReturnThis(),
     execute:     vi.fn().mockResolvedValue({ rows: [] }),
     transaction: vi.fn(async (fn: (tx: typeof txMock) => Promise<unknown>) => fn(txMock)),
@@ -221,7 +221,6 @@ vi.mock('../../lib/auto-account', () => ({
 vi.mock('../../lib/ledger-balance', () => ({
   getCustomerLedgerBalance: vi.fn().mockResolvedValue(0),
 }));
-// Accounts route uses a Redis cache layer — return cache miss so route falls through to DB
 vi.mock('../../lib/cache', () => ({
   getCache:    vi.fn().mockResolvedValue(null),
   setCache:    vi.fn().mockResolvedValue(undefined),
@@ -229,6 +228,7 @@ vi.mock('../../lib/cache', () => ({
 }));
 
 import { authenticate } from '../../middleware/auth';
+import { writeAuditLog } from '../../lib/audit-log';
 import type { AuthUser } from '../../middleware/auth';
 import { db } from '@workspace/db';
 
@@ -266,10 +266,20 @@ const mockAccount = {
   created_at: new Date('2024-01-01T10:00:00.000Z'),
 };
 
+const mockJournalEntry = {
+  id: 10, entry_no: 'JE-00001', date: '2024-01-15',
+  description: 'قيد اختبار', reference: null,
+  status: 'draft',
+  total_debit: '1000.00', total_credit: '1000.00',
+  company_id: 1,
+  created_at: new Date('2024-01-15T10:00:00.000Z'),
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('GET /api/accounts', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mockChainData.mockResolvedValue([]);
     vi.mocked(authenticate).mockImplementation(
       (req: Request, _res: Response, next: NextFunction) => {
@@ -358,6 +368,7 @@ describe('GET /api/accounts', () => {
 
 describe('POST /api/accounts', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mockChainData.mockResolvedValue([]);
     vi.mocked(authenticate).mockImplementation(
       (req: Request, _res: Response, next: NextFunction) => {
@@ -414,5 +425,508 @@ describe('POST /api/accounts', () => {
     expect(res.body).toHaveProperty('id', 1);
     expect(res.body).toHaveProperty('code', '1001');
     expect(typeof res.body.opening_balance).toBe('number');
+  });
+
+  it('يجب أن يسجّل writeAuditLog عند إنشاء حساب بنجاح', async () => {
+    dbMock.returning.mockResolvedValueOnce([mockAccount]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    await request(app)
+      .post('/api/accounts')
+      .set('Authorization', 'Bearer test-token')
+      .send({ code: '1001', name: 'صندوق', type: 'asset' });
+
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'create', record_type: 'account' }),
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('PUT /api/accounts/:id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockChainData.mockResolvedValue([]);
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يرجع 400 لمعرّف غير رقمي', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .put('/api/accounts/abc')
+      .set('Authorization', 'Bearer test-token')
+      .send({ name: 'صندوق معدّل' });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 404 إذا لم يُعثر على الحساب', async () => {
+    dbMock.returning.mockResolvedValueOnce([]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .put('/api/accounts/999')
+      .set('Authorization', 'Bearer test-token')
+      .send({ name: 'صندوق معدّل' });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('error', 'الحساب غير موجود');
+  });
+
+  it('يجب أن يرجع 200 عند تعديل حساب بنجاح', async () => {
+    dbMock.returning.mockResolvedValueOnce([{ ...mockAccount, name: 'صندوق معدّل' }]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .put('/api/accounts/1')
+      .set('Authorization', 'Bearer test-token')
+      .send({ name: 'صندوق معدّل' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('name', 'صندوق معدّل');
+  });
+
+  it('يجب أن يسجّل writeAuditLog عند تعديل حساب', async () => {
+    dbMock.returning.mockResolvedValueOnce([{ ...mockAccount, name: 'صندوق معدّل' }]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    await request(app)
+      .put('/api/accounts/1')
+      .set('Authorization', 'Bearer test-token')
+      .send({ name: 'صندوق معدّل' });
+
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'update', record_type: 'account', record_id: 1 }),
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('DELETE /api/accounts/:id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يرجع 400 لمعرّف غير رقمي', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .delete('/api/accounts/abc')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(400);
+  });
+
+  it('يجب أن يرجع 200 ويحذف الحساب', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .delete('/api/accounts/1')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+  });
+
+  it('يجب أن يسجّل writeAuditLog عند حذف حساب', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    await request(app)
+      .delete('/api/accounts/1')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'delete', record_type: 'account', record_id: 1 }),
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('GET /api/journal-entries', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockChainData.mockResolvedValue([]);
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يرجع 200 ومصفوفة القيود', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .get('/api/journal-entries')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it('يجب أن يرجع 403 للمستخدم بدون company_id', async () => {
+    vi.mocked(authenticate).mockImplementationOnce(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = noCompanyUser;
+        next();
+      },
+    );
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .get('/api/journal-entries')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(403);
+  });
+
+  it('يجب أن يُنسّق total_debit/total_credit كأرقام في الاستجابة', async () => {
+    mockChainData.mockResolvedValueOnce([mockJournalEntry]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .get('/api/journal-entries')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(typeof res.body[0].total_debit).toBe('number');
+    expect(typeof res.body[0].total_credit).toBe('number');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('POST /api/journal-entries', () => {
+  const validPayload = {
+    date: '2024-01-15',
+    description: 'قيد اختبار متوازن',
+    lines: [
+      { account_id: 1, debit: 1000, credit: 0 },
+      { account_id: 2, debit: 0,    credit: 1000 },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockChainData.mockResolvedValue([]);
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يرجع 400 عند إرسال body بدون الحقول المطلوبة', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/journal-entries')
+      .set('Authorization', 'Bearer test-token')
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('يجب أن يرجع 400 إذا كان القيد غير متوازن (مدين ≠ دائن)', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/journal-entries')
+      .set('Authorization', 'Bearer test-token')
+      .send({
+        date: '2024-01-15',
+        description: 'قيد غير متوازن',
+        lines: [
+          { account_id: 1, debit: 1000, credit: 0 },
+          { account_id: 2, debit: 0,    credit: 500 },
+        ],
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('غير متوازن');
+  });
+
+  it('يجب أن يرجع 403 للمستخدم بدون company_id', async () => {
+    vi.mocked(authenticate).mockImplementationOnce(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = noCompanyUser;
+        next();
+      },
+    );
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/journal-entries')
+      .set('Authorization', 'Bearer test-token')
+      .send(validPayload);
+
+    expect(res.status).toBe(403);
+  });
+
+  it('يجب أن يرجع 201 عند إنشاء قيد متوازن بنجاح', async () => {
+    dbMock.returning.mockResolvedValueOnce([mockJournalEntry]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/journal-entries')
+      .set('Authorization', 'Bearer test-token')
+      .send(validPayload);
+
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveProperty('id', 10);
+    expect(res.body).toHaveProperty('entry_no', 'JE-00001');
+  });
+
+  it('يجب أن يسجّل writeAuditLog عند إنشاء قيد بنجاح', async () => {
+    dbMock.returning.mockResolvedValueOnce([mockJournalEntry]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    await request(app)
+      .post('/api/journal-entries')
+      .set('Authorization', 'Bearer test-token')
+      .send(validPayload);
+
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'create', record_type: 'journal_entry' }),
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('PATCH /api/journal-entries/:id/post', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockChainData.mockResolvedValue([]);
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يرجع 400 لمعرّف غير رقمي', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .patch('/api/journal-entries/abc/post')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(400);
+  });
+
+  it('يجب أن يرجع 404 إذا لم يُعثر على القيد', async () => {
+    dbMock.returning.mockResolvedValueOnce([]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .patch('/api/journal-entries/999/post')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('error', 'غير موجود');
+  });
+
+  it('يجب أن يرجع 200 عند نشر القيد بنجاح ويسجّل audit log', async () => {
+    dbMock.returning.mockResolvedValueOnce([{ ...mockJournalEntry, status: 'posted' }]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .patch('/api/journal-entries/10/post')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(200);
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'update', record_type: 'journal_entry', record_id: 10 }),
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('DELETE /api/journal-entries/:id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockChainData.mockResolvedValue([]);
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يرجع 404 إذا لم يُعثر على القيد', async () => {
+    mockChainData.mockResolvedValueOnce([]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .delete('/api/journal-entries/999')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(404);
+  });
+
+  it('يجب أن يرجع 400 إذا كان القيد منشوراً', async () => {
+    mockChainData.mockResolvedValueOnce([{ id: 10, status: 'posted' }]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .delete('/api/journal-entries/10')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('لا يمكن حذف قيد منشور');
+  });
+
+  it('يجب أن يرجع 200 ويسجّل audit log عند حذف قيد مسودة', async () => {
+    mockChainData.mockResolvedValueOnce([{ id: 10, status: 'draft' }]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .delete('/api/journal-entries/10')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'delete', record_type: 'journal_entry', record_id: 10 }),
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('POST /api/journal-entries/:id/reverse', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockChainData.mockResolvedValue([]);
+    vi.mocked(authenticate).mockImplementation(
+      (req: Request, _res: Response, next: NextFunction) => {
+        (req as Request & { user: AuthUser }).user = adminUserA;
+        next();
+      },
+    );
+  });
+
+  it('يجب أن يرجع 400 لمعرّف غير رقمي', async () => {
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/journal-entries/abc/reverse')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(400);
+  });
+
+  it('يجب أن يرجع 404 إذا لم يُعثر على القيد', async () => {
+    mockChainData.mockResolvedValueOnce([]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/journal-entries/999/reverse')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('error', 'القيد غير موجود');
+  });
+
+  it('يجب أن يرجع 400 إذا كان القيد غير منشور', async () => {
+    mockChainData.mockResolvedValueOnce([{ ...mockJournalEntry, status: 'draft' }]);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/journal-entries/10/reverse')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('المنشورة');
+  });
+
+  it('يجب أن يرجع 200 ويسجّل audit log عند عكس قيد منشور', async () => {
+    const postedEntry = { ...mockJournalEntry, status: 'posted' };
+    const reversalEntry = { ...mockJournalEntry, id: 11, entry_no: 'REV-JE-00001', status: 'posted' };
+
+    mockChainData
+      .mockResolvedValueOnce([postedEntry])
+      .mockResolvedValueOnce([{ id: 1, account_id: 1, debit: '500', credit: '500', description: null }]);
+
+    const dbAny = db as unknown as { transaction: ReturnType<typeof vi.fn> };
+    dbAny.transaction.mockResolvedValueOnce(reversalEntry);
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/journal-entries/10/reverse')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+    expect(vi.mocked(writeAuditLog)).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'reversal_created', record_type: 'journal_entry', record_id: 10 }),
+    );
   });
 });

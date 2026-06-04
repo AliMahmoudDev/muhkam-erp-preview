@@ -12,6 +12,7 @@ import { wrap } from "../lib/async-handler";
 import { resolveTenantWarehouseId } from "../lib/warehouse-guard";
 import { z } from "zod/v4";
 import { getTenant } from "../middleware/auth";
+import { writeAuditLog } from "../lib/audit-log";
 
 const router: IRouter = Router();
 
@@ -148,6 +149,7 @@ router.post("/inventory/opening-balance", wrap(async (req, res) => {
     });
   });
 
+  void writeAuditLog({ action: "create", record_type: "opening_balance", record_id: prodId, new_value: { product_id: prodId, product_name: product.name, quantity: qty, cost_price: cost }, user: req.user, company_id: companyId });
   res.status(201).json({
     success: true,
     product_id: prodId,
@@ -221,6 +223,7 @@ router.post("/opening-balance/treasury", wrap(async (req, res) => {
     });
   });
 
+  void writeAuditLog({ action: "create", record_type: "opening_balance", record_id: safe.id, new_value: { safe_id: safe.id, safe_name: safe.name, amount: amt }, user: req.user, company_id: companyId });
   res.status(201).json({ success: true, safe_id: safe.id, safe_name: safe.name, amount: amt });
 }));
 
@@ -286,6 +289,7 @@ router.post("/opening-balance/customer", wrap(async (req, res) => {
     });
   });
 
+  void writeAuditLog({ action: "create", record_type: "opening_balance", record_id: custId, new_value: { customer_id: custId, customer_name: customer.name, amount: amt }, user: req.user, company_id: companyId });
   res.status(201).json({ success: true, customer_id: custId, customer_name: customer.name, amount: amt });
 }));
 
@@ -356,6 +360,7 @@ router.post("/opening-balance/supplier", wrap(async (req, res) => {
     });
   });
 
+  void writeAuditLog({ action: "create", record_type: "opening_balance", record_id: custId, new_value: { supplier_id: custId, supplier_name: customer.name, amount: amt }, user: req.user, company_id: companyId });
   res.status(201).json({ success: true, supplier_id: custId, supplier_name: customer.name, amount: amt });
 }));
 
