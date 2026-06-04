@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 import { type AuditRow, type PlanSetting, type ActiveTab, authHeaders } from './types';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface RevenueData {
   mrr: number; arr: number; arpu: number; conversionRate: number;
@@ -101,14 +102,14 @@ export function useTabsData(
 
   /* ── Queries ── */
   const { data: revenueData, isLoading: revenueLoading } = useQuery<RevenueData>({
-    queryKey: ['/api/super/revenue'],
+    queryKey: queryKeys.super.revenue,
     queryFn: () => fetcher('/api/super/revenue') as Promise<RevenueData>,
     enabled: activeTab === 'revenue',
     staleTime: 60_000,
   });
 
   const { data: alertsData, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery<AlertsData>({
-    queryKey: ['/api/super/alerts'],
+    queryKey: queryKeys.super.alerts,
     queryFn: () => fetcher('/api/super/alerts') as Promise<AlertsData>,
     enabled: activeTab === 'alerts',
     staleTime: 30_000,
@@ -116,7 +117,7 @@ export function useTabsData(
   });
 
   const { data: monData, isLoading: monLoading, isError: monError, refetch: refetchMon } = useQuery<TrialMonitoringData>({
-    queryKey: ['/api/super/trial-monitoring'],
+    queryKey: queryKeys.super.trialMonitoring,
     queryFn: () => authFetch('/api/super/trial-monitoring').then(async r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }) as Promise<TrialMonitoringData>,
     enabled: activeTab === 'monitoring',
     staleTime: 15_000,
@@ -125,7 +126,7 @@ export function useTabsData(
   });
 
   const { data: healthData, isLoading: healthLoading, refetch: refetchHealth, dataUpdatedAt: healthUpdated } = useQuery<HealthData>({
-    queryKey: ['/api/super/health'],
+    queryKey: queryKeys.super.health,
     queryFn: () => fetcher('/api/super/health') as Promise<HealthData>,
     enabled: activeTab === 'health' || activeTab === 'overview',
     staleTime: 10_000,
@@ -133,7 +134,7 @@ export function useTabsData(
   });
 
   const { data: redisHealth } = useQuery<RedisHealthData>({
-    queryKey: ['/api/super/health/redis'],
+    queryKey: queryKeys.super.healthRedis,
     queryFn: () => authFetch('/api/super/health/redis').then(r => r.json() as Promise<RedisHealthData>).catch(() => ({ status: 'down' as const })),
     refetchInterval: 10_000,
     retry: false,
@@ -141,28 +142,28 @@ export function useTabsData(
   });
 
   const { data: auditData, isLoading: auditLoading, refetch: refetchAudit } = useQuery<{ count: number; rows: AuditRow[] }>({
-    queryKey: ['/api/super/audit-log', auditLimit, auditAction],
+    queryKey: queryKeys.super.auditLog.list(auditLimit, auditAction),
     queryFn: () => fetcher(`/api/super/audit-log?limit=${auditLimit}${auditAction ? `&action=${auditAction}` : ''}`) as Promise<{ count: number; rows: AuditRow[] }>,
     enabled: activeTab === 'audit_log' || (activeTab === 'settings' && settingsActiveCard === 'audit_log'),
     staleTime: 30_000,
   });
 
   const { data: overviewAudit } = useQuery<{ count: number; rows: AuditRow[] }>({
-    queryKey: ['/api/super/audit-log', 5, ''],
+    queryKey: queryKeys.super.auditLog.list(5, ''),
     queryFn: () => fetcher('/api/super/audit-log?limit=5') as Promise<{ count: number; rows: AuditRow[] }>,
     enabled: activeTab === 'overview',
     staleTime: 30_000,
   });
 
   const { data: planSettings, isLoading: planSettingsLoading, refetch: refetchPlans } = useQuery<PlanSetting[]>({
-    queryKey: ['/api/super/plan-settings'],
+    queryKey: queryKeys.super.planSettings,
     queryFn: () => fetcher('/api/super/plan-settings') as Promise<PlanSetting[]>,
     enabled: activeTab === 'plans',
     staleTime: 30_000,
   });
 
   const { data: annData, refetch: refetchAnn } = useQuery<{ announcements: AnnounceItem[]; total: number }>({
-    queryKey: ['/api/super/announcements'],
+    queryKey: queryKeys.super.announcements,
     queryFn: () => fetcher('/api/super/announcements') as Promise<{ announcements: AnnounceItem[]; total: number }>,
     enabled: activeTab === 'announcements',
     staleTime: 30_000,

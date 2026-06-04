@@ -6,6 +6,12 @@ const { mockChainData } = vi.hoisted(() => ({
   mockChainData: vi.fn<[], Promise<unknown[]>>().mockResolvedValue([]),
 }));
 
+// يُستخدم في مجموعة اختبارات «Tenant Isolation» أدناه. يجب أن يبقى في المستوى
+// الأعلى لأن vi.hoisted يُرفع قبل تنفيذ أي كود — وضعه داخل describe يُطلق تحذيراً.
+const { mockDb } = vi.hoisted(() => ({
+  mockDb: { upsertCalls: [] as Array<{ companyId: number }> },
+}));
+
 // ── @workspace/db mock ────────────────────────────────────────────────────────
 vi.mock('@workspace/db', () => {
   const txMock: Record<string, ReturnType<typeof vi.fn>> = {
@@ -334,8 +340,6 @@ describe('POST /api/settings/system', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('POST /api/settings/system — Tenant Isolation', () => {
-  const { mockDb } = vi.hoisted(() => ({ mockDb: { upsertCalls: [] as Array<{ companyId: number }> } }));
-
   beforeEach(() => {
     mockChainData.mockResolvedValue([]);
   });

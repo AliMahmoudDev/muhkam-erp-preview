@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
+import { queryKeys } from '@/lib/queryKeys';
 import { useLocation } from 'wouter';
 import { type Stats, type ActiveTab, C, FONT } from './types';
 import { Toast } from './ui';
@@ -59,7 +60,7 @@ export default function SuperAdmin() {
 
   /* ── Shared stats query (used by TabOverview + TabCompanies) ── */
   const { data: stats } = useQuery<Stats>({
-    queryKey: ['/api/super/stats'],
+    queryKey: queryKeys.super.stats,
     queryFn: () => authFetch(api('/api/super/stats')).then(r => r.json()) as Promise<Stats>,
     staleTime: 30_000,
   });

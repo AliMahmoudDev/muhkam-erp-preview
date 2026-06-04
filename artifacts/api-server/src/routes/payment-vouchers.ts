@@ -8,6 +8,7 @@ import { wrap, httpError } from "../lib/async-handler";
 import { assertPeriodOpen } from "../lib/period-lock";
 import { getOrCreateSafeAccount, getOrCreateGeneralExpenseAccount, createAutoJournalEntry, type AccountRef } from "../lib/auto-account";
 import { hasPermission } from "../lib/permissions";
+import { writeAuditLog } from "../lib/audit-log";
 import { getTenant } from "../middleware/auth";
 
 const createPaymentVoucherSchema = z.object({
@@ -142,6 +143,21 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
     return v;
   });
 
+  void writeAuditLog({
+    action: "create",
+    record_type: "payment_voucher",
+    record_id: voucher.id,
+    new_value: {
+      voucher_no: voucher.voucher_no,
+      amount: Number(voucher.amount),
+      customer_name: voucher.customer_name,
+      safe_id: voucher.safe_id,
+    },
+    user: req.user,
+    company_id: cid,
+    note: "إنشاء سند دفع",
+  });
+
   return res.status(201).json(fmt(voucher));
 }));
 
@@ -200,6 +216,17 @@ router.post("/payment-vouchers/:id/post", wrap(async (req, res) => {
     .where(and(eq(paymentVouchersTable.id, id), eq(paymentVouchersTable.company_id, cid)))
     .returning();
 
+  void writeAuditLog({
+    action: "update",
+    record_type: "payment_voucher",
+    record_id: id,
+    old_value: { posting_status: v.posting_status },
+    new_value: { posting_status: "posted" },
+    user: req.user,
+    company_id: cid,
+    note: "ترحيل سند دفع (draft → posted)",
+  });
+
   res.json(fmt(updated));
 }));
 
@@ -236,6 +263,17 @@ router.post("/payment-vouchers/:id/cancel", wrap(async (req, res) => {
     .set({ posting_status: "cancelled" })
     .where(and(eq(paymentVouchersTable.id, id), eq(paymentVouchersTable.company_id, cid)))
     .returning();
+
+  void writeAuditLog({
+    action: "cancel",
+    record_type: "payment_voucher",
+    record_id: id,
+    old_value: { posting_status: v.posting_status },
+    new_value: { posting_status: "cancelled" },
+    user: req.user,
+    company_id: cid,
+    note: "إلغاء سند دفع",
+  });
 
   res.json(fmt(updated));
 }));
@@ -293,6 +331,16 @@ router.delete("/payment-vouchers/:id", wrap(async (req, res) => {
 
     await tx.delete(paymentVouchersTable).where(eq(paymentVouchersTable.id, id));
   });
+
+  void writeAuditLog({
+    action: "delete",
+    record_type: "payment_voucher",
+    record_id: id,
+    user: req.user,
+    company_id: cid,
+    note: "حذف سند دفع (مسودة)",
+  });
+
   res.json({ success: true });
 }));
 

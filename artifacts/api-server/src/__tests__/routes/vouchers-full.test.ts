@@ -236,6 +236,7 @@ vi.mock('../../lib/cache', () => ({
 import { authenticate } from '../../middleware/auth';
 import type { AuthUser } from '../../middleware/auth';
 import { db } from '@workspace/db';
+import { writeAuditLog } from '../../lib/audit-log';
 
 const dbMock = db as unknown as {
   transaction: ReturnType<typeof vi.fn>;
@@ -438,6 +439,29 @@ describe('POST /api/receipt-vouchers', () => {
     expect(res.body).toHaveProperty('id', 1);
     expect(res.body).toHaveProperty('voucher_no', 'RV-2024-0001');
     expect(typeof res.body.amount).toBe('number');
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'create',
+        record_type: 'receipt_voucher',
+        record_id: 1,
+        company_id: 1,
+      }),
+    );
+  });
+
+  it('يجب ألا يكتب سجل تدقيق عند فشل التحقق (400)', async () => {
+    vi.mocked(writeAuditLog).mockClear();
+
+    const request = (await import('supertest')).default;
+    const app = (await import('../../app')).default;
+
+    const res = await request(app)
+      .post('/api/receipt-vouchers')
+      .set('Authorization', 'Bearer test-token')
+      .send({ safe_id: 1 });
+
+    expect(res.status).toBe(400);
+    expect(writeAuditLog).not.toHaveBeenCalled();
   });
 });
 
@@ -563,5 +587,13 @@ describe('POST /api/payment-vouchers', () => {
     expect(res.body).toHaveProperty('id', 1);
     expect(res.body).toHaveProperty('voucher_no', 'PV-2024-0001');
     expect(typeof res.body.amount).toBe('number');
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'create',
+        record_type: 'payment_voucher',
+        record_id: 1,
+        company_id: 1,
+      }),
+    );
   });
 });
