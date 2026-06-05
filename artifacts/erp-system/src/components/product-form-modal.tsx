@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Plus, RefreshCw, Tag, ChevronDown, Loader2 } from 'lucide-react';
+import { X, Plus, RefreshCw, Tag, ChevronDown, Loader2, Sparkles } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { useGetCategories } from '@workspace/api-client-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -39,6 +39,115 @@ export function generateBarcode(): string {
     .padStart(2, '0');
   return `HT${ts}${rand}`;
 }
+
+function generateSmartSku(name: string): string {
+  const n = name;
+  const nl = n.toLowerCase();
+
+  // --- Type prefix ---
+  let prefix = '';
+  if (/شاشة|screen|lcd|oled|display/i.test(n)) prefix = 'SCR';
+  else if (/بطارية|battery/i.test(n)) prefix = 'BAT';
+  else if (/هاوسنج|هيكل|housing|back.*cover|غطاء.*خلفي/i.test(n)) prefix = 'HSG';
+  else if (/كاميرا|camera/i.test(n)) prefix = 'CAM';
+  else if (/شاحن|charger|كابل|cable/i.test(n)) prefix = 'CHR';
+  else if (/سماعة|earpiece|speaker/i.test(n)) prefix = 'SPK';
+  else if (/سوار|حزام|band|strap/i.test(n)) prefix = 'BND';
+  else if (/زجاج|glass/i.test(n)) prefix = 'GLS';
+  else if (/مايك|mic|microphone/i.test(n)) prefix = 'MIC';
+  else if (/موصل|connector|منفذ|port/i.test(n)) prefix = 'CNT';
+  else if (/درع|حماية|protector/i.test(n)) prefix = 'PRT';
+
+  // --- Model ---
+  let model = '';
+  // iPhone with sub-model
+  const ipMatch =
+    nl.match(
+      /i(?:phone|فون)\s*(\d{1,2})\s*(pro\s*max|pro\s*plus|pro|plus|mini|برو\s*ماكس|برو\s*بلس|برو|بلس|ميني)?/
+    ) ||
+    nl.match(
+      /ايفون\s*(\d{1,2})\s*(برو\s*ماكس|برو\s*بلس|برو|بلس|ميني|pro\s*max|pro\s*plus|pro|plus|mini)?/
+    );
+  if (ipMatch) {
+    model = `IP${ipMatch[1]}`;
+    const sub = (ipMatch[2] || '').toLowerCase();
+    if (/max|ماكس/.test(sub)) model += 'PM';
+    else if (/pro|برو/.test(sub)) model += 'P';
+    else if (/plus|بلس/.test(sub)) model += 'PL';
+    else if (/mini|ميني/.test(sub)) model += 'M';
+  }
+  // iPad
+  if (!model) {
+    const ipadMatch = nl.match(/i(?:pad|باد)\s*(pro|air|mini|برو|اير|ميني)?\s*(\d{1,2})?/);
+    if (ipadMatch) {
+      model = 'IPD';
+      const sub = (ipadMatch[1] || '').toLowerCase();
+      if (/pro|برو/.test(sub)) model += 'P';
+      else if (/air|اير/.test(sub)) model += 'A';
+      else if (/mini|ميني/.test(sub)) model += 'M';
+      if (ipadMatch[2]) model += ipadMatch[2];
+    }
+  }
+  // Apple Watch
+  if (!model && /watch|واتش|ساعة/.test(nl)) {
+    model = 'AW';
+    const s = nl.match(/series\s*(\d+)|سيريز\s*(\d+)/);
+    if (s) model += s[1] || s[2];
+    const ult = /ultra/.test(nl);
+    if (ult) model += 'U';
+  }
+  // MacBook
+  if (!model && /macbook|ماك/.test(nl)) {
+    model = 'MB';
+  }
+  // AirPods
+  if (!model && /airpods|ايربودز/.test(nl)) {
+    model = 'AP';
+  }
+
+  // --- Quality suffix ---
+  let quality = '';
+  if (/أصلي|اصلي|original|org\b|og\b/i.test(n)) quality = 'OG';
+  else if (/كوبي.*a\+|copy.*a\+|hard.*oled|a\+/i.test(n)) quality = 'CPA';
+  else if (/كوبي|copy/i.test(n)) quality = 'CP';
+  else if (/مستعمل|used/i.test(n)) quality = 'USD';
+
+  const parts = [prefix, model, quality].filter(Boolean);
+  if (parts.length === 0) return generateBarcode();
+
+  // Add 2-digit random suffix to avoid collisions when same combination exists
+  const rand = Math.floor(Math.random() * 99)
+    .toString()
+    .padStart(2, '0');
+  return parts.join('-') + '-' + rand;
+}
+
+const QUALITY_OPTIONS = [
+  {
+    label: '✦ أصلي',
+    suffix: ' — أصلي',
+    skuHint: 'OG',
+    color: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
+  },
+  {
+    label: '◈ كوبي A+',
+    suffix: ' — كوبي A+',
+    skuHint: 'CPA',
+    color: 'bg-blue-500/20 border-blue-500/40 text-blue-300',
+  },
+  {
+    label: '◇ كوبي',
+    suffix: ' — كوبي',
+    skuHint: 'CP',
+    color: 'bg-yellow-500/20 border-yellow-500/40 text-yellow-300',
+  },
+  {
+    label: '↺ مستعمل',
+    suffix: ' — مستعمل',
+    skuHint: 'USD',
+    color: 'bg-gray-500/20 border-gray-500/40 text-gray-300',
+  },
+];
 
 interface ProductFormModalProps {
   title?: string;
@@ -136,6 +245,13 @@ export function ProductFormModal({
     );
   };
 
+  const applyQuality = (suffix: string) => {
+    const base = form.name.replace(/ — أصلي$| — كوبي A\+$| — كوبي$| — مستعمل$/u, '').trim();
+    const newName = base + suffix;
+    set('name', newName);
+    set('sku', generateSmartSku(newName));
+  };
+
   const margin =
     form.cost_price > 0 && form.sale_price > 0
       ? ((form.sale_price - form.cost_price) / form.sale_price) * 100
@@ -174,10 +290,30 @@ export function ProductFormModal({
               required
               type="text"
               className="glass-input"
-              placeholder="مثال: شاشة سامسونج 6.5"
+              placeholder="مثال: شاشة iPhone 15 Pro — أصلي OLED"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
             />
+          </div>
+
+          {/* Quality quick-select */}
+          <div>
+            <label className="block text-white/50 text-xs mb-2 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-400/70" />
+              نوع/جودة — اضغط لإضافته للاسم وتوليد SKU تلقائياً
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {QUALITY_OPTIONS.map((q) => (
+                <button
+                  key={q.skuHint}
+                  type="button"
+                  onClick={() => applyQuality(q.suffix)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all hover:scale-105 active:scale-95 ${q.color}`}
+                >
+                  {q.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Barcode */}
@@ -193,14 +329,17 @@ export function ProductFormModal({
               />
               <button
                 type="button"
-                onClick={() => set('sku', generateBarcode())}
+                onClick={() =>
+                  set('sku', form.name.trim() ? generateSmartSku(form.name) : generateBarcode())
+                }
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-xs font-bold shrink-0 transition-all"
               >
                 <RefreshCw className="w-3 h-3" /> توليد
               </button>
             </div>
             <p className="text-white/25 text-xs mt-1.5">
-              إذا تُرك فارغاً سيُولَّد تلقائياً عند الحفظ
+              مثال: <span className="font-mono text-amber-400/50">SCR-IP15P-OG-03</span> — أو اكتب
+              SKU يدوياً
             </p>
           </div>
 
