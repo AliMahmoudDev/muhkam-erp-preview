@@ -293,10 +293,19 @@ export default function DeliveryGateForm({
 
       {/* ③ الدفع */}
       <div className="px-5 pt-4 pb-3 border-b border-white/5">
-        <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
-          <span className="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-[9px] text-emerald-300 font-black">＄</span>
-          الدفع
-        </h4>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-[12px] font-black text-white/80 flex items-center gap-2">
+            <span className="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-[9px] text-emerald-300 font-black">＄</span>
+            الدفع
+            <span className="text-[10px] font-normal text-white/35">(اختياري)</span>
+          </h4>
+          {!payIsDone && grandTotal > 0 && payRows.length === 0 && (
+            <span className="text-[10px] text-indigo-300/70 px-2 py-0.5 rounded-lg"
+              style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)" }}>
+              بدون دفع = كل المبلغ آجل
+            </span>
+          )}
+        </div>
 
         {payRows.length > 0 && (
           <div className="mb-2.5 space-y-1.5">
