@@ -32,7 +32,7 @@ expertMode = true
 
   [nix]
   channel = "stable-25_05"
-  packages = ["gh", "pm2"]
+packages = ["gh", "pm2"]
 
   [userenv]
 
