@@ -293,6 +293,9 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
     if (!Number.isFinite(numericCost) || numericCost < 0) errs.push("تكلفة الشحن غير صحيحة");
     if (!Number.isFinite(numericDisc) || numericDisc < 0)  errs.push("قيمة الخصم غير صحيحة");
     if (numericCost > 0 && !safeId) errs.push("يجب اختيار خزنة لخصم تكلفة الشحن");
+    if (grandTotal > 0 && remaining > 0.01) {
+      errs.push(`يجب تحديد طريقة دفع المبلغ المتبقي (${remaining.toFixed(2)} ج.م) — اضغط «نقدي» أو «آجل» ثم «إضافة»`);
+    }
     if (errs.length) { setErrors(errs); return; }
     setSaving(true); setErrors([]);
     try {
@@ -303,9 +306,19 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
       const d1 = await r1.json().catch(() => ({})) as { error?: string };
       if (!r1.ok) { setErrors([d1.error ?? "تعذّر حفظ بيانات المحاسبة"]); setSaving(false); return; }
 
+      const deliveryCashPaid   = payRows.filter(r => r.type === "cash").reduce((s, r) => s + r.amount, 0);
+      const deliveryCreditAmt  = payRows.filter(r => r.type === "credit").reduce((s, r) => s + r.amount, 0);
       const r2 = await authFetch(api(`/api/repair-jobs/${job.id}/shipping`), {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shipping_cost: numericCost, safe_id: numericCost > 0 ? Number(safeId) : null, final_discount: numericDisc, notes: `تسليم بطاقة صيانة ${job.job_no}` }),
+        body: JSON.stringify({
+          shipping_cost:          numericCost,
+          safe_id:                numericCost > 0 ? Number(safeId) : null,
+          final_discount:         numericDisc,
+          notes:                  `تسليم بطاقة صيانة ${job.job_no}`,
+          delivery_grand_total:   grandTotal,
+          delivery_cash_paid:     deliveryCashPaid,
+          delivery_credit:        deliveryCreditAmt,
+        }),
       });
       const d2 = await r2.json().catch(() => ({})) as { error?: string };
       if (!r2.ok) { setErrors([d2.error ?? "تعذّر تسجيل بيانات الشحن"]); setSaving(false); return; }

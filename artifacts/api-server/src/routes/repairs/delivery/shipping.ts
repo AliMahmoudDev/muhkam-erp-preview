@@ -9,6 +9,7 @@ import {
   expenseCategoriesTable,
   safesTable,
   transactionsTable,
+  customerLedgerTable,
 } from "@workspace/db";
 import { wrap } from "../../../lib/async-handler";
 import { hasPermission } from "../../../lib/permissions";
@@ -68,6 +69,44 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
     return res.status(400).json({ error: "تكلفة الشحن مسجّلة مسبقاً لهذه البطاقة" });
   }
 
+  /* بيانات دفع التسليم (من الفرونت إند) لتسجيل حساب العميل */
+  const deliveryGrandTotal = Math.max(0, Number(b.delivery_grand_total ?? 0));
+  const deliveryCashPaid   = Math.max(0, Number(b.delivery_cash_paid   ?? 0));
+
+  /* helper: تسجيل قيود حساب العميل بعد اكتمال التسليم */
+  async function recordCustomerLedger(jobRow: typeof job) {
+    if (!jobRow.customer_id || deliveryGrandTotal <= 0) return;
+    const today = new Date().toISOString().split("T")[0]!;
+    try {
+      await db.insert(customerLedgerTable).values({
+        customer_id:    jobRow.customer_id,
+        type:           "repair",
+        amount:         String(deliveryGrandTotal),
+        reference_type: "repair_delivery",
+        reference_id:   id,
+        reference_no:   jobRow.job_no ?? undefined,
+        description:    `تسليم بطاقة صيانة ${jobRow.job_no}`,
+        date:           today,
+        company_id,
+      });
+      if (deliveryCashPaid > 0) {
+        await db.insert(customerLedgerTable).values({
+          customer_id:    jobRow.customer_id,
+          type:           "payment",
+          amount:         String(-deliveryCashPaid),
+          reference_type: "repair_delivery",
+          reference_id:   id,
+          reference_no:   jobRow.job_no ?? undefined,
+          description:    `دفعة نقدية عند تسليم صيانة ${jobRow.job_no}`,
+          date:           today,
+          company_id,
+        });
+      }
+    } catch (ledgerErr) {
+      logger.error({ jobId: id, err: ledgerErr }, "[repair-shipping] customer-ledger insert failed");
+    }
+  }
+
   /* حالة 1: المستخدم أكّد عدم وجود تكلفة شحن
      IDEMPOTENCY: الـ WHERE يضمن أنه لو طلبان متزامنان أرسلا shipping=0
      فسطر واحد فقط هو الذي سيُحدّث، والثاني سيرجع بدون updated rows. */
@@ -94,6 +133,7 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
       note: "تم تأكيد عدم وجود تكلفة شحن",
     });
 
+    await recordCustomerLedger(job);
     return res.json({ job: updated, expense: null });
   }
 
@@ -220,6 +260,7 @@ router.post("/repair-jobs/:id/shipping", wrap(async (req, res) => {
     } catch (jErr) {
       logger.error({ jobId: id, err: jErr }, "[repair-shipping] auto-journal failed");
     }
+    await recordCustomerLedger(txResult.job);
   }
 
   return res.json({ job: txResult?.job, expense: txResult?.expense });
