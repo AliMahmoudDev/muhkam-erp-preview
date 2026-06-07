@@ -9,6 +9,8 @@ import {
   productsTable,
   stockMovementsTable,
   safesTable,
+  expensesTable,
+  transactionsTable,
 } from "@workspace/db";
 import { wrap } from "../../../lib/async-handler";
 import { hasPermission } from "../../../lib/permissions";
@@ -43,25 +45,32 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
      source = "external": بند إصلاح خارجي (product_id = null، مفيش حركة مخزون،
        product_name يحمل وصف الإصلاح + اسم الورشة) */
   type PartInput = {
-    product_id:   number | null;
-    product_name: string;
-    quantity:     number;
-    unit_price:   number;
-    warehouse_id: number | null;
-    source:       "internal" | "external";
+    product_id:          number | null;
+    product_name:        string;
+    quantity:            number;
+    unit_price:          number;
+    warehouse_id:        number | null;
+    source:              "internal" | "external";
+    vendor_cost?:        number;
+    vendor_payment_type?: "cash" | "credit";
+    vendor_safe_id?:     number | null;
   };
   const partsInput: PartInput[] = Array.isArray(b.parts)
     ? (b.parts as unknown[]).map((p) => {
         const o = p as Record<string, unknown>;
         const src: "internal" | "external" = o.source === "external" ? "external" : "internal";
         const pid = Number(o.product_id);
+        const vCost = Number(o.vendor_cost) || 0;
         return {
-          product_id:   src === "external" ? null : (Number.isFinite(pid) && pid > 0 ? pid : null),
-          product_name: String(o.product_name ?? ""),
-          quantity:     Math.max(1, Number(o.quantity) || 1),
-          unit_price:   Math.max(0, Number(o.unit_price) || 0),
-          warehouse_id: src === "external" ? null : (o.warehouse_id ? Number(o.warehouse_id) : null),
-          source:       src,
+          product_id:          src === "external" ? null : (Number.isFinite(pid) && pid > 0 ? pid : null),
+          product_name:        String(o.product_name ?? ""),
+          quantity:            Math.max(1, Number(o.quantity) || 1),
+          unit_price:          Math.max(0, Number(o.unit_price) || 0),
+          warehouse_id:        src === "external" ? null : (o.warehouse_id ? Number(o.warehouse_id) : null),
+          source:              src,
+          vendor_cost:         src === "external" && vCost > 0 ? vCost : undefined,
+          vendor_payment_type: src === "external" && vCost > 0 ? (o.vendor_payment_type === "credit" ? "credit" as const : "cash" as const) : undefined,
+          vendor_safe_id:      src === "external" && vCost > 0 && o.vendor_payment_type !== "credit" ? (o.vendor_safe_id ? Number(o.vendor_safe_id) : null) : null,
         };
       }).filter(p => p.source === "external" ? !!p.product_name.trim() : (p.product_id !== null))
     : [];
@@ -97,8 +106,52 @@ router.post("/repair-jobs/:id/pre-delivery", wrap(async (req, res) => {
         is_returned:  false,
       });
 
-      /* البنود الخارجية لا تُخصم من المخزن */
-      if (part.source === "external") continue;
+      /* البنود الخارجية — تسجيل تكلفة الورشة في المصروفات إن وُجدت */
+      if (part.source === "external") {
+        if (part.vendor_cost && part.vendor_cost > 0) {
+          const isCash      = part.vendor_payment_type === "cash";
+          const safeLookup  = isCash && part.vendor_safe_id
+            ? await tx.select({ name: safesTable.name, balance: safesTable.balance })
+                .from(safesTable)
+                .where(and(eq(safesTable.id, part.vendor_safe_id), eq(safesTable.company_id, company_id)))
+                .limit(1)
+            : [];
+          if (isCash && part.vendor_safe_id && safeLookup.length === 0) {
+            throw new Error("الخزنة المختارة لتكلفة الورشة غير موجودة");
+          }
+          if (isCash && part.vendor_safe_id && Number(safeLookup[0].balance) < part.vendor_cost) {
+            throw new Error(`رصيد الخزنة "${safeLookup[0].name}" غير كافٍ لدفع تكلفة الورشة`);
+          }
+          const safeName = safeLookup[0]?.name ?? null;
+          const expDesc  = `تكلفة ورشة: ${part.product_name} — بطاقة صيانة #${job.job_no}`;
+          const [exp]    = await tx.insert(expensesTable).values({
+            category:   "إصلاح خارجي",
+            amount:     String(part.vendor_cost),
+            description: expDesc,
+            safe_id:    isCash ? (part.vendor_safe_id ?? null) : null,
+            safe_name:  isCash ? safeName : null,
+            company_id,
+          }).returning();
+          await tx.insert(transactionsTable).values({
+            type:           "expense",
+            reference_type: "expense",
+            reference_id:   exp.id,
+            safe_id:        exp.safe_id,
+            safe_name:      exp.safe_name,
+            amount:         String(part.vendor_cost),
+            direction:      isCash ? "out" : "none",
+            description:    expDesc,
+            date:           now.toISOString().split("T")[0],
+            company_id,
+          });
+          if (isCash && part.vendor_safe_id) {
+            await tx.update(safesTable)
+              .set({ balance: sql`${safesTable.balance} - ${String(part.vendor_cost)}` })
+              .where(and(eq(safesTable.id, part.vendor_safe_id), eq(safesTable.company_id, company_id)));
+          }
+        }
+        continue;
+      }
 
       /* خصم الكمية من المخزن */
       if (part.warehouse_id && part.product_id) {

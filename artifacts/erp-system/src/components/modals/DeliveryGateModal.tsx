@@ -178,7 +178,11 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
               showExtForm={g.showExtForm} setShowExtForm={g.setShowExtForm}
               extVendor={g.extVendor} setExtVendor={g.setExtVendor}
               extDesc={g.extDesc} setExtDesc={g.setExtDesc}
-              extPrice={g.extPrice} setExtPrice={g.setExtPrice} addExternalLine={g.addExternalLine}
+              extPrice={g.extPrice} setExtPrice={g.setExtPrice}
+              extVendorCost={g.extVendorCost} setExtVendorCost={g.setExtVendorCost}
+              extVendorPayType={g.extVendorPayType} setExtVendorPayType={g.setExtVendorPayType}
+              extVendorSafeId={g.extVendorSafeId} setExtVendorSafeId={g.setExtVendorSafeId}
+              addExternalLine={g.addExternalLine}
               safes={g.safes} payRows={g.payRows} setPayRows={g.setPayRows}
               payType={g.payType} setPayType={g.setPayType}
               paySafe={g.paySafe} setPaySafe={g.setPaySafe}

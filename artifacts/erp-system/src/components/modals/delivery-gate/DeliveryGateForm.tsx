@@ -38,6 +38,12 @@ interface Props {
   setExtDesc: (v: string) => void;
   extPrice: string;
   setExtPrice: (v: string) => void;
+  extVendorCost: string;
+  setExtVendorCost: (v: string) => void;
+  extVendorPayType: "cash" | "credit";
+  setExtVendorPayType: (v: "cash" | "credit") => void;
+  extVendorSafeId: number | null;
+  setExtVendorSafeId: (v: number | null) => void;
   addExternalLine: () => void;
   /* Payment */
   safes: { id: number; name: string; balance: string | number }[];
@@ -67,7 +73,9 @@ export default function DeliveryGateForm({
   filteredProducts, productSearch, setProductSearch, showProductDrop, setShowProductDrop,
   productSearchRef, addQty, setAddQty, addPrice, setAddPrice, selectedProduct,
   preSavedParts, partLines, setPartLines, selectProduct, addPartLine, updateLineDiscount,
-  showExtForm, setShowExtForm, extVendor, setExtVendor, extDesc, setExtDesc, extPrice, setExtPrice, addExternalLine,
+  showExtForm, setShowExtForm, extVendor, setExtVendor, extDesc, setExtDesc, extPrice, setExtPrice,
+  extVendorCost, setExtVendorCost, extVendorPayType, setExtVendorPayType, extVendorSafeId, setExtVendorSafeId,
+  addExternalLine,
   safes, payRows, setPayRows, payType, setPayType, paySafe, setPaySafe, payAmount, setPayAmount,
   paidSoFar, grandTotal, remaining, payIsDone, addPayRow, fillAll,
   brokerName, setBrokerName, brokerComm, setBrokerComm,
@@ -167,28 +175,74 @@ export default function DeliveryGateForm({
         </div>
 
         {showExtForm && (
-          <div className="mt-2 p-3 rounded-xl flex flex-wrap gap-2 items-end"
+          <div className="mt-2 p-3 rounded-xl space-y-2.5"
             style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)" }}>
-            <div className="flex-1 min-w-[150px]">
-              <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">وصف الإصلاح</label>
-              <input value={extDesc} onChange={(e) => setExtDesc(e.target.value)} placeholder="مثلاً: تغيير شاشة"
-                className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-purple-400/25 text-[11px] text-white focus:outline-none focus:border-purple-400/50" />
+
+            {/* الصف الأول: بيانات الإصلاح + تكلفة العميل */}
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="flex-1 min-w-[150px]">
+                <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">وصف الإصلاح</label>
+                <input value={extDesc} onChange={(e) => setExtDesc(e.target.value)} placeholder="مثلاً: تغيير شاشة"
+                  className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-purple-400/25 text-[11px] text-white focus:outline-none focus:border-purple-400/50" />
+              </div>
+              <div className="flex-1 min-w-[120px]">
+                <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">اسم الورشة (اختياري)</label>
+                <input value={extVendor} onChange={(e) => setExtVendor(e.target.value)} placeholder="ورشة الأمل"
+                  className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-purple-400/25 text-[11px] text-white focus:outline-none focus:border-purple-400/50" />
+              </div>
+              <div style={{ width: 110 }}>
+                <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">تكلفة العميل (ج.م)</label>
+                <input type="number" min={0} step="any" value={extPrice} onChange={(e) => setExtPrice(e.target.value)} placeholder="0.00" dir="ltr"
+                  className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-purple-400/25 text-[11px] text-white focus:outline-none focus:border-purple-400/50" />
+              </div>
             </div>
-            <div className="flex-1 min-w-[120px]">
-              <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">اسم الورشة (اختياري)</label>
-              <input value={extVendor} onChange={(e) => setExtVendor(e.target.value)} placeholder="ورشة الأمل"
-                className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-purple-400/25 text-[11px] text-white focus:outline-none focus:border-purple-400/50" />
+
+            {/* الصف الثاني: تكلفة الورشة + طريقة الدفع */}
+            <div className="pt-2 border-t border-purple-400/15">
+              <p className="text-[10px] text-purple-200/50 mb-1.5">تكلفة الورشة (ما ستدفعه أنت للورشة)</p>
+              <div className="flex flex-wrap gap-2 items-end">
+                <div style={{ width: 110 }}>
+                  <label className="text-[10px] font-bold text-purple-200/60 mb-1 block">تكلفة الورشة (ج.م)</label>
+                  <input type="number" min={0} step="any" value={extVendorCost} onChange={(e) => setExtVendorCost(e.target.value)} placeholder="0.00" dir="ltr"
+                    className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-amber-400/25 text-[11px] text-white focus:outline-none focus:border-amber-400/50" />
+                </div>
+                {parseFloat(extVendorCost) > 0 && (<>
+                  <div>
+                    <label className="text-[10px] font-bold text-purple-200/60 mb-1 block">طريقة الدفع للورشة</label>
+                    <div className="flex gap-1">
+                      <button type="button" onClick={() => setExtVendorPayType("cash")}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${extVendorPayType === "cash" ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/45" : "bg-white/[0.03] text-white/50 border border-white/10"}`}>
+                        نقدي الآن
+                      </button>
+                      <button type="button" onClick={() => setExtVendorPayType("credit")}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${extVendorPayType === "credit" ? "bg-indigo-500/25 text-indigo-300 border border-indigo-500/45" : "bg-white/[0.03] text-white/50 border border-white/10"}`}>
+                        آجل (لاحقاً)
+                      </button>
+                    </div>
+                  </div>
+                  {extVendorPayType === "cash" && safes.length > 0 && (
+                    <div className="flex-1 min-w-[130px]">
+                      <label className="text-[10px] font-bold text-purple-200/60 mb-1 block">الخزنة</label>
+                      <select value={extVendorSafeId ?? ""} onChange={(e) => setExtVendorSafeId(parseInt(e.target.value) || null)}
+                        className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-emerald-400/25 text-[11px] text-white focus:outline-none">
+                        <option value="">-- اختر --</option>
+                        {safes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {extVendorPayType === "credit" && (
+                    <p className="text-[10px] text-indigo-300/70 flex items-center gap-1">
+                      سيُسجَّل في المصروفات الآجلة وتدفعه للورشة لاحقاً
+                    </p>
+                  )}
+                </>)}
+                <button type="button" onClick={addExternalLine}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0 mr-auto"
+                  style={{ background: "rgba(168,85,247,0.25)", border: "1px solid rgba(192,132,252,0.4)", color: "#E9D5FF" }}>
+                  <Plus className="w-3.5 h-3.5" /> إضافة البند
+                </button>
+              </div>
             </div>
-            <div style={{ width: 110 }}>
-              <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">التكلفة على العميل</label>
-              <input type="number" min={0} step="any" value={extPrice} onChange={(e) => setExtPrice(e.target.value)} placeholder="0.00" dir="ltr"
-                className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-purple-400/25 text-[11px] text-white focus:outline-none focus:border-purple-400/50" />
-            </div>
-            <button type="button" onClick={addExternalLine}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0"
-              style={{ background: "rgba(168,85,247,0.25)", border: "1px solid rgba(192,132,252,0.4)", color: "#E9D5FF" }}>
-              <Plus className="w-3.5 h-3.5" /> إضافة
-            </button>
           </div>
         )}
 

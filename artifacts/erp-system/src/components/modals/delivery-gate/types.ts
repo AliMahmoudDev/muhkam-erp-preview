@@ -10,6 +10,7 @@ export type PayType = "cash" | "credit";
 export interface PayRow { id: string; type: PayType; safe_id: number | null; amount: number; }
 export type DiscMode = 'amt' | 'pct';
 export type PartSource = 'internal' | 'external';
+export type VendorPayType = 'cash' | 'credit';
 export interface PartLine {
   id: string;
   product_id: number | null;
@@ -21,6 +22,10 @@ export interface PartLine {
   discount_mode: DiscMode;
   source: PartSource;
   external_vendor?: string;
+  /* تكلفة الورشة الخارجية */
+  vendor_cost?: number;
+  vendor_payment_type?: VendorPayType;
+  vendor_safe_id?: number | null;
 }
 export interface PreSavedPart {
   product_name: string;

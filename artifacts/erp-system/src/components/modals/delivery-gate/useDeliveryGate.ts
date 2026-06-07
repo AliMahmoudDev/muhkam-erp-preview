@@ -118,16 +118,27 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
   }
 
   /* ── External repair ── */
-  const [showExtForm, setShowExtForm] = useState(false);
-  const [extVendor, setExtVendor]     = useState("");
-  const [extDesc, setExtDesc]         = useState("");
-  const [extPrice, setExtPrice]       = useState("");
+  const [showExtForm, setShowExtForm]       = useState(false);
+  const [extVendor, setExtVendor]           = useState("");
+  const [extDesc, setExtDesc]               = useState("");
+  const [extPrice, setExtPrice]             = useState("");
+  const [extVendorCost, setExtVendorCost]   = useState("");
+  const [extVendorPayType, setExtVendorPayType] = useState<"cash" | "credit">("cash");
+  const [extVendorSafeId, setExtVendorSafeId]   = useState<number | null>(null);
+
+  useEffect(() => {
+    if (safes.length === 1 && extVendorSafeId === null) setExtVendorSafeId(safes[0].id);
+  }, [safes.length]);
 
   function addExternalLine() {
     const desc  = extDesc.trim();
     const price = parseFloat(extPrice) || 0;
-    if (!desc)  { toast({ title: "اكتب وصف الإصلاح الخارجي", variant: "destructive" }); return; }
+    if (!desc)    { toast({ title: "اكتب وصف الإصلاح الخارجي", variant: "destructive" }); return; }
     if (price <= 0) { toast({ title: "اكتب التكلفة على العميل", variant: "destructive" }); return; }
+    const vCost = parseFloat(extVendorCost) || 0;
+    if (vCost > 0 && extVendorPayType === "cash" && !extVendorSafeId && safes.length > 0) {
+      toast({ title: "اختر الخزنة لدفع تكلفة الورشة نقداً", variant: "destructive" }); return;
+    }
     const vendor = extVendor.trim();
     setPartLines(prev => [...prev, {
       id: `${Date.now()}-${Math.random()}`,
@@ -140,8 +151,12 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
       discount_mode: 'pct',
       source: 'external',
       external_vendor: vendor || undefined,
+      vendor_cost:         vCost > 0 ? vCost : undefined,
+      vendor_payment_type: vCost > 0 ? extVendorPayType : undefined,
+      vendor_safe_id:      vCost > 0 && extVendorPayType === "cash" ? extVendorSafeId : undefined,
     }]);
     setExtVendor(""); setExtDesc(""); setExtPrice("");
+    setExtVendorCost(""); setExtVendorPayType("cash");
     setShowExtForm(false);
   }
 
@@ -245,7 +260,14 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
       broker_commission: Number(brokerComm) || 0,
       parts: partLines.map(l => {
         const netUnit = l.quantity > 0 ? lineNet(l) / l.quantity : 0;
-        return { product_id: l.product_id, product_name: l.product_name, quantity: l.quantity, unit_price: netUnit, warehouse_id: l.warehouse_id, source: l.source };
+        return {
+          product_id: l.product_id, product_name: l.product_name,
+          quantity: l.quantity, unit_price: netUnit,
+          warehouse_id: l.warehouse_id, source: l.source,
+          vendor_cost:         l.vendor_cost,
+          vendor_payment_type: l.vendor_payment_type,
+          vendor_safe_id:      l.vendor_safe_id,
+        };
       }),
       payment: {
         payment_type: pt,
@@ -318,6 +340,9 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
     partsTotal, partsDiscSum, preSavedParts, preSavedPartsTotal,
     showExtForm, setShowExtForm,
     extVendor, setExtVendor, extDesc, setExtDesc, extPrice, setExtPrice,
+    extVendorCost, setExtVendorCost,
+    extVendorPayType, setExtVendorPayType,
+    extVendorSafeId, setExtVendorSafeId,
     selectProduct, addPartLine, addExternalLine, updateLineDiscount,
     payRows, setPayRows, payType, setPayType,
     paySafe, setPaySafe, payAmount, setPayAmount,
