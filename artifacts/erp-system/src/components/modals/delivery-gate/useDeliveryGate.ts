@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { safeArray } from "@/lib/safe-data";
 import { useAuth } from "@/contexts/auth";
 import {
-  Product, Warehouse, PayType, PayRow, DiscMode, PartLine, ReceiptBase, SafeRow, JobLite,
+  Product, Warehouse, PayType, PayRow, DiscMode, PartLine, ReceiptBase, SafeRow, JobLite, PreSavedPart,
   lineDiscountAmount, lineNet,
 } from "./types";
 
@@ -223,7 +223,9 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
   const dep    = receiptData?.deposit_paid ?? 0;
   const sc     = Math.max(numericCost, 0);
   const disc   = Math.max(numericDisc, 0);
-  const sub    = partsTotal + sc;
+  const preSavedPartsTotal = receiptData?.parts_total ?? 0;
+  const preSavedParts: PreSavedPart[] = receiptData?.parts ?? [];
+  const sub    = partsTotal + preSavedPartsTotal + sc;
   const total  = Math.max(sub - disc, 0);
   const totalRem  = Math.max(total - dep, 0);
   const grandTotal = totalRem;
@@ -320,7 +322,7 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
     addQty, setAddQty, addPrice, setAddPrice,
     selectedProduct, setSelectedProduct,
     partLines, setPartLines,
-    partsTotal, partsDiscSum,
+    partsTotal, partsDiscSum, preSavedParts, preSavedPartsTotal,
     showExtForm, setShowExtForm,
     extVendor, setExtVendor, extDesc, setExtDesc, extPrice, setExtPrice,
     selectProduct, addPartLine, addExternalLine, updateLineDiscount,

@@ -1,6 +1,6 @@
-import { Coins, Clock, Plus, Trash2, UserCog, Wrench, X } from "lucide-react";
+import { Coins, Clock, Plus, Trash2, UserCog, Wrench, X, Package } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
-import { PartLine, PayRow, PayType, Warehouse, Product, DiscMode, lineDiscountAmount, lineNet } from "./types";
+import { PartLine, PayRow, PayType, Warehouse, Product, DiscMode, PreSavedPart, lineDiscountAmount, lineNet } from "./types";
 import { DeliveryPaymentSection } from "@/pages/repairs/RepairExtensions";
 
 const fmtCurrency = (n: number) => formatCurrency(n);
@@ -22,6 +22,8 @@ interface Props {
   addPrice: string;
   setAddPrice: (v: string) => void;
   selectedProduct: Product | null;
+  /* Pre-saved repair parts (read-only) */
+  preSavedParts: PreSavedPart[];
   /* Part lines */
   partLines: PartLine[];
   setPartLines: (fn: (prev: PartLine[]) => PartLine[]) => void;
@@ -68,7 +70,7 @@ export default function DeliveryGateForm({
   warehouses, selectedWarehouseId, setSelectedWarehouseId,
   filteredProducts, productSearch, setProductSearch, showProductDrop, setShowProductDrop,
   productSearchRef, addQty, setAddQty, addPrice, setAddPrice, selectedProduct,
-  partLines, setPartLines, selectProduct, addPartLine, updateLineDiscount,
+  preSavedParts, partLines, setPartLines, selectProduct, addPartLine, updateLineDiscount,
   showExtForm, setShowExtForm, extVendor, setExtVendor, extDesc, setExtDesc, extPrice, setExtPrice, addExternalLine,
   safes, payRows, setPayRows, payType, setPayType, paySafe, setPaySafe, payAmount, setPayAmount,
   paidSoFar, grandTotal, remaining, payIsDone, addPayRow, fillAll,
@@ -77,11 +79,33 @@ export default function DeliveryGateForm({
 }: Props) {
   return (
     <div className="overflow-y-auto max-h-[65vh]">
-      {/* قطع الغيار */}
+
+      {/* قطع الإصلاح المحفوظة مسبقاً (للقراءة فقط) */}
+      {preSavedParts.length > 0 && (
+        <div className="px-5 pt-4 pb-3 border-b border-white/5">
+          <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
+            <Package className="w-3.5 h-3.5 text-amber-400" />
+            قطع الغيار المستخدمة في الإصلاح
+            <span className="text-[10px] font-normal text-white/40 mr-1">محفوظة تلقائياً</span>
+          </h4>
+          <div className="space-y-1.5">
+            {preSavedParts.map((p, i) => (
+              <div key={i} className="px-3 py-2 rounded-xl flex items-center gap-2"
+                style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)" }}>
+                <span className="flex-1 text-[11px] text-white/80 truncate">{p.product_name}</span>
+                <span className="text-[10px] text-white/50 shrink-0">{p.quantity} × {fmtCurrency(p.unit_price)}</span>
+                <span className="text-[11px] font-bold text-amber-300 shrink-0">{fmtCurrency(p.total)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* قطع غيار إضافية عند التسليم */}
       <div className="px-5 pt-4 pb-3 border-b border-white/5">
         <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
           <span className="w-5 h-5 rounded-md bg-blue-500/15 border border-blue-400/25 flex items-center justify-center text-[9px] text-blue-300 font-black">١</span>
-          القطع المستخدمة من المخزن (اختياري)
+          قطع إضافية عند التسليم (اختياري)
         </h4>
 
         {warehouses.length > 1 && (

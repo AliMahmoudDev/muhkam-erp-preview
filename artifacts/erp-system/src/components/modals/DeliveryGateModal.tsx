@@ -69,8 +69,12 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
   function handleWhatsapp() {
     if (!g.receiptData?.customer_phone) { toast({ title: "لا يوجد رقم هاتف للعميل", variant: "destructive" }); return; }
     const partsBlock: string[] = [];
-    if (g.partLines.length > 0) {
-      partsBlock.push(`*قطع الغيار:*`);
+    const hasParts = g.preSavedParts.length > 0 || g.partLines.length > 0;
+    if (hasParts) {
+      partsBlock.push(`*قطع الغيار المستخدمة:*`);
+      for (const p of g.preSavedParts) {
+        partsBlock.push(`• ${p.product_name} — ${p.quantity} × ${fmt(p.unit_price)} = ${fmt(p.total)}`);
+      }
       for (const p of g.partLines) {
         const d = lineDiscountAmount(p);
         const base = `• ${p.product_name} — ${p.quantity} × ${fmt(p.unit_price)}`;
@@ -80,13 +84,14 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
       if (g.partsDiscSum > 0) partsBlock.push(`إجمالي خصم القطع: - ${fmt(g.partsDiscSum)}`);
       partsBlock.push(``);
     }
+    const allPartsTotal = g.preSavedPartsTotal + g.partsTotal;
     const lines = [
       `*فاتورة تسليم بطاقة صيانة*`, `رقم البطاقة: ${g.receiptData.job_no}`,
       `العميل: ${g.receiptData.customer_name ?? "—"}`,
       `الجهاز: ${[g.receiptData.device_brand, g.receiptData.device_model].filter(Boolean).join(" ") || "—"}`,
       g.receiptData.problem_description ? `المشكلة: ${g.receiptData.problem_description}` : "",
       ``, ...partsBlock,
-      g.partsTotal > 0 ? `إجمالي صافي القطع: ${fmt(g.partsTotal)}` : "",
+      allPartsTotal > 0 ? `إجمالي القطع: ${fmt(allPartsTotal)}` : "",
       g.numericCost > 0 ? `الشحن: ${fmt(g.numericCost)}` : "",
       g.numericDisc > 0 ? `خصم إضافي: - ${fmt(g.numericDisc)}` : "",
       `الإجمالي: ${fmt(g.total)}`, `المدفوع مقدماً: ${fmt(g.dep)}`, `*المتبقي: ${fmt(g.totalRem)} ج.م*`, ``, `شكراً لتعاملكم معنا 🙏`,
@@ -169,6 +174,7 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
               brokerName={g.brokerName} setBrokerName={g.setBrokerName}
               brokerComm={g.brokerComm} setBrokerComm={g.setBrokerComm}
               deliveryPayment={g.deliveryPayment} setDeliveryPayment={g.setDeliveryPayment}
+              preSavedParts={g.preSavedParts}
             />
 
             {/* Right: invoice summary */}
@@ -230,7 +236,8 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
 
               {/* Totals */}
               <div className="px-5 py-4 space-y-1.5 text-[11px]">
-                {g.partsTotal > 0 && <div className="flex justify-between"><span className="text-white/50">قطع الغيار:</span><span className="text-blue-300">{fmtCurrency(g.partsTotal)}</span></div>}
+                {g.preSavedPartsTotal > 0 && <div className="flex justify-between"><span className="text-white/50">قطع الإصلاح (محفوظة):</span><span className="text-amber-300">{fmtCurrency(g.preSavedPartsTotal)}</span></div>}
+                {g.partsTotal > 0 && <div className="flex justify-between"><span className="text-white/50">قطع إضافية (عند التسليم):</span><span className="text-blue-300">{fmtCurrency(g.partsTotal)}</span></div>}
                 {g.numericCost > 0 && <div className="flex justify-between"><span className="text-white/50">الشحن:</span><span className="text-sky-300">{fmtCurrency(g.numericCost)}</span></div>}
                 {g.numericDisc > 0 && <div className="flex justify-between text-red-400"><span>خصم نهائي:</span><span>- {fmtCurrency(g.numericDisc)}</span></div>}
                 <div className="flex justify-between font-bold text-white text-[12px] pt-1.5 border-t border-white/8">

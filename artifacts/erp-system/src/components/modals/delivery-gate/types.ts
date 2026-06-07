@@ -22,6 +22,13 @@ export interface PartLine {
   source: PartSource;
   external_vendor?: string;
 }
+export interface PreSavedPart {
+  product_name: string;
+  quantity:     number;
+  unit_price:   number;
+  total:        number;
+}
+
 export interface ReceiptBase {
   job_no:              string;
   customer_name:       string | null;
@@ -36,6 +43,8 @@ export interface ReceiptBase {
   deposit_paid:        number;
   shipping_cost:       number;
   final_discount:      number;
+  parts_total:         number;
+  parts:               PreSavedPart[];
 }
 export interface SafeRow { id: number; name: string; balance: string | number; }
 export interface JobLite {
