@@ -49,6 +49,16 @@ export interface PartLine {
   warehouse_id: number | null;
 }
 
+export interface SavedPart {
+  id: number;
+  product_id?: number | null;
+  product_name: string;
+  quantity: string;
+  unit_price: string;
+  warehouse_id?: number | null;
+  is_returned?: boolean;
+}
+
 export interface JobLite {
   id: number;
   job_no: string;
@@ -63,6 +73,7 @@ export interface JobLite {
   device_score?: number | null;
   broker_name?: string | null;
   broker_commission?: string | number | null;
+  parts?: SavedPart[];
 }
 
 /* ─── بنود QC الافتراضية حسب نوع الجهاز ─── */

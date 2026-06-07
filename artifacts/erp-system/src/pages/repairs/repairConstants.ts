@@ -64,10 +64,12 @@ export interface RepairJob {
 
 export interface RepairPart {
   id: number;
-  product_id?: number;
+  product_id?: number | null;
   product_name: string;
   quantity: string;
   unit_price: string;
+  warehouse_id?: number | null;
+  is_returned?: boolean;
 }
 
 export interface Stats {

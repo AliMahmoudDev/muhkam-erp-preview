@@ -10,7 +10,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { safeArray } from "@/lib/safe-data";
-import { JobLite, Product, Warehouse, PayRow, PayType, PartLine } from "./types";
+import { JobLite, Product, Warehouse, PayRow, PayType, PartLine, SavedPart } from "./types";
 
 function fmtCurrency(n: number) { return formatCurrency(n); }
 
@@ -85,9 +85,11 @@ export default function BillingPhase({
     return products.filter(p => p.name.toLowerCase().includes(q)).slice(0, 30);
   }, [products, productSearch]);
 
+  const preSavedParts: SavedPart[] = (job.parts ?? []).filter(p => !p.is_returned);
+  const preSavedPartsTotal = preSavedParts.reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
   const partsTotal    = partLines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
   const finalCostBase = Number(job.final_cost ?? 0);
-  const grandTotal    = finalCostBase + partsTotal;
+  const grandTotal    = finalCostBase + preSavedPartsTotal + partsTotal;
   const paidSoFar     = payRows.reduce((s, r) => s + r.amount, 0);
   const remaining     = Math.max(0, grandTotal - paidSoFar);
   const payIsDone     = grandTotal > 0 ? paidSoFar >= grandTotal - 0.005 : payRows.length > 0;
@@ -157,8 +159,36 @@ export default function BillingPhase({
         <div className="px-5 pt-4 pb-3 border-b border-white/5">
           <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
             <span className="w-5 h-5 rounded-md bg-blue-500/15 border border-blue-400/25 flex items-center justify-center text-[9px] text-blue-300 font-black">١</span>
-            القطع المستخدمة من المخزن (اختياري)
+            القطع المستخدمة من المخزن
           </h4>
+
+          {/* القطع المضافة أثناء الإصلاح (محفوظة مسبقاً) */}
+          {preSavedParts.length > 0 && (
+            <div className="mb-4 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.04] p-3">
+              <p className="text-[10px] text-cyan-300/70 font-bold mb-2 flex items-center gap-1.5">
+                <PackageCheck className="w-3.5 h-3.5" />
+                قطع أضافها الفني أثناء الإصلاح
+              </p>
+              <div className="space-y-1">
+                {preSavedParts.map(p => {
+                  const qty   = Number(p.quantity) || 1;
+                  const price = Number(p.unit_price) || 0;
+                  return (
+                    <div key={p.id} className="flex items-center justify-between text-[11px] px-2 py-1 rounded-lg bg-white/[0.02]">
+                      <span className="text-white/80 truncate flex-1">{p.product_name}</span>
+                      <span className="text-white/40 shrink-0 mx-2">×{qty}</span>
+                      <span className="text-cyan-300/80 font-bold shrink-0 font-mono">{fmtCurrency(qty * price)}</span>
+                    </div>
+                  );
+                })}
+                {preSavedPartsTotal > 0 && (
+                  <div className="flex justify-end pt-1 border-t border-cyan-500/10">
+                    <span className="text-[10px] text-cyan-300/60 font-bold">إجمالي: {fmtCurrency(preSavedPartsTotal)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {warehouses.length > 1 && (
             <div className="mb-3">
@@ -271,9 +301,15 @@ export default function BillingPhase({
             <span className="text-white/50">تكلفة الإصلاح المسجّلة</span>
             <span className="font-bold text-white">{fmtCurrency(finalCostBase)}</span>
           </div>
+          {preSavedPartsTotal > 0 && (
+            <div className="flex items-center justify-between text-[11px] mt-1">
+              <span className="text-white/50">قطع أضافها الفني</span>
+              <span className="font-bold text-cyan-300">+ {fmtCurrency(preSavedPartsTotal)}</span>
+            </div>
+          )}
           {partsTotal > 0 && (
             <div className="flex items-center justify-between text-[11px] mt-1">
-              <span className="text-white/50">قطع مضافة</span>
+              <span className="text-white/50">قطع إضافية (محاسبة)</span>
               <span className="font-bold text-blue-300">+ {fmtCurrency(partsTotal)}</span>
             </div>
           )}
