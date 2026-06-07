@@ -45,7 +45,9 @@ const STAGE_REQUIREMENTS: Record<string, { field: string; label_ar: string }[]> 
     { field: 'technician_id', label_ar: 'يجب تعيين فني مسؤول' },
   ],
   repaired: [
-    { field: 'final_cost', label_ar: 'يجب إدخال التكلفة النهائية' },
+    { field: 'final_cost',          label_ar: 'يجب إدخال التكلفة النهائية' },
+    { field: 'has_parts',           label_ar: 'يجب إضافة قطعة مستخدمة في الإصلاح أولاً' },
+    { field: 'has_engineer_report', label_ar: 'يجب كتابة تقرير الإصلاح من الفني المسؤول أولاً' },
   ],
   /* ── الانتقال من "مراقبة الجودة" إلى "جاهز للتسليم" ──
         يكفي إكمال فحص الجودة (QC). محاسبة العميل تتم في بوّابة التسليم. */

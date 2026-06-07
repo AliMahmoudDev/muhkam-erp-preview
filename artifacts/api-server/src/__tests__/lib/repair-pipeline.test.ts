@@ -8,15 +8,18 @@ import { validateTransition } from "../../services/repair-pipeline.service";
 
 /* ── بيانات مشتركة ── */
 const BASE_JOB: Record<string, unknown> = {
-  technician_id:           "tech-1",
-  problem_description:     "شاشة مكسورة",
-  estimated_cost:          "150",
-  final_cost:              "200",
-  qa_completed_at:         new Date().toISOString(),
+  technician_id:            "tech-1",
+  problem_description:      "شاشة مكسورة",
+  estimated_cost:           "150",
+  final_cost:               "200",
+  qa_completed_at:          new Date().toISOString(),
   pre_delivery_reviewed_at: new Date().toISOString(),
-  shipping_settled_at:     new Date().toISOString(),
-  notes:                   "ملاحظة",
-  checklist:               JSON.stringify([{ id: "1", label: "شاشة", status: "fail" }]),
+  shipping_settled_at:      new Date().toISOString(),
+  notes:                    "ملاحظة",
+  checklist:                JSON.stringify([{ id: "1", label: "شاشة", status: "fail" }]),
+  /* حقول مُحقَنة من crud.ts عند الانتقال إلى repaired */
+  has_parts:                true,
+  has_engineer_report:      true,
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -131,6 +134,40 @@ describe("validateTransition — متطلبات مفقودة", () => {
     });
     expect(r.allowed).toBe(false);
     expect(r.errors).toContain("يجب إدخال التكلفة النهائية");
+  });
+
+  it("repaired بدون has_parts (لم تُضَف قطعة)", () => {
+    const r = validateTransition("in_repair", "repaired", {
+      ...BASE_JOB,
+      has_parts: false,
+    });
+    expect(r.allowed).toBe(false);
+    expect(r.errors).toContain("يجب إضافة قطعة مستخدمة في الإصلاح أولاً");
+  });
+
+  it("repaired بدون has_engineer_report (لم يُكتب تقرير الفني)", () => {
+    const r = validateTransition("in_repair", "repaired", {
+      ...BASE_JOB,
+      has_engineer_report: false,
+    });
+    expect(r.allowed).toBe(false);
+    expect(r.errors).toContain("يجب كتابة تقرير الإصلاح من الفني المسؤول أولاً");
+  });
+
+  it("repaired بدون has_parts وبدون has_engineer_report معاً", () => {
+    const r = validateTransition("in_repair", "repaired", {
+      ...BASE_JOB,
+      has_parts:           false,
+      has_engineer_report: false,
+    });
+    expect(r.allowed).toBe(false);
+    expect(r.errors).toHaveLength(2);
+  });
+
+  it("repaired مسموح عندما تتوفر القطعة والتقرير والتكلفة", () => {
+    const r = validateTransition("in_repair", "repaired", BASE_JOB);
+    expect(r.allowed).toBe(true);
+    expect(r.errors).toHaveLength(0);
   });
 
   it("ready_for_delivery بدون qa_completed_at (مع checklist موجود)", () => {

@@ -234,10 +234,34 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
   }
 
   if ("status" in b && String(b.status) !== existing.status) {
+    let jobDataForValidation: Record<string, unknown> = existing as Record<string, unknown>;
+
+    /* ── إذا كان الانتقال المستهدف هو "repaired" (تم الإصلاح)،
+          نحقق من وجود قطعة مضافة وتقرير فني مكتوب قبل السماح بالانتقال. ── */
+    if (String(b.status) === "repaired") {
+      const [partsRows, reportsRows] = await Promise.all([
+        db.select({ count: sql<number>`count(*)` })
+          .from(repairJobPartsTable)
+          .where(eq(repairJobPartsTable.job_id, id)),
+        db.select({ count: sql<number>`count(*)` })
+          .from(repairStatusHistoryTable)
+          .where(and(
+            eq(repairStatusHistoryTable.job_id, id),
+            eq(repairStatusHistoryTable.company_id, company_id),
+            eq(repairStatusHistoryTable.event_type, "engineer_report"),
+          )),
+      ]);
+      jobDataForValidation = {
+        ...jobDataForValidation,
+        has_parts:           Number(partsRows[0]?.count ?? 0) > 0,
+        has_engineer_report: Number(reportsRows[0]?.count ?? 0) > 0,
+      };
+    }
+
     const { allowed, errors } = validateTransition(
       existing.status,
       String(b.status),
-      existing as Record<string, unknown>,
+      jobDataForValidation,
     );
     if (!allowed) {
       return res.status(422).json({ error: errors.join(', ') });
