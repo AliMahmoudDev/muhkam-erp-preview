@@ -173,6 +173,11 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
   const [paySafe, setPaySafe]   = useState<number | null>(null);
   const [payAmount, setPayAmount] = useState("");
 
+  // auto-select first safe so cash payment works without manual selection
+  useEffect(() => {
+    if (safes.length > 0 && paySafe === null) setPaySafe(safes[0].id);
+  }, [safes.length]);
+
   const paidSoFar = payRows.reduce((s, r) => s + r.amount, 0);
 
   function addPayRow() {
