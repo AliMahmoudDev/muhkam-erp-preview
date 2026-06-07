@@ -170,6 +170,40 @@ describe("validateTransition — متطلبات مفقودة", () => {
     expect(r.errors).toHaveLength(0);
   });
 
+  it("final_quality_check بدون has_parts (الانتقال المباشر من in_repair)", () => {
+    const r = validateTransition("in_repair", "final_quality_check", {
+      ...BASE_JOB,
+      has_parts: false,
+    });
+    expect(r.allowed).toBe(false);
+    expect(r.errors).toContain("يجب إضافة قطعة مستخدمة في الإصلاح أولاً");
+  });
+
+  it("final_quality_check بدون has_engineer_report (الانتقال المباشر من in_repair)", () => {
+    const r = validateTransition("in_repair", "final_quality_check", {
+      ...BASE_JOB,
+      has_engineer_report: false,
+    });
+    expect(r.allowed).toBe(false);
+    expect(r.errors).toContain("يجب كتابة تقرير الإصلاح من الفني المسؤول أولاً");
+  });
+
+  it("final_quality_check بدون has_parts وhas_engineer_report معاً", () => {
+    const r = validateTransition("in_repair", "final_quality_check", {
+      ...BASE_JOB,
+      has_parts:           false,
+      has_engineer_report: false,
+    });
+    expect(r.allowed).toBe(false);
+    expect(r.errors).toHaveLength(2);
+  });
+
+  it("final_quality_check مسموح عندما تتوفر القطعة والتقرير", () => {
+    const r = validateTransition("in_repair", "final_quality_check", BASE_JOB);
+    expect(r.allowed).toBe(true);
+    expect(r.errors).toHaveLength(0);
+  });
+
   it("ready_for_delivery بدون qa_completed_at (مع checklist موجود)", () => {
     const r = validateTransition("final_quality_check", "ready_for_delivery", {
       ...BASE_JOB,

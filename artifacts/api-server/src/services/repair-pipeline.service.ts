@@ -49,6 +49,13 @@ const STAGE_REQUIREMENTS: Record<string, { field: string; label_ar: string }[]> 
     { field: 'has_parts',           label_ar: 'يجب إضافة قطعة مستخدمة في الإصلاح أولاً' },
     { field: 'has_engineer_report', label_ar: 'يجب كتابة تقرير الإصلاح من الفني المسؤول أولاً' },
   ],
+  /* ── الانتقال إلى "مراقبة الجودة" ──
+        يشترط أن يكون الفني قد أضاف قطعة مستخدمة في الإصلاح وكتب تقرير إصلاح.
+        الحقلان has_parts / has_engineer_report يُحقَنان من crud.ts بعد استعلام DB. */
+  final_quality_check: [
+    { field: 'has_parts',           label_ar: 'يجب إضافة قطعة مستخدمة في الإصلاح أولاً' },
+    { field: 'has_engineer_report', label_ar: 'يجب كتابة تقرير الإصلاح من الفني المسؤول أولاً' },
+  ],
   /* ── الانتقال من "مراقبة الجودة" إلى "جاهز للتسليم" ──
         يكفي إكمال فحص الجودة (QC). محاسبة العميل تتم في بوّابة التسليم. */
   ready_for_delivery: [

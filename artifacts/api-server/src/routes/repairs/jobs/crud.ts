@@ -236,9 +236,11 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
   if ("status" in b && String(b.status) !== existing.status) {
     let jobDataForValidation: Record<string, unknown> = existing as Record<string, unknown>;
 
-    /* ── إذا كان الانتقال المستهدف هو "repaired" (تم الإصلاح)،
-          نحقق من وجود قطعة مضافة وتقرير فني مكتوب قبل السماح بالانتقال. ── */
-    if (String(b.status) === "repaired") {
+    /* ── إذا كان الانتقال المستهدف هو "repaired" أو "final_quality_check"،
+          نحقق من وجود قطعة مضافة وتقرير فني مكتوب قبل السماح بالانتقال.
+          ملاحظة: الـ UI يقفز مباشرةً من in_repair → final_quality_check
+          (repaired مخفي في الواجهة)، لذلك الشرط مطبَّق على كليهما. ── */
+    if (String(b.status) === "repaired" || String(b.status) === "final_quality_check") {
       const [partsRows, reportsRows] = await Promise.all([
         db.select({ count: sql<number>`count(*)` })
           .from(repairJobPartsTable)
