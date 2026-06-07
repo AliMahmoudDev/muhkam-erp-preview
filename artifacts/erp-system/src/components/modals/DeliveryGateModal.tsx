@@ -5,7 +5,7 @@
 import { createPortal } from "react-dom";
 import {
   PackageCheck, Loader2, X, AlertTriangle,
-  FileText, Printer, MessageCircle, CheckCircle2, Truck, Save,
+  FileText, Printer, MessageCircle, CheckCircle2, Truck, Save, Tag,
 } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +32,18 @@ export default function DeliveryGateModal({ job, onClose, onSaved }: Props) {
     const esc = (v: unknown): string =>
       String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     const deviceLine = [g.receiptData.device_brand, g.receiptData.device_model].filter(Boolean).map(esc).join(" ") || "—";
+    const allParts = [
+      ...g.preSavedParts.map(p => ({ name: p.product_name, qty: p.quantity, price: p.unit_price, net: p.total, disc: "" })),
+      ...g.partLines.map(p => {
+        const d = lineDiscountAmount(p);
+        const discCell = d > 0 ? (p.discount_mode === 'pct' ? `${p.discount_value}% (-${fmt(d)})` : `- ${fmt(d)}`) : "";
+        return { name: p.product_name, qty: p.quantity, price: p.unit_price, net: lineNet(p), disc: discCell };
+      }),
+    ];
+    const partsTable = allParts.length > 0
+      ? `<table><thead><tr><th>القطعة</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>${allParts.map(p => `<tr><td>${esc(p.name)}</td><td>${p.qty}</td><td>${fmt(p.price)}</td><td>${fmt(p.net)}</td></tr>`).join("")}</tbody></table>`
+      : "";
+    const allPartsTotal = g.preSavedPartsTotal + g.partsTotal;
     const html = `<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/>
 <title>فاتورة تسليم ${esc(g.receiptData.job_no)}</title>
 <style>body{font-family:'Tahoma','Segoe UI',sans-serif;padding:8px;font-size:11px;color:#000;max-width:80mm;margin:0 auto;}h1{text-align:center;font-size:13px;margin:6px 0;border-bottom:1px dashed #000;padding-bottom:4px;}.row{display:flex;justify-content:space-between;margin:2px 0;}.label{color:#555;}table{width:100%;border-collapse:collapse;margin:6px 0;}th,td{padding:3px 4px;border-bottom:1px dotted #999;text-align:right;font-size:10px;}.totals{margin-top:6px;padding-top:4px;border-top:1px dashed #000;}.grand{font-weight:bold;font-size:12px;}.discount{color:#c00;}.footer{text-align:center;margin-top:8px;color:#666;font-size:10px;border-top:1px dashed #000;padding-top:4px;}@media print{@page{size:80mm auto;margin:4mm;}body{padding:0;}}</style></head><body>
@@ -45,9 +57,9 @@ ${g.receiptData.received_at ? `<div class="row"><span class="label">تاريخ �
 <div class="row"><span class="label">تاريخ التسليم:</span><span>${new Date().toLocaleDateString("ar-EG")}</span></div>
 ${g.receiptData.technician_name ? `<div class="row"><span class="label">الفني:</span><span>${esc(g.receiptData.technician_name)}</span></div>` : ""}
 ${g.receiptData.problem_description ? `<div style="margin-top:6px;padding:4px;background:#f5f5f5;border-radius:4px;"><strong>المشكلة:</strong> ${esc(g.receiptData.problem_description)}</div>` : ""}
-${g.partLines.length > 0 ? `<table><thead><tr><th>القطعة</th><th>الكمية</th><th>السعر</th><th>الخصم</th><th>الإجمالي</th></tr></thead><tbody>${g.partLines.map(p => { const d = lineDiscountAmount(p); const discCell = d > 0 ? (p.discount_mode === 'pct' ? `${p.discount_value}% (-${fmt(d)})` : `- ${fmt(d)}`) : "—"; return `<tr><td>${esc(p.product_name)}</td><td>${p.quantity}</td><td>${fmt(p.unit_price)}</td><td>${discCell}</td><td>${fmt(lineNet(p))}</td></tr>`; }).join("")}</tbody></table>` : ""}
+${partsTable}
 <div class="totals">
-${g.partsTotal > 0 ? `<div class="row"><span class="label">قطع الغيار:</span><span>${fmt(g.partsTotal)}</span></div>` : ""}
+${allPartsTotal > 0 ? `<div class="row"><span class="label">قطع الغيار:</span><span>${fmt(allPartsTotal)}</span></div>` : ""}
 ${g.numericCost > 0 ? `<div class="row"><span class="label">الشحن:</span><span>${fmt(g.numericCost)}</span></div>` : ""}
 ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${fmt(g.numericDisc)}</span></div>` : ""}
 <div class="row grand"><span>الإجمالي:</span><span>${fmt(g.total)}</span></div>
@@ -134,7 +146,7 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
         {g.draftRestored && (
           <div className="mx-5 mt-3 p-2.5 rounded-xl flex items-center justify-between gap-2"
             style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(96,165,250,0.25)" }}>
-            <span className="text-[11px] text-blue-200">تم استعادة بيانات فاتورة محفوظة محلياً لهذه البطاقة. اضغط «حفظ» للتحديث أو «تأكيد التسليم» لإتمام العملية.</span>
+            <span className="text-[11px] text-blue-200">تم استعادة بيانات فاتورة محفوظة محلياً لهذه البطاقة.</span>
             <button type="button" onClick={g.clearDraft} className="shrink-0 text-[10px] text-red-300 hover:text-red-200 underline">حذف المسوّدة</button>
           </div>
         )}
@@ -148,10 +160,11 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
           </div>
         )}
 
-        {/* Body */}
+        {/* Body — two columns */}
         {!g.fetchLoading && !g.fetchErr && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-white/5">
-            {/* Left: form */}
+
+            {/* ── LEFT: interactive form ── */}
             <DeliveryGateForm
               warehouses={g.warehouses} selectedWarehouseId={g.selectedWarehouseId} setSelectedWarehouseId={g.setSelectedWarehouseId}
               filteredProducts={g.filteredProducts} productSearch={g.productSearch} setProductSearch={g.setProductSearch}
@@ -159,6 +172,7 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
               productSearchRef={g.productSearchRef}
               addQty={g.addQty} setAddQty={g.setAddQty} addPrice={g.addPrice} setAddPrice={g.setAddPrice}
               selectedProduct={g.selectedProduct}
+              preSavedParts={g.preSavedParts}
               partLines={g.partLines} setPartLines={g.setPartLines}
               selectProduct={g.selectProduct} addPartLine={g.addPartLine} updateLineDiscount={g.updateLineDiscount}
               showExtForm={g.showExtForm} setShowExtForm={g.setShowExtForm}
@@ -173,12 +187,12 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
               addPayRow={g.addPayRow} fillAll={g.fillAll}
               brokerName={g.brokerName} setBrokerName={g.setBrokerName}
               brokerComm={g.brokerComm} setBrokerComm={g.setBrokerComm}
-              deliveryPayment={g.deliveryPayment} setDeliveryPayment={g.setDeliveryPayment}
-              preSavedParts={g.preSavedParts}
             />
 
-            {/* Right: invoice summary */}
-            <div className="overflow-y-auto max-h-[65vh]">
+            {/* ── RIGHT: invoice summary ── */}
+            <div className="overflow-y-auto max-h-[65vh] flex flex-col">
+
+              {/* معلومات العميل والجهاز */}
               <div className="px-5 pt-4 pb-3 border-b border-white/5">
                 <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
                   <FileText className="w-3.5 h-3.5 text-amber-400" /> ملخص الفاتورة
@@ -186,15 +200,15 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
                 {g.receiptData && (
                   <div className="space-y-1 text-[11px]">
                     {[
-                      { label: "العميل", val: g.receiptData.customer_name },
-                      { label: "الهاتف", val: g.receiptData.customer_phone },
-                      { label: "الجهاز", val: [g.receiptData.device_brand, g.receiptData.device_model].filter(Boolean).join(" ") },
-                      { label: "IMEI", val: g.receiptData.imei },
+                      { label: "العميل",  val: g.receiptData.customer_name },
+                      { label: "الهاتف",  val: g.receiptData.customer_phone },
+                      { label: "الجهاز",  val: [g.receiptData.device_brand, g.receiptData.device_model].filter(Boolean).join(" ") },
+                      { label: "IMEI",    val: g.receiptData.imei },
                       { label: "المشكلة", val: g.receiptData.problem_description },
-                      { label: "الفني", val: g.receiptData.technician_name },
+                      { label: "الفني",   val: g.receiptData.technician_name },
                     ].filter(r => r.val).map(r => (
                       <div key={r.label} className="flex justify-between gap-2">
-                        <span className="text-white/45 shrink-0">{r.label}:</span>
+                        <span className="text-white/40 shrink-0">{r.label}:</span>
                         <span className="text-white/75 text-left truncate">{r.val}</span>
                       </div>
                     ))}
@@ -202,50 +216,94 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
                 )}
               </div>
 
-              {/* Shipping cost */}
+              {/* الشحن والخصم في صف واحد */}
               <div className="px-5 pt-4 pb-3 border-b border-white/5">
                 <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
-                  <Truck className="w-3.5 h-3.5 text-sky-400" /> تكلفة الشحن (اختياري)
+                  <Truck className="w-3.5 h-3.5 text-sky-400" /> تعديلات السعر
                 </h4>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="text-[10px] font-bold text-white/50 mb-1 block">التكلفة (ج.م)</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* الشحن */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/45 mb-1 block flex items-center gap-1">
+                      <Truck className="w-3 h-3 text-sky-400/60" /> تكلفة الشحن (ج.م)
+                    </label>
                     <input type="number" min={0} step="any" value={g.cost} onChange={(e) => g.setCost(e.target.value)}
                       placeholder="0.00" dir="ltr"
                       className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-sky-400/20 text-sm text-white focus:outline-none focus:border-sky-400/40" />
-                  </div>
-                  {g.numericCost > 0 && (
-                    <div className="flex-1">
-                      <label className="text-[10px] font-bold text-white/50 mb-1 block">الخزنة</label>
+                    {g.numericCost > 0 && (
                       <select value={g.safeId} onChange={(e) => g.setSafeId(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-sky-400/20 text-sm text-white focus:outline-none focus:border-sky-400/40">
-                        <option value="">-- اختر --</option>
+                        className="w-full mt-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-sky-400/20 text-[11px] text-white focus:outline-none focus:border-sky-400/40">
+                        <option value="">-- الخزنة --</option>
                         {g.safes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                       </select>
+                    )}
+                  </div>
+                  {/* الخصم */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/45 mb-1 block flex items-center gap-1">
+                      <Tag className="w-3 h-3 text-red-400/60" /> خصم نهائي (ج.م)
+                    </label>
+                    <input type="number" min={0} step="0.01" value={g.discount} onChange={(e) => g.setDiscount(e.target.value)}
+                      placeholder="0.00" dir="ltr"
+                      className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-red-400/20 text-sm text-white focus:outline-none focus:border-red-400/40" />
+                    <p className="text-[10px] text-white/30 mt-1">اتركه 0 إن لم يكن هناك خصم</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* الإجماليات */}
+              <div className="px-5 py-4 space-y-2 flex-1">
+                <h4 className="text-[12px] font-black text-white/80 mb-3">الإجماليات</h4>
+
+                {/* تفاصيل */}
+                <div className="space-y-1.5 text-[11px]">
+                  {g.preSavedPartsTotal > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/45">قطع الإصلاح (محفوظة):</span>
+                      <span className="font-bold text-amber-300">{fmtCurrency(g.preSavedPartsTotal)}</span>
+                    </div>
+                  )}
+                  {g.partsTotal > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/45">قطع إضافية:</span>
+                      <span className="font-bold text-blue-300">{fmtCurrency(g.partsTotal)}</span>
+                    </div>
+                  )}
+                  {g.numericCost > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/45">الشحن:</span>
+                      <span className="text-sky-300">{fmtCurrency(g.numericCost)}</span>
+                    </div>
+                  )}
+                  {g.numericDisc > 0 && (
+                    <div className="flex justify-between items-center text-red-400">
+                      <span>خصم:</span>
+                      <span>- {fmtCurrency(g.numericDisc)}</span>
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Discount */}
-              <div className="px-5 pt-4 pb-3 border-b border-white/5">
-                <h4 className="text-[12px] font-black text-white/80 mb-3">خصم نهائي (اترك 0 إن لم يكن)</h4>
-                <input type="number" min={0} step="0.01" value={g.discount} onChange={(e) => g.setDiscount(e.target.value)} placeholder="0.00"
-                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-red-400/20 text-sm text-white focus:outline-none focus:border-red-400/40" />
-              </div>
-
-              {/* Totals */}
-              <div className="px-5 py-4 space-y-1.5 text-[11px]">
-                {g.preSavedPartsTotal > 0 && <div className="flex justify-between"><span className="text-white/50">قطع الإصلاح (محفوظة):</span><span className="text-amber-300">{fmtCurrency(g.preSavedPartsTotal)}</span></div>}
-                {g.partsTotal > 0 && <div className="flex justify-between"><span className="text-white/50">قطع إضافية (عند التسليم):</span><span className="text-blue-300">{fmtCurrency(g.partsTotal)}</span></div>}
-                {g.numericCost > 0 && <div className="flex justify-between"><span className="text-white/50">الشحن:</span><span className="text-sky-300">{fmtCurrency(g.numericCost)}</span></div>}
-                {g.numericDisc > 0 && <div className="flex justify-between text-red-400"><span>خصم نهائي:</span><span>- {fmtCurrency(g.numericDisc)}</span></div>}
-                <div className="flex justify-between font-bold text-white text-[12px] pt-1.5 border-t border-white/8">
-                  <span>الإجمالي الكلي:</span><span className="text-lime-300">{fmtCurrency(g.total)}</span>
+                {/* الإجمالي الكلي */}
+                <div className="mt-2 pt-2 border-t border-white/8 flex justify-between items-center font-bold text-[13px]">
+                  <span className="text-white">الإجمالي الكلي:</span>
+                  <span className="text-lime-300">{fmtCurrency(g.total)}</span>
                 </div>
-                {g.dep > 0 && <div className="flex justify-between text-emerald-300"><span>المدفوع مقدماً:</span><span>{fmtCurrency(g.dep)}</span></div>}
-                <div className="flex justify-between font-black text-amber-300 text-[13px] pt-1 border-t border-white/8">
-                  <span>المتبقي على العميل:</span><span>{fmtCurrency(g.totalRem)}</span>
+
+                {/* المدفوع مقدماً */}
+                {g.dep > 0 && (
+                  <div className="flex justify-between items-center text-[11px] text-emerald-300">
+                    <span>المدفوع مقدماً:</span>
+                    <span>{fmtCurrency(g.dep)}</span>
+                  </div>
+                )}
+
+                {/* المتبقي — بارز */}
+                <div className="mt-2 p-3 rounded-xl flex justify-between items-center"
+                  style={{ background: g.totalRem > 0 ? "rgba(245,158,11,0.10)" : "rgba(16,185,129,0.10)", border: `1px solid ${g.totalRem > 0 ? "rgba(245,158,11,0.3)" : "rgba(52,211,153,0.3)"}` }}>
+                  <span className="text-[12px] font-black text-white">المتبقي على العميل:</span>
+                  <span className={`text-[15px] font-black ${g.totalRem > 0 ? "text-amber-300" : "text-emerald-300"}`}>
+                    {fmtCurrency(g.totalRem)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -278,7 +336,7 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
             <button onClick={() => g.handleSave()} disabled={g.saving || !g.receiptData}
               className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
               style={{ background: "rgba(59,130,246,0.75)", border: "1px solid rgba(96,165,250,0.45)" }}>
-              {g.saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</> : <><Save className="w-3.5 h-3.5" /> حفظ</>}
+              {g.saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</> : <><Save className="w-3.5 h-3.5" /> حفظ مؤقت</>}
             </button>
             <button onClick={() => void g.handleConfirm()} disabled={g.saving || !g.receiptData}
               className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"

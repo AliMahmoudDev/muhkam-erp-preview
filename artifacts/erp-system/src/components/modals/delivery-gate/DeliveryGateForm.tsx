@@ -1,7 +1,6 @@
 import { Coins, Clock, Plus, Trash2, UserCog, Wrench, X, Package } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { PartLine, PayRow, PayType, Warehouse, Product, DiscMode, PreSavedPart, lineDiscountAmount, lineNet } from "./types";
-import { DeliveryPaymentSection } from "@/pages/repairs/RepairExtensions";
 
 const fmtCurrency = (n: number) => formatCurrency(n);
 
@@ -61,9 +60,6 @@ interface Props {
   setBrokerName: (v: string) => void;
   brokerComm: string;
   setBrokerComm: (v: string) => void;
-  /* Delivery Payment (from RepairExtensions) */
-  deliveryPayment: { payment_type: string; safe_id: number | null };
-  setDeliveryPayment: (v: { payment_type: string; safe_id: number | null }) => void;
 }
 
 export default function DeliveryGateForm({
@@ -75,25 +71,26 @@ export default function DeliveryGateForm({
   safes, payRows, setPayRows, payType, setPayType, paySafe, setPaySafe, payAmount, setPayAmount,
   paidSoFar, grandTotal, remaining, payIsDone, addPayRow, fillAll,
   brokerName, setBrokerName, brokerComm, setBrokerComm,
-  deliveryPayment, setDeliveryPayment,
 }: Props) {
   return (
     <div className="overflow-y-auto max-h-[65vh]">
 
-      {/* قطع الإصلاح المحفوظة مسبقاً (للقراءة فقط) */}
+      {/* ① قطع الإصلاح المحفوظة مسبقاً (للقراءة فقط) */}
       {preSavedParts.length > 0 && (
         <div className="px-5 pt-4 pb-3 border-b border-white/5">
           <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
             <Package className="w-3.5 h-3.5 text-amber-400" />
             قطع الغيار المستخدمة في الإصلاح
-            <span className="text-[10px] font-normal text-white/40 mr-1">محفوظة تلقائياً</span>
+            <span className="ms-auto text-[10px] font-normal text-white/35 bg-amber-400/8 border border-amber-400/20 px-2 py-0.5 rounded-full">
+              محفوظة تلقائياً
+            </span>
           </h4>
           <div className="space-y-1.5">
             {preSavedParts.map((p, i) => (
               <div key={i} className="px-3 py-2 rounded-xl flex items-center gap-2"
                 style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)" }}>
                 <span className="flex-1 text-[11px] text-white/80 truncate">{p.product_name}</span>
-                <span className="text-[10px] text-white/50 shrink-0">{p.quantity} × {fmtCurrency(p.unit_price)}</span>
+                <span className="text-[10px] text-white/45 shrink-0">{p.quantity} × {fmtCurrency(p.unit_price)}</span>
                 <span className="text-[11px] font-bold text-amber-300 shrink-0">{fmtCurrency(p.total)}</span>
               </div>
             ))}
@@ -101,11 +98,12 @@ export default function DeliveryGateForm({
         </div>
       )}
 
-      {/* قطع غيار إضافية عند التسليم */}
+      {/* ② قطع غيار إضافية عند التسليم */}
       <div className="px-5 pt-4 pb-3 border-b border-white/5">
         <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
-          <span className="w-5 h-5 rounded-md bg-blue-500/15 border border-blue-400/25 flex items-center justify-center text-[9px] text-blue-300 font-black">١</span>
-          قطع إضافية عند التسليم (اختياري)
+          <span className="w-5 h-5 rounded-md bg-blue-500/15 border border-blue-400/25 flex items-center justify-center text-[9px] text-blue-300 font-black">+</span>
+          قطع إضافية عند التسليم
+          <span className="text-[10px] font-normal text-white/35">(اختياري)</span>
         </h4>
 
         {warehouses.length > 1 && (
@@ -217,14 +215,14 @@ export default function DeliveryGateForm({
                       </span>
                     )}
                     <span className="flex-1 text-[11px] text-white/80 truncate">{l.product_name}</span>
-                    <span className="text-[10px] text-white/50 shrink-0">{l.quantity} × {fmtCurrency(l.unit_price)}</span>
+                    <span className="text-[10px] text-white/45 shrink-0">{l.quantity} × {fmtCurrency(l.unit_price)}</span>
                     <span className={`text-[11px] font-bold shrink-0 ${isExt ? "text-purple-300" : "text-blue-300"}`}>{fmtCurrency(lineNet(l))}</span>
                   </div>
                   <div className="mt-1.5 flex items-center gap-2 pl-7">
-                    <span className="text-[10px] text-white/45">خصم على الصنف:</span>
+                    <span className="text-[10px] text-white/40">خصم:</span>
                     <input type="number" min={0} step="any" value={l.discount_value}
                       onChange={(e) => updateLineDiscount(l.id, parseFloat(e.target.value) || 0, l.discount_mode)}
-                      className="w-20 px-2 py-0.5 rounded-md bg-white/[0.03] border border-amber-400/20 text-[10px] text-white text-center focus:outline-none" dir="ltr" />
+                      className="w-16 px-2 py-0.5 rounded-md bg-white/[0.03] border border-amber-400/20 text-[10px] text-white text-center focus:outline-none" dir="ltr" />
                     <button type="button"
                       onClick={() => updateLineDiscount(l.id, l.discount_value, l.discount_mode === 'pct' ? 'amt' : 'pct')}
                       className="w-6 h-6 rounded-md text-[10px] font-black text-amber-300 border border-amber-400/30 hover:bg-amber-400/10">
@@ -239,23 +237,15 @@ export default function DeliveryGateForm({
         )}
       </div>
 
-      {/* الإجمالي */}
-      <div className="px-5 py-3 border-b border-white/5 bg-white/[0.015]">
-        <div className="flex items-center justify-between text-[12px] font-black">
-          <span className="text-white">الإجمالي المستحق على العميل</span>
-          <span className="text-lime-300">{fmtCurrency(grandTotal)}</span>
-        </div>
-      </div>
-
-      {/* طريقة الدفع */}
+      {/* ③ الدفع */}
       <div className="px-5 pt-4 pb-3 border-b border-white/5">
         <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
-          <span className="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-[9px] text-emerald-300 font-black">٢</span>
-          طريقة الدفع
+          <span className="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-[9px] text-emerald-300 font-black">＄</span>
+          الدفع
         </h4>
 
         {payRows.length > 0 && (
-          <div className="mb-2 space-y-1.5">
+          <div className="mb-2.5 space-y-1.5">
             {payRows.map(row => (
               <div key={row.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${row.type === "credit" ? "bg-indigo-500/8 border border-indigo-500/20" : "bg-emerald-500/8 border border-emerald-500/20"}`}>
                 <button type="button" onClick={() => setPayRows(prev => prev.filter(r => r.id !== row.id))}
@@ -331,32 +321,25 @@ export default function DeliveryGateForm({
         )}
       </div>
 
-      {/* الوسيط */}
+      {/* ④ الوسيط (اختياري) */}
       <div className="px-5 pt-3 pb-4">
-        <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
-          <UserCog className="w-3.5 h-3.5 text-violet-400" /> الوسيط (اختياري)
+        <h4 className="text-[12px] font-black text-white/80 mb-2.5 flex items-center gap-2">
+          <UserCog className="w-3.5 h-3.5 text-violet-400" />
+          الوسيط
+          <span className="text-[10px] font-normal text-white/35">(اختياري)</span>
         </h4>
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="text-[10px] text-white/50 mb-1 block">اسم الوسيط</label>
-            <input value={brokerName} onChange={(e) => setBrokerName(e.target.value)} placeholder="اتركه فارغاً إن لم يكن هناك وسيط"
+            <input value={brokerName} onChange={(e) => setBrokerName(e.target.value)}
+              placeholder="اسم الوسيط — اتركه فارغاً إن لم يكن هناك وسيط"
               className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none" />
           </div>
-          <div style={{ width: 100 }}>
-            <label className="text-[10px] text-white/50 mb-1 block">العمولة (ج.م)</label>
-            <input type="number" min={0} step="any" value={brokerComm} onChange={(e) => setBrokerComm(e.target.value)} placeholder="0" dir="ltr"
+          <div style={{ width: 110 }}>
+            <input type="number" min={0} step="any" value={brokerComm} onChange={(e) => setBrokerComm(e.target.value)}
+              placeholder="العمولة ج.م" dir="ltr"
               className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none" />
           </div>
         </div>
-      </div>
-
-      {/* طريقة الدفع عند التسليم (من RepairExtensions) */}
-      <div className="px-5 pt-3 pb-4 border-t border-white/5">
-        <DeliveryPaymentSection
-          value={deliveryPayment}
-          onChange={setDeliveryPayment}
-          safes={safes}
-        />
       </div>
     </div>
   );

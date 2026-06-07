@@ -180,9 +180,6 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
   const [brokerName, setBrokerName] = useState(job.broker_name ?? "");
   const [brokerComm, setBrokerComm] = useState(String(Number(job.broker_commission) || ""));
 
-  /* ── Delivery Payment method (from RepairExtensions) ── */
-  const [deliveryPayment, setDeliveryPayment] = useState<{ payment_type: string; safe_id: number | null }>({ payment_type: "cash", safe_id: null });
-
   /* ── Shipping & discount ── */
   const [cost,     setCost]     = useState("0");
   const [safeId,   setSafeId]   = useState<string>("");
@@ -202,7 +199,6 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
         brokerName?: string; brokerComm?: string;
         cost?: string; safeId?: string; discount?: string;
         selectedWarehouseId?: number | null;
-        deliveryPayment?: { payment_type: string; safe_id: number | null };
       };
       if (Array.isArray(d.partLines))       setPartLines(d.partLines);
       if (Array.isArray(d.payRows))         setPayRows(d.payRows);
@@ -212,7 +208,6 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
       if (typeof d.safeId === "string")     setSafeId(d.safeId);
       if (typeof d.discount === "string")   setDiscount(d.discount);
       if (d.selectedWarehouseId != null)    setSelectedWarehouseId(d.selectedWarehouseId);
-      if (d.deliveryPayment)                setDeliveryPayment(d.deliveryPayment);
       setDraftRestored(true);
     } catch { /* ignore */ }
   }, [draftKey]);
@@ -248,8 +243,6 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
     return {
       broker_name: brokerName.trim() || null,
       broker_commission: Number(brokerComm) || 0,
-      delivery_payment_type: deliveryPayment.payment_type,
-      delivery_payment_safe_id: deliveryPayment.safe_id,
       parts: partLines.map(l => {
         const netUnit = l.quantity > 0 ? lineNet(l) / l.quantity : 0;
         return { product_id: l.product_id, product_name: l.product_name, quantity: l.quantity, unit_price: netUnit, warehouse_id: l.warehouse_id, source: l.source };
@@ -266,7 +259,7 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
   function handleSave() {
     setErrors([]);
     try {
-      localStorage.setItem(draftKey, JSON.stringify({ v: 1, savedAt: new Date().toISOString(), partLines, payRows, brokerName, brokerComm, cost, safeId, discount, selectedWarehouseId, deliveryPayment }));
+      localStorage.setItem(draftKey, JSON.stringify({ v: 1, savedAt: new Date().toISOString(), partLines, payRows, brokerName, brokerComm, cost, safeId, discount, selectedWarehouseId }));
       toast({ title: "✓ تم حفظ بيانات الفاتورة", description: "البيانات محفوظة محلياً. عند مجيء العميل افتح البطاقة واضغط «تأكيد التسليم»" });
     } catch {
       toast({ title: "تعذّر حفظ البيانات محلياً", variant: "destructive" });
@@ -330,7 +323,6 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
     paySafe, setPaySafe, payAmount, setPayAmount,
     paidSoFar, addPayRow, fillAll, payIsDone,
     brokerName, setBrokerName, brokerComm, setBrokerComm,
-    deliveryPayment, setDeliveryPayment,
     cost, setCost, safeId, setSafeId, discount, setDiscount,
     numericCost: sc, numericDisc: disc, dep, total, totalRem, grandTotal, remaining,
     draftRestored, clearDraft,
