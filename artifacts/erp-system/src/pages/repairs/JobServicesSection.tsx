@@ -15,7 +15,7 @@ import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Pencil, Trash2, Check, X, Wrench,
-  ChevronRight, Link2, Unlink, Package, Search,
+  ChevronRight, Package, Search,
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
@@ -50,14 +50,6 @@ interface JobService {
   linked_parts: LinkedPart[];
 }
 
-interface JobPart {
-  id: number;
-  product_name: string;
-  unit_price: string;
-  quantity: string;
-  is_returned: boolean;
-}
-
 interface Product {
   id: number;
   name: string;
@@ -85,10 +77,9 @@ const EMPTY_FORM = {
 
 /* ── Props ────────────────────────────────────────────────────── */
 interface Props {
-  jobId:    number;
-  users:    { id: number; name: string }[];
-  jobParts: JobPart[];
-  locked?:  boolean;
+  jobId:   number;
+  users:   { id: number; name: string }[];
+  locked?: boolean;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -330,257 +321,9 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LINKED PARTS PANEL — inline per service card
-══════════════════════════════════════════════════════════════ */
-function LinkedPartsPanel({
-  jobId, service, jobParts, sectionLocked,
-}: {
-  jobId:         number;
-  service:       JobService;
-  jobParts:      JobPart[];
-  sectionLocked: boolean;
-}) {
-  const qc = useQueryClient();
-  const { toast } = useToast();
-
-  const [open, setOpen]                   = useState(false);
-  const [addingPart, setAddingPart]       = useState(false);
-  const [selectedPartId, setSelectedPartId] = useState<string>("");
-  const [selectedQty, setSelectedQty]     = useState("1");
-  const [editingQtyId, setEditingQtyId]   = useState<number | null>(null);
-  const [editingQtyVal, setEditingQtyVal] = useState("");
-
-  const isLocked = sectionLocked || service.commission_locked;
-  const linkedPartIds = new Set(service.linked_parts.map(lp => lp.part_id));
-  const availableParts = jobParts.filter(p => !p.is_returned && !linkedPartIds.has(p.id));
-
-  const invalidate = () =>
-    qc.invalidateQueries({ queryKey: ["/api/repair-jobs", jobId, "services"] });
-
-  const linkMut = useMutation({
-    mutationFn: ({ partId, qty }: { partId: number; qty: number }) =>
-      authFetch(api(`/api/repair-jobs/${jobId}/services/${service.id}/parts`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ part_id: partId, quantity_allocated: qty }),
-      }).then(async r => { if (!r.ok) throw new Error((await r.json()).error); return r.json(); }),
-    onSuccess: () => {
-      invalidate();
-      setAddingPart(false);
-      setSelectedPartId("");
-      setSelectedQty("1");
-      toast({ title: "✓ تم ربط القطعة" });
-    },
-    onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
-  });
-
-  const updateQtyMut = useMutation({
-    mutationFn: ({ partId, qty }: { partId: number; qty: number }) =>
-      authFetch(api(`/api/repair-jobs/${jobId}/services/${service.id}/parts`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ part_id: partId, quantity_allocated: qty }),
-      }).then(async r => { if (!r.ok) throw new Error((await r.json()).error); return r.json(); }),
-    onSuccess: () => { invalidate(); setEditingQtyId(null); },
-    onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
-  });
-
-  const unlinkMut = useMutation({
-    mutationFn: (partId: number) =>
-      authFetch(api(`/api/repair-jobs/${jobId}/services/${service.id}/parts/${partId}`), {
-        method: "DELETE",
-      }).then(async r => { if (!r.ok) throw new Error((await r.json()).error); }),
-    onSuccess: () => { invalidate(); toast({ title: "✓ تم إلغاء الربط" }); },
-    onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
-  });
-
-  const handleLink = () => {
-    if (!selectedPartId) return;
-    linkMut.mutate({ partId: Number(selectedPartId), qty: parseFloat(selectedQty) || 1 });
-  };
-
-  const startEditQty = (lp: LinkedPart) => {
-    setEditingQtyId(lp.id);
-    setEditingQtyVal(lp.quantity_allocated);
-  };
-
-  const commitEditQty = (lp: LinkedPart) => {
-    const qty = parseFloat(editingQtyVal);
-    if (!qty || qty <= 0) { setEditingQtyId(null); return; }
-    if (qty === parseFloat(lp.quantity_allocated)) { setEditingQtyId(null); return; }
-    updateQtyMut.mutate({ partId: lp.part_id, qty });
-  };
-
-  const hasLinked = service.linked_parts.length > 0;
-
-  return (
-    <div className="mt-0 rounded-lg border border-white/5 bg-white/[0.015] overflow-hidden">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-2.5 py-1.5 hover:bg-white/3 transition-all"
-      >
-        <span className="flex items-center gap-1.5 text-[10px] text-white/45 font-bold">
-          <Package className="w-3 h-3 text-cyan-400/60" />
-          القطع المرتبطة
-          {hasLinked && (
-            <span className="text-[9px] px-1 py-0.5 rounded bg-cyan-500/12 border border-cyan-500/20 text-cyan-300/70 tabular-nums">
-              {service.linked_parts.length}
-            </span>
-          )}
-        </span>
-        <div className="flex items-center gap-1.5">
-          {open && !isLocked && !addingPart && availableParts.length > 0 && (
-            <span
-              onClick={e => { e.stopPropagation(); setAddingPart(true); }}
-              className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded border border-cyan-500/25 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition-all cursor-pointer"
-            >
-              <Link2 className="w-2.5 h-2.5" /> ربط قطعة
-            </span>
-          )}
-          <ChevronRight
-            className={`w-3.5 h-3.5 text-white/25 transition-transform duration-150 ${open ? "-rotate-90" : "rotate-90"}`}
-          />
-        </div>
-      </button>
-
-      {open && (
-        <div className="px-2.5 pb-2.5 space-y-1.5">
-          {addingPart && !isLocked && (
-            <div className="flex items-center gap-1.5 rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-2.5 py-2">
-              <select
-                value={selectedPartId}
-                onChange={e => setSelectedPartId(e.target.value)}
-                autoFocus
-                className="erp-input flex-1 text-[10px]"
-              >
-                <option value="">— اختر القطعة —</option>
-                {availableParts.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.product_name}
-                    {Number(p.unit_price) > 0 ? ` (${Number(p.unit_price).toLocaleString("ar-EG")} ر.س)` : ""}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number" min="0.001" step="1"
-                value={selectedQty}
-                onChange={e => setSelectedQty(e.target.value)}
-                className="erp-input w-14 text-[10px] text-center"
-                title="الكمية المخصصة"
-              />
-              <button
-                onClick={handleLink}
-                disabled={!selectedPartId || linkMut.isPending}
-                className="flex items-center gap-0.5 text-[9px] font-bold px-2 py-1 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-30 transition-all shrink-0"
-              >
-                <Check className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => { setAddingPart(false); setSelectedPartId(""); setSelectedQty("1"); }}
-                className="w-5 h-5 flex items-center justify-center rounded text-white/25 hover:text-white/50 transition-all shrink-0"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          )}
-
-          {!hasLinked && !addingPart && (
-            <div className="flex items-center justify-between py-1">
-              <span className="text-[10px] text-white/25 italic">لا توجد قطع مرتبطة</span>
-              {!isLocked && availableParts.length > 0 && (
-                <button
-                  onClick={() => setAddingPart(true)}
-                  className="text-[9px] text-cyan-400/60 hover:text-cyan-300 transition-colors flex items-center gap-1"
-                >
-                  <Link2 className="w-2.5 h-2.5" /> ربط قطعة
-                </button>
-              )}
-              {!isLocked && jobParts.filter(p => !p.is_returned).length > 0 && availableParts.length === 0 && (
-                <span className="text-[9px] text-white/20">كل القطع مرتبطة بالفعل</span>
-              )}
-              {jobParts.filter(p => !p.is_returned).length === 0 && (
-                <span className="text-[9px] text-white/20">لا توجد قطع في البطاقة</span>
-              )}
-            </div>
-          )}
-
-          {service.linked_parts.map(lp => {
-            const unitPrice = Number(lp.unit_price) || 0;
-            const qty       = Number(lp.quantity_allocated) || 1;
-            const cost      = unitPrice * qty;
-            const isEditingThis = editingQtyId === lp.id;
-
-            return (
-              <div key={lp.id} className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] px-2 py-1.5 group">
-                <span className="flex-1 text-[10px] text-white/75 font-medium truncate min-w-0">{lp.product_name}</span>
-
-                {isEditingThis && !isLocked ? (
-                  <input
-                    type="number" min="0.001" step="1"
-                    value={editingQtyVal}
-                    autoFocus
-                    onChange={e => setEditingQtyVal(e.target.value)}
-                    onBlur={() => commitEditQty(lp)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") commitEditQty(lp);
-                      if (e.key === "Escape") setEditingQtyId(null);
-                    }}
-                    className="erp-input w-14 text-[10px] text-center py-0.5"
-                  />
-                ) : (
-                  <button
-                    onClick={() => { if (!isLocked) startEditQty(lp); }}
-                    disabled={isLocked}
-                    title={isLocked ? "" : "انقر لتعديل الكمية"}
-                    className={`text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded transition-all ${
-                      isLocked ? "text-white/35 cursor-default" : "text-white/50 hover:text-white/80 hover:bg-white/5 cursor-pointer"
-                    }`}
-                  >
-                    ×{qty % 1 === 0 ? qty : qty.toFixed(2)}
-                  </button>
-                )}
-
-                {unitPrice > 0 && (
-                  <span className="text-[10px] font-mono tabular-nums text-cyan-300/65 shrink-0">
-                    {cost.toLocaleString("ar-EG")} ر.س
-                  </span>
-                )}
-
-                {!isLocked && (
-                  <button
-                    onClick={() => { if (confirm(`إلغاء ربط "${lp.product_name}" من هذه الخدمة؟`)) unlinkMut.mutate(lp.part_id); }}
-                    className="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
-                    title="إلغاء الربط"
-                  >
-                    <Unlink className="w-2.5 h-2.5" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-
-          {hasLinked && (() => {
-            const total = service.linked_parts.reduce((s, lp) =>
-              s + (Number(lp.unit_price) || 0) * (Number(lp.quantity_allocated) || 1), 0);
-            return total > 0 ? (
-              <div className="flex items-center justify-between border-t border-white/5 pt-1.5 mt-0.5">
-                <span className="text-[9px] text-white/30">إجمالي تكلفة القطع المرتبطة</span>
-                <span className="text-[10px] font-black text-cyan-300/70 font-mono tabular-nums">
-                  {total.toLocaleString("ar-EG")} ر.س
-                </span>
-              </div>
-            ) : null;
-          })()}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════════════════════════ */
-export function JobServicesSection({ jobId, users, jobParts, locked = false }: Props) {
+export function JobServicesSection({ jobId, users, locked = false }: Props) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen]         = useState(true);
@@ -814,6 +557,29 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
                             )}
                           </div>
                           {sv.notes && <p className="text-[10px] text-white/30 italic">{sv.notes}</p>}
+
+                          {/* قطع مرتبطة — chips للقراءة فقط */}
+                          {sv.linked_parts.length > 0 && (
+                            <div className="flex flex-wrap gap-1 pt-0.5">
+                              {sv.linked_parts.map(lp => {
+                                const cost = (Number(lp.unit_price) || 0) * (Number(lp.quantity_allocated) || 1);
+                                return (
+                                  <span
+                                    key={lp.id}
+                                    className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full border border-cyan-500/20 bg-cyan-500/8 text-cyan-300/75 font-medium"
+                                  >
+                                    <Package className="w-2 h-2 shrink-0" />
+                                    {lp.product_name}
+                                    {cost > 0 && (
+                                      <span className="font-mono tabular-nums text-cyan-400/50">
+                                        {cost.toLocaleString("ar-EG")}
+                                      </span>
+                                    )}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
 
                         {!locked && !sv.commission_locked && (
@@ -822,6 +588,7 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
                               onClick={() => {
                                 setEditId(sv.id);
                                 setEditForm({
+                                  ...EMPTY_FORM,
                                   service_type_id:   sv.service_type_id,
                                   service_type_name: sv.service_type_name_snapshot,
                                   technician_id:     sv.technician_id,
@@ -846,15 +613,6 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
                             </button>
                           </div>
                         )}
-                      </div>
-
-                      <div className="border-t border-white/5 mx-3 mb-2">
-                        <LinkedPartsPanel
-                          jobId={jobId}
-                          service={sv}
-                          jobParts={jobParts}
-                          sectionLocked={locked}
-                        />
                       </div>
                     </div>
                   )}

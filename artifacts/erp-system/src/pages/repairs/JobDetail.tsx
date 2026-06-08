@@ -741,7 +741,6 @@ export function JobDetail({
         <JobServicesSection
           jobId={job.id}
           users={users}
-          jobParts={job.parts ?? []}
           locked={job.status === 'delivered' || job.status === 'done'}
         />
 
