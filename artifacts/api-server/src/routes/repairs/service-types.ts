@@ -26,7 +26,7 @@ const updateServiceTypeSchema = z.object({
 });
 
 /* ── GET /api/repair-service-types ───────────────────────────── */
-router.get("/api/repair-service-types", wrap(async (req, res) => {
+router.get("/repair-service-types", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const rows = await db
     .select()
@@ -37,7 +37,7 @@ router.get("/api/repair-service-types", wrap(async (req, res) => {
 }));
 
 /* ── POST /api/repair-service-types ──────────────────────────── */
-router.post("/api/repair-service-types", wrap(async (req, res) => {
+router.post("/repair-service-types", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   if (!hasPermission(req.user, "can_manage_settings")) {
     res.status(403).json({ error: "غير مصرح" }); return;
@@ -60,7 +60,7 @@ router.post("/api/repair-service-types", wrap(async (req, res) => {
 }));
 
 /* ── PATCH /api/repair-service-types/:id ─────────────────────── */
-router.patch("/api/repair-service-types/:id", wrap(async (req, res) => {
+router.patch("/repair-service-types/:id", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   if (!hasPermission(req.user, "can_manage_settings")) {
     res.status(403).json({ error: "غير مصرح" }); return;
@@ -89,7 +89,7 @@ router.patch("/api/repair-service-types/:id", wrap(async (req, res) => {
 }));
 
 /* ── DELETE /api/repair-service-types/:id ────────────────────── */
-router.delete("/api/repair-service-types/:id", wrap(async (req, res) => {
+router.delete("/repair-service-types/:id", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   if (!hasPermission(req.user, "can_manage_settings")) {
     res.status(403).json({ error: "غير مصرح" }); return;

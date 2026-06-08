@@ -726,10 +726,11 @@ export function JobDetail({
           )}
         </div>
 
-        {/* Job Services — Phase 1 (no commission calc yet) */}
+        {/* Job Services — Phase 1.5 (with parts linking) */}
         <JobServicesSection
           jobId={job.id}
           users={users}
+          jobParts={job.parts ?? []}
           locked={job.status === 'delivered' || job.status === 'done'}
         />
 

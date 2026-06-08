@@ -14,7 +14,7 @@ const router: IRouter = Router();
 /* Feature-gate maintenance module on all repair-related path prefixes.
    Must be registered BEFORE the sub-routers so it intercepts every request. */
 router.use(
-  ["/repair-jobs", "/repair-statuses", "/repair-customers", "/repair-checklist-items", "/scrap-items"],
+  ["/repair-jobs", "/repair-statuses", "/repair-customers", "/repair-checklist-items", "/scrap-items", "/repair-service-types"],
   requireFeature("maintenance"),
 );
 

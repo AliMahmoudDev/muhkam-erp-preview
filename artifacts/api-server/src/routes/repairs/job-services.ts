@@ -66,7 +66,7 @@ async function getJob(jobId: number, company_id: number) {
 }
 
 /* ── GET /api/repair-jobs/:id/services ───────────────────────── */
-router.get("/api/repair-jobs/:id/services", wrap(async (req, res) => {
+router.get("/repair-jobs/:id/services", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const jobId = Number(req.params.id);
 
@@ -109,7 +109,7 @@ router.get("/api/repair-jobs/:id/services", wrap(async (req, res) => {
 }));
 
 /* ── POST /api/repair-jobs/:id/services ──────────────────────── */
-router.post("/api/repair-jobs/:id/services", wrap(async (req, res) => {
+router.post("/repair-jobs/:id/services", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const jobId = Number(req.params.id);
 
@@ -156,7 +156,7 @@ router.post("/api/repair-jobs/:id/services", wrap(async (req, res) => {
 }));
 
 /* ── PATCH /api/repair-jobs/:id/services/:serviceId ─────────── */
-router.patch("/api/repair-jobs/:id/services/:serviceId", wrap(async (req, res) => {
+router.patch("/repair-jobs/:id/services/:serviceId", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const jobId     = Number(req.params.id);
   const serviceId = Number(req.params.serviceId);
@@ -217,7 +217,7 @@ router.patch("/api/repair-jobs/:id/services/:serviceId", wrap(async (req, res) =
 }));
 
 /* ── DELETE /api/repair-jobs/:id/services/:serviceId ─────────── */
-router.delete("/api/repair-jobs/:id/services/:serviceId", wrap(async (req, res) => {
+router.delete("/repair-jobs/:id/services/:serviceId", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const jobId     = Number(req.params.id);
   const serviceId = Number(req.params.serviceId);
@@ -244,7 +244,7 @@ router.delete("/api/repair-jobs/:id/services/:serviceId", wrap(async (req, res) 
 }));
 
 /* ── POST /api/repair-jobs/:id/services/:serviceId/parts ──────── */
-router.post("/api/repair-jobs/:id/services/:serviceId/parts", wrap(async (req, res) => {
+router.post("/repair-jobs/:id/services/:serviceId/parts", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const jobId     = Number(req.params.id);
   const serviceId = Number(req.params.serviceId);
@@ -296,7 +296,7 @@ router.post("/api/repair-jobs/:id/services/:serviceId/parts", wrap(async (req, r
 }));
 
 /* ── DELETE /api/repair-jobs/:id/services/:serviceId/parts/:partId */
-router.delete("/api/repair-jobs/:id/services/:serviceId/parts/:partId", wrap(async (req, res) => {
+router.delete("/repair-jobs/:id/services/:serviceId/parts/:partId", wrap(async (req, res) => {
   const { company_id } = ctx(req);
   const jobId     = Number(req.params.id);
   const serviceId = Number(req.params.serviceId);
