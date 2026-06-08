@@ -191,8 +191,8 @@ function Router() {
     );
   }
 
-  /* ── Employee role: redirect root to personal portal (no dashboard access) ── */
-  if (user.role === Role.Employee && location === '/') {
+  /* ── Employee / Technician role: redirect root to personal portal ── */
+  if ((user.role === Role.Employee || user.role === Role.Technician) && location === '/') {
     return <Redirect to="/my-portal" />;
   }
 

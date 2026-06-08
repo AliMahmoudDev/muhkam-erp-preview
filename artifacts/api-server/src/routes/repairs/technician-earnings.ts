@@ -1,16 +1,15 @@
 /**
- * technician-earnings.ts — Phase 2
+ * technician-earnings.ts — Phase 2 / Phase 3
  *
  * Routes (read-only):
  *   GET /api/technicians/:id/earnings          — قائمة مفصّلة
- *   GET /api/technicians/:id/earnings/summary  — ملخص إجمالي
+ *   GET /api/technicians/:id/earnings/summary  — ملخص KPI
  *
- * المصدر الوحيد: repair_job_services حيث commission_locked = true.
- * لا يعكس أي دفع أو تسوية (Phase 3).
+ * الصلاحية: صاحب الطلب نفسه (employee_id == :id) أو can_view_reports.
  */
 
 import { Router, type IRouter } from "express";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { eq, and, gte, ne, inArray, sql } from "drizzle-orm";
 import {
   db,
   repairJobServicesTable,
@@ -22,14 +21,21 @@ import { hasPermission } from "../../lib/permissions";
 
 const router: IRouter = Router();
 
+/* ── helper: يتحقق أن المستخدم يملك صلاحية لرؤية بيانات هذا الفني ─── */
+function canViewTech(req: Express.Request, techId: number): boolean {
+  const u = req.user as { employee_id?: number } | undefined;
+  const isSelf = u?.employee_id != null && Number(u.employee_id) === techId;
+  return isSelf || hasPermission(req.user, "can_view_reports");
+}
+
+const ACTIVE_SVC_STATUSES = ["pending", "in_progress", "completed"] as const;
+
 /* ── GET /api/technicians/:id/earnings ───────────────────────── */
 router.get("/technicians/:id/earnings", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_reports")) {
-    return res.status(403).json({ error: "غير مصرح بعرض أرباح الفنيين" });
-  }
   const { company_id } = ctx(req);
   const techId = Number(req.params.id);
   if (!techId) return res.status(400).json({ error: "معرّف الفني غير صحيح" });
+  if (!canViewTech(req, techId)) return res.status(403).json({ error: "غير مصرح بعرض أرباح الفنيين" });
 
   const rows = await db
     .select({
@@ -58,20 +64,13 @@ router.get("/technicians/:id/earnings", wrap(async (req, res) => {
 
 /* ── GET /api/technicians/:id/earnings/summary ───────────────── */
 router.get("/technicians/:id/earnings/summary", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_reports")) {
-    return res.status(403).json({ error: "غير مصرح بعرض أرباح الفنيين" });
-  }
   const { company_id } = ctx(req);
   const techId = Number(req.params.id);
   if (!techId) return res.status(400).json({ error: "معرّف الفني غير صحيح" });
+  if (!canViewTech(req, techId)) return res.status(403).json({ error: "غير مصرح بعرض أرباح الفنيين" });
 
   const now = new Date();
-  /* بداية اليوم (منتصف الليل توقيت الخادم) */
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  /* بداية الأسبوع (الأحد = 0) */
-  const weekStart  = new Date(todayStart);
-  weekStart.setDate(todayStart.getDate() - todayStart.getDay());
-  /* بداية الشهر */
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const baseWhere = and(
@@ -80,15 +79,17 @@ router.get("/technicians/:id/earnings/summary", wrap(async (req, res) => {
     eq(repairJobServicesTable.commission_locked, true),
   );
 
+  /* ── إجمالي الأرباح وعدد الخدمات المُسلَّمة ── */
   const [totalRow] = await db
     .select({
-      total:   sql<number>`coalesce(sum(${repairJobServicesTable.commission_computed}::numeric), 0)`,
-      count:   sql<number>`count(*)`,
+      total: sql<number>`coalesce(sum(${repairJobServicesTable.commission_computed}::numeric), 0)`,
+      count: sql<number>`count(*)`,
     })
     .from(repairJobServicesTable)
     .innerJoin(repairJobsTable, eq(repairJobsTable.id, repairJobServicesTable.job_id))
     .where(baseWhere);
 
+  /* ── أرباح اليوم ── */
   const [todayRow] = await db
     .select({
       total: sql<number>`coalesce(sum(${repairJobServicesTable.commission_computed}::numeric), 0)`,
@@ -97,14 +98,7 @@ router.get("/technicians/:id/earnings/summary", wrap(async (req, res) => {
     .innerJoin(repairJobsTable, eq(repairJobsTable.id, repairJobServicesTable.job_id))
     .where(and(baseWhere, gte(repairJobsTable.delivered_at, todayStart.toISOString().split("T")[0])));
 
-  const [weekRow] = await db
-    .select({
-      total: sql<number>`coalesce(sum(${repairJobServicesTable.commission_computed}::numeric), 0)`,
-    })
-    .from(repairJobServicesTable)
-    .innerJoin(repairJobsTable, eq(repairJobsTable.id, repairJobServicesTable.job_id))
-    .where(and(baseWhere, gte(repairJobsTable.delivered_at, weekStart.toISOString().split("T")[0])));
-
+  /* ── أرباح الشهر ── */
   const [monthRow] = await db
     .select({
       total: sql<number>`coalesce(sum(${repairJobServicesTable.commission_computed}::numeric), 0)`,
@@ -113,13 +107,32 @@ router.get("/technicians/:id/earnings/summary", wrap(async (req, res) => {
     .innerJoin(repairJobsTable, eq(repairJobsTable.id, repairJobServicesTable.job_id))
     .where(and(baseWhere, gte(repairJobsTable.delivered_at, monthStart.toISOString().split("T")[0])));
 
+  /* ── خدمات نشطة (لم تُسلَّم ولم تُلغَ بعد) ── */
+  const [activeRow] = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(repairJobServicesTable)
+    .innerJoin(repairJobsTable, eq(repairJobsTable.id, repairJobServicesTable.job_id))
+    .where(and(
+      eq(repairJobServicesTable.company_id, company_id),
+      eq(repairJobServicesTable.technician_id, techId),
+      ne(repairJobsTable.status, "delivered"),
+      ne(repairJobsTable.status, "cancelled"),
+      inArray(repairJobServicesTable.status, [...ACTIVE_SVC_STATUSES]),
+    ));
+
+  const totalEarned = Number(totalRow?.total ?? 0);
+
   return res.json({
-    technician_id:   techId,
-    total_earned:    Number(totalRow?.total ?? 0),
-    today:           Number(todayRow?.total ?? 0),
-    this_week:       Number(weekRow?.total  ?? 0),
-    this_month:      Number(monthRow?.total ?? 0),
-    delivered_count: Number(totalRow?.count ?? 0),
+    technician_id:       techId,
+    total_earned:        totalEarned,
+    today:               Number(todayRow?.total  ?? 0),
+    this_month:          Number(monthRow?.total  ?? 0),
+    delivered_count:     Number(totalRow?.count  ?? 0),
+    active_count:        Number(activeRow?.count ?? 0),
+    /* outstanding = إجمالي المكتسب حتى الآن (placeholder — سيُطرح منه المدفوع في إصدار الرواتب) */
+    outstanding_earnings: totalEarned,
   });
 }));
 

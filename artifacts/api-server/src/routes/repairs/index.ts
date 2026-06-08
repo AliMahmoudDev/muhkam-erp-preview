@@ -9,6 +9,7 @@ import photosRouter from "./photos";
 import serviceTypesRouter from "./service-types";
 import jobServicesRouter from "./job-services";
 import techEarningsRouter from "./technician-earnings";
+import techServicesRouter from "./technician-services";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(photosRouter);
 router.use(serviceTypesRouter);
 router.use(jobServicesRouter);
 router.use(techEarningsRouter);
+router.use(techServicesRouter);
 
 export default router;

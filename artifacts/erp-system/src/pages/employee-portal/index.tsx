@@ -19,6 +19,8 @@ import { AttBadge, StatusBadge } from './Badge';
 import { SectionCard } from './SectionCard';
 import { StatCard } from './StatCard';
 import { AdvanceRequestModal } from './AdvanceRequestModal';
+import { TechnicianSections } from './TechnicianSections';
+import { Role } from '@/lib/roles';
 
 /* ══════════════════════════════════════════════════
    MAIN PAGE
@@ -261,6 +263,19 @@ export default function EmployeePortal() {
         </div>
       </div>
 
+
+      {/* ── TECHNICIAN DASHBOARD — يظهر فقط لدور الفني ── */}
+      {user.role === Role.Technician && empId && (
+        <TechnicianSections
+          empId={empId}
+          isDark={isDark}
+          textMain={textMain}
+          textMuted={textMuted}
+          cardBg={cardBg}
+          border={border}
+          currency={empCurrency}
+        />
+      )}
 
       {/* ── TODAY + JOB INFO ROW ── */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:18, marginBottom:18 }}>
