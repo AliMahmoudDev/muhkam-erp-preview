@@ -505,6 +505,18 @@ export function EmployeeDetail({
 }: EmployeeDetailProps) {
   const [expandedCustody, setExpandedCustody] = useState<number | null>(null);
 
+  /* دفتر العمولات — مُحمَّل مرة واحدة، يُستخدم في تبويب التقارير */
+  const { data: commissionLedger } = useQuery<CommissionLedgerData>({
+    queryKey: ['/api/employees', selected.id, 'commission-ledger'],
+    queryFn: async () => {
+      const r = await authFetch(`/api/employees/${selected.id}/commission-ledger`);
+      if (!r.ok) throw new Error('failed');
+      return r.json() as Promise<CommissionLedgerData>;
+    },
+    enabled: !!selected.id,
+    staleTime: 30_000,
+  });
+
   const deductionsByType = (t: string) =>
     deductions.filter((d) => String(d.deduction_type) === t).reduce((s, d) => s + Number(d.amount ?? 0), 0);
 
@@ -730,11 +742,24 @@ export function EmployeeDetail({
 
       {/* ── Reports Tab ── */}
       {detailTab === 'reports' && (() => {
-        const baseSalary = Number(selected.salary ?? 0);
+        const baseSalary  = Number(selected.salary ?? 0);
         const totalBonuses = bonuses.reduce((s, b) => s + Number(b.amount ?? 0), 0);
-        const totalIncome = baseSalary + totalBonuses;
+
+        /* ── حسابات دفتر العمولات ──────────────────────────────────
+         * payout مُستثنى: هو تسوية للرصيد المحقق، لا دخل جديد.
+         * reversal و adjustment قد تكون سالبة فتُقلِّل الدخل.
+         * ──────────────────────────────────────────────────────── */
+        const clEntries    = commissionLedger?.entries ?? [];
+        const commEarned   = clEntries.filter(e => e.entry_type === 'commission_earned').reduce((s, e) => s + Number(e.amount), 0);
+        const commBonus    = clEntries.filter(e => e.entry_type === 'bonus').reduce((s, e) => s + Number(e.amount), 0);
+        const commIncentive= clEntries.filter(e => e.entry_type === 'incentive').reduce((s, e) => s + Number(e.amount), 0);
+        const commReversals= clEntries.filter(e => e.entry_type === 'reversal').reduce((s, e) => s + Number(e.amount), 0);
+        const commAdjust   = clEntries.filter(e => e.entry_type === 'adjustment').reduce((s, e) => s + Number(e.amount), 0);
+        const commNetIncome= commEarned + commBonus + commIncentive + commReversals + commAdjust;
+
+        const totalIncome      = baseSalary + totalBonuses + commNetIncome;
         const totalDeductionsAll = totalDeducted + remainingLoans;
-        const netAmount = totalIncome - totalDeductionsAll;
+        const netAmount        = totalIncome - totalDeductionsAll;
         const fmtMoneyPrint = (n: number) => `${Number(n ?? 0).toFixed(2)} ${selected.currency ?? ''}`;
         const todayStr = new Date().toLocaleDateString('ar-EG-u-nu-latn', { year: 'numeric', month: 'long', day: 'numeric' });
         const buildReportHTML = () => {
@@ -745,6 +770,11 @@ export function EmployeeDetail({
             const reason = b.reason ? ` — ${String(b.reason)}` : '';
             incomeRows.push(`<tr><td>حافز${reason}<div class="sub">${String(b.granted_date ?? '')}</div></td><td class="num green">${fmtMoneyPrint(Number(b.amount ?? 0))}</td></tr>`);
           });
+          if (commEarned    > 0) incomeRows.push(`<tr><td>عمولات محققة (صيانة)</td><td class="num green">${fmtMoneyPrint(commEarned)}</td></tr>`);
+          if (commBonus     > 0) incomeRows.push(`<tr><td>حوافز (دفتر العمولات)</td><td class="num green">${fmtMoneyPrint(commBonus)}</td></tr>`);
+          if (commIncentive > 0) incomeRows.push(`<tr><td>إنسنتف</td><td class="num green">${fmtMoneyPrint(commIncentive)}</td></tr>`);
+          if (commReversals < 0) incomeRows.push(`<tr><td>مستردّ (عمولات)</td><td class="num red">− ${fmtMoneyPrint(Math.abs(commReversals))}</td></tr>`);
+          if (commAdjust   !== 0) incomeRows.push(`<tr><td>تعديل عمولة</td><td class="num ${commAdjust >= 0 ? 'green' : 'red'}">${commAdjust >= 0 ? '' : '− '}${fmtMoneyPrint(Math.abs(commAdjust))}</td></tr>`);
           const dedRows: string[] = [];
           deductions.forEach((d) => {
             const info = dedLabel(String(d.deduction_type ?? 'other'));
@@ -807,6 +837,58 @@ export function EmployeeDetail({
                     <div className="w-20"></div>
                   </div>
                 ))}
+                {commEarned > 0 && (
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                    <div className="text-white/70 flex items-center gap-1.5">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">عمولة</span>
+                      عمولات محققة (صيانة)
+                    </div>
+                    <div className="font-mono font-semibold text-emerald-300 w-20 text-center">{fmt(commEarned)}</div>
+                    <div className="w-20"></div>
+                  </div>
+                )}
+                {commBonus > 0 && (
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                    <div className="text-white/70 flex items-center gap-1.5">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">حافز</span>
+                      حوافز (دفتر العمولات)
+                    </div>
+                    <div className="font-mono font-semibold text-emerald-300 w-20 text-center">{fmt(commBonus)}</div>
+                    <div className="w-20"></div>
+                  </div>
+                )}
+                {commIncentive > 0 && (
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                    <div className="text-white/70 flex items-center gap-1.5">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-300">إنسنتف</span>
+                      إنسنتف
+                    </div>
+                    <div className="font-mono font-semibold text-emerald-300 w-20 text-center">{fmt(commIncentive)}</div>
+                    <div className="w-20"></div>
+                  </div>
+                )}
+                {commReversals < 0 && (
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                    <div className="text-white/70 flex items-center gap-1.5">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-300">مستردّ</span>
+                      استرداد عمولات
+                    </div>
+                    <div className="font-mono font-semibold text-red-300 w-20 text-center">− {fmt(Math.abs(commReversals))}</div>
+                    <div className="w-20"></div>
+                  </div>
+                )}
+                {commAdjust !== 0 && (
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                    <div className="text-white/70 flex items-center gap-1.5">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300">تعديل</span>
+                      تعديل عمولة
+                    </div>
+                    <div className={`font-mono font-semibold w-20 text-center ${commAdjust >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                      {commAdjust >= 0 ? '+' : '−'} {fmt(Math.abs(commAdjust))}
+                    </div>
+                    <div className="w-20"></div>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-emerald-500/5 border-b border-white/10 text-xs font-bold">
                 <div className="text-emerald-300">إجمالي الدخل</div>
