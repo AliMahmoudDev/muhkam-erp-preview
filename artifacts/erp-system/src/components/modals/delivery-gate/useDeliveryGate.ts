@@ -24,24 +24,39 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
     ? allSafes.filter(s => s.id === user.safe_id)
     : allSafes;
 
-  /* ── Receipt data ── */
+  /* ── Receipt data + service lines (parallel fetch) ── */
   const [receiptData, setReceiptData] = useState<ReceiptBase | null>(null);
   const [fetchErr, setFetchErr]       = useState("");
   const [fetchLoading, setFetchLoading] = useState(true);
 
+  /* map: product_name → service_amount (للقطع المرتبطة بخدمة، نستخدم الاسم لأن الـ schema لا يحتفظ بـ product_id في repair_job_parts) */
+  const [partServiceAmountMap, setPartServiceAmountMap] = useState<Map<string, number>>(new Map());
+
   useEffect(() => {
     let cancelled = false;
-    authFetch(api(`/api/repair-jobs/${job.id}/receipt-data`))
-      .then(async r => {
+    Promise.all([
+      authFetch(api(`/api/repair-jobs/${job.id}/receipt-data`)).then(async r => {
         if (!r.ok) throw new Error(((await r.json()) as { error?: string }).error ?? "تعذّر تحميل البيانات");
         return r.json() as Promise<ReceiptBase>;
-      })
-      .then(d => {
-        if (!cancelled) {
-          setReceiptData(d);
-          setFetchLoading(false);
-          if (d.final_discount > 0) setDiscount(String(d.final_discount));
+      }),
+      authFetch(api(`/api/repair-jobs/${job.id}/services`)).then(r =>
+        r.ok ? r.json() as Promise<Array<{ amount: string | number; linked_parts?: Array<{ id: number; product_name?: string }> }>> : Promise.resolve([]),
+      ),
+    ])
+      .then(([d, svs]) => {
+        if (cancelled) return;
+        setReceiptData(d);
+        if (d.final_discount > 0) setDiscount(String(d.final_discount));
+        /* بناء الـ map: product_name → مبلغ الخدمة المرتبطة */
+        const map = new Map<string, number>();
+        for (const sv of (Array.isArray(svs) ? svs : [])) {
+          const amt = Number(sv.amount ?? 0);
+          for (const lp of (sv.linked_parts ?? [])) {
+            if (lp.product_name) map.set(lp.product_name, amt);
+          }
         }
+        setPartServiceAmountMap(map);
+        setFetchLoading(false);
       })
       .catch(e => {
         if (!cancelled) { setFetchErr(e instanceof Error ? e.message : "خطأ"); setFetchLoading(false); }
@@ -370,5 +385,6 @@ export function useDeliveryGate(job: JobLite, onSaved: () => void) {
     numericCost: sc, numericDisc: disc, dep, total, totalRem, grandTotal, remaining,
     draftRestored, clearDraft,
     errors, saving, handleSave, handleConfirm,
+    partServiceAmountMap,
   };
 }

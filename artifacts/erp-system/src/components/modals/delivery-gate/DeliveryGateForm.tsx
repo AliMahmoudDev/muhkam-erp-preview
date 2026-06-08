@@ -23,6 +23,8 @@ interface Props {
   selectedProduct: Product | null;
   /* Pre-saved repair parts (read-only) */
   preSavedParts: PreSavedPart[];
+  /* map: product_name → مبلغ الخدمة المرتبطة */
+  partServiceAmountMap: Map<string, number>;
   /* Part lines */
   partLines: PartLine[];
   setPartLines: (fn: (prev: PartLine[]) => PartLine[]) => void;
@@ -72,7 +74,7 @@ export default function DeliveryGateForm({
   warehouses, selectedWarehouseId, setSelectedWarehouseId,
   filteredProducts, productSearch, setProductSearch, showProductDrop, setShowProductDrop,
   productSearchRef, addQty, setAddQty, addPrice, setAddPrice, selectedProduct,
-  preSavedParts, partLines, setPartLines, selectProduct, addPartLine, updateLineDiscount,
+  preSavedParts, partServiceAmountMap, partLines, setPartLines, selectProduct, addPartLine, updateLineDiscount,
   showExtForm, setShowExtForm, extVendor, setExtVendor, extDesc, setExtDesc, extPrice, setExtPrice,
   extVendorCost, setExtVendorCost, extVendorPayType, setExtVendorPayType, extVendorSafeId, setExtVendorSafeId,
   addExternalLine,
@@ -94,14 +96,22 @@ export default function DeliveryGateForm({
             </span>
           </h4>
           <div className="space-y-1.5">
-            {preSavedParts.map((p, i) => (
-              <div key={i} className="px-3 py-2 rounded-xl flex items-center gap-2"
-                style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)" }}>
-                <span className="flex-1 text-[11px] text-white/80 truncate">{p.product_name}</span>
-                <span className="text-[10px] text-white/45 shrink-0">{p.quantity} × {fmtCurrency(p.unit_price)}</span>
-                <span className="text-[11px] font-bold text-amber-300 shrink-0">{fmtCurrency(p.total)}</span>
-              </div>
-            ))}
+            {preSavedParts.map((p, i) => {
+              /* إن كانت القطعة مرتبطة بخدمة، اعرض مبلغ الخدمة بدل سعر الشراء */
+              const serviceAmt = partServiceAmountMap.get(p.product_name);
+              const displayAmt = serviceAmt != null ? serviceAmt : p.total;
+              const hasServiceLink = serviceAmt != null;
+              return (
+                <div key={i} className="px-3 py-2 rounded-xl flex items-center gap-2"
+                  style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)" }}>
+                  <span className="flex-1 text-[11px] text-white/80 truncate">{p.product_name}</span>
+                  {!hasServiceLink && (
+                    <span className="text-[10px] text-white/45 shrink-0">{p.quantity} × {fmtCurrency(p.unit_price)}</span>
+                  )}
+                  <span className="text-[11px] font-bold text-amber-300 shrink-0">{fmtCurrency(displayAmt)}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

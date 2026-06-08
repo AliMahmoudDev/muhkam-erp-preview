@@ -173,6 +173,7 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
               addQty={g.addQty} setAddQty={g.setAddQty} addPrice={g.addPrice} setAddPrice={g.setAddPrice}
               selectedProduct={g.selectedProduct}
               preSavedParts={g.preSavedParts}
+              partServiceAmountMap={g.partServiceAmountMap}
               partLines={g.partLines} setPartLines={g.setPartLines}
               selectProduct={g.selectProduct} addPartLine={g.addPartLine} updateLineDiscount={g.updateLineDiscount}
               showExtForm={g.showExtForm} setShowExtForm={g.setShowExtForm}
