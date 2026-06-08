@@ -189,16 +189,19 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
     queryFn: () => authFetch(api(`/api/repair-jobs/${job.id}/services`)).then(r => r.json()),
     enabled: phase === "billing",
   });
-  type ServiceLine = { id: number; service_type_name_snapshot: string; amount: string | number; technician_name: string | null };
+  type ServiceLine = {
+    id: number;
+    service_type_name_snapshot: string;
+    amount: string | number;
+    technician_name: string | null;
+    linked_parts?: Array<{ id: number; product_name: string; quantity_allocated?: string }>;
+  };
   const serviceLines = safeArray(servicesRaw) as ServiceLine[];
   const servicesTotalCost = serviceLines.reduce((s, sv) => s + Number(sv.amount ?? 0), 0);
 
-  const preSavedPartsTotal = (job.parts ?? [])
-    .filter(p => !p.is_returned)
-    .reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
-  const partsTotal    = partLines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
   const finalCostBase = Number(job.final_cost ?? 0);
-  const grandTotal    = finalCostBase + preSavedPartsTotal + servicesTotalCost + partsTotal;
+  /* إجمالي العميل = بنود الخدمة فقط (أو final_cost كبديل عند غياب الخدمات) */
+  const grandTotal    = servicesTotalCost > 0 ? servicesTotalCost : finalCostBase;
   const paidSoFar     = payRows.reduce((s, r) => s + r.amount, 0);
   const payIsDone     = grandTotal > 0 ? paidSoFar >= grandTotal - 0.005 : payRows.length > 0;
 

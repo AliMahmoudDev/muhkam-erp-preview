@@ -1,15 +1,11 @@
-import { useMemo, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 import { useGetSettingsSafes } from "@workspace/api-client-react";
-import { useWarehouses } from "@/hooks/useWarehouses";
 import { formatCurrency } from "@/lib/format";
 import {
-  Loader2, X, PackageCheck, Coins, Clock, Plus, Trash2, UserCog, ChevronLeft,
+  Loader2, X, Coins, Clock, Wrench, Package, PackageCheck, UserCog, ChevronLeft,
 } from "lucide-react";
-import { authFetch } from "@/lib/auth-fetch";
-import { api } from "@/lib/api";
 import { safeArray } from "@/lib/safe-data";
-import { JobLite, Product, Warehouse, PayRow, PayType, PartLine, SavedPart } from "./types";
+import { JobLite, Product, PayRow, PayType, PartLine } from "./types";
 
 function fmtCurrency(n: number) { return formatCurrency(n); }
 
@@ -42,7 +38,13 @@ interface BillingPhaseProps {
   setBrokerName: React.Dispatch<React.SetStateAction<string>>;
   brokerComm: string;
   setBrokerComm: React.Dispatch<React.SetStateAction<string>>;
-  serviceLines: Array<{ id: number; service_type_name_snapshot: string; amount: string | number; technician_name: string | null }>;
+  serviceLines: Array<{
+    id: number;
+    service_type_name_snapshot: string;
+    amount: string | number;
+    technician_name: string | null;
+    linked_parts?: Array<{ id: number; product_name: string; quantity_allocated?: string }>;
+  }>;
   billingLoading: boolean;
   billingErrors: string[];
   onBillingSave: () => void;
@@ -53,76 +55,26 @@ interface BillingPhaseProps {
 export default function BillingPhase({
   job, partLines, setPartLines,
   payRows, setPayRows, payType, setPayType, paySafe, setPaySafe, payAmount, setPayAmount,
-  productSearch, setProductSearch, showProductDrop, setShowProductDrop,
-  addQty, setAddQty, addPrice, setAddPrice,
-  selectedProduct, setSelectedProduct, selectedWarehouseId, setSelectedWarehouseId,
   brokerName, setBrokerName, brokerComm, setBrokerComm,
   serviceLines,
   billingLoading, billingErrors, onBillingSave, onClose, onBack,
 }: BillingPhaseProps) {
+  /* these props remain in the interface so ReadyForDeliveryModal can still pass them
+     for potential future use; they are intentionally unused in the current render */
+  void partLines; void setPartLines;
   const productSearchRef = useRef<HTMLInputElement>(null);
+  void productSearchRef;
 
   const { data: safesRaw } = useGetSettingsSafes();
   const safes = safeArray(safesRaw) as { id: number; name: string }[];
 
-  const { warehouses: warehousesRaw } = useWarehouses();
-  const warehouses = warehousesRaw as Warehouse[];
-
-  const { data: productsRaw } = useQuery<Product[]>({
-    queryKey: ["/api/products", selectedWarehouseId],
-    queryFn: () => {
-      const url = selectedWarehouseId
-        ? api(`/api/products?warehouse_id=${selectedWarehouseId}`)
-        : api("/api/products");
-      return authFetch(url).then(r => r.json());
-    },
-  });
-  const products: Product[] = safeArray(productsRaw) as Product[];
-
-  const filteredProducts = useMemo(() => {
-    if (!productSearch.trim()) return products.slice(0, 30);
-    const q = productSearch.toLowerCase();
-    return products.filter(p => p.name.toLowerCase().includes(q)).slice(0, 30);
-  }, [products, productSearch]);
-
-  const preSavedParts: SavedPart[] = (job.parts ?? []).filter(p => !p.is_returned);
-  const preSavedPartsTotal = preSavedParts.reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
-  const partsTotal     = partLines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
   const servicesTotal  = serviceLines.reduce((s, sv) => s + Number(sv.amount ?? 0), 0);
   const finalCostBase  = Number(job.final_cost ?? 0);
-  const grandTotal     = finalCostBase + preSavedPartsTotal + servicesTotal + partsTotal;
+  /* إجمالي العميل = مجموع بنود الخدمة فقط (أو التكلفة المسجّلة إن لم تكن هناك خدمات) */
+  const grandTotal     = servicesTotal > 0 ? servicesTotal : finalCostBase;
   const paidSoFar      = payRows.reduce((s, r) => s + r.amount, 0);
   const remaining      = Math.max(0, grandTotal - paidSoFar);
   const payIsDone      = grandTotal > 0 ? paidSoFar >= grandTotal - 0.005 : payRows.length > 0;
-
-  function selectProduct(p: Product) {
-    setSelectedProduct(p);
-    setProductSearch(p.name);
-    setAddPrice(String(Number(p.sell_price) || ""));
-    setShowProductDrop(false);
-  }
-
-  function addPartLine() {
-    if (!selectedProduct) return;
-    const qty   = Math.max(1, parseInt(addQty) || 1);
-    const price = parseFloat(addPrice) || 0;
-    setPartLines(prev => [
-      ...prev,
-      {
-        id:           `${Date.now()}-${Math.random()}`,
-        product_id:   selectedProduct.id,
-        product_name: selectedProduct.name,
-        quantity:     qty,
-        unit_price:   price,
-        warehouse_id: selectedWarehouseId,
-      },
-    ]);
-    setSelectedProduct(null);
-    setProductSearch("");
-    setAddQty("1");
-    setAddPrice("");
-    productSearchRef.current?.focus();
-  }
 
   function addPayRow() {
     const amt = parseFloat(payAmount);
@@ -156,199 +108,80 @@ export default function BillingPhase({
   return (
     <>
       <div className="overflow-y-auto max-h-[68vh]">
-        {/* القطع المستخدمة */}
+
+        {/* ── فاتورة العميل — بنود الخدمة ── */}
         <div className="px-5 pt-4 pb-3 border-b border-white/5">
           <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
-            <span className="w-5 h-5 rounded-md bg-blue-500/15 border border-blue-400/25 flex items-center justify-center text-[9px] text-blue-300 font-black">١</span>
-            القطع المستخدمة من المخزن
+            <span className="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-[9px] text-emerald-300 font-black">١</span>
+            <Wrench className="w-3.5 h-3.5 text-emerald-400/70" />
+            بنود الخدمة
           </h4>
 
-          {/* القطع المضافة أثناء الإصلاح (محفوظة مسبقاً) */}
-          {preSavedParts.length > 0 && (
-            <div className="mb-4 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.04] p-3">
-              <p className="text-[10px] text-cyan-300/70 font-bold mb-2 flex items-center gap-1.5">
-                <PackageCheck className="w-3.5 h-3.5" />
-                قطع أضافها الفني أثناء الإصلاح
-              </p>
-              <div className="space-y-1">
-                {preSavedParts.map(p => {
-                  const qty   = Number(p.quantity) || 1;
-                  const price = Number(p.unit_price) || 0;
-                  return (
-                    <div key={p.id} className="flex items-center justify-between text-[11px] px-2 py-1 rounded-lg bg-white/[0.02]">
-                      <span className="text-white/80 truncate flex-1">{p.product_name}</span>
-                      <span className="text-white/40 shrink-0 mx-2">×{qty}</span>
-                      <span className="text-cyan-300/80 font-bold shrink-0 font-mono">{fmtCurrency(qty * price)}</span>
-                    </div>
-                  );
-                })}
-                {preSavedPartsTotal > 0 && (
-                  <div className="flex justify-end pt-1 border-t border-cyan-500/10">
-                    <span className="text-[10px] text-cyan-300/60 font-bold">إجمالي: {fmtCurrency(preSavedPartsTotal)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* بنود خدمات الفني */}
-          {serviceLines.length > 0 && (
-            <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-3">
-              <p className="text-[10px] text-emerald-300/70 font-bold mb-2 flex items-center gap-1.5">
-                <UserCog className="w-3.5 h-3.5" />
-                خدمات الفني
-              </p>
-              <div className="space-y-1">
-                {serviceLines.map(sv => (
-                  <div key={sv.id} className="flex items-center justify-between text-[11px] px-2 py-1 rounded-lg bg-white/[0.02]">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-white/80 truncate block">{sv.service_type_name_snapshot || "—"}</span>
-                      {sv.technician_name && (
-                        <span className="text-[10px] text-white/35">{sv.technician_name}</span>
-                      )}
-                    </div>
-                    <span className="text-emerald-300/80 font-bold shrink-0 font-mono mr-2">{fmtCurrency(Number(sv.amount ?? 0))}</span>
-                  </div>
-                ))}
-                {servicesTotal > 0 && (
-                  <div className="flex justify-end pt-1 border-t border-emerald-500/10">
-                    <span className="text-[10px] text-emerald-300/60 font-bold">إجمالي: {fmtCurrency(servicesTotal)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {warehouses.length > 1 && (
-            <div className="mb-3">
-              <label className="text-[10px] font-bold text-white/50 mb-1 block">المخزن</label>
-              <select
-                value={selectedWarehouseId ?? ""}
-                onChange={(e) => setSelectedWarehouseId(parseInt(e.target.value) || null)}
-                className="w-full max-w-xs px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none focus:border-blue-400/40"
-              >
-                <option value="">-- اختر المخزن --</option>
-                {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-              </select>
-            </div>
-          )}
-
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 relative">
-              <label className="text-[10px] font-bold text-white/50 mb-1 block">اختر قطعة من المخزن</label>
-              <input
-                ref={productSearchRef}
-                value={productSearch}
-                onChange={(e) => { setProductSearch(e.target.value); setShowProductDrop(true); setSelectedProduct(null); }}
-                onFocus={() => setShowProductDrop(true)}
-                onBlur={() => setTimeout(() => setShowProductDrop(false), 180)}
-                placeholder="ابحث عن منتج..."
-                className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-blue-400/40"
-              />
-              {showProductDrop && filteredProducts.length > 0 && (
-                <div
-                  className="absolute top-full right-0 left-0 z-50 mt-1 rounded-xl border border-white/10 overflow-hidden"
-                  style={{ background: "rgba(20,16,40,0.98)", backdropFilter: "blur(12px)", maxHeight: 220, overflowY: "auto" }}
-                >
-                  {filteredProducts.map(p => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onMouseDown={() => selectProduct(p)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-right hover:bg-white/5 transition-colors"
-                    >
-                      <span className="text-[11px] text-white/85 truncate">{p.name}</span>
-                      <span className="text-[10px] text-white/40 shrink-0 mr-2">{fmtCurrency(Number(p.sell_price))}</span>
-                    </button>
-                  ))}
-                </div>
+          {serviceLines.length === 0 ? (
+            <div className="rounded-xl border border-white/8 p-4 text-center">
+              <p className="text-[11px] text-white/40">لا توجد بنود خدمة مسجّلة</p>
+              {finalCostBase > 0 && (
+                <p className="text-[11px] text-white/60 mt-1">
+                  التكلفة المسجّلة: <span className="font-bold text-white">{fmtCurrency(finalCostBase)}</span>
+                </p>
               )}
             </div>
-
-            <div style={{ width: 72 }}>
-              <label className="text-[10px] font-bold text-white/50 mb-1 block">الكمية</label>
-              <input
-                type="number" min={1} value={addQty}
-                onChange={(e) => setAddQty(e.target.value)}
-                className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none focus:border-blue-400/40 text-center"
-              />
-            </div>
-
-            <div style={{ width: 100 }}>
-              <label className="text-[10px] font-bold text-white/50 mb-1 block">سعر الوحدة (ج.م)</label>
-              <input
-                type="number" min={0} step="any" value={addPrice}
-                onChange={(e) => setAddPrice(e.target.value)}
-                placeholder="0.00"
-                className="w-full px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none focus:border-blue-400/40"
-                dir="ltr"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={addPartLine}
-              disabled={!selectedProduct}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-30 flex-shrink-0"
-              style={{ background: "rgba(59,130,246,0.2)", border: "1px solid rgba(96,165,250,0.3)", color: "#93C5FD" }}
-            >
-              <Plus className="w-3.5 h-3.5" /> إضافة
-            </button>
-          </div>
-
-          {partLines.length > 0 && (
-            <div className="mt-3 space-y-1.5">
-              {partLines.map(l => (
-                <div
-                  key={l.id}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl"
-                  style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setPartLines(prev => prev.filter(x => x.id !== l.id))}
-                    className="shrink-0 w-5 h-5 rounded flex items-center justify-center text-red-400/60 hover:text-red-400 transition-colors"
-                    style={{ background: "rgba(239,68,68,0.08)" }}
+          ) : (
+            <div className="space-y-2">
+              {serviceLines.map((sv, idx) => {
+                const amt = Number(sv.amount ?? 0);
+                const parts = sv.linked_parts ?? [];
+                return (
+                  <div
+                    key={sv.id}
+                    className="rounded-xl border border-white/8 bg-white/[0.02] p-3"
                   >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                  <span className="flex-1 text-[11px] text-white/80 truncate">{l.product_name}</span>
-                  <span className="text-[10px] text-white/50 shrink-0">{l.quantity} × {fmtCurrency(l.unit_price)}</span>
-                  <span className="text-[11px] font-bold text-blue-300 shrink-0">{fmtCurrency(l.quantity * l.unit_price)}</span>
-                </div>
-              ))}
-              <div className="flex justify-end pt-1">
-                <span className="text-[11px] font-bold text-blue-300">إجمالي القطع: {fmtCurrency(partsTotal)}</span>
-              </div>
+                    {/* رقم + اسم الخدمة + المبلغ */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-[9px] text-emerald-300 font-black mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-bold text-white truncate">
+                            {sv.service_type_name_snapshot || "خدمة"}
+                          </p>
+                          {/* قطع الغيار المرتبطة — الأسماء فقط للعميل */}
+                          {parts.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {parts.map(p => (
+                                <span
+                                  key={p.id}
+                                  className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300/80"
+                                >
+                                  <Package className="w-2.5 h-2.5 shrink-0" />
+                                  {p.product_name}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-[13px] font-black text-emerald-300 font-mono tabular-nums">
+                        {fmtCurrency(amt)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* ملخص المبلغ */}
+        {/* ── ملخص الإجمالي ── */}
         <div className="px-5 py-3 border-b border-white/5 bg-white/[0.015]">
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="text-white/50">تكلفة الإصلاح المسجّلة</span>
-            <span className="font-bold text-white">{fmtCurrency(finalCostBase)}</span>
-          </div>
-          {preSavedPartsTotal > 0 && (
-            <div className="flex items-center justify-between text-[11px] mt-1">
-              <span className="text-white/50">قطع أضافها الفني</span>
-              <span className="font-bold text-cyan-300">+ {fmtCurrency(preSavedPartsTotal)}</span>
-            </div>
-          )}
           {servicesTotal > 0 && (
-            <div className="flex items-center justify-between text-[11px] mt-1">
-              <span className="text-white/50">خدمات الفني</span>
-              <span className="font-bold text-emerald-300">+ {fmtCurrency(servicesTotal)}</span>
+            <div className="flex items-center justify-between text-[11px] mb-1">
+              <span className="text-white/50">مجموع بنود الخدمة</span>
+              <span className="font-bold text-emerald-300">{fmtCurrency(servicesTotal)}</span>
             </div>
           )}
-          {partsTotal > 0 && (
-            <div className="flex items-center justify-between text-[11px] mt-1">
-              <span className="text-white/50">قطع إضافية (محاسبة)</span>
-              <span className="font-bold text-blue-300">+ {fmtCurrency(partsTotal)}</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between text-[12px] font-black mt-2 pt-2 border-t border-white/8">
+          <div className="flex items-center justify-between text-[13px] font-black pt-1 border-t border-white/8">
             <span className="text-white">الإجمالي المستحق</span>
             <span className="text-lime-300">{fmtCurrency(grandTotal)}</span>
           </div>
