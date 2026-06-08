@@ -130,6 +130,10 @@ jobs:
               echo "BACKUP_DIR=/home/deploy/muhkam-backups/db" >> "$ENV_FILE"
               echo "✓ Added production BACKUP_DIR"
             fi
+            if ! grep -q "^BACKUP_PGDUMP_DOCKER_IMAGE=" "$ENV_FILE" 2>/dev/null; then
+              echo "BACKUP_PGDUMP_DOCKER_IMAGE=postgres:17" >> "$ENV_FILE"
+              echo "✓ Added production BACKUP_PGDUMP_DOCKER_IMAGE"
+            fi
             # Add SUPER_ADMIN_IPS placeholder if missing (admin must fill it in .env manually)
             if ! grep -q "^SUPER_ADMIN_IPS=" "$ENV_FILE" 2>/dev/null; then
               echo "SUPER_ADMIN_IPS=" >> "$ENV_FILE"
@@ -157,6 +161,7 @@ jobs:
             : "${TOTP_ENCRYPTION_KEY:?BUG: فشل توليد TOTP_ENCRYPTION_KEY}"
             : "${BACKUP_ENCRYPTION_KEY:?BUG: فشل توليد BACKUP_ENCRYPTION_KEY}"
             : "${BACKUP_DIR:?خطأ: BACKUP_DIR غير موجود في ملف .env}"
+            : "${BACKUP_PGDUMP_DOCKER_IMAGE:?خطأ: BACKUP_PGDUMP_DOCKER_IMAGE غير موجود في ملف .env}"
 
             mkdir -p "$BACKUP_DIR"
             chmod 700 "$(dirname "$BACKUP_DIR")" "$BACKUP_DIR"
@@ -194,6 +199,7 @@ jobs:
               TOTP_ENCRYPTION_KEY="$TOTP_ENCRYPTION_KEY" \
               BACKUP_ENCRYPTION_KEY="$BACKUP_ENCRYPTION_KEY" \
               BACKUP_DIR="$BACKUP_DIR" \
+              BACKUP_PGDUMP_DOCKER_IMAGE="$BACKUP_PGDUMP_DOCKER_IMAGE" \
               SUPER_ADMIN_IPS="${SUPER_ADMIN_IPS:-}" \
               REDIS_URL="${REDIS_URL:-}" \
               TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}" \
