@@ -11,11 +11,11 @@
  *   - commission_computed يُحسب ويُكتب عند التسليم في delivery route
  *   - معالجة خصومات البطاقة عند تحديد قاعدة الكوميشن
  */
-import { useState } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Pencil, Trash2, Check, X, Wrench,
-  ChevronRight, Link2, Unlink, Package,
+  ChevronRight, Link2, Unlink, Package, Search,
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
@@ -58,6 +58,13 @@ interface JobPart {
   is_returned: boolean;
 }
 
+interface Product {
+  id: number;
+  name: string;
+  sell_price: string | number;
+  warehouse_id?: number | null;
+}
+
 /* ── Constants ────────────────────────────────────────────────── */
 const STATUS_CONFIG = {
   pending:     { label: "في الانتظار", color: "text-white/40 bg-white/5 border-white/10" },
@@ -73,6 +80,7 @@ const EMPTY_FORM = {
   amount:            "0",
   status:            "pending" as JobService["status"],
   notes:             "",
+  pending_part:      null as { product_id: number; product_name: string; unit_price: number; warehouse_id: number | null } | null,
 };
 
 /* ── Props ────────────────────────────────────────────────────── */
@@ -95,9 +103,20 @@ interface ServiceFormProps {
   saving:       boolean;
   serviceTypes: ServiceType[];
   users:        { id: number; name: string }[];
+  products:     Product[];
 }
 
-function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, users }: ServiceFormProps) {
+function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, users, products }: ServiceFormProps) {
+  const dropRef      = useRef<HTMLDivElement>(null);
+  const [partSearch, setPartSearch]     = useState("");
+  const [showPartDrop, setShowPartDrop] = useState(false);
+
+  const filteredProducts = useMemo(() => {
+    if (!partSearch.trim()) return products.slice(0, 25);
+    const q = partSearch.toLowerCase();
+    return products.filter(p => p.name.toLowerCase().includes(q)).slice(0, 25);
+  }, [products, partSearch]);
+
   function onServiceTypeChange(id: string) {
     const numId = id ? Number(id) : null;
     const st = serviceTypes.find(s => s.id === numId);
@@ -110,10 +129,28 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
     onChange({ ...value, technician_id: numId, technician_name: u?.name ?? value.technician_name });
   }
 
+  function selectPart(p: Product) {
+    onChange({
+      ...value,
+      pending_part: {
+        product_id:   p.id,
+        product_name: p.name,
+        unit_price:   Number(p.sell_price) || 0,
+        warehouse_id: p.warehouse_id ?? null,
+      },
+    });
+    setPartSearch("");
+    setShowPartDrop(false);
+  }
+
+  function clearPart() {
+    onChange({ ...value, pending_part: null });
+  }
+
   return (
     <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 space-y-2">
 
-      {/* صف ١: نوع الخدمة | اسم مخصص | المبلغ */}
+      {/* صف ١: نوع الخدمة | قطعة مستخدمة (بحث ذكي) | المبلغ */}
       <div className="grid grid-cols-[1fr_1fr_6rem] gap-2">
         <div>
           <label className="text-[10px] erp-label mb-1 block">نوع الخدمة</label>
@@ -137,17 +174,67 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
           )}
         </div>
 
-        <div>
-          <label className="text-[10px] erp-label mb-1 block">
-            {serviceTypes.length > 0 ? "اسم مخصص (اختياري)" : "وصف إضافي"}
-          </label>
-          <input
-            type="text"
-            value={value.service_type_name}
-            onChange={e => onChange({ ...value, service_type_name: e.target.value })}
-            placeholder={serviceTypes.length > 0 ? "أو اكتب بدلاً من القائمة..." : "وصف..."}
-            className="erp-input w-full text-xs"
-          />
+        {/* ─── حقل القطعة المستخدمة ─── */}
+        <div className="relative" ref={dropRef}>
+          <label className="text-[10px] erp-label mb-1 block">قطعة مستخدمة</label>
+          {value.pending_part ? (
+            /* عرض القطعة المختارة كـ chip */
+            <div className="flex items-center gap-1 erp-input py-1.5 min-h-[2rem]">
+              <Package className="w-3 h-3 text-cyan-400/70 shrink-0" />
+              <span className="flex-1 text-[10px] text-cyan-300/90 truncate font-medium">
+                {value.pending_part.product_name}
+              </span>
+              {value.pending_part.unit_price > 0 && (
+                <span className="text-[9px] text-white/35 font-mono tabular-nums shrink-0">
+                  {value.pending_part.unit_price.toLocaleString("ar-EG")}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={clearPart}
+                className="w-4 h-4 flex items-center justify-center rounded text-white/25 hover:text-red-400 transition-colors shrink-0"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          ) : (
+            /* حقل البحث */
+            <div className="relative">
+              <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/25 pointer-events-none" />
+              <input
+                type="text"
+                value={partSearch}
+                onChange={e => { setPartSearch(e.target.value); setShowPartDrop(true); }}
+                onFocus={() => setShowPartDrop(true)}
+                onBlur={() => setTimeout(() => setShowPartDrop(false), 180)}
+                placeholder="ابحث عن قطعة..."
+                className="erp-input w-full text-xs pr-7"
+              />
+              {showPartDrop && (
+                <div className="absolute z-50 top-full mt-0.5 right-0 left-0 rounded-lg border border-white/10 bg-[#0f1117] shadow-xl overflow-hidden max-h-44 overflow-y-auto">
+                  {filteredProducts.length === 0 ? (
+                    <div className="px-3 py-2 text-[10px] text-white/30 text-center">لا توجد نتائج</div>
+                  ) : (
+                    filteredProducts.map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onMouseDown={() => selectPart(p)}
+                        className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-cyan-500/10 transition-colors text-right"
+                      >
+                        <span className="text-[10px] text-white/80 truncate">{p.name}</span>
+                        {Number(p.sell_price) > 0 && (
+                          <span className="text-[9px] text-cyan-300/60 font-mono tabular-nums shrink-0 mr-2">
+                            {Number(p.sell_price).toLocaleString("ar-EG")} ر.س
+                          </span>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div>
@@ -176,7 +263,6 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
                 <option value="">— اختر من القائمة —</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
-              {/* حقل الاسم الحر يظهر فقط عند عدم اختيار فني من القائمة */}
               {!value.technician_id && (
                 <input
                   type="text"
@@ -510,6 +596,13 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
   });
   const serviceTypes: ServiceType[] = (safeArray(serviceTypesRaw) as ServiceType[]).filter(s => s.is_active);
 
+  const { data: productsRaw } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+    queryFn:  () => authFetch(api("/api/products")).then(r => r.json()),
+    staleTime: 60_000,
+  });
+  const products: Product[] = safeArray(productsRaw) as Product[];
+
   const { data: servicesRaw, isLoading } = useQuery<JobService[]>({
     queryKey: ["/api/repair-jobs", jobId, "services"],
     queryFn:  () => authFetch(api(`/api/repair-jobs/${jobId}/services`)).then(r => r.json()),
@@ -520,10 +613,39 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/repair-jobs", jobId, "services"] });
 
+  /* ── مساعد: إضافة قطعة للبطاقة ثم ربطها بخدمة ── */
+  async function addAndLinkPart(
+    serviceId: number,
+    part: NonNullable<typeof EMPTY_FORM["pending_part"]>,
+  ) {
+    const partRes = await authFetch(api(`/api/repair-jobs/${jobId}/parts`), {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_id:   part.product_id,
+        product_name: part.product_name,
+        quantity:     1,
+        unit_price:   part.unit_price,
+        source:       "internal",
+        warehouse_id: part.warehouse_id,
+      }),
+    });
+    if (!partRes.ok) throw new Error((await partRes.json()).error ?? "تعذّر إضافة القطعة");
+    const jobPart = await partRes.json() as { id: number };
+
+    const linkRes = await authFetch(api(`/api/repair-jobs/${jobId}/services/${serviceId}/parts`), {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ part_id: jobPart.id, quantity_allocated: 1 }),
+    });
+    if (!linkRes.ok) throw new Error((await linkRes.json()).error ?? "تعذّر ربط القطعة");
+    qc.invalidateQueries({ queryKey: ["/api/repair-jobs", jobId] });
+  }
+
   const createMut = useMutation({
-    mutationFn: (body: typeof EMPTY_FORM) =>
-      authFetch(api(`/api/repair-jobs/${jobId}/services`), {
-        method: "POST",
+    mutationFn: async (body: typeof EMPTY_FORM) => {
+      const r = await authFetch(api(`/api/repair-jobs/${jobId}/services`), {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           service_type_id:   body.service_type_id,
@@ -534,15 +656,28 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
           status:            body.status,
           notes:             body.notes || null,
         }),
-      }).then(async r => { if (!r.ok) throw new Error((await r.json()).error); return r.json(); }),
-    onSuccess: () => { invalidate(); setAdding(false); setForm({ ...EMPTY_FORM }); toast({ title: "✓ تمت إضافة الخدمة" }); },
+      });
+      if (!r.ok) throw new Error((await r.json()).error);
+      const service = await r.json() as { id: number };
+      return { service, pendingPart: body.pending_part };
+    },
+    onSuccess: async ({ service, pendingPart }) => {
+      let partLinked = false;
+      if (pendingPart) {
+        try { await addAndLinkPart(service.id, pendingPart); partLinked = true; } catch { /* non-fatal */ }
+      }
+      invalidate();
+      setAdding(false);
+      setForm({ ...EMPTY_FORM });
+      toast({ title: partLinked ? "✓ تمت إضافة الخدمة والقطعة" : "✓ تمت إضافة الخدمة" });
+    },
     onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ id, body }: { id: number; body: typeof EMPTY_FORM }) =>
-      authFetch(api(`/api/repair-jobs/${jobId}/services/${id}`), {
-        method: "PATCH",
+    mutationFn: async ({ id, body }: { id: number; body: typeof EMPTY_FORM }) => {
+      const r = await authFetch(api(`/api/repair-jobs/${jobId}/services/${id}`), {
+        method:  "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           service_type_id:   body.service_type_id,
@@ -553,8 +688,19 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
           status:            body.status,
           notes:             body.notes || null,
         }),
-      }).then(async r => { if (!r.ok) throw new Error((await r.json()).error); return r.json(); }),
-    onSuccess: () => { invalidate(); setEditId(null); toast({ title: "✓ تم التحديث" }); },
+      });
+      if (!r.ok) throw new Error((await r.json()).error);
+      return { serviceId: id, pendingPart: body.pending_part };
+    },
+    onSuccess: async ({ serviceId, pendingPart }) => {
+      let partLinked = false;
+      if (pendingPart) {
+        try { await addAndLinkPart(serviceId, pendingPart); partLinked = true; } catch { /* non-fatal */ }
+      }
+      invalidate();
+      setEditId(null);
+      toast({ title: partLinked ? "✓ تم التحديث وربط القطعة" : "✓ تم التحديث" });
+    },
     onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
@@ -610,6 +756,7 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
               saving={createMut.isPending}
               serviceTypes={serviceTypes}
               users={users}
+              products={products}
             />
           )}
 
@@ -641,6 +788,7 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
                       saving={updateMut.isPending}
                       serviceTypes={serviceTypes}
                       users={users}
+                      products={products}
                     />
                   ) : (
                     <div className="rounded-xl border border-white/5 bg-white/[0.02]">
