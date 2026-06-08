@@ -152,13 +152,24 @@ export default function EmployeePortal() {
   /* ── Tech-services visibility check ────────────────────────────
      يتحقق هل سبق تعيين خدمات صيانة لهذا المستخدم (نشطة أو مكتملة).
      technician_id في repair_job_services = user.id (ليس employee_id).
-     يُستخدم في شرط إظهار لوحة الفني — لا علاقة له بدور المستخدم ── */
-  const { data: techSummaryRaw } = useQuery<{ active_count: number; delivered_count: number } | null>({
+     يُستخدم في شرط إظهار لوحة الفني — لا علاقة له بدور المستخدم.
+     هام: عند error نُلقي استثناء (لا نُرجع null) حتى يُعيد React Query المحاولة ── */
+  const { data: techSummaryRaw } = useQuery<{
+    active_count:        number;
+    delivered_count:     number;
+    outstanding_earnings:number;
+    total_assigned:      number;
+  } | null>({
     queryKey: ['portal-tech-check', user.id],
     queryFn: async () => {
       const r = await authFetch(`/api/technicians/${user.id}/earnings/summary`);
-      return r.ok ? r.json() : null;
+      /* 403 = مستخدم لا يملك خدمات (ليس فنياً) — أرجع null بهدوء
+         أي خطأ آخر (502/503/network) = ألقِ استثناء حتى يُعيد React Query المحاولة تلقائياً */
+      if (r.status === 403) return null;
+      if (!r.ok) throw new Error(`tech-check: ${r.status}`);
+      return r.json();
     },
+    retry: 3,
     enabled: true,
   });
 
@@ -170,7 +181,7 @@ export default function EmployeePortal() {
        قد يكون صفراً حتى لو عنده خدمات بحالة "completed" أو "commission_locked" */
   const hasTechServices =
     !!techSummaryRaw &&
-    ((techSummaryRaw as { total_assigned?: number }).total_assigned ?? 0) > 0;
+    (techSummaryRaw.total_assigned ?? 0) > 0;
   const showTechDashboard = user.role === Role.Technician || (!!empId && hasTechServices);
 
   const emp       = (empRaw ?? {}) as AnyRec;
