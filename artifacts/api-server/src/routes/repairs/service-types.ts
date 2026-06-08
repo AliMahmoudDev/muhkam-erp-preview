@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db, repairServiceTypesTable } from "@workspace/db";
+import { db, repairServiceTypesTable, repairJobServicesTable } from "@workspace/db";
 import { wrap } from "../../lib/async-handler";
 import { hasPermission } from "../../lib/permissions";
 import { ctx } from "./_shared";
@@ -103,6 +103,20 @@ router.delete("/repair-service-types/:id", wrap(async (req, res) => {
     res.status(403).json({ error: "غير مصرح" }); return;
   }
   const id = Number(req.params.id);
+
+  /* فحص الارتباط بـ repair_job_services قبل الحذف */
+  const [usageRow] = await db
+    .select({ cnt: sql<number>`count(*)::int` })
+    .from(repairJobServicesTable)
+    .where(eq(repairJobServicesTable.service_type_id, id));
+
+  if ((usageRow?.cnt ?? 0) > 0) {
+    res.status(409).json({
+      error: "لا يمكن حذف نوع خدمة مستخدم في بطاقات صيانة. قم بتعطيله بدلاً من ذلك.",
+    });
+    return;
+  }
+
   await db
     .delete(repairServiceTypesTable)
     .where(and(
