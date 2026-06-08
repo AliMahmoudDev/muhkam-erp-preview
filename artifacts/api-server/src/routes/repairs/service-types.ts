@@ -28,12 +28,20 @@ const updateServiceTypeSchema = z.object({
 /* ── GET /api/repair-service-types ───────────────────────────── */
 router.get("/repair-service-types", wrap(async (req, res) => {
   const { company_id } = ctx(req);
+  const isManager = hasPermission(req.user, "can_manage_settings");
+
   const rows = await db
     .select()
     .from(repairServiceTypesTable)
     .where(eq(repairServiceTypesTable.company_id, company_id))
     .orderBy(asc(repairServiceTypesTable.sort_order), asc(repairServiceTypesTable.id));
-  res.json(rows);
+
+  if (isManager) {
+    res.json(rows);
+  } else {
+    /* المستخدمون غير المدراء (الفنيون وغيرهم) يحصلون على الاسم والحالة فقط */
+    res.json(rows.map(r => ({ id: r.id, name_ar: r.name_ar, is_active: r.is_active })));
+  }
 }));
 
 /* ── POST /api/repair-service-types ──────────────────────────── */
