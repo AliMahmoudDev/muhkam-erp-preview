@@ -41,9 +41,10 @@ function SubTabSkeleton() {
 export default function Employees() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const canManage     = hasPermission(user, 'can_manage_employees');
-  const canViewSalary = hasPermission(user, 'can_view_employee_salary');
-  const isSelfService = user?.role === 'employee';
+  const canManage          = hasPermission(user, 'can_manage_employees');
+  const canViewSalary      = hasPermission(user, 'can_view_employee_salary');
+  const canViewMaintenance = hasPermission(user, 'can_view_reports') || hasPermission(user, 'can_manage_employees');
+  const isSelfService      = user?.role === 'employee';
   const selfEmpId     = user?.employee_id ?? null;
 
   /* ── Page-level tab ─────────────────────────────────────────── */
@@ -226,6 +227,7 @@ export default function Employees() {
             setDetailTab={setDetailTab}
             canManage={canManage}
             canViewSalary={canViewSalary}
+            canViewMaintenance={canViewMaintenance}
             isSelfService={isSelfService}
             loans={loans}
             loansLoading={loansLoading}

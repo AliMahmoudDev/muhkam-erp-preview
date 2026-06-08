@@ -88,6 +88,162 @@ function CustodyLinesPanel({ custodyId }: { custodyId: number }) {
 
 /* ── Callbacks passed from parent (avoids threading many setters) ── */
 
+/* ── Employee Maintenance Tab (Admin/Manager only) ── */
+type MaintenanceServiceRow = {
+  id: number; job_id: number; job_no: string; customer_name: string;
+  service_type: string; amount: number;
+  commission_computed: number | null; commission_locked: boolean;
+  service_status: string; job_status: string;
+  created_at: string; delivered_at: string | null;
+};
+type MaintenanceData = {
+  employee_id: number; has_user: boolean;
+  total_assigned: number; active_count: number; delivered_count: number;
+  total_earned: number; pending_commission: number; avg_commission: number;
+  commission_services_count: number; no_commission_services_count: number;
+  services: MaintenanceServiceRow[];
+};
+
+const SVC_STATUS_AR: Record<string, string> = {
+  pending: 'معلق', in_progress: 'جارِ', completed: 'مكتمل', cancelled: 'ملغي',
+};
+const JOB_STATUS_AR: Record<string, string> = {
+  received: 'مستلم', in_progress: 'قيد الإصلاح', repaired: 'تم الإصلاح',
+  delivered: 'مُسلَّم', cancelled: 'ملغي', pending: 'معلق',
+};
+
+function EmployeeMaintenanceTab({ employeeId }: { employeeId: number }) {
+  const { data, isLoading } = useQuery<MaintenanceData>({
+    queryKey: ['/api/employees', employeeId, 'maintenance-tab'],
+    queryFn: async () => {
+      const r = await authFetch(`/api/employees/${employeeId}/maintenance-tab`);
+      if (!r.ok) throw new Error('failed');
+      return r.json() as Promise<MaintenanceData>;
+    },
+    enabled: !!employeeId,
+  });
+
+  if (isLoading) return (
+    <div className="space-y-3">
+      {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />)}
+    </div>
+  );
+
+  if (!data) return (
+    <div className="text-xs text-white/40 text-center py-6">لا توجد بيانات</div>
+  );
+
+  if (!data.has_user) return (
+    <div className="text-center py-8 space-y-2">
+      <Wrench size={28} className="mx-auto text-white/20" />
+      <p className="text-xs text-white/40">هذا الموظف لا يملك حساب مستخدم مرتبط</p>
+      <p className="text-[10px] text-white/25">لا يمكن تتبع خدمات الصيانة بدون ربط بحساب</p>
+    </div>
+  );
+
+  if (data.total_assigned === 0) return (
+    <div className="text-center py-8 space-y-2">
+      <Wrench size={28} className="mx-auto text-white/20" />
+      <p className="text-xs text-white/40">لم تُسند لهذا الفني أي خدمات بعد</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* ── KPI Cards ── */}
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: 'إجمالي المُسنَدة', value: String(data.total_assigned), color: 'text-white/80' },
+          { label: 'النشطة',           value: String(data.active_count),   color: 'text-amber-300' },
+          { label: 'المُسلَّمة',        value: String(data.delivered_count), color: 'text-emerald-300' },
+          { label: 'عمولات محققة',     value: fmt(data.total_earned),      color: 'text-emerald-300' },
+          { label: 'عمولات معلقة',     value: fmt(data.pending_commission), color: 'text-amber-300' },
+          { label: 'متوسط العمولة',    value: fmt(data.avg_commission),    color: 'text-purple-300' },
+        ].map((card) => (
+          <div key={card.label} className="bg-white/5 border border-white/8 rounded-xl p-2.5 text-center">
+            <div className={`text-sm font-bold font-mono ${card.color}`}>{card.value}</div>
+            <div className="text-[10px] text-white/35 mt-0.5 leading-tight">{card.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── جدول الخدمات الأخيرة ── */}
+      {data.services.length > 0 && (
+        <div>
+          <p className="text-[11px] font-semibold text-white/50 mb-1.5">
+            آخر {data.services.length} خدمة
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-white/8">
+            <table className="w-full text-[10px]">
+              <thead className="bg-white/5 text-white/40">
+                <tr>
+                  {['رقم البطاقة','العميل','نوع الخدمة','المبلغ','العمولة','حالة الخدمة','حالة البطاقة','تاريخ الإضافة','تاريخ التسليم'].map(h => (
+                    <th key={h} className="text-right px-2 py-2 font-semibold whitespace-nowrap border-b border-white/5">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.services.map((s) => (
+                  <tr key={s.id} className="border-t border-white/5 hover:bg-white/[0.03]">
+                    <td className="px-2 py-1.5 font-mono text-amber-300 whitespace-nowrap">{s.job_no}</td>
+                    <td className="px-2 py-1.5 text-white/70 max-w-[70px] truncate">{s.customer_name}</td>
+                    <td className="px-2 py-1.5 text-white/60 max-w-[70px] truncate">{s.service_type}</td>
+                    <td className="px-2 py-1.5 font-mono text-white/80 whitespace-nowrap">{fmt(s.amount)}</td>
+                    <td className="px-2 py-1.5 font-mono whitespace-nowrap">
+                      {s.commission_locked
+                        ? <span className="text-emerald-300">{fmt(s.commission_computed ?? 0)}</span>
+                        : <span className="text-white/25">—</span>}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                        s.service_status === 'completed'   ? 'bg-emerald-500/20 text-emerald-300' :
+                        s.service_status === 'in_progress' ? 'bg-amber-500/20 text-amber-300' :
+                        s.service_status === 'cancelled'   ? 'bg-red-500/20 text-red-300' :
+                        'bg-white/8 text-white/50'
+                      }`}>{SVC_STATUS_AR[s.service_status] ?? s.service_status}</span>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                        s.job_status === 'delivered' ? 'bg-emerald-500/20 text-emerald-300' :
+                        s.job_status === 'cancelled' ? 'bg-red-500/20 text-red-300' :
+                        'bg-white/8 text-white/50'
+                      }`}>{JOB_STATUS_AR[s.job_status] ?? s.job_status}</span>
+                    </td>
+                    <td className="px-2 py-1.5 font-mono text-white/35 whitespace-nowrap">
+                      {s.created_at ? new Date(s.created_at).toLocaleDateString('ar-EG-u-nu-latn') : '—'}
+                    </td>
+                    <td className="px-2 py-1.5 font-mono text-white/35 whitespace-nowrap">
+                      {s.delivered_at ? new Date(s.delivered_at).toLocaleDateString('ar-EG-u-nu-latn') : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── قسم ملخص العمولات ── */}
+      <div className="bg-white/3 border border-white/8 rounded-xl p-3 space-y-2">
+        <p className="text-[11px] font-semibold text-white/50 border-b border-white/8 pb-1.5">ملخص العمولات</p>
+        <div className="space-y-1.5">
+          {[
+            { label: 'إجمالي العمولات المحققة',       value: fmt(data.total_earned),                             color: 'text-emerald-300' },
+            { label: 'إجمالي العمولات المعلقة',       value: fmt(data.pending_commission),                       color: 'text-amber-300' },
+            { label: 'خدمات تم احتساب عمولتها',       value: String(data.commission_services_count),             color: 'text-emerald-300' },
+            { label: 'خدمات لم تُحتسب عمولتها بعد',  value: String(data.no_commission_services_count),          color: 'text-white/50' },
+          ].map((row) => (
+            <div key={row.label} className="flex justify-between items-center">
+              <span className="text-xs text-white/40">{row.label}</span>
+              <span className={`text-xs font-bold font-mono ${row.color}`}>{row.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Employee Repairs Tab ── */
 function EmployeeRepairsTab({ employeeId }: { employeeId: number }) {
   const { data, isLoading } = useQuery<{
@@ -164,6 +320,7 @@ interface EmployeeDetailProps extends EmployeeDetailCallbacks {
   setDetailTab: (t: DetailTab) => void;
   canManage: boolean;
   canViewSalary: boolean;
+  canViewMaintenance: boolean;
   loans: AnyRec[];
   loansLoading: boolean;
   deductions: AnyRec[];
@@ -178,7 +335,7 @@ interface EmployeeDetailProps extends EmployeeDetailCallbacks {
 
 export function EmployeeDetail({
   selected, isSelfService, detailTab, setDetailTab,
-  canManage, canViewSalary, openEdit, setSelected,
+  canManage, canViewSalary, canViewMaintenance, openEdit, setSelected,
   loans, loansLoading, deductions, ledgerLoading, bonuses, custody, documents,
   totalLoans, remainingLoans, totalDeducted,
   onAddLoan, onApproveLoan, onPayLoan,
@@ -213,16 +370,17 @@ export function EmployeeDetail({
       <div className="flex gap-1 flex-wrap border-b border-white/10 pb-2">
         {(
           [
-            { key: 'info', label: 'البيانات', icon: IdCard },
-            { key: 'loans', label: 'السلف', icon: Banknote },
-            { key: 'deductions', label: 'الخصومات', icon: MinusCircle },
-            { key: 'bonuses', label: 'الحافز', icon: Award },
-            { key: 'custody', label: 'عهدة', icon: Package },
-            { key: 'repairs', label: 'الصيانة', icon: Wrench },
-            { key: 'reports', label: 'التقارير', icon: BarChart2 },
-            { key: 'docs', label: 'مستندات', icon: FileText },
+            { key: 'info',        label: 'البيانات',    icon: IdCard,     show: true },
+            { key: 'loans',       label: 'السلف',       icon: Banknote,   show: true },
+            { key: 'deductions',  label: 'الخصومات',    icon: MinusCircle,show: true },
+            { key: 'bonuses',     label: 'الحافز',      icon: Award,      show: true },
+            { key: 'custody',     label: 'عهدة',        icon: Package,    show: true },
+            { key: 'repairs',     label: 'البطاقات',    icon: Wrench,     show: true },
+            { key: 'maintenance', label: 'الصيانة',     icon: Wrench,     show: canViewMaintenance },
+            { key: 'reports',     label: 'التقارير',    icon: BarChart2,  show: true },
+            { key: 'docs',        label: 'مستندات',     icon: FileText,   show: true },
           ] as const
-        ).map((t) => (
+        ).filter((t) => t.show).map((t) => (
           <button
             key={t.key}
             onClick={() => setDetailTab(t.key)}
@@ -700,9 +858,14 @@ export function EmployeeDetail({
         </div>
       )}
 
-      {/* ── Repairs Tab ── */}
+      {/* ── Repairs (بطاقات الإصلاح) Tab ── */}
       {detailTab === 'repairs' && (
         <EmployeeRepairsTab employeeId={selected.id} />
+      )}
+
+      {/* ── Maintenance Tab (Admin/Manager only) ── */}
+      {detailTab === 'maintenance' && canViewMaintenance && (
+        <EmployeeMaintenanceTab employeeId={selected.id} />
       )}
     </div>
   );

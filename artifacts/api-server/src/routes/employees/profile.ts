@@ -11,6 +11,8 @@ import {
   jobTitlesTable,
   branchesTable,
   repairJobsTable,
+  repairJobServicesTable,
+  erpUsersTable,
 } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
@@ -275,6 +277,102 @@ router.delete('/employees/:id', wrap(async (req, res) => {
   await db.insert(employeeStatusHistoryTable).values({ employee_id: id, old_status: 'active', new_status: 'terminated', reason: 'حذف من النظام', changed_by: userId });
   await writeAuditLog({ action: 'delete', record_type: 'employee', record_id: id, new_value: { name: `${emp.first_name_ar} ${emp.last_name_ar}` }, user: { id: userId ?? undefined, username: req.user?.username } });
   res.json({ ok: true });
+}));
+
+/* ── GET /employees/:id/maintenance-tab — تبويب الصيانة للإدارة ── */
+router.get('/employees/:id/maintenance-tab', wrap(async (req, res) => {
+  const canView = hasPermission(req.user, 'can_view_reports') || hasPermission(req.user, 'can_manage_employees');
+  if (!canView) { res.status(403).json({ error: 'غير مصرح' }); return; }
+
+  const companyId = getTenant(req);
+  const empId = parseInt(String(req.params['id']), 10);
+  if (!Number.isFinite(empId) || empId <= 0) { res.status(400).json({ error: 'معرّف الموظف غير صحيح' }); return; }
+
+  /* Map employee_id → user_id (technician_id in repair_job_services = user.id) */
+  const [userRow] = await db
+    .select({ id: erpUsersTable.id })
+    .from(erpUsersTable)
+    .where(and(eq(erpUsersTable.employee_id, empId), eq(erpUsersTable.company_id, companyId)))
+    .limit(1);
+
+  const EMPTY = {
+    employee_id: empId, has_user: false,
+    total_assigned: 0, active_count: 0, delivered_count: 0,
+    total_earned: 0, pending_commission: 0, avg_commission: 0,
+    commission_services_count: 0, no_commission_services_count: 0,
+    services: [],
+  };
+  if (!userRow) return res.json(EMPTY);
+
+  const userId = userRow.id;
+
+  /* جلب كل الخدمات لحساب KPIs + آخر 20 للعرض */
+  const allRows = await db
+    .select({
+      id:                         repairJobServicesTable.id,
+      job_id:                     repairJobServicesTable.job_id,
+      job_no:                     repairJobsTable.job_no,
+      customer_name:              repairJobsTable.customer_name,
+      service_type_name_snapshot: repairJobServicesTable.service_type_name_snapshot,
+      amount:                     repairJobServicesTable.amount,
+      commission_computed:        repairJobServicesTable.commission_computed,
+      commission_locked:          repairJobServicesTable.commission_locked,
+      service_status:             repairJobServicesTable.status,
+      job_status:                 repairJobsTable.status,
+      created_at:                 repairJobServicesTable.created_at,
+      delivered_at:               repairJobsTable.delivered_at,
+    })
+    .from(repairJobServicesTable)
+    .innerJoin(repairJobsTable, eq(repairJobsTable.id, repairJobServicesTable.job_id))
+    .where(and(
+      eq(repairJobServicesTable.company_id, companyId),
+      eq(repairJobServicesTable.technician_id, userId),
+    ))
+    .orderBy(desc(repairJobServicesTable.created_at));
+
+  if (allRows.length === 0) return res.json({ ...EMPTY, has_user: true });
+
+  /* KPIs */
+  const ACTIVE_SVC = new Set(['pending', 'in_progress']);
+  const FINAL_JOB  = new Set(['delivered', 'cancelled']);
+  const totalAssigned  = allRows.length;
+  const activeCount    = allRows.filter(r => ACTIVE_SVC.has(r.service_status) && !FINAL_JOB.has(r.job_status)).length;
+  const deliveredCount = allRows.filter(r => r.commission_locked).length;
+  const totalEarned    = allRows.filter(r => r.commission_locked).reduce((s, r) => s + Number(r.commission_computed ?? 0), 0);
+  const pendingComm    = allRows.filter(r => !r.commission_locked && r.job_status !== 'cancelled').reduce((s, r) => s + Number(r.commission_computed ?? 0), 0);
+  const avgCommission  = deliveredCount > 0 ? totalEarned / deliveredCount : 0;
+  const commCount      = allRows.filter(r => r.commission_locked && Number(r.commission_computed ?? 0) > 0).length;
+  const noCommCount    = allRows.filter(r => !r.commission_locked).length;
+
+  /* آخر 20 خدمة للجدول — لا تُعاد commission_source_snapshot ولا commission_rate_snapshot */
+  const services = allRows.slice(0, 20).map(r => ({
+    id:               r.id,
+    job_id:           r.job_id,
+    job_no:           r.job_no,
+    customer_name:    r.customer_name,
+    service_type:     r.service_type_name_snapshot,
+    amount:           Number(r.amount ?? 0),
+    commission_computed: r.commission_locked ? Number(r.commission_computed ?? 0) : null,
+    commission_locked:   r.commission_locked,
+    service_status:   r.service_status,
+    job_status:       r.job_status,
+    created_at:       r.created_at,
+    delivered_at:     r.delivered_at,
+  }));
+
+  return res.json({
+    employee_id: empId,
+    has_user: true,
+    total_assigned:            totalAssigned,
+    active_count:              activeCount,
+    delivered_count:           deliveredCount,
+    total_earned:              Number(totalEarned.toFixed(2)),
+    pending_commission:        Number(pendingComm.toFixed(2)),
+    avg_commission:            Number(avgCommission.toFixed(2)),
+    commission_services_count: commCount,
+    no_commission_services_count: noCommCount,
+    services,
+  });
 }));
 
 /* ── GET /employees/:id/repair-stats — إحصائيات إصلاح الفني ── */
