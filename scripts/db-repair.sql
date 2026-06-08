@@ -475,6 +475,16 @@ BEGIN
     RAISE NOTICE 'db-repair: repair_job_parts orphans fixed';
   END IF;
 
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_job_services') THEN
+    UPDATE repair_job_services SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_job_services orphans fixed';
+  END IF;
+
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_service_types') THEN
+    UPDATE repair_service_types SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: repair_service_types orphans fixed';
+  END IF;
+
   IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'repair_payments') THEN
     UPDATE repair_payments SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
     RAISE NOTICE 'db-repair: repair_payments orphans fixed';
