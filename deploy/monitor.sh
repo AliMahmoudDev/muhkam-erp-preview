@@ -11,7 +11,7 @@ response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$API_URL")
 
 if [ "$response" != "200" ]; then
   echo "[$TIMESTAMP] ❌ API DOWN (HTTP $response) — Restarting..." >> "$LOG_FILE"
-  pm2 restart halaltech-api
+  pm2 restart muhkam-api
   sleep 10
 
   response2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$API_URL")

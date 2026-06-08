@@ -1,5 +1,5 @@
 -- =====================================================================
--- VPS Emergency Fix — halaltec.com / Hetzner
+-- VPS Emergency Fix — muhkampro.com / Hetzner
 -- تُشغَّل مرة واحدة عبر: psql $DATABASE_URL -f vps-fix.sql
 -- كل جملة مؤمَّنة بـ IF NOT EXISTS — آمنة للتشغيل أكثر من مرة.
 -- =====================================================================

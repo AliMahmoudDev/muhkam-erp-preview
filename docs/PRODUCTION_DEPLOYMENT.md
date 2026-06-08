@@ -11,7 +11,7 @@
 - **API + SPA على نفس الـ origin:** Express يخدم الـ React build من
   `artifacts/erp-system/dist/public`، لذا الواجهة والـ API على نفس الدومين.
 - **Nginx** = reverse proxy + SSL termination → يمرر إلى `localhost:8080`.
-- **PM2** يدير عملية الـ API باسم `halaltech-api`.
+- **PM2** يدير عملية الـ API باسم `muhkam-api`.
 - **Deploy تلقائي:** push إلى `main` → CI → (عند النجاح) Deploy عبر SSH.
 
 ---
@@ -104,13 +104,13 @@ REDIS_URL=redis://localhost:6379
 
 ## 7. Nginx Reverse Proxy
 
-الإعداد الجاهز في `deploy/nginx.conf` (الدومين الحالي `halaltec.com` — بدّله
-لدومينك). الـ deploy ينسخه تلقائيًا إلى `/etc/nginx/sites-available/muhkam`.
+الإعداد الجاهز في `deploy/nginx.conf` (الدومين الحالي `muhkampro.com` — بدّله
+لدومينك). الـ deploy ينسخه تلقائيًا إلى `/etc/nginx/sites-available/muhkampro`.
 
 تفعيل يدوي أول مرة:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/muhkam /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/muhkampro /etc/nginx/sites-enabled/
 sudo nginx -t          # اختبار الصياغة
 sudo systemctl reload nginx
 ```
@@ -152,9 +152,9 @@ sudo certbot renew --dry-run    # تأكيد التجديد التلقائي
 
 ```bash
 pm2 status                       # حالة العمليات
-pm2 logs halaltech-api           # متابعة اللوجز الحية
-pm2 logs halaltech-api --lines 100 --nostream
-pm2 restart halaltech-api
+pm2 logs muhkam-api           # متابعة اللوجز الحية
+pm2 logs muhkam-api --lines 100 --nostream
+pm2 restart muhkam-api
 pm2 save                         # حفظ قائمة العمليات
 pm2 startup                      # تفعيل التشغيل عند إقلاع السيرفر
 ```
@@ -197,7 +197,7 @@ pnpm --filter @workspace/scripts run production:preflight
 
 ```bash
 ls -lh /root/db-backups
-pm2 logs halaltech-api | grep -i backup
+pm2 logs muhkam-api | grep -i backup
 ```
 
 ---
@@ -226,7 +226,7 @@ git revert <BAD_COMMIT_SHA>
 pnpm install --frozen-lockfile
 cd artifacts/erp-system && NODE_ENV=production BASE_PATH=/ VITE_API_URL="" pnpm run build
 cd ../api-server && pnpm run build
-pm2 restart halaltech-api
+pm2 restart muhkam-api
 ```
 
 > الأنظف: ادفع الإصلاح/الـ revert إلى `main` ودع الـ pipeline ينشر تلقائيًا.
@@ -246,7 +246,7 @@ pm2 restart halaltech-api
 - الـ deploy يطبع آخر 50 سطر من `pm2 logs` عند الفشل، وأسماء متغيرات البيئة
   فقط (القيم مُخفّاة `<redacted>` عبر `sed` — لا تُسرَّب الأسرار في CI logs).
 - أسباب شائعة: متغير مطلوب ناقص في `.env`، فشل migrate، أو فشل health check.
-- على VPS: `pm2 logs halaltech-api --lines 100 --nostream`.
+- على VPS: `pm2 logs muhkam-api --lines 100 --nostream`.
 - يمكن إعادة التشغيل اليدوي: GitHub → Actions → Deploy → `Run workflow`
   (`workflow_dispatch` مفعّل).
 

@@ -18,7 +18,7 @@
 
 <br/>
 
-[🌐 العرض الحي — Live Demo](https://halaltec.com) &nbsp;·&nbsp; [📖 دليل التشغيل](docs/RUNBOOK.md) &nbsp;·&nbsp; [🏗️ قرارات المعمارية](docs/ADR/) &nbsp;·&nbsp; [🔒 الأمان](SECURITY.md)
+[🌐 العرض الحي — Live Demo](https://muhkampro.com) &nbsp;·&nbsp; [📖 دليل التشغيل](docs/RUNBOOK.md) &nbsp;·&nbsp; [🏗️ قرارات المعمارية](docs/ADR/) &nbsp;·&nbsp; [🔒 الأمان](SECURITY.md)
 
 </div>
 
@@ -527,6 +527,6 @@ To report a vulnerability, please see our [Security Policy](SECURITY.md) — do 
 
 *Built with ❤️ for the Arabic market*
 
-[🌐 halaltec.com](https://halaltec.com) &nbsp;·&nbsp; [📖 RUNBOOK](docs/RUNBOOK.md) &nbsp;·&nbsp; [🏗️ ADRs](docs/ADR/) &nbsp;·&nbsp; [🔒 Security](SECURITY.md)
+[🌐 muhkampro.com](https://muhkampro.com) &nbsp;·&nbsp; [📖 RUNBOOK](docs/RUNBOOK.md) &nbsp;·&nbsp; [🏗️ ADRs](docs/ADR/) &nbsp;·&nbsp; [🔒 Security](SECURITY.md)
 
 </div>

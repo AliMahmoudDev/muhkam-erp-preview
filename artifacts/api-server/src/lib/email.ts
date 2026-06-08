@@ -1,10 +1,12 @@
 import { Resend } from 'resend';
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-export async function sendEmail({ to, subject, html }: {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+}: {
   to: string;
   subject: string;
   html: string;
@@ -15,7 +17,7 @@ export async function sendEmail({ to, subject, html }: {
   }
   try {
     await resend.emails.send({
-      from: 'مُحكم ERP <noreply@halaltec.com>',
+      from: 'مُحكم ERP <noreply@muhkampro.com>',
       to,
       subject,
       html,

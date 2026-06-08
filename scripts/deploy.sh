@@ -36,7 +36,7 @@ UNPUSHED=$(git log origin/main..HEAD --oneline 2>/dev/null | wc -l | tr -d ' ')
 if [ "$UNPUSHED" -eq "0" ]; then
   echo "✅  Already up to date with origin/main — nothing to push."
   echo ""
-  echo "  halaltec.com is already running the latest code."
+  echo "  muhkampro.com is already running the latest code."
   echo ""
   exit 0
 fi
@@ -51,7 +51,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  ✅  Push successful!"
 echo ""
-echo "  GitHub Actions is now deploying to halaltec.com"
+echo "  GitHub Actions is now deploying to muhkampro.com"
 echo "  Track progress:"
 echo "  https://github.com/m4elmelegy-hub/MUHKAM-ERP/actions"
 echo ""

@@ -174,7 +174,7 @@ jobs:
             pnpm run build
 
             # Stop old process cleanly before starting fresh with correct env
-            pm2 delete halaltech-api || true
+            pm2 delete muhkam-api || true
 
             # Start with all required env vars passed explicitly (no reliance on --update-env)
             # Optional vars (REDIS_URL, TELEGRAM_*, SUPER_ADMIN_IPS) are passed if present in .env
@@ -193,7 +193,7 @@ jobs:
               SUPPORT_EMAIL="${SUPPORT_EMAIL:-}" \
               SUPER_ADMIN_PIN="${SUPER_ADMIN_PIN:-}" \
               pm2 start dist/index.mjs \
-                --name halaltech-api \
+                --name muhkam-api \
                 --cwd "$APP_DIR/artifacts/api-server"
             pm2 save
             # التحقق من تشغيل Redis
@@ -203,7 +203,7 @@ jobs:
               echo "Redis يعمل بشكل صحيح"
             fi
 
-            sudo cp "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/muhkam
+            sudo cp "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/muhkampro
             sudo nginx -t && sudo nginx -s reload
 
             echo "--- انتظار تشغيل الـ API (حد أقصى 60 ثانية) ---"
@@ -213,7 +213,7 @@ jobs:
               i=$((i+1))
               if [ "$i" -ge "$MAX" ]; then
                 echo "❌ فشل التشغيل بعد 60 ثانية — آخر لوجز:"
-                pm2 logs halaltech-api --lines 50 --nostream || true
+                pm2 logs muhkam-api --lines 50 --nostream || true
                 echo "--- أسماء متغيرات البيئة المتاحة لـ PM2 (الأسماء فقط، بدون قيم) ---"
                 pm2 env 0 2>/dev/null | sed -E 's/=.*/=<redacted>/' || true
                 exit 1
@@ -221,9 +221,10 @@ jobs:
               echo "  انتظار... ($((i*3))/60 ثانية)"
               sleep 3
             done
-            echo "✅ Deploy complete — halaltec.com is live"
+            echo "✅ Deploy complete — muhkampro.com is live"
         env:
           DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          SUPER_ADMIN_PIN: ${{ secrets.SUPER_ADMIN_PIN }}
 
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
@@ -235,4 +236,4 @@ jobs:
           command_timeout: 30s
           script: |
             RESPONSE=$(curl -sf http://localhost:8080/api/healthz)
-            echo "OK — $RESPONSE — halaltec.com is live!"
+            echo "OK — $RESPONSE — muhkampro.com is live!"

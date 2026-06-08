@@ -5,95 +5,97 @@
  * Never throws — a logging failure must never break the main request.
  */
 
-import { db, auditLogsTable } from "@workspace/db";
-import { logger } from "./logger";
+import { db, auditLogsTable } from '@workspace/db';
+import { logger } from './logger';
 
 export type AuditAction =
-  | "create"
-  | "update"
-  | "delete"
-  | "cancel"
-  | "price_override"
-  | "lock_period"
-  | "unlock_period"
-  | "lock_blocked"
-  | "reversal_created"
-  | "correction_created"
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'cancel'
+  | 'price_override'
+  | 'lock_period'
+  | 'unlock_period'
+  | 'lock_blocked'
+  | 'reversal_created'
+  | 'correction_created'
   // ── ERP critical events ────────────────────────────────────────────────────
-  | "INTEGRITY_REPAIR"          // إصلاح انحراف محاسبي (أرصدة حسابات أو عملاء)
-  | "INVENTORY_ADJUSTMENT"      // تسوية يدوية للمخزون
-  | "INVENTORY_COUNT_APPLIED"   // تطبيق جلسة جرد مخزون
-  | "INVENTORY_TRANSFER"        // تحويل مخزون بين مخازن
-  | "PERIOD_OVERRIDE"           // تجاوز مدير للقفل المالي
+  | 'INTEGRITY_REPAIR' // إصلاح انحراف محاسبي (أرصدة حسابات أو عملاء)
+  | 'INVENTORY_ADJUSTMENT' // تسوية يدوية للمخزون
+  | 'INVENTORY_COUNT_APPLIED' // تطبيق جلسة جرد مخزون
+  | 'INVENTORY_TRANSFER' // تحويل مخزون بين مخازن
+  | 'PERIOD_OVERRIDE' // تجاوز مدير للقفل المالي
   // ── Safe transfer events ───────────────────────────────────────────────────
-  | "SAFE_TRANSFER_CREATED"     // إنشاء تحويل خزينة
-  | "SAFE_TRANSFER_COMPLETED"   // اكتمال تحويل الخزينة بنجاح
-  | "SAFE_TRANSFER_FEE_APPLIED" // تطبيق رسوم على تحويل خزينة
+  | 'SAFE_TRANSFER_CREATED' // إنشاء تحويل خزينة
+  | 'SAFE_TRANSFER_COMPLETED' // اكتمال تحويل الخزينة بنجاح
+  | 'SAFE_TRANSFER_FEE_APPLIED' // تطبيق رسوم على تحويل خزينة
   // ── SaaS / super-admin events ─────────────────────────────────────────────
-  | "COMPANY_CREATED"
-  | "COMPANY_ACTIVATED"
-  | "COMPANY_SUSPENDED"
-  | "COMPANY_EXTENDED"
-  | "COMPANY_DELETED"
-  | "COMPANY_SUBSCRIPTION_UPDATED"
-  | "ADMIN_PASSWORD_RESET"
-  | "MANAGER_CREATED"
-  | "MANAGER_UPDATED"
-  | "MANAGER_TOGGLED"
-  | "MANAGER_DELETED"
-  | "PLAN_SETTINGS_UPDATED"
-  | "TELEGRAM_SETTINGS_UPDATED"
-  | "SUPPORT_SETTINGS_UPDATED"
+  | 'COMPANY_CREATED'
+  | 'COMPANY_ACTIVATED'
+  | 'COMPANY_SUSPENDED'
+  | 'COMPANY_EXTENDED'
+  | 'COMPANY_DELETED'
+  | 'COMPANY_SUBSCRIPTION_UPDATED'
+  | 'ADMIN_PASSWORD_RESET'
+  | 'MANAGER_CREATED'
+  | 'MANAGER_UPDATED'
+  | 'MANAGER_TOGGLED'
+  | 'MANAGER_DELETED'
+  | 'PLAN_SETTINGS_UPDATED'
+  | 'TELEGRAM_SETTINGS_UPDATED'
+  | 'SUPPORT_SETTINGS_UPDATED'
   // ── Backup / restore lifecycle ────────────────────────────────────────────
-  | "RESTORE_STARTED"
-  | "RESTORE_REJECTED"
-  | "RESTORE_FAILED"
-  | "RESTORE_COMPLETED"
+  | 'RESTORE_STARTED'
+  | 'RESTORE_REJECTED'
+  | 'RESTORE_FAILED'
+  | 'RESTORE_COMPLETED'
   // ── Super-admin tenant data access (forensic) ─────────────────────────────
-  | "SUPER_ADMIN_ACCESS"                    // super admin viewed tenant data/details
-  | "SUPER_ADMIN_LIST_VIEW"                 // super admin listed all companies
+  | 'SUPER_ADMIN_ACCESS' // super admin viewed tenant data/details
+  | 'SUPER_ADMIN_LIST_VIEW' // super admin listed all companies
   // ── Trial monitoring events ────────────────────────────────────────────────
-  | "TRIAL_MONITORING_WARNING"              // spike crossed ANOMALY_ALERT_COUNT
-  | "TRIAL_REGISTRATION_AUTO_PAUSED"        // spike crossed ANOMALY_TRIP_COUNT
-  | "TRIAL_REGISTRATION_MANUAL_PAUSED"      // super admin paused manually
-  | "TRIAL_REGISTRATION_RESUMED"            // super admin resumed
-  | "TRIAL_MONITORING_WARNING_CLEARED"      // super admin cleared warning
-  | "TRIAL_GUARD_UNBLOCK_IP"              // super admin cleared Redis blocks for an IP
-  | "repair_status_change";              // تغيير حالة بطاقة صيانة عبر Pipeline
+  | 'TRIAL_MONITORING_WARNING' // spike crossed ANOMALY_ALERT_COUNT
+  | 'TRIAL_REGISTRATION_AUTO_PAUSED' // spike crossed ANOMALY_TRIP_COUNT
+  | 'TRIAL_REGISTRATION_MANUAL_PAUSED' // super admin paused manually
+  | 'TRIAL_REGISTRATION_RESUMED' // super admin resumed
+  | 'TRIAL_MONITORING_WARNING_CLEARED' // super admin cleared warning
+  | 'TRIAL_GUARD_UNBLOCK_IP' // super admin cleared Redis blocks for an IP
+  | 'repair_status_change' // تغيير حالة بطاقة صيانة عبر Pipeline
+  | 'commission_ledger_entry'; // حركة دفتر عمولات موظف
 
 export type AuditRecordType =
-  | "customer"
-  | "supplier"
-  | "sale"
-  | "sale_return"
-  | "purchase_return"
-  | "product"
-  | "financial_lock"
-  | "expense"
-  | "safe_transfer"
-  | "receipt_voucher"
-  | "payment_voucher"
-  | "deposit_voucher"
-  | "treasury_voucher"
-  | "user"
+  | 'customer'
+  | 'supplier'
+  | 'sale'
+  | 'sale_return'
+  | 'purchase_return'
+  | 'product'
+  | 'financial_lock'
+  | 'expense'
+  | 'safe_transfer'
+  | 'receipt_voucher'
+  | 'payment_voucher'
+  | 'deposit_voucher'
+  | 'treasury_voucher'
+  | 'user'
   // ── ERP critical types ─────────────────────────────────────────────────────
-  | "account_balances"        // إصلاح أرصدة الحسابات المحاسبية
-  | "customer_balances"       // إصلاح أرصدة العملاء
-  | "employee"                // إدارة الموظفين
-  | "company"                 // SaaS company management
-  | "subscription"            // تجديد/تمديد الاشتراك
-  | "payroll_period"          // payroll period lifecycle
-  | "salary_advance"          // salary advance lifecycle
-  | "fiscal_year"             // fiscal year open/close
-  | "erp_user"               // user account management (password reset, etc.)
-  | "system"                 // tenant-level system actions (restore, etc.)
-  | "announcement"           // super-admin announcements
-  | "warranty"              // warranty records
-  | "trial_monitoring"      // trial registration monitoring actions
-  | "repair_job"            // بطاقة صيانة
-  | "account"               // دليل الحسابات
-  | "journal_entry"         // القيود اليومية
-  | "opening_balance";      // رصيد أول المدة
+  | 'account_balances' // إصلاح أرصدة الحسابات المحاسبية
+  | 'customer_balances' // إصلاح أرصدة العملاء
+  | 'employee' // إدارة الموظفين
+  | 'company' // SaaS company management
+  | 'subscription' // تجديد/تمديد الاشتراك
+  | 'payroll_period' // payroll period lifecycle
+  | 'salary_advance' // salary advance lifecycle
+  | 'fiscal_year' // fiscal year open/close
+  | 'erp_user' // user account management (password reset, etc.)
+  | 'system' // tenant-level system actions (restore, etc.)
+  | 'announcement' // super-admin announcements
+  | 'warranty' // warranty records
+  | 'trial_monitoring' // trial registration monitoring actions
+  | 'repair_job' // بطاقة صيانة
+  | 'account' // دليل الحسابات
+  | 'journal_entry' // القيود اليومية
+  | 'opening_balance' // رصيد أول المدة
+  | 'employee_commission_ledger'; // دفتر عمولات الموظفين
 
 interface AuditUser {
   id?: number;
@@ -124,6 +126,6 @@ export async function writeAuditLog(opts: {
       company_id: opts.company_id ?? null,
     });
   } catch (err) {
-    logger.error({ err }, "[audit-log] failed to write log");
+    logger.error({ err }, '[audit-log] failed to write log');
   }
 }

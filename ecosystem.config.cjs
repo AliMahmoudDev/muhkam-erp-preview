@@ -29,7 +29,7 @@ if (fs.existsSync(envFile)) {
 module.exports = {
   apps: [
     {
-      name: "halaltech-api",
+      name: "muhkam-api",
       script: "./artifacts/api-server/dist/index.mjs",
       interpreter: "node",
       interpreter_args: "--enable-source-maps",
@@ -56,8 +56,8 @@ module.exports = {
         FRONTEND_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
         ADVANCED_DIST: "/var/www/muhkam-erp/artifacts/erp-system/dist/public",
       },
-      error_file: "/var/log/pm2/halaltech-error.log",
-      out_file: "/var/log/pm2/halaltech-out.log",
+      error_file: "/var/log/pm2/muhkam-error.log",
+      out_file: "/var/log/pm2/muhkam-out.log",
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
       merge_logs: true,
     },

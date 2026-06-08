@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import { getApiBaseUrl } from "@/context/AuthContext";
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl ?? "https://halaltec.com";
+const API_URL = Constants.expoConfig?.extra?.apiUrl ?? "https://muhkampro.com";
 
 let _getToken: (() => string | null) | null = null;
 

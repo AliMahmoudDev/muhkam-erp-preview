@@ -41,7 +41,7 @@ NODE_ENV=production BASE_PATH=/ VITE_API_URL="" \
   pnpm --filter @workspace/erp-system run build
 
 echo "=== [5/5] إعادة تشغيل الـ Backend ==="
-pm2 restart halaltech-api --update-env
+pm2 restart muhkam-api --update-env
 
 echo "--- انتظار تشغيل الـ API (حد أقصى 60 ثانية) ---"
 MAX=24
@@ -50,7 +50,7 @@ until curl -sf http://localhost:8080/api/healthz > /dev/null 2>&1; do
   i=$((i+1))
   if [ "$i" -ge "$MAX" ]; then
     echo "فشل التشغيل — آخر لوجز:"
-    pm2 logs halaltech-api --lines 30 --nostream || true
+    pm2 logs muhkam-api --lines 30 --nostream || true
     exit 1
   fi
   sleep 2.5

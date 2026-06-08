@@ -29,25 +29,25 @@
  *    48-hour mark, which writes to the DB once and is then a no-op.
  */
 
-import { and, eq, not } from "drizzle-orm";
-import { db, companiesTable } from "@workspace/db";
-import { logger } from "./logger";
-import { scoreAllTrialCompanies } from "./trial-scoring";
-import { alertManager, ALERT_TYPES } from "./telegram-alert-manager";
-import { sendEmail } from "./email";
+import { and, eq, not } from 'drizzle-orm';
+import { db, companiesTable } from '@workspace/db';
+import { logger } from './logger';
+import { scoreAllTrialCompanies } from './trial-scoring';
+import { alertManager, ALERT_TYPES } from './telegram-alert-manager';
+import { sendEmail } from './email';
 
 const TICK_MS = 60 * 60 * 1000; // every hour
 
 /* Age thresholds */
-const REMINDER_AFTER_MS  =       10 * 60 * 1000;  // 10 minutes
-const WARNING_AFTER_MS   =  24 * 60 * 60 * 1000;  // 24 hours
-const EXPIRE_AFTER_MS    =  48 * 60 * 60 * 1000;  // 48 hours
+const REMINDER_AFTER_MS = 10 * 60 * 1000; // 10 minutes
+const WARNING_AFTER_MS = 24 * 60 * 60 * 1000; // 24 hours
+const EXPIRE_AFTER_MS = 48 * 60 * 60 * 1000; // 48 hours
 
 /* Trial day thresholds for conversion triggers */
-const CONV_EARLY_START   = 2;   // Day 2
-const CONV_EARLY_END     = 3;   // Day 3
-const CONV_LATE_START    = 5;   // Day 5
-const CONV_LATE_END      = 6;   // Day 6
+const CONV_EARLY_START = 2; // Day 2
+const CONV_EARLY_END = 3; // Day 3
+const CONV_LATE_START = 5; // Day 5
+const CONV_LATE_END = 6; // Day 6
 
 /* ─── Email verification lifecycle ──────────────────────────────────────── */
 
@@ -57,19 +57,19 @@ async function processVerificationReminders(): Promise<void> {
   /* Fetch all unverified trial companies — we handle all age tiers in one query */
   const unverified = await db
     .select({
-      id:                            companiesTable.id,
-      name:                          companiesTable.name,
-      admin_email:                   companiesTable.admin_email,
-      created_at:                    companiesTable.created_at,
+      id: companiesTable.id,
+      name: companiesTable.name,
+      admin_email: companiesTable.admin_email,
+      created_at: companiesTable.created_at,
       email_verification_expires_at: companiesTable.email_verification_expires_at,
-      verification_status:           companiesTable.verification_status,
+      verification_status: companiesTable.verification_status,
     })
     .from(companiesTable)
     .where(
       and(
-        eq(companiesTable.email_verified,   false),
-        eq(companiesTable.has_used_trial,   true),
-        not(eq(companiesTable.verification_status, "expired")), // already expired → skip
+        eq(companiesTable.email_verified, false),
+        eq(companiesTable.has_used_trial, true),
+        not(eq(companiesTable.verification_status, 'expired')) // already expired → skip
       )
     );
 
@@ -81,65 +81,72 @@ async function processVerificationReminders(): Promise<void> {
         /* ── 48+ hours: mark verification_status = 'expired' ── */
         await db
           .update(companiesTable)
-          .set({ verification_status: "expired" })
+          .set({ verification_status: 'expired' })
           .where(eq(companiesTable.id, company.id));
 
         logger.warn(
           { companyId: company.id, email: company.admin_email },
-          "[trial-scheduler] Email verification expired — write-lock will be enforced"
+          '[trial-scheduler] Email verification expired — write-lock will be enforced'
         );
 
-        if (company.admin_email) await sendEmail({
-          to: company.admin_email,
-          subject: '🔒 انتهت تجربتك — بياناتك محفوظة',
-          html: `
+        if (company.admin_email)
+          await sendEmail({
+            to: company.admin_email,
+            subject: '🔒 انتهت تجربتك — بياناتك محفوظة',
+            html: `
             <div dir="rtl" style="font-family: Arial; padding: 20px;">
               <h2>انتهت فترة التجربة المجانية</h2>
               <p>بياناتك محفوظة بأمان. تواصل معنا لإعادة التفعيل.</p>
-              <a href="https://halaltec.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+              <a href="https://muhkampro.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
                 تواصل معنا ←
               </a>
             </div>
           `,
-        });
-
+          });
       } else if (ageMs >= WARNING_AFTER_MS) {
         /* ── 24–48 hours: urgent warning ── */
         logger.warn(
-          { companyId: company.id, email: company.admin_email, ageHours: Math.round(ageMs / 3_600_000) },
-          "[trial-scheduler] Email verification: LAST CHANCE warning"
+          {
+            companyId: company.id,
+            email: company.admin_email,
+            ageHours: Math.round(ageMs / 3_600_000),
+          },
+          '[trial-scheduler] Email verification: LAST CHANCE warning'
         );
 
-        if (company.admin_email) await sendEmail({
-          to: company.admin_email,
-          subject: '⏰ تجربتك تنتهي غداً — استمر الآن',
-          html: `
+        if (company.admin_email)
+          await sendEmail({
+            to: company.admin_email,
+            subject: '⏰ تجربتك تنتهي غداً — استمر الآن',
+            html: `
             <div dir="rtl" style="font-family: Arial; padding: 20px;">
               <h2>تجربتك المجانية تنتهي غداً</h2>
               <p>لا تفقد بياناتك — تواصل معنا لتفعيل اشتراكك.</p>
-              <a href="https://halaltec.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+              <a href="https://muhkampro.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
                 فعّل اشتراكك الآن ←
               </a>
             </div>
           `,
-        });
-
+          });
       } else if (ageMs >= REMINDER_AFTER_MS) {
         /* ── 10 min – 24 hours: initial reminder ── */
         logger.info(
           { companyId: company.id, email: company.admin_email },
-          "[trial-scheduler] Email verification: sending reminder"
+          '[trial-scheduler] Email verification: sending reminder'
         );
 
         logger.info(
           { companyId: company.id, email: company.admin_email },
-          "[trial-scheduler] [REMINDER] email verification reminder sent"
+          '[trial-scheduler] [REMINDER] email verification reminder sent'
         );
         /* Verification reminder email is handled by the email-verify flow — no extra send needed here */
       }
     } catch (err) {
       /* Fail open: log and continue to next company */
-      logger.error({ err, companyId: company.id }, "[trial-scheduler] Error processing verification reminder");
+      logger.error(
+        { err, companyId: company.id },
+        '[trial-scheduler] Error processing verification reminder'
+      );
     }
   }
 }
@@ -152,39 +159,40 @@ async function processConversionTriggers(): Promise<void> {
   /* Active, verified trial companies still within their trial window */
   const trialCompanies = await db
     .select({
-      id:           companiesTable.id,
-      name:         companiesTable.name,
-      admin_email:  companiesTable.admin_email,
-      start_date:   companiesTable.start_date,
-      end_date:     companiesTable.end_date,
+      id: companiesTable.id,
+      name: companiesTable.name,
+      admin_email: companiesTable.admin_email,
+      start_date: companiesTable.start_date,
+      end_date: companiesTable.end_date,
       email_verified: companiesTable.email_verified,
     })
     .from(companiesTable)
     .where(
       and(
-        eq(companiesTable.plan_type, "trial"),
+        eq(companiesTable.plan_type, 'trial'),
         eq(companiesTable.is_active, true),
-        eq(companiesTable.has_used_trial, true),
+        eq(companiesTable.has_used_trial, true)
       )
     );
 
   for (const company of trialCompanies) {
     try {
-      const startDate  = new Date(company.start_date);
-      const endDate    = new Date(company.end_date);
+      const startDate = new Date(company.start_date);
+      const endDate = new Date(company.end_date);
       const dayElapsed = Math.floor((now.getTime() - startDate.getTime()) / 86_400_000) + 1; // 1-indexed
-      const daysLeft   = Math.ceil((endDate.getTime() - now.getTime()) / 86_400_000);
+      const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / 86_400_000);
 
       if (dayElapsed >= CONV_EARLY_START && dayElapsed <= CONV_EARLY_END) {
         /* Day 2–3: feature nudge */
         logger.info(
           { companyId: company.id, dayElapsed },
-          "[trial-scheduler] Conversion trigger: early feature nudge"
+          '[trial-scheduler] Conversion trigger: early feature nudge'
         );
-        if (company.admin_email) await sendEmail({
-          to: company.admin_email,
-          subject: '💡 اكتشف قوة مُحكم ERP',
-          html: `
+        if (company.admin_email)
+          await sendEmail({
+            to: company.admin_email,
+            subject: '💡 اكتشف قوة مُحكم ERP',
+            html: `
             <div dir="rtl" style="font-family: Arial; padding: 20px;">
               <h2>مرحباً بك في مُحكم ERP</h2>
               <p>لقد مضى 3 أيام على تجربتك — هل جربت هذه المميزات؟</p>
@@ -193,44 +201,47 @@ async function processConversionTriggers(): Promise<void> {
                 <li>🔧 وحدة الصيانة وتتبع الأجهزة</li>
                 <li>📱 تطبيق الموبايل للموظفين</li>
               </ul>
-              <a href="https://halaltec.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+              <a href="https://muhkampro.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
                 استمر في التجربة ←
               </a>
             </div>
           `,
-        });
-
+          });
       } else if (dayElapsed >= CONV_LATE_START && dayElapsed <= CONV_LATE_END) {
         /* Day 5–6: expiry warning */
         logger.warn(
           { companyId: company.id, dayElapsed, daysLeft },
-          "[trial-scheduler] Conversion trigger: trial ending soon"
+          '[trial-scheduler] Conversion trigger: trial ending soon'
         );
-        if (company.admin_email) await sendEmail({
-          to: company.admin_email,
-          subject: '⏰ تجربتك تنتهي غداً — استمر الآن',
-          html: `
+        if (company.admin_email)
+          await sendEmail({
+            to: company.admin_email,
+            subject: '⏰ تجربتك تنتهي غداً — استمر الآن',
+            html: `
             <div dir="rtl" style="font-family: Arial; padding: 20px;">
               <h2>تجربتك المجانية تنتهي غداً</h2>
               <p>لا تفقد بياناتك — تواصل معنا لتفعيل اشتراكك.</p>
-              <a href="https://halaltec.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+              <a href="https://muhkampro.com" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
                 فعّل اشتراكك الآن ←
               </a>
             </div>
           `,
-        });
+          });
       }
 
       /* Alert 5 — Telegram: اشتراك على وشك الانتهاء (3 أيام أو أقل) */
       if (daysLeft >= 0 && daysLeft <= 3) {
         void alertManager.send({
-          type:          ALERT_TYPES.SUBSCRIPTION_EXPIRING(company.id),
-          message:       `⚠️ *اشتراك على وشك الانتهاء*\nالشركة: ${company.name}\nتاريخ الانتهاء: ${new Date(company.end_date).toLocaleDateString("ar-EG")}\nالأيام المتبقية: ${daysLeft}`,
+          type: ALERT_TYPES.SUBSCRIPTION_EXPIRING(company.id),
+          message: `⚠️ *اشتراك على وشك الانتهاء*\nالشركة: ${company.name}\nتاريخ الانتهاء: ${new Date(company.end_date).toLocaleDateString('ar-EG')}\nالأيام المتبقية: ${daysLeft}`,
           cooldownHours: 4,
         });
       }
     } catch (err) {
-      logger.error({ err, companyId: company.id }, "[trial-scheduler] Error processing conversion trigger");
+      logger.error(
+        { err, companyId: company.id },
+        '[trial-scheduler] Error processing conversion trigger'
+      );
     }
   }
 }
@@ -238,27 +249,27 @@ async function processConversionTriggers(): Promise<void> {
 /* ─── Main tick ──────────────────────────────────────────────────────────── */
 
 async function tick(): Promise<void> {
-  logger.info("[trial-scheduler] Tick started");
+  logger.info('[trial-scheduler] Tick started');
 
   try {
     await processVerificationReminders();
   } catch (err) {
-    logger.error({ err }, "[trial-scheduler] processVerificationReminders failed");
+    logger.error({ err }, '[trial-scheduler] processVerificationReminders failed');
   }
 
   try {
     await processConversionTriggers();
   } catch (err) {
-    logger.error({ err }, "[trial-scheduler] processConversionTriggers failed");
+    logger.error({ err }, '[trial-scheduler] processConversionTriggers failed');
   }
 
   try {
     await scoreAllTrialCompanies();
   } catch (err) {
-    logger.error({ err }, "[trial-scheduler] scoreAllTrialCompanies failed");
+    logger.error({ err }, '[trial-scheduler] scoreAllTrialCompanies failed');
   }
 
-  logger.info("[trial-scheduler] Tick complete");
+  logger.info('[trial-scheduler] Tick complete');
 }
 
 /* ─── Public API ─────────────────────────────────────────────────────────── */
@@ -268,12 +279,16 @@ let interval: ReturnType<typeof setInterval> | null = null;
 export function startTrialScheduler(): void {
   if (interval) return; // already started
 
-  interval = setInterval(() => { void tick(); }, TICK_MS);
+  interval = setInterval(() => {
+    void tick();
+  }, TICK_MS);
 
   /* Run once shortly after startup to catch any overdue accounts */
-  setTimeout(() => { void tick(); }, 30_000);
+  setTimeout(() => {
+    void tick();
+  }, 30_000);
 
-  logger.info("[trial-scheduler] Started (hourly tick)");
+  logger.info('[trial-scheduler] Started (hourly tick)');
 }
 
 export function stopTrialScheduler(): void {
