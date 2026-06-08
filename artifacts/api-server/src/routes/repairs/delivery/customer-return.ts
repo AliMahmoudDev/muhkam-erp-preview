@@ -10,6 +10,7 @@ import {
   safesTable,
   transactionsTable,
   scrapItemsTable,
+  employeeCommissionLedgerTable,
 } from "@workspace/db";
 import { wrap } from "../../../lib/async-handler";
 import { hasPermission } from "../../../lib/permissions";
@@ -171,6 +172,72 @@ router.post("/repair-jobs/:id/customer-return", wrap(async (req, res) => {
           reference_id:   jobId,
           safe_id:        refundSafeId,
         });
+      }
+
+      /* ── عكس العمولة تناسبياً عند وجود مبلغ مسترد ──────────────────
+       *
+       * القاعدة الذرية: reversal يُدرج داخل نفس الـ transaction.
+       *
+       * الصيغة:
+       *   reversal_per_employee =
+       *     total_commission_earned_for_job_by_employee
+       *     × (refund_amount / final_cost)
+       *
+       * الضمان يُكمَّل عبر warranty card (لا علاقة بهذا الـ endpoint).
+       * لا يُحذف ولا يُعدَّل أي سطر commission_earned — فقط إدراج سطر reversal جديد.
+       * ─────────────────────────────────────────────────────────────── */
+      if (refundAmount > 0) {
+        const finalCost = Number(job.final_cost ?? 0);
+        if (finalCost > 0) {
+          /* جلب مجموع عمولات كل موظف على هذه البطاقة */
+          const commEntries = await tx
+            .select({
+              employee_id: employeeCommissionLedgerTable.employee_id,
+              amount:      employeeCommissionLedgerTable.amount,
+            })
+            .from(employeeCommissionLedgerTable)
+            .where(and(
+              eq(employeeCommissionLedgerTable.company_id, company_id),
+              eq(employeeCommissionLedgerTable.reference_no, job.job_no),
+              eq(employeeCommissionLedgerTable.entry_type, "commission_earned"),
+            ));
+
+          if (commEntries.length > 0) {
+            /* تجميع إجمالي العمولة لكل موظف */
+            const byEmployee = new Map<number, number>();
+            for (const e of commEntries as { employee_id: number; amount: string }[]) {
+              byEmployee.set(e.employee_id, (byEmployee.get(e.employee_id) ?? 0) + Number(e.amount));
+            }
+
+            /* نسبة الاسترداد — 100% كحد أقصى (مرتجع كامل أو جزئي) */
+            const ratio = Math.min(refundAmount / finalCost, 1);
+            const today = new Date().toISOString().split("T")[0];
+            const ratioLabel = (ratio * 100).toFixed(0);
+
+            const reversalRows = [];
+            for (const [empId, totalEarned] of byEmployee.entries()) {
+              const reversalAmt = Math.round(totalEarned * ratio * 100) / 100;
+              if (reversalAmt <= 0) continue;
+              reversalRows.push({
+                company_id:     company_id,
+                employee_id:    empId,
+                entry_type:     "reversal",
+                amount:         String((-reversalAmt).toFixed(2)),
+                reference_type: "repair_return",
+                reference_id:   jobId,
+                reference_no:   job.job_no,
+                description:    `مرتجع عميل: ${job.job_no} — ${ratioLabel}% من العمولة`,
+                date:           today,
+                created_by:     user_id,
+                notes:          `مرتجع ${refundAmount.toFixed(2)} من أصل ${finalCost.toFixed(2)}`,
+              });
+            }
+
+            if (reversalRows.length > 0) {
+              await tx.insert(employeeCommissionLedgerTable).values(reversalRows);
+            }
+          }
+        }
       }
 
       /* سجل في التاريخ */
