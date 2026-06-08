@@ -13,6 +13,7 @@ import {
   repairJobsTable,
   repairJobServicesTable,
   erpUsersTable,
+  employeeCommissionLedgerTable,
 } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
@@ -416,6 +417,141 @@ router.get('/employees/:id/repair-stats', wrap(async (req, res) => {
       ...j,
       final_cost: Number(j.final_cost ?? 0),
     })),
+  });
+}));
+
+/* ── GET /employees/:id/commission-ledger ──────────────────────
+ * يُعيد رصيد دفتر العمولات + جميع الحركات بالترتيب العكسي.
+ * balance = SUM(amount) — موجب = دخل، سالب = صرف أو استرداد.
+ * ──────────────────────────────────────────────────────────── */
+router.get('/employees/:id/commission-ledger', wrap(async (req, res) => {
+  const canView = hasPermission(req.user, 'can_view_reports') || hasPermission(req.user, 'can_manage_employees');
+  if (!canView) { res.status(403).json({ error: 'غير مصرح' }); return; }
+
+  const companyId = getTenant(req);
+  const empId     = parseInt(String(req.params['id']), 10);
+  if (!Number.isFinite(empId) || empId <= 0) { res.status(400).json({ error: 'معرّف الموظف غير صحيح' }); return; }
+
+  const [emp] = await db.select({ id: employeesTable.id })
+    .from(employeesTable)
+    .where(and(eq(employeesTable.id, empId), eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at)));
+  if (!emp) { res.status(404).json({ error: 'الموظف غير موجود' }); return; }
+
+  const entries = await db.select()
+    .from(employeeCommissionLedgerTable)
+    .where(and(
+      eq(employeeCommissionLedgerTable.employee_id, empId),
+      eq(employeeCommissionLedgerTable.company_id, companyId),
+    ))
+    .orderBy(desc(employeeCommissionLedgerTable.created_at));
+
+  const balance     = entries.reduce((s, e) => s + Number(e.amount), 0);
+  const totalEarned = entries.filter(e => Number(e.amount) > 0).reduce((s, e) => s + Number(e.amount), 0);
+  const totalPaid   = entries.filter(e => Number(e.amount) < 0).reduce((s, e) => s + Math.abs(Number(e.amount)), 0);
+
+  return res.json({
+    employee_id: empId,
+    balance:      Number(balance.toFixed(2)),
+    total_earned: Number(totalEarned.toFixed(2)),
+    total_paid:   Number(totalPaid.toFixed(2)),
+    entries:      entries.map(e => ({ ...e, amount: Number(e.amount) })),
+  });
+}));
+
+/* ── POST /employees/:id/commission-ledger ─────────────────────
+ * إنشاء حركة يدوية في دفتر العمولات (صرف، تعديل، حافز…).
+ * الأنواع المتاحة: commission_earned | payout | reversal | bonus | adjustment | incentive
+ * القاعدة: payout و reversal دائماً بالقيمة السالبة (تُطبَّق تلقائياً).
+ * ──────────────────────────────────────────────────────────── */
+router.post('/employees/:id/commission-ledger', wrap(async (req, res) => {
+  if (!hasPermission(req.user, 'can_manage_employees')) {
+    res.status(403).json({ error: 'غير مصرح — يلزم صلاحية إدارة الموظفين' }); return;
+  }
+
+  const companyId = getTenant(req);
+  const empId     = parseInt(String(req.params['id']), 10);
+  if (!Number.isFinite(empId) || empId <= 0) { res.status(400).json({ error: 'معرّف الموظف غير صحيح' }); return; }
+
+  const [emp] = await db.select({ id: employeesTable.id })
+    .from(employeesTable)
+    .where(and(eq(employeesTable.id, empId), eq(employeesTable.company_id, companyId), isNull(employeesTable.deleted_at)));
+  if (!emp) { res.status(404).json({ error: 'الموظف غير موجود' }); return; }
+
+  const body = req.body as Record<string, unknown>;
+  const { entry_type, amount: rawAmount, reference_type, reference_id, reference_no, description, date, notes } = body;
+
+  const VALID_TYPES = ['commission_earned', 'payout', 'reversal', 'bonus', 'adjustment', 'incentive'];
+  if (typeof entry_type !== 'string' || !VALID_TYPES.includes(entry_type)) {
+    res.status(400).json({ error: `entry_type غير صالح. المتاح: ${VALID_TYPES.join(', ')}` }); return;
+  }
+
+  const inputAmount = Number(rawAmount);
+  if (!Number.isFinite(inputAmount) || inputAmount === 0) {
+    res.status(400).json({ error: 'المبلغ يجب أن يكون رقماً غير صفري' }); return;
+  }
+
+  /* payout و reversal دائماً سالبة — أي قيمة موجبة تُعكس تلقائياً */
+  const DEBIT_TYPES = ['payout', 'reversal'];
+  const finalAmount = DEBIT_TYPES.includes(entry_type)
+    ? -Math.abs(inputAmount)
+    : Math.abs(inputAmount);
+
+  /* للخصم: تحقق من توفر الرصيد الكافي */
+  if (DEBIT_TYPES.includes(entry_type)) {
+    const existing = await db.select({ amount: employeeCommissionLedgerTable.amount })
+      .from(employeeCommissionLedgerTable)
+      .where(and(
+        eq(employeeCommissionLedgerTable.employee_id, empId),
+        eq(employeeCommissionLedgerTable.company_id, companyId),
+      ));
+    const currentBalance = existing.reduce((s, e) => s + Number(e.amount), 0);
+    if (Math.abs(inputAmount) > currentBalance + 0.01) {
+      res.status(409).json({
+        error:             'المبلغ يتجاوز الرصيد المتاح',
+        available_balance: Number(currentBalance.toFixed(2)),
+      }); return;
+    }
+  }
+
+  const entryDate = typeof date === 'string' && date ? date : new Date().toISOString().split('T')[0];
+  const userId    = req.user?.id ?? null;
+
+  const [newEntry] = await db.insert(employeeCommissionLedgerTable).values({
+    company_id:     companyId,
+    employee_id:    empId,
+    entry_type,
+    amount:         String(finalAmount.toFixed(2)),
+    reference_type: typeof reference_type === 'string' ? reference_type : null,
+    reference_id:   typeof reference_id   === 'number' ? reference_id   : null,
+    reference_no:   typeof reference_no   === 'string' ? reference_no   : null,
+    description:    typeof description    === 'string' ? description    : null,
+    date:           entryDate,
+    created_by:     userId,
+    notes:          typeof notes === 'string' ? notes : null,
+  }).returning();
+
+  /* رصيد محدَّث بعد الإدراج */
+  const allEntries = await db.select({ amount: employeeCommissionLedgerTable.amount })
+    .from(employeeCommissionLedgerTable)
+    .where(and(
+      eq(employeeCommissionLedgerTable.employee_id, empId),
+      eq(employeeCommissionLedgerTable.company_id, companyId),
+    ));
+  const newBalance = allEntries.reduce((s, e) => s + Number(e.amount), 0);
+
+  void writeAuditLog({
+    action:      'commission_ledger_entry',
+    record_type: 'employee_commission_ledger',
+    record_id:   newEntry.id,
+    new_value:   { entry_type, amount: finalAmount, employee_id: empId },
+    user:        { id: userId ?? 0, username: String(req.user?.username ?? '') },
+    company_id:  companyId,
+  });
+
+  return res.status(201).json({
+    ok:          true,
+    entry:       { ...newEntry, amount: Number(newEntry.amount) },
+    new_balance: Number(newBalance.toFixed(2)),
   });
 }));
 

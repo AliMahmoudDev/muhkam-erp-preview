@@ -1,6 +1,7 @@
 import {
   pgTable, serial, text, integer, timestamp, numeric, index,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 import { companiesTable } from "./companies";
 import { employeesTable } from "./employees";
 
@@ -100,3 +101,47 @@ export const employeeDeductionsTable = pgTable("employee_deductions", {
 ]);
 
 export type EmployeeDeduction = typeof employeeDeductionsTable.$inferSelect;
+
+/* ── Employee Commission Ledger (دفتر عمولات الموظف) ────────────────
+ *
+ * دفتر أستاذ عام قابل للتوسع لجميع حركات عمولات وتسويات الموظف.
+ *
+ * قاعدة الرصيد:
+ *   amount > 0  → دخل (commission_earned, bonus, incentive, adjustment+)
+ *   amount < 0  → صرف أو استرداد (payout, reversal, adjustment-)
+ *
+ * balance = SUM(amount)  — دائماً متسق، لا يُخزَّن
+ *
+ * entry_type الحالية: commission_earned | payout | reversal | bonus | adjustment | incentive
+ * قابلة للتوسع مستقبلاً دون تغيير البنية.
+ *
+ * Business rules:
+ *   - Warranty job  → NO entry (no commission impact)
+ *   - Cash refund   → reversal entry, amount negative
+ *   - Cancellation  → reversal entry, amount negative
+ *   - Historical commission_computed → NEVER modified; corrections = new ledger row
+ */
+export const employeeCommissionLedgerTable = pgTable("employee_commission_ledger", {
+  id:             serial("id").primaryKey(),
+  company_id:     integer("company_id").notNull().references(() => companiesTable.id),
+  employee_id:    integer("employee_id").notNull().references(() => employeesTable.id),
+  entry_type:     text("entry_type").notNull(),
+  amount:         numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  reference_type: text("reference_type"),
+  reference_id:   integer("reference_id"),
+  reference_no:   text("reference_no"),
+  description:    text("description"),
+  date:           text("date").notNull(),
+  created_by:     integer("created_by"),
+  notes:          text("notes"),
+  created_at:     timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("emp_comm_ledger_employee_idx").on(t.employee_id),
+  index("emp_comm_ledger_company_idx").on(t.company_id),
+  index("emp_comm_ledger_type_idx").on(t.company_id, t.entry_type),
+  index("emp_comm_ledger_ref_idx").on(t.reference_type, t.reference_id),
+  index("emp_comm_ledger_date_idx").on(t.company_id, t.date),
+]);
+
+export const insertEmployeeCommissionLedgerSchema = createInsertSchema(employeeCommissionLedgerTable).omit({ id: true, created_at: true });
+export type EmployeeCommissionLedger = typeof employeeCommissionLedgerTable.$inferSelect;

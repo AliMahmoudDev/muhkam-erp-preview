@@ -393,7 +393,7 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
         event_type:  "pipeline_transition",
         note:        "انتقال تلقائي عبر Pipeline",
       });
-      await lockJobCommissions(id, company_id, tx);
+      await lockJobCommissions(id, company_id, tx, existing.job_no);
       return [u];
     });
     statusHistoryHandled = true;

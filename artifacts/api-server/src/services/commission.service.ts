@@ -3,7 +3,13 @@
  * Phase 2 — حساب وقفل كوميشن الفنيين عند التسليم
  *
  * يُستدعى دائماً داخل نفس db.transaction() الخاصة بالتسليم
- * لضمان الذرية: إما التسليم + الكوميشن معاً أو لا شيء.
+ * لضمان الذرية: إما التسليم + الكوميشن + دفتر الأستاذ معاً أو لا شيء.
+ *
+ * Business rules:
+ *   - commission_computed لا يُعدَّل أبداً بعد القفل (commission_locked = true)
+ *   - كل تعديل يُمثَّل كحركة جديدة في employee_commission_ledger
+ *   - بطاقات الضمان (warranty) لا تُولِّد حركات (لا تمر هنا)
+ *   - المرتجعات والإلغاء تُسجَّل كحركات reversal منفصلة
  */
 
 import { eq, and, inArray } from "drizzle-orm";
@@ -12,6 +18,8 @@ import {
   repairJobServicePartsTable,
   repairJobPartsTable,
   repairServiceTypesTable,
+  erpUsersTable,
+  employeeCommissionLedgerTable,
 } from "@workspace/db";
 
 /** نوع الـ transaction المُمرَّر من db.transaction() */
@@ -40,17 +48,20 @@ function calcCommission(
 }
 
 /**
- * يقفل ويحسب كوميشن جميع بنود الخدمة لبطاقة صيانة واحدة.
+ * يقفل ويحسب كوميشن جميع بنود الخدمة لبطاقة صيانة واحدة
+ * ويُنشئ حركات commission_earned في دفتر عمولات الموظف تلقائياً.
  * يُستدعى حصراً داخل transaction التسليم في crud.ts.
  *
  * @param jobId     - معرّف بطاقة الصيانة
  * @param companyId - معرّف الشركة
  * @param tx        - كائن الـ transaction الحالي
+ * @param jobNo     - رقم البطاقة (يُستخدم كـ reference_no في دفتر العمولات)
  */
 export async function lockJobCommissions(
   jobId: number,
   companyId: number,
   tx: Tx,
+  jobNo?: string,
 ): Promise<void> {
   /* 1. جلب جميع بنود الخدمة للبطاقة */
   const services = await tx
@@ -109,12 +120,23 @@ export async function lockJobCommissions(
       .map(t => [t.id, t]),
   );
 
-  /* 4. حساب وقفل كل بند على حدة */
+  /* 4. حساب وقفل كل بند على حدة — تجميع حركات دفتر العمولات */
+  type LedgerPending = {
+    svcId:            number;
+    technicianUserId: number;
+    computed:         number;
+    serviceName:      string;
+    sourceSnapshot:   string;
+  };
+  const pendingLedger: LedgerPending[] = [];
+
   for (const svc of services as {
-    id: number;
-    commission_locked: boolean;
-    service_type_id: number | null;
-    amount: string;
+    id:                         number;
+    commission_locked:           boolean;
+    service_type_id:             number | null;
+    service_type_name_snapshot:  string;
+    technician_id:               number | null;
+    amount:                      string;
   }[]) {
     if (svc.commission_locked) continue; // مقفول مسبقاً — تجاوز
 
@@ -146,5 +168,65 @@ export async function lockJobCommissions(
         updated_at:                 new Date(),
       })
       .where(eq(repairJobServicesTable.id, svc.id));
+
+    /* تجميع حركات الدفتر — فقط إذا: عمولة موجبة + فني مرتبط بمستخدم */
+    if (computed > 0 && svc.technician_id != null) {
+      pendingLedger.push({
+        svcId:            svc.id,
+        technicianUserId: svc.technician_id,
+        computed,
+        serviceName:      svc.service_type_name_snapshot,
+        sourceSnapshot,
+      });
+    }
+  }
+
+  /* 5. ربط المستخدمين بالموظفين وإدراج حركات دفتر العمولات دفعةً واحدة */
+  if (pendingLedger.length === 0) return;
+
+  const uniqueUserIds = [...new Set(pendingLedger.map(e => e.technicianUserId))];
+
+  const userRows = await tx
+    .select({
+      id:          erpUsersTable.id,
+      employee_id: erpUsersTable.employee_id,
+    })
+    .from(erpUsersTable)
+    .where(and(
+      inArray(erpUsersTable.id, uniqueUserIds),
+      eq(erpUsersTable.company_id, companyId),
+    ));
+
+  const employeeByUser = new Map<number, number>(
+    (userRows as { id: number; employee_id: number | null }[])
+      .filter(u => u.employee_id != null)
+      .map(u => [u.id, u.employee_id as number]),
+  );
+
+  const today  = new Date().toISOString().split("T")[0];
+  const refNo  = jobNo ?? String(jobId);
+
+  const ledgerRows = pendingLedger
+    .map(entry => {
+      const employeeId = employeeByUser.get(entry.technicianUserId);
+      if (!employeeId) return null;
+      return {
+        company_id:     companyId,
+        employee_id:    employeeId,
+        entry_type:     "commission_earned" as const,
+        amount:         String(entry.computed.toFixed(2)),
+        reference_type: "repair_job_service",
+        reference_id:   entry.svcId,
+        reference_no:   refNo,
+        description:    `عمولة خدمة: ${entry.serviceName}`,
+        date:           today,
+        created_by:     null as number | null,
+        notes:          entry.sourceSnapshot,
+      };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
+
+  if (ledgerRows.length > 0) {
+    await tx.insert(employeeCommissionLedgerTable).values(ledgerRows);
   }
 }
