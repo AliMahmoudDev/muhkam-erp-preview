@@ -6,6 +6,7 @@ import {
   ChevronLeft, Printer, Send, CheckCheck, Trash2, Smartphone, Phone,
   ClipboardList, Plus, Save, History, ChevronRight, Package,
 } from 'lucide-react';
+import { JobServicesSection } from './JobServicesSection';
 import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
 import { authFetch } from '@/lib/auth-fetch';
@@ -724,6 +725,13 @@ export function JobDetail({
             </div>
           )}
         </div>
+
+        {/* Job Services — Phase 1 (no commission calc yet) */}
+        <JobServicesSection
+          jobId={job.id}
+          users={users}
+          locked={job.status === 'delivered' || job.status === 'done'}
+        />
 
         {/* Technician & Costs */}
         <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)] space-y-3">

@@ -1,5 +1,5 @@
 // Shared types, constants, and utilities for RepairSettingsModal tabs
-import { ClipboardList, Users, Package, Shield, MessageCircle, LayoutDashboard, Smartphone } from "lucide-react";
+import { ClipboardList, Users, Package, Shield, MessageCircle, LayoutDashboard, Smartphone, Wrench } from "lucide-react";
 import type { ComponentType } from "react";
 
 /* ══════════════════════════════════════════════════════════════
@@ -10,7 +10,7 @@ export type DeviceType =
   | "samsung_phone" | "samsung_tablet"
   | "android_phone" | "android_tablet"
   | "other";
-export type SettingsTab = "checklist" | "dashboard-cards" | "technicians" | "models" | "defaults" | "wa-templates" | "accessories";
+export type SettingsTab = "checklist" | "dashboard-cards" | "technicians" | "models" | "defaults" | "wa-templates" | "accessories" | "service-types";
 
 /* ── system_settings keys (shared across maintenance) ────────── */
 export const REPAIR_SETTING_KEYS = {
@@ -125,6 +125,7 @@ export const TABS: Array<{
   { id: "checklist",       label: "بنود الفحص",       sublabel: "قوالب الفحص و QC حسب نوع الجهاز", icon: ClipboardList },
   { id: "dashboard-cards", label: "كروت اللوحة",      sublabel: "تخصيص ملخّص الصفحة", icon: LayoutDashboard, adminOnly: true },
   { id: "technicians",     label: "الفنيين",          sublabel: "إعدادات الموظفين",   icon: Users },
+  { id: "service-types",   label: "أنواع الخدمات",    sublabel: "الخدمات وقواعد الكوميشن", icon: Wrench, adminOnly: true },
   { id: "accessories",     label: "الإكسسوارات",      sublabel: "ما يستلم مع الجهاز", icon: Package },
   { id: "defaults",        label: "الافتراضيات",      sublabel: "مدة الضمان الافتراضية", icon: Shield, adminOnly: true },
   { id: "wa-templates",    label: "قوالب الواتس",     sublabel: "نص رسائل العميل",    icon: MessageCircle, adminOnly: true },

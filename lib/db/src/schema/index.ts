@@ -50,3 +50,8 @@ export * from "./devices";
 export * from "./trial-abuse-log";
 export * from "./super-settings";
 export * from "./price-lists";
+export {
+  repairServiceTypesTable,
+  repairJobServicesTable,
+  repairJobServicePartsTable,
+} from "./repairs";

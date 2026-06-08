@@ -267,6 +267,80 @@ export const repairDevicePhotosTable = pgTable("repair_device_photos", {
   index("repair_device_photos_job_idx").on(t.repair_job_id),
 ]);
 
+/* ══════════════════════════════════════════════════════════════
+   PHASE 1 — خدمات الصيانة والكوميشن
+   ── جداول البنية التحتية (لا تحسب كوميشن بعد) ──────────────
+   TODO (Phase 2): خصومات الخدمة
+     - مبالغ الخدمة لا تعكس بالضرورة قيمة الفاتورة النهائية (final_cost)
+     - قد تكون هناك خصومات على مستوى الخدمة أو على مستوى البطاقة ككل
+     - يجب في المرحلة الثانية دراسة: amount_before_discount أو
+       استراتيجية توزيع الخصم على مستوى كل خدمة
+     - commission_computed يجب أن يأخذ بعين الاعتبار الخصومات المطبّقة
+══════════════════════════════════════════════════════════════ */
+
+/* ── 1. أنواع الخدمات (إعدادات على مستوى الشركة) ── */
+export const repairServiceTypesTable = pgTable("repair_service_types", {
+  id:               serial("id").primaryKey(),
+  company_id:       integer("company_id").notNull(),
+  name_ar:          text("name_ar").notNull(),
+  /* commission_type: profit_based | amount_based | fixed */
+  commission_type:  text("commission_type").notNull().default("profit_based"),
+  commission_value: numeric("commission_value", { precision: 8, scale: 4 }).notNull().default("0"),
+  is_active:        boolean("is_active").notNull().default(true),
+  sort_order:       integer("sort_order").notNull().default(0),
+  created_at:       timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("repair_service_types_company_idx").on(t.company_id, t.sort_order),
+  uniqueIndex("repair_service_types_company_name_uidx").on(t.company_id, t.name_ar),
+]);
+
+/* ── 2. بنود الخدمة لكل بطاقة صيانة ── */
+export const repairJobServicesTable = pgTable("repair_job_services", {
+  id:                          serial("id").primaryKey(),
+  job_id:                      integer("job_id").notNull().references(() => repairJobsTable.id, { onDelete: "cascade" }),
+  company_id:                  integer("company_id").notNull(),
+
+  /* مرجع نوع الخدمة — SET NULL عند الحذف (الـ snapshots تحفظ البيانات) */
+  service_type_id:             integer("service_type_id").references(() => repairServiceTypesTable.id, { onDelete: "set null" }),
+  service_type_name_snapshot:  text("service_type_name_snapshot").notNull(),
+  /* TODO (Phase 2): يُستخدم للتقارير التاريخية بعد إعادة تسمية الأنواع */
+  service_type_code_snapshot:  text("service_type_code_snapshot"),
+
+  technician_id:               integer("technician_id"),
+  technician_name:             text("technician_name").notNull(),
+
+  /* مبلغ الخدمة — أساس حساب الكوميشن (مستقل عن final_cost) */
+  amount:                      numeric("amount", { precision: 12, scale: 2 }).notNull().default("0"),
+
+  status:                      text("status").notNull().default("pending"),
+
+  /* حقول الكوميشن — تُكتب فقط عند التسليم (Phase 2) */
+  commission_source_snapshot:  text("commission_source_snapshot"),
+  commission_rate_snapshot:    numeric("commission_rate_snapshot", { precision: 8, scale: 4 }),
+  commission_computed:         numeric("commission_computed", { precision: 12, scale: 2 }),
+  commission_locked:           boolean("commission_locked").notNull().default(false),
+
+  notes:                       text("notes"),
+  created_at:                  timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updated_at:                  timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("repair_job_services_job_idx").on(t.job_id),
+  index("repair_job_services_tech_idx").on(t.company_id, t.technician_id),
+]);
+
+/* ── 3. جسر القطع ↔ الخدمات (M:N) ── */
+export const repairJobServicePartsTable = pgTable("repair_job_service_parts", {
+  id:                  serial("id").primaryKey(),
+  service_id:          integer("service_id").notNull().references(() => repairJobServicesTable.id, { onDelete: "cascade" }),
+  part_id:             integer("part_id").notNull().references(() => repairJobPartsTable.id, { onDelete: "cascade" }),
+  quantity_allocated:  numeric("quantity_allocated", { precision: 12, scale: 3 }).notNull().default("1"),
+  created_at:          timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("repair_job_service_parts_service_idx").on(t.service_id),
+  index("repair_job_service_parts_part_idx").on(t.part_id),
+  uniqueIndex("repair_job_service_parts_uidx").on(t.service_id, t.part_id),
+]);
+
 export const insertRepairJobSchema = createInsertSchema(repairJobsTable).omit({ id: true, created_at: true, updated_at: true });
 export const insertRepairJobPartSchema = createInsertSchema(repairJobPartsTable).omit({ id: true, created_at: true });
 export const insertRepairStatusSchema = createInsertSchema(repairStatusesTable).omit({ id: true, created_at: true });
@@ -286,3 +360,6 @@ export type RepairDashboardCard = typeof repairDashboardCardsTable.$inferSelect;
 export type RepairDeviceModel = typeof repairDeviceModelsTable.$inferSelect;
 export type RepairReceiptTechnician = typeof repairReceiptTechniciansTable.$inferSelect;
 export type RepairDevicePhoto = typeof repairDevicePhotosTable.$inferSelect;
+export type RepairServiceType = typeof repairServiceTypesTable.$inferSelect;
+export type RepairJobService = typeof repairJobServicesTable.$inferSelect;
+export type RepairJobServicePart = typeof repairJobServicePartsTable.$inferSelect;

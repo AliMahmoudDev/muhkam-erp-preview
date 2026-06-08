@@ -15,6 +15,7 @@ import DefaultsTab from "./repair-settings/DefaultsTab";
 import WhatsAppTemplatesTab from "./repair-settings/WhatsAppTemplatesTab";
 import DashboardCardsTab from "./repair-settings/DashboardCardsTab";
 import DeviceModelsTab from "./repair-settings/DeviceModelsTab";
+import ServiceTypesTab from "./repair-settings/ServiceTypesTab";
 
 /* ══════════════════════════════════════════════════════════════
    MAIN MODAL
@@ -262,6 +263,7 @@ export default function RepairSettingsModal({ onClose, initialTab = "checklist" 
             {activeTab === "checklist"        && <ChecklistTab />}
             {activeTab === "dashboard-cards"  && <DashboardCardsTab />}
             {activeTab === "technicians"      && <TechniciansTab />}
+            {activeTab === "service-types"    && <ServiceTypesTab />}
             {activeTab === "accessories"      && <AccessoriesTab />}
             {activeTab === "defaults"         && <DefaultsTab />}
             {activeTab === "wa-templates"     && <WhatsAppTemplatesTab />}

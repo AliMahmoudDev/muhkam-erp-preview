@@ -6,6 +6,8 @@ import paymentsRouter from "./payments";
 import deliveryRouter from "./delivery";
 import techReceiptsRouter from "./technician-receipts";
 import photosRouter from "./photos";
+import serviceTypesRouter from "./service-types";
+import jobServicesRouter from "./job-services";
 
 const router: IRouter = Router();
 
@@ -22,5 +24,7 @@ router.use(paymentsRouter);
 router.use(deliveryRouter);
 router.use(techReceiptsRouter);
 router.use(photosRouter);
+router.use(serviceTypesRouter);
+router.use(jobServicesRouter);
 
 export default router;
