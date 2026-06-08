@@ -111,9 +111,10 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
   }
 
   return (
-    <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 space-y-2.5">
-      {/* نوع الخدمة */}
-      <div className="grid grid-cols-2 gap-2">
+    <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 space-y-2">
+
+      {/* صف ١: نوع الخدمة | اسم مخصص | المبلغ */}
+      <div className="grid grid-cols-[1fr_1fr_6rem] gap-2">
         <div>
           <label className="text-[10px] erp-label mb-1 block">نوع الخدمة</label>
           {serviceTypes.length > 0 ? (
@@ -122,62 +123,81 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
               onChange={e => onServiceTypeChange(e.target.value)}
               className="erp-input w-full text-xs"
             >
-              <option value="">— اختر أو اكتب يدوياً —</option>
+              <option value="">— اختر أو اكتب —</option>
               {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
             </select>
-          ) : null}
+          ) : (
+            <input
+              type="text"
+              value={value.service_type_name}
+              onChange={e => onChange({ ...value, service_type_name: e.target.value })}
+              placeholder="اسم الخدمة..."
+              className="erp-input w-full text-xs"
+            />
+          )}
         </div>
+
         <div>
           <label className="text-[10px] erp-label mb-1 block">
-            {serviceTypes.length > 0 ? "أو اكتب اسم الخدمة" : "اسم الخدمة"}
+            {serviceTypes.length > 0 ? "اسم مخصص (اختياري)" : "وصف إضافي"}
           </label>
           <input
             type="text"
             value={value.service_type_name}
             onChange={e => onChange({ ...value, service_type_name: e.target.value })}
-            placeholder={serviceTypes.length > 0 ? "خدمة غير مصنّفة..." : "اسم الخدمة..."}
+            placeholder={serviceTypes.length > 0 ? "أو اكتب بدلاً من القائمة..." : "وصف..."}
             className="erp-input w-full text-xs"
           />
         </div>
-      </div>
 
-      {/* الفني — اختيار من القائمة + حقل نصي حر دائماً */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <label className="text-[10px] erp-label mb-1 block">الفني المنفذ</label>
-          {users.length > 0 && (
-            <select
-              value={value.technician_id ?? ""}
-              onChange={e => onTechSelect(e.target.value)}
-              className="erp-input w-full text-xs"
-            >
-              <option value="">— اختر من القائمة —</option>
-              {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
-          )}
-          <input
-            type="text"
-            value={value.technician_name}
-            onChange={e => onChange({ ...value, technician_name: e.target.value, technician_id: null })}
-            placeholder="أو اكتب اسم الفني..."
-            className="erp-input w-full text-xs"
-          />
-        </div>
         <div>
-          <label className="text-[10px] erp-label mb-1 block">مبلغ الخدمة</label>
+          <label className="text-[10px] erp-label mb-1 block">المبلغ</label>
           <input
-            type="number"
-            min="0"
-            step="0.01"
+            type="number" min="0" step="0.01"
             value={value.amount}
             onChange={e => onChange({ ...value, amount: e.target.value })}
-            className="erp-input w-full text-xs"
+            className="erp-input w-full text-xs text-left"
+            dir="ltr"
           />
         </div>
       </div>
 
-      {/* الحالة والملاحظات */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* صف ٢: الفني (ذكي) | الحالة | ملاحظة */}
+      <div className="grid grid-cols-[1fr_7rem_1fr] gap-2">
+        <div>
+          <label className="text-[10px] erp-label mb-1 block">الفني المنفذ</label>
+          {users.length > 0 ? (
+            <>
+              <select
+                value={value.technician_id ?? ""}
+                onChange={e => onTechSelect(e.target.value)}
+                className="erp-input w-full text-xs"
+              >
+                <option value="">— اختر من القائمة —</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
+              {/* حقل الاسم الحر يظهر فقط عند عدم اختيار فني من القائمة */}
+              {!value.technician_id && (
+                <input
+                  type="text"
+                  value={value.technician_name}
+                  onChange={e => onChange({ ...value, technician_name: e.target.value, technician_id: null })}
+                  placeholder="أو اكتب اسم الفني..."
+                  className="erp-input w-full text-xs mt-1"
+                />
+              )}
+            </>
+          ) : (
+            <input
+              type="text"
+              value={value.technician_name}
+              onChange={e => onChange({ ...value, technician_name: e.target.value, technician_id: null })}
+              placeholder="اسم الفني..."
+              className="erp-input w-full text-xs"
+            />
+          )}
+        </div>
+
         <div>
           <label className="text-[10px] erp-label mb-1 block">الحالة</label>
           <select
@@ -185,18 +205,19 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
             onChange={e => onChange({ ...value, status: e.target.value as JobService["status"] })}
             className="erp-input w-full text-xs"
           >
-            <option value="pending">في الانتظار</option>
-            <option value="in_progress">قيد التنفيذ</option>
+            <option value="pending">انتظار</option>
+            <option value="in_progress">جاري</option>
             <option value="completed">مكتمل</option>
           </select>
         </div>
+
         <div>
-          <label className="text-[10px] erp-label mb-1 block">ملاحظة (اختياري)</label>
+          <label className="text-[10px] erp-label mb-1 block">ملاحظة</label>
           <input
             type="text"
             value={value.notes}
             onChange={e => onChange({ ...value, notes: e.target.value })}
-            placeholder="ملاحظة اختيارية..."
+            placeholder="اختياري..."
             className="erp-input w-full text-xs"
           />
         </div>
