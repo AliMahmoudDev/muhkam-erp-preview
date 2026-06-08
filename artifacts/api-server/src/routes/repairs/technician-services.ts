@@ -28,7 +28,9 @@ import { hasPermission } from "../../lib/permissions";
 
 const router: IRouter = Router();
 
-const ACTIVE_SVC_STATUSES = ["pending", "in_progress", "completed"] as const;
+/* Active = عمل قيد التنفيذ فعلياً — "completed" تعني الخدمة انتهت لكن البطاقة لم تُسلَّم بعد
+   ولا تظهر في Active ولا في Completed (تنتظر قفل الكوميشن عند التسليم) */
+const ACTIVE_SVC_STATUSES = ["pending", "in_progress"] as const;
 
 router.get("/technicians/:id/services", wrap(async (req, res) => {
   const { company_id } = ctx(req);

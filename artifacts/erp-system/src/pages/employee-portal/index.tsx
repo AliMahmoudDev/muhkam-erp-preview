@@ -165,10 +165,12 @@ export default function EmployeePortal() {
   /* ── Derived ── */
   /* لوحة الفني:
      - technician_id في repair_job_services = user.id دائماً
-     - تظهر اللوحة إذا: role=technician  أو  (empId موجود + سبق تعيين خدمات) */
+     - تظهر اللوحة إذا: role=technician  أو  (empId موجود + سبق تعيين أي خدمة للمستخدم)
+     - نستخدم total_assigned (كل الخدمات بغض النظر عن الحالة) لأن active_count
+       قد يكون صفراً حتى لو عنده خدمات بحالة "completed" أو "commission_locked" */
   const hasTechServices =
     !!techSummaryRaw &&
-    ((techSummaryRaw.active_count ?? 0) > 0 || (techSummaryRaw.delivered_count ?? 0) > 0);
+    ((techSummaryRaw as { total_assigned?: number }).total_assigned ?? 0) > 0;
   const showTechDashboard = user.role === Role.Technician || (!!empId && hasTechServices);
 
   const emp       = (empRaw ?? {}) as AnyRec;

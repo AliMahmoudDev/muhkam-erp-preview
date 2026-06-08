@@ -27,6 +27,7 @@ interface EarningsSummary {
   delivered_count:      number;
   active_count:         number;
   outstanding_earnings: number;
+  total_assigned:       number;
 }
 
 /* SECURITY: لا commission_source_snapshot ولا commission_rate_snapshot */

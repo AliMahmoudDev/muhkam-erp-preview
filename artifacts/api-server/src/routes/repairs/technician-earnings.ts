@@ -33,7 +33,9 @@ function canViewTech(req: Express.Request, techId: number): boolean {
   return isSelf || hasPermission(req.user, "can_view_reports");
 }
 
-const ACTIVE_SVC_STATUSES = ["pending", "in_progress", "completed"] as const;
+/* active_count + outstanding_earnings: pending + in_progress فقط
+   "completed" لا تُحسب في الأرباح المعلقة لأن الخدمة منتهية (تنتظر تسليم البطاقة وقفل الكوميشن) */
+const ACTIVE_SVC_STATUSES = ["pending", "in_progress"] as const;
 
 /* ── GET /api/technicians/:id/earnings ───────────────────────── */
 router.get("/technicians/:id/earnings", wrap(async (req, res) => {
@@ -127,15 +129,25 @@ router.get("/technicians/:id/earnings/summary", wrap(async (req, res) => {
       inArray(repairJobServicesTable.status, [...ACTIVE_SVC_STATUSES]),
     ));
 
+  /* ── إجمالي الخدمات المُسنَدة للفني (لأغراض إظهار لوحة الفني بصرف النظر عن حالة الخدمة) ── */
+  const [totalAssignedRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(repairJobServicesTable)
+    .where(and(
+      eq(repairJobServicesTable.company_id, company_id),
+      eq(repairJobServicesTable.technician_id, techId),
+    ));
+
   return res.json({
     technician_id:        techId,
-    total_earned:         Number(totalRow?.total  ?? 0),
-    today:                Number(todayRow?.total  ?? 0),
-    this_month:           Number(monthRow?.total  ?? 0),
-    delivered_count:      Number(totalRow?.count  ?? 0),
-    active_count:         Number(activeRow?.count ?? 0),
-    /* مجموع مبالغ الخدمات النشطة (الكوميشن لم يُحسب بعد حتى التسليم) */
-    outstanding_earnings: Number(activeRow?.amount_sum ?? 0),
+    total_earned:         Number(totalRow?.total          ?? 0),
+    today:                Number(todayRow?.total          ?? 0),
+    this_month:           Number(monthRow?.total          ?? 0),
+    delivered_count:      Number(totalRow?.count          ?? 0),
+    active_count:         Number(activeRow?.count         ?? 0),
+    outstanding_earnings: Number(activeRow?.amount_sum    ?? 0),
+    /* كل الخدمات المُسنَدة — يُستخدم لإظهار لوحة الفني بمجرد وجود أي خدمة */
+    total_assigned:       Number(totalAssignedRow?.count  ?? 0),
   });
 }));
 
