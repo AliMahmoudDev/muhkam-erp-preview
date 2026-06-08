@@ -303,7 +303,7 @@ router.delete("/repair-jobs/:id/services/:serviceId/parts/:partId", wrap(async (
   const partId    = Number(req.params.partId);
 
   const [svc] = await db
-    .select({ id: repairJobServicesTable.id })
+    .select({ id: repairJobServicesTable.id, commission_locked: repairJobServicesTable.commission_locked })
     .from(repairJobServicesTable)
     .where(and(
       eq(repairJobServicesTable.id, serviceId),
@@ -311,6 +311,9 @@ router.delete("/repair-jobs/:id/services/:serviceId/parts/:partId", wrap(async (
       eq(repairJobServicesTable.company_id, company_id),
     ));
   if (!svc) { res.status(404).json({ error: "بند الخدمة غير موجود" }); return; }
+  if (svc.commission_locked) {
+    res.status(409).json({ error: "الخدمة مقفولة بعد التسليم — لا يمكن تعديل قطعها" }); return;
+  }
 
   await db.delete(repairJobServicePartsTable).where(and(
     eq(repairJobServicePartsTable.service_id, serviceId),

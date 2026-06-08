@@ -22,6 +22,7 @@ import { notifyUser } from "../../../lib/notify";
 import { hasPermission } from "../../../lib/permissions";
 import { computeTrackingToken } from "../../../lib/tracking-token";
 import { validateTransition } from "../../../services/repair-pipeline.service";
+import { lockJobCommissions } from "../../../services/commission.service";
 import { writeAuditLog } from "../../../lib/audit-log";
 import { normalizeName, getNextCustomerCode } from "../../customers";
 import { getOrCreateCustomerAccount } from "../../../lib/auto-account";
@@ -370,28 +371,67 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
     updates.locked = true;
   }
 
-  const [updated] = await db.update(repairJobsTable).set(updates)
-    .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
-    .returning();
+  /* ── تسليم: تحديث + قفل كوميشن + سجل الحالة — داخل transaction واحدة ──
+        يضمن الذرية الكاملة: إما الثلاثة معاً أو لا شيء. ── */
+  let updated: typeof existing;
+  let statusHistoryHandled = false;
 
-  if (b.status && b.status !== existing.status) {
+  if (String(b.status ?? "") === "delivered") {
+    [updated] = await db.transaction(async (tx) => {
+      const [u] = await tx
+        .update(repairJobsTable)
+        .set(updates)
+        .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
+        .returning();
+      await tx.insert(repairStatusHistoryTable).values({
+        job_id:      id,
+        company_id,
+        status_from: existing.status,
+        status_to:   "delivered",
+        user_id,
+        user_name,
+        event_type:  "pipeline_transition",
+        note:        "انتقال تلقائي عبر Pipeline",
+      });
+      await lockJobCommissions(id, company_id, tx);
+      return [u];
+    });
+    statusHistoryHandled = true;
+    void writeAuditLog({
+      action:      "repair_status_change",
+      record_type: "repair_job",
+      record_id:   id,
+      old_value:   { status: existing.status },
+      new_value:   { status: "delivered" },
+      user:        { id: user_id, username: user_name },
+      company_id,
+    });
+  } else {
+    [updated] = await db
+      .update(repairJobsTable)
+      .set(updates)
+      .where(and(eq(repairJobsTable.id, id), eq(repairJobsTable.company_id, company_id)))
+      .returning();
+  }
+
+  if (!statusHistoryHandled && b.status && b.status !== existing.status) {
     await db.insert(repairStatusHistoryTable).values({
-      job_id: id,
+      job_id:      id,
       company_id,
       status_from: existing.status,
-      status_to: String(b.status),
+      status_to:   String(b.status),
       user_id,
       user_name,
-      event_type: "pipeline_transition",
-      note: "انتقال تلقائي عبر Pipeline",
+      event_type:  "pipeline_transition",
+      note:        "انتقال تلقائي عبر Pipeline",
     });
     void writeAuditLog({
-      action: "repair_status_change",
+      action:      "repair_status_change",
       record_type: "repair_job",
-      record_id: id,
-      old_value: { status: existing.status },
-      new_value: { status: String(b.status) },
-      user: { id: user_id, username: user_name },
+      record_id:   id,
+      old_value:   { status: existing.status },
+      new_value:   { status: String(b.status) },
+      user:        { id: user_id, username: user_name },
       company_id,
     });
   }
