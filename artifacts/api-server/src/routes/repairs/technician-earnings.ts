@@ -6,6 +6,9 @@
  *   GET /api/technicians/:id/earnings/summary  — ملخص KPI
  *
  * الصلاحية: صاحب الطلب نفسه (employee_id == :id) أو can_view_reports.
+ *
+ * SECURITY: لا تُعاد commission_source_snapshot ولا commission_rate_snapshot
+ *   في أي استجابة موجهة للفنيين — هذه الحقول تكشف طريقة حساب الكوميشن.
  */
 
 import { Router, type IRouter } from "express";
@@ -21,7 +24,7 @@ import { hasPermission } from "../../lib/permissions";
 
 const router: IRouter = Router();
 
-/* ── helper: يتحقق أن المستخدم يملك صلاحية لرؤية بيانات هذا الفني ─── */
+/* ── helper ─────────────────────────────────────────────────── */
 function canViewTech(req: Express.Request, techId: number): boolean {
   const u = req.user as { employee_id?: number } | undefined;
   const isSelf = u?.employee_id != null && Number(u.employee_id) === techId;
@@ -47,8 +50,7 @@ router.get("/technicians/:id/earnings", wrap(async (req, res) => {
       service_type_name_snapshot: repairJobServicesTable.service_type_name_snapshot,
       amount:                     repairJobServicesTable.amount,
       commission_computed:        repairJobServicesTable.commission_computed,
-      commission_source_snapshot: repairJobServicesTable.commission_source_snapshot,
-      commission_rate_snapshot:   repairJobServicesTable.commission_rate_snapshot,
+      /* commission_source_snapshot و commission_rate_snapshot محذوفان — لا يُكشفان للفنيين */
     })
     .from(repairJobServicesTable)
     .innerJoin(repairJobsTable, eq(repairJobsTable.id, repairJobServicesTable.job_id))
@@ -79,7 +81,7 @@ router.get("/technicians/:id/earnings/summary", wrap(async (req, res) => {
     eq(repairJobServicesTable.commission_locked, true),
   );
 
-  /* ── إجمالي الأرباح وعدد الخدمات المُسلَّمة ── */
+  /* ── إجمالي الأرباح المحققة + عدد الخدمات المُسلَّمة ── */
   const [totalRow] = await db
     .select({
       total: sql<number>`coalesce(sum(${repairJobServicesTable.commission_computed}::numeric), 0)`,
@@ -107,10 +109,11 @@ router.get("/technicians/:id/earnings/summary", wrap(async (req, res) => {
     .innerJoin(repairJobsTable, eq(repairJobsTable.id, repairJobServicesTable.job_id))
     .where(and(baseWhere, gte(repairJobsTable.delivered_at, monthStart.toISOString().split("T")[0])));
 
-  /* ── خدمات نشطة (لم تُسلَّم ولم تُلغَ بعد) ── */
+  /* ── الخدمات النشطة + مجموع مبالغها (الأرباح المعلقة) ── */
   const [activeRow] = await db
     .select({
-      count: sql<number>`count(*)`,
+      count:      sql<number>`count(*)`,
+      amount_sum: sql<number>`coalesce(sum(${repairJobServicesTable.amount}::numeric), 0)`,
     })
     .from(repairJobServicesTable)
     .innerJoin(repairJobsTable, eq(repairJobsTable.id, repairJobServicesTable.job_id))
@@ -122,17 +125,15 @@ router.get("/technicians/:id/earnings/summary", wrap(async (req, res) => {
       inArray(repairJobServicesTable.status, [...ACTIVE_SVC_STATUSES]),
     ));
 
-  const totalEarned = Number(totalRow?.total ?? 0);
-
   return res.json({
-    technician_id:       techId,
-    total_earned:        totalEarned,
-    today:               Number(todayRow?.total  ?? 0),
-    this_month:          Number(monthRow?.total  ?? 0),
-    delivered_count:     Number(totalRow?.count  ?? 0),
-    active_count:        Number(activeRow?.count ?? 0),
-    /* outstanding = إجمالي المكتسب حتى الآن (placeholder — سيُطرح منه المدفوع في إصدار الرواتب) */
-    outstanding_earnings: totalEarned,
+    technician_id:        techId,
+    total_earned:         Number(totalRow?.total  ?? 0),
+    today:                Number(todayRow?.total  ?? 0),
+    this_month:           Number(monthRow?.total  ?? 0),
+    delivered_count:      Number(totalRow?.count  ?? 0),
+    active_count:         Number(activeRow?.count ?? 0),
+    /* مجموع مبالغ الخدمات النشطة (الكوميشن لم يُحسب بعد حتى التسليم) */
+    outstanding_earnings: Number(activeRow?.amount_sum ?? 0),
   });
 }));
 

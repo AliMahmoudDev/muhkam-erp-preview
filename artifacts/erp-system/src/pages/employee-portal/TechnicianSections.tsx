@@ -1,13 +1,12 @@
 /**
- * TechnicianSections.tsx — Phase 3
+ * TechnicianSections.tsx — Phase 3 / 3.1
  *
  * الأقسام الخاصة بلوحة الفني، تُحقن داخل /my-portal عندما role = 'technician'.
  *
- * الأقسام:
- *  1. KPI Cards (4): أرباح اليوم / أرباح الشهر / خدمات نشطة / أرباح معلقة
- *  2. خدماتي النشطة  — from GET /api/technicians/:id/services
- *  3. الخدمات المكتملة — from GET /api/technicians/:id/earnings
- *  4. الأداء          — derived metrics
+ * SECURITY — الفني يرى فقط:
+ *   - اسم الخدمة، رقم البطاقة، اسم العميل، الحالة، المبلغ، الكوميشن المحقق
+ *   لا يُعرض: commission_source_snapshot, commission_rate_snapshot,
+ *              commission_type, commission_value, تكاليف قطع، ربح الشركة
  */
 
 import { useState } from 'react';
@@ -21,14 +20,16 @@ import { fmtCurrency, fmtDate } from './helpers';
 
 /* ── Types ─────────────────────────────────────────────── */
 interface EarningsSummary {
-  technician_id:       number;
-  total_earned:        number;
-  today:               number;
-  this_month:          number;
-  delivered_count:     number;
-  active_count:        number;
+  technician_id:        number;
+  total_earned:         number;
+  today:                number;
+  this_month:           number;
+  delivered_count:      number;
+  active_count:         number;
   outstanding_earnings: number;
 }
+
+/* SECURITY: لا commission_source_snapshot ولا commission_rate_snapshot */
 interface ActiveService {
   id:                         number;
   job_id:                     number;
@@ -38,12 +39,14 @@ interface ActiveService {
   service_type_name_snapshot: string | null;
   amount:                     string;
   status:                     string;
-  commission_source_snapshot: string | null;
   created_at:                 string;
 }
+
+/* SECURITY: لا commission_source_snapshot ولا commission_rate_snapshot */
 interface EarningsRow {
   id:                         number;
   job_no:                     string;
+  customer_name:              string;
   delivered_at:               string | null;
   service_type_name_snapshot: string | null;
   amount:                     string;
@@ -52,15 +55,15 @@ interface EarningsRow {
 
 /* ── Status label maps ─────────────────────────────────── */
 const JOB_STATUS: Record<string, { label: string; color: string }> = {
-  pending:              { label: 'في الانتظار',       color: '#f59e0b' },
-  diagnosing:           { label: 'قيد الفحص',         color: '#3b82f6' },
-  in_progress:          { label: 'قيد الإصلاح',       color: '#8b5cf6' },
-  in_repair:            { label: 'قيد الإصلاح',       color: '#8b5cf6' },
-  waiting_parts:        { label: 'بانتظار قطعة',      color: '#ec4899' },
-  qa:                   { label: 'اختبار الجودة',     color: '#06b6d4' },
-  final_quality_check:  { label: 'فحص نهائي',         color: '#06b6d4' },
-  done:                 { label: 'تم الإصلاح',         color: '#10b981' },
-  shipped:              { label: 'قيد الشحن',          color: '#0ea5e9' },
+  pending:              { label: 'في الانتظار',   color: '#f59e0b' },
+  diagnosing:           { label: 'قيد الفحص',     color: '#3b82f6' },
+  in_progress:          { label: 'قيد الإصلاح',   color: '#8b5cf6' },
+  in_repair:            { label: 'قيد الإصلاح',   color: '#8b5cf6' },
+  waiting_parts:        { label: 'بانتظار قطعة',  color: '#ec4899' },
+  qa:                   { label: 'اختبار الجودة', color: '#06b6d4' },
+  final_quality_check:  { label: 'فحص نهائي',     color: '#06b6d4' },
+  done:                 { label: 'تم الإصلاح',     color: '#10b981' },
+  shipped:              { label: 'قيد الشحن',      color: '#0ea5e9' },
 };
 const SVC_STATUS: Record<string, { label: string; color: string }> = {
   pending:     { label: 'في الانتظار', color: '#f59e0b' },
@@ -117,14 +120,14 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
     enabled: !!empId,
   });
 
-  const activeServices  = activeRaw    ?? [];
-  const earnings        = earningsRaw  ?? [];
+  const activeServices  = activeRaw   ?? [];
+  const earnings        = earningsRaw ?? [];
   const recentCompleted = [...earnings].reverse().slice(0, 20);
 
   /* ── Derived ── */
-  const deliveredCount  = summary?.delivered_count ?? earnings.length;
-  const activeCount     = summary?.active_count    ?? activeServices.length;
-  const avgCommission   = deliveredCount > 0 ? (summary?.total_earned ?? 0) / deliveredCount : 0;
+  const deliveredCount = summary?.delivered_count ?? earnings.length;
+  const activeCount    = summary?.active_count    ?? activeServices.length;
+  const avgCommission  = deliveredCount > 0 ? (summary?.total_earned ?? 0) / deliveredCount : 0;
 
   /* ── Shared style helpers ── */
   const S = {
@@ -214,7 +217,7 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
           label="أرباح معلقة"
           value={sumLoading ? '…' : fmtCurrency(summary?.outstanding_earnings ?? 0, currency)}
           emoji="⏳" color="#8b5cf6" isDark={isDark}
-          note="إجمالي المكتسب"
+          note="مجموع مبالغ الخدمات النشطة"
         />
       </div>
 
@@ -223,7 +226,7 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
         <div style={S.head}>
           <button onClick={() => setActiveOpen(o => !o)} style={S.headBtn}>
             <span style={S.iconBox('#10b981')}><Wrench size={16} /></span>
-            <span style={S.title}>خدماتي النشطة</span>
+            <span style={S.title}>خدماتي الحالية</span>
             {activeLoading && <Loader2 size={13} className="animate-spin" style={{ color: textMuted }} />}
             <span style={S.chevron}>{activeOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</span>
           </button>
@@ -242,24 +245,24 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
                     <tr style={S.theadRow}>
-                      {['اسم الخدمة', 'رقم البطاقة', 'اسم العميل', 'حالة الخدمة', 'حالة البطاقة', 'المبلغ', 'تاريخ الإضافة'].map(h => (
+                      {['رقم البطاقة', 'اسم العميل', 'نوع الخدمة', 'حالة الخدمة', 'حالة البطاقة', 'المبلغ', 'تاريخ الإضافة'].map(h => (
                         <th key={h} style={S.th}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {activeServices.map((s, i) => {
-                      const svcSt = SVC_STATUS[s.status] ?? { label: s.status, color: textMuted };
+                      const svcSt = SVC_STATUS[s.status]     ?? { label: s.status,     color: textMuted };
                       const jobSt = JOB_STATUS[s.job_status] ?? { label: s.job_status, color: textMuted };
                       return (
                         <tr key={s.id} style={S.rowStripe(i)}>
-                          <td style={{ ...S.td, fontWeight: 700, color: textMain }}>
-                            {s.service_type_name_snapshot ?? '—'}
-                          </td>
                           <td style={{ ...S.td, fontFamily: 'monospace', color: '#8b5cf6', fontWeight: 700 }}>
                             {s.job_no}
                           </td>
                           <td style={S.td}>{s.customer_name}</td>
+                          <td style={{ ...S.td, fontWeight: 700, color: textMain }}>
+                            {s.service_type_name_snapshot ?? '—'}
+                          </td>
                           <td style={S.td}>
                             <StatusPill label={svcSt.label} color={svcSt.color} />
                           </td>
@@ -307,7 +310,7 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
                     <tr style={S.theadRow}>
-                      {['اسم الخدمة', 'رقم البطاقة', 'تاريخ التسليم', 'مبلغ الخدمة', 'الكوميشن المحقق'].map(h => (
+                      {['رقم البطاقة', 'اسم العميل', 'نوع الخدمة', 'تاريخ التسليم', 'مبلغ الخدمة', 'الكوميشن المحقق'].map(h => (
                         <th key={h} style={S.th}>{h}</th>
                       ))}
                     </tr>
@@ -315,11 +318,12 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
                   <tbody>
                     {recentCompleted.map((e, i) => (
                       <tr key={e.id} style={S.rowStripe(i)}>
-                        <td style={{ ...S.td, fontWeight: 700, color: textMain }}>
-                          {e.service_type_name_snapshot ?? '—'}
-                        </td>
                         <td style={{ ...S.td, fontFamily: 'monospace', color: '#8b5cf6', fontWeight: 700 }}>
                           {e.job_no}
+                        </td>
+                        <td style={S.td}>{e.customer_name}</td>
+                        <td style={{ ...S.td, fontWeight: 700, color: textMain }}>
+                          {e.service_type_name_snapshot ?? '—'}
                         </td>
                         <td style={{ ...S.td, color: textMuted }}>
                           {fmtDate(e.delivered_at, false)}
@@ -352,21 +356,9 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
         {perfOpen && (
           <div style={S.body}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-              <PerfStat
-                label="خدمات مكتملة"
-                value={String(deliveredCount)}
-                color="#10b981" isDark={isDark}
-              />
-              <PerfStat
-                label="خدمات نشطة"
-                value={String(activeCount)}
-                color="#3b82f6" isDark={isDark}
-              />
-              <PerfStat
-                label="متوسط الكوميشن"
-                value={fmtCurrency(avgCommission.toFixed(2), currency)}
-                color="#8b5cf6" isDark={isDark}
-              />
+              <PerfStat label="خدمات مكتملة"  value={String(deliveredCount)}                      color="#10b981" />
+              <PerfStat label="خدمات نشطة"    value={String(activeCount)}                          color="#3b82f6" />
+              <PerfStat label="متوسط الكوميشن" value={fmtCurrency(avgCommission.toFixed(2), currency)} color="#8b5cf6" />
             </div>
           </div>
         )}
@@ -408,13 +400,11 @@ function KpiCard({ label, value, emoji, color, isDark, note, unit }: {
   );
 }
 
-function PerfStat({ label, value, color, isDark }: {
-  label:  string;
-  value:  string;
-  color:  string;
-  isDark: boolean;
+function PerfStat({ label, value, color }: {
+  label: string;
+  value: string;
+  color: string;
 }) {
-  void isDark;
   return (
     <div style={{
       borderRadius: 12, padding: '16px', textAlign: 'center',

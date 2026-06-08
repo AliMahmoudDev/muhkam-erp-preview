@@ -10,6 +10,9 @@
  *   - repair_job_services.status IN ('pending', 'in_progress', 'completed')
  *
  * الصلاحية: صاحب الطلب نفسه (employee_id == :id) أو can_view_reports.
+ *
+ * SECURITY: لا تُعاد commission_source_snapshot ولا commission_rate_snapshot —
+ *   هذه الحقول مخصصة للإدارة فقط ولا يجب أن تصل للفنيين.
  */
 
 import { Router, type IRouter } from "express";
@@ -32,7 +35,6 @@ router.get("/technicians/:id/services", wrap(async (req, res) => {
   const techId = Number(req.params.id);
   if (!techId) return res.status(400).json({ error: "معرّف الفني غير صحيح" });
 
-  /* يسمح للفني برؤية بياناته الخاصة أو لمن لديه صلاحية can_view_reports */
   const reqUser = req.user as { employee_id?: number };
   const isSelf  = reqUser.employee_id != null && Number(reqUser.employee_id) === techId;
   if (!isSelf && !hasPermission(req.user, "can_view_reports")) {
@@ -49,7 +51,6 @@ router.get("/technicians/:id/services", wrap(async (req, res) => {
       service_type_name_snapshot: repairJobServicesTable.service_type_name_snapshot,
       amount:                     repairJobServicesTable.amount,
       status:                     repairJobServicesTable.status,
-      commission_source_snapshot: repairJobServicesTable.commission_source_snapshot,
       created_at:                 repairJobServicesTable.created_at,
     })
     .from(repairJobServicesTable)

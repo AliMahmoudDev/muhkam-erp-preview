@@ -284,6 +284,8 @@ export default function ServiceTypesTab() {
                       {Number(t.commission_value).toLocaleString("ar-EG")}
                       {t.commission_type === "fixed" ? " ج.م" : "%"}
                     </span>
+                    <span className="text-white/10 text-[9px]">·</span>
+                    <span className="text-[9px] text-white/20 font-mono">ترتيب {t.sort_order}</span>
                   </div>
                 </div>
 
