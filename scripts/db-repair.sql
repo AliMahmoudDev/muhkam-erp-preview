@@ -369,6 +369,11 @@ BEGIN
     RAISE NOTICE 'db-repair: employee_deductions orphans fixed';
   END IF;
 
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employee_commission_ledger') THEN
+    UPDATE employee_commission_ledger SET company_id = 1 WHERE company_id NOT IN (SELECT id FROM companies);
+    RAISE NOTICE 'db-repair: employee_commission_ledger orphans fixed';
+  END IF;
+
   -- ── HR — custody ──────────────────────────────────────────────────────────
 
   IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employee_custody') THEN
