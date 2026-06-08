@@ -1,7 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { useWarehouses } from '@/hooks/useWarehouses';
-import { safeArray } from '@/lib/safe-data';
 import {
   ChevronLeft, Printer, Send, CheckCheck, Trash2, Smartphone, Phone,
   ClipboardList, Plus, Save, History, ChevronRight, Package,
@@ -72,75 +70,12 @@ export function JobDetail({
     select: (d) => (Array.isArray(d) ? d : []),
   });
   const servicesTotalCost = servicesForCost.reduce((s, sv) => s + (Number(sv.amount) || 0), 0);
-  const partsTotalCost = (job.parts ?? []).filter(p => !p.is_returned)
-    .reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
-
-  /* ── قطع الغيار ── */
-  const [partsOpen, setPartsOpen]               = useState(true);
-  const [addingPart, setAddingPart]             = useState(false);
-  const [partSearch, setPartSearch]             = useState('');
-  const [partDropOpen, setPartDropOpen]         = useState(false);
-  const [partSelectedProduct, setPartSelectedProduct] = useState<{ id: number; name: string; quantity: string | number; sell_price: string | number } | null>(null);
-  const [partQty, setPartQty]                   = useState('1');
-  const [partPrice, setPartPrice]               = useState('');
-  const [partWarehouseId, setPartWarehouseId]   = useState<number | null>(null);
 
   const _safeHistory   = Array.isArray(job.history) ? job.history : [];
   const engineerReports = _safeHistory.filter(h => h.event_type === 'engineer_report');
   const otherHistory    = _safeHistory.filter(h => h.event_type !== 'engineer_report');
 
   const refreshJob = () => qc.invalidateQueries({ queryKey: ['/api/repair-jobs', job.id] });
-
-  /* ── بيانات المخازن والمنتجات لقطع الغيار ── */
-  const { warehouses: warehousesRaw } = useWarehouses();
-  const warehouses = (warehousesRaw ?? []) as { id: number; name: string }[];
-
-  type PartProduct = { id: number; name: string; quantity: string | number; sell_price: string | number };
-  const { data: allProductsRaw } = useQuery<PartProduct[]>({
-    queryKey: ['/api/products', partWarehouseId, 'repair-parts'],
-    queryFn: () => {
-      const url = partWarehouseId
-        ? api(`/api/products?warehouse_id=${partWarehouseId}`)
-        : api('/api/products');
-      return authFetch(url).then(r => r.json());
-    },
-    enabled: addingPart,
-  });
-  const allProducts: PartProduct[] = safeArray(allProductsRaw) as PartProduct[];
-
-  const filteredPartProducts = useMemo(() => {
-    if (!partSearch.trim()) return allProducts.slice(0, 25);
-    const q = partSearch.toLowerCase();
-    return allProducts.filter(p => p.name.toLowerCase().includes(q)).slice(0, 25);
-  }, [allProducts, partSearch]);
-
-  const addPart = async () => {
-    if (!partSelectedProduct) return;
-    const qty   = Math.max(1, parseInt(partQty) || 1);
-    const price = parseFloat(partPrice) || 0;
-    const r = await authFetch(api(`/api/repair-jobs/${job.id}/parts`), {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        product_id:   partSelectedProduct.id,
-        product_name: partSelectedProduct.name,
-        quantity:     qty,
-        unit_price:   price,
-        source:       'internal',
-        warehouse_id: partWarehouseId,
-      }),
-    });
-    if (!r.ok) { toast({ title: 'خطأ في إضافة القطعة', variant: 'destructive' }); return; }
-    setPartSearch(''); setPartSelectedProduct(null); setPartQty('1'); setPartPrice('');
-    setAddingPart(false);
-    toast({ title: '✓ تمت إضافة القطعة' });
-    refreshJob();
-  };
-
-  const deletePart = async (partId: number) => {
-    const r = await authFetch(api(`/api/repair-jobs/${job.id}/parts/${partId}`), { method: 'DELETE' });
-    if (!r.ok) { toast({ title: 'خطأ في حذف القطعة', variant: 'destructive' }); return; }
-    refreshJob();
-  };
 
   const addReport = async () => {
     const note = newReportText.trim();
@@ -556,193 +491,13 @@ export function JobDetail({
           )}
         </div>
 
-        {/* Parts Used — Interactive */}
-        <div className="glass-panel rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.03] overflow-hidden">
-          <button
-            onClick={() => setPartsOpen(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-white/3 transition-all"
-          >
-            <p className="text-[11px] text-cyan-300/80 font-bold flex items-center gap-1.5">
-              <Package className="w-3.5 h-3.5" /> قطع الغيار المستخدمة
-              {(job.parts?.filter(p => !p.is_returned).length ?? 0) > 0 && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300/70 font-medium tabular-nums">
-                  {job.parts!.filter(p => !p.is_returned).length}
-                </span>
-              )}
-            </p>
-            <div className="flex items-center gap-2">
-              {partsOpen && !addingPart && (
-                <span
-                  onClick={(e) => { e.stopPropagation(); setAddingPart(true); }}
-                  className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-cyan-500/12 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 transition-all cursor-pointer"
-                >
-                  <Plus className="w-3 h-3" /> إضافة قطعة
-                </span>
-              )}
-              <ChevronRight className={`w-4 h-4 text-cyan-400/50 transition-transform duration-200 ${partsOpen ? '-rotate-90' : 'rotate-90'}`} />
-            </div>
-          </button>
-
-          {partsOpen && (
-            <div className="px-4 pb-4 space-y-2.5">
-              {/* نموذج الإضافة */}
-              {addingPart && (
-                <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 space-y-2.5">
-                  {/* المخزن */}
-                  <div>
-                    <label className="text-[10px] erp-label mb-1 block">المخزن</label>
-                    <select
-                      value={partWarehouseId ?? ''}
-                      onChange={e => {
-                        setPartWarehouseId(e.target.value ? Number(e.target.value) : null);
-                        setPartSearch(''); setPartSelectedProduct(null);
-                      }}
-                      className="erp-input w-full text-xs"
-                    >
-                      <option value="">— كل المخازن —</option>
-                      {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                    </select>
-                  </div>
-                  {/* البحث عن المنتج */}
-                  <div className="relative">
-                    <label className="text-[10px] erp-label mb-1 block">اسم القطعة / المنتج</label>
-                    <input
-                      type="text"
-                      value={partSearch}
-                      onChange={e => { setPartSearch(e.target.value); setPartDropOpen(true); setPartSelectedProduct(null); }}
-                      onFocus={() => setPartDropOpen(true)}
-                      onBlur={() => setTimeout(() => setPartDropOpen(false), 180)}
-                      placeholder="ابحث في المخزن..."
-                      className="erp-input w-full text-xs"
-                      autoComplete="off"
-                    />
-                    {partDropOpen && partSearch.trim() && filteredPartProducts.length > 0 && (
-                      <div className="absolute z-50 top-full right-0 left-0 mt-1 rounded-xl border border-white/10 bg-[#0f0c1e] shadow-2xl max-h-44 overflow-y-auto">
-                        {filteredPartProducts.map(p => (
-                          <button
-                            key={p.id}
-                            onMouseDown={e => e.preventDefault()}
-                            onClick={() => {
-                              setPartSelectedProduct(p);
-                              setPartSearch(p.name);
-                              setPartPrice(String(Number(p.sell_price) || ''));
-                              setPartDropOpen(false);
-                            }}
-                            className="w-full text-right px-3 py-2 text-xs hover:bg-white/5 flex items-center justify-between gap-2 border-b border-white/5 last:border-0"
-                          >
-                            <span className="text-white/80 truncate">{p.name}</span>
-                            <span className="text-cyan-300/60 font-mono tabular-nums shrink-0">
-                              {Number(p.sell_price) > 0 ? Number(p.sell_price).toLocaleString('ar-EG') : '—'}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {/* الكمية والسعر */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[10px] erp-label mb-1 block">الكمية</label>
-                      <input type="number" min="1" value={partQty} onChange={e => setPartQty(e.target.value)} className="erp-input w-full text-xs" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] erp-label mb-1 block">سعر الوحدة</label>
-                      <input type="number" min="0" step="0.01" value={partPrice} onChange={e => setPartPrice(e.target.value)} className="erp-input w-full text-xs" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] erp-label">
-                      {partSelectedProduct
-                        ? `متاح في المخزن: ${Number(partSelectedProduct.quantity).toLocaleString('ar-EG')}`
-                        : 'اختر منتجاً من القائمة'}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setAddingPart(false);
-                          setPartSearch(''); setPartSelectedProduct(null);
-                          setPartQty('1'); setPartPrice('');
-                        }}
-                        className="text-[11px] px-3 py-1 rounded-lg border border-[var(--erp-border)] erp-label hover:text-white/65 hover:border-white/20 transition-all"
-                      >
-                        إلغاء
-                      </button>
-                      <button
-                        onClick={addPart}
-                        disabled={!partSelectedProduct}
-                        className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-lg bg-cyan-500/20 border border-cyan-500/35 text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-30 transition-all"
-                      >
-                        <Plus className="w-3 h-3" /> إضافة
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* حالة فارغة */}
-              {(!job.parts || job.parts.filter(p => !p.is_returned).length === 0) && !addingPart && (
-                <div className="text-center py-6 space-y-2">
-                  <Package className="w-6 h-6 text-cyan-400/30 mx-auto" />
-                  <p className="text-[11px] text-white/35">لم تُضف قطع غيار بعد</p>
-                  <button
-                    onClick={() => setAddingPart(true)}
-                    className="text-[11px] text-cyan-400/70 hover:text-cyan-300 transition-colors inline-flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" /> أضف أول قطعة
-                  </button>
-                </div>
-              )}
-
-              {/* قائمة القطع */}
-              {job.parts && job.parts.filter(p => !p.is_returned).length > 0 && (
-                <div className="space-y-1">
-                  {job.parts.filter(p => !p.is_returned).map(p => {
-                    const qty   = Number(p.quantity) || 1;
-                    const price = Number(p.unit_price) || 0;
-                    const line  = qty * price;
-                    return (
-                      <div key={p.id} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 border border-white/5 bg-white/[0.02] group">
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[11px] font-bold text-white/85 truncate block">{p.product_name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 text-[10px]">
-                          <span className="text-white/35">×{qty}</span>
-                          {price > 0 && (
-                            <span className="text-cyan-300/70 font-mono tabular-nums">{line.toLocaleString('ar-EG')} ر.س</span>
-                          )}
-                          <button
-                            onClick={() => deletePart(p.id)}
-                            className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 p-0.5 transition-all"
-                            title="حذف القطعة"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {(() => {
-                    const activeParts = job.parts.filter(p => !p.is_returned);
-                    const total = activeParts.reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
-                    return total > 0 ? (
-                      <div className="flex items-center justify-between border-t border-cyan-500/10 pt-2 mt-1">
-                        <span className="text-[10px] text-white/40">إجمالي القطع</span>
-                        <span className="text-[11px] font-black text-cyan-300 font-mono tabular-nums">{total.toLocaleString('ar-EG')} ر.س</span>
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Job Services — Phase 1.5 (with parts linking) */}
+        {/* Job Services — Phase 1.5 */}
         <JobServicesSection
           jobId={job.id}
           users={users}
           locked={job.status === 'delivered' || job.status === 'done'}
         />
+
 
         {/* Technician & Costs */}
         <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)] space-y-3">
@@ -768,29 +523,13 @@ export function JobDetail({
               <input type="number" value={editFinal} onChange={(e) => { setEditFinal(e.target.value); }} className="erp-input w-full text-xs" />
             </div>
           </div>
-          {/* ملخص التكاليف — قطع + خدمات */}
-          {(partsTotalCost > 0 || servicesTotalCost > 0) && (
-            <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2 space-y-1">
-              {partsTotalCost > 0 && (
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-white/35">إجمالي القطع</span>
-                  <span className="font-mono tabular-nums text-cyan-300/70">{partsTotalCost.toLocaleString('ar-EG')} ر.س</span>
-                </div>
-              )}
-              {servicesTotalCost > 0 && (
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-white/35">إجمالي الخدمات</span>
-                  <span className="font-mono tabular-nums text-emerald-300/70">{servicesTotalCost.toLocaleString('ar-EG')} ر.س</span>
-                </div>
-              )}
-              {partsTotalCost > 0 && servicesTotalCost > 0 && (
-                <div className="flex items-center justify-between text-[10px] border-t border-white/5 pt-1">
-                  <span className="text-white/50 font-bold">الإجمالي معاً</span>
-                  <span className="font-mono tabular-nums font-black text-white/70">
-                    {(partsTotalCost + servicesTotalCost).toLocaleString('ar-EG')} ر.س
-                  </span>
-                </div>
-              )}
+          {/* ملخص تكاليف الخدمات */}
+          {servicesTotalCost > 0 && (
+            <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-white/35">إجمالي الخدمات</span>
+                <span className="font-mono tabular-nums text-emerald-300/70">{servicesTotalCost.toLocaleString('ar-EG')} ر.س</span>
+              </div>
             </div>
           )}
           <button onClick={handleSave} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold text-xs transition-all">
