@@ -64,6 +64,17 @@ export function JobDetail({
   const [newReportText, setNewReportText] = useState('');
   const [addingReport, setAddingReport]   = useState(false);
 
+  /* ── إجمالي بنود الخدمة (للعرض في قسم التكاليف) ── */
+  const { data: servicesForCost = [] } = useQuery<{ amount: string }[]>({
+    queryKey: ["/api/repair-jobs", job.id, "services"],
+    queryFn:  () => authFetch(api(`/api/repair-jobs/${job.id}/services`)).then(r => r.json()),
+    staleTime: 10_000,
+    select: (d) => (Array.isArray(d) ? d : []),
+  });
+  const servicesTotalCost = servicesForCost.reduce((s, sv) => s + (Number(sv.amount) || 0), 0);
+  const partsTotalCost = (job.parts ?? []).filter(p => !p.is_returned)
+    .reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
+
   /* ── قطع الغيار ── */
   const [partsOpen, setPartsOpen]               = useState(true);
   const [addingPart, setAddingPart]             = useState(false);
@@ -758,6 +769,31 @@ export function JobDetail({
               <input type="number" value={editFinal} onChange={(e) => { setEditFinal(e.target.value); }} className="erp-input w-full text-xs" />
             </div>
           </div>
+          {/* ملخص التكاليف — قطع + خدمات */}
+          {(partsTotalCost > 0 || servicesTotalCost > 0) && (
+            <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2 space-y-1">
+              {partsTotalCost > 0 && (
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-white/35">إجمالي القطع</span>
+                  <span className="font-mono tabular-nums text-cyan-300/70">{partsTotalCost.toLocaleString('ar-EG')} ر.س</span>
+                </div>
+              )}
+              {servicesTotalCost > 0 && (
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-white/35">إجمالي الخدمات</span>
+                  <span className="font-mono tabular-nums text-emerald-300/70">{servicesTotalCost.toLocaleString('ar-EG')} ر.س</span>
+                </div>
+              )}
+              {partsTotalCost > 0 && servicesTotalCost > 0 && (
+                <div className="flex items-center justify-between text-[10px] border-t border-white/5 pt-1">
+                  <span className="text-white/50 font-bold">الإجمالي معاً</span>
+                  <span className="font-mono tabular-nums font-black text-white/70">
+                    {(partsTotalCost + servicesTotalCost).toLocaleString('ar-EG')} ر.س
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
           <button onClick={handleSave} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold text-xs transition-all">
             <Save className="w-3.5 h-3.5" /> حفظ التغييرات
           </button>

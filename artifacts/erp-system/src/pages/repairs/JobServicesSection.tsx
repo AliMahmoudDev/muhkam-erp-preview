@@ -3,6 +3,10 @@
  *
  * Phase 1.5: ربط القطع بالخدمات (inline UI)
  *
+ * IMPORTANT: ServiceForm يجب أن يبقى خارج JobServicesSection
+ * لأن تعريفه داخل الدالة الأم يُسبب إعادة إنشاء كامل في كل render
+ * مما يفقد التركيز بعد كل ضغطة مفتاح.
+ *
  * TODO (Phase 2):
  *   - commission_computed يُحسب ويُكتب عند التسليم في delivery route
  *   - معالجة خصومات البطاقة عند تحديد قاعدة الكوميشن
@@ -26,8 +30,8 @@ interface ServiceType {
 }
 
 interface LinkedPart {
-  id: number;            /* repair_job_service_parts.id */
-  part_id: number;       /* repair_job_parts.id */
+  id: number;
+  part_id: number;
   product_name: string;
   quantity_allocated: string;
   unit_price: string;
@@ -61,7 +65,7 @@ const STATUS_CONFIG = {
   completed:   { label: "مكتمل",       color: "text-emerald-300 bg-emerald-500/10 border-emerald-500/20" },
 } as const;
 
-const EMPTY_FORM = {
+export const EMPTY_FORM = {
   service_type_id:   null as number | null,
   service_type_name: "",
   technician_id:     null as number | null,
@@ -75,8 +79,147 @@ const EMPTY_FORM = {
 interface Props {
   jobId:    number;
   users:    { id: number; name: string }[];
-  jobParts: JobPart[];        /* القطع المرفقة بالبطاقة (من job.parts) */
+  jobParts: JobPart[];
   locked?:  boolean;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SERVICE FORM — مُعرَّف خارج JobServicesSection تماماً
+   (تعريفه داخل الدالة يُسبب فقدان التركيز بعد كل حرف)
+══════════════════════════════════════════════════════════════ */
+interface ServiceFormProps {
+  value:        typeof EMPTY_FORM;
+  onChange:     (v: typeof EMPTY_FORM) => void;
+  onSave:       () => void;
+  onCancel:     () => void;
+  saving:       boolean;
+  serviceTypes: ServiceType[];
+  users:        { id: number; name: string }[];
+}
+
+function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, users }: ServiceFormProps) {
+  function onServiceTypeChange(id: string) {
+    const numId = id ? Number(id) : null;
+    const st = serviceTypes.find(s => s.id === numId);
+    onChange({ ...value, service_type_id: numId, service_type_name: st?.name_ar ?? value.service_type_name });
+  }
+
+  function onTechSelect(id: string) {
+    const numId = id ? Number(id) : null;
+    const u = users.find(u => u.id === numId);
+    onChange({ ...value, technician_id: numId, technician_name: u?.name ?? value.technician_name });
+  }
+
+  return (
+    <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 space-y-2.5">
+      {/* نوع الخدمة */}
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="text-[10px] erp-label mb-1 block">نوع الخدمة</label>
+          {serviceTypes.length > 0 ? (
+            <select
+              value={value.service_type_id ?? ""}
+              onChange={e => onServiceTypeChange(e.target.value)}
+              className="erp-input w-full text-xs"
+            >
+              <option value="">— اختر أو اكتب يدوياً —</option>
+              {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
+            </select>
+          ) : null}
+        </div>
+        <div>
+          <label className="text-[10px] erp-label mb-1 block">
+            {serviceTypes.length > 0 ? "أو اكتب اسم الخدمة" : "اسم الخدمة"}
+          </label>
+          <input
+            type="text"
+            value={value.service_type_name}
+            onChange={e => onChange({ ...value, service_type_name: e.target.value })}
+            placeholder={serviceTypes.length > 0 ? "خدمة غير مصنّفة..." : "اسم الخدمة..."}
+            className="erp-input w-full text-xs"
+          />
+        </div>
+      </div>
+
+      {/* الفني — اختيار من القائمة + حقل نصي حر دائماً */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <label className="text-[10px] erp-label mb-1 block">الفني المنفذ</label>
+          {users.length > 0 && (
+            <select
+              value={value.technician_id ?? ""}
+              onChange={e => onTechSelect(e.target.value)}
+              className="erp-input w-full text-xs"
+            >
+              <option value="">— اختر من القائمة —</option>
+              {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          )}
+          <input
+            type="text"
+            value={value.technician_name}
+            onChange={e => onChange({ ...value, technician_name: e.target.value, technician_id: null })}
+            placeholder="أو اكتب اسم الفني..."
+            className="erp-input w-full text-xs"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] erp-label mb-1 block">مبلغ الخدمة</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={value.amount}
+            onChange={e => onChange({ ...value, amount: e.target.value })}
+            className="erp-input w-full text-xs"
+          />
+        </div>
+      </div>
+
+      {/* الحالة والملاحظات */}
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="text-[10px] erp-label mb-1 block">الحالة</label>
+          <select
+            value={value.status}
+            onChange={e => onChange({ ...value, status: e.target.value as JobService["status"] })}
+            className="erp-input w-full text-xs"
+          >
+            <option value="pending">في الانتظار</option>
+            <option value="in_progress">قيد التنفيذ</option>
+            <option value="completed">مكتمل</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-[10px] erp-label mb-1 block">ملاحظة (اختياري)</label>
+          <input
+            type="text"
+            value={value.notes}
+            onChange={e => onChange({ ...value, notes: e.target.value })}
+            placeholder="ملاحظة اختيارية..."
+            className="erp-input w-full text-xs"
+          />
+        </div>
+      </div>
+
+      {/* الأزرار */}
+      <div className="flex items-center justify-end gap-2 pt-0.5">
+        <button
+          onClick={onCancel}
+          className="text-[11px] px-3 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-white/60 transition-all"
+        >
+          إلغاء
+        </button>
+        <button
+          onClick={onSave}
+          disabled={(!value.service_type_id && !value.service_type_name.trim()) || !value.technician_name.trim() || saving}
+          className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/35 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-30 transition-all"
+        >
+          <Check className="w-3 h-3" /> حفظ
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -93,25 +236,20 @@ function LinkedPartsPanel({
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const [open, setOpen]           = useState(false);
-  const [addingPart, setAddingPart] = useState(false);
+  const [open, setOpen]                   = useState(false);
+  const [addingPart, setAddingPart]       = useState(false);
   const [selectedPartId, setSelectedPartId] = useState<string>("");
-  const [selectedQty, setSelectedQty]       = useState("1");
-
-  /* inline qty edit state */
-  const [editingQtyId, setEditingQtyId]     = useState<number | null>(null);  /* linked_part.id */
-  const [editingQtyVal, setEditingQtyVal]   = useState("");
+  const [selectedQty, setSelectedQty]     = useState("1");
+  const [editingQtyId, setEditingQtyId]   = useState<number | null>(null);
+  const [editingQtyVal, setEditingQtyVal] = useState("");
 
   const isLocked = sectionLocked || service.commission_locked;
-
-  /* parts from the job NOT yet linked to this service */
   const linkedPartIds = new Set(service.linked_parts.map(lp => lp.part_id));
   const availableParts = jobParts.filter(p => !p.is_returned && !linkedPartIds.has(p.id));
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: ["/api/repair-jobs", jobId, "services"] });
 
-  /* ── link part ─────────────────────────────────────────── */
   const linkMut = useMutation({
     mutationFn: ({ partId, qty }: { partId: number; qty: number }) =>
       authFetch(api(`/api/repair-jobs/${jobId}/services/${service.id}/parts`), {
@@ -129,7 +267,6 @@ function LinkedPartsPanel({
     onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
-  /* ── update qty (re-link with new qty — onConflictDoUpdate) ─ */
   const updateQtyMut = useMutation({
     mutationFn: ({ partId, qty }: { partId: number; qty: number }) =>
       authFetch(api(`/api/repair-jobs/${jobId}/services/${service.id}/parts`), {
@@ -141,7 +278,6 @@ function LinkedPartsPanel({
     onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
-  /* ── unlink part ────────────────────────────────────────── */
   const unlinkMut = useMutation({
     mutationFn: (partId: number) =>
       authFetch(api(`/api/repair-jobs/${jobId}/services/${service.id}/parts/${partId}`), {
@@ -151,11 +287,9 @@ function LinkedPartsPanel({
     onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
-  /* ── helpers ────────────────────────────────────────────── */
   const handleLink = () => {
     if (!selectedPartId) return;
-    const qty = parseFloat(selectedQty) || 1;
-    linkMut.mutate({ partId: Number(selectedPartId), qty });
+    linkMut.mutate({ partId: Number(selectedPartId), qty: parseFloat(selectedQty) || 1 });
   };
 
   const startEditQty = (lp: LinkedPart) => {
@@ -170,12 +304,10 @@ function LinkedPartsPanel({
     updateQtyMut.mutate({ partId: lp.part_id, qty });
   };
 
-  /* ── render ─────────────────────────────────────────────── */
   const hasLinked = service.linked_parts.length > 0;
 
   return (
-    <div className="mt-2 rounded-lg border border-white/5 bg-white/[0.015] overflow-hidden">
-      {/* toggle row */}
+    <div className="mt-0 rounded-lg border border-white/5 bg-white/[0.015] overflow-hidden">
       <button
         onClick={() => setOpen(v => !v)}
         className="w-full flex items-center justify-between px-2.5 py-1.5 hover:bg-white/3 transition-all"
@@ -206,8 +338,6 @@ function LinkedPartsPanel({
 
       {open && (
         <div className="px-2.5 pb-2.5 space-y-1.5">
-
-          {/* ── نموذج ربط قطعة جديدة ── */}
           {addingPart && !isLocked && (
             <div className="flex items-center gap-1.5 rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-2.5 py-2">
               <select
@@ -224,11 +354,8 @@ function LinkedPartsPanel({
                   </option>
                 ))}
               </select>
-              {/* الكمية */}
               <input
-                type="number"
-                min="0.001"
-                step="1"
+                type="number" min="0.001" step="1"
                 value={selectedQty}
                 onChange={e => setSelectedQty(e.target.value)}
                 className="erp-input w-14 text-[10px] text-center"
@@ -250,7 +377,6 @@ function LinkedPartsPanel({
             </div>
           )}
 
-          {/* ── حالة فارغة ── */}
           {!hasLinked && !addingPart && (
             <div className="flex items-center justify-between py-1">
               <span className="text-[10px] text-white/25 italic">لا توجد قطع مرتبطة</span>
@@ -262,16 +388,15 @@ function LinkedPartsPanel({
                   <Link2 className="w-2.5 h-2.5" /> ربط قطعة
                 </button>
               )}
-              {!isLocked && availableParts.length === 0 && jobParts.filter(p => !p.is_returned).length === 0 && (
-                <span className="text-[9px] text-white/20">لا توجد قطع في البطاقة</span>
-              )}
-              {!isLocked && availableParts.length === 0 && jobParts.filter(p => !p.is_returned).length > 0 && (
+              {!isLocked && jobParts.filter(p => !p.is_returned).length > 0 && availableParts.length === 0 && (
                 <span className="text-[9px] text-white/20">كل القطع مرتبطة بالفعل</span>
+              )}
+              {jobParts.filter(p => !p.is_returned).length === 0 && (
+                <span className="text-[9px] text-white/20">لا توجد قطع في البطاقة</span>
               )}
             </div>
           )}
 
-          {/* ── قائمة القطع المرتبطة ── */}
           {service.linked_parts.map(lp => {
             const unitPrice = Number(lp.unit_price) || 0;
             const qty       = Number(lp.quantity_allocated) || 1;
@@ -279,21 +404,12 @@ function LinkedPartsPanel({
             const isEditingThis = editingQtyId === lp.id;
 
             return (
-              <div
-                key={lp.id}
-                className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] px-2 py-1.5 group"
-              >
-                {/* اسم القطعة */}
-                <span className="flex-1 text-[10px] text-white/75 font-medium truncate min-w-0">
-                  {lp.product_name}
-                </span>
+              <div key={lp.id} className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] px-2 py-1.5 group">
+                <span className="flex-1 text-[10px] text-white/75 font-medium truncate min-w-0">{lp.product_name}</span>
 
-                {/* الكمية المخصصة — قابلة للتعديل inline */}
                 {isEditingThis && !isLocked ? (
                   <input
-                    type="number"
-                    min="0.001"
-                    step="1"
+                    type="number" min="0.001" step="1"
                     value={editingQtyVal}
                     autoFocus
                     onChange={e => setEditingQtyVal(e.target.value)}
@@ -310,23 +426,19 @@ function LinkedPartsPanel({
                     disabled={isLocked}
                     title={isLocked ? "" : "انقر لتعديل الكمية"}
                     className={`text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded transition-all ${
-                      isLocked
-                        ? "text-white/35 cursor-default"
-                        : "text-white/50 hover:text-white/80 hover:bg-white/5 cursor-pointer"
+                      isLocked ? "text-white/35 cursor-default" : "text-white/50 hover:text-white/80 hover:bg-white/5 cursor-pointer"
                     }`}
                   >
                     ×{qty % 1 === 0 ? qty : qty.toFixed(2)}
                   </button>
                 )}
 
-                {/* التكلفة */}
                 {unitPrice > 0 && (
                   <span className="text-[10px] font-mono tabular-nums text-cyan-300/65 shrink-0">
                     {cost.toLocaleString("ar-EG")} ر.س
                   </span>
                 )}
 
-                {/* إلغاء الربط */}
                 {!isLocked && (
                   <button
                     onClick={() => { if (confirm(`إلغاء ربط "${lp.product_name}" من هذه الخدمة؟`)) unlinkMut.mutate(lp.part_id); }}
@@ -340,7 +452,6 @@ function LinkedPartsPanel({
             );
           })}
 
-          {/* ── إجمالي القطع المرتبطة ── */}
           {hasLinked && (() => {
             const total = service.linked_parts.reduce((s, lp) =>
               s + (Number(lp.unit_price) || 0) * (Number(lp.quantity_allocated) || 1), 0);
@@ -371,7 +482,6 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
   const [form, setForm]         = useState({ ...EMPTY_FORM });
   const [editForm, setEditForm] = useState({ ...EMPTY_FORM });
 
-  /* ── جلب أنواع الخدمات والبنود ─────────────────────────── */
   const { data: serviceTypesRaw } = useQuery<ServiceType[]>({
     queryKey: ["/api/repair-service-types"],
     queryFn:  () => authFetch(api("/api/repair-service-types")).then(r => r.json()),
@@ -387,7 +497,6 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
   const services: JobService[] = safeArray(servicesRaw) as JobService[];
   const totalAmount = services.reduce((s, sv) => s + (Number(sv.amount) || 0), 0);
 
-  /* ── Mutations ────────────────────────────────────────── */
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/repair-jobs", jobId, "services"] });
 
   const createMut = useMutation({
@@ -436,141 +545,6 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
     onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
-  /* ── Helpers ─────────────────────────────────────────── */
-  function onServiceTypeChange(id: string, setF: (v: typeof EMPTY_FORM) => void, current: typeof EMPTY_FORM) {
-    const numId = id ? Number(id) : null;
-    const st = serviceTypes.find(s => s.id === numId);
-    setF({ ...current, service_type_id: numId, service_type_name: st?.name_ar ?? current.service_type_name });
-  }
-
-  function onTechChange(id: string, setF: (v: typeof EMPTY_FORM) => void, current: typeof EMPTY_FORM) {
-    const numId = id ? Number(id) : null;
-    const u = users.find(u => u.id === numId);
-    setF({ ...current, technician_id: numId, technician_name: u?.name ?? current.technician_name });
-  }
-
-  /* ── ServiceForm ─────────────────────────────────────── */
-  function ServiceForm({
-    value, onChange, onSave, onCancel, saving,
-  }: {
-    value: typeof EMPTY_FORM;
-    onChange: (v: typeof EMPTY_FORM) => void;
-    onSave: () => void;
-    onCancel: () => void;
-    saving: boolean;
-  }) {
-    return (
-      <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 space-y-2.5">
-        {/* نوع الخدمة */}
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[10px] erp-label mb-1 block">نوع الخدمة</label>
-            {serviceTypes.length > 0 ? (
-              <select
-                value={value.service_type_id ?? ""}
-                onChange={e => onServiceTypeChange(e.target.value, onChange, value)}
-                className="erp-input w-full text-xs"
-              >
-                <option value="">— اختر أو اكتب يدوياً —</option>
-                {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
-              </select>
-            ) : (
-              <input
-                type="text"
-                value={value.service_type_name}
-                onChange={e => onChange({ ...value, service_type_name: e.target.value })}
-                placeholder="اسم الخدمة..."
-                className="erp-input w-full text-xs"
-              />
-            )}
-          </div>
-          {serviceTypes.length > 0 && !value.service_type_id && (
-            <div>
-              <label className="text-[10px] erp-label mb-1 block">أو اكتب اسم الخدمة</label>
-              <input
-                type="text"
-                value={value.service_type_name}
-                onChange={e => onChange({ ...value, service_type_name: e.target.value })}
-                placeholder="خدمة غير مصنّفة..."
-                className="erp-input w-full text-xs"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* الفني والمبلغ */}
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[10px] erp-label mb-1 block">الفني المنفذ</label>
-            <select
-              value={value.technician_id ?? ""}
-              onChange={e => onTechChange(e.target.value, onChange, value)}
-              className="erp-input w-full text-xs"
-            >
-              <option value="">— اختر الفني —</option>
-              {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] erp-label mb-1 block">مبلغ الخدمة</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={value.amount}
-              onChange={e => onChange({ ...value, amount: e.target.value })}
-              className="erp-input w-full text-xs"
-            />
-          </div>
-        </div>
-
-        {/* الحالة والملاحظات */}
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[10px] erp-label mb-1 block">الحالة</label>
-            <select
-              value={value.status}
-              onChange={e => onChange({ ...value, status: e.target.value as JobService["status"] })}
-              className="erp-input w-full text-xs"
-            >
-              <option value="pending">في الانتظار</option>
-              <option value="in_progress">قيد التنفيذ</option>
-              <option value="completed">مكتمل</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] erp-label mb-1 block">ملاحظة (اختياري)</label>
-            <input
-              type="text"
-              value={value.notes}
-              onChange={e => onChange({ ...value, notes: e.target.value })}
-              placeholder="ملاحظة اختيارية..."
-              className="erp-input w-full text-xs"
-            />
-          </div>
-        </div>
-
-        {/* الأزرار */}
-        <div className="flex items-center justify-end gap-2 pt-0.5">
-          <button
-            onClick={onCancel}
-            className="text-[11px] px-3 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-white/60 transition-all"
-          >
-            إلغاء
-          </button>
-          <button
-            onClick={onSave}
-            disabled={(!value.service_type_id && !value.service_type_name.trim()) || !value.technician_name.trim() || saving}
-            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/35 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-30 transition-all"
-          >
-            <Check className="w-3 h-3" /> حفظ
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ── Render ───────────────────────────────────────────── */
   return (
     <div className="glass-panel rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.03] overflow-hidden">
       {/* الرأس */}
@@ -583,6 +557,11 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
           {services.length > 0 && (
             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300/70 font-medium tabular-nums">
               {services.length}
+            </span>
+          )}
+          {totalAmount > 0 && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300/50 font-mono tabular-nums">
+              {totalAmount.toLocaleString("ar-EG")} ر.س
             </span>
           )}
         </p>
@@ -601,8 +580,6 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
 
       {open && (
         <div className="px-4 pb-4 space-y-2.5">
-
-          {/* نموذج الإضافة */}
           {adding && (
             <ServiceForm
               value={form}
@@ -610,10 +587,11 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
               onSave={() => createMut.mutate(form)}
               onCancel={() => { setAdding(false); setForm({ ...EMPTY_FORM }); }}
               saving={createMut.isPending}
+              serviceTypes={serviceTypes}
+              users={users}
             />
           )}
 
-          {/* حالة فارغة */}
           {!isLoading && services.length === 0 && !adding && (
             <div className="text-center py-6 space-y-2">
               <Wrench className="w-6 h-6 text-emerald-400/30 mx-auto" />
@@ -629,7 +607,6 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
             </div>
           )}
 
-          {/* قائمة البنود */}
           {services.length > 0 && (
             <div className="space-y-2">
               {services.map(sv => (
@@ -641,16 +618,15 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
                       onSave={() => updateMut.mutate({ id: sv.id, body: editForm })}
                       onCancel={() => setEditId(null)}
                       saving={updateMut.isPending}
+                      serviceTypes={serviceTypes}
+                      users={users}
                     />
                   ) : (
                     <div className="rounded-xl border border-white/5 bg-white/[0.02]">
-                      {/* بيانات الخدمة الرئيسية */}
                       <div className="flex items-start gap-2 px-3 py-2.5 group">
                         <div className="flex-1 min-w-0 space-y-0.5">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[11px] font-bold text-white/90">
-                              {sv.service_type_name_snapshot}
-                            </span>
+                            <span className="text-[11px] font-bold text-white/90">{sv.service_type_name_snapshot}</span>
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${STATUS_CONFIG[sv.status].color}`}>
                               {STATUS_CONFIG[sv.status].label}
                             </span>
@@ -668,12 +644,9 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
                               </span>
                             )}
                           </div>
-                          {sv.notes && (
-                            <p className="text-[10px] text-white/30 italic">{sv.notes}</p>
-                          )}
+                          {sv.notes && <p className="text-[10px] text-white/30 italic">{sv.notes}</p>}
                         </div>
 
-                        {/* أزرار تعديل / حذف */}
                         {!locked && !sv.commission_locked && (
                           <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
@@ -706,7 +679,6 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
                         )}
                       </div>
 
-                      {/* القطع المرتبطة — inline panel */}
                       <div className="border-t border-white/5 mx-3 mb-2">
                         <LinkedPartsPanel
                           jobId={jobId}
@@ -720,7 +692,6 @@ export function JobServicesSection({ jobId, users, jobParts, locked = false }: P
                 </div>
               ))}
 
-              {/* إجمالي مبالغ الخدمات */}
               {totalAmount > 0 && (
                 <div className="flex items-center justify-between border-t border-emerald-500/10 pt-2 mt-1">
                   <span className="text-[10px] text-white/40">إجمالي مبالغ الخدمات</span>
