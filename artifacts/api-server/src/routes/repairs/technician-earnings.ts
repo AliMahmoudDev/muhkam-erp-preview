@@ -26,8 +26,10 @@ const router: IRouter = Router();
 
 /* ── helper ─────────────────────────────────────────────────── */
 function canViewTech(req: Express.Request, techId: number): boolean {
-  const u = req.user as { employee_id?: number } | undefined;
-  const isSelf = u?.employee_id != null && Number(u.employee_id) === techId;
+  const u = req.user as { id?: number; employee_id?: number } | undefined;
+  /* technician_id يُخزَّن كـ user_id — نتحقق من الاثنين للتوافق */
+  const isSelf = (u?.id != null && Number(u.id) === techId) ||
+                 (u?.employee_id != null && Number(u.employee_id) === techId);
   return isSelf || hasPermission(req.user, "can_view_reports");
 }
 

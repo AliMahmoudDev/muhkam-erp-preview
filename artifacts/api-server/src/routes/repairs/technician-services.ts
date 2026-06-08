@@ -35,8 +35,10 @@ router.get("/technicians/:id/services", wrap(async (req, res) => {
   const techId = Number(req.params.id);
   if (!techId) return res.status(400).json({ error: "معرّف الفني غير صحيح" });
 
-  const reqUser = req.user as { employee_id?: number };
-  const isSelf  = reqUser.employee_id != null && Number(reqUser.employee_id) === techId;
+  const reqUser = req.user as { id?: number; employee_id?: number };
+  /* technician_id يُخزَّن كـ user_id — نتحقق من الاثنين للتوافق */
+  const isSelf  = (reqUser.id != null && Number(reqUser.id) === techId) ||
+                  (reqUser.employee_id != null && Number(reqUser.employee_id) === techId);
   if (!isSelf && !hasPermission(req.user, "can_view_reports")) {
     return res.status(403).json({ error: "غير مصرح بعرض خدمات هذا الفني" });
   }

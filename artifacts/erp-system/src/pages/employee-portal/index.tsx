@@ -149,8 +149,28 @@ export default function EmployeePortal() {
     },
   });
 
+  /* ── Tech-services visibility check ────────────────────────────
+     يتحقق هل سبق تعيين خدمات صيانة لهذا المستخدم (نشطة أو مكتملة).
+     technician_id في repair_job_services = user.id (ليس employee_id).
+     يُستخدم في شرط إظهار لوحة الفني — لا علاقة له بدور المستخدم ── */
+  const { data: techSummaryRaw } = useQuery<{ active_count: number; delivered_count: number } | null>({
+    queryKey: ['portal-tech-check', user.id],
+    queryFn: async () => {
+      const r = await authFetch(`/api/technicians/${user.id}/earnings/summary`);
+      return r.ok ? r.json() : null;
+    },
+    enabled: true,
+  });
 
   /* ── Derived ── */
+  /* لوحة الفني:
+     - technician_id في repair_job_services = user.id دائماً
+     - تظهر اللوحة إذا: role=technician  أو  (empId موجود + سبق تعيين خدمات) */
+  const hasTechServices =
+    !!techSummaryRaw &&
+    ((techSummaryRaw.active_count ?? 0) > 0 || (techSummaryRaw.delivered_count ?? 0) > 0);
+  const showTechDashboard = user.role === Role.Technician || (!!empId && hasTechServices);
+
   const emp       = (empRaw ?? {}) as AnyRec;
   const summary   = (summaryRaw ?? {}) as AnyRec;
   const recentRecs = Array.isArray(recentRaw)    ? recentRaw    : [];
@@ -264,10 +284,10 @@ export default function EmployeePortal() {
       </div>
 
 
-      {/* ── TECHNICIAN DASHBOARD — يظهر فقط لدور الفني ── */}
-      {user.role === Role.Technician && empId && (
+      {/* ── TECHNICIAN DASHBOARD — يظهر لـ role=technician أو لأي موظف عنده خدمات صيانة ── */}
+      {showTechDashboard && (
         <TechnicianSections
-          empId={empId}
+          empId={user.id}
           isDark={isDark}
           textMain={textMain}
           textMuted={textMuted}
