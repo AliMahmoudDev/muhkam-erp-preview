@@ -126,6 +126,10 @@ jobs:
               echo "BACKUP_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$ENV_FILE"
               echo "✓ Generated BACKUP_ENCRYPTION_KEY"
             fi
+            if ! grep -q "^BACKUP_DIR=" "$ENV_FILE" 2>/dev/null; then
+              echo "BACKUP_DIR=/home/deploy/muhkam-backups/db" >> "$ENV_FILE"
+              echo "✓ Added production BACKUP_DIR"
+            fi
             # Add SUPER_ADMIN_IPS placeholder if missing (admin must fill it in .env manually)
             if ! grep -q "^SUPER_ADMIN_IPS=" "$ENV_FILE" 2>/dev/null; then
               echo "SUPER_ADMIN_IPS=" >> "$ENV_FILE"
@@ -152,6 +156,10 @@ jobs:
             : "${DATABASE_URL:?خطأ: DATABASE_URL غير موجود في ملف .env}"
             : "${TOTP_ENCRYPTION_KEY:?BUG: فشل توليد TOTP_ENCRYPTION_KEY}"
             : "${BACKUP_ENCRYPTION_KEY:?BUG: فشل توليد BACKUP_ENCRYPTION_KEY}"
+            : "${BACKUP_DIR:?خطأ: BACKUP_DIR غير موجود في ملف .env}"
+
+            mkdir -p "$BACKUP_DIR"
+            chmod 700 "$(dirname "$BACKUP_DIR")" "$BACKUP_DIR"
 
             # Authenticate git with token (GitHub no longer accepts passwords)
             git remote set-url origin "https://x-access-token:${DEPLOY_TOKEN}@github.com/m4elmelegy-hub/MUHKAM-ERP.git"
@@ -185,6 +193,7 @@ jobs:
               DATABASE_URL="$DATABASE_URL" \
               TOTP_ENCRYPTION_KEY="$TOTP_ENCRYPTION_KEY" \
               BACKUP_ENCRYPTION_KEY="$BACKUP_ENCRYPTION_KEY" \
+              BACKUP_DIR="$BACKUP_DIR" \
               SUPER_ADMIN_IPS="${SUPER_ADMIN_IPS:-}" \
               REDIS_URL="${REDIS_URL:-}" \
               TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}" \
