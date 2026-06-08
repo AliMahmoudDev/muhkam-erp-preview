@@ -18,6 +18,10 @@ const execAsync = promisify(exec);
 const BACKUP_DIR = process.env.BACKUP_DIR ?? '/home/runner/workspace/db-backups';
 const MAX_BACKUPS = 30;
 
+function shellQuote(value: string): string {
+  return "'" + value.replace(/'/g, "'\\''") + "'";
+}
+
 export async function createDatabaseBackup(): Promise<string> {
   /* Refuse to create unencrypted backups — plaintext SQL dumps expose the full
      multi-tenant database if the backup directory or media is ever compromised.
@@ -56,7 +60,6 @@ export async function createDatabaseBackup(): Promise<string> {
 
   try {
     const dockerImage = process.env.BACKUP_PGDUMP_DOCKER_IMAGE?.trim();
-    const shellQuote = (value: string): string => `'${value.replace(/'/g, `'\''`)}'`;
     const outputFilename = path.basename(filepath);
 
     const command = dockerImage
@@ -102,6 +105,7 @@ export async function createDatabaseBackup(): Promise<string> {
     fs.unlinkSync(filepath); // remove plaintext dump immediately
     const encSize = fs.statSync(encFilepath).size;
     logger.info({ filepath: encFilepath, size: encSize }, 'Database backup created (encrypted)');
+    await uploadEncryptedBackupToR2(encFilepath);
     await cleanOldBackups();
     return encFilepath;
   } catch (err) {
@@ -119,6 +123,86 @@ export async function createDatabaseBackup(): Promise<string> {
     throw new Error(
       `Backup encryption failed: ${err instanceof Error ? err.message : String(err)}`
     );
+  }
+}
+
+type R2BackupConfig = {
+  endpoint: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  prefix: string;
+};
+
+function getR2BackupConfig(): R2BackupConfig | null {
+  const endpoint =
+    process.env.R2_ENDPOINT?.trim() ||
+    (process.env.R2_ACCOUNT_ID?.trim()
+      ? `https://${process.env.R2_ACCOUNT_ID.trim()}.r2.cloudflarestorage.com`
+      : '');
+  const bucket = process.env.R2_BUCKET?.trim() || '';
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim() || '';
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim() || '';
+  const prefix = (process.env.R2_BACKUP_PREFIX?.trim() || 'db').replace(/^\/+|\/+$/g, '');
+
+  const values = [endpoint, bucket, accessKeyId, secretAccessKey];
+  const anyConfigured = values.some(Boolean);
+  const allConfigured = values.every(Boolean);
+
+  if (!anyConfigured) return null;
+  if (!allConfigured) {
+    throw new Error(
+      'R2 backup upload is partially configured. Set R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY.'
+    );
+  }
+
+  return { endpoint, bucket, accessKeyId, secretAccessKey, prefix };
+}
+
+async function uploadEncryptedBackupToR2(encFilepath: string): Promise<void> {
+  const config = getR2BackupConfig();
+  if (!config) return;
+
+  const dockerImage = process.env.BACKUP_AWS_CLI_DOCKER_IMAGE?.trim() || 'amazon/aws-cli';
+  const filename = path.basename(encFilepath);
+  const objectKey = config.prefix ? `${config.prefix}/${filename}` : filename;
+  const envFile = path.join(os.tmpdir(), `.r2-backup-${process.pid}-${Date.now()}.env`);
+
+  fs.writeFileSync(
+    envFile,
+    [
+      `AWS_ACCESS_KEY_ID=${config.accessKeyId}`,
+      `AWS_SECRET_ACCESS_KEY=${config.secretAccessKey}`,
+      'AWS_DEFAULT_REGION=auto',
+      '',
+    ].join('\n'),
+    { mode: 0o600 }
+  );
+
+  try {
+    const command = [
+      'docker run --rm',
+      `--env-file ${shellQuote(envFile)}`,
+      `-v ${shellQuote(`${path.dirname(encFilepath)}:/backup:ro`)}`,
+      shellQuote(dockerImage),
+      `--endpoint-url ${shellQuote(config.endpoint)}`,
+      's3 cp',
+      '--only-show-errors',
+      shellQuote(`/backup/${filename}`),
+      shellQuote(`s3://${config.bucket}/${objectKey}`),
+    ].join(' ');
+
+    await execAsync(command);
+    logger.info(
+      { bucket: config.bucket, key: objectKey },
+      'Encrypted database backup uploaded to R2'
+    );
+  } finally {
+    try {
+      fs.unlinkSync(envFile);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
