@@ -56,3 +56,4 @@ attached_assets/
 .env.local
 .env.test
 .env.*.local
+.deploy-keys/
