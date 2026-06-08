@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
 import { safeArray } from "@/lib/safe-data";
 import { JobLite, Product, Warehouse, PayRow, PayType, PartLine, SavedPart } from "./types";
 
@@ -43,6 +42,7 @@ interface BillingPhaseProps {
   setBrokerName: React.Dispatch<React.SetStateAction<string>>;
   brokerComm: string;
   setBrokerComm: React.Dispatch<React.SetStateAction<string>>;
+  serviceLines: Array<{ id: number; service_type_name_snapshot: string; amount: string | number; technician_name: string | null }>;
   billingLoading: boolean;
   billingErrors: string[];
   onBillingSave: () => void;
@@ -57,9 +57,9 @@ export default function BillingPhase({
   addQty, setAddQty, addPrice, setAddPrice,
   selectedProduct, setSelectedProduct, selectedWarehouseId, setSelectedWarehouseId,
   brokerName, setBrokerName, brokerComm, setBrokerComm,
+  serviceLines,
   billingLoading, billingErrors, onBillingSave, onClose, onBack,
 }: BillingPhaseProps) {
-  const { toast: _toast } = useToast();
   const productSearchRef = useRef<HTMLInputElement>(null);
 
   const { data: safesRaw } = useGetSettingsSafes();
@@ -87,12 +87,13 @@ export default function BillingPhase({
 
   const preSavedParts: SavedPart[] = (job.parts ?? []).filter(p => !p.is_returned);
   const preSavedPartsTotal = preSavedParts.reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
-  const partsTotal    = partLines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
-  const finalCostBase = Number(job.final_cost ?? 0);
-  const grandTotal    = finalCostBase + preSavedPartsTotal + partsTotal;
-  const paidSoFar     = payRows.reduce((s, r) => s + r.amount, 0);
-  const remaining     = Math.max(0, grandTotal - paidSoFar);
-  const payIsDone     = grandTotal > 0 ? paidSoFar >= grandTotal - 0.005 : payRows.length > 0;
+  const partsTotal     = partLines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
+  const servicesTotal  = serviceLines.reduce((s, sv) => s + Number(sv.amount ?? 0), 0);
+  const finalCostBase  = Number(job.final_cost ?? 0);
+  const grandTotal     = finalCostBase + preSavedPartsTotal + servicesTotal + partsTotal;
+  const paidSoFar      = payRows.reduce((s, r) => s + r.amount, 0);
+  const remaining      = Math.max(0, grandTotal - paidSoFar);
+  const payIsDone      = grandTotal > 0 ? paidSoFar >= grandTotal - 0.005 : payRows.length > 0;
 
   function selectProduct(p: Product) {
     setSelectedProduct(p);
@@ -184,6 +185,34 @@ export default function BillingPhase({
                 {preSavedPartsTotal > 0 && (
                   <div className="flex justify-end pt-1 border-t border-cyan-500/10">
                     <span className="text-[10px] text-cyan-300/60 font-bold">إجمالي: {fmtCurrency(preSavedPartsTotal)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* بنود خدمات الفني */}
+          {serviceLines.length > 0 && (
+            <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-3">
+              <p className="text-[10px] text-emerald-300/70 font-bold mb-2 flex items-center gap-1.5">
+                <UserCog className="w-3.5 h-3.5" />
+                خدمات الفني
+              </p>
+              <div className="space-y-1">
+                {serviceLines.map(sv => (
+                  <div key={sv.id} className="flex items-center justify-between text-[11px] px-2 py-1 rounded-lg bg-white/[0.02]">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-white/80 truncate block">{sv.service_type_name_snapshot || "—"}</span>
+                      {sv.technician_name && (
+                        <span className="text-[10px] text-white/35">{sv.technician_name}</span>
+                      )}
+                    </div>
+                    <span className="text-emerald-300/80 font-bold shrink-0 font-mono mr-2">{fmtCurrency(Number(sv.amount ?? 0))}</span>
+                  </div>
+                ))}
+                {servicesTotal > 0 && (
+                  <div className="flex justify-end pt-1 border-t border-emerald-500/10">
+                    <span className="text-[10px] text-emerald-300/60 font-bold">إجمالي: {fmtCurrency(servicesTotal)}</span>
                   </div>
                 )}
               </div>
@@ -305,6 +334,12 @@ export default function BillingPhase({
             <div className="flex items-center justify-between text-[11px] mt-1">
               <span className="text-white/50">قطع أضافها الفني</span>
               <span className="font-bold text-cyan-300">+ {fmtCurrency(preSavedPartsTotal)}</span>
+            </div>
+          )}
+          {servicesTotal > 0 && (
+            <div className="flex items-center justify-between text-[11px] mt-1">
+              <span className="text-white/50">خدمات الفني</span>
+              <span className="font-bold text-emerald-300">+ {fmtCurrency(servicesTotal)}</span>
             </div>
           )}
           {partsTotal > 0 && (

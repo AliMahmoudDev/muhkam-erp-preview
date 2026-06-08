@@ -5,8 +5,10 @@
 import { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ShieldCheck, X, PackageCheck } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { authFetch } from "@/lib/auth-fetch";
 import { api } from "@/lib/api";
+import { safeArray } from "@/lib/safe-data";
 import { useToast } from "@/hooks/use-toast";
 import { JobLite, QcItem, PartLine, PayRow, PayType, parseChecklist, parseSavedQc, getDefaultQcItems } from "./ready-for-delivery/types";
 import QcPhase from "./ready-for-delivery/QcPhase";
@@ -181,9 +183,22 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
   const [billingLoading, setBillingLoading]     = useState(false);
   const [billingErrors, setBillingErrors]       = useState<string[]>([]);
 
+  /* ── خدمات الوظيفة — تُجلب عند الانتقال لمرحلة المحاسبة ── */
+  const { data: servicesRaw } = useQuery({
+    queryKey: ["/api/repair-jobs", job.id, "services"],
+    queryFn: () => authFetch(api(`/api/repair-jobs/${job.id}/services`)).then(r => r.json()),
+    enabled: phase === "billing",
+  });
+  type ServiceLine = { id: number; service_type_name_snapshot: string; amount: string | number; technician_name: string | null };
+  const serviceLines = safeArray(servicesRaw) as ServiceLine[];
+  const servicesTotalCost = serviceLines.reduce((s, sv) => s + Number(sv.amount ?? 0), 0);
+
+  const preSavedPartsTotal = (job.parts ?? [])
+    .filter(p => !p.is_returned)
+    .reduce((s, p) => s + (Number(p.quantity) || 1) * (Number(p.unit_price) || 0), 0);
   const partsTotal    = partLines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
   const finalCostBase = Number(job.final_cost ?? 0);
-  const grandTotal    = finalCostBase + partsTotal;
+  const grandTotal    = finalCostBase + preSavedPartsTotal + servicesTotalCost + partsTotal;
   const paidSoFar     = payRows.reduce((s, r) => s + r.amount, 0);
   const payIsDone     = grandTotal > 0 ? paidSoFar >= grandTotal - 0.005 : payRows.length > 0;
 
@@ -332,6 +347,7 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
             setBrokerName={setBrokerName}
             brokerComm={brokerComm}
             setBrokerComm={setBrokerComm}
+            serviceLines={serviceLines}
             billingLoading={billingLoading}
             billingErrors={billingErrors}
             onBillingSave={() => void handleBillingSave()}

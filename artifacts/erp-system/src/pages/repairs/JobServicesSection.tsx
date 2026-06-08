@@ -65,7 +65,7 @@ const STATUS_CONFIG = {
   completed:   { label: "مكتمل",       color: "text-emerald-300 bg-emerald-500/10 border-emerald-500/20" },
 } as const;
 
-export const EMPTY_FORM = {
+const EMPTY_FORM = {
   service_type_id:   null as number | null,
   service_type_name: "",
   technician_id:     null as number | null,
