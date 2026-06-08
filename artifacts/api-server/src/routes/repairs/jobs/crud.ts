@@ -10,7 +10,7 @@
  *   POST   /repair-customers
  */
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, gt } from "drizzle-orm";
 import {
   db,
   repairJobsTable,
@@ -241,18 +241,46 @@ router.patch("/repair-jobs/:id", wrap(async (req, res) => {
           ملاحظة: الـ UI يقفز مباشرةً من in_repair → final_quality_check
           (repaired مخفي في الواجهة)، لذلك الشرط مطبَّق على كليهما. ── */
     if (String(b.status) === "repaired" || String(b.status) === "final_quality_check") {
-      const [partsRows, reportsRows] = await Promise.all([
+      /* ── نجد متى دخلت البطاقة مرحلة "جاري الإصلاح" آخر مرة ──
+            للتحقق من أن التقرير كُتب في هذه المرحلة تحديداً، لا قبلها. */
+      const [partsRows, inRepairEntry] = await Promise.all([
         db.select({ count: sql<number>`count(*)` })
           .from(repairJobPartsTable)
           .where(eq(repairJobPartsTable.job_id, id)),
-        db.select({ count: sql<number>`count(*)` })
+        db.select({ created_at: repairStatusHistoryTable.created_at })
           .from(repairStatusHistoryTable)
           .where(and(
             eq(repairStatusHistoryTable.job_id, id),
             eq(repairStatusHistoryTable.company_id, company_id),
-            eq(repairStatusHistoryTable.event_type, "engineer_report"),
-          )),
+            eq(repairStatusHistoryTable.status_to, "in_repair"),
+          ))
+          .orderBy(desc(repairStatusHistoryTable.created_at))
+          .limit(1),
       ]);
+
+      /* ── نبحث عن تقرير كُتب بعد دخول مرحلة "جاري الإصلاح" ──
+            إن لم يوجد سجل الدخول (مثلاً: بطاقة قديمة قبل تطبيق القيد)،
+            نرجع للتحقق التقليدي (أي تقرير موجود يكفي). */
+      const inRepairAt = inRepairEntry[0]?.created_at ?? null;
+      const reportFilter = inRepairAt
+        ? and(
+            eq(repairStatusHistoryTable.job_id, id),
+            eq(repairStatusHistoryTable.company_id, company_id),
+            eq(repairStatusHistoryTable.event_type, "engineer_report"),
+            gt(repairStatusHistoryTable.created_at, inRepairAt),
+          )
+        : and(
+            eq(repairStatusHistoryTable.job_id, id),
+            eq(repairStatusHistoryTable.company_id, company_id),
+            eq(repairStatusHistoryTable.event_type, "engineer_report"),
+          );
+
+      const [reportsRows] = await Promise.all([
+        db.select({ count: sql<number>`count(*)` })
+          .from(repairStatusHistoryTable)
+          .where(reportFilter),
+      ]);
+
       jobDataForValidation = {
         ...jobDataForValidation,
         has_parts:           Number(partsRows[0]?.count ?? 0) > 0,
