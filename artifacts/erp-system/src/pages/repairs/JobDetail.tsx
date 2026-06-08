@@ -51,7 +51,6 @@ export function JobDetail({
   const repairSettings  = useRepairSettings();
   const qrBaseUrlSetting = repairSettings[REPAIR_SETTING_KEYS.qrBaseUrl] ?? '';
   const [editEst, setEditEst]       = useState(job.estimated_cost ?? '0');
-  const [editFinal, setEditFinal]   = useState(job.final_cost ?? '0');
   const [editDeposit] = useState(job.deposit_paid ?? '0');
   const [editDelivery, setEditDelivery] = useState(job.estimated_delivery ?? '');
   const [editTech, setEditTech]     = useState(job.technician_id?.toString() ?? '');
@@ -100,7 +99,7 @@ export function JobDetail({
     const num = (v: string) => v.trim() === '' ? '0' : v.trim();
     onPatch({
       estimated_cost: num(editEst),
-      final_cost: num(editFinal),
+
       deposit_paid: num(editDeposit),
       estimated_delivery: editDelivery || null,
       technician_id: editTech ? Number(editTech) : null,
@@ -502,7 +501,7 @@ export function JobDetail({
         {/* Technician & Costs */}
         <div className="glass-panel rounded-2xl p-3 border border-[var(--erp-border)] space-y-3">
           <p className="text-[10px] erp-label font-bold">الفني والتكاليف</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <div>
               <label className="text-[10px] erp-label mb-1 block">الفني المسؤول</label>
               <select value={editTech} onChange={(e) => setEditTech(e.target.value)} className="erp-input w-full text-xs">
@@ -517,10 +516,6 @@ export function JobDetail({
             <div>
               <label className="text-[10px] erp-label mb-1 block">تكلفة تقديرية</label>
               <input type="number" value={editEst} onChange={(e) => setEditEst(e.target.value)} className="erp-input w-full text-xs" />
-            </div>
-            <div>
-              <label className="text-[10px] erp-label mb-1 block">التكلفة النهائية</label>
-              <input type="number" value={editFinal} onChange={(e) => { setEditFinal(e.target.value); }} className="erp-input w-full text-xs" />
             </div>
           </div>
           {/* ملخص تكاليف الخدمات */}
