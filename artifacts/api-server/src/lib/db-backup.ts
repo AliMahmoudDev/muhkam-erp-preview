@@ -12,11 +12,24 @@ import os from 'os';
 import path from 'path';
 import { logger } from './logger';
 import { encryptFile, isEncryptionEnabled, encryptedExtension } from './backup-crypto';
+import { DeleteObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 
 const execAsync = promisify(exec);
 
 const BACKUP_DIR = process.env.BACKUP_DIR ?? '/home/runner/workspace/db-backups';
-const MAX_BACKUPS = 30;
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/* Keep the newest N encrypted DB backups locally and on R2.
+   Default: 30 daily backups. Override with DB_BACKUP_MAX_FILES or BACKUP_MAX_FILES. */
+const MAX_BACKUPS = parsePositiveInt(
+  process.env.DB_BACKUP_MAX_FILES ?? process.env.BACKUP_MAX_FILES,
+  30
+);
 
 function shellQuote(value: string): string {
   return "'" + value.replace(/'/g, "'\\''") + "'";
@@ -198,12 +211,62 @@ async function uploadEncryptedBackupToR2(encFilepath: string): Promise<void> {
       { bucket: config.bucket, key: objectKey },
       'Encrypted database backup uploaded to R2'
     );
+
+    try {
+      await cleanOldR2Backups(config);
+    } catch (cleanupErr) {
+      logger.warn({ err: cleanupErr }, 'R2 backup retention cleanup failed');
+    }
   } finally {
     try {
       fs.unlinkSync(envFile);
     } catch {
       /* ignore */
     }
+  }
+}
+
+async function cleanOldR2Backups(config: R2BackupConfig): Promise<void> {
+  const client = new S3Client({
+    region: 'auto',
+    endpoint: config.endpoint,
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    },
+    forcePathStyle: true,
+  });
+
+  const prefix = config.prefix ? `${config.prefix}/` : '';
+  let continuationToken: string | undefined;
+  const objects: Array<{ key: string; time: number }> = [];
+
+  do {
+    const result = await client.send(
+      new ListObjectsV2Command({
+        Bucket: config.bucket,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      })
+    );
+
+    for (const item of result.Contents ?? []) {
+      if (!item.Key) continue;
+      if (!isBackupFile(path.basename(item.Key))) continue;
+      objects.push({
+        key: item.Key,
+        time: item.LastModified?.getTime() ?? 0,
+      });
+    }
+
+    continuationToken = result.NextContinuationToken;
+  } while (continuationToken);
+
+  objects.sort((a, b) => b.time - a.time);
+
+  for (const old of objects.slice(MAX_BACKUPS)) {
+    await client.send(new DeleteObjectCommand({ Bucket: config.bucket, Key: old.key }));
+    logger.info({ key: old.key }, 'Old R2 database backup deleted');
   }
 }
 
