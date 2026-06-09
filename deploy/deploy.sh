@@ -37,7 +37,7 @@ pnpm --filter @workspace/api-server run build
 
 echo "=== [4/5] بناء الـ Frontend ==="
 cd "$APP_DIR"
-NODE_ENV=production BASE_PATH=/ VITE_API_URL="" \
+NODE_ENV=production BASE_PATH=/ VITE_API_URL="" VITE_SENTRY_DSN="${SENTRY_DSN:-}" \
   pnpm --filter @workspace/erp-system run build
 
 echo "=== [5/5] إعادة تشغيل الـ Backend ==="

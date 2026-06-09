@@ -34,6 +34,7 @@ import {
   updateLiveGauges,
 } from './lib/prom-metrics';
 import { alertManager, ALERT_TYPES } from './lib/telegram-alert-manager';
+import { captureException } from './lib/sentry';
 import { requestTimeout } from './middleware/request-timeout';
 import { perTenantRateLimit } from './middleware/per-tenant-rate-limit';
 import { requestId } from './middleware/request-id';
@@ -381,6 +382,14 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
       : typeof (err as Record<string, unknown>).statusCode === 'number'
         ? ((err as Record<string, unknown>).statusCode as number)
         : 500;
+  if (status >= 500) {
+    captureException(err, {
+      method: _req.method,
+      path: _req.originalUrl,
+      status,
+    });
+  }
+
   const isDev = process.env.NODE_ENV !== 'production';
   const message: string =
     status < 500 && err instanceof Error ? err.message : 'خطأ داخلي في الخادم';
