@@ -1,5 +1,10 @@
 # مُحكم ERP — Operations Runbook / دليل التشغيل
 
+> ⚠️ Production note: the current canonical production operations guide is
+> `docs/operations/PRODUCTION_OPERATIONS.md`.
+> Use that file as the source of truth for the live muhkampro.com environment.
+>
+
 | Field | Value |
 |-------|-------|
 | **Version** | 1.0 |

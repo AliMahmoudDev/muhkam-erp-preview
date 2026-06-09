@@ -1,5 +1,10 @@
 # Muhkam ERP - Production Deployment Status
 
+> ⚠️ Production note: the current canonical production operations guide is
+> `docs/operations/PRODUCTION_OPERATIONS.md`.
+> Use that file as the source of truth for the live muhkampro.com environment.
+>
+
 Last Updated: 2026-06-08
 
 ## Production Server

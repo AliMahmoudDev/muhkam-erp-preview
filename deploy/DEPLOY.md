@@ -1,4 +1,9 @@
 # دليل نشر MUHKAM ERP على Hetzner VPS
+
+> ⚠️ Production note: the current canonical production operations guide is
+> `docs/operations/PRODUCTION_OPERATIONS.md`.
+> Use that file as the source of truth for the live muhkampro.com environment.
+>
 ## (ULTIMATE + ADVANCED — نظامان في خادم واحد)
 
 ---

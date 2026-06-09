@@ -1,5 +1,10 @@
 # MUHKAM ERP — Production Deployment Runbook
 
+> ⚠️ Production note: the current canonical production operations guide is
+> `docs/operations/PRODUCTION_OPERATIONS.md`.
+> Use that file as the source of truth for the live muhkampro.com environment.
+>
+
 > دليل تشغيل الإنتاج على VPS + Domain. لا يحتوي أي أسرار حقيقية — فقط أوامر
 > توليد وأسماء متغيرات. للمزيد من تفاصيل الـ CI/Deploy راجع `docs/DEPLOYMENT.md`
 > وملف `.github/workflows/deploy.yml`. إعداد Nginx الفعلي في `deploy/nginx.conf`.
