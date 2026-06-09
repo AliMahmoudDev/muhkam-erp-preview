@@ -1,5 +1,6 @@
 import { UserCheck, X, IdCard, Plus, Wallet, Percent } from 'lucide-react';
 import type { Employee, Department, JobTitle, Branch } from './types';
+import { uploadFileToR2, resolveUploadedFileUrl } from '@/lib/file-upload';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -10,7 +11,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-type ToastFn = (opts: { title: string; variant?: 'default' | 'destructive' | 'warning' | 'info' | null }) => void;
+type ToastFn = (opts: {
+  title: string;
+  variant?: 'default' | 'destructive' | 'warning' | 'info' | null;
+}) => void;
 
 interface EmployeeFormProps {
   showForm: boolean;
@@ -154,7 +158,7 @@ export function EmployeeForm({
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const f = e.target.files?.[0];
                       if (!f) return;
                       if (f.size > 2 * 1024 * 1024) {
@@ -164,16 +168,25 @@ export function EmployeeForm({
                         });
                         return;
                       }
-                      const reader = new FileReader();
-                      reader.onload = () => set('national_id_image', String(reader.result));
-                      reader.readAsDataURL(f);
+                      try {
+                        const uploaded = await uploadFileToR2(f, 'employees');
+                        set('national_id_image', uploaded.url);
+                        toast({ title: 'تم رفع صورة البطاقة بنجاح', variant: 'default' });
+                      } catch (err) {
+                        toast({
+                          title: err instanceof Error ? err.message : 'فشل رفع صورة البطاقة',
+                          variant: 'destructive',
+                        });
+                      } finally {
+                        e.currentTarget.value = '';
+                      }
                     }}
                   />
                 </label>
                 {editEmp.national_id_image && (
                   <>
                     <a
-                      href={editEmp.national_id_image}
+                      href={resolveUploadedFileUrl(editEmp.national_id_image)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="erp-btn erp-btn-ghost text-xs px-2 border border-emerald-500/30 text-emerald-300"
@@ -319,9 +332,7 @@ export function EmployeeForm({
             <Field label="الفرع">
               <select
                 value={editEmp.branch_id ?? ''}
-                onChange={(e) =>
-                  set('branch_id', e.target.value ? Number(e.target.value) : null)
-                }
+                onChange={(e) => set('branch_id', e.target.value ? Number(e.target.value) : null)}
                 className="erp-input w-full"
               >
                 <option value="">— اختر الفرع —</option>

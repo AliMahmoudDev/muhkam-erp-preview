@@ -20,17 +20,41 @@ import { useIdleTimeout } from '@/hooks/use-idle-timeout';
 import LogoutCheckoutModal from '@/components/logout-checkout-modal';
 import IdleCheckoutModal from '@/components/idle-checkout-modal';
 
-
+import { resolveUploadedFileUrl } from '@/lib/file-upload';
 /* ── Nav sections ───────────────────────────────── */
 const NAV_SECTIONS = [
   { label: 'القائمة', hrefs: ['/'] },
   {
     label: 'التجارة',
-    hrefs: ['/pos', '/sales', '/purchases', '/products', '/price-lists', '/inventory', '/customers', '/returns', '/devices', '/repairs'],
+    hrefs: [
+      '/pos',
+      '/sales',
+      '/purchases',
+      '/products',
+      '/price-lists',
+      '/inventory',
+      '/customers',
+      '/returns',
+      '/devices',
+      '/repairs',
+    ],
   },
   { label: 'المالية', hrefs: ['/treasury', '/expenses', '/income', '/reports'] },
   { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance', '/payroll'] },
-  { label: 'المحاسبة', hrefs: ['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/fixed-assets', '/accruals', '/bank-reconciliation', '/budgets', '/cost-centers'] },
+  {
+    label: 'المحاسبة',
+    hrefs: [
+      '/accounts',
+      '/journal-entries',
+      '/fiscal-years',
+      '/audit-log',
+      '/fixed-assets',
+      '/accruals',
+      '/bank-reconciliation',
+      '/budgets',
+      '/cost-centers',
+    ],
+  },
   { label: 'النظام', hrefs: ['/settings', '/branches'] },
 ];
 
@@ -200,17 +224,20 @@ export function AppLayout({ children }: LayoutProps) {
     queryKey: ['layout-attendance-today', empId, todayStr],
     queryFn: async () => {
       if (!empId) return [];
-      const r = await authFetch(`/api/attendance/records?employee_id=${empId}&from=${todayStr}&to=${todayStr}`);
+      const r = await authFetch(
+        `/api/attendance/records?employee_id=${empId}&from=${todayStr}&to=${todayStr}`
+      );
       return r.ok ? r.json() : [];
     },
     enabled: !!empId,
     refetchInterval: 2 * 60_000,
   });
-  const todayRec = Array.isArray(todayRecRaw) && todayRecRaw.length > 0
-    ? (todayRecRaw[0] as Record<string, unknown>)
-    : null;
+  const todayRec =
+    Array.isArray(todayRecRaw) && todayRecRaw.length > 0
+      ? (todayRecRaw[0] as Record<string, unknown>)
+      : null;
   const todayRecordId = todayRec?.id as number | undefined;
-  const alreadyCheckedIn  = !!todayRec?.check_in_time;
+  const alreadyCheckedIn = !!todayRec?.check_in_time;
   const alreadyCheckedOut = !!todayRec?.check_out_time;
 
   /* ── Idle timeout: 1 hour ── */
@@ -233,12 +260,19 @@ export function AppLayout({ children }: LayoutProps) {
     }
   }, [warehouses, canSelectWarehouse, currentWarehouseId, setWarehouseId]);
 
-  const ACCOUNTING_CORE   = new Set(['/accounts', '/journal-entries', '/fiscal-years', '/audit-log', '/cost-centers', '/accruals']);
-  const FIXED_ASSETS      = new Set(['/fixed-assets']);
-  const BANK_RECON        = new Set(['/bank-reconciliation']);
-  const BUDGETS           = new Set(['/budgets']);
-  const HR_PATHS          = new Set(['/employees', '/attendance']);
-  const POS_PATHS         = new Set(['/pos']);
+  const ACCOUNTING_CORE = new Set([
+    '/accounts',
+    '/journal-entries',
+    '/fiscal-years',
+    '/audit-log',
+    '/cost-centers',
+    '/accruals',
+  ]);
+  const FIXED_ASSETS = new Set(['/fixed-assets']);
+  const BANK_RECON = new Set(['/bank-reconciliation']);
+  const BUDGETS = new Set(['/budgets']);
+  const HR_PATHS = new Set(['/employees', '/attendance']);
+  const POS_PATHS = new Set(['/pos']);
   const MAINTENANCE_PATHS = new Set(['/repairs', '/devices']);
   const visibleNav = NAV_ITEMS.filter((item) => {
     /* My portal: only for users who are linked to an employee */
@@ -252,17 +286,18 @@ export function AppLayout({ children }: LayoutProps) {
       if (!canAccess(role, item.href)) return false;
     }
     /* 2. Feature-flag checks (subscription plan) */
-    if (ACCOUNTING_CORE.has(item.href)   && !hasFeature('accounting'))          return false;
-    if (FIXED_ASSETS.has(item.href)      && !hasFeature('fixed_assets'))        return false;
-    if (BANK_RECON.has(item.href)        && !hasFeature('bank_reconciliation')) return false;
-    if (BUDGETS.has(item.href)           && !hasFeature('budgets'))             return false;
-    if (HR_PATHS.has(item.href)          && !hasFeature('hr'))                  return false;
-    if (POS_PATHS.has(item.href)         && !hasFeature('pos'))                 return false;
-    if (MAINTENANCE_PATHS.has(item.href) && !hasFeature('maintenance'))         return false;
+    if (ACCOUNTING_CORE.has(item.href) && !hasFeature('accounting')) return false;
+    if (FIXED_ASSETS.has(item.href) && !hasFeature('fixed_assets')) return false;
+    if (BANK_RECON.has(item.href) && !hasFeature('bank_reconciliation')) return false;
+    if (BUDGETS.has(item.href) && !hasFeature('budgets')) return false;
+    if (HR_PATHS.has(item.href) && !hasFeature('hr')) return false;
+    if (POS_PATHS.has(item.href) && !hasFeature('pos')) return false;
+    if (MAINTENANCE_PATHS.has(item.href) && !hasFeature('maintenance')) return false;
     return true;
   });
 
-  const logoSrc = settings.customLogo || `${import.meta.env.BASE_URL}logo.png`;
+  const logoSrc =
+    resolveUploadedFileUrl(settings.customLogo) || `${import.meta.env.BASE_URL}logo.png`;
 
   const pageTitle =
     NAV_ITEMS.find((i) => i.href === location)?.name ||
@@ -432,53 +467,125 @@ export function AppLayout({ children }: LayoutProps) {
           </button>
         </div>
 
-
         {/* Warehouse selector */}
         {warehouses.length > 0 && canSelectWarehouse && !sidebarCollapsed && (
-          <div className="mx-3 mt-2 rounded-lg px-3"
-            style={{ flexShrink: 0, paddingTop: 8, paddingBottom: 8, background: isDark ? 'rgba(245,158,11,0.05)' : 'rgba(180,83,9,0.05)', border: isDark ? '1px solid rgba(245,158,11,0.12)' : '1px solid rgba(180,83,9,0.11)' }}
+          <div
+            className="mx-3 mt-2 rounded-lg px-3"
+            style={{
+              flexShrink: 0,
+              paddingTop: 8,
+              paddingBottom: 8,
+              background: isDark ? 'rgba(245,158,11,0.05)' : 'rgba(180,83,9,0.05)',
+              border: isDark ? '1px solid rgba(245,158,11,0.12)' : '1px solid rgba(180,83,9,0.11)',
+            }}
           >
             <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
-              <Warehouse style={{ width: 11, height: 11, color: isDark ? 'rgba(245,158,11,0.50)' : 'rgba(180,83,9,0.50)' }} />
-              <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: textMuted }}>المخزن</span>
+              <Warehouse
+                style={{
+                  width: 11,
+                  height: 11,
+                  color: isDark ? 'rgba(245,158,11,0.50)' : 'rgba(180,83,9,0.50)',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 9.5,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: textMuted,
+                }}
+              >
+                المخزن
+              </span>
             </div>
-            <select value={currentWarehouseId} onChange={(e) => setWarehouseId(e.target.value)}
-              style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontSize: 12.5, fontWeight: 600, color: textPrimary, cursor: 'pointer', fontFamily: 'inherit', appearance: 'none' }}
+            <select
+              value={currentWarehouseId}
+              onChange={(e) => setWarehouseId(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: textPrimary,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                appearance: 'none',
+              }}
             >
-              <option value="" style={{ background: isDark ? '#111827' : '#fff' }}>كل المخازن</option>
+              <option value="" style={{ background: isDark ? '#111827' : '#fff' }}>
+                كل المخازن
+              </option>
               {warehouses.map((w) => (
-                <option key={w.id} value={String(w.id)} style={{ background: isDark ? '#111827' : '#fff' }}>{w.name}</option>
+                <option
+                  key={w.id}
+                  value={String(w.id)}
+                  style={{ background: isDark ? '#111827' : '#fff' }}
+                >
+                  {w.name}
+                </option>
               ))}
             </select>
           </div>
         )}
 
         {/* Navigation */}
-        <nav role="navigation" aria-label="القائمة الرئيسية" className="flex-1 overflow-y-auto pb-4 mt-1" style={{ scrollbarWidth: 'none', padding: sidebarCollapsed ? '4px 8px' : '0 12px' }}>
+        <nav
+          role="navigation"
+          aria-label="القائمة الرئيسية"
+          className="flex-1 overflow-y-auto pb-4 mt-1"
+          style={{ scrollbarWidth: 'none', padding: sidebarCollapsed ? '4px 8px' : '0 12px' }}
+        >
           {NAV_SECTIONS.map((section, si) => {
             const items = visibleNav.filter((i) => section.hrefs.includes(i.href));
             if (!items.length) return null;
-            const sectionActive = items.some((i) => i.href === location)
-              || (section.hrefs.includes('/inventory') && location === '/transfers');
+            const sectionActive =
+              items.some((i) => i.href === location) ||
+              (section.hrefs.includes('/inventory') && location === '/transfers');
             const isAccounting = section.label === 'المحاسبة';
             /* Accounting: toggle-able; all others: always open */
-            const isOpen = isAccounting
-              ? (openSections[section.label] ?? sectionActive)
-              : true;
+            const isOpen = isAccounting ? (openSections[section.label] ?? sectionActive) : true;
             return (
               <div key={section.label}>
                 {/* Section label — hidden when collapsed */}
-                {!sidebarCollapsed && (
-                  isAccounting ? (
+                {!sidebarCollapsed &&
+                  (isAccounting ? (
                     /* Accounting: clickable with arrow */
                     <button
                       type="button"
-                      onClick={() => setOpenSections((prev) => ({ ...prev, [section.label]: !(prev[section.label] ?? sectionActive) }))}
+                      onClick={() =>
+                        setOpenSections((prev) => ({
+                          ...prev,
+                          [section.label]: !(prev[section.label] ?? sectionActive),
+                        }))
+                      }
                       className="erp-divider-label"
-                      style={{ paddingTop: si === 0 ? 10 : 16, paddingBottom: 4, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'right' }}
+                      style={{
+                        paddingTop: si === 0 ? 10 : 16,
+                        paddingBottom: 4,
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        textAlign: 'right',
+                      }}
                     >
                       <span>{section.label}</span>
-                      <ChevronDown style={{ width: 12, height: 12, opacity: 0.55, transition: 'transform 0.2s ease', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+                      <ChevronDown
+                        style={{
+                          width: 12,
+                          height: 12,
+                          opacity: 0.55,
+                          transition: 'transform 0.2s ease',
+                          transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                        }}
+                      />
                     </button>
                   ) : (
                     /* Other sections: plain label, no arrow, always open */
@@ -488,25 +595,43 @@ export function AppLayout({ children }: LayoutProps) {
                     >
                       <span>{section.label}</span>
                     </div>
-                  )
-                )}
+                  ))}
                 {/* Divider line when collapsed */}
                 {sidebarCollapsed && si > 0 && (
-                  <div style={{ height: 1, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', margin: '8px 0' }} />
+                  <div
+                    style={{
+                      height: 1,
+                      background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                      margin: '8px 0',
+                    }}
+                  />
                 )}
                 {/* Nav items */}
                 {(sidebarCollapsed || isOpen) &&
                   items.map((item) => {
-                    const active = location === item.href
-                      || (item.href === '/inventory' && location === '/transfers');
+                    const active =
+                      location === item.href ||
+                      (item.href === '/inventory' && location === '/transfers');
                     return (
                       <Link key={item.href} href={item.href}>
                         <div
                           className={`nav-item ${active ? 'active' : ''}`}
                           title={sidebarCollapsed ? item.name : undefined}
-                          style={sidebarCollapsed ? { justifyContent: 'center', paddingRight: 0, paddingLeft: 0 } : {}}
+                          style={
+                            sidebarCollapsed
+                              ? { justifyContent: 'center', paddingRight: 0, paddingLeft: 0 }
+                              : {}
+                          }
                         >
-                          <item.icon style={{ width: 16, height: 16, flexShrink: 0, opacity: active ? 1 : 0.55, color: active ? '#f59e0b' : 'inherit' }} />
+                          <item.icon
+                            style={{
+                              width: 16,
+                              height: 16,
+                              flexShrink: 0,
+                              opacity: active ? 1 : 0.55,
+                              color: active ? '#f59e0b' : 'inherit',
+                            }}
+                          />
                           {!sidebarCollapsed && <span style={{ flex: 1 }}>{item.name}</span>}
                         </div>
                       </Link>
@@ -519,26 +644,60 @@ export function AppLayout({ children }: LayoutProps) {
 
         {/* ── My Portal pinned bottom link ── */}
         {user?.employee_id && (
-          <div style={{ flexShrink: 0, borderTop: sidebarBdr, padding: sidebarCollapsed ? '8px' : '8px 12px' }}>
+          <div
+            style={{
+              flexShrink: 0,
+              borderTop: sidebarBdr,
+              padding: sidebarCollapsed ? '8px' : '8px 12px',
+            }}
+          >
             <Link href="/my-portal">
               <div
                 className={`nav-item ${location === '/my-portal' ? 'active' : ''}`}
                 title={sidebarCollapsed ? 'بوابتي الشخصية' : undefined}
                 style={{
-                  ...(sidebarCollapsed ? { justifyContent: 'center', paddingRight: 0, paddingLeft: 0 } : {}),
-                  background: location === '/my-portal'
-                    ? (isDark ? 'rgba(245,158,11,0.15)' : 'rgba(180,83,9,0.08)')
-                    : (isDark ? 'rgba(245,158,11,0.06)' : 'rgba(180,83,9,0.05)'),
-                  border: `1px solid ${location === '/my-portal'
-                    ? (isDark ? 'rgba(245,158,11,0.35)' : 'rgba(180,83,9,0.25)')
-                    : (isDark ? 'rgba(245,158,11,0.12)' : 'rgba(180,83,9,0.10)')}`,
+                  ...(sidebarCollapsed
+                    ? { justifyContent: 'center', paddingRight: 0, paddingLeft: 0 }
+                    : {}),
+                  background:
+                    location === '/my-portal'
+                      ? isDark
+                        ? 'rgba(245,158,11,0.15)'
+                        : 'rgba(180,83,9,0.08)'
+                      : isDark
+                        ? 'rgba(245,158,11,0.06)'
+                        : 'rgba(180,83,9,0.05)',
+                  border: `1px solid ${
+                    location === '/my-portal'
+                      ? isDark
+                        ? 'rgba(245,158,11,0.35)'
+                        : 'rgba(180,83,9,0.25)'
+                      : isDark
+                        ? 'rgba(245,158,11,0.12)'
+                        : 'rgba(180,83,9,0.10)'
+                  }`,
                   borderRadius: 10,
                   marginBottom: 0,
                 }}
               >
-                <UserCircle style={{ width: 16, height: 16, flexShrink: 0, color: '#f59e0b', opacity: location === '/my-portal' ? 1 : 0.75 }} />
+                <UserCircle
+                  style={{
+                    width: 16,
+                    height: 16,
+                    flexShrink: 0,
+                    color: '#f59e0b',
+                    opacity: location === '/my-portal' ? 1 : 0.75,
+                  }}
+                />
                 {!sidebarCollapsed && (
-                  <span style={{ flex: 1, color: '#f59e0b', fontWeight: location === '/my-portal' ? 800 : 600, fontSize: 13 }}>
+                  <span
+                    style={{
+                      flex: 1,
+                      color: '#f59e0b',
+                      fontWeight: location === '/my-portal' ? 800 : 600,
+                      fontSize: 13,
+                    }}
+                  >
                     بوابتي الشخصية
                   </span>
                 )}
@@ -552,7 +711,9 @@ export function AppLayout({ children }: LayoutProps) {
           className="flex items-center justify-between px-4"
           style={{ height: 40, borderTop: sidebarBdr, flexShrink: 0 }}
         >
-          {!sidebarCollapsed && <span style={{ fontSize: 10, color: textMuted }}>MuhKam Advanced</span>}
+          {!sidebarCollapsed && (
+            <span style={{ fontSize: 10, color: textMuted }}>MuhKam Advanced</span>
+          )}
           <div className="glow-dot" style={sidebarCollapsed ? { margin: '0 auto' } : {}} />
         </div>
       </aside>
@@ -626,25 +787,73 @@ export function AppLayout({ children }: LayoutProps) {
               >
                 <div
                   className="flex items-center justify-center shrink-0 font-black"
-                  style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#000', fontSize: 10 }}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    background: 'linear-gradient(135deg,#f59e0b,#d97706)',
+                    color: '#000',
+                    fontSize: 10,
+                  }}
                 >
                   {getInitials(user.name)}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: textPrimary, lineHeight: 1.2, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: textPrimary,
+                      lineHeight: 1.2,
+                      maxWidth: 100,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {user.name}
                   </p>
                   <div className="flex items-center gap-1" style={{ marginTop: 1 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: ROLE_DOT[user.role] ?? '#94a3b8', flexShrink: 0 }} />
-                    <span style={{ fontSize: 10, color: textMuted, fontWeight: 600 }}>{translateRole(user.role)}</span>
+                    <div
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: '50%',
+                        background: ROLE_DOT[user.role] ?? '#94a3b8',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span style={{ fontSize: 10, color: textMuted, fontWeight: 600 }}>
+                      {translateRole(user.role)}
+                    </span>
                   </div>
                 </div>
-                <div style={{ width: 1, height: 22, background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)', flexShrink: 0, margin: '0 2px' }} />
+                <div
+                  style={{
+                    width: 1,
+                    height: 22,
+                    background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
+                    flexShrink: 0,
+                    margin: '0 2px',
+                  }}
+                />
                 <button
                   onClick={() => setShowLogoutModal(true)}
                   title="تسجيل الخروج"
                   aria-label="تسجيل الخروج"
-                  style={{ width: 26, height: 26, borderRadius: 7, border: 'none', background: 'transparent', color: textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 7,
+                    border: 'none',
+                    background: 'transparent',
+                    color: textMuted,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
                 >
                   <LogOut style={{ width: 14, height: 14 }} />
                 </button>
@@ -666,7 +875,10 @@ export function AppLayout({ children }: LayoutProps) {
           todayRecordId={todayRecordId}
           alreadyCheckedIn={alreadyCheckedIn}
           alreadyCheckedOut={alreadyCheckedOut}
-          onLogout={() => { setShowLogoutModal(false); logout(); }}
+          onLogout={() => {
+            setShowLogoutModal(false);
+            logout();
+          }}
           onCancel={() => setShowLogoutModal(false)}
         />
       )}
@@ -678,7 +890,10 @@ export function AppLayout({ children }: LayoutProps) {
           todayRecordId={todayRecordId}
           alreadyCheckedOut={alreadyCheckedOut}
           onStayLoggedIn={() => setShowIdleModal(false)}
-          onLogout={() => { setShowIdleModal(false); logout(); }}
+          onLogout={() => {
+            setShowIdleModal(false);
+            logout();
+          }}
         />
       )}
     </div>

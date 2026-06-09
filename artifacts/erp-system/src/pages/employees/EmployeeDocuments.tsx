@@ -1,3 +1,4 @@
+import { resolveUploadedFileUrl } from '@/lib/file-upload';
 /**
  * EmployeeDocuments.tsx — documents & attachments display for the employee detail panel.
  */
@@ -18,13 +19,13 @@ export function EmployeeDocuments({ selected, documents }: EmployeeDocumentsProp
             <IdCard size={12} className="text-amber-400" /> صورة البطاقة الشخصية
           </div>
           <a
-            href={selected.national_id_image}
+            href={resolveUploadedFileUrl(selected.national_id_image)}
             target="_blank"
             rel="noopener noreferrer"
             className="block"
           >
             <img
-              src={selected.national_id_image}
+              src={resolveUploadedFileUrl(selected.national_id_image)}
               alt="بطاقة شخصية"
               className="rounded max-h-48 w-auto border border-white/10"
             />
