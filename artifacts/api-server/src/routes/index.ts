@@ -1,81 +1,82 @@
-import { Router, type IRouter } from "express";
-import { authenticate, requireTenant } from "../middleware/auth";
-import { tenantGuard } from "../middleware/tenant-guard";
-import { emailVerifyGuard } from "../middleware/email-verify-guard";
-import healthRouter from "./health";
-import productsRouter from "./products";
-import customersRouter from "./customers";
-import salesRouter from "./sales";
-import purchasesRouter from "./purchases";
-import expensesRouter from "./expenses";
-import incomeRouter from "./income";
-import transactionsRouter from "./transactions";
-import dashboardRouter from "./dashboard";
-import settingsRouter from "./settings";
-import accountsRouter from "./accounts";
-import returnsRouter from "./returns";
-import treasuryVouchersRouter from "./treasury-vouchers";
-import receiptVouchersRouter from "./receipt-vouchers";
-import depositVouchersRouter from "./deposit-vouchers";
-import paymentVouchersRouter from "./payment-vouchers";
-import safeTransfersRouter from "./safe-transfers";
-import financialTransactionsRouter from "./financial-transactions";
-import adminRouter from "./admin";
-import profitsRouter from "./profits";
-import metricsRouter from "./metrics";
-import inventoryRouter from "./inventory";
-import reportsRouter from "./reports";
-import authRouter from "./auth";
-import openingBalanceRouter from "./opening-balance";
-import contactsRouter from "./contacts";
-import alertsRouter from "./alerts";
-import { notificationsRouter } from "./notifications";
-import warrantyRouter from "./warranty";
-import systemRouter from "./system";
-import backupsRouter from "./backups";
-import companiesRouter from "./companies";
-import integrityRouter from "./integrity";
-import inventoryControlRouter from "./inventory-control";
-import categoriesRouter from "./categories";
-import superRouter from "./super";
-import debugRouter from "./debug";
-import trialMonitoringRouter from "./trial-monitoring";
-import branchesRouter from "./branches";
-import employeesRouter from "./employees";
-import suppliersRouter from "./suppliers";
-import payrollRouter from "./payroll";
-import attendanceRouter from "./attendance";
+import { Router, type IRouter } from 'express';
+import { authenticate, requireTenant } from '../middleware/auth';
+import { tenantGuard } from '../middleware/tenant-guard';
+import { emailVerifyGuard } from '../middleware/email-verify-guard';
+import healthRouter from './health';
+import productsRouter from './products';
+import customersRouter from './customers';
+import salesRouter from './sales';
+import purchasesRouter from './purchases';
+import expensesRouter from './expenses';
+import incomeRouter from './income';
+import transactionsRouter from './transactions';
+import dashboardRouter from './dashboard';
+import settingsRouter from './settings';
+import accountsRouter from './accounts';
+import returnsRouter from './returns';
+import treasuryVouchersRouter from './treasury-vouchers';
+import receiptVouchersRouter from './receipt-vouchers';
+import depositVouchersRouter from './deposit-vouchers';
+import paymentVouchersRouter from './payment-vouchers';
+import safeTransfersRouter from './safe-transfers';
+import financialTransactionsRouter from './financial-transactions';
+import adminRouter from './admin';
+import profitsRouter from './profits';
+import metricsRouter from './metrics';
+import inventoryRouter from './inventory';
+import reportsRouter from './reports';
+import authRouter from './auth';
+import openingBalanceRouter from './opening-balance';
+import contactsRouter from './contacts';
+import alertsRouter from './alerts';
+import { notificationsRouter } from './notifications';
+import warrantyRouter from './warranty';
+import systemRouter from './system';
+import backupsRouter from './backups';
+import companiesRouter from './companies';
+import integrityRouter from './integrity';
+import inventoryControlRouter from './inventory-control';
+import categoriesRouter from './categories';
+import superRouter from './super';
+import debugRouter from './debug';
+import trialMonitoringRouter from './trial-monitoring';
+import branchesRouter from './branches';
+import employeesRouter from './employees';
+import suppliersRouter from './suppliers';
+import payrollRouter from './payroll';
+import attendanceRouter from './attendance';
 
-import incentivesRouter from "./incentives";
-import salaryAdvancesRouter from "./salary-advances";
-import employeeBonusesCustodyRouter from "./employee-bonuses-custody";
-import attendanceDeductionsRouter from "./attendance-deductions";
-import fiscalYearsRouter from "./fiscal-years";
-import announcementsRouter from "./announcements";
-import exchangeRatesRouter from "./exchange-rates";
-import consignmentRouter from "./consignment";
-import fixedAssetsRouter from "./fixed-assets";
-import accrualsRouter from "./accruals";
-import bankReconciliationRouter from "./bank-reconciliation";
-import budgetsRouter from "./budgets";
-import costCentersRouter from "./cost-centers";
-import salesTargetsRouter from "./sales-targets";
-import repairsRouter from "./repairs";
-import repairDashboardCardsRouter from "./repair-dashboard-cards";
-import repairAccessoriesRouter from "./repair-accessories";
-import scrapItemsRouter from "./scrap-items";
-import badDebtsRouter from "./bad-debts";
-import devicesRouter from "./devices";
-import stockTransfersRouter from "./stock-transfers";
-import repairTrackingRouter from "./repair-tracking";
-import { deviceCheckRouter } from "./device-check";
-import leavesRouter from "./leaves";
-import priceListsRouter from "./price-lists";
+import incentivesRouter from './incentives';
+import salaryAdvancesRouter from './salary-advances';
+import employeeBonusesCustodyRouter from './employee-bonuses-custody';
+import attendanceDeductionsRouter from './attendance-deductions';
+import fiscalYearsRouter from './fiscal-years';
+import announcementsRouter from './announcements';
+import exchangeRatesRouter from './exchange-rates';
+import consignmentRouter from './consignment';
+import fixedAssetsRouter from './fixed-assets';
+import accrualsRouter from './accruals';
+import bankReconciliationRouter from './bank-reconciliation';
+import budgetsRouter from './budgets';
+import costCentersRouter from './cost-centers';
+import salesTargetsRouter from './sales-targets';
+import repairsRouter from './repairs';
+import repairDashboardCardsRouter from './repair-dashboard-cards';
+import repairAccessoriesRouter from './repair-accessories';
+import scrapItemsRouter from './scrap-items';
+import badDebtsRouter from './bad-debts';
+import devicesRouter from './devices';
+import stockTransfersRouter from './stock-transfers';
+import repairTrackingRouter from './repair-tracking';
+import { deviceCheckRouter } from './device-check';
+import leavesRouter from './leaves';
+import priceListsRouter from './price-lists';
+import uploadsRouter from './uploads';
 
 const router: IRouter = Router();
 
 /* ── Public routes — no auth required ─────────────────────────── */
-router.use(authRouter);   // /auth/login  /auth/refresh  /auth/2fa/* (no user-directory endpoint)
+router.use(authRouter); // /auth/login  /auth/refresh  /auth/2fa/* (no user-directory endpoint)
 router.use(healthRouter); // /health
 // zktecoRouter is mounted directly on the Express app (not under /api) in app.ts
 // so that /iclock/... and /api/attendance/zkteco resolve at their correct paths.
@@ -86,7 +87,7 @@ router.use(authenticate);
 
 /* ── super_admin cross-tenant routes mount BEFORE requireTenant ── */
 router.use(superRouter);
-router.use(debugRouter);           // /super/trial-check
+router.use(debugRouter); // /super/trial-check
 router.use(trialMonitoringRouter); // /super/trial-monitoring
 
 /* ── Tenant guard — every route below MUST resolve a company_id ── */
@@ -101,6 +102,7 @@ router.use(emailVerifyGuard);
 /* ── Protected routes ─────────────────────────────────────────── */
 router.use(productsRouter);
 router.use(priceListsRouter);
+router.use(uploadsRouter);
 router.use(customersRouter);
 router.use(salesRouter);
 router.use(purchasesRouter);

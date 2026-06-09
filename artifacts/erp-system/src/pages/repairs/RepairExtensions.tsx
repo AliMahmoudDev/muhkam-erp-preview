@@ -9,7 +9,7 @@
  *  - TechnicianReceiptLine     (technician dropdown per receipt line)
  *  - RepairLabelSettings       (invoice size + show/hide toggles)
  */
-import { useState } from 'react';
+import { type ChangeEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, Upload, User, DollarSign, CreditCard, Banknote } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
@@ -62,12 +62,16 @@ export function DeliveryPaymentSection({ value, onChange, safes }: DeliveryPayme
           <label className="text-[11px] text-white/40 mb-1 block">الخزنة</label>
           <select
             value={value.safe_id ?? ''}
-            onChange={(e) => onChange({ ...value, safe_id: e.target.value ? Number(e.target.value) : null })}
+            onChange={(e) =>
+              onChange({ ...value, safe_id: e.target.value ? Number(e.target.value) : null })
+            }
             className="erp-input w-full text-sm"
           >
             <option value="">— اختر خزنة —</option>
             {safes.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
             ))}
           </select>
         </div>
@@ -87,12 +91,21 @@ interface TechnicianSelectorProps {
   className?: string;
 }
 
-export function TechnicianSelector({ label, value, onChange, technicians, className }: TechnicianSelectorProps) {
+export function TechnicianSelector({
+  label,
+  value,
+  onChange,
+  technicians,
+  className,
+}: TechnicianSelectorProps) {
   return (
     <div className={className}>
       {label && <label className="text-[11px] text-white/40 mb-1 block">{label}</label>}
       <div className="relative">
-        <User size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+        <User
+          size={12}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none"
+        />
         <select
           value={value ?? ''}
           onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
@@ -100,7 +113,9 @@ export function TechnicianSelector({ label, value, onChange, technicians, classN
         >
           <option value="">— بدون تعيين —</option>
           {technicians.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
           ))}
         </select>
       </div>
@@ -118,7 +133,12 @@ interface QAReportFieldsProps {
   onChangeInspector: (v: string) => void;
 }
 
-export function QAReportFields({ qaReport, inspectorName, onChangeReport, onChangeInspector }: QAReportFieldsProps) {
+export function QAReportFields({
+  qaReport,
+  inspectorName,
+  onChangeReport,
+  onChangeInspector,
+}: QAReportFieldsProps) {
   return (
     <div className="space-y-3">
       <div>
@@ -162,7 +182,6 @@ interface DevicePhotosSectionProps {
 
 export function DevicePhotosSection({ jobId, photoType = 'intake' }: DevicePhotosSectionProps) {
   const qc = useQueryClient();
-  const [url, setUrl] = useState('');
 
   const { data: photos = [] } = useQuery<DevicePhoto[]>({
     queryKey: ['/api/repair-jobs', jobId, 'photos'],
@@ -174,22 +193,61 @@ export function DevicePhotosSection({ jobId, photoType = 'intake' }: DevicePhoto
     enabled: !!jobId,
   });
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('category', 'repairs');
+
+      const uploadRes = await authFetch(api('/api/uploads'), {
+        method: 'POST',
+        body: form,
+      });
+
+      if (!uploadRes.ok) {
+        let message = 'فشل رفع الصورة';
+        try {
+          const body = await uploadRes.json();
+          if (body?.error) message = body.error;
+        } catch {}
+        throw new Error(message);
+      }
+
+      const uploaded = (await uploadRes.json()) as { url: string };
+
       const r = await authFetch(api(`/api/repair-jobs/${jobId}/photos`), {
         method: 'POST',
-        body: JSON.stringify({ photo_url: url, photo_type: photoType }),
+        body: JSON.stringify({ photo_url: uploaded.url, photo_type: photoType }),
       });
-      if (!r.ok) throw new Error('failed');
+
+      if (!r.ok) {
+        let message = 'فشل حفظ الصورة في بطاقة الصيانة';
+        try {
+          const body = await r.json();
+          if (body?.error) message = body.error;
+        } catch {}
+        throw new Error(message);
+      }
+
       return r.json();
     },
     onSuccess: () => {
-      setUrl('');
       qc.invalidateQueries({ queryKey: ['/api/repair-jobs', jobId, 'photos'] });
     },
   });
 
   const filtered = photos.filter((p) => p.photo_type === photoType);
+  const inputId = `repair-photo-${jobId}-${photoType}`;
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    uploadMutation.mutate(file);
+  };
+
+  const resolvePhotoSrc = (photoUrl: string) =>
+    photoUrl.startsWith('/api/') ? api(photoUrl) : photoUrl;
 
   return (
     <div className="space-y-2">
@@ -204,7 +262,7 @@ export function DevicePhotosSection({ jobId, photoType = 'intake' }: DevicePhoto
           {filtered.map((p) => (
             <img
               key={p.id}
-              src={p.photo_url}
+              src={resolvePhotoSrc(p.photo_url)}
               alt=""
               className="w-full h-16 object-cover rounded-lg border border-white/10"
             />
@@ -212,24 +270,30 @@ export function DevicePhotosSection({ jobId, photoType = 'intake' }: DevicePhoto
         </div>
       )}
 
-      {/* Add photo URL input */}
+      {/* Upload photo */}
       <div className="flex gap-2">
         <input
-          type="url"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="رابط الصورة (URL)"
-          className="erp-input flex-1 text-xs"
+          id={inputId}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={handleFileChange}
+          disabled={uploadMutation.isPending}
         />
-        <button
-          type="button"
-          onClick={() => url.trim() && addMutation.mutate()}
-          disabled={!url.trim() || addMutation.isPending}
-          className="erp-btn erp-btn-primary text-xs px-3 flex items-center gap-1"
+        <label
+          htmlFor={inputId}
+          className={`erp-btn erp-btn-primary text-xs px-3 flex items-center gap-1 cursor-pointer ${uploadMutation.isPending ? 'opacity-60 pointer-events-none' : ''}`}
         >
-          <Upload size={11} /> إضافة
-        </button>
+          <Upload size={11} />
+          {uploadMutation.isPending ? 'جاري الرفع...' : 'رفع صورة'}
+        </label>
       </div>
+
+      {uploadMutation.isError && (
+        <p className="text-[11px] text-red-300">
+          {(uploadMutation.error as Error)?.message || 'فشل رفع الصورة'}
+        </p>
+      )}
     </div>
   );
 }
@@ -243,7 +307,11 @@ interface TechReceiptLineProps {
   technicians: Array<{ id: number; name: string }>;
 }
 
-export function TechnicianReceiptLine({ technicianId, onChange, technicians }: TechReceiptLineProps) {
+export function TechnicianReceiptLine({
+  technicianId,
+  onChange,
+  technicians,
+}: TechReceiptLineProps) {
   return (
     <select
       value={technicianId ?? ''}
@@ -252,7 +320,9 @@ export function TechnicianReceiptLine({ technicianId, onChange, technicians }: T
     >
       <option value="">— فني —</option>
       {technicians.map((t) => (
-        <option key={t.id} value={t.id}>{t.name}</option>
+        <option key={t.id} value={t.id}>
+          {t.name}
+        </option>
       ))}
     </select>
   );

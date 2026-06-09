@@ -12,26 +12,24 @@
  */
 
 /** اسم كوكي CSRF الذي يضبطه الخادم */
-const CSRF_COOKIE_NAME = "csrf_token";
+const CSRF_COOKIE_NAME = 'csrf_token';
 
 /** اسم الترويسة المطلوبة من الخادم */
-const CSRF_HEADER_NAME = "X-CSRF-Token";
+const CSRF_HEADER_NAME = 'X-CSRF-Token';
 
 /** الطرق التي تحتاج رمز CSRF */
-const STATE_CHANGING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /** المسار الذي لا يجب إعادة محاولة التجديد له (لمنع الحلقة اللانهائية) */
-const REFRESH_PATH = "/api/auth/refresh";
+const REFRESH_PATH = '/api/auth/refresh';
 
 /**
  * يقرأ قيمة كوكي بالاسم من document.cookie.
  * يُرجع undefined إذا لم يُوجد.
  */
 function getCookie(name: string): string | undefined {
-  const match = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith(`${name}=`));
-  return match ? decodeURIComponent(match.split("=")[1] ?? "") : undefined;
+  const match = document.cookie.split('; ').find((row) => row.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.split('=')[1] ?? '') : undefined;
 }
 
 /* ── Refresh stampede prevention ──────────────────────────────────
@@ -46,14 +44,14 @@ let _refreshPromise: Promise<boolean> | null = null;
 async function doRefresh(): Promise<boolean> {
   try {
     const csrfToken = getCookie(CSRF_COOKIE_NAME);
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (csrfToken) {
       headers[CSRF_HEADER_NAME] = csrfToken;
     }
     const res = await fetch(REFRESH_PATH, {
-      method: "POST",
+      method: 'POST',
       headers,
-      credentials: "include",
+      credentials: 'include',
     });
     return res.ok;
   } catch {
@@ -75,13 +73,15 @@ function refreshSession(): Promise<boolean> {
 }
 
 export async function authFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const isFormDataBody = typeof FormData !== 'undefined' && init.body instanceof FormData;
+
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormDataBody ? {} : { 'Content-Type': 'application/json' }),
     ...(init.headers as Record<string, string> | undefined),
   };
 
   /* ── إرفاق رمز CSRF تلقائياً للطلبات المتغيّرة ──────────────── */
-  const method = (init.method ?? "GET").toUpperCase();
+  const method = (init.method ?? 'GET').toUpperCase();
   if (STATE_CHANGING_METHODS.has(method)) {
     const csrfToken = getCookie(CSRF_COOKIE_NAME);
     if (csrfToken) {
@@ -89,7 +89,7 @@ export async function authFetch(url: string, init: RequestInit = {}): Promise<Re
     }
   }
 
-  const res = await fetch(url, { ...init, headers, credentials: "include" });
+  const res = await fetch(url, { ...init, headers, credentials: 'include' });
 
   /* ── Auto-refresh on 401 ────────────────────────────────────────
      إذا انتهت صلاحية رمز الوصول (401) وليس الطلب نفسه هو طلب التجديد:
@@ -101,7 +101,7 @@ export async function authFetch(url: string, init: RequestInit = {}): Promise<Re
     if (refreshed) {
       /* إعادة بناء ترويسات CSRF — قد يكون الكوكي تجدد بعد الـ refresh */
       const retryHeaders: Record<string, string> = {
-        "Content-Type": "application/json",
+        ...(isFormDataBody ? {} : { 'Content-Type': 'application/json' }),
         ...(init.headers as Record<string, string> | undefined),
       };
       if (STATE_CHANGING_METHODS.has(method)) {
@@ -110,10 +110,10 @@ export async function authFetch(url: string, init: RequestInit = {}): Promise<Re
           retryHeaders[CSRF_HEADER_NAME] = freshCsrf;
         }
       }
-      return fetch(url, { ...init, headers: retryHeaders, credentials: "include" });
+      return fetch(url, { ...init, headers: retryHeaders, credentials: 'include' });
     }
     /* فشل التجديد — الجلسة انتهت فعلاً */
-    window.dispatchEvent(new CustomEvent("session:expired"));
+    window.dispatchEvent(new CustomEvent('session:expired'));
     return res;
   }
 
@@ -122,14 +122,17 @@ export async function authFetch(url: string, init: RequestInit = {}): Promise<Re
      fire a global DOM event so the auth context can intercept it.  */
   if (res.status === 403) {
     const clone = res.clone();
-    clone.json().then((body: { error?: string; code?: string }) => {
-      if (
-        typeof body?.error === "string" &&
-        (body.error.includes("الاشتراك") || body.error.includes("subscription"))
-      ) {
-        window.dispatchEvent(new CustomEvent("subscription:expired"));
-      }
-    }).catch(() => {});
+    clone
+      .json()
+      .then((body: { error?: string; code?: string }) => {
+        if (
+          typeof body?.error === 'string' &&
+          (body.error.includes('الاشتراك') || body.error.includes('subscription'))
+        ) {
+          window.dispatchEvent(new CustomEvent('subscription:expired'));
+        }
+      })
+      .catch(() => {});
   }
 
   return res;
