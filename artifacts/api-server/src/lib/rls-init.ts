@@ -18,58 +18,68 @@
  * authenticated routes) without breaking unauthenticated/system code paths.
  */
 
-import { db } from "@workspace/db";
-import { sql } from "drizzle-orm";
-import { logger } from "./logger";
+import { db } from '@workspace/db';
+import { sql } from 'drizzle-orm';
+import { logger } from './logger';
 
-/* Tables with a direct `company_id integer` column that hold tenant business
-   data. Excludes: erp_users (login flow), companies (auth), refresh_tokens,
-   idempotency_keys, audit_logs, backups, system_settings, alerts (background
-   jobs may write without auth context). */
-const RLS_TABLES = [
-  "products",
-  "customers",
-  "sales",
-  "purchases",
-  "sales_returns",
-  "purchase_returns",
-  "expenses",
-  "income",
-  "transactions",
-  "accounts",
-  "journal_entries",
-  "receipt_vouchers",
-  "deposit_vouchers",
-  "payment_vouchers",
-  "treasury_vouchers",
-  "safe_transfers",
-  "safes",
-  "warehouses",
-  "stock_movements",
-  "employees",
-  "branches",
-  "departments",
-  "customer_ledger",
-  "categories",
-  "suppliers",
-  "fixed_assets",
-  "depreciation_runs",
-  "accruals",
-  "accrual_runs",
-  "bank_accounts",
-  "bank_statement_lines",
-  "budgets",
-  "budget_lines",
-  "cost_centers",
-  "devices",
+/* Fallback list used only if dynamic discovery fails. Runtime discovery
+   enables RLS on every public base table with a direct company_id column, so
+   newly added tenant-scoped tables are not left unprotected by accident. */
+const FALLBACK_RLS_TABLES = [
+  'products',
+  'customers',
+  'sales',
+  'purchases',
+  'sales_returns',
+  'purchase_returns',
+  'expenses',
+  'income',
+  'transactions',
+  'accounts',
+  'journal_entries',
+  'receipt_vouchers',
+  'deposit_vouchers',
+  'payment_vouchers',
+  'treasury_vouchers',
+  'safe_transfers',
+  'safes',
+  'warehouses',
+  'stock_movements',
+  'employees',
+  'branches',
+  'departments',
+  'customer_ledger',
+  'categories',
+  'suppliers',
+  'fixed_assets',
+  'depreciation_runs',
+  'accruals',
+  'accrual_runs',
+  'bank_accounts',
+  'bank_statement_lines',
+  'budgets',
+  'budget_lines',
+  'cost_centers',
+  'devices',
 ] as const;
 
-const POLICY_NAME = "muhkam_tenant_isolation";
+const POLICY_NAME = 'muhkam_tenant_isolation';
 
 /* Application role (NOSUPERUSER, NOBYPASSRLS) — auth middleware switches the
    session to this role so RLS policies apply. Background jobs that connect
    without the middleware remain as the connection owner and bypass RLS. */
-export const APP_ROLE = "erp_app_role";
+export const APP_ROLE = 'erp_app_role';
+
+function queryRows<T>(result: unknown): T[] {
+  return (result as { rows?: T[] }).rows ?? (result as T[]) ?? [];
+}
+
+function quoteIdentifier(identifier: string): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
+    throw new Error(`[rls] unsafe SQL identifier: ${identifier}`);
+  }
+  return `"${identifier.replace(/"/g, '""')}"`;
+}
 
 /**
  * Ensure the constrained application role exists with the privileges it needs
@@ -79,7 +89,8 @@ async function ensureAppRole(): Promise<void> {
   /* Create role if missing — DO blocks can't accept bind params, so use raw SQL.
      APP_ROLE is a hard-coded constant (no injection risk). */
   // nosemgrep: ban-drizzle-sql-raw — PostgreSQL DDL (DO block / GRANT / ALTER) cannot be expressed in Drizzle; APP_ROLE is a hardcoded constant
-  await db.execute(sql.raw(`
+  await db.execute(
+    sql.raw(`
     DO $$
     BEGIN
       IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${APP_ROLE}') THEN
@@ -87,25 +98,34 @@ async function ensureAppRole(): Promise<void> {
       END IF;
     END
     $$;
-  `));
+  `)
+  );
   // nosemgrep: ban-drizzle-sql-raw
   await db.execute(sql.raw(`GRANT "${APP_ROLE}" TO CURRENT_USER`));
   // nosemgrep: ban-drizzle-sql-raw
   await db.execute(sql.raw(`GRANT USAGE ON SCHEMA public TO "${APP_ROLE}"`));
   // nosemgrep: ban-drizzle-sql-raw
-  await db.execute(sql.raw(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "${APP_ROLE}"`));
+  await db.execute(
+    sql.raw(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "${APP_ROLE}"`)
+  );
   // nosemgrep: ban-drizzle-sql-raw
-  await db.execute(sql.raw(`GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO "${APP_ROLE}"`));
+  await db.execute(
+    sql.raw(`GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO "${APP_ROLE}"`)
+  );
   // nosemgrep: ban-drizzle-sql-raw
-  await db.execute(sql.raw(`
+  await db.execute(
+    sql.raw(`
     ALTER DEFAULT PRIVILEGES IN SCHEMA public
       GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "${APP_ROLE}"
-  `));
+  `)
+  );
   // nosemgrep: ban-drizzle-sql-raw
-  await db.execute(sql.raw(`
+  await db.execute(
+    sql.raw(`
     ALTER DEFAULT PRIVILEGES IN SCHEMA public
       GRANT USAGE, SELECT ON SEQUENCES TO "${APP_ROLE}"
-  `));
+  `)
+  );
 }
 
 /**
@@ -126,10 +146,11 @@ async function tableExists(name: string): Promise<boolean> {
     sql`SELECT EXISTS (
       SELECT 1 FROM information_schema.tables
       WHERE table_schema = 'public' AND table_name = ${name}
-    ) AS exists`,
+    ) AS exists`
   );
-  const rows = (result as unknown as { rows?: Array<{ exists: boolean }> }).rows
-    ?? (result as unknown as Array<{ exists: boolean }>);
+  const rows =
+    (result as unknown as { rows?: Array<{ exists: boolean }> }).rows ??
+    (result as unknown as Array<{ exists: boolean }>);
   return rows?.[0]?.exists === true;
 }
 
@@ -138,11 +159,33 @@ async function hasCompanyIdColumn(table: string): Promise<boolean> {
     sql`SELECT EXISTS (
       SELECT 1 FROM information_schema.columns
       WHERE table_schema = 'public' AND table_name = ${table} AND column_name = 'company_id'
-    ) AS exists`,
+    ) AS exists`
   );
-  const rows = (result as unknown as { rows?: Array<{ exists: boolean }> }).rows
-    ?? (result as unknown as Array<{ exists: boolean }>);
+  const rows =
+    (result as unknown as { rows?: Array<{ exists: boolean }> }).rows ??
+    (result as unknown as Array<{ exists: boolean }>);
   return rows?.[0]?.exists === true;
+}
+
+async function discoverCompanyScopedTables(): Promise<string[]> {
+  const result = await db.execute<{ table_name: string }>(
+    sql`SELECT c.table_name
+        FROM information_schema.columns c
+        JOIN information_schema.tables t
+          ON t.table_schema = c.table_schema
+         AND t.table_name = c.table_name
+        WHERE c.table_schema = 'public'
+          AND t.table_type = 'BASE TABLE'
+          AND c.column_name = 'company_id'
+          AND c.table_name NOT LIKE 'drizzle_%'
+        ORDER BY c.table_name`
+  );
+
+  return queryRows<{ table_name: string }>(result)
+    .map((row) => row.table_name)
+    .filter(
+      (name): name is string => typeof name === 'string' && /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
+    );
 }
 
 export async function initRLS(): Promise<{ enabled: number; skipped: number }> {
@@ -152,50 +195,70 @@ export async function initRLS(): Promise<{ enabled: number; skipped: number }> {
   /* Step 1: ensure the constrained role exists & has privileges */
   try {
     await ensureAppRole();
-    logger.info({ role: APP_ROLE }, "[rls] application role ensured");
+    logger.info({ role: APP_ROLE }, '[rls] application role ensured');
   } catch (err) {
-    logger.error({ err }, "[rls] failed to ensure application role — RLS will not be enforced at session level");
+    logger.error(
+      { err },
+      '[rls] failed to ensure application role — RLS will not be enforced at session level'
+    );
   }
 
-  for (const table of RLS_TABLES) {
+  let rlsTables: string[] = [...FALLBACK_RLS_TABLES];
+
+  try {
+    rlsTables = await discoverCompanyScopedTables();
+    logger.info({ total: rlsTables.length }, '[rls] discovered company-scoped tables');
+  } catch (err) {
+    logger.error(
+      { err, total: rlsTables.length },
+      '[rls] failed to discover company-scoped tables — using fallback list'
+    );
+  }
+
+  for (const table of rlsTables) {
     try {
       if (!(await tableExists(table))) {
-        logger.debug({ table }, "[rls] table missing — skipping");
+        logger.debug({ table }, '[rls] table missing — skipping');
         skipped++;
         continue;
       }
       if (!(await hasCompanyIdColumn(table))) {
-        logger.warn({ table }, "[rls] table has no company_id column — skipping");
+        logger.warn({ table }, '[rls] table has no company_id column — skipping');
         skipped++;
         continue;
       }
 
+      const quotedTable = quoteIdentifier(table);
+      const quotedPolicy = quoteIdentifier(POLICY_NAME);
+
       /* Enable RLS (idempotent). FORCE makes it apply to table owner too. */
-      // nosemgrep: ban-drizzle-sql-raw — ALTER TABLE DDL not expressible in Drizzle; table name comes from hardcoded RLS_TABLES constant
-      await db.execute(sql.raw(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`));
+      // nosemgrep: ban-drizzle-sql-raw — ALTER TABLE DDL not expressible in Drizzle; table name is validated by quoteIdentifier()
+      await db.execute(sql.raw(`ALTER TABLE ${quotedTable} ENABLE ROW LEVEL SECURITY`));
       // nosemgrep: ban-drizzle-sql-raw
-      await db.execute(sql.raw(`ALTER TABLE "${table}" FORCE ROW LEVEL SECURITY`));
+      await db.execute(sql.raw(`ALTER TABLE ${quotedTable} FORCE ROW LEVEL SECURITY`));
 
       /* Recreate policy idempotently inside a single DO block to avoid race conditions */
       // nosemgrep: ban-drizzle-sql-raw
-      await db.execute(sql.raw(
-        `DO $$
+      await db.execute(
+        sql.raw(
+          `DO $$
          BEGIN
-           DROP POLICY IF EXISTS "${POLICY_NAME}" ON "${table}";
-           CREATE POLICY "${POLICY_NAME}" ON "${table}"
+           DROP POLICY IF EXISTS ${quotedPolicy} ON ${quotedTable};
+           CREATE POLICY ${quotedPolicy} ON ${quotedTable}
              USING ${POLICY_EXPR}
              WITH CHECK ${POLICY_EXPR};
          END;
-         $$`,
-      ));
+         $$`
+        )
+      );
 
       enabled++;
     } catch (err) {
-      logger.error({ table, err }, "[rls] failed to enable on table");
+      logger.error({ table, err }, '[rls] failed to enable on table');
       skipped++;
     }
   }
 
-  logger.info({ enabled, skipped, total: RLS_TABLES.length }, "[rls] initialization complete");
+  logger.info({ enabled, skipped, total: rlsTables.length }, '[rls] initialization complete');
   return { enabled, skipped };
 }
