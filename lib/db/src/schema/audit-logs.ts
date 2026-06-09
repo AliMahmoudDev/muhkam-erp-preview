@@ -10,6 +10,7 @@ export const auditLogsTable = pgTable("audit_logs", {
   new_value: jsonb("new_value"),
   user_id: integer("user_id"),
   username: text("username"),
+  note: text("note"),
   /* Nullable: super_admin / system events legitimately have no tenant context.
      Forcing a default of 1 caused forensic pollution of tenant 1's audit trail. */
   company_id: integer("company_id").references(() => companiesTable.id),

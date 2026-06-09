@@ -121,6 +121,7 @@ export async function writeAuditLog(opts: {
       new_value: opts.new_value ?? null,
       user_id: opts.user?.id ?? null,
       username: opts.user?.username ?? null,
+      note: opts.note ?? null,
       /* NULL when no tenant context (super_admin/system events). NEVER default
          to a tenant id — that pollutes another tenant's forensic trail. */
       company_id: opts.company_id ?? null,

@@ -435,6 +435,7 @@ CREATE TABLE "audit_logs" (
 	"new_value" jsonb,
 	"user_id" integer,
 	"username" text,
+    "note" text,
 	"company_id" integer,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );

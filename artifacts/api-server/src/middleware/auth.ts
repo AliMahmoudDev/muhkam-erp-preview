@@ -1,12 +1,12 @@
-import type { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { db, pool, erpUsersTable, companiesTable } from "@workspace/db";
-import type { PoolClient } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
-import { isTokenBlacklisted } from "../lib/session-blacklist";
-import { sanitizeObject } from "../lib/sanitize";
-import { logger } from "../lib/logger";
-import { Role } from "../lib/roles";
+import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { db, pool, erpUsersTable, companiesTable } from '@workspace/db';
+import type { PoolClient } from '@workspace/db';
+import { eq, sql } from 'drizzle-orm';
+import { isTokenBlacklisted } from '../lib/session-blacklist';
+import { sanitizeObject } from '../lib/sanitize';
+import { logger } from '../lib/logger';
+import { Role } from '../lib/roles';
 
 /** نوع عميل pg المُثبَّت من تجمُّع الاتصالات */
 type PinnedClient = PoolClient;
@@ -26,17 +26,17 @@ type PinnedClient = PoolClient;
  */
 async function setDbContext(
   user: { company_id: number | null; role: string },
-  client?: PinnedClient,
+  client?: PinnedClient
 ): Promise<void> {
-  const companyId = user.company_id ? String(user.company_id) : "";
-  const isSuperAdmin = user.role === Role.SuperAdmin ? "true" : "false";
+  const companyId = user.company_id ? String(user.company_id) : '';
+  const isSuperAdmin = user.role === Role.SuperAdmin ? 'true' : 'false';
   try {
     if (client) {
-      await client.query("SET ROLE erp_app_role");
+      await client.query('SET ROLE erp_app_role');
       await client.query(
         "SELECT set_config('app.current_company_id', $1, false)," +
-        "       set_config('app.is_super_admin', $2, false)",
-        [companyId, isSuperAdmin],
+          "       set_config('app.is_super_admin', $2, false)",
+        [companyId, isSuperAdmin]
       );
     } else {
       await db.execute(sql`SET ROLE erp_app_role`);
@@ -60,10 +60,10 @@ async function setDbContext(
 async function clearDbContext(client?: PinnedClient): Promise<void> {
   try {
     if (client) {
-      await client.query("RESET ROLE");
+      await client.query('RESET ROLE');
       await client.query(
         "SELECT set_config('app.current_company_id', '', false)," +
-        "       set_config('app.is_super_admin', 'false', false)",
+          "       set_config('app.is_super_admin', 'false', false)"
       );
     } else {
       await db.execute(sql`RESET ROLE`);
@@ -78,7 +78,9 @@ async function clearDbContext(client?: PinnedClient): Promise<void> {
 }
 
 if (!process.env.JWT_SECRET) {
-  throw new Error("[FATAL] JWT_SECRET environment variable is not set. Server cannot start securely.");
+  throw new Error(
+    '[FATAL] JWT_SECRET environment variable is not set. Server cannot start securely.'
+  );
 }
 const JWT_SECRET: string = process.env.JWT_SECRET;
 
@@ -113,14 +115,14 @@ declare global {
  * @returns {string} - رمز JWT موقَّع
  */
 export function signToken(userId: number, role: string, companyId: number | null = null): string {
-  return jwt.sign({ userId, role, companyId }, JWT_SECRET, { expiresIn: "4h" });
+  return jwt.sign({ userId, role, companyId }, JWT_SECRET, { expiresIn: '4h' });
 }
 
 /* ── Sign a long-lived refresh token (7 d) ──────────────── */
 if (!process.env.JWT_REFRESH_SECRET) {
   throw new Error(
-    "[FATAL] JWT_REFRESH_SECRET environment variable is not set. " +
-    "Server cannot start securely. Set a strong independent JWT_REFRESH_SECRET.",
+    '[FATAL] JWT_REFRESH_SECRET environment variable is not set. ' +
+      'Server cannot start securely. Set a strong independent JWT_REFRESH_SECRET.'
   );
 }
 const REFRESH_SECRET: string = process.env.JWT_REFRESH_SECRET;
@@ -132,7 +134,7 @@ const REFRESH_SECRET: string = process.env.JWT_REFRESH_SECRET;
  * @returns {string} - رمز JWT موقَّع بالسرّ الخاص بالتحديث
  */
 export function signRefreshToken(userId: number): string {
-  return jwt.sign({ userId, type: "refresh" }, REFRESH_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ userId, type: 'refresh' }, REFRESH_SECRET, { expiresIn: '7d' });
 }
 
 /**
@@ -143,7 +145,7 @@ export function signRefreshToken(userId: number): string {
 export function verifyRefreshToken(token: string): { userId: number } | null {
   try {
     const decoded = jwt.verify(token, REFRESH_SECRET) as { userId: number; type: string };
-    if (decoded.type !== "refresh") return null;
+    if (decoded.type !== 'refresh') return null;
     return { userId: decoded.userId };
   } catch {
     return null;
@@ -164,24 +166,21 @@ export function verifyRefreshToken(token: string): { userId: number } | null {
  * @param {NextFunction} next - دالة الانتقال للوسيط التالي
  * @returns {Promise<void>} - لا تُرجع قيمة
  */
-export async function authenticate(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+export async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
   /* Primary: httpOnly cookie — Secondary: Authorization header (fallback) */
   const cookieToken = (req.cookies as Record<string, string> | undefined)?.access_token;
   const authHeader = req.headers.authorization;
-  const token = cookieToken ?? (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined);
+  const token =
+    cookieToken ?? (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined);
 
   if (!token) {
-    res.status(401).json({ error: "غير مصرح: يلزم تسجيل الدخول أولاً" });
+    res.status(401).json({ error: 'غير مصرح: يلزم تسجيل الدخول أولاً' });
     return;
   }
 
   /* Check token blacklist (logout / revocation) */
   if (await isTokenBlacklisted(token)) {
-    res.status(401).json({ error: "انتهت الجلسة، يرجى تسجيل الدخول مجدداً" });
+    res.status(401).json({ error: 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً' });
     return;
   }
 
@@ -190,32 +189,31 @@ export async function authenticate(
   try {
     payload = jwt.verify(token, JWT_SECRET) as { userId: number; role: string };
   } catch {
-    res.status(401).json({ error: "الجلسة منتهية، يرجى تسجيل الدخول مجدداً" });
+    res.status(401).json({ error: 'الجلسة منتهية، يرجى تسجيل الدخول مجدداً' });
     return;
   }
 
   /* Always re-read from DB — never trust the token's role alone */
-  const [user] = await db
-    .select()
-    .from(erpUsersTable)
-    .where(eq(erpUsersTable.id, payload.userId));
+  const [user] = await db.select().from(erpUsersTable).where(eq(erpUsersTable.id, payload.userId));
 
   if (!user || user.active === false) {
-    res.status(401).json({ error: "الحساب غير نشط" });
+    res.status(401).json({ error: 'الحساب غير نشط' });
     return;
   }
 
   /* cashier/salesperson must have warehouse_id AND safe_id configured */
-  if (user.role === Role.Cashier || user.role === "salesperson") {
+  if (user.role === Role.Cashier || user.role === Role.Salesperson) {
     if (!user.warehouse_id || !user.safe_id) {
-      res.status(400).json({ error: "يجب تحديد المخزن والخزنة لهذا المستخدم — يرجى مراجعة المدير" });
+      res
+        .status(400)
+        .json({ error: 'يجب تحديد المخزن والخزنة لهذا المستخدم — يرجى مراجعة المدير' });
       return;
     }
   }
 
   /* Non-super_admin must belong to a company */
   if (user.role !== Role.SuperAdmin && !user.company_id) {
-    res.status(403).json({ error: "حساب غير مرتبط بشركة — تواصل مع المدير" });
+    res.status(403).json({ error: 'حساب غير مرتبط بشركة — تواصل مع المدير' });
     return;
   }
 
@@ -226,12 +224,12 @@ export async function authenticate(
       .where(eq(companiesTable.id, user.company_id));
     if (co) {
       if (!co.is_active) {
-        res.status(403).json({ error: "الاشتراك موقوف — يرجى التواصل مع المدير" });
+        res.status(403).json({ error: 'الاشتراك موقوف — يرجى التواصل مع المدير' });
         return;
       }
       const today = new Date().toISOString().slice(0, 10);
       if (co.end_date < today) {
-        res.status(403).json({ error: "انتهت صلاحية الاشتراك — يرجى تجديد الاشتراك" });
+        res.status(403).json({ error: 'انتهت صلاحية الاشتراك — يرجى تجديد الاشتراك' });
         return;
       }
     }
@@ -252,19 +250,21 @@ export async function authenticate(
     await setDbContext(user, pinnedClient);
     res.locals.pgClient = pinnedClient;
   } catch (err) {
-    logger.warn({ err }, "[auth] connection-pinning failed — falling back to pool for RLS context");
-    void setDbContext(user);          // pool best-effort fallback
+    logger.warn({ err }, '[auth] connection-pinning failed — falling back to pool for RLS context');
+    void setDbContext(user); // pool best-effort fallback
   }
 
   /* تنظيف الاتصال المُثبَّت عند انتهاء الاستجابة — مع الحرص على عدم الإطلاق مرتين */
   const releasePinned = (): void => {
     const c = pinnedClient;
     if (!c) return;
-    pinnedClient = undefined;         // guard against double-release on finish+close
-    void clearDbContext(c).finally(() => { c.release(); });
+    pinnedClient = undefined; // guard against double-release on finish+close
+    void clearDbContext(c).finally(() => {
+      c.release();
+    });
   };
-  res.on("finish", releasePinned);
-  res.on("close",  releasePinned);
+  res.on('finish', releasePinned);
+  res.on('close', releasePinned);
 
   next();
 }
@@ -278,12 +278,12 @@ export async function authenticate(
 export function requireRole(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      res.status(401).json({ error: "غير مصرح: يلزم تسجيل الدخول أولاً" });
+      res.status(401).json({ error: 'غير مصرح: يلزم تسجيل الدخول أولاً' });
       return;
     }
     if (!roles.includes(req.user.role)) {
       res.status(403).json({
-        error: `ليس لديك صلاحية — يتطلب: ${roles.join(" أو ")}`,
+        error: `ليس لديك صلاحية — يتطلب: ${roles.join(' أو ')}`,
         required: roles,
         yourRole: req.user.role,
       });
@@ -303,7 +303,7 @@ export function requireRole(...roles: string[]) {
  */
 export function sanitizeBody(req: Request, _res: Response, next: NextFunction): void {
   /* Skip Buffers (e.g. /api/system/restore uses express.raw() — body is a Buffer) */
-  if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
+  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
     req.body = sanitizeObject(req.body as Record<string, unknown>);
   }
   next();
@@ -327,9 +327,9 @@ export function sanitizeBody(req: Request, _res: Response, next: NextFunction): 
  */
 export function requireTenantStrict(req: Request, res: Response, next: NextFunction): void {
   const cid = req.user?.company_id;
-  if (typeof cid !== "number" || cid <= 0) {
+  if (typeof cid !== 'number' || cid <= 0) {
     res.status(403).json({
-      error: "هذه العملية تتطلب سياق شركة (tenant) — استخدم حساب مستخدم تابع للشركة",
+      error: 'هذه العملية تتطلب سياق شركة (tenant) — استخدم حساب مستخدم تابع للشركة',
     });
     return;
   }
@@ -347,7 +347,7 @@ export function requireTenantStrict(req: Request, res: Response, next: NextFunct
  */
 export function requireTenant(req: Request, res: Response, next: NextFunction): void {
   if (!req.user) {
-    res.status(401).json({ error: "غير مصرح: يلزم تسجيل الدخول أولاً" });
+    res.status(401).json({ error: 'غير مصرح: يلزم تسجيل الدخول أولاً' });
     return;
   }
   // super_admin operates across tenants — must explicitly pass company_id when needed
@@ -355,8 +355,8 @@ export function requireTenant(req: Request, res: Response, next: NextFunction): 
     next();
     return;
   }
-  if (!req.user.company_id || typeof req.user.company_id !== "number") {
-    res.status(403).json({ error: "Tenant not resolved — حساب غير مرتبط بشركة" });
+  if (!req.user.company_id || typeof req.user.company_id !== 'number') {
+    res.status(403).json({ error: 'Tenant not resolved — حساب غير مرتبط بشركة' });
     return;
   }
   req.companyId = req.user.company_id;
@@ -373,21 +373,21 @@ export function requireTenant(req: Request, res: Response, next: NextFunction): 
  */
 export function getTenant(req: Request): number {
   const cid = req.user?.company_id;
-  if (typeof cid === "number" && cid > 0) return cid;
+  if (typeof cid === 'number' && cid > 0) return cid;
   if (req.user?.role === Role.SuperAdmin) {
     const q = Number(req.query?.company_id ?? req.body?.company_id);
     if (Number.isFinite(q) && q > 0) return q;
-    const err = Object.assign(new Error("super_admin must provide company_id"), { status: 400 });
+    const err = Object.assign(new Error('super_admin must provide company_id'), { status: 400 });
     throw err;
   }
-  const err = Object.assign(new Error("Tenant not resolved"), { status: 403 });
+  const err = Object.assign(new Error('Tenant not resolved'), { status: 403 });
   throw err;
 }
 
 /* ── Convenience combos ─────────────────────────────────── */
-export const adminOnly    = [authenticate, requireRole("admin"), requireTenant] as const;
-export const managerUp    = [authenticate, requireRole("admin", "manager"), requireTenant] as const;
-export const anyAuth      = [authenticate, requireTenant] as const;
+export const adminOnly = [authenticate, requireRole('admin'), requireTenant] as const;
+export const managerUp = [authenticate, requireRole('admin', 'manager'), requireTenant] as const;
+export const anyAuth = [authenticate, requireTenant] as const;
 
 /**
  * وسيط قائمة السماح بالعناوين IP لمسارات المشرف العام.
@@ -402,7 +402,9 @@ export const anyAuth      = [authenticate, requireTenant] as const;
  * @returns {void}
  */
 export function superAdminIPGuard(req: Request, res: Response, next: NextFunction): void {
-  const allowedIPs = process.env.SUPER_ADMIN_IPS?.split(",").map((ip) => ip.trim()).filter(Boolean);
+  const allowedIPs = process.env.SUPER_ADMIN_IPS?.split(',')
+    .map((ip) => ip.trim())
+    .filter(Boolean);
 
   /* If no IP list configured:
    *   - In production: fail-closed — reject all requests.
@@ -411,9 +413,11 @@ export function superAdminIPGuard(req: Request, res: Response, next: NextFunctio
    *   - In non-production: allow all (development convenience).
    */
   if (!allowedIPs || allowedIPs.length === 0) {
-    if (process.env.NODE_ENV === "production") {
-      logger.warn("[superAdminIPGuard] SUPER_ADMIN_IPS is not configured in production — blocking all super-admin access");
-      res.status(403).json({ error: "الوصول مرفوض — قائمة IP المسموح بها غير مضبوطة" });
+    if (process.env.NODE_ENV === 'production') {
+      logger.warn(
+        '[superAdminIPGuard] SUPER_ADMIN_IPS is not configured in production — blocking all super-admin access'
+      );
+      res.status(403).json({ error: 'الوصول مرفوض — قائمة IP المسموح بها غير مضبوطة' });
       return;
     }
     next();
@@ -427,12 +431,12 @@ export function superAdminIPGuard(req: Request, res: Response, next: NextFunctio
    * Normalize IPv6-mapped IPv4 addresses (e.g. ::ffff:1.2.3.4 → 1.2.3.4)
    * so that IPs configured as plain IPv4 still match when nginx proxies.
    */
-  const rawIP = req.ip || req.socket.remoteAddress || "";
-  const clientIP = rawIP.startsWith("::ffff:") ? rawIP.slice(7) : rawIP;
+  const rawIP = req.ip || req.socket.remoteAddress || '';
+  const clientIP = rawIP.startsWith('::ffff:') ? rawIP.slice(7) : rawIP;
 
   if (!clientIP || !allowedIPs.includes(clientIP)) {
-    logger.warn({ clientIP, allowedIPs }, "[superAdminIPGuard] blocked request from unlisted IP");
-    res.status(403).json({ error: "الوصول مرفوض — عنوان IP غير مصرح به" });
+    logger.warn({ clientIP, allowedIPs }, '[superAdminIPGuard] blocked request from unlisted IP');
+    res.status(403).json({ error: 'الوصول مرفوض — عنوان IP غير مصرح به' });
     return;
   }
 

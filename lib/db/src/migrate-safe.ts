@@ -112,6 +112,13 @@ const migrations: { name: string; sql: string }[] = [
         ADD COLUMN IF NOT EXISTS dashboard_shortcuts JSONB NOT NULL DEFAULT '[]'::jsonb;
     `,
   },
+  {
+    name: "audit_logs — إضافة عمود note",
+    sql: `
+      ALTER TABLE audit_logs
+        ADD COLUMN IF NOT EXISTS note TEXT;
+    `,
+  },
 ];
 
 async function runMigrations() {

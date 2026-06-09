@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Role } from "@/lib/roles";
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Role } from '@/lib/roles';
 
 export interface AuthUser {
   id: number;
@@ -29,10 +29,10 @@ const AuthContext = createContext<AuthContextType>({
   clearSubscriptionExpired: () => {},
 });
 
-const USER_KEY = "erp_current_user";
+const USER_KEY = 'erp_current_user';
 
 function isValidForRole(u: AuthUser): boolean {
-  if (u.role === Role.Cashier || u.role === "salesperson") {
+  if (u.role === Role.Cashier || u.role === Role.Salesperson) {
     return !!u.warehouse_id && !!u.safe_id;
   }
   return true;
@@ -63,19 +63,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSubscriptionExpired(true);
       }
     };
-    window.addEventListener("subscription:expired", handler);
-    return () => window.removeEventListener("subscription:expired", handler);
+    window.addEventListener('subscription:expired', handler);
+    return () => window.removeEventListener('subscription:expired', handler);
   }, [user]);
 
   const login = (u: AuthUser) => {
     localStorage.setItem(USER_KEY, JSON.stringify(u));
-    localStorage.setItem("halal_erp_login_flag", "1");
+    localStorage.setItem('halal_erp_login_flag', '1');
     setUser(u);
     setSubscriptionExpired(false);
   };
 
   const logout = () => {
-    localStorage.setItem("halal_erp_logout_flag", "1");
+    localStorage.setItem('halal_erp_logout_flag', '1');
     localStorage.removeItem(USER_KEY);
     setUser(null);
     setSubscriptionExpired(false);
@@ -84,7 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSubscriptionExpired = () => setSubscriptionExpired(false);
 
   return (
-    <AuthContext.Provider value={{ user, subscriptionExpired, login, logout, clearSubscriptionExpired }}>
+    <AuthContext.Provider
+      value={{ user, subscriptionExpired, login, logout, clearSubscriptionExpired }}
+    >
       {children}
     </AuthContext.Provider>
   );
