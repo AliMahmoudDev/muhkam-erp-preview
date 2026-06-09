@@ -1,3 +1,5 @@
+import { beforeAll } from 'vitest';
+
 /*
  * Integration test setup — runs before any test file in this directory.
  *
@@ -21,7 +23,7 @@ if (!process.env.JWT_SECRET) {
   if (!isTestEnv) {
     throw new Error(
       '[integration setup] JWT_SECRET is not set and NODE_ENV !== "test". ' +
-      'Refusing to fall back to the test default outside of a test environment.',
+        'Refusing to fall back to the test default outside of a test environment.'
     );
   }
   process.env.JWT_SECRET = 'integration-test-jwt-secret-minimum-32chars!!';
@@ -31,10 +33,19 @@ if (!process.env.JWT_REFRESH_SECRET) {
   if (!isTestEnv) {
     throw new Error(
       '[integration setup] JWT_REFRESH_SECRET is not set and NODE_ENV !== "test". ' +
-      'Refusing to fall back to the test default outside of a test environment.',
+        'Refusing to fall back to the test default outside of a test environment.'
     );
   }
   process.env.JWT_REFRESH_SECRET = 'integration-test-jwt-refresh-secret-min-32chars!!';
 }
 
 process.env.NODE_ENV = 'test';
+
+beforeAll(async () => {
+  const { pool } = await import('@workspace/db');
+
+  await pool.query(`
+    ALTER TABLE audit_logs
+    ADD COLUMN IF NOT EXISTS note TEXT
+  `);
+});
