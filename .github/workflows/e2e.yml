@@ -89,14 +89,27 @@ jobs:
         # E2E_TEST_USER / E2E_TEST_PASS are absent, so only credential-free
         # tests run in this pipeline.
         run: |
-          node artifacts/api-server/dist/index.mjs &
+          node artifacts/api-server/dist/index.mjs > /tmp/muhkam-e2e-server.log 2>&1 &
           echo "Waiting for server to be ready…"
           for i in {1..20}; do
-            curl -sf http://localhost:3000/api/healthz > /dev/null 2>&1 \
-              && echo "Server is ready" && break
+            if curl -sf http://localhost:3000/api/healthz > /dev/null 2>&1; then
+              echo "Server is ready"
+              exit 0
+            fi
+
+            if ! kill -0 "$!" 2>/dev/null; then
+              echo "::error::Backend process exited before becoming ready"
+              cat /tmp/muhkam-e2e-server.log
+              exit 1
+            fi
+
             echo "  attempt $i/20 — retrying in 3 s"
             sleep 3
           done
+
+          echo "::error::Backend did not become ready on http://localhost:3000"
+          cat /tmp/muhkam-e2e-server.log
+          exit 1
         env:
           DATABASE_URL:          postgresql://postgres:postgres@localhost:5432/e2edb
           JWT_SECRET:            e2e-ci-jwt-secret-minimum-32-characters!!
