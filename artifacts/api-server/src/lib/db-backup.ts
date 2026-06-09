@@ -74,7 +74,7 @@ export async function createDatabaseBackup(): Promise<string> {
           `-v ${shellQuote(`${BACKUP_DIR}:/backup`)}`,
           `-v ${shellQuote(`${pgpassFile}:/tmp/.pgpass:ro`)}`,
           shellQuote(dockerImage),
-          `bash -lc ${shellQuote(`pg_dump --no-owner --no-acl | gzip > /backup/${outputFilename}`)}`,
+          `bash -lc ${shellQuote(`pg_dump --schema=public --no-owner --no-acl | gzip > /backup/${outputFilename}`)}`,
         ].join(' ')
       : [
           'pg_dump',
@@ -82,6 +82,7 @@ export async function createDatabaseBackup(): Promise<string> {
           `-p ${shellQuote(port)}`,
           `-U ${shellQuote(user)}`,
           `-d ${shellQuote(dbName)}`,
+          '--schema=public',
           '--no-owner',
           '--no-acl',
           `| gzip > ${shellQuote(filepath)}`,
