@@ -1,3 +1,4 @@
+import './lib/load-env';
 import express, { type Express, type ErrorRequestHandler } from 'express';
 
 import http from 'http';
@@ -122,7 +123,8 @@ app.use(
 
 /* ── General rate limiter: 100 req/min per IP ─────────────── */
 const IN_TEST = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
-const LOAD_TEST_MODE = (process.env.LOAD_TEST_MODE === '1' || (process.env.NODE_ENV !== 'production' && !IN_TEST));
+const LOAD_TEST_MODE =
+  process.env.LOAD_TEST_MODE === '1' || (process.env.NODE_ENV !== 'production' && !IN_TEST);
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: LOAD_TEST_MODE ? 1_000_000 : 100,
@@ -149,7 +151,9 @@ const superAdminLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   store: makeRateLimitStore('rl:super:'),
-  message: { error: 'طلبات كثيرة جداً على عمليات المشرف العام — يرجى الانتظار قليلاً ثم المحاولة مرة أخرى' },
+  message: {
+    error: 'طلبات كثيرة جداً على عمليات المشرف العام — يرجى الانتظار قليلاً ثم المحاولة مرة أخرى',
+  },
 });
 
 /* ── Compression: gzip responses > 1kb ─────────────────────── */
@@ -240,8 +244,8 @@ app.use((req, res, next) => {
     if (responseTime > SLOW_THRESHOLD_MS) {
       const companyId = (req.headers['x-company-id'] as string | undefined) ?? 'غير معروف';
       void alertManager.send({
-        type:         ALERT_TYPES.SERVER_SLOW,
-        message:      `⚠️ *استجابة بطيئة*\nالمسار: ${req.method} ${req.path}\nالوقت: ${responseTime}ms\nالشركة: ${companyId}`,
+        type: ALERT_TYPES.SERVER_SLOW,
+        message: `⚠️ *استجابة بطيئة*\nالمسار: ${req.method} ${req.path}\nالوقت: ${responseTime}ms\nالشركة: ${companyId}`,
         cooldownHours: 4,
       });
     }
@@ -253,12 +257,12 @@ app.use((req, res, next) => {
 if (process.env.NODE_ENV !== 'production') {
   const DEV_PROXIES: Array<{ prefix: string; target: number; strip: boolean }> = [
     { prefix: '/erp-mobile', target: 8082, strip: true },
-    { prefix: '/__mockup',   target: 8083, strip: false },
+    { prefix: '/__mockup', target: 8083, strip: false },
   ];
 
   for (const { prefix, target, strip } of DEV_PROXIES) {
     app.use(prefix, (req, res) => {
-      const targetPath = strip ? (req.url || '/') : `${prefix}${req.url || '/'}`;
+      const targetPath = strip ? req.url || '/' : `${prefix}${req.url || '/'}`;
       const opts: http.RequestOptions = {
         hostname: '127.0.0.1',
         port: target,
@@ -344,7 +348,6 @@ if (process.env.NODE_ENV === 'production') {
   });
   logger.info({ frontendDist }, 'Serving MuhKam ERP frontend at /');
 }
-
 
 /* ── Global error handler — no stack traces in responses ───── */
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
