@@ -1,0 +1,245 @@
+name: Deploy to Staging
+
+on:
+  workflow_run:
+    workflows: ["CI — Lint, Type Check, Test, Build"]
+    types: [completed]
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to deploy to staging
+        required: false
+        default: develop
+
+concurrency:
+  group: staging-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration-test:
+    name: Staging Multi-Tenant Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event.workflow_run.head_branch }}
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Push database schema to test DB
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+        run: pnpm --filter @workspace/db run push-force
+
+      - name: Run multi-tenant isolation tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          JWT_SECRET: ci-staging-test-jwt-secret-minimum-32chars!!
+          JWT_REFRESH_SECRET: ci-staging-test-jwt-refresh-secret-min-32chars!!
+          NODE_ENV: test
+        run: pnpm --filter @workspace/api-server run test:integration
+
+  deploy-staging:
+    name: Deploy to Staging VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [integration-test]
+    environment: staging
+    if: |
+      always() &&
+      needs.integration-test.result == 'success' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'develop'
+        )
+      )
+
+    steps:
+      - name: Deploy staging via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_VPS_HOST || secrets.VPS_HOST }}
+          username: ${{ secrets.STAGING_VPS_USER || secrets.VPS_USER }}
+          key: ${{ secrets.STAGING_VPS_SSH_KEY || secrets.VPS_SSH_KEY }}
+          port: 22
+          command_timeout: 15m
+          envs: DEPLOY_TOKEN,STAGING_BRANCH
+          script: |
+            set -euo pipefail
+
+            APP_DIR=/var/www/muhkam-erp-staging
+            PROCESS_NAME=muhkam-api-staging
+            PORT=8081
+            BRANCH="${STAGING_BRANCH:-develop}"
+            ENV_FILE="$APP_DIR/.env"
+
+            mkdir -p "$APP_DIR"
+
+            if [ ! -d "$APP_DIR/.git" ]; then
+              rm -rf "$APP_DIR"
+              git clone "https://x-access-token:${DEPLOY_TOKEN}@github.com/m4elmelegy-hub/MUHKAM-ERP.git" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+            git remote set-url origin "https://x-access-token:${DEPLOY_TOKEN}@github.com/m4elmelegy-hub/MUHKAM-ERP.git"
+            git fetch origin "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+            git clean -fd --exclude=.env
+            git remote set-url origin "https://github.com/m4elmelegy-hub/MUHKAM-ERP.git"
+
+            touch "$ENV_FILE"
+            if ! grep -q "^PORT=" "$ENV_FILE" 2>/dev/null; then
+              echo "PORT=8081" >> "$ENV_FILE"
+            fi
+            if ! grep -q "^NODE_ENV=" "$ENV_FILE" 2>/dev/null; then
+              echo "NODE_ENV=production" >> "$ENV_FILE"
+            fi
+            if ! grep -q "^ALLOWED_ORIGINS=" "$ENV_FILE" 2>/dev/null; then
+              echo "ALLOWED_ORIGINS=https://staging.muhkampro.com" >> "$ENV_FILE"
+            fi
+            if ! grep -q "^TOTP_ENCRYPTION_KEY=" "$ENV_FILE" 2>/dev/null; then
+              echo "TOTP_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$ENV_FILE"
+            fi
+            if ! grep -q "^BACKUP_ENCRYPTION_KEY=" "$ENV_FILE" 2>/dev/null; then
+              echo "BACKUP_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$ENV_FILE"
+            fi
+            if ! grep -q "^BACKUP_DIR=" "$ENV_FILE" 2>/dev/null; then
+              echo "BACKUP_DIR=/home/deploy/muhkam-staging-backups/db" >> "$ENV_FILE"
+            fi
+            if ! grep -q "^BACKUP_PGDUMP_DOCKER_IMAGE=" "$ENV_FILE" 2>/dev/null; then
+              echo "BACKUP_PGDUMP_DOCKER_IMAGE=postgres:17" >> "$ENV_FILE"
+            fi
+            if ! grep -q "^BACKUP_AWS_CLI_DOCKER_IMAGE=" "$ENV_FILE" 2>/dev/null; then
+              echo "BACKUP_AWS_CLI_DOCKER_IMAGE=amazon/aws-cli" >> "$ENV_FILE"
+            fi
+
+            set -a
+            source "$ENV_FILE"
+            set +a
+
+            : "${JWT_SECRET:?Missing JWT_SECRET in staging .env}"
+            : "${JWT_REFRESH_SECRET:?Missing JWT_REFRESH_SECRET in staging .env}"
+            : "${DATABASE_URL:?Missing DATABASE_URL in staging .env}"
+            : "${TOTP_ENCRYPTION_KEY:?Missing TOTP_ENCRYPTION_KEY in staging .env}"
+            : "${BACKUP_ENCRYPTION_KEY:?Missing BACKUP_ENCRYPTION_KEY in staging .env}"
+            : "${BACKUP_DIR:?Missing BACKUP_DIR in staging .env}"
+            : "${BACKUP_PGDUMP_DOCKER_IMAGE:?Missing BACKUP_PGDUMP_DOCKER_IMAGE in staging .env}"
+            : "${BACKUP_AWS_CLI_DOCKER_IMAGE:?Missing BACKUP_AWS_CLI_DOCKER_IMAGE in staging .env}"
+
+            mkdir -p "$BACKUP_DIR"
+            chmod 700 "$(dirname "$BACKUP_DIR")" "$BACKUP_DIR"
+
+            pnpm install --frozen-lockfile
+
+            cd "$APP_DIR/lib/db"
+            pnpm run migrate
+
+            cd "$APP_DIR/artifacts/erp-system"
+            NODE_ENV=production BASE_PATH=/ VITE_API_URL="" VITE_SENTRY_DSN="${SENTRY_DSN:-}" pnpm run build
+
+            cd "$APP_DIR/artifacts/api-server"
+            pnpm run build
+
+            pm2 delete "$PROCESS_NAME" || true
+
+            NODE_ENV=production \
+              PORT="$PORT" \
+              JWT_SECRET="$JWT_SECRET" \
+              JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET" \
+              DATABASE_URL="$DATABASE_URL" \
+              TOTP_ENCRYPTION_KEY="$TOTP_ENCRYPTION_KEY" \
+              BACKUP_ENCRYPTION_KEY="$BACKUP_ENCRYPTION_KEY" \
+              BACKUP_DIR="$BACKUP_DIR" \
+              BACKUP_PGDUMP_DOCKER_IMAGE="$BACKUP_PGDUMP_DOCKER_IMAGE" \
+              BACKUP_AWS_CLI_DOCKER_IMAGE="$BACKUP_AWS_CLI_DOCKER_IMAGE" \
+              R2_ENDPOINT="${R2_ENDPOINT:-}" \
+              R2_BUCKET="${R2_BUCKET:-}" \
+              R2_ACCESS_KEY_ID="${R2_ACCESS_KEY_ID:-}" \
+              R2_SECRET_ACCESS_KEY="${R2_SECRET_ACCESS_KEY:-}" \
+              R2_BACKUP_PREFIX="${R2_BACKUP_PREFIX:-staging-db}" \
+              SUPER_ADMIN_IPS="${SUPER_ADMIN_IPS:-}" \
+              REDIS_URL="${REDIS_URL:-}" \
+              TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}" \
+              TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}" \
+              SENTRY_DSN="${SENTRY_DSN:-}" \
+              SUPPORT_WHATSAPP="${SUPPORT_WHATSAPP:-}" \
+              SUPPORT_EMAIL="${SUPPORT_EMAIL:-}" \
+              SUPER_ADMIN_PIN="${SUPER_ADMIN_PIN:-}" \
+              pm2 start dist/index.mjs \
+                --name "$PROCESS_NAME" \
+                --cwd "$APP_DIR/artifacts/api-server"
+
+            pm2 save
+
+            if [ -f /etc/letsencrypt/live/staging.muhkampro.com/fullchain.pem ]; then
+              sudo cp "$APP_DIR/deploy/nginx.staging.conf" /etc/nginx/sites-available/muhkampro-staging
+              sudo ln -sf /etc/nginx/sites-available/muhkampro-staging /etc/nginx/sites-enabled/muhkampro-staging
+              sudo nginx -t && sudo nginx -s reload
+            else
+              echo "⚠️ staging SSL certificate is missing — skipped nginx reload"
+            fi
+
+            MAX=24
+            i=0
+            until curl -sf "http://localhost:${PORT}/api/healthz" > /dev/null 2>&1; do
+              i=$((i+1))
+              if [ "$i" -ge "$MAX" ]; then
+                echo "❌ Staging API failed after 60 seconds"
+                pm2 logs "$PROCESS_NAME" --lines 50 --nostream || true
+                exit 1
+              fi
+              sleep 3
+            done
+
+            echo "✅ Staging deploy complete"
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          STAGING_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || 'develop' }}
+
+      - name: Verify staging health
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_VPS_HOST || secrets.VPS_HOST }}
+          username: ${{ secrets.STAGING_VPS_USER || secrets.VPS_USER }}
+          key: ${{ secrets.STAGING_VPS_SSH_KEY || secrets.VPS_SSH_KEY }}
+          port: 22
+          command_timeout: 30s
+          script: |
+            curl -sf http://localhost:8081/api/healthz
+            echo "OK — staging API is healthy"
