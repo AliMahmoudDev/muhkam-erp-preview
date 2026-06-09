@@ -19,7 +19,8 @@
     "fix": "pnpm run lint:fix && pnpm run format",
     "ci:local": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build",
     "sync-pages": "pnpm --filter @workspace/scripts sync-pages",
-    "prepare": "husky"
+    "prepare": "husky",
+    "load:test": "pnpm --filter @workspace/scripts load:test"
   },
   "lint-staged": {
     "artifacts/api-server/src/**/*.ts": [

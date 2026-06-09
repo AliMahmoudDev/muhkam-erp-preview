@@ -8,7 +8,8 @@
     "check-repair-coverage": "tsx ./src/check-db-repair-coverage.ts",
     "production:preflight": "tsx ./src/production-preflight.ts",
     "sync-pages": "tsx ./src/sync-pages.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "load:test": "tsx ./src/load-smoke.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",
