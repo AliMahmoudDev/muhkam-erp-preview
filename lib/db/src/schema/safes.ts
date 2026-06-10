@@ -8,7 +8,9 @@ export const safesTable = pgTable("safes", {
   company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
   branch_id:  integer("branch_id"),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+},
+  (t) => [index("safes_company_idx").on(t.company_id)]
+);
 
 export const safeTransfersTable = pgTable("safe_transfers", {
   id: serial("id").primaryKey(),

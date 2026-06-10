@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
 import { companiesTable } from "./companies";
 
 export const warehousesTable = pgTable("warehouses", {
@@ -10,6 +10,8 @@ export const warehousesTable = pgTable("warehouses", {
   is_consignment: boolean("is_consignment").notNull().default(false),
   supplier_id: integer("supplier_id"),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+},
+  (t) => [index("warehouses_company_idx").on(t.company_id)]
+);
 
 export type Warehouse = typeof warehousesTable.$inferSelect;

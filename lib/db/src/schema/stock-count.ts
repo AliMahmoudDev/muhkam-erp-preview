@@ -1,4 +1,4 @@
-import { pgTable, serial, text, numeric, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, numeric, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { productsTable } from "./products";
 import { companiesTable } from "./companies";
 
@@ -11,7 +11,9 @@ export const stockCountSessionsTable = pgTable("stock_count_sessions", {
   created_by:   integer("created_by"),
   applied_at:   timestamp("applied_at", { withTimezone: true }),
   created_at:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+},
+  (t) => [index("stock_count_sessions_company_idx").on(t.company_id)]
+);
 
 export const stockCountItemsTable = pgTable("stock_count_items", {
   id:           serial("id").primaryKey(),
