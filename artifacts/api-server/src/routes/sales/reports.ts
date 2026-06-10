@@ -90,7 +90,12 @@ router.get(
       const matchingCusts = await db
         .select({ id: customersTable.id })
         .from(customersTable)
-        .where(sql`CAST(${customersTable.customer_code} AS TEXT) ILIKE ${pat}`);
+        .where(
+          and(
+            sql`CAST(${customersTable.customer_code} AS TEXT) ILIKE ${pat}`,
+            eq(customersTable.company_id, companyId)
+          )
+        );
       const custIds = matchingCusts.map((c) => c.id);
       searchWhere = or(
         ilike(salesTable.invoice_no, pat),
