@@ -342,6 +342,18 @@ if (process.env.NODE_ENV === 'production') {
   };
 
   app.use(express.static(frontendDist, staticOpts));
+  const knownScannerPathPattern =
+    /^\/(?:lander(?:\/|$)|sber(?:\/|$)|sberbank(?:[-/]|$)|sberchat|tink_chat(?:\/|$)|fckeditor(?:\/|$)|developmentserver(?:\/|$)|src\/FileUpload\.js$|wp(?:[-/]|$)|wordpress(?:\/|$)|xmlrpc\.php$|phpmyadmin(?:\/|$))/i;
+
+  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (knownScannerPathPattern.test(req.path)) {
+      res.status(404).type('text/plain').send('Not found');
+      return;
+    }
+
+    next();
+  });
+
   /* SPA fallback */
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path.startsWith('/api')) return next();
