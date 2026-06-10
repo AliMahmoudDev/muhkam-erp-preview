@@ -4,10 +4,10 @@ import { companiesTable } from "./companies";
 
 export const stockCountSessionsTable = pgTable("stock_count_sessions", {
   id:           serial("id").primaryKey(),
-  warehouse_id: integer("warehouse_id").notNull().default(1),
+  warehouse_id: integer("warehouse_id").notNull(),
   status:       text("status").notNull().default("draft"),
   notes:        text("notes"),
-  company_id:   integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:   integer("company_id").notNull().references(() => companiesTable.id),
   created_by:   integer("created_by"),
   applied_at:   timestamp("applied_at", { withTimezone: true }),
   created_at:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
