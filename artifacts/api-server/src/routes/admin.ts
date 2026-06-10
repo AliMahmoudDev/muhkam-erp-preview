@@ -1,27 +1,47 @@
-import { Router, type IRouter } from "express";
-import { db,
-  salesTable, saleItemsTable,
-  purchasesTable, purchaseItemsTable,
-  salesReturnsTable, saleReturnItemsTable,
-  purchaseReturnsTable, purchaseReturnItemsTable,
-  expensesTable, incomeTable,
-  receiptVouchersTable, depositVouchersTable, transactionsTable,
-  paymentVouchersTable, treasuryVouchersTable, safeTransfersTable,
-  productsTable, stockMovementsTable,
+import { Router, type IRouter } from 'express';
+import {
+  db,
+  salesTable,
+  saleItemsTable,
+  purchasesTable,
+  purchaseItemsTable,
+  salesReturnsTable,
+  saleReturnItemsTable,
+  purchaseReturnsTable,
+  purchaseReturnItemsTable,
+  expensesTable,
+  incomeTable,
+  receiptVouchersTable,
+  depositVouchersTable,
+  transactionsTable,
+  paymentVouchersTable,
+  treasuryVouchersTable,
+  safeTransfersTable,
+  productsTable,
+  stockMovementsTable,
   customersTable,
-} from "@workspace/db";
-import { sql, eq, inArray, and } from "drizzle-orm";
-import { wrap } from "../lib/async-handler";
-import { authenticate, requireRole, getTenant } from "../middleware/auth";
-import { getOrCreateCustomerAccount, getOrCreateCustomerPayableAccount } from "../lib/auto-account";
-import { z } from "zod/v4";
+} from '@workspace/db';
+import { sql, eq, inArray, and } from 'drizzle-orm';
+import { wrap } from '../lib/async-handler';
+import { authenticate, requireRole, getTenant } from '../middleware/auth';
+import { getOrCreateCustomerAccount, getOrCreateCustomerPayableAccount } from '../lib/auto-account';
+import { z } from 'zod/v4';
 
 const router: IRouter = Router();
 
-const VALID_TABLES = ["sales", "purchases", "expenses", "income", "vouchers_treasury", "products", "warehouse", "customers"] as const;
+const VALID_TABLES = [
+  'sales',
+  'purchases',
+  'expenses',
+  'income',
+  'vouchers_treasury',
+  'products',
+  'warehouse',
+  'customers',
+] as const;
 
 const AdminClearBody = z.object({
-  tables:      z.array(z.string()).min(1, "حدد الجداول المطلوب مسحها"),
+  tables: z.array(z.string()).min(1, 'حدد الجداول المطلوب مسحها'),
   warehouse_id: z.number().int().positive().optional(),
 });
 
@@ -30,25 +50,55 @@ const AdminClearBody = z.object({
    vouchers_treasury = يشمل جميع السندات والحركات المالية
    warehouse         = يُمرَّر warehouse_id اختيارياً (من الـ body)
 ────────────────────────────────────────────────────────────────────────────── */
-const TABLES: Record<string, (companyId: number, extra?: { warehouseId?: number }) => Promise<void>> = {
+const TABLES: Record<
+  string,
+  (companyId: number, extra?: { warehouseId?: number }) => Promise<void>
+> = {
   sales: async (cid) => {
-    const saleIds = (await db.select({ id: salesTable.id }).from(salesTable).where(eq(salesTable.company_id, cid))).map(r => r.id);
-    const retIds  = (await db.select({ id: salesReturnsTable.id }).from(salesReturnsTable).where(eq(salesReturnsTable.company_id, cid))).map(r => r.id);
-    if (retIds.length  > 0) await db.delete(saleReturnItemsTable).where(inArray(saleReturnItemsTable.return_id, retIds));
+    const saleIds = (
+      await db.select({ id: salesTable.id }).from(salesTable).where(eq(salesTable.company_id, cid))
+    ).map((r) => r.id);
+    const retIds = (
+      await db
+        .select({ id: salesReturnsTable.id })
+        .from(salesReturnsTable)
+        .where(eq(salesReturnsTable.company_id, cid))
+    ).map((r) => r.id);
+    if (retIds.length > 0)
+      await db.delete(saleReturnItemsTable).where(inArray(saleReturnItemsTable.return_id, retIds));
     await db.delete(salesReturnsTable).where(eq(salesReturnsTable.company_id, cid));
-    if (saleIds.length > 0) await db.delete(saleItemsTable).where(inArray(saleItemsTable.sale_id, saleIds));
+    if (saleIds.length > 0)
+      await db.delete(saleItemsTable).where(inArray(saleItemsTable.sale_id, saleIds));
     await db.delete(salesTable).where(eq(salesTable.company_id, cid));
   },
   purchases: async (cid) => {
-    const purIds = (await db.select({ id: purchasesTable.id }).from(purchasesTable).where(eq(purchasesTable.company_id, cid))).map(r => r.id);
-    const retIds = (await db.select({ id: purchaseReturnsTable.id }).from(purchaseReturnsTable).where(eq(purchaseReturnsTable.company_id, cid))).map(r => r.id);
-    if (retIds.length > 0) await db.delete(purchaseReturnItemsTable).where(inArray(purchaseReturnItemsTable.return_id, retIds));
+    const purIds = (
+      await db
+        .select({ id: purchasesTable.id })
+        .from(purchasesTable)
+        .where(eq(purchasesTable.company_id, cid))
+    ).map((r) => r.id);
+    const retIds = (
+      await db
+        .select({ id: purchaseReturnsTable.id })
+        .from(purchaseReturnsTable)
+        .where(eq(purchaseReturnsTable.company_id, cid))
+    ).map((r) => r.id);
+    if (retIds.length > 0)
+      await db
+        .delete(purchaseReturnItemsTable)
+        .where(inArray(purchaseReturnItemsTable.return_id, retIds));
     await db.delete(purchaseReturnsTable).where(eq(purchaseReturnsTable.company_id, cid));
-    if (purIds.length > 0) await db.delete(purchaseItemsTable).where(inArray(purchaseItemsTable.purchase_id, purIds));
+    if (purIds.length > 0)
+      await db.delete(purchaseItemsTable).where(inArray(purchaseItemsTable.purchase_id, purIds));
     await db.delete(purchasesTable).where(eq(purchasesTable.company_id, cid));
   },
-  expenses:  async (cid) => { await db.delete(expensesTable).where(eq(expensesTable.company_id, cid)); },
-  income:    async (cid) => { await db.delete(incomeTable).where(eq(incomeTable.company_id, cid)); },
+  expenses: async (cid) => {
+    await db.delete(expensesTable).where(eq(expensesTable.company_id, cid));
+  },
+  income: async (cid) => {
+    await db.delete(incomeTable).where(eq(incomeTable.company_id, cid));
+  },
 
   /* السندات والخزينة — مجموعة موحدة تشمل كل السندات والحركات المالية */
   vouchers_treasury: async (cid) => {
@@ -62,14 +112,37 @@ const TABLES: Record<string, (companyId: number, extra?: { warehouseId?: number 
 
   products: async (cid) => {
     await db.delete(stockMovementsTable).where(eq(stockMovementsTable.company_id, cid));
-    const retIds    = (await db.select({ id: salesReturnsTable.id }).from(salesReturnsTable).where(eq(salesReturnsTable.company_id, cid))).map(r => r.id);
-    if (retIds.length > 0)    await db.delete(saleReturnItemsTable).where(inArray(saleReturnItemsTable.return_id, retIds));
-    const purRetIds = (await db.select({ id: purchaseReturnsTable.id }).from(purchaseReturnsTable).where(eq(purchaseReturnsTable.company_id, cid))).map(r => r.id);
-    if (purRetIds.length > 0) await db.delete(purchaseReturnItemsTable).where(inArray(purchaseReturnItemsTable.return_id, purRetIds));
-    const saleIds   = (await db.select({ id: salesTable.id }).from(salesTable).where(eq(salesTable.company_id, cid))).map(r => r.id);
-    if (saleIds.length > 0)   await db.delete(saleItemsTable).where(inArray(saleItemsTable.sale_id, saleIds));
-    const purIds    = (await db.select({ id: purchasesTable.id }).from(purchasesTable).where(eq(purchasesTable.company_id, cid))).map(r => r.id);
-    if (purIds.length > 0)    await db.delete(purchaseItemsTable).where(inArray(purchaseItemsTable.purchase_id, purIds));
+    const retIds = (
+      await db
+        .select({ id: salesReturnsTable.id })
+        .from(salesReturnsTable)
+        .where(eq(salesReturnsTable.company_id, cid))
+    ).map((r) => r.id);
+    if (retIds.length > 0)
+      await db.delete(saleReturnItemsTable).where(inArray(saleReturnItemsTable.return_id, retIds));
+    const purRetIds = (
+      await db
+        .select({ id: purchaseReturnsTable.id })
+        .from(purchaseReturnsTable)
+        .where(eq(purchaseReturnsTable.company_id, cid))
+    ).map((r) => r.id);
+    if (purRetIds.length > 0)
+      await db
+        .delete(purchaseReturnItemsTable)
+        .where(inArray(purchaseReturnItemsTable.return_id, purRetIds));
+    const saleIds = (
+      await db.select({ id: salesTable.id }).from(salesTable).where(eq(salesTable.company_id, cid))
+    ).map((r) => r.id);
+    if (saleIds.length > 0)
+      await db.delete(saleItemsTable).where(inArray(saleItemsTable.sale_id, saleIds));
+    const purIds = (
+      await db
+        .select({ id: purchasesTable.id })
+        .from(purchasesTable)
+        .where(eq(purchasesTable.company_id, cid))
+    ).map((r) => r.id);
+    if (purIds.length > 0)
+      await db.delete(purchaseItemsTable).where(inArray(purchaseItemsTable.purchase_id, purIds));
     await db.delete(productsTable).where(eq(productsTable.company_id, cid));
   },
 
@@ -77,9 +150,11 @@ const TABLES: Record<string, (companyId: number, extra?: { warehouseId?: number 
   warehouse: async (cid, extra) => {
     const wid = extra?.warehouseId;
     if (wid) {
-      await db.delete(stockMovementsTable).where(
-        and(eq(stockMovementsTable.company_id, cid), eq(stockMovementsTable.warehouse_id, wid))
-      );
+      await db
+        .delete(stockMovementsTable)
+        .where(
+          and(eq(stockMovementsTable.company_id, cid), eq(stockMovementsTable.warehouse_id, wid))
+        );
       /* صفّر الكميات للمنتجات المرتبطة بالمخزن */
       await db.execute(
         sql`UPDATE products SET quantity = 0 WHERE company_id = ${cid}
@@ -88,7 +163,10 @@ const TABLES: Record<string, (companyId: number, extra?: { warehouseId?: number 
     } else {
       /* تفريغ كل المخازن */
       await db.delete(stockMovementsTable).where(eq(stockMovementsTable.company_id, cid));
-      await db.update(productsTable).set({ quantity: "0" }).where(eq(productsTable.company_id, cid));
+      await db
+        .update(productsTable)
+        .set({ quantity: '0' })
+        .where(eq(productsTable.company_id, cid));
     }
   },
 
@@ -97,52 +175,74 @@ const TABLES: Record<string, (companyId: number, extra?: { warehouseId?: number 
   },
 };
 
-router.post("/admin/clear", authenticate, requireRole("admin"), wrap(async (req, res) => {
-  const parsed = AdminClearBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "بيانات الطلب غير صحيحة", details: parsed.error.issues.map(i => i.message) });
-    return;
-  }
+router.post(
+  '/admin/clear',
+  authenticate,
+  requireRole('admin'),
+  wrap(async (req, res) => {
+    const parsed = AdminClearBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({
+          error: 'بيانات الطلب غير صحيحة',
+          details: parsed.error.issues.map((i) => i.message),
+        });
+      return;
+    }
 
-  const { tables, warehouse_id } = parsed.data;
+    const { tables, warehouse_id } = parsed.data;
 
-  // eslint-disable-next-line security/detect-object-injection
-  const invalid = tables.filter(t => !TABLES[t]);
-  if (invalid.length > 0) {
-    res.status(400).json({ error: `جداول غير معروفة: ${invalid.join(", ")}` }); return;
-  }
+    // eslint-disable-next-line security/detect-object-injection
+    const invalid = tables.filter((t) => !TABLES[t]);
+    if (invalid.length > 0) {
+      res.status(400).json({ error: `جداول غير معروفة: ${invalid.join(', ')}` });
+      return;
+    }
 
-  const companyId: number = getTenant(req);
+    const companyId: number = getTenant(req);
 
-  const ORDER = VALID_TABLES as readonly string[];
-  const sorted = ORDER.filter(t => tables.includes(t));
-  const extra  = { warehouseId: warehouse_id };
+    const ORDER = VALID_TABLES as readonly string[];
+    const sorted = ORDER.filter((t) => tables.includes(t));
+    const extra = { warehouseId: warehouse_id };
 
-  // eslint-disable-next-line security/detect-object-injection
-  for (const t of sorted) await TABLES[t](companyId, extra);
-  res.json({ success: true, cleared: sorted });
-}));
+    // eslint-disable-next-line security/detect-object-injection
+    for (const t of sorted) await TABLES[t](companyId, extra);
+    res.json({ success: true, cleared: sorted });
+  })
+);
 
 /* ── ربط تلقائي: إنشاء حسابات للعملاء الموجودين ──────────────────────────── */
-router.post("/admin/backfill-accounts", [authenticate, requireRole("admin", "manager")], wrap(async (req, res) => {
-  const companyId: number = getTenant(req);
-  const customers = await db.select().from(customersTable)
-    .where(sql`${customersTable.account_id} IS NULL AND ${customersTable.company_id} = ${companyId}`);
+router.post(
+  '/admin/backfill-accounts',
+  [authenticate, requireRole('admin', 'manager')],
+  wrap(async (req, res) => {
+    const companyId: number = getTenant(req);
+    const customers = await db
+      .select()
+      .from(customersTable)
+      .where(
+        sql`${customersTable.account_id} IS NULL AND ${customersTable.company_id} = ${companyId}`
+      );
 
-  let customersLinked = 0;
+    let customersLinked = 0;
 
-  for (const c of customers) {
-    if (!c.customer_code) continue;
-    const acct = await getOrCreateCustomerAccount(c.customer_code, c.name, companyId);
-    await db.update(customersTable).set({ account_id: acct.id }).where(sql`id = ${c.id}`);
-    customersLinked++;
+    for (const c of customers) {
+      if (!c.customer_code) continue;
+      const acct = await getOrCreateCustomerAccount(c.customer_code, c.name, companyId);
+      await db
+        .update(customersTable)
+        .set({ account_id: acct.id })
+        .where(and(eq(customersTable.id, c.id), eq(customersTable.company_id, companyId)));
+      customersLinked++;
 
-    if (c.is_supplier) {
-      await getOrCreateCustomerPayableAccount(c.customer_code, c.name, companyId);
+      if (c.is_supplier) {
+        await getOrCreateCustomerPayableAccount(c.customer_code, c.name, companyId);
+      }
     }
-  }
 
-  res.json({ success: true, customersLinked });
-}));
+    res.json({ success: true, customersLinked });
+  })
+);
 
 export default router;
