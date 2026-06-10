@@ -30,12 +30,12 @@
  * إلغاء لأيّ مستند تاريخه ≤ closing_date.
  */
 
-import { and, eq } from "drizzle-orm";
-import { db, systemSettingsTable } from "@workspace/db";
-import { httpError } from "./async-handler";
-import { writeAuditLog } from "./audit-log";
-import type { Request } from "express";
-import { getTenant } from "../middleware/auth";
+import { and, eq } from 'drizzle-orm';
+import { db, systemSettingsTable } from '@workspace/db';
+import { httpError } from './async-handler';
+import { writeAuditLog } from './audit-log';
+import type { Request } from 'express';
+import { getTenant } from '../middleware/auth';
 
 /** Short-lived in-process cache to avoid a DB round-trip on every request */
 const CACHE_TTL_MS = 5_000; // Re-read from DB at most every 5 seconds
@@ -53,7 +53,10 @@ const cache = new Map<number, { date: string | null; expiry: number }>();
  * @param companyId  The tenant company's ID
  * @returns  Closing date string (e.g. "2025-12-31") or null if unlocked
  */
-export async function getClosingDate(companyId: number = 1): Promise<string | null> {
+export async function getClosingDate(companyId: number): Promise<string | null> {
+  if (!Number.isInteger(companyId) || companyId <= 0) {
+    throw httpError(500, 'Financial period lock requires an explicit valid company_id');
+  }
   const now = Date.now();
   const cached = cache.get(companyId);
 
@@ -66,8 +69,8 @@ export async function getClosingDate(companyId: number = 1): Promise<string | nu
     .from(systemSettingsTable)
     .where(
       and(
-        eq(systemSettingsTable.key, "closing_date"),
-        eq(systemSettingsTable.company_id, companyId),
+        eq(systemSettingsTable.key, 'closing_date'),
+        eq(systemSettingsTable.company_id, companyId)
       )
     );
 
@@ -97,45 +100,46 @@ export async function getClosingDate(companyId: number = 1): Promise<string | nu
  */
 export async function assertPeriodOpen(
   docDate: string | null | undefined,
-  req: Request,
+  req: Request
 ): Promise<void> {
-  const companyId  = getTenant(req);
+  const companyId = getTenant(req);
   const closingDate = await getClosingDate(companyId);
 
   // Case (a): No period lock configured for this company — allow all writes
   if (!closingDate) return;
 
   // Normalize the document date to YYYY-MM-DD; default to today if not provided
-  const date = (docDate ?? new Date().toISOString().split("T")[0]).slice(0, 10);
+  const date = (docDate ?? new Date().toISOString().split('T')[0]).slice(0, 10);
 
   // Case (b): Document date is after the closing date — in the open period, allow
   if (date > closingDate) return;
 
   // Document date is within the locked period
   // Case (c): Admin override — log it and allow
-  const isAdmin          = req.user?.role === "admin";
+  const isAdmin = req.user?.role === 'admin';
   const overrideRequested = req.body?.admin_override === true;
 
   if (isAdmin && overrideRequested) {
     // Write an audit entry so there is a record of every override
     void writeAuditLog({
-      action:      "PERIOD_OVERRIDE",
-      record_type: "financial_lock",
-      record_id:   0,
-      old_value:   { closing_date: closingDate, doc_date: docDate ?? "today", status: "LOCKED" },
-      new_value:   { overridden: true, admin: req.user?.username, role: "admin" },
-      user:        { id: req.user?.id, username: req.user?.username },
+      action: 'PERIOD_OVERRIDE',
+      record_type: 'financial_lock',
+      record_id: 0,
+      old_value: { closing_date: closingDate, doc_date: docDate ?? 'today', status: 'LOCKED' },
+      new_value: { overridden: true, admin: req.user?.username, role: 'admin' },
+      user: { id: req.user?.id, username: req.user?.username },
     });
     return;
   }
 
   // Case (d): Period is locked and no admin override — reject the write
   // Provide a helpful hint to admins about how to override
-  const adminHint = isAdmin ? " (المدير: أرسل admin_override: true للتجاوز)" : "";
-  throw httpError(423,
+  const adminHint = isAdmin ? ' (المدير: أرسل admin_override: true للتجاوز)' : '';
+  throw httpError(
+    423,
     `لا يمكن تعديل هذا السجل لأنه ضمن فترة مالية مغلقة (حتى ${closingDate}).` +
-    ` للتصحيح، استخدم إجراءً عكسياً أو سند/قيد تصحيحي جديد.` +
-    adminHint
+      ` للتصحيح، استخدم إجراءً عكسياً أو سند/قيد تصحيحي جديد.` +
+      adminHint
   );
 }
 
