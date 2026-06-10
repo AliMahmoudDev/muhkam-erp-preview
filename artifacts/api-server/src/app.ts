@@ -346,7 +346,13 @@ if (process.env.NODE_ENV === 'production') {
     /^\/(?:lander(?:\/|$)|sber(?:\/|$)|sberbank(?:[-/]|$)|sberchat|tink_chat(?:\/|$)|fckeditor(?:\/|$)|developmentserver(?:\/|$)|src\/FileUpload\.js$|wp(?:[-/]|$)|wordpress(?:\/|$)|xmlrpc\.php$|phpmyadmin(?:\/|$))/i;
 
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (knownScannerPathPattern.test(req.path)) {
+    const probePath = (req.originalUrl || req.url || req.path).split('?')[0].replace(/^\/+/, '/');
+
+    if (
+      knownScannerPathPattern.test(probePath) ||
+      /\/(?:wp-includes|wp-content|wp-admin)\//i.test(probePath) ||
+      /\/xmlrpc\.php$/i.test(probePath)
+    ) {
       res.status(404).type('text/plain').send('Not found');
       return;
     }
