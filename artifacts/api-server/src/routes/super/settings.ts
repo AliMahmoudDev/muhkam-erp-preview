@@ -76,7 +76,7 @@ router.get(
   '/super/backup/download/:filename',
   ...superOnly,
   wrap(async (req, res) => {
-    const BACKUP_DIR = process.env.BACKUP_DIR ?? '/home/runner/workspace/db-backups';
+    const BACKUP_DIR = process.env.BACKUP_DIR ?? path.join(process.cwd(), 'db-backups');
     const raw = req.params.filename as string;
 
     const filename = path.basename(raw);

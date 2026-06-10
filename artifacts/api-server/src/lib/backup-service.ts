@@ -37,7 +37,7 @@ import { isEncryptionEnabled, encryptFile, encryptedExtension } from "./backup-c
 import { alertManager, ALERT_TYPES } from "./telegram-alert-manager";
 
 /* ── Backup folder ─────────────────────────────────────────────── */
-export const BACKUP_DIR = process.env.BACKUP_DIR ?? "/home/runner/erp-backups";
+export const BACKUP_DIR = process.env.BACKUP_DIR ?? path.join(process.cwd(), "erp-backups");
 
 function ensureBackupDir() {
   if (!fs.existsSync(BACKUP_DIR)) {

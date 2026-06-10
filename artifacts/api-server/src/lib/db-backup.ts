@@ -16,7 +16,7 @@ import { DeleteObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/cl
 
 const execAsync = promisify(exec);
 
-const BACKUP_DIR = process.env.BACKUP_DIR ?? '/home/runner/workspace/db-backups';
+const BACKUP_DIR = process.env.BACKUP_DIR ?? path.join(process.cwd(), 'db-backups');
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (!value) return fallback;
