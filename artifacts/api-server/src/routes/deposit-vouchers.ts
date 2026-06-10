@@ -202,17 +202,20 @@ router.post(
 );
 
 /* ── مساعد: جلب حساب العميل ────────────────────────────────────────────── */
-async function getVoucherCustomerAcct(customerId: number | null): Promise<AccountRef | null> {
+async function getVoucherCustomerAcct(
+  customerId: number | null,
+  companyId: number
+): Promise<AccountRef | null> {
   if (!customerId) return null;
   const [cust] = await db
     .select({ account_id: customersTable.account_id, name: customersTable.name })
     .from(customersTable)
-    .where(eq(customersTable.id, customerId));
+    .where(and(eq(customersTable.id, customerId), eq(customersTable.company_id, companyId)));
   if (!cust?.account_id) return null;
   const [acctRow] = await db
     .select({ id: accountsTable.id, code: accountsTable.code, name: accountsTable.name })
     .from(accountsTable)
-    .where(eq(accountsTable.id, cust.account_id));
+    .where(and(eq(accountsTable.id, cust.account_id), eq(accountsTable.company_id, companyId)));
   return acctRow ?? null;
 }
 
@@ -234,7 +237,7 @@ router.post(
 
     await assertPeriodOpen(v.date, req);
 
-    const custAcct = await getVoucherCustomerAcct(v.customer_id);
+    const custAcct = await getVoucherCustomerAcct(v.customer_id, cid);
     const safeAcct = await getOrCreateSafeAccount(v.safe_id, v.safe_name, cid);
     if (custAcct) {
       await createAutoJournalEntry({
@@ -298,7 +301,7 @@ router.post(
     await assertPeriodOpen(v.date, req);
 
     if (v.posting_status === 'posted') {
-      const custAcct = await getVoucherCustomerAcct(v.customer_id);
+      const custAcct = await getVoucherCustomerAcct(v.customer_id, cid);
       if (custAcct) {
         const safeAcct = await getOrCreateSafeAccount(v.safe_id, v.safe_name, cid);
         await createAutoJournalEntry({
