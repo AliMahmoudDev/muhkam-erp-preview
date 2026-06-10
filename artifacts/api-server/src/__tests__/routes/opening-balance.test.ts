@@ -354,7 +354,7 @@ describe('POST /api/opening-balance/supplier', () => {
   });
 
   it('يجب أن يسجل رصيد أول المدة للمورد بنجاح ويرجع 201 (باستخدام supplier_id)', async () => {
-    mockChainData.mockResolvedValue([{ id: 5, name: 'مورد اختبار', balance: '0', company_id: 1 }]);
+    mockChainData.mockResolvedValue([{ id: 5, name: 'مورد اختبار', balance: '0', company_id: 1, is_supplier: true }]);
     const request = (await import('supertest')).default;
     const app = (await import('../../app')).default;
     const res = await request(app).post('/api/opening-balance/supplier').set('Authorization', 'Bearer test-token')
@@ -366,7 +366,7 @@ describe('POST /api/opening-balance/supplier', () => {
   });
 
   it('يجب أن يسجل رصيد أول المدة للمورد بنجاح ويرجع 201 (باستخدام customer_id)', async () => {
-    mockChainData.mockResolvedValue([{ id: 7, name: 'مورد عبر customer_id', balance: '0', company_id: 1 }]);
+    mockChainData.mockResolvedValue([{ id: 7, name: 'مورد عبر customer_id', balance: '0', company_id: 1, is_supplier: true }]);
     const request = (await import('supertest')).default;
     const app = (await import('../../app')).default;
     const res = await request(app).post('/api/opening-balance/supplier').set('Authorization', 'Bearer test-token')
@@ -377,7 +377,7 @@ describe('POST /api/opening-balance/supplier', () => {
   });
 
   it('يجب أن يسجّل writeAuditLog عند تسجيل رصيد المورد بنجاح', async () => {
-    mockChainData.mockResolvedValue([{ id: 5, name: 'مورد اختبار', balance: '0', company_id: 1 }]);
+    mockChainData.mockResolvedValue([{ id: 5, name: 'مورد اختبار', balance: '0', company_id: 1, is_supplier: true }]);
     const request = (await import('supertest')).default;
     const app = (await import('../../app')).default;
     await request(app).post('/api/opening-balance/supplier').set('Authorization', 'Bearer test-token')

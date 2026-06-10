@@ -561,6 +561,8 @@ router.post("/customers/:id/supplier-payment", wrap(async (req, res) => {
 
     await tx.insert(transactionsTable).values({
       type: "supplier_payment",
+      reference_type: "supplier_payment",
+      reference_id: id,
       direction: "out",
       customer_id: id,
       customer_name: customer.name,
@@ -569,18 +571,21 @@ router.post("/customers/:id/supplier-payment", wrap(async (req, res) => {
       amount: String(amt),
       description: notes || `تسديد دفعة للمورد - ${customer.name}`,
       date: txDate,
+      company_id: cidSPay,
     });
 
     // دفتر الأستاذ: تسديد للمورد يُقلّل ما يدين به لنا (أو يزيد دينه علينا)
     // الرصيد السالب = ندين له، التسديد يُقلّل ما علينا → +amt في دفتر الأستاذ
     await tx.insert(customerLedgerTable).values({
       customer_id: id,
+      reference_id: id,
       type: "supplier_payment",
       amount: String(amt), // يُزيد رصيده (يُقلّل ما ندين به)
       reference_type: "supplier_payment",
       reference_no: paymentNo,
       description: notes ? `${notes}` : `تسديد للمورد ${paymentNo} — ${customer.name}`,
       date: txDate,
+      company_id: cidSPay,
     });
 
     resultCustomer = updated;

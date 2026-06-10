@@ -266,6 +266,12 @@ router.post("/opening-balance/customer", wrap(async (req, res) => {
     .where(and(eq(customersTable.id, custId), eq(customersTable.company_id, companyId)));
   if (!customer) {
     res.status(404).json({ error: "العميل غير موجود" });
+
+    return;
+  }
+
+  if (customer.is_customer === false) {
+    res.status(400).json({ error: "هذا السجل ليس عميلاً" });
     return;
   }
 
@@ -303,7 +309,7 @@ router.get("/opening-balance/supplier", wrap(async (req, res) => {
     .select()
     .from(transactionsTable)
     .where(and(
-      eq(transactionsTable.reference_type, "customer_opening"),
+      eq(transactionsTable.reference_type, "supplier_opening"),
       eq(transactionsTable.company_id, companyId),
     ));
   res.json(
@@ -337,6 +343,12 @@ router.post("/opening-balance/supplier", wrap(async (req, res) => {
     .where(and(eq(customersTable.id, custId), eq(customersTable.company_id, companyId)));
   if (!customer) {
     res.status(404).json({ error: "المورد غير موجود" });
+
+    return;
+  }
+
+  if (customer.is_supplier !== true) {
+    res.status(400).json({ error: "هذا السجل ليس مورداً" });
     return;
   }
 
@@ -348,7 +360,7 @@ router.post("/opening-balance/supplier", wrap(async (req, res) => {
 
     await tx.insert(transactionsTable).values({
       type: "opening_balance",
-      reference_type: "customer_opening",
+      reference_type: "supplier_opening",
       reference_id: custId,
       customer_id: custId,
       customer_name: customer.name,

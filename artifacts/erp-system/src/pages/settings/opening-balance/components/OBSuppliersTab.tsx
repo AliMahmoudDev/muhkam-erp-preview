@@ -27,7 +27,7 @@ export function OBSuppliersTab() {
   });
   const [saving, setSaving] = useState(false);
 
-  const registeredIds = new Set(entries.map((e) => e.id));
+  const registeredIds = new Set(entries.map((e) => Number(e.customer_id ?? e.reference_id)).filter(Number.isFinite));
   const filteredSuppliers = suppliers.filter(
     (s) => !registeredIds.has(s.id) && s.name.includes(search)
   );
@@ -39,7 +39,7 @@ export function OBSuppliersTab() {
 
   const handleSubmit = async () => {
     if (!form.supplier_id || !form.amount) {
-      toast({ title: 'العميل والمبلغ مطلوبان', variant: 'destructive' });
+      toast({ title: 'المورد والمبلغ مطلوبان', variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -59,7 +59,7 @@ export function OBSuppliersTab() {
       return;
     }
     toast({
-      title: `✅ تم تسجيل رصيد أول المدة لـ ${selectedSupplier?.name ?? 'العميل'}`,
+      title: `✅ تم تسجيل رصيد أول المدة لـ ${selectedSupplier?.name ?? 'المورد'}`,
     });
     setForm((f) => ({ ...f, supplier_id: '', amount: '', notes: '' }));
     setSearch('');
@@ -70,13 +70,13 @@ export function OBSuppliersTab() {
     <div className="space-y-5">
       <div className="bg-[#1A2235] border border-amber-500/20 rounded-2xl p-5 space-y-4">
         <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
-          <Truck className="w-4 h-4" /> إضافة رصيد افتتاحي لعميل (يُشترى منه)
+          <Truck className="w-4 h-4" /> إضافة رصيد افتتاحي لمورد
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="relative">
-            <FieldLabel>العميل</FieldLabel>
+            <FieldLabel>المورد</FieldLabel>
             <SInput
-              placeholder="ابحث عن عميل..."
+              placeholder="ابحث عن مورد..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -136,7 +136,7 @@ export function OBSuppliersTab() {
 
       <div className="bg-[#111827] rounded-2xl overflow-hidden border border-white/5">
         <div className="p-4 border-b border-white/8 flex items-center justify-between">
-          <h4 className="font-bold text-white/60 text-sm">أرصدة العملاء المسجلة</h4>
+          <h4 className="font-bold text-white/60 text-sm">أرصدة الموردين المسجلة</h4>
           <span className="text-white/30 text-xs bg-white/5 px-2 py-0.5 rounded-lg">
             {entries.length}
           </span>
@@ -146,10 +146,10 @@ export function OBSuppliersTab() {
           isLoading={isLoading}
           columns={[
             {
-              label: 'العميل',
+              label: 'المورد',
               render: (e) => (
                 <span className="font-bold text-white">
-                  {e.description?.split('—')[1]?.trim() ?? `عميل #${e.id}`}
+                  {e.customer_name ?? e.description?.split('—')[1]?.trim() ?? `مورد #${e.customer_id ?? e.reference_id ?? e.id}`}
                 </span>
               ),
             },

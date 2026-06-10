@@ -72,7 +72,6 @@ export async function cascadeDeleteCompany(id: number): Promise<void> {
 
     /* ── Devices & suppliers ── */
     await tx.execute(sql`DELETE FROM devices                   WHERE company_id = ${cid}`);
-    await tx.execute(sql`DELETE FROM suppliers                 WHERE company_id = ${cid}`);
 
     /* ── Price lists (items reference products — must delete before products) ── */
     await tx.execute(sql`DELETE FROM price_list_items WHERE price_list_id IN (SELECT id FROM price_lists WHERE company_id = ${cid})`);

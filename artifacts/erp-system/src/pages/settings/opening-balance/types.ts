@@ -17,11 +17,14 @@ export interface ProductItem {
 export interface CustomerItem {
   id: number;
   name: string;
+  is_customer?: boolean;
   is_supplier?: boolean;
 }
 
 export interface OBEntry {
   id: number;
+  customer_id?: number;
+  reference_id?: number;
   amount?: number;
   quantity?: number;
   unit_cost?: number;

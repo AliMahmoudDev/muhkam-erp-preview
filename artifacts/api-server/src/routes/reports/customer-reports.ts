@@ -30,6 +30,7 @@ router.get("/reports/customer-statement", wrap(async (req, res) => {
     LEFT JOIN journal_entry_lines jel ON jel.account_id = c.account_id
     LEFT JOIN journal_entries je ON je.id = jel.entry_id AND je.status = 'posted'
     WHERE c.id = ${custId}
+      AND c.is_customer IS NOT FALSE
       ${cfSql("c", companyId)}
     GROUP BY c.id, c.name, c.customer_code
   `);
@@ -146,6 +147,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
     SELECT id, name, CAST(balance AS FLOAT8) AS balance
     FROM customers
     WHERE id = ${sid}
+      AND is_supplier = true
       ${cfSimpleSql(companyId)}
   `);
   if (!custRow.rows.length) { res.status(404).json({ error: "المورد غير موجود" }); return; }
@@ -156,7 +158,7 @@ router.get("/reports/supplier-statement", wrap(async (req, res) => {
 
   const openRows = await db.execute(sql`
     SELECT date, amount FROM transactions
-    WHERE reference_type = 'customer_opening'
+    WHERE reference_type = 'supplier_opening'
       AND reference_id = ${sid}
       ${cfSimpleSql(companyId)}
   `);

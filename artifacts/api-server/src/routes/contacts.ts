@@ -44,16 +44,32 @@ router.get("/contacts/:id/full-statement", wrap(async (req, res) => {
 
   const rows: StatRow[] = [];
 
-  // رصيد أول المدة
-  const openings = await db.select().from(transactionsTable)
-    .where(and(
-      eq(transactionsTable.reference_type, "customer_opening"),
-      eq(transactionsTable.company_id, cid),
-    ));
-  const ob = openings.filter(o => o.reference_id === id);
-  const openingCredit = ob.reduce((s, o) => s + Number(o.amount), 0);
-  if (openingCredit !== 0) {
-    rows.push({ date: "2000-01-01", type: "opening_balance", description: "رصيد أول المدة", debit: 0, credit: openingCredit });
+  // رصيد أول المدة للعميل
+  if (c.is_customer) {
+    const openings = await db.select().from(transactionsTable)
+      .where(and(
+        eq(transactionsTable.reference_type, "customer_opening"),
+        eq(transactionsTable.company_id, cid),
+      ));
+    const ob = openings.filter(o => o.reference_id === id);
+    const openingCredit = ob.reduce((s, o) => s + Number(o.amount), 0);
+    if (openingCredit !== 0) {
+      rows.push({ date: "2000-01-01", type: "opening_balance", description: "رصيد أول المدة للعميل", debit: 0, credit: openingCredit });
+    }
+  }
+
+  // رصيد أول المدة للمورد
+  if (c.is_supplier) {
+    const supplierOpenings = await db.select().from(transactionsTable)
+      .where(and(
+        eq(transactionsTable.reference_type, "supplier_opening"),
+        eq(transactionsTable.company_id, cid),
+      ));
+    const sob = supplierOpenings.filter(o => o.reference_id === id);
+    const supplierOpeningCredit = sob.reduce((s, o) => s + Number(o.amount), 0);
+    if (supplierOpeningCredit !== 0) {
+      rows.push({ date: "2000-01-01", type: "supplier_opening_balance", description: "رصيد أول المدة للمورد", debit: 0, credit: supplierOpeningCredit });
+    }
   }
 
   // مبيعات

@@ -15,7 +15,7 @@ export function OBCustomersTab() {
   const qc = useQueryClient();
   const { data: entries = [], isLoading } = useOBQuery('/opening-balance/customer');
   const { data: customersRaw } = useGetCustomers();
-  const customers = safeArray(customersRaw);
+  const customers = safeArray<CustomerItem>(customersRaw).filter((c) => c.is_customer !== false);
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({
@@ -26,11 +26,11 @@ export function OBCustomersTab() {
   });
   const [saving, setSaving] = useState(false);
 
-  const registeredIds = new Set(entries.map((e) => e.id));
-  const filteredCustomers = safeArray<CustomerItem>(customers).filter(
+  const registeredIds = new Set(entries.map((e) => Number(e.customer_id ?? e.reference_id)).filter(Number.isFinite));
+  const filteredCustomers = customers.filter(
     (c) => !registeredIds.has(c.id) && c.name.includes(search)
   );
-  const selectedCustomer = safeArray<CustomerItem>(customers).find((c) => String(c.id) === form.customer_id);
+  const selectedCustomer = customers.find((c) => String(c.id) === form.customer_id);
   const handleSelect = (c: CustomerItem) => {
     setForm((f) => ({ ...f, customer_id: String(c.id) }));
     setSearch(c.name);
