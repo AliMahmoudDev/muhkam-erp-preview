@@ -105,6 +105,29 @@ async function retryRlsStep<T>(label: string, fn: () => Promise<T>, attempts = 5
   throw lastError;
 }
 
+async function ensureCurrentUserCanSetAppRole(): Promise<void> {
+  const result = await db.execute<{ current_user: string; can_set_role: boolean }>(
+    sql`SELECT current_user, pg_has_role(current_user, ${APP_ROLE}, 'usage') AS can_set_role`
+  );
+
+  const row = queryRows<{ current_user: string; can_set_role: boolean }>(result)[0];
+  if (row?.can_set_role === true) {
+    logger.info({ role: APP_ROLE }, '[rls] current user can set application role');
+    return;
+  }
+
+  if (!row?.current_user) {
+    throw new Error('[rls] could not resolve current database user');
+  }
+
+  // PostgreSQL 16+ separates membership from SET ROLE permission.
+  // Explicit WITH SET TRUE is required for SET ROLE erp_app_role to work.
+  // nosemgrep: ban-drizzle-sql-raw — role name is validated by quoteIdentifier()
+  await db.execute(
+    sql.raw(`GRANT "${APP_ROLE}" TO ${quoteIdentifier(row.current_user)} WITH SET TRUE`)
+  );
+}
+
 /**
  * Ensure the constrained application role exists with the privileges it needs
  * on every public-schema table. Idempotent.
@@ -125,7 +148,7 @@ async function ensureAppRole(): Promise<void> {
   `)
   );
   // nosemgrep: ban-drizzle-sql-raw
-  await db.execute(sql.raw(`GRANT "${APP_ROLE}" TO CURRENT_USER`));
+  await ensureCurrentUserCanSetAppRole();
   // nosemgrep: ban-drizzle-sql-raw
   await db.execute(sql.raw(`GRANT USAGE ON SCHEMA public TO "${APP_ROLE}"`));
   // nosemgrep: ban-drizzle-sql-raw
