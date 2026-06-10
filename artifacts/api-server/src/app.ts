@@ -357,6 +357,12 @@ if (process.env.NODE_ENV === 'production') {
   /* SPA fallback */
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path.startsWith('/api')) return next();
+
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.status(404).type('text/plain').send('Not found');
+      return;
+    }
+
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
   logger.info({ frontendDist }, 'Serving MuhKam ERP frontend at /');
