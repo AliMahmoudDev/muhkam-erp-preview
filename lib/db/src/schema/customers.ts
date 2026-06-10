@@ -6,7 +6,7 @@ import { companiesTable } from "./companies";
 export const customerClassificationsTable = pgTable("customer_classifications", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("customer_classifications_company_id_idx").on(t.company_id),
@@ -30,7 +30,7 @@ export const customersTable = pgTable("customers", {
   price_list_id: integer("price_list_id"),
   price_list_markup: numeric("price_list_markup", { precision: 8, scale: 2 }),
   source: text("source"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   unique("customers_company_customer_code_unique").on(t.company_id, t.customer_code),
