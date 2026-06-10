@@ -341,9 +341,10 @@ if (process.env.NODE_ENV === 'production') {
     },
   };
 
-  app.use(express.static(frontendDist, staticOpts));
   const knownScannerPathPattern =
-    /^\/(?:lander(?:\/|$)|sber(?:\/|$)|sberbank(?:[-/]|$)|sberchat|tink_chat(?:\/|$)|fckeditor(?:\/|$)|developmentserver(?:\/|$)|src\/FileUpload\.js$|wp(?:[-/]|$)|wordpress(?:\/|$)|xmlrpc\.php$|phpmyadmin(?:\/|$))/i;
+    /^\/(?:lander(?:\/|$)|sber(?:\/|$)|sberbank(?:[-/]|$)|sberchat|tink_chat(?:\/|$)|fckeditor(?:\/|$)|developmentserver(?:\/|$)|src\/FileUpload\.js$|wp(?:[-/]|$)|wordpress(?:\/|$)|xmlrpc\.php$|phpmyadmin(?:\/|$)|\.env$|\.env\..*$|\.git(?:\/|$)|\.aws(?:\/|$)|phpinfo\.php$|adminer\.php$|\.ssh(?:\/|$))/i;
+
+  app.use(express.static(frontendDist, staticOpts));
 
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     const probePath = (req.originalUrl || req.url || req.path).split('?')[0].replace(/^\/+/, '/');
