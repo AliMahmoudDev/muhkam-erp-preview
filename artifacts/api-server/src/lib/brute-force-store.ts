@@ -40,6 +40,7 @@ if (process.env.REDIS_URL) {
       redis = null;
     });
 
+    await redis.connect();
     await redis.ping();
     logger.info('[BruteForce] Connected to Redis — brute force store is distributed');
   } catch (err) {
@@ -48,7 +49,9 @@ if (process.env.REDIS_URL) {
   }
 } else {
   if (process.env.NODE_ENV === 'production') {
-    logger.warn('[BruteForce] REDIS_URL not set — using in-memory brute-force store (single-instance safe, resets on restart)');
+    logger.warn(
+      '[BruteForce] REDIS_URL not set — using in-memory brute-force store (single-instance safe, resets on restart)'
+    );
   }
   logger.info('[BruteForce] REDIS_URL not set — using in-memory store (single-instance only)');
 }
@@ -94,8 +97,8 @@ export async function recordLoginFailure(userId: number, ip?: string): Promise<L
     updated = { attempts, lockedUntil };
     if (lockedUntil !== null) {
       void alertManager.send({
-        type:          ALERT_TYPES.BRUTE_FORCE(ip ?? "unknown"),
-        message:       `🔒 *محاولة اختراق محتملة*\nIP: ${ip ?? 'غير متاح'}\nعدد المحاولات: ${attempts}\nالوقت: ${new Date().toLocaleString("ar-EG")}`,
+        type: ALERT_TYPES.BRUTE_FORCE(ip ?? 'unknown'),
+        message: `🔒 *محاولة اختراق محتملة*\nIP: ${ip ?? 'غير متاح'}\nعدد المحاولات: ${attempts}\nالوقت: ${new Date().toLocaleString('ar-EG')}`,
         cooldownHours: 4,
       });
     }

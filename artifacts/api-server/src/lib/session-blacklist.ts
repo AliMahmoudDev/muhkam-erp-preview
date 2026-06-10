@@ -6,40 +6,46 @@
  * - Otherwise: in-memory fallback → cleared on restart, single-instance only.
  */
 
-import { logger } from "./logger";
+import { logger } from './logger';
 
 const DEFAULT_TTL_MS = 4 * 60 * 60 * 1000; // 4h — matches access-token expiry
 const KEY = (token: string) => `bl:tok:${token}`;
 
-let redis: import("ioredis").Redis | null = null;
+let redis: import('ioredis').Redis | null = null;
 
-if (process.env.NODE_ENV === "production" && !process.env.REDIS_URL) {
+if (process.env.NODE_ENV === 'production' && !process.env.REDIS_URL) {
   logger.warn(
-    "[SessionBlacklist] REDIS_URL not set in production — using in-memory store. " +
-    "This is safe for single-instance deployments but tokens will not be revoked across restarts.",
+    '[SessionBlacklist] REDIS_URL not set in production — using in-memory store. ' +
+      'This is safe for single-instance deployments but tokens will not be revoked across restarts.'
   );
 }
 
 if (process.env.REDIS_URL) {
   try {
-    const { default: Redis } = await import("ioredis");
+    const { default: Redis } = await import('ioredis');
     redis = new Redis(process.env.REDIS_URL, {
       maxRetriesPerRequest: 2,
       enableOfflineQueue: false,
       lazyConnect: true,
     });
-    redis.on("error", (err: Error) => {
-      logger.warn({ err }, "[SessionBlacklist] Redis error — falling back to in-memory for new requests");
+    redis.on('error', (err: Error) => {
+      logger.warn(
+        { err },
+        '[SessionBlacklist] Redis error — falling back to in-memory for new requests'
+      );
       redis = null;
     });
+    await redis.connect();
     await redis.ping();
-    logger.info("[SessionBlacklist] Connected to Redis — token blacklist is distributed");
+    logger.info('[SessionBlacklist] Connected to Redis — token blacklist is distributed');
   } catch (err) {
-    logger.warn({ err }, "[SessionBlacklist] Redis unavailable — using in-memory fallback");
+    logger.warn({ err }, '[SessionBlacklist] Redis unavailable — using in-memory fallback');
     redis = null;
   }
 } else {
-  logger.info("[SessionBlacklist] REDIS_URL not set — using in-memory store (single-instance only)");
+  logger.info(
+    '[SessionBlacklist] REDIS_URL not set — using in-memory store (single-instance only)'
+  );
 }
 
 /* ── In-memory fallback ─────────────────────────────────── */
@@ -57,7 +63,7 @@ export async function blacklistToken(token: string, ttlMs = DEFAULT_TTL_MS): Pro
   if (redis) {
     try {
       const ttlSec = Math.max(1, Math.ceil(ttlMs / 1000));
-      await redis.set(KEY(token), "1", "EX", ttlSec);
+      await redis.set(KEY(token), '1', 'EX', ttlSec);
       return;
     } catch {
       /* fall through to memory */
