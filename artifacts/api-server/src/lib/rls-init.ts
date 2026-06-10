@@ -81,6 +81,30 @@ function quoteIdentifier(identifier: string): string {
   return `"${identifier.replace(/"/g, '""')}"`;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function retryRlsStep<T>(label: string, fn: () => Promise<T>, attempts = 5): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+
+      if (attempt >= attempts) break;
+
+      const delayMs = Math.min(500 * attempt, 2_000);
+      logger.warn({ err, attempt, attempts, delayMs }, `[rls] ${label} failed — retrying`);
+      await sleep(delayMs);
+    }
+  }
+
+  throw lastError;
+}
+
 /**
  * Ensure the constrained application role exists with the privileges it needs
  * on every public-schema table. Idempotent.
@@ -194,7 +218,7 @@ export async function initRLS(): Promise<{ enabled: number; skipped: number }> {
 
   /* Step 1: ensure the constrained role exists & has privileges */
   try {
-    await ensureAppRole();
+    await retryRlsStep('ensure application role', ensureAppRole);
     logger.info({ role: APP_ROLE }, '[rls] application role ensured');
   } catch (err) {
     logger.error(
@@ -206,7 +230,7 @@ export async function initRLS(): Promise<{ enabled: number; skipped: number }> {
   let rlsTables: string[] = [...FALLBACK_RLS_TABLES];
 
   try {
-    rlsTables = await discoverCompanyScopedTables();
+    rlsTables = await retryRlsStep('discover company-scoped tables', discoverCompanyScopedTables);
     logger.info({ total: rlsTables.length }, '[rls] discovered company-scoped tables');
   } catch (err) {
     logger.error(
