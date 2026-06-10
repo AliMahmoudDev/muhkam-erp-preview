@@ -16,8 +16,8 @@ export const stockMovementsTable = pgTable("stock_movements", {
   reference_no: text("reference_no"),
   notes: text("notes"),
   date: text("date"),
-  warehouse_id: integer("warehouse_id").notNull().default(1),
-  company_id:  integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  warehouse_id: integer("warehouse_id").notNull(),
+  company_id:  integer("company_id").notNull().references(() => companiesTable.id),
   branch_id:   integer("branch_id"),
   created_at:  timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

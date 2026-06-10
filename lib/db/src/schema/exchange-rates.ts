@@ -6,7 +6,7 @@ export const exchangeRatesTable = pgTable("exchange_rates", {
   currency: text("currency").notNull(),
   rate: numeric("rate", { precision: 12, scale: 6 }).notNull(),
   date: text("date").notNull(),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   notes: text("notes"),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

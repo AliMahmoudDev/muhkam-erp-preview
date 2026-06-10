@@ -31,7 +31,7 @@ export const transactionsTable = pgTable("transactions", {
 
   description: text("description"),
   date: text("date"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
 
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

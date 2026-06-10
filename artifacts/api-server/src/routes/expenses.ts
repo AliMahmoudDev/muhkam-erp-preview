@@ -1,19 +1,29 @@
-import { Router, type IRouter } from "express";
-import { eq, and, sql } from "drizzle-orm";
-import { db, expensesTable, expenseCategoriesTable, transactionsTable, safesTable } from "@workspace/db";
+import { Router, type IRouter } from 'express';
+import { eq, and, sql } from 'drizzle-orm';
+import {
+  db,
+  expensesTable,
+  expenseCategoriesTable,
+  transactionsTable,
+  safesTable,
+} from '@workspace/db';
 import {
   GetExpensesResponse,
   CreateExpenseBody,
   DeleteExpenseParams,
   DeleteExpenseResponse,
-} from "@workspace/api-zod";
-import { wrap, httpError } from "../lib/async-handler";
-import { hasPermission } from "../lib/permissions";
-import { logger } from "../lib/logger";
-import { getTenant } from "../middleware/auth";
-import { assertPeriodOpen } from "../lib/period-lock";
-import { getOrCreateSafeAccount, getOrCreateGeneralExpenseAccount, createAutoJournalEntry } from "../lib/auto-account";
-import { categoryBodySchema, firstZodError } from "../lib/schemas";
+} from '@workspace/api-zod';
+import { wrap, httpError } from '../lib/async-handler';
+import { hasPermission } from '../lib/permissions';
+import { logger } from '../lib/logger';
+import { getTenant } from '../middleware/auth';
+import { assertPeriodOpen } from '../lib/period-lock';
+import {
+  getOrCreateSafeAccount,
+  getOrCreateGeneralExpenseAccount,
+  createAutoJournalEntry,
+} from '../lib/auto-account';
+import { categoryBodySchema, firstZodError } from '../lib/schemas';
 
 const router: IRouter = Router();
 
@@ -25,66 +35,113 @@ function formatExpense(e: typeof expensesTable.$inferSelect) {
    تصنيفات المصروفات — Expense Categories
 ═══════════════════════════════════════════════════════════ */
 
-router.get("/expense-categories", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_expenses")) {
-    res.status(403).json({ error: "غير مصرح" }); return;
-  }
-  const companyId = getTenant(req);
-  const cats = await db.select().from(expenseCategoriesTable)
-    .where(eq(expenseCategoriesTable.company_id, companyId))
-    .orderBy(expenseCategoriesTable.name);
-  res.json(cats);
-}));
+router.get(
+  '/expense-categories',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_view_expenses')) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
+    const companyId = getTenant(req);
+    const cats = await db
+      .select()
+      .from(expenseCategoriesTable)
+      .where(eq(expenseCategoriesTable.company_id, companyId))
+      .orderBy(expenseCategoriesTable.name);
+    res.json(cats);
+  })
+);
 
-router.post("/expense-categories", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_add_expense")) {
-    res.status(403).json({ error: "غير مصرح" }); return;
-  }
-  const companyId = getTenant(req);
+router.post(
+  '/expense-categories',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_add_expense')) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
+    const companyId = getTenant(req);
 
-  const bodyResult = categoryBodySchema.safeParse(req.body);
-  if (!bodyResult.success) {
-    res.status(400).json({ error: firstZodError(bodyResult.error) }); return;
-  }
-  const { name } = bodyResult.data;
+    const bodyResult = categoryBodySchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      res.status(400).json({ error: firstZodError(bodyResult.error) });
+      return;
+    }
+    const { name } = bodyResult.data;
 
-  const [existing] = await db.select().from(expenseCategoriesTable)
-    .where(and(eq(expenseCategoriesTable.company_id, companyId), eq(expenseCategoriesTable.name, name)));
-  if (existing) { res.status(400).json({ error: `التصنيف "${name}" موجود بالفعل` }); return; }
+    const [existing] = await db
+      .select()
+      .from(expenseCategoriesTable)
+      .where(
+        and(eq(expenseCategoriesTable.company_id, companyId), eq(expenseCategoriesTable.name, name))
+      );
+    if (existing) {
+      res.status(400).json({ error: `التصنيف "${name}" موجود بالفعل` });
+      return;
+    }
 
-  const [cat] = await db.insert(expenseCategoriesTable).values({ name, company_id: companyId }).returning();
-  res.status(201).json(cat);
-}));
+    const [cat] = await db
+      .insert(expenseCategoriesTable)
+      .values({ name, company_id: companyId })
+      .returning();
+    res.status(201).json(cat);
+  })
+);
 
-router.delete("/expense-categories/:id", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_add_expense")) {
-    res.status(403).json({ error: "غير مصرح" }); return;
-  }
-  const id = parseInt(String(req.params.id), 10);
-  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صالح" }); return; }
-  const cidExp = getTenant(req);
-  const [cat] = await db.select({ name: expenseCategoriesTable.name }).from(expenseCategoriesTable).where(and(eq(expenseCategoriesTable.id, id), eq(expenseCategoriesTable.company_id, cidExp))).limit(1);
-  if (!cat) { res.status(404).json({ error: "التصنيف غير موجود" }); return; }
-  const [linkedExpense] = await db.select({ id: expensesTable.id }).from(expensesTable).where(and(eq(expensesTable.category, cat.name), eq(expensesTable.company_id, cidExp))).limit(1);
-  if (linkedExpense) { res.status(400).json({ error: "لا يمكن حذف التصنيف لأنه مرتبط بمصروفات" }); return; }
-  await db.delete(expenseCategoriesTable).where(and(eq(expenseCategoriesTable.id, id), eq(expenseCategoriesTable.company_id, cidExp)));
-  res.json({ success: true });
-}));
+router.delete(
+  '/expense-categories/:id',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_add_expense')) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
+    const id = parseInt(String(req.params.id), 10);
+    if (isNaN(id)) {
+      res.status(400).json({ error: 'معرف غير صالح' });
+      return;
+    }
+    const cidExp = getTenant(req);
+    const [cat] = await db
+      .select({ name: expenseCategoriesTable.name })
+      .from(expenseCategoriesTable)
+      .where(and(eq(expenseCategoriesTable.id, id), eq(expenseCategoriesTable.company_id, cidExp)))
+      .limit(1);
+    if (!cat) {
+      res.status(404).json({ error: 'التصنيف غير موجود' });
+      return;
+    }
+    const [linkedExpense] = await db
+      .select({ id: expensesTable.id })
+      .from(expensesTable)
+      .where(and(eq(expensesTable.category, cat.name), eq(expensesTable.company_id, cidExp)))
+      .limit(1);
+    if (linkedExpense) {
+      res.status(400).json({ error: 'لا يمكن حذف التصنيف لأنه مرتبط بمصروفات' });
+      return;
+    }
+    await db
+      .delete(expenseCategoriesTable)
+      .where(and(eq(expenseCategoriesTable.id, id), eq(expenseCategoriesTable.company_id, cidExp)));
+    res.json({ success: true });
+  })
+);
 
 /* ═══════════════════════════════════════════════════════════
    تقارير المصروفات — Expense Reports
 ═══════════════════════════════════════════════════════════ */
 
-router.get("/expense-reports", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_expenses")) {
-    res.status(403).json({ error: "غير مصرح" }); return;
-  }
-  const companyId = getTenant(req);
-  const category  = req.query.category  ? String(req.query.category)  : null;
-  const dateFrom  = req.query.date_from ? String(req.query.date_from) : null;
-  const dateTo    = req.query.date_to   ? String(req.query.date_to)   : null;
+router.get(
+  '/expense-reports',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_view_expenses')) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
+    const companyId = getTenant(req);
+    const category = req.query.category ? String(req.query.category) : null;
+    const dateFrom = req.query.date_from ? String(req.query.date_from) : null;
+    const dateTo = req.query.date_to ? String(req.query.date_to) : null;
 
-  const rows = await db.execute(sql`
+    const rows = await db.execute(sql`
     SELECT
       e.id,
       e.category,
@@ -100,166 +157,218 @@ router.get("/expense-reports", wrap(async (req, res) => {
     ORDER BY e.created_at DESC
   `);
 
-  const result = (rows.rows as Record<string, unknown>[]).map(r => ({
-    id:          r.id,
-    category:    r.category,
-    amount:      Math.round(Number(r.amount) * 100) / 100,
-    description: r.description ?? null,
-    safe_name:   r.safe_name   ?? null,
-    date:        r.date,
-  }));
+    const result = (rows.rows as Record<string, unknown>[]).map((r) => ({
+      id: r.id,
+      category: r.category,
+      amount: Math.round(Number(r.amount) * 100) / 100,
+      description: r.description ?? null,
+      safe_name: r.safe_name ?? null,
+      date: r.date,
+    }));
 
-  res.json(result);
-}));
+    res.json(result);
+  })
+);
 
 /* ═══════════════════════════════════════════════════════════
    المصروفات — Expenses CRUD
 ═══════════════════════════════════════════════════════════ */
 
-router.get("/expenses", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_view_expenses")) {
-    res.status(403).json({ error: "غير مصرح بعرض المصروفات" }); return;
-  }
-  const companyId = getTenant(req);
-  const expenses = await db.select().from(expensesTable)
-    .where(eq(expensesTable.company_id, companyId))
-    .orderBy(expensesTable.created_at);
-  res.json(GetExpensesResponse.parse(expenses.map(formatExpense)));
-}));
+router.get(
+  '/expenses',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_view_expenses')) {
+      res.status(403).json({ error: 'غير مصرح بعرض المصروفات' });
+      return;
+    }
+    const companyId = getTenant(req);
+    const expenses = await db
+      .select()
+      .from(expensesTable)
+      .where(eq(expensesTable.company_id, companyId))
+      .orderBy(expensesTable.created_at);
+    res.json(GetExpensesResponse.parse(expenses.map(formatExpense)));
+  })
+);
 
-router.post("/expenses", wrap(async (req, res) => {
-  if (!hasPermission(req.user, "can_add_expense")) {
-    res.status(403).json({ error: "غير مصرح بإضافة مصروفات" }); return;
-  }
+router.post(
+  '/expenses',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_add_expense')) {
+      res.status(403).json({ error: 'غير مصرح بإضافة مصروفات' });
+      return;
+    }
 
-  await assertPeriodOpen(new Date().toISOString().split("T")[0], req);
+    await assertPeriodOpen(new Date().toISOString().split('T')[0], req);
 
-  const parsed = CreateExpenseBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+    const parsed = CreateExpenseBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
 
-  const safe_id: number | undefined = req.body.safe_id ? parseInt(req.body.safe_id) : undefined;
-  const amt = parsed.data.amount;
-  if (amt <= 0) throw httpError(400, "المبلغ يجب أن يكون أكبر من صفر");
+    const safe_id: number | undefined = req.body.safe_id ? parseInt(req.body.safe_id) : undefined;
+    const amt = parsed.data.amount;
+    if (amt <= 0) throw httpError(400, 'المبلغ يجب أن يكون أكبر من صفر');
 
-  const result = await db.transaction(async (tx) => {
-    let safe: typeof safesTable.$inferSelect | null = null;
-    if (safe_id) {
-      const cidPre = req.user?.company_id;
-      if (typeof cidPre !== "number") throw httpError(403, "تعذر تحديد الشركة");
-      const [s] = await tx.select().from(safesTable).where(eq(safesTable.id, safe_id));
-      if (!s) throw httpError(400, "الخزينة غير موجودة");
-      if (s.company_id !== cidPre) throw httpError(403, "غير مسموح باستخدام هذه الخزينة");
-      // خصم ذرّي مع شرط كفاية الرصيد لمنع التضارب المتزامن
-      const debited = await tx.update(safesTable)
-        .set({ balance: sql`${safesTable.balance} - ${String(amt)}` })
-        .where(and(
-          eq(safesTable.id, s.id),
-          eq(safesTable.company_id, cidPre),
-          sql`${safesTable.balance} >= ${String(amt)}`,
-        ))
+    const result = await db.transaction(async (tx) => {
+      let safe: typeof safesTable.$inferSelect | null = null;
+      if (safe_id) {
+        const cidPre = getTenant(req);
+        const [s] = await tx.select().from(safesTable).where(eq(safesTable.id, safe_id));
+        if (!s) throw httpError(400, 'الخزينة غير موجودة');
+        if (s.company_id !== cidPre) throw httpError(403, 'غير مسموح باستخدام هذه الخزينة');
+        // خصم ذرّي مع شرط كفاية الرصيد لمنع التضارب المتزامن
+        const debited = await tx
+          .update(safesTable)
+          .set({ balance: sql`${safesTable.balance} - ${String(amt)}` })
+          .where(
+            and(
+              eq(safesTable.id, s.id),
+              eq(safesTable.company_id, cidPre),
+              sql`${safesTable.balance} >= ${String(amt)}`
+            )
+          )
+          .returning();
+        if (!debited[0])
+          throw httpError(400, `رصيد الخزينة غير كافٍ (${Number(s.balance).toFixed(2)} ج.م)`);
+        safe = s;
+      }
+      const companyId = getTenant(req);
+      const [exp] = await tx
+        .insert(expensesTable)
+        .values({
+          category: parsed.data.category,
+          amount: String(amt),
+          description: parsed.data.description ?? null,
+          safe_id: safe?.id ?? null,
+          safe_name: safe?.name ?? null,
+          company_id: companyId,
+        })
         .returning();
-      if (!debited[0]) throw httpError(400, `رصيد الخزينة غير كافٍ (${Number(s.balance).toFixed(2)} ج.م)`);
-      safe = s;
-    }
-    const companyId = req.user?.company_id ?? undefined;
-    const [exp] = await tx.insert(expensesTable).values({
-      category: parsed.data.category,
-      amount: String(amt),
-      description: parsed.data.description ?? null,
-      safe_id: safe?.id ?? null,
-      safe_name: safe?.name ?? null,
-      company_id: companyId,
-    }).returning();
-    await tx.insert(transactionsTable).values({
-      type: "expense", reference_type: "expense", reference_id: exp.id,
-      safe_id: safe?.id ?? null, safe_name: safe?.name ?? null,
-      amount: String(amt), direction: safe ? "out" : "none",
-      description: parsed.data.description ?? parsed.data.category,
-      date: new Date().toISOString().split("T")[0],
-      company_id: companyId,
-    });
-    return { exp, safe };
-  });
-
-  const { exp: expense, safe } = result;
-  if (safe) {
-    try {
-      const cidExp = getTenant(req);
-      const expAcct  = await getOrCreateGeneralExpenseAccount(cidExp);
-      const safeAcct = await getOrCreateSafeAccount(safe.id, safe.name, cidExp);
-      const todayStr = new Date().toISOString().split("T")[0];
-      await createAutoJournalEntry({
-        date:        todayStr,
-        description: `مصروف: ${parsed.data.category}${parsed.data.description ? ` — ${parsed.data.description}` : ""}`,
-        reference:   `EXP-${expense.id}`,
-        debit:  expAcct,
-        credit: safeAcct,
-        amount: amt,
-        companyId: cidExp,
+      await tx.insert(transactionsTable).values({
+        type: 'expense',
+        reference_type: 'expense',
+        reference_id: exp.id,
+        safe_id: safe?.id ?? null,
+        safe_name: safe?.name ?? null,
+        amount: String(amt),
+        direction: safe ? 'out' : 'none',
+        description: parsed.data.description ?? parsed.data.category,
+        date: new Date().toISOString().split('T')[0],
+        company_id: companyId,
       });
-    } catch (jeErr) {
-      logger.error({ err: jeErr }, "Failed to create journal entry for expense");
-    }
-  }
-  res.status(201).json(formatExpense(expense));
-}));
+      return { exp, safe };
+    });
 
-router.delete("/expenses/:id", wrap(async (req, res) => {
-  const params = DeleteExpenseParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const [preCheck] = await db.select().from(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, getTenant(req))));
-  if (!preCheck) { res.status(404).json({ error: "المصروف غير موجود" }); return; }
-  await assertPeriodOpen(preCheck.created_at?.toISOString().split("T")[0] ?? null, req);
-
-  let deletedSafeId:   number | null = null;
-  let deletedSafeName: string | null = null;
-  let deletedAmount:   number        = 0;
-  let deletedCategory: string        = "";
-
-  await db.transaction(async (tx) => {
-    const [exp] = await tx.select().from(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, getTenant(req))));
-    if (exp?.safe_id) {
-      const cidGuard = getTenant(req);
-      const [safe] = await tx.select().from(safesTable).where(and(
-        eq(safesTable.id, exp.safe_id),
-        eq(safesTable.company_id, cidGuard),
-      ));
-      if (safe) {
-        deletedSafeId   = safe.id;
-        deletedSafeName = safe.name;
-        await tx.update(safesTable)
-          .set({ balance: sql`${safesTable.balance} + ${String(Number(exp.amount))}` })
-          .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cidGuard)));
+    const { exp: expense, safe } = result;
+    if (safe) {
+      try {
+        const cidExp = getTenant(req);
+        const expAcct = await getOrCreateGeneralExpenseAccount(cidExp);
+        const safeAcct = await getOrCreateSafeAccount(safe.id, safe.name, cidExp);
+        const todayStr = new Date().toISOString().split('T')[0];
+        await createAutoJournalEntry({
+          date: todayStr,
+          description: `مصروف: ${parsed.data.category}${parsed.data.description ? ` — ${parsed.data.description}` : ''}`,
+          reference: `EXP-${expense.id}`,
+          debit: expAcct,
+          credit: safeAcct,
+          amount: amt,
+          companyId: cidExp,
+        });
+      } catch (jeErr) {
+        logger.error({ err: jeErr }, 'Failed to create journal entry for expense');
       }
     }
-    if (exp) {
-      deletedAmount   = Number(exp.amount);
-      deletedCategory = exp.category ?? "مصروف محذوف";
-    }
-    await tx.delete(expensesTable).where(and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, getTenant(req))));
-  });
+    res.status(201).json(formatExpense(expense));
+  })
+);
 
-  if (deletedSafeId !== null && deletedAmount > 0) {
-    try {
-      const cidDel = getTenant(req);
-      const safeAcct = await getOrCreateSafeAccount(deletedSafeId, deletedSafeName ?? `خزينة ${deletedSafeId}`, cidDel);
-      const expAcct  = await getOrCreateGeneralExpenseAccount(cidDel);
-      const todayStr = new Date().toISOString().split("T")[0];
-      await createAutoJournalEntry({
-        date:        todayStr,
-        description: `إلغاء مصروف: ${deletedCategory}`,
-        reference:   `EXP-DEL-${params.data.id}`,
-        debit:  safeAcct,
-        credit: expAcct,
-        amount: deletedAmount,
-        companyId: cidDel,
-      });
-    } catch (jeErr) {
-      logger.error({ err: jeErr }, "Failed to create reversal JE for deleted expense");
+router.delete(
+  '/expenses/:id',
+  wrap(async (req, res) => {
+    const params = DeleteExpenseParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
     }
-  }
+    const [preCheck] = await db
+      .select()
+      .from(expensesTable)
+      .where(
+        and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, getTenant(req)))
+      );
+    if (!preCheck) {
+      res.status(404).json({ error: 'المصروف غير موجود' });
+      return;
+    }
+    await assertPeriodOpen(preCheck.created_at?.toISOString().split('T')[0] ?? null, req);
 
-  res.json(DeleteExpenseResponse.parse({ success: true, message: "Expense deleted" }));
-}));
+    let deletedSafeId: number | null = null;
+    let deletedSafeName: string | null = null;
+    let deletedAmount: number = 0;
+    let deletedCategory: string = '';
+
+    await db.transaction(async (tx) => {
+      const [exp] = await tx
+        .select()
+        .from(expensesTable)
+        .where(
+          and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, getTenant(req)))
+        );
+      if (exp?.safe_id) {
+        const cidGuard = getTenant(req);
+        const [safe] = await tx
+          .select()
+          .from(safesTable)
+          .where(and(eq(safesTable.id, exp.safe_id), eq(safesTable.company_id, cidGuard)));
+        if (safe) {
+          deletedSafeId = safe.id;
+          deletedSafeName = safe.name;
+          await tx
+            .update(safesTable)
+            .set({ balance: sql`${safesTable.balance} + ${String(Number(exp.amount))}` })
+            .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cidGuard)));
+        }
+      }
+      if (exp) {
+        deletedAmount = Number(exp.amount);
+        deletedCategory = exp.category ?? 'مصروف محذوف';
+      }
+      await tx
+        .delete(expensesTable)
+        .where(
+          and(eq(expensesTable.id, params.data.id), eq(expensesTable.company_id, getTenant(req)))
+        );
+    });
+
+    if (deletedSafeId !== null && deletedAmount > 0) {
+      try {
+        const cidDel = getTenant(req);
+        const safeAcct = await getOrCreateSafeAccount(
+          deletedSafeId,
+          deletedSafeName ?? `خزينة ${deletedSafeId}`,
+          cidDel
+        );
+        const expAcct = await getOrCreateGeneralExpenseAccount(cidDel);
+        const todayStr = new Date().toISOString().split('T')[0];
+        await createAutoJournalEntry({
+          date: todayStr,
+          description: `إلغاء مصروف: ${deletedCategory}`,
+          reference: `EXP-DEL-${params.data.id}`,
+          debit: safeAcct,
+          credit: expAcct,
+          amount: deletedAmount,
+          companyId: cidDel,
+        });
+      } catch (jeErr) {
+        logger.error({ err: jeErr }, 'Failed to create reversal JE for deleted expense');
+      }
+    }
+
+    res.json(DeleteExpenseResponse.parse({ success: true, message: 'Expense deleted' }));
+  })
+);
 
 export default router;

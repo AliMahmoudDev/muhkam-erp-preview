@@ -6,7 +6,7 @@ import { companiesTable } from "./companies";
 export const expenseCategoriesTable = pgTable("expense_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("expense_categories_company_idx").on(t.company_id),
@@ -23,7 +23,7 @@ export const expensesTable = pgTable("expenses", {
   // ربط بسجل مرجعي (مثل: تحويل خزينة)
   reference_type: text("reference_type"),
   reference_id: integer("reference_id"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   branch_id:  integer("branch_id"),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

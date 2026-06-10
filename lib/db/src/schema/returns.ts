@@ -19,7 +19,7 @@ export const salesReturnsTable = pgTable("sales_returns", {
   notes: text("notes"),
   user_id: integer("user_id"),
   warehouse_id: integer("warehouse_id"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("sales_returns_customer_id_idx").on(t.customer_id),
@@ -59,7 +59,7 @@ export const purchaseReturnsTable = pgTable("purchase_returns", {
   date: text("date"),
   reason: text("reason"),
   notes: text("notes"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("purchase_returns_purchase_id_idx").on(t.purchase_id),
@@ -94,7 +94,7 @@ export const treasuryVouchersTable = pgTable("treasury_vouchers", {
   party_name: text("party_name"),
   description: text("description").notNull(),
   category: text("category"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("treasury_vouchers_safe_id_idx").on(t.safe_id),

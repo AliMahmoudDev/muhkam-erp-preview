@@ -25,7 +25,7 @@ export const customerLedgerTable = pgTable("customer_ledger", {
   reference_no: text("reference_no"),
   description: text("description"),
   date: text("date"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("customer_ledger_customer_id_idx").on(t.customer_id),

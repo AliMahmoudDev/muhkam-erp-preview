@@ -26,7 +26,7 @@ export const purchasesTable = pgTable("purchases", {
   consignment_warehouse_id: integer("consignment_warehouse_id"),
   notes: text("notes"),
   date: text("date"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   branch_id:  integer("branch_id"),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

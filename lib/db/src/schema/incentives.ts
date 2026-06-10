@@ -8,7 +8,7 @@ import { employeesTable } from "./employees";
 /* ── Incentive Schemes ───────────────────────────────────────── */
 export const incentiveSchemesTable = pgTable("incentive_schemes", {
   id:          serial("id").primaryKey(),
-  company_id:  integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:  integer("company_id").notNull().references(() => companiesTable.id),
   name_en:     text("name_en").notNull(),
   name_ar:     text("name_ar").notNull(),
   description: text("description"),

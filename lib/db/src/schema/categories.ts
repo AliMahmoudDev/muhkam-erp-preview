@@ -6,7 +6,7 @@ import { companiesTable } from "./companies";
 export const categoriesTable = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
 }, (t) => [
   uniqueIndex("categories_name_company_idx").on(t.name, t.company_id),
 ]);

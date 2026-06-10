@@ -5,7 +5,7 @@ export const warehousesTable = pgTable("warehouses", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   address: text("address"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   branch_id:  integer("branch_id"),
   is_consignment: boolean("is_consignment").notNull().default(false),
   supplier_id: integer("supplier_id"),

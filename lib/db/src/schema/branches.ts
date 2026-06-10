@@ -3,7 +3,7 @@ import { companiesTable } from "./companies";
 
 export const branchesTable = pgTable("branches", {
   id:         serial("id").primaryKey(),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   name:       text("name").notNull(),
   address:    text("address"),
   phone:      text("phone"),

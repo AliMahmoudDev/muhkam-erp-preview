@@ -10,7 +10,7 @@ export const incomeTable = pgTable("income", {
   description: text("description"),
   safe_id: integer("safe_id"),
   safe_name: text("safe_name"),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   branch_id:  integer("branch_id"),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

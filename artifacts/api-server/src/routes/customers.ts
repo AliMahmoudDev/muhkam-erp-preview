@@ -211,6 +211,7 @@ router.post(
     const openingBalance = Number(parsed.data.balance ?? 0);
     if (openingBalance !== 0) {
       await db.insert(customerLedgerTable).values({
+        company_id: companyIdPost,
         customer_id: updated.id,
         type: 'opening_balance',
         amount: String(openingBalance),
@@ -611,6 +612,7 @@ router.post(
 
           // الحركة المالية المركزية
           await tx.insert(transactionsTable).values({
+            company_id: cidPay,
             type: 'receipt_voucher',
             reference_type: 'customer_payment',
             reference_id: id,
@@ -630,6 +632,7 @@ router.post(
 
       // 2. دفتر الأستاذ — تسجيل السداد (يُقلّل الدين)
       await tx.insert(customerLedgerTable).values({
+        company_id: cidPay,
         customer_id: id,
         type: 'payment',
         amount: String(-amt),

@@ -8,7 +8,7 @@ import { employeesTable } from "./employees";
 /* ── Shift Schedules ─────────────────────────────────────────── */
 export const shiftSchedulesTable = pgTable("shift_schedules", {
   id:              serial("id").primaryKey(),
-  company_id:      integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:      integer("company_id").notNull().references(() => companiesTable.id),
   name_en:         text("name_en").notNull(),
   name_ar:         text("name_ar").notNull(),
   start_time:      text("start_time").notNull(),   // HH:MM format
@@ -87,7 +87,7 @@ export type OvertimeRecord = typeof overtimeRecordsTable.$inferSelect;
 /* ── Public Holidays ─────────────────────────────────────────── */
 export const publicHolidaysTable = pgTable("public_holidays", {
   id:           serial("id").primaryKey(),
-  company_id:   integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:   integer("company_id").notNull().references(() => companiesTable.id),
   holiday_date: text("holiday_date").notNull(),
   name_en:      text("name_en").notNull(),
   name_ar:      text("name_ar").notNull(),

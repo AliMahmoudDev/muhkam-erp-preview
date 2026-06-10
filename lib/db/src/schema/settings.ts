@@ -8,7 +8,7 @@ import { companiesTable } from "./companies";
 export const systemSettingsTable = pgTable("system_settings", {
   id:         serial("id").primaryKey(),
   key:        text("key").notNull(),
-  company_id: integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id: integer("company_id").notNull().references(() => companiesTable.id),
   value:      text("value"),
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

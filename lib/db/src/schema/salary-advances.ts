@@ -8,7 +8,7 @@ import { employeesTable } from "./employees";
 /* ── Salary Advance Settings ─────────────────────────────────── */
 export const salaryAdvanceSettingsTable = pgTable("salary_advance_settings", {
   id:                        serial("id").primaryKey(),
-  company_id:                integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:                integer("company_id").notNull().references(() => companiesTable.id),
   max_advance_percentage:    numeric("max_advance_percentage", { precision: 5, scale: 2 }).notNull().default("50"),
   max_concurrent_advances:   integer("max_concurrent_advances").notNull().default(2),
   min_salary_for_advance:    numeric("min_salary_for_advance", { precision: 14, scale: 2 }).notNull().default("3000"),
@@ -25,7 +25,7 @@ export type SalaryAdvanceSettings = typeof salaryAdvanceSettingsTable.$inferSele
 /* ── Salary Advances ─────────────────────────────────────────── */
 export const salaryAdvancesTable = pgTable("salary_advances", {
   id:               serial("id").primaryKey(),
-  company_id:       integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:       integer("company_id").notNull().references(() => companiesTable.id),
   employee_id:      integer("employee_id").notNull().references(() => employeesTable.id),
   requested_date:   text("requested_date").notNull(),
   requested_amount: numeric("requested_amount", { precision: 14, scale: 2 }).notNull(),

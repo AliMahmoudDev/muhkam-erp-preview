@@ -15,7 +15,7 @@ export const alertsTable = pgTable("alerts", {
   is_resolved:          boolean("is_resolved").notNull().default(false),
   resolved_at:          timestamp("resolved_at", { withTimezone: true }),
   resolved_by:          integer("resolved_by"),
-  company_id:           integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:           integer("company_id").notNull().references(() => companiesTable.id),
   created_at:           timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("alerts_type_ref_idx").on(t.type, t.reference_id),

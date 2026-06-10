@@ -8,7 +8,7 @@ import { employeesTable } from "./employees";
 /* ── Salary Structures ───────────────────────────────────────── */
 export const salaryStructuresTable = pgTable("salary_structures", {
   id:          serial("id").primaryKey(),
-  company_id:  integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:  integer("company_id").notNull().references(() => companiesTable.id),
   name_en:     text("name_en").notNull(),
   name_ar:     text("name_ar").notNull(),
   base_salary: numeric("base_salary", { precision: 14, scale: 2 }).notNull().default("0"),
@@ -46,7 +46,7 @@ export type SalaryComponent = typeof salaryComponentsTable.$inferSelect;
 /* ── Tax Brackets ────────────────────────────────────────────── */
 export const taxBracketsTable = pgTable("tax_brackets", {
   id:           serial("id").primaryKey(),
-  company_id:   integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:   integer("company_id").notNull().references(() => companiesTable.id),
   fiscal_year:  text("fiscal_year").notNull(),
   min_salary:   numeric("min_salary", { precision: 14, scale: 2 }).notNull().default("0"),
   max_salary:   numeric("max_salary", { precision: 14, scale: 2 }),
@@ -62,7 +62,7 @@ export type TaxBracket = typeof taxBracketsTable.$inferSelect;
 /* ── Statutory Contributions ─────────────────────────────────── */
 export const statutoryContributionsTable = pgTable("statutory_contributions", {
   id:                    serial("id").primaryKey(),
-  company_id:            integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:            integer("company_id").notNull().references(() => companiesTable.id),
   contribution_type:     text("contribution_type").notNull(), // social_insurance | health_insurance | pension | other
   name_ar:               text("name_ar").notNull(),
   name_en:               text("name_en").notNull(),
@@ -81,7 +81,7 @@ export type StatutoryContribution = typeof statutoryContributionsTable.$inferSel
 /* ── Payroll Periods ─────────────────────────────────────────── */
 export const payrollPeriodsTable = pgTable("payroll_periods", {
   id:             serial("id").primaryKey(),
-  company_id:     integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:     integer("company_id").notNull().references(() => companiesTable.id),
   name:           text("name").notNull(),
   start_date:     text("start_date").notNull(),
   end_date:       text("end_date").notNull(),

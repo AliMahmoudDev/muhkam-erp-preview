@@ -8,7 +8,7 @@ import { employeesTable } from "./employees";
 /* ── Leave Types ─────────────────────────────────────────────── */
 export const leaveTypesTable = pgTable("leave_types", {
   id:                 serial("id").primaryKey(),
-  company_id:         integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:         integer("company_id").notNull().references(() => companiesTable.id),
   name_en:            text("name_en").notNull(),
   name_ar:            text("name_ar").notNull(),
   code:               text("code").notNull(),
@@ -28,7 +28,7 @@ export type LeaveType = typeof leaveTypesTable.$inferSelect;
 /* ── Leave Policies ──────────────────────────────────────────── */
 export const leavePoliciesTable = pgTable("leave_policies", {
   id:                      serial("id").primaryKey(),
-  company_id:              integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:              integer("company_id").notNull().references(() => companiesTable.id),
   leave_type_id:           integer("leave_type_id").notNull().references(() => leaveTypesTable.id),
   entitlement_days_per_year: integer("entitlement_days_per_year").notNull().default(21),
   accrual_method:          text("accrual_method").notNull().default("fixed"), // fixed | percentage | custom
@@ -122,7 +122,7 @@ export type LeaveAccrualHistory = typeof leaveAccrualHistoryTable.$inferSelect;
 /* ── Leave Blackout Dates ────────────────────────────────────── */
 export const leaveBlackoutDatesTable = pgTable("leave_blackout_dates", {
   id:          serial("id").primaryKey(),
-  company_id:  integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:  integer("company_id").notNull().references(() => companiesTable.id),
   start_date:  text("start_date").notNull(),
   end_date:    text("end_date").notNull(),
   reason_en:   text("reason_en"),

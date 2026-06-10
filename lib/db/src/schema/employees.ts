@@ -9,7 +9,7 @@ import { branchesTable } from "./branches";
 /* ── Departments ─────────────────────────────────────────────────── */
 export const departmentsTable = pgTable("departments", {
   id:              serial("id").primaryKey(),
-  company_id:      integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:      integer("company_id").notNull().references(() => companiesTable.id),
   name_en:         text("name_en").notNull(),
   name_ar:         text("name_ar").notNull(),
   description_en:  text("description_en"),
@@ -26,7 +26,7 @@ export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 /* ── Job Titles ──────────────────────────────────────────────────── */
 export const jobTitlesTable = pgTable("job_titles", {
   id:          serial("id").primaryKey(),
-  company_id:  integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:  integer("company_id").notNull().references(() => companiesTable.id),
   name_en:     text("name_en").notNull(),
   name_ar:     text("name_ar").notNull(),
   created_at:  timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -41,7 +41,7 @@ export type InsertJobTitle = z.infer<typeof insertJobTitleSchema>;
 /* ── Employees ───────────────────────────────────────────────────── */
 export const employeesTable = pgTable("employees", {
   id:                 serial("id").primaryKey(),
-  company_id:         integer("company_id").notNull().default(1).references(() => companiesTable.id),
+  company_id:         integer("company_id").notNull().references(() => companiesTable.id),
   employee_code:      text("employee_code").notNull(),
   first_name_en:      text("first_name_en").notNull(),
   last_name_en:       text("last_name_en").notNull(),
