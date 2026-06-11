@@ -57,3 +57,14 @@ attached_assets/
 .env.test
 .env.*.local
 .deploy-keys/
+
+# Database backup files — generated at runtime, must NEVER be committed.
+# Contains tenant data. Use a secure off-site backup store (e.g. S3/R2) instead.
+db-backups/
+erp-backups/
+*.sql.gz
+*.sql.gz.enc
+
+# Generated export / archive artifacts
+ui-export.tar.gz
+*.tar.gz
