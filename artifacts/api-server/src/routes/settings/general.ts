@@ -234,7 +234,7 @@ router.post(
 
       /* ── Level 2: all direct company_id tables ── */
       await tx.execute(
-        sql`DELETE FROM journal_entry_lines   WHERE journal_entry_id IN (SELECT id FROM journal_entries WHERE company_id = ${cid})`
+        sql`DELETE FROM journal_entry_lines   WHERE entry_id IN (SELECT id FROM journal_entries WHERE company_id = ${cid})`
       );
       await tx.execute(sql`DELETE FROM journal_entries       WHERE company_id = ${cid}`);
       await tx.execute(sql`DELETE FROM sales_returns         WHERE company_id = ${cid}`);
