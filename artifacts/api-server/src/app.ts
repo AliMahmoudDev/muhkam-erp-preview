@@ -286,17 +286,19 @@ if (process.env.NODE_ENV !== 'production') {
 /* Apply general limiter to all API routes */
 app.use('/api', generalLimiter);
 
-/* ── Swagger UI — accessible at /api/docs ────────────────────── */
-app.use('/api/docs', swaggerUi.serve);
-app.get(
-  '/api/docs',
-  swaggerUi.setup(swaggerSpec, {
-    customSiteTitle: 'مُحكم - MUHKAM ERP — API Docs',
-    customCss: '.swagger-ui .topbar { display: none }',
-    swaggerOptions: { persistAuthorization: true, docExpansion: 'none' },
-  })
-);
-app.get('/api/docs/spec.json', (_req, res) => res.json(swaggerSpec));
+/* ── Swagger UI — accessible outside production only ─────────── */
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/docs', swaggerUi.serve);
+  app.get(
+    '/api/docs',
+    swaggerUi.setup(swaggerSpec, {
+      customSiteTitle: 'مُحكم - MUHKAM ERP — API Docs',
+      customCss: '.swagger-ui .topbar { display: none }',
+      swaggerOptions: { persistAuthorization: true, docExpansion: 'none' },
+    })
+  );
+  app.get('/api/docs/spec.json', (_req, res) => res.json(swaggerSpec));
+}
 
 /* Apply stricter limiter to auth routes */
 app.use('/api/auth/login', authLimiter);
