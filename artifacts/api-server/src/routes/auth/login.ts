@@ -309,7 +309,7 @@ router.post('/auth/logout', authenticate, async (req, res) => {
   if (accessToken) await blacklistToken(accessToken);
 
   const cookieRefresh = (req.cookies as Record<string, string> | undefined)?.refresh_token;
-  const { refreshToken: bodyRefresh } = req.body as { refreshToken?: string };
+  const { refreshToken: bodyRefresh } = (req.body as { refreshToken?: string } | undefined) ?? {};
   const refreshToken = cookieRefresh ?? bodyRefresh;
   if (refreshToken) {
     const payload = verifyRefreshToken(refreshToken);

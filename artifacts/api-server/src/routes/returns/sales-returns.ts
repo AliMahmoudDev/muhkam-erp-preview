@@ -138,12 +138,25 @@ router.post("/sales-returns", wrap(async (req, res) => {
   const rtype: string = refund_type === "cash" ? "cash" : "credit";
   const txDate = date ?? new Date().toISOString().split("T")[0];
 
+  let effectiveCustomerId: string | null = customer_id != null ? String(customer_id) : null;
+  let effectiveCustomerName: string | null = customer_name ?? null;
+
   if (sale_id) {
     const [origSale] = await db
-      .select({ total_amount: salesTable.total_amount })
+      .select({
+        total_amount: salesTable.total_amount,
+        customer_id: salesTable.customer_id,
+        customer_name: salesTable.customer_name,
+      })
       .from(salesTable)
       .where(and(eq(salesTable.id, parseInt(sale_id)), eq(salesTable.company_id, companyId)));
     if (!origSale) { res.status(400).json({ error: "الفاتورة الأصلية غير موجودة" }); return; }
+    if (!effectiveCustomerId && origSale.customer_id) {
+      effectiveCustomerId = String(origSale.customer_id);
+    }
+    if (!effectiveCustomerName && origSale.customer_name) {
+      effectiveCustomerName = origSale.customer_name;
+    }
     const [retAgg] = await db
       .select({ returned: sql<string>`coalesce(sum(total_amount::numeric), 0)` })
       .from(salesReturnsTable)
@@ -157,8 +170,8 @@ router.post("/sales-returns", wrap(async (req, res) => {
     }
   }
 
-  if (customer_id) {
-    const custId = parseInt(customer_id);
+  if (effectiveCustomerId) {
+    const custId = parseInt(effectiveCustomerId);
     const [salesAgg] = await db
       .select({ total: sql<string>`coalesce(sum(total_amount::numeric), 0)` })
       .from(salesTable)
@@ -196,8 +209,8 @@ router.post("/sales-returns", wrap(async (req, res) => {
       request_id: requestId,
       return_no,
       sale_id: sale_id ?? null,
-      customer_id: customer_id ? parseInt(customer_id) : null,
-      customer_name: customer_name ?? null,
+      customer_id: effectiveCustomerId ? parseInt(effectiveCustomerId) : null,
+      customer_name: effectiveCustomerName ?? null,
       total_amount: String(total),
       refund_type: rtype,
       safe_id: safeIdInt,
@@ -298,7 +311,7 @@ router.post("/sales-returns", wrap(async (req, res) => {
           reference_type:  "sale_return",
           reference_id:    ret.id,
           reference_no:    return_no,
-          notes: customer_name ? `مرتجع مبيعات من ${customer_name}` : "مرتجع مبيعات",
+          notes: effectiveCustomerName ? `مرتجع مبيعات من ${effectiveCustomerName}` : "مرتجع مبيعات",
           date: txDate,
           warehouse_id: tenantWarehouseId,
           company_id:   companyId,
@@ -311,7 +324,7 @@ router.post("/sales-returns", wrap(async (req, res) => {
       const cogsAcct      = await getOrCreateCOGSAccount(companyId);
       await createJournalEntry({
         date:        txDate,
-        description: `عكس تكلفة مرتجع مبيعات ${return_no}${customer_name ? ` — ${customer_name}` : ""}`,
+        description: `عكس تكلفة مرتجع مبيعات ${return_no}${effectiveCustomerName ? ` — ${effectiveCustomerName}` : ""}`,
         reference:   return_no,
         lines: [
           { account: inventoryAcct, debit: totalCOGSReversed, credit: 0 },
@@ -331,8 +344,8 @@ router.post("/sales-returns", wrap(async (req, res) => {
     const finalTotal = actualTotal > 0 ? actualTotal : total;
 
     if (rtype === "credit") {
-      if (customer_id) {
-        const [cust] = await tx.select().from(customersTable).where(and(eq(customersTable.id, parseInt(customer_id)), eq(customersTable.company_id, companyId)));
+      if (effectiveCustomerId) {
+        const [cust] = await tx.select().from(customersTable).where(and(eq(customersTable.id, parseInt(effectiveCustomerId)), eq(customersTable.company_id, companyId)));
         if (cust) {
           await tx.update(customersTable)
             .set({ balance: String(Number(cust.balance) - finalTotal) })
@@ -352,25 +365,25 @@ router.post("/sales-returns", wrap(async (req, res) => {
         reference_id: ret.id,
         safe_id: safeIdInt,
         safe_name: safeName ?? "",
-        customer_id: customer_id ? parseInt(customer_id) : null,
-        customer_name: customer_name ?? null,
+        customer_id: effectiveCustomerId ? parseInt(effectiveCustomerId) : null,
+        customer_name: effectiveCustomerName ?? null,
         amount: String(finalTotal.toFixed(2)),
         direction: "out",
-        description: `مرتجع مبيعات نقدي ${return_no}${customer_name ? ` — ${customer_name}` : ""}`,
+        description: `مرتجع مبيعات نقدي ${return_no}${effectiveCustomerName ? ` — ${effectiveCustomerName}` : ""}`,
         date: txDate,
         company_id: companyId,
       });
     }
 
-    if (customer_id) {
+    if (effectiveCustomerId) {
       await tx.insert(customerLedgerTable).values({
-        customer_id: parseInt(customer_id),
+        customer_id: parseInt(effectiveCustomerId),
         type: "sale_return",
         amount: String(-finalTotal),
         reference_type: "sale_return",
         reference_id: ret.id,
         reference_no: return_no,
-        description: `مرتجع مبيعات ${return_no}${customer_name ? ` — ${customer_name}` : ""}`,
+        description: `مرتجع مبيعات ${return_no}${effectiveCustomerName ? ` — ${effectiveCustomerName}` : ""}`,
         date: txDate,
         company_id: companyId,
       });

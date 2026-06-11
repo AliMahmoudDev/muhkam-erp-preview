@@ -73,7 +73,7 @@ router.get(
           GROUP BY c.id
         ),
         cust_sales AS (
-          SELECT customer_id, COALESCE(SUM(CAST(total_amount AS FLOAT8)),0) AS tot
+          SELECT customer_id, COALESCE(SUM(CAST(remaining_amount AS FLOAT8)),0) AS tot
           FROM sales WHERE posting_status='posted' ${cfSimpleSql(companyId)} GROUP BY customer_id
         ),
         cust_receipts AS (
@@ -82,7 +82,7 @@ router.get(
         ),
         cust_returns AS (
           SELECT customer_id, COALESCE(SUM(CAST(total_amount AS FLOAT8)),0) AS tot
-          FROM sales_returns WHERE 1=1 ${cfSimpleSql(companyId)} GROUP BY customer_id
+          FROM sales_returns WHERE refund_type = 'credit' ${cfSimpleSql(companyId)} GROUP BY customer_id
         )
       SELECT c.id, c.name,
              COALESCE(al.ar_bal, 0)                                          AS system_balance,
