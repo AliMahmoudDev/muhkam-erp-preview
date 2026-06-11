@@ -1,41 +1,57 @@
-import { Router, type IRouter } from "express";
-import { eq, and, count, sql, desc } from "drizzle-orm";
-import { z } from "zod/v4";
-import { db, fixedAssetsTable, depreciationRunsTable, accountsTable, journalEntriesTable, journalEntryLinesTable } from "@workspace/db";
-import { wrap, httpError } from "../lib/async-handler";
-import { getOrCreateAccount } from "../lib/auto-account";
-import { requireFeature } from "../middleware/feature-guard";
-import { getTenant } from "../middleware/auth";
+import { Router, type IRouter } from 'express';
+import { eq, and, count, sql, desc } from 'drizzle-orm';
+import { z } from 'zod/v4';
+import {
+  db,
+  fixedAssetsTable,
+  depreciationRunsTable,
+  accountsTable,
+  journalEntriesTable,
+  journalEntryLinesTable,
+} from '@workspace/db';
+import { wrap, httpError } from '../lib/async-handler';
+import { getOrCreateAccount } from '../lib/auto-account';
+import { requireFeature } from '../middleware/feature-guard';
+import { getTenant } from '../middleware/auth';
 
-const DEP_METHODS = ["straight_line", "declining_balance"] as const;
+const DEP_METHODS = ['straight_line', 'declining_balance'] as const;
 
 const createFixedAssetSchema = z.object({
-  name: z.string().min(1, "اسم الأصل مطلوب").max(200),
+  name: z.string().min(1, 'اسم الأصل مطلوب').max(200),
   code: z.string().max(50).optional().nullable(),
   category: z.string().max(100).optional(),
   description: z.string().max(500).optional().nullable(),
-  purchase_date: z.string().min(1, "تاريخ الشراء مطلوب"),
-  purchase_cost: z.number({ error: "تكلفة الشراء يجب أن تكون رقماً" }).positive("تكلفة الشراء يجب أن تكون أكبر من صفر"),
+  purchase_date: z.string().min(1, 'تاريخ الشراء مطلوب'),
+  purchase_cost: z
+    .number({ error: 'تكلفة الشراء يجب أن تكون رقماً' })
+    .positive('تكلفة الشراء يجب أن تكون أكبر من صفر'),
   residual_value: z.number().min(0).optional().default(0),
-  useful_life_months: z.number({ error: "العمر الإنتاجي يجب أن يكون رقماً" }).int().min(1, "العمر الإنتاجي يجب أن يكون شهراً على الأقل"),
-  depreciation_method: z.enum(DEP_METHODS).optional().default("straight_line"),
+  useful_life_months: z
+    .number({ error: 'العمر الإنتاجي يجب أن يكون رقماً' })
+    .int()
+    .min(1, 'العمر الإنتاجي يجب أن يكون شهراً على الأقل'),
+  depreciation_method: z.enum(DEP_METHODS).optional().default('straight_line'),
 });
 
 const depreciateSchema = z.object({
-  period: z.string().regex(/^\d{4}-\d{2}$/, "الفترة مطلوبة بصيغة YYYY-MM"),
+  period: z.string().regex(/^\d{4}-\d{2}$/, 'الفترة مطلوبة بصيغة YYYY-MM'),
 });
 
 const disposeSchema = z.object({
-  disposal_date: z.string().min(1, "تاريخ الاستبعاد مطلوب"),
+  disposal_date: z.string().min(1, 'تاريخ الاستبعاد مطلوب'),
   disposal_proceeds: z.number().optional(),
 });
 
 const router: IRouter = Router();
-router.use("/fixed-assets", requireFeature("fixed_assets"));
+router.use('/fixed-assets', requireFeature('fixed_assets'));
 
 type AccountRef = { id: number; code: string; name: string };
 
-interface JLine { account: AccountRef; debit: number; credit: number }
+interface JLine {
+  account: AccountRef;
+  debit: number;
+  credit: number;
+}
 
 async function postEntry(
   cid: number,
@@ -46,26 +62,31 @@ async function postEntry(
 ): Promise<number> {
   const totalDebit = lines.reduce((s, l) => s + l.debit, 0);
   const totalCredit = lines.reduce((s, l) => s + l.credit, 0);
-  if (Math.abs(totalDebit - totalCredit) > 0.01) throw new Error("Journal entry imbalance");
+  if (Math.abs(totalDebit - totalCredit) > 0.01) throw new Error('Journal entry imbalance');
 
-  const [{ total }] = await db.select({ total: count() })
-    .from(journalEntriesTable).where(eq(journalEntriesTable.company_id, cid));
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(journalEntriesTable)
+    .where(eq(journalEntriesTable.company_id, cid));
 
-  const entryNo = `JE-${String(Number(total) + 1).padStart(5, "0")}`;
+  const entryNo = `JE-${String(Number(total) + 1).padStart(5, '0')}`;
 
-  const [entry] = await db.insert(journalEntriesTable).values({
-    entry_no: entryNo,
-    date,
-    description,
-    status: "posted",
-    reference,
-    total_debit: String(totalDebit),
-    total_credit: String(totalCredit),
-    company_id: cid,
-  }).returning({ id: journalEntriesTable.id });
+  const [entry] = await db
+    .insert(journalEntriesTable)
+    .values({
+      entry_no: entryNo,
+      date,
+      description,
+      status: 'posted',
+      reference,
+      total_debit: String(totalDebit),
+      total_credit: String(totalCredit),
+      company_id: cid,
+    })
+    .returning({ id: journalEntriesTable.id });
 
   await db.insert(journalEntryLinesTable).values(
-    lines.map(l => ({
+    lines.map((l) => ({
       entry_id: entry.id,
       account_id: l.account.id,
       account_code: l.account.code,
@@ -78,9 +99,10 @@ async function postEntry(
   for (const l of lines) {
     const delta = l.debit - l.credit;
     if (delta === 0) continue;
-    await db.update(accountsTable)
+    await db
+      .update(accountsTable)
       .set({ current_balance: sql`current_balance + ${String(delta)}::numeric` })
-      .where(eq(accountsTable.id, l.account.id));
+      .where(and(eq(accountsTable.id, l.account.id), eq(accountsTable.company_id, cid)));
   }
 
   return entry.id;
@@ -103,7 +125,7 @@ function calcMonthlyDep(asset: typeof fixedAssetsTable.$inferSelect): number {
   const residual = Number(asset.residual_value);
   const months = asset.useful_life_months;
   if (months < 1 || cost <= 0) return 0;
-  if (asset.depreciation_method === "straight_line") {
+  if (asset.depreciation_method === 'straight_line') {
     return (cost - residual) / months;
   }
   const bookValue = cost - Number(asset.accumulated_depreciation);
@@ -113,19 +135,25 @@ function calcMonthlyDep(asset: typeof fixedAssetsTable.$inferSelect): number {
 }
 
 function buildSchedule(asset: typeof fixedAssetsTable.$inferSelect) {
-  const schedule: { period: string; depreciation: number; accumulated: number; book_value: number }[] = [];
+  const schedule: {
+    period: string;
+    depreciation: number;
+    accumulated: number;
+    book_value: number;
+  }[] = [];
   let accumulated = 0;
   let bookValue = Number(asset.purchase_cost);
   const residual = Number(asset.residual_value);
   const cost = Number(asset.purchase_cost);
   const months = asset.useful_life_months;
   if (months < 1 || cost <= 0) return schedule;
-  const parts = asset.purchase_date.split("-").map(Number);
-  const startY = parts[0], startM = parts[1];
+  const parts = asset.purchase_date.split('-').map(Number);
+  const startY = parts[0],
+    startM = parts[1];
 
   for (let i = 0; i < months; i++) {
     let dep = 0;
-    if (asset.depreciation_method === "straight_line") {
+    if (asset.depreciation_method === 'straight_line') {
       dep = (cost - residual) / months;
     } else {
       const annualRate = 1 - Math.pow(Math.max(residual / cost, 0.0001), 12 / months);
@@ -137,10 +165,10 @@ function buildSchedule(asset: typeof fixedAssetsTable.$inferSelect) {
     accumulated += dep;
     bookValue -= dep;
 
-    const monthIdx = (startM - 1 + i + 1);
+    const monthIdx = startM - 1 + i + 1;
     const month = (monthIdx % 12) + 1;
     const year = startY + Math.floor(monthIdx / 12);
-    const period = `${year}-${String(month).padStart(2, "0")}`;
+    const period = `${year}-${String(month).padStart(2, '0')}`;
 
     schedule.push({
       period,
@@ -153,189 +181,302 @@ function buildSchedule(asset: typeof fixedAssetsTable.$inferSelect) {
 }
 
 /* GET /api/fixed-assets */
-router.get("/fixed-assets", wrap(async (req, res) => {
-  const cid = getTenant(req);
-  const assets = await db.select().from(fixedAssetsTable)
-    .where(eq(fixedAssetsTable.company_id, cid))
-    .orderBy(desc(fixedAssetsTable.created_at));
-  res.json(assets.map(fmt));
-}));
+router.get(
+  '/fixed-assets',
+  wrap(async (req, res) => {
+    const cid = getTenant(req);
+    const assets = await db
+      .select()
+      .from(fixedAssetsTable)
+      .where(eq(fixedAssetsTable.company_id, cid))
+      .orderBy(desc(fixedAssetsTable.created_at));
+    res.json(assets.map(fmt));
+  })
+);
 
 /* POST /api/fixed-assets */
-router.post("/fixed-assets", wrap(async (req, res) => {
-  const cid = getTenant(req);
-  const v = createFixedAssetSchema.safeParse(req.body);
-  if (!v.success) { res.status(400).json({ error: "بيانات الأصل الثابت غير صالحة", details: v.error.issues.map(i => i.message) }); return; }
-  const { name, code, category, description, purchase_date, purchase_cost, residual_value, useful_life_months, depreciation_method } = v.data;
+router.post(
+  '/fixed-assets',
+  wrap(async (req, res) => {
+    const cid = getTenant(req);
+    const v = createFixedAssetSchema.safeParse(req.body);
+    if (!v.success) {
+      res
+        .status(400)
+        .json({
+          error: 'بيانات الأصل الثابت غير صالحة',
+          details: v.error.issues.map((i) => i.message),
+        });
+      return;
+    }
+    const {
+      name,
+      code,
+      category,
+      description,
+      purchase_date,
+      purchase_cost,
+      residual_value,
+      useful_life_months,
+      depreciation_method,
+    } = v.data;
 
-  const safeCode = (code || name).replace(/\s+/g, "-").toUpperCase().slice(0, 20);
+    const safeCode = (code || name).replace(/\s+/g, '-').toUpperCase().slice(0, 20);
 
-  const assetAccount = await getOrCreateAccount(
-    { code: `ASSET-FA-${safeCode}`, name: `أصل ثابت - ${name}`, type: "asset" }, cid
-  );
-  const accDepAccount = await getOrCreateAccount(
-    { code: `ASSET-ACCDEPR-${safeCode}`, name: `مجمع إهلاك - ${name}`, type: "asset" }, cid
-  );
-  const depExpAccount = await getOrCreateAccount(
-    { code: `EXP-DEPR-${safeCode}`, name: `مصروف إهلاك - ${name}`, type: "expense" }, cid
-  );
+    const assetAccount = await getOrCreateAccount(
+      { code: `ASSET-FA-${safeCode}`, name: `أصل ثابت - ${name}`, type: 'asset' },
+      cid
+    );
+    const accDepAccount = await getOrCreateAccount(
+      { code: `ASSET-ACCDEPR-${safeCode}`, name: `مجمع إهلاك - ${name}`, type: 'asset' },
+      cid
+    );
+    const depExpAccount = await getOrCreateAccount(
+      { code: `EXP-DEPR-${safeCode}`, name: `مصروف إهلاك - ${name}`, type: 'expense' },
+      cid
+    );
 
-  const [asset] = await db.insert(fixedAssetsTable).values({
-    name,
-    code: safeCode,
-    category: category || "equipment",
-    description: description || null,
-    purchase_date,
-    purchase_cost: String(purchase_cost),
-    residual_value: String(residual_value || 0),
-    useful_life_months: Number(useful_life_months),
-    depreciation_method: depreciation_method || "straight_line",
-    asset_account_id: assetAccount.id,
-    acc_dep_account_id: accDepAccount.id,
-    dep_expense_account_id: depExpAccount.id,
-    accumulated_depreciation: "0",
-    status: "active",
-    company_id: cid,
-  }).returning();
+    const [asset] = await db
+      .insert(fixedAssetsTable)
+      .values({
+        name,
+        code: safeCode,
+        category: category || 'equipment',
+        description: description || null,
+        purchase_date,
+        purchase_cost: String(purchase_cost),
+        residual_value: String(residual_value || 0),
+        useful_life_months: Number(useful_life_months),
+        depreciation_method: depreciation_method || 'straight_line',
+        asset_account_id: assetAccount.id,
+        acc_dep_account_id: accDepAccount.id,
+        dep_expense_account_id: depExpAccount.id,
+        accumulated_depreciation: '0',
+        status: 'active',
+        company_id: cid,
+      })
+      .returning();
 
-  res.status(201).json(fmt(asset));
-}));
+    res.status(201).json(fmt(asset));
+  })
+);
 
 /* GET /api/fixed-assets/:id */
-router.get("/fixed-assets/:id", wrap(async (req, res) => {
-  const cid = getTenant(req);
-  const [asset] = await db.select().from(fixedAssetsTable)
-    .where(and(eq(fixedAssetsTable.id, Number(req.params.id)), eq(fixedAssetsTable.company_id, cid)));
-  if (!asset) throw httpError(404, "الأصل غير موجود");
+router.get(
+  '/fixed-assets/:id',
+  wrap(async (req, res) => {
+    const cid = getTenant(req);
+    const [asset] = await db
+      .select()
+      .from(fixedAssetsTable)
+      .where(
+        and(eq(fixedAssetsTable.id, Number(req.params.id)), eq(fixedAssetsTable.company_id, cid))
+      );
+    if (!asset) throw httpError(404, 'الأصل غير موجود');
 
-  const runs = await db.select().from(depreciationRunsTable)
-    .where(and(eq(depreciationRunsTable.asset_id, asset.id), eq(depreciationRunsTable.company_id, cid)))
-    .orderBy(depreciationRunsTable.period);
+    const runs = await db
+      .select()
+      .from(depreciationRunsTable)
+      .where(
+        and(eq(depreciationRunsTable.asset_id, asset.id), eq(depreciationRunsTable.company_id, cid))
+      )
+      .orderBy(depreciationRunsTable.period);
 
-  res.json({
-    ...fmt(asset),
-    schedule: buildSchedule(asset),
-    runs: runs.map(r => ({ ...r, amount: Number(r.amount), created_at: r.created_at.toISOString() })),
-  });
-}));
+    res.json({
+      ...fmt(asset),
+      schedule: buildSchedule(asset),
+      runs: runs.map((r) => ({
+        ...r,
+        amount: Number(r.amount),
+        created_at: r.created_at.toISOString(),
+      })),
+    });
+  })
+);
 
 /* POST /api/fixed-assets/:id/depreciate */
-router.post("/fixed-assets/:id/depreciate", wrap(async (req, res) => {
-  const cid = getTenant(req);
-  const depParsed = depreciateSchema.safeParse(req.body);
-  if (!depParsed.success) { res.status(400).json({ error: "الفترة مطلوبة بصيغة YYYY-MM", details: depParsed.error.issues.map(i => i.message) }); return; }
-  const { period } = depParsed.data;
+router.post(
+  '/fixed-assets/:id/depreciate',
+  wrap(async (req, res) => {
+    const cid = getTenant(req);
+    const depParsed = depreciateSchema.safeParse(req.body);
+    if (!depParsed.success) {
+      res
+        .status(400)
+        .json({
+          error: 'الفترة مطلوبة بصيغة YYYY-MM',
+          details: depParsed.error.issues.map((i) => i.message),
+        });
+      return;
+    }
+    const { period } = depParsed.data;
 
-  const [asset] = await db.select().from(fixedAssetsTable)
-    .where(and(eq(fixedAssetsTable.id, Number(req.params.id)), eq(fixedAssetsTable.company_id, cid)));
-  if (!asset) throw httpError(404, "الأصل غير موجود");
-  if (asset.status !== "active") throw httpError(400, "الأصل غير نشط");
+    const [asset] = await db
+      .select()
+      .from(fixedAssetsTable)
+      .where(
+        and(eq(fixedAssetsTable.id, Number(req.params.id)), eq(fixedAssetsTable.company_id, cid))
+      );
+    if (!asset) throw httpError(404, 'الأصل غير موجود');
+    if (asset.status !== 'active') throw httpError(400, 'الأصل غير نشط');
 
-  const [existingRun] = await db.select().from(depreciationRunsTable)
-    .where(and(
-      eq(depreciationRunsTable.asset_id, asset.id),
-      eq(depreciationRunsTable.period, period),
-      eq(depreciationRunsTable.company_id, cid)
-    ));
-  if (existingRun) throw httpError(409, "تم تنفيذ الإهلاك لهذه الفترة مسبقاً");
+    const [existingRun] = await db
+      .select()
+      .from(depreciationRunsTable)
+      .where(
+        and(
+          eq(depreciationRunsTable.asset_id, asset.id),
+          eq(depreciationRunsTable.period, period),
+          eq(depreciationRunsTable.company_id, cid)
+        )
+      );
+    if (existingRun) throw httpError(409, 'تم تنفيذ الإهلاك لهذه الفترة مسبقاً');
 
-  const bookValue = Number(asset.purchase_cost) - Number(asset.accumulated_depreciation);
-  const residual = Number(asset.residual_value);
-  if (bookValue <= residual) throw httpError(400, "وصل الأصل إلى قيمته الباقية — لا يوجد إهلاك");
+    const bookValue = Number(asset.purchase_cost) - Number(asset.accumulated_depreciation);
+    const residual = Number(asset.residual_value);
+    if (bookValue <= residual) throw httpError(400, 'وصل الأصل إلى قيمته الباقية — لا يوجد إهلاك');
 
-  let dep = calcMonthlyDep(asset);
-  dep = Math.min(dep, bookValue - residual);
-  dep = Math.round(dep * 100) / 100;
+    let dep = calcMonthlyDep(asset);
+    dep = Math.min(dep, bookValue - residual);
+    dep = Math.round(dep * 100) / 100;
 
-  if (!asset.dep_expense_account_id || !asset.acc_dep_account_id) {
-    throw httpError(400, "حسابات الإهلاك غير مُعيَّنة لهذا الأصل — يرجى تحديث بيانات الأصل");
-  }
+    if (!asset.dep_expense_account_id || !asset.acc_dep_account_id) {
+      throw httpError(400, 'حسابات الإهلاك غير مُعيَّنة لهذا الأصل — يرجى تحديث بيانات الأصل');
+    }
 
-  const depExpAccount = await db.select().from(accountsTable)
-    .where(and(eq(accountsTable.id, asset.dep_expense_account_id), eq(accountsTable.company_id, cid)))
-    .then(r => r[0]);
-  const accDepAccount = await db.select().from(accountsTable)
-    .where(and(eq(accountsTable.id, asset.acc_dep_account_id), eq(accountsTable.company_id, cid)))
-    .then(r => r[0]);
+    const depExpAccount = await db
+      .select()
+      .from(accountsTable)
+      .where(
+        and(eq(accountsTable.id, asset.dep_expense_account_id), eq(accountsTable.company_id, cid))
+      )
+      .then((r) => r[0]);
+    const accDepAccount = await db
+      .select()
+      .from(accountsTable)
+      .where(and(eq(accountsTable.id, asset.acc_dep_account_id), eq(accountsTable.company_id, cid)))
+      .then((r) => r[0]);
 
-  const entryId = await postEntry(cid, `${period}-01`, `إهلاك شهري - ${asset.name} - ${period}`, `DEP-${asset.code}-${period}`, [
-    { account: depExpAccount, debit: dep, credit: 0 },
-    { account: accDepAccount, debit: 0, credit: dep },
-  ]);
+    const entryId = await postEntry(
+      cid,
+      `${period}-01`,
+      `إهلاك شهري - ${asset.name} - ${period}`,
+      `DEP-${asset.code}-${period}`,
+      [
+        { account: depExpAccount, debit: dep, credit: 0 },
+        { account: accDepAccount, debit: 0, credit: dep },
+      ]
+    );
 
-  await db.update(fixedAssetsTable)
-    .set({ accumulated_depreciation: String(Number(asset.accumulated_depreciation) + dep) })
-    .where(and(eq(fixedAssetsTable.id, asset.id), eq(fixedAssetsTable.company_id, cid)));
+    await db
+      .update(fixedAssetsTable)
+      .set({ accumulated_depreciation: String(Number(asset.accumulated_depreciation) + dep) })
+      .where(and(eq(fixedAssetsTable.id, asset.id), eq(fixedAssetsTable.company_id, cid)));
 
-  const [run] = await db.insert(depreciationRunsTable).values({
-    asset_id: asset.id,
-    period,
-    amount: String(dep),
-    entry_id: entryId,
-    company_id: cid,
-  }).returning();
+    const [run] = await db
+      .insert(depreciationRunsTable)
+      .values({
+        asset_id: asset.id,
+        period,
+        amount: String(dep),
+        entry_id: entryId,
+        company_id: cid,
+      })
+      .returning();
 
-  res.json({ ...run, amount: Number(run.amount), created_at: run.created_at.toISOString() });
-}));
+    res.json({ ...run, amount: Number(run.amount), created_at: run.created_at.toISOString() });
+  })
+);
 
 /* POST /api/fixed-assets/:id/dispose */
-router.post("/fixed-assets/:id/dispose", wrap(async (req, res) => {
-  const cid = getTenant(req);
-  const disParsed = disposeSchema.safeParse(req.body);
-  if (!disParsed.success) { res.status(400).json({ error: "بيانات الاستبعاد غير صالحة", details: disParsed.error.issues.map(i => i.message) }); return; }
-  const { disposal_date, disposal_proceeds } = disParsed.data;
+router.post(
+  '/fixed-assets/:id/dispose',
+  wrap(async (req, res) => {
+    const cid = getTenant(req);
+    const disParsed = disposeSchema.safeParse(req.body);
+    if (!disParsed.success) {
+      res
+        .status(400)
+        .json({
+          error: 'بيانات الاستبعاد غير صالحة',
+          details: disParsed.error.issues.map((i) => i.message),
+        });
+      return;
+    }
+    const { disposal_date, disposal_proceeds } = disParsed.data;
 
-  const [asset] = await db.select().from(fixedAssetsTable)
-    .where(and(eq(fixedAssetsTable.id, Number(req.params.id)), eq(fixedAssetsTable.company_id, cid)));
-  if (!asset) throw httpError(404, "الأصل غير موجود");
-  if (asset.status !== "active") throw httpError(400, "الأصل مستبعد مسبقاً");
+    const [asset] = await db
+      .select()
+      .from(fixedAssetsTable)
+      .where(
+        and(eq(fixedAssetsTable.id, Number(req.params.id)), eq(fixedAssetsTable.company_id, cid))
+      );
+    if (!asset) throw httpError(404, 'الأصل غير موجود');
+    if (asset.status !== 'active') throw httpError(400, 'الأصل مستبعد مسبقاً');
 
-  const cost = Number(asset.purchase_cost);
-  const accumulated = Number(asset.accumulated_depreciation);
-  const bookValue = cost - accumulated;
-  const proceeds = Number(disposal_proceeds || 0);
-  const gainOrLoss = proceeds - bookValue;
+    const cost = Number(asset.purchase_cost);
+    const accumulated = Number(asset.accumulated_depreciation);
+    const bookValue = cost - accumulated;
+    const proceeds = Number(disposal_proceeds || 0);
+    const gainOrLoss = proceeds - bookValue;
 
-  if (!asset.asset_account_id || !asset.acc_dep_account_id) {
-    throw httpError(400, "حسابات الأصل غير مُعيَّنة — يرجى تحديث بيانات الأصل قبل الاستبعاد");
-  }
+    if (!asset.asset_account_id || !asset.acc_dep_account_id) {
+      throw httpError(400, 'حسابات الأصل غير مُعيَّنة — يرجى تحديث بيانات الأصل قبل الاستبعاد');
+    }
 
-  const assetAccount = await db.select().from(accountsTable)
-    .where(and(eq(accountsTable.id, asset.asset_account_id), eq(accountsTable.company_id, cid))).then(r => r[0]);
-  const accDepAccount = await db.select().from(accountsTable)
-    .where(and(eq(accountsTable.id, asset.acc_dep_account_id), eq(accountsTable.company_id, cid))).then(r => r[0]);
+    const assetAccount = await db
+      .select()
+      .from(accountsTable)
+      .where(and(eq(accountsTable.id, asset.asset_account_id), eq(accountsTable.company_id, cid)))
+      .then((r) => r[0]);
+    const accDepAccount = await db
+      .select()
+      .from(accountsTable)
+      .where(and(eq(accountsTable.id, asset.acc_dep_account_id), eq(accountsTable.company_id, cid)))
+      .then((r) => r[0]);
 
-  const lines: JLine[] = [
-    { account: accDepAccount, debit: accumulated, credit: 0 },
-    { account: assetAccount, debit: 0, credit: cost },
-  ];
+    const lines: JLine[] = [
+      { account: accDepAccount, debit: accumulated, credit: 0 },
+      { account: assetAccount, debit: 0, credit: cost },
+    ];
 
-  if (proceeds > 0) {
-    const cashAccount = await getOrCreateAccount(
-      { code: "ASSET-DISPOSAL-PROCEEDS", name: "حصيلة بيع أصول ثابتة", type: "asset" }, cid
+    if (proceeds > 0) {
+      const cashAccount = await getOrCreateAccount(
+        { code: 'ASSET-DISPOSAL-PROCEEDS', name: 'حصيلة بيع أصول ثابتة', type: 'asset' },
+        cid
+      );
+      lines.push({ account: cashAccount, debit: proceeds, credit: 0 });
+    }
+
+    if (gainOrLoss > 0) {
+      const gainAccount = await getOrCreateAccount(
+        { code: 'REV-ASSET-DISPOSAL', name: 'أرباح بيع أصول ثابتة', type: 'revenue' },
+        cid
+      );
+      lines.push({ account: gainAccount, debit: 0, credit: gainOrLoss });
+    } else if (gainOrLoss < 0) {
+      const lossAccount = await getOrCreateAccount(
+        { code: 'EXP-ASSET-DISPOSAL', name: 'خسائر بيع أصول ثابتة', type: 'expense' },
+        cid
+      );
+      lines.push({ account: lossAccount, debit: Math.abs(gainOrLoss), credit: 0 });
+    }
+
+    await postEntry(
+      cid,
+      disposal_date,
+      `استبعاد أصل ثابت - ${asset.name}`,
+      `DISP-${asset.code}`,
+      lines
     );
-    lines.push({ account: cashAccount, debit: proceeds, credit: 0 });
-  }
 
-  if (gainOrLoss > 0) {
-    const gainAccount = await getOrCreateAccount(
-      { code: "REV-ASSET-DISPOSAL", name: "أرباح بيع أصول ثابتة", type: "revenue" }, cid
-    );
-    lines.push({ account: gainAccount, debit: 0, credit: gainOrLoss });
-  } else if (gainOrLoss < 0) {
-    const lossAccount = await getOrCreateAccount(
-      { code: "EXP-ASSET-DISPOSAL", name: "خسائر بيع أصول ثابتة", type: "expense" }, cid
-    );
-    lines.push({ account: lossAccount, debit: Math.abs(gainOrLoss), credit: 0 });
-  }
+    await db
+      .update(fixedAssetsTable)
+      .set({ status: 'disposed', disposal_date, disposal_proceeds: String(proceeds) })
+      .where(and(eq(fixedAssetsTable.id, asset.id), eq(fixedAssetsTable.company_id, cid)));
 
-  await postEntry(cid, disposal_date, `استبعاد أصل ثابت - ${asset.name}`, `DISP-${asset.code}`, lines);
-
-  await db.update(fixedAssetsTable)
-    .set({ status: "disposed", disposal_date, disposal_proceeds: String(proceeds) })
-    .where(and(eq(fixedAssetsTable.id, asset.id), eq(fixedAssetsTable.company_id, cid)));
-
-  res.json({ message: "تم استبعاد الأصل وقيد المحاسبة", gain_loss: gainOrLoss });
-}));
+    res.json({ message: 'تم استبعاد الأصل وقيد المحاسبة', gain_loss: gainOrLoss });
+  })
+);
 
 export default router;
