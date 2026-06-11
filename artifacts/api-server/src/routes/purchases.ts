@@ -516,7 +516,8 @@ async function buildPurchaseJournalLines(
       .where(
         and(
           eq(transactionsTable.reference_type, 'purchase'),
-          eq(transactionsTable.reference_id, purchase.id)
+          eq(transactionsTable.reference_id, purchase.id),
+          eq(transactionsTable.company_id, companyId)
         )
       )
       .limit(1);
@@ -536,7 +537,9 @@ async function buildPurchaseJournalLines(
         account_id: customersTable.account_id,
       })
       .from(customersTable)
-      .where(eq(customersTable.id, purchase.customer_id));
+      .where(
+        and(eq(customersTable.id, purchase.customer_id), eq(customersTable.company_id, companyId))
+      );
 
     if (cust) {
       let apAcct: { id: number; code: string; name: string } | undefined;
@@ -544,12 +547,19 @@ async function buildPurchaseJournalLines(
         const [a] = await db
           .select({ id: accountsTable.id, code: accountsTable.code, name: accountsTable.name })
           .from(accountsTable)
-          .where(eq(accountsTable.id, cust.account_id));
+          .where(
+            and(eq(accountsTable.id, cust.account_id), eq(accountsTable.company_id, companyId))
+          );
         // نبحث عن حساب AP خاص بالعميل-المورد
         const [apRow] = await db
           .select({ id: accountsTable.id, code: accountsTable.code, name: accountsTable.name })
           .from(accountsTable)
-          .where(eq(accountsTable.code, `AP-C-${cust.customer_code ?? purchase.customer_id}`));
+          .where(
+            and(
+              eq(accountsTable.code, `AP-C-${cust.customer_code ?? purchase.customer_id}`),
+              eq(accountsTable.company_id, companyId)
+            )
+          );
         apAcct = apRow ?? (cust.customer_code ? undefined : a);
       }
       if (!apAcct) {
