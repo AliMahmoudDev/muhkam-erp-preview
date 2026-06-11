@@ -111,7 +111,7 @@ router.post(
           )
         );
       if (custRow) {
-        const ledgerBal = await getCustomerLedgerBalance(custRow.account_id);
+        const ledgerBal = await getCustomerLedgerBalance(custRow.account_id, sale.company_id);
         if (ledgerBal < Number(sale.remaining_amount) - 0.001) {
           throw httpError(
             400,

@@ -17,7 +17,7 @@ import {
   customersTable,
   systemSettingsTable,
 } from '@workspace/db';
-import { getCustomerLedgerBalance } from './ledger-balance';
+import { getCustomerLedgerBalance, getSupplierLedgerBalance } from './ledger-balance';
 
 /* ── Thresholds ─────────────────────────────────────────────── */
 const CUSTOMER_DEBT_LIMIT = 10_000;
@@ -190,7 +190,7 @@ export async function checkCustomerDebt(
     : await db.select().from(customersTable).where(eq(customersTable.company_id, companyId));
 
   for (const c of rows) {
-    const balance = await getCustomerLedgerBalance(c.id);
+    const balance = await getCustomerLedgerBalance(c.account_id, companyId);
     if (balance > CUSTOMER_DEBT_LIMIT) {
       await upsertAlert(
         companyId,
@@ -222,7 +222,7 @@ export async function checkSupplierPayable(
         .where(and(eq(customersTable.is_supplier, true), eq(customersTable.company_id, companyId)));
 
   for (const s of rows) {
-    const balance = await getCustomerLedgerBalance(s.id);
+    const balance = await getSupplierLedgerBalance(s.account_id, companyId);
     if (balance > SUPPLIER_DEBT_LIMIT) {
       await upsertAlert(
         companyId,

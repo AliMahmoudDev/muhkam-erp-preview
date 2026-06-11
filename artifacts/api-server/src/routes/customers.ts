@@ -107,7 +107,7 @@ router.get(
       c.classification_id, c.source, c.price_list_id, c.price_list_markup,
       COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS ledger_balance
     FROM customers c
-    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id
+    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id AND cl.company_id = c.company_id
     ${companyFilter}
     GROUP BY c.id, c.name, c.customer_code, c.phone,
              c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at,
@@ -254,7 +254,7 @@ router.get(
       c.is_customer, c.is_supplier, c.account_id, c.created_at,
       COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS ledger_balance
     FROM customers c
-    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id
+    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id AND cl.company_id = c.company_id
     WHERE c.id = ${id} AND c.company_id = ${companyId}
     GROUP BY c.id, c.name, c.customer_code, c.phone,
              c.is_customer, c.is_supplier, c.account_id, c.created_at
@@ -521,7 +521,7 @@ router.post(
       .select()
       .from(customersTable)
       .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, cid)));
-    const ledgerBal = await getCustomerLedgerBalance((updated ?? customer).account_id);
+    const ledgerBal = await getCustomerLedgerBalance((updated ?? customer).account_id, cid);
     res.json(CreateCustomerReceiptResponse.parse(formatCustomer(updated ?? customer, ledgerBal)));
   })
 );
@@ -655,7 +655,7 @@ router.post(
       .select()
       .from(customersTable)
       .where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidPay)));
-    const ledgerBal = await getCustomerLedgerBalance(updated.account_id);
+    const ledgerBal = await getCustomerLedgerBalance(updated.account_id, cidPay);
     res.json({ success: true, customer: formatCustomer(updated, ledgerBal) });
   })
 );
@@ -890,6 +890,7 @@ router.get(
         SELECT SUM(CAST(cl2.amount AS FLOAT8))
         FROM customer_ledger cl2
         WHERE cl2.customer_id = c.id
+          AND cl2.company_id = c.company_id
           AND (${dateFrom}::date IS NULL OR cl2.date::date < ${dateFrom}::date)
       ), 0) AS opening_balance,
       COALESCE(SUM(CASE
@@ -903,8 +904,8 @@ router.get(
           AND (${dateTo}::date   IS NULL OR cl.date::date <= ${dateTo}::date)
         THEN ABS(CAST(cl.amount AS FLOAT8)) ELSE 0 END), 0) AS period_credits
     FROM customers c
-    LEFT JOIN customer_classifications cc ON cc.id = c.classification_id
-    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id
+    LEFT JOIN customer_classifications cc ON cc.id = c.classification_id AND cc.company_id = c.company_id
+    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id AND cl.company_id = c.company_id
     WHERE c.company_id = ${companyId} ${customerFilter} ${classificationFilter}
     GROUP BY c.id, c.name, c.customer_code, cc.name
     ORDER BY c.customer_code

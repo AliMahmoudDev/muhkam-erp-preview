@@ -10,11 +10,13 @@
  *   - لا تُنشئ أو تحذف سجلات — تُصلح الأرصدة فقط
  */
 
-import { db } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { db } from '@workspace/db';
+import { sql } from 'drizzle-orm';
 
 const TOLERANCE = 0.005;
-function r2(n: number) { return Math.round(n * 100) / 100; }
+function r2(n: number) {
+  return Math.round(n * 100) / 100;
+}
 
 /* ───────────────────────────── Types ────────────────────────────────────── */
 
@@ -29,7 +31,7 @@ export interface DriftItem {
 
 export interface IntegrityCheck {
   check: string;
-  status: "OK" | "DRIFT";
+  status: 'OK' | 'DRIFT';
   drift_count: number;
   items: DriftItem[];
   checked_at: string;
@@ -40,9 +42,10 @@ export interface IntegrityCheck {
  * يتحقق: هل كل قيد مرحَّل يحقق مجموع_مدين = مجموع_دائن ؟
  * يكشف أي قيد مُدخَل يدوياً أو من جيل سابق قبل تطبيق التحقق المركزي.
  * ─────────────────────────────────────────────────────────────────────────── */
-export async function checkJournalEntryBalance(): Promise<IntegrityCheck> {
+export async function checkJournalEntryBalance(companyId: number): Promise<IntegrityCheck> {
   // nosemgrep: ban-drizzle-sql-raw — complex HAVING clause requires raw SQL; no user input
-  const rows = await db.execute(sql.raw(`
+  const rows = await db.execute(
+    sql.raw(`
     SELECT
       je.id,
       je.entry_no                            AS name,
@@ -52,7 +55,7 @@ export async function checkJournalEntryBalance(): Promise<IntegrityCheck> {
       COALESCE(SUM(CAST(jel.credit AS FLOAT8)), 0) AS line_credit
     FROM journal_entries je
     LEFT JOIN journal_entry_lines jel ON jel.entry_id = je.id
-    WHERE je.status = 'posted'
+    WHERE je.status = 'posted' AND je.company_id = ${companyId}
     GROUP BY je.id, je.entry_no, je.total_debit, je.total_credit
     HAVING
       ABS(CAST(je.total_debit AS FLOAT8) - CAST(je.total_credit AS FLOAT8)) > ${TOLERANCE}
@@ -60,22 +63,23 @@ export async function checkJournalEntryBalance(): Promise<IntegrityCheck> {
         CAST(je.total_debit AS FLOAT8) -
         COALESCE(SUM(CAST(jel.debit AS FLOAT8)), 0)
       ) > ${TOLERANCE}
-  `));
+  `)
+  );
 
-  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map(r => ({
-    id:       Number(r.id),
-    name:     String(r.name),
-    stored:   r2(Number(r.hdr_debit)),
+  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map((r) => ({
+    id: Number(r.id),
+    name: String(r.name),
+    stored: r2(Number(r.hdr_debit)),
     computed: r2(Number(r.line_debit)),
-    drift:    r2(Number(r.hdr_debit) - Number(r.hdr_credit)),
+    drift: r2(Number(r.hdr_debit) - Number(r.hdr_credit)),
   }));
 
   return {
-    check:       "journal_entry_balance",
-    status:      items.length === 0 ? "OK" : "DRIFT",
+    check: 'journal_entry_balance',
+    status: items.length === 0 ? 'OK' : 'DRIFT',
     drift_count: items.length,
     items,
-    checked_at:  new Date().toISOString(),
+    checked_at: new Date().toISOString(),
   };
 }
 
@@ -87,9 +91,10 @@ export async function checkJournalEntryBalance(): Promise<IntegrityCheck> {
  * الانحراف = current_balance - SUM(jel.debit - jel.credit)
  * إذا كان |انحراف| > TOLERANCE فالحساب مُنحرف.
  * ─────────────────────────────────────────────────────────────────────────── */
-export async function checkAccountBalanceDrift(): Promise<IntegrityCheck> {
+export async function checkAccountBalanceDrift(companyId: number): Promise<IntegrityCheck> {
   // nosemgrep: ban-drizzle-sql-raw — complex HAVING clause requires raw SQL; no user input
-  const rows = await db.execute(sql.raw(`
+  const rows = await db.execute(
+    sql.raw(`
     SELECT
       a.id,
       a.name,
@@ -102,30 +107,31 @@ export async function checkAccountBalanceDrift(): Promise<IntegrityCheck> {
     FROM accounts a
     LEFT JOIN journal_entry_lines jel ON jel.account_id = a.id
     LEFT JOIN journal_entries je
-      ON je.id = jel.entry_id AND je.status = 'posted'
-    WHERE a.is_posting = true AND a.is_active = true
+      ON je.id = jel.entry_id AND je.status = 'posted' AND je.company_id = ${companyId}
+    WHERE a.company_id = ${companyId} AND a.is_posting = true AND a.is_active = true
     GROUP BY a.id, a.name, a.code, a.current_balance
     HAVING ABS(
       CAST(a.current_balance AS FLOAT8) -
       COALESCE(SUM(CAST(jel.debit AS FLOAT8) - CAST(jel.credit AS FLOAT8)), 0)
     ) > ${TOLERANCE}
-  `));
+  `)
+  );
 
-  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map(r => ({
-    id:       Number(r.id),
-    name:     String(r.name),
-    code:     String(r.code),
-    stored:   r2(Number(r.stored)),
+  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map((r) => ({
+    id: Number(r.id),
+    name: String(r.name),
+    code: String(r.code),
+    stored: r2(Number(r.stored)),
     computed: r2(Number(r.computed)),
-    drift:    r2(Number(r.stored) - Number(r.computed)),
+    drift: r2(Number(r.stored) - Number(r.computed)),
   }));
 
   return {
-    check:       "account_balance_drift",
-    status:      items.length === 0 ? "OK" : "DRIFT",
+    check: 'account_balance_drift',
+    status: items.length === 0 ? 'OK' : 'DRIFT',
     drift_count: items.length,
     items,
-    checked_at:  new Date().toISOString(),
+    checked_at: new Date().toISOString(),
   };
 }
 
@@ -140,37 +146,40 @@ export async function checkAccountBalanceDrift(): Promise<IntegrityCheck> {
  * لذا الانحراف في customers.balance لا يؤثر على عرض الرصيد.
  * لكن بعض المسارات القديمة قد تقرأ customers.balance مباشرةً.
  * ─────────────────────────────────────────────────────────────────────────── */
-export async function checkCustomerBalanceDrift(): Promise<IntegrityCheck> {
+export async function checkCustomerBalanceDrift(companyId: number): Promise<IntegrityCheck> {
   // nosemgrep: ban-drizzle-sql-raw — complex HAVING clause requires raw SQL; no user input
-  const rows = await db.execute(sql.raw(`
+  const rows = await db.execute(
+    sql.raw(`
     SELECT
       c.id,
       c.name,
       CAST(c.balance AS FLOAT8)              AS stored,
       COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS computed
     FROM customers c
-    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id
+    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id AND cl.company_id = c.company_id
+    WHERE c.company_id = ${companyId}
     GROUP BY c.id, c.name, c.balance
     HAVING ABS(
       CAST(c.balance AS FLOAT8) -
       COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0)
     ) > ${TOLERANCE}
-  `));
+  `)
+  );
 
-  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map(r => ({
-    id:       Number(r.id),
-    name:     String(r.name),
-    stored:   r2(Number(r.stored)),
+  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map((r) => ({
+    id: Number(r.id),
+    name: String(r.name),
+    stored: r2(Number(r.stored)),
     computed: r2(Number(r.computed)),
-    drift:    r2(Number(r.stored) - Number(r.computed)),
+    drift: r2(Number(r.stored) - Number(r.computed)),
   }));
 
   return {
-    check:       "customer_balance_drift",
-    status:      items.length === 0 ? "OK" : "DRIFT",
+    check: 'customer_balance_drift',
+    status: items.length === 0 ? 'OK' : 'DRIFT',
     drift_count: items.length,
     items,
-    checked_at:  new Date().toISOString(),
+    checked_at: new Date().toISOString(),
   };
 }
 
@@ -182,37 +191,40 @@ export async function checkCustomerBalanceDrift(): Promise<IntegrityCheck> {
  * الكميات الموجبة: مشتريات، أرصدة افتتاحية، مرتجعات مبيعات
  * الكميات السالبة: مبيعات، مرتجعات مشتريات، تسويات سالبة
  * ─────────────────────────────────────────────────────────────────────────── */
-export async function checkInventoryDrift(): Promise<IntegrityCheck> {
+export async function checkInventoryDrift(companyId: number): Promise<IntegrityCheck> {
   // nosemgrep: ban-drizzle-sql-raw — complex HAVING clause requires raw SQL; no user input
-  const rows = await db.execute(sql.raw(`
+  const rows = await db.execute(
+    sql.raw(`
     SELECT
       p.id,
       p.name,
       CAST(p.quantity AS FLOAT8)                  AS stored,
       COALESCE(SUM(CAST(sm.quantity AS FLOAT8)), 0) AS computed
     FROM products p
-    LEFT JOIN stock_movements sm ON sm.product_id = p.id
+    LEFT JOIN stock_movements sm ON sm.product_id = p.id AND sm.company_id = p.company_id
+    WHERE p.company_id = ${companyId}
     GROUP BY p.id, p.name, p.quantity
     HAVING ABS(
       CAST(p.quantity AS FLOAT8) -
       COALESCE(SUM(CAST(sm.quantity AS FLOAT8)), 0)
     ) > ${TOLERANCE}
-  `));
+  `)
+  );
 
-  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map(r => ({
-    id:       Number(r.id),
-    name:     String(r.name),
-    stored:   r2(Number(r.stored)),
+  const items: DriftItem[] = (rows.rows as Record<string, unknown>[]).map((r) => ({
+    id: Number(r.id),
+    name: String(r.name),
+    stored: r2(Number(r.stored)),
     computed: r2(Number(r.computed)),
-    drift:    r2(Number(r.stored) - Number(r.computed)),
+    drift: r2(Number(r.stored) - Number(r.computed)),
   }));
 
   return {
-    check:       "inventory_drift",
-    status:      items.length === 0 ? "OK" : "DRIFT",
+    check: 'inventory_drift',
+    status: items.length === 0 ? 'OK' : 'DRIFT',
     drift_count: items.length,
     items,
-    checked_at:  new Date().toISOString(),
+    checked_at: new Date().toISOString(),
   };
 }
 
@@ -221,9 +233,10 @@ export async function checkInventoryDrift(): Promise<IntegrityCheck> {
  * يُعدِّل accounts.current_balance للحسابات ذات الانحراف فقط.
  * لا يمس الحسابات التي رصيدها صحيح.
  * ─────────────────────────────────────────────────────────────────────────── */
-export async function repairAccountBalances(): Promise<{ repaired: number }> {
+export async function repairAccountBalances(companyId: number): Promise<{ repaired: number }> {
   // nosemgrep: ban-drizzle-sql-raw — UPDATE…FROM…HAVING not expressible in Drizzle; no user input
-  const result = await db.execute(sql.raw(`
+  const result = await db.execute(
+    sql.raw(`
     UPDATE accounts a
     SET current_balance = subq.correct_balance
     FROM (
@@ -236,17 +249,18 @@ export async function repairAccountBalances(): Promise<{ repaired: number }> {
       FROM accounts a2
       LEFT JOIN journal_entry_lines jel ON jel.account_id = a2.id
       LEFT JOIN journal_entries je
-        ON je.id = jel.entry_id AND je.status = 'posted'
-      WHERE a2.is_posting = true AND a2.is_active = true
+        ON je.id = jel.entry_id AND je.status = 'posted' AND je.company_id = ${companyId}
+      WHERE a2.company_id = ${companyId} AND a2.is_posting = true AND a2.is_active = true
       GROUP BY a2.id, a2.current_balance
       HAVING ABS(
         CAST(a2.current_balance AS FLOAT8) -
         COALESCE(SUM(CAST(jel.debit AS FLOAT8) - CAST(jel.credit AS FLOAT8)), 0)
       ) > ${TOLERANCE}
     ) subq
-    WHERE a.id = subq.id
+    WHERE a.id = subq.id AND a.company_id = ${companyId}
     RETURNING a.id
-  `));
+  `)
+  );
 
   return { repaired: result.rows.length };
 }
@@ -255,9 +269,10 @@ export async function repairAccountBalances(): Promise<{ repaired: number }> {
  * WRITE OPERATION — admin only
  * يُعدِّل customers.balance للعملاء ذوي الانحراف فقط.
  * ─────────────────────────────────────────────────────────────────────────── */
-export async function repairCustomerBalances(): Promise<{ repaired: number }> {
+export async function repairCustomerBalances(companyId: number): Promise<{ repaired: number }> {
   // nosemgrep: ban-drizzle-sql-raw — UPDATE…FROM…HAVING not expressible in Drizzle; no user input
-  const result = await db.execute(sql.raw(`
+  const result = await db.execute(
+    sql.raw(`
     UPDATE customers c
     SET balance = subq.correct_balance::numeric
     FROM (
@@ -265,47 +280,48 @@ export async function repairCustomerBalances(): Promise<{ repaired: number }> {
         c2.id,
         COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS correct_balance
       FROM customers c2
-      LEFT JOIN customer_ledger cl ON cl.customer_id = c2.id
+      LEFT JOIN customer_ledger cl ON cl.customer_id = c2.id AND cl.company_id = c2.company_id
+      WHERE c2.company_id = ${companyId}
       GROUP BY c2.id, c2.balance
       HAVING ABS(
         CAST(c2.balance AS FLOAT8) -
         COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0)
       ) > ${TOLERANCE}
     ) subq
-    WHERE c.id = subq.id
+    WHERE c.id = subq.id AND c.company_id = ${companyId}
     RETURNING c.id
-  `));
+  `)
+  );
 
   return { repaired: result.rows.length };
 }
 
 /* ── 7. تشغيل جميع الفحوصات دفعةً واحدة ────────────────────────────────────── */
-export async function runAllIntegrityChecks(): Promise<{
-  overall_status: "OK" | "DRIFT_DETECTED";
+export async function runAllIntegrityChecks(companyId: number): Promise<{
+  overall_status: 'OK' | 'DRIFT_DETECTED';
   checks: Record<string, IntegrityCheck>;
   generated_at: string;
 }> {
-  const [jeBalance, accountDrift, customerDrift, inventoryDrift] =
-    await Promise.all([
-      checkJournalEntryBalance(),
-      checkAccountBalanceDrift(),
-      checkCustomerBalanceDrift(),
-      checkInventoryDrift(),
-    ]);
+  const [jeBalance, accountDrift, customerDrift, inventoryDrift] = await Promise.all([
+    checkJournalEntryBalance(companyId),
+    checkAccountBalanceDrift(companyId),
+    checkCustomerBalanceDrift(companyId),
+    checkInventoryDrift(companyId),
+  ]);
 
   const allOk =
-    jeBalance.status === "OK" &&
-    accountDrift.status === "OK" &&
-    customerDrift.status === "OK" &&
-    inventoryDrift.status === "OK";
+    jeBalance.status === 'OK' &&
+    accountDrift.status === 'OK' &&
+    customerDrift.status === 'OK' &&
+    inventoryDrift.status === 'OK';
 
   return {
-    overall_status: allOk ? "OK" : "DRIFT_DETECTED",
+    overall_status: allOk ? 'OK' : 'DRIFT_DETECTED',
     checks: {
       journal_entry_balance: jeBalance,
-      account_balance:       accountDrift,
-      customer_balance:      customerDrift,
-      inventory:             inventoryDrift,
+      account_balance: accountDrift,
+      customer_balance: customerDrift,
+      inventory: inventoryDrift,
     },
     generated_at: new Date().toISOString(),
   };
