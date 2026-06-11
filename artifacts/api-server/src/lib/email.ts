@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { logger } from './logger';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -12,7 +13,7 @@ export async function sendEmail({
   html: string;
 }) {
   if (!resend) {
-    console.warn('[Email] RESEND_API_KEY not set — skipping email');
+    logger.warn('[Email] RESEND_API_KEY not set — skipping email');
     return;
   }
   try {
@@ -23,6 +24,6 @@ export async function sendEmail({
       html,
     });
   } catch (err) {
-    console.error('[Email] Failed to send:', err);
+    logger.error({ err }, '[Email] Failed to send');
   }
 }

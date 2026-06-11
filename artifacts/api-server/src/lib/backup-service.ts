@@ -31,7 +31,7 @@ import {
   erpUsersTable, systemSettingsTable,
   alertsTable, auditLogsTable,
 } from "@workspace/db";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { logger } from "./logger";
 import { isEncryptionEnabled, encryptFile, encryptedExtension } from "./backup-crypto";
 import { alertManager, ALERT_TYPES } from "./telegram-alert-manager";
@@ -311,9 +311,17 @@ export function isBackupInProgress() {
   return isBackingUp;
 }
 
-/** Check a boolean backup trigger setting */
+/* Company-id scope for backup-trigger settings — must match the write side in backups.ts */
+const BACKUP_SETTINGS_COMPANY_ID = 1;
+
+/** Check a boolean backup trigger setting (scoped to the backup-settings company) */
 export async function isBackupTriggerEnabled(key: "backup_on_login" | "backup_on_logout"): Promise<boolean> {
-  const [row] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.key, key));
+  const [row] = await db.select().from(systemSettingsTable).where(
+    and(
+      eq(systemSettingsTable.key, key),
+      eq(systemSettingsTable.company_id, BACKUP_SETTINGS_COMPANY_ID),
+    ),
+  );
   return row?.value === "true";
 }
 
