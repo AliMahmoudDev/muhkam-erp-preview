@@ -1,4 +1,5 @@
 import { openPrintWindow } from '../print-utils';
+import { getTenantSettingsStorageKey } from '../tenant-storage';
 
 export function escapeHtml(unsafe: string | null | undefined): string {
   if (unsafe == null) return '';
@@ -12,7 +13,7 @@ export function escapeHtml(unsafe: string | null | undefined): string {
 
 export function getSettings(): { companyName: string; phone: string; address: string } {
   try {
-    const raw = localStorage.getItem('halal_erp_settings');
+    const raw = localStorage.getItem(getTenantSettingsStorageKey());
     if (raw) {
       const p = JSON.parse(raw);
       return {
@@ -24,8 +25,6 @@ export function getSettings(): { companyName: string; phone: string; address: st
   } catch {}
   return { companyName: 'هالال تك', phone: '', address: '' };
 }
-
-const STORAGE_KEY = 'halal_erp_settings';
 
 function _toWestern(str: string): string {
   return str.replace(/[٠-٩]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0x0630));
@@ -51,14 +50,15 @@ export function getNumSettings(): {
   dateLocale: string;
 } {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getTenantSettingsStorageKey());
     if (raw) {
       const p = JSON.parse(raw);
       const currMap: Record<string, string> = { EGP: 'ج.م', USD: '$', CNY: '¥' };
       const numFmt = p.numberFormat === 'arabic-indic' ? 'arabic-indic' : 'western';
       const dp = [0, 2, 3].includes(p.decimalPlaces) ? p.decimalPlaces : 2;
       const tSep = ['comma', 'period', 'space', 'arabic-comma'].includes(p.thousandsSeparator)
-        ? p.thousandsSeparator : 'comma';
+        ? p.thousandsSeparator
+        : 'comma';
       const dateLocale = numFmt === 'arabic-indic' ? 'ar-EG' : 'ar-EG-u-nu-latn';
       return { sym: currMap[p.currency] ?? 'ج.م', numFmt, dp, tSep, dateLocale };
     }

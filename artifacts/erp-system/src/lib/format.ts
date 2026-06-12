@@ -1,12 +1,12 @@
-const STORAGE_KEY = 'halal_erp_settings';
+import { getTenantSettingsStorageKey } from './tenant-storage';
 
 type CurrencyCode = 'EGP' | 'USD' | 'CNY';
 type ThousandsSeparator = 'comma' | 'period' | 'space' | 'arabic-comma' | 'none';
 
 const CURRENCY_MAP: Record<CurrencyCode, { locale: string; symbol: string }> = {
   EGP: { locale: 'ar-EG-u-nu-latn', symbol: 'ج.م' },
-  USD: { locale: 'en-US',           symbol: '$'    },
-  CNY: { locale: 'zh-CN',           symbol: '¥'    },
+  USD: { locale: 'en-US', symbol: '$' },
+  CNY: { locale: 'zh-CN', symbol: '¥' },
 };
 
 /* ─── numeral helpers ──────────────────────────────────────── */
@@ -21,7 +21,7 @@ function toArabicIndic(str: string): string {
 
 function getActiveCurrency(): CurrencyCode {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getTenantSettingsStorageKey());
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.currency && CURRENCY_MAP[parsed.currency as CurrencyCode]) {
@@ -34,7 +34,7 @@ function getActiveCurrency(): CurrencyCode {
 
 function getActiveNumberFormat(): 'western' | 'arabic-indic' {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getTenantSettingsStorageKey());
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.numberFormat === 'arabic-indic') return 'arabic-indic';
@@ -45,7 +45,7 @@ function getActiveNumberFormat(): 'western' | 'arabic-indic' {
 
 function getActiveDecimalPlaces(): 0 | 2 | 3 {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getTenantSettingsStorageKey());
     if (raw) {
       const parsed = JSON.parse(raw);
       const dp = parsed.decimalPlaces;
@@ -57,11 +57,12 @@ function getActiveDecimalPlaces(): 0 | 2 | 3 {
 
 function getActiveThousandsSep(): ThousandsSeparator {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getTenantSettingsStorageKey());
     if (raw) {
       const parsed = JSON.parse(raw);
       const sep = parsed.thousandsSeparator;
-      if (['comma', 'period', 'space', 'arabic-comma'].includes(sep)) return sep as ThousandsSeparator;
+      if (['comma', 'period', 'space', 'arabic-comma'].includes(sep))
+        return sep as ThousandsSeparator;
     }
   } catch {}
   return 'comma';
@@ -77,17 +78,16 @@ function applyNumberFormat(str: string, fmt: 'western' | 'arabic-indic'): string
 function applyThousandsSep(str: string, sep: ThousandsSeparator): string {
   if (sep === 'comma') return str; // default Intl output uses comma
   if (sep === 'none') return str.replace(/,/g, '');
-  return str
-    .replace(/,/g, sep === 'period' ? '.' : sep === 'space' ? ' ' : '،');
+  return str.replace(/,/g, sep === 'period' ? '.' : sep === 'space' ? ' ' : '،');
 }
 
 export function formatCurrency(amount: number | undefined | null): string {
   if (amount === undefined || amount === null) return '0.00';
   const code = getActiveCurrency();
   const { locale, symbol } = CURRENCY_MAP[code];
-  const numFmt  = getActiveNumberFormat();
-  const dp      = getActiveDecimalPlaces();
-  const tSep    = getActiveThousandsSep();
+  const numFmt = getActiveNumberFormat();
+  const dp = getActiveDecimalPlaces();
+  const tSep = getActiveThousandsSep();
   try {
     const raw = new Intl.NumberFormat(locale, {
       style: 'currency',
@@ -107,9 +107,9 @@ export function formatCurrency(amount: number | undefined | null): string {
  */
 export function formatNumber(value: number | undefined | null, decimals = 2): string {
   if (value === undefined || value === null) return '0';
-  const fmt  = getActiveNumberFormat();
+  const fmt = getActiveNumberFormat();
   const tSep = getActiveThousandsSep();
-  const raw  = value.toLocaleString('en-US', {
+  const raw = value.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
@@ -145,8 +145,8 @@ export function formatDate(dateStr: string | undefined | null): string {
   try {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return '-';
-    const dd   = String(date.getDate()).padStart(2, '0');
-    const mm   = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
     const yyyy = String(date.getFullYear());
     return `${dd}/${mm}/${yyyy}`;
   } catch {

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { getTenantSettingsStorageKey } from '@/lib/tenant-storage';
 
 export type CurrencyCode = 'EGP' | 'USD' | 'CNY';
 export type FontFamily = 'Tajawal' | 'Cairo' | 'Almarai' | 'Changa' | 'Inter';
@@ -31,9 +32,9 @@ export interface AppSettings {
 }
 
 export const FONT_SIZES: Record<FontSize, { label: string; base: string; cssVal: string }> = {
-  sm: { label: 'صغير',      base: '13px', cssVal: '0.8125rem' },
-  md: { label: 'متوسط',     base: '15px', cssVal: '0.9375rem' },
-  lg: { label: 'كبير',      base: '17px', cssVal: '1.0625rem' },
+  sm: { label: 'صغير', base: '13px', cssVal: '0.8125rem' },
+  md: { label: 'متوسط', base: '15px', cssVal: '0.9375rem' },
+  lg: { label: 'كبير', base: '17px', cssVal: '1.0625rem' },
   xl: { label: 'كبير جداً', base: '19px', cssVal: '1.1875rem' },
 };
 
@@ -62,23 +63,29 @@ function hexToHsl(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
   const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  let h = 0,
+    s = 0;
   const l = (max + min) / 2;
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
     switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
     }
     h /= 6;
   }
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
-
-const STORAGE_KEY = 'halal_erp_settings';
 
 interface SettingsCtx {
   settings: AppSettings;
@@ -93,42 +100,70 @@ const Ctx = createContext<SettingsCtx>({
 });
 
 export const CURRENCIES: Record<CurrencyCode, { label: string; symbol: string; locale: string }> = {
-  EGP: { label: 'جنيه مصري',    symbol: 'ج.م', locale: 'ar-EG-u-nu-latn' },
-  USD: { label: 'دولار أمريكي', symbol: '$',    locale: 'en-US'           },
-  CNY: { label: 'يوان صيني',    symbol: '¥',    locale: 'zh-CN'           },
+  EGP: { label: 'جنيه مصري', symbol: 'ج.م', locale: 'ar-EG-u-nu-latn' },
+  USD: { label: 'دولار أمريكي', symbol: '$', locale: 'en-US' },
+  CNY: { label: 'يوان صيني', symbol: '¥', locale: 'zh-CN' },
 };
 
 export const FONTS: Record<FontFamily, { label: string; googleUrl: string }> = {
-  Tajawal: { label: 'تجوال',    googleUrl: 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap' },
-  Cairo:   { label: 'القاهرة', googleUrl: 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700;800&display=swap'   },
-  Almarai: { label: 'المرعى',  googleUrl: 'https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap'     },
-  Changa:  { label: 'تشانجا',  googleUrl: 'https://fonts.googleapis.com/css2?family=Changa:wght@400;500;700;800&display=swap'  },
-  Inter:   { label: 'Inter',    googleUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap'   },
+  Tajawal: {
+    label: 'تجوال',
+    googleUrl: 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap',
+  },
+  Cairo: {
+    label: 'القاهرة',
+    googleUrl: 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700;800&display=swap',
+  },
+  Almarai: {
+    label: 'المرعى',
+    googleUrl: 'https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap',
+  },
+  Changa: {
+    label: 'تشانجا',
+    googleUrl: 'https://fonts.googleapis.com/css2?family=Changa:wght@400;500;700;800&display=swap',
+  },
+  Inter: {
+    label: 'Inter',
+    googleUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap',
+  },
 };
 
-export const ACCENT_COLORS: Record<AccentColor, { label: string; primary: string; ring: string; bg: string }> = {
-  amber:   { label: 'ذهبي',     primary: '37 91% 55%',  ring: '37 91% 55%',  bg: '37 91% 55% / 0.15'  },
-  emerald: { label: 'زمردي',    primary: '160 84% 39%', ring: '160 84% 39%', bg: '160 84% 39% / 0.15' },
-  violet:  { label: 'بنفسجي',   primary: '262 83% 58%', ring: '262 83% 58%', bg: '262 83% 58% / 0.15' },
-  sky:     { label: 'سماوي',    primary: '199 89% 48%', ring: '199 89% 48%', bg: '199 89% 48% / 0.15' },
-  rose:    { label: 'وردي',     primary: '330 81% 60%', ring: '330 81% 60%', bg: '330 81% 60% / 0.15' },
-  orange:  { label: 'برتقالي',  primary: '25 95% 53%',  ring: '25 95% 53%',  bg: '25 95% 53% / 0.15'  },
+export const ACCENT_COLORS: Record<
+  AccentColor,
+  { label: string; primary: string; ring: string; bg: string }
+> = {
+  amber: { label: 'ذهبي', primary: '37 91% 55%', ring: '37 91% 55%', bg: '37 91% 55% / 0.15' },
+  emerald: {
+    label: 'زمردي',
+    primary: '160 84% 39%',
+    ring: '160 84% 39%',
+    bg: '160 84% 39% / 0.15',
+  },
+  violet: {
+    label: 'بنفسجي',
+    primary: '262 83% 58%',
+    ring: '262 83% 58%',
+    bg: '262 83% 58% / 0.15',
+  },
+  sky: { label: 'سماوي', primary: '199 89% 48%', ring: '199 89% 48%', bg: '199 89% 48% / 0.15' },
+  rose: { label: 'وردي', primary: '330 81% 60%', ring: '330 81% 60%', bg: '330 81% 60% / 0.15' },
+  orange: { label: 'برتقالي', primary: '25 95% 53%', ring: '25 95% 53%', bg: '25 95% 53% / 0.15' },
 };
 
 const LOGIN_BACKGROUNDS: Record<string, string> = {
-  default:  'linear-gradient(135deg, #0a0a0f 0%, #0d1117 50%, #0a0a0f 100%)',
+  default: 'linear-gradient(135deg, #0a0a0f 0%, #0d1117 50%, #0a0a0f 100%)',
   midnight: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-  forest:   'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1628 100%)',
-  sunset:   'linear-gradient(135deg, #1a0a0a 0%, #2d0f1f 50%, #1a0a0a 100%)',
-  ocean:    'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a0f1a 100%)',
+  forest: 'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1628 100%)',
+  sunset: 'linear-gradient(135deg, #1a0a0a 0%, #2d0f1f 50%, #1a0a0a 100%)',
+  ocean: 'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a0f1a 100%)',
 };
 
 export const LOGIN_BG_OPTIONS = [
-  { key: 'default',  label: 'افتراضي'       },
-  { key: 'midnight', label: 'منتصف الليل'   },
-  { key: 'forest',   label: 'الغابة'         },
-  { key: 'sunset',   label: 'الغروب'         },
-  { key: 'ocean',    label: 'المحيط'          },
+  { key: 'default', label: 'افتراضي' },
+  { key: 'midnight', label: 'منتصف الليل' },
+  { key: 'forest', label: 'الغابة' },
+  { key: 'sunset', label: 'الغروب' },
+  { key: 'ocean', label: 'المحيط' },
 ];
 
 function applySettings(s: AppSettings) {
@@ -185,19 +220,21 @@ function applySettings(s: AppSettings) {
     root.setAttribute('data-theme', 'dark');
     root.style.colorScheme = 'dark';
   }
-
 }
 
-function loadSettings(): AppSettings {
+function loadSettings(storageKey = getTenantSettingsStorageKey()): AppSettings {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<AppSettings>;
       if (parsed.companyName === 'Halal Tech' || parsed.companyName === 'مُحكم - MUHKAM ERP') {
         parsed.companyName = DEFAULTS.companyName;
       }
       if (!parsed.companyName) parsed.companyName = DEFAULTS.companyName;
-      if (parsed.companySlogan === 'الحلال = البركة' || parsed.companySlogan === 'أدِر عملك باحترافية وثقة كاملة') {
+      if (
+        parsed.companySlogan === 'الحلال = البركة' ||
+        parsed.companySlogan === 'أدِر عملك باحترافية وثقة كاملة'
+      ) {
         parsed.companySlogan = DEFAULTS.companySlogan;
       }
       const currency = parsed.currency as string | undefined;
@@ -211,22 +248,41 @@ function loadSettings(): AppSettings {
 }
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const [storageKey, setStorageKey] = useState(getTenantSettingsStorageKey);
+  const [settings, setSettings] = useState<AppSettings>(() => loadSettings(storageKey));
 
   useEffect(() => {
     applySettings(settings);
   }, [settings]);
 
+  useEffect(() => {
+    const reloadTenantSettings = () => {
+      const nextKey = getTenantSettingsStorageKey();
+      setStorageKey(nextKey);
+      setSettings(loadSettings(nextKey));
+    };
+
+    window.addEventListener('auth:user-changed', reloadTenantSettings);
+    window.addEventListener('storage', reloadTenantSettings);
+    window.addEventListener('focus', reloadTenantSettings);
+
+    return () => {
+      window.removeEventListener('auth:user-changed', reloadTenantSettings);
+      window.removeEventListener('storage', reloadTenantSettings);
+      window.removeEventListener('focus', reloadTenantSettings);
+    };
+  }, []);
+
   const update = (patch: Partial<AppSettings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...patch };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(storageKey, JSON.stringify(next));
       return next;
     });
   };
 
   const reset = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(storageKey);
     setSettings(DEFAULTS);
   };
 

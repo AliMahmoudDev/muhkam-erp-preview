@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { useAuth } from "@/contexts/auth";
-import { authFetch } from "@/lib/auth-fetch";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { useAuth } from '@/contexts/auth';
+import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
-
+import { getTenantScopedStorageKey } from '@/lib/tenant-storage';
 
 export type CompanyFeatures = {
   accounting: boolean;
@@ -41,7 +41,7 @@ const DEFAULT_ADVANCED: CompanyFeatures = {
 };
 
 export interface SubscriptionInfo {
-  edition: "ultimate" | "advanced";
+  edition: 'ultimate' | 'advanced';
   features: CompanyFeatures;
   isAdvanced: boolean;
   hasFeature: (key: keyof CompanyFeatures) => boolean;
@@ -49,18 +49,18 @@ export interface SubscriptionInfo {
 }
 
 const SubscriptionContext = createContext<SubscriptionInfo>({
-  edition: "ultimate",
+  edition: 'ultimate',
   features: DEFAULT_ULTIMATE,
   isAdvanced: false,
   hasFeature: () => false,
   refresh: () => {},
 });
 
-const STORAGE_KEY = "erp_subscription";
+const STORAGE_KEY_BASE = 'erp_subscription';
 
-function loadCached(): { edition: "ultimate" | "advanced"; features: CompanyFeatures } | null {
+function loadCached(): { edition: 'ultimate' | 'advanced'; features: CompanyFeatures } | null {
   try {
-    const s = localStorage.getItem(STORAGE_KEY);
+    const s = localStorage.getItem(getTenantScopedStorageKey(STORAGE_KEY_BASE));
     return s ? JSON.parse(s) : null;
   } catch {
     return null;
@@ -71,27 +71,30 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
   const cached = loadCached();
-  const [edition, setEdition] = useState<"ultimate" | "advanced">(cached?.edition ?? "ultimate");
+  const [edition, setEdition] = useState<'ultimate' | 'advanced'>(cached?.edition ?? 'ultimate');
   const [features, setFeatures] = useState<CompanyFeatures>(cached?.features ?? DEFAULT_ULTIMATE);
 
   const fetchStatus = useCallback(async () => {
-    if (!user || user.role === "super_admin") return;
+    if (!user || user.role === 'super_admin') return;
     try {
-      const res = await authFetch(api("/api/subscription/status"));
+      const res = await authFetch(api('/api/subscription/status'));
       if (!res.ok) return;
       const data = (await res.json()) as {
         edition?: string;
         features?: CompanyFeatures;
       };
-      const ed = data.edition === "advanced" ? "advanced" : "ultimate";
+      const ed = data.edition === 'advanced' ? 'advanced' : 'ultimate';
       const feat: CompanyFeatures = data.features
-        ? { ...(ed === "advanced" ? DEFAULT_ADVANCED : DEFAULT_ULTIMATE), ...data.features }
-        : ed === "advanced"
-        ? DEFAULT_ADVANCED
-        : DEFAULT_ULTIMATE;
+        ? { ...(ed === 'advanced' ? DEFAULT_ADVANCED : DEFAULT_ULTIMATE), ...data.features }
+        : ed === 'advanced'
+          ? DEFAULT_ADVANCED
+          : DEFAULT_ULTIMATE;
       setEdition(ed);
       setFeatures(feat);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ edition: ed, features: feat }));
+      localStorage.setItem(
+        getTenantScopedStorageKey(STORAGE_KEY_BASE),
+        JSON.stringify({ edition: ed, features: feat })
+      );
     } catch {
       /* non-fatal */
     }
@@ -103,8 +106,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) {
-      localStorage.removeItem(STORAGE_KEY);
-      setEdition("ultimate");
+      localStorage.removeItem(getTenantScopedStorageKey(STORAGE_KEY_BASE));
+      setEdition('ultimate');
       setFeatures(DEFAULT_ULTIMATE);
     }
   }, [user]);
@@ -116,7 +119,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SubscriptionContext.Provider
-      value={{ edition, features, isAdvanced: edition === "advanced", hasFeature, refresh: fetchStatus }}
+      value={{
+        edition,
+        features,
+        isAdvanced: edition === 'advanced',
+        hasFeature,
+        refresh: fetchStatus,
+      }}
     >
       {children}
     </SubscriptionContext.Provider>

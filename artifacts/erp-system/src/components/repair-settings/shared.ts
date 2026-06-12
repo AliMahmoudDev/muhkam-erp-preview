@@ -1,3 +1,4 @@
+import { getTenantScopedStorageKey } from '@/lib/tenant-storage';
 // Shared types, constants, and utilities for RepairSettingsModal tabs
 import {
   ClipboardList,
@@ -133,7 +134,7 @@ export const DEFAULT_MANUFACTURERS: Manufacturer[] = [
 
 export function loadManufacturers(): Manufacturer[] {
   try {
-    const s = localStorage.getItem(MFR_STORAGE_KEY);
+    const s = localStorage.getItem(getTenantScopedStorageKey(MFR_STORAGE_KEY));
     if (!s) return DEFAULT_MANUFACTURERS;
     const parsed = JSON.parse(s) as Manufacturer[];
     return parsed.length > 0 ? parsed : DEFAULT_MANUFACTURERS;
@@ -142,7 +143,7 @@ export function loadManufacturers(): Manufacturer[] {
   }
 }
 export function saveManufacturers(mfrs: Manufacturer[]) {
-  localStorage.setItem(MFR_STORAGE_KEY, JSON.stringify(mfrs));
+  localStorage.setItem(getTenantScopedStorageKey(MFR_STORAGE_KEY), JSON.stringify(mfrs));
 }
 
 export const TABS: Array<{

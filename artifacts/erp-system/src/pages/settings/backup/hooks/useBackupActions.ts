@@ -1,3 +1,4 @@
+import { getTenantSettingsStorageKey } from '@/lib/tenant-storage';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
@@ -24,7 +25,9 @@ export function useBackupActions() {
   );
   const [bkLoading, setBkLoading] = useState(false);
   const [bkProgress, setBkProgress] = useState(0);
-  const [bkResult, setBkResult] = useState<{ name: string; size: string; count: number } | null>(null);
+  const [bkResult, setBkResult] = useState<{ name: string; size: string; count: number } | null>(
+    null
+  );
   const [lastBackup, setLastBackup] = useState<string | null>(() =>
     localStorage.getItem(LAST_BK_KEY)
   );
@@ -71,40 +74,47 @@ export function useBackupActions() {
 
   const [autoSettings, setAutoSettings] = useState<AutoSettings>(loadAutoSettings);
 
-  const saveAutoSettings = useCallback((patch: Partial<AutoSettings>) => {
-    const next = { ...autoSettings, ...patch };
-    localStorage.setItem(AUTO_BK_KEY, JSON.stringify(next));
-    setAutoSettings(next);
-  }, [autoSettings]);
+  const saveAutoSettings = useCallback(
+    (patch: Partial<AutoSettings>) => {
+      const next = { ...autoSettings, ...patch };
+      localStorage.setItem(AUTO_BK_KEY, JSON.stringify(next));
+      setAutoSettings(next);
+    },
+    [autoSettings]
+  );
 
-  const handleComprehensiveBackup = useCallback(async (silent = false) => {
-    setCompBusy(true);
-    setCompResult(null);
-    try {
-      const r = await authFetch(api('/api/system/backup'), { method: 'POST' });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? 'فشل الطلب');
-      const disp = r.headers.get('Content-Disposition') ?? '';
-      const match = disp.match(/filename="([^"]+)"/);
-      const fname = match?.[1] ?? `backup_comprehensive_${new Date().toISOString().slice(0, 10)}.json`;
-      const blob = await r.blob();
-      await saveFile(blob, fname, silent);
-      const now = new Date().toISOString();
-      localStorage.setItem(LAST_BK_KEY, now);
-      setLastBackup(now);
-      setCompResult(fname);
-      toast({ title: `✅ نسخة شاملة محفوظة — ${fname}` });
-    } catch (e: unknown) {
-      if (e instanceof Error && e.name === 'AbortError') return;
-      const msg = e instanceof Error ? e.message : String(e);
-      toast({ title: 'فشل إنشاء النسخة الشاملة', description: msg, variant: 'destructive' });
-    } finally {
-      setCompBusy(false);
-    }
-  }, [toast]);
+  const handleComprehensiveBackup = useCallback(
+    async (silent = false) => {
+      setCompBusy(true);
+      setCompResult(null);
+      try {
+        const r = await authFetch(api('/api/system/backup'), { method: 'POST' });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? 'فشل الطلب');
+        const disp = r.headers.get('Content-Disposition') ?? '';
+        const match = disp.match(/filename="([^"]+)"/);
+        const fname =
+          match?.[1] ?? `backup_comprehensive_${new Date().toISOString().slice(0, 10)}.json`;
+        const blob = await r.blob();
+        await saveFile(blob, fname, silent);
+        const now = new Date().toISOString();
+        localStorage.setItem(LAST_BK_KEY, now);
+        setLastBackup(now);
+        setCompResult(fname);
+        toast({ title: `✅ نسخة شاملة محفوظة — ${fname}` });
+      } catch (e: unknown) {
+        if (e instanceof Error && e.name === 'AbortError') return;
+        const msg = e instanceof Error ? e.message : String(e);
+        toast({ title: 'فشل إنشاء النسخة الشاملة', description: msg, variant: 'destructive' });
+      } finally {
+        setCompBusy(false);
+      }
+    },
+    [toast]
+  );
 
   useEffect(() => {
     const auto = loadAutoSettings();
-    const loginFlag  = localStorage.getItem('halal_erp_login_flag');
+    const loginFlag = localStorage.getItem('halal_erp_login_flag');
     const logoutFlag = localStorage.getItem('halal_erp_logout_flag');
     if (loginFlag) {
       localStorage.removeItem('halal_erp_login_flag');
@@ -162,7 +172,8 @@ export function useBackupActions() {
   const toggleModule = (key: string) =>
     setBkModules((prev) => {
       const s = new Set(prev);
-      if (s.has(key)) s.delete(key); else s.add(key);
+      if (s.has(key)) s.delete(key);
+      else s.add(key);
       return s;
     });
 
@@ -212,7 +223,7 @@ export function useBackupActions() {
             bundle[mod.key] = [];
           }
         } else if (mod.key === 'settings') {
-          bundle[mod.key] = JSON.parse(localStorage.getItem('halal_erp_settings') || '{}');
+          bundle[mod.key] = JSON.parse(localStorage.getItem(getTenantSettingsStorageKey()) || '{}');
         }
       }
       setBkProgress(90);
@@ -343,14 +354,20 @@ export function useBackupActions() {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
-    const isEnc  = file.name.endsWith('.json.enc');
+    const isEnc = file.name.endsWith('.json.enc');
     const isJson = file.name.endsWith('.json');
     if (!isJson && !isEnc) {
       toast({ title: 'يجب اختيار ملف .json أو .json.enc', variant: 'destructive' });
       return;
     }
     if (isEnc) {
-      setPending({ fileName: file.name, parsed: null, version: 'مشفّر', date: null, tableCount: 0 });
+      setPending({
+        fileName: file.name,
+        parsed: null,
+        version: 'مشفّر',
+        date: null,
+        tableCount: 0,
+      });
       (pendingEncFileRef as React.MutableRefObject<File | null>).current = file;
       setModalText('');
       setUnderstood(false);
@@ -360,8 +377,8 @@ export function useBackupActions() {
     try {
       const parsed = JSON.parse(await file.text()) as Record<string, unknown>;
       const dataSection = (parsed.data ?? parsed.tables ?? parsed) as Record<string, unknown>;
-      const tableCount  = Object.values(dataSection).filter(Array.isArray).length;
-      const structured  = typeof parsed.data === 'object' && parsed.data !== null;
+      const tableCount = Object.values(dataSection).filter(Array.isArray).length;
+      const structured = typeof parsed.data === 'object' && parsed.data !== null;
       setPending({
         fileName: file.name,
         parsed,
@@ -375,24 +392,33 @@ export function useBackupActions() {
       if (structured) {
         const data = parsed.data as Record<string, unknown[]>;
         const MODULE_TABLE_MAP: Record<string, string[]> = {
-          products:       ['products', 'stock_movements'],
-          customers:      ['customers'],
-          sales:          ['sales', 'sale_items', 'sales_returns', 'sale_return_items'],
-          purchases:      ['purchases', 'purchase_items', 'purchase_returns', 'purchase_return_items'],
-          finance:        ['expenses', 'income', 'transactions', 'accounts', 'journal_entries', 'receipt_vouchers', 'payment_vouchers'],
+          products: ['products', 'stock_movements'],
+          customers: ['customers'],
+          sales: ['sales', 'sale_items', 'sales_returns', 'sale_return_items'],
+          purchases: ['purchases', 'purchase_items', 'purchase_returns', 'purchase_return_items'],
+          finance: [
+            'expenses',
+            'income',
+            'transactions',
+            'accounts',
+            'journal_entries',
+            'receipt_vouchers',
+            'payment_vouchers',
+          ],
           infrastructure: ['safes', 'warehouses'],
-          alerts:         ['alerts'],
+          alerts: ['alerts'],
         };
-        const found = RESTORE_MODULE_GROUPS
-          .map(g => g.key)
-          .filter(k => (MODULE_TABLE_MAP[k] ?? []).some(t => Array.isArray(data[t])));
+        const found = RESTORE_MODULE_GROUPS.map((g) => g.key).filter((k) =>
+          (MODULE_TABLE_MAP[k] ?? []).some((t) => Array.isArray(data[t]))
+        );
         setAvailMods(found);
         setSelectedRestoreMods(new Set(found));
         setShowModSelect(true);
       } else {
         toast({
           title: '⚠️ هذا الملف للتصدير فقط',
-          description: 'ملفات النسخ المحلية (v1.0) لا يمكن استعادتها. استخدم "النسخة الشاملة" التي تنزّلها بالزر الأخضر.',
+          description:
+            'ملفات النسخ المحلية (v1.0) لا يمكن استعادتها. استخدم "النسخة الشاملة" التي تنزّلها بالزر الأخضر.',
           variant: 'destructive',
         });
       }
@@ -416,9 +442,10 @@ export function useBackupActions() {
         contentType = 'application/octet-stream';
         (pendingEncFileRef as React.MutableRefObject<File | null>).current = null;
       } else {
-        const payload = isStructuredBackup && selectedRestoreMods.size > 0
-          ? { ...(pending.parsed as object), restore_modules: Array.from(selectedRestoreMods) }
-          : pending.parsed;
+        const payload =
+          isStructuredBackup && selectedRestoreMods.size > 0
+            ? { ...(pending.parsed as object), restore_modules: Array.from(selectedRestoreMods) }
+            : pending.parsed;
         body = JSON.stringify(payload);
         contentType = 'application/json';
       }
@@ -449,33 +476,57 @@ export function useBackupActions() {
 
   return {
     isSuperAdmin,
-    bkMode, setBkMode,
+    bkMode,
+    setBkMode,
     bkModules,
-    bkLoading, bkProgress, bkResult,
-    schedule, lastScheduled,
-    onLogin, onLogout,
-    schedSaving, serverBkBusy,
-    backupList, listLoading, deletingId,
-    restoreLoading, restoreResult, restoreError,
-    restoreFileRef, pendingEncFileRef,
-    modal, setModal, modalText, setModalText,
-    understood, setUnderstood,
-    pending, setPending,
-    showModSelect, setShowModSelect,
-    availMods, selectedRestoreMods, setSelectedRestoreMods,
+    bkLoading,
+    bkProgress,
+    bkResult,
+    schedule,
+    lastScheduled,
+    onLogin,
+    onLogout,
+    schedSaving,
+    serverBkBusy,
+    backupList,
+    listLoading,
+    deletingId,
+    restoreLoading,
+    restoreResult,
+    restoreError,
+    restoreFileRef,
+    pendingEncFileRef,
+    modal,
+    setModal,
+    modalText,
+    setModalText,
+    understood,
+    setUnderstood,
+    pending,
+    setPending,
+    showModSelect,
+    setShowModSelect,
+    availMods,
+    selectedRestoreMods,
+    setSelectedRestoreMods,
     isStructuredBackup,
-    compBusy, compResult,
+    compBusy,
+    compResult,
     autoSettings,
     canConfirm,
     saveAutoSettings,
-    toggleModule, toggleAll,
+    toggleModule,
+    toggleAll,
     lastBackupLabel,
     handleComprehensiveBackup,
     handleLocalBackup,
-    handleServerDownload, handleServerSave,
+    handleServerDownload,
+    handleServerSave,
     handleSaveSettings,
-    handleDeleteBackup, handleDownloadById,
-    handleRestoreFile, handleConfirmRestore,
+    handleDeleteBackup,
+    handleDownloadById,
+    handleRestoreFile,
+    handleConfirmRestore,
     loadList,
   };
 }

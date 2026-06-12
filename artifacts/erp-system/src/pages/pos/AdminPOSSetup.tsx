@@ -4,6 +4,7 @@ import { useGetSettingsSafes } from '@workspace/api-client-react';
 import { useWarehouses } from '@/hooks/useWarehouses';
 import { SearchableSelect } from '@/components/searchable-select';
 import { Store, Vault, Zap } from 'lucide-react';
+import { getTenantScopedStorageKey } from '@/lib/tenant-storage';
 
 export default function AdminPOSSetup({ onStart }: { onStart: (w: number, s: number) => void }) {
   const { warehouses } = useWarehouses();
@@ -11,8 +12,11 @@ export default function AdminPOSSetup({ onStart }: { onStart: (w: number, s: num
   const rawSafes = safeArray(rawSafesData);
   const safes = rawSafes as { id: number; name: string }[];
 
-  const [wId, setWId] = useState<string>(() => localStorage.getItem('pos:lastWarehouse') ?? '');
-  const [sId, setSId] = useState<string>(() => localStorage.getItem('pos:lastSafe') ?? '');
+  const posLastWarehouseKey = getTenantScopedStorageKey('pos:lastWarehouse');
+  const posLastSafeKey = getTenantScopedStorageKey('pos:lastSafe');
+
+  const [wId, setWId] = useState<string>(() => localStorage.getItem(posLastWarehouseKey) ?? '');
+  const [sId, setSId] = useState<string>(() => localStorage.getItem(posLastSafeKey) ?? '');
 
   const warehouseItems = useMemo(
     () => warehouses.map((w) => ({ value: String(w.id), label: w.name, searchKeys: [w.name] })),
@@ -27,8 +31,8 @@ export default function AdminPOSSetup({ onStart }: { onStart: (w: number, s: num
 
   function handleStart() {
     if (!ready) return;
-    localStorage.setItem('pos:lastWarehouse', wId);
-    localStorage.setItem('pos:lastSafe', sId);
+    localStorage.setItem(posLastWarehouseKey, wId);
+    localStorage.setItem(posLastSafeKey, sId);
     onStart(Number(wId), Number(sId));
   }
 

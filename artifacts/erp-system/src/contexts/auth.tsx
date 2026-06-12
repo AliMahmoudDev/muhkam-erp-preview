@@ -5,6 +5,7 @@ export interface AuthUser {
   id: number;
   name: string;
   username: string;
+  company_id?: number | null;
   role: string;
   permissions?: Record<string, boolean>;
   active?: boolean;
@@ -69,7 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (u: AuthUser) => {
     localStorage.setItem(USER_KEY, JSON.stringify(u));
+    if (u.company_id) {
+      localStorage.setItem('erp_company_id', String(u.company_id));
+    } else {
+      localStorage.removeItem('erp_company_id');
+    }
     localStorage.setItem('halal_erp_login_flag', '1');
+    window.dispatchEvent(new CustomEvent('auth:user-changed'));
     setUser(u);
     setSubscriptionExpired(false);
   };
@@ -77,6 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.setItem('halal_erp_logout_flag', '1');
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem('erp_company_id');
+    window.dispatchEvent(new CustomEvent('auth:user-changed'));
     setUser(null);
     setSubscriptionExpired(false);
   };

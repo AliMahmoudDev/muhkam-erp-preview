@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { getTenantScopedStorageKey } from '@/lib/tenant-storage';
 
 interface WarehouseContextType {
   currentWarehouseId: string;
@@ -6,25 +7,46 @@ interface WarehouseContextType {
 }
 
 const WarehouseContext = createContext<WarehouseContextType>({
-  currentWarehouseId: "",
+  currentWarehouseId: '',
   setWarehouseId: () => {},
 });
 
-const STORAGE_KEY = "erp_current_warehouse_id";
+const STORAGE_KEY_BASE = 'erp_current_warehouse_id';
 
 export function WarehouseProvider({ children }: { children: ReactNode }) {
   const [currentWarehouseId, setCurrentWarehouseId] = useState<string>(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) ?? "";
+      return localStorage.getItem(getTenantScopedStorageKey(STORAGE_KEY_BASE)) ?? '';
     } catch {
-      return "";
+      return '';
     }
   });
 
+  useEffect(() => {
+    const reloadWarehouse = () => {
+      try {
+        setCurrentWarehouseId(
+          localStorage.getItem(getTenantScopedStorageKey(STORAGE_KEY_BASE)) ?? ''
+        );
+      } catch {
+        setCurrentWarehouseId('');
+      }
+    };
+
+    window.addEventListener('auth:user-changed', reloadWarehouse);
+    window.addEventListener('storage', reloadWarehouse);
+    return () => {
+      window.removeEventListener('auth:user-changed', reloadWarehouse);
+      window.removeEventListener('storage', reloadWarehouse);
+    };
+  }, []);
+
   const setWarehouseId = (id: string) => {
     try {
-      localStorage.setItem(STORAGE_KEY, id);
-    } catch { /* silent */ }
+      localStorage.setItem(getTenantScopedStorageKey(STORAGE_KEY_BASE), id);
+    } catch {
+      /* silent */
+    }
     setCurrentWarehouseId(id);
   };
 

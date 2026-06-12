@@ -113,11 +113,18 @@ router.delete(
       db
         .select({ n: count() })
         .from(stockMovementsTable)
-        .where(eq(stockMovementsTable.warehouse_id, id)),
+        .where(
+          and(eq(stockMovementsTable.warehouse_id, id), eq(stockMovementsTable.company_id, tenant))
+        ),
       db
         .select({ n: count() })
         .from(stockCountSessionsTable)
-        .where(eq(stockCountSessionsTable.warehouse_id, id)),
+        .where(
+          and(
+            eq(stockCountSessionsTable.warehouse_id, id),
+            eq(stockCountSessionsTable.company_id, tenant)
+          )
+        ),
     ]);
 
     if (Number(movements.n) > 0) {
@@ -129,7 +136,9 @@ router.delete(
       return;
     }
 
-    await db.delete(warehousesTable).where(eq(warehousesTable.id, id));
+    await db
+      .delete(warehousesTable)
+      .where(and(eq(warehousesTable.id, id), eq(warehousesTable.company_id, tenant)));
     res.json({ success: true });
   })
 );

@@ -1,3 +1,4 @@
+import { getTenantScopedStorageKey } from '@/lib/tenant-storage';
 /**
  * hooks/useNewSaleForm.ts
  * All form state, cart management, payment logic, and derived
@@ -94,9 +95,10 @@ export function useNewSaleForm({
   const [quickCustName, setQuickCustName] = useState('');
   const [quickCustPhone, setQuickCustPhone] = useState('');
   const [quickCustLoading, setQuickCustLoading] = useState(false);
+  const heldInvoicesStorageKey = getTenantScopedStorageKey('muhkam_held_invoices');
   const [heldInvoices, setHeldInvoices] = useState<HeldInvoice[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem('muhkam_held_invoices') || '[]');
+      return JSON.parse(localStorage.getItem(heldInvoicesStorageKey) || '[]');
     } catch {
       return [];
     }
@@ -124,8 +126,7 @@ export function useNewSaleForm({
   barcodeModeRef.current = barcodeMode;
 
   // ── Role/permission derived values ───────────────────────────────────────
-  const isRestricted =
-    currentUser?.role === 'cashier' || currentUser?.role === 'salesperson';
+  const isRestricted = currentUser?.role === 'cashier' || currentUser?.role === 'salesperson';
 
   const effectiveWarehouseId = isRestricted
     ? currentUser?.warehouse_id
@@ -147,9 +148,7 @@ export function useNewSaleForm({
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()));
     const matchCat =
-      !categoryFilter ||
-      p.category_name === categoryFilter ||
-      p.category === categoryFilter;
+      !categoryFilter || p.category_name === categoryFilter || p.category === categoryFilter;
     return matchSearch && matchCat;
   });
 
@@ -346,8 +345,7 @@ export function useNewSaleForm({
             });
           }
         },
-        onError: () =>
-          toast({ title: 'حدث خطأ أثناء إضافة المنتج', variant: 'destructive' }),
+        onError: () => toast({ title: 'حدث خطأ أثناء إضافة المنتج', variant: 'destructive' }),
       }
     );
   };
@@ -382,7 +380,7 @@ export function useNewSaleForm({
     };
     const updated = [held, ...heldInvoices];
     setHeldInvoices(updated);
-    localStorage.setItem('muhkam_held_invoices', JSON.stringify(updated));
+    localStorage.setItem(heldInvoicesStorageKey, JSON.stringify(updated));
     _handleNewSale();
     toast({ title: `✅ تم إيداع الفاتورة — ${custName}` });
   };
@@ -397,14 +395,14 @@ export function useNewSaleForm({
     setInvoiceNote(held.invoiceNote);
     const updated = heldInvoices.filter((h) => h.id !== id);
     setHeldInvoices(updated);
-    localStorage.setItem('muhkam_held_invoices', JSON.stringify(updated));
+    localStorage.setItem(heldInvoicesStorageKey, JSON.stringify(updated));
     setShowHeld(false);
   };
 
   const deleteHold = (id: string) => {
     const updated = heldInvoices.filter((h) => h.id !== id);
     setHeldInvoices(updated);
-    localStorage.setItem('muhkam_held_invoices', JSON.stringify(updated));
+    localStorage.setItem(heldInvoicesStorageKey, JSON.stringify(updated));
   };
 
   // ── Payment helpers ──────────────────────────────────────────────────────
@@ -496,9 +494,7 @@ export function useNewSaleForm({
     } else {
       toast({
         title:
-          filteredProducts.length === 0
-            ? 'لا توجد منتجات مطابقة للبحث'
-            : 'المنتج نفد من المخزون',
+          filteredProducts.length === 0 ? 'لا توجد منتجات مطابقة للبحث' : 'المنتج نفد من المخزون',
         variant: 'destructive',
       });
     }
@@ -506,33 +502,56 @@ export function useNewSaleForm({
 
   return {
     // State
-    search, setSearch,
-    cart, setCart,
-    customerId, setCustomerId,
-    invoiceNote, setInvoiceNote,
-    discountMode, setDiscountMode,
-    barcodeMode, setBarcodeMode,
-    editingDisc, setEditingDisc,
-    showQuickCustomer, setShowQuickCustomer,
-    quickCustName, setQuickCustName,
-    quickCustPhone, setQuickCustPhone,
+    search,
+    setSearch,
+    cart,
+    setCart,
+    customerId,
+    setCustomerId,
+    invoiceNote,
+    setInvoiceNote,
+    discountMode,
+    setDiscountMode,
+    barcodeMode,
+    setBarcodeMode,
+    editingDisc,
+    setEditingDisc,
+    showQuickCustomer,
+    setShowQuickCustomer,
+    quickCustName,
+    setQuickCustName,
+    quickCustPhone,
+    setQuickCustPhone,
     quickCustLoading,
     heldInvoices,
-    showHeld, setShowHeld,
-    warehouseId, setWarehouseId,
-    discountPct, setDiscountPct,
-    categoryFilter, setCategoryFilter,
-    payRows, setPayRows,
-    payType, setPayType,
-    paySafe, setPaySafe,
-    payAmount, setPayAmount,
+    showHeld,
+    setShowHeld,
+    warehouseId,
+    setWarehouseId,
+    discountPct,
+    setDiscountPct,
+    categoryFilter,
+    setCategoryFilter,
+    payRows,
+    setPayRows,
+    payType,
+    setPayType,
+    paySafe,
+    setPaySafe,
+    payAmount,
+    setPayAmount,
     payShake,
-    payRowKey, setPayRowKey,
+    payRowKey,
+    setPayRowKey,
     recentlyAdded,
-    editingPrice, setEditingPrice,
-    checkoutError, setCheckoutError,
-    successInvoice, setSuccessInvoice,
-    showCreateProduct, setShowCreateProduct,
+    editingPrice,
+    setEditingPrice,
+    checkoutError,
+    setCheckoutError,
+    successInvoice,
+    setSuccessInvoice,
+    showCreateProduct,
+    setShowCreateProduct,
     // Refs
     searchInputRef,
     payAmountRef,

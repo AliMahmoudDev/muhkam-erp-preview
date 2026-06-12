@@ -138,28 +138,49 @@ router.delete(
 
     const [[expenses], [income], [receipts], [payments], [deposits], [transfers], [sales], [txn]] =
       await Promise.all([
-        db.select({ n: count() }).from(expensesTable).where(eq(expensesTable.safe_id, id)),
-        db.select({ n: count() }).from(incomeTable).where(eq(incomeTable.safe_id, id)),
+        db
+          .select({ n: count() })
+          .from(expensesTable)
+          .where(and(eq(expensesTable.safe_id, id), eq(expensesTable.company_id, tenant))),
+        db
+          .select({ n: count() })
+          .from(incomeTable)
+          .where(and(eq(incomeTable.safe_id, id), eq(incomeTable.company_id, tenant))),
         db
           .select({ n: count() })
           .from(receiptVouchersTable)
-          .where(eq(receiptVouchersTable.safe_id, id)),
+          .where(
+            and(eq(receiptVouchersTable.safe_id, id), eq(receiptVouchersTable.company_id, tenant))
+          ),
         db
           .select({ n: count() })
           .from(paymentVouchersTable)
-          .where(eq(paymentVouchersTable.safe_id, id)),
+          .where(
+            and(eq(paymentVouchersTable.safe_id, id), eq(paymentVouchersTable.company_id, tenant))
+          ),
         db
           .select({ n: count() })
           .from(depositVouchersTable)
-          .where(eq(depositVouchersTable.safe_id, id)),
+          .where(
+            and(eq(depositVouchersTable.safe_id, id), eq(depositVouchersTable.company_id, tenant))
+          ),
         db
           .select({ n: count() })
           .from(safeTransfersTable)
           .where(
-            or(eq(safeTransfersTable.from_safe_id, id), eq(safeTransfersTable.to_safe_id, id))
+            and(
+              eq(safeTransfersTable.company_id, tenant),
+              or(eq(safeTransfersTable.from_safe_id, id), eq(safeTransfersTable.to_safe_id, id))
+            )
           ),
-        db.select({ n: count() }).from(salesTable).where(eq(salesTable.safe_id, id)),
-        db.select({ n: count() }).from(transactionsTable).where(eq(transactionsTable.safe_id, id)),
+        db
+          .select({ n: count() })
+          .from(salesTable)
+          .where(and(eq(salesTable.safe_id, id), eq(salesTable.company_id, tenant))),
+        db
+          .select({ n: count() })
+          .from(transactionsTable)
+          .where(and(eq(transactionsTable.safe_id, id), eq(transactionsTable.company_id, tenant))),
       ]);
 
     const hasMovements =

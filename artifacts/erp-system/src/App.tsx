@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from 'wouter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -7,7 +7,11 @@ import { AppLayout } from '@/components/layout';
 import { SubscriptionBanner } from '@/components/subscription-banner';
 import { AnnouncementBanner } from '@/components/announcement-banner';
 import { AuthProvider, useAuth } from '@/contexts/auth';
-import { SubscriptionProvider, useSubscription, type CompanyFeatures } from '@/contexts/subscription';
+import {
+  SubscriptionProvider,
+  useSubscription,
+  type CompanyFeatures,
+} from '@/contexts/subscription';
 import { AppSettingsProvider } from '@/contexts/app-settings';
 import { WarehouseProvider } from '@/contexts/warehouse';
 import { canAccess, ROUTE_PERMISSION, type UserRole } from '@/lib/rbac';
@@ -26,21 +30,21 @@ import EmployeeGateway from '@/components/employee-gateway';
    Defines which feature flag must be enabled for each route.
    Routes NOT listed here require no feature flag.           */
 const ROUTE_FEATURES: Partial<Record<string, keyof CompanyFeatures>> = {
-  '/accounts':            'accounting',
-  '/journal-entries':     'accounting',
-  '/fiscal-years':        'accounting',
-  '/audit-log':           'accounting',
-  '/cost-centers':        'accounting',
-  '/accruals':            'accounting',
-  '/fixed-assets':        'fixed_assets',
+  '/accounts': 'accounting',
+  '/journal-entries': 'accounting',
+  '/fiscal-years': 'accounting',
+  '/audit-log': 'accounting',
+  '/cost-centers': 'accounting',
+  '/accruals': 'accounting',
+  '/fixed-assets': 'fixed_assets',
   '/bank-reconciliation': 'bank_reconciliation',
-  '/budgets':             'budgets',
-  '/employees':           'hr',
-  '/attendance':          'hr',
-  '/payroll':             'hr',
-  '/pos':                 'pos',
-  '/repairs':             'maintenance',
-  '/devices':             'maintenance',
+  '/budgets': 'budgets',
+  '/employees': 'hr',
+  '/attendance': 'hr',
+  '/payroll': 'hr',
+  '/pos': 'pos',
+  '/repairs': 'maintenance',
+  '/devices': 'maintenance',
 };
 
 /* ── Lazy-loaded pages ─────────────────────────────────── */
@@ -69,10 +73,10 @@ const SuperAdmin = lazy(() => import('@/pages/super-admin'));
 const Branches = lazy(() => import('@/pages/branches'));
 const Employees = lazy(() => import('@/pages/employees'));
 const Attendance = lazy(() => import('@/pages/attendance'));
-const Payroll    = lazy(() => import('@/pages/payroll'));
+const Payroll = lazy(() => import('@/pages/payroll'));
 const Returns = lazy(() => import('@/pages/returns'));
-const Repairs  = lazy(() => import('@/pages/repairs'));
-const Devices  = lazy(() => import('@/pages/devices'));
+const Repairs = lazy(() => import('@/pages/repairs'));
+const Devices = lazy(() => import('@/pages/devices'));
 const FixedAssets = lazy(() => import('@/pages/fixed-assets'));
 const Accruals = lazy(() => import('@/pages/accruals'));
 const BankReconciliation = lazy(() => import('@/pages/bank-reconciliation'));
@@ -130,7 +134,9 @@ function Router() {
         const s = localStorage.getItem('erp_current_user');
         if (!s) return 0;
         return (JSON.parse(s) as { id?: number }).id ?? 0;
-      } catch { return 0; }
+      } catch {
+        return 0;
+      }
     })();
     return !!sessionStorage.getItem(`erp_gateway_${uid}`);
   });
@@ -238,7 +244,9 @@ function Router() {
         <Route path="/scrap-inventory">{() => <Redirect to="/inventory" />}</Route>
         <Route path="/bad-debts">{() => <Redirect to="/customers" />}</Route>
         <Route path="/products">{() => <Guard path="/products" component={Products} />}</Route>
-        <Route path="/price-lists">{() => <Guard path="/price-lists" component={PriceLists} />}</Route>
+        <Route path="/price-lists">
+          {() => <Guard path="/price-lists" component={PriceLists} />}
+        </Route>
         <Route path="/inventory">{() => <Guard path="/inventory" component={Inventory} />}</Route>
         <Route path="/customers">{() => <Guard path="/customers" component={Customers} />}</Route>
         <Route path="/expenses">{() => <Guard path="/expenses" component={Expenses} />}</Route>
@@ -255,9 +263,7 @@ function Router() {
         <Route path="/fiscal-years">
           {() => <Guard path="/fiscal-years" component={FiscalYears} />}
         </Route>
-        <Route path="/audit-log">
-          {() => <Guard path="/audit-log" component={AuditLog} />}
-        </Route>
+        <Route path="/audit-log">{() => <Guard path="/audit-log" component={AuditLog} />}</Route>
         <Route path="/branches">{() => <Guard path="/branches" component={Branches} />}</Route>
         <Route path="/employees">{() => <Guard path="/employees" component={Employees} />}</Route>
         <Route path="/payroll">{() => <Guard path="/payroll" component={Payroll} />}</Route>
@@ -280,11 +286,17 @@ function Router() {
         <Route path="/payment-vouchers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/safe-transfers">{() => <Redirect to="/vouchers" />}</Route>
         <Route path="/financial-transactions">{() => <Redirect to="/reports" />}</Route>
-        <Route path="/fixed-assets">{() => <Guard path="/fixed-assets" component={FixedAssets} />}</Route>
+        <Route path="/fixed-assets">
+          {() => <Guard path="/fixed-assets" component={FixedAssets} />}
+        </Route>
         <Route path="/accruals">{() => <Guard path="/accruals" component={Accruals} />}</Route>
-        <Route path="/bank-reconciliation">{() => <Guard path="/bank-reconciliation" component={BankReconciliation} />}</Route>
+        <Route path="/bank-reconciliation">
+          {() => <Guard path="/bank-reconciliation" component={BankReconciliation} />}
+        </Route>
         <Route path="/budgets">{() => <Guard path="/budgets" component={Budgets} />}</Route>
-        <Route path="/cost-centers">{() => <Guard path="/cost-centers" component={CostCenters} />}</Route>
+        <Route path="/cost-centers">
+          {() => <Guard path="/cost-centers" component={CostCenters} />}
+        </Route>
         <Route path="/transfers">{() => <Guard path="/transfers" component={Transfers} />}</Route>
         <Route component={NotFound} />
       </Switch>
@@ -293,6 +305,17 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    const clearTenantCache = () => {
+      queryClient.clear();
+    };
+
+    window.addEventListener('auth:user-changed', clearTenantCache);
+    return () => {
+      window.removeEventListener('auth:user-changed', clearTenantCache);
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
