@@ -5,7 +5,7 @@ const E2E_PASS = process.env.E2E_TEST_PASS;
 
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/login');
-  await page.fill('[aria-label="اسم المستخدم أو البريد الإلكتروني"]', E2E_USER!);
+  await page.fill('[aria-label="رقم الهاتف أو اسم المستخدم"]', E2E_USER!);
   await page.fill('[aria-label="الرقم السري"]', E2E_PASS!);
   await page.click('button[type="submit"]');
   await page.waitForURL(/(?!.*login)/, { timeout: 15000 });

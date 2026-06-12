@@ -7,7 +7,7 @@ const E2E_PASS = process.env.E2E_TEST_PASS;
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/login');
   await page.waitForLoadState('networkidle');
-  await page.fill('[aria-label="اسم المستخدم أو البريد الإلكتروني"]', E2E_USER!);
+  await page.fill('[aria-label="رقم الهاتف أو اسم المستخدم"]', E2E_USER!);
   await page.fill('[aria-label="الرقم السري"]', E2E_PASS!);
   await page.click('button[type="submit"]');
   await page.waitForURL(/(?!.*login)/, { timeout: 15000 });
@@ -22,7 +22,7 @@ test('صفحة /login تعرض واجهة عربية RTL', async ({ page }) => {
   // Wait for the form to be fully rendered before inspecting content.
   // The login page injects its CSS into <head> via useEffect, so checking
   // body.textContent is unreliable — query the form element instead.
-  const usernameInput = page.locator('[aria-label="اسم المستخدم أو البريد الإلكتروني"]');
+  const usernameInput = page.locator('[aria-label="رقم الهاتف أو اسم المستخدم"]');
   await expect(usernameInput).toBeVisible({ timeout: 10000 });
 
   // The root wrapper declares RTL direction
@@ -37,9 +37,9 @@ test('صفحة /login تعرض واجهة عربية RTL', async ({ page }) => {
 test('كلمة مرور خاطئة تظهر رسالة خطأ بالعربية', async ({ page }) => {
   await page.goto('/login');
   await page.waitForLoadState('networkidle');
-  await expect(page.locator('[aria-label="اسم المستخدم أو البريد الإلكتروني"]')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('[aria-label="رقم الهاتف أو اسم المستخدم"]')).toBeVisible({ timeout: 10000 });
 
-  await page.fill('[aria-label="اسم المستخدم أو البريد الإلكتروني"]', 'admin');
+  await page.fill('[aria-label="رقم الهاتف أو اسم المستخدم"]', 'admin');
   await page.fill('[aria-label="الرقم السري"]', '0000');
   await page.click('button[type="submit"]');
 
@@ -54,7 +54,7 @@ test('بيانات صحيحة تحوّل إلى لوحة التحكم', async ({
 
   await page.goto('/login');
   await page.waitForLoadState('networkidle');
-  await page.fill('[aria-label="اسم المستخدم أو البريد الإلكتروني"]', E2E_USER);
+  await page.fill('[aria-label="رقم الهاتف أو اسم المستخدم"]', E2E_USER);
   await page.fill('[aria-label="الرقم السري"]', E2E_PASS);
   await page.click('button[type="submit"]');
   await expect(page).not.toHaveURL(/login/, { timeout: 15000 });
