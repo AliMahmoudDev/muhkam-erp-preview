@@ -608,7 +608,7 @@ export default function Dashboard() {
                       className="db-stock-badge"
                       style={{
                         background: outOfStock ? 'rgba(248,113,113,0.15)' : 'rgba(245,158,11,0.15)',
-                        color: outOfStock ? 'var(--status-danger)' : '#fcd34d',
+                        color: outOfStock ? 'var(--status-danger)' : 'var(--status-warning)',
                         border: `1px solid ${outOfStock ? 'rgba(248,113,113,0.22)' : 'rgba(245,158,11,0.22)'}`,
                       }}
                     >

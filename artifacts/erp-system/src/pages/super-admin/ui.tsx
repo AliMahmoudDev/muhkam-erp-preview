@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors */
 import { useState, useEffect, useRef } from 'react';
 import { C, FONT } from './types';
 

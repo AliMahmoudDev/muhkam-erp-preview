@@ -389,7 +389,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
                       flex: 1,
                       height: 3,
                       borderRadius: 2,
-                      background: i <= strength.score ? strength.color : '#1E293B',
+                      background: i <= strength.score ? strength.color : 'var(--bg-elevated)',
                       transition: 'background .25s ease',
                     }}
                   />

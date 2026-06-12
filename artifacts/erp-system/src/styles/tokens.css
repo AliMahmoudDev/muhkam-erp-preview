@@ -57,6 +57,37 @@ html.dark {
   --status-danger:    #f87171;
   --status-info:      #60a5fa;
 
+  /* ── Status tinted surfaces (report cards & table rows) ── */
+  --bg-success-tint:  rgba(5,150,105,0.08);
+  --bg-danger-tint:   rgba(220,38,38,0.08);
+  --bg-warning-tint:  rgba(245,158,11,0.08);
+  --bg-success-mid:   rgba(5,150,105,0.12);
+  --bg-danger-mid:    rgba(220,38,38,0.12);
+
+  /* ── Status tinted borders ── */
+  --edge-success:     rgba(5,150,105,0.20);
+  --edge-danger:      rgba(220,38,38,0.20);
+  --edge-warning:     rgba(245,158,11,0.20);
+
+  /* ── Table row backgrounds ── */
+  --bg-row-alt:       rgba(255,255,255,0.02);
+  --bg-row-section:   rgba(255,255,255,0.03);
+  --bg-row-subhead:   rgba(255,255,255,0.04);
+  --bg-row-header:    rgba(255,255,255,0.06);
+
+  /* ── Table divider & subtle row border ── */
+  --edge-row:         rgba(255,255,255,0.08);
+
+  /* ── Faint / hint text ── */
+  --text-hint:        rgba(255,255,255,0.35);
+  --text-neutral:     rgba(255,255,255,0.55);
+
+  /* ── Floating panel (notification/alert dropdowns) ── */
+  --bg-panel:         #161f30;
+
+  /* ── Deep background (gateway, full-page surfaces) ── */
+  --bg-deep:          #070d1a;
+
   /* ── Focus ── */
   --focus-edge:       rgba(196, 138, 49, 0.55);
   --focus-ring:       0 0 0 3px rgba(196, 138, 49, 0.18);
@@ -169,6 +200,37 @@ html.light {
   --status-warning:   #d97706;
   --status-danger:    #dc2626;
   --status-info:      #2563eb;
+
+  /* ── Status tinted surfaces ── */
+  --bg-success-tint:  #f0fdf4;
+  --bg-danger-tint:   #fef2f2;
+  --bg-warning-tint:  #fffbeb;
+  --bg-success-mid:   #ecfdf5;
+  --bg-danger-mid:    #fef2f2;
+
+  /* ── Status tinted borders ── */
+  --edge-success:     #bbf7d0;
+  --edge-danger:      #fecaca;
+  --edge-warning:     #fde68a;
+
+  /* ── Table row backgrounds ── */
+  --bg-row-alt:       #fafafa;
+  --bg-row-section:   #f9fafb;
+  --bg-row-subhead:   #f9fafb;
+  --bg-row-header:    #f3f4f6;
+
+  /* ── Table divider & subtle row border ── */
+  --edge-row:         #e5e7eb;
+
+  /* ── Faint / hint text ── */
+  --text-hint:        #9ca3af;
+  --text-neutral:     #4b5563;
+
+  /* ── Floating panel ── */
+  --bg-panel:         #ffffff;
+
+  /* ── Deep background ── */
+  --bg-deep:          #f0f4ff;
 
   /* ── Focus ── */
   --focus-edge:       rgba(184, 121, 36, 0.50);

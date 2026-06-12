@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors */
 import { C, FONT } from '../types';
 import type { CoMutate, CreateResult } from './types';
 

@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors */
 import { C, STATUS, translatePlan, FONT } from '../types';
 import type { Company, CompanyFeatures } from '../types';
 import { ActionBtn } from '../ui';

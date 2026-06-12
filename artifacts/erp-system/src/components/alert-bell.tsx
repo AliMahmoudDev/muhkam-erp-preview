@@ -164,7 +164,7 @@ export function AlertBell() {
   }
 
   /* ── Styles ─────────────────────────────────────────────── */
-  const bgPanel = isDark ? '#161f30' : 'var(--text-1)';
+  const bgPanel = 'var(--bg-panel)';
   const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)';
   const textMain = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.85)';
   const textSub = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.42)';

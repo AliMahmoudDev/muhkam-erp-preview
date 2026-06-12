@@ -3,7 +3,7 @@
  * Contains: AccountingStatement, BranchTable, and all Accordion sections.
  */
 import React, { useState, useMemo } from "react";
-import { useAppSettings } from "@/contexts/app-settings";
+
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart3, DollarSign,
@@ -79,22 +79,17 @@ function Accordion({ title, icon, children, badge }: {
 
 /* ── Accounting Statement Table ───────────────────────────────────────────── */
 function AccountingStatement({ pl }: { pl: ProfitsData }) {
-  const { settings } = useAppSettings();
-  const isLight = (settings.theme ?? "dark") === "light";
-
   /* ── Design tokens ── */
-  const border   = isLight ? "#e5e7eb"               : "rgba(255,255,255,0.08)";
-  const txtMain  = isLight ? "var(--bg-card)"               : "rgba(255,255,255,0.90)";
-  const txtSub   = isLight ? "var(--text-2)"               : "rgba(255,255,255,0.38)";
-  const txtHint  = isLight ? "#9ca3af"               : "rgba(255,255,255,0.28)";
-  const secBg    = isLight ? "var(--text-1)"               : "rgba(255,255,255,0.03)";
-  const totalBg  = isLight ? "var(--text-1)"               : "rgba(255,255,255,0.05)";
-  const grossBg  = isLight ? "#fef9ec"               : "rgba(245,158,11,0.08)";
-  const netBg    = pl.net_profit >= 0
-    ? (isLight ? "#ecfdf5" : "rgba(5,150,105,0.10)")
-    : (isLight ? "#fef2f2" : "rgba(220,38,38,0.10)");
-  const netColor = pl.net_profit >= 0 ? "var(--status-success)"    : "var(--status-danger)";
-  const grossClr = pl.gross_profit >= 0 ? "var(--status-warning)"  : "var(--status-danger)";
+  const border    = 'var(--edge-row)';
+  const txtMain   = 'var(--text-1)';
+  const txtSub    = 'var(--text-2)';
+  const txtHint   = 'var(--text-hint)';
+  const secBg     = 'var(--bg-row-section)';
+  const totalBg   = 'var(--bg-row-header)';
+  const grossBg   = 'var(--bg-warning-tint)';
+  const netBg     = pl.net_profit >= 0 ? 'var(--bg-success-tint)' : 'var(--bg-danger-tint)';
+  const netColor  = pl.net_profit >= 0 ? 'var(--status-success)'  : 'var(--status-danger)';
+  const grossClr  = pl.gross_profit >= 0 ? 'var(--status-warning)' : 'var(--status-danger)';
 
   const hasReturn   = pl.return_amount > 0;
   const netRevenue  = pl.total_revenue - pl.return_amount;

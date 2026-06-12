@@ -199,7 +199,7 @@ export function NotificationBell() {
   }
 
   /* ── Styles ── */
-  const bgPanel  = isDark ? '#161f30' : 'var(--text-1)';
+  const bgPanel  = 'var(--bg-panel)';
   const border   = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)';
   const textMain = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.85)';
   const textSub  = isDark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.45)';
@@ -326,7 +326,7 @@ export function NotificationBell() {
           onClick={(e) => { if (e.target === e.currentTarget && !advApproving) setAdvApproveNotif(null); }}
         >
           <div style={{
-            background: isDark ? '#1a2540' : 'var(--text-1)',
+            background: 'var(--bg-panel)',
             borderRadius: 18, boxShadow: '0 24px 64px rgba(0,0,0,0.45)',
             width: '100%', maxWidth: 440,
             border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,

@@ -96,25 +96,49 @@ const erpNoHardcodedColors = {
               }
             }
 
-            // ── style prop — check for hex color literal values ────
+            // ── style prop — check for hex color values (direct, ternary, template) ────
             if (attrName === 'style') {
               const val = node.value;
               if (!val || val.type !== 'JSXExpressionContainer') return;
               const expr = val.expression;
               if (!expr || expr.type !== 'ObjectExpression') return;
 
-              for (const prop of expr.properties) {
+              /**
+               * Recursively check a value node for hardcoded hex.
+               * Handles: Literal, ConditionalExpression, TemplateLiteral.
+               */
+              function checkStyleValue(valueNode) {
                 if (
-                  prop.type === 'Property' &&
-                  prop.value.type === 'Literal' &&
-                  typeof prop.value.value === 'string' &&
-                  /^#[0-9a-fA-F]{3,8}$/.test(prop.value.value)
+                  valueNode.type === 'Literal' &&
+                  typeof valueNode.value === 'string' &&
+                  /^#[0-9a-fA-F]{3,8}$/.test(valueNode.value)
                 ) {
                   context.report({
-                    node: prop.value,
+                    node: valueNode,
                     messageId: 'hexInStyle',
-                    data: { hex: prop.value.value },
+                    data: { hex: valueNode.value },
                   });
+                } else if (valueNode.type === 'ConditionalExpression') {
+                  checkStyleValue(valueNode.consequent);
+                  checkStyleValue(valueNode.alternate);
+                } else if (
+                  valueNode.type === 'TemplateLiteral' &&
+                  valueNode.expressions.length === 0
+                ) {
+                  const raw = valueNode.quasis[0]?.value?.raw ?? '';
+                  if (/^#[0-9a-fA-F]{3,8}$/.test(raw)) {
+                    context.report({
+                      node: valueNode,
+                      messageId: 'hexInStyle',
+                      data: { hex: raw },
+                    });
+                  }
+                }
+              }
+
+              for (const prop of expr.properties) {
+                if (prop.type === 'Property') {
+                  checkStyleValue(prop.value);
                 }
               }
             }

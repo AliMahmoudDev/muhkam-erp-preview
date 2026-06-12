@@ -366,7 +366,7 @@ export default function EmployeePortal() {
               style={{
                 fontSize: 20,
                 fontWeight: 900,
-                color: isDark ? '#fcd34d' : 'var(--status-warning)',
+                color: 'var(--status-warning)',
                 lineHeight: 1.2,
               }}
             >
@@ -393,7 +393,7 @@ export default function EmployeePortal() {
                 }}
               >
                 <p style={{ fontSize: 10, color: textMuted }}>كود الموظف</p>
-                <p style={{ fontSize: 16, fontWeight: 900, color: isDark ? '#fcd34d' : 'var(--status-warning)' }}>
+                <p style={{ fontSize: 16, fontWeight: 900, color: 'var(--status-warning)' }}>
                   {empCode}
                 </p>
               </div>

@@ -26,26 +26,25 @@ function BsKPICard({
   value: number;
   variant: 'green' | 'red' | 'amber';
 }) {
-  const { isLight } = useTheme();
   const animated = useCountUp(value);
   const colors = {
     green: {
       clr: 'var(--status-success)',
-      bg: isLight ? '#f0fdf4' : 'rgba(5,150,105,0.08)',
-      bdr: isLight ? '#bbf7d0' : 'rgba(5,150,105,0.20)',
+      bg:  'var(--bg-success-tint)',
+      bdr: 'var(--edge-success)',
     },
     red: {
       clr: 'var(--status-danger)',
-      bg: isLight ? '#fef2f2' : 'rgba(220,38,38,0.08)',
-      bdr: isLight ? '#fecaca' : 'rgba(220,38,38,0.20)',
+      bg:  'var(--bg-danger-tint)',
+      bdr: 'var(--edge-danger)',
     },
     amber: {
       clr: 'var(--status-warning)',
-      bg: isLight ? '#fffbeb' : 'rgba(245,158,11,0.08)',
-      bdr: isLight ? '#fde68a' : 'rgba(245,158,11,0.20)',
+      bg:  'var(--bg-warning-tint)',
+      bdr: 'var(--edge-warning)',
     },
   }[variant];
-  const txtHint = isLight ? '#9ca3af' : 'rgba(255,255,255,0.35)';
+  const txtHint = 'var(--text-hint)';
   return (
     <div
       className="rpt-panel rounded-2xl p-4"
@@ -258,7 +257,7 @@ function BalanceSheetStatement({ data }: { data: BalanceSheetData }) {
 
 /* ── Main Component ─────────────────────────────────────────────────────── */
 export default function BalanceSheetReport() {
-  const { isLight, txtMain, txtSub, panelBdr } = useTheme();
+  const { txtMain, txtSub, panelBdr } = useTheme();
   const [asOfDate, setAsOfDate] = useState(todayStr());
 
   const {
@@ -332,7 +331,7 @@ export default function BalanceSheetReport() {
             <h2 style={{ fontSize: 18, fontWeight: 900, color: txtMain }}>الميزانية العمومية</h2>
             <p style={{ fontSize: 11, color: txtSub, marginTop: 2 }}>
               كما في تاريخ:&nbsp;
-              <strong style={{ color: isLight ? 'var(--text-2)' : 'rgba(255,255,255,0.75)' }}>
+              <strong style={{ color: 'var(--text-2)' }}>
                 {asOfFormatted}
               </strong>
             </p>
@@ -344,7 +343,7 @@ export default function BalanceSheetReport() {
           <div
             className="flex items-center gap-2 rounded-xl px-3 py-1.5"
             style={{
-              background: isLight ? '#f3f4f6' : 'rgba(255,255,255,0.06)',
+              background: 'var(--bg-row-header)',
               border: `1px solid ${panelBdr}`,
             }}
           >

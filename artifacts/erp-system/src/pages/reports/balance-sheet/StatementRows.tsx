@@ -127,19 +127,17 @@ export function NetRow({ label, value, balanced }: { label: string; value: numbe
 }
 
 export function Spacer() {
-  const { isLight } = useTheme();
   return (
     <tr>
-      <td colSpan={2} style={{ height: 1, background: isLight ? '#e5e7eb' : 'rgba(255,255,255,0.07)', padding: 0 }} />
+      <td colSpan={2} style={{ height: 1, background: 'var(--edge-row)', padding: 0 }} />
     </tr>
   );
 }
 
 export function DrillRow({ children }: { children: React.ReactNode }) {
-  const { isLight } = useTheme();
   return (
     <tr>
-      <td colSpan={2} style={{ padding: '0 12px 12px', background: isLight ? '#fafafa' : 'rgba(255,255,255,0.02)' }}>
+      <td colSpan={2} style={{ padding: '0 12px 12px', background: 'var(--bg-row-alt)' }}>
         {children}
       </td>
     </tr>

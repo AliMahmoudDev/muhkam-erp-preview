@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors */
 import { type Company, C, FONT } from '../../types';
 import { ConfirmDeleteModal } from '../../ui';
 

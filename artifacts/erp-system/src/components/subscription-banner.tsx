@@ -112,6 +112,7 @@ export function SubscriptionBanner() {
             rel="noopener noreferrer"
             style={{
               padding: "5px 14px", borderRadius: "8px",
+              // eslint-disable-next-line erp/no-hardcoded-colors
               background: isOrange ? "#EA580C" : "var(--status-warning)",
               color: "var(--text-1)", fontSize: "12px", fontWeight: 700,
               textDecoration: "none", whiteSpace: "nowrap",

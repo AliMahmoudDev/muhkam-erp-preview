@@ -209,11 +209,11 @@ export default function EmployeeGateway({ onEnter }: Props) {
     resolveUploadedFileUrl(settings.customLogo) || `${import.meta.env.BASE_URL}logo.png`;
 
   /* ── Colors ── */
-  const bg = isDark ? '#070d1a' : '#f0f4ff';
-  const card = isDark ? 'rgba(255,255,255,0.04)' : 'var(--text-1)';
-  const bord = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const text = isDark ? 'var(--text-1)' : 'var(--bg-app)';
-  const muted = isDark ? 'rgba(255,255,255,0.40)' : 'rgba(0,0,0,0.45)';
+  const bg   = 'var(--bg-deep)';
+  const card = 'var(--surface)';
+  const bord = 'var(--edge)';
+  const text = 'var(--text-1)';
+  const muted = 'var(--text-2)';
 
   return (
     <div

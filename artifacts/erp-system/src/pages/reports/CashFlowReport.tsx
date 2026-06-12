@@ -10,7 +10,6 @@ import {
   api, authFetch, formatCurrency, useCountUp,
   DateFilterBar, getDateRange, getPrevRange, DateMode, thisMonthStart, todayStr,
 } from "./shared";
-import { useAppSettings } from "@/contexts/app-settings";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 interface CashFlowSummary {
@@ -43,8 +42,6 @@ function CfKPICard({ label, hint, value, variant, icon: Icon }: {
   label: string; hint: string; value: number;
   variant: "green" | "red" | "net"; icon: React.ElementType;
 }) {
-  const { settings } = useAppSettings();
-  const isLight = (settings.theme ?? "dark") === "light";
   const animated = useCountUp(value);
   const isPos    = value >= 0;
 
@@ -53,14 +50,14 @@ function CfKPICard({ label, hint, value, variant, icon: Icon }: {
     variant === "red"   ? "var(--status-danger)" :
     isPos ? "var(--status-success)" : "var(--status-danger)";
   const bg =
-    variant === "green" ? (isLight ? "#f0fdf4" : "rgba(5,150,105,0.08)") :
-    variant === "red"   ? (isLight ? "#fef2f2" : "rgba(220,38,38,0.08)") :
-    isPos ? (isLight ? "#f0fdf4" : "rgba(5,150,105,0.08)") : (isLight ? "#fef2f2" : "rgba(220,38,38,0.08)");
+    variant === "green" ? "var(--bg-success-tint)" :
+    variant === "red"   ? "var(--bg-danger-tint)" :
+    isPos ? "var(--bg-success-tint)" : "var(--bg-danger-tint)";
   const bdr =
-    variant === "green" ? (isLight ? "#bbf7d0" : "rgba(5,150,105,0.20)") :
-    variant === "red"   ? (isLight ? "#fecaca" : "rgba(220,38,38,0.20)") :
-    isPos ? (isLight ? "#bbf7d0" : "rgba(5,150,105,0.20)") : (isLight ? "#fecaca" : "rgba(220,38,38,0.20)");
-  const txtHint = isLight ? "#9ca3af" : "rgba(255,255,255,0.35)";
+    variant === "green" ? "var(--edge-success)" :
+    variant === "red"   ? "var(--edge-danger)" :
+    isPos ? "var(--edge-success)" : "var(--edge-danger)";
+  const txtHint = "var(--text-hint)";
 
   return (
     <div className="rpt-panel rounded-2xl p-4" style={{ border: `1px solid ${bdr}`, background: bg }}>
@@ -84,21 +81,16 @@ function CashFlowStatement({
   closingBalance: number | null;
   prevNetCf: number | null;
 }) {
-  const { settings } = useAppSettings();
-  const isLight = (settings.theme ?? "dark") === "light";
-
-  const border    = isLight ? "#e5e7eb"              : "rgba(255,255,255,0.08)";
-  const txtMain   = isLight ? "var(--bg-card)"              : "rgba(255,255,255,0.90)";
-  const txtSub    = isLight ? "var(--text-2)"              : "rgba(255,255,255,0.40)";
-  const txtHint   = isLight ? "#9ca3af"              : "rgba(255,255,255,0.28)";
-  const secBg     = isLight ? "var(--text-1)"              : "rgba(255,255,255,0.03)";
-  const totalBg   = isLight ? "var(--text-1)"              : "rgba(255,255,255,0.05)";
-  const neutralClr = isLight ? "#4b5563"             : "rgba(255,255,255,0.55)";
+  const border     = "var(--edge-row)";
+  const txtMain    = "var(--text-1)";
+  const txtSub     = "var(--text-2)";
+  const txtHint    = "var(--text-hint)";
+  const secBg      = "var(--bg-row-section)";
+  const totalBg    = "var(--bg-row-header)";
+  const neutralClr = "var(--text-neutral)";
 
   const netColor  = cf.net_cash_flow >= 0 ? "var(--status-success)" : "var(--status-danger)";
-  const netBg     = cf.net_cash_flow >= 0
-    ? (isLight ? "#ecfdf5" : "rgba(5,150,105,0.12)")
-    : (isLight ? "#fef2f2" : "rgba(220,38,38,0.12)");
+  const netBg     = cf.net_cash_flow >= 0 ? "var(--bg-success-mid)" : "var(--bg-danger-mid)";
 
   const openingBalance = closingBalance !== null ? closingBalance - cf.net_cash_flow : null;
   const operatingNet   = cf.customer_receipts - cf.payments_out - cf.expenses_out;
@@ -170,7 +162,7 @@ function CashFlowStatement({
 
             {/* ══ رصيد أول الفترة ══ */}
             {openingBalance !== null && (
-              <tr style={{ background: isLight ? "#fafafa" : "rgba(255,255,255,0.02)" }}>
+              <tr style={{ background: "var(--bg-row-alt)" }}>
                 <td style={cell({ color: txtSub, fontSize: 12.5, fontStyle: "italic" })}>رصيد أول الفترة (الخزينة)</td>
                 <td style={cellNum({ color: txtSub, fontSize: 12.5, fontStyle: "italic" })}>{formatCurrency(openingBalance)}</td>
               </tr>
@@ -248,7 +240,7 @@ function CashFlowStatement({
             {closingBalance !== null && (
               <>
                 <Spacer />
-                <tr style={{ background: isLight ? "var(--text-1)" : "rgba(255,255,255,0.03)" }}>
+                <tr style={{ background: "var(--bg-row-section)" }}>
                   <td style={cell({ fontWeight: 700, color: txtMain, fontSize: 13 })}>= رصيد آخر الفترة (الخزينة)</td>
                   <td style={cellNum({ fontWeight: 700, color: txtMain, fontSize: 13 })}>{formatCurrency(closingBalance)}</td>
                 </tr>
