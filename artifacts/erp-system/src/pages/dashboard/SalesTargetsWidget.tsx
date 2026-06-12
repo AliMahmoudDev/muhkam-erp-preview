@@ -39,7 +39,7 @@ export function SalesTargetsWidget() {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-14 rounded-xl bg-white/[0.03] animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
+            <div key={i} className="h-14 rounded-xl bg-surface animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
           ))}
         </div>
       ) : (
@@ -57,7 +57,7 @@ export function SalesTargetsWidget() {
                       style={{ background: `${color}20` }}>
                       <Trophy style={{ width: 14, height: 14, color }} />
                     </div>
-                    <span className="text-white/80 text-sm font-semibold truncate">{row.user_name}</span>
+                    <span className="text-ink/80 text-sm font-semibold truncate">{row.user_name}</span>
                   </div>
                   <span className="text-xs font-black shrink-0" style={{ color }}>
                     {pct.toFixed(0)}%
@@ -68,10 +68,10 @@ export function SalesTargetsWidget() {
                     style={{ width: `${pct}%`, background: color }} />
                 </div>
                 <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-white/35">
+                  <span className="text-ink/35">
                     {row.achieved_amount.toLocaleString('ar-EG-u-nu-latn')} ج.م
                   </span>
-                  <span className="text-white/25">
+                  <span className="text-ink/25">
                     الهدف: {row.target_amount.toLocaleString('ar-EG-u-nu-latn')} ج.م
                   </span>
                 </div>

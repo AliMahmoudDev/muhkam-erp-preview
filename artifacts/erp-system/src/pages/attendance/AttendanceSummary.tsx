@@ -10,7 +10,7 @@ export default function AttendanceSummary({
   late: number;
 }) {
   const stats = [
-    { label: 'إجمالي السجلات', val: total, color: 'text-white' },
+    { label: 'إجمالي السجلات', val: total, color: 'text-ink' },
     { label: 'حاضر', val: present, color: 'text-emerald-300' },
     { label: 'غائب', val: absent, color: 'text-red-400' },
     { label: 'متأخر', val: late, color: 'text-amber-300' },
@@ -20,7 +20,7 @@ export default function AttendanceSummary({
       {stats.map((s) => (
         <div key={s.label} className="erp-card p-4 text-center">
           <div className={`text-2xl font-bold ${s.color}`}>{s.val}</div>
-          <div className="text-xs text-white/40 mt-1">{s.label}</div>
+          <div className="text-xs text-ink/40 mt-1">{s.label}</div>
         </div>
       ))}
     </div>

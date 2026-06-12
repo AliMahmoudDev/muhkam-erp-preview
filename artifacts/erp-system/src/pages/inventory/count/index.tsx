@@ -262,13 +262,13 @@ function CountTab({
       <div className="flex gap-2">
         <button
           onClick={() => setSessionView('new')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'new' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'new' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
         >
           جرد جديد
         </button>
         <button
           onClick={() => setSessionView('history')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'history' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'history' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
         >
           سجل الجرد ({sessions.length})
         </button>
@@ -326,8 +326,8 @@ function CountTab({
 
           {/* شريط أدوات الجرد — باركود */}
           {selectedWarehouse > 0 && countMode !== 'partial' && (
-            <div className="flex items-center justify-between gap-3 bg-white/3 border border-white/8 rounded-xl px-4 py-2.5">
-              <div className="flex items-center gap-2 text-xs text-white/50">
+            <div className="flex items-center justify-between gap-3 bg-surface border border-line rounded-xl px-4 py-2.5">
+              <div className="flex items-center gap-2 text-xs text-ink/50">
                 <Camera className="w-3.5 h-3.5 text-violet-400" />
                 <span>استخدم الماسح الضوئي لإضافة الكميات بسرعة</span>
                 {lastScanned && (

@@ -60,7 +60,7 @@ export default function EmployeePortal() {
   const today = todayStr();
   const currentMonth = today.slice(0, 7);
 
-  const textMain = isDark ? '#f1f5f9' : '#0f172a';
+  const textMain = isDark ? '#f1f5f9' : 'var(--bg-app)';
   const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
   const bg = isDark ? 'rgba(255,255,255,0.01)' : '#f8fafc';
   const cardBg = isDark ? 'rgba(255,255,255,0.035)' : '#ffffff';

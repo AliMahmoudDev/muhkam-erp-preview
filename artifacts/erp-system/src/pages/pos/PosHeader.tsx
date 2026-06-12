@@ -89,7 +89,7 @@ export function PosHeader({
           <button
             onClick={onToggleReturnMode}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              returnMode ? 'bg-red-500 text-white' : 'erp-btn-secondary'
+              returnMode ? 'bg-red-500 text-ink' : 'erp-btn-secondary'
             }`}
           >
             <RotateCcw className="w-3.5 h-3.5" />

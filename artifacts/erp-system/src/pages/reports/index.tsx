@@ -37,7 +37,7 @@ function WarehouseFilter({ value, onChange }: { value: number | null; onChange: 
     <select
       value={value ?? ""}
       onChange={e => onChange(e.target.value ? Number(e.target.value) : null)}
-      className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white/70 focus:outline-none focus:ring-1 focus:ring-amber-400/40"
+      className="bg-surface border border-line rounded-xl px-3 py-2 text-sm font-bold text-ink/70 focus:outline-none focus:ring-1 focus:ring-amber-400/40"
     >
       <option value="" className="bg-[#1a1a2e]">🏪 كل الفروع</option>
       {warehouses.map(w => (
@@ -145,21 +145,21 @@ export default function Reports() {
       <svg className="w-14 h-14 text-red-400/40 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 115.636 5.636m12.728 12.728L5.636 5.636"/>
       </svg>
-      <p className="text-white/60 font-bold text-lg">غير مصرح</p>
-      <p className="text-white/30 text-sm mt-1">غير مصرح لك بالوصول إلى التقارير — تواصل مع المدير لتفعيل الصلاحية</p>
+      <p className="text-ink/60 font-bold text-lg">غير مصرح</p>
+      <p className="text-ink/30 text-sm mt-1">غير مصرح لك بالوصول إلى التقارير — تواصل مع المدير لتفعيل الصلاحية</p>
     </div>
   );
 
   return (
     <div className="space-y-4" style={{ fontFamily:"'Tajawal','Cairo',sans-serif" }} dir="rtl">
       {/* ── Tab bar + warehouse filter ── */}
-      <div className="no-print flex flex-wrap gap-1.5 bg-white/5 rounded-2xl p-1.5 border border-white/10 items-center">
+      <div className="no-print flex flex-wrap gap-1.5 bg-surface rounded-2xl p-1.5 border border-line items-center">
         {TABS.map(t => (
           <button key={t.id} onClick={() => changeTab(t.id)}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
               tab === t.id
                 ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
-                : "text-white/50 hover:text-white hover:bg-white/8"
+                : "text-ink/50 hover:text-ink hover:bg-surface"
             }`}>
             {t.label}
           </button>

@@ -186,7 +186,7 @@ function BalanceSheetStatement({ data }: { data: BalanceSheetData }) {
           <ChildRow label="أصول ثابتة — لا توجد في هذا النظام حالياً" value={0} dim />
           <TotalRow label="= إجمالي الأصول غير المتداولة" value={0} accent="#6b7280" />
 
-          <TotalRow label="= إجمالي الأصول" value={data.assets.total} accent="#1e293b" />
+          <TotalRow label="= إجمالي الأصول" value={data.assets.total} accent="var(--bg-elevated)" />
 
           <Spacer />
 

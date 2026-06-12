@@ -322,7 +322,7 @@ export default function SalesReturnsPanel() {
           {isAdmin && (
             <button
               onClick={() => { resetStandalone(); setPhase('standalone'); }}
-              className="px-4 py-2 rounded-xl text-xs font-bold border border-white/15 text-white/40 hover:text-white/60 hover:border-white/25 transition-all"
+              className="px-4 py-2 rounded-xl text-xs font-bold border border-line text-ink/40 hover:text-ink/60 hover:border-line transition-all"
             >
               مرتجع مستقل
             </button>

@@ -67,17 +67,17 @@ export default function TopReportsTab() {
     rows: any[];
     cols: { key: string; label: string; fmt?: (v: any) => string; cls?: string }[];
   }) => (
-    <div className="glass-panel rounded-2xl overflow-hidden border border-white/5">
-      <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+    <div className="glass-panel rounded-2xl overflow-hidden border border-line">
+      <div className="px-4 py-3 border-b border-line flex items-center gap-2">
         {icon}
-        <h3 className="text-white font-bold text-sm">{title}</h3>
+        <h3 className="text-ink font-bold text-sm">{title}</h3>
       </div>
       <table className="w-full text-right text-sm">
-        <thead className="bg-white/5">
+        <thead className="bg-surface">
           <tr>
-            <th className="p-3 text-white/40 text-xs">#</th>
+            <th className="p-3 text-ink/40 text-xs">#</th>
             {cols.map((c) => (
-              <th key={c.key} className="p-3 text-white/40 text-xs">
+              <th key={c.key} className="p-3 text-ink/40 text-xs">
                 {c.label}
               </th>
             ))}
@@ -88,22 +88,22 @@ export default function TopReportsTab() {
             <TableSkeleton cols={cols.length + 1} rows={5} />
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={cols.length + 1} className="p-8 text-center text-white/30 text-xs">
+              <td colSpan={cols.length + 1} className="p-8 text-center text-ink/30 text-xs">
                 لا توجد بيانات
               </td>
             </tr>
           ) : (
             rows.map((row, i) => (
-              <tr key={`top-row-${i}`} className="border-b border-white/5 erp-table-row">
+              <tr key={`top-row-${i}`} className="border-b border-line erp-table-row">
                 <td className="p-3">
                   <span className="text-base">
                     {['🥇', '🥈', '🥉'][i] ?? (
-                      <span className="text-white/30 text-xs font-bold">#{i + 1}</span>
+                      <span className="text-ink/30 text-xs font-bold">#{i + 1}</span>
                     )}
                   </span>
                 </td>
                 {cols.map((c) => (
-                  <td key={c.key} className={`p-3 font-bold ${c.cls ?? 'text-white'}`}>
+                  <td key={c.key} className={`p-3 font-bold ${c.cls ?? 'text-ink'}`}>
                     {c.fmt ? c.fmt(row[c.key]) : row[c.key]}
                   </td>
                 ))}
@@ -158,7 +158,7 @@ export default function TopReportsTab() {
               fmt: (v) => formatCurrency(v),
               cls: 'text-emerald-400',
             },
-            { key: 'invoice_count', label: 'الفواتير', cls: 'text-white/50' },
+            { key: 'invoice_count', label: 'الفواتير', cls: 'text-ink/50' },
           ]}
         />
         <TopTable
@@ -173,7 +173,7 @@ export default function TopReportsTab() {
               fmt: (v) => formatCurrency(v),
               cls: 'text-blue-400',
             },
-            { key: 'invoice_count', label: 'الفواتير', cls: 'text-white/50' },
+            { key: 'invoice_count', label: 'الفواتير', cls: 'text-ink/50' },
           ]}
         />
       </div>

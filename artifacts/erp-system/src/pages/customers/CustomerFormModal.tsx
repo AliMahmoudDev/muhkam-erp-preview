@@ -84,12 +84,12 @@ export function AddCustomerModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay">
       <form
         onSubmit={handleAdd}
-        className="glass-panel rounded-3xl p-8 w-full max-w-md border border-white/10"
+        className="glass-panel rounded-3xl p-8 w-full max-w-md border border-line"
       >
-        <h3 className="text-2xl font-bold text-white mb-6">عميل جديد</h3>
+        <h3 className="text-2xl font-bold text-ink mb-6">عميل جديد</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-white/70 text-sm mb-1">اسم العميل *</label>
+            <label className="block text-ink/70 text-sm mb-1">اسم العميل *</label>
             <input
               required
               type="text"
@@ -99,8 +99,8 @@ export function AddCustomerModal({
             />
           </div>
           <div>
-            <label className="block text-white/70 text-sm mb-1">
-              رقم الهاتف * <span className="text-white/30 text-xs">(11 رقم)</span>
+            <label className="block text-ink/70 text-sm mb-1">
+              رقم الهاتف * <span className="text-ink/30 text-xs">(11 رقم)</span>
             </label>
             <input
               required
@@ -114,7 +114,7 @@ export function AddCustomerModal({
             />
           </div>
           <div>
-            <label className="block text-white/70 text-sm mb-1">رصيد ابتدائي (عليه)</label>
+            <label className="block text-ink/70 text-sm mb-1">رصيد ابتدائي (عليه)</label>
             <input
               type="number"
               step="0.01"
@@ -125,7 +125,7 @@ export function AddCustomerModal({
           </div>
 
           <div>
-            <label className="block text-white/70 text-sm mb-1">تصنيف العميل</label>
+            <label className="block text-ink/70 text-sm mb-1">تصنيف العميل</label>
             <div className="flex items-center gap-2">
               <select
                 className="glass-input flex-1 appearance-none"
@@ -164,7 +164,7 @@ export function AddCustomerModal({
                     }}
                   />
                   <button type="button" onClick={handleAddClassification} className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors shrink-0">حفظ</button>
-                  <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(''); }} className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors shrink-0">إلغاء</button>
+                  <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(''); }} className="px-2 py-1.5 rounded-lg bg-surface text-ink/60 text-xs hover:bg-raised transition-colors shrink-0">إلغاء</button>
                 </div>
               ) : (
                 <button type="button" onClick={() => setShowNewClassification(true)} className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1.5 transition-colors">
@@ -174,25 +174,25 @@ export function AddCustomerModal({
             )}
           </div>
 
-          <div className="border border-white/10 rounded-2xl p-4 bg-white/3 space-y-3">
-            <p className="text-white/50 text-xs font-semibold mb-1">الدور في العمليات</p>
+          <div className="border border-line rounded-2xl p-4 bg-surface space-y-3">
+            <p className="text-ink/50 text-xs font-semibold mb-1">الدور في العمليات</p>
             <button
               type="button"
               onClick={() => setFormData((f) => ({ ...f, is_customer: !f.is_customer }))}
-              className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${formData.is_customer ? 'text-green-400' : 'text-white/50 hover:text-white/70'}`}
+              className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${formData.is_customer ? 'text-green-400' : 'text-ink/50 hover:text-ink/70'}`}
             >
-              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${formData.is_customer ? 'bg-green-500 border-green-500' : 'border-white/30'}`}>
-                {formData.is_customer && <span className="text-white text-xs font-black">✓</span>}
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${formData.is_customer ? 'bg-green-500 border-green-500' : 'border-line'}`}>
+                {formData.is_customer && <span className="text-ink text-xs font-black">✓</span>}
               </div>
               🛒 عميل — يمكن البيع له
             </button>
             <button
               type="button"
               onClick={() => setFormData((f) => ({ ...f, is_supplier: !f.is_supplier }))}
-              className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${formData.is_supplier ? 'text-blue-400' : 'text-white/50 hover:text-white/70'}`}
+              className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${formData.is_supplier ? 'text-blue-400' : 'text-ink/50 hover:text-ink/70'}`}
             >
-              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${formData.is_supplier ? 'bg-blue-500 border-blue-500' : 'border-white/30'}`}>
-                {formData.is_supplier && <span className="text-white text-xs font-black">✓</span>}
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${formData.is_supplier ? 'bg-blue-500 border-blue-500' : 'border-line'}`}>
+                {formData.is_supplier && <span className="text-ink text-xs font-black">✓</span>}
               </div>
               🔄 مورد — يمكن الشراء منه
             </button>
@@ -247,12 +247,12 @@ export function EditCustomerModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay">
       <form
         onSubmit={handleEdit}
-        className="glass-panel rounded-3xl p-8 w-full max-w-md border border-white/10"
+        className="glass-panel rounded-3xl p-8 w-full max-w-md border border-line"
       >
-        <h3 className="text-2xl font-bold text-white mb-6">تعديل بيانات العميل</h3>
+        <h3 className="text-2xl font-bold text-ink mb-6">تعديل بيانات العميل</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-white/70 text-sm mb-1">اسم العميل *</label>
+            <label className="block text-ink/70 text-sm mb-1">اسم العميل *</label>
             <input
               required
               type="text"
@@ -262,8 +262,8 @@ export function EditCustomerModal({
             />
           </div>
           <div>
-            <label className="block text-white/70 text-sm mb-1">
-              رقم الهاتف * <span className="text-white/30 text-xs">(11 رقم)</span>
+            <label className="block text-ink/70 text-sm mb-1">
+              رقم الهاتف * <span className="text-ink/30 text-xs">(11 رقم)</span>
             </label>
             <input
               required
@@ -278,7 +278,7 @@ export function EditCustomerModal({
           </div>
 
           <div>
-            <label className="block text-white/70 text-sm mb-1">تصنيف العميل</label>
+            <label className="block text-ink/70 text-sm mb-1">تصنيف العميل</label>
             <div className="flex items-center gap-2">
               <select
                 className="glass-input flex-1 appearance-none"
@@ -317,7 +317,7 @@ export function EditCustomerModal({
                     }}
                   />
                   <button type="button" onClick={handleAddClassification} className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold hover:bg-amber-500/30 transition-colors shrink-0">حفظ</button>
-                  <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(''); }} className="px-2 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs hover:bg-white/15 transition-colors shrink-0">إلغاء</button>
+                  <button type="button" onClick={() => { setShowNewClassification(false); setNewClassificationName(''); }} className="px-2 py-1.5 rounded-lg bg-surface text-ink/60 text-xs hover:bg-raised transition-colors shrink-0">إلغاء</button>
                 </div>
               ) : (
                 <button type="button" onClick={() => setShowNewClassification(true)} className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-1.5 transition-colors">
@@ -328,7 +328,7 @@ export function EditCustomerModal({
           </div>
 
           <div>
-            <label className="block text-white/70 text-sm mb-1">قائمة الأسعار</label>
+            <label className="block text-ink/70 text-sm mb-1">قائمة الأسعار</label>
             <select
               className="glass-input w-full appearance-none"
               value={editFormData.price_list_id ?? ''}
@@ -341,7 +341,7 @@ export function EditCustomerModal({
             </select>
             {editFormData.price_list_id && (
               <div className="mt-2 flex items-center gap-2">
-                <label className="text-white/50 text-xs shrink-0">هامش الربح الخاص %</label>
+                <label className="text-ink/50 text-xs shrink-0">هامش الربح الخاص %</label>
                 <input
                   type="number"
                   min="0"
@@ -351,30 +351,30 @@ export function EditCustomerModal({
                   placeholder="مثال: 15"
                   className="glass-input flex-1 text-sm py-1.5"
                 />
-                <span className="text-white/40 text-xs shrink-0">%</span>
+                <span className="text-ink/40 text-xs shrink-0">%</span>
               </div>
             )}
           </div>
 
-          <div className="border border-white/10 rounded-2xl p-4 bg-white/3 space-y-3">
-            <p className="text-white/50 text-xs font-semibold mb-1">الدور في العمليات</p>
+          <div className="border border-line rounded-2xl p-4 bg-surface space-y-3">
+            <p className="text-ink/50 text-xs font-semibold mb-1">الدور في العمليات</p>
             <button
               type="button"
               onClick={() => setEditFormData((f) => ({ ...f, is_customer: !f.is_customer }))}
-              className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${editFormData.is_customer ? 'text-green-400' : 'text-white/50 hover:text-white/70'}`}
+              className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${editFormData.is_customer ? 'text-green-400' : 'text-ink/50 hover:text-ink/70'}`}
             >
-              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${editFormData.is_customer ? 'bg-green-500 border-green-500' : 'border-white/30'}`}>
-                {editFormData.is_customer && <span className="text-white text-xs font-black">✓</span>}
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${editFormData.is_customer ? 'bg-green-500 border-green-500' : 'border-line'}`}>
+                {editFormData.is_customer && <span className="text-ink text-xs font-black">✓</span>}
               </div>
               🛒 عميل — يمكن البيع له
             </button>
             <button
               type="button"
               onClick={() => setEditFormData((f) => ({ ...f, is_supplier: !f.is_supplier }))}
-              className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${editFormData.is_supplier ? 'text-blue-400' : 'text-white/50 hover:text-white/70'}`}
+              className={`flex items-center gap-2 w-full text-sm font-bold transition-colors ${editFormData.is_supplier ? 'text-blue-400' : 'text-ink/50 hover:text-ink/70'}`}
             >
-              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${editFormData.is_supplier ? 'bg-blue-500 border-blue-500' : 'border-white/30'}`}>
-                {editFormData.is_supplier && <span className="text-white text-xs font-black">✓</span>}
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0 ${editFormData.is_supplier ? 'bg-blue-500 border-blue-500' : 'border-line'}`}>
+                {editFormData.is_supplier && <span className="text-ink text-xs font-black">✓</span>}
               </div>
               🔄 مورد — يمكن الشراء منه
             </button>
@@ -414,12 +414,12 @@ export function ReceiptModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay">
       <form
         onSubmit={handleReceipt}
-        className="glass-panel rounded-3xl p-8 w-full max-w-md border border-white/10 space-y-5"
+        className="glass-panel rounded-3xl p-8 w-full max-w-md border border-line space-y-5"
       >
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-2xl font-bold text-white">سند قبض</h3>
-            <p className="text-white/50 text-sm mt-1">
+            <h3 className="text-2xl font-bold text-ink">سند قبض</h3>
+            <p className="text-ink/50 text-sm mt-1">
               استلام مبلغ من{' '}
               <span className="text-amber-400 font-bold">{showReceipt.name}</span>
             </p>
@@ -427,14 +427,14 @@ export function ReceiptModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20"
+            className="p-2 rounded-xl bg-surface hover:bg-raised"
           >
-            <X className="w-4 h-4 text-white/60" />
+            <X className="w-4 h-4 text-ink/60" />
           </button>
         </div>
 
         <div
-          className={`rounded-xl px-4 py-2.5 border text-sm font-bold flex items-center justify-between ${showReceipt.balance > 0 ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : showReceipt.balance < 0 ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-white/40'}`}
+          className={`rounded-xl px-4 py-2.5 border text-sm font-bold flex items-center justify-between ${showReceipt.balance > 0 ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : showReceipt.balance < 0 ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-surface border-line text-ink/40'}`}
         >
           <span>الرصيد الحالي:</span>
           <span>
@@ -453,7 +453,7 @@ export function ReceiptModal({
         )}
 
         <div>
-          <label className="block text-white/70 text-sm mb-1">الخزينة المستلِمة *</label>
+          <label className="block text-ink/70 text-sm mb-1">الخزينة المستلِمة *</label>
           <select
             required
             className="glass-input w-full appearance-none"
@@ -472,7 +472,7 @@ export function ReceiptModal({
         </div>
 
         <div>
-          <label className="block text-white/70 text-sm mb-1">المبلغ المستلم *</label>
+          <label className="block text-ink/70 text-sm mb-1">المبلغ المستلم *</label>
           <input
             required
             type="number"
@@ -484,7 +484,7 @@ export function ReceiptModal({
             placeholder="0.00"
           />
           {receiptData.amount && (
-            <p className="text-xs text-white/40 mt-1">
+            <p className="text-xs text-ink/40 mt-1">
               الرصيد بعد القبض:{' '}
               <span
                 className={
@@ -505,7 +505,7 @@ export function ReceiptModal({
         </div>
 
         <div>
-          <label className="block text-white/70 text-sm mb-1">بيان (اختياري)</label>
+          <label className="block text-ink/70 text-sm mb-1">بيان (اختياري)</label>
           <input
             type="text"
             className="glass-input"
@@ -519,7 +519,7 @@ export function ReceiptModal({
           <button
             type="submit"
             disabled={isPending}
-            className="flex-1 bg-emerald-500 text-white py-3 rounded-xl font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 bg-emerald-500 text-ink py-3 rounded-xl font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2"
           >
             <Vault className="w-4 h-4" />
             {isPending ? 'جاري الحفظ...' : 'تأكيد القبض'}
@@ -560,12 +560,12 @@ export function SupplierPaymentModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay">
       <form
         onSubmit={handleSupplierPayment}
-        className="glass-panel rounded-3xl p-8 w-full max-w-md border border-white/10 space-y-5"
+        className="glass-panel rounded-3xl p-8 w-full max-w-md border border-line space-y-5"
       >
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-2xl font-bold text-white">تسديد دفعة</h3>
-            <p className="text-white/50 text-sm mt-1">
+            <h3 className="text-2xl font-bold text-ink">تسديد دفعة</h3>
+            <p className="text-ink/50 text-sm mt-1">
               سداد مستحقات{' '}
               <span className="text-cyan-400 font-bold">{showSupplierPayment.name}</span>
             </p>
@@ -573,14 +573,14 @@ export function SupplierPaymentModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20"
+            className="p-2 rounded-xl bg-surface hover:bg-raised"
           >
-            <X className="w-4 h-4 text-white/60" />
+            <X className="w-4 h-4 text-ink/60" />
           </button>
         </div>
 
         <div
-          className={`rounded-xl px-4 py-2.5 border text-sm font-bold flex items-center justify-between ${showSupplierPayment.balance < 0 ? 'bg-red-500/10 border-red-500/30 text-red-400' : showSupplierPayment.balance > 0 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-white/40'}`}
+          className={`rounded-xl px-4 py-2.5 border text-sm font-bold flex items-center justify-between ${showSupplierPayment.balance < 0 ? 'bg-red-500/10 border-red-500/30 text-red-400' : showSupplierPayment.balance > 0 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-surface border-line text-ink/40'}`}
         >
           <span>الرصيد الحالي:</span>
           <span>
@@ -593,7 +593,7 @@ export function SupplierPaymentModal({
         </div>
 
         <div>
-          <label className="block text-white/70 text-sm mb-1">الخزينة المدفوعة منها *</label>
+          <label className="block text-ink/70 text-sm mb-1">الخزينة المدفوعة منها *</label>
           <select
             required
             className="glass-input w-full appearance-none"
@@ -612,7 +612,7 @@ export function SupplierPaymentModal({
         </div>
 
         <div>
-          <label className="block text-white/70 text-sm mb-1">المبلغ المسدَّد *</label>
+          <label className="block text-ink/70 text-sm mb-1">المبلغ المسدَّد *</label>
           <input
             required
             type="number"
@@ -624,7 +624,7 @@ export function SupplierPaymentModal({
             placeholder="0.00"
           />
           {supplierPaymentData.amount && (
-            <p className="text-xs text-white/40 mt-1">
+            <p className="text-xs text-ink/40 mt-1">
               الرصيد بعد التسديد:{' '}
               {(() => {
                 const newBal =
@@ -636,7 +636,7 @@ export function SupplierPaymentModal({
                         ? 'text-red-400 font-bold'
                         : newBal > 0
                           ? 'text-green-400 font-bold'
-                          : 'text-white/40 font-bold'
+                          : 'text-ink/40 font-bold'
                     }
                   >
                     {newBal < 0
@@ -652,7 +652,7 @@ export function SupplierPaymentModal({
         </div>
 
         <div>
-          <label className="block text-white/70 text-sm mb-1">ملاحظات (اختياري)</label>
+          <label className="block text-ink/70 text-sm mb-1">ملاحظات (اختياري)</label>
           <input
             type="text"
             className="glass-input"
@@ -666,7 +666,7 @@ export function SupplierPaymentModal({
           <button
             type="submit"
             disabled={isPending}
-            className="flex-1 bg-cyan-500 text-white py-3 rounded-xl font-bold hover:bg-cyan-600 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 bg-cyan-500 text-ink py-3 rounded-xl font-bold hover:bg-cyan-600 transition-colors flex items-center justify-center gap-2"
           >
             <CreditCard className="w-4 h-4" />
             {isPending ? 'جاري الحفظ...' : 'تأكيد التسديد'}
@@ -702,15 +702,15 @@ export function DeleteCustomerConfirm({
   const customer = customers.find((c) => c.id === deleteConfirmId);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm modal-overlay">
-      <div className="glass-panel rounded-3xl p-8 w-full max-w-sm border border-white/10 text-center space-y-5">
+      <div className="glass-panel rounded-3xl p-8 w-full max-w-sm border border-line text-center space-y-5">
         <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto">
           <Trash2 className="w-7 h-7 text-red-400" />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-white">حذف العميل</h3>
-          <p className="text-white/50 text-sm mt-2">
+          <h3 className="text-xl font-bold text-ink">حذف العميل</h3>
+          <p className="text-ink/50 text-sm mt-2">
             هل تريد حذف العميل{' '}
-            <span className="text-white font-bold">
+            <span className="text-ink font-bold">
               {customer?.name}
             </span>
             ؟
@@ -725,7 +725,7 @@ export function DeleteCustomerConfirm({
           <button
             onClick={handleDelete}
             disabled={isPending || Number(customer?.balance) !== 0}
-            className="flex-1 bg-red-500/80 hover:bg-red-500 text-white py-2.5 rounded-xl font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex-1 bg-red-500/80 hover:bg-red-500 text-ink py-2.5 rounded-xl font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {isPending ? 'جاري الحذف...' : 'حذف'}
           </button>

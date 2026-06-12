@@ -33,7 +33,7 @@ function KPICard({ label, value, prevVal, accent, sub, icon, index }: {
   const animated = useCountUp(value);
   const { settings } = useAppSettings();
   const isLight = (settings.theme ?? "dark") === "light";
-  const numColor = accent === "#10b981" && value < 0 ? "#ef4444" : isLight ? "#0f172a" : "#ffffff";
+  const numColor = accent === "#10b981" && value < 0 ? "#ef4444" : isLight ? "var(--bg-app)" : "#ffffff";
   return (
     <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:0.3,delay:index*0.06}}
       className="rpt-panel rounded-xl px-4 py-3.5"

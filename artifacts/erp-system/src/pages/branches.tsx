@@ -181,8 +181,8 @@ export default function Branches() {
                 <GitBranch className="w-4 h-4 text-amber-400" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-white">إدارة الفروع</h1>
-                <p className="text-[10px] text-white/40">إنشاء وإدارة فروع الشركة</p>
+                <h1 className="text-base font-bold text-ink">إدارة الفروع</h1>
+                <p className="text-[10px] text-ink/40">إنشاء وإدارة فروع الشركة</p>
               </div>
             </div>
             {isAdmin && (
@@ -203,7 +203,7 @@ export default function Branches() {
             ].map((s) => (
               <div key={s.label} className="rounded-lg p-2 text-center border border-[var(--erp-border)]" style={{ background: s.color + '10' }}>
                 <p className="text-base font-black" style={{ color: s.color }}>{s.value}</p>
-                <p className="text-[9px] text-white/40">{s.label}</p>
+                <p className="text-[9px] text-ink/40">{s.label}</p>
               </div>
             ))}
           </div>
@@ -223,8 +223,8 @@ export default function Branches() {
         {showForm && isAdmin && (
           <div className="mx-3 mt-3 rounded-xl p-3.5 border border-amber-500/25" style={{ background: 'rgba(245,158,11,0.05)' }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold text-white">{editId !== null ? 'تعديل الفرع' : 'فرع جديد'}</p>
-              <button onClick={resetForm} className="text-[10px] text-white/40 hover:text-white/60">إلغاء</button>
+              <p className="text-xs font-bold text-ink">{editId !== null ? 'تعديل الفرع' : 'فرع جديد'}</p>
+              <button onClick={resetForm} className="text-[10px] text-ink/40 hover:text-ink/60">إلغاء</button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-2">
               <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -236,10 +236,10 @@ export default function Branches() {
               {editId !== null && (
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => setForm((f) => ({ ...f, is_active: !f.is_active }))}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${form.is_active ? 'bg-amber-500' : 'bg-white/15'}`}>
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${form.is_active ? 'bg-amber-500' : 'bg-raised'}`}>
                     <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${form.is_active ? '-translate-x-5' : '-translate-x-1'}`} />
                   </button>
-                  <span className="text-[10px] text-white/50">{form.is_active ? 'نشط' : 'موقوف'}</span>
+                  <span className="text-[10px] text-ink/50">{form.is_active ? 'نشط' : 'موقوف'}</span>
                 </div>
               )}
               <button type="submit" disabled={createMutation.isPending || updateMutation.isPending}
@@ -258,8 +258,8 @@ export default function Branches() {
             </div>
           ) : branches.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <GitBranch className="w-10 h-10 text-white/10 mb-3" />
-              <p className="text-xs text-white/30">لا توجد فروع</p>
+              <GitBranch className="w-10 h-10 text-ink/10 mb-3" />
+              <p className="text-xs text-ink/30">لا توجد فروع</p>
               {isAdmin && (
                 <button onClick={() => setShowForm(true)} className="mt-3 text-xs text-amber-400 hover:text-amber-300">أضف أول فرع</button>
               )}
@@ -270,22 +270,22 @@ export default function Branches() {
                 className={`w-full text-right rounded-xl p-3 border transition-all ${b.id === selectedId ? 'border-amber-500/40 bg-amber-500/8' : 'border-[var(--erp-border)] hover:border-amber-500/20 bg-[var(--erp-bg-card)]'}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${b.is_active ? 'bg-amber-500/15' : 'bg-white/5'}`}>
-                      <Building2 className={`w-4 h-4 ${b.is_active ? 'text-amber-400' : 'text-white/20'}`} />
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${b.is_active ? 'bg-amber-500/15' : 'bg-surface'}`}>
+                      <Building2 className={`w-4 h-4 ${b.is_active ? 'text-amber-400' : 'text-ink/20'}`} />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-white text-sm truncate">{b.name}</p>
-                      {b.address && <p className="text-[10px] text-white/40 truncate">{b.address}</p>}
+                      <p className="font-bold text-ink text-sm truncate">{b.name}</p>
+                      {b.address && <p className="text-[10px] text-ink/40 truncate">{b.address}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${b.is_active ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
                       {b.is_active ? 'نشط' : 'موقوف'}
                     </span>
-                    <ChevronRight className={`w-3.5 h-3.5 text-white/20 transition-transform ${b.id === selectedId ? 'rotate-180' : ''}`} />
+                    <ChevronRight className={`w-3.5 h-3.5 text-ink/20 transition-transform ${b.id === selectedId ? 'rotate-180' : ''}`} />
                   </div>
                 </div>
-                <div className="flex items-center gap-3 mt-2 pt-2 border-t border-white/5">
+                <div className="flex items-center gap-3 mt-2 pt-2 border-t border-line">
                   <span className="flex items-center gap-1 text-[10px] text-blue-400/70">
                     <Warehouse className="w-3 h-3" /> {b.warehouse_count ?? 0} مخزن
                   </span>
@@ -314,8 +314,8 @@ export default function Branches() {
           <div className="w-16 h-16 rounded-2xl bg-amber-500/8 border border-amber-500/15 flex items-center justify-center mb-4">
             <ArrowRight className="w-7 h-7 text-amber-500/40" />
           </div>
-          <p className="text-white/30 font-medium text-sm">اختر فرعاً من القائمة</p>
-          <p className="text-white/20 text-xs mt-1">لعرض التفاصيل الكاملة — الموظفون، المخازن، الخزائن، والإحصاءات</p>
+          <p className="text-ink/30 font-medium text-sm">اختر فرعاً من القائمة</p>
+          <p className="text-ink/20 text-xs mt-1">لعرض التفاصيل الكاملة — الموظفون، المخازن، الخزائن، والإحصاءات</p>
         </div>
       )}
 
@@ -368,31 +368,31 @@ function BranchDetail({
       <div className="shrink-0 px-5 pt-4 pb-0 border-b border-[var(--erp-border)]">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${branch.is_active ? 'bg-amber-500/15' : 'bg-white/5'}`}>
-              <Building2 className={`w-5 h-5 ${branch.is_active ? 'text-amber-400' : 'text-white/30'}`} />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${branch.is_active ? 'bg-amber-500/15' : 'bg-surface'}`}>
+              <Building2 className={`w-5 h-5 ${branch.is_active ? 'text-amber-400' : 'text-ink/30'}`} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-white">{branch.name}</h2>
+                <h2 className="text-lg font-black text-ink">{branch.name}</h2>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${branch.is_active ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' : 'text-red-400 bg-red-500/10 border border-red-500/20'}`}>
                   {branch.is_active ? <><CheckCircle2 className="w-2.5 h-2.5 inline ml-0.5" />نشط</> : <><XCircle className="w-2.5 h-2.5 inline ml-0.5" />موقوف</>}
                 </span>
               </div>
               <div className="flex items-center gap-3 mt-0.5">
-                {branch.address && <span className="flex items-center gap-1 text-[11px] text-white/40"><MapPin className="w-3 h-3" />{branch.address}</span>}
-                {branch.phone && <span className="flex items-center gap-1 text-[11px] text-white/40"><Phone className="w-3 h-3" />{branch.phone}</span>}
-                <span className="flex items-center gap-1 text-[11px] text-white/30"><Calendar className="w-3 h-3" />{new Date(branch.created_at).toLocaleDateString('ar-EG-u-nu-latn')}</span>
+                {branch.address && <span className="flex items-center gap-1 text-[11px] text-ink/40"><MapPin className="w-3 h-3" />{branch.address}</span>}
+                {branch.phone && <span className="flex items-center gap-1 text-[11px] text-ink/40"><Phone className="w-3 h-3" />{branch.phone}</span>}
+                <span className="flex items-center gap-1 text-[11px] text-ink/30"><Calendar className="w-3 h-3" />{new Date(branch.created_at).toLocaleDateString('ar-EG-u-nu-latn')}</span>
               </div>
             </div>
           </div>
           {isAdmin && (
             <div className="flex gap-2">
               <button onClick={onEdit}
-                className="flex items-center gap-1.5 text-xs text-white/50 hover:text-amber-400 hover:bg-amber-500/8 px-3 py-1.5 rounded-xl border border-[var(--erp-border)] hover:border-amber-500/25 transition-all">
+                className="flex items-center gap-1.5 text-xs text-ink/50 hover:text-amber-400 hover:bg-amber-500/8 px-3 py-1.5 rounded-xl border border-[var(--erp-border)] hover:border-amber-500/25 transition-all">
                 <Pencil className="w-3.5 h-3.5" /> تعديل
               </button>
               <button onClick={onDelete}
-                className="flex items-center gap-1.5 text-xs text-white/30 hover:text-red-400 hover:bg-red-500/8 px-3 py-1.5 rounded-xl border border-[var(--erp-border)] hover:border-red-500/25 transition-all">
+                className="flex items-center gap-1.5 text-xs text-ink/30 hover:text-red-400 hover:bg-red-500/8 px-3 py-1.5 rounded-xl border border-[var(--erp-border)] hover:border-red-500/25 transition-all">
                 <Trash2 className="w-3.5 h-3.5" /> حذف
               </button>
             </div>
@@ -403,11 +403,11 @@ function BranchDetail({
         <div className="flex gap-1">
           {TABS.map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-t-xl border-b-2 transition-all ${tab === t.key ? 'text-amber-400 border-amber-400 bg-amber-500/8' : 'text-white/40 border-transparent hover:text-white/60 hover:bg-white/3'}`}>
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-t-xl border-b-2 transition-all ${tab === t.key ? 'text-amber-400 border-amber-400 bg-amber-500/8' : 'text-ink/40 border-transparent hover:text-ink/60 hover:bg-surface'}`}>
               <t.icon className="w-3.5 h-3.5" />
               {t.label}
               {t.count !== undefined && (
-                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${tab === t.key ? 'bg-amber-500/20 text-amber-300' : 'bg-white/8 text-white/30'}`}>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${tab === t.key ? 'bg-amber-500/20 text-amber-300' : 'bg-surface text-ink/30'}`}>
                   {t.count}
                 </span>
               )}
@@ -424,7 +424,7 @@ function BranchDetail({
           </div>
         ) : !data ? (
           <div className="flex items-center justify-center py-16">
-            <p className="text-xs text-white/30">خطأ في تحميل البيانات</p>
+            <p className="text-xs text-ink/30">خطأ في تحميل البيانات</p>
           </div>
         ) : (
           <div className="p-5">
@@ -465,16 +465,16 @@ function OverviewTab({ data }: { data: BranchOverview }) {
     <div className="space-y-5">
       {/* KPI cards */}
       <div>
-        <p className="text-[10px] text-white/30 font-bold mb-2.5">ملخص الفرع</p>
+        <p className="text-[10px] text-ink/30 font-bold mb-2.5">ملخص الفرع</p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map((k) => (
             <div key={k.label} className="rounded-xl p-3.5 border border-[var(--erp-border)]" style={{ background: k.color + '0D' }}>
               <div className="flex items-center justify-between mb-2">
                 <k.icon className="w-4 h-4" style={{ color: k.color }} />
               </div>
-              <p className="text-xl font-black text-white">{k.value}</p>
+              <p className="text-xl font-black text-ink">{k.value}</p>
               <p className="text-xs font-bold mt-0.5" style={{ color: k.color }}>{k.label}</p>
-              <p className="text-[10px] text-white/30 mt-0.5">{k.sub}</p>
+              <p className="text-[10px] text-ink/30 mt-0.5">{k.sub}</p>
             </div>
           ))}
         </div>
@@ -482,7 +482,7 @@ function OverviewTab({ data }: { data: BranchOverview }) {
 
       {/* 30-day stats */}
       <div>
-        <p className="text-[10px] text-white/30 font-bold mb-2.5">آخر 30 يوم</p>
+        <p className="text-[10px] text-ink/30 font-bold mb-2.5">آخر 30 يوم</p>
         <div className="grid grid-cols-2 gap-3">
           {stats30.map((s) => (
             <div key={s.label} className="rounded-xl p-3.5 border border-[var(--erp-border)] bg-[var(--erp-bg-card)]">
@@ -490,10 +490,10 @@ function OverviewTab({ data }: { data: BranchOverview }) {
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: s.color + '1A' }}>
                   <s.icon className="w-3.5 h-3.5" style={{ color: s.color }} />
                 </div>
-                <p className="text-[10px] text-white/40 font-medium">{s.label}</p>
+                <p className="text-[10px] text-ink/40 font-medium">{s.label}</p>
               </div>
-              <p className="text-lg font-black text-white">{s.value}</p>
-              <p className="text-[10px] text-white/30 mt-0.5">{s.sub}</p>
+              <p className="text-lg font-black text-ink">{s.value}</p>
+              <p className="text-[10px] text-ink/30 mt-0.5">{s.sub}</p>
             </div>
           ))}
         </div>
@@ -502,13 +502,13 @@ function OverviewTab({ data }: { data: BranchOverview }) {
       {/* Quick lists */}
       {data.safes.length > 0 && (
         <div>
-          <p className="text-[10px] text-white/30 font-bold mb-2.5">أرصدة الخزائن</p>
+          <p className="text-[10px] text-ink/30 font-bold mb-2.5">أرصدة الخزائن</p>
           <div className="rounded-xl border border-[var(--erp-border)] overflow-hidden">
             {data.safes.map((s, i) => (
               <div key={s.id} className={`flex items-center justify-between px-4 py-3 ${i > 0 ? 'border-t border-[var(--erp-border)]' : ''}`}>
                 <div className="flex items-center gap-2.5">
                   <Vault className="w-3.5 h-3.5 text-purple-400" />
-                  <span className="text-sm text-white font-medium">{s.name}</span>
+                  <span className="text-sm text-ink font-medium">{s.name}</span>
                 </div>
                 <span className="font-black text-emerald-400 tabular-nums">{fmt(Number(s.balance))}</span>
               </div>
@@ -531,8 +531,8 @@ function EmployeesTab({ employees }: { employees: EmployeeRow[] }) {
 
   if (employees.length === 0) return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <UserX className="w-10 h-10 text-white/10 mb-3" />
-      <p className="text-sm text-white/30">لا يوجد موظفون مرتبطون بهذا الفرع</p>
+      <UserX className="w-10 h-10 text-ink/10 mb-3" />
+      <p className="text-sm text-ink/30">لا يوجد موظفون مرتبطون بهذا الفرع</p>
     </div>
   );
 
@@ -548,10 +548,10 @@ function EmployeesTab({ employees }: { employees: EmployeeRow[] }) {
                   {e.name.charAt(0)}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-white text-sm truncate">{e.name}</p>
+                  <p className="font-bold text-ink text-sm truncate">{e.name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-white/30 font-mono">{e.employee_code}</span>
-                    {e.phone && <span className="text-[10px] text-white/30">{e.phone}</span>}
+                    <span className="text-[10px] text-ink/30 font-mono">{e.employee_code}</span>
+                    {e.phone && <span className="text-[10px] text-ink/30">{e.phone}</span>}
                   </div>
                 </div>
               </div>
@@ -564,8 +564,8 @@ function EmployeesTab({ employees }: { employees: EmployeeRow[] }) {
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-white/5">
-              <span className="flex items-center gap-1 text-[10px] text-white/30">
+            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-line">
+              <span className="flex items-center gap-1 text-[10px] text-ink/30">
                 <Calendar className="w-3 h-3" /> تعيين: {e.hire_date}
               </span>
             </div>
@@ -580,9 +580,9 @@ function EmployeesTab({ employees }: { employees: EmployeeRow[] }) {
 function WarehousesTab({ warehouses }: { warehouses: WarehouseRow[] }) {
   if (warehouses.length === 0) return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Warehouse className="w-10 h-10 text-white/10 mb-3" />
-      <p className="text-sm text-white/30">لا توجد مخازن مرتبطة بهذا الفرع</p>
-      <p className="text-xs text-white/20 mt-1">يمكنك ربط المخازن من صفحة إعدادات المخازن</p>
+      <Warehouse className="w-10 h-10 text-ink/10 mb-3" />
+      <p className="text-sm text-ink/30">لا توجد مخازن مرتبطة بهذا الفرع</p>
+      <p className="text-xs text-ink/20 mt-1">يمكنك ربط المخازن من صفحة إعدادات المخازن</p>
     </div>
   );
 
@@ -595,9 +595,9 @@ function WarehousesTab({ warehouses }: { warehouses: WarehouseRow[] }) {
               <Warehouse className="w-4 h-4 text-blue-400" />
             </div>
             <div className="min-w-0">
-              <p className="font-bold text-white text-sm">{w.name}</p>
+              <p className="font-bold text-ink text-sm">{w.name}</p>
               {w.address && (
-                <p className="text-[10px] text-white/40 flex items-center gap-1 mt-0.5">
+                <p className="text-[10px] text-ink/40 flex items-center gap-1 mt-0.5">
                   <MapPin className="w-3 h-3" /> {w.address}
                 </p>
               )}
@@ -615,9 +615,9 @@ function SafesTab({ safes }: { safes: SafeRow[] }) {
 
   if (safes.length === 0) return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Vault className="w-10 h-10 text-white/10 mb-3" />
-      <p className="text-sm text-white/30">لا توجد خزائن مرتبطة بهذا الفرع</p>
-      <p className="text-xs text-white/20 mt-1">يمكنك ربط الخزائن من صفحة إعدادات الخزائن</p>
+      <Vault className="w-10 h-10 text-ink/10 mb-3" />
+      <p className="text-sm text-ink/30">لا توجد خزائن مرتبطة بهذا الفرع</p>
+      <p className="text-xs text-ink/20 mt-1">يمكنك ربط الخزائن من صفحة إعدادات الخزائن</p>
     </div>
   );
 
@@ -637,11 +637,11 @@ function SafesTab({ safes }: { safes: SafeRow[] }) {
               <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
                 <Vault className="w-4 h-4 text-purple-400" />
               </div>
-              <p className="font-bold text-white text-sm truncate">{s.name}</p>
+              <p className="font-bold text-ink text-sm truncate">{s.name}</p>
             </div>
             <div className="shrink-0 text-right">
               <p className="font-black text-emerald-400 tabular-nums">{fmt(Number(s.balance))}</p>
-              <p className="text-[9px] text-white/30">EGP</p>
+              <p className="text-[9px] text-ink/30">EGP</p>
             </div>
           </div>
         ))}

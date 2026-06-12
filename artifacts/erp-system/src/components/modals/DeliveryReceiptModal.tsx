@@ -219,27 +219,27 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="my-4 rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl"
+        className="my-4 rounded-2xl border border-line w-full max-w-lg shadow-2xl"
         style={{ background: "rgba(15,12,30,0.97)", backdropFilter: "blur(20px)" }}
       >
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/8">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center">
               <FileText className="w-4.5 h-4.5 text-emerald-300" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">إيصال التسليم</h3>
-              <p className="text-[11px] text-white/50">معاينة + طباعة + واتساب</p>
+              <h3 className="text-sm font-black text-ink">إيصال التسليم</h3>
+              <p className="text-[11px] text-ink/50">معاينة + طباعة + واتساب</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 text-white/60">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface text-ink/60">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="px-5 py-4">
           {loading && (
-            <div className="flex items-center gap-2 text-white/60 text-xs justify-center py-6">
+            <div className="flex items-center gap-2 text-ink/60 text-xs justify-center py-6">
               <Loader2 className="w-4 h-4 animate-spin" /> جارٍ تحميل بيانات الإيصال...
             </div>
           )}
@@ -254,29 +254,29 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
           {data && (() => {
             const { total, remaining } = buildTotals(data);
             return (
-              <div className="rounded-xl border border-white/8 p-4 text-[11px] space-y-1.5" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <div className="flex justify-between"><span className="text-white/50">رقم البطاقة:</span><span className="font-bold text-white">{data.job_no}</span></div>
-                <div className="flex justify-between"><span className="text-white/50">العميل:</span><span className="text-white">{data.customer_name ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-white/50">الهاتف:</span><span className="text-white">{data.customer_phone ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-white/50">الجهاز:</span><span className="text-white">{[data.device_brand, data.device_model].filter(Boolean).join(" ") || "—"}</span></div>
-                {data.imei && <div className="flex justify-between"><span className="text-white/50">IMEI:</span><span className="text-white font-mono">{data.imei}</span></div>}
+              <div className="rounded-xl border border-line p-4 text-[11px] space-y-1.5" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <div className="flex justify-between"><span className="text-ink/50">رقم البطاقة:</span><span className="font-bold text-ink">{data.job_no}</span></div>
+                <div className="flex justify-between"><span className="text-ink/50">العميل:</span><span className="text-ink">{data.customer_name ?? "—"}</span></div>
+                <div className="flex justify-between"><span className="text-ink/50">الهاتف:</span><span className="text-ink">{data.customer_phone ?? "—"}</span></div>
+                <div className="flex justify-between"><span className="text-ink/50">الجهاز:</span><span className="text-ink">{[data.device_brand, data.device_model].filter(Boolean).join(" ") || "—"}</span></div>
+                {data.imei && <div className="flex justify-between"><span className="text-ink/50">IMEI:</span><span className="text-ink font-mono">{data.imei}</span></div>}
                 {data.parts.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-white/8">
-                    <p className="text-white/55 mb-1">قطع الغيار:</p>
+                  <div className="mt-2 pt-2 border-t border-line">
+                    <p className="text-ink/55 mb-1">قطع الغيار:</p>
                     {data.parts.map((p, i) => (
-                      <div key={i} className="flex justify-between text-[10px] text-white/70">
+                      <div key={i} className="flex justify-between text-[10px] text-ink/70">
                         <span>{p.product_name} × {p.quantity}</span>
                         <span>{fmt(p.total)}</span>
                       </div>
                     ))}
                   </div>
                 )}
-                <div className="mt-2 pt-2 border-t border-white/8 space-y-1">
-                  <div className="flex justify-between"><span className="text-white/50">تكلفة الإصلاح:</span><span className="text-white">{fmt(data.final_cost)}</span></div>
-                  {data.parts_total > 0 && <div className="flex justify-between"><span className="text-white/50">قطع الغيار:</span><span className="text-white">{fmt(data.parts_total)}</span></div>}
-                  {data.shipping_cost > 0 && <div className="flex justify-between"><span className="text-white/50">الشحن:</span><span className="text-white">{fmt(data.shipping_cost)}</span></div>}
+                <div className="mt-2 pt-2 border-t border-line space-y-1">
+                  <div className="flex justify-between"><span className="text-ink/50">تكلفة الإصلاح:</span><span className="text-ink">{fmt(data.final_cost)}</span></div>
+                  {data.parts_total > 0 && <div className="flex justify-between"><span className="text-ink/50">قطع الغيار:</span><span className="text-ink">{fmt(data.parts_total)}</span></div>}
+                  {data.shipping_cost > 0 && <div className="flex justify-between"><span className="text-ink/50">الشحن:</span><span className="text-ink">{fmt(data.shipping_cost)}</span></div>}
                   {data.final_discount > 0 && <div className="flex justify-between text-red-400"><span>خصم نهائي:</span><span>- {fmt(data.final_discount)}</span></div>}
-                  <div className="flex justify-between font-bold text-white pt-1 border-t border-white/8"><span>الإجمالي:</span><span>{fmt(total)}</span></div>
+                  <div className="flex justify-between font-bold text-ink pt-1 border-t border-line"><span>الإجمالي:</span><span>{fmt(total)}</span></div>
                   <div className="flex justify-between text-emerald-300"><span>المدفوع:</span><span>{fmt(data.deposit_paid)}</span></div>
                   <div className="flex justify-between font-black text-amber-300 text-[12px]"><span>المتبقي:</span><span>{fmt(remaining)}</span></div>
                 </div>
@@ -285,11 +285,11 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
           })()}
         </div>
 
-        <div className="px-5 py-4 border-t border-white/8 grid grid-cols-2 gap-2">
+        <div className="px-5 py-4 border-t border-line grid grid-cols-2 gap-2">
           <button
             onClick={handleWhatsapp}
             disabled={!data || !data.customer_phone}
-            className="py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+            className="py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
             style={{ background: "rgba(34,197,94,0.7)", border: "1px solid rgba(74,222,128,0.4)" }}
           >
             <MessageCircle className="w-3.5 h-3.5" /> إرسال واتساب
@@ -297,7 +297,7 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
           <button
             onClick={handlePrint}
             disabled={!data}
-            className="py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+            className="py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
             style={{ background: "rgba(59,130,246,0.7)", border: "1px solid rgba(96,165,250,0.4)" }}
           >
             <Printer className="w-3.5 h-3.5" /> طباعة الإيصال

@@ -27,16 +27,16 @@ export default function BackupModSelectModal({
             </div>
             <div>
               <p className="font-bold text-amber-400 text-sm">اختر وحدات الاستعادة</p>
-              <p className="text-white/30 text-xs">{pending.fileName}</p>
+              <p className="text-ink/30 text-xs">{pending.fileName}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/8">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-ink/30 hover:text-ink hover:bg-surface">
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-white/50 text-xs">الوحدات المتاحة في هذا الملف</p>
+            <p className="text-ink/50 text-xs">الوحدات المتاحة في هذا الملف</p>
             <button
               onClick={onToggleAll}
               className="text-xs text-amber-400 hover:text-amber-300 font-semibold"
@@ -51,15 +51,15 @@ export default function BackupModSelectModal({
                 <button
                   key={g.key}
                   onClick={() => onToggleMod(g.key)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${on ? 'bg-amber-500/10 border-amber-500/25' : 'bg-white/3 border-white/8 hover:border-amber-500/15'}`}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${on ? 'bg-amber-500/10 border-amber-500/25' : 'bg-surface border-line hover:border-amber-500/15'}`}
                 >
                   <span className="text-xl shrink-0">{g.icon}</span>
                   <div className="flex-1">
-                    <p className={`text-sm font-bold ${on ? 'text-amber-300' : 'text-white/60'}`}>{g.label}</p>
-                    <p className="text-white/25 text-xs">{g.note}</p>
+                    <p className={`text-sm font-bold ${on ? 'text-amber-300' : 'text-ink/60'}`}>{g.label}</p>
+                    <p className="text-ink/25 text-xs">{g.note}</p>
                   </div>
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${on ? 'bg-amber-500 border-amber-500' : 'border-white/20'}`}>
-                    {on && <Check className="w-3 h-3 text-white" />}
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${on ? 'bg-amber-500 border-amber-500' : 'border-line'}`}>
+                    {on && <Check className="w-3 h-3 text-ink" />}
                   </div>
                 </button>
               );
@@ -71,7 +71,7 @@ export default function BackupModSelectModal({
           <div className="flex gap-2 pt-1">
             <button
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm font-bold hover:text-white transition-colors"
+              className="flex-1 py-2.5 rounded-xl border border-line text-ink/50 text-sm font-bold hover:text-ink transition-colors"
             >
               إلغاء
             </button>

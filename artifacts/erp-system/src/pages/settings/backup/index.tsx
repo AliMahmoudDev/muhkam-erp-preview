@@ -9,15 +9,15 @@ export default function BackupTab() {
   const bk = useBackupActions();
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-white/8 bg-[#111827]">
+    <div className="rounded-2xl overflow-hidden border border-line bg-[#111827]">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3 bg-white/2">
+      <div className="px-5 py-4 border-b border-line flex items-center gap-3 bg-surface">
         <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
           <HardDrive className="w-4 h-4 text-amber-400" />
         </div>
         <div className="flex-1">
-          <p className="font-bold text-white text-sm">النسخ الاحتياطي والاستعادة</p>
-          <p className="text-white/30 text-xs">{bk.lastBackupLabel()}</p>
+          <p className="font-bold text-ink text-sm">النسخ الاحتياطي والاستعادة</p>
+          <p className="text-ink/30 text-xs">{bk.lastBackupLabel()}</p>
         </div>
         <div className="flex items-center gap-1.5">
           <Shield className="w-3 h-3 text-emerald-400/60" />
@@ -26,7 +26,7 @@ export default function BackupTab() {
       </div>
 
       {/* Mode tabs */}
-      <div className="flex border-b border-white/5">
+      <div className="flex border-b border-line">
         {(
           [
             ['local', <Download className="w-3.5 h-3.5" />, 'نسخ محلي', 'على جهازك'],
@@ -36,16 +36,16 @@ export default function BackupTab() {
           <button
             key={id}
             onClick={() => bk.setBkMode(id)}
-            className={`flex-1 flex items-center gap-2 px-4 py-3 text-right transition-all border-b-2 ${bk.bkMode === id ? 'border-amber-400 bg-amber-500/5' : 'border-transparent hover:bg-white/3'}`}
+            className={`flex-1 flex items-center gap-2 px-4 py-3 text-right transition-all border-b-2 ${bk.bkMode === id ? 'border-amber-400 bg-amber-500/5' : 'border-transparent hover:bg-surface'}`}
           >
-            <span className={bk.bkMode === id ? 'text-amber-400' : 'text-white/30'}>{icon}</span>
+            <span className={bk.bkMode === id ? 'text-amber-400' : 'text-ink/30'}>{icon}</span>
             <div>
               <p
-                className={`text-sm font-bold ${bk.bkMode === id ? 'text-amber-400' : 'text-white/50'}`}
+                className={`text-sm font-bold ${bk.bkMode === id ? 'text-amber-400' : 'text-ink/50'}`}
               >
                 {label}
               </p>
-              <p className="text-white/25 text-xs">{sub}</p>
+              <p className="text-ink/25 text-xs">{sub}</p>
             </div>
           </button>
         ))}
@@ -76,12 +76,12 @@ export default function BackupTab() {
 
       {bk.bkMode === 'server' && !bk.isSuperAdmin && (
         <div className="flex flex-col items-center justify-center gap-4 py-16 px-6 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center">
-            <Lock className="w-6 h-6 text-white/25" />
+          <div className="w-14 h-14 rounded-2xl bg-surface border border-line flex items-center justify-center">
+            <Lock className="w-6 h-6 text-ink/25" />
           </div>
           <div>
-            <p className="text-white/60 text-sm font-bold mb-1">هذه الميزة للمسؤول العام فقط</p>
-            <p className="text-white/25 text-xs leading-relaxed max-w-xs">
+            <p className="text-ink/60 text-sm font-bold mb-1">هذه الميزة للمسؤول العام فقط</p>
+            <p className="text-ink/25 text-xs leading-relaxed max-w-xs">
               نسخ الخادم والجدولة التلقائية متاحة حصراً للمسؤول العام (super_admin). يمكنك استخدام
               تبويب "نسخ محلي" لتصدير بياناتك وتنزيلها مباشرةً.
             </p>

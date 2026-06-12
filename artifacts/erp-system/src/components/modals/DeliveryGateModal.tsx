@@ -120,26 +120,26 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
       dir="rtl"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="my-4 rounded-2xl border border-white/10 w-full max-w-5xl shadow-2xl"
+      <div className="my-4 rounded-2xl border border-line w-full max-w-5xl shadow-2xl"
         style={{ background: "rgba(15,12,30,0.97)", backdropFilter: "blur(20px)" }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/8">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
               style={{ background: "rgba(132,204,22,0.15)", border: "1px solid rgba(163,230,53,0.3)" }}>
               <PackageCheck className="w-4.5 h-4.5 text-lime-300" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">محاسبة العميل والفاتورة النهائية</h3>
-              <p className="text-[11px] text-white/50">
-                البطاقة <span className="text-white font-bold">{job.job_no}</span>
+              <h3 className="text-sm font-black text-ink">محاسبة العميل والفاتورة النهائية</h3>
+              <p className="text-[11px] text-ink/50">
+                البطاقة <span className="text-ink font-bold">{job.job_no}</span>
                 {job.customer_name && <> · {job.customer_name}</>}
                 {job.device_brand && <> · {job.device_brand} {job.device_model ?? ""}</>}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 text-white/60"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface text-ink/60"><X className="w-4 h-4" /></button>
         </div>
 
         {/* Draft notice */}
@@ -152,7 +152,7 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
         )}
 
         {/* Loading / Error */}
-        {g.fetchLoading && <div className="flex items-center justify-center gap-2 text-white/60 text-xs py-8"><Loader2 className="w-4 h-4 animate-spin" /> جارٍ تحميل بيانات الفاتورة...</div>}
+        {g.fetchLoading && <div className="flex items-center justify-center gap-2 text-ink/60 text-xs py-8"><Loader2 className="w-4 h-4 animate-spin" /> جارٍ تحميل بيانات الفاتورة...</div>}
         {g.fetchErr && (
           <div className="m-5 p-3 rounded-xl bg-red-500/10 border border-red-500/25 flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -198,8 +198,8 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
             <div className="overflow-y-auto max-h-[65vh] flex flex-col">
 
               {/* معلومات العميل والجهاز */}
-              <div className="px-5 pt-4 pb-3 border-b border-white/5">
-                <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
+              <div className="px-5 pt-4 pb-3 border-b border-line">
+                <h4 className="text-[12px] font-black text-ink/80 mb-3 flex items-center gap-2">
                   <FileText className="w-3.5 h-3.5 text-amber-400" /> ملخص الفاتورة
                 </h4>
                 {g.receiptData && (
@@ -213,8 +213,8 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
                       { label: "الفني",   val: g.receiptData.technician_name },
                     ].filter(r => r.val).map(r => (
                       <div key={r.label} className="flex justify-between gap-2">
-                        <span className="text-white/40 shrink-0">{r.label}:</span>
-                        <span className="text-white/75 text-left truncate">{r.val}</span>
+                        <span className="text-ink/40 shrink-0">{r.label}:</span>
+                        <span className="text-ink/75 text-left truncate">{r.val}</span>
                       </div>
                     ))}
                   </div>
@@ -222,22 +222,22 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
               </div>
 
               {/* الشحن والخصم في صف واحد */}
-              <div className="px-5 pt-4 pb-3 border-b border-white/5">
-                <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
+              <div className="px-5 pt-4 pb-3 border-b border-line">
+                <h4 className="text-[12px] font-black text-ink/80 mb-3 flex items-center gap-2">
                   <Truck className="w-3.5 h-3.5 text-sky-400" /> تعديلات السعر
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   {/* الشحن */}
                   <div>
-                    <label className="text-[10px] font-bold text-white/45 mb-1 block flex items-center gap-1">
+                    <label className="text-[10px] font-bold text-ink/45 mb-1 block flex items-center gap-1">
                       <Truck className="w-3 h-3 text-sky-400/60" /> تكلفة الشحن (ج.م)
                     </label>
                     <input type="number" min={0} step="any" value={g.cost} onChange={(e) => g.setCost(e.target.value)}
                       placeholder="0.00" dir="ltr"
-                      className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-sky-400/20 text-sm text-white focus:outline-none focus:border-sky-400/40" />
+                      className="w-full px-3 py-2 rounded-lg bg-surface border border-sky-400/20 text-sm text-ink focus:outline-none focus:border-sky-400/40" />
                     {g.numericCost > 0 && (
                       <select value={g.safeId} onChange={(e) => g.setSafeId(e.target.value)}
-                        className="w-full mt-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-sky-400/20 text-[11px] text-white focus:outline-none focus:border-sky-400/40">
+                        className="w-full mt-1.5 px-3 py-1.5 rounded-lg bg-surface border border-sky-400/20 text-[11px] text-ink focus:outline-none focus:border-sky-400/40">
                         <option value="">-- الخزنة --</option>
                         {g.safes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                       </select>
@@ -245,38 +245,38 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
                   </div>
                   {/* الخصم */}
                   <div>
-                    <label className="text-[10px] font-bold text-white/45 mb-1 block flex items-center gap-1">
+                    <label className="text-[10px] font-bold text-ink/45 mb-1 block flex items-center gap-1">
                       <Tag className="w-3 h-3 text-red-400/60" /> خصم نهائي (ج.م)
                     </label>
                     <input type="number" min={0} step="0.01" value={g.discount} onChange={(e) => g.setDiscount(e.target.value)}
                       placeholder="0.00" dir="ltr"
-                      className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-red-400/20 text-sm text-white focus:outline-none focus:border-red-400/40" />
-                    <p className="text-[10px] text-white/30 mt-1">اتركه 0 إن لم يكن هناك خصم</p>
+                      className="w-full px-3 py-2 rounded-lg bg-surface border border-red-400/20 text-sm text-ink focus:outline-none focus:border-red-400/40" />
+                    <p className="text-[10px] text-ink/30 mt-1">اتركه 0 إن لم يكن هناك خصم</p>
                   </div>
                 </div>
               </div>
 
               {/* الإجماليات */}
               <div className="px-5 py-4 space-y-2 flex-1">
-                <h4 className="text-[12px] font-black text-white/80 mb-3">الإجماليات</h4>
+                <h4 className="text-[12px] font-black text-ink/80 mb-3">الإجماليات</h4>
 
                 {/* تفاصيل */}
                 <div className="space-y-1.5 text-[11px]">
                   {g.preSavedPartsTotal > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-white/45">قطع الإصلاح (محفوظة):</span>
+                      <span className="text-ink/45">قطع الإصلاح (محفوظة):</span>
                       <span className="font-bold text-amber-300">{fmtCurrency(g.preSavedPartsTotal)}</span>
                     </div>
                   )}
                   {g.partsTotal > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-white/45">قطع إضافية:</span>
+                      <span className="text-ink/45">قطع إضافية:</span>
                       <span className="font-bold text-blue-300">{fmtCurrency(g.partsTotal)}</span>
                     </div>
                   )}
                   {g.numericCost > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-white/45">الشحن:</span>
+                      <span className="text-ink/45">الشحن:</span>
                       <span className="text-sky-300">{fmtCurrency(g.numericCost)}</span>
                     </div>
                   )}
@@ -289,8 +289,8 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
                 </div>
 
                 {/* الإجمالي الكلي */}
-                <div className="mt-2 pt-2 border-t border-white/8 flex justify-between items-center font-bold text-[13px]">
-                  <span className="text-white">الإجمالي الكلي:</span>
+                <div className="mt-2 pt-2 border-t border-line flex justify-between items-center font-bold text-[13px]">
+                  <span className="text-ink">الإجمالي الكلي:</span>
                   <span className="text-lime-300">{fmtCurrency(g.total)}</span>
                 </div>
 
@@ -305,7 +305,7 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
                 {/* المتبقي — بارز */}
                 <div className="mt-2 p-3 rounded-xl flex justify-between items-center"
                   style={{ background: g.totalRem > 0 ? "rgba(245,158,11,0.10)" : "rgba(16,185,129,0.10)", border: `1px solid ${g.totalRem > 0 ? "rgba(245,158,11,0.3)" : "rgba(52,211,153,0.3)"}` }}>
-                  <span className="text-[12px] font-black text-white">المتبقي على العميل:</span>
+                  <span className="text-[12px] font-black text-ink">المتبقي على العميل:</span>
                   <span className={`text-[15px] font-black ${g.totalRem > 0 ? "text-amber-300" : "text-emerald-300"}`}>
                     {fmtCurrency(g.totalRem)}
                   </span>
@@ -324,31 +324,31 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
         )}
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/8 space-y-2">
+        <div className="px-5 py-4 border-t border-line space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <button onClick={handleWhatsapp} disabled={!g.receiptData || !g.receiptData.customer_phone}
-              className="py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+              className="py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
               style={{ background: "rgba(34,197,94,0.7)", border: "1px solid rgba(74,222,128,0.4)" }}>
               <MessageCircle className="w-3.5 h-3.5" /> إرسال واتساب
             </button>
             <button onClick={handlePrint} disabled={!g.receiptData}
-              className="py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+              className="py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
               style={{ background: "rgba(59,130,246,0.7)", border: "1px solid rgba(96,165,250,0.4)" }}>
               <Printer className="w-3.5 h-3.5" /> طباعة الفاتورة
             </button>
           </div>
           <div className="flex gap-2">
             <button onClick={() => g.handleSave()} disabled={g.saving || !g.receiptData}
-              className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
               style={{ background: "rgba(59,130,246,0.75)", border: "1px solid rgba(96,165,250,0.45)" }}>
               {g.saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</> : <><Save className="w-3.5 h-3.5" /> حفظ مؤقت</>}
             </button>
             <button onClick={() => void g.handleConfirm()} disabled={g.saving || !g.receiptData}
-              className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
               style={{ background: "rgba(16,185,129,0.75)", border: "1px solid rgba(52,211,153,0.45)" }}>
               {g.saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</> : <><CheckCircle2 className="w-3.5 h-3.5" /> تأكيد التسليم</>}
             </button>
-            <button onClick={onClose} className="px-5 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white text-xs">إلغاء</button>
+            <button onClick={onClose} className="px-5 py-2.5 rounded-xl border border-line text-ink/60 hover:text-ink text-xs">إلغاء</button>
           </div>
         </div>
       </div>

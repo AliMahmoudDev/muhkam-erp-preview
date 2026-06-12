@@ -114,7 +114,7 @@ function POSBody({
           className="fixed inset-0 z-[200] flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
         >
-          <div className="erp-card-soft rounded-2xl p-6 w-full max-w-xs text-center space-y-4 border border-white/10 shadow-2xl">
+          <div className="erp-card-soft rounded-2xl p-6 w-full max-w-xs text-center space-y-4 border border-line shadow-2xl">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto">
               <span className="text-2xl">⚠️</span>
             </div>

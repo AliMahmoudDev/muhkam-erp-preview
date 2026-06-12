@@ -111,16 +111,16 @@ export function OnboardingPanel() {
 
       {showWarehouseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="glass-panel rounded-3xl p-7 w-full max-w-xs border border-white/10 shadow-2xl space-y-5">
+          <div className="glass-panel rounded-3xl p-7 w-full max-w-xs border border-line shadow-2xl space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">إضافة مخزن</h3>
+              <h3 className="text-lg font-bold text-ink">إضافة مخزن</h3>
               <button onClick={() => { setShowWarehouseModal(false); setWarehouseName(""); }}
-                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20">
-                <X className="w-4 h-4 text-white/60" />
+                className="p-1.5 rounded-xl bg-surface hover:bg-raised">
+                <X className="w-4 h-4 text-ink/60" />
               </button>
             </div>
             <div>
-              <label className="text-white/50 text-xs block mb-1">اسم المخزن *</label>
+              <label className="text-ink/50 text-xs block mb-1">اسم المخزن *</label>
               <input autoFocus type="text" className="glass-input w-full" placeholder="مثال: المخزن الرئيسي"
                 value={warehouseName} onChange={e => setWarehouseName(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && warehouseName.trim() && addWarehouse.mutate()} />
@@ -138,24 +138,24 @@ export function OnboardingPanel() {
         </div>
       )}
 
-      <div className="relative rounded-3xl border border-white/10 overflow-hidden"
+      <div className="relative rounded-3xl border border-line overflow-hidden"
         style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.06), rgba(255,255,255,0.02))" }}>
         <button onClick={() => setDismissed(true)}
-          className="absolute top-4 left-4 p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/30 hover:text-white/50 transition-all z-10">
+          className="absolute top-4 left-4 p-1.5 rounded-xl bg-surface hover:bg-surface text-ink/30 hover:text-ink/50 transition-all z-10">
           <X className="w-3.5 h-3.5" />
         </button>
 
         <div className="px-6 pt-6 pb-5">
           <div className="flex items-center gap-3 mb-1">
             <span className="text-2xl">👋</span>
-            <h2 className="text-lg font-black text-white">مرحبًا! ابدأ في 3 خطوات بسيطة</h2>
+            <h2 className="text-lg font-black text-ink">مرحبًا! ابدأ في 3 خطوات بسيطة</h2>
           </div>
           <div className="flex items-center gap-2 mb-5">
-            <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+            <div className="flex-1 h-1.5 rounded-full bg-surface overflow-hidden">
               <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-400 transition-all duration-500"
                 style={{ width: `${(doneCount / 3) * 100}%` }} />
             </div>
-            <span className="text-white/40 text-xs shrink-0">{doneCount} / 3</span>
+            <span className="text-ink/40 text-xs shrink-0">{doneCount} / 3</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -165,22 +165,22 @@ export function OnboardingPanel() {
                 <div key={step.num}
                   className={`rounded-2xl p-4 border transition-all ${step.done
                     ? "bg-emerald-500/8 border-emerald-500/20"
-                    : "bg-white/3 border-white/8 hover:border-white/15"
+                    : "bg-surface border-line hover:border-line"
                   }`}>
                   <div className="flex items-center gap-2.5 mb-3">
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${step.done
                       ? "bg-emerald-500/20"
-                      : "bg-white/8"}`}>
+                      : "bg-surface"}`}>
                       {step.done
                         ? <CheckCircle className="w-4 h-4 text-emerald-400" />
-                        : <Icon className="w-4 h-4 text-white/40" />
+                        : <Icon className="w-4 h-4 text-ink/40" />
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className={`text-xs font-bold ${step.done ? "text-emerald-300" : "text-white/70"}`}>
+                      <span className={`text-xs font-bold ${step.done ? "text-emerald-300" : "text-ink/70"}`}>
                         الخطوة {step.num}
                       </span>
-                      <p className={`text-sm font-black leading-tight ${step.done ? "text-emerald-200 line-through opacity-60" : "text-white"}`}>
+                      <p className={`text-sm font-black leading-tight ${step.done ? "text-emerald-200 line-through opacity-60" : "text-ink"}`}>
                         {step.label}
                       </p>
                     </div>

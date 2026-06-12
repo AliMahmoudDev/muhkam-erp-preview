@@ -75,7 +75,7 @@ function VerifCode({ code }: { code: string | null }) {
   return (
     <button
       onClick={() => setShow(s => !s)}
-      className="text-xs px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/40 hover:text-white/70 transition-colors font-mono"
+      className="text-xs px-2 py-0.5 rounded bg-surface border border-line text-ink/40 hover:text-ink/70 transition-colors font-mono"
     >
       {show ? code : '••••••'}
     </button>
@@ -85,7 +85,7 @@ function VerifCode({ code }: { code: string | null }) {
 // ─── شارة الحالة ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold border ${STATUS_COLOR[status] ?? 'bg-white/10 text-white/50 border-white/10'}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold border ${STATUS_COLOR[status] ?? 'bg-surface text-ink/50 border-line'}`}>
       {STATUS_ICON[status]}
       {STATUS_LABEL[status] ?? status}
     </span>
@@ -144,12 +144,12 @@ function RequestModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#0f1623] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-white/8">
-          <span className="font-bold text-white flex items-center gap-2">
+      <div className="bg-[#0f1623] border border-line rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <span className="font-bold text-ink flex items-center gap-2">
             <ArrowRightLeft className="w-4 h-4 text-violet-400" /> طلب تحويل جديد
           </span>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-ink/40 hover:text-ink transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -157,11 +157,11 @@ function RequestModal({
         <div className="p-5 space-y-4">
           {/* المنتج */}
           <div>
-            <label className="text-white/50 text-xs mb-1.5 block">المنتج <span className="text-red-400">*</span></label>
+            <label className="text-ink/50 text-xs mb-1.5 block">المنتج <span className="text-red-400">*</span></label>
             <select
               value={form.product_id}
               onChange={e => setForm(f => ({ ...f, product_id: e.target.value }))}
-              className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
             >
               <option value="">— اختر منتجاً —</option>
               {products.map(p => (
@@ -173,11 +173,11 @@ function RequestModal({
           {/* الفروع */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-white/50 text-xs mb-1.5 block">من فرع <span className="text-red-400">*</span></label>
+              <label className="text-ink/50 text-xs mb-1.5 block">من فرع <span className="text-red-400">*</span></label>
               <select
                 value={form.from_branch_id}
                 onChange={e => setForm(f => ({ ...f, from_branch_id: e.target.value }))}
-                className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+                className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
               >
                 <option value="">— اختر —</option>
                 {branches.map(b => (
@@ -186,13 +186,13 @@ function RequestModal({
               </select>
             </div>
             <div>
-              <label className="text-white/50 text-xs mb-1.5 block">إلى فرع <span className="text-red-400">*</span></label>
+              <label className="text-ink/50 text-xs mb-1.5 block">إلى فرع <span className="text-red-400">*</span></label>
               <select
                 value={form.to_branch_id}
                 onChange={e => setForm(f => ({ ...f, to_branch_id: e.target.value }))}
-                className={`w-full bg-white/8 border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 ${
+                className={`w-full bg-surface border rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 ${
                   form.from_branch_id && form.to_branch_id && form.from_branch_id === form.to_branch_id
-                    ? 'border-red-500/40' : 'border-white/15'
+                    ? 'border-red-500/40' : 'border-line'
                 }`}
               >
                 <option value="">— اختر —</option>
@@ -208,7 +208,7 @@ function RequestModal({
 
           {/* الكمية */}
           <div>
-            <label className="text-white/50 text-xs mb-1.5 block">الكمية <span className="text-red-400">*</span></label>
+            <label className="text-ink/50 text-xs mb-1.5 block">الكمية <span className="text-red-400">*</span></label>
             <input
               type="number"
               min="0.001"
@@ -216,26 +216,26 @@ function RequestModal({
               value={form.quantity}
               onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))}
               placeholder="0"
-              className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-violet-400/50 font-mono"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-violet-400/50 font-mono"
             />
           </div>
 
           {/* ملاحظات */}
           <div>
-            <label className="text-white/50 text-xs mb-1.5 block">ملاحظات</label>
+            <label className="text-ink/50 text-xs mb-1.5 block">ملاحظات</label>
             <input
               type="text"
               value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               placeholder="سبب التحويل..."
-              className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
             />
           </div>
 
           <button
             onClick={() => mutation.mutate()}
             disabled={!valid || mutation.isPending}
-            className="w-full py-3 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-40 disabled:cursor-not-allowed text-ink font-bold text-sm transition-colors flex items-center justify-center gap-2"
           >
             {mutation.isPending
               ? <><Loader2 className="w-4 h-4 animate-spin" /> جاري الإرسال...</>
@@ -281,38 +281,38 @@ function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#0f1623] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-white/8">
-          <span className="font-bold text-white flex items-center gap-2">
+      <div className="bg-[#0f1623] border border-line rounded-2xl w-full max-w-sm shadow-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <span className="font-bold text-ink flex items-center gap-2">
             <Package className="w-4 h-4 text-emerald-400" /> تأكيد الاستلام
           </span>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-ink/40 hover:text-ink transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
-          <div className="bg-white/4 border border-white/8 rounded-xl p-3 text-sm">
-            <p className="text-white/60">منتج: <span className="text-white font-bold">{transfer.product_name}</span></p>
-            <p className="text-white/60 mt-1">الكمية: <span className="text-white font-bold font-mono">{transfer.quantity}</span></p>
+          <div className="bg-surface border border-line rounded-xl p-3 text-sm">
+            <p className="text-ink/60">منتج: <span className="text-ink font-bold">{transfer.product_name}</span></p>
+            <p className="text-ink/60 mt-1">الكمية: <span className="text-ink font-bold font-mono">{transfer.quantity}</span></p>
           </div>
 
           <div>
-            <label className="text-white/50 text-xs mb-1.5 block">رمز التحقق (6 أرقام) <span className="text-red-400">*</span></label>
+            <label className="text-ink/50 text-xs mb-1.5 block">رمز التحقق (6 أرقام) <span className="text-red-400">*</span></label>
             <input
               type="text"
               maxLength={6}
               value={code}
               onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
               placeholder="000000"
-              className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-3 text-white text-xl text-center tracking-widest font-mono placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-3 text-ink text-xl text-center tracking-widest font-mono placeholder:text-ink/20 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
             />
           </div>
 
           <button
             onClick={() => mutation.mutate()}
             disabled={code.length !== 6 || mutation.isPending}
-            className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-ink font-bold text-sm transition-colors flex items-center justify-center gap-2"
           >
             {mutation.isPending
               ? <><Loader2 className="w-4 h-4 animate-spin" /> جاري التأكيد...</>
@@ -406,15 +406,15 @@ export default function Transfers() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0a0f1a] text-white" dir="rtl">
+    <div className="min-h-screen bg-[#0a0f1a] text-ink" dir="rtl">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
         {/* ══ شريط تبويبات المخزون — نفس تبويبات صفحة /inventory ══ */}
-        <div className="flex border-b border-white/10 overflow-x-auto" style={{scrollbarWidth:'none'}}>
+        <div className="flex border-b border-line overflow-x-auto" style={{scrollbarWidth:'none'}}>
           {/* نظرة عامة */}
           <button
             onClick={() => navigate('/inventory?tab=overview')}
-            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-ink/50 hover:text-ink/80 whitespace-nowrap"
           >
             <LayoutDashboard className="w-4 h-4" />
             نظرة عامة
@@ -422,7 +422,7 @@ export default function Transfers() {
           {/* الحركات */}
           <button
             onClick={() => navigate('/inventory?tab=movements')}
-            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-ink/50 hover:text-ink/80 whitespace-nowrap"
           >
             <Package className="w-4 h-4" />
             الحركات
@@ -431,7 +431,7 @@ export default function Transfers() {
           {canManage && (
             <button
               onClick={() => navigate('/inventory?tab=count')}
-              className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-ink/50 hover:text-ink/80 whitespace-nowrap"
             >
               <ClipboardList className="w-4 h-4" />
               الجرد
@@ -450,7 +450,7 @@ export default function Transfers() {
           {canManage && (
             <button
               onClick={() => navigate('/inventory?tab=consignment')}
-              className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-ink/50 hover:text-ink/80 whitespace-nowrap"
             >
               <Archive className="w-4 h-4" />
               الائتمان
@@ -459,7 +459,7 @@ export default function Transfers() {
           {/* تنبيهات */}
           <button
             onClick={() => navigate('/inventory?tab=alerts')}
-            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-ink/50 hover:text-ink/80 whitespace-nowrap"
           >
             <Bell className="w-4 h-4" />
             تنبيهات المخزون
@@ -467,7 +467,7 @@ export default function Transfers() {
           {/* تقارير */}
           <button
             onClick={() => navigate('/inventory?tab=reports')}
-            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-ink/50 hover:text-ink/80 whitespace-nowrap"
           >
             <BarChart3 className="w-4 h-4" />
             تقارير المخزون
@@ -475,7 +475,7 @@ export default function Transfers() {
           {/* مخزن التوالف */}
           <button
             onClick={() => navigate('/inventory?tab=scrap')}
-            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-white/50 hover:text-white/80 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-transparent text-ink/50 hover:text-ink/80 whitespace-nowrap"
           >
             <Trash2 className="w-4 h-4" />
             مخزن التوالف
@@ -489,7 +489,7 @@ export default function Transfers() {
               <ArrowRightLeft className="w-5 h-5 text-violet-400" />
               تحويل المخزون بين الفروع
             </h1>
-            <p className="text-white/40 text-xs mt-1">
+            <p className="text-ink/40 text-xs mt-1">
               {transfers.length} طلب {filterStatus ? `— ${STATUS_LABEL[filterStatus]}` : 'إجمالاً'}
             </p>
           </div>
@@ -511,8 +511,8 @@ export default function Transfers() {
               onClick={() => setFilterStatus(s)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors border ${
                 filterStatus === s
-                  ? 'bg-violet-500 text-white border-violet-500'
-                  : 'bg-white/5 text-white/50 border-white/10 hover:text-white hover:border-white/20'
+                  ? 'bg-violet-500 text-ink border-violet-500'
+                  : 'bg-surface text-ink/50 border-line hover:text-ink hover:border-line'
               }`}
             >
               {s === '' ? 'الكل' : STATUS_LABEL[s]}
@@ -526,9 +526,9 @@ export default function Transfers() {
             <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
           </div>
         ) : transfers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center bg-white/3 border border-white/8 rounded-2xl">
-            <ArrowRightLeft className="w-10 h-10 text-white/10 mb-3" />
-            <p className="text-white/40 font-bold">لا توجد طلبات تحويل</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center bg-surface border border-line rounded-2xl">
+            <ArrowRightLeft className="w-10 h-10 text-ink/10 mb-3" />
+            <p className="text-ink/40 font-bold">لا توجد طلبات تحويل</p>
             {canManage && (
               <button
                 onClick={() => setShowRequest(true)}
@@ -545,30 +545,30 @@ export default function Transfers() {
               return (
                 <div
                   key={t.id}
-                  className="bg-[#111827] border border-white/8 rounded-2xl p-4 hover:border-white/15 transition-colors"
+                  className="bg-[#111827] border border-line rounded-2xl p-4 hover:border-line transition-colors"
                 >
                   <div className="flex items-start gap-3 flex-wrap">
                     {/* معلومات */}
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-white font-bold text-sm">{t.product_name}</span>
+                        <span className="text-ink font-bold text-sm">{t.product_name}</span>
                         <StatusBadge status={t.status} />
-                        <span className="text-xs text-white/30 font-mono">#{t.id}</span>
+                        <span className="text-xs text-ink/30 font-mono">#{t.id}</span>
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-white/60 flex-wrap">
+                      <div className="flex items-center gap-2 text-sm text-ink/60 flex-wrap">
                         <span className="text-amber-300">{branchName(t.from_branch_id)}</span>
-                        <ArrowRightLeft className="w-3 h-3 text-white/25" />
+                        <ArrowRightLeft className="w-3 h-3 text-ink/25" />
                         <span className="text-emerald-300">{branchName(t.to_branch_id)}</span>
-                        <span className="text-white/30">·</span>
-                        <span className="font-mono text-white">{t.quantity} وحدة</span>
+                        <span className="text-ink/30">·</span>
+                        <span className="font-mono text-ink">{t.quantity} وحدة</span>
                       </div>
 
                       <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-white/30 text-xs">{fmtDate(t.created_at)}</span>
+                        <span className="text-ink/30 text-xs">{fmtDate(t.created_at)}</span>
                         {t.status === 'shipped' && <VerifCode code={t.verification_code} />}
                         {t.notes && (
-                          <span className="text-white/30 text-xs truncate max-w-xs">{t.notes}</span>
+                          <span className="text-ink/30 text-xs truncate max-w-xs">{t.notes}</span>
                         )}
                       </div>
                     </div>

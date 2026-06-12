@@ -35,8 +35,8 @@ import { REPAIR_SETTING_KEYS } from '@/components/repair-settings/constants';
 function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <span className="text-white/30 text-[10px]">{label}: </span>
-      <span className={`text-white/80 ${mono ? 'font-mono' : ''}`}>{value}</span>
+      <span className="text-ink/30 text-[10px]">{label}: </span>
+      <span className={`text-ink/80 ${mono ? 'font-mono' : ''}`}>{value}</span>
     </div>
   );
 }
@@ -234,17 +234,17 @@ export function JobDetail({
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               onClick={onClose}
-              className="shrink-0 w-7 h-7 rounded-xl border border-[var(--erp-border)] flex items-center justify-center erp-label hover:text-white hover:border-white/25 transition-all"
+              className="shrink-0 w-7 h-7 rounded-xl border border-[var(--erp-border)] flex items-center justify-center erp-label hover:text-ink hover:border-line transition-all"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <div className="min-w-0">
-              <p className="font-black text-white text-[15px] leading-tight truncate">
+              <p className="font-black text-ink text-[15px] leading-tight truncate">
                 {job.device_brand} {job.device_model}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] text-white/25 font-mono">{job.job_no}</span>
-                <span className="text-white/15 text-[10px]">·</span>
+                <span className="text-[10px] text-ink/25 font-mono">{job.job_no}</span>
+                <span className="text-ink/15 text-[10px]">·</span>
                 <span className="text-[10px] erp-label">{job.customer_name}</span>
               </div>
             </div>
@@ -370,13 +370,13 @@ export function JobDetail({
               >
                 {mainNote && (
                   <div>
-                    <p className="text-[10px] text-white/55 mb-0.5">سبب الرفض:</p>
+                    <p className="text-[10px] text-ink/55 mb-0.5">سبب الرفض:</p>
                     <p className="text-[11px] text-red-200 leading-relaxed">{mainNote}</p>
                   </div>
                 )}
                 {failedItems.length > 0 && (
                   <div>
-                    <p className="text-[10px] text-white/55 mb-1">
+                    <p className="text-[10px] text-ink/55 mb-1">
                       البنود الفاشلة ({failedItems.length}):
                     </p>
                     <div className="flex flex-wrap gap-1">
@@ -441,7 +441,7 @@ export function JobDetail({
               <div className="text-[10px] text-amber-400/70">
                 {checklist.filter((c) => c.status === 'partial').length} جزئي
               </div>
-              <div className="text-[10px] text-white/25">
+              <div className="text-[10px] text-ink/25">
                 {checklist.filter((c) => !c.status).length} لم يُفحص
               </div>
             </div>
@@ -452,7 +452,7 @@ export function JobDetail({
         <div className="glass-panel rounded-2xl border border-[var(--erp-border)] overflow-hidden">
           <button
             onClick={() => setChecklistOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-3 py-2.5 text-right hover:bg-white/3 transition-all"
+            className="w-full flex items-center justify-between px-3 py-2.5 text-right hover:bg-surface transition-all"
           >
             <div className="flex items-center gap-2">
               <p className="text-[10px] erp-text-muted font-bold flex items-center gap-1.5">
@@ -494,7 +494,7 @@ export function JobDetail({
         <div className="glass-panel rounded-2xl border border-violet-500/15 bg-violet-500/[0.03] overflow-hidden">
           <button
             onClick={() => setReportOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-white/3 transition-all"
+            className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-surface transition-all"
           >
             <p className="text-[11px] text-violet-300/80 font-bold flex items-center gap-1.5">
               <ClipboardList className="w-3.5 h-3.5" /> تقارير مهندس الصيانة
@@ -548,7 +548,7 @@ export function JobDetail({
                           setAddingReport(false);
                           setNewReportText('');
                         }}
-                        className="text-[11px] px-3 py-1 rounded-lg border border-[var(--erp-border)] erp-label hover:text-white/65 hover:border-white/20 transition-all"
+                        className="text-[11px] px-3 py-1 rounded-lg border border-[var(--erp-border)] erp-label hover:text-ink/65 hover:border-line transition-all"
                       >
                         إلغاء
                       </button>
@@ -567,7 +567,7 @@ export function JobDetail({
               {engineerReports.length === 0 && !addingReport && (
                 <div className="text-center py-6 space-y-2">
                   <ClipboardList className="w-6 h-6 text-violet-400/30 mx-auto" />
-                  <p className="text-[11px] text-white/35">لا توجد تقارير بعد</p>
+                  <p className="text-[11px] text-ink/35">لا توجد تقارير بعد</p>
                   <button
                     onClick={() => setAddingReport(true)}
                     className="text-[11px] text-violet-400/70 hover:text-violet-300 transition-colors inline-flex items-center gap-1"
@@ -588,7 +588,7 @@ export function JobDetail({
                 return (
                   <div
                     key={r.id}
-                    className="rounded-xl border border-[var(--erp-border)] bg-white/[0.02] p-3 group"
+                    className="rounded-xl border border-[var(--erp-border)] bg-surface p-3 group"
                   >
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div className="flex items-center gap-2">
@@ -604,13 +604,13 @@ export function JobDetail({
                       </div>
                       <button
                         onClick={() => deleteReport(r.id)}
-                        className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 p-1 transition-all"
+                        className="opacity-0 group-hover:opacity-100 text-ink/20 hover:text-red-400 p-1 transition-all"
                         title="حذف التقرير"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <p className="text-[12px] text-white/75 leading-6 whitespace-pre-wrap pr-8">
+                    <p className="text-[12px] text-ink/75 leading-6 whitespace-pre-wrap pr-8">
                       {r.note}
                     </p>
                   </div>
@@ -667,9 +667,9 @@ export function JobDetail({
           </div>
           {/* ملخص تكاليف الخدمات */}
           {servicesTotalCost > 0 && (
-            <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2">
+            <div className="rounded-xl border border-line bg-surface px-3 py-2">
               <div className="flex items-center justify-between text-[10px]">
-                <span className="text-white/35">إجمالي الخدمات</span>
+                <span className="text-ink/35">إجمالي الخدمات</span>
                 <span className="font-mono tabular-nums text-emerald-300/70">
                   {servicesTotalCost.toLocaleString('ar-EG')} ر.س
                 </span>
@@ -715,7 +715,7 @@ export function JobDetail({
           <div className="glass-panel rounded-2xl border border-[var(--erp-border)] overflow-hidden">
             <button
               onClick={() => setHistoryOpen((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-white/3 transition-all"
+              className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-surface transition-all"
             >
               <p className="text-[10px] erp-label font-bold flex items-center gap-1.5">
                 <History className="w-3 h-3" /> سجل الأحداث ({otherHistory.length})
@@ -756,7 +756,7 @@ export function JobDetail({
                                 ? `${fromLabel} ← ${toLabel}`
                                 : (toLabel ?? fromLabel ?? h.event_type))}
                           </span>
-                          <span className="text-[10px] text-white/25 shrink-0">
+                          <span className="text-[10px] text-ink/25 shrink-0">
                             {dateStr} {timeStr}
                           </span>
                         </div>
@@ -782,7 +782,7 @@ export function JobDetail({
           dir="rtl"
         >
           <div className="glass-panel rounded-2xl p-6 w-80 border border-[var(--erp-border)] space-y-4">
-            <p className="font-bold text-white">حذف البطاقة {job.job_no}؟</p>
+            <p className="font-bold text-ink">حذف البطاقة {job.job_no}؟</p>
             <p className="text-sm erp-text-muted">لا يمكن التراجع عن هذا الإجراء.</p>
             <div className="flex gap-2">
               <button

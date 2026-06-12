@@ -63,23 +63,23 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" dir="rtl">
-      <div className="glass-panel rounded-3xl p-6 w-full max-w-lg border border-white/10 space-y-4">
-        <h2 className="text-lg font-black text-white flex items-center gap-2">
+      <div className="glass-panel rounded-3xl p-6 w-full max-w-lg border border-line space-y-4">
+        <h2 className="text-lg font-black text-ink flex items-center gap-2">
           <Shield className="w-5 h-5 text-amber-400" />
           سجل ضمان جديد
         </h2>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
-            <label className="text-white/50 text-xs mb-1 block">المنتج / الخدمة *</label>
+            <label className="text-ink/50 text-xs mb-1 block">المنتج / الخدمة *</label>
             <input className="glass-input w-full text-sm" placeholder="اسم المنتج أو الخدمة" value={form.product_name} onChange={e => field("product_name", e.target.value)} />
           </div>
           <div>
-            <label className="text-white/50 text-xs mb-1 block">اسم العميل</label>
+            <label className="text-ink/50 text-xs mb-1 block">اسم العميل</label>
             <input className="glass-input w-full text-sm" placeholder="العميل" value={form.customer_name} onChange={e => field("customer_name", e.target.value)} />
           </div>
           <div>
-            <label className="text-white/50 text-xs mb-1 block">رقم الهاتف * <span className="text-white/30">(11 رقم)</span></label>
+            <label className="text-ink/50 text-xs mb-1 block">رقم الهاتف * <span className="text-ink/30">(11 رقم)</span></label>
             <input
               required
               type="text"
@@ -92,15 +92,15 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
             />
           </div>
           <div>
-            <label className="text-white/50 text-xs mb-1 block">الرقم التسلسلي</label>
+            <label className="text-ink/50 text-xs mb-1 block">الرقم التسلسلي</label>
             <input className="glass-input w-full text-sm" placeholder="S/N أو IMEI" value={form.serial_number} onChange={e => field("serial_number", e.target.value)} />
           </div>
           <div>
-            <label className="text-white/50 text-xs mb-1 block">الموديل</label>
+            <label className="text-ink/50 text-xs mb-1 block">الموديل</label>
             <input className="glass-input w-full text-sm" placeholder="iPhone 14 / Samsung S23..." value={form.device_model} onChange={e => field("device_model", e.target.value)} />
           </div>
           <div>
-            <label className="text-white/50 text-xs mb-1 block">مدة الضمان (شهر) *</label>
+            <label className="text-ink/50 text-xs mb-1 block">مدة الضمان (شهر) *</label>
             <select className="glass-input w-full text-sm" value={form.warranty_months} onChange={e => field("warranty_months", e.target.value)}>
               <option value="1">شهر</option>
               <option value="3">3 أشهر</option>
@@ -110,11 +110,11 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
             </select>
           </div>
           <div>
-            <label className="text-white/50 text-xs mb-1 block">تاريخ البدء *</label>
+            <label className="text-ink/50 text-xs mb-1 block">تاريخ البدء *</label>
             <input type="date" className="glass-input w-full text-sm" value={form.warranty_start} onChange={e => field("warranty_start", e.target.value)} />
           </div>
           <div className="col-span-2">
-            <label className="text-white/50 text-xs mb-1 block">ملاحظات</label>
+            <label className="text-ink/50 text-xs mb-1 block">ملاحظات</label>
             <textarea className="glass-input w-full text-sm resize-none" rows={2} placeholder="ملاحظات إضافية..." value={form.notes} onChange={e => field("notes", e.target.value)} />
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
       {/* ── Header (hidden when embedded) ── */}
       {!embedded && (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-black text-white flex items-center gap-2">
+          <h1 className="text-xl font-black text-ink flex items-center gap-2">
             <Shield className="w-6 h-6 text-amber-400" />
             سجلات الضمان
           </h1>
@@ -249,10 +249,10 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {STAT_CARDS.map(c => (
-          <div key={c.label} className="glass-panel rounded-2xl p-4 border border-white/5">
+          <div key={c.label} className="glass-panel rounded-2xl p-4 border border-line">
             <div className="flex items-center gap-2 mb-1">
               <c.icon className={`w-4 h-4 ${c.color}`} />
-              <span className="text-white/40 text-xs">{c.label}</span>
+              <span className="text-ink/40 text-xs">{c.label}</span>
             </div>
             <p className={`text-2xl font-black ${c.color}`}>{c.value}</p>
           </div>
@@ -273,7 +273,7 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
       {/* ── Filters ── */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
           <input className="glass-input w-full icon-pr text-sm" placeholder="بحث بالمنتج / العميل / الرقم التسلسلي..."
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
@@ -282,7 +282,7 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
             <button key={f} onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${filter === f
                 ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
-                : "glass-panel border-white/10 text-white/50 hover:text-white"}`}>
+                : "glass-panel border-line text-ink/50 hover:text-ink"}`}>
               {f === "all" ? "الكل" : f === "active" ? "نشط" : f === "expiring" ? "ينتهي قريباً" : "منتهي"}
             </button>
           ))}
@@ -296,11 +296,11 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
       </div>
 
       {/* ── Table ── */}
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-sm erp-table" dir="rtl">
             <thead>
-              <tr className="border-b border-white/10 text-white/40 text-right">
+              <tr className="border-b border-line text-ink/40 text-right">
                 <th className="p-3 font-medium">المنتج / الخدمة</th>
                 <th className="p-3 font-medium">العميل</th>
                 <th className="p-3 font-medium">الموديل / S/N</th>
@@ -313,22 +313,22 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={8} className="p-8 text-center text-white/40">جاري التحميل...</td></tr>
+                <tr><td colSpan={8} className="p-8 text-center text-ink/40">جاري التحميل...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} className="p-8 text-center text-white/40">لا توجد سجلات ضمان</td></tr>
+                <tr><td colSpan={8} className="p-8 text-center text-ink/40">لا توجد سجلات ضمان</td></tr>
               ) : filtered.map(r => (
-                <tr key={r.id} className="border-b border-white/5 erp-table-row">
-                  <td className="p-3 font-bold text-white">{r.product_name}</td>
+                <tr key={r.id} className="border-b border-line erp-table-row">
+                  <td className="p-3 font-bold text-ink">{r.product_name}</td>
                   <td className="p-3">
-                    <div className="text-white/80">{r.customer_name || "—"}</div>
-                    {r.customer_phone && <div className="text-white/40 text-xs">{r.customer_phone}</div>}
+                    <div className="text-ink/80">{r.customer_name || "—"}</div>
+                    {r.customer_phone && <div className="text-ink/40 text-xs">{r.customer_phone}</div>}
                   </td>
                   <td className="p-3">
-                    <div className="text-white/70 text-xs">{r.device_model || "—"}</div>
-                    {r.serial_number && <div className="text-white/40 text-xs font-mono">{r.serial_number}</div>}
+                    <div className="text-ink/70 text-xs">{r.device_model || "—"}</div>
+                    {r.serial_number && <div className="text-ink/40 text-xs font-mono">{r.serial_number}</div>}
                   </td>
-                  <td className="p-3 text-white/60">{r.warranty_months} شهر</td>
-                  <td className="p-3 text-white/60">{r.warranty_end}</td>
+                  <td className="p-3 text-ink/60">{r.warranty_months} شهر</td>
+                  <td className="p-3 text-ink/60">{r.warranty_end}</td>
                   <td className="p-3">
                     <span className={`font-bold ${r.days_remaining <= 0 ? "text-red-400" : r.days_remaining <= 30 ? "text-amber-400" : "text-emerald-400"}`}>
                       {r.days_remaining <= 0 ? "منتهي" : `${r.days_remaining} يوم`}

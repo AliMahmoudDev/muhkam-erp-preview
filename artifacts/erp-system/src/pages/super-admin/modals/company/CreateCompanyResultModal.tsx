@@ -20,7 +20,7 @@ export function CreateCompanyResultModal({ createResult, setCreateResult, showTo
       >
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg,#f97316,#fbbf24)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: '28px' }}>🏢</div>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b', fontFamily: FONT }}>تم إنشاء الشركة بنجاح!</div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--bg-elevated)', fontFamily: FONT }}>تم إنشاء الشركة بنجاح!</div>
           <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px', fontFamily: FONT }}>{createResult.company_name}</div>
         </div>
         <div style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
@@ -36,11 +36,11 @@ export function CreateCompanyResultModal({ createResult, setCreateResult, showTo
               <span style={{ fontSize: '12px', color: '#92400e', fontFamily: FONT }}>{row.label}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {row.mono ? (
-                  <code style={{ fontSize: row.secret ? '18px' : '14px', fontWeight: 800, color: row.secret ? '#ea580c' : '#1e293b', background: row.secret ? '#fff7ed' : '#f8fafc', padding: '4px 10px', borderRadius: '8px', letterSpacing: row.secret ? '2px' : '0.5px', fontFamily: 'monospace' }}>
+                  <code style={{ fontSize: row.secret ? '18px' : '14px', fontWeight: 800, color: row.secret ? '#ea580c' : 'var(--bg-elevated)', background: row.secret ? '#fff7ed' : '#f8fafc', padding: '4px 10px', borderRadius: '8px', letterSpacing: row.secret ? '2px' : '0.5px', fontFamily: 'monospace' }}>
                     {row.value}
                   </code>
                 ) : (
-                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', fontFamily: FONT }}>{row.value}</span>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--bg-elevated)', fontFamily: FONT }}>{row.value}</span>
                 )}
                 <button onClick={() => void navigator.clipboard.writeText(row.value)} title="نسخ" style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #fed7aa', background: '#fff', cursor: 'pointer', fontSize: '12px' }}>📋</button>
               </div>

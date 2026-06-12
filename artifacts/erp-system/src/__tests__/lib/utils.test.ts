@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 describe("cn (className merge utility)", () => {
   it("merges multiple class strings", () => {
-    const result = cn("text-white", "bg-black");
-    expect(result).toContain("text-white");
+    const result = cn("text-ink", "bg-black");
+    expect(result).toContain("text-ink");
     expect(result).toContain("bg-black");
   });
 

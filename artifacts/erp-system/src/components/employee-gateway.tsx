@@ -212,7 +212,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
   const bg = isDark ? '#070d1a' : '#f0f4ff';
   const card = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
   const bord = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const text = isDark ? '#f1f5f9' : '#0f172a';
+  const text = isDark ? '#f1f5f9' : 'var(--bg-app)';
   const muted = isDark ? 'rgba(255,255,255,0.40)' : 'rgba(0,0,0,0.45)';
 
   return (

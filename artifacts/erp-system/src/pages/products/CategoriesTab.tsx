@@ -89,7 +89,7 @@ export function CategoriesTab() {
   return (
     <div className="space-y-6 max-w-2xl">
       {canManage && (
-        <div className="glass-panel rounded-2xl p-4 border border-white/5 flex gap-3 items-center">
+        <div className="glass-panel rounded-2xl p-4 border border-line flex gap-3 items-center">
           <Tag className="w-5 h-5 text-amber-400 shrink-0" />
           <input type="text" placeholder="اسم التصنيف الجديد..." className="glass-input flex-1" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }} />
           <button onClick={handleCreate} disabled={!newName.trim() || createMutation.isPending} className="btn-primary flex items-center gap-2 whitespace-nowrap disabled:opacity-50">
@@ -98,32 +98,32 @@ export function CategoriesTab() {
         </div>
       )}
 
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         {isLoading ? (
-          <div className="p-8 text-center text-white/40">جاري التحميل...</div>
+          <div className="p-8 text-center text-ink/40">جاري التحميل...</div>
         ) : categories.length === 0 ? (
           <div className="p-14 text-center">
-            <Tag className="w-10 h-10 text-white/20 mx-auto mb-3" />
-            <p className="text-white/40 font-bold">لا توجد تصنيفات</p>
-            <p className="text-white/20 text-sm mt-1">أضف أول تصنيف من الحقل أعلاه</p>
+            <Tag className="w-10 h-10 text-ink/20 mx-auto mb-3" />
+            <p className="text-ink/40 font-bold">لا توجد تصنيفات</p>
+            <p className="text-ink/20 text-sm mt-1">أضف أول تصنيف من الحقل أعلاه</p>
           </div>
         ) : (
           <ul className="divide-y divide-white/5">
             {categories.map((cat) => (
-              <li key={cat.id} className="flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors">
+              <li key={cat.id} className="flex items-center gap-3 px-5 py-4 hover:bg-surface transition-colors">
                 <Tag className="w-4 h-4 text-amber-400/60 shrink-0" />
                 {editingId === cat.id ? (
-                  <input ref={inputRef} className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white outline-none focus:border-amber-400/60" value={editName} onChange={(e) => setEditName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(cat.id); if (e.key === 'Escape') cancelEdit(); }} />
+                  <input ref={inputRef} className="flex-1 bg-surface border border-line rounded-lg px-3 py-1.5 text-sm text-ink outline-none focus:border-amber-400/60" value={editName} onChange={(e) => setEditName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(cat.id); if (e.key === 'Escape') cancelEdit(); }} />
                 ) : (
-                  <span className="flex-1 text-white font-semibold text-sm">{cat.name}</span>
+                  <span className="flex-1 text-ink font-semibold text-sm">{cat.name}</span>
                 )}
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${(cat.product_count ?? 0) > 0 ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-white/5 text-white/30 border-white/10'}`}>{cat.product_count ?? 0} منتج</span>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${(cat.product_count ?? 0) > 0 ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-surface text-ink/30 border-line'}`}>{cat.product_count ?? 0} منتج</span>
                 {canManage && (
                   <div className="flex items-center gap-1 shrink-0">
                     {editingId === cat.id ? (
                       <>
                         <button onClick={() => saveEdit(cat.id)} disabled={updateMutation.isPending} className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-400/10 transition-colors disabled:opacity-50" title="حفظ"><Check className="w-4 h-4" /></button>
-                        <button onClick={cancelEdit} className="p-1.5 rounded-lg text-white/40 hover:bg-white/5 transition-colors" title="إلغاء"><X className="w-4 h-4" /></button>
+                        <button onClick={cancelEdit} className="p-1.5 rounded-lg text-ink/40 hover:bg-surface transition-colors" title="إلغاء"><X className="w-4 h-4" /></button>
                       </>
                     ) : (
                       <>

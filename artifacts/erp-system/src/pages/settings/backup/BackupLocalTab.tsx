@@ -42,7 +42,7 @@ export default function BackupLocalTab({
       {/* اختيار الوحدات */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-white/50 text-xs">اختر الوحدات المطلوبة في النسخة</p>
+          <p className="text-ink/50 text-xs">اختر الوحدات المطلوبة في النسخة</p>
           <button
             onClick={onToggleAll}
             className="text-xs text-amber-400 hover:text-amber-300 transition-colors font-semibold"
@@ -62,11 +62,11 @@ export default function BackupLocalTab({
               >
                 <span className="text-lg shrink-0">{MODULE_ICONS[m.key] ?? '📁'}</span>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-bold truncate ${on ? 'text-amber-300' : 'text-white/60'}`}>{m.label}</p>
-                  <p className="text-white/20 text-[10px] truncate">{m.sub}</p>
+                  <p className={`text-xs font-bold truncate ${on ? 'text-amber-300' : 'text-ink/60'}`}>{m.label}</p>
+                  <p className="text-ink/20 text-[10px] truncate">{m.sub}</p>
                 </div>
-                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${on ? 'bg-amber-500 border-amber-500' : 'border-white/20'}`}>
-                  {on && <Check className="w-2.5 h-2.5 text-white" />}
+                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${on ? 'bg-amber-500 border-amber-500' : 'border-line'}`}>
+                  {on && <Check className="w-2.5 h-2.5 text-ink" />}
                 </div>
               </button>
             );
@@ -75,11 +75,11 @@ export default function BackupLocalTab({
 
         {bkLoading && (
           <div className="space-y-1.5">
-            <div className="flex justify-between text-xs text-white/40">
+            <div className="flex justify-between text-xs text-ink/40">
               <span>جاري إنشاء النسخة...</span>
               <span>{bkProgress}%</span>
             </div>
-            <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-surface overflow-hidden">
               <div
                 className="h-full bg-amber-400 rounded-full transition-all duration-300"
                 style={{ width: `${bkProgress}%` }}
@@ -92,8 +92,8 @@ export default function BackupLocalTab({
           <div className="flex items-center gap-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-emerald-400 font-bold flex-1 truncate">{bkResult.name}</span>
-            <span className="text-white/40">{bkResult.size}</span>
-            <span className="text-white/40">{bkResult.count} وحدات</span>
+            <span className="text-ink/40">{bkResult.size}</span>
+            <span className="text-ink/40">{bkResult.count} وحدات</span>
           </div>
         )}
 
@@ -110,15 +110,15 @@ export default function BackupLocalTab({
       </div>
 
       {/* النسخة الشاملة */}
-      <div className="h-px bg-white/5" />
+      <div className="h-px bg-surface" />
       <div className="space-y-3">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
             <Shield className="w-3.5 h-3.5 text-emerald-400" />
           </div>
           <div>
-            <p className="font-bold text-white text-sm">نسخة شاملة (كل البيانات)</p>
-            <p className="text-white/30 text-xs">تُصدِّر جميع بيانات شركتك في ملف JSON واحد</p>
+            <p className="font-bold text-ink text-sm">نسخة شاملة (كل البيانات)</p>
+            <p className="text-ink/30 text-xs">تُصدِّر جميع بيانات شركتك في ملف JSON واحد</p>
           </div>
         </div>
         {compResult && (
@@ -130,7 +130,7 @@ export default function BackupLocalTab({
         <button
           onClick={() => onComprehensiveBackup()}
           disabled={compBusy}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-all"
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-ink font-bold text-sm transition-all"
         >
           {compBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
           {compBusy ? 'جاري التصدير...' : 'تنزيل النسخة الشاملة'}
@@ -138,15 +138,15 @@ export default function BackupLocalTab({
       </div>
 
       {/* الإعدادات التلقائية */}
-      <div className="h-px bg-white/5" />
+      <div className="h-px bg-surface" />
       <div className="space-y-3">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
             <Clock className="w-3.5 h-3.5 text-blue-400" />
           </div>
           <div>
-            <p className="font-bold text-white text-sm">تشغيل تلقائي للنسخة الشاملة</p>
-            <p className="text-white/30 text-xs">يبدأ التنزيل التلقائي عند تحقق الشروط</p>
+            <p className="font-bold text-ink text-sm">تشغيل تلقائي للنسخة الشاملة</p>
+            <p className="text-ink/30 text-xs">يبدأ التنزيل التلقائي عند تحقق الشروط</p>
           </div>
         </div>
         <div className="flex items-start gap-2 p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/15 text-xs text-blue-300/70">
@@ -167,11 +167,11 @@ export default function BackupLocalTab({
               <button
                 key={key}
                 onClick={() => onSaveAutoSettings({ [key]: !on })}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${on ? `bg-${color}-500/8 border-${color}-500/20` : 'bg-white/3 border-white/8 hover:border-white/15'}`}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${on ? `bg-${color}-500/8 border-${color}-500/20` : 'bg-surface border-line hover:border-line'}`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${on ? `text-${color}-400` : 'text-white/30'}`} />
-                <p className={`flex-1 text-right text-sm font-semibold ${on ? `text-${color}-300` : 'text-white/50'}`}>{label}</p>
-                <div className={`w-9 h-5 rounded-full relative transition-all ${on ? `bg-${color}-500` : 'bg-white/10'}`}>
+                <Icon className={`w-4 h-4 shrink-0 ${on ? `text-${color}-400` : 'text-ink/30'}`} />
+                <p className={`flex-1 text-right text-sm font-semibold ${on ? `text-${color}-300` : 'text-ink/50'}`}>{label}</p>
+                <div className={`w-9 h-5 rounded-full relative transition-all ${on ? `bg-${color}-500` : 'bg-surface'}`}>
                   <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${on ? 'right-0.5' : 'left-0.5'}`} />
                 </div>
               </button>
@@ -181,15 +181,15 @@ export default function BackupLocalTab({
       </div>
 
       {/* الاستعادة */}
-      <div className="h-px bg-white/5" />
+      <div className="h-px bg-surface" />
       <div className="space-y-3">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
             <Upload className="w-3.5 h-3.5 text-violet-400" />
           </div>
           <div>
-            <p className="font-bold text-white text-sm">استعادة نسخة احتياطية</p>
-            <p className="text-white/30 text-xs">
+            <p className="font-bold text-ink text-sm">استعادة نسخة احتياطية</p>
+            <p className="text-ink/30 text-xs">
               ارفع ملف <strong className="text-emerald-400">النسخة الشاملة</strong> فقط (الزر الأخضر أعلاه)
             </p>
           </div>
@@ -229,9 +229,9 @@ export default function BackupLocalTab({
                 .filter(([, v]) => (v as number) > 0)
                 .slice(0, 9)
                 .map(([k, v]) => (
-                  <div key={k} className="bg-white/5 rounded-lg p-2">
-                    <p className="text-white/35 text-[10px]">{k}</p>
-                    <p className="text-white font-bold">{String(v)}</p>
+                  <div key={k} className="bg-surface rounded-lg p-2">
+                    <p className="text-ink/35 text-[10px]">{k}</p>
+                    <p className="text-ink font-bold">{String(v)}</p>
                   </div>
                 ))}
             </div>

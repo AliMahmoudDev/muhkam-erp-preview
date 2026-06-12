@@ -207,7 +207,7 @@ export default function Payroll() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <Wallet size={22} className="text-amber-400" />
-          <h1 className="text-xl font-bold text-white">إدارة الرواتب</h1>
+          <h1 className="text-xl font-bold text-ink">إدارة الرواتب</h1>
         </div>
         {canManage && (
           <button onClick={() => setShowCreate(true)} className="erp-btn erp-btn-primary flex items-center gap-1 text-sm">
@@ -219,10 +219,10 @@ export default function Payroll() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* ── Left: periods list ───────────────────────────── */}
         <div className="space-y-2">
-          <h2 className="text-xs font-semibold text-white/50 uppercase tracking-wider">فترات الرواتب</h2>
-          {periods.isLoading && <div className="text-white/40 text-sm text-center py-6">جاري التحميل…</div>}
+          <h2 className="text-xs font-semibold text-ink/50 uppercase tracking-wider">فترات الرواتب</h2>
+          {periods.isLoading && <div className="text-ink/40 text-sm text-center py-6">جاري التحميل…</div>}
           {periodList.length === 0 && !periods.isLoading && (
-            <div className="text-white/40 text-sm text-center py-6">لا توجد فترات رواتب</div>
+            <div className="text-ink/40 text-sm text-center py-6">لا توجد فترات رواتب</div>
           )}
           {periodList.map((p) => (
             <button
@@ -231,14 +231,14 @@ export default function Payroll() {
               className={`w-full text-right p-3 rounded-xl border transition-all ${
                 selectedPeriod?.id === p.id
                   ? 'border-amber-500/60 bg-amber-500/10'
-                  : 'border-white/8 bg-white/4 hover:bg-white/8'
+                  : 'border-line bg-surface hover:bg-surface'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-white text-sm truncate">{String(p.name ?? '')}</span>
+                <span className="font-semibold text-ink text-sm truncate">{String(p.name ?? '')}</span>
                 <PeriodBadge s={String(p.status ?? '')} />
               </div>
-              <div className="text-xs text-white/40 mt-1">
+              <div className="text-xs text-ink/40 mt-1">
                 {dateFmt(p.start_date)} — {dateFmt(p.end_date)}
               </div>
             </button>
@@ -248,7 +248,7 @@ export default function Payroll() {
         {/* ── Right: period detail ─────────────────────────── */}
         <div className="lg:col-span-2 space-y-4">
           {!selectedPeriod && (
-            <div className="flex items-center justify-center h-48 text-white/30 text-sm">
+            <div className="flex items-center justify-center h-48 text-ink/30 text-sm">
               اختر فترة لعرض تفاصيلها
             </div>
           )}
@@ -259,8 +259,8 @@ export default function Payroll() {
               <div className="erp-card p-4 rounded-xl space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="font-bold text-white text-lg">{String(selectedPeriod.name ?? '')}</h2>
-                    <p className="text-white/50 text-sm">
+                    <h2 className="font-bold text-ink text-lg">{String(selectedPeriod.name ?? '')}</h2>
+                    <p className="text-ink/50 text-sm">
                       {dateFmt(selectedPeriod.start_date)} — {dateFmt(selectedPeriod.end_date)}
                     </p>
                   </div>
@@ -271,15 +271,15 @@ export default function Payroll() {
                 {recordsList.length > 0 && (
                   <div className="grid grid-cols-3 gap-3">
                     <div className="erp-card p-3 rounded-lg text-center">
-                      <p className="text-xs text-white/40">عدد الموظفين</p>
-                      <p className="text-xl font-bold text-white">{recordsList.length}</p>
+                      <p className="text-xs text-ink/40">عدد الموظفين</p>
+                      <p className="text-xl font-bold text-ink">{recordsList.length}</p>
                     </div>
                     <div className="erp-card p-3 rounded-lg text-center">
-                      <p className="text-xs text-white/40">إجمالي الرواتب</p>
+                      <p className="text-xs text-ink/40">إجمالي الرواتب</p>
                       <p className="text-base font-bold text-amber-400">{numFmt(totalGross)}</p>
                     </div>
                     <div className="erp-card p-3 rounded-lg text-center">
-                      <p className="text-xs text-white/40">صافي الرواتب</p>
+                      <p className="text-xs text-ink/40">صافي الرواتب</p>
                       <p className="text-base font-bold text-emerald-400">{numFmt(totalNet)}</p>
                     </div>
                   </div>
@@ -311,7 +311,7 @@ export default function Payroll() {
                     <button
                       onClick={() => setShowPay(true)}
                       disabled={payPeriod.isPending}
-                      className="erp-btn flex items-center gap-1 text-sm bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white border border-emerald-500/50 disabled:opacity-50"
+                      className="erp-btn flex items-center gap-1 text-sm bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-ink border border-emerald-500/50 disabled:opacity-50"
                     >
                       {payPeriod.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
                       صرف الرواتب
@@ -327,11 +327,11 @@ export default function Payroll() {
 
               {/* Records table */}
               {periodDetail.isLoading && (
-                <div className="text-white/40 text-sm text-center py-8">جاري تحميل بيانات الرواتب…</div>
+                <div className="text-ink/40 text-sm text-center py-8">جاري تحميل بيانات الرواتب…</div>
               )}
 
               {recordsList.length === 0 && !periodDetail.isLoading && selectedPeriod.status === 'draft' && (
-                <div className="erp-card p-6 rounded-xl text-center text-white/40 text-sm">
+                <div className="erp-card p-6 rounded-xl text-center text-ink/40 text-sm">
                   <FileText size={32} className="mx-auto mb-2 opacity-30" />
                   <p>اضغط "احتساب الرواتب" لبدء معالجة رواتب الموظفين</p>
                 </div>
@@ -341,7 +341,7 @@ export default function Payroll() {
                 <div className="erp-card rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-white/8 text-white/50 text-xs">
+                      <tr className="border-b border-line text-ink/50 text-xs">
                         <th className="text-right p-3">الموظف</th>
                         <th className="text-center p-3">الراتب الإجمالي</th>
                         <th className="text-center p-3">صافي الراتب</th>
@@ -353,12 +353,12 @@ export default function Payroll() {
                     <tbody>
                       {recordsList.map((rec) => (
                         <Fragment key={String(rec.id)}>
-                          <tr className="border-b border-white/5 hover:bg-white/4 transition-colors">
+                          <tr className="border-b border-line hover:bg-surface transition-colors">
                             <td className="p-3">
-                              <div className="font-semibold text-white">
+                              <div className="font-semibold text-ink">
                                 {rec.first_name_ar} {rec.last_name_ar}
                               </div>
-                              <div className="text-xs text-white/40">{String(rec.employee_code ?? '')}</div>
+                              <div className="text-xs text-ink/40">{String(rec.employee_code ?? '')}</div>
                             </td>
                             <td className="p-3 text-center text-amber-300 font-mono font-semibold">
                               {numFmt(rec.gross_salary, String(rec.currency ?? 'EGP'))}
@@ -379,21 +379,21 @@ export default function Payroll() {
                                       net: Number(rec.net_salary ?? 0),
                                       currency: String(rec.currency ?? 'EGP'),
                                     })}
-                                    className="flex items-center gap-1 mx-auto px-2 py-1 rounded-lg text-xs bg-emerald-600/70 hover:bg-emerald-600 text-white border border-emerald-500/40 transition-colors"
+                                    className="flex items-center gap-1 mx-auto px-2 py-1 rounded-lg text-xs bg-emerald-600/70 hover:bg-emerald-600 text-ink border border-emerald-500/40 transition-colors"
                                   >
                                     <Banknote size={12} /> صرف
                                   </button>
                                 ) : rec.status === 'paid' ? (
                                   <CheckCircle2 size={14} className="text-emerald-400 mx-auto" />
                                 ) : (
-                                  <span className="text-white/20 text-xs">—</span>
+                                  <span className="text-ink/20 text-xs">—</span>
                                 )}
                               </td>
                             )}
                             <td className="p-3 text-center">
                               <button
                                 onClick={() => toggleLines(Number(rec.id))}
-                                className="text-white/40 hover:text-amber-400 transition-colors"
+                                className="text-ink/40 hover:text-amber-400 transition-colors"
                               >
                                 {expandedRecId === Number(rec.id) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                               </button>
@@ -403,13 +403,13 @@ export default function Payroll() {
                           {/* Line items */}
                           {expandedRecId === Number(rec.id) && (
                             <tr key={`lines-${rec.id}`}>
-                              <td colSpan={canApprove ? 6 : 5} className="bg-white/3 px-6 py-3">
+                              <td colSpan={canApprove ? 6 : 5} className="bg-surface px-6 py-3">
                                 {loadingLines ? (
-                                  <div className="text-white/40 text-xs text-center py-2">جاري التحميل…</div>
+                                  <div className="text-ink/40 text-xs text-center py-2">جاري التحميل…</div>
                                 ) : (
                                   <table className="w-full text-xs">
                                     <thead>
-                                      <tr className="text-white/40">
+                                      <tr className="text-ink/40">
                                         <th className="text-right pb-1">البند</th>
                                         <th className="text-left pb-1">النوع</th>
                                         <th className="text-left pb-1">المبلغ</th>
@@ -417,9 +417,9 @@ export default function Payroll() {
                                     </thead>
                                     <tbody>
                                       {expandedLineItems.map((li, i) => (
-                                        <tr key={`${String(li.component_name ?? '')}-${String(li.component_type ?? '')}-${i}`} className="border-t border-white/5">
-                                          <td className="py-1 text-white/80">{String(li.component_name ?? '')}</td>
-                                          <td className="py-1 text-white/50">{lineTypeLabel(String(li.component_type ?? ''))}</td>
+                                        <tr key={`${String(li.component_name ?? '')}-${String(li.component_type ?? '')}-${i}`} className="border-t border-line">
+                                          <td className="py-1 text-ink/80">{String(li.component_name ?? '')}</td>
+                                          <td className="py-1 text-ink/50">{lineTypeLabel(String(li.component_type ?? ''))}</td>
                                           <td className={`py-1 font-mono ${Number(li.amount) < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                                             {numFmt(li.amount)}
                                           </td>
@@ -446,24 +446,24 @@ export default function Payroll() {
       {payRecModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2 text-base">
+            <div className="flex items-center justify-between p-5 border-b border-line">
+              <h2 className="font-bold text-ink flex items-center gap-2 text-base">
                 <Banknote size={15} className="text-emerald-400" /> صرف راتب
               </h2>
-              <button onClick={() => { setPayRecModal(null); setPayRecSafeId(''); }} className="text-white/40 hover:text-white">
+              <button onClick={() => { setPayRecModal(null); setPayRecSafeId(''); }} className="text-ink/40 hover:text-ink">
                 <X size={18} />
               </button>
             </div>
             <div className="p-5 space-y-4">
               {/* Employee & amount */}
               <div className="erp-card p-3 rounded-xl space-y-1">
-                <p className="text-sm font-semibold text-white">{payRecModal.name}</p>
-                <p className="text-xs text-white/50">صافي الراتب المستحق</p>
+                <p className="text-sm font-semibold text-ink">{payRecModal.name}</p>
+                <p className="text-xs text-ink/50">صافي الراتب المستحق</p>
                 <p className="text-lg font-bold text-emerald-400 font-mono">{numFmt(payRecModal.net, payRecModal.currency)}</p>
               </div>
               {/* Safe selector */}
               <div>
-                <label className="text-xs text-white/50 block mb-1">الخزانة <span className="text-red-400">*</span></label>
+                <label className="text-xs text-ink/50 block mb-1">الخزانة <span className="text-red-400">*</span></label>
                 <select
                   className="erp-input w-full"
                   value={payRecSafeId}
@@ -489,11 +489,11 @@ export default function Payroll() {
                 })()}
               </div>
             </div>
-            <div className="flex gap-2 p-5 border-t border-white/10">
+            <div className="flex gap-2 p-5 border-t border-line">
               <button
                 onClick={() => payRecord.mutate({ recId: payRecModal.recId, safe_id: Number(payRecSafeId) })}
                 disabled={payRecord.isPending || !payRecSafeId}
-                className="erp-btn flex-1 flex items-center gap-1 justify-center bg-emerald-600/80 hover:bg-emerald-600 text-white border border-emerald-500/40 disabled:opacity-40"
+                className="erp-btn flex-1 flex items-center gap-1 justify-center bg-emerald-600/80 hover:bg-emerald-600 text-ink border border-emerald-500/40 disabled:opacity-40"
               >
                 {payRecord.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
                 {payRecord.isPending ? 'جاري الصرف…' : `تأكيد صرف ${numFmt(payRecModal.net, payRecModal.currency)}`}
@@ -508,26 +508,26 @@ export default function Payroll() {
       {showPay && selectedPeriod && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2">
+            <div className="flex items-center justify-between p-5 border-b border-line">
+              <h2 className="font-bold text-ink flex items-center gap-2">
                 <Banknote size={16} className="text-emerald-400" /> صرف رواتب — {String(selectedPeriod.name ?? '')}
               </h2>
-              <button onClick={() => setShowPay(false)} className="text-white/40 hover:text-white"><X size={18} /></button>
+              <button onClick={() => setShowPay(false)} className="text-ink/40 hover:text-ink"><X size={18} /></button>
             </div>
 
             <div className="p-5 space-y-4">
               {/* Unpaid summary */}
               <div className="erp-card p-3 rounded-xl space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/50">الموظفون المتبقون للصرف</span>
-                  <span className="text-sm font-bold text-white">{unpaidCount} موظف</span>
+                  <span className="text-xs text-ink/50">الموظفون المتبقون للصرف</span>
+                  <span className="text-sm font-bold text-ink">{unpaidCount} موظف</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/50">المبلغ المستحق الصرف</span>
+                  <span className="text-xs text-ink/50">المبلغ المستحق الصرف</span>
                   <span className="font-bold text-emerald-400 text-base font-mono">{numFmt(unpaidNet)}</span>
                 </div>
                 {unpaidCount < recordsList.length && (
-                  <p className="text-xs text-amber-400/80 pt-1 border-t border-white/8">
+                  <p className="text-xs text-amber-400/80 pt-1 border-t border-line">
                     ملاحظة: تم صرف {recordsList.length - unpaidCount} موظف مسبقاً وسيُتخطّون
                   </p>
                 )}
@@ -535,7 +535,7 @@ export default function Payroll() {
 
               {/* Safe picker */}
               <div>
-                <label className="text-xs text-white/50 block mb-1">الخزانة <span className="text-red-400">*</span></label>
+                <label className="text-xs text-ink/50 block mb-1">الخزانة <span className="text-red-400">*</span></label>
                 <select
                   className="erp-input w-full"
                   value={payForm.safe_id}
@@ -563,7 +563,7 @@ export default function Payroll() {
 
               {/* Notes */}
               <div>
-                <label className="text-xs text-white/50 block mb-1">ملاحظات (اختياري)</label>
+                <label className="text-xs text-ink/50 block mb-1">ملاحظات (اختياري)</label>
                 <input
                   className="erp-input w-full"
                   value={payForm.notes}
@@ -573,11 +573,11 @@ export default function Payroll() {
               </div>
             </div>
 
-            <div className="flex gap-2 p-5 border-t border-white/10">
+            <div className="flex gap-2 p-5 border-t border-line">
               <button
                 onClick={() => payPeriod.mutate({ id: Number(selectedPeriod.id), safe_id: Number(payForm.safe_id), notes: payForm.notes })}
                 disabled={payPeriod.isPending || !payForm.safe_id}
-                className="erp-btn flex-1 flex items-center gap-1 justify-center bg-emerald-600/80 hover:bg-emerald-600 text-white border border-emerald-500/40 disabled:opacity-40"
+                className="erp-btn flex-1 flex items-center gap-1 justify-center bg-emerald-600/80 hover:bg-emerald-600 text-ink border border-emerald-500/40 disabled:opacity-40"
               >
                 {payPeriod.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
                 {payPeriod.isPending ? 'جاري الصرف…' : `تأكيد صرف ${numFmt(unpaidNet)}`}
@@ -592,18 +592,18 @@ export default function Payroll() {
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <h2 className="font-bold text-white flex items-center gap-2">
+            <div className="flex items-center justify-between p-5 border-b border-line">
+              <h2 className="font-bold text-ink flex items-center gap-2">
                 <Plus size={16} className="text-amber-400" /> فترة راتب جديدة
               </h2>
-              <button onClick={() => setShowCreate(false)} className="text-white/40 hover:text-white">
+              <button onClick={() => setShowCreate(false)} className="text-ink/40 hover:text-ink">
                 <X size={18} />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
               <div>
-                <label className="text-xs text-white/50 block mb-1">اسم الفترة</label>
+                <label className="text-xs text-ink/50 block mb-1">اسم الفترة</label>
                 <input
                   className="erp-input w-full"
                   value={form.name}
@@ -613,7 +613,7 @@ export default function Payroll() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-white/50 block mb-1">من تاريخ</label>
+                  <label className="text-xs text-ink/50 block mb-1">من تاريخ</label>
                   <input
                     type="date" className="erp-input w-full"
                     value={form.start_date}
@@ -621,7 +621,7 @@ export default function Payroll() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-white/50 block mb-1">إلى تاريخ</label>
+                  <label className="text-xs text-ink/50 block mb-1">إلى تاريخ</label>
                   <input
                     type="date" className="erp-input w-full"
                     value={form.end_date}
@@ -630,7 +630,7 @@ export default function Payroll() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-white/50 block mb-1">ملاحظات (اختياري)</label>
+                <label className="text-xs text-ink/50 block mb-1">ملاحظات (اختياري)</label>
                 <input
                   className="erp-input w-full"
                   value={form.notes}
@@ -639,7 +639,7 @@ export default function Payroll() {
               </div>
             </div>
 
-            <div className="flex gap-2 p-5 border-t border-white/10">
+            <div className="flex gap-2 p-5 border-t border-line">
               <button
                 onClick={() => createPeriod.mutate(form as unknown as AnyRec)}
                 disabled={createPeriod.isPending || !form.name.trim()}

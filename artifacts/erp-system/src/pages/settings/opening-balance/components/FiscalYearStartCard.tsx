@@ -45,8 +45,8 @@ export function FiscalYearStartCard() {
         <CalendarDays className="w-5 h-5 text-amber-400" />
       </div>
       <div className="flex-1">
-        <p className="text-white font-bold text-sm">تاريخ بداية السنة المالية</p>
-        <p className="text-white/40 text-xs mt-0.5">
+        <p className="text-ink font-bold text-sm">تاريخ بداية السنة المالية</p>
+        <p className="text-ink/40 text-xs mt-0.5">
           يُحدد نقطة البداية للفترة المحاسبية الأولى — يؤثر على التقارير والمقارنات الدورية
         </p>
       </div>

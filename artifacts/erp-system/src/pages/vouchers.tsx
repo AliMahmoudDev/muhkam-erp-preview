@@ -109,14 +109,14 @@ function SubBadge({ sub }: { sub: string }) {
     "صرف":         "bg-orange-500/15 text-orange-300 border-orange-500/20",
     "تحويل خزنة": "bg-violet-500/15 text-violet-300 border-violet-500/20",
   };
-  return <span className={`px-2 py-0.5 rounded-lg text-xs font-medium border ${map[sub] ?? "bg-white/10 text-white/50 border-white/10"}`}>{sub}</span>;
+  return <span className={`px-2 py-0.5 rounded-lg text-xs font-medium border ${map[sub] ?? "bg-surface text-ink/50 border-line"}`}>{sub}</span>;
 }
 
 function StatusBadge({ status }: { status: string | null }) {
-  if (!status)                return <span className="text-xs text-white/30">—</span>;
+  if (!status)                return <span className="text-xs text-ink/30">—</span>;
   if (status === "posted")    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">مرحَّل</span>;
   if (status === "cancelled") return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">ملغى</span>;
-  return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-white/50">مسودة</span>;
+  return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-surface text-ink/50">مسودة</span>;
 }
 
 /* ── main component ── */
@@ -236,26 +236,26 @@ export default function Vouchers() {
       {/* ── Back navigation ── */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate("/treasury")}
-          className="flex items-center gap-2 text-white/40 hover:text-amber-400 transition-colors group text-sm">
+          className="flex items-center gap-2 text-ink/40 hover:text-amber-400 transition-colors group text-sm">
           <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           <Wallet className="w-4 h-4" />
           <span>العودة إلى الخزينة</span>
         </button>
-        <span className="text-white/15">|</span>
-        <div className="flex items-center gap-2 text-white/50">
+        <span className="text-ink/15">|</span>
+        <div className="flex items-center gap-2 text-ink/50">
           <ReceiptText className="w-4 h-4 text-amber-400" />
-          <span className="text-sm font-bold text-white">سجل السندات</span>
+          <span className="text-sm font-bold text-ink">سجل السندات</span>
         </div>
       </div>
 
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-3">
             <ReceiptText className="w-6 h-6 text-amber-400" />
             سجل السندات
           </h1>
-          <p className="text-white/40 text-sm mt-1">
+          <p className="text-ink/40 text-sm mt-1">
             عرض جميع السندات والتحويلات — لإنشاء سند جديد انتقل إلى{" "}
             <button onClick={() => navigate("/treasury")} className="text-amber-400 hover:underline">الخزينة</button>
           </p>
@@ -273,8 +273,8 @@ export default function Vouchers() {
       {safes.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {safes.map(s => (
-            <div key={s.id} className="bg-white/5 border border-white/8 rounded-2xl p-4">
-              <p className="text-white/50 text-xs mb-1">{s.name}</p>
+            <div key={s.id} className="bg-surface border border-line rounded-2xl p-4">
+              <p className="text-ink/50 text-xs mb-1">{s.name}</p>
               <p className="text-xl font-black text-amber-400">{formatCurrency(Number(s.balance))}</p>
             </div>
           ))}
@@ -286,53 +286,53 @@ export default function Vouchers() {
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 text-right">
           <div className="text-emerald-400/70 text-xs mb-1">إجمالي القبض</div>
           <div className="text-lg font-black text-emerald-400">{formatCurrency(totalReceipt)}</div>
-          <div className="text-white/30 text-xs mt-1">{allRows.filter(r => r.voucherType === "قبض").length} سند</div>
+          <div className="text-ink/30 text-xs mt-1">{allRows.filter(r => r.voucherType === "قبض").length} سند</div>
         </div>
         <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 text-right">
           <div className="text-orange-400/70 text-xs mb-1">إجمالي الصرف</div>
           <div className="text-lg font-black text-orange-400">{formatCurrency(totalPayment)}</div>
-          <div className="text-white/30 text-xs mt-1">{allRows.filter(r => r.voucherType === "صرف" && r.kind !== "transfer").length} سند</div>
+          <div className="text-ink/30 text-xs mt-1">{allRows.filter(r => r.voucherType === "صرف" && r.kind !== "transfer").length} سند</div>
         </div>
         <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 text-right">
           <div className="text-violet-400/70 text-xs mb-1">تحويلات الخزائن</div>
           <div className="text-lg font-black text-violet-400">{formatCurrency(totalTransfer)}</div>
-          <div className="text-white/30 text-xs mt-1">{allRows.filter(r => r.kind === "transfer").length} تحويل</div>
+          <div className="text-ink/30 text-xs mt-1">{allRows.filter(r => r.kind === "transfer").length} تحويل</div>
         </div>
       </div>
 
       {/* Tab filter */}
-      <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-2xl p-1 w-fit">
+      <div className="flex items-center gap-1 bg-surface border border-line rounded-2xl p-1 w-fit">
         {(["الكل", "قبض", "صرف"] as TabFilter[]).map(t => {
           const count = t === "الكل" ? allRows.length : allRows.filter(r => r.voucherType === t).length;
           return (
             <button key={t} onClick={() => setTab(t)}
               className={`flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold transition-all ${
-                tab === t ? "bg-amber-500 text-black shadow-lg" : "text-white/50 hover:text-white"
+                tab === t ? "bg-amber-500 text-black shadow-lg" : "text-ink/50 hover:text-ink"
               }`}>
               {t === "قبض"  && <HandCoins className="w-3.5 h-3.5" />}
               {t === "صرف"  && <ArrowUpFromLine className="w-3.5 h-3.5" />}
               {t === "الكل" && <ArrowLeftRight className="w-3.5 h-3.5" />}
               {t}
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === t ? "bg-black/20" : "bg-white/10"}`}>{count}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === t ? "bg-black/20" : "bg-surface"}`}>{count}</span>
             </button>
           );
         })}
       </div>
 
       {/* Table */}
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-white/80 whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10">
+          <table className="w-full text-right text-ink/80 whitespace-nowrap">
+            <thead className="bg-surface border-b border-line">
               <tr>
-                <th className="p-4 font-medium text-white/60">النوع</th>
-                <th className="p-4 font-medium text-white/60">رقم السند</th>
-                <th className="p-4 font-medium text-white/60">الطرف</th>
-                <th className="p-4 font-medium text-white/60">الخزينة</th>
-                <th className="p-4 font-medium text-white/60">المبلغ</th>
-                <th className="p-4 font-medium text-white/60">الحالة</th>
-                <th className="p-4 font-medium text-white/60">التاريخ</th>
-                <th className="p-4 font-medium text-white/60">ملاحظات</th>
+                <th className="p-4 font-medium text-ink/60">النوع</th>
+                <th className="p-4 font-medium text-ink/60">رقم السند</th>
+                <th className="p-4 font-medium text-ink/60">الطرف</th>
+                <th className="p-4 font-medium text-ink/60">الخزينة</th>
+                <th className="p-4 font-medium text-ink/60">المبلغ</th>
+                <th className="p-4 font-medium text-ink/60">الحالة</th>
+                <th className="p-4 font-medium text-ink/60">التاريخ</th>
+                <th className="p-4 font-medium text-ink/60">ملاحظات</th>
                 <th className="p-4 w-28"></th>
               </tr>
             </thead>
@@ -342,8 +342,8 @@ export default function Vouchers() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="p-16 text-center">
-                    <ReceiptText className="w-10 h-10 text-white/15 mx-auto mb-3" />
-                    <p className="text-white/40 text-sm">لا توجد سندات بعد</p>
+                    <ReceiptText className="w-10 h-10 text-ink/15 mx-auto mb-3" />
+                    <p className="text-ink/40 text-sm">لا توجد سندات بعد</p>
                     <button onClick={() => navigate("/treasury")}
                       className="mt-3 text-amber-400 text-xs hover:underline">
                       أنشئ سنداً جديداً من صفحة الخزينة
@@ -351,7 +351,7 @@ export default function Vouchers() {
                   </td>
                 </tr>
               ) : filtered.map(row => (
-                <tr key={row.uid} className="border-b border-white/5 erp-table-row">
+                <tr key={row.uid} className="border-b border-line erp-table-row">
                   <td className="p-4">
                     <div className="flex flex-col gap-1">
                       <TypeBadge type={row.voucherType} />
@@ -359,7 +359,7 @@ export default function Vouchers() {
                     </div>
                   </td>
                   <td className="p-4 font-mono text-amber-400 text-sm">{row.voucherNo}</td>
-                  <td className="p-4 font-bold text-white">{row.partyName}</td>
+                  <td className="p-4 font-bold text-ink">{row.partyName}</td>
                   <td className="p-4 text-blue-300">{row.safeName}</td>
                   <td className="p-4 font-bold">
                     <span className={row.voucherType === "قبض" ? "text-emerald-400" : "text-orange-400"}>
@@ -367,8 +367,8 @@ export default function Vouchers() {
                     </span>
                   </td>
                   <td className="p-4"><StatusBadge status={row.status} /></td>
-                  <td className="p-4 text-sm text-white/60">{row.date || "—"}</td>
-                  <td className="p-4 text-white/50 text-sm max-w-[150px] truncate">{row.notes || "—"}</td>
+                  <td className="p-4 text-sm text-ink/60">{row.date || "—"}</td>
+                  <td className="p-4 text-ink/50 text-sm max-w-[150px] truncate">{row.notes || "—"}</td>
                   <td className="p-4">
                     <div className="flex items-center gap-1">
                       {row.kind === "deposit" && row.status === "draft" && (

@@ -107,7 +107,7 @@ export function PaymentBadge({ type }: { type: string }) {
     credit:  { label: "آجل",   cls: "bg-red-500/20 text-red-400 border-red-500/30" },
     partial: { label: "جزئي",  cls: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
   };
-  const d = map[type] || { label: type, cls: "bg-white/10 text-white/50 border-white/10" };
+  const d = map[type] || { label: type, cls: "bg-surface text-ink/50 border-line" };
   return <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${d.cls}`}>{d.label}</span>;
 }
 
@@ -118,7 +118,7 @@ export function StatusBadge({ status }: { status: string }) {
     pending: { label: "معلق",       cls: "text-red-400" },
     unpaid:  { label: "غير مدفوع", cls: "text-red-400" },
   };
-  const d = map[status] || { label: status, cls: "text-white/50" };
+  const d = map[status] || { label: status, cls: "text-ink/50" };
   return <span className={`text-xs font-bold ${d.cls}`}>{d.label}</span>;
 }
 
@@ -155,15 +155,15 @@ export function DateFilterBar({
     <div className="flex flex-wrap items-center gap-2" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
       {DATE_MODES.map(m => (
         <button key={m.id} onClick={() => setMode(m.id)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${mode === m.id ? "bg-amber-500/25 border-amber-500/50 text-amber-300" : "glass-panel border-white/10 text-white/50 hover:text-white"}`}>
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${mode === m.id ? "bg-amber-500/25 border-amber-500/50 text-amber-300" : "glass-panel border-line text-ink/50 hover:text-ink"}`}>
           {m.label}
         </button>
       ))}
       {mode === "custom" && (
         <div className="flex items-center gap-2">
-          <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="glass-input rounded-xl px-3 py-1.5 text-sm text-white" />
-          <span className="text-white/30">←</span>
-          <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="glass-input rounded-xl px-3 py-1.5 text-sm text-white" />
+          <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="glass-input rounded-xl px-3 py-1.5 text-sm text-ink" />
+          <span className="text-ink/30">←</span>
+          <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="glass-input rounded-xl px-3 py-1.5 text-sm text-ink" />
         </div>
       )}
     </div>

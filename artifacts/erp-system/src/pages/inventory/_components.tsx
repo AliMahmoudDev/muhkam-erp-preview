@@ -20,7 +20,7 @@ export function TabBtn({
       className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px whitespace-nowrap ${
         isActive
           ? 'border-violet-400 text-violet-300'
-          : 'border-transparent text-white/50 hover:text-white/80'
+          : 'border-transparent text-ink/50 hover:text-ink/80'
       }`}
     >
       {icon}
@@ -51,7 +51,7 @@ export function TabBtnBadge({
       className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px whitespace-nowrap ${
         isActive
           ? 'border-amber-400 text-amber-300'
-          : 'border-transparent text-white/50 hover:text-white/80'
+          : 'border-transparent text-ink/50 hover:text-ink/80'
       }`}
     >
       {icon}
@@ -96,18 +96,18 @@ export function StatCard({
           : ''
       }`}
     >
-      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+      <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center shrink-0">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-white/40 text-xs">{label}</p>
+        <p className="text-ink/40 text-xs">{label}</p>
         <p className={`text-lg font-bold truncate ${color}`}>{value}</p>
         {isClickable && hint && (
-          <p className="text-white/25 text-[10px] mt-0.5 truncate">{hint}</p>
+          <p className="text-ink/25 text-[10px] mt-0.5 truncate">{hint}</p>
         )}
       </div>
       {isClickable && (
-        <svg className="w-3.5 h-3.5 text-white/20 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-3.5 h-3.5 text-ink/20 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       )}

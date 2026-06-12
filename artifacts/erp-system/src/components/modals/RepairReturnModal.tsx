@@ -131,12 +131,12 @@ export default function RepairReturnModal({
               <RotateCcw className="w-4.5 h-4.5 text-red-400" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">مرتجع عميل</h3>
-              <p className="text-[10px] text-white/40">بطاقة صيانة {jobNo} · {customerName}</p>
+              <h3 className="text-sm font-black text-ink">مرتجع عميل</h3>
+              <p className="text-[10px] text-ink/40">بطاقة صيانة {jobNo} · {customerName}</p>
             </div>
           </div>
           {!done && (
-            <button onClick={onClose} className="text-white/30 hover:text-white transition-colors">
+            <button onClick={onClose} className="text-ink/30 hover:text-ink transition-colors">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -149,12 +149,12 @@ export default function RepairReturnModal({
               <CheckCircle2 className="w-7 h-7 text-emerald-400" />
             </div>
             <div>
-              <p className="text-white font-black text-base">تم تسجيل المرتجع</p>
-              <p className="text-white/50 text-xs mt-1">تم استرداد المبلغ وتحديث القطع</p>
+              <p className="text-ink font-black text-base">تم تسجيل المرتجع</p>
+              <p className="text-ink/50 text-xs mt-1">تم استرداد المبلغ وتحديث القطع</p>
             </div>
             <button
               onClick={onDone}
-              className="mt-4 px-6 py-2.5 rounded-xl text-xs font-black text-white transition-all"
+              className="mt-4 px-6 py-2.5 rounded-xl text-xs font-black text-ink transition-all"
               style={{ background: "rgba(16,185,129,0.4)", border: "1px solid rgba(16,185,129,0.4)" }}
             >
               حسناً
@@ -166,7 +166,7 @@ export default function RepairReturnModal({
 
               {/* Refund amount */}
               <div>
-                <label className="block text-[11px] font-bold text-white/60 mb-1.5">المبلغ المُسترد <span className="text-red-400">*</span></label>
+                <label className="block text-[11px] font-bold text-ink/60 mb-1.5">المبلغ المُسترد <span className="text-red-400">*</span></label>
                 <div className="relative">
                   <input
                     type="number"
@@ -174,24 +174,24 @@ export default function RepairReturnModal({
                     step="0.01"
                     value={refundAmount}
                     onChange={(e) => setRefundAmount(e.target.value)}
-                    className="w-full rounded-xl px-3 py-2.5 text-sm font-bold text-white placeholder:text-white/25 outline-none transition-all"
+                    className="w-full rounded-xl px-3 py-2.5 text-sm font-bold text-ink placeholder:text-ink/25 outline-none transition-all"
                     style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(239,68,68,0.3)" }}
                   />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-white/40">ج.م</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/40">ج.م</span>
                 </div>
               </div>
 
               {/* Safe selector — يظهر فقط عند وجود مبلغ مسترد */}
               {Number(refundAmount) > 0 && (
                 <div>
-                  <label className="block text-[11px] font-bold text-white/60 mb-1.5 flex items-center gap-1">
+                  <label className="block text-[11px] font-bold text-ink/60 mb-1.5 flex items-center gap-1">
                     <Wallet className="w-3 h-3" />
                     الخزنة (لخصم المبلغ المسترد منها) <span className="text-red-400">*</span>
                   </label>
                   <select
                     value={safeId}
                     onChange={(e) => setSafeId(e.target.value)}
-                    className="w-full rounded-xl px-3 py-2.5 text-xs text-white outline-none transition-all"
+                    className="w-full rounded-xl px-3 py-2.5 text-xs text-ink outline-none transition-all"
                     style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(239,68,68,0.3)" }}
                   >
                     <option value="" className="bg-[#1a1530]">— اختر الخزنة —</option>
@@ -209,13 +209,13 @@ export default function RepairReturnModal({
 
               {/* Problem description */}
               <div>
-                <label className="block text-[11px] font-bold text-white/60 mb-1.5">سبب الإرجاع / وصف المشكلة <span className="text-red-400">*</span></label>
+                <label className="block text-[11px] font-bold text-ink/60 mb-1.5">سبب الإرجاع / وصف المشكلة <span className="text-red-400">*</span></label>
                 <textarea
                   value={problemDesc}
                   onChange={(e) => setProblemDesc(e.target.value)}
                   rows={2}
                   placeholder="اكتب سبب إرجاع الجهاز..."
-                  className="w-full rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-white/25 outline-none resize-none transition-all"
+                  className="w-full rounded-xl px-3 py-2.5 text-xs text-ink placeholder:text-ink/25 outline-none resize-none transition-all"
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)" }}
                 />
               </div>
@@ -223,7 +223,7 @@ export default function RepairReturnModal({
               {/* Parts disposition */}
               {availableParts.length > 0 && (
                 <div>
-                  <label className="block text-[11px] font-bold text-white/60 mb-2">مصير القطع المستخدمة</label>
+                  <label className="block text-[11px] font-bold text-ink/60 mb-2">مصير القطع المستخدمة</label>
                   <div className="space-y-2">
                     {availableParts.map((part) => {
                       const disp = dispositions[part.id] ?? "ignore";
@@ -235,8 +235,8 @@ export default function RepairReturnModal({
                         >
                           <div className="flex items-start justify-between gap-2 mb-2.5">
                             <div>
-                              <p className="text-[12px] font-bold text-white">{part.product_name}</p>
-                              <p className="text-[10px] text-white/40">الكمية: {Number(part.quantity)} · السعر: {Number(part.unit_price).toFixed(2)} ج.م</p>
+                              <p className="text-[12px] font-bold text-ink">{part.product_name}</p>
+                              <p className="text-[10px] text-ink/40">الكمية: {Number(part.quantity)} · السعر: {Number(part.unit_price).toFixed(2)} ج.م</p>
                             </div>
                           </div>
                           <div className="flex gap-1.5">
@@ -254,7 +254,7 @@ export default function RepairReturnModal({
                                     "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all border",
                                     isActive
                                       ? `bg-${color}-500/25 border-${color}-500/50 text-${color}-300`
-                                      : "border-white/10 text-white/40 hover:text-white/70 hover:border-white/20",
+                                      : "border-line text-ink/40 hover:text-ink/70 hover:border-line",
                                     d === "stock" && !part.warehouse_id ? "opacity-30 cursor-not-allowed" : "",
                                   ].join(" ")}
                                 >
@@ -275,20 +275,20 @@ export default function RepairReturnModal({
               )}
 
               {availableParts.length === 0 && (
-                <div className="rounded-xl p-3 text-center text-[11px] text-white/30" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="rounded-xl p-3 text-center text-[11px] text-ink/30" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                   لا توجد قطع مسجّلة على هذه البطاقة
                 </div>
               )}
 
               {/* Notes */}
               <div>
-                <label className="block text-[11px] font-bold text-white/60 mb-1.5">ملاحظات (اختياري)</label>
+                <label className="block text-[11px] font-bold text-ink/60 mb-1.5">ملاحظات (اختياري)</label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="أي ملاحظات إضافية..."
-                  className="w-full rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/25 outline-none transition-all"
+                  className="w-full rounded-xl px-3 py-2 text-xs text-ink placeholder:text-ink/25 outline-none transition-all"
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)" }}
                 />
               </div>
@@ -306,7 +306,7 @@ export default function RepairReturnModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-2.5 rounded-xl text-xs font-black text-white transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 rounded-xl text-xs font-black text-ink transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                 style={{ background: "rgba(239,68,68,0.55)", border: "1px solid rgba(239,68,68,0.4)" }}
               >
                 {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ الحفظ...</> : <><RotateCcw className="w-3.5 h-3.5" /> تسجيل المرتجع</>}
@@ -315,7 +315,7 @@ export default function RepairReturnModal({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2.5 rounded-xl border text-xs text-white/60 hover:text-white transition-all disabled:opacity-40"
+                className="px-4 py-2.5 rounded-xl border text-xs text-ink/60 hover:text-ink transition-all disabled:opacity-40"
                 style={{ borderColor: "rgba(255,255,255,0.12)" }}
               >
                 إلغاء

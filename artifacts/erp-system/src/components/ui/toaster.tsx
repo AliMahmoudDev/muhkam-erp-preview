@@ -64,7 +64,7 @@ function ToastItem({
       duration={DURATION}
     >
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/5 overflow-hidden rounded-b-xl">
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-surface overflow-hidden rounded-b-xl">
         {open && (
           <div
             className={`h-full ${cfg.barColor} origin-right`}

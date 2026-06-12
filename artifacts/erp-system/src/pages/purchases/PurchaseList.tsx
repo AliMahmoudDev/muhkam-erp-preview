@@ -22,7 +22,7 @@ interface PurchaseRecord {
 function PostingBadge({ status }: { status: string }) {
   if (status === "posted")    return <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">مرحَّل</span>;
   if (status === "cancelled") return <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">ملغى</span>;
-  return <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-medium">مسودة</span>;
+  return <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink/50 font-medium">مسودة</span>;
 }
 
 export default function PurchaseList() {
@@ -64,8 +64,8 @@ export default function PurchaseList() {
     <>
       <div className="glass-panel rounded-3xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-white/80 whitespace-nowrap text-sm">
-            <thead className="bg-white/5 border-b border-white/10">
+          <table className="w-full text-right text-ink/80 whitespace-nowrap text-sm">
+            <thead className="bg-surface border-b border-line">
               <tr>
                 <th className="p-3 font-medium">رقم الفاتورة</th>
                 <th className="p-3 font-medium">العميل</th>
@@ -78,24 +78,24 @@ export default function PurchaseList() {
             </thead>
             <tbody>
               {isLoading ? <TableSkeleton cols={7} rows={5} />
-                : purchases.length === 0 ? <tr><td colSpan={7} className="p-8 text-center text-white/40">لا توجد فواتير بعد</td></tr>
+                : purchases.length === 0 ? <tr><td colSpan={7} className="p-8 text-center text-ink/40">لا توجد فواتير بعد</td></tr>
                 : purchases.map(p => (
-                  <tr key={p.id} className="border-b border-white/5 erp-table-row">
+                  <tr key={p.id} className="border-b border-line erp-table-row">
                     <td className="p-3 font-mono text-amber-400">{p.invoice_no}</td>
-                    <td className="p-3 font-bold text-white">{p.supplier_name || '—'}</td>
+                    <td className="p-3 font-bold text-ink">{p.supplier_name || '—'}</td>
                     <td className="p-3 font-bold text-blue-400">
                       {formatCurrency(p.total_amount)}
                       {p.currency && p.currency !== "EGP" && (
                         <span className="mr-1 text-xs text-blue-300/60 font-normal">({p.currency} × {p.exchange_rate?.toFixed(2)})</span>
                       )}
                     </td>
-                    <td className="p-3 text-white/60">{p.payment_type === "cash" ? "نقدي" : p.payment_type === "credit" ? "آجل" : "جزئي"}</td>
+                    <td className="p-3 text-ink/60">{p.payment_type === "cash" ? "نقدي" : p.payment_type === "credit" ? "آجل" : "جزئي"}</td>
                     <td className="p-3"><PostingBadge status={p.posting_status} /></td>
-                    <td className="p-3 text-white/50">{p.date || '—'}</td>
+                    <td className="p-3 text-ink/50">{p.date || '—'}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-1">
                         <button onClick={() => setSelectedPurchaseId(p.id)} title="عرض التفاصيل"
-                          className="btn-icon text-white/50 hover:text-white hover:bg-white/10">
+                          className="btn-icon text-ink/50 hover:text-ink hover:bg-surface">
                           <Eye className="w-4 h-4" />
                         </button>
                         {p.posting_status === "draft" && (

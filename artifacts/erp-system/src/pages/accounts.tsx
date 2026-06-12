@@ -57,19 +57,19 @@ function AccountRow({ account, accounts, depth = 0 }: { account: Account; accoun
 
   return (
     <>
-      <tr className="border-b border-white/5 erp-table-row">
+      <tr className="border-b border-line erp-table-row">
         <td className="p-3">
           <div className="flex items-center gap-2" style={{ paddingRight: `${depth * 20}px` }}>
             {hasChildren ? (
-              <button onClick={() => setOpen(!open)} className="p-0.5 rounded text-white/40 hover:text-white/80 transition-colors">
+              <button onClick={() => setOpen(!open)} className="p-0.5 rounded text-ink/40 hover:text-ink/80 transition-colors">
                 {open ? <ChevronDown className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
               </button>
             ) : <span className="w-5" />}
-            <span className={`font-mono text-xs ${depth === 0 ? "text-amber-400 font-bold" : "text-white/50"}`}>{account.code}</span>
+            <span className={`font-mono text-xs ${depth === 0 ? "text-amber-400 font-bold" : "text-ink/50"}`}>{account.code}</span>
           </div>
         </td>
         <td className="p-3">
-          <span className={`font-${depth === 0 ? "black" : depth === 1 ? "bold" : "medium"} text-white`}>{account.name}</span>
+          <span className={`font-${depth === 0 ? "black" : depth === 1 ? "bold" : "medium"} text-ink`}>{account.name}</span>
         </td>
         <td className="p-3">
           <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${TYPE_COLORS[account.type] || ""}`}>
@@ -85,7 +85,7 @@ function AccountRow({ account, accounts, depth = 0 }: { account: Account; accoun
           {account.is_posting ? (
             <span className="px-2 py-0.5 rounded text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">ترحيل</span>
           ) : (
-            <span className="px-2 py-0.5 rounded text-xs text-white/30 bg-white/5 border border-white/10">إجمالي</span>
+            <span className="px-2 py-0.5 rounded text-xs text-ink/30 bg-surface border border-line">إجمالي</span>
           )}
         </td>
       </tr>
@@ -134,10 +134,10 @@ export default function Accounts() {
   return (
     <div className="space-y-4">
       <div className="flex gap-3 items-center flex-wrap">
-        <div className="flex bg-white/5 rounded-2xl p-1 border border-white/10 flex-wrap gap-1">
+        <div className="flex bg-surface rounded-2xl p-1 border border-line flex-wrap gap-1">
           {["", "asset", "liability", "equity", "revenue", "expense"].map(t => (
             <button key={t} onClick={() => setFilter(t)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === t ? "bg-amber-500 text-black" : "text-white/50 hover:text-white"}`}>
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === t ? "bg-amber-500 text-black" : "text-ink/50 hover:text-ink"}`}>
               {t ? TYPE_LABELS[t] : "الكل"}
             </button>
           ))}
@@ -159,7 +159,7 @@ export default function Accounts() {
         {Object.entries(totals).map(([type, val]) => (
           <div key={type} className={`glass-panel rounded-2xl p-3 border ${TYPE_COLORS[type].split(" ").slice(1).join(" ")}`}>
             <p className={`text-xs font-bold mb-1 ${TYPE_COLORS[type].split(" ")[0]}`}>{TYPE_LABELS[type]}</p>
-            <p className="text-white font-black text-sm">{formatCurrency(val)}</p>
+            <p className="text-ink font-black text-sm">{formatCurrency(val)}</p>
           </div>
         ))}
       </div>
@@ -167,33 +167,33 @@ export default function Accounts() {
       {/* نموذج الإضافة */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm modal-overlay">
-          <div className="glass-panel rounded-3xl p-8 w-full max-w-md border border-white/10 shadow-2xl modal-panel">
+          <div className="glass-panel rounded-3xl p-8 w-full max-w-md border border-line shadow-2xl modal-panel">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white">حساب جديد</h3>
-              <button onClick={() => setShowForm(false)} className="p-2 rounded-xl bg-white/10 hover:bg-white/20"><X className="w-4 h-4 text-white/70" /></button>
+              <h3 className="text-xl font-bold text-ink">حساب جديد</h3>
+              <button onClick={() => setShowForm(false)} className="p-2 rounded-xl bg-surface hover:bg-raised"><X className="w-4 h-4 text-ink/70" /></button>
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-white/60 text-xs mb-1 block">كود الحساب *</label><input required type="text" className="glass-input font-mono" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="مثال: 1110" /></div>
-                <div><label className="text-white/60 text-xs mb-1 block">نوع الحساب *</label>
+                <div><label className="text-ink/60 text-xs mb-1 block">كود الحساب *</label><input required type="text" className="glass-input font-mono" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="مثال: 1110" /></div>
+                <div><label className="text-ink/60 text-xs mb-1 block">نوع الحساب *</label>
                   <select className="glass-input appearance-none" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
                     {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v} className="bg-gray-900">{l}</option>)}
                   </select>
                 </div>
               </div>
-              <div><label className="text-white/60 text-xs mb-1 block">اسم الحساب *</label><input required type="text" className="glass-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-              <div><label className="text-white/60 text-xs mb-1 block">الحساب الأب</label>
+              <div><label className="text-ink/60 text-xs mb-1 block">اسم الحساب *</label><input required type="text" className="glass-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+              <div><label className="text-ink/60 text-xs mb-1 block">الحساب الأب</label>
                 <select className="glass-input appearance-none" value={form.parent_id} onChange={e => setForm(f => ({ ...f, parent_id: e.target.value }))}>
                   <option value="" className="bg-gray-900">بدون (حساب رئيسي)</option>
                   {accounts.filter(a => !a.is_posting).map(a => <option key={a.id} value={a.id} className="bg-gray-900">[{a.code}] {a.name}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-white/60 text-xs mb-1 block">رصيد افتتاحي</label><input type="number" step="0.01" className="glass-input" value={form.opening_balance} onChange={e => setForm(f => ({ ...f, opening_balance: e.target.value }))} /></div>
+                <div><label className="text-ink/60 text-xs mb-1 block">رصيد افتتاحي</label><input type="number" step="0.01" className="glass-input" value={form.opening_balance} onChange={e => setForm(f => ({ ...f, opening_balance: e.target.value }))} /></div>
                 <div className="flex items-end pb-1">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={form.is_posting} onChange={e => setForm(f => ({ ...f, is_posting: e.target.checked }))} className="w-4 h-4 accent-amber-500" />
-                    <span className="text-white/70 text-sm">حساب ترحيل</span>
+                    <span className="text-ink/70 text-sm">حساب ترحيل</span>
                   </label>
                 </div>
               </div>
@@ -207,16 +207,16 @@ export default function Accounts() {
       )}
 
       {/* الجدول */}
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm">
-            <thead className="bg-white/5 border-b border-white/10">
+            <thead className="bg-surface border-b border-line">
               <tr>
-                <th className="p-3 text-white/60 font-semibold">الكود</th>
-                <th className="p-3 text-white/60 font-semibold">اسم الحساب</th>
-                <th className="p-3 text-white/60 font-semibold">النوع</th>
-                <th className="p-3 text-white/60 font-semibold text-right">الرصيد</th>
-                <th className="p-3 text-white/60 font-semibold">طبيعة</th>
+                <th className="p-3 text-ink/60 font-semibold">الكود</th>
+                <th className="p-3 text-ink/60 font-semibold">اسم الحساب</th>
+                <th className="p-3 text-ink/60 font-semibold">النوع</th>
+                <th className="p-3 text-ink/60 font-semibold text-right">الرصيد</th>
+                <th className="p-3 text-ink/60 font-semibold">طبيعة</th>
               </tr>
             </thead>
             <tbody>
@@ -224,7 +224,7 @@ export default function Accounts() {
                 <TableSkeleton cols={5} rows={6} />
               ) : accounts.length === 0 ? (
                 <tr><td colSpan={5} className="p-12 text-center">
-                  <div className="text-white/30 space-y-3">
+                  <div className="text-ink/30 space-y-3">
                     <p className="text-lg">لا توجد حسابات</p>
                     <button onClick={() => seedMutation.mutate()} className="btn-primary px-6 py-2 text-sm mx-auto">تحميل الحسابات الافتراضية</button>
                   </div>

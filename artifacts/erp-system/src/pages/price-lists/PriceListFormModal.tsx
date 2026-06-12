@@ -75,21 +75,21 @@ export function PriceListFormModal({
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-line">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
                 <Tags className="w-4 h-4 text-amber-400" />
               </div>
-              <p className="font-bold text-white">{initial ? "تعديل قائمة الأسعار" : "إنشاء قائمة أسعار جديدة"}</p>
+              <p className="font-bold text-ink">{initial ? "تعديل قائمة الأسعار" : "إنشاء قائمة أسعار جديدة"}</p>
             </div>
-            <button onClick={onClose} className="p-1 rounded-lg text-white/40 hover:text-white"><X className="w-4 h-4" /></button>
+            <button onClick={onClose} className="p-1 rounded-lg text-ink/40 hover:text-ink"><X className="w-4 h-4" /></button>
           </div>
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-xs text-white/50 font-semibold mb-1.5 uppercase tracking-wide">اسم القائمة *</label>
+              <label className="block text-xs text-ink/50 font-semibold mb-1.5 uppercase tracking-wide">اسم القائمة *</label>
               <input
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -100,7 +100,7 @@ export function PriceListFormModal({
 
             {/* Description */}
             <div>
-              <label className="block text-xs text-white/50 font-semibold mb-1.5 uppercase tracking-wide">الوصف (اختياري)</label>
+              <label className="block text-xs text-ink/50 font-semibold mb-1.5 uppercase tracking-wide">الوصف (اختياري)</label>
               <input
                 value={description}
                 onChange={e => setDescription(e.target.value)}
@@ -113,17 +113,17 @@ export function PriceListFormModal({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsActive(v => !v)}
-                className={`w-10 h-6 rounded-full transition-colors relative shrink-0 ${isActive ? "bg-amber-500" : "bg-white/15"}`}
+                className={`w-10 h-6 rounded-full transition-colors relative shrink-0 ${isActive ? "bg-amber-500" : "bg-raised"}`}
               >
                 <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${isActive ? "right-1" : "left-1"}`} />
               </button>
-              <span className="text-sm text-white/70">القائمة {isActive ? "مفعّلة" : "معطّلة"}</span>
+              <span className="text-sm text-ink/70">القائمة {isActive ? "مفعّلة" : "معطّلة"}</span>
             </div>
 
             {/* Products */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs text-white/50 font-semibold uppercase tracking-wide">المنتجات ({items.length})</label>
+                <label className="text-xs text-ink/50 font-semibold uppercase tracking-wide">المنتجات ({items.length})</label>
                 <button
                   onClick={() => setShowPicker(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-semibold hover:bg-amber-500/25 transition"
@@ -134,7 +134,7 @@ export function PriceListFormModal({
               </div>
 
               {items.length === 0 ? (
-                <div className="border border-dashed border-white/10 rounded-xl py-8 text-center text-white/30 text-sm">
+                <div className="border border-dashed border-line rounded-xl py-8 text-center text-ink/30 text-sm">
                   لم يتم إضافة منتجات بعد
                 </div>
               ) : (
@@ -149,10 +149,10 @@ export function PriceListFormModal({
                       : null;
 
                     return (
-                      <div key={item.product_id} className="flex items-center gap-2 bg-white/3 rounded-xl px-3 py-2.5 border border-white/5">
+                      <div key={item.product_id} className="flex items-center gap-2 bg-surface rounded-xl px-3 py-2.5 border border-line">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">{prod.name}</p>
-                          <p className="text-xs text-white/30">
+                          <p className="text-sm text-ink truncate">{prod.name}</p>
+                          <p className="text-xs text-ink/30">
                             تكلفة: {formatCurrency(cost)}
                             {previewPrice != null && (
                               <span className="text-amber-400/70 mr-2">← سعر البيع: {formatCurrency(previewPrice)}</span>
@@ -167,13 +167,13 @@ export function PriceListFormModal({
                             value={item.markup_percent}
                             onChange={e => updateMarkup(item.product_id, e.target.value)}
                             placeholder="هامش%"
-                            className="w-20 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none text-right"
+                            className="w-20 bg-surface border border-line rounded-lg px-2 py-1.5 text-xs text-ink outline-none text-right"
                           />
-                          <span className="text-white/30 text-xs">%</span>
+                          <span className="text-ink/30 text-xs">%</span>
                         </div>
                         <button
                           onClick={() => removeItem(item.product_id)}
-                          className="p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition"
+                          className="p-1.5 rounded-lg text-ink/20 hover:text-red-400 hover:bg-red-500/10 transition"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -186,8 +186,8 @@ export function PriceListFormModal({
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-4 border-t border-white/8 flex justify-between items-center gap-3">
-            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition">
+          <div className="px-5 py-4 border-t border-line flex justify-between items-center gap-3">
+            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-line text-ink/50 hover:text-ink text-sm transition">
               إلغاء
             </button>
             <button

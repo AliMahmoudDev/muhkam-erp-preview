@@ -69,7 +69,7 @@ export default function AttendanceList({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-white/50">من:</label>
+          <label className="text-xs text-ink/50">من:</label>
           <input
             type="date"
             className="erp-input"
@@ -78,7 +78,7 @@ export default function AttendanceList({
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-white/50">إلى:</label>
+          <label className="text-xs text-ink/50">إلى:</label>
           <input
             type="date"
             className="erp-input"
@@ -106,13 +106,13 @@ export default function AttendanceList({
         </select>
       </div>
 
-      <div className="text-xs text-white/40 flex gap-4">
+      <div className="text-xs text-ink/40 flex gap-4">
         <span>
           إجمالي ساعات العمل:{' '}
           <span className="text-amber-300 font-bold">{totalHours.toFixed(1)} س</span>
         </span>
         <span>
-          السجلات الظاهرة: <span className="text-white/60">{recordsList.length}</span>
+          السجلات الظاهرة: <span className="text-ink/60">{recordsList.length}</span>
         </span>
       </div>
 
@@ -143,11 +143,11 @@ export default function AttendanceList({
                 <tr key={String(r.id)} className="erp-table-row">
                   <td className="p-3 text-sm">
                     {String(r.first_name_ar ?? '')} {String(r.last_name_ar ?? '')}
-                    <span className="text-white/30 text-xs mr-1">
+                    <span className="text-ink/30 text-xs mr-1">
                       {String(r.employee_code ?? '')}
                     </span>
                   </td>
-                  <td className="p-3 text-sm text-white/60 font-mono">
+                  <td className="p-3 text-sm text-ink/60 font-mono">
                     {String(r.attendance_date)}
                   </td>
                   <td className="p-3 text-sm text-emerald-300 font-mono">
@@ -182,7 +182,7 @@ export default function AttendanceList({
                         <button
                           onClick={() => openEdit(r)}
                           title="تعديل"
-                          className="p-1.5 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                          className="p-1.5 rounded-lg bg-surface text-ink/50 hover:bg-surface hover:text-ink transition-colors"
                         >
                           <Pencil size={13} />
                         </button>

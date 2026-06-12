@@ -12,7 +12,7 @@ export const DEDUCTION_LABELS: Record<string, { label: string; color: string; bg
   late:    { label: 'تأخير',      color: 'text-amber-300', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
   absence: { label: 'غياب',      color: 'text-red-300',   bg: 'bg-red-500/10',   border: 'border-red-500/20' },
   damage:  { label: 'تلف/خسائر', color: 'text-rose-300',  bg: 'bg-rose-500/10',  border: 'border-rose-500/20' },
-  other:   { label: 'أخرى',      color: 'text-white/70',  bg: 'bg-white/5',      border: 'border-white/10' },
+  other:   { label: 'أخرى',      color: 'text-ink/70',  bg: 'bg-surface',      border: 'border-line' },
 };
 
 export function dedLabel(t: string) { return DEDUCTION_LABELS[t] ?? DEDUCTION_LABELS['other']; }

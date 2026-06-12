@@ -42,7 +42,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   cancel: { label: 'إلغاء', color: 'text-red-400' },
   view: { label: 'عرض', color: 'text-blue-400' },
   login: { label: 'دخول', color: 'text-violet-400' },
-  logout: { label: 'خروج', color: 'text-white/40' },
+  logout: { label: 'خروج', color: 'text-ink/40' },
   approve: { label: 'موافقة', color: 'text-emerald-400' },
   reject: { label: 'رفض', color: 'text-red-400' },
   lock: { label: 'قفل', color: 'text-orange-400' },
@@ -337,16 +337,16 @@ function HumanDiff({
         {label}
       </button>
       {open && (
-        <div className="mt-1 bg-white/5 border border-white/8 rounded-xl p-2 space-y-1 max-h-52 overflow-y-auto">
+        <div className="mt-1 bg-surface border border-line rounded-xl p-2 space-y-1 max-h-52 overflow-y-auto">
           {entries.map(([k, v]) => {
             const displayVal = typeof v === 'object' ? JSON.stringify(v) : translateValue(v);
             const isPassword = k === 'password' || k === 'token';
             return (
               <div key={k} className="flex items-start gap-2 text-xs">
-                <span className="text-white/35 shrink-0 min-w-[6rem] text-left font-medium">
+                <span className="text-ink/35 shrink-0 min-w-[6rem] text-left font-medium">
                   {translateKey(k)}
                 </span>
-                <span className="text-white/70 break-all">
+                <span className="text-ink/70 break-all">
                   {isPassword ? '••••••••' : displayVal}
                 </span>
               </div>
@@ -385,8 +385,8 @@ export default function AuditLog() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <Shield className="w-14 h-14 text-red-400/40 mb-4" />
-        <p className="text-white/60 font-bold text-lg">غير مصرح</p>
-        <p className="text-white/30 text-sm mt-1">هذه الصفحة للمديرين فقط</p>
+        <p className="text-ink/60 font-bold text-lg">غير مصرح</p>
+        <p className="text-ink/30 text-sm mt-1">هذه الصفحة للمديرين فقط</p>
       </div>
     );
   }
@@ -420,17 +420,17 @@ export default function AuditLog() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-ink flex items-center gap-2">
             <Shield className="w-5 h-5 text-amber-400" />
             سجل التدقيق والمراجعة
           </h1>
-          <p className="text-sm text-white/40 mt-0.5">
+          <p className="text-sm text-ink/40 mt-0.5">
             سجل شامل لجميع العمليات الحساسة — {filtered.length} من {logs.length} سجل
           </p>
         </div>
         <button
           onClick={() => void refetch()}
-          className="flex items-center gap-2 px-3 py-2 bg-white/8 hover:bg-white/12 rounded-xl text-sm text-white/60 border border-white/10 transition-all"
+          className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-surface rounded-xl text-sm text-ink/60 border border-line transition-all"
         >
           <RefreshCw className="w-4 h-4" />
           تحديث
@@ -438,16 +438,16 @@ export default function AuditLog() {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-wrap gap-3 bg-white/3 border border-white/8 rounded-2xl p-4">
+      <div className="flex flex-wrap gap-3 bg-surface border border-line rounded-2xl p-4">
         {/* Search */}
         <div className="relative flex-1 min-w-40">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="بحث في السجل..."
-            className="w-full bg-white/8 border border-white/15 rounded-xl icon-pr pl-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/50"
+            className="w-full bg-surface border border-line rounded-xl icon-pr pl-3 py-2 text-sm text-ink placeholder:text-ink/30 focus:outline-none focus:border-amber-400/50"
           />
         </div>
 
@@ -455,7 +455,7 @@ export default function AuditLog() {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none"
+          className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink/70 focus:outline-none"
         >
           <option value="">كل السجلات</option>
           {ALL_RECORD_TYPES.map((t) => (
@@ -469,7 +469,7 @@ export default function AuditLog() {
         <select
           value={filterAction}
           onChange={(e) => setFilterAction(e.target.value)}
-          className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none"
+          className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink/70 focus:outline-none"
         >
           <option value="">كل الإجراءات</option>
           {uniqueActions.map((a) => (
@@ -483,7 +483,7 @@ export default function AuditLog() {
         <select
           value={filterUser}
           onChange={(e) => setFilterUser(e.target.value)}
-          className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none"
+          className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink/70 focus:outline-none"
         >
           <option value="">كل المستخدمين</option>
           {uniqueUsers.map((u) => (
@@ -497,14 +497,14 @@ export default function AuditLog() {
         <select
           value={limit}
           onChange={(e) => setLimit(Number(e.target.value))}
-          className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none"
+          className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink/70 focus:outline-none"
         >
           <option value={100}>آخر 100</option>
           <option value={200}>آخر 200</option>
           <option value={500}>آخر 500</option>
         </select>
 
-        <div className="flex items-center gap-1 text-xs text-white/30">
+        <div className="flex items-center gap-1 text-xs text-ink/30">
           <Filter className="w-3 h-3" />
           {filtered.length} نتيجة
         </div>
@@ -518,15 +518,15 @@ export default function AuditLog() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-white/30">
+        <div className="text-center py-16 text-ink/30">
           <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="font-bold">لا توجد سجلات تطابق البحث</p>
         </div>
       ) : (
-        <div className="bg-white/3 border border-white/8 rounded-2xl overflow-hidden">
+        <div className="bg-surface border border-line rounded-2xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-white/5 text-white/40 text-xs">
+              <tr className="bg-surface text-ink/40 text-xs">
                 <th className="p-3 text-right font-semibold w-32">الوقت</th>
                 <th className="p-3 text-right font-semibold">الإجراء</th>
                 <th className="p-3 text-right font-semibold">النوع</th>
@@ -539,16 +539,16 @@ export default function AuditLog() {
               {filtered.map((log, idx) => {
                 const actionMeta = ACTION_LABELS[log.action] ?? {
                   label: translateKey(log.action),
-                  color: 'text-white/50',
+                  color: 'text-ink/50',
                 };
                 const recordLabel = RECORD_LABELS[log.record_type] ?? translateKey(log.record_type);
                 return (
                   <tr
                     key={log.id}
-                    className={`border-t border-white/5 hover:bg-white/3 transition-colors ${idx % 2 === 0 ? '' : 'bg-white/1'}`}
+                    className={`border-t border-line hover:bg-surface transition-colors ${idx % 2 === 0 ? '' : 'bg-surface'}`}
                   >
                     <td className="p-3">
-                      <div className="flex items-center gap-1 text-white/40 text-xs">
+                      <div className="flex items-center gap-1 text-ink/40 text-xs">
                         <Clock className="w-3 h-3 shrink-0" />
                         <span className="font-mono">{formatDate(log.created_at)}</span>
                       </div>
@@ -559,23 +559,23 @@ export default function AuditLog() {
                       </span>
                     </td>
                     <td className="p-3">
-                      <span className="text-xs bg-white/8 text-white/70 px-2 py-0.5 rounded-lg">
+                      <span className="text-xs bg-surface text-ink/70 px-2 py-0.5 rounded-lg">
                         {recordLabel}
                       </span>
                     </td>
-                    <td className="p-3 font-mono text-xs text-white/40">#{log.record_id}</td>
+                    <td className="p-3 font-mono text-xs text-ink/40">#{log.record_id}</td>
                     <td className="p-3">
                       {log.username ? (
                         <div className="flex items-center gap-1.5">
-                          <User className="w-3 h-3 text-white/30 shrink-0" />
-                          <span className="text-xs text-white/70">{log.username}</span>
+                          <User className="w-3 h-3 text-ink/30 shrink-0" />
+                          <span className="text-xs text-ink/70">{log.username}</span>
                         </div>
                       ) : (
-                        <span className="text-xs text-white/25">نظام</span>
+                        <span className="text-xs text-ink/25">نظام</span>
                       )}
                     </td>
                     <td className="p-3">
-                      {log.note && <div className="text-xs text-white/60 mb-1">{log.note}</div>}
+                      {log.note && <div className="text-xs text-ink/60 mb-1">{log.note}</div>}
                       <HumanDiff
                         label="قبل التعديل"
                         data={log.old_value}
@@ -609,15 +609,15 @@ export default function AuditLog() {
             .map(([action, count]) => {
               const meta = ACTION_LABELS[action] ?? {
                 label: translateKey(action),
-                color: 'text-white/50',
+                color: 'text-ink/50',
               };
               return (
                 <div
                   key={action}
-                  className="bg-white/3 border border-white/8 rounded-2xl p-4 text-center"
+                  className="bg-surface border border-line rounded-2xl p-4 text-center"
                 >
                   <div className={`text-2xl font-bold ${meta.color}`}>{count}</div>
-                  <div className="text-xs text-white/40 mt-1">{meta.label}</div>
+                  <div className="text-xs text-ink/40 mt-1">{meta.label}</div>
                 </div>
               );
             })}

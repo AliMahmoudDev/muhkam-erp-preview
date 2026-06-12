@@ -74,14 +74,14 @@ export default function PriceLists() {
   return (
     <div className="h-full flex flex-col overflow-hidden" dir="rtl">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-4 border-b border-white/8">
+      <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-4 border-b border-line">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center">
             <Tags className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <h1 className="text-base font-black text-white">قوائم الأسعار</h1>
-            <p className="text-xs text-white/40">قوائم مخصصة لتسعير المنتجات للعملاء</p>
+            <h1 className="text-base font-black text-ink">قوائم الأسعار</h1>
+            <p className="text-xs text-ink/40">قوائم مخصصة لتسعير المنتجات للعملاء</p>
           </div>
         </div>
         <button
@@ -98,16 +98,16 @@ export default function PriceLists() {
         {loadingLists ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 rounded-2xl animate-pulse bg-white/5 border border-white/5" />
+              <div key={i} className="h-20 rounded-2xl animate-pulse bg-surface border border-line" />
             ))}
           </div>
         ) : lists.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-              <Tags className="w-8 h-8 text-white/20" />
+            <div className="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center mb-4">
+              <Tags className="w-8 h-8 text-ink/20" />
             </div>
-            <p className="text-white/40 font-semibold">لا توجد قوائم أسعار بعد</p>
-            <p className="text-white/25 text-sm mt-1">أنشئ قائمة أسعار وخصصها للعملاء</p>
+            <p className="text-ink/40 font-semibold">لا توجد قوائم أسعار بعد</p>
+            <p className="text-ink/25 text-sm mt-1">أنشئ قائمة أسعار وخصصها للعملاء</p>
             <button
               onClick={() => setShowCreate(true)}
               className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 text-amber-400 text-sm font-semibold hover:bg-amber-500/25 transition"
@@ -165,8 +165,8 @@ export default function PriceLists() {
                 <AlertCircle className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <p className="font-bold text-white">حذف قائمة الأسعار</p>
-                <p className="text-white/50 text-sm">سيتم إلغاء ربطها من جميع العملاء</p>
+                <p className="font-bold text-ink">حذف قائمة الأسعار</p>
+                <p className="text-ink/50 text-sm">سيتم إلغاء ربطها من جميع العملاء</p>
               </div>
             </div>
             {deleteError && (
@@ -175,14 +175,14 @@ export default function PriceLists() {
             <div className="flex gap-2">
               <button
                 onClick={() => setDeletingId(null)}
-                className="flex-1 py-2 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition"
+                className="flex-1 py-2 rounded-xl border border-line text-ink/50 hover:text-ink text-sm transition"
               >
                 إلغاء
               </button>
               <button
                 onClick={() => deleteMutation.mutate(deletingId)}
                 disabled={deleteMutation.isPending}
-                className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition disabled:opacity-50"
+                className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-ink font-bold text-sm transition disabled:opacity-50"
               >
                 {deleteMutation.isPending ? "جاري الحذف..." : "حذف"}
               </button>

@@ -21,7 +21,7 @@ export function AdvanceRequestModal({ empId, currency, isDark, border, onClose }
     deduct_from: 'fixed' as 'fixed' | 'commission' | 'both',
   });
   const bg = isDark ? 'rgba(8,14,26,0.98)' : '#ffffff';
-  const textMain = isDark ? '#f1f5f9' : '#0f172a';
+  const textMain = isDark ? '#f1f5f9' : 'var(--bg-app)';
   const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
   const inputBg = isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc';
   const inputStyle = {

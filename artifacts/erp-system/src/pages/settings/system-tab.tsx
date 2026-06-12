@@ -31,15 +31,15 @@ export default function SystemTab() {
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-right flex-1 ${
                 isActive
                   ? "bg-amber-500/10 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.12)]"
-                  : "border-white/8 bg-[var(--erp-bg-card)] hover:border-white/15 hover:bg-white/[0.03]"
+                  : "border-line bg-[var(--erp-bg-card)] hover:border-line hover:bg-surface"
               }`}
             >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isActive ? "bg-amber-500/20" : "bg-white/5"}`}>
-                <Icon className={`w-4 h-4 ${isActive ? "text-amber-400" : "text-white/40"}`} />
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isActive ? "bg-amber-500/20" : "bg-surface"}`}>
+                <Icon className={`w-4 h-4 ${isActive ? "text-amber-400" : "text-ink/40"}`} />
               </div>
               <div>
-                <p className={`font-bold text-sm ${isActive ? "text-amber-400" : "text-white/60"}`}>{t.label}</p>
-                <p className="text-white/25 text-[11px] mt-0.5">{t.desc}</p>
+                <p className={`font-bold text-sm ${isActive ? "text-amber-400" : "text-ink/60"}`}>{t.label}</p>
+                <p className="text-ink/25 text-[11px] mt-0.5">{t.desc}</p>
               </div>
             </button>
           );
@@ -48,7 +48,7 @@ export default function SystemTab() {
 
       {/* Content */}
       <Suspense fallback={
-        <div className="flex items-center justify-center gap-2 py-16 text-white/25 text-sm">
+        <div className="flex items-center justify-center gap-2 py-16 text-ink/25 text-sm">
           <Loader2 className="w-5 h-5 animate-spin" /> جاري التحميل...
         </div>
       }>

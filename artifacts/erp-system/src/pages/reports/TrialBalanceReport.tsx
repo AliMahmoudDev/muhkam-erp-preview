@@ -91,16 +91,16 @@ export default function TrialBalanceReport() {
   return (
     <div className="space-y-4" dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
       {/* Controls */}
-      <div className="flex flex-wrap items-end gap-3 bg-white/5 rounded-2xl p-4 border border-white/10 no-print">
+      <div className="flex flex-wrap items-end gap-3 bg-surface rounded-2xl p-4 border border-line no-print">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-white/50">من تاريخ</label>
+          <label className="text-xs text-ink/50">من تاريخ</label>
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50" />
+            className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:border-amber-400/50" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-white/50">إلى تاريخ</label>
+          <label className="text-xs text-ink/50">إلى تاريخ</label>
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50" />
+            className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:border-amber-400/50" />
         </div>
         <button onClick={handleGenerate} disabled={isLoading}
           className="flex items-center gap-2 px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition-all text-sm disabled:opacity-50">
@@ -109,7 +109,7 @@ export default function TrialBalanceReport() {
         </button>
         {data && (<>
           <button onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 text-white rounded-xl text-sm transition-all border border-white/10">
+            className="flex items-center gap-2 px-4 py-2 bg-surface hover:bg-raised text-ink rounded-xl text-sm transition-all border border-line">
             <Download className="w-4 h-4" />
             طباعة
           </button>
@@ -134,8 +134,8 @@ export default function TrialBalanceReport() {
               : <><AlertTriangle className="w-5 h-5" /> الميزان غير متوازن — فرق {formatCurrency(data.summary.difference)}</>}
           </div>
           <div className="flex gap-6 mr-auto text-sm">
-            <span className="text-white/50">إجمالي المدين: <span className="text-blue-300 font-bold">{formatCurrency(data.summary.grand_debit)}</span></span>
-            <span className="text-white/50">إجمالي الدائن: <span className="text-amber-300 font-bold">{formatCurrency(data.summary.grand_credit)}</span></span>
+            <span className="text-ink/50">إجمالي المدين: <span className="text-blue-300 font-bold">{formatCurrency(data.summary.grand_debit)}</span></span>
+            <span className="text-ink/50">إجمالي الدائن: <span className="text-amber-300 font-bold">{formatCurrency(data.summary.grand_credit)}</span></span>
           </div>
         </div>
       )}
@@ -151,10 +151,10 @@ export default function TrialBalanceReport() {
 
       {/* Accounts Table */}
       {data && !isLoading && (
-        <div className="bg-white/3 border border-white/8 rounded-2xl overflow-hidden">
+        <div className="bg-surface border border-line rounded-2xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-white/5 text-white/50 text-xs">
+              <tr className="bg-surface text-ink/50 text-xs">
                 <th className="p-3 text-right font-semibold">كود الحساب</th>
                 <th className="p-3 text-right font-semibold">اسم الحساب</th>
                 <th className="p-3 text-right font-semibold">نوع الحساب</th>
@@ -166,7 +166,7 @@ export default function TrialBalanceReport() {
             <tbody>
               {Object.entries(grouped).map(([type, accounts]) => (
                 <React.Fragment key={type}>
-                  <tr className="bg-white/5">
+                  <tr className="bg-surface">
                     <td colSpan={6} className="px-3 py-2">
                       <span className="text-xs font-bold text-amber-400/80">
                         {TYPE_LABELS[type] ?? type}
@@ -174,10 +174,10 @@ export default function TrialBalanceReport() {
                     </td>
                   </tr>
                   {accounts.map(acc => (
-                    <tr key={acc.account_id} className="border-t border-white/5 hover:bg-white/3 transition-colors">
-                      <td className="p-3 font-mono text-xs text-white/60">{acc.account_code}</td>
-                      <td className="p-3 text-white/90">{acc.account_name}</td>
-                      <td className="p-3 text-white/40 text-xs">{TYPE_LABELS[acc.account_type] ?? acc.account_type}</td>
+                    <tr key={acc.account_id} className="border-t border-line hover:bg-surface transition-colors">
+                      <td className="p-3 font-mono text-xs text-ink/60">{acc.account_code}</td>
+                      <td className="p-3 text-ink/90">{acc.account_name}</td>
+                      <td className="p-3 text-ink/40 text-xs">{TYPE_LABELS[acc.account_type] ?? acc.account_type}</td>
                       <td className="p-3 text-left font-mono text-blue-300/90 text-xs">
                         {acc.total_debit > 0 ? formatCurrency(acc.total_debit) : "—"}
                       </td>
@@ -185,7 +185,7 @@ export default function TrialBalanceReport() {
                         {acc.total_credit > 0 ? formatCurrency(acc.total_credit) : "—"}
                       </td>
                       <td className={`p-3 text-left font-mono text-xs font-bold ${
-                        acc.balance > 0 ? "text-emerald-400" : acc.balance < 0 ? "text-red-400" : "text-white/40"
+                        acc.balance > 0 ? "text-emerald-400" : acc.balance < 0 ? "text-red-400" : "text-ink/40"
                       }`}>
                         {acc.balance !== 0 ? formatCurrency(Math.abs(acc.balance)) : "—"}
                         {acc.balance < 0 ? " د" : acc.balance > 0 ? " م" : ""}
@@ -193,8 +193,8 @@ export default function TrialBalanceReport() {
                     </tr>
                   ))}
                   {/* Subtotal per type */}
-                  <tr className="bg-white/3 border-t border-white/10">
-                    <td colSpan={3} className="px-3 py-2 text-xs text-white/40 text-left">
+                  <tr className="bg-surface border-t border-line">
+                    <td colSpan={3} className="px-3 py-2 text-xs text-ink/40 text-left">
                       إجمالي {TYPE_LABELS[type] ?? type}
                     </td>
                     <td className="px-3 py-2 text-left font-mono text-xs font-bold text-blue-300">
@@ -228,7 +228,7 @@ export default function TrialBalanceReport() {
       )}
 
       {!data && !isLoading && (
-        <div className="text-center py-16 text-white/30">
+        <div className="text-center py-16 text-ink/30">
           <p className="text-lg font-bold mb-1">اختر فترة وانقر «توليد الميزان»</p>
           <p className="text-sm">سيُعرض ميزان المراجعة مع إجمالي المدين والدائن لكل حساب</p>
         </div>

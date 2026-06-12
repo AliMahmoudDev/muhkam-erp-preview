@@ -28,21 +28,21 @@ export function LoadingPage() {
 
         {/* Brand name */}
         <div className="flex flex-col items-center gap-1">
-          <h1 className="text-2xl font-bold text-white/90 tracking-wide" style={{ fontFamily: 'Tajawal, sans-serif' }}>
+          <h1 className="text-2xl font-bold text-ink/90 tracking-wide" style={{ fontFamily: 'Tajawal, sans-serif' }}>
             مُحكم
           </h1>
-          <p className="text-xs text-white/40 tracking-widest uppercase">
+          <p className="text-xs text-ink/40 tracking-widest uppercase">
             MUHKAM ERP
           </p>
         </div>
 
         {/* Progress bar */}
-        <div className="w-48 h-1 rounded-full bg-white/5 overflow-hidden mt-2">
+        <div className="w-48 h-1 rounded-full bg-surface overflow-hidden mt-2">
           <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 animate-[progress-slide_1.8s_ease-in-out_infinite]" />
         </div>
 
         {/* Loading text */}
-        <p className="text-sm text-white/30 mt-1" style={{ fontFamily: 'Tajawal, sans-serif' }}>
+        <p className="text-sm text-ink/30 mt-1" style={{ fontFamily: 'Tajawal, sans-serif' }}>
           جارِ التحميل...
         </p>
       </div>

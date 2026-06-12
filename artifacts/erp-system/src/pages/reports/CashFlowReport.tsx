@@ -88,7 +88,7 @@ function CashFlowStatement({
   const isLight = (settings.theme ?? "dark") === "light";
 
   const border    = isLight ? "#e5e7eb"              : "rgba(255,255,255,0.08)";
-  const txtMain   = isLight ? "#111827"              : "rgba(255,255,255,0.90)";
+  const txtMain   = isLight ? "var(--bg-card)"              : "rgba(255,255,255,0.90)";
   const txtSub    = isLight ? "#6b7280"              : "rgba(255,255,255,0.40)";
   const txtHint   = isLight ? "#9ca3af"              : "rgba(255,255,255,0.28)";
   const secBg     = isLight ? "#f8fafc"              : "rgba(255,255,255,0.03)";

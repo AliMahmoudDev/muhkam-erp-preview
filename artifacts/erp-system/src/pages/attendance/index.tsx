@@ -76,7 +76,7 @@ export default function Attendance() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <Clock size={22} className="text-amber-400" />
-          <h1 className="text-xl font-bold text-white">الحضور والانصراف</h1>
+          <h1 className="text-xl font-bold text-ink">الحضور والانصراف</h1>
         </div>
         {canManage && (
           <div className="flex gap-2 flex-wrap">
@@ -91,10 +91,10 @@ export default function Attendance() {
 
       <AttendanceSummary total={allRecords.length} present={present} absent={absent} late={late} />
 
-      <div className="flex gap-1 border-b border-white/10 mb-2 flex-wrap">
+      <div className="flex gap-1 border-b border-line mb-2 flex-wrap">
         {TABS.map((t) => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-t-lg transition-all ${activeTab === t.key ? 'bg-amber-500/20 text-amber-300 border-b-2 border-amber-400' : 'text-white/50 hover:text-white/80'}`}>
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-t-lg transition-all ${activeTab === t.key ? 'bg-amber-500/20 text-amber-300 border-b-2 border-amber-400' : 'text-ink/50 hover:text-ink/80'}`}>
             <t.icon size={14} /> {t.label}
           </button>
         ))}

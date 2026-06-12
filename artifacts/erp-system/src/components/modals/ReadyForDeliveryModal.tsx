@@ -248,11 +248,11 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="my-4 rounded-2xl border border-white/10 w-full max-w-5xl shadow-2xl"
+        className="my-4 rounded-2xl border border-line w-full max-w-5xl shadow-2xl"
         style={{ background: "rgba(15,12,30,0.97)", backdropFilter: "blur(20px)" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/8">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
           <div className="flex items-center gap-2.5">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -268,25 +268,25 @@ export default function ReadyForDeliveryModal({ job, onClose, onSaved, onRejecte
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black text-white">
+                <h3 className="text-sm font-black text-ink">
                   {phase === "qc" ? "فحص الجودة النهائي" : "محاسبة العميل"}
                 </h3>
                 {!qcOnly && (
-                  <span className="flex items-center gap-1 text-[10px] text-white/40">
-                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === "qc" ? "bg-purple-500/20 text-purple-300" : "bg-white/10 text-white/40"}`}>١</span>
-                    <span className="text-white/20">←</span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === "billing" ? "bg-lime-500/20 text-lime-300" : "bg-white/10 text-white/40"}`}>٢</span>
+                  <span className="flex items-center gap-1 text-[10px] text-ink/40">
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === "qc" ? "bg-purple-500/20 text-purple-300" : "bg-surface text-ink/40"}`}>١</span>
+                    <span className="text-ink/20">←</span>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === "billing" ? "bg-lime-500/20 text-lime-300" : "bg-surface text-ink/40"}`}>٢</span>
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-white/50">
-                البطاقة <span className="text-white font-bold">{job.job_no}</span>
+              <p className="text-[11px] text-ink/50">
+                البطاقة <span className="text-ink font-bold">{job.job_no}</span>
                 {job.customer_name && <> · {job.customer_name}</>}
                 {job.device_brand && <> · {job.device_brand} {job.device_model ?? ""}</>}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 text-white/60">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface text-ink/60">
             <X className="w-4 h-4" />
           </button>
         </div>

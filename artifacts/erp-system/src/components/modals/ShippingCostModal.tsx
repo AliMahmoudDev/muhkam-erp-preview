@@ -103,37 +103,37 @@ export default function ShippingCostModal({ job, onClose, onSaved }: Props) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="rounded-2xl border border-white/10 w-full max-w-md shadow-2xl"
+        className="rounded-2xl border border-line w-full max-w-md shadow-2xl"
         style={{ background: "rgba(15,12,30,0.97)", backdropFilter: "blur(20px)" }}
       >
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/8">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center">
               <Truck className="w-4.5 h-4.5 text-sky-300" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">تسجيل تكلفة الشحن</h3>
-              <p className="text-[11px] text-white/50">البطاقة <span className="text-white font-bold">{job.job_no}</span></p>
+              <h3 className="text-sm font-black text-ink">تسجيل تكلفة الشحن</h3>
+              <p className="text-[11px] text-ink/50">البطاقة <span className="text-ink font-bold">{job.job_no}</span></p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 text-white/60">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface text-ink/60">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="px-5 py-4 space-y-3">
           <div>
-            <label className="block text-[10px] font-bold text-white/55 mb-1">تكلفة الشحن (ج.م)</label>
+            <label className="block text-[10px] font-bold text-ink/55 mb-1">تكلفة الشحن (ج.م)</label>
             <input
               type="number"
               min={0}
               step="0.01"
               value={cost}
               onChange={(e) => setCost(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/8 text-sm text-white focus:outline-none focus:border-sky-400/40"
+              className="w-full px-3 py-2 rounded-lg bg-surface border border-line text-sm text-ink focus:outline-none focus:border-sky-400/40"
               placeholder="0.00"
             />
-            <p className="text-[10px] text-white/40 mt-1">
+            <p className="text-[10px] text-ink/40 mt-1">
               {isZero
                 ? "أدخل 0 لتأكيد عدم وجود تكلفة شحن (لن يُنشأ مصروف)."
                 : "سيتم إنشاء مصروف تلقائياً تحت فئة \"مصاريف شحن صيانة\" وخصم المبلغ من الخزنة."}
@@ -142,11 +142,11 @@ export default function ShippingCostModal({ job, onClose, onSaved }: Props) {
 
           {needsSafe && (
             <div>
-              <label className="block text-[10px] font-bold text-white/55 mb-1">الخزنة المختارة</label>
+              <label className="block text-[10px] font-bold text-ink/55 mb-1">الخزنة المختارة</label>
               <select
                 value={safeId}
                 onChange={(e) => setSafeId(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white focus:outline-none focus:border-sky-400/40"
+                className="w-full px-3 py-2 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-sky-400/40"
               >
                 <option value="">— اختر الخزنة —</option>
                 {safes.map(s => (
@@ -159,12 +159,12 @@ export default function ShippingCostModal({ job, onClose, onSaved }: Props) {
           )}
 
           <div>
-            <label className="block text-[10px] font-bold text-white/55 mb-1">ملاحظة (اختياري)</label>
+            <label className="block text-[10px] font-bold text-ink/55 mb-1">ملاحظة (اختياري)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-sky-400/40"
+              className="w-full px-3 py-2 rounded-lg bg-surface border border-line text-[11px] text-ink placeholder:text-ink/30 focus:outline-none focus:border-sky-400/40"
               placeholder="مثلاً: شحن عبر أرامكس - نمرة الشحنة 12345..."
             />
           </div>
@@ -182,11 +182,11 @@ export default function ShippingCostModal({ job, onClose, onSaved }: Props) {
           </div>
         )}
 
-        <div className="px-5 py-4 border-t border-white/8 flex gap-2">
+        <div className="px-5 py-4 border-t border-line flex gap-2">
           <button
             onClick={handleSave}
             disabled={loading}
-            className="flex-1 py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
             style={{ background: "rgba(14,165,233,0.7)", border: "1px solid rgba(56,189,248,0.4)" }}
           >
             {loading
@@ -195,7 +195,7 @@ export default function ShippingCostModal({ job, onClose, onSaved }: Props) {
           </button>
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white text-xs"
+            className="px-5 py-2.5 rounded-xl border border-line text-ink/60 hover:text-ink text-xs"
           >
             إلغاء
           </button>

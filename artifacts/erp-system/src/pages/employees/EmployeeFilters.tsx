@@ -28,7 +28,7 @@ export function EmployeeFilters({
       <div className="relative flex-1 min-w-[200px]">
         <Search
           size={14}
-          className="absolute top-1/2 -translate-y-1/2 right-3 text-white/40"
+          className="absolute top-1/2 -translate-y-1/2 right-3 text-ink/40"
         />
         <input
           value={search}

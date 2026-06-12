@@ -315,31 +315,31 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="my-4 rounded-2xl border border-white/10 w-full max-w-5xl shadow-2xl"
+        className="my-4 rounded-2xl border border-line w-full max-w-5xl shadow-2xl"
         style={{ background: "rgba(15,12,30,0.97)", backdropFilter: "blur(20px)" }}
       >
         {/* ── Header ── */}
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/8">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center">
               <ShieldCheck className="w-4.5 h-4.5 text-purple-300" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">فحص مراقبة الجودة (QC)</h3>
-              <p className="text-[11px] text-white/50">
-                البطاقة <span className="text-white font-bold">{job.job_no}</span>
+              <h3 className="text-sm font-black text-ink">فحص مراقبة الجودة (QC)</h3>
+              <p className="text-[11px] text-ink/50">
+                البطاقة <span className="text-ink font-bold">{job.job_no}</span>
                 {job.device_brand && <> · {job.device_brand} {job.device_model ?? ""}</>}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 text-white/60">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface text-ink/60">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* ── Counters ── */}
-        <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 border-b border-white/5 bg-white/[0.02]">
-          <span className="text-[10px] text-white/55 ml-1">إجمالي البنود: <span className="text-white font-bold">{items.length}</span></span>
+        <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 border-b border-line bg-surface">
+          <span className="text-[10px] text-ink/55 ml-1">إجمالي البنود: <span className="text-ink font-bold">{items.length}</span></span>
           <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/12 text-emerald-300 border border-emerald-500/25">
             ✓ مقبول: {passCount}
           </span>
@@ -358,7 +358,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
 
         {/* ── القطع المستخدمة في الإصلاح (للمراجعة فقط) ── */}
         {job.parts && job.parts.length > 0 && (
-          <div className="px-5 py-2.5 border-b border-white/5 bg-cyan-500/[0.03]">
+          <div className="px-5 py-2.5 border-b border-line bg-cyan-500/[0.03]">
             <p className="text-[10px] font-black text-cyan-300/80 mb-2 flex items-center gap-1.5">
               <Package className="w-3.5 h-3.5" />
               القطع المستخدمة في الإصلاح ({job.parts.length})
@@ -372,8 +372,8 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                     key={p.id}
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.05] text-[10.5px]"
                   >
-                    <span className="text-white/80 font-bold">{p.product_name}</span>
-                    <span className="text-white/35">×{qty}</span>
+                    <span className="text-ink/80 font-bold">{p.product_name}</span>
+                    <span className="text-ink/35">×{qty}</span>
                     {price > 0 && (
                       <span className="text-cyan-300/70">{(qty * price).toLocaleString("ar-EG")} ر.س</span>
                     )}
@@ -396,21 +396,21 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
         {templateLoading ? (
           <div className="px-5 py-10 text-center">
             <Loader2 className="w-8 h-8 text-purple-400/60 mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-white/60">جارٍ تحميل بنود القالب للجهاز...</p>
+            <p className="text-sm text-ink/60">جارٍ تحميل بنود القالب للجهاز...</p>
           </div>
         ) : items.length === 0 ? (
           <div className="px-5 py-10 text-center">
             <AlertTriangle className="w-10 h-10 text-amber-400/60 mx-auto mb-3" />
-            <p className="text-sm text-white/80 font-bold mb-1">لا توجد بنود فحص</p>
-            <p className="text-[11px] text-white/45">
+            <p className="text-sm text-ink/80 font-bold mb-1">لا توجد بنود فحص</p>
+            <p className="text-[11px] text-ink/45">
               لم يُعرَف نوع الجهاز — يمكنك تأكيد اجتياز مراقبة الجودة يدوياً باستخدام الزر أدناه.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 max-h-[58vh] overflow-y-auto" dir="rtl">
             {/* ═══ العمود الأيمن: بنود الاستلام أو القالب (للقراءة فقط) ═══ */}
-            <div className="border-l border-white/5 bg-indigo-500/[0.03]">
-              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-white/5 bg-indigo-500/10 backdrop-blur">
+            <div className="border-l border-line bg-indigo-500/[0.03]">
+              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-indigo-500/10 backdrop-blur">
                 <div className="flex items-center gap-2">
                   {isFallback ? (
                     <Package className="w-4 h-4 text-violet-300" />
@@ -432,13 +432,13 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                   return (
                     <div
                       key={`r-${it.id}-${idx}`}
-                      className="rounded-xl border border-white/8 px-3 py-2 bg-white/[0.02]"
+                      className="rounded-xl border border-line px-3 py-2 bg-surface"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-[12px] font-bold text-white/85 leading-tight">{it.label}</p>
+                          <p className="text-[12px] font-bold text-ink/85 leading-tight">{it.label}</p>
                           {it.category && (
-                            <p className="text-[9px] text-white/35 mt-0.5">{it.category}</p>
+                            <p className="text-[9px] text-ink/35 mt-0.5">{it.category}</p>
                           )}
                           {it.intake_notes && (
                             <p className="text-[10px] text-amber-300/70 mt-1 italic">
@@ -451,7 +451,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                             {meta.txt}
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 text-white/40 shrink-0">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border border-line text-ink/40 shrink-0">
                             —
                           </span>
                         )}
@@ -464,7 +464,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
 
             {/* ═══ العمود الأيسر: قرار الفني ═══ */}
             <div className="bg-purple-500/[0.03]">
-              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-white/5 bg-purple-500/10 backdrop-blur">
+              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-purple-500/10 backdrop-blur">
                 <div className="flex items-center gap-2">
                   <ClipboardCheck className="w-4 h-4 text-purple-300" />
                   <p className="text-[12px] font-black text-purple-200">قرار الفني (مراقبة الجودة)</p>
@@ -476,7 +476,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                     it.status === "pass" ? "border-emerald-500/30 bg-emerald-500/[0.04]" :
                     it.status === "fail" ? "border-red-500/30 bg-red-500/[0.04]" :
                     it.status === "n/a"  ? "border-zinc-500/25 bg-zinc-500/[0.03]" :
-                                           "border-white/8 bg-white/[0.02]";
+                                           "border-line bg-surface";
                   const notesOpen = openNotes.has(idx);
                   const hasNote   = (it.notes ?? "").trim().length > 0;
                   return (
@@ -496,13 +496,13 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                               ? "bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
                               : notesOpen
                                 ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
-                                : "bg-white/[0.04] text-white/40 border border-white/10 hover:text-white/70 hover:bg-white/[0.08]",
+                                : "bg-surface text-ink/40 border border-line hover:text-ink/70 hover:bg-surface",
                           ].join(" ")}
                         >
                           <MessageSquare className="w-3 h-3" />
                         </button>
                         <p
-                          className="flex-1 min-w-0 text-[11.5px] font-bold text-white truncate cursor-pointer"
+                          className="flex-1 min-w-0 text-[11.5px] font-bold text-ink truncate cursor-pointer"
                           onClick={() => toggleNotes(idx)}
                           title="اضغط لإظهار/إخفاء الملاحظة"
                         >
@@ -523,8 +523,8 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                                 className={[
                                   "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all",
                                   active
-                                    ? `${cfg.bg} text-white ring-2 ${cfg.ring} shadow-md`
-                                    : "bg-white/[0.04] text-white/50 border border-white/10 hover:bg-white/[0.08] hover:text-white",
+                                    ? `${cfg.bg} text-ink ring-2 ${cfg.ring} shadow-md`
+                                    : "bg-surface text-ink/50 border border-line hover:bg-surface hover:text-ink",
                                 ].join(" ")}
                               >
                                 <Icon className="w-3 h-3" />
@@ -545,10 +545,10 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                             disabled={loading}
                             autoFocus
                             className={[
-                              "w-full px-2.5 py-1 rounded-md text-[10.5px] text-white placeholder:text-white/25 focus:outline-none transition-colors",
+                              "w-full px-2.5 py-1 rounded-md text-[10.5px] text-ink placeholder:text-ink/25 focus:outline-none transition-colors",
                               it.status === "fail"
                                 ? "bg-red-500/8 border border-red-500/25 focus:border-red-400/45"
-                                : "bg-white/[0.03] border border-white/8 focus:border-purple-400/35",
+                                : "bg-surface border border-line focus:border-purple-400/35",
                             ].join(" ")}
                           />
                         </div>
@@ -563,7 +563,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
 
         {/* ── سبب الرفض الإجمالي (يظهر في وضع الرفض فقط) ── */}
         {rejectMode && (
-          <div className="px-5 py-3 border-t border-white/5 bg-red-500/[0.04]">
+          <div className="px-5 py-3 border-t border-line bg-red-500/[0.04]">
             <label className="text-[11px] font-black text-red-300 mb-1.5 flex items-center gap-1.5">
               <ThumbsDown className="w-3.5 h-3.5" />
               سبب رفض الفحص (إلزامي — سيُعاد للفني)
@@ -574,7 +574,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
               rows={3}
               disabled={loading}
               autoFocus
-              className="w-full px-3 py-2 rounded-lg bg-red-500/5 border border-red-500/25 text-[12px] text-white placeholder:text-white/30 focus:outline-none focus:border-red-400/50"
+              className="w-full px-3 py-2 rounded-lg bg-red-500/5 border border-red-500/25 text-[12px] text-ink placeholder:text-ink/30 focus:outline-none focus:border-red-400/50"
               placeholder="مثلاً: الكاميرا الخلفية ما زالت لا تعمل بعد التركيب — يحتاج إعادة فحص..."
             />
             {failCount > 0 && (
@@ -587,7 +587,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
 
         {/* ── تقرير مراقبة الجودة + فاحص الجودة (من RepairExtensions) ── */}
         {!rejectMode && (
-          <div className="px-5 py-3 border-t border-white/5 bg-purple-500/[0.02]">
+          <div className="px-5 py-3 border-t border-line bg-purple-500/[0.02]">
             <QAReportFields
               qaReport={qaReport}
               inspectorName={inspectorName}
@@ -609,7 +609,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
 
         {/* ── تقرير المهندس (إجباري دائماً) ── */}
         {!rejectMode && (
-          <div className="px-5 py-3 border-t border-white/5 bg-violet-500/[0.03]">
+          <div className="px-5 py-3 border-t border-line bg-violet-500/[0.03]">
             <label className="text-[11px] font-black text-violet-300 mb-1.5 flex items-center gap-1.5">
               <ClipboardList className="w-3.5 h-3.5" />
               تقرير المهندس
@@ -621,7 +621,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
               rows={3}
               disabled={loading}
               autoFocus={items.length === 0}
-              className="w-full px-3 py-2 rounded-lg bg-violet-500/5 border border-violet-500/20 text-[12px] text-white placeholder:text-white/25 focus:outline-none focus:border-violet-400/45 resize-y"
+              className="w-full px-3 py-2 rounded-lg bg-violet-500/5 border border-violet-500/20 text-[12px] text-ink placeholder:text-ink/25 focus:outline-none focus:border-violet-400/45 resize-y"
               placeholder="صِف ما تم إصلاحه — مثلاً: تم تغيير الشاشة وإصلاح منفذ الشحن..."
             />
             {engineerNote.trim().length > 0 && engineerNote.trim().length < 5 && (
@@ -632,13 +632,13 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
 
         {/* ── تقييم الجهاز (يظهر في وضع القبول فقط) ── */}
         {!rejectMode && items.length > 0 && (
-          <div className="px-5 py-3 border-t border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-            <div className="sm:col-span-2 text-[10.5px] text-white/55">
-              <span className="text-white/70 font-bold">ملاحظة:</span> القبول لن يُسمح به ما لم يُتَّخذ قرار لكل بند ولا يوجد أي بند مرفوض.
+          <div className="px-5 py-3 border-t border-line grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div className="sm:col-span-2 text-[10.5px] text-ink/55">
+              <span className="text-ink/70 font-bold">ملاحظة:</span> القبول لن يُسمح به ما لم يُتَّخذ قرار لكل بند ولا يوجد أي بند مرفوض.
               في حالة وجود بند مرفوض، استخدم زر <span className="text-red-300 font-bold">«رفض الفحص»</span> لإعادة البطاقة لـ <span className="text-cyan-300 font-bold">«جارٍ الإصلاح»</span>.
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-white/55 mb-1">تقييم الجهاز (0–100) — اختياري</label>
+              <label className="block text-[10px] font-bold text-ink/55 mb-1">تقييم الجهاز (0–100) — اختياري</label>
               <input
                 type="number"
                 min={0}
@@ -646,7 +646,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                 value={score}
                 onChange={(e) => setScore(e.target.value)}
                 disabled={loading}
-                className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/8 text-[11px] text-white focus:outline-none focus:border-purple-400/40"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-purple-400/40"
                 placeholder="—"
               />
             </div>
@@ -667,13 +667,13 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
         )}
 
         {/* ── Actions ── */}
-        <div className="px-5 py-4 border-t border-white/8 flex flex-wrap gap-2">
+        <div className="px-5 py-4 border-t border-line flex flex-wrap gap-2">
           {!rejectMode ? (
             <>
               <button
                 onClick={handleApprove}
                 disabled={loading || engineerNote.trim().length < 5 || (items.length > 0 && (!allDecided || failCount > 0))}
-                className="flex-1 min-w-[220px] py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+                className="flex-1 min-w-[220px] py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
                 style={{ background: "rgba(16,185,129,0.85)", border: "1px solid rgba(52,211,153,0.5)" }}
               >
                 {loading
@@ -685,7 +685,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
               <button
                 onClick={() => { setRejectMode(true); setErrors([]); }}
                 disabled={loading || items.length === 0}
-                className="px-4 py-2.5 rounded-xl text-red-300 hover:text-white text-xs font-bold transition-all border border-red-500/30 hover:bg-red-500/15 flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-4 py-2.5 rounded-xl text-red-300 hover:text-ink text-xs font-bold transition-all border border-red-500/30 hover:bg-red-500/15 flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ThumbsDown className="w-3.5 h-3.5" />
                 رفض الفحص (يعود للإصلاح)
@@ -693,7 +693,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white text-xs"
+                className="px-4 py-2.5 rounded-xl border border-line text-ink/60 hover:text-ink text-xs"
               >
                 إلغاء
               </button>
@@ -703,7 +703,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
               <button
                 onClick={handleReject}
                 disabled={loading || rejectReason.trim().length < 3}
-                className="flex-1 min-w-[220px] py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+                className="flex-1 min-w-[220px] py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
                 style={{ background: "rgba(239,68,68,0.85)", border: "1px solid rgba(248,113,113,0.5)" }}
               >
                 {loading
@@ -713,7 +713,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
               <button
                 onClick={() => { setRejectMode(false); setRejectReason(""); setErrors([]); }}
                 disabled={loading}
-                className="px-4 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white text-xs"
+                className="px-4 py-2.5 rounded-xl border border-line text-ink/60 hover:text-ink text-xs"
               >
                 رجوع
               </button>

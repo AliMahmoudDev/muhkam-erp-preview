@@ -16,14 +16,14 @@ export function ScoreRing({ score }: { score: number }) {
           transform="rotate(-90 36 36)" style={{ transition: 'stroke-dasharray 0.5s' }} />
         <text x="36" y="40" textAnchor="middle" fill="white" fontSize="14" fontWeight="900">{score}%</text>
       </svg>
-      <span className="text-[10px] text-white/40">حالة الجهاز</span>
+      <span className="text-[10px] text-ink/40">حالة الجهاز</span>
     </div>
   );
 }
 
 /* ── StatusBadge component ── */
 export function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_MAP[status] ?? { label: status, color: 'text-white/60', bg: 'bg-white/5 border-white/10', icon: AlertCircle };
+  const s = STATUS_MAP[status] ?? { label: status, color: 'text-ink/60', bg: 'bg-surface border-line', icon: AlertCircle };
   const Icon = s.icon;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold ${s.color} ${s.bg}`}>

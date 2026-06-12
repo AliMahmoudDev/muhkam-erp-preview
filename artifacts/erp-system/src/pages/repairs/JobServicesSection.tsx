@@ -59,7 +59,7 @@ interface JobService {
 
 /* ── Constants ────────────────────────────────────────────────── */
 const STATUS_CONFIG = {
-  pending:     { label: "في الانتظار", color: "text-white/40 bg-white/5 border-white/10" },
+  pending:     { label: "في الانتظار", color: "text-ink/40 bg-surface border-line" },
   in_progress: { label: "قيد التنفيذ", color: "text-amber-300 bg-amber-500/10 border-amber-500/20" },
   completed:   { label: "مكتمل",       color: "text-emerald-300 bg-emerald-500/10 border-emerald-500/20" },
 } as const;
@@ -171,21 +171,21 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
                 {value.pending_part.product_name}
               </span>
               {value.pending_part.unit_price > 0 && (
-                <span className="text-[9px] text-white/35 font-mono tabular-nums shrink-0">
+                <span className="text-[9px] text-ink/35 font-mono tabular-nums shrink-0">
                   {value.pending_part.unit_price.toLocaleString("ar-EG")}
                 </span>
               )}
               <button
                 type="button"
                 onClick={() => onChange({ ...value, pending_part: null })}
-                className="w-4 h-4 flex items-center justify-center rounded text-white/25 hover:text-red-400 transition-colors shrink-0"
+                className="w-4 h-4 flex items-center justify-center rounded text-ink/25 hover:text-red-400 transition-colors shrink-0"
               >
                 <X className="w-2.5 h-2.5" />
               </button>
             </div>
           ) : (
             <div className="relative">
-              <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/25 pointer-events-none" />
+              <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-ink/25 pointer-events-none" />
               <input
                 type="text"
                 value={partSearch}
@@ -196,9 +196,9 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
                 className="erp-input w-full text-xs pr-7"
               />
               {showPartDrop && (
-                <div className="absolute z-50 top-full mt-0.5 right-0 left-0 rounded-lg border border-white/10 bg-[#0f1117] shadow-xl overflow-hidden max-h-44 overflow-y-auto">
+                <div className="absolute z-50 top-full mt-0.5 right-0 left-0 rounded-lg border border-line bg-[#0f1117] shadow-xl overflow-hidden max-h-44 overflow-y-auto">
                   {filteredProducts.length === 0 ? (
-                    <div className="px-3 py-2 text-[10px] text-white/30 text-center">لا توجد نتائج</div>
+                    <div className="px-3 py-2 text-[10px] text-ink/30 text-center">لا توجد نتائج</div>
                   ) : (
                     filteredProducts.map(p => (
                       <button
@@ -207,7 +207,7 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
                         onMouseDown={() => selectPart(p)}
                         className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-cyan-500/10 transition-colors text-right"
                       >
-                        <span className="text-[10px] text-white/80 truncate">{p.name}</span>
+                        <span className="text-[10px] text-ink/80 truncate">{p.name}</span>
                         {Number(p.sell_price) > 0 && (
                           <span className="text-[9px] text-cyan-300/60 font-mono tabular-nums shrink-0 mr-2">
                             {Number(p.sell_price).toLocaleString("ar-EG")} ر.س
@@ -298,7 +298,7 @@ function ServiceForm({ value, onChange, onSave, onCancel, saving, serviceTypes, 
       <div className="flex items-center justify-end gap-2 pt-0.5">
         <button
           onClick={onCancel}
-          className="text-[11px] px-3 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-white/60 transition-all"
+          className="text-[11px] px-3 py-1.5 rounded-lg border border-line text-ink/40 hover:text-ink/60 transition-all"
         >
           إلغاء
         </button>
@@ -454,7 +454,7 @@ export function JobServicesSection({ jobId, users, locked = false }: Props) {
       {/* الرأس */}
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-white/3 transition-all"
+        className="w-full flex items-center justify-between px-4 py-3 text-right hover:bg-surface transition-all"
       >
         <p className="text-[11px] text-emerald-300/80 font-bold flex items-center gap-1.5">
           <Wrench className="w-3.5 h-3.5" /> بنود الخدمة
@@ -500,7 +500,7 @@ export function JobServicesSection({ jobId, users, locked = false }: Props) {
           {!isLoading && services.length === 0 && !adding && (
             <div className="text-center py-6 space-y-2">
               <Wrench className="w-6 h-6 text-emerald-400/30 mx-auto" />
-              <p className="text-[11px] text-white/35">لم تُضف بنود خدمة بعد</p>
+              <p className="text-[11px] text-ink/35">لم تُضف بنود خدمة بعد</p>
               {!locked && (
                 <button
                   onClick={() => setAdding(true)}
@@ -528,11 +528,11 @@ export function JobServicesSection({ jobId, users, locked = false }: Props) {
                       products={products}
                     />
                   ) : (
-                    <div className="rounded-xl border border-white/5 bg-white/[0.02]">
+                    <div className="rounded-xl border border-line bg-surface">
                       <div className="flex items-start gap-2 px-3 py-2.5 group">
                         <div className="flex-1 min-w-0 space-y-0.5">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[11px] font-bold text-white/90">{sv.service_type_name_snapshot}</span>
+                            <span className="text-[11px] font-bold text-ink/90">{sv.service_type_name_snapshot}</span>
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${STATUS_CONFIG[sv.status].color}`}>
                               {STATUS_CONFIG[sv.status].label}
                             </span>
@@ -542,7 +542,7 @@ export function JobServicesSection({ jobId, users, locked = false }: Props) {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 text-[10px] text-white/35">
+                          <div className="flex items-center gap-3 text-[10px] text-ink/35">
                             <span>{sv.technician_name}</span>
                             {Number(sv.amount) > 0 && (
                               <span className="font-mono tabular-nums text-emerald-300/70">
@@ -550,7 +550,7 @@ export function JobServicesSection({ jobId, users, locked = false }: Props) {
                               </span>
                             )}
                           </div>
-                          {sv.notes && <p className="text-[10px] text-white/30 italic">{sv.notes}</p>}
+                          {sv.notes && <p className="text-[10px] text-ink/30 italic">{sv.notes}</p>}
 
                           {/* قطع مرتبطة — chips للقراءة فقط */}
                           {sv.linked_parts.length > 0 && (
@@ -593,14 +593,14 @@ export function JobServicesSection({ jobId, users, locked = false }: Props) {
                                 });
                                 setAdding(false);
                               }}
-                              className="w-6 h-6 rounded-lg flex items-center justify-center text-white/20 hover:text-amber-300 hover:bg-amber-500/10 transition-all"
+                              className="w-6 h-6 rounded-lg flex items-center justify-center text-ink/20 hover:text-amber-300 hover:bg-amber-500/10 transition-all"
                               title="تعديل"
                             >
                               <Pencil className="w-3 h-3" />
                             </button>
                             <button
                               onClick={() => { if (confirm("حذف بند الخدمة؟")) deleteMut.mutate(sv.id); }}
-                              className="w-6 h-6 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                              className="w-6 h-6 rounded-lg flex items-center justify-center text-ink/20 hover:text-red-400 hover:bg-red-500/10 transition-all"
                               title="حذف"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -615,7 +615,7 @@ export function JobServicesSection({ jobId, users, locked = false }: Props) {
 
               {totalAmount > 0 && (
                 <div className="flex items-center justify-between border-t border-emerald-500/10 pt-2 mt-1">
-                  <span className="text-[10px] text-white/40">إجمالي مبالغ الخدمات</span>
+                  <span className="text-[10px] text-ink/40">إجمالي مبالغ الخدمات</span>
                   <span className="text-[11px] font-black text-emerald-300 font-mono tabular-nums">
                     {totalAmount.toLocaleString("ar-EG")} ر.س
                   </span>

@@ -77,14 +77,14 @@ export default function WhatsAppTemplatesTab() {
         </div>
 
         {/* Placeholders cheat sheet */}
-        <div className="rounded-xl border border-white/8 overflow-hidden bg-white/[0.02]">
-          <div className="px-4 py-2 border-b border-white/8">
-            <span className="text-[11px] font-bold text-white/40 tracking-widest uppercase">المتغيّرات المتاحة</span>
+        <div className="rounded-xl border border-line overflow-hidden bg-surface">
+          <div className="px-4 py-2 border-b border-line">
+            <span className="text-[11px] font-bold text-ink/40 tracking-widest uppercase">المتغيّرات المتاحة</span>
           </div>
           <div className="px-3 py-2 flex flex-wrap gap-1.5">
             {WA_PLACEHOLDERS.map(p => (
               <span key={p.key} title={p.desc}
-                className="text-[11px] px-2 py-1 rounded-md bg-white/5 text-amber-300/80 font-mono border border-white/8">
+                className="text-[11px] px-2 py-1 rounded-md bg-surface text-amber-300/80 font-mono border border-line">
                 {p.key}
               </span>
             ))}
@@ -92,10 +92,10 @@ export default function WhatsAppTemplatesTab() {
         </div>
 
         {/* Ready template */}
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8 flex items-center justify-between">
-            <span className="text-[12px] font-semibold text-white/50">رسالة "الجهاز جاهز للاستلام"</span>
-            <button onClick={() => resetTo("ready")} className="text-[10px] text-white/30 hover:text-white/60">↺ افتراضي</button>
+        <div className="rounded-xl border border-line overflow-hidden">
+          <div className="px-4 py-3 bg-surface border-b border-line flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-ink/50">رسالة "الجهاز جاهز للاستلام"</span>
+            <button onClick={() => resetTo("ready")} className="text-[10px] text-ink/30 hover:text-ink/60">↺ افتراضي</button>
           </div>
           <textarea value={readyBuf} onChange={e => setReadyBuf(e.target.value)}
             rows={6} dir="rtl"
@@ -103,10 +103,10 @@ export default function WhatsAppTemplatesTab() {
         </div>
 
         {/* Progress template */}
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8 flex items-center justify-between">
-            <span className="text-[12px] font-semibold text-white/50">رسالة "تحديث الحالة"</span>
-            <button onClick={() => resetTo("progress")} className="text-[10px] text-white/30 hover:text-white/60">↺ افتراضي</button>
+        <div className="rounded-xl border border-line overflow-hidden">
+          <div className="px-4 py-3 bg-surface border-b border-line flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-ink/50">رسالة "تحديث الحالة"</span>
+            <button onClick={() => resetTo("progress")} className="text-[10px] text-ink/30 hover:text-ink/60">↺ افتراضي</button>
           </div>
           <textarea value={progressBuf} onChange={e => setProgressBuf(e.target.value)}
             rows={6} dir="rtl"

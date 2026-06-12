@@ -55,19 +55,19 @@ export function CustomerList({
   setDeleteConfirmId,
 }: CustomerListProps) {
   return (
-    <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+    <div className="glass-panel rounded-3xl overflow-hidden border border-line">
       <div className="overflow-x-auto">
-        <table className="w-full text-right text-white/80 whitespace-nowrap">
-          <thead className="bg-white/5 border-b border-white/10">
+        <table className="w-full text-right text-ink/80 whitespace-nowrap">
+          <thead className="bg-surface border-b border-line">
             <tr>
-              <th className="p-4 font-semibold text-white/60">الكود</th>
-              <th className="p-4 font-semibold text-white/60">العميل</th>
-              <th className="p-4 font-semibold text-white/60">رقم الهاتف</th>
-              <th className="p-4 font-semibold text-white/60">
+              <th className="p-4 font-semibold text-ink/60">الكود</th>
+              <th className="p-4 font-semibold text-ink/60">العميل</th>
+              <th className="p-4 font-semibold text-ink/60">رقم الهاتف</th>
+              <th className="p-4 font-semibold text-ink/60">
                 الرصيد
-                <span className="text-white/25 text-xs font-normal mr-1">(+ عليه | − له)</span>
+                <span className="text-ink/25 text-xs font-normal mr-1">(+ عليه | − له)</span>
               </th>
-              <th className="p-4 font-semibold text-white/60">الإجراءات</th>
+              <th className="p-4 font-semibold text-ink/60">الإجراءات</th>
             </tr>
           </thead>
           <tbody>
@@ -75,17 +75,17 @@ export function CustomerList({
               <TableSkeleton cols={5} rows={5} />
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-12 text-center text-white/40">لا يوجد عملاء</td>
+                <td colSpan={5} className="p-12 text-center text-ink/40">لا يوجد عملاء</td>
               </tr>
             ) : (
               paginatedCustomers.map((customer) => (
-                <tr key={customer.id} className="border-b border-white/5 erp-table-row">
+                <tr key={customer.id} className="border-b border-line erp-table-row">
                   <td className="p-4">
                     <span className="font-mono text-xs font-bold px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
                       {customer.customer_code ?? '—'}
                     </span>
                   </td>
-                  <td className="p-4 font-bold text-white">
+                  <td className="p-4 font-bold text-ink">
                     <div className="flex items-center gap-2 flex-wrap">
                       {isMaintenanceCustomer(customer) && (
                         <span title="عميل صيانة" className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/40 shrink-0">
@@ -105,7 +105,7 @@ export function CustomerList({
                       )}
                     </div>
                   </td>
-                  <td className="p-4 text-white/60">{customer.phone || '-'}</td>
+                  <td className="p-4 text-ink/60">{customer.phone || '-'}</td>
                   <td className="p-4 font-bold">
                     {Number(customer.balance) > 0 ? (
                       <span className="text-amber-400 flex items-center gap-1.5">
@@ -118,7 +118,7 @@ export function CustomerList({
                         <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-red-500/15 text-red-400 border border-red-500/20">AP له</span>
                       </span>
                     ) : (
-                      <span className="text-white/30">متسوّى</span>
+                      <span className="text-ink/30">متسوّى</span>
                     )}
                   </td>
                   <td className="p-4">
@@ -170,7 +170,7 @@ export function CustomerList({
                               price_list_markup: customer.price_list_markup != null ? String(customer.price_list_markup) : '',
                             });
                           }}
-                          className="p-1.5 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80 transition-colors border border-white/10"
+                          className="p-1.5 rounded-lg bg-surface text-ink/50 hover:bg-surface hover:text-ink/80 transition-colors border border-line"
                           title="تعديل"
                         >
                           <Pencil className="w-3.5 h-3.5" />

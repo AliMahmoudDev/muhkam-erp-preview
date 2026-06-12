@@ -55,16 +55,16 @@ export default function DefaultsTab() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8">
-            <span className="text-[12px] font-semibold text-white/50">مدة الضمان الافتراضية بعد الإصلاح</span>
+        <div className="rounded-xl border border-line overflow-hidden">
+          <div className="px-4 py-3 bg-surface border-b border-line">
+            <span className="text-[12px] font-semibold text-ink/50">مدة الضمان الافتراضية بعد الإصلاح</span>
           </div>
           <div className="p-4 flex items-center gap-3">
             <input type="number" min={0} max={3650} value={warrantyBuf}
               onChange={e => setWarrantyBuf(e.target.value)}
               className="erp-input w-28 text-center text-sm py-1.5" />
-            <span className="text-white/45 text-sm">يوم</span>
-            <span className="text-[11px] text-white/25 mr-auto">يستخدم في بطاقات الضمان عند تسليم الجهاز</span>
+            <span className="text-ink/45 text-sm">يوم</span>
+            <span className="text-[11px] text-ink/25 mr-auto">يستخدم في بطاقات الضمان عند تسليم الجهاز</span>
           </div>
         </div>
 

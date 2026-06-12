@@ -56,11 +56,11 @@ function Accordion({ title, icon, children, badge }: {
       <button onClick={toggle}
         className="rpt-accordion-hd w-full flex items-center justify-between px-5 py-3.5 text-right transition-colors">
         <div className="flex items-center gap-2.5">
-          <span className="text-white/50">{icon}</span>
+          <span className="text-ink/50">{icon}</span>
           <span className="rpt-strong font-semibold text-sm">{title}</span>
           {badge && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-400 border border-amber-500/20">{badge}</span>}
         </div>
-        <ChevronDown className={`w-4 h-4 text-white/30 transition-transform duration-200 ${open ? "rotate-180" : ""}`}/>
+        <ChevronDown className={`w-4 h-4 text-ink/30 transition-transform duration-200 ${open ? "rotate-180" : ""}`}/>
       </button>
       <AnimatePresence initial={false}>
         {open && (
@@ -84,7 +84,7 @@ function AccountingStatement({ pl }: { pl: ProfitsData }) {
 
   /* ── Design tokens ── */
   const border   = isLight ? "#e5e7eb"               : "rgba(255,255,255,0.08)";
-  const txtMain  = isLight ? "#111827"               : "rgba(255,255,255,0.90)";
+  const txtMain  = isLight ? "var(--bg-card)"               : "rgba(255,255,255,0.90)";
   const txtSub   = isLight ? "#6b7280"               : "rgba(255,255,255,0.38)";
   const txtHint  = isLight ? "#9ca3af"               : "rgba(255,255,255,0.28)";
   const secBg    = isLight ? "#f8fafc"               : "rgba(255,255,255,0.03)";
@@ -291,7 +291,7 @@ function BranchTable({ warehouses }: { warehouses: ProfitsData["by_warehouse"] }
 
   return (
     <div className="rpt-section rounded-2xl overflow-hidden">
-      <div className="px-5 py-3 border-b border-white/8 flex items-center gap-2">
+      <div className="px-5 py-3 border-b border-line flex items-center gap-2">
         <Building2 className="w-4 h-4 text-amber-400"/>
         <span className="rpt-strong font-semibold text-sm">مقارنة الفروع</span>
         <span className="rpt-muted text-xs mr-auto">{active.length} فروع</span>
@@ -310,7 +310,7 @@ function BranchTable({ warehouses }: { warehouses: ProfitsData["by_warehouse"] }
               const margin = w.revenue > 0 ? (w.gross_profit / w.revenue) * 100 : 0;
               const mgColor = margin >= 30 ? "text-emerald-400 bg-emerald-500/12" : margin >= 15 ? "text-amber-400 bg-amber-500/12" : "text-red-400 bg-red-500/10";
               return (
-                <tr key={w.warehouse_id} className="erp-table-row border-b border-white/5 transition-colors">
+                <tr key={w.warehouse_id} className="erp-table-row border-b border-line transition-colors">
                   <td className="rpt-td">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full shrink-0" style={{background:BRANCH_COLORS[i%BRANCH_COLORS.length]}}/>
@@ -332,7 +332,7 @@ function BranchTable({ warehouses }: { warehouses: ProfitsData["by_warehouse"] }
             })}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-white/10">
+            <tr className="border-t-2 border-line">
               <td className="rpt-td rpt-muted text-xs font-semibold">الإجمالي</td>
               <td className="rpt-td rpt-td-num font-black tabular-nums">{formatCurrency(active.reduce((s,w)=>s+w.revenue,0))}</td>
               <td className="rpt-td rpt-muted tabular-nums">{formatCurrency(active.reduce((s,w)=>s+w.cost,0))}</td>

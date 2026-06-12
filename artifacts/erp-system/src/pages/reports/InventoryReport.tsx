@@ -27,10 +27,10 @@ function AnimStatCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
       whileHover={{ y: -3 }}
-      className="glass-panel rounded-2xl p-5 border border-white/5"
+      className="glass-panel rounded-2xl p-5 border border-line"
       style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}
     >
-      <p className="text-white/40 text-xs mb-2">{label}</p>
+      <p className="text-ink/40 text-xs mb-2">{label}</p>
       <p className={`text-xl font-black ${color}`}>{fmt(animated)}</p>
     </motion.div>
   );
@@ -115,7 +115,7 @@ export default function InventoryReport() {
           label="إجمالي الأصناف"
           value={filtered.length}
           fmt={(v) => String(Math.round(v))}
-          color="text-white"
+          color="text-ink"
           delay={0}
         />
         <AnimStatCard

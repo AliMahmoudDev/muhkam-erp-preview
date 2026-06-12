@@ -25,7 +25,7 @@ interface FiscalYear {
 function toast(msg: string, type: "success" | "error" = "success") {
   const el = document.createElement("div");
   el.className = `fixed top-5 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl font-bold text-sm shadow-xl transition-all ${
-    type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+    type === "success" ? "bg-emerald-600 text-ink" : "bg-red-600 text-ink"
   }`;
   el.textContent = msg;
   document.body.appendChild(el);
@@ -105,11 +105,11 @@ export default function FiscalYears() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-ink flex items-center gap-2">
             <Calendar className="w-5 h-5 text-amber-400" />
             إدارة السنوات المالية
           </h1>
-          <p className="text-sm text-white/40 mt-0.5">تحكم في السنوات المالية للشركة، فتح وإقفال الفترات المحاسبية</p>
+          <p className="text-sm text-ink/40 mt-0.5">تحكم في السنوات المالية للشركة، فتح وإقفال الفترات المحاسبية</p>
         </div>
         {isAdmin && (
           <button onClick={() => setShowAdd(true)}
@@ -122,33 +122,33 @@ export default function FiscalYears() {
 
       {/* Add Form */}
       {showAdd && (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+        <div className="bg-surface border border-line rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-white">إضافة سنة مالية جديدة</h3>
-            <button onClick={() => setShowAdd(false)}><X className="w-4 h-4 text-white/40 hover:text-white" /></button>
+            <h3 className="font-bold text-ink">إضافة سنة مالية جديدة</h3>
+            <button onClick={() => setShowAdd(false)}><X className="w-4 h-4 text-ink/40 hover:text-ink" /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-xs text-white/50 block mb-1">اسم السنة *</label>
+              <label className="text-xs text-ink/50 block mb-1">اسم السنة *</label>
               <input type="text" value={form.year_label} onChange={e => setForm(f => ({ ...f, year_label: e.target.value }))}
                 placeholder="مثال: السنة المالية 2026"
-                className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50" />
+                className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:border-amber-400/50" />
             </div>
             <div>
-              <label className="text-xs text-white/50 block mb-1">تاريخ البداية *</label>
+              <label className="text-xs text-ink/50 block mb-1">تاريخ البداية *</label>
               <input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
-                className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50" />
+                className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:border-amber-400/50" />
             </div>
             <div>
-              <label className="text-xs text-white/50 block mb-1">تاريخ النهاية *</label>
+              <label className="text-xs text-ink/50 block mb-1">تاريخ النهاية *</label>
               <input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))}
-                className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50" />
+                className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:border-amber-400/50" />
             </div>
           </div>
           <div>
-            <label className="text-xs text-white/50 block mb-1">ملاحظات</label>
+            <label className="text-xs text-ink/50 block mb-1">ملاحظات</label>
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-              className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50 resize-none" />
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:border-amber-400/50 resize-none" />
           </div>
           <div className="flex gap-2">
             <button onClick={handleCreate} disabled={createMut.isPending}
@@ -156,7 +156,7 @@ export default function FiscalYears() {
               {createMut.isPending ? "جارِ الحفظ..." : "حفظ"}
             </button>
             <button onClick={() => setShowAdd(false)}
-              className="px-4 py-2 bg-white/8 hover:bg-white/15 text-white rounded-xl text-sm">إلغاء</button>
+              className="px-4 py-2 bg-surface hover:bg-raised text-ink rounded-xl text-sm">إلغاء</button>
           </div>
         </div>
       )}
@@ -165,7 +165,7 @@ export default function FiscalYears() {
       {isLoading ? (
         <div className="space-y-3">{[1,2].map(i => <div key={i} className="skeleton-shimmer h-20 rounded-2xl" />)}</div>
       ) : years.length === 0 ? (
-        <div className="text-center py-16 text-white/30">
+        <div className="text-center py-16 text-ink/30">
           <Calendar className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="font-bold">لا توجد سنوات مالية</p>
           <p className="text-sm mt-1">انقر «سنة مالية جديدة» لإنشاء أول سنة مالية</p>
@@ -178,30 +178,30 @@ export default function FiscalYears() {
                 ? "bg-amber-500/8 border-amber-500/30"
                 : fy.is_open
                   ? "bg-emerald-500/5 border-emerald-500/15"
-                  : "bg-white/3 border-white/8 opacity-70"
+                  : "bg-surface border-line opacity-70"
             }`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
-                    fy.is_current ? "bg-amber-500/20" : fy.is_open ? "bg-emerald-500/15" : "bg-white/8"
+                    fy.is_current ? "bg-amber-500/20" : fy.is_open ? "bg-emerald-500/15" : "bg-surface"
                   }`}>
                     {fy.is_open ? <Unlock className={`w-5 h-5 ${fy.is_current ? "text-amber-400" : "text-emerald-400"}`} />
-                               : <Lock className="w-5 h-5 text-white/40" />}
+                               : <Lock className="w-5 h-5 text-ink/40" />}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-white">{fy.year_label}</span>
+                      <span className="font-bold text-ink">{fy.year_label}</span>
                       {fy.is_current && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold">الحالية</span>
                       )}
                       {!fy.is_open && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/40 font-bold">مقفلة</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink/40 font-bold">مقفلة</span>
                       )}
                     </div>
-                    <div className="text-xs text-white/40 mt-0.5">
+                    <div className="text-xs text-ink/40 mt-0.5">
                       {fy.start_date} ← {fy.end_date}
                     </div>
-                    {fy.notes && <div className="text-xs text-white/30 mt-0.5">{fy.notes}</div>}
+                    {fy.notes && <div className="text-xs text-ink/30 mt-0.5">{fy.notes}</div>}
                   </div>
                 </div>
 
@@ -241,7 +241,7 @@ export default function FiscalYears() {
                     {fy.is_open && !fy.is_current && (
                       <button onClick={() => { if (confirm("حذف هذه السنة المالية؟")) deleteMut.mutate(fy.id); }}
                         disabled={deleteMut.isPending}
-                        className="flex items-center gap-1 text-xs px-3 py-1.5 bg-white/8 hover:bg-white/15 text-white/40 hover:text-red-400 rounded-xl font-bold transition-colors border border-white/10">
+                        className="flex items-center gap-1 text-xs px-3 py-1.5 bg-surface hover:bg-raised text-ink/40 hover:text-red-400 rounded-xl font-bold transition-colors border border-line">
                         <X className="w-3 h-3" />
                         حذف
                       </button>

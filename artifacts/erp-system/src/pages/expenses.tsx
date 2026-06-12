@@ -27,8 +27,8 @@ function AccessDenied({ msg }: { msg: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <ShieldOff className="w-14 h-14 text-red-400/40 mb-4" />
-      <p className="text-white/60 font-bold text-lg">غير مصرح</p>
-      <p className="text-white/30 text-sm mt-1">{msg}</p>
+      <p className="text-ink/60 font-bold text-lg">غير مصرح</p>
+      <p className="text-ink/30 text-sm mt-1">{msg}</p>
     </div>
   );
 }
@@ -232,7 +232,7 @@ export default function Expenses() {
 
       {/* ─── Header ─── */}
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-xl font-bold text-white flex-shrink-0">
+        <h2 className="text-xl font-bold text-ink flex-shrink-0">
           {activeTab === 'expenses' ? 'إدارة المصروفات' : 'الديون المعدومة / المتعثرة'}
         </h2>
         <div className="flex-1" />
@@ -260,20 +260,20 @@ export default function Expenses() {
       </div>
 
       {/* ─── Tabs ─── */}
-      <div className="flex items-center gap-1.5 border-b border-white/8 -mt-1">
+      <div className="flex items-center gap-1.5 border-b border-line -mt-1">
         <button onClick={() => changeTab('expenses')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
             activeTab === 'expenses'
-              ? 'border-violet-400 text-white'
-              : 'border-transparent text-white/40 hover:text-white/70'
+              ? 'border-violet-400 text-ink'
+              : 'border-transparent text-ink/40 hover:text-ink/70'
           }`}>
           <TrendingDown className="w-4 h-4" /> المصروفات
         </button>
         <button onClick={() => changeTab('debts')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
             activeTab === 'debts'
-              ? 'border-violet-400 text-white'
-              : 'border-transparent text-white/40 hover:text-white/70'
+              ? 'border-violet-400 text-ink'
+              : 'border-transparent text-ink/40 hover:text-ink/70'
           }`}>
           <Ban className="w-4 h-4" /> الديون المعدومة
         </button>

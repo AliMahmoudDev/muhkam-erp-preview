@@ -52,7 +52,7 @@ export function DangerBtn({ children, className = "", ...p }: React.ButtonHTMLAt
   return (
     <button {...p}
       className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
-        bg-red-600 hover:bg-red-700 text-white font-bold text-sm
+        bg-red-600 hover:bg-red-700 text-ink font-bold text-sm
         transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
     >{children}</button>
   );
@@ -145,8 +145,8 @@ export function PageHeader({ title, sub, action }: { title: string; sub?: string
   return (
     <div className="flex items-start justify-between gap-4 mb-6">
       <div>
-        <h2 className="text-lg font-black text-white">{title}</h2>
-        {sub && <p className="text-white/40 text-sm mt-0.5">{sub}</p>}
+        <h2 className="text-lg font-black text-ink">{title}</h2>
+        {sub && <p className="text-ink/40 text-sm mt-0.5">{sub}</p>}
       </div>
       {action}
     </div>
@@ -157,7 +157,7 @@ export function PageHeader({ title, sub, action }: { title: string; sub?: string
 export function SectionCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-2xl border border-white/8 p-5 ${className}`}
+      className={`rounded-2xl border border-line p-5 ${className}`}
       style={{ background: "var(--erp-bg-card)" }}
     >
       {children}
@@ -168,15 +168,15 @@ export function SectionCard({ children, className = "" }: { children: React.Reac
 /* ─── Card Skeleton ─── */
 export function CardSkeleton() {
   return (
-    <div className="border border-white/5 rounded-2xl p-5 animate-pulse space-y-3" style={{ background: "var(--erp-bg-card)" }}>
+    <div className="border border-line rounded-2xl p-5 animate-pulse space-y-3" style={{ background: "var(--erp-bg-card)" }}>
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-white/5" />
+        <div className="w-12 h-12 rounded-xl bg-surface" />
         <div className="flex-1 space-y-2">
-          <div className="h-3 bg-white/5 rounded w-2/3" />
-          <div className="h-2.5 bg-white/5 rounded w-1/3" />
+          <div className="h-3 bg-surface rounded w-2/3" />
+          <div className="h-2.5 bg-surface rounded w-1/3" />
         </div>
       </div>
-      <div className="h-2 bg-white/5 rounded" />
+      <div className="h-2 bg-surface rounded" />
     </div>
   );
 }
@@ -185,11 +185,11 @@ export function CardSkeleton() {
 export function EmptyState({ icon: Icon, title, sub }: { icon: React.FC<{ className?: string }>; title: string; sub?: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-        <Icon className="w-8 h-8 text-white/20" />
+      <div className="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center mb-4">
+        <Icon className="w-8 h-8 text-ink/20" />
       </div>
-      <p className="text-white/40 font-semibold">{title}</p>
-      {sub && <p className="text-white/20 text-sm mt-1">{sub}</p>}
+      <p className="text-ink/40 font-semibold">{title}</p>
+      {sub && <p className="text-ink/20 text-sm mt-1">{sub}</p>}
     </div>
   );
 }
@@ -236,7 +236,7 @@ export function PermissionGroupCard({
         onClick={() => setOpen(o => !o)}
       >
         <div className="flex items-center gap-2.5">
-          <span className="font-bold text-white text-sm">{group.label}</span>
+          <span className="font-bold text-ink text-sm">{group.label}</span>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${c.badge}`}>
             {onCount} / {keys.length}
           </span>
@@ -303,8 +303,8 @@ export function SectionTitle({ icon: Icon, title, sub }: { icon: React.FC<{ clas
         <Icon className="w-4 h-4 text-amber-400" />
       </div>
       <div>
-        <p className="font-bold text-white text-sm">{title}</p>
-        {sub && <p className="text-white/35 text-xs">{sub}</p>}
+        <p className="font-bold text-ink text-sm">{title}</p>
+        {sub && <p className="text-ink/35 text-xs">{sub}</p>}
       </div>
     </div>
   );

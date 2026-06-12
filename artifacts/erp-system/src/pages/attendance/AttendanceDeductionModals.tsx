@@ -7,7 +7,7 @@ type AnyRec = Record<string, unknown>;
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs text-white/50">{label}</label>
+      <label className="text-xs text-ink/50">{label}</label>
       {children}
     </div>
   );
@@ -65,7 +65,7 @@ export function DeductionSettingsModal({
         onChange={(e) => updTier(editTiers.indexOf(t), 'max_minutes', e.target.value === '' ? null : Number(e.target.value))} />
       <input type="number" min="0" step="0.01" className="erp-input text-xs" placeholder="قيمة الخصم" value={String(t['amount'] ?? '')}
         onChange={(e) => updTier(editTiers.indexOf(t), 'amount', e.target.value === '' ? 0 : Number(e.target.value))} />
-      <label className="flex items-center gap-1.5 text-[10px] text-white/60 cursor-pointer">
+      <label className="flex items-center gap-1.5 text-[10px] text-ink/60 cursor-pointer">
         <input type="checkbox" checked={t['is_active'] !== false} onChange={(e) => updTier(editTiers.indexOf(t), 'is_active', e.target.checked)} className="w-4 h-4 accent-emerald-500 cursor-pointer" />
         <span className={t['is_active'] !== false ? 'text-emerald-400 font-bold' : ''}>نشط</span>
       </label>
@@ -76,9 +76,9 @@ export function DeductionSettingsModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto p-4" dir="rtl">
       <div className="erp-modal rounded-xl max-w-3xl w-full my-4">
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2"><Settings size={18} className="text-amber-300" /> إعدادات خصومات الحضور</h3>
-          <button onClick={onClose} className="text-white/50 hover:text-white"><X size={18} /></button>
+        <div className="flex items-center justify-between p-4 border-b border-line">
+          <h3 className="text-lg font-bold text-ink flex items-center gap-2"><Settings size={18} className="text-amber-300" /> إعدادات خصومات الحضور</h3>
+          <button onClick={onClose} className="text-ink/50 hover:text-ink"><X size={18} /></button>
         </div>
         <div className="p-5 space-y-5 max-h-[75vh] overflow-y-auto">
           <section className="space-y-3">
@@ -88,7 +88,7 @@ export function DeductionSettingsModal({
                 <input type="number" min="0" className="erp-input w-full" value={grace} onChange={(e) => setGrace(e.target.value)} />
               </Field>
               <Field label="">
-                <label className="flex items-center gap-2 text-sm text-white/80 mt-6">
+                <label className="flex items-center gap-2 text-sm text-ink/80 mt-6">
                   <input type="checkbox" checked={applyEarly} onChange={(e) => setApplyEarly(e.target.checked)} />
                   تطبيق نفس الشرائح على الانصراف المبكر
                 </label>
@@ -98,7 +98,7 @@ export function DeductionSettingsModal({
               <div className="flex flex-wrap gap-2">
                 {DAYS.map((d) => (
                   <button key={d.v} onClick={() => toggleDay(d.v)} type="button"
-                    className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${weeklyOff.includes(d.v) ? 'bg-amber-500/20 border-amber-400 text-amber-200' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${weeklyOff.includes(d.v) ? 'bg-amber-500/20 border-amber-400 text-amber-200' : 'bg-surface border-line text-ink/60 hover:text-ink'}`}>
                     {d.label}
                   </button>
                 ))}
@@ -117,11 +117,11 @@ export function DeductionSettingsModal({
               {savingSettings ? 'جاري الحفظ...' : 'حفظ الإعدادات العامة'}
             </button>
           </section>
-          <div className="border-t border-white/10" />
+          <div className="border-t border-line" />
           <section className="space-y-3">
             <h4 className="text-sm font-bold text-amber-300">شرائح خصم التأخير</h4>
-            <div className="text-[11px] text-white/40">مثال: من 1 إلى 15 دقيقة → 25 جنيه. اترك الحد الأعلى فارغاً للشريحة المفتوحة.</div>
-            <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 text-[10px] text-white/40 font-bold">
+            <div className="text-[11px] text-ink/40">مثال: من 1 إلى 15 دقيقة → 25 جنيه. اترك الحد الأعلى فارغاً للشريحة المفتوحة.</div>
+            <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 text-[10px] text-ink/40 font-bold">
               <div>من (دقيقة)</div><div>إلى (دقيقة)</div><div>قيمة الخصم</div><div>نشط</div><div></div>
             </div>
             {lateTiers.map(renderTierRow)}
@@ -129,7 +129,7 @@ export function DeductionSettingsModal({
             {applyEarly && (
               <>
                 <h4 className="text-sm font-bold text-amber-300 mt-4">شرائح خصم الانصراف المبكر</h4>
-                <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 text-[10px] text-white/40 font-bold">
+                <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 text-[10px] text-ink/40 font-bold">
                   <div>من (دقيقة)</div><div>إلى (دقيقة)</div><div>قيمة الخصم</div><div>نشط</div><div></div>
                 </div>
                 {earlyTiers.map(renderTierRow)}
@@ -141,7 +141,7 @@ export function DeductionSettingsModal({
             </button>
           </section>
         </div>
-        <div className="flex justify-end gap-2 p-4 border-t border-white/10">
+        <div className="flex justify-end gap-2 p-4 border-t border-line">
           <button onClick={onClose} className="erp-btn erp-btn-ghost">إغلاق</button>
         </div>
       </div>
@@ -174,9 +174,9 @@ export function DeductionCalcModal({
 
   const inner = (
     <>
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2"><Calculator size={18} className="text-amber-300" /> احتساب خصومات الشهر تلقائياً</h3>
-        {!inline && <button onClick={onClose} className="text-white/50 hover:text-white"><X size={18} /></button>}
+      <div className="flex items-center justify-between p-4 border-b border-line">
+        <h3 className="text-lg font-bold text-ink flex items-center gap-2"><Calculator size={18} className="text-amber-300" /> احتساب خصومات الشهر تلقائياً</h3>
+        {!inline && <button onClick={onClose} className="text-ink/50 hover:text-ink"><X size={18} /></button>}
       </div>
       <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
@@ -195,24 +195,24 @@ export function DeductionCalcModal({
           </button>
         </div>
         {previewData && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-white/5 rounded-lg border border-white/10">
-            <div><div className="text-[10px] text-white/40">إجمالي البنود</div><div className="text-lg font-bold text-white">{Number(summary['total_items'] ?? 0)}</div></div>
-            <div><div className="text-[10px] text-white/40">جديدة</div><div className="text-lg font-bold text-emerald-300">{Number(summary['new_items'] ?? 0)}</div></div>
-            <div><div className="text-[10px] text-white/40">سبق احتسابها</div><div className="text-lg font-bold text-white/40">{Number(summary['already_applied'] ?? 0)}</div></div>
-            <div><div className="text-[10px] text-white/40">إجمالي محدد</div><div className="text-lg font-bold text-amber-300">{selectedTotal.toFixed(2)}</div></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-surface rounded-lg border border-line">
+            <div><div className="text-[10px] text-ink/40">إجمالي البنود</div><div className="text-lg font-bold text-ink">{Number(summary['total_items'] ?? 0)}</div></div>
+            <div><div className="text-[10px] text-ink/40">جديدة</div><div className="text-lg font-bold text-emerald-300">{Number(summary['new_items'] ?? 0)}</div></div>
+            <div><div className="text-[10px] text-ink/40">سبق احتسابها</div><div className="text-lg font-bold text-ink/40">{Number(summary['already_applied'] ?? 0)}</div></div>
+            <div><div className="text-[10px] text-ink/40">إجمالي محدد</div><div className="text-lg font-bold text-amber-300">{selectedTotal.toFixed(2)}</div></div>
           </div>
         )}
         {previewData && items.length === 0 && (
           <div className="erp-empty-state">
             <CheckCircle2 size={36} className="erp-empty-icon mb-2 text-emerald-300" />
             <p className="erp-empty-label">لا توجد خصومات للاحتساب في هذا الشهر</p>
-            <p className="text-xs text-white/40 mt-1">تأكد من إعداد الشرائح وتسجيل الحضور</p>
+            <p className="text-xs text-ink/40 mt-1">تأكد من إعداد الشرائح وتسجيل الحضور</p>
           </div>
         )}
         {previewData && items.length > 0 && (
-          <div className="border border-white/10 rounded-lg overflow-hidden">
+          <div className="border border-line rounded-lg overflow-hidden">
             <table className="w-full text-xs">
-              <thead className="bg-white/5">
+              <thead className="bg-surface">
                 <tr>
                   <th className="p-2 text-center w-10">
                     <input type="checkbox" checked={selectableItems.length > 0 && excluded.size === 0}
@@ -232,17 +232,17 @@ export function DeductionCalcModal({
                   const applied = Boolean(it['already_applied']);
                   const isExcluded = excluded.has(k);
                   return (
-                    <tr key={k} className={`border-t border-white/5 ${applied ? 'opacity-40' : ''}`}>
+                    <tr key={k} className={`border-t border-line ${applied ? 'opacity-40' : ''}`}>
                       <td className="p-2 text-center">
                         {applied ? <span title="سبق احتسابه"><CheckCircle2 size={14} className="text-emerald-400 inline" /></span>
                           : <input type="checkbox" checked={!isExcluded} onChange={() => toggleExcluded(k)} />}
                       </td>
-                      <td className="p-2"><div className="text-white/80">{String(it['employee_name'])}</div>{it['employee_code'] ? <div className="text-[10px] text-white/40">{String(it['employee_code'])}</div> : null}</td>
-                      <td className="p-2 font-mono text-white/60">{String(it['date'])}</td>
+                      <td className="p-2"><div className="text-ink/80">{String(it['employee_name'])}</div>{it['employee_code'] ? <div className="text-[10px] text-ink/40">{String(it['employee_code'])}</div> : null}</td>
+                      <td className="p-2 font-mono text-ink/60">{String(it['date'])}</td>
                       <td className={`p-2 font-bold ${typeColor(String(it['type']))}`}>{typeLabel(String(it['type']))}</td>
-                      <td className="p-2 font-mono text-white/60">{Number(it['minutes']) || '—'}</td>
+                      <td className="p-2 font-mono text-ink/60">{Number(it['minutes']) || '—'}</td>
                       <td className="p-2 font-mono font-bold text-red-300">{Number(it['amount']).toFixed(2)}</td>
-                      <td className="p-2 text-white/50 text-[11px]">{String(it['reason'])}</td>
+                      <td className="p-2 text-ink/50 text-[11px]">{String(it['reason'])}</td>
                     </tr>
                   );
                 })}
@@ -254,7 +254,7 @@ export function DeductionCalcModal({
           <div className="text-xs text-amber-300 flex items-center gap-1"><AlertCircle size={14} /> تم استبعاد {excluded.size} بند من الحفظ</div>
         )}
       </div>
-      <div className="flex gap-2 p-4 border-t border-white/10">
+      <div className="flex gap-2 p-4 border-t border-line">
         <button onClick={() => onApply(selectedItems)} disabled={applying || selectedItems.length === 0}
           className="erp-btn erp-btn-primary flex-1 flex items-center gap-1 justify-center">
           <CheckCircle2 size={14} /> {applying ? 'جاري الحفظ...' : `تأكيد وحفظ (${selectedItems.length}) خصم`}

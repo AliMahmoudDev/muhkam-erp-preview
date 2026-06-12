@@ -41,21 +41,21 @@ export function ConfirmModal({
       className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm modal-overlay"
       onKeyDown={e => { if (e.key === "Escape") onCancel(); }}
     >
-      <div className="glass-panel rounded-3xl p-8 w-full max-w-sm border border-white/10 shadow-2xl modal-panel">
+      <div className="glass-panel rounded-3xl p-8 w-full max-w-sm border border-line shadow-2xl modal-panel">
 
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center flex-shrink-0">
             <AlertTriangle className="w-6 h-6 text-red-400" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-white">{title}</h3>
-            <p className="text-white/50 text-sm mt-1 leading-relaxed">{description}</p>
+            <h3 className="text-lg font-bold text-ink">{title}</h3>
+            <p className="text-ink/50 text-sm mt-1 leading-relaxed">{description}</p>
           </div>
           <button
             onClick={onCancel}
-            className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
+            className="p-1.5 rounded-xl bg-surface hover:bg-raised transition-colors flex-shrink-0"
           >
-            <X className="w-4 h-4 text-white/50" />
+            <X className="w-4 h-4 text-ink/50" />
           </button>
         </div>
 
@@ -63,7 +63,7 @@ export function ConfirmModal({
           <button
             onClick={onConfirm}
             disabled={!canConfirm || isPending}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500 text-ink font-bold hover:bg-red-600 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isPending
               ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -79,7 +79,7 @@ export function ConfirmModal({
           <button
             onClick={onCancel}
             disabled={isPending}
-            className="flex-1 py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-white/15 active:scale-95 transition-all"
+            className="flex-1 py-3 rounded-xl bg-surface text-ink font-bold hover:bg-raised active:scale-95 transition-all"
           >
             إلغاء
           </button>

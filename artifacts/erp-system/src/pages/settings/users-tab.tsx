@@ -305,11 +305,11 @@ export default function UsersTab() {
         </div>
       ) : users.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-            <Users className="w-8 h-8 text-white/20" />
+          <div className="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center mb-4">
+            <Users className="w-8 h-8 text-ink/20" />
           </div>
-          <p className="text-white/40 font-semibold">لا يوجد مستخدمون</p>
-          <p className="text-white/20 text-sm mt-1">أضف أول مستخدم للنظام</p>
+          <p className="text-ink/40 font-semibold">لا يوجد مستخدمون</p>
+          <p className="text-ink/20 text-sm mt-1">أضف أول مستخدم للنظام</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -343,8 +343,8 @@ export default function UsersTab() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-white truncate">{u.name}</p>
-                      <p className="text-white/40 text-xs font-mono mt-0.5">
+                      <p className="font-bold text-ink truncate">{u.name}</p>
+                      <p className="text-ink/40 text-xs font-mono mt-0.5">
                         {u.phone || u.username}
                       </p>
                     </div>
@@ -383,10 +383,10 @@ export default function UsersTab() {
                 </div>
 
                 {/* Last login bar */}
-                <div className="flex items-center gap-1.5 px-5 py-2.5 bg-white/[0.02] border-y border-white/5">
-                  <Clock className="w-3 h-3 text-white/20 shrink-0" />
+                <div className="flex items-center gap-1.5 px-5 py-2.5 bg-surface border-y border-line">
+                  <Clock className="w-3 h-3 text-ink/20 shrink-0" />
                   <span
-                    className={`text-[11px] ${lastLogin.online ? 'text-emerald-400 font-semibold' : 'text-white/30'}`}
+                    className={`text-[11px] ${lastLogin.online ? 'text-emerald-400 font-semibold' : 'text-ink/30'}`}
                   >
                     {lastLogin.label}
                   </span>
@@ -449,21 +449,21 @@ export default function UsersTab() {
                     onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value }))}
                   />
                   <button
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40 hover:text-ink transition-colors"
                     onClick={() => setShowPin((s) => !s)}
                   >
                     {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 <div className="mt-1.5 space-y-1">
-                  <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                  <div className="h-1 rounded-full bg-surface overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${ps.color}`}
                       style={{ width: ps.w }}
                     />
                   </div>
-                  <p className="text-[11px] text-white/30">
-                    قوة الرقم السري: <span className="text-white/60 font-semibold">{ps.label}</span>
+                  <p className="text-[11px] text-ink/30">
+                    قوة الرقم السري: <span className="text-ink/60 font-semibold">{ps.label}</span>
                   </p>
                 </div>
               </div>
@@ -533,7 +533,7 @@ export default function UsersTab() {
                 {form.role === 'employee' ? (
                   <span className="text-red-400 mr-0.5">* مطلوب لدور الموظف</span>
                 ) : (
-                  <span className="text-white/30 text-[10px] font-normal">
+                  <span className="text-ink/30 text-[10px] font-normal">
                     {' '}
                     (مطلوب لتسجيل الحضور من الموبايل)
                   </span>
@@ -557,17 +557,17 @@ export default function UsersTab() {
               )}
             </div>
 
-            <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+            <div className="flex items-center justify-between bg-surface border border-line rounded-xl px-4 py-3">
               <div>
-                <p className="text-white/80 text-sm font-semibold">المستخدم نشط</p>
-                <p className="text-white/35 text-[11px]">
+                <p className="text-ink/80 text-sm font-semibold">المستخدم نشط</p>
+                <p className="text-ink/35 text-[11px]">
                   {form.active ? 'يمكنه تسجيل الدخول' : 'لا يمكنه تسجيل الدخول'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, active: !f.active }))}
-                className={`relative w-12 h-6 rounded-full transition-all duration-300 focus:outline-none ${form.active ? 'bg-emerald-500' : 'bg-white/15'}`}
+                className={`relative w-12 h-6 rounded-full transition-all duration-300 focus:outline-none ${form.active ? 'bg-emerald-500' : 'bg-raised'}`}
               >
                 <span
                   className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${form.active ? 'right-0.5' : 'left-0.5'}`}
@@ -604,13 +604,13 @@ export default function UsersTab() {
                       if (tpl) setForm((f) => ({ ...f, permissions: { ...tpl } }));
                     }}
                     title="إعادة تعيين للصلاحيات الافتراضية بناءً على الدور"
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white/80 hover:border-white/25 transition-all text-xs whitespace-nowrap shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface border border-line text-ink/50 hover:text-ink/80 hover:border-line transition-all text-xs whitespace-nowrap shrink-0"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     إعادة تعيين
                   </button>
                 </div>
-                <p className="text-[10px] text-white/25 mt-1.5">
+                <p className="text-[10px] text-ink/25 mt-1.5">
                   يملأ مربعات الصلاحيات تلقائياً — يمكنك التعديل بعدها يدوياً
                 </p>
               </div>
@@ -664,7 +664,7 @@ export default function UsersTab() {
             </div>
           </div>
 
-          <div className="flex gap-3 px-6 py-4 border-t border-white/8 shrink-0">
+          <div className="flex gap-3 px-6 py-4 border-t border-line shrink-0">
             <PrimaryBtn
               onClick={handleSubmit}
               className="flex-1"
@@ -692,14 +692,14 @@ export default function UsersTab() {
               <Trash2 className="w-7 h-7 text-red-400" />
             </div>
             <div>
-              <p className="text-white font-bold">هل تريد حذف هذا المستخدم؟</p>
-              <p className="text-white/40 text-sm mt-1">
-                سيتم حذف <span className="text-white font-semibold">{deleteTarget.name}</span>{' '}
+              <p className="text-ink font-bold">هل تريد حذف هذا المستخدم؟</p>
+              <p className="text-ink/40 text-sm mt-1">
+                سيتم حذف <span className="text-ink font-semibold">{deleteTarget.name}</span>{' '}
                 نهائياً
               </p>
             </div>
           </div>
-          <div className="flex gap-3 px-6 py-4 border-t border-white/8">
+          <div className="flex gap-3 px-6 py-4 border-t border-line">
             <DangerBtn onClick={confirmDelete} className="flex-1" disabled={deleteUser.isPending}>
               {deleteUser.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

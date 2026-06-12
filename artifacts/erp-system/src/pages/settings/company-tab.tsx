@@ -199,7 +199,7 @@ export default function CompanyTab() {
         </div>
         <div className="p-5 flex items-center gap-5">
           {/* Preview */}
-          <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-white/15 flex items-center justify-center overflow-hidden bg-white/3 shrink-0">
+          <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-line flex items-center justify-center overflow-hidden bg-surface shrink-0">
             {form.company_logo ? (
               <img
                 src={resolveUploadedFileUrl(form.company_logo)}
@@ -207,7 +207,7 @@ export default function CompanyTab() {
                 className="w-full h-full object-contain"
               />
             ) : (
-              <div className="flex flex-col items-center gap-1 text-white/20">
+              <div className="flex flex-col items-center gap-1 text-ink/20">
                 <ImagePlus className="w-6 h-6" />
                 <span className="text-[10px]">الشعار</span>
               </div>
@@ -239,7 +239,7 @@ export default function CompanyTab() {
                 <Trash2 className="w-3.5 h-3.5" /> حذف الشعار
               </button>
             )}
-            <p className="text-white/25 text-[10px]">PNG أو JPG — الحد الأقصى 500 كيلوبايت</p>
+            <p className="text-ink/25 text-[10px]">PNG أو JPG — الحد الأقصى 500 كيلوبايت</p>
           </div>
         </div>
       </div>
@@ -261,7 +261,7 @@ export default function CompanyTab() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-white/25 text-sm">
+          <div className="flex items-center justify-center gap-2 py-12 text-ink/25 text-sm">
             <Loader2 className="w-5 h-5 animate-spin" />
             جاري التحميل...
           </div>
@@ -273,7 +273,7 @@ export default function CompanyTab() {
                 <div key={f.key} className={f.key === 'company_name' ? 'sm:col-span-2' : ''}>
                   <FieldLabel>
                     <span className="flex items-center gap-1.5">
-                      <Icon className="w-3.5 h-3.5 text-white/30" />
+                      <Icon className="w-3.5 h-3.5 text-ink/30" />
                       {f.label}
                     </span>
                   </FieldLabel>
@@ -290,7 +290,7 @@ export default function CompanyTab() {
             <div className="sm:col-span-2">
               <FieldLabel>
                 <span className="flex items-center gap-1.5">
-                  <Printer className="w-3.5 h-3.5 text-white/30" />
+                  <Printer className="w-3.5 h-3.5 text-ink/30" />
                   رأس الفاتورة (invoice header)
                 </span>
               </FieldLabel>

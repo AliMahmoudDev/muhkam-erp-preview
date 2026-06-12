@@ -41,7 +41,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
     <button
       type="button" onClick={onToggle}
-      className={`relative w-11 h-6 rounded-full transition-all duration-300 focus:outline-none flex-shrink-0 ${on ? "bg-amber-500" : "bg-white/15"}`}
+      className={`relative w-11 h-6 rounded-full transition-all duration-300 focus:outline-none flex-shrink-0 ${on ? "bg-amber-500" : "bg-raised"}`}
     >
       <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${on ? "right-0.5" : "left-0.5"}`} />
     </button>
@@ -50,10 +50,10 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 
 function ToggleRow({ label, sub, on, onToggle }: { label: string; sub?: string; on: boolean; onToggle: () => void }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+    <div className="flex items-center justify-between py-3 border-b border-line last:border-0">
       <div>
-        <p className={`text-sm font-semibold ${on ? "text-white" : "text-white/50"}`}>{label}</p>
-        {sub && <p className="text-white/30 text-xs mt-0.5">{sub}</p>}
+        <p className={`text-sm font-semibold ${on ? "text-ink" : "text-ink/50"}`}>{label}</p>
+        {sub && <p className="text-ink/30 text-xs mt-0.5">{sub}</p>}
       </div>
       <Toggle on={on} onToggle={onToggle} />
     </div>
@@ -62,12 +62,12 @@ function ToggleRow({ label, sub, on, onToggle }: { label: string; sub?: string; 
 
 function Section({ icon: Icon, title, children }: { icon: React.FC<{ className?: string }>; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "var(--erp-bg-card)" }}>
-      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-white/5">
+    <div className="rounded-2xl border border-line overflow-hidden" style={{ background: "var(--erp-bg-card)" }}>
+      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-line">
         <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
           <Icon className="w-3.5 h-3.5 text-amber-400" />
         </div>
-        <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{title}</p>
+        <p className="text-ink/70 text-xs font-bold uppercase tracking-wider">{title}</p>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -139,7 +139,7 @@ export default function InvoiceTab() {
       />
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-white/25 text-sm">
+        <div className="flex items-center justify-center gap-2 py-16 text-ink/25 text-sm">
           <Loader2 className="w-5 h-5 animate-spin" /> جاري التحميل...
         </div>
       ) : (
@@ -166,8 +166,8 @@ export default function InvoiceTab() {
                     )}
                     <span className="text-2xl">{s.icon}</span>
                     <div className="text-center">
-                      <p className={`font-bold text-sm ${active ? "text-amber-400" : "text-white/80"}`}>{s.label}</p>
-                      <p className="text-white/30 text-[11px] mt-0.5">{s.sub}</p>
+                      <p className={`font-bold text-sm ${active ? "text-amber-400" : "text-ink/80"}`}>{s.label}</p>
+                      <p className="text-ink/30 text-[11px] mt-0.5">{s.sub}</p>
                     </div>
                   </button>
                 );
@@ -187,7 +187,7 @@ export default function InvoiceTab() {
                   placeholder="1"
                 />
               </div>
-              <div className="mt-5 text-white/30 text-sm leading-relaxed">
+              <div className="mt-5 text-ink/30 text-sm leading-relaxed">
                 يُطبع <span className="text-amber-400 font-bold">{form.invoice_copies || "1"}</span> {form.invoice_copies === "1" ? "نسخة" : "نسخ"} تلقائياً عند الطباعة
               </div>
             </div>
@@ -230,9 +230,9 @@ export default function InvoiceTab() {
           </Section>
 
           {/* Info */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/8">
-            <FileText className="w-4 h-4 text-white/25 mt-0.5 shrink-0" />
-            <p className="text-white/30 text-xs leading-relaxed">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-line">
+            <FileText className="w-4 h-4 text-ink/25 mt-0.5 shrink-0" />
+            <p className="text-ink/30 text-xs leading-relaxed">
               إعدادات الفاتورة تُطبّق على جميع الفواتير المطبوعة من نظام المبيعات والمشتريات.
               بعض الإعدادات قد تتأثر بمعلومات الشركة الموجودة في تبويب بيانات الشركة.
             </p>

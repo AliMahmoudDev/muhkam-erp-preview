@@ -93,7 +93,7 @@ export function CountVarianceSummary({
           <button
             onClick={onApply}
             disabled={isPending || !canApply}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-colors whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-ink rounded-xl text-sm font-bold transition-colors whitespace-nowrap"
           >
             {isPending ? (
               <>

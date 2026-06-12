@@ -134,11 +134,11 @@ export function CustomerStatementModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm modal-overlay">
-      <div className="glass-panel rounded-3xl p-0 w-full max-w-4xl border border-white/10 shadow-2xl max-h-[92vh] overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5 flex-shrink-0">
+      <div className="glass-panel rounded-3xl p-0 w-full max-w-4xl border border-line shadow-2xl max-h-[92vh] overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center p-6 border-b border-line bg-surface flex-shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-black text-white">كشف حساب</h3>
+              <h3 className="text-2xl font-black text-ink">كشف حساب</h3>
               {isSupplier && (
                 <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-500/15 text-blue-400 border border-blue-500/25">
                   يتم الشراء منه
@@ -146,35 +146,35 @@ export function CustomerStatementModal({
               )}
             </div>
             <p className="text-amber-400 font-bold text-lg mt-0.5">{customerName}</p>
-            {customerPhone && <p className="text-white/40 text-xs mt-0.5">📞 {customerPhone}</p>}
+            {customerPhone && <p className="text-ink/40 text-xs mt-0.5">📞 {customerPhone}</p>}
             {isSupplier ? (
               <div className="mt-2 space-y-0.5 text-xs">
-                <p className="text-white/50">
+                <p className="text-ink/50">
                   إجمالي المبيعات له:{' '}
                   <span className="text-amber-400 font-bold">{formatCurrency(totalSales)}</span>
                 </p>
-                <p className="text-white/50">
+                <p className="text-ink/50">
                   إجمالي المشتريات منه:{' '}
                   <span className="text-purple-400 font-bold">
                     {formatCurrency(totalPurchases)}
                   </span>
                 </p>
                 {totalPurchaseReturns > 0 && (
-                  <p className="text-white/50">
+                  <p className="text-ink/50">
                     مرتجع مشتريات:{' '}
                     <span className="text-violet-400 font-bold">
                       {formatCurrency(totalPurchaseReturns)}
                     </span>
                   </p>
                 )}
-                <p className="text-white/50">
+                <p className="text-ink/50">
                   المدفوعات والمقبوضات:{' '}
                   <span className="text-emerald-400 font-bold">
                     {formatCurrency(totalReceipts + totalSupplierPayments + totalPayments)}
                   </span>
                 </p>
                 <p
-                  className={`font-bold text-sm mt-1 ${customerBalance > 0 ? 'text-green-400' : customerBalance < 0 ? 'text-red-400' : 'text-white/40'}`}
+                  className={`font-bold text-sm mt-1 ${customerBalance > 0 ? 'text-green-400' : customerBalance < 0 ? 'text-red-400' : 'text-ink/40'}`}
                 >
                   الرصيد الصافي:{' '}
                   {customerBalance > 0
@@ -186,7 +186,7 @@ export function CustomerStatementModal({
               </div>
             ) : (
               <p
-                className={`text-sm mt-1 font-semibold ${customerBalance > 0 ? 'text-yellow-400' : customerBalance < 0 ? 'text-orange-400' : 'text-white/40'}`}
+                className={`text-sm mt-1 font-semibold ${customerBalance > 0 ? 'text-yellow-400' : customerBalance < 0 ? 'text-orange-400' : 'text-ink/40'}`}
               >
                 الرصيد:{' '}
                 {customerBalance > 0
@@ -201,7 +201,7 @@ export function CustomerStatementModal({
             <button
               onClick={handleWhatsApp}
               title={customerPhone ? 'إرسال ملخص الكشف على واتساب' : 'لا يوجد رقم هاتف مسجل'}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold border transition-all ${customerPhone ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30 border-green-500/30' : 'bg-white/5 text-white/20 border-white/10 cursor-not-allowed'}`}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold border transition-all ${customerPhone ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30 border-green-500/30' : 'bg-surface text-ink/20 border-line cursor-not-allowed'}`}
             >
               <MessageCircle className="w-4 h-4" /> واتساب
             </button>
@@ -213,9 +213,9 @@ export function CustomerStatementModal({
             </button>
             <button
               onClick={onClose}
-              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+              className="p-2.5 rounded-xl bg-surface hover:bg-raised transition-colors"
             >
-              <X className="w-5 h-5 text-white/70" />
+              <X className="w-5 h-5 text-ink/70" />
             </button>
           </div>
         </div>

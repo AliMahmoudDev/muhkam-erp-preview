@@ -156,7 +156,7 @@ export function SplitPaymentModal({
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-white/15 overflow-hidden shadow-2xl"
+        className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-line overflow-hidden shadow-2xl"
         style={{ background: 'linear-gradient(145deg, rgba(15,15,25,0.99), rgba(8,8,18,0.99))' }}
       >
         <div style={{ height: 2, background: 'linear-gradient(90deg, #F59E0B, #FBBF24, #F59E0B)' }} />
@@ -165,13 +165,13 @@ export function SplitPaymentModal({
         <div className="flex items-center justify-between px-5 pt-5 pb-4">
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/40 hover:text-white/70 transition-colors"
+            className="w-8 h-8 rounded-xl bg-surface hover:bg-surface border border-line flex items-center justify-center text-ink/40 hover:text-ink/70 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
           <div className="text-right">
-            <h2 className="font-black text-white text-base">تسوية الدفع</h2>
-            <p className="text-white/35 text-xs mt-0.5">
+            <h2 className="font-black text-ink text-base">تسوية الدفع</h2>
+            <p className="text-ink/35 text-xs mt-0.5">
               إجمالي الفاتورة:&nbsp;
               <span className="text-amber-400 font-bold tabular-nums">{formatCurrency(total)}</span>
             </p>
@@ -187,7 +187,7 @@ export function SplitPaymentModal({
             <span className="font-bold tabular-nums transition-colors" style={{ color: isDone ? '#10B981' : '#F59E0B' }}>
               {isDone ? '✓ مكتمل' : `متبقي: ${formatCurrency(remaining)}`}
             </span>
-            <span className="text-white/30">{Math.round(pct)}%</span>
+            <span className="text-ink/30">{Math.round(pct)}%</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--erp-bg-hover)' }}>
             <div
@@ -226,8 +226,8 @@ export function SplitPaymentModal({
                     <X className="w-3 h-3" />
                   </button>
                   <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-                    <span className="font-bold text-sm tabular-nums text-white">{formatCurrency(row.amount)}</span>
-                    {loc && <span className="text-xs text-white/35 truncate">{loc}</span>}
+                    <span className="font-bold text-sm tabular-nums text-ink">{formatCurrency(row.amount)}</span>
+                    {loc && <span className="text-xs text-ink/35 truncate">{loc}</span>}
                     <span className="shrink-0 px-2 py-0.5 rounded-lg text-xs font-bold flex items-center gap-1" style={{ background: c.active, color: c.text }}>
                       <Icon className="w-3 h-3" /> {lbl}
                     </span>

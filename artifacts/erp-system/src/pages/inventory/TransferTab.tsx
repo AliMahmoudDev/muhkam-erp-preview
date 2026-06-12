@@ -197,13 +197,13 @@ function TransferTab({
         <div className="flex gap-2">
           <button
             onClick={() => setView('new')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'new' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'new' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
           >
             تحويل جديد
           </button>
           <button
             onClick={() => setView('history')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'history' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'history' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
           >
             سجل التحويلات ({transfers.length})
           </button>
@@ -228,19 +228,19 @@ function TransferTab({
 
       {view === 'new' && (
         <div className="space-y-5">
-          <div className="bg-[#111827] border border-white/8 rounded-2xl p-5 space-y-4">
-            <h3 className="text-sm font-bold text-white/70 flex items-center gap-2">
+          <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-4">
+            <h3 className="text-sm font-bold text-ink/70 flex items-center gap-2">
               <Truck className="w-4 h-4 text-violet-400" /> بيانات التحويل
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-end">
               <div>
-                <label className="block text-white/50 text-xs mb-1.5">
+                <label className="block text-ink/50 text-xs mb-1.5">
                   من مخزن <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={fromWH}
                   onChange={(e) => setFromWH(Number(e.target.value))}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+                  className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
                 >
                   {warehouses.map((w) => (
                     <option key={w.id} value={w.id} className="bg-[#1a1a2e]">
@@ -255,14 +255,14 @@ function TransferTab({
                 </div>
               </div>
               <div>
-                <label className="block text-white/50 text-xs mb-1.5">
+                <label className="block text-ink/50 text-xs mb-1.5">
                   إلى مخزن <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={toWH}
                   onChange={(e) => setToWH(Number(e.target.value))}
-                  className={`w-full bg-white/10 border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 ${
-                    fromWH === toWH ? 'border-red-500/40' : 'border-white/20'
+                  className={`w-full bg-surface border rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 ${
+                    fromWH === toWH ? 'border-red-500/40' : 'border-line'
                   }`}
                 >
                   {warehouses.map((w) => (
@@ -277,19 +277,19 @@ function TransferTab({
               </div>
             </div>
             <div>
-              <label className="block text-white/50 text-xs mb-1.5">ملاحظات (اختياري)</label>
+              <label className="block text-ink/50 text-xs mb-1.5">ملاحظات (اختياري)</label>
               <input
                 type="text"
                 value={transferNotes}
                 onChange={(e) => setTransferNotes(e.target.value)}
                 placeholder="سبب التحويل..."
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+                className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
               />
             </div>
           </div>
 
-          <div className="bg-[#111827] border border-white/8 rounded-2xl p-5 space-y-4">
-            <h3 className="text-sm font-bold text-white/70">المنتجات المحوَّلة</h3>
+          <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-4">
+            <h3 className="text-sm font-bold text-ink/70">المنتجات المحوَّلة</h3>
             <div className="space-y-3">
               {lines.map((line, idx) => {
                 const availableQty = getAvailableQty(line.product_id);
@@ -298,15 +298,15 @@ function TransferTab({
                 return (
                   <div
                     key={idx}
-                    className={`border rounded-xl p-4 space-y-3 transition-colors ${insufficient ? 'border-red-500/30 bg-red-500/5' : 'border-white/8 bg-white/3'}`}
+                    className={`border rounded-xl p-4 space-y-3 transition-colors ${insufficient ? 'border-red-500/30 bg-red-500/5' : 'border-line bg-surface'}`}
                   >
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-start">
                       <div>
-                        <label className="block text-white/50 text-xs mb-1.5">المنتج</label>
+                        <label className="block text-ink/50 text-xs mb-1.5">المنتج</label>
                         <select
                           value={line.product_id}
                           onChange={(e) => updateLine(idx, 'product_id', e.target.value)}
-                          className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+                          className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
                         >
                           <option value={0} className="bg-[#1a1a2e]">
                             — اختر منتجاً —
@@ -319,7 +319,7 @@ function TransferTab({
                         </select>
                         {line.product_id > 0 && (
                           <div
-                            className={`mt-1 text-xs flex items-center gap-1 ${availableQty > 0 ? 'text-white/40' : 'text-red-400/70'}`}
+                            className={`mt-1 text-xs flex items-center gap-1 ${availableQty > 0 ? 'text-ink/40' : 'text-red-400/70'}`}
                           >
                             <span>
                               متاح في {warehouses.find((w) => w.id === fromWH)?.name ?? 'المصدر'}:
@@ -334,7 +334,7 @@ function TransferTab({
                         )}
                       </div>
                       <div className="md:w-36">
-                        <label className="block text-white/50 text-xs mb-1.5">الكمية</label>
+                        <label className="block text-ink/50 text-xs mb-1.5">الكمية</label>
                         <input
                           type="number"
                           min="0.001"
@@ -342,10 +342,10 @@ function TransferTab({
                           value={line.quantity}
                           onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
                           placeholder="0"
-                          className={`w-full bg-white/10 border rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 font-mono ${
+                          className={`w-full bg-surface border rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:ring-2 font-mono ${
                             insufficient
                               ? 'border-red-500/40 focus:ring-red-400/40'
-                              : 'border-white/20 focus:ring-violet-400/50'
+                              : 'border-line focus:ring-violet-400/50'
                           }`}
                         />
                       </div>
@@ -389,7 +389,7 @@ function TransferTab({
               fromWH === toWH ||
               hasAnyInsufficientQty
             }
-            className="w-full py-3 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-ink font-bold text-sm transition-colors flex items-center justify-center gap-2"
           >
             {transferMutation.isPending ? (
               <>
@@ -412,10 +412,10 @@ function TransferTab({
       {view === 'history' && (
         <div className="space-y-3">
           {transfers.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center bg-white/3 border border-white/5 rounded-2xl">
-              <Truck className="w-10 h-10 text-white/10 mb-3" />
-              <p className="text-white/40 font-bold mb-1">لا توجد تحويلات سابقة</p>
-              <p className="text-white/25 text-xs mb-4">قم بنقل المخزون بين المخازن لتظهر هنا</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center bg-surface border border-line rounded-2xl">
+              <Truck className="w-10 h-10 text-ink/10 mb-3" />
+              <p className="text-ink/40 font-bold mb-1">لا توجد تحويلات سابقة</p>
+              <p className="text-ink/25 text-xs mb-4">قم بنقل المخزون بين المخازن لتظهر هنا</p>
               <button
                 onClick={() => setView('new')}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
@@ -440,16 +440,16 @@ function TransferTab({
               minute: '2-digit',
             });
             return (
-              <div key={t.id} className="bg-[#111827] border border-white/8 rounded-2xl p-4">
+              <div key={t.id} className="bg-[#111827] border border-line rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-white font-bold">تحويل #{t.id}</span>
+                      <span className="text-ink font-bold">تحويل #{t.id}</span>
                       <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300">
                         {t.status === 'completed' ? '✓ مكتمل' : t.status}
                       </span>
                       {t.items_count > 0 && (
-                        <span className="px-2 py-0.5 rounded-lg text-xs bg-white/5 text-white/50">
+                        <span className="px-2 py-0.5 rounded-lg text-xs bg-surface text-ink/50">
                           {t.items_count} صنف
                         </span>
                       )}
@@ -461,13 +461,13 @@ function TransferTab({
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-amber-300 font-medium">{fromName}</span>
-                      <ArrowLeft className="w-4 h-4 text-white/30" />
+                      <ArrowLeft className="w-4 h-4 text-ink/30" />
                       <span className="text-emerald-300 font-medium">{toName}</span>
                     </div>
-                    <div className="text-white/30 text-xs">
+                    <div className="text-ink/30 text-xs">
                       {dateStr} · {timeStr}
                     </div>
-                    {t.notes && <p className="text-white/30 text-xs">{t.notes}</p>}
+                    {t.notes && <p className="text-ink/30 text-xs">{t.notes}</p>}
                   </div>
                 </div>
               </div>

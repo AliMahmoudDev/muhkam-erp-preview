@@ -46,34 +46,34 @@ export default function ProductProfitReport({ warehouseId }: { warehouseId?: num
           { label:"إجمالي الربح",      value:formatCurrency(summary.total_profit),            color:summary.total_profit>=0?"text-amber-400":"text-red-400" },
           { label:"هامش الربح الكلي",  value:`${summary.overall_margin.toFixed(1)}%`,         color:summary.overall_margin>=20?"text-emerald-400":"text-red-400" },
         ].map(c=>(
-          <div key={c.label} className="glass-panel rounded-2xl p-4 border border-white/5">
-            <p className="text-white/40 text-xs mb-1">{c.label}</p>
+          <div key={c.label} className="glass-panel rounded-2xl p-4 border border-line">
+            <p className="text-ink/40 text-xs mb-1">{c.label}</p>
             <p className={`text-lg font-black ${c.color}`}>{c.value}</p>
           </div>
         ))}
       </div>
       <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 max-w-xs"><Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"/><input className="glass-input w-full icon-pr text-sm" placeholder="بحث بالمنتج..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        <div className="relative flex-1 max-w-xs"><Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30"/><input className="glass-input w-full icon-pr text-sm" placeholder="بحث بالمنتج..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
         <div className="flex gap-1">{(["profit","revenue","margin","qty"] as const).map(s=>(
-          <button key={s} onClick={()=>setSort(s)} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${sort===s?"bg-amber-500/20 border-amber-500/40 text-amber-400":"glass-panel border-white/10 text-white/50 hover:text-white"}`}>
+          <button key={s} onClick={()=>setSort(s)} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${sort===s?"bg-amber-500/20 border-amber-500/40 text-amber-400":"glass-panel border-line text-ink/50 hover:text-ink"}`}>
             {s==="profit"?"الربح":s==="revenue"?"المبيعات":s==="margin"?"الهامش":"الكمية"}
           </button>
         ))}</div>
       </div>
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10">
-              <tr><th className="p-3 text-white/50">#</th><th className="p-3 text-white/50">المنتج</th><th className="p-3 text-white/50">الكمية المباعة</th><th className="p-3 text-white/50">إجمالي المبيعات</th><th className="p-3 text-white/50">تكلفة البضاعة</th><th className="p-3 text-white/50">الربح</th><th className="p-3 text-white/50">هامش الربح</th></tr>
+            <thead className="bg-surface border-b border-line">
+              <tr><th className="p-3 text-ink/50">#</th><th className="p-3 text-ink/50">المنتج</th><th className="p-3 text-ink/50">الكمية المباعة</th><th className="p-3 text-ink/50">إجمالي المبيعات</th><th className="p-3 text-ink/50">تكلفة البضاعة</th><th className="p-3 text-ink/50">الربح</th><th className="p-3 text-ink/50">هامش الربح</th></tr>
             </thead>
             <tbody>
               {isLoading ? <TableSkeleton cols={7} rows={5}/> :
-               products.length===0 ? <tr><td colSpan={7} className="p-12 text-center text-white/40">لا توجد بيانات</td></tr> :
+               products.length===0 ? <tr><td colSpan={7} className="p-12 text-center text-ink/40">لا توجد بيانات</td></tr> :
                products.map((p,i)=>(
-                <tr key={p.product_id} className="border-b border-white/5 erp-table-row">
-                  <td className="p-3 text-white/30 text-xs">{i+1}</td>
-                  <td className="p-3 text-white font-bold">{p.product_name}</td>
-                  <td className="p-3 text-white/70">{p.qty_sold.toFixed(2)}</td>
+                <tr key={p.product_id} className="border-b border-line erp-table-row">
+                  <td className="p-3 text-ink/30 text-xs">{i+1}</td>
+                  <td className="p-3 text-ink font-bold">{p.product_name}</td>
+                  <td className="p-3 text-ink/70">{p.qty_sold.toFixed(2)}</td>
                   <td className="p-3 text-emerald-400 font-bold">{formatCurrency(p.revenue)}</td>
                   <td className="p-3 text-red-400">{formatCurrency(p.cogs)}</td>
                   <td className={`p-3 font-black ${p.profit>=0?"text-amber-400":"text-red-400"}`}>{formatCurrency(p.profit)}</td>
@@ -82,13 +82,13 @@ export default function ProductProfitReport({ warehouseId }: { warehouseId?: num
               ))}
             </tbody>
             {products.length>0&&(
-              <tfoot className="bg-white/5 border-t border-white/10">
+              <tfoot className="bg-surface border-t border-line">
                 <tr>
-                  <td colSpan={3} className="p-3 text-white/50 font-bold">الإجمالي ({products.length} منتج)</td>
+                  <td colSpan={3} className="p-3 text-ink/50 font-bold">الإجمالي ({products.length} منتج)</td>
                   <td className="p-3 font-black text-emerald-400">{formatCurrency(summary.total_revenue)}</td>
                   <td className="p-3 font-black text-red-400">{formatCurrency(summary.total_cogs)}</td>
                   <td className={`p-3 font-black ${summary.total_profit>=0?"text-amber-400":"text-red-400"}`}>{formatCurrency(summary.total_profit)}</td>
-                  <td className="p-3 font-bold text-white/50">{summary.overall_margin.toFixed(1)}%</td>
+                  <td className="p-3 font-bold text-ink/50">{summary.overall_margin.toFixed(1)}%</td>
                 </tr>
               </tfoot>
             )}

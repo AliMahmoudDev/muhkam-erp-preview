@@ -26,11 +26,11 @@ const PAGE_TABS: { id: PageTab; label: string; icon: React.FC<{ className?: stri
 function SubTabSkeleton() {
   return (
     <div className="space-y-4 animate-pulse max-w-2xl mt-6">
-      <div className="h-8 w-48 bg-white/5 rounded-xl" />
-      <div className="h-4 w-64 bg-white/3 rounded-lg" />
+      <div className="h-8 w-48 bg-surface rounded-xl" />
+      <div className="h-4 w-64 bg-surface rounded-lg" />
       <div className="grid grid-cols-2 gap-4 mt-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 bg-white/3 rounded-2xl" />
+          <div key={i} className="h-24 bg-surface rounded-2xl" />
         ))}
       </div>
     </div>
@@ -129,10 +129,10 @@ export default function Employees() {
   const PageHeader = (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2">
+        <h1 className="text-xl font-bold text-ink flex items-center gap-2">
           <UserCheck size={22} className="text-amber-400" /> إدارة الموظفين
         </h1>
-        <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/10">
+        <div className="flex items-center gap-1 bg-surface rounded-xl p-1 border border-line">
           {PAGE_TABS.map((tab) => (
             <button
               key={tab.id}
@@ -140,7 +140,7 @@ export default function Employees() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 pageTab === tab.id
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  : 'text-white/50 hover:text-white/80'
+                  : 'text-ink/50 hover:text-ink/80'
               }`}
             >
               <tab.icon className="w-3.5 h-3.5" />
@@ -159,7 +159,7 @@ export default function Employees() {
           ].map((stat) => (
             <div key={stat.label} className="erp-card p-3">
               <div className={`text-lg font-bold font-mono ${stat.color}`}>{stat.value}</div>
-              <div className="text-xs text-white/40 mt-0.5">{stat.label}</div>
+              <div className="text-xs text-ink/40 mt-0.5">{stat.label}</div>
             </div>
           ))}
         </div>

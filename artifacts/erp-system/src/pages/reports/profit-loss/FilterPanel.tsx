@@ -51,7 +51,7 @@ function exportCSV(pl: ProfitsData, dateFrom: string, dateTo: string, branchLabe
 /* ── Branch Selector ──────────────────────────────────────────────────────── */
 function CheckBox({ checked }: { checked: boolean }) {
   return (
-    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${checked?"bg-amber-500 border-amber-500":"border-white/25"}`}>
+    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${checked?"bg-amber-500 border-amber-500":"border-line"}`}>
       {checked && <span className="text-black text-[9px] font-black leading-none">✓</span>}
     </div>
   );
@@ -72,25 +72,25 @@ function BranchSelector({ warehouses, selected, onChange }: {
   return (
     <div className="relative">
       <button onClick={()=>setOpen(o=>!o)}
-        className="rpt-section flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 text-sm font-semibold hover:border-white/20 transition-all">
+        className="rpt-section flex items-center gap-2 px-3 py-1.5 rounded-xl border border-line text-sm font-semibold hover:border-line transition-all">
         <Building2 className="w-3.5 h-3.5 text-amber-400 shrink-0"/>
         <span className="rpt-strong text-sm">{label}</span>
-        <ChevronDown className={`w-3 h-3 text-white/30 transition-transform ${open?"rotate-180":""}`}/>
+        <ChevronDown className={`w-3 h-3 text-ink/30 transition-transform ${open?"rotate-180":""}`}/>
       </button>
       <AnimatePresence>
         {open && (
           <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}} transition={{duration:0.12}}
             className="rpt-dropdown absolute top-full mt-2 right-0 z-40 min-w-[200px] rounded-xl shadow-2xl overflow-hidden">
             <button onClick={()=>{onChange([]);setOpen(false);}}
-              className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-right transition-colors ${allSelected?"text-amber-400 bg-amber-500/10":"text-white/60 hover:text-white hover:bg-white/4"}`}>
+              className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-right transition-colors ${allSelected?"text-amber-400 bg-amber-500/10":"text-ink/60 hover:text-ink hover:bg-surface"}`}>
               <CheckBox checked={allSelected}/> جميع الفروع
             </button>
-            {warehouses.length > 0 && <div className="h-px bg-white/8 mx-3"/>}
+            {warehouses.length > 0 && <div className="h-px bg-surface mx-3"/>}
             {warehouses.map(w=>{
               const checked = selected.includes(w.id);
               return (
                 <button key={w.id} onClick={()=>toggle(w.id)}
-                  className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-right transition-colors ${checked?"text-white bg-white/5":"text-white/60 hover:text-white hover:bg-white/4"}`}>
+                  className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-right transition-colors ${checked?"text-ink bg-surface":"text-ink/60 hover:text-ink hover:bg-surface"}`}>
                   <CheckBox checked={checked}/> {w.name}
                 </button>
               );
@@ -115,7 +115,7 @@ export default function FilterPanel({
       <div className="flex flex-wrap gap-1.5">
         {DATE_MODES.map(m=>(
           <button key={m.id} onClick={()=>setMode(m.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${mode===m.id?"text-amber-300 border-amber-500/40":"text-white/40 border-white/8 hover:text-white/70 hover:border-white/15"}`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${mode===m.id?"text-amber-300 border-amber-500/40":"text-ink/40 border-line hover:text-ink/70 hover:border-line"}`}
             style={mode===m.id?{background:"rgba(245,158,11,0.12)"}:{background:"rgba(255,255,255,0.02)"}}>
             {m.label}
           </button>
@@ -123,9 +123,9 @@ export default function FilterPanel({
       </div>
       {mode==="custom"&&(
         <div className="flex items-center gap-2">
-          <input type="date" value={customFrom} onChange={e=>setCustomFrom(e.target.value)} className="glass-input rounded-xl px-3 py-1.5 text-sm text-white"/>
+          <input type="date" value={customFrom} onChange={e=>setCustomFrom(e.target.value)} className="glass-input rounded-xl px-3 py-1.5 text-sm text-ink"/>
           <span className="rpt-muted">←</span>
-          <input type="date" value={customTo} onChange={e=>setCustomTo(e.target.value)} className="glass-input rounded-xl px-3 py-1.5 text-sm text-white"/>
+          <input type="date" value={customTo} onChange={e=>setCustomTo(e.target.value)} className="glass-input rounded-xl px-3 py-1.5 text-sm text-ink"/>
         </div>
       )}
       {/* Branch selector */}

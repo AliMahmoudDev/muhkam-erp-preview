@@ -91,7 +91,7 @@ export function PricingTab() {
                 placeholder="مثال: 25"
                 className="pr-10"
               />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">%</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40 text-sm font-bold">%</span>
             </div>
             {isValid && marginPercent !== "" && (
               <p className="text-xs text-amber-400/70 mt-1.5">
@@ -143,14 +143,14 @@ export function PricingTab() {
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold border border-white/10 text-white/60 hover:text-white/90 transition"
+                className="px-4 py-2 rounded-xl text-sm font-semibold border border-line text-ink/60 hover:text-ink/90 transition"
               >
                 إلغاء
               </button>
               <button
                 onClick={handleApply}
                 disabled={saving}
-                className="px-4 py-2 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 text-ink transition disabled:opacity-50 flex items-center gap-2"
               >
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
                 نعم، طبّق التحديث
@@ -183,7 +183,7 @@ export function PricingTab() {
       {/* شرح الآلية */}
       <SectionCard>
         <SectionTitle icon={TrendingUp} title="كيف يعمل؟" />
-        <div className="space-y-2 text-sm text-white/50">
+        <div className="space-y-2 text-sm text-ink/50">
           <p>• سعر البيع الجديد = سعر التكلفة × (1 + الهامش ÷ 100)</p>
           <p>• المنتجات التي سعر تكلفتها صفر أو غير محدد تُستثنى تلقائياً</p>
           <p>• يمكنك اختيار فئة معينة لتطبيق الهامش عليها فقط</p>

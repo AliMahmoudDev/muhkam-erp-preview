@@ -33,8 +33,8 @@ export default function AccessDenied() {
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-black text-white mb-2">صلاحية مرفوضة</h1>
-        <p className="text-white/40 text-sm mb-2">
+        <h1 className="text-2xl font-black text-ink mb-2">صلاحية مرفوضة</h1>
+        <p className="text-ink/40 text-sm mb-2">
           ليس لديك صلاحية للوصول إلى هذه الصفحة
         </p>
 

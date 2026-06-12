@@ -513,14 +513,14 @@ export function AppLayout({ children }: LayoutProps) {
                 appearance: 'none',
               }}
             >
-              <option value="" style={{ background: isDark ? '#111827' : '#fff' }}>
+              <option value="" style={{ background: isDark ? 'var(--bg-card)' : '#fff' }}>
                 كل المخازن
               </option>
               {warehouses.map((w) => (
                 <option
                   key={w.id}
                   value={String(w.id)}
-                  style={{ background: isDark ? '#111827' : '#fff' }}
+                  style={{ background: isDark ? 'var(--bg-card)' : '#fff' }}
                 >
                   {w.name}
                 </option>

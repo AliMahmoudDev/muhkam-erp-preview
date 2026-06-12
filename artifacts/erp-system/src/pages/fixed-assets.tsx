@@ -52,8 +52,8 @@ export default function FixedAssetsPage() {
             <Building2 className="w-6 h-6 text-violet-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">الأصول الثابتة</h1>
-            <p className="text-white/40 text-sm mt-0.5">إدارة الأصول وحساب الإهلاك</p>
+            <h1 className="text-2xl font-bold text-ink">الأصول الثابتة</h1>
+            <p className="text-ink/40 text-sm mt-0.5">إدارة الأصول وحساب الإهلاك</p>
           </div>
         </div>
         <button
@@ -66,35 +66,35 @@ export default function FixedAssetsPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="glass-panel rounded-2xl p-4 border border-white/10">
+        <div className="glass-panel rounded-2xl p-4 border border-line">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <p className="text-xs text-white/40">إجمالي التكلفة</p>
-              <p className="text-white font-bold text-lg">{formatCurrency(totalCost)}</p>
+              <p className="text-xs text-ink/40">إجمالي التكلفة</p>
+              <p className="text-ink font-bold text-lg">{formatCurrency(totalCost)}</p>
             </div>
           </div>
         </div>
-        <div className="glass-panel rounded-2xl p-4 border border-white/10">
+        <div className="glass-panel rounded-2xl p-4 border border-line">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
               <TrendingDown className="w-5 h-5 text-orange-400" />
             </div>
             <div>
-              <p className="text-xs text-white/40">مجمع الإهلاك</p>
+              <p className="text-xs text-ink/40">مجمع الإهلاك</p>
               <p className="text-orange-300 font-bold text-lg">{formatCurrency(totalAccDep)}</p>
             </div>
           </div>
         </div>
-        <div className="glass-panel rounded-2xl p-4 border border-white/10">
+        <div className="glass-panel rounded-2xl p-4 border border-line">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
               <BarChart3 className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <p className="text-xs text-white/40">إجمالي القيمة الدفترية</p>
+              <p className="text-xs text-ink/40">إجمالي القيمة الدفترية</p>
               <p className="text-emerald-300 font-bold text-lg">{formatCurrency(totalBookValue)}</p>
             </div>
           </div>
@@ -107,7 +107,7 @@ export default function FixedAssetsPage() {
           <button
             key={s}
             onClick={() => setFilterStatus(s)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${filterStatus === s ? 'bg-violet-500/30 text-violet-300 border border-violet-500/40' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${filterStatus === s ? 'bg-violet-500/30 text-violet-300 border border-violet-500/40' : 'bg-surface text-ink/50 hover:bg-surface'}`}
           >
             {s === 'all' ? 'الكل' : s === 'active' ? 'نشطة' : 'مستبعدة'}
             <span className="mr-2 text-xs opacity-60">
@@ -118,15 +118,15 @@ export default function FixedAssetsPage() {
       </div>
 
       {/* Table */}
-      <div className="glass-panel rounded-3xl border border-white/10 overflow-hidden">
+      <div className="glass-panel rounded-3xl border border-line overflow-hidden">
         {isLoading ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm"><tbody><TableSkeleton /></tbody></table>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Building2 className="w-14 h-14 text-white/10 mb-4" />
-            <p className="text-white/40">لا توجد أصول ثابتة</p>
+            <Building2 className="w-14 h-14 text-ink/10 mb-4" />
+            <p className="text-ink/40">لا توجد أصول ثابتة</p>
             <button
               onClick={() => setShowAdd(true)}
               className="mt-4 btn-primary px-5 py-2 text-sm flex items-center gap-2"
@@ -138,27 +138,27 @@ export default function FixedAssetsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 bg-white/5">
-                  <th className="text-right px-5 py-3 text-xs text-white/40 font-medium">الأصل</th>
-                  <th className="text-right px-5 py-3 text-xs text-white/40 font-medium">
+                <tr className="border-b border-line bg-surface">
+                  <th className="text-right px-5 py-3 text-xs text-ink/40 font-medium">الأصل</th>
+                  <th className="text-right px-5 py-3 text-xs text-ink/40 font-medium">
                     التصنيف
                   </th>
-                  <th className="text-right px-5 py-3 text-xs text-white/40 font-medium">
+                  <th className="text-right px-5 py-3 text-xs text-ink/40 font-medium">
                     تاريخ الشراء
                   </th>
-                  <th className="text-right px-5 py-3 text-xs text-white/40 font-medium">
+                  <th className="text-right px-5 py-3 text-xs text-ink/40 font-medium">
                     التكلفة
                   </th>
-                  <th className="text-right px-5 py-3 text-xs text-white/40 font-medium">
+                  <th className="text-right px-5 py-3 text-xs text-ink/40 font-medium">
                     مجمع الإهلاك
                   </th>
-                  <th className="text-right px-5 py-3 text-xs text-white/40 font-medium">
+                  <th className="text-right px-5 py-3 text-xs text-ink/40 font-medium">
                     القيمة الدفترية
                   </th>
-                  <th className="text-right px-5 py-3 text-xs text-white/40 font-medium">
+                  <th className="text-right px-5 py-3 text-xs text-ink/40 font-medium">
                     طريقة الإهلاك
                   </th>
-                  <th className="text-right px-5 py-3 text-xs text-white/40 font-medium">الحالة</th>
+                  <th className="text-right px-5 py-3 text-xs text-ink/40 font-medium">الحالة</th>
                 </tr>
               </thead>
               <tbody>
@@ -166,7 +166,7 @@ export default function FixedAssetsPage() {
                   <tr
                     key={asset.id}
                     onClick={() => setSelectedId(asset.id)}
-                    className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                    className="border-b border-line hover:bg-surface cursor-pointer transition-colors"
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
@@ -174,23 +174,23 @@ export default function FixedAssetsPage() {
                           <Building2 className="w-4 h-4 text-violet-400" />
                         </div>
                         <div>
-                          <p className="text-white font-semibold">{asset.name}</p>
-                          <p className="text-white/40 text-xs font-mono">{asset.code}</p>
+                          <p className="text-ink font-semibold">{asset.name}</p>
+                          <p className="text-ink/40 text-xs font-mono">{asset.code}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-white/60">
+                    <td className="px-5 py-3 text-ink/60">
                       {CATEGORIES[asset.category] ?? asset.category}
                     </td>
-                    <td className="px-5 py-3 text-white/60">{asset.purchase_date}</td>
-                    <td className="px-5 py-3 text-white">{formatCurrency(asset.purchase_cost)}</td>
+                    <td className="px-5 py-3 text-ink/60">{asset.purchase_date}</td>
+                    <td className="px-5 py-3 text-ink">{formatCurrency(asset.purchase_cost)}</td>
                     <td className="px-5 py-3 text-orange-300">
                       {formatCurrency(asset.accumulated_depreciation)}
                     </td>
                     <td className="px-5 py-3 text-emerald-300 font-bold">
                       {formatCurrency(asset.book_value)}
                     </td>
-                    <td className="px-5 py-3 text-white/60">
+                    <td className="px-5 py-3 text-ink/60">
                       {METHODS[asset.depreciation_method] ?? asset.depreciation_method}
                     </td>
                     <td className="px-5 py-3">

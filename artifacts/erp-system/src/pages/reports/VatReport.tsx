@@ -67,16 +67,16 @@ export default function VatReport({ warehouseId }: { warehouseId?: number | null
   return (
     <div className="space-y-4" dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
       {/* Controls */}
-      <div className="flex flex-wrap items-end gap-3 bg-white/5 rounded-2xl p-4 border border-white/10 no-print">
+      <div className="flex flex-wrap items-end gap-3 bg-surface rounded-2xl p-4 border border-line no-print">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-white/50">من تاريخ</label>
+          <label className="text-xs text-ink/50">من تاريخ</label>
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50" />
+            className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:border-amber-400/50" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-white/50">إلى تاريخ</label>
+          <label className="text-xs text-ink/50">إلى تاريخ</label>
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            className="bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50" />
+            className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:border-amber-400/50" />
         </div>
         <button onClick={handleGenerate} disabled={isLoading}
           className="flex items-center gap-2 px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition-all text-sm disabled:opacity-50">
@@ -102,10 +102,10 @@ export default function VatReport({ warehouseId }: { warehouseId?: number | null
               <ArrowUpCircle className="w-5 h-5 text-blue-400" />
             </div>
             <div className="text-2xl font-bold text-blue-300 mb-1">{formatCurrency(data.output_vat.tax_amount)}</div>
-            <div className="text-xs text-white/40">
+            <div className="text-xs text-ink/40">
               إجمالي المبيعات: {formatCurrency(data.output_vat.total_sales)}
             </div>
-            <div className="text-xs text-white/30 mt-1">{data.output_vat.invoice_count} فاتورة</div>
+            <div className="text-xs text-ink/30 mt-1">{data.output_vat.invoice_count} فاتورة</div>
           </div>
 
           {/* Input VAT */}
@@ -115,10 +115,10 @@ export default function VatReport({ warehouseId }: { warehouseId?: number | null
               <ArrowDownCircle className="w-5 h-5 text-amber-400" />
             </div>
             <div className="text-2xl font-bold text-amber-300 mb-1">{formatCurrency(data.input_vat.tax_amount)}</div>
-            <div className="text-xs text-white/40">
+            <div className="text-xs text-ink/40">
               إجمالي المشتريات: {formatCurrency(data.input_vat.total_purchases)}
             </div>
-            <div className="text-xs text-white/30 mt-1">{data.input_vat.invoice_count} فاتورة</div>
+            <div className="text-xs text-ink/30 mt-1">{data.input_vat.invoice_count} فاتورة</div>
           </div>
 
           {/* Net VAT */}
@@ -141,12 +141,12 @@ export default function VatReport({ warehouseId }: { warehouseId?: number | null
 
       {/* Explanation */}
       {data && (
-        <div className="bg-white/3 border border-white/8 rounded-2xl p-5 text-sm">
-          <h3 className="font-bold text-white/80 mb-3 flex items-center gap-2">
+        <div className="bg-surface border border-line rounded-2xl p-5 text-sm">
+          <h3 className="font-bold text-ink/80 mb-3 flex items-center gap-2">
             <Receipt className="w-4 h-4 text-amber-400" />
             تفاصيل احتساب ضريبة القيمة المضافة
           </h3>
-          <div className="space-y-2 text-white/60">
+          <div className="space-y-2 text-ink/60">
             <div className="flex justify-between">
               <span>ضريبة المخرجات (على المبيعات)</span>
               <span className="font-mono text-blue-300">{formatCurrency(data.output_vat.tax_amount)}</span>
@@ -155,21 +155,21 @@ export default function VatReport({ warehouseId }: { warehouseId?: number | null
               <span>ضريبة المدخلات (على المشتريات) — تُخصم</span>
               <span className="font-mono text-amber-300">({formatCurrency(data.input_vat.tax_amount)})</span>
             </div>
-            <div className="flex justify-between border-t border-white/10 pt-2 font-bold text-white/90">
+            <div className="flex justify-between border-t border-line pt-2 font-bold text-ink/90">
               <span>{data.vat_status}</span>
               <span className={`font-mono ${netPositive ? "text-red-300" : "text-emerald-300"}`}>
                 {formatCurrency(Math.abs(data.net_vat_payable))}
               </span>
             </div>
           </div>
-          <p className="text-xs text-white/30 mt-3">
+          <p className="text-xs text-ink/30 mt-3">
             * يُحتسب على أساس الفواتير المُرحَّلة فقط (posting_status = posted) خلال الفترة المحددة.
           </p>
         </div>
       )}
 
       {!data && !isLoading && (
-        <div className="text-center py-16 text-white/30">
+        <div className="text-center py-16 text-ink/30">
           <Receipt className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-lg font-bold mb-1">اختر فترة وانقر «توليد تقرير الضريبة»</p>
           <p className="text-sm">سيُعرض تقرير ضريبة القيمة المضافة مع تفاصيل المخرجات والمدخلات</p>

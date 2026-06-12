@@ -131,7 +131,7 @@ export default function ServiceTypesTab() {
       <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-3 space-y-3">
         {/* اسم الخدمة */}
         <div>
-          <label className="text-[10px] text-white/50 mb-1 block font-bold">اسم الخدمة</label>
+          <label className="text-[10px] text-ink/50 mb-1 block font-bold">اسم الخدمة</label>
           <input
             type="text"
             value={value.name_ar}
@@ -143,7 +143,7 @@ export default function ServiceTypesTab() {
         </div>
         {/* نوع الكوميشن */}
         <div>
-          <label className="text-[10px] text-white/50 mb-1.5 block font-bold">نوع الكوميشن</label>
+          <label className="text-[10px] text-ink/50 mb-1.5 block font-bold">نوع الكوميشن</label>
           <div className="grid grid-cols-3 gap-1.5">
             {(
               Object.entries(COMMISSION_TYPE_LABELS) as [
@@ -158,18 +158,18 @@ export default function ServiceTypesTab() {
                 className={`text-center py-2 px-2 rounded-lg border text-[10px] font-bold transition-all ${
                   value.commission_type === key
                     ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                    : 'bg-white/[0.03] border-white/8 text-white/45 hover:text-white/70 hover:border-white/15'
+                    : 'bg-surface border-line text-ink/45 hover:text-ink/70 hover:border-line'
                 }`}
               >
                 {meta.label}
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-white/35 mt-1">{meta.hint}</p>
+          <p className="text-[10px] text-ink/35 mt-1">{meta.hint}</p>
         </div>
         {/* قيمة الكوميشن */}
         <div>
-          <label className="text-[10px] text-white/50 mb-1 block font-bold">
+          <label className="text-[10px] text-ink/50 mb-1 block font-bold">
             {value.commission_type === 'fixed' ? 'المبلغ الثابت' : 'النسبة المئوية'}
           </label>
           <div className="flex items-center gap-2">
@@ -182,7 +182,7 @@ export default function ServiceTypesTab() {
               onChange={(e) => onChange({ ...value, commission_value: e.target.value })}
               className="erp-input flex-1 text-xs"
             />
-            <span className="text-[11px] text-white/40 font-bold shrink-0">{meta.suffix}</span>
+            <span className="text-[11px] text-ink/40 font-bold shrink-0">{meta.suffix}</span>
           </div>
         </div>
         {/* أزرار */}
@@ -190,18 +190,18 @@ export default function ServiceTypesTab() {
           <label className="flex items-center gap-2 cursor-pointer">
             <div
               onClick={() => onChange({ ...value, is_active: !value.is_active })}
-              className={`w-8 h-4 rounded-full relative transition-colors ${value.is_active ? 'bg-emerald-500/70' : 'bg-white/10'}`}
+              className={`w-8 h-4 rounded-full relative transition-colors ${value.is_active ? 'bg-emerald-500/70' : 'bg-surface'}`}
             >
               <span
                 className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-all ${value.is_active ? 'right-0.5' : 'left-0.5'}`}
               />
             </div>
-            <span className="text-[10px] text-white/50">{value.is_active ? 'نشط' : 'معطّل'}</span>
+            <span className="text-[10px] text-ink/50">{value.is_active ? 'نشط' : 'معطّل'}</span>
           </label>
           <div className="flex items-center gap-1.5">
             <button
               onClick={onCancel}
-              className="text-[11px] px-3 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-white/60 transition-all"
+              className="text-[11px] px-3 py-1.5 rounded-lg border border-line text-ink/40 hover:text-ink/60 transition-all"
             >
               إلغاء
             </button>
@@ -222,11 +222,11 @@ export default function ServiceTypesTab() {
   return (
     <div className="flex flex-col h-full overflow-hidden" dir="rtl">
       {/* Header */}
-      <div className="px-6 pt-5 pb-4 shrink-0 border-b border-white/5">
+      <div className="px-6 pt-5 pb-4 shrink-0 border-b border-line">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-[15px] font-black text-white">أنواع الخدمات والكوميشن</h3>
-            <p className="text-[11px] text-white/40 mt-0.5">
+            <h3 className="text-[15px] font-black text-ink">أنواع الخدمات والكوميشن</h3>
+            <p className="text-[11px] text-ink/40 mt-0.5">
               عرّف أنواع خدمات الصيانة وقواعد احتساب كوميشن الفنيين
             </p>
           </div>
@@ -272,7 +272,7 @@ export default function ServiceTypesTab() {
 
         {/* قائمة الأنواع */}
         {isLoading && (
-          <div className="text-center py-10 text-white/30 text-sm">جارٍ التحميل...</div>
+          <div className="text-center py-10 text-ink/30 text-sm">جارٍ التحميل...</div>
         )}
 
         {!isLoading && types.length === 0 && !adding && (
@@ -280,7 +280,7 @@ export default function ServiceTypesTab() {
             <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto">
               <GripVertical className="w-5 h-5 text-amber-400/40" />
             </div>
-            <p className="text-[12px] text-white/35">لم تُضف أنواع خدمات بعد</p>
+            <p className="text-[12px] text-ink/35">لم تُضف أنواع خدمات بعد</p>
             <button
               onClick={() => setAdding(true)}
               className="text-[11px] text-amber-400/70 hover:text-amber-300 transition-colors inline-flex items-center gap-1"
@@ -304,30 +304,30 @@ export default function ServiceTypesTab() {
               <div
                 className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all ${
                   t.is_active
-                    ? 'border-white/8 bg-white/[0.025] hover:bg-white/[0.04]'
-                    : 'border-white/4 bg-white/[0.01] opacity-50'
+                    ? 'border-line bg-surface hover:bg-surface'
+                    : 'border-line bg-surface opacity-50'
                 }`}
               >
                 {/* الاسم والنوع */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-bold text-white/90">{t.name_ar}</span>
+                    <span className="text-[12px] font-bold text-ink/90">{t.name_ar}</span>
                     {!t.is_active && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-white/30 border border-white/8">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface text-ink/30 border border-line">
                         معطّل
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-white/35">
+                    <span className="text-[10px] text-ink/35">
                       {COMMISSION_TYPE_LABELS[t.commission_type]?.label}
                     </span>
                     <span className="text-[10px] font-mono text-amber-400/70">
                       {Number(t.commission_value).toLocaleString('ar-EG')}
                       {t.commission_type === 'fixed' ? ' ج.م' : '%'}
                     </span>
-                    <span className="text-white/10 text-[9px]">·</span>
-                    <span className="text-[9px] text-white/20 font-mono">ترتيب {t.sort_order}</span>
+                    <span className="text-ink/10 text-[9px]">·</span>
+                    <span className="text-[9px] text-ink/20 font-mono">ترتيب {t.sort_order}</span>
                   </div>
                 </div>
 
@@ -336,7 +336,7 @@ export default function ServiceTypesTab() {
                   <button
                     onClick={() => toggleActive(t)}
                     title={t.is_active ? 'تعطيل' : 'تفعيل'}
-                    className="w-6 h-6 rounded-lg flex items-center justify-center text-white/25 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-ink/25 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
                   >
                     {t.is_active ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
                   </button>
@@ -352,7 +352,7 @@ export default function ServiceTypesTab() {
                       setAdding(false);
                     }}
                     title="تعديل"
-                    className="w-6 h-6 rounded-lg flex items-center justify-center text-white/25 hover:text-amber-300 hover:bg-amber-500/10 transition-all"
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-ink/25 hover:text-amber-300 hover:bg-amber-500/10 transition-all"
                   >
                     <Pencil className="w-3 h-3" />
                   </button>
@@ -361,7 +361,7 @@ export default function ServiceTypesTab() {
                       if (confirm(`حذف "${t.name_ar}"؟`)) deleteMutation.mutate(t.id);
                     }}
                     title="حذف"
-                    className="w-6 h-6 rounded-lg flex items-center justify-center text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-ink/25 hover:text-red-400 hover:bg-red-500/10 transition-all"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>

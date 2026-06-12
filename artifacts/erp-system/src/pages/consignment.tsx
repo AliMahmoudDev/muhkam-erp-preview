@@ -52,9 +52,9 @@ function StatCard({ label, value, icon, color }: {
         <div className={`p-2 rounded-xl ${color.replace("border-", "bg-").replace("/40", "/10")}`}>
           {icon}
         </div>
-        <span className="text-white/60 text-sm">{label}</span>
+        <span className="text-ink/60 text-sm">{label}</span>
       </div>
-      <p className="text-white font-black text-xl">{value}</p>
+      <p className="text-ink font-black text-xl">{value}</p>
     </div>
   );
 }
@@ -76,8 +76,8 @@ export default function ConsignmentPage() {
   if (isLoading) return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-white mb-1">تقرير الائتمان</h1>
-        <p className="text-white/40 text-sm">جاري التحميل...</p>
+        <h1 className="text-2xl font-black text-ink mb-1">تقرير الائتمان</h1>
+        <p className="text-ink/40 text-sm">جاري التحميل...</p>
       </div>
       <table className="w-full"><tbody><TableSkeleton /></tbody></table>
     </div>
@@ -104,8 +104,8 @@ export default function ConsignmentPage() {
           <Package className="w-6 h-6 text-violet-400" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-white">تقرير الائتمان</h1>
-          <p className="text-white/40 text-sm">بضاعة أُودعت بالأمانة — تتبع المستلم والمباع والمستحق</p>
+          <h1 className="text-2xl font-black text-ink">تقرير الائتمان</h1>
+          <p className="text-ink/40 text-sm">بضاعة أُودعت بالأمانة — تتبع المستلم والمباع والمستحق</p>
         </div>
       </div>
 
@@ -142,9 +142,9 @@ export default function ConsignmentPage() {
       {/* Empty state */}
       {suppliers.length === 0 && (
         <div className="glass-panel rounded-2xl p-16 text-center">
-          <Package className="w-12 h-12 text-white/20 mx-auto mb-4" />
-          <p className="text-white/40 text-sm">لا توجد فواتير ائتمان حتى الآن</p>
-          <p className="text-white/25 text-xs mt-1">أنشئ فاتورة شراء وفعّل خيار «ائتمان»</p>
+          <Package className="w-12 h-12 text-ink/20 mx-auto mb-4" />
+          <p className="text-ink/40 text-sm">لا توجد فواتير ائتمان حتى الآن</p>
+          <p className="text-ink/25 text-xs mt-1">أنشئ فاتورة شراء وفعّل خيار «ائتمان»</p>
         </div>
       )}
 
@@ -163,14 +163,14 @@ export default function ConsignmentPage() {
                   {sup.supplier_name.slice(0, 2)}
                 </div>
                 <div>
-                  <p className="font-bold text-white">{sup.supplier_name}</p>
-                  <p className="text-xs text-white/40 flex items-center gap-1">
+                  <p className="font-bold text-ink">{sup.supplier_name}</p>
+                  <p className="text-xs text-ink/40 flex items-center gap-1">
                     <Warehouse className="w-3 h-3" /> {sup.warehouse_name}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-white/50 bg-white/5 px-2 py-1 rounded-lg border border-white/10">
+                <span className="text-xs text-ink/50 bg-surface px-2 py-1 rounded-lg border border-line">
                   {sup.purchases.length} فاتورة
                 </span>
                 <span className={`text-xs font-bold px-3 py-1.5 rounded-xl border ${
@@ -193,19 +193,19 @@ export default function ConsignmentPage() {
               ].map((s) => (
                 <div key={s.label} className="p-4 text-center">
                   <p className={`font-black text-lg ${s.color}`}>{s.val}</p>
-                  {s.sub && <p className="text-xs text-white/40 mt-0.5">{s.sub}</p>}
-                  <p className="text-xs text-white/30 mt-1">{s.label}</p>
+                  {s.sub && <p className="text-xs text-ink/40 mt-0.5">{s.sub}</p>}
+                  <p className="text-xs text-ink/30 mt-1">{s.label}</p>
                 </div>
               ))}
             </div>
 
             {/* Progress bar */}
-            <div className="px-5 py-3 border-t border-white/5">
+            <div className="px-5 py-3 border-t border-line">
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-xs text-white/40">نسبة المبيعات</span>
-                <span className="text-xs font-bold text-white/60">{soldPct}%</span>
+                <span className="text-xs text-ink/40">نسبة المبيعات</span>
+                <span className="text-xs font-bold text-ink/60">{soldPct}%</span>
               </div>
-              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-surface rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-violet-500 to-green-500 transition-all"
                   style={{ width: `${soldPct}%` }}
@@ -214,14 +214,14 @@ export default function ConsignmentPage() {
             </div>
 
             {/* Purchases table */}
-            <details className="border-t border-white/10">
-              <summary className="px-5 py-3 text-xs text-white/40 cursor-pointer hover:text-white/60 flex items-center gap-2 select-none">
+            <details className="border-t border-line">
+              <summary className="px-5 py-3 text-xs text-ink/40 cursor-pointer hover:text-ink/60 flex items-center gap-2 select-none">
                 <span>▶ عرض الفواتير التفصيلية ({sup.purchases.length})</span>
               </summary>
               <div className="px-5 pb-4">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-white/40 border-b border-white/10">
+                    <tr className="text-ink/40 border-b border-line">
                       <th className="text-right py-2">رقم الفاتورة</th>
                       <th className="text-right py-2">التاريخ</th>
                       <th className="text-left py-2">القيمة</th>
@@ -229,10 +229,10 @@ export default function ConsignmentPage() {
                   </thead>
                   <tbody>
                     {sup.purchases.map(p => (
-                      <tr key={p.id} className="border-b border-white/5 hover:bg-white/5">
+                      <tr key={p.id} className="border-b border-line hover:bg-surface">
                         <td className="py-2 text-violet-300 font-mono font-bold">{p.invoice_no}</td>
-                        <td className="py-2 text-white/50">{p.date ?? "—"}</td>
-                        <td className="py-2 text-left font-bold text-white/80">{formatCurrency(Number(p.total_amount))}</td>
+                        <td className="py-2 text-ink/50">{p.date ?? "—"}</td>
+                        <td className="py-2 text-left font-bold text-ink/80">{formatCurrency(Number(p.total_amount))}</td>
                       </tr>
                     ))}
                   </tbody>

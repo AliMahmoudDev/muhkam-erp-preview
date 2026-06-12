@@ -88,8 +88,8 @@ export default function AccrualsPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">الاستحقاقات والمدفوعات المقدمة</h1>
-          <p className="text-white/50 text-sm mt-1">إدارة المصروفات/الإيرادات المؤجلة والمستحقة مع القيود التلقائية</p>
+          <h1 className="text-2xl font-bold text-ink">الاستحقاقات والمدفوعات المقدمة</h1>
+          <p className="text-ink/50 text-sm mt-1">إدارة المصروفات/الإيرادات المؤجلة والمستحقة مع القيود التلقائية</p>
         </div>
         <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4" /> إضافة جديد
@@ -97,14 +97,14 @@ export default function AccrualsPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center text-white/50 py-20">جاري التحميل...</div>
+        <div className="text-center text-ink/50 py-20">جاري التحميل...</div>
       ) : accruals.length === 0 ? (
-        <div className="text-center text-white/50 py-20">لا توجد سجلات بعد</div>
+        <div className="text-center text-ink/50 py-20">لا توجد سجلات بعد</div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-white/10">
+        <div className="overflow-x-auto rounded-xl border border-line">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-white/5 text-white/60 text-right">
+              <tr className="bg-surface text-ink/60 text-right">
                 {['النوع', 'التصنيف', 'البيان', 'الإجمالي', 'المُعترف به', 'المتبقي', 'التقدم', 'الحالة', 'إجراءات'].map(h => (
                   <th key={h} className="px-4 py-3 font-medium">{h}</th>
                 ))}
@@ -115,7 +115,7 @@ export default function AccrualsPage() {
                 const pct = Math.round((a.amount_recognized / a.total_amount) * 100);
                 const remaining = a.total_amount - a.amount_recognized;
                 return (
-                  <tr key={a.id} className="hover:bg-white/[0.02] text-white/85">
+                  <tr key={a.id} className="hover:bg-surface text-ink/85">
                     <td className="px-4 py-3 font-medium">{typeLabel[a.type]}</td>
                     <td className="px-4 py-3">{categoryLabel[a.category]}</td>
                     <td className="px-4 py-3 max-w-[200px] truncate">{a.description}</td>
@@ -124,10 +124,10 @@ export default function AccrualsPage() {
                     <td className="px-4 py-3 font-mono text-amber-400">{formatCurrency(remaining)}</td>
                     <td className="px-4 py-3 min-w-[120px]">
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div className="flex-1 h-2 bg-surface rounded-full overflow-hidden">
                           <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="text-xs text-white/50">{pct}%</span>
+                        <span className="text-xs text-ink/50">{pct}%</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -166,7 +166,7 @@ export default function AccrualsPage() {
               <div className="space-y-2">
                 <Label>النوع</Label>
                 <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
-                  <SelectTrigger className="bg-white/5 border-white/10"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="bg-surface border-line"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="prepayment">مدفوع مقدماً</SelectItem>
                     <SelectItem value="accrual">مستحق</SelectItem>
@@ -176,7 +176,7 @@ export default function AccrualsPage() {
               <div className="space-y-2">
                 <Label>التصنيف</Label>
                 <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                  <SelectTrigger className="bg-white/5 border-white/10"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="bg-surface border-line"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="expense">مصروف</SelectItem>
                     <SelectItem value="revenue">إيراد</SelectItem>
@@ -186,30 +186,30 @@ export default function AccrualsPage() {
             </div>
             <div className="space-y-2">
               <Label>البيان</Label>
-              <Input className="bg-white/5 border-white/10" placeholder="وصف الاستحقاق..."
+              <Input className="bg-surface border-line" placeholder="وصف الاستحقاق..."
                 value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>المبلغ الإجمالي</Label>
-                <Input type="number" className="bg-white/5 border-white/10" placeholder="0.00"
+                <Input type="number" className="bg-surface border-line" placeholder="0.00"
                   value={form.total_amount} onChange={e => setForm(f => ({ ...f, total_amount: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>عدد الأشهر</Label>
-                <Input type="number" className="bg-white/5 border-white/10" min="1" max="60"
+                <Input type="number" className="bg-surface border-line" min="1" max="60"
                   value={form.months_total} onChange={e => setForm(f => ({ ...f, months_total: e.target.value }))} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>تاريخ البداية</Label>
-                <Input type="date" className="bg-white/5 border-white/10"
+                <Input type="date" className="bg-surface border-line"
                   value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>تاريخ النهاية</Label>
-                <Input type="date" className="bg-white/5 border-white/10"
+                <Input type="date" className="bg-surface border-line"
                   value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} />
               </div>
             </div>
@@ -233,14 +233,14 @@ export default function AccrualsPage() {
           <DialogHeader><DialogTitle>تسجيل الاستحقاق الشهري</DialogTitle></DialogHeader>
           {showRecognize && (
             <div className="space-y-4">
-              <div className="rounded-lg bg-white/5 p-3 space-y-1 text-sm">
-                <p className="text-white/60">البيان: <span className="text-white">{showRecognize.description}</span></p>
-                <p className="text-white/60">القسط الشهري: <span className="text-green-400 font-mono">{formatCurrency(showRecognize.monthly_amount)}</span></p>
-                <p className="text-white/60">المتبقي: <span className="text-amber-400 font-mono">{formatCurrency(showRecognize.total_amount - showRecognize.amount_recognized)}</span></p>
+              <div className="rounded-lg bg-surface p-3 space-y-1 text-sm">
+                <p className="text-ink/60">البيان: <span className="text-ink">{showRecognize.description}</span></p>
+                <p className="text-ink/60">القسط الشهري: <span className="text-green-400 font-mono">{formatCurrency(showRecognize.monthly_amount)}</span></p>
+                <p className="text-ink/60">المتبقي: <span className="text-amber-400 font-mono">{formatCurrency(showRecognize.total_amount - showRecognize.amount_recognized)}</span></p>
               </div>
               <div className="space-y-2">
                 <Label>الفترة (YYYY-MM)</Label>
-                <Input type="month" className="bg-white/5 border-white/10"
+                <Input type="month" className="bg-surface border-line"
                   value={period} onChange={e => setPeriod(e.target.value)} />
               </div>
               <Button className="w-full bg-green-600 hover:bg-green-700"

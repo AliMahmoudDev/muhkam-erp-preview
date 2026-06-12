@@ -35,7 +35,7 @@ export default function FilterPanel({
     <>
       <div className="flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
           <input
             className="glass-input w-full icon-pr text-sm"
             placeholder="ابحث عن منتج أو صنف..."
@@ -45,7 +45,7 @@ export default function FilterPanel({
         </div>
         <button
           onClick={() => setLowStockOnly(!lowStockOnly)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${lowStockOnly ? 'bg-red-500/20 border-red-500/40 text-red-400' : 'glass-panel border-white/10 text-white/50'}`}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${lowStockOnly ? 'bg-red-500/20 border-red-500/40 text-red-400' : 'glass-panel border-line text-ink/50'}`}
         >
           <AlertTriangle className="w-3.5 h-3.5" /> نافدة فقط
         </button>
@@ -53,14 +53,14 @@ export default function FilterPanel({
           <select
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as SortMode)}
-            className="glass-input rounded-xl px-3 py-2 text-xs font-bold text-white/70 appearance-none pl-8 cursor-pointer"
+            className="glass-input rounded-xl px-3 py-2 text-xs font-bold text-ink/70 appearance-none pl-8 cursor-pointer"
           >
             <option value="default">الترتيب الافتراضي</option>
             <option value="value">الأعلى قيمة</option>
             <option value="profit">الأعلى ربحاً</option>
             <option value="lowStock">الأقل مخزوناً</option>
           </select>
-          <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/30 pointer-events-none" />
+          <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-ink/30 pointer-events-none" />
         </div>
         <button
           onClick={() => exportTableToPDF({
@@ -79,7 +79,7 @@ export default function FilterPanel({
         </button>
       </div>
 
-      <div className="flex items-center gap-1 flex-wrap border-b border-white/8 pb-2">
+      <div className="flex items-center gap-1 flex-wrap border-b border-line pb-2">
         {(
           [
             { id: '', label: `الكل (${products.length})` },
@@ -92,7 +92,7 @@ export default function FilterPanel({
           <button
             key={cat.id}
             onClick={() => setCatFilter(cat.id)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-t-lg transition-all relative ${catFilter === cat.id ? 'text-amber-400' : 'text-white/40 hover:text-white/70'}`}
+            className={`px-3 py-1.5 text-xs font-bold rounded-t-lg transition-all relative ${catFilter === cat.id ? 'text-amber-400' : 'text-ink/40 hover:text-ink/70'}`}
           >
             {cat.label}
             {catFilter === cat.id && (

@@ -19,7 +19,7 @@ import { useSalaryMutations } from './salary-modal';
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs text-white/50">{label}</label>
+      <label className="text-xs text-ink/50">{label}</label>
       {children}
     </div>
   );
@@ -165,8 +165,8 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center" dir="rtl">
               <UserX size={36} className="text-red-400 mx-auto mb-3" />
-              <h2 className="text-lg font-bold text-white mb-1">حذف الموظف</h2>
-              <p className="text-white/50 text-sm mb-4">
+              <h2 className="text-lg font-bold text-ink mb-1">حذف الموظف</h2>
+              <p className="text-ink/50 text-sm mb-4">
                 هل أنت متأكد من حذف هذا الموظف؟ لا يمكن التراجع عن هذه العملية.
               </p>
               <div className="flex gap-2">
@@ -189,12 +189,12 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
         {showLoanForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-              <div className="flex items-center justify-between p-5 border-b border-white/10">
-                <h2 className="font-bold text-white flex items-center gap-2">
+              <div className="flex items-center justify-between p-5 border-b border-line">
+                <h2 className="font-bold text-ink flex items-center gap-2">
                   <Banknote size={16} className="text-amber-400" />
                   سلفة جديدة — {selected?.first_name_ar} {selected?.last_name_ar}
                 </h2>
-                <button onClick={() => setShowLoanForm(false)} className="text-white/40 hover:text-white">
+                <button onClick={() => setShowLoanForm(false)} className="text-ink/40 hover:text-ink">
                   <X size={18} />
                 </button>
               </div>
@@ -263,7 +263,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   </div>
                 )}
               </div>
-              <div className="flex gap-2 p-5 border-t border-white/10">
+              <div className="flex gap-2 p-5 border-t border-line">
                 <button
                   onClick={() => createLoan.mutate({ employee_id: selected?.id, ...loanForm, requested_amount: Number(loanForm.requested_amount) })}
                   disabled={!loanForm.requested_amount || createLoan.isPending}
@@ -281,9 +281,9 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
         {showPayModal != null && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-sm" dir="rtl">
-              <div className="flex items-center justify-between p-4 border-b border-white/10">
-                <h2 className="font-bold text-white">تسجيل دفعة / خصم</h2>
-                <button onClick={() => setShowPayModal(null)} className="text-white/40 hover:text-white">
+              <div className="flex items-center justify-between p-4 border-b border-line">
+                <h2 className="font-bold text-ink">تسجيل دفعة / خصم</h2>
+                <button onClick={() => setShowPayModal(null)} className="text-ink/40 hover:text-ink">
                   <X size={16} />
                 </button>
               </div>
@@ -299,7 +299,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   />
                 </Field>
               </div>
-              <div className="flex gap-2 p-4 border-t border-white/10">
+              <div className="flex gap-2 p-4 border-t border-line">
                 <button
                   onClick={() => manualPay.mutate({ id: showPayModal, amount: Number(payAmount) })}
                   disabled={!payAmount || Number(payAmount) <= 0 || manualPay.isPending}
@@ -317,12 +317,12 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
         {showDeductForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-              <div className="flex items-center justify-between p-5 border-b border-white/10">
-                <h2 className="font-bold text-white flex items-center gap-2">
+              <div className="flex items-center justify-between p-5 border-b border-line">
+                <h2 className="font-bold text-ink flex items-center gap-2">
                   <MinusCircle size={16} className="text-red-400" />
                   خصم من الراتب — {selected?.first_name_ar} {selected?.last_name_ar}
                 </h2>
-                <button onClick={() => setShowDeductForm(false)} className="text-white/40 hover:text-white">
+                <button onClick={() => setShowDeductForm(false)} className="text-ink/40 hover:text-ink">
                   <X size={18} />
                 </button>
               </div>
@@ -340,7 +340,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                           className={`p-2 rounded-lg border text-xs font-semibold transition-all ${
                             active
                               ? `${info.bg} ${info.border} ${info.color} ring-1 ring-white/20`
-                              : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
+                              : 'bg-surface border-line text-ink/60 hover:bg-surface'
                           }`}
                         >
                           {info.label}
@@ -381,7 +381,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   />
                 </Field>
               </div>
-              <div className="flex gap-2 p-5 border-t border-white/10">
+              <div className="flex gap-2 p-5 border-t border-line">
                 <button
                   onClick={() => createDeduction.mutate({ amount: Number(deductForm.amount), reason: deductForm.reason, deduction_type: deductForm.deduction_type, deduction_date: deductForm.deduction_date })}
                   disabled={!deductForm.amount || Number(deductForm.amount) <= 0 || createDeduction.isPending}
@@ -399,12 +399,12 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
         {showBonusForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-              <div className="flex items-center justify-between p-5 border-b border-white/10">
-                <h2 className="font-bold text-white flex items-center gap-2">
+              <div className="flex items-center justify-between p-5 border-b border-line">
+                <h2 className="font-bold text-ink flex items-center gap-2">
                   <Award size={16} className="text-emerald-400" />
                   إضافة حافز — {selected?.first_name_ar} {selected?.last_name_ar}
                 </h2>
-                <button onClick={() => setShowBonusForm(false)} className="text-white/40 hover:text-white">
+                <button onClick={() => setShowBonusForm(false)} className="text-ink/40 hover:text-ink">
                   <X size={18} />
                 </button>
               </div>
@@ -436,7 +436,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   />
                 </Field>
               </div>
-              <div className="flex gap-2 p-5 border-t border-white/10">
+              <div className="flex gap-2 p-5 border-t border-line">
                 <button
                   onClick={() => createBonus.mutate({ employee_id: selected?.id, amount: Number(bonusForm.amount), reason: bonusForm.reason || null, granted_date: bonusForm.granted_date })}
                   disabled={!bonusForm.amount || Number(bonusForm.amount) <= 0 || createBonus.isPending}
@@ -454,12 +454,12 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
         {showCustodyForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-              <div className="flex items-center justify-between p-5 border-b border-white/10">
-                <h2 className="font-bold text-white flex items-center gap-2">
+              <div className="flex items-center justify-between p-5 border-b border-line">
+                <h2 className="font-bold text-ink flex items-center gap-2">
                   <Package size={16} className="text-amber-400" />
                   إضافة عهدة — {selected?.first_name_ar} {selected?.last_name_ar}
                 </h2>
-                <button onClick={() => setShowCustodyForm(false)} className="text-white/40 hover:text-white">
+                <button onClick={() => setShowCustodyForm(false)} className="text-ink/40 hover:text-ink">
                   <X size={18} />
                 </button>
               </div>
@@ -515,7 +515,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   />
                 </Field>
               </div>
-              <div className="flex gap-2 p-5 border-t border-white/10">
+              <div className="flex gap-2 p-5 border-t border-line">
                 <button
                   onClick={() => createCustody.mutate({ employee_id: selected?.id, amount: Number(custodyForm.amount), purpose: custodyForm.purpose || null, granted_date: custodyForm.granted_date, notes: custodyForm.notes || null, safe_id: custodyForm.safe_id || null })}
                   disabled={!custodyForm.amount || Number(custodyForm.amount) <= 0 || createCustody.isPending}
@@ -543,25 +543,25 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
           return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
               <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]" dir="rtl">
-                <div className="flex items-center justify-between p-4 border-b border-white/10">
-                  <h2 className="font-bold text-white flex items-center gap-2">
+                <div className="flex items-center justify-between p-4 border-b border-line">
+                  <h2 className="font-bold text-ink flex items-center gap-2">
                     <CheckCircle size={16} className="text-emerald-400" /> تسوية العهدة
-                    {current && <span className="text-xs text-white/60 mr-2">(إجمالي: {original.toLocaleString('ar-EG-u-nu-latn')})</span>}
+                    {current && <span className="text-xs text-ink/60 mr-2">(إجمالي: {original.toLocaleString('ar-EG-u-nu-latn')})</span>}
                   </h2>
-                  <button onClick={() => setShowSettleCustody(null)} className="text-white/40 hover:text-white">
+                  <button onClick={() => setShowSettleCustody(null)} className="text-ink/40 hover:text-ink">
                     <X size={16} />
                   </button>
                 </div>
                 <div className="p-4 space-y-3 overflow-auto">
-                  <div className="text-xs text-white/60">أدخل تفاصيل المصروفات الفعلية. كل بند سيُسجَّل كمصروف منفصل.</div>
+                  <div className="text-xs text-ink/60">أدخل تفاصيل المصروفات الفعلية. كل بند سيُسجَّل كمصروف منفصل.</div>
                   {settleLines.map((line, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2 p-2 rounded-lg bg-white/5 border border-white/10">
+                    <div key={idx} className="grid grid-cols-12 gap-2 p-2 rounded-lg bg-surface border border-line">
                       <div className="col-span-3">
-                        <label className="text-[10px] text-white/50">المبلغ</label>
+                        <label className="text-[10px] text-ink/50">المبلغ</label>
                         <input type="number" value={line.amount} onChange={(e) => setSettleLines((arr) => arr.map((l, i) => i === idx ? { ...l, amount: e.target.value } : l))} className="erp-input w-full text-sm" min={0} step="0.01" />
                       </div>
                       <div className="col-span-3">
-                        <label className="text-[10px] text-white/50">نوع المصروف</label>
+                        <label className="text-[10px] text-ink/50">نوع المصروف</label>
                         <select value={line.category} onChange={(e) => setSettleLines((arr) => arr.map((l, i) => i === idx ? { ...l, category: e.target.value } : l))} className="erp-input w-full text-sm">
                           <option value="">— اختر —</option>
                           {expenseCategories.map((c) => (
@@ -570,11 +570,11 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                         </select>
                       </div>
                       <div className="col-span-2">
-                        <label className="text-[10px] text-white/50">التاريخ</label>
+                        <label className="text-[10px] text-ink/50">التاريخ</label>
                         <input type="date" value={line.date} onChange={(e) => setSettleLines((arr) => arr.map((l, i) => i === idx ? { ...l, date: e.target.value } : l))} className="erp-input w-full text-sm" />
                       </div>
                       <div className="col-span-3">
-                        <label className="text-[10px] text-white/50">الوصف</label>
+                        <label className="text-[10px] text-ink/50">الوصف</label>
                         <input value={line.description} onChange={(e) => setSettleLines((arr) => arr.map((l, i) => i === idx ? { ...l, description: e.target.value } : l))} className="erp-input w-full text-sm" placeholder="اختياري" />
                       </div>
                       <div className="col-span-1 flex items-end justify-center">
@@ -587,9 +587,9 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   <button type="button" onClick={() => setSettleLines((arr) => [...arr, blankSettleLine()])} className="erp-btn erp-btn-ghost text-xs">
                     + إضافة بند مصروف
                   </button>
-                  <div className="grid grid-cols-3 gap-2 mt-2 p-3 rounded-lg bg-white/5 border border-white/10 text-sm">
-                    <div><div className="text-[10px] text-white/50">إجمالي العهدة</div><div className="font-bold text-white">{original.toLocaleString('ar-EG-u-nu-latn')}</div></div>
-                    <div><div className="text-[10px] text-white/50">إجمالي المصروفات</div><div className="font-bold text-amber-300">{sumLines.toLocaleString('ar-EG-u-nu-latn')}</div></div>
+                  <div className="grid grid-cols-3 gap-2 mt-2 p-3 rounded-lg bg-surface border border-line text-sm">
+                    <div><div className="text-[10px] text-ink/50">إجمالي العهدة</div><div className="font-bold text-ink">{original.toLocaleString('ar-EG-u-nu-latn')}</div></div>
+                    <div><div className="text-[10px] text-ink/50">إجمالي المصروفات</div><div className="font-bold text-amber-300">{sumLines.toLocaleString('ar-EG-u-nu-latn')}</div></div>
                     <div>
                       {overspent ? (
                         <><div className="text-[10px] text-rose-300">مستحق للموظف</div><div className="font-bold text-rose-300">{reimbursement.toLocaleString('ar-EG-u-nu-latn')}</div></>
@@ -607,7 +607,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                     <input value={settleNotes} onChange={(e) => setSettleNotes(e.target.value)} className="erp-input w-full" />
                   </Field>
                 </div>
-                <div className="flex gap-2 p-4 border-t border-white/10">
+                <div className="flex gap-2 p-4 border-t border-line">
                   <button
                     onClick={() => settleCustody.mutate({
                       id: showSettleCustody,
@@ -641,14 +641,14 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
               <div className="erp-card max-w-md w-full p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-base font-bold">صرف مستحقات الموظف</h3>
-                  <button onClick={() => setShowReimburseCustody(null)} className="text-white/40 hover:text-white">✕</button>
+                  <button onClick={() => setShowReimburseCustody(null)} className="text-ink/40 hover:text-ink">✕</button>
                 </div>
                 <div className="bg-rose-500/10 border border-rose-400/30 rounded p-2 text-xs text-rose-200 mb-3">
                   المبلغ المستحق: <span className="font-mono font-bold">{fmt(due)}</span> {String(current?.['currency'] ?? 'EGP')}
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <label className="text-xs text-white/60 block mb-1">خزينة الصرف *</label>
+                    <label className="text-xs text-ink/60 block mb-1">خزينة الصرف *</label>
                     <select value={reimburseSafeId} onChange={(e) => setReimburseSafeId(e.target.value)} className="erp-input w-full text-xs">
                       <option value="">— اختر —</option>
                       {eligibleSafes.map((s) => (
@@ -657,7 +657,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-white/60 block mb-1">ملاحظات</label>
+                    <label className="text-xs text-ink/60 block mb-1">ملاحظات</label>
                     <input value={reimburseNotes} onChange={(e) => setReimburseNotes(e.target.value)} placeholder="(اختياري)" className="erp-input w-full text-xs" />
                   </div>
                 </div>
@@ -680,12 +680,12 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
         {approveModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="erp-modal rounded-2xl shadow-2xl w-full max-w-md" dir="rtl">
-              <div className="flex items-center justify-between p-5 border-b border-white/10">
-                <h2 className="font-bold text-white flex items-center gap-2">
+              <div className="flex items-center justify-between p-5 border-b border-line">
+                <h2 className="font-bold text-ink flex items-center gap-2">
                   <CheckCircle size={16} className="text-emerald-400" />
                   اعتماد السلفة
                 </h2>
-                <button onClick={() => setApproveModal(null)} className="text-white/40 hover:text-white">
+                <button onClick={() => setApproveModal(null)} className="text-ink/40 hover:text-ink">
                   <X size={18} />
                 </button>
               </div>
@@ -727,7 +727,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   />
                 </Field>
               </div>
-              <div className="flex gap-2 p-5 border-t border-white/10">
+              <div className="flex gap-2 p-5 border-t border-line">
                 <button
                   onClick={() => {
                     if (!approveForm.safe_id) {

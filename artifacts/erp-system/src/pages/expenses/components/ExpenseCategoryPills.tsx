@@ -16,7 +16,7 @@ export function ExpenseCategoryPills({
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-white/25 text-xs font-medium shrink-0 ml-1">اختصارات الشهر:</span>
+      <span className="text-ink/25 text-xs font-medium shrink-0 ml-1">اختصارات الشهر:</span>
       {categoryBreakdown.slice(0, 6).map(({ cat, amt }) => {
         const active = catFilter === cat;
         return (
@@ -26,7 +26,7 @@ export function ExpenseCategoryPills({
             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
               active
                 ? 'bg-orange-500/25 text-orange-200 border-orange-400/40 shadow-[0_0_12px_rgba(249,115,22,0.2)]'
-                : 'bg-white/[0.04] text-white/55 border-white/[0.08] hover:bg-white/[0.08] hover:text-white/80 hover:border-white/15'
+                : 'bg-surface text-ink/55 border-line hover:bg-surface hover:text-ink/80 hover:border-line'
             }`}
           >
             <span>{cat}</span>
@@ -39,7 +39,7 @@ export function ExpenseCategoryPills({
       {catFilter && (
         <button
           onClick={() => setCatFilter('')}
-          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs text-white/30 hover:text-white/60 border border-white/8 hover:border-white/15 transition-all"
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs text-ink/30 hover:text-ink/60 border border-line hover:border-line transition-all"
         >
           <X className="w-3 h-3" /> إلغاء
         </button>

@@ -61,34 +61,34 @@ export function SellModal({ device, onClose, onDone }: { device: Device; onClose
     } finally { setSaving(false); }
   };
 
-  const lCls = "text-[11px] text-white/40 mb-1 block text-right";
+  const lCls = "text-[11px] text-ink/40 mb-1 block text-right";
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 bg-black/70 backdrop-blur-sm overflow-y-auto" dir="rtl">
-      <div className="glass-panel rounded-2xl border border-white/10 w-full max-w-sm mx-4 my-4">
+      <div className="glass-panel rounded-2xl border border-line w-full max-w-sm mx-4 my-4">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-line">
           <div className="flex items-center gap-2">
             <ShoppingCart className="w-4 h-4 text-emerald-400" />
             <div>
-              <span className="font-bold text-white text-sm">بيع الجهاز</span>
-              <p className="text-[10px] text-white/30">{device.brand} {device.model}</p>
+              <span className="font-bold text-ink text-sm">بيع الجهاز</span>
+              <p className="text-[10px] text-ink/30">{device.brand} {device.model}</p>
             </div>
           </div>
-          <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
+          <button onClick={onClose} className="btn-icon text-ink/40 hover:text-ink">
             <XCircle className="w-4 h-4" />
           </button>
         </div>
 
         {/* Device summary */}
-        <div className="mx-4 mt-4 flex items-center gap-3 p-3 bg-white/4 rounded-xl border border-white/8">
+        <div className="mx-4 mt-4 flex items-center gap-3 p-3 bg-surface rounded-xl border border-line">
           <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
             <Smartphone className="w-5 h-5 text-violet-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-white text-sm truncate">{device.brand} {device.model}</p>
-            <p className="text-white/40 text-xs mt-0.5">
+            <p className="font-bold text-ink text-sm truncate">{device.brand} {device.model}</p>
+            <p className="text-ink/40 text-xs mt-0.5">
               {device.storage && <span className="ml-2">{device.storage}</span>}
               {device.color && <span className="ml-2">· {device.color}</span>}
               {device.imei && <span className="ml-2 font-mono">· IMEI: ···{device.imei.slice(-4)}</span>}
@@ -96,7 +96,7 @@ export function SellModal({ device, onClose, onDone }: { device: Device; onClose
           </div>
           <div className="text-right">
             <p className="text-emerald-400 font-bold text-sm">{finalPrice.toLocaleString()} ج.م</p>
-            <p className="text-white/25 text-[10px]">سعر البيع</p>
+            <p className="text-ink/25 text-[10px]">سعر البيع</p>
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export function SellModal({ device, onClose, onDone }: { device: Device; onClose
             )}
             {customerId && (
               <button onClick={() => setCustomerId("")}
-                className="mt-1 text-xs text-white/30 hover:text-red-400 transition-colors">
+                className="mt-1 text-xs text-ink/30 hover:text-red-400 transition-colors">
                 × إلغاء التحديد
               </button>
             )}
@@ -151,14 +151,14 @@ export function SellModal({ device, onClose, onDone }: { device: Device; onClose
                   disabled={discountType === "none"}
                   className="erp-input w-full text-sm disabled:opacity-40 disabled:cursor-not-allowed" />
                 {discountType === "percent" && (
-                  <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/30 pointer-events-none" />
+                  <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-ink/30 pointer-events-none" />
                 )}
               </div>
             </div>
           </div>
           {discountType !== "none" && discountAmount > 0 && (
             <div className="flex items-center justify-between bg-amber-500/8 border border-amber-500/20 rounded-lg px-3 py-2 text-xs">
-              <span className="text-white/50">الخصم: {discountAmount.toLocaleString()} ج.م</span>
+              <span className="text-ink/50">الخصم: {discountAmount.toLocaleString()} ج.م</span>
               <span className="text-emerald-400 font-bold">الإجمالي بعد الخصم: {finalPrice.toLocaleString()} ج.م</span>
             </div>
           )}
@@ -172,7 +172,7 @@ export function SellModal({ device, onClose, onDone }: { device: Device; onClose
                   className={`py-2 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-0.5 ${
                     payMethod === v
                       ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
-                      : "border-white/10 bg-white/3 text-white/40 hover:text-white/70"
+                      : "border-line bg-surface text-ink/40 hover:text-ink/70"
                   }`}>{l}</button>
               ))}
             </div>
@@ -189,7 +189,7 @@ export function SellModal({ device, onClose, onDone }: { device: Device; onClose
               ] as [PaymentStatus, string, string][]).map(([v, l, cls]) => (
                 <button key={v} onClick={() => setPayStatus(v)}
                   className={`py-2 rounded-xl border text-xs font-bold transition-all ${
-                    payStatus === v ? cls : "border-white/10 bg-white/3 text-white/40 hover:text-white/70"
+                    payStatus === v ? cls : "border-line bg-surface text-ink/40 hover:text-ink/70"
                   }`}>{l}</button>
               ))}
             </div>
@@ -205,7 +205,7 @@ export function SellModal({ device, onClose, onDone }: { device: Device; onClose
             </div>
             <div>
               <label className={lCls}>البائع</label>
-              <div className="erp-input w-full text-sm text-white/50 flex items-center gap-1.5">
+              <div className="erp-input w-full text-sm text-ink/50 flex items-center gap-1.5">
                 <User className="w-3 h-3 shrink-0" />
                 <span className="truncate">{(user as { name?: string })?.name ?? "—"}</span>
               </div>
@@ -215,7 +215,7 @@ export function SellModal({ device, onClose, onDone }: { device: Device; onClose
 
         {/* Footer */}
         <div className="px-4 pb-4 flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80">
+          <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-line text-ink/50 text-sm hover:text-ink/80">
             إلغاء
           </button>
           <button onClick={handleSell} disabled={saving}

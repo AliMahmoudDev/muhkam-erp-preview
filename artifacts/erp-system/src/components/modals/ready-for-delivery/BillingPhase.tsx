@@ -110,19 +110,19 @@ export default function BillingPhase({
       <div className="overflow-y-auto max-h-[68vh]">
 
         {/* ── فاتورة العميل — بنود الخدمة ── */}
-        <div className="px-5 pt-4 pb-3 border-b border-white/5">
-          <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
+        <div className="px-5 pt-4 pb-3 border-b border-line">
+          <h4 className="text-[12px] font-black text-ink/80 mb-3 flex items-center gap-2">
             <span className="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-[9px] text-emerald-300 font-black">١</span>
             <Wrench className="w-3.5 h-3.5 text-emerald-400/70" />
             بنود الخدمة
           </h4>
 
           {serviceLines.length === 0 ? (
-            <div className="rounded-xl border border-white/8 p-4 text-center">
-              <p className="text-[11px] text-white/40">لا توجد بنود خدمة مسجّلة</p>
+            <div className="rounded-xl border border-line p-4 text-center">
+              <p className="text-[11px] text-ink/40">لا توجد بنود خدمة مسجّلة</p>
               {finalCostBase > 0 && (
-                <p className="text-[11px] text-white/60 mt-1">
-                  التكلفة المسجّلة: <span className="font-bold text-white">{fmtCurrency(finalCostBase)}</span>
+                <p className="text-[11px] text-ink/60 mt-1">
+                  التكلفة المسجّلة: <span className="font-bold text-ink">{fmtCurrency(finalCostBase)}</span>
                 </p>
               )}
             </div>
@@ -134,7 +134,7 @@ export default function BillingPhase({
                 return (
                   <div
                     key={sv.id}
-                    className="rounded-xl border border-white/8 bg-white/[0.02] p-3"
+                    className="rounded-xl border border-line bg-surface p-3"
                   >
                     {/* رقم + اسم الخدمة + المبلغ */}
                     <div className="flex items-start justify-between gap-2">
@@ -143,7 +143,7 @@ export default function BillingPhase({
                           {idx + 1}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[12px] font-bold text-white truncate">
+                          <p className="text-[12px] font-bold text-ink truncate">
                             {sv.service_type_name_snapshot || "خدمة"}
                           </p>
                           {/* قطع الغيار المرتبطة — الأسماء فقط للعميل */}
@@ -174,22 +174,22 @@ export default function BillingPhase({
         </div>
 
         {/* ── ملخص الإجمالي ── */}
-        <div className="px-5 py-3 border-b border-white/5 bg-white/[0.015]">
+        <div className="px-5 py-3 border-b border-line bg-surface">
           {servicesTotal > 0 && (
             <div className="flex items-center justify-between text-[11px] mb-1">
-              <span className="text-white/50">مجموع بنود الخدمة</span>
+              <span className="text-ink/50">مجموع بنود الخدمة</span>
               <span className="font-bold text-emerald-300">{fmtCurrency(servicesTotal)}</span>
             </div>
           )}
-          <div className="flex items-center justify-between text-[13px] font-black pt-1 border-t border-white/8">
-            <span className="text-white">الإجمالي المستحق</span>
+          <div className="flex items-center justify-between text-[13px] font-black pt-1 border-t border-line">
+            <span className="text-ink">الإجمالي المستحق</span>
             <span className="text-lime-300">{fmtCurrency(grandTotal)}</span>
           </div>
         </div>
 
         {/* طريقة الدفع */}
-        <div className="px-5 pt-4 pb-3 border-b border-white/5">
-          <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
+        <div className="px-5 pt-4 pb-3 border-b border-line">
+          <h4 className="text-[12px] font-black text-ink/80 mb-3 flex items-center gap-2">
             <span className="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-[9px] text-emerald-300 font-black">٢</span>
             طريقة الدفع
           </h4>
@@ -213,7 +213,7 @@ export default function BillingPhase({
                     {row.type === "cash" ? <Coins className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                     {row.type === "cash" ? (safes.find(s => s.id === row.safe_id)?.name ?? "نقدي") : "آجل"}
                   </span>
-                  <span className="font-black text-sm text-white mr-auto">{fmtCurrency(row.amount)}</span>
+                  <span className="font-black text-sm text-ink mr-auto">{fmtCurrency(row.amount)}</span>
                 </div>
               ))}
             </div>
@@ -221,11 +221,11 @@ export default function BillingPhase({
 
           {grandTotal > 0 && (
             <div className="mb-3">
-              <div className="flex justify-between text-[10px] text-white/50 mb-1">
+              <div className="flex justify-between text-[10px] text-ink/50 mb-1">
                 <span>{payIsDone ? "✓ مكتمل" : `متبقي: ${fmtCurrency(remaining)}`}</span>
                 <span>{Math.min(100, Math.round((paidSoFar / grandTotal) * 100))}%</span>
               </div>
-              <div className="h-1.5 rounded-full overflow-hidden bg-white/10">
+              <div className="h-1.5 rounded-full overflow-hidden bg-surface">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
@@ -244,13 +244,13 @@ export default function BillingPhase({
               <div className="flex gap-1.5">
                 <button
                   onClick={() => setPayType("cash")}
-                  className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${payType === "cash" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-white/[0.03] text-white/50 border border-white/10 hover:bg-white/[0.06]"}`}
+                  className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${payType === "cash" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-surface text-ink/50 border border-line hover:bg-surface"}`}
                 >
                   <Coins className="w-3 h-3" /> نقدي
                 </button>
                 <button
                   onClick={() => setPayType("credit")}
-                  className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${payType === "credit" ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40" : "bg-white/[0.03] text-white/50 border border-white/10 hover:bg-white/[0.06]"}`}
+                  className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${payType === "credit" ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40" : "bg-surface text-ink/50 border border-line hover:bg-surface"}`}
                 >
                   <Clock className="w-3 h-3" /> آجل
                 </button>
@@ -260,7 +260,7 @@ export default function BillingPhase({
                   <select
                     value={paySafe ?? ""}
                     onChange={(e) => setPaySafe(parseInt(e.target.value) || null)}
-                    className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white focus:outline-none focus:border-emerald-400/40"
+                    className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-emerald-400/40"
                   >
                     {safes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -276,16 +276,16 @@ export default function BillingPhase({
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPayRow(); } }}
                     onFocus={(e) => e.target.select()}
                     placeholder={grandTotal > 0 ? remaining.toFixed(0) : "0"}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-400/40"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink placeholder:text-ink/30 focus:outline-none focus:border-emerald-400/40"
                     dir="ltr"
                   />
-                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] pointer-events-none text-white/30">ج.م</span>
+                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] pointer-events-none text-ink/30">ج.م</span>
                 </div>
               </div>
               <div className="flex gap-1.5">
                 <button
                   onClick={addPayRow}
-                  className="shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white/80 hover:text-white transition-all"
+                  className="shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold text-ink/80 hover:text-ink transition-all"
                   style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
                 >
                   ↵ تأكيد
@@ -293,7 +293,7 @@ export default function BillingPhase({
                 <button
                   onClick={fillAll}
                   disabled={remaining <= 0}
-                  className="flex-1 py-1.5 rounded-lg text-[11px] font-bold text-emerald-300 hover:text-white transition-all disabled:opacity-30"
+                  className="flex-1 py-1.5 rounded-lg text-[11px] font-bold text-emerald-300 hover:text-ink transition-all disabled:opacity-30"
                   style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(52,211,153,0.2)" }}
                 >
                   كل المتبقي ({fmtCurrency(remaining)})
@@ -305,28 +305,28 @@ export default function BillingPhase({
 
         {/* الوسيط */}
         <div className="px-5 pt-4 pb-4">
-          <h4 className="text-[12px] font-black text-white/80 mb-3 flex items-center gap-2">
+          <h4 className="text-[12px] font-black text-ink/80 mb-3 flex items-center gap-2">
             <span className="w-5 h-5 rounded-md bg-amber-500/15 border border-amber-400/25 flex items-center justify-center text-[9px] text-amber-300 font-black">٣</span>
             <UserCog className="w-3.5 h-3.5 text-amber-300" />
             الوسيط (اختياري)
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold text-white/50 mb-1 block">اسم الوسيط</label>
+              <label className="text-[10px] font-bold text-ink/50 mb-1 block">اسم الوسيط</label>
               <input
                 value={brokerName}
                 onChange={(e) => setBrokerName(e.target.value)}
                 placeholder="اسم الوسيط..."
-                className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/40"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink placeholder:text-ink/30 focus:outline-none focus:border-amber-400/40"
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-white/50 mb-1 block">قيمة العمولة (ج.م)</label>
+              <label className="text-[10px] font-bold text-ink/50 mb-1 block">قيمة العمولة (ج.م)</label>
               <input
                 type="number" min={0} step="any" value={brokerComm}
                 onChange={(e) => setBrokerComm(e.target.value)}
                 placeholder="0.00"
-                className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/40"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink placeholder:text-ink/30 focus:outline-none focus:border-amber-400/40"
                 dir="ltr"
               />
             </div>
@@ -347,10 +347,10 @@ export default function BillingPhase({
         </div>
       )}
 
-      <div className="px-5 py-4 border-t border-white/8 flex flex-wrap gap-2">
+      <div className="px-5 py-4 border-t border-line flex flex-wrap gap-2">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white text-xs transition-all"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-line text-ink/60 hover:text-ink text-xs transition-all"
           disabled={billingLoading}
         >
           <ChevronLeft className="w-3.5 h-3.5" />
@@ -359,7 +359,7 @@ export default function BillingPhase({
         <button
           onClick={onBillingSave}
           disabled={billingLoading}
-          className="flex-1 min-w-[200px] py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+          className="flex-1 min-w-[200px] py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
           style={{ background: "rgba(132,204,22,0.85)", border: "1px solid rgba(163,230,53,0.5)", color: "#0d1f00" }}
         >
           {billingLoading
@@ -369,7 +369,7 @@ export default function BillingPhase({
         <button
           onClick={onClose}
           disabled={billingLoading}
-          className="px-4 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white text-xs"
+          className="px-4 py-2.5 rounded-xl border border-line text-ink/60 hover:text-ink text-xs"
         >
           إلغاء
         </button>

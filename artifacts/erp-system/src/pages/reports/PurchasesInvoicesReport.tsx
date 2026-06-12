@@ -52,14 +52,14 @@ export default function PurchasesInvoicesReport() {
   return (
     <div className="space-y-4" style={{ fontFamily:"'Tajawal','Cairo',sans-serif" }}>
       <div className="grid grid-cols-3 gap-4">
-        <div className="glass-panel rounded-2xl p-4 border border-red-500/10"><p className="text-red-400 text-xs mb-1">إجمالي المشتريات</p><p className="text-2xl font-black text-white">{formatCurrency(totalPurchases)}</p><p className="text-white/30 text-xs">{filtered.length} فاتورة</p></div>
-        <div className="glass-panel rounded-2xl p-4 border border-emerald-500/10"><p className="text-emerald-400 text-xs mb-1">المدفوع</p><p className="text-2xl font-black text-white">{formatCurrency(totalPaid)}</p></div>
-        <div className="glass-panel rounded-2xl p-4 border border-amber-500/10"><p className="text-amber-400 text-xs mb-1">المتبقي للعملاء</p><p className="text-2xl font-black text-white">{formatCurrency(totalRemaining)}</p></div>
+        <div className="glass-panel rounded-2xl p-4 border border-red-500/10"><p className="text-red-400 text-xs mb-1">إجمالي المشتريات</p><p className="text-2xl font-black text-ink">{formatCurrency(totalPurchases)}</p><p className="text-ink/30 text-xs">{filtered.length} فاتورة</p></div>
+        <div className="glass-panel rounded-2xl p-4 border border-emerald-500/10"><p className="text-emerald-400 text-xs mb-1">المدفوع</p><p className="text-2xl font-black text-ink">{formatCurrency(totalPaid)}</p></div>
+        <div className="glass-panel rounded-2xl p-4 border border-amber-500/10"><p className="text-amber-400 text-xs mb-1">المتبقي للعملاء</p><p className="text-2xl font-black text-ink">{formatCurrency(totalRemaining)}</p></div>
       </div>
       <div className="flex gap-3 flex-wrap items-center">
-        <div className="relative flex-1 max-w-xs"><Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"/><input className="glass-input w-full icon-pr text-sm" placeholder="بحث برقم الفاتورة أو العميل..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        <div className="relative flex-1 max-w-xs"><Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30"/><input className="glass-input w-full icon-pr text-sm" placeholder="بحث برقم الفاتورة أو العميل..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
         <div className="flex gap-1">{[{v:"",l:"الكل"},{v:"cash",l:"نقدي"},{v:"credit",l:"آجل"},{v:"partial",l:"جزئي"}].map(opt=>(
-          <button key={opt.v} onClick={()=>setPayFilter(opt.v)} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${payFilter===opt.v?"bg-amber-500/20 border-amber-500/40 text-amber-400":"glass-panel border-white/10 text-white/50 hover:text-white"}`}>{opt.l}</button>
+          <button key={opt.v} onClick={()=>setPayFilter(opt.v)} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${payFilter===opt.v?"bg-amber-500/20 border-amber-500/40 text-amber-400":"glass-panel border-line text-ink/50 hover:text-ink"}`}>{opt.l}</button>
         ))}</div>
         <div className="flex gap-2 mr-auto">
           <button onClick={()=>exportPurchasesExcel(filtered)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all"><FileDown className="w-3.5 h-3.5"/> Excel</button>
@@ -78,30 +78,30 @@ export default function PurchasesInvoicesReport() {
           </button>
         </div>
       </div>
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10"><tr><th className="p-3 text-white/50">رقم الفاتورة</th><th className="p-3 text-white/50">العميل</th><th className="p-3 text-white/50">الإجمالي</th><th className="p-3 text-white/50">المدفوع</th><th className="p-3 text-white/50">المتبقي</th><th className="p-3 text-white/50">الدفع</th><th className="p-3 text-white/50">الحالة</th><th className="p-3 text-white/50">التاريخ</th><th className="p-3 text-white/50">فاتورة</th></tr></thead>
+            <thead className="bg-surface border-b border-line"><tr><th className="p-3 text-ink/50">رقم الفاتورة</th><th className="p-3 text-ink/50">العميل</th><th className="p-3 text-ink/50">الإجمالي</th><th className="p-3 text-ink/50">المدفوع</th><th className="p-3 text-ink/50">المتبقي</th><th className="p-3 text-ink/50">الدفع</th><th className="p-3 text-ink/50">الحالة</th><th className="p-3 text-ink/50">التاريخ</th><th className="p-3 text-ink/50">فاتورة</th></tr></thead>
             <tbody>
               {isLoading ? <TableSkeleton cols={9} rows={5}/>
-                : filtered.length===0 ? <tr><td colSpan={9} className="p-12 text-center text-white/40">لا توجد مشتريات</td></tr>
+                : filtered.length===0 ? <tr><td colSpan={9} className="p-12 text-center text-ink/40">لا توجد مشتريات</td></tr>
                 : filtered.map(p=>(
-                  <tr key={p.id} className="border-b border-white/5 erp-table-row">
+                  <tr key={p.id} className="border-b border-line erp-table-row">
                     <td className="p-3 font-bold text-amber-400">{p.invoice_no}</td>
-                    <td className="p-3 text-white">{p.customer_name||"—"}</td>
-                    <td className="p-3 font-bold text-white">{formatCurrency(p.total_amount)}</td>
+                    <td className="p-3 text-ink">{p.customer_name||"—"}</td>
+                    <td className="p-3 font-bold text-ink">{formatCurrency(p.total_amount)}</td>
                     <td className="p-3 text-emerald-400 font-bold">{formatCurrency(p.paid_amount)}</td>
                     <td className="p-3 text-red-400 font-bold">{p.remaining_amount>0?formatCurrency(p.remaining_amount):"—"}</td>
                     <td className="p-3"><PaymentBadge type={p.payment_type}/></td>
                     <td className="p-3"><StatusBadge status={p.status}/></td>
-                    <td className="p-3 text-white/40 text-xs">{formatDate(p.created_at)}</td>
+                    <td className="p-3 text-ink/40 text-xs">{formatDate(p.created_at)}</td>
                     <td className="p-3"><InvoicePdfButton type="purchases" id={p.id}/></td>
                   </tr>
                 ))
               }
             </tbody>
             {filtered.length>0&&(
-              <tfoot className="bg-white/5 border-t border-white/10"><tr><td colSpan={2} className="p-3 text-white/50 font-bold">الإجمالي ({filtered.length} فاتورة)</td><td className="p-3 font-black text-white">{formatCurrency(totalPurchases)}</td><td className="p-3 font-black text-emerald-400">{formatCurrency(totalPaid)}</td><td className="p-3 font-black text-red-400">{formatCurrency(totalRemaining)}</td><td colSpan={4}/></tr></tfoot>
+              <tfoot className="bg-surface border-t border-line"><tr><td colSpan={2} className="p-3 text-ink/50 font-bold">الإجمالي ({filtered.length} فاتورة)</td><td className="p-3 font-black text-ink">{formatCurrency(totalPurchases)}</td><td className="p-3 font-black text-emerald-400">{formatCurrency(totalPaid)}</td><td className="p-3 font-black text-red-400">{formatCurrency(totalRemaining)}</td><td colSpan={4}/></tr></tfoot>
             )}
           </table>
         </div>

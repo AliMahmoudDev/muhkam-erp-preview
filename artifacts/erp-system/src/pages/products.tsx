@@ -17,13 +17,13 @@ export default function Products() {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-1 border-b border-white/10 pb-0">
+      <div className="flex gap-1 border-b border-line pb-0">
         <button
           onClick={() => changeTab('products')}
           className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all ${
             activeTab === 'products'
-              ? 'bg-white/10 text-white border border-white/10 border-b-transparent'
-              : 'text-white/40 hover:text-white/70'
+              ? 'bg-surface text-ink border border-line border-b-transparent'
+              : 'text-ink/40 hover:text-ink/70'
           }`}
         >
           <span className="flex items-center gap-2">
@@ -34,8 +34,8 @@ export default function Products() {
           onClick={() => changeTab('categories')}
           className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all ${
             activeTab === 'categories'
-              ? 'bg-white/10 text-white border border-white/10 border-b-transparent'
-              : 'text-white/40 hover:text-white/70'
+              ? 'bg-surface text-ink border border-line border-b-transparent'
+              : 'text-ink/40 hover:text-ink/70'
           }`}
         >
           <span className="flex items-center gap-2">

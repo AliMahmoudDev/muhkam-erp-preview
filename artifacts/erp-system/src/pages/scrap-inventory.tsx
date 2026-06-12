@@ -60,7 +60,7 @@ export default function ScrapInventory({ embedded = false }: { embedded?: boolea
     <div className={embedded ? "space-y-4" : "p-4 space-y-4 h-full overflow-y-auto"} dir="rtl">
       <div className="flex items-center justify-between">
         {!embedded && (
-          <h1 className="text-xl font-black text-white flex items-center gap-2">
+          <h1 className="text-xl font-black text-ink flex items-center gap-2">
             <Trash2 className="w-5 h-5 text-amber-400" /> مخزن التوالف
           </h1>
         )}
@@ -71,27 +71,27 @@ export default function ScrapInventory({ embedded = false }: { embedded?: boolea
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="glass-panel rounded-xl p-3 border border-white/5">
-          <p className="text-[11px] text-white/40">عدد القطع التالفة</p>
+        <div className="glass-panel rounded-xl p-3 border border-line">
+          <p className="text-[11px] text-ink/40">عدد القطع التالفة</p>
           <p className="text-2xl font-black text-amber-400">{items.length}</p>
         </div>
-        <div className="glass-panel rounded-xl p-3 border border-white/5">
-          <p className="text-[11px] text-white/40">إجمالي الخسارة</p>
+        <div className="glass-panel rounded-xl p-3 border border-line">
+          <p className="text-[11px] text-ink/40">إجمالي الخسارة</p>
           <p className="text-2xl font-black text-red-400">{formatCurrency(total)}</p>
         </div>
       </div>
 
-      <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
-        {isLoading && <div className="text-center text-white/40 py-8">جاري التحميل...</div>}
+      <div className="glass-panel rounded-2xl border border-line overflow-hidden">
+        {isLoading && <div className="text-center text-ink/40 py-8">جاري التحميل...</div>}
         {!isLoading && items.length === 0 && (
-          <div className="text-center text-white/40 py-12 flex flex-col items-center gap-2">
+          <div className="text-center text-ink/40 py-12 flex flex-col items-center gap-2">
             <Package className="w-10 h-10 opacity-20" />لا توجد قطع تالفة
           </div>
         )}
         {items.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-white/10 bg-white/3">
-              <tr className="text-right text-[11px] text-white/50">
+            <thead className="border-b border-line bg-surface">
+              <tr className="text-right text-[11px] text-ink/50">
                 <th className="px-3 py-2">اسم القطعة</th>
                 <th className="px-3 py-2">الكمية</th>
                 <th className="px-3 py-2">السعر</th>
@@ -103,13 +103,13 @@ export default function ScrapInventory({ embedded = false }: { embedded?: boolea
             </thead>
             <tbody>
               {items.map(it => (
-                <tr key={it.id} className="border-b border-white/5 text-white/80">
+                <tr key={it.id} className="border-b border-line text-ink/80">
                   <td className="px-3 py-2">{it.product_name}</td>
-                  <td className="px-3 py-2 text-white/60">{Number(it.quantity).toFixed(2)}</td>
-                  <td className="px-3 py-2 text-white/60">{formatCurrency(Number(it.unit_cost))}</td>
+                  <td className="px-3 py-2 text-ink/60">{Number(it.quantity).toFixed(2)}</td>
+                  <td className="px-3 py-2 text-ink/60">{formatCurrency(Number(it.unit_cost))}</td>
                   <td className="px-3 py-2 font-bold text-amber-400">{formatCurrency(Number(it.quantity) * Number(it.unit_cost))}</td>
-                  <td className="px-3 py-2 text-xs text-white/50">{it.reason ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs text-white/50">
+                  <td className="px-3 py-2 text-xs text-ink/50">{it.reason ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs text-ink/50">
                     {it.source_repair_job_id ? <span className="text-violet-300">صيانة #{it.source_repair_job_id}</span> : "يدوي"}
                   </td>
                   <td className="px-3 py-2">
@@ -126,10 +126,10 @@ export default function ScrapInventory({ embedded = false }: { embedded?: boolea
 
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowNew(false)}>
-          <div className="glass-panel rounded-2xl p-5 w-96 border border-white/10 space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="glass-panel rounded-2xl p-5 w-96 border border-line space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-black text-white flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-400" /> إضافة توالف</h3>
-              <button onClick={() => setShowNew(false)} className="btn-icon text-white/40"><XCircle className="w-4 h-4" /></button>
+              <h3 className="font-black text-ink flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-400" /> إضافة توالف</h3>
+              <button onClick={() => setShowNew(false)} className="btn-icon text-ink/40"><XCircle className="w-4 h-4" /></button>
             </div>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="اسم القطعة *" className="erp-input w-full text-sm" />
             <div className="grid grid-cols-2 gap-2">

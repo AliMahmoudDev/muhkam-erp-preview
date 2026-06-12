@@ -74,23 +74,23 @@ export default function TechniciansTab() {
   return (
     <div className="flex flex-col h-full">
       {/* header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-white/8 shrink-0">
-        <div className="flex items-center gap-2 text-white/30 text-[12px]">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-line shrink-0">
+        <div className="flex items-center gap-2 text-ink/30 text-[12px]">
           <Info className="w-3.5 h-3.5" />
           <span>تُحفظ الإعدادات في قاعدة البيانات لكل المستخدمين</span>
         </div>
-        <span className="text-[11px] text-white/20">{techUsers.length} فني</span>
+        <span className="text-[11px] text-ink/20">{techUsers.length} فني</span>
       </div>
 
       <div className="overflow-y-auto flex-1">
         {isLoading && (
           <div className="flex items-center justify-center h-32">
-            <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-line border-t-white/60 rounded-full animate-spin" />
           </div>
         )}
 
         {!isLoading && techUsers.length === 0 && (
-          <div className="flex flex-col items-center gap-3 py-16 text-white/30 text-sm">
+          <div className="flex flex-col items-center gap-3 py-16 text-ink/30 text-sm">
             <Users className="w-8 h-8 opacity-40" />
             لا يوجد مستخدمون نشطون
           </div>
@@ -101,7 +101,7 @@ export default function TechniciansTab() {
           const isEdit = editingId === u.id;
           return (
             <div key={u.id}
-              className="border-b border-white/5 last:border-b-0 px-4 py-3.5 hover:bg-white/[0.02] transition-colors">
+              className="border-b border-line last:border-b-0 px-4 py-3.5 hover:bg-surface transition-colors">
               <div className="flex items-start gap-3">
                 {/* avatar */}
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/30 to-orange-500/15 border border-amber-500/25 flex items-center justify-center shrink-0 text-sm font-bold text-amber-300">
@@ -110,19 +110,19 @@ export default function TechniciansTab() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-semibold text-white/85">{u.name}</span>
-                    {u.role && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 text-white/35">{u.role}</span>}
+                    <span className="text-sm font-semibold text-ink/85">{u.name}</span>
+                    {u.role && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface text-ink/35">{u.role}</span>}
                   </div>
 
                   {!isEdit ? (
                     <div className="flex items-center gap-3 mt-1.5">
-                      <span className="flex items-center gap-1 text-[12px] text-white/35">
+                      <span className="flex items-center gap-1 text-[12px] text-ink/35">
                         <Percent className="w-3 h-3" /> {s.commission}%
                       </span>
-                      <span className="text-white/15">·</span>
-                      {s.specialty && <span className="text-[12px] text-white/35">{s.specialty}</span>}
-                      {s.specialty && <span className="text-white/15">·</span>}
-                      <span className={`flex items-center gap-1 text-[12px] ${s.notifications ? "text-emerald-400/60" : "text-white/25"}`}>
+                      <span className="text-ink/15">·</span>
+                      {s.specialty && <span className="text-[12px] text-ink/35">{s.specialty}</span>}
+                      {s.specialty && <span className="text-ink/15">·</span>}
+                      <span className={`flex items-center gap-1 text-[12px] ${s.notifications ? "text-emerald-400/60" : "text-ink/25"}`}>
                         {s.notifications ? <Bell className="w-3 h-3" /> : <BellOff className="w-3 h-3" />}
                         {s.notifications ? "إشعارات مفعّلة" : "إشعارات مُعطّلة"}
                       </span>
@@ -130,28 +130,28 @@ export default function TechniciansTab() {
                   ) : (
                     <div className="mt-2 space-y-2">
                       <div className="flex items-center gap-2">
-                        <label className="text-[11px] text-white/35 w-24 shrink-0">التخصص</label>
+                        <label className="text-[11px] text-ink/35 w-24 shrink-0">التخصص</label>
                         <input value={editBuf.specialty}
                           onChange={e => setEditBuf(b => ({ ...b, specialty: e.target.value }))}
                           placeholder="مثال: هواتف — شاشات"
                           className="erp-input flex-1 text-sm py-1" />
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className="text-[11px] text-white/35 w-24 shrink-0">نسبة العمولة</label>
+                        <label className="text-[11px] text-ink/35 w-24 shrink-0">نسبة العمولة</label>
                         <div className="flex items-center gap-1.5">
                           <input type="number" min={0} max={100} value={editBuf.commission}
                             onChange={e => setEditBuf(b => ({ ...b, commission: Number(e.target.value) }))}
                             className="erp-input w-20 text-sm py-1 text-center" />
-                          <span className="text-white/35 text-sm">%</span>
+                          <span className="text-ink/35 text-sm">%</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className="text-[11px] text-white/35 w-24 shrink-0">الإشعارات</label>
+                        <label className="text-[11px] text-ink/35 w-24 shrink-0">الإشعارات</label>
                         <button onClick={() => setEditBuf(b => ({ ...b, notifications: !b.notifications }))}
                           className={`flex items-center gap-2 px-3 py-1 rounded-lg border text-[12px] transition-all ${
                             editBuf.notifications
                               ? "bg-emerald-500/12 border-emerald-500/25 text-emerald-400"
-                              : "bg-white/5 border-white/12 text-white/35"
+                              : "bg-surface border-line text-ink/35"
                           }`}>
                           {editBuf.notifications ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
                           {editBuf.notifications ? "مفعّلة" : "مُعطّلة"}
@@ -163,7 +163,7 @@ export default function TechniciansTab() {
                           <CheckCircle2 className="w-3.5 h-3.5" /> {saving ? "جاري الحفظ..." : "حفظ"}
                         </button>
                         <button onClick={() => setEditingId(null)} disabled={saving}
-                          className="px-3 py-1.5 rounded-lg border border-white/10 text-white/30 text-[12px] hover:border-white/20 hover:text-white/50 transition-colors disabled:opacity-40">
+                          className="px-3 py-1.5 rounded-lg border border-line text-ink/30 text-[12px] hover:border-line hover:text-ink/50 transition-colors disabled:opacity-40">
                           إلغاء
                         </button>
                       </div>
@@ -173,7 +173,7 @@ export default function TechniciansTab() {
 
                 {!isEdit && (
                   <button onClick={() => startEdit(u)}
-                    className="text-white/20 hover:text-white/55 p-1.5 transition-colors shrink-0">
+                    className="text-ink/20 hover:text-ink/55 p-1.5 transition-colors shrink-0">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                 )}

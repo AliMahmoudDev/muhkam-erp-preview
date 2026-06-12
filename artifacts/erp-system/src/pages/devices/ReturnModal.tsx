@@ -44,12 +44,12 @@ export function ReturnModal({ device, onClose, onDone }: { device: Device; onClo
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm" dir="rtl">
       <div className="glass-panel rounded-2xl border border-amber-500/20 w-full max-w-sm mx-4 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-line">
           <div className="flex items-center gap-2">
             <RotateCcw className="w-4 h-4 text-amber-400" />
-            <span className="font-bold text-white">إرجاع الجهاز من العميل</span>
+            <span className="font-bold text-ink">إرجاع الجهاز من العميل</span>
           </div>
-          <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
+          <button onClick={onClose} className="btn-icon text-ink/40 hover:text-ink">
             <XCircle className="w-4 h-4" />
           </button>
         </div>
@@ -57,27 +57,27 @@ export function ReturnModal({ device, onClose, onDone }: { device: Device; onClo
         <div className="p-5 space-y-4">
           {/* Device info */}
           <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3 text-sm space-y-1">
-            <p className="text-white/80 font-bold">{device.brand} {device.model}</p>
-            <p className="text-white/40 text-xs">{device.device_no} — {device.color ?? ""}</p>
+            <p className="text-ink/80 font-bold">{device.brand} {device.model}</p>
+            <p className="text-ink/40 text-xs">{device.device_no} — {device.color ?? ""}</p>
             {device.sold_to_customer_name && (
-              <p className="text-white/50 text-xs">العميل: {device.sold_to_customer_name}</p>
+              <p className="text-ink/50 text-xs">العميل: {device.sold_to_customer_name}</p>
             )}
           </div>
 
           {/* Return price (read-only, equals sale price) */}
           <div>
-            <label className="text-[11px] text-white/40 mb-1 block text-right">سعر الإرجاع (نفس سعر الفاتورة)</label>
+            <label className="text-[11px] text-ink/40 mb-1 block text-right">سعر الإرجاع (نفس سعر الفاتورة)</label>
             <div className="erp-input w-full text-sm flex items-center justify-between opacity-70 cursor-not-allowed">
               <span className="text-emerald-300 font-bold">
                 {parseFloat(returnPrice ?? "0").toLocaleString("ar-EG")} ج.م
               </span>
-              <span className="text-white/30 text-xs">غير قابل للتعديل</span>
+              <span className="text-ink/30 text-xs">غير قابل للتعديل</span>
             </div>
           </div>
 
           {/* Return reason */}
           <div>
-            <label className="text-[11px] text-white/40 mb-1 block text-right">سبب الإرجاع *</label>
+            <label className="text-[11px] text-ink/40 mb-1 block text-right">سبب الإرجاع *</label>
             <select value={reason} onChange={e => setReason(e.target.value)} className="erp-input w-full text-sm">
               {RETURN_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -94,7 +94,7 @@ export function ReturnModal({ device, onClose, onDone }: { device: Device; onClo
 
         <div className="px-5 pb-5 flex gap-2">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80">
+            className="flex-1 py-2 rounded-xl border border-line text-ink/50 text-sm hover:text-ink/80">
             إلغاء
           </button>
           <button onClick={handleReturn} disabled={saving}

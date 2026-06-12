@@ -77,8 +77,8 @@ export default function CostCentersPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">مراكز التكلفة</h1>
-          <p className="text-white/50 text-sm mt-1">تقسيم الإيرادات والمصروفات على مراكز التكلفة وتقارير الربحية</p>
+          <h1 className="text-2xl font-bold text-ink">مراكز التكلفة</h1>
+          <p className="text-ink/50 text-sm mt-1">تقسيم الإيرادات والمصروفات على مراكز التكلفة وتقارير الربحية</p>
         </div>
         <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4" /> إضافة مركز تكلفة
@@ -88,25 +88,25 @@ export default function CostCentersPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Centers List */}
         <div className="space-y-3">
-          <h2 className="text-sm font-medium text-white/60 uppercase tracking-wider">مراكز التكلفة</h2>
+          <h2 className="text-sm font-medium text-ink/60 uppercase tracking-wider">مراكز التكلفة</h2>
           {isLoading ? (
-            <div className="text-center text-white/50 py-8">جاري التحميل...</div>
+            <div className="text-center text-ink/50 py-8">جاري التحميل...</div>
           ) : centers.length === 0 ? (
-            <div className="text-center text-white/50 py-8">لا توجد مراكز تكلفة بعد</div>
+            <div className="text-center text-ink/50 py-8">لا توجد مراكز تكلفة بعد</div>
           ) : centers.map(cc => (
             <button key={cc.id} onClick={() => setSelected(cc)}
-              className={`w-full text-right p-4 rounded-xl border transition-all ${selected?.id === cc.id ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-white/5 hover:bg-white/[0.08]'}`}>
+              className={`w-full text-right p-4 rounded-xl border transition-all ${selected?.id === cc.id ? 'border-blue-500 bg-blue-500/10' : 'border-line bg-surface hover:bg-surface'}`}>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-blue-400" />
-                  <span className="text-xs font-mono text-white/50">{cc.code}</span>
+                  <span className="text-xs font-mono text-ink/50">{cc.code}</span>
                 </div>
-                <Badge className={cc.is_active ? 'bg-green-500/15 text-green-400' : 'bg-white/10 text-white/40'}>
+                <Badge className={cc.is_active ? 'bg-green-500/15 text-green-400' : 'bg-surface text-ink/40'}>
                   {cc.is_active ? 'نشط' : 'غير نشط'}
                 </Badge>
               </div>
-              <p className="font-medium text-white">{cc.name}</p>
-              {cc.description && <p className="text-xs text-white/40 mt-1">{cc.description}</p>}
+              <p className="font-medium text-ink">{cc.name}</p>
+              {cc.description && <p className="text-xs text-ink/40 mt-1">{cc.description}</p>}
             </button>
           ))}
         </div>
@@ -114,7 +114,7 @@ export default function CostCentersPage() {
         {/* Report Panel */}
         <div className="lg:col-span-2 space-y-4">
           {!selected ? (
-            <div className="flex items-center justify-center h-full min-h-[300px] text-white/40">
+            <div className="flex items-center justify-center h-full min-h-[300px] text-ink/40">
               <div className="text-center">
                 <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
                 <p>اختر مركز تكلفة لعرض التقرير</p>
@@ -123,12 +123,12 @@ export default function CostCentersPage() {
           ) : (
             <>
               <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-lg font-semibold text-white flex-1">تقرير: {selected.name}</h2>
+                <h2 className="text-lg font-semibold text-ink flex-1">تقرير: {selected.name}</h2>
                 <div className="flex gap-2 items-center">
-                  <Input type="date" className="bg-white/5 border-white/10 text-white h-8 text-xs w-36"
+                  <Input type="date" className="bg-surface border-line text-ink h-8 text-xs w-36"
                     value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-                  <span className="text-white/40">—</span>
-                  <Input type="date" className="bg-white/5 border-white/10 text-white h-8 text-xs w-36"
+                  <span className="text-ink/40">—</span>
+                  <Input type="date" className="bg-surface border-line text-ink h-8 text-xs w-36"
                     value={dateTo} onChange={e => setDateTo(e.target.value)} />
                   <Button size="sm" variant="ghost" className="text-red-400 hover:bg-red-500/10 h-8 w-8 p-0"
                     onClick={() => { if (confirm('حذف مركز التكلفة؟')) deleteMutation.mutate(selected.id); }}>
@@ -138,7 +138,7 @@ export default function CostCentersPage() {
               </div>
 
               {reportLoading ? (
-                <div className="text-center text-white/50 py-10">جاري تحميل التقرير...</div>
+                <div className="text-center text-ink/50 py-10">جاري تحميل التقرير...</div>
               ) : report ? (
                 <>
                   {/* Summary Cards */}
@@ -148,10 +148,10 @@ export default function CostCentersPage() {
                       { label: 'إجمالي المصروفات', value: report.summary.total_expense, color: 'text-red-400', icon: TrendingDown },
                       { label: 'صافي الربح', value: report.summary.net_income, color: report.summary.net_income >= 0 ? 'text-blue-400' : 'text-red-400', icon: BarChart3 },
                     ].map(card => (
-                      <div key={card.label} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                      <div key={card.label} className="rounded-xl border border-line bg-surface p-3">
                         <div className="flex items-center gap-2 mb-1">
                           <card.icon className={`h-4 w-4 ${card.color}`} />
-                          <span className="text-xs text-white/50">{card.label}</span>
+                          <span className="text-xs text-ink/50">{card.label}</span>
                         </div>
                         <p className={`text-lg font-bold font-mono ${card.color}`}>{formatCurrency(card.value)}</p>
                       </div>
@@ -160,12 +160,12 @@ export default function CostCentersPage() {
 
                   {/* Detail Table */}
                   {report.lines.length === 0 ? (
-                    <div className="text-center text-white/50 py-6">لا توجد حركات في هذه الفترة</div>
+                    <div className="text-center text-ink/50 py-6">لا توجد حركات في هذه الفترة</div>
                   ) : (
-                    <div className="overflow-x-auto rounded-xl border border-white/10">
+                    <div className="overflow-x-auto rounded-xl border border-line">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="bg-white/5 text-white/60 text-right">
+                          <tr className="bg-surface text-ink/60 text-right">
                             {['الحساب', 'النوع', 'مدين', 'دائن', 'الصافي'].map(h => (
                               <th key={h} className="px-4 py-3 font-medium">{h}</th>
                             ))}
@@ -173,18 +173,18 @@ export default function CostCentersPage() {
                         </thead>
                         <tbody className="divide-y divide-white/5">
                           {report.lines.map(line => (
-                            <tr key={line.account_code} className="hover:bg-white/[0.02]">
+                            <tr key={line.account_code} className="hover:bg-surface">
                               <td className="px-4 py-2.5">
-                                <p className="text-white font-medium">{line.account_name}</p>
-                                <p className="text-xs text-white/40 font-mono">{line.account_code}</p>
+                                <p className="text-ink font-medium">{line.account_name}</p>
+                                <p className="text-xs text-ink/40 font-mono">{line.account_code}</p>
                               </td>
                               <td className="px-4 py-2.5">
                                 <Badge className={line.account_type === 'revenue' ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}>
                                   {line.account_type === 'revenue' ? 'إيراد' : 'مصروف'}
                                 </Badge>
                               </td>
-                              <td className="px-4 py-2.5 font-mono text-white/70">{formatCurrency(line.total_debit)}</td>
-                              <td className="px-4 py-2.5 font-mono text-white/70">{formatCurrency(line.total_credit)}</td>
+                              <td className="px-4 py-2.5 font-mono text-ink/70">{formatCurrency(line.total_debit)}</td>
+                              <td className="px-4 py-2.5 font-mono text-ink/70">{formatCurrency(line.total_credit)}</td>
                               <td className={`px-4 py-2.5 font-mono font-semibold ${line.net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                                 {formatCurrency(Math.abs(line.net))}
                               </td>
@@ -209,18 +209,18 @@ export default function CostCentersPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>الكود</Label>
-                <Input className="bg-white/5 border-white/10" placeholder="مثال: CC-001"
+                <Input className="bg-surface border-line" placeholder="مثال: CC-001"
                   value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>الاسم</Label>
-                <Input className="bg-white/5 border-white/10" placeholder="مثال: ورشة الإصلاح"
+                <Input className="bg-surface border-line" placeholder="مثال: ورشة الإصلاح"
                   value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
               </div>
             </div>
             <div className="space-y-2">
               <Label>الوصف (اختياري)</Label>
-              <Input className="bg-white/5 border-white/10" placeholder="وصف مختصر..."
+              <Input className="bg-surface border-line" placeholder="وصف مختصر..."
                 value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
             </div>
             <Button className="w-full bg-blue-600 hover:bg-blue-700" disabled={addMutation.isPending}

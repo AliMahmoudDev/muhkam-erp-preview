@@ -244,7 +244,7 @@ export function SalePaymentSection({
             setDiscountMode((m) => (m === 'pct' ? 'amt' : 'pct'));
             setDiscountPct('');
           }}
-          className="text-xs font-black sale-muted-text hover:text-amber-400 transition-colors px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 shrink-0"
+          className="text-xs font-black sale-muted-text hover:text-amber-400 transition-colors px-1.5 py-0.5 rounded-md bg-surface border border-line shrink-0"
           title="تبديل بين % ومبلغ"
         >
           {discountMode === 'pct' ? '%' : 'ج'}

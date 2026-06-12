@@ -248,8 +248,8 @@ export default function Inventory() {
         dir="rtl"
       >
         <ShieldX className="w-16 h-16 text-red-400/50 mb-4" />
-        <h2 className="text-xl font-bold text-white/80 mb-2">غير مصرح بالوصول</h2>
-        <p className="text-white/40 text-sm">ليس لديك صلاحية لعرض صفحة المخزون</p>
+        <h2 className="text-xl font-bold text-ink/80 mb-2">غير مصرح بالوصول</h2>
+        <p className="text-ink/40 text-sm">ليس لديك صلاحية لعرض صفحة المخزون</p>
       </div>
     );
   }
@@ -258,7 +258,7 @@ export default function Inventory() {
     <div className="p-6 space-y-6 text-right" dir="rtl">
       {/* ══ تبويبات المخزون — في الأعلى دائماً ════════════════════════════════ */}
       <div>
-        <div className="flex border-b border-white/10 mb-6 overflow-x-auto" style={{scrollbarWidth:'none'}}>
+        <div className="flex border-b border-line mb-6 overflow-x-auto" style={{scrollbarWidth:'none'}}>
           <TabBtn
             id="overview"
             label="نظرة عامة"
@@ -284,7 +284,7 @@ export default function Inventory() {
           )}
           {canAdjustInventory && (
             <Link to="/transfers">
-              <button className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 border-transparent text-white/50 hover:text-white/80 transition-colors -mb-px whitespace-nowrap">
+              <button className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 border-transparent text-ink/50 hover:text-ink/80 transition-colors -mb-px whitespace-nowrap">
                 <Truck className="w-4 h-4" />
                 التحويلات بين الفروع
               </button>
@@ -332,7 +332,7 @@ export default function Inventory() {
                 label="إجمالي المنتجات"
                 value={String(gs.total_products)}
                 icon={<Package className="w-5 h-5 text-violet-400" />}
-                color="text-white"
+                color="text-ink"
                 bg="bg-violet-500/10 border-violet-500/20"
                 onClick={() => setActiveTab('reports')}
                 hint="عرض تقارير المخزون"
@@ -350,11 +350,11 @@ export default function Inventory() {
                 label="تحت حد الطلب"
                 value={String(gs.low_stock_count)}
                 icon={<AlertTriangle className="w-5 h-5 text-amber-400" />}
-                color={gs.low_stock_count > 0 ? 'text-amber-400' : 'text-white/40'}
+                color={gs.low_stock_count > 0 ? 'text-amber-400' : 'text-ink/40'}
                 bg={
                   gs.low_stock_count > 0
                     ? 'bg-amber-500/10 border-amber-500/20'
-                    : 'bg-white/5 border-white/5'
+                    : 'bg-surface border-line'
                 }
                 onClick={() => setActiveTab('alerts')}
                 hint="عرض تنبيهات المخزون"
@@ -363,11 +363,11 @@ export default function Inventory() {
                 label="نفد المخزون"
                 value={String(gs.zero_stock_count)}
                 icon={<TrendingDown className="w-5 h-5 text-red-400" />}
-                color={gs.zero_stock_count > 0 ? 'text-red-400' : 'text-white/40'}
+                color={gs.zero_stock_count > 0 ? 'text-red-400' : 'text-ink/40'}
                 bg={
                   gs.zero_stock_count > 0
                     ? 'bg-red-500/10 border-red-500/20'
-                    : 'bg-white/5 border-white/5'
+                    : 'bg-surface border-line'
                 }
                 onClick={() => setActiveTab('alerts')}
                 hint="عرض تنبيهات المخزون"
@@ -378,7 +378,7 @@ export default function Inventory() {
             <div className="flex justify-end">
               <Link
                 href={api("/audit-log")}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border border-line bg-surface text-ink/60 hover:bg-surface hover:text-ink transition-all"
               >
                 <Shield className="w-3.5 h-3.5" /> سجل المراجعات الكامل
               </Link>
@@ -386,7 +386,7 @@ export default function Inventory() {
           )}
           {gs && (gs.low_stock_count > 0 || gs.zero_stock_count > 0) && (
             <div className="flex gap-2 flex-wrap">
-              <span className="text-white/40 text-xs flex items-center gap-1.5 me-1">
+              <span className="text-ink/40 text-xs flex items-center gap-1.5 me-1">
                 <Filter className="w-3.5 h-3.5" /> فلاتر سريعة:
               </span>
               {gs.zero_stock_count > 0 && (
@@ -443,7 +443,7 @@ export default function Inventory() {
       )}
 
         {activeTab === 'overview' && !gs && (
-          <div className="text-center py-20 text-white/30 text-sm">
+          <div className="text-center py-20 text-ink/30 text-sm">
             جاري تحميل بيانات المخزون...
           </div>
         )}

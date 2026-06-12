@@ -255,7 +255,7 @@ export default function Dashboard() {
                 border: `1px solid ${def.color}33`,
                 background: isDark ? `${def.color}14` : `${def.color}11`,
                 cursor: 'pointer',
-                color: isDark ? '#f1f5f9' : '#1e293b',
+                color: isDark ? '#f1f5f9' : 'var(--bg-elevated)',
                 fontSize: 13,
                 fontWeight: 600,
                 transition: 'all 0.18s',
@@ -473,7 +473,7 @@ export default function Dashboard() {
                   boxShadow: '0 20px 48px rgba(0,0,0,0.5)',
                 }}
                 labelStyle={{ color: tooltipLabelClr, marginBottom: 6, fontWeight: 700 }}
-                itemStyle={{ color: isDark ? '#fff' : '#0d1117' }}
+                itemStyle={{ color: isDark ? '#fff' : 'var(--bg-app)' }}
                 formatter={(v: number) => [formatCurrency(v), '']}
               />
               <Bar dataKey="amount" radius={[10, 10, 0, 0]}>

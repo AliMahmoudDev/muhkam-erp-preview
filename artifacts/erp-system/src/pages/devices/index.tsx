@@ -67,7 +67,7 @@ export function GradeBadge({ grade }: { grade?: string }) {
     "C":  "text-orange-300 bg-orange-500/10 border-orange-500/20",
     "D":  "text-red-400 bg-red-500/10 border-red-500/20",
   };
-  const c = colors[grade ?? "B"] ?? "text-white/40 bg-white/5 border-white/10";
+  const c = colors[grade ?? "B"] ?? "text-ink/40 bg-surface border-line";
   return (
     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${c}`}>
       {grade ?? "—"}
@@ -178,13 +178,13 @@ export function RowMenu({ device, onDetail, onRefresh }: {
       {/* Eye icon */}
       <button onClick={(e) => { e.stopPropagation(); onDetail(); }}
         title="تفاصيل الجهاز"
-        className="p-1.5 rounded-lg text-white/25 hover:text-violet-300 hover:bg-violet-500/10 transition-all">
+        className="p-1.5 rounded-lg text-ink/25 hover:text-violet-300 hover:bg-violet-500/10 transition-all">
         <Eye className="w-3.5 h-3.5" />
       </button>
 
       {/* Three-dot */}
       <button ref={btnRef} onClick={handleOpenMenu}
-        className="p-1.5 rounded-lg text-white/25 hover:text-white/70 hover:bg-white/8 transition-all">
+        className="p-1.5 rounded-lg text-ink/25 hover:text-ink/70 hover:bg-surface transition-all">
         <MoreVertical className="w-3.5 h-3.5" />
       </button>
 
@@ -210,14 +210,14 @@ export function RowMenu({ device, onDetail, onRefresh }: {
       {confirming && confirming !== "return" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" dir="rtl"
           onClick={e => e.stopPropagation()}>
-          <div className="glass-panel rounded-2xl border border-white/10 p-5 w-72 space-y-4">
-            <p className="font-bold text-white text-center">
+          <div className="glass-panel rounded-2xl border border-line p-5 w-72 space-y-4">
+            <p className="font-bold text-ink text-center">
               {confirming === "delete" ? "حذف الجهاز؟" : confirming === "maintenance" ? "إرسال للصيانة؟" : "إرجاع كمتاح؟"}
             </p>
-            <p className="text-white/40 text-xs text-center">{device.brand} {device.model}</p>
+            <p className="text-ink/40 text-xs text-center">{device.brand} {device.model}</p>
             <div className="flex gap-2">
               <button onClick={(e) => { e.stopPropagation(); setConfirming(null); }}
-                className="flex-1 py-2 rounded-xl border border-white/10 text-white/50 text-sm">إلغاء</button>
+                className="flex-1 py-2 rounded-xl border border-line text-ink/50 text-sm">إلغاء</button>
               <button onClick={(e) => { e.stopPropagation(); doAction(confirming as "delete" | "maintenance" | "available"); }}
                 className={`flex-1 py-2 rounded-xl border text-sm font-bold ${
                   confirming === "delete" ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-amber-500/40 bg-amber-500/15 text-amber-300"
@@ -298,8 +298,8 @@ export default function Devices() {
             <Smartphone className="w-4 h-4 text-violet-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white leading-tight">الأجهزة المستعملة</h1>
-            <p className="text-[11px] text-white/30">شراء وبيع الأجهزة — البيع والصيانة</p>
+            <h1 className="text-lg font-bold text-ink leading-tight">الأجهزة المستعملة</h1>
+            <p className="text-[11px] text-ink/30">شراء وبيع الأجهزة — البيع والصيانة</p>
           </div>
         </div>
         {pageView === "devices" && (
@@ -311,7 +311,7 @@ export default function Devices() {
       </div>
 
       {/* ── Page-level tab bar ── */}
-      <div className="flex gap-1 border-b border-white/8 pb-0">
+      <div className="flex gap-1 border-b border-line pb-0">
         {[
           { id: "devices" as const, label: "الأجهزة", icon: Smartphone },
           { id: "warranty" as const, label: "الضمانات", icon: Shield },
@@ -322,7 +322,7 @@ export default function Devices() {
                 ? id === "warranty"
                   ? "border-amber-500 text-amber-300"
                   : "border-violet-500 text-violet-300"
-                : "border-transparent text-white/40 hover:text-white/70"
+                : "border-transparent text-ink/40 hover:text-ink/70"
             }`}>
             <Icon className="w-3.5 h-3.5" />
             {label}
@@ -339,14 +339,14 @@ export default function Devices() {
       {/* ── Stats cards — Row 1: Counts ── */}
       <div className="grid grid-cols-4 gap-2">
         {[
-          { label: "إجمالي الأجهزة", value: stats?.total ?? 0,        color: "text-white",       icon: Smartphone },
+          { label: "إجمالي الأجهزة", value: stats?.total ?? 0,        color: "text-ink",       icon: Smartphone },
           { label: "متاح للبيع",     value: stats?.available ?? 0,     color: "text-emerald-400", icon: CheckCircle2 },
           { label: "في الصيانة",     value: stats?.maintenance ?? 0,   color: "text-amber-400",   icon: Wrench },
           { label: "إجمالي المباع",  value: stats?.sold ?? 0,          color: "text-blue-400",    icon: ShoppingCart },
         ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="glass-panel rounded-xl border border-white/8 p-3">
+          <div key={label} className="glass-panel rounded-xl border border-line p-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-white/30">{label}</span>
+              <span className="text-[10px] text-ink/30">{label}</span>
               <Icon className={`w-3.5 h-3.5 ${color} opacity-60`} />
             </div>
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
@@ -358,36 +358,36 @@ export default function Devices() {
       <div className="grid grid-cols-3 gap-2">
         <div className="glass-panel rounded-xl border border-violet-500/15 p-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-white/30">قيمة المخزون (شراء)</span>
+            <span className="text-[10px] text-ink/30">قيمة المخزون (شراء)</span>
             <Package className="w-3.5 h-3.5 text-violet-400/60" />
           </div>
           <p className="text-lg font-bold text-violet-300">
             {(stats?.stock_purchase_value ?? 0).toLocaleString("ar-EG")}
-            <span className="text-[10px] font-normal text-white/25 mr-1">ج.م</span>
+            <span className="text-[10px] font-normal text-ink/25 mr-1">ج.م</span>
           </p>
-          <p className="text-[10px] text-white/20 mt-0.5">
+          <p className="text-[10px] text-ink/20 mt-0.5">
             سعر بيع متوقع: {(stats?.stock_sale_value ?? 0).toLocaleString("ar-EG")} ج.م
           </p>
         </div>
         <div className="glass-panel rounded-xl border border-emerald-500/15 p-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-white/30">ربح متوقع من المخزون</span>
+            <span className="text-[10px] text-ink/30">ربح متوقع من المخزون</span>
             <TrendingUp className="w-3.5 h-3.5 text-emerald-400/60" />
           </div>
           <p className="text-lg font-bold text-emerald-300">
             {(stats?.stock_profit_potential ?? 0).toLocaleString("ar-EG")}
-            <span className="text-[10px] font-normal text-white/25 mr-1">ج.م</span>
+            <span className="text-[10px] font-normal text-ink/25 mr-1">ج.م</span>
           </p>
-          <p className="text-[10px] text-white/20 mt-0.5">هامش متوقع على الأجهزة المتاحة</p>
+          <p className="text-[10px] text-ink/20 mt-0.5">هامش متوقع على الأجهزة المتاحة</p>
         </div>
         <div className="glass-panel rounded-xl border border-blue-500/15 p-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-white/30">إيراد المبيعات الفعلي</span>
+            <span className="text-[10px] text-ink/30">إيراد المبيعات الفعلي</span>
             <Banknote className="w-3.5 h-3.5 text-blue-400/60" />
           </div>
           <p className="text-lg font-bold text-blue-300">
             {(stats?.sold_revenue ?? 0).toLocaleString("ar-EG")}
-            <span className="text-[10px] font-normal text-white/25 mr-1">ج.م</span>
+            <span className="text-[10px] font-normal text-ink/25 mr-1">ج.م</span>
           </p>
           <p className={`text-[10px] mt-0.5 font-semibold ${(stats?.sold_profit ?? 0) >= 0 ? "text-emerald-400/70" : "text-red-400/70"}`}>
             صافي الربح: {(stats?.sold_profit ?? 0).toLocaleString("ar-EG")} ج.م

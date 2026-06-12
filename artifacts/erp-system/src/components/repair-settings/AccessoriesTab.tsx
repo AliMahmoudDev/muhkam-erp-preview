@@ -111,9 +111,9 @@ export default function AccessoriesTab() {
         </div>
 
         {/* Add new */}
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8">
-            <span className="text-[12px] font-semibold text-white/50">إضافة إكسسوار جديد</span>
+        <div className="rounded-xl border border-line overflow-hidden">
+          <div className="px-4 py-3 bg-surface border-b border-line">
+            <span className="text-[12px] font-semibold text-ink/50">إضافة إكسسوار جديد</span>
           </div>
           <div className="p-3 space-y-2">
             <div className="grid grid-cols-12 gap-2">
@@ -133,22 +133,22 @@ export default function AccessoriesTab() {
         </div>
 
         {/* List */}
-        <div className="rounded-xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-3 bg-white/[0.02] border-b border-white/8 flex items-center justify-between">
-            <span className="text-[12px] font-semibold text-white/50">الإكسسوارات الحالية</span>
-            <span className="text-[11px] text-white/25">{items.length}</span>
+        <div className="rounded-xl border border-line overflow-hidden">
+          <div className="px-4 py-3 bg-surface border-b border-line flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-ink/50">الإكسسوارات الحالية</span>
+            <span className="text-[11px] text-ink/25">{items.length}</span>
           </div>
           {isLoading && (
             <div className="flex items-center justify-center py-12">
-              <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-line border-t-white/60 rounded-full animate-spin" />
             </div>
           )}
           {!isLoading && items.length === 0 && (
-            <p className="text-center py-12 text-white/30 text-sm">لا توجد إكسسوارات بعد</p>
+            <p className="text-center py-12 text-ink/30 text-sm">لا توجد إكسسوارات بعد</p>
           )}
           <div className="divide-y divide-white/5">
             {items.map(it => (
-              <div key={it.id} className={`flex items-center gap-2 px-3 py-2.5 hover:bg-white/[0.02] transition-colors ${!it.active ? "opacity-40" : ""}`}>
+              <div key={it.id} className={`flex items-center gap-2 px-3 py-2.5 hover:bg-surface transition-colors ${!it.active ? "opacity-40" : ""}`}>
                 <span className="text-lg w-7 text-center">{it.emoji ?? "✨"}</span>
                 {editId === it.id ? (
                   <>
@@ -160,21 +160,21 @@ export default function AccessoriesTab() {
                       className="text-emerald-400 hover:text-emerald-300 p-1 disabled:opacity-30">
                       <CheckCircle2 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => setEditId(null)} className="text-white/30 hover:text-white/60 p-1">
+                    <button onClick={() => setEditId(null)} className="text-ink/30 hover:text-ink/60 p-1">
                       <XCircle className="w-4 h-4" />
                     </button>
                   </>
                 ) : (
                   <>
-                    <span className="flex-1 text-sm text-white/75">{it.label_ar}</span>
-                    <code className="text-[10px] text-white/20 font-mono">{it.key_}</code>
+                    <span className="flex-1 text-sm text-ink/75">{it.label_ar}</span>
+                    <code className="text-[10px] text-ink/20 font-mono">{it.key_}</code>
                     {it.is_system && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400/70">افتراضي</span>}
                     <button onClick={() => toggleActive(it)} disabled={busy}
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${it.active ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-white/30"}`}>
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${it.active ? "bg-emerald-500/15 text-emerald-400" : "bg-surface text-ink/30"}`}>
                       {it.active ? "مفعّل" : "موقوف"}
                     </button>
                     <button onClick={() => { setEditId(it.id); setEditBuf({ label_ar: it.label_ar, emoji: it.emoji ?? "" }); }}
-                      className="text-white/25 hover:text-white/55 p-1">
+                      className="text-ink/25 hover:text-ink/55 p-1">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     {!it.is_system && (

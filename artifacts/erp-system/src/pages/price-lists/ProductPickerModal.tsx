@@ -47,19 +47,19 @@ export function ProductPickerModal({
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
-          <p className="font-bold text-white">اختر المنتجات</p>
-          <button onClick={onClose} className="p-1 rounded-lg text-white/40 hover:text-white transition"><X className="w-4 h-4" /></button>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+          <p className="font-bold text-ink">اختر المنتجات</p>
+          <button onClick={onClose} className="p-1 rounded-lg text-ink/40 hover:text-ink transition"><X className="w-4 h-4" /></button>
         </div>
         {/* Search */}
-        <div className="px-4 py-3 border-b border-white/5">
+        <div className="px-4 py-3 border-b border-line">
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="بحث بالاسم أو الباركود..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-sm text-white outline-none"
+              className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 pr-10 text-sm text-ink outline-none"
               autoFocus
             />
           </div>
@@ -73,28 +73,28 @@ export function ProductPickerModal({
                 key={p.id}
                 onClick={() => toggle(p.id)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
-                  isSelected ? "bg-amber-500/15 border border-amber-500/30" : "border border-transparent hover:bg-white/5"
+                  isSelected ? "bg-amber-500/15 border border-amber-500/30" : "border border-transparent hover:bg-surface"
                 }`}
               >
                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
-                  isSelected ? "bg-amber-500 border-amber-500" : "border-white/20"
+                  isSelected ? "bg-amber-500 border-amber-500" : "border-line"
                 }`}>
                   {isSelected && <Check className="w-3 h-3 text-black" strokeWidth={3} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white truncate">{p.name}</p>
-                  <p className="text-xs text-white/40">تكلفة: {formatCurrency(safeNum(p.cost_price))}</p>
+                  <p className="text-sm text-ink truncate">{p.name}</p>
+                  <p className="text-xs text-ink/40">تكلفة: {formatCurrency(safeNum(p.cost_price))}</p>
                 </div>
               </div>
             );
           })}
           {filtered.length === 0 && (
-            <div className="text-center py-10 text-white/30 text-sm">لا توجد منتجات</div>
+            <div className="text-center py-10 text-ink/30 text-sm">لا توجد منتجات</div>
           )}
         </div>
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/8 flex justify-between items-center">
-          <span className="text-white/50 text-sm">{selected.size} منتج محدد</span>
+        <div className="px-5 py-4 border-t border-line flex justify-between items-center">
+          <span className="text-ink/50 text-sm">{selected.size} منتج محدد</span>
           <button
             onClick={() => onConfirm(selected)}
             className="px-4 py-2 rounded-xl bg-amber-500 text-black font-bold text-sm hover:bg-amber-400 transition"

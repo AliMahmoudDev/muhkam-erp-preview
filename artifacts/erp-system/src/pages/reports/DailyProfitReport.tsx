@@ -32,36 +32,36 @@ export default function DailyProfitReport() {
           { label:"المصروفات",       value:summary.total_expenses,      color:"text-orange-400" },
           { label:"صافي الربح",      value:summary.total_net_profit,    color:summary.total_net_profit>=0?"text-blue-400":"text-red-400" },
         ].map(c=>(
-          <div key={c.label} className="glass-panel rounded-2xl p-4 border border-white/5">
-            <p className="text-white/40 text-xs mb-1">{c.label}</p>
+          <div key={c.label} className="glass-panel rounded-2xl p-4 border border-line">
+            <p className="text-ink/40 text-xs mb-1">{c.label}</p>
             <p className={`text-lg font-black ${c.color}`}>{formatCurrency(c.value)}</p>
           </div>
         ))}
       </div>
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10">
+            <thead className="bg-surface border-b border-line">
               <tr>
-                <th className="p-3 text-white/50">التاريخ</th>
-                <th className="p-3 text-white/50">المبيعات</th>
-                <th className="p-3 text-white/50">المرتجعات</th>
-                <th className="p-3 text-white/50">صافي المبيعات</th>
-                <th className="p-3 text-white/50">تكلفة البضاعة</th>
-                <th className="p-3 text-white/50">مجمل الربح</th>
-                <th className="p-3 text-white/50">المصروفات</th>
-                <th className="p-3 text-white/50">صافي الربح</th>
+                <th className="p-3 text-ink/50">التاريخ</th>
+                <th className="p-3 text-ink/50">المبيعات</th>
+                <th className="p-3 text-ink/50">المرتجعات</th>
+                <th className="p-3 text-ink/50">صافي المبيعات</th>
+                <th className="p-3 text-ink/50">تكلفة البضاعة</th>
+                <th className="p-3 text-ink/50">مجمل الربح</th>
+                <th className="p-3 text-ink/50">المصروفات</th>
+                <th className="p-3 text-ink/50">صافي الربح</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? <TableSkeleton cols={8} rows={5}/> :
-               days.length===0 ? <tr><td colSpan={8} className="p-12 text-center text-white/40">لا توجد بيانات في هذه الفترة</td></tr> :
+               days.length===0 ? <tr><td colSpan={8} className="p-12 text-center text-ink/40">لا توجد بيانات في هذه الفترة</td></tr> :
                days.map(d=>(
-                <tr key={d.day} className="border-b border-white/5 erp-table-row">
-                  <td className="p-3 text-white/70 font-mono">{d.day}</td>
+                <tr key={d.day} className="border-b border-line erp-table-row">
+                  <td className="p-3 text-ink/70 font-mono">{d.day}</td>
                   <td className="p-3 text-emerald-400 font-bold">{formatCurrency(d.total_sales)}</td>
                   <td className="p-3 text-red-400">{d.total_returns>0?formatCurrency(d.total_returns):"—"}</td>
-                  <td className="p-3 text-white font-bold">{formatCurrency(d.net_sales)}</td>
+                  <td className="p-3 text-ink font-bold">{formatCurrency(d.net_sales)}</td>
                   <td className="p-3 text-red-400">{formatCurrency(d.total_cogs)}</td>
                   <td className={`p-3 font-bold ${d.gross_profit>=0?"text-amber-400":"text-red-400"}`}>{formatCurrency(d.gross_profit)}</td>
                   <td className="p-3 text-orange-400">{d.expenses>0?formatCurrency(d.expenses):"—"}</td>
@@ -70,11 +70,11 @@ export default function DailyProfitReport() {
               ))}
             </tbody>
             {days.length>0&&(
-              <tfoot className="bg-white/5 border-t border-white/10">
+              <tfoot className="bg-surface border-t border-line">
                 <tr>
-                  <td className="p-3 font-bold text-white/50">الإجمالي</td>
+                  <td className="p-3 font-bold text-ink/50">الإجمالي</td>
                   <td className="p-3"/><td className="p-3"/>
-                  <td className="p-3 font-black text-white">{formatCurrency(summary.total_net_sales)}</td>
+                  <td className="p-3 font-black text-ink">{formatCurrency(summary.total_net_sales)}</td>
                   <td className="p-3 font-black text-red-400">{formatCurrency(summary.total_cogs)}</td>
                   <td className="p-3 font-black text-amber-400">{formatCurrency(summary.total_gross_profit)}</td>
                   <td className="p-3 font-black text-orange-400">{formatCurrency(summary.total_expenses)}</td>

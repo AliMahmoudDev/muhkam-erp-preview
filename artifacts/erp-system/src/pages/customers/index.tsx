@@ -59,8 +59,8 @@ function AccessDenied({ msg }: { msg: string }) {
           d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 115.636 5.636m12.728 12.728L5.636 5.636"
         />
       </svg>
-      <p className="text-white/60 font-bold text-lg">غير مصرح</p>
-      <p className="text-white/30 text-sm mt-1">{msg}</p>
+      <p className="text-ink/60 font-bold text-lg">غير مصرح</p>
+      <p className="text-ink/30 text-sm mt-1">{msg}</p>
     </div>
   );
 }
@@ -508,14 +508,14 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-3 border-b border-white/10">
+      <div className="flex items-end justify-between gap-3 border-b border-line">
         <div className="flex gap-1">
           {([
             { id: 'customers', label: 'العملاء والموردون' },
             { id: 'bad-debts', label: 'الديون المعدومة' },
           ] as const).map(t => (
             <button key={t.id} onClick={() => setPageView(t.id)}
-              className={`px-5 py-2.5 text-sm font-bold border-b-2 transition-all ${pageView === t.id ? 'border-amber-400 text-amber-400' : 'border-transparent text-white/40 hover:text-white/70'}`}>
+              className={`px-5 py-2.5 text-sm font-bold border-b-2 transition-all ${pageView === t.id ? 'border-amber-400 text-amber-400' : 'border-transparent text-ink/40 hover:text-ink/70'}`}>
               {t.label}
             </button>
           ))}
@@ -550,7 +550,7 @@ export default function Customers() {
 
       {pageView === 'customers' && <>
       <div className="relative max-w-sm">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/40" />
         <input
           type="text"
           placeholder="بحث بالاسم أو الهاتف..."
@@ -569,10 +569,10 @@ export default function Customers() {
           >
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
-              <p className="text-white/40 text-xs font-bold">ذمم مدينة (AR)</p>
+              <p className="text-ink/40 text-xs font-bold">ذمم مدينة (AR)</p>
             </div>
             <p className="text-xl font-black text-amber-400">{formatCurrency(totalAR)}</p>
-            <p className="text-white/30 text-xs mt-0.5">{debtorCount} عميل عليه رصيد</p>
+            <p className="text-ink/30 text-xs mt-0.5">{debtorCount} عميل عليه رصيد</p>
           </div>
           <div
             className="glass-panel rounded-2xl p-4 border cursor-pointer transition-all"
@@ -581,18 +581,18 @@ export default function Customers() {
           >
             <div className="flex items-center gap-2 mb-1">
               <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-              <p className="text-white/40 text-xs font-bold">ذمم دائنة (AP)</p>
+              <p className="text-ink/40 text-xs font-bold">ذمم دائنة (AP)</p>
             </div>
             <p className="text-xl font-black text-red-400">{formatCurrency(totalAP)}</p>
-            <p className="text-white/30 text-xs mt-0.5">{customers.filter(c => Number(c.balance) < -0.001).length} له رصيد عليك</p>
+            <p className="text-ink/30 text-xs mt-0.5">{customers.filter(c => Number(c.balance) < -0.001).length} له رصيد عليك</p>
           </div>
-          <div className="glass-panel rounded-2xl p-4 border border-white/5">
+          <div className="glass-panel rounded-2xl p-4 border border-line">
             <div className="flex items-center gap-2 mb-1">
               <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
-              <p className="text-white/40 text-xs font-bold">الصافي</p>
+              <p className="text-ink/40 text-xs font-bold">الصافي</p>
             </div>
             <p className={`text-xl font-black ${totalAR - totalAP >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(Math.abs(totalAR - totalAP))}</p>
-            <p className="text-white/30 text-xs mt-0.5">{totalAR - totalAP >= 0 ? 'لصالحك' : 'عليك صافياً'}</p>
+            <p className="text-ink/30 text-xs mt-0.5">{totalAR - totalAP >= 0 ? 'لصالحك' : 'عليك صافياً'}</p>
           </div>
           <div
             className="glass-panel rounded-2xl p-4 border cursor-pointer transition-all"
@@ -601,10 +601,10 @@ export default function Customers() {
           >
             <div className="flex items-center gap-2 mb-1">
               <ArrowDownToLine className="w-3.5 h-3.5 text-indigo-400" />
-              <p className="text-white/40 text-xs font-bold">موردون</p>
+              <p className="text-ink/40 text-xs font-bold">موردون</p>
             </div>
             <p className="text-xl font-black text-indigo-400">{totalSuppliers}</p>
-            <p className="text-white/30 text-xs mt-0.5">جهة يتم الشراء منها</p>
+            <p className="text-ink/30 text-xs mt-0.5">جهة يتم الشراء منها</p>
           </div>
         </div>
       )}
@@ -635,7 +635,7 @@ export default function Customers() {
             className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
               typeFilter === f.key
                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'
+                : 'bg-surface border-line text-ink/40 hover:text-ink/60'
             }`}
           >
             {f.label}

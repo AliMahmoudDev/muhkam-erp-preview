@@ -303,9 +303,9 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
   };
 
   const selectRow = (label: string, icon: React.ReactNode, children: React.ReactNode) => (
-    <div className="purch-row flex items-center gap-2 bg-white/[0.07] border border-white/[0.13] rounded-xl px-3 py-2 focus-within:border-amber-500/50 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.12)] transition-all">
-      <span className="text-white/50 shrink-0">{icon}</span>
-      <span className="text-white/50 text-xs w-14 shrink-0 font-medium">{label}</span>
+    <div className="purch-row flex items-center gap-2 bg-surface border border-line rounded-xl px-3 py-2 focus-within:border-amber-500/50 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.12)] transition-all">
+      <span className="text-ink/50 shrink-0">{icon}</span>
+      <span className="text-ink/50 text-xs w-14 shrink-0 font-medium">{label}</span>
       {children}
     </div>
   );
@@ -326,17 +326,17 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
         <div className="flex-1 flex flex-col min-h-0">
           <div className="glass-panel rounded-2xl p-3 mb-3 shrink-0 flex flex-wrap gap-2 items-center">
             <div className="purch-search-wrap flex items-center gap-2 flex-1 min-w-0">
-              <Search className="w-4 h-4 text-white/40 shrink-0" />
+              <Search className="w-4 h-4 text-ink/40 shrink-0" />
               <input
                 type="text"
                 placeholder="ابحث عن منتج..."
-                className="bg-transparent text-white outline-none text-sm w-full placeholder:text-white/30"
+                className="bg-transparent text-ink outline-none text-sm w-full placeholder:text-ink/30"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
             <select
-              className="bg-black/30 text-white/70 border border-white/10 rounded-xl px-3 py-1.5 text-sm outline-none appearance-none"
+              className="bg-black/30 text-ink/70 border border-line rounded-xl px-3 py-1.5 text-sm outline-none appearance-none"
               value={categoryFilter}
               onChange={e => setCategoryFilter(e.target.value)}
             >
@@ -349,14 +349,14 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
               {filteredProducts.map(product => (
                 <button key={product.id} onClick={() => addToCart(product)}
                   className="group glass-panel rounded-2xl p-3 text-right transition-all hover:-translate-y-1 hover:border-amber-500/50 hover:shadow-[0_10px_28px_rgba(245,158,11,0.14),0_2px_10px_rgba(0,0,0,0.2)]">
-                  <div className="h-14 bg-white/[0.07] rounded-xl mb-3 flex items-center justify-center border border-white/[0.10] group-hover:bg-amber-500/10 group-hover:border-amber-500/25 transition-all">
-                    <Package className="w-6 h-6 text-white/45 group-hover:text-amber-400/80 transition-colors" />
+                  <div className="h-14 bg-surface rounded-xl mb-3 flex items-center justify-center border border-line group-hover:bg-amber-500/10 group-hover:border-amber-500/25 transition-all">
+                    <Package className="w-6 h-6 text-ink/45 group-hover:text-amber-400/80 transition-colors" />
                   </div>
-                  <p className="font-bold text-white/92 text-sm truncate">{product.name}</p>
+                  <p className="font-bold text-ink/92 text-sm truncate">{product.name}</p>
                   {(product.category_name || product.category) && <p className="text-xs text-amber-400/70 mt-0.5 truncate">{product.category_name || product.category}</p>}
                   <div className="flex justify-between items-center mt-2.5">
                     <span className="text-blue-300 font-black text-sm tabular-nums">{formatCurrency(product.cost_price)}</span>
-                    <span className="text-[10px] text-white/45 bg-white/8 px-1.5 py-0.5 rounded-md font-bold tabular-nums">{product.quantity}</span>
+                    <span className="text-[10px] text-ink/45 bg-surface px-1.5 py-0.5 rounded-md font-bold tabular-nums">{product.quantity}</span>
                   </div>
                   <div className="mt-2 py-1 rounded-lg text-[11px] font-black text-center opacity-0 group-hover:opacity-100 transition-opacity bg-amber-500/11 text-amber-400 border border-amber-500/20">
                     + أضف للفاتورة
@@ -374,13 +374,13 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                   </div>
                   <div className="text-center">
                     <p className="text-violet-300 text-xs font-bold">إضافة منتج جديد</p>
-                    <p className="text-white/30 text-xs mt-0.5 truncate max-w-[120px]">«{search}»</p>
+                    <p className="text-ink/30 text-xs mt-0.5 truncate max-w-[120px]">«{search}»</p>
                   </div>
                 </button>
               )}
 
               {!search && filteredProducts.length === 0 && (
-                <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-white/25">
+                <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-ink/25">
                   <Package className="w-10 h-10 mb-3 opacity-20" />
                   <p className="text-sm">لا توجد منتجات — اذهب إلى قسم المنتجات لإضافتها</p>
                 </div>
@@ -395,10 +395,10 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
           <div className="purch-cart-header px-3 pt-3 pb-2.5 shrink-0">
             {/* عنوان + عداد */}
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-black text-white flex items-center gap-1.5 text-sm">
+              <h3 className="font-black text-ink flex items-center gap-1.5 text-sm">
                 <ShoppingBag className="w-4 h-4 text-amber-400" /> فاتورة مشتريات
               </h3>
-              <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${cart.length > 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-white/[0.06] text-white/30 border border-white/[0.08]'}`}>
+              <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${cart.length > 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-surface text-ink/30 border border-line'}`}>
                 {cart.length} صنف
               </span>
             </div>
@@ -407,7 +407,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
             <div className="flex gap-1 mb-1.5">
               {(Object.keys(CURRENCY_SYMBOLS) as PurchaseCurrency[]).map(cur => (
                 <button key={cur} onClick={() => setCurrency(cur)}
-                  className={`flex-1 py-1 rounded-lg text-[10px] font-bold border transition-all ${currency === cur ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' : 'bg-white/5 text-white/35 border-white/10 hover:bg-white/10 hover:text-white/60'}`}>
+                  className={`flex-1 py-1 rounded-lg text-[10px] font-bold border transition-all ${currency === cur ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' : 'bg-surface text-ink/35 border-line hover:bg-surface hover:text-ink/60'}`}>
                   {CURRENCY_SYMBOLS[cur]} {cur}
                 </button>
               ))}
@@ -415,10 +415,10 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
 
             {/* المخزن + مصاريف الشحن في صف واحد */}
             <div className="grid grid-cols-2 gap-1.5">
-              <div className="flex items-center gap-1.5 bg-white/[0.055] border border-white/[0.1] rounded-xl px-2.5 py-1.5 focus-within:border-amber-500/40 transition-all">
-                <Vault className="w-3 h-3 text-white/35 shrink-0" />
+              <div className="flex items-center gap-1.5 bg-surface border border-line rounded-xl px-2.5 py-1.5 focus-within:border-amber-500/40 transition-all">
+                <Vault className="w-3 h-3 text-ink/35 shrink-0" />
                 <select
-                  className="bg-transparent text-white/80 outline-none text-[10px] w-full appearance-none font-bold truncate"
+                  className="bg-transparent text-ink/80 outline-none text-[10px] w-full appearance-none font-bold truncate"
                   value={warehouseId}
                   onChange={e => setWarehouseId(e.target.value)}
                 >
@@ -427,7 +427,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                   ))}
                 </select>
               </div>
-              <div className="flex items-center gap-1 bg-white/[0.055] border border-white/[0.1] rounded-xl px-2.5 py-1.5 focus-within:border-amber-500/40 transition-all">
+              <div className="flex items-center gap-1 bg-surface border border-line rounded-xl px-2.5 py-1.5 focus-within:border-amber-500/40 transition-all">
                 <span className="text-[11px] shrink-0">🚢</span>
                 <input
                   type="number" step="0.01" min="0"
@@ -436,7 +436,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                   className="bg-transparent text-amber-200/80 outline-none text-[10px] font-bold w-full text-right"
                   placeholder="شحن 0"
                 />
-                <span className="text-white/30 text-[10px] shrink-0">{currency !== "EGP" ? currency : "ج"}</span>
+                <span className="text-ink/30 text-[10px] shrink-0">{currency !== "EGP" ? currency : "ج"}</span>
               </div>
             </div>
 
@@ -458,21 +458,21 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
           {/* ─── أصناف السلة ─── */}
           <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 cart-items-area">
             {cart.length === 0 ? (
-              <div className="h-full min-h-[80px] flex flex-col items-center justify-center text-white/20 gap-2 py-6">
+              <div className="h-full min-h-[80px] flex flex-col items-center justify-center text-ink/20 gap-2 py-6">
                 <ShoppingBag className="w-10 h-10 opacity-25" />
                 <p className="text-xs font-bold">اضغط على منتج لإضافته</p>
               </div>
             ) : cart.map(item => (
               <div key={item.product_id} className="pos-cart-item flex items-center gap-1.5 px-2.5 py-2 rounded-xl">
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-bold text-xs truncate leading-tight">{item.product_name}</p>
-                  <p className="text-white/40 text-[10px] tabular-nums">{item.unit_price.toFixed(2)} {currSym}</p>
+                  <p className="text-ink font-bold text-xs truncate leading-tight">{item.product_name}</p>
+                  <p className="text-ink/40 text-[10px] tabular-nums">{item.unit_price.toFixed(2)} {currSym}</p>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
                   <button onClick={() => updateQty(item.product_id, -1)} className="pos-qty-btn w-6 h-6 rounded-lg flex items-center justify-center">
                     <Minus className="w-3 h-3" />
                   </button>
-                  <span className="text-white font-black text-xs w-5 text-center tabular-nums">{item.quantity}</span>
+                  <span className="text-ink font-black text-xs w-5 text-center tabular-nums">{item.quantity}</span>
                   <button onClick={() => updateQty(item.product_id, 1)} className="pos-qty-btn pos-qty-btn-add w-6 h-6 rounded-lg flex items-center justify-center">
                     <Plus className="w-3 h-3" />
                   </button>
@@ -482,11 +482,11 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                     type="number" step="0.01" min="0"
                     value={item.unit_price}
                     onChange={e => updatePrice(item.product_id, parseFloat(e.target.value) || 0)}
-                    className="bg-white/10 border border-amber-500/25 rounded-lg px-1.5 py-1 text-[10px] text-amber-200 outline-none w-full text-right font-bold focus:border-amber-500/55 transition-colors"
+                    className="bg-surface border border-amber-500/25 rounded-lg px-1.5 py-1 text-[10px] text-amber-200 outline-none w-full text-right font-bold focus:border-amber-500/55 transition-colors"
                   />
                   <p className="text-blue-300 font-black text-[10px] text-right tabular-nums mt-0.5">
                     {item.total_price.toFixed(currency === "EGP" ? 0 : 2)}
-                    {currency !== "EGP" && <span className="text-white/30 text-[9px] mr-0.5">{currSym}</span>}
+                    {currency !== "EGP" && <span className="text-ink/30 text-[9px] mr-0.5">{currSym}</span>}
                   </p>
                 </div>
                 <button
@@ -538,7 +538,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
               className={`w-full py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
                 isConsignment
                   ? 'bg-violet-500/20 text-violet-300 border-violet-500/40'
-                  : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 hover:text-white/60'
+                  : 'bg-surface text-ink/40 border-line hover:bg-surface hover:text-ink/60'
               }`}
             >
               <span className="text-base leading-none">📦</span>
@@ -549,7 +549,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
               <div className="flex gap-1">
                 {[{ v: "cash", l: "نقدي" }, { v: "credit", l: "آجل" }, { v: "partial", l: "جزئي" }].map(opt => (
                   <button key={opt.v} onClick={() => setPaymentType(opt.v as "cash" | "credit" | "partial")}
-                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${paymentType === opt.v ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}>
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${paymentType === opt.v ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-surface text-ink/50 border-line hover:bg-surface'}`}>
                     {opt.l}
                   </button>
                 ))}
@@ -570,7 +570,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
             <div className="sale-total-box rounded-2xl overflow-hidden">
               <div className="px-3 py-2.5 space-y-1.5">
                 {currency !== "EGP" && (
-                  <div className="flex justify-between text-[10px] border-b border-white/10 pb-1.5">
+                  <div className="flex justify-between text-[10px] border-b border-line pb-1.5">
                     <span className="text-blue-300/80">إجمالي بـ {CURRENCY_LABELS[currency]}</span>
                     <span className="font-bold text-blue-300">{currSym} {cartTotal.toFixed(2)}</span>
                   </div>
@@ -582,32 +582,32 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-white/70 text-sm font-semibold">
+                  <span className="text-ink/70 text-sm font-semibold">
                     {currency !== "EGP" ? "الإجمالي بالجنيه" : "إجمالي الفاتورة"}
                   </span>
-                  <span className="font-black text-white text-lg tabular-nums">{formatCurrency(egpTotal)}</span>
+                  <span className="font-black text-ink text-lg tabular-nums">{formatCurrency(egpTotal)}</span>
                 </div>
                 {paymentType === "cash" && (
-                  <div className="flex justify-between text-[10px] border-t border-white/10 pt-1.5">
-                    <span className="text-white/60">يُخصم من الخزينة</span>
+                  <div className="flex justify-between text-[10px] border-t border-line pt-1.5">
+                    <span className="text-ink/60">يُخصم من الخزينة</span>
                     <span className="text-red-400 font-bold">− {formatCurrency(egpTotal)}</span>
                   </div>
                 )}
                 {paymentType === "partial" && paidAmount && (
                   <>
-                    <div className="flex justify-between text-[10px] border-t border-white/10 pt-1.5">
-                      <span className="text-white/60">نقدي من الخزينة</span>
+                    <div className="flex justify-between text-[10px] border-t border-line pt-1.5">
+                      <span className="text-ink/60">نقدي من الخزينة</span>
                       <span className="text-red-400 font-bold">− {formatCurrency(parseFloat(paidAmount) || 0)}</span>
                     </div>
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-white/60">على حساب العميل</span>
+                      <span className="text-ink/60">على حساب العميل</span>
                       <span className="text-orange-400 font-bold">− {formatCurrency(egpTotal - (parseFloat(paidAmount) || 0))}</span>
                     </div>
                   </>
                 )}
                 {partyKey && customerImpact !== 0 && (
-                  <div className="flex justify-between text-[10px] border-t border-white/10 pt-1.5">
-                    <span className="text-white/60">أثر على حساب {selectedParty?.name}</span>
+                  <div className="flex justify-between text-[10px] border-t border-line pt-1.5">
+                    <span className="text-ink/60">أثر على حساب {selectedParty?.name}</span>
                     <span className="text-orange-400 font-bold">{formatCurrency(Math.abs(customerImpact))} (علينا)</span>
                   </div>
                 )}

@@ -122,29 +122,29 @@ export default function SalesTargetsTab() {
   return (
     <div className="space-y-6" dir="rtl">
       <div className="mb-2">
-        <h2 className="text-lg font-black text-white">أهداف المبيعات</h2>
-        <p className="text-white/40 text-sm mt-0.5">
+        <h2 className="text-lg font-black text-ink">أهداف المبيعات</h2>
+        <p className="text-ink/40 text-sm mt-0.5">
           تحديد هدف شهري للموظفين المرتبطين بحسابات في النظام ومتابعة تقدمهم
         </p>
       </div>
 
       {/* Month navigator */}
       <div
-        className="flex items-center justify-between p-4 rounded-2xl border border-white/8"
+        className="flex items-center justify-between p-4 rounded-2xl border border-line"
         style={{ background: 'var(--erp-bg-card)' }}
       >
         <button
           onClick={() => setMonth(prevMonth(month))}
-          className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition"
+          className="w-9 h-9 rounded-xl bg-surface hover:bg-surface flex items-center justify-center transition"
         >
-          <ChevronRight className="w-4 h-4 text-white/60" />
+          <ChevronRight className="w-4 h-4 text-ink/60" />
         </button>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">
             <Target className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-center">
-            <p className="text-white font-bold text-sm">{monthLabel(month)}</p>
+            <p className="text-ink font-bold text-sm">{monthLabel(month)}</p>
             {month === currentYM() && (
               <p className="text-amber-400/70 text-[10px] font-semibold">الشهر الحالي</p>
             )}
@@ -152,21 +152,21 @@ export default function SalesTargetsTab() {
         </div>
         <button
           onClick={() => setMonth(nextMonth(month))}
-          className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition"
+          className="w-9 h-9 rounded-xl bg-surface hover:bg-surface flex items-center justify-center transition"
         >
-          <ChevronLeft className="w-4 h-4 text-white/60" />
+          <ChevronLeft className="w-4 h-4 text-ink/60" />
         </button>
       </div>
 
       {/* Overall stats bar */}
       {rows.length > 0 && totalTarget > 0 && (
         <div
-          className="rounded-2xl border border-white/8 p-4 space-y-2"
+          className="rounded-2xl border border-line p-4 space-y-2"
           style={{ background: 'var(--erp-bg-card)' }}
         >
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-amber-400" />
-            <span className="text-white/70 text-sm font-bold">إجمالي الفريق</span>
+            <span className="text-ink/70 text-sm font-bold">إجمالي الفريق</span>
             <span
               className="mr-auto font-bold text-sm"
               style={{ color: overallPct >= 100 ? '#34d399' : overallPct >= 60 ? '#f59e0b' : '#f87171' }}
@@ -174,7 +174,7 @@ export default function SalesTargetsTab() {
               {overallPct.toFixed(1)}%
             </span>
           </div>
-          <div className="h-2 rounded-full bg-white/8 overflow-hidden">
+          <div className="h-2 rounded-full bg-surface overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{
@@ -183,7 +183,7 @@ export default function SalesTargetsTab() {
               }}
             />
           </div>
-          <div className="flex justify-between text-xs text-white/35">
+          <div className="flex justify-between text-xs text-ink/35">
             <span>محقق: {totalAchieved.toLocaleString('ar-EG-u-nu-latn')} ج.م</span>
             <span>المستهدف: {totalTarget.toLocaleString('ar-EG-u-nu-latn')} ج.م</span>
           </div>
@@ -192,11 +192,11 @@ export default function SalesTargetsTab() {
 
       {/* Rows */}
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-white/30 text-sm">
+        <div className="flex items-center justify-center gap-2 py-16 text-ink/30 text-sm">
           <Loader2 className="w-5 h-5 animate-spin" /> جاري التحميل...
         </div>
       ) : rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-white/25">
+        <div className="flex flex-col items-center gap-3 py-16 text-ink/25">
           <UserCheck className="w-10 h-10" />
           <p className="text-sm font-semibold">لا يوجد موظفون مرتبطون بحسابات في النظام</p>
           <p className="text-xs text-center max-w-xs">
@@ -215,7 +215,7 @@ export default function SalesTargetsTab() {
             return (
               <div
                 key={row.user_id}
-                className="rounded-2xl border border-white/8 p-4 space-y-3"
+                className="rounded-2xl border border-line p-4 space-y-3"
                 style={{ background: 'var(--erp-bg-card)' }}
               >
                 {/* Employee info */}
@@ -226,7 +226,7 @@ export default function SalesTargetsTab() {
                     </div>
                     <div className="min-w-0">
                       {/* Employee name (primary) */}
-                      <p className="text-white font-bold text-sm truncate">
+                      <p className="text-ink font-bold text-sm truncate">
                         {emp ? `${emp.first_name_ar} ${emp.last_name_ar}` : row.user_name}
                       </p>
                       {/* Role + department + username */}
@@ -236,14 +236,14 @@ export default function SalesTargetsTab() {
                         </span>
                         {emp?.department_name && (
                           <>
-                            <span className="text-white/20 text-xs">·</span>
-                            <span className="text-white/40 text-[11px]">{emp.department_name}</span>
+                            <span className="text-ink/20 text-xs">·</span>
+                            <span className="text-ink/40 text-[11px]">{emp.department_name}</span>
                           </>
                         )}
                         {emp?.employee_code && (
                           <>
-                            <span className="text-white/20 text-xs">·</span>
-                            <span className="text-white/30 text-[11px] font-mono">{emp.employee_code}</span>
+                            <span className="text-ink/20 text-xs">·</span>
+                            <span className="text-ink/30 text-[11px] font-mono">{emp.employee_code}</span>
                           </>
                         )}
                       </div>
@@ -262,9 +262,9 @@ export default function SalesTargetsTab() {
                         onChange={(e) =>
                           setDrafts((p) => ({ ...p, [row.user_id]: e.target.value }))
                         }
-                        className="w-32 px-3 py-2 pl-10 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-amber-500/50 text-right"
+                        className="w-32 px-3 py-2 pl-10 rounded-xl bg-surface border border-line text-ink text-sm font-mono focus:outline-none focus:border-amber-500/50 text-right"
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 text-xs pointer-events-none">
                         ج.م
                       </span>
                     </div>
@@ -291,7 +291,7 @@ export default function SalesTargetsTab() {
                 {row.target_amount > 0 && (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-white/40">
+                      <span className="text-ink/40">
                         تحقق:{' '}
                         <span className="font-bold" style={{ color }}>
                           {row.achieved_amount.toLocaleString('ar-EG-u-nu-latn')} ج.م
@@ -301,13 +301,13 @@ export default function SalesTargetsTab() {
                         {pct.toFixed(1)}%
                       </span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-surface overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{ width: `${pct}%`, background: color }}
                       />
                     </div>
-                    <p className="text-white/25 text-[10px] text-left">
+                    <p className="text-ink/25 text-[10px] text-left">
                       الهدف: {row.target_amount.toLocaleString('ar-EG-u-nu-latn')} ج.م
                     </p>
                   </div>
@@ -318,9 +318,9 @@ export default function SalesTargetsTab() {
         </div>
       )}
 
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/8">
-        <Target className="w-4 h-4 text-white/25 mt-0.5 shrink-0" />
-        <p className="text-white/30 text-xs leading-relaxed">
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-line">
+        <Target className="w-4 h-4 text-ink/25 mt-0.5 shrink-0" />
+        <p className="text-ink/30 text-xs leading-relaxed">
           تظهر هنا فقط الموظفون الذين تم إنشاء حساب دخول لهم في النظام. لإضافة موظف للقائمة، اذهب لتبويب
           "الموظفون" وأنشئ له حساباً. اضبط الهدف بـ 0 لحذفه.
         </p>

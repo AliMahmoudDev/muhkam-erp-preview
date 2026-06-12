@@ -9,24 +9,24 @@ interface AlertsTableProps {
 
 export function AlertsTable({ filtered, showZeroOnly, onTransferPrefill }: AlertsTableProps) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/10">
+    <div className="overflow-x-auto rounded-2xl border border-line">
       <table className="w-full text-sm min-w-[900px]">
         <thead>
-          <tr className="border-b border-white/10 bg-white/5">
-            <th className="p-3 text-right text-white/60 font-medium">المنتج</th>
-            <th className="p-3 text-right text-white/60 font-medium">المخزن</th>
-            <th className="p-3 text-right text-white/60 font-medium">الكمية الحالية</th>
-            <th className="p-3 text-right text-white/60 font-medium">الحد الدنى</th>
-            <th className="p-3 text-right text-white/60 font-medium">العجز</th>
-            <th className="p-3 text-right text-white/60 font-medium">مقترح الطلب</th>
-            <th className="p-3 text-right text-white/60 font-medium">متاح في مخازن أخرى</th>
-            <th className="p-3 text-right text-white/60 font-medium">إجراء</th>
+          <tr className="border-b border-line bg-surface">
+            <th className="p-3 text-right text-ink/60 font-medium">المنتج</th>
+            <th className="p-3 text-right text-ink/60 font-medium">المخزن</th>
+            <th className="p-3 text-right text-ink/60 font-medium">الكمية الحالية</th>
+            <th className="p-3 text-right text-ink/60 font-medium">الحد الدنى</th>
+            <th className="p-3 text-right text-ink/60 font-medium">العجز</th>
+            <th className="p-3 text-right text-ink/60 font-medium">مقترح الطلب</th>
+            <th className="p-3 text-right text-ink/60 font-medium">متاح في مخازن أخرى</th>
+            <th className="p-3 text-right text-ink/60 font-medium">إجراء</th>
           </tr>
         </thead>
         <tbody>
           {filtered.length === 0 && (
             <tr>
-              <td colSpan={8} className="text-center text-white/30 py-10">
+              <td colSpan={8} className="text-center text-ink/30 py-10">
                 {showZeroOnly ? 'لا توجد منتجات نافدة في هذا المخزن' : 'لا توجد تنبيهات بهذه الفلاتر'}
               </td>
             </tr>
@@ -34,7 +34,7 @@ export function AlertsTable({ filtered, showZeroOnly, onTransferPrefill }: Alert
           {filtered.map((item, idx) => (
             <tr
               key={`${item.product_id}-${item.warehouse_id}-${idx}`}
-              className={`border-b border-white/5 erp-table-row ${item.is_zero ? 'bg-red-500/5' : 'bg-amber-500/5'}`}
+              className={`border-b border-line erp-table-row ${item.is_zero ? 'bg-red-500/5' : 'bg-amber-500/5'}`}
             >
               <td className="p-3">
                 <div className="flex items-center gap-2">
@@ -44,14 +44,14 @@ export function AlertsTable({ filtered, showZeroOnly, onTransferPrefill }: Alert
                     <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                   )}
                   <div>
-                    <div className="text-white font-medium">{item.product_name}</div>
-                    {item.sku && <div className="text-white/40 text-xs">{item.sku}</div>}
-                    {item.category && <div className="text-white/30 text-xs">{item.category}</div>}
+                    <div className="text-ink font-medium">{item.product_name}</div>
+                    {item.sku && <div className="text-ink/40 text-xs">{item.sku}</div>}
+                    {item.category && <div className="text-ink/30 text-xs">{item.category}</div>}
                   </div>
                 </div>
               </td>
               <td className="p-3">
-                <span className="px-2 py-1 rounded-lg text-xs bg-white/5 text-white/60 font-medium">
+                <span className="px-2 py-1 rounded-lg text-xs bg-surface text-ink/60 font-medium">
                   {item.warehouse_name}
                 </span>
               </td>
@@ -61,7 +61,7 @@ export function AlertsTable({ filtered, showZeroOnly, onTransferPrefill }: Alert
                 </span>
               </td>
               <td className="p-3">
-                <span className="text-white/60 font-mono text-sm">{item.min_stock}</span>
+                <span className="text-ink/60 font-mono text-sm">{item.min_stock}</span>
               </td>
               <td className="p-3">
                 <span className="font-mono text-red-400 text-sm font-bold">
@@ -83,11 +83,11 @@ export function AlertsTable({ filtered, showZeroOnly, onTransferPrefill }: Alert
                       </div>
                     ))}
                     {item.available_elsewhere.length > 2 && (
-                      <div className="text-white/30 text-xs">+{item.available_elsewhere.length - 2} أخرى</div>
+                      <div className="text-ink/30 text-xs">+{item.available_elsewhere.length - 2} أخرى</div>
                     )}
                   </div>
                 ) : (
-                  <span className="text-white/25 text-xs">غير متاح</span>
+                  <span className="text-ink/25 text-xs">غير متاح</span>
                 )}
               </td>
               <td className="p-3">

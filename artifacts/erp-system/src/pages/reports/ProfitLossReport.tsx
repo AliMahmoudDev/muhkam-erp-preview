@@ -83,7 +83,7 @@ export default function ProfitLossReport() {
       ) : (
         !isLoading && (
           <div className="rpt-section rounded-2xl p-16 flex flex-col items-center gap-3">
-            <BarChart3 className="w-10 h-10 text-white/15"/>
+            <BarChart3 className="w-10 h-10 text-ink/15"/>
             <p className="rpt-strong font-semibold">لا توجد بيانات للفترة المحددة</p>
             <p className="rpt-muted text-xs">جرّب تغيير النطاق الزمني أو الفرع المحدد</p>
           </div>

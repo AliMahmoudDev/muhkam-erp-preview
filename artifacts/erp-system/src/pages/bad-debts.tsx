@@ -81,7 +81,7 @@ export default function BadDebts({ embedded = false }: { embedded?: boolean } = 
     <div className={embedded ? "space-y-4" : "p-4 space-y-4 h-full overflow-y-auto"} dir="rtl">
       {!embedded && (
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-black text-white flex items-center gap-2">
+          <h1 className="text-xl font-black text-ink flex items-center gap-2">
             <Ban className="w-5 h-5 text-red-400" /> الديون المعدومة / المتعثرة
           </h1>
           <button onClick={() => setShowNew(true)}
@@ -93,15 +93,15 @@ export default function BadDebts({ embedded = false }: { embedded?: boolean } = 
 
       <div className="grid grid-cols-3 gap-3">
         <div className="glass-panel rounded-xl p-3 border border-amber-500/20">
-          <p className="text-[11px] text-white/40">متعثر (غير مسدد)</p>
+          <p className="text-[11px] text-ink/40">متعثر (غير مسدد)</p>
           <p className="text-xl font-black text-amber-400">{formatCurrency(open)}</p>
         </div>
         <div className="glass-panel rounded-xl p-3 border border-red-500/20">
-          <p className="text-[11px] text-white/40">مشطوب</p>
+          <p className="text-[11px] text-ink/40">مشطوب</p>
           <p className="text-xl font-black text-red-400">{formatCurrency(writtenOff)}</p>
         </div>
         <div className="glass-panel rounded-xl p-3 border border-emerald-500/20">
-          <p className="text-[11px] text-white/40">مُسترد</p>
+          <p className="text-[11px] text-ink/40">مُسترد</p>
           <p className="text-xl font-black text-emerald-400">{formatCurrency(recovered)}</p>
         </div>
       </div>
@@ -109,23 +109,23 @@ export default function BadDebts({ embedded = false }: { embedded?: boolean } = 
       <div className="flex gap-1.5">
         {(["all", "open", "written_off", "recovered"] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-3 py-1 rounded-lg text-[11px] font-bold border ${filter === f ? "bg-violet-500/20 border-violet-500/40 text-violet-300" : "border-white/10 text-white/40"}`}>
+            className={`px-3 py-1 rounded-lg text-[11px] font-bold border ${filter === f ? "bg-violet-500/20 border-violet-500/40 text-violet-300" : "border-line text-ink/40"}`}>
             {f === "all" ? "الكل" : statusLabel[f]}
           </button>
         ))}
       </div>
 
-      <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
-        {isLoading && <div className="text-center text-white/40 py-8">جاري التحميل...</div>}
+      <div className="glass-panel rounded-2xl border border-line overflow-hidden">
+        {isLoading && <div className="text-center text-ink/40 py-8">جاري التحميل...</div>}
         {!isLoading && items.length === 0 && (
-          <div className="text-center text-white/40 py-12 flex flex-col items-center gap-2">
+          <div className="text-center text-ink/40 py-12 flex flex-col items-center gap-2">
             <CheckCircle2 className="w-10 h-10 opacity-20 text-emerald-400" />لا توجد ديون متعثرة
           </div>
         )}
         {items.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-white/10 bg-white/3">
-              <tr className="text-right text-[11px] text-white/50">
+            <thead className="border-b border-line bg-surface">
+              <tr className="text-right text-[11px] text-ink/50">
                 <th className="px-3 py-2">العميل</th>
                 <th className="px-3 py-2">المبلغ</th>
                 <th className="px-3 py-2">السبب</th>
@@ -137,16 +137,16 @@ export default function BadDebts({ embedded = false }: { embedded?: boolean } = 
             </thead>
             <tbody>
               {items.map(d => (
-                <tr key={d.id} className="border-b border-white/5 text-white/80">
+                <tr key={d.id} className="border-b border-line text-ink/80">
                   <td className="px-3 py-2 font-bold">{d.customer_name}</td>
                   <td className="px-3 py-2 font-black text-red-400">{formatCurrency(Number(d.amount))}</td>
-                  <td className="px-3 py-2 text-xs text-white/50">{d.reason ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs text-white/50">
+                  <td className="px-3 py-2 text-xs text-ink/50">{d.reason ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs text-ink/50">
                     {d.source_invoice_id && <span className="text-blue-300">فاتورة #{d.source_invoice_id}</span>}
                     {d.source_repair_job_id && <span className="text-violet-300">صيانة #{d.source_repair_job_id}</span>}
                     {!d.source_invoice_id && !d.source_repair_job_id && "يدوي"}
                   </td>
-                  <td className="px-3 py-2 text-xs text-white/40">{new Date(d.created_at).toLocaleDateString("ar-EG")}</td>
+                  <td className="px-3 py-2 text-xs text-ink/40">{new Date(d.created_at).toLocaleDateString("ar-EG")}</td>
                   <td className="px-3 py-2">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusColor[d.status]}`}>{statusLabel[d.status]}</span>
                   </td>
@@ -169,10 +169,10 @@ export default function BadDebts({ embedded = false }: { embedded?: boolean } = 
 
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowNew(false)}>
-          <div className="glass-panel rounded-2xl p-5 w-96 border border-white/10 space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="glass-panel rounded-2xl p-5 w-96 border border-line space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-black text-white flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-400" /> إضافة دين</h3>
-              <button onClick={() => setShowNew(false)} className="btn-icon text-white/40"><XCircle className="w-4 h-4" /></button>
+              <h3 className="font-black text-ink flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-400" /> إضافة دين</h3>
+              <button onClick={() => setShowNew(false)} className="btn-icon text-ink/40"><XCircle className="w-4 h-4" /></button>
             </div>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="اسم العميل *" className="erp-input w-full text-sm" />
             <input type="number" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} placeholder="المبلغ *" className="erp-input w-full text-sm" />

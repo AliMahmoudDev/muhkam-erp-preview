@@ -43,8 +43,8 @@ export function ReorderPanel({
             <ShoppingCart className="w-4 h-4 text-violet-300" />
           </div>
           <div>
-            <h3 className="text-white font-bold text-sm">مقترحات إعادة الطلب</h3>
-            <p className="text-white/40 text-xs">
+            <h3 className="text-ink font-bold text-sm">مقترحات إعادة الطلب</h3>
+            <p className="text-ink/40 text-xs">
               حسب سرعة المبيعات في آخر {reorderData?.days_analyzed ?? 30} يوم — تغطية {reorderData?.cover_days ?? 30} يوم
             </p>
           </div>
@@ -58,7 +58,7 @@ export function ReorderPanel({
               {poSelectedCount > 0 ? (
                 <button
                   onClick={() => setShowPOModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500 hover:bg-violet-400 text-white text-xs rounded-xl font-bold border border-violet-400 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500 hover:bg-violet-400 text-ink text-xs rounded-xl font-bold border border-violet-400 transition-colors"
                 >
                   <ClipboardList className="w-3 h-3" /> إنشاء أمر شراء ({poSelectedCount})
                 </button>
@@ -73,7 +73,7 @@ export function ReorderPanel({
               {poSelectedCount > 0 && (
                 <button
                   onClick={clearSelectPO}
-                  className="flex items-center gap-1.5 px-2 py-1.5 bg-white/5 hover:bg-white/10 text-white/50 text-xs rounded-xl border border-white/10 transition-colors"
+                  className="flex items-center gap-1.5 px-2 py-1.5 bg-surface hover:bg-surface text-ink/50 text-xs rounded-xl border border-line transition-colors"
                 >
                   <X className="w-3 h-3" /> إلغاء
                 </button>
@@ -88,7 +88,7 @@ export function ReorderPanel({
           )}
           <button
             onClick={() => refetchReorder()}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 text-xs rounded-xl border border-white/10"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-surface hover:bg-surface text-ink/60 text-xs rounded-xl border border-line"
           >
             <RefreshCw className="w-3 h-3" /> تحديث
           </button>
@@ -96,11 +96,11 @@ export function ReorderPanel({
       </div>
 
       {loadingReorder ? (
-        <div className="text-center py-8 text-white/40 text-sm">جاري التحليل...</div>
+        <div className="text-center py-8 text-ink/40 text-sm">جاري التحليل...</div>
       ) : reorderSuggestions.length === 0 ? (
         <div className="text-center py-8">
           <CheckCircle className="w-10 h-10 text-emerald-500/30 mx-auto mb-2" />
-          <p className="text-white/40 text-sm">لا توجد مقترحات توريد حالياً</p>
+          <p className="text-ink/40 text-sm">لا توجد مقترحات توريد حالياً</p>
         </div>
       ) : (
         <>
@@ -111,11 +111,11 @@ export function ReorderPanel({
               <button onClick={() => setShowPOModal(true)} className="ms-auto underline font-bold hover:text-violet-200">إنشاء أمر الشراء الآن</button>
             </div>
           )}
-          <div className="overflow-x-auto rounded-xl border border-white/8">
+          <div className="overflow-x-auto rounded-xl border border-line">
             <table className="w-full text-sm min-w-[850px]">
               <thead>
-                <tr className="border-b border-white/10 bg-white/5">
-                  <th className="p-2.5 text-center text-white/60 font-medium text-xs w-8">
+                <tr className="border-b border-line bg-surface">
+                  <th className="p-2.5 text-center text-ink/60 font-medium text-xs w-8">
                     <input
                       type="checkbox"
                       checked={poSelectedCount === reorderSuggestions.length && reorderSuggestions.length > 0}
@@ -123,14 +123,14 @@ export function ReorderPanel({
                       className="w-3.5 h-3.5 accent-violet-500"
                     />
                   </th>
-                  <th className="p-2.5 text-right text-white/60 font-medium text-xs">الأولوية</th>
-                  <th className="p-2.5 text-right text-white/60 font-medium text-xs">المنتج</th>
-                  <th className="p-2.5 text-right text-white/60 font-medium text-xs">الحالي</th>
-                  <th className="p-2.5 text-right text-white/60 font-medium text-xs">سرعة (يوم)</th>
-                  <th className="p-2.5 text-right text-white/60 font-medium text-xs">التغطية</th>
-                  <th className="p-2.5 text-right text-white/60 font-medium text-xs">مقترح</th>
-                  <th className="p-2.5 text-right text-white/60 font-medium text-xs">تكلفة مقدّرة</th>
-                  <th className="p-2.5 text-right text-white/60 font-medium text-xs">السبب</th>
+                  <th className="p-2.5 text-right text-ink/60 font-medium text-xs">الأولوية</th>
+                  <th className="p-2.5 text-right text-ink/60 font-medium text-xs">المنتج</th>
+                  <th className="p-2.5 text-right text-ink/60 font-medium text-xs">الحالي</th>
+                  <th className="p-2.5 text-right text-ink/60 font-medium text-xs">سرعة (يوم)</th>
+                  <th className="p-2.5 text-right text-ink/60 font-medium text-xs">التغطية</th>
+                  <th className="p-2.5 text-right text-ink/60 font-medium text-xs">مقترح</th>
+                  <th className="p-2.5 text-right text-ink/60 font-medium text-xs">تكلفة مقدّرة</th>
+                  <th className="p-2.5 text-right text-ink/60 font-medium text-xs">السبب</th>
                 </tr>
               </thead>
               <tbody>
@@ -139,7 +139,7 @@ export function ReorderPanel({
                   return (
                     <tr
                       key={s.product_id}
-                      className={`border-b border-white/5 erp-table-row cursor-pointer ${isChecked ? 'bg-violet-500/5' : ''}`}
+                      className={`border-b border-line erp-table-row cursor-pointer ${isChecked ? 'bg-violet-500/5' : ''}`}
                       onClick={() => toggleSelectPO(s.product_id)}
                     >
                       <td className="p-2.5 text-center" onClick={(e) => e.stopPropagation()}>
@@ -156,16 +156,16 @@ export function ReorderPanel({
                         </span>
                       </td>
                       <td className="p-2.5">
-                        <div className="text-white text-sm font-medium">{s.product_name}</div>
-                        {s.sku && <div className="text-white/40 text-xs font-mono">{s.sku}</div>}
+                        <div className="text-ink text-sm font-medium">{s.product_name}</div>
+                        {s.sku && <div className="text-ink/40 text-xs font-mono">{s.sku}</div>}
                       </td>
-                      <td className="p-2.5 font-mono text-white/70 text-sm">{s.current_qty.toFixed(2)}</td>
-                      <td className="p-2.5 font-mono text-white/70 text-xs">
+                      <td className="p-2.5 font-mono text-ink/70 text-sm">{s.current_qty.toFixed(2)}</td>
+                      <td className="p-2.5 font-mono text-ink/70 text-xs">
                         <TrendingUp className="w-3 h-3 inline me-1 text-emerald-400" />
                         {s.daily_velocity.toFixed(2)}
                       </td>
                       <td className="p-2.5 font-mono text-xs">
-                        <span className={s.coverage_days !== null && s.coverage_days <= 7 ? 'text-red-400 font-bold' : 'text-white/60'}>
+                        <span className={s.coverage_days !== null && s.coverage_days <= 7 ? 'text-red-400 font-bold' : 'text-ink/60'}>
                           {s.coverage_days !== null ? `${s.coverage_days.toFixed(1)} يوم` : '∞'}
                         </span>
                       </td>
@@ -177,14 +177,14 @@ export function ReorderPanel({
                       <td className="p-2.5 font-mono text-emerald-300 text-xs">
                         {formatCurrency(s.suggested_cost)}
                       </td>
-                      <td className="p-2.5 text-white/50 text-xs">{s.reason}</td>
+                      <td className="p-2.5 text-ink/50 text-xs">{s.reason}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
             {reorderSuggestions.length > 50 && (
-              <div className="p-2 text-center text-white/30 text-xs bg-white/[0.02]">
+              <div className="p-2 text-center text-ink/30 text-xs bg-surface">
                 عُرضت أعلى 50 من {reorderSuggestions.length} — حمّل Excel لرؤية الكل
               </div>
             )}

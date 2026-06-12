@@ -267,25 +267,25 @@ export function ProductFormModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm modal-overlay">
       <form
         onSubmit={handleSubmit}
-        className="glass-panel rounded-3xl p-8 w-full max-w-md shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto"
+        className="glass-panel rounded-3xl p-8 w-full max-w-md shadow-2xl border border-line max-h-[90vh] overflow-y-auto"
       >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+          <h3 className="text-xl font-bold text-ink flex items-center gap-2">
             <Plus className="w-5 h-5 text-amber-400" /> {title}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+            className="p-2 rounded-xl bg-surface hover:bg-raised transition-colors"
           >
-            <X className="w-4 h-4 text-white/60" />
+            <X className="w-4 h-4 text-ink/60" />
           </button>
         </div>
 
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-white/70 text-xs mb-1">اسم المنتج *</label>
+            <label className="block text-ink/70 text-xs mb-1">اسم المنتج *</label>
             <input
               required
               type="text"
@@ -298,7 +298,7 @@ export function ProductFormModal({
 
           {/* Quality quick-select */}
           <div>
-            <label className="block text-white/50 text-xs mb-2 flex items-center gap-1">
+            <label className="block text-ink/50 text-xs mb-2 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-amber-400/70" />
               نوع/جودة — اضغط لإضافته للاسم وتوليد SKU تلقائياً
             </label>
@@ -337,7 +337,7 @@ export function ProductFormModal({
                 <RefreshCw className="w-3 h-3" /> توليد
               </button>
             </div>
-            <p className="text-white/25 text-xs mt-1.5">
+            <p className="text-ink/25 text-xs mt-1.5">
               مثال: <span className="font-mono text-amber-400/50">SCR-IP15P-OG-03</span> — أو اكتب
               SKU يدوياً
             </p>
@@ -345,7 +345,7 @@ export function ProductFormModal({
 
           {/* Category — combobox */}
           <div>
-            <label className="flex items-center gap-1 text-white/70 text-xs mb-1">
+            <label className="flex items-center gap-1 text-ink/70 text-xs mb-1">
               <Tag className="w-3 h-3 text-violet-400" /> التصنيف *
             </label>
             <div className="relative" ref={catRef}>
@@ -366,7 +366,7 @@ export function ProductFormModal({
                     }}
                     onFocus={() => setCatOpen(true)}
                   />
-                  <ChevronDown className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
+                  <ChevronDown className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30 pointer-events-none" />
                 </div>
                 {catCreating && (
                   <div className="px-3 flex items-center">
@@ -376,23 +376,23 @@ export function ProductFormModal({
               </div>
 
               {catOpen && (
-                <div className="absolute top-full mt-1 w-full z-50 glass-panel rounded-xl border border-white/10 shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                <div className="absolute top-full mt-1 w-full z-50 glass-panel rounded-xl border border-line shadow-xl overflow-hidden max-h-48 overflow-y-auto">
                   {filtered.length === 0 && !canCreate && (
-                    <p className="px-3 py-2 text-white/40 text-xs text-center">لا توجد تصنيفات</p>
+                    <p className="px-3 py-2 text-ink/40 text-xs text-center">لا توجد تصنيفات</p>
                   )}
                   {filtered.map((cat) => (
                     <button
                       key={cat.id}
                       type="button"
                       onClick={() => selectCategory(cat)}
-                      className={`w-full text-right px-3 py-2 text-sm hover:bg-white/10 transition-colors flex items-center justify-between ${
+                      className={`w-full text-right px-3 py-2 text-sm hover:bg-surface transition-colors flex items-center justify-between ${
                         form.category_id === cat.id
                           ? 'text-violet-300 bg-violet-500/10'
-                          : 'text-white/80'
+                          : 'text-ink/80'
                       }`}
                     >
                       <span>{cat.name}</span>
-                      <span className="text-white/30 text-xs">{cat.product_count} منتج</span>
+                      <span className="text-ink/30 text-xs">{cat.product_count} منتج</span>
                     </button>
                   ))}
                   {canCreate && (
@@ -400,7 +400,7 @@ export function ProductFormModal({
                       type="button"
                       onClick={handleCreateCategory}
                       disabled={catCreating}
-                      className="w-full text-right px-3 py-2 text-sm text-violet-400 hover:bg-violet-500/10 transition-colors border-t border-white/10 flex items-center gap-2"
+                      className="w-full text-right px-3 py-2 text-sm text-violet-400 hover:bg-violet-500/10 transition-colors border-t border-line flex items-center gap-2"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       إنشاء «{catInput.trim()}»
@@ -419,7 +419,7 @@ export function ProductFormModal({
           {/* Prices */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-white/70 text-xs mb-1">سعر التكلفة *</label>
+              <label className="block text-ink/70 text-xs mb-1">سعر التكلفة *</label>
               <input
                 required
                 type="number"
@@ -432,7 +432,7 @@ export function ProductFormModal({
               />
             </div>
             <div>
-              <label className="block text-white/70 text-xs mb-1">سعر البيع *</label>
+              <label className="block text-ink/70 text-xs mb-1">سعر البيع *</label>
               <input
                 required
                 type="number"
@@ -465,9 +465,9 @@ export function ProductFormModal({
           {/* Tax rate — shown only when VAT is enabled in settings */}
           {vatEnabled && (
             <div>
-              <label className="block text-white/70 text-xs mb-1">
+              <label className="block text-ink/70 text-xs mb-1">
                 نسبة ضريبة القيمة المضافة (%)
-                <span className="text-white/30 mr-1">— {vatRate}% المعدل المضبوط</span>
+                <span className="text-ink/30 mr-1">— {vatRate}% المعدل المضبوط</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -480,7 +480,7 @@ export function ProductFormModal({
                   value={form.tax_rate ?? ''}
                   onChange={(e) => set('tax_rate', parseFloat(e.target.value) || 0)}
                 />
-                <span className="text-white/40 text-sm">%</span>
+                <span className="text-ink/40 text-sm">%</span>
               </div>
               {form.tax_rate > 0 && form.sale_price > 0 && (
                 <p className="text-xs text-amber-400/70 mt-1">
@@ -494,7 +494,7 @@ export function ProductFormModal({
           {/* Quantity + threshold */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-white/70 text-xs mb-1">الكمية الافتتاحية</label>
+              <label className="block text-ink/70 text-xs mb-1">الكمية الافتتاحية</label>
               <input
                 type="number"
                 min="0"
@@ -504,7 +504,7 @@ export function ProductFormModal({
               />
             </div>
             <div>
-              <label className="block text-white/70 text-xs mb-1">حد التنبيه</label>
+              <label className="block text-ink/70 text-xs mb-1">حد التنبيه</label>
               <input
                 type="number"
                 min="0"

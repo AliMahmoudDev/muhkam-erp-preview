@@ -49,13 +49,13 @@ function VSubBadge({ sub }: { sub:string }) {
     "صرف":    "bg-orange-500/15 text-orange-300 border-orange-500/20",
     "تحويل":  "bg-violet-500/15 text-violet-300 border-violet-500/20",
   };
-  return <span className={`px-2 py-0.5 rounded-lg text-xs font-medium border ${map[sub]??"bg-white/10 text-white/50 border-white/10"}`}>{sub}</span>;
+  return <span className={`px-2 py-0.5 rounded-lg text-xs font-medium border ${map[sub]??"bg-surface text-ink/50 border-line"}`}>{sub}</span>;
 }
 function VoucherStatusBadge({ status }: { status:string|null }) {
-  if (!status)                return <span className="text-xs text-white/30">—</span>;
+  if (!status)                return <span className="text-xs text-ink/30">—</span>;
   if (status==="posted")      return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">مرحَّل</span>;
   if (status==="cancelled")   return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">ملغى</span>;
-  return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-white/50">مسودة</span>;
+  return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-surface text-ink/50">مسودة</span>;
 }
 
 /* ─── Pagination helper ───────────────────────────────────────────────────── */
@@ -64,11 +64,11 @@ function Paginator({ page, total, perPage, onChange }: { page:number; total:numb
   if (totalPages<=1) return null;
   return (
     <div className="flex items-center justify-center gap-2 pt-2" dir="ltr">
-      <button onClick={()=>onChange(1)} disabled={page===1} className="p-1.5 rounded-lg text-white/40 hover:text-white disabled:opacity-30 hover:bg-white/10 transition-all"><ChevronRight className="w-4 h-4"/><ChevronRight className="w-4 h-4 -mr-2.5"/></button>
-      <button onClick={()=>onChange(page-1)} disabled={page===1} className="p-1.5 rounded-lg text-white/40 hover:text-white disabled:opacity-30 hover:bg-white/10 transition-all"><ChevronRight className="w-4 h-4"/></button>
-      <span className="text-xs text-white/50 min-w-[80px] text-center font-mono">{page} / {totalPages}</span>
-      <button onClick={()=>onChange(page+1)} disabled={page===totalPages} className="p-1.5 rounded-lg text-white/40 hover:text-white disabled:opacity-30 hover:bg-white/10 transition-all"><ChevronLeft className="w-4 h-4"/></button>
-      <button onClick={()=>onChange(totalPages)} disabled={page===totalPages} className="p-1.5 rounded-lg text-white/40 hover:text-white disabled:opacity-30 hover:bg-white/10 transition-all"><ChevronLeft className="w-4 h-4"/><ChevronLeft className="w-4 h-4 -ml-2.5"/></button>
+      <button onClick={()=>onChange(1)} disabled={page===1} className="p-1.5 rounded-lg text-ink/40 hover:text-ink disabled:opacity-30 hover:bg-surface transition-all"><ChevronRight className="w-4 h-4"/><ChevronRight className="w-4 h-4 -mr-2.5"/></button>
+      <button onClick={()=>onChange(page-1)} disabled={page===1} className="p-1.5 rounded-lg text-ink/40 hover:text-ink disabled:opacity-30 hover:bg-surface transition-all"><ChevronRight className="w-4 h-4"/></button>
+      <span className="text-xs text-ink/50 min-w-[80px] text-center font-mono">{page} / {totalPages}</span>
+      <button onClick={()=>onChange(page+1)} disabled={page===totalPages} className="p-1.5 rounded-lg text-ink/40 hover:text-ink disabled:opacity-30 hover:bg-surface transition-all"><ChevronLeft className="w-4 h-4"/></button>
+      <button onClick={()=>onChange(totalPages)} disabled={page===totalPages} className="p-1.5 rounded-lg text-ink/40 hover:text-ink disabled:opacity-30 hover:bg-surface transition-all"><ChevronLeft className="w-4 h-4"/><ChevronLeft className="w-4 h-4 -ml-2.5"/></button>
     </div>
   );
 }
@@ -142,17 +142,17 @@ export default function VouchersHistoryReport() {
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
           <div className="text-emerald-400/70 text-xs mb-1">إجمالي القبض</div>
           <div className="text-lg font-black text-emerald-400">{formatCurrency(totalReceipt)}</div>
-          <div className="text-white/30 text-xs mt-1">{allRows.filter(r=>r.voucherType==="قبض").length} سند</div>
+          <div className="text-ink/30 text-xs mt-1">{allRows.filter(r=>r.voucherType==="قبض").length} سند</div>
         </div>
         <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4">
           <div className="text-orange-400/70 text-xs mb-1">إجمالي الصرف</div>
           <div className="text-lg font-black text-orange-400">{formatCurrency(totalPayment)}</div>
-          <div className="text-white/30 text-xs mt-1">{allRows.filter(r=>r.voucherType==="صرف"&&r.kind!=="transfer").length} سند</div>
+          <div className="text-ink/30 text-xs mt-1">{allRows.filter(r=>r.voucherType==="صرف"&&r.kind!=="transfer").length} سند</div>
         </div>
         <div className={`border rounded-2xl p-4 ${netFlow>=0?"bg-blue-500/10 border-blue-500/20":"bg-red-500/10 border-red-500/20"}`}>
           <div className={`text-xs mb-1 ${netFlow>=0?"text-blue-400/70":"text-red-400/70"}`}>صافي الحركة النقدية</div>
           <div className={`text-lg font-black ${netFlow>=0?"text-blue-400":"text-red-400"}`}>{netFlow>=0?"+":""}{formatCurrency(netFlow)}</div>
-          <div className="text-white/30 text-xs mt-1">{allRows.length} حركة إجمالاً</div>
+          <div className="text-ink/30 text-xs mt-1">{allRows.length} حركة إجمالاً</div>
         </div>
       </div>
 
@@ -160,8 +160,8 @@ export default function VouchersHistoryReport() {
       {safes.length>0&&(
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {safes.map((s:any)=>(
-            <div key={s.id} className="bg-white/5 border border-white/8 rounded-2xl p-4">
-              <p className="text-white/50 text-xs mb-1">{s.name}</p>
+            <div key={s.id} className="bg-surface border border-line rounded-2xl p-4">
+              <p className="text-ink/50 text-xs mb-1">{s.name}</p>
               <p className="text-xl font-black text-amber-400">{formatCurrency(Number(s.balance))}</p>
             </div>
           ))}
@@ -174,47 +174,47 @@ export default function VouchersHistoryReport() {
       {/* ── Search + Type Filter + Per-page ── */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-48 max-w-sm">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"/>
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30"/>
           <input className="glass-input w-full icon-pr text-sm" placeholder="بحث برقم السند أو الطرف أو الخزينة..." value={search} onChange={e=>handleSearch(e.target.value)}/>
         </div>
-        <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-2xl p-1">
+        <div className="flex items-center gap-1 bg-surface border border-line rounded-2xl p-1">
           {(["الكل","قبض","صرف","تحويل"] as VFilter[]).map(t=>{
             const count=t==="الكل"?allRows.length:t==="قبض"?allRows.filter(r=>r.voucherType==="قبض").length:t==="صرف"?allRows.filter(r=>r.voucherType==="صرف"&&r.kind!=="transfer").length:allRows.filter(r=>r.kind==="transfer").length;
             return (
               <button key={t} onClick={()=>handleFilter(t)}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${vFilter===t?"bg-amber-500 text-black shadow":"text-white/50 hover:text-white"}`}>
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${vFilter===t?"bg-amber-500 text-black shadow":"text-ink/50 hover:text-ink"}`}>
                 {t==="قبض"&&<HandCoins className="w-3 h-3"/>}
                 {t==="صرف"&&<ArrowUpFromLine className="w-3 h-3"/>}
                 {t==="تحويل"&&<ArrowLeftRight className="w-3 h-3"/>}
                 {t==="الكل"&&<Filter className="w-3 h-3"/>}
                 {t}
-                <span className={`text-xs px-1 py-0.5 rounded-full ${vFilter===t?"bg-black/20":"bg-white/10"}`}>{count}</span>
+                <span className={`text-xs px-1 py-0.5 rounded-full ${vFilter===t?"bg-black/20":"bg-surface"}`}>{count}</span>
               </button>
             );
           })}
         </div>
-        <div className="flex items-center gap-1.5 mr-auto text-xs text-white/40">
+        <div className="flex items-center gap-1.5 mr-auto text-xs text-ink/40">
           <span>عرض:</span>
           {PER_PAGE_OPTIONS.map(n=>(
-            <button key={n} onClick={()=>handlePerPage(n)} className={`px-2 py-1 rounded-lg font-bold border transition-all ${perPage===n?"bg-amber-500/20 border-amber-500/40 text-amber-400":"border-white/10 text-white/40 hover:text-white"}`}>{n}</button>
+            <button key={n} onClick={()=>handlePerPage(n)} className={`px-2 py-1 rounded-lg font-bold border transition-all ${perPage===n?"bg-amber-500/20 border-amber-500/40 text-amber-400":"border-line text-ink/40 hover:text-ink"}`}>{n}</button>
           ))}
         </div>
       </div>
 
       {/* ── Table ── */}
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-white/80 whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10">
+          <table className="w-full text-right text-ink/80 whitespace-nowrap">
+            <thead className="bg-surface border-b border-line">
               <tr>
-                <th className="p-4 font-medium text-white/60 text-sm">النوع</th>
-                <th className="p-4 font-medium text-white/60 text-sm">رقم السند</th>
-                <th className="p-4 font-medium text-white/60 text-sm">الطرف</th>
-                <th className="p-4 font-medium text-white/60 text-sm">الخزينة</th>
-                <th className="p-4 font-medium text-white/60 text-sm">المبلغ</th>
-                <th className="p-4 font-medium text-white/60 text-sm">الحالة</th>
-                <th className="p-4 font-medium text-white/60 text-sm">التاريخ</th>
-                <th className="p-4 font-medium text-white/60 text-sm">ملاحظات</th>
+                <th className="p-4 font-medium text-ink/60 text-sm">النوع</th>
+                <th className="p-4 font-medium text-ink/60 text-sm">رقم السند</th>
+                <th className="p-4 font-medium text-ink/60 text-sm">الطرف</th>
+                <th className="p-4 font-medium text-ink/60 text-sm">الخزينة</th>
+                <th className="p-4 font-medium text-ink/60 text-sm">المبلغ</th>
+                <th className="p-4 font-medium text-ink/60 text-sm">الحالة</th>
+                <th className="p-4 font-medium text-ink/60 text-sm">التاريخ</th>
+                <th className="p-4 font-medium text-ink/60 text-sm">ملاحظات</th>
                 <th className="p-4 w-20"></th>
               </tr>
             </thead>
@@ -222,24 +222,24 @@ export default function VouchersHistoryReport() {
               {isLoading ? <TableSkeleton cols={9} rows={6}/> :
                pageRows.length===0 ? (
                 <tr><td colSpan={9} className="p-16 text-center">
-                  <ReceiptText className="w-10 h-10 text-white/15 mx-auto mb-3"/>
-                  <p className="text-white/40 text-sm">{search?"لا نتائج للبحث":"لا توجد سندات في هذه الفترة"}</p>
-                  {!search&&<p className="text-white/25 text-xs mt-1">جرّب تغيير نطاق التاريخ أو الفلتر</p>}
+                  <ReceiptText className="w-10 h-10 text-ink/15 mx-auto mb-3"/>
+                  <p className="text-ink/40 text-sm">{search?"لا نتائج للبحث":"لا توجد سندات في هذه الفترة"}</p>
+                  {!search&&<p className="text-ink/25 text-xs mt-1">جرّب تغيير نطاق التاريخ أو الفلتر</p>}
                 </td></tr>
                ) : pageRows.map(row=>(
-                <motion.tr key={row.uid} initial={{opacity:0}} animate={{opacity:1}} className="border-b border-white/5 erp-table-row">
+                <motion.tr key={row.uid} initial={{opacity:0}} animate={{opacity:1}} className="border-b border-line erp-table-row">
                   <td className="p-4">
                     <div className="flex flex-col gap-1"><VTypeBadge type={row.voucherType}/><VSubBadge sub={row.subType}/></div>
                   </td>
                   <td className="p-4 font-mono text-amber-400 text-sm">{row.voucherNo}</td>
-                  <td className="p-4 font-bold text-white">{row.partyName}</td>
+                  <td className="p-4 font-bold text-ink">{row.partyName}</td>
                   <td className="p-4 text-blue-300 text-sm">{row.safeName}</td>
                   <td className="p-4 font-bold">
                     <span className={row.voucherType==="قبض"?"text-emerald-400":"text-orange-400"}>{formatCurrency(row.amount)}</span>
                   </td>
                   <td className="p-4"><VoucherStatusBadge status={row.status}/></td>
-                  <td className="p-4 text-sm text-white/60 font-mono">{row.date||"—"}</td>
-                  <td className="p-4 text-white/50 text-sm max-w-[140px] truncate" title={row.notes||undefined}>{row.notes||"—"}</td>
+                  <td className="p-4 text-sm text-ink/60 font-mono">{row.date||"—"}</td>
+                  <td className="p-4 text-ink/50 text-sm max-w-[140px] truncate" title={row.notes||undefined}>{row.notes||"—"}</td>
                   <td className="p-4">
                     <div className="flex items-center gap-1">
                       {row.kind==="deposit"&&row.status==="draft"&&(
@@ -265,8 +265,8 @@ export default function VouchersHistoryReport() {
 
         {/* Footer: row count + pagination */}
         {filtered.length>0&&(
-          <div className="border-t border-white/8 px-6 py-3 flex items-center justify-between gap-4">
-            <span className="text-xs text-white/30">{filtered.length} سند إجمالاً — يعرض {Math.min((safePage-1)*perPage+1,filtered.length)}-{Math.min(safePage*perPage,filtered.length)}</span>
+          <div className="border-t border-line px-6 py-3 flex items-center justify-between gap-4">
+            <span className="text-xs text-ink/30">{filtered.length} سند إجمالاً — يعرض {Math.min((safePage-1)*perPage+1,filtered.length)}-{Math.min(safePage*perPage,filtered.length)}</span>
             <Paginator page={safePage} total={filtered.length} perPage={perPage} onChange={handlePageChange}/>
           </div>
         )}

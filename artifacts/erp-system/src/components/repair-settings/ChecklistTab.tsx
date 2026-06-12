@@ -287,11 +287,11 @@ export default function ChecklistTab() {
         <div className="flex items-center justify-between gap-3 mb-2.5">
           <div className="flex items-center gap-2.5">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-amber-300 to-amber-500" />
-            <h3 className={`text-[11px] font-black tracking-[0.22em] uppercase ${isLight ? "text-slate-500" : "text-white/55"}`}>
+            <h3 className={`text-[11px] font-black tracking-[0.22em] uppercase ${isLight ? "text-slate-500" : "text-ink/55"}`}>
               الشركة المصنعة
             </h3>
           </div>
-          <div className={`flex items-center gap-2 text-[10px] ${isLight ? "text-slate-400" : "text-white/35"}`}>
+          <div className={`flex items-center gap-2 text-[10px] ${isLight ? "text-slate-400" : "text-ink/35"}`}>
             <span className="font-bold text-amber-500 tabular-nums">{items.length}</span>
             <span>بند في «{activeMeta.label}»</span>
           </div>
@@ -375,7 +375,7 @@ export default function ChecklistTab() {
             </button>
           )}
           {activeMfrData?.categories.length === 0 && (
-            <p className={`text-[11px] py-0.5 ${isLight ? "text-slate-400" : "text-white/25"}`}>لا توجد فئات — اضغط «فئة جديدة» لإضافة الأولى</p>
+            <p className={`text-[11px] py-0.5 ${isLight ? "text-slate-400" : "text-ink/25"}`}>لا توجد فئات — اضغط «فئة جديدة» لإضافة الأولى</p>
           )}
         </div>
       </div>
@@ -403,7 +403,7 @@ export default function ChecklistTab() {
           <button onClick={doAddManufacturer} disabled={!addMfrLabel.trim()} className="text-emerald-400 hover:text-emerald-300 disabled:opacity-30">
             <CheckCircle2 className="w-4 h-4" />
           </button>
-          <button onClick={() => { setShowAddMfr(false); setAddMfrLabel(""); }} className="text-white/30 hover:text-white/60">
+          <button onClick={() => { setShowAddMfr(false); setAddMfrLabel(""); }} className="text-ink/30 hover:text-ink/60">
             <XCircle className="w-4 h-4" />
           </button>
         </div>
@@ -432,7 +432,7 @@ export default function ChecklistTab() {
           <button onClick={doAddCategory} disabled={!addCatLabel.trim()} className="text-emerald-400 hover:text-emerald-300 disabled:opacity-30">
             <CheckCircle2 className="w-4 h-4" />
           </button>
-          <button onClick={() => { setShowAddCat(false); setAddCatLabel(""); }} className="text-white/30 hover:text-white/60">
+          <button onClick={() => { setShowAddCat(false); setAddCatLabel(""); }} className="text-ink/30 hover:text-ink/60">
             <XCircle className="w-4 h-4" />
           </button>
         </div>
@@ -452,19 +452,19 @@ export default function ChecklistTab() {
             ? { background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.10)" }
             : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
-          <Search className={`w-3.5 h-3.5 shrink-0 ${isLight ? "text-slate-400" : "text-white/40"}`} />
+          <Search className={`w-3.5 h-3.5 shrink-0 ${isLight ? "text-slate-400" : "text-ink/40"}`} />
           <input
             ref={searchRef}
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder={`ابحث في بنود ${activeMeta.label}...`}
-            className={`flex-1 bg-transparent text-[12px] outline-none font-medium ${isLight ? "text-slate-700 placeholder:text-slate-400" : "text-white placeholder:text-white/45"}`}
+            className={`flex-1 bg-transparent text-[12px] outline-none font-medium ${isLight ? "text-slate-700 placeholder:text-slate-400" : "text-ink placeholder:text-ink/45"}`}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className={`shrink-0 ${isLight ? "text-slate-400 hover:text-slate-600" : "text-white/30 hover:text-white/70"}`}
+              className={`shrink-0 ${isLight ? "text-slate-400 hover:text-slate-600" : "text-ink/30 hover:text-ink/70"}`}
               title="مسح البحث"
             >
               <X className="w-3 h-3" />
@@ -480,7 +480,7 @@ export default function ChecklistTab() {
         {/* الإجراءات */}
         <button
           onClick={() => setShowNewCat(v => !v)}
-          className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl font-bold ${isLight ? "text-slate-600 hover:text-slate-800" : "text-white/70 hover:text-white"}`}
+          className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl font-bold ${isLight ? "text-slate-600 hover:text-slate-800" : "text-ink/70 hover:text-ink"}`}
           style={isLight
             ? { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)" }
             : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}
@@ -491,7 +491,7 @@ export default function ChecklistTab() {
           <button
             onClick={() => setShowCopyMenu(v => !v)}
             disabled={copying}
-            className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl disabled:opacity-40 font-bold ${isLight ? "text-slate-600 hover:text-slate-800" : "text-white/70 hover:text-white"}`}
+            className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl disabled:opacity-40 font-bold ${isLight ? "text-slate-600 hover:text-slate-800" : "text-ink/70 hover:text-ink"}`}
             style={isLight
               ? { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)" }
               : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}
@@ -504,7 +504,7 @@ export default function ChecklistTab() {
               className="rs-popup-dark absolute left-0 top-full mt-1.5 z-20 w-56 rounded-xl py-1.5 max-h-80 overflow-y-auto rs-scroll"
               style={isLight
                 ? {
-                  background: "#1e293b",
+                  background: "var(--bg-elevated)",
                   backdropFilter: "blur(20px)",
                   border: "1px solid rgba(255,255,255,0.15)",
                   boxShadow: "0 24px 48px -12px rgba(0,0,0,0.50), 0 0 0 1px rgba(255,255,255,0.06) inset",
@@ -516,14 +516,14 @@ export default function ChecklistTab() {
                   boxShadow: "0 24px 48px -12px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset",
                 }}
             >
-              <p className="text-[10px] text-white/40 font-black tracking-wider uppercase px-3 pt-1 pb-1.5">
+              <p className="text-[10px] text-ink/40 font-black tracking-wider uppercase px-3 pt-1 pb-1.5">
                 انسخ بنود من:
               </p>
               {allDeviceTypes.filter(d => d.key !== activeType).map(d => (
                 <button
                   key={d.key}
                   onClick={() => copyFrom(d.key)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-white/80 hover:bg-amber-500/10 hover:text-amber-200 text-right rounded-md mx-1 transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-ink/80 hover:bg-amber-500/10 hover:text-amber-200 text-right rounded-md mx-1 transition-colors"
                 >
                   <span className="text-base">{d.emoji}</span>
                   <span className="flex-1 font-semibold">{d.label}</span>
@@ -552,7 +552,7 @@ export default function ChecklistTab() {
 
       {/* Add cat input */}
       {showNewCat && (
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/8 bg-white/2 shrink-0">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-line bg-surface shrink-0">
           <input autoFocus value={newCatInput}
             onChange={e => setNewCatInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") confirmAddCat(); if (e.key === "Escape") { setShowNewCat(false); setNewCatInput(""); }}}
@@ -561,7 +561,7 @@ export default function ChecklistTab() {
           <button onClick={confirmAddCat} disabled={!newCatInput.trim()} className="text-emerald-400 hover:text-emerald-300 disabled:opacity-30">
             <CheckCircle2 className="w-4 h-4" />
           </button>
-          <button onClick={() => { setShowNewCat(false); setNewCatInput(""); }} className="text-white/30 hover:text-white/60">
+          <button onClick={() => { setShowNewCat(false); setNewCatInput(""); }} className="text-ink/30 hover:text-ink/60">
             <XCircle className="w-4 h-4" />
           </button>
         </div>
@@ -571,7 +571,7 @@ export default function ChecklistTab() {
       <div className="overflow-y-auto flex-1">
         {isLoading && (
           <div className="flex items-center justify-center h-32">
-            <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-line border-t-white/60 rounded-full animate-spin" />
           </div>
         )}
         {isError && (
@@ -584,7 +584,7 @@ export default function ChecklistTab() {
             <div className="w-12 h-12 rounded-2xl bg-amber-500/12 border border-amber-500/25 flex items-center justify-center text-2xl">
               {activeMeta.emoji}
             </div>
-            <p className="text-white/40 text-sm text-center">
+            <p className="text-ink/40 text-sm text-center">
               لا توجد بنود فحص لـ {activeMeta.label} بعد — تُستخدم نفس البنود في الفحص الأولي و QC
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -594,12 +594,12 @@ export default function ChecklistTab() {
                 {seeding ? "جاري التحميل..." : `تحميل بنود ${activeMeta.label}`}
               </button>
               <button onClick={() => setShowCopyMenu(v => !v)} disabled={copying}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold border border-white/10 bg-white/5 text-white/65 hover:bg-white/10 disabled:opacity-50">
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold border border-line bg-surface text-ink/65 hover:bg-surface disabled:opacity-50">
                 <Copy className="w-4 h-4" /> نسخ من نوع آخر
               </button>
             </div>
             <button onClick={() => { setShowNewCat(true); }}
-              className="text-xs text-white/25 hover:text-white/50 transition-colors">
+              className="text-xs text-ink/25 hover:text-ink/50 transition-colors">
               أو أضف تصنيفاً يدوياً
             </button>
           </div>
@@ -613,9 +613,9 @@ export default function ChecklistTab() {
               const isExpanded = searchQuery ? true : expandedCats.has(cat);
               const isLocal    = !dbCategories.includes(cat);
               return (
-                <div key={cat} className="border-b border-white/5 last:border-b-0">
+                <div key={cat} className="border-b border-line last:border-b-0">
                   <button onClick={() => toggleCat(cat)}
-                    className="w-full flex items-center gap-3 px-4 py-3 bg-white/[0.02] hover:bg-white/[0.04] transition-colors text-right"
+                    className="w-full flex items-center gap-3 px-4 py-3 bg-surface hover:bg-surface transition-colors text-right"
                     style={isLight ? { background: "rgba(0,0,0,0.025)" } : undefined}>
                     <ChevronDown
                       style={isLight ? { color: "#b45309" } : undefined}
@@ -624,23 +624,23 @@ export default function ChecklistTab() {
                       style={isLight ? { color: "#b45309" } : undefined}
                       className={`text-[13px] font-semibold flex-1 text-right ${isLight ? "" : accentDim}`}>
                       {cat}
-                      {isLocal && <span className={`text-[10px] font-normal mr-2 ${isLight ? "text-slate-400" : "text-white/25"}`}>جديد</span>}
+                      {isLocal && <span className={`text-[10px] font-normal mr-2 ${isLight ? "text-slate-400" : "text-ink/25"}`}>جديد</span>}
                     </span>
                     {!isLocal && <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${badgeCls}`}>{catItems.length}</span>}
                     <span onClick={e => { e.stopPropagation(); openAddToCat(cat); }}
-                      className="flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-lg border border-transparent text-white/25 hover:bg-white/8 hover:border-white/12 hover:text-white/60 transition-all shrink-0">
+                      className="flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-lg border border-transparent text-ink/25 hover:bg-surface hover:border-line hover:text-ink/60 transition-all shrink-0">
                       <Plus className="w-3 h-3" /> بند
                     </span>
                   </button>
                   {isExpanded && (
                     <div className="px-2 pt-0.5 pb-2 space-y-0.5">
                       {catItems.length === 0 && addingToCat !== cat && (
-                        <p className="text-center text-white/20 text-xs py-4">لا توجد بنود — اضغط «بند» لإضافة الأول</p>
+                        <p className="text-center text-ink/20 text-xs py-4">لا توجد بنود — اضغط «بند» لإضافة الأول</p>
                       )}
                       {catItems.map((item, idx) => (
                         <div key={item.id}
-                          className="flex items-center gap-2 py-2 px-3 rounded-xl border border-transparent hover:border-white/8 hover:bg-white/[0.03] transition-all group">
-                          <span className="text-[10px] text-white/15 w-5 text-left shrink-0 tabular-nums group-hover:text-white/35">{idx + 1}</span>
+                          className="flex items-center gap-2 py-2 px-3 rounded-xl border border-transparent hover:border-line hover:bg-surface transition-all group">
+                          <span className="text-[10px] text-ink/15 w-5 text-left shrink-0 tabular-nums group-hover:text-ink/35">{idx + 1}</span>
                           {editingId === item.id ? (
                             <>
                               <input autoFocus value={editLabel}
@@ -648,17 +648,17 @@ export default function ChecklistTab() {
                                 onKeyDown={e => { if (e.key === "Enter") saveEdit(item.id); if (e.key === "Escape") setEditingId(null); }}
                                 className="erp-input flex-1 text-sm py-0.5" />
                               <button onClick={() => saveEdit(item.id)} className="text-emerald-400 hover:text-emerald-300 p-1 shrink-0"><CheckCircle2 className="w-3.5 h-3.5" /></button>
-                              <button onClick={() => setEditingId(null)} className="text-white/30 p-1 shrink-0"><XCircle className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => setEditingId(null)} className="text-ink/30 p-1 shrink-0"><XCircle className="w-3.5 h-3.5" /></button>
                             </>
                           ) : (
                             <>
-                              <span className="flex-1 text-sm text-white/75">{item.label_ar}</span>
+                              <span className="flex-1 text-sm text-ink/75">{item.label_ar}</span>
                               <button onClick={() => { setEditingId(item.id); setEditLabel(item.label_ar); setAddingToCat(null); }}
-                                className="opacity-0 group-hover:opacity-100 text-white/25 hover:text-amber-400 p-1 transition-all shrink-0">
+                                className="opacity-0 group-hover:opacity-100 text-ink/25 hover:text-amber-400 p-1 transition-all shrink-0">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={() => deleteItem(item.id)}
-                                className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 p-1 transition-all shrink-0">
+                                className="opacity-0 group-hover:opacity-100 text-ink/20 hover:text-red-400 p-1 transition-all shrink-0">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </>
@@ -666,7 +666,7 @@ export default function ChecklistTab() {
                         </div>
                       ))}
                       {addingToCat === cat && (
-                        <div className="flex items-center gap-2 py-1.5 px-3 mt-0.5 rounded-xl border border-white/10 bg-white/3">
+                        <div className="flex items-center gap-2 py-1.5 px-3 mt-0.5 rounded-xl border border-line bg-surface">
                           <input autoFocus value={newItemLabel}
                             onChange={e => setNewItemLabel(e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") addItemToCat(cat); if (e.key === "Escape") { setAddingToCat(null); setNewItemLabel(""); }}}
@@ -675,7 +675,7 @@ export default function ChecklistTab() {
                           <button onClick={() => addItemToCat(cat)} disabled={!newItemLabel.trim()}
                             className="text-emerald-400 hover:text-emerald-300 p-1 disabled:opacity-30 shrink-0"><CheckCircle2 className="w-4 h-4" /></button>
                           <button onClick={() => { setAddingToCat(null); setNewItemLabel(""); }}
-                            className="text-white/25 hover:text-white/60 p-1 shrink-0"><XCircle className="w-4 h-4" /></button>
+                            className="text-ink/25 hover:text-ink/60 p-1 shrink-0"><XCircle className="w-4 h-4" /></button>
                         </div>
                       )}
                     </div>

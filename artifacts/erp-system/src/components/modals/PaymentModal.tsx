@@ -92,7 +92,7 @@ export default function PaymentModal({ onClose }: Props) {
         className="relative w-full max-w-sm rounded-3xl p-7 space-y-4 shadow-2xl border border-orange-500/30 bg-[var(--erp-bg-card)]">
 
         <button type="button" onClick={onClose}
-          className="absolute top-4 left-4 text-white/30 hover:text-white transition-colors">
+          className="absolute top-4 left-4 text-ink/30 hover:text-ink transition-colors">
           <X className="w-5 h-5" />
         </button>
 
@@ -102,19 +102,19 @@ export default function PaymentModal({ onClose }: Props) {
           </div>
           <div>
             <h3 className="text-lg font-black text-orange-400">سند صرف</h3>
-            <p className="text-white/30 text-xs">صرف مبلغ من الخزينة</p>
+            <p className="text-ink/30 text-xs">صرف مبلغ من الخزينة</p>
           </div>
         </div>
 
         <div>
-          <label className="block text-white/50 text-xs mb-1.5 font-medium">العميل / المورد *</label>
+          <label className="block text-ink/50 text-xs mb-1.5 font-medium">العميل / المورد *</label>
           <SearchableSelect items={customerItems} value={form.customer_id}
             onChange={v => setForm(f => ({ ...f, customer_id: v }))}
             placeholder="ابحث باسم أو كود..." emptyLabel="-- اختر العميل / المورد --" clearable={false} />
         </div>
 
         <div>
-          <label className="block text-white/50 text-xs mb-1.5 font-medium">الخزينة *</label>
+          <label className="block text-ink/50 text-xs mb-1.5 font-medium">الخزينة *</label>
           <select required className="glass-input w-full text-sm" value={form.safe_id}
             onChange={e => setForm(f => ({ ...f, safe_id: e.target.value }))}>
             <option value="">-- اختر الخزينة --</option>
@@ -123,20 +123,20 @@ export default function PaymentModal({ onClose }: Props) {
         </div>
 
         <div>
-          <label className="block text-white/50 text-xs mb-1.5 font-medium">المبلغ (ج.م) *</label>
+          <label className="block text-ink/50 text-xs mb-1.5 font-medium">المبلغ (ج.م) *</label>
           <input required type="number" step="0.01" min="0.01" className="glass-input w-full text-sm"
             placeholder="0.00" value={form.amount}
             onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
         </div>
 
         <div>
-          <label className="block text-white/50 text-xs mb-1.5 font-medium">التاريخ</label>
+          <label className="block text-ink/50 text-xs mb-1.5 font-medium">التاريخ</label>
           <input type="date" className="glass-input w-full text-sm" value={form.date}
             onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
         </div>
 
         <div>
-          <label className="block text-white/50 text-xs mb-1.5 font-medium">ملاحظات</label>
+          <label className="block text-ink/50 text-xs mb-1.5 font-medium">ملاحظات</label>
           <input type="text" className="glass-input w-full text-sm" placeholder="اختياري..."
             value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
         </div>

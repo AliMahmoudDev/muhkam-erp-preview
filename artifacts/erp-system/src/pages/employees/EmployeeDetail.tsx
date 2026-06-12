@@ -20,8 +20,8 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
   return (
     <div className="flex items-start gap-2 text-sm">
       <Icon size={13} className="text-amber-400/60 mt-0.5 shrink-0" />
-      <span className="text-white/40 shrink-0">{label}:</span>
-      <span className="text-white/80 break-all">{value}</span>
+      <span className="text-ink/40 shrink-0">{label}:</span>
+      <span className="text-ink/80 break-all">{value}</span>
     </div>
   );
 }
@@ -46,7 +46,7 @@ const DEDUCTION_LABELS: Record<string, { label: string; color: string; bg: strin
   late:    { label: 'تأخير',     color: 'text-amber-300', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
   absence: { label: 'غياب',     color: 'text-red-300',   bg: 'bg-red-500/10',   border: 'border-red-500/20' },
   damage:  { label: 'تلف/خسائر',color: 'text-rose-300',  bg: 'bg-rose-500/10',  border: 'border-rose-500/20' },
-  other:   { label: 'أخرى',     color: 'text-white/70',  bg: 'bg-white/5',      border: 'border-white/10' },
+  other:   { label: 'أخرى',     color: 'text-ink/70',  bg: 'bg-surface',      border: 'border-line' },
 };
 function dedLabel(t: string) { return DEDUCTION_LABELS[t] ?? DEDUCTION_LABELS['other']; }
 
@@ -59,13 +59,13 @@ function CustodyLinesPanel({ custodyId }: { custodyId: number }) {
       return r.json();
     },
   });
-  if (isLoading) return <div className="text-xs text-white/40 mt-2 text-center py-2">جارِ التحميل…</div>;
+  if (isLoading) return <div className="text-xs text-ink/40 mt-2 text-center py-2">جارِ التحميل…</div>;
   const lines = data ?? [];
-  if (lines.length === 0) return <div className="text-xs text-white/40 mt-2 text-center py-2 bg-white/5 rounded">لا توجد بنود مصروفات</div>;
+  if (lines.length === 0) return <div className="text-xs text-ink/40 mt-2 text-center py-2 bg-surface rounded">لا توجد بنود مصروفات</div>;
   return (
-    <div className="mt-2 bg-black/20 rounded border border-white/10 overflow-hidden">
+    <div className="mt-2 bg-black/20 rounded border border-line overflow-hidden">
       <table className="w-full text-xs">
-        <thead className="bg-white/5 text-white/50">
+        <thead className="bg-surface text-ink/50">
           <tr>
             <th className="text-right p-1.5">المبلغ</th><th className="text-right p-1.5">النوع</th>
             <th className="text-right p-1.5">الوصف</th><th className="text-right p-1.5">التاريخ</th>
@@ -73,11 +73,11 @@ function CustodyLinesPanel({ custodyId }: { custodyId: number }) {
         </thead>
         <tbody>
           {lines.map((l) => (
-            <tr key={String(l['id'])} className="border-t border-white/5">
+            <tr key={String(l['id'])} className="border-t border-line">
               <td className="p-1.5 font-mono text-amber-300">{Number(l['amount'] ?? 0).toFixed(2)}</td>
-              <td className="p-1.5 text-white/70">{String(l['category'] ?? '')}</td>
-              <td className="p-1.5 text-white/60">{String(l['description'] ?? '—')}</td>
-              <td className="p-1.5 font-mono text-white/40">{String(l['line_date'] ?? '')}</td>
+              <td className="p-1.5 text-ink/70">{String(l['category'] ?? '')}</td>
+              <td className="p-1.5 text-ink/60">{String(l['description'] ?? '—')}</td>
+              <td className="p-1.5 font-mono text-ink/40">{String(l['line_date'] ?? '')}</td>
             </tr>
           ))}
         </tbody>
@@ -150,13 +150,13 @@ function CommissionLedgerSection({ employeeId, canManage }: { employeeId: number
     } finally { setPayoutLoading(false); }
   };
 
-  if (isLoading) return <div className="h-16 rounded-xl bg-white/5 animate-pulse mt-2" />;
+  if (isLoading) return <div className="h-16 rounded-xl bg-surface animate-pulse mt-2" />;
   if (!data) return null;
 
   return (
-    <div className="space-y-3 pt-3 border-t border-white/8 mt-1">
+    <div className="space-y-3 pt-3 border-t border-line mt-1">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold text-white/50">العمولات والصرف</p>
+        <p className="text-[11px] font-semibold text-ink/50">العمولات والصرف</p>
         {canManage && data.balance > 0 && (
           <button onClick={openModal} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors">
             <Banknote size={11} />اعتماد وصرف
@@ -168,36 +168,36 @@ function CommissionLedgerSection({ employeeId, canManage }: { employeeId: number
         {([
           { label: 'إجمالي المحققة', value: fmt(data.total_earned), color: 'text-emerald-300' },
           { label: 'إجمالي المصروف', value: fmt(data.total_paid),   color: 'text-red-300'     },
-          { label: 'الرصيد المستحق', value: fmt(data.balance),      color: data.balance > 0 ? 'text-amber-300' : 'text-white/40' },
+          { label: 'الرصيد المستحق', value: fmt(data.balance),      color: data.balance > 0 ? 'text-amber-300' : 'text-ink/40' },
         ] as const).map((c) => (
-          <div key={c.label} className="bg-white/5 border border-white/8 rounded-xl p-2.5 text-center">
+          <div key={c.label} className="bg-surface border border-line rounded-xl p-2.5 text-center">
             <div className={`text-sm font-bold font-mono ${c.color}`}>{c.value}</div>
-            <div className="text-[10px] text-white/35 mt-0.5 leading-tight">{c.label}</div>
+            <div className="text-[10px] text-ink/35 mt-0.5 leading-tight">{c.label}</div>
           </div>
         ))}
       </div>
 
       {data.entries.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-white/8">
+        <div className="overflow-x-auto rounded-xl border border-line">
           <table className="w-full text-[10px]">
-            <thead className="bg-white/5 text-white/40">
+            <thead className="bg-surface text-ink/40">
               <tr>{['التاريخ','النوع','المبلغ','المرجع','البيان'].map(h => (
-                <th key={h} className="text-right px-2 py-2 font-semibold whitespace-nowrap border-b border-white/5">{h}</th>
+                <th key={h} className="text-right px-2 py-2 font-semibold whitespace-nowrap border-b border-line">{h}</th>
               ))}</tr>
             </thead>
             <tbody>
               {data.entries.map((e) => {
-                const ti = LEDGER_TYPE_AR[e.entry_type] ?? { label: e.entry_type, color: 'text-white/60' };
+                const ti = LEDGER_TYPE_AR[e.entry_type] ?? { label: e.entry_type, color: 'text-ink/60' };
                 const isDebit = e.amount < 0;
                 return (
-                  <tr key={e.id} className="border-t border-white/5 hover:bg-white/[0.03]">
-                    <td className="px-2 py-1.5 font-mono text-white/40 whitespace-nowrap">{e.date}</td>
+                  <tr key={e.id} className="border-t border-line hover:bg-surface">
+                    <td className="px-2 py-1.5 font-mono text-ink/40 whitespace-nowrap">{e.date}</td>
                     <td className="px-2 py-1.5"><span className={`text-[9px] font-semibold ${ti.color}`}>{ti.label}</span></td>
                     <td className={`px-2 py-1.5 font-mono font-semibold whitespace-nowrap ${isDebit ? 'text-red-300' : 'text-emerald-300'}`}>
                       {isDebit ? '−' : '+'}{fmt(Math.abs(e.amount))}
                     </td>
                     <td className="px-2 py-1.5 font-mono text-amber-300/70 whitespace-nowrap">{e.reference_no ?? '—'}</td>
-                    <td className="px-2 py-1.5 text-white/50 max-w-[100px] truncate">{e.description ?? '—'}</td>
+                    <td className="px-2 py-1.5 text-ink/50 max-w-[100px] truncate">{e.description ?? '—'}</td>
                   </tr>
                 );
               })}
@@ -205,32 +205,32 @@ function CommissionLedgerSection({ employeeId, canManage }: { employeeId: number
           </table>
         </div>
       ) : (
-        <div className="text-xs text-white/30 text-center py-4 bg-white/3 rounded-xl border border-white/8">لا توجد حركات بعد</div>
+        <div className="text-xs text-ink/30 text-center py-4 bg-surface rounded-xl border border-line">لا توجد حركات بعد</div>
       )}
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={closeModal}>
-          <div className="bg-[#1a1f2e] border border-white/10 rounded-2xl p-5 w-80 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#1a1f2e] border border-line rounded-2xl p-5 w-80 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white">اعتماد وصرف العمولة</h3>
-              <button onClick={closeModal} className="text-white/40 hover:text-white/70"><X size={16} /></button>
+              <h3 className="text-sm font-bold text-ink">اعتماد وصرف العمولة</h3>
+              <button onClick={closeModal} className="text-ink/40 hover:text-ink/70"><X size={16} /></button>
             </div>
-            <div className="bg-white/5 rounded-xl p-3 text-center">
-              <div className="text-[10px] text-white/40 mb-0.5">الرصيد المتاح</div>
+            <div className="bg-surface rounded-xl p-3 text-center">
+              <div className="text-[10px] text-ink/40 mb-0.5">الرصيد المتاح</div>
               <div className="text-xl font-bold font-mono text-amber-300">{fmt(data.balance)}</div>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] text-white/50 block mb-1">المبلغ المراد صرفه</label>
+                <label className="text-[10px] text-ink/50 block mb-1">المبلغ المراد صرفه</label>
                 <input type="number" value={payoutAmount} onChange={e => { setPayoutAmount(e.target.value); setPayoutError(null); }}
                   placeholder={`الحد الأقصى ${fmt(data.balance)}`}
-                  className="w-full bg-white/8 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-amber-500/50" />
+                  className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm text-ink placeholder-white/25 focus:outline-none focus:border-amber-500/50" />
               </div>
               <div>
-                <label className="text-[10px] text-white/50 block mb-1">ملاحظات (اختياري)</label>
+                <label className="text-[10px] text-ink/50 block mb-1">ملاحظات (اختياري)</label>
                 <input type="text" value={payoutNotes} onChange={e => setPayoutNotes(e.target.value)}
                   placeholder="سبب الصرف…"
-                  className="w-full bg-white/8 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-amber-500/50" />
+                  className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm text-ink placeholder-white/25 focus:outline-none focus:border-amber-500/50" />
               </div>
               {payoutError && <div className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{payoutError}</div>}
               <button onClick={handlePayout} disabled={payoutLoading || !payoutAmount}
@@ -282,26 +282,26 @@ function EmployeeMaintenanceTab({ employeeId, canManage = false }: { employeeId:
 
   if (isLoading) return (
     <div className="space-y-3">
-      {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />)}
+      {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-surface animate-pulse" />)}
     </div>
   );
 
   if (!data) return (
-    <div className="text-xs text-white/40 text-center py-6">لا توجد بيانات</div>
+    <div className="text-xs text-ink/40 text-center py-6">لا توجد بيانات</div>
   );
 
   if (!data.has_user) return (
     <div className="text-center py-8 space-y-2">
-      <Wrench size={28} className="mx-auto text-white/20" />
-      <p className="text-xs text-white/40">هذا الموظف لا يملك حساب مستخدم مرتبط</p>
-      <p className="text-[10px] text-white/25">لا يمكن تتبع خدمات الصيانة بدون ربط بحساب</p>
+      <Wrench size={28} className="mx-auto text-ink/20" />
+      <p className="text-xs text-ink/40">هذا الموظف لا يملك حساب مستخدم مرتبط</p>
+      <p className="text-[10px] text-ink/25">لا يمكن تتبع خدمات الصيانة بدون ربط بحساب</p>
     </div>
   );
 
   if (data.total_assigned === 0) return (
     <div className="text-center py-8 space-y-2">
-      <Wrench size={28} className="mx-auto text-white/20" />
-      <p className="text-xs text-white/40">لم تُسند لهذا الفني أي خدمات بعد</p>
+      <Wrench size={28} className="mx-auto text-ink/20" />
+      <p className="text-xs text-ink/40">لم تُسند لهذا الفني أي خدمات بعد</p>
     </div>
   );
 
@@ -310,16 +310,16 @@ function EmployeeMaintenanceTab({ employeeId, canManage = false }: { employeeId:
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'إجمالي المُسنَدة', value: String(data.total_assigned), color: 'text-white/80' },
+          { label: 'إجمالي المُسنَدة', value: String(data.total_assigned), color: 'text-ink/80' },
           { label: 'النشطة',           value: String(data.active_count),   color: 'text-amber-300' },
           { label: 'المُسلَّمة',        value: String(data.delivered_count), color: 'text-emerald-300' },
           { label: 'عمولات محققة',     value: fmt(data.total_earned),      color: 'text-emerald-300' },
           { label: 'عمولات معلقة',     value: fmt(data.pending_commission), color: 'text-amber-300' },
           { label: 'متوسط العمولة',    value: fmt(data.avg_commission),    color: 'text-purple-300' },
         ].map((card) => (
-          <div key={card.label} className="bg-white/5 border border-white/8 rounded-xl p-2.5 text-center">
+          <div key={card.label} className="bg-surface border border-line rounded-xl p-2.5 text-center">
             <div className={`text-sm font-bold font-mono ${card.color}`}>{card.value}</div>
-            <div className="text-[10px] text-white/35 mt-0.5 leading-tight">{card.label}</div>
+            <div className="text-[10px] text-ink/35 mt-0.5 leading-tight">{card.label}</div>
           </div>
         ))}
       </div>
@@ -327,49 +327,49 @@ function EmployeeMaintenanceTab({ employeeId, canManage = false }: { employeeId:
       {/* ── جدول الخدمات الأخيرة ── */}
       {data.services.length > 0 && (
         <div>
-          <p className="text-[11px] font-semibold text-white/50 mb-1.5">
+          <p className="text-[11px] font-semibold text-ink/50 mb-1.5">
             آخر {data.services.length} خدمة
           </p>
-          <div className="overflow-x-auto rounded-xl border border-white/8">
+          <div className="overflow-x-auto rounded-xl border border-line">
             <table className="w-full text-[10px]">
-              <thead className="bg-white/5 text-white/40">
+              <thead className="bg-surface text-ink/40">
                 <tr>
                   {['رقم البطاقة','العميل','نوع الخدمة','المبلغ','العمولة','حالة الخدمة','حالة البطاقة','تاريخ الإضافة','تاريخ التسليم'].map(h => (
-                    <th key={h} className="text-right px-2 py-2 font-semibold whitespace-nowrap border-b border-white/5">{h}</th>
+                    <th key={h} className="text-right px-2 py-2 font-semibold whitespace-nowrap border-b border-line">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {data.services.map((s) => (
-                  <tr key={s.id} className="border-t border-white/5 hover:bg-white/[0.03]">
+                  <tr key={s.id} className="border-t border-line hover:bg-surface">
                     <td className="px-2 py-1.5 font-mono text-amber-300 whitespace-nowrap">{s.job_no}</td>
-                    <td className="px-2 py-1.5 text-white/70 max-w-[70px] truncate">{s.customer_name}</td>
-                    <td className="px-2 py-1.5 text-white/60 max-w-[70px] truncate">{s.service_type}</td>
-                    <td className="px-2 py-1.5 font-mono text-white/80 whitespace-nowrap">{fmt(s.amount)}</td>
+                    <td className="px-2 py-1.5 text-ink/70 max-w-[70px] truncate">{s.customer_name}</td>
+                    <td className="px-2 py-1.5 text-ink/60 max-w-[70px] truncate">{s.service_type}</td>
+                    <td className="px-2 py-1.5 font-mono text-ink/80 whitespace-nowrap">{fmt(s.amount)}</td>
                     <td className="px-2 py-1.5 font-mono whitespace-nowrap">
                       {s.commission_locked
                         ? <span className="text-emerald-300">{fmt(s.commission_computed ?? 0)}</span>
-                        : <span className="text-white/25">—</span>}
+                        : <span className="text-ink/25">—</span>}
                     </td>
                     <td className="px-2 py-1.5">
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
                         s.service_status === 'completed'   ? 'bg-emerald-500/20 text-emerald-300' :
                         s.service_status === 'in_progress' ? 'bg-amber-500/20 text-amber-300' :
                         s.service_status === 'cancelled'   ? 'bg-red-500/20 text-red-300' :
-                        'bg-white/8 text-white/50'
+                        'bg-surface text-ink/50'
                       }`}>{SVC_STATUS_AR[s.service_status] ?? s.service_status}</span>
                     </td>
                     <td className="px-2 py-1.5">
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
                         s.job_status === 'delivered' ? 'bg-emerald-500/20 text-emerald-300' :
                         s.job_status === 'cancelled' ? 'bg-red-500/20 text-red-300' :
-                        'bg-white/8 text-white/50'
+                        'bg-surface text-ink/50'
                       }`}>{JOB_STATUS_AR[s.job_status] ?? s.job_status}</span>
                     </td>
-                    <td className="px-2 py-1.5 font-mono text-white/35 whitespace-nowrap">
+                    <td className="px-2 py-1.5 font-mono text-ink/35 whitespace-nowrap">
                       {s.created_at ? new Date(s.created_at).toLocaleDateString('ar-EG-u-nu-latn') : '—'}
                     </td>
-                    <td className="px-2 py-1.5 font-mono text-white/35 whitespace-nowrap">
+                    <td className="px-2 py-1.5 font-mono text-ink/35 whitespace-nowrap">
                       {s.delivered_at ? new Date(s.delivered_at).toLocaleDateString('ar-EG-u-nu-latn') : '—'}
                     </td>
                   </tr>
@@ -381,17 +381,17 @@ function EmployeeMaintenanceTab({ employeeId, canManage = false }: { employeeId:
       )}
 
       {/* ── قسم ملخص العمولات ── */}
-      <div className="bg-white/3 border border-white/8 rounded-xl p-3 space-y-2">
-        <p className="text-[11px] font-semibold text-white/50 border-b border-white/8 pb-1.5">ملخص العمولات</p>
+      <div className="bg-surface border border-line rounded-xl p-3 space-y-2">
+        <p className="text-[11px] font-semibold text-ink/50 border-b border-line pb-1.5">ملخص العمولات</p>
         <div className="space-y-1.5">
           {[
             { label: 'إجمالي العمولات المحققة',       value: fmt(data.total_earned),                             color: 'text-emerald-300' },
             { label: 'إجمالي العمولات المعلقة',       value: fmt(data.pending_commission),                       color: 'text-amber-300' },
             { label: 'خدمات تم احتساب عمولتها',       value: String(data.commission_services_count),             color: 'text-emerald-300' },
-            { label: 'خدمات لم تُحتسب عمولتها بعد',  value: String(data.no_commission_services_count),          color: 'text-white/50' },
+            { label: 'خدمات لم تُحتسب عمولتها بعد',  value: String(data.no_commission_services_count),          color: 'text-ink/50' },
           ].map((row) => (
             <div key={row.label} className="flex justify-between items-center">
-              <span className="text-xs text-white/40">{row.label}</span>
+              <span className="text-xs text-ink/40">{row.label}</span>
               <span className={`text-xs font-bold font-mono ${row.color}`}>{row.value}</span>
             </div>
           ))}
@@ -425,27 +425,27 @@ function EmployeeRepairsTab({ employeeId }: { employeeId: number }) {
     enabled: !!employeeId,
   });
 
-  if (isLoading) return <div className="text-xs text-white/40 text-center py-6">جارِ تحميل بيانات الصيانة…</div>;
-  if (!data || data.jobs_count === 0) return <div className="text-xs text-white/40 text-center py-6 bg-white/5 rounded-xl">لا توجد بطاقات صيانة لهذا الفني</div>;
+  if (isLoading) return <div className="text-xs text-ink/40 text-center py-6">جارِ تحميل بيانات الصيانة…</div>;
+  if (!data || data.jobs_count === 0) return <div className="text-xs text-ink/40 text-center py-6 bg-surface rounded-xl">لا توجد بطاقات صيانة لهذا الفني</div>;
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2">
-        <div className="bg-white/5 rounded-xl p-3 text-center border border-white/8">
+        <div className="bg-surface rounded-xl p-3 text-center border border-line">
           <div className="text-lg font-bold text-amber-300 font-mono">{data.jobs_count}</div>
-          <div className="text-[10px] text-white/40">بطاقات الصيانة</div>
+          <div className="text-[10px] text-ink/40">بطاقات الصيانة</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-3 text-center border border-white/8">
+        <div className="bg-surface rounded-xl p-3 text-center border border-line">
           <div className="text-lg font-bold text-emerald-300 font-mono">{fmt(data.total_revenue)}</div>
-          <div className="text-[10px] text-white/40">إجمالي الإيرادات</div>
+          <div className="text-[10px] text-ink/40">إجمالي الإيرادات</div>
         </div>
       </div>
       <div className="space-y-1.5 max-h-64 overflow-y-auto">
         {data.jobs.map((j) => (
-          <div key={j.id} className="flex items-center justify-between bg-white/[0.03] rounded-lg px-3 py-2 border border-white/6 text-xs">
+          <div key={j.id} className="flex items-center justify-between bg-surface rounded-lg px-3 py-2 border border-line text-xs">
             <div>
-              <span className="text-white/80 font-bold font-mono">{j.job_no}</span>
-              <span className="text-white/40 mr-2">{j.customer_name}</span>
+              <span className="text-ink/80 font-bold font-mono">{j.job_no}</span>
+              <span className="text-ink/40 mr-2">{j.customer_name}</span>
             </div>
             <div className="text-left">
               <span className="text-amber-300 font-mono">{fmt(j.final_cost)}</span>
@@ -524,14 +524,14 @@ export function EmployeeDetail({
     <div className={`erp-card space-y-3 ${isSelfService ? 'xl:col-span-3' : ''}`}>
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-lg font-bold text-white">
+          <div className="text-lg font-bold text-ink">
             {selected.first_name_ar} {selected.last_name_ar}
           </div>
           <div className="text-xs text-amber-300 font-mono">{selected.employee_code}</div>
         </div>
         <div className="flex items-center gap-2">
           {!isSelfService && (
-            <button onClick={() => setSelected(null)} className="text-white/40 hover:text-white">
+            <button onClick={() => setSelected(null)} className="text-ink/40 hover:text-ink">
               <X size={16} />
             </button>
           )}
@@ -539,7 +539,7 @@ export function EmployeeDetail({
       </div>
 
       {/* Detail Tabs */}
-      <div className="flex gap-1 flex-wrap border-b border-white/10 pb-2">
+      <div className="flex gap-1 flex-wrap border-b border-line pb-2">
         {(
           [
             { key: 'info',        label: 'البيانات',    icon: IdCard,     show: true },
@@ -557,7 +557,7 @@ export function EmployeeDetail({
             key={t.key}
             onClick={() => setDetailTab(t.key)}
             className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-all ${
-              detailTab === t.key ? 'bg-amber-500/20 text-amber-300' : 'text-white/40 hover:text-white/60'
+              detailTab === t.key ? 'bg-amber-500/20 text-amber-300' : 'text-ink/40 hover:text-ink/60'
             }`}
           >
             <t.icon size={11} /> {t.label}
@@ -587,7 +587,7 @@ export function EmployeeDetail({
             <InfoRow icon={Building2} label="العنوان" value={`${selected.address_ar}${selected.city ? ` — ${selected.city}` : ''}`} />
           )}
           {selected.notes && (
-            <div className="bg-white/5 rounded p-2 text-white/60 text-xs">{selected.notes}</div>
+            <div className="bg-surface rounded p-2 text-ink/60 text-xs">{selected.notes}</div>
           )}
           {canManage && (
             <button
@@ -614,23 +614,23 @@ export function EmployeeDetail({
           )}
           {loansLoading ? (
             <div className="space-y-2 py-2">
-              {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />)}
+              {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-lg bg-surface animate-pulse" />)}
             </div>
           ) : loans.length === 0 ? (
-            <div className="text-center py-6 text-white/30 text-xs">
+            <div className="text-center py-6 text-ink/30 text-xs">
               <Banknote size={28} className="mx-auto mb-2 opacity-30" />
               <p>لا توجد سلف لهذا الموظف</p>
             </div>
           ) : (
             <div className={`space-y-2 ${loans.length > 5 ? 'max-h-[340px] overflow-y-auto pr-1 thin-scroll' : ''}`}>
               {loans.map((l) => (
-                <div key={String(l.id)} className="bg-white/5 rounded-lg p-3 space-y-1">
+                <div key={String(l.id)} className="bg-surface rounded-lg p-3 space-y-1">
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-sm font-bold text-amber-300 font-mono">
                         {fmt(l.requested_amount)} {String(l.currency ?? 'EGP')}
                       </span>
-                      <span className="text-xs text-white/40 mr-2">{String(l.advance_type ?? '')}</span>
+                      <span className="text-xs text-ink/40 mr-2">{String(l.advance_type ?? '')}</span>
                     </div>
                     <span className={advStatusBadge(String(l.status))}>{advStatusAr(String(l.status))}</span>
                   </div>
@@ -639,8 +639,8 @@ export function EmployeeDetail({
                       متبقي: <span className="font-mono">{fmt(l.remaining_balance)}</span>
                     </div>
                   )}
-                  {!!l.reason && <div className="text-xs text-white/40">{String(l.reason)}</div>}
-                  <div className="text-xs text-white/30 font-mono">{String(l.requested_date ?? '')}</div>
+                  {!!l.reason && <div className="text-xs text-ink/40">{String(l.reason)}</div>}
+                  <div className="text-xs text-ink/30 font-mono">{String(l.requested_date ?? '')}</div>
                   {canManage && (
                     <div className="flex gap-1 mt-2">
                       {l.status === 'pending' && (
@@ -695,10 +695,10 @@ export function EmployeeDetail({
           )}
           {ledgerLoading ? (
             <div className="space-y-2 py-2">
-              {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />)}
+              {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-lg bg-surface animate-pulse" />)}
             </div>
           ) : deductions.length === 0 ? (
-            <div className="text-center py-6 text-white/30 text-xs">
+            <div className="text-center py-6 text-ink/30 text-xs">
               <MinusCircle size={28} className="mx-auto mb-2 opacity-30" />
               <p>لا توجد خصومات</p>
             </div>
@@ -716,8 +716,8 @@ export function EmployeeDetail({
                           </span>
                           <span className={`text-sm font-bold ${info.color} font-mono`}>- {fmt(d.amount)}</span>
                         </div>
-                        {!!d.reason && <div className="text-xs text-white/60 mt-1">{String(d.reason)}</div>}
-                        <div className="text-[10px] text-white/30 font-mono mt-1">{String(d.deduction_date ?? '')}</div>
+                        {!!d.reason && <div className="text-xs text-ink/60 mt-1">{String(d.reason)}</div>}
+                        <div className="text-[10px] text-ink/30 font-mono mt-1">{String(d.deduction_date ?? '')}</div>
                       </div>
                       {canManage && (
                         <button
@@ -732,7 +732,7 @@ export function EmployeeDetail({
                   </div>
                 );
               })}
-              <div className="bg-white/5 rounded-lg p-2 text-xs text-center">
+              <div className="bg-surface rounded-lg p-2 text-xs text-center">
                 إجمالي الخصومات: <span className="text-red-400 font-bold font-mono">{fmt(totalDeducted)}</span>
               </div>
             </div>
@@ -791,7 +791,7 @@ export function EmployeeDetail({
         return (
           <div className="space-y-3">
             <div className="flex items-center justify-end gap-2">
-              <button onClick={() => openReport(true)} className="erp-btn flex items-center gap-1.5 text-xs px-3 py-2 bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg text-white">
+              <button onClick={() => openReport(true)} className="erp-btn flex items-center gap-1.5 text-xs px-3 py-2 bg-surface hover:bg-raised border border-line rounded-lg text-ink">
                 <Printer size={14} /> طباعة
               </button>
               <button onClick={() => openReport(false)} className="erp-btn flex items-center gap-1.5 text-xs px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-amber-300">
@@ -799,14 +799,14 @@ export function EmployeeDetail({
               </button>
             </div>
             <div className={`rounded-xl p-4 border-2 ${netAmount >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-              <div className="text-xs text-white/50 mb-1">الصافي المستحق</div>
+              <div className="text-xs text-ink/50 mb-1">الصافي المستحق</div>
               <div className={`text-2xl font-bold font-mono ${netAmount >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
                 {fmt(netAmount)} {selected.currency}
               </div>
-              <div className="text-[10px] text-white/40 mt-1">= دخل ({fmt(totalIncome)}) − خصومات ({fmt(totalDeductionsAll)})</div>
+              <div className="text-[10px] text-ink/40 mt-1">= دخل ({fmt(totalIncome)}) − خصومات ({fmt(totalDeductionsAll)})</div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-              <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-white/5 border-b border-white/10 text-[10px] font-bold text-white/50 uppercase">
+            <div className="bg-surface border border-line rounded-xl overflow-hidden">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-surface border-b border-line text-[10px] font-bold text-ink/50 uppercase">
                 <div>البند</div><div className="text-center w-20">دخل</div><div className="text-center w-20">صرف</div>
               </div>
               <div className="px-3 py-1.5 bg-emerald-500/10 text-[10px] font-bold text-emerald-300 flex items-center gap-1 sticky top-0 z-10">
@@ -814,32 +814,32 @@ export function EmployeeDetail({
               </div>
               <div className="max-h-[200px] overflow-y-auto thin-scroll">
                 {canViewSalary && baseSalary > 0 && (
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
-                    <div className="text-white/70">الراتب الأساسي</div>
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
+                    <div className="text-ink/70">الراتب الأساسي</div>
                     <div className="font-mono font-semibold text-emerald-300 w-20 text-center">{fmt(baseSalary)}</div>
                     <div className="w-20"></div>
                   </div>
                 )}
                 {(selected.commission_rate ?? 0) > 0 && (
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
-                    <div className="text-white/70">نسبة العمولة <span className="text-purple-300 font-mono">({selected.commission_rate}%)</span></div>
-                    <div className="font-mono text-white/30 w-20 text-center">—</div>
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
+                    <div className="text-ink/70">نسبة العمولة <span className="text-purple-300 font-mono">({selected.commission_rate}%)</span></div>
+                    <div className="font-mono text-ink/30 w-20 text-center">—</div>
                     <div className="w-20"></div>
                   </div>
                 )}
                 {bonuses.map((b) => (
-                  <div key={`bonus-${String(b.id)}`} className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                  <div key={`bonus-${String(b.id)}`} className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
                     <div className="min-w-0">
-                      <div className="text-white/70 truncate">حافز{b.reason ? ` — ${String(b.reason)}` : ''}</div>
-                      <div className="text-[10px] text-white/30 font-mono">{String(b.granted_date ?? '')}</div>
+                      <div className="text-ink/70 truncate">حافز{b.reason ? ` — ${String(b.reason)}` : ''}</div>
+                      <div className="text-[10px] text-ink/30 font-mono">{String(b.granted_date ?? '')}</div>
                     </div>
                     <div className="font-mono font-semibold text-emerald-300 w-20 text-center">{fmt(b.amount)}</div>
                     <div className="w-20"></div>
                   </div>
                 ))}
                 {commEarned > 0 && (
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
-                    <div className="text-white/70 flex items-center gap-1.5">
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
+                    <div className="text-ink/70 flex items-center gap-1.5">
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">عمولة</span>
                       عمولات محققة (صيانة)
                     </div>
@@ -848,8 +848,8 @@ export function EmployeeDetail({
                   </div>
                 )}
                 {commBonus > 0 && (
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
-                    <div className="text-white/70 flex items-center gap-1.5">
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
+                    <div className="text-ink/70 flex items-center gap-1.5">
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">حافز</span>
                       حوافز (دفتر العمولات)
                     </div>
@@ -858,8 +858,8 @@ export function EmployeeDetail({
                   </div>
                 )}
                 {commIncentive > 0 && (
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
-                    <div className="text-white/70 flex items-center gap-1.5">
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
+                    <div className="text-ink/70 flex items-center gap-1.5">
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-300">إنسنتف</span>
                       إنسنتف
                     </div>
@@ -868,8 +868,8 @@ export function EmployeeDetail({
                   </div>
                 )}
                 {commReversals < 0 && (
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
-                    <div className="text-white/70 flex items-center gap-1.5">
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
+                    <div className="text-ink/70 flex items-center gap-1.5">
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-300">مستردّ</span>
                       استرداد عمولات
                     </div>
@@ -878,8 +878,8 @@ export function EmployeeDetail({
                   </div>
                 )}
                 {commAdjust !== 0 && (
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
-                    <div className="text-white/70 flex items-center gap-1.5">
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
+                    <div className="text-ink/70 flex items-center gap-1.5">
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300">تعديل</span>
                       تعديل عمولة
                     </div>
@@ -890,7 +890,7 @@ export function EmployeeDetail({
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-emerald-500/5 border-b border-white/10 text-xs font-bold">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-emerald-500/5 border-b border-line text-xs font-bold">
                 <div className="text-emerald-300">إجمالي الدخل</div>
                 <div className="font-mono text-emerald-300 w-20 text-center">{fmt(totalIncome)}</div>
                 <div className="w-20"></div>
@@ -902,13 +902,13 @@ export function EmployeeDetail({
                 {deductions.map((d) => {
                   const info = dedLabel(String(d.deduction_type ?? 'other'));
                   return (
-                    <div key={`ded-${String(d.id)}`} className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                    <div key={`ded-${String(d.id)}`} className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
                       <div className="min-w-0">
-                        <div className="text-white/70 truncate flex items-center gap-1.5">
+                        <div className="text-ink/70 truncate flex items-center gap-1.5">
                           <span className={`text-[9px] px-1.5 py-0.5 rounded-full border ${info.border} ${info.color} ${info.bg}`}>{info.label}</span>
                           {d.reason ? <span className="truncate">{String(d.reason)}</span> : null}
                         </div>
-                        <div className="text-[10px] text-white/30 font-mono">{String(d.deduction_date ?? '')}</div>
+                        <div className="text-[10px] text-ink/30 font-mono">{String(d.deduction_date ?? '')}</div>
                       </div>
                       <div className="w-20"></div>
                       <div className="font-mono font-semibold text-red-300 w-20 text-center">{fmt(d.amount)}</div>
@@ -916,23 +916,23 @@ export function EmployeeDetail({
                   );
                 })}
                 {loans.filter((l) => Number(l.remaining_balance ?? 0) > 0).map((l) => (
-                  <div key={`loan-${String(l.id)}`} className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-white/5 text-xs">
+                  <div key={`loan-${String(l.id)}`} className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
                     <div className="min-w-0">
-                      <div className="text-white/70 truncate flex items-center gap-1.5">
+                      <div className="text-ink/70 truncate flex items-center gap-1.5">
                         <span className="text-[9px] px-1.5 py-0.5 rounded-full border border-amber-500/30 text-amber-300 bg-amber-500/10">سلفة</span>
                         {l.reason ? <span className="truncate">{String(l.reason)}</span> : null}
                       </div>
-                      <div className="text-[10px] text-white/30 font-mono">متبقي من أصل {fmt(l.requested_amount)}</div>
+                      <div className="text-[10px] text-ink/30 font-mono">متبقي من أصل {fmt(l.requested_amount)}</div>
                     </div>
                     <div className="w-20"></div>
                     <div className="font-mono font-semibold text-amber-300 w-20 text-center">{fmt(l.remaining_balance)}</div>
                   </div>
                 ))}
                 {deductions.length === 0 && remainingLoans === 0 && (
-                  <div className="px-3 py-3 text-center text-[11px] text-white/30">لا توجد خصومات أو سلف</div>
+                  <div className="px-3 py-3 text-center text-[11px] text-ink/30">لا توجد خصومات أو سلف</div>
                 )}
               </div>
-              <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-red-500/5 border-b border-white/10 text-xs font-bold">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-red-500/5 border-b border-line text-xs font-bold">
                 <div className="text-red-300">إجمالي الصرف</div>
                 <div className="w-20"></div>
                 <div className="font-mono text-red-300 w-20 text-center">{fmt(totalDeductionsAll)}</div>
@@ -943,23 +943,23 @@ export function EmployeeDetail({
                 <div className={`font-mono w-20 text-center ${netAmount >= 0 ? 'text-emerald-200' : 'text-red-200'}`}>{fmt(netAmount)}</div>
               </div>
             </div>
-            <div className="bg-white/5 rounded-lg p-3 space-y-2">
-              <div className="text-xs font-semibold text-white/70 border-b border-white/10 pb-1.5">السلف</div>
+            <div className="bg-surface rounded-lg p-3 space-y-2">
+              <div className="text-xs font-semibold text-ink/70 border-b border-line pb-1.5">السلف</div>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div><div className="text-sm font-bold text-white/70">{loans.length}</div><div className="text-[10px] text-white/40 mt-0.5">العدد</div></div>
-                <div><div className="text-sm font-bold text-amber-300 font-mono">{fmt(totalLoans)}</div><div className="text-[10px] text-white/40 mt-0.5">إجمالي</div></div>
-                <div><div className="text-sm font-bold text-red-400 font-mono">{fmt(remainingLoans)}</div><div className="text-[10px] text-white/40 mt-0.5">متبقي</div></div>
+                <div><div className="text-sm font-bold text-ink/70">{loans.length}</div><div className="text-[10px] text-ink/40 mt-0.5">العدد</div></div>
+                <div><div className="text-sm font-bold text-amber-300 font-mono">{fmt(totalLoans)}</div><div className="text-[10px] text-ink/40 mt-0.5">إجمالي</div></div>
+                <div><div className="text-sm font-bold text-red-400 font-mono">{fmt(remainingLoans)}</div><div className="text-[10px] text-ink/40 mt-0.5">متبقي</div></div>
               </div>
             </div>
-            <div className="bg-white/5 rounded-lg p-3 space-y-2 text-xs">
+            <div className="bg-surface rounded-lg p-3 space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-white/40">تاريخ التعيين</span>
-                <span className="font-mono text-white/70">{selected.hire_date}</span>
+                <span className="text-ink/40">تاريخ التعيين</span>
+                <span className="font-mono text-ink/70">{selected.hire_date}</span>
               </div>
               {selected.national_id && (
                 <div className="flex justify-between">
-                  <span className="text-white/40">رقم البطاقة</span>
-                  <span className="font-mono text-white/70">{selected.national_id}</span>
+                  <span className="text-ink/40">رقم البطاقة</span>
+                  <span className="font-mono text-ink/70">{selected.national_id}</span>
                 </div>
               )}
             </div>
@@ -981,7 +981,7 @@ export function EmployeeDetail({
             </button>
           )}
           {bonuses.length === 0 ? (
-            <div className="text-center py-6 text-white/30 text-xs">
+            <div className="text-center py-6 text-ink/30 text-xs">
               <Award size={28} className="mx-auto mb-2 opacity-30" />
               <p>لا توجد حوافز لهذا الموظف</p>
             </div>
@@ -992,8 +992,8 @@ export function EmployeeDetail({
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="text-sm font-bold text-emerald-300 font-mono">+ {fmt(b.amount)} {String(b.currency ?? 'EGP')}</div>
-                      {b.reason ? <div className="text-xs text-white/60 mt-1">{String(b.reason)}</div> : null}
-                      <div className="text-xs text-white/30 font-mono mt-1">{String(b.granted_date ?? '')}</div>
+                      {b.reason ? <div className="text-xs text-ink/60 mt-1">{String(b.reason)}</div> : null}
+                      <div className="text-xs text-ink/30 font-mono mt-1">{String(b.granted_date ?? '')}</div>
                     </div>
                     {canManage && (
                       <button onClick={() => onDeleteBonus(b.id as number)} className="text-red-400/60 hover:text-red-400">
@@ -1003,7 +1003,7 @@ export function EmployeeDetail({
                   </div>
                 </div>
               ))}
-              <div className="bg-white/5 rounded-lg p-2 text-xs text-center">
+              <div className="bg-surface rounded-lg p-2 text-xs text-center">
                 إجمالي الحوافز: <span className="text-emerald-300 font-bold font-mono">{fmt(bonuses.reduce((s, b) => s + Number(b.amount ?? 0), 0))}</span>
               </div>
             </div>
@@ -1020,7 +1020,7 @@ export function EmployeeDetail({
             </button>
           )}
           {custody.length === 0 ? (
-            <div className="text-center py-6 text-white/30 text-xs">
+            <div className="text-center py-6 text-ink/30 text-xs">
               <Package size={28} className="mx-auto mb-2 opacity-30" />
               <p>لا توجد عهد لهذا الموظف</p>
             </div>
@@ -1031,12 +1031,12 @@ export function EmployeeDetail({
                 const reimbursement = Number(c.reimbursement_due ?? 0);
                 const isExpanded = expandedCustody === Number(c.id);
                 return (
-                  <div key={String(c.id)} className={`rounded-lg p-3 border ${isOpen ? 'bg-amber-500/5 border-amber-500/20' : 'bg-white/5 border-white/10'}`}>
+                  <div key={String(c.id)} className={`rounded-lg p-3 border ${isOpen ? 'bg-amber-500/5 border-amber-500/20' : 'bg-surface border-line'}`}>
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="text-sm font-bold text-amber-300 font-mono">{fmt(c.amount)} {String(c.currency ?? 'EGP')}</div>
-                        {c.purpose ? <div className="text-xs text-white/60 mt-1">{String(c.purpose)}</div> : null}
-                        <div className="text-xs text-white/30 font-mono mt-1">{String(c.granted_date ?? '')}</div>
+                        {c.purpose ? <div className="text-xs text-ink/60 mt-1">{String(c.purpose)}</div> : null}
+                        <div className="text-xs text-ink/30 font-mono mt-1">{String(c.granted_date ?? '')}</div>
                         {!isOpen && (
                           <div className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
                             <CheckCircle size={10} /> مردودة: <span className="font-mono">{fmt(c.returned_amount)}</span>
@@ -1080,7 +1080,7 @@ export function EmployeeDetail({
                     {!isOpen && (
                       <button
                         onClick={() => setExpandedCustody(isExpanded ? null : Number(c.id))}
-                        className="erp-btn erp-btn-ghost text-xs text-white/60 mt-2"
+                        className="erp-btn erp-btn-ghost text-xs text-ink/60 mt-2"
                       >
                         {isExpanded ? '▲ إخفاء التفاصيل' : '▼ عرض بنود التسوية'}
                       </button>
@@ -1089,7 +1089,7 @@ export function EmployeeDetail({
                   </div>
                 );
               })}
-              <div className="bg-white/5 rounded-lg p-2 text-xs text-center">
+              <div className="bg-surface rounded-lg p-2 text-xs text-center">
                 عهد مفتوحة:{' '}
                 <span className="text-amber-300 font-bold font-mono">
                   {fmt(custody.filter((c) => String(c.status) === 'open').reduce((s, c) => s + Number(c.amount ?? 0) - Number(c.returned_amount ?? 0), 0))}

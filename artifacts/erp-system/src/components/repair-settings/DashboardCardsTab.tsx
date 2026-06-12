@@ -79,8 +79,8 @@ export default function DashboardCardsTab() {
           <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
             <Lock className="w-5 h-5 text-amber-400/70" />
           </div>
-          <h3 className="text-white/80 text-sm font-bold mb-1">صلاحيات المسؤول مطلوبة</h3>
-          <p className="text-white/35 text-[12px] leading-relaxed">
+          <h3 className="text-ink/80 text-sm font-bold mb-1">صلاحيات المسؤول مطلوبة</h3>
+          <p className="text-ink/35 text-[12px] leading-relaxed">
             تخصيص كروت لوحة الصيانة متاح لمدير النظام فقط لضمان توحيد العرض بين الفرع والفنيين.
           </p>
         </div>
@@ -91,7 +91,7 @@ export default function DashboardCardsTab() {
   return (
     <div className="h-full overflow-y-auto" dir="rtl">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-white/8 flex items-start justify-between gap-3">
+      <div className="px-5 py-4 border-b border-line flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/8 border border-amber-500/20 flex-1">
             <Info className="w-4 h-4 text-amber-400/85 shrink-0 mt-0.5" />
@@ -108,24 +108,24 @@ export default function DashboardCardsTab() {
 
       {/* List */}
       <div className="px-5 py-4">
-        {isLoading && <div className="text-center text-white/30 text-sm py-8">جارٍ التحميل...</div>}
+        {isLoading && <div className="text-center text-ink/30 text-sm py-8">جارٍ التحميل...</div>}
         {!isLoading && cards.length === 0 && (
-          <div className="text-center text-white/30 text-sm py-8">لا توجد كروت — أضف كارت جديد</div>
+          <div className="text-center text-ink/30 text-sm py-8">لا توجد كروت — أضف كارت جديد</div>
         )}
         <div className="flex flex-col gap-2">
           {cards.map((c, i) => {
             const Icon = DASHBOARD_CARD_ICONS[c.icon] ?? Wrench;
             return (
               <div key={c.id}
-                className="rounded-2xl border border-white/8 bg-white/[0.025] p-3 flex items-center gap-3 hover:border-white/15 transition-all">
+                className="rounded-2xl border border-line bg-surface p-3 flex items-center gap-3 hover:border-line transition-all">
                 {/* Reorder */}
                 <div className="flex flex-col gap-0.5 shrink-0">
                   <button onClick={() => move(i, -1)} disabled={i === 0}
-                    className="w-5 h-5 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/8 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                    className="w-5 h-5 rounded-md flex items-center justify-center text-ink/30 hover:text-ink/70 hover:bg-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all">
                     <ArrowRight className="w-3 h-3 rotate-90" />
                   </button>
                   <button onClick={() => move(i, +1)} disabled={i === cards.length - 1}
-                    className="w-5 h-5 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/8 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                    className="w-5 h-5 rounded-md flex items-center justify-center text-ink/30 hover:text-ink/70 hover:bg-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all">
                     <ArrowRight className="w-3 h-3 -rotate-90" />
                   </button>
                 </div>
@@ -139,8 +139,8 @@ export default function DashboardCardsTab() {
                 {/* Body */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[13px] font-bold text-white/85 truncate">{c.name}</span>
-                    {c.is_system && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/8 text-white/40 font-medium">افتراضي</span>}
+                    <span className="text-[13px] font-bold text-ink/85 truncate">{c.name}</span>
+                    {c.is_system && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-surface text-ink/40 font-medium">افتراضي</span>}
                     {c.alert_threshold != null && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400/80 font-medium flex items-center gap-1">
                         <Bell className="w-2.5 h-2.5" /> ≥ {c.alert_threshold}
@@ -149,10 +149,10 @@ export default function DashboardCardsTab() {
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {c.statuses.slice(0, 5).map(s => (
-                      <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-white/45 font-mono">{s}</span>
+                      <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface text-ink/45 font-mono">{s}</span>
                     ))}
                     {c.statuses.length > 5 && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-white/35">+{c.statuses.length - 5}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface text-ink/35">+{c.statuses.length - 5}</span>
                     )}
                   </div>
                 </div>
@@ -160,12 +160,12 @@ export default function DashboardCardsTab() {
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
                   <button onClick={() => { setEditing(c); setShowNew(false); }}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-amber-300 hover:bg-amber-500/10 transition-all"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/30 hover:text-amber-300 hover:bg-amber-500/10 transition-all"
                     title="تعديل">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button onClick={() => remove(c.id)} disabled={busyId === c.id || cards.length <= 1}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/30 hover:text-red-300 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     title={cards.length <= 1 ? "لا يمكن حذف الكارت الأخير" : "حذف"}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -310,20 +310,20 @@ function DashboardCardEditor({
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-start justify-center pt-8 pb-8 bg-black/70 backdrop-blur-md" dir="rtl"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="glass-panel rounded-2xl border border-white/12 w-full mx-4 overflow-hidden flex flex-col"
+      <div className="glass-panel rounded-2xl border border-line w-full mx-4 overflow-hidden flex flex-col"
         style={{ maxWidth: 580, maxHeight: "90vh" }}>
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-line shrink-0">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center"
             style={{ background: `${color}22`, border: `1px solid ${color}40` }}>
             <PreviewIcon className="w-4 h-4" style={{ color }} />
           </div>
-          <h3 className="flex-1 text-sm font-bold text-white/85">
+          <h3 className="flex-1 text-sm font-bold text-ink/85">
             {initial ? "تعديل الكارت" : "كارت جديد"}
           </h3>
           <button onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white/70 hover:bg-white/8 transition-all">
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-ink/30 hover:text-ink/70 hover:bg-surface transition-all">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -349,7 +349,7 @@ function DashboardCardEditor({
 
           {/* Name */}
           <div>
-            <label className="text-[11px] text-white/45 font-bold mb-1.5 block">اسم الكارت</label>
+            <label className="text-[11px] text-ink/45 font-bold mb-1.5 block">اسم الكارت</label>
             <input value={name} onChange={e => setName(e.target.value)}
               placeholder="مثال: بانتظار قطعة" maxLength={40}
               className="erp-input w-full text-sm" />
@@ -359,11 +359,11 @@ function DashboardCardEditor({
               and any custom statuses you add). */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] text-white/45 font-bold">
+              <label className="text-[11px] text-ink/45 font-bold">
                 الحالات المضمومة <span className="text-amber-400/85">({statuses.length})</span>
               </label>
               <button type="button" onClick={() => setShowAddStatus(v => !v)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/55 text-[10px] font-bold transition-all">
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-surface hover:bg-surface border border-line text-ink/55 text-[10px] font-bold transition-all">
                 <Plus className="w-3 h-3" /> حالة جديدة
               </button>
             </div>
@@ -392,11 +392,11 @@ function DashboardCardEditor({
               </div>
             )}
 
-            <div className="rounded-xl border border-white/8 p-2 max-h-56 overflow-y-auto">
+            <div className="rounded-xl border border-line p-2 max-h-56 overflow-y-auto">
               {loadingStatuses ? (
-                <div className="text-center text-white/30 text-xs py-4">جارٍ التحميل...</div>
+                <div className="text-center text-ink/30 text-xs py-4">جارٍ التحميل...</div>
               ) : companyStatuses.length === 0 ? (
-                <div className="text-center text-white/35 text-xs py-4">
+                <div className="text-center text-ink/35 text-xs py-4">
                   لا توجد حالات بعد — أضف واحدة بالأعلى
                 </div>
               ) : (
@@ -408,7 +408,7 @@ function DashboardCardEditor({
                         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
                           on
                             ? "bg-amber-500/20 border-amber-500/40 text-amber-200"
-                            : "bg-white/[0.02] border-white/8 text-white/45 hover:text-white/75 hover:border-white/15"
+                            : "bg-surface border-line text-ink/45 hover:text-ink/75 hover:border-line"
                         }`}>
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.color }} />
                         {s.label_ar}
@@ -439,7 +439,7 @@ function DashboardCardEditor({
 
           {/* Color */}
           <div>
-            <label className="text-[11px] text-white/45 font-bold mb-1.5 block">اللون</label>
+            <label className="text-[11px] text-ink/45 font-bold mb-1.5 block">اللون</label>
             <div className="flex flex-wrap gap-1.5">
               {DASHBOARD_CARD_COLORS.map(c => (
                 <button key={c} type="button" onClick={() => setColor(c)}
@@ -456,14 +456,14 @@ function DashboardCardEditor({
 
           {/* Icon */}
           <div>
-            <label className="text-[11px] text-white/45 font-bold mb-1.5 block">الأيقونة</label>
+            <label className="text-[11px] text-ink/45 font-bold mb-1.5 block">الأيقونة</label>
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(DASHBOARD_CARD_ICONS).map(([key, IconC]) => (
                 <button key={key} type="button" onClick={() => setIcon(key)}
                   className={`w-9 h-9 rounded-lg flex items-center justify-center border transition-all ${
                     icon === key
-                      ? "bg-amber-500/20 border-amber-500/50 text-white"
-                      : "bg-white/[0.02] border-white/8 text-white/40 hover:text-white/75 hover:border-white/15"
+                      ? "bg-amber-500/20 border-amber-500/50 text-ink"
+                      : "bg-surface border-line text-ink/40 hover:text-ink/75 hover:border-line"
                   }`}
                   title={key}>
                   <IconC className="w-4 h-4" />
@@ -474,20 +474,20 @@ function DashboardCardEditor({
 
           {/* Alert threshold */}
           <div>
-            <label className="text-[11px] text-white/45 font-bold mb-1.5 block flex items-center gap-1.5">
+            <label className="text-[11px] text-ink/45 font-bold mb-1.5 block flex items-center gap-1.5">
               <Bell className="w-3 h-3" /> تنبيه عند تجاوز (اختياري)
             </label>
             <input value={alertThreshold} onChange={e => setAlertThreshold(e.target.value.replace(/[^\d]/g, ""))}
               placeholder="مثال: 5" inputMode="numeric"
               className="erp-input w-full text-sm" />
-            <p className="text-[10px] text-white/30 mt-1">يتغيّر شكل الكارت لتنبيه بصري عند بلوغ هذا الحد</p>
+            <p className="text-[10px] text-ink/30 mt-1">يتغيّر شكل الكارت لتنبيه بصري عند بلوغ هذا الحد</p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-2 px-5 py-3 border-t border-white/10 shrink-0 bg-white/[0.02]">
+        <div className="flex items-center gap-2 px-5 py-3 border-t border-line shrink-0 bg-surface">
           <button onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 text-xs font-bold transition-all">
+            className="px-4 py-2 rounded-xl bg-surface hover:bg-surface border border-line text-ink/60 text-xs font-bold transition-all">
             إلغاء
           </button>
           <div className="flex-1" />

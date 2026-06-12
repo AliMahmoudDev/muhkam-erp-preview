@@ -304,7 +304,7 @@ export default function Repairs() {
       >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-black text-white flex items-center gap-2">
+          <h1 className="text-xl font-black text-ink flex items-center gap-2">
             <Wrench className="w-5 h-5 text-violet-400" />
             بطاقات الصيانة
           </h1>
@@ -312,7 +312,7 @@ export default function Repairs() {
             <button
               onClick={() => setShowSettings(true)}
               title="إعدادات بنود الفحص"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white/70 text-xs transition-all"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-surface hover:bg-surface border border-line text-ink/40 hover:text-ink/70 text-xs transition-all"
             >
               <Settings className="w-3.5 h-3.5" />
             </button>
@@ -356,7 +356,7 @@ export default function Repairs() {
         {/* Search row */}
         <div className="flex gap-2 items-center">
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/30" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -366,7 +366,7 @@ export default function Repairs() {
             <button
               onClick={() => setShowScanner(true)}
               title="مسح QR"
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-violet-400 transition-colors"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-ink/30 hover:text-violet-400 transition-colors"
             >
               <ScanLine className="w-3.5 h-3.5" />
             </button>
@@ -384,18 +384,18 @@ export default function Repairs() {
             ))}
           </select>
           {!selectedJob && (
-            <div className="flex gap-0.5 bg-white/4 rounded-xl border border-white/8 p-0.5 shrink-0">
+            <div className="flex gap-0.5 bg-surface rounded-xl border border-line p-0.5 shrink-0">
               <button
                 onClick={() => setViewMode('list')}
                 title="عرض قائمة"
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-violet-500/25 text-violet-300' : 'text-white/30 hover:text-white/60'}`}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-violet-500/25 text-violet-300' : 'text-ink/30 hover:text-ink/60'}`}
               >
                 <List className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setViewMode('grid')}
                 title="عرض شبكة"
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-violet-500/25 text-violet-300' : 'text-white/30 hover:text-white/60'}`}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-violet-500/25 text-violet-300' : 'text-ink/30 hover:text-ink/60'}`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
@@ -405,11 +405,11 @@ export default function Repairs() {
 
         {/* Technician performance panel */}
         {!selectedJob && (
-          <div className="rounded-2xl border border-[var(--erp-border)] bg-white/[0.025] overflow-hidden">
+          <div className="rounded-2xl border border-[var(--erp-border)] bg-surface overflow-hidden">
             <button
               type="button"
               onClick={() => setShowTechStats((v) => !v)}
-              className="w-full flex items-center justify-between px-3 py-2 text-right hover:bg-white/3 transition-all"
+              className="w-full flex items-center justify-between px-3 py-2 text-right hover:bg-surface transition-all"
             >
               <span className="text-[11px] text-cyan-300/85 font-bold flex items-center gap-1.5">
                 📊 أداء الفنيين
@@ -440,7 +440,7 @@ export default function Repairs() {
                     {techStats.map((t) => (
                       <div
                         key={t.technician_id}
-                        className="grid grid-cols-12 gap-2 items-center px-2 py-1.5 rounded-lg text-xs bg-white/[0.02] hover:bg-white/[0.04] transition-all"
+                        className="grid grid-cols-12 gap-2 items-center px-2 py-1.5 rounded-lg text-xs bg-surface hover:bg-surface transition-all"
                       >
                         <div
                           className="col-span-5 truncate erp-text font-medium"
@@ -448,7 +448,7 @@ export default function Repairs() {
                         >
                           {t.technician_name}
                         </div>
-                        <div className="col-span-2 text-center tabular-nums text-white/85 font-bold">
+                        <div className="col-span-2 text-center tabular-nums text-ink/85 font-bold">
                           {t.total_jobs}
                         </div>
                         <div className="col-span-2 text-center tabular-nums text-emerald-300/85">
@@ -472,8 +472,8 @@ export default function Repairs() {
             onClick={() => setStatusFilter('all')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all duration-150 ${
               statusFilter === 'all'
-                ? 'bg-white/10 border-white/20 text-white shadow-sm'
-                : 'border-white/6 text-white/35 hover:text-white/60 hover:border-white/12'
+                ? 'bg-surface border-line text-ink shadow-sm'
+                : 'border-line text-ink/35 hover:text-ink/60 hover:border-line'
             }`}
           >
             الكل
@@ -507,9 +507,9 @@ export default function Repairs() {
         </div>
 
         {/* Loading / empty states */}
-        {isLoading && <div className="text-center text-white/30 text-sm py-8">جاري التحميل...</div>}
+        {isLoading && <div className="text-center text-ink/30 text-sm py-8">جاري التحميل...</div>}
         {!isLoading && jobs.length === 0 && (
-          <div className="text-center text-white/30 text-sm py-8 flex flex-col items-center gap-2">
+          <div className="text-center text-ink/30 text-sm py-8 flex flex-col items-center gap-2">
             <Wrench className="w-8 h-8 opacity-20" />
             لا توجد بطاقات صيانة
           </div>
@@ -522,11 +522,11 @@ export default function Repairs() {
               const isActive = selectedJob?.id === job.id;
               const s = STATUS_MAP[job.status] ?? {
                 label: job.status,
-                color: 'text-white/50',
+                color: 'text-ink/50',
                 bg: '',
                 icon: AlertCircle,
               };
-              const barColor = STATUS_BAR_COLOR[job.status] ?? 'bg-white/10';
+              const barColor = STATUS_BAR_COLOR[job.status] ?? 'bg-surface';
               return (
                 <div
                   key={job.id}
@@ -536,8 +536,8 @@ export default function Repairs() {
                   }}
                   className={`relative rounded-2xl border cursor-pointer transition-all duration-150 overflow-hidden group ${
                     isActive
-                      ? `${STATUS_BORDER[job.status] ?? 'border-violet-500/40'} bg-white/5 shadow-lg`
-                      : 'border-white/6 hover:border-white/15 hover:bg-white/3'
+                      ? `${STATUS_BORDER[job.status] ?? 'border-violet-500/40'} bg-surface shadow-lg`
+                      : 'border-line hover:border-line hover:bg-surface'
                   }`}
                 >
                   <div className={`absolute top-0 right-0 bottom-0 w-[3px] ${barColor}`} />
@@ -550,17 +550,17 @@ export default function Repairs() {
                           >
                             {s.label}
                           </span>
-                          <span className="text-[9px] text-white/20 font-mono">{job.job_no}</span>
+                          <span className="text-[9px] text-ink/20 font-mono">{job.job_no}</span>
                         </div>
-                        <p className="font-black text-white text-[13px] leading-tight truncate">
+                        <p className="font-black text-ink text-[13px] leading-tight truncate">
                           {job.customer_name}
                         </p>
-                        <p className="text-white/40 text-[11px] mt-0.5 truncate">
+                        <p className="text-ink/40 text-[11px] mt-0.5 truncate">
                           {job.device_brand} {job.device_model}
                         </p>
                       </div>
                       <div className="shrink-0 text-left">
-                        <p className="text-sm font-black text-white">
+                        <p className="text-sm font-black text-ink">
                           {formatCurrency(Number(job.final_cost ?? job.estimated_cost))}
                         </p>
                         {job.device_score != null && (
@@ -573,7 +573,7 @@ export default function Repairs() {
                       </div>
                     </div>
                     {job.technician_name && (
-                      <p className="text-[9px] text-white/25 mt-1 truncate">
+                      <p className="text-[9px] text-ink/25 mt-1 truncate">
                         {job.technician_name} · {job.received_at}
                       </p>
                     )}
@@ -587,14 +587,14 @@ export default function Repairs() {
         {/* LIST VIEW — full table when no job selected */}
         {!isLoading && jobs.length > 0 && viewMode === 'list' && !selectedJob && (
           <div
-            className="rounded-2xl border border-white/6 overflow-hidden"
+            className="rounded-2xl border border-line overflow-hidden"
             style={{ background: 'rgba(255,255,255,0.025)' }}
           >
             <div className="overflow-x-auto">
               <table dir="rtl" className="w-full text-right">
                 <thead>
                   <tr
-                    className="border-b border-white/8"
+                    className="border-b border-line"
                     style={{ background: 'rgba(255,255,255,0.04)' }}
                   >
                     {[
@@ -610,7 +610,7 @@ export default function Repairs() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-3 py-3 text-[10px] font-bold text-white/35 whitespace-nowrap tracking-wider uppercase"
+                        className="px-3 py-3 text-[10px] font-bold text-ink/35 whitespace-nowrap tracking-wider uppercase"
                       >
                         {h}
                       </th>
@@ -619,7 +619,7 @@ export default function Repairs() {
                 </thead>
                 <tbody className="divide-y divide-white/4">
                   {paginatedJobs.map((job) => {
-                    const barColor = STATUS_BAR_COLOR[job.status] ?? 'bg-white/10';
+                    const barColor = STATUS_BAR_COLOR[job.status] ?? 'bg-surface';
                     return (
                       <tr
                         key={job.id}
@@ -627,45 +627,45 @@ export default function Repairs() {
                           setSelectedJob(job);
                           setShowNewForm(false);
                         }}
-                        className="cursor-pointer transition-all duration-100 hover:bg-white/4 group"
+                        className="cursor-pointer transition-all duration-100 hover:bg-surface group"
                       >
                         <td className="px-3 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <div className={`w-0.5 h-5 rounded-full ${barColor}`} />
-                            <span className="text-[11px] font-mono text-white/50 group-hover:text-white/80 transition-colors">
+                            <span className="text-[11px] font-mono text-ink/50 group-hover:text-ink/80 transition-colors">
                               {job.job_no}
                             </span>
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-[11px] text-white/30 whitespace-nowrap">
+                        <td className="px-3 py-3 text-[11px] text-ink/30 whitespace-nowrap">
                           {job.received_at}
                         </td>
                         <td className="px-3 py-3 whitespace-nowrap">
                           <StatusBadge status={job.status} />
                         </td>
                         <td className="px-3 py-3 max-w-[160px]">
-                          <p className="text-[13px] font-black text-white truncate group-hover:text-white transition-colors">
+                          <p className="text-[13px] font-black text-ink truncate group-hover:text-ink transition-colors">
                             {job.customer_name}
                           </p>
                         </td>
-                        <td className="px-3 py-3 text-[11px] text-white/40 font-mono whitespace-nowrap">
+                        <td className="px-3 py-3 text-[11px] text-ink/40 font-mono whitespace-nowrap">
                           {job.customer_phone || '—'}
                         </td>
                         <td className="px-3 py-3 max-w-[150px]">
-                          <p className="text-[11px] text-white/60 truncate">
+                          <p className="text-[11px] text-ink/60 truncate">
                             {[job.device_brand, job.device_model].filter(Boolean).join(' ') || '—'}
                           </p>
                         </td>
                         <td className="px-3 py-3 max-w-[180px]">
-                          <p className="text-[11px] text-white/35 truncate italic">
+                          <p className="text-[11px] text-ink/35 truncate italic">
                             {job.problem_description || '—'}
                           </p>
                         </td>
-                        <td className="px-3 py-3 text-[11px] text-white/45 whitespace-nowrap truncate max-w-[120px]">
+                        <td className="px-3 py-3 text-[11px] text-ink/45 whitespace-nowrap truncate max-w-[120px]">
                           {job.technician_name || '—'}
                         </td>
                         <td className="px-3 py-3 whitespace-nowrap">
-                          <span className="text-[13px] font-black text-white">
+                          <span className="text-[13px] font-black text-ink">
                             {formatCurrency(Number(job.final_cost ?? job.estimated_cost))}
                           </span>
                         </td>
@@ -684,13 +684,13 @@ export default function Repairs() {
             {paginatedJobs.map((job) => {
               const s = STATUS_MAP[job.status] ?? {
                 label: job.status,
-                color: 'text-white/60',
-                bg: 'bg-white/5 border-white/10',
+                color: 'text-ink/60',
+                bg: 'bg-surface border-line',
                 icon: AlertCircle,
               };
               const StatusIcon = s.icon;
-              const barColor = STATUS_BAR_COLOR[job.status] ?? 'bg-white/10';
-              const borderColor = STATUS_BORDER[job.status] ?? 'border-white/8';
+              const barColor = STATUS_BAR_COLOR[job.status] ?? 'bg-surface';
+              const borderColor = STATUS_BORDER[job.status] ?? 'border-line';
               const cost = Number(job.final_cost ?? job.estimated_cost);
               return (
                 <div
@@ -720,38 +720,38 @@ export default function Repairs() {
                       )}
                     </div>
                     <div>
-                      <p className="font-black text-white text-sm leading-tight truncate group-hover:text-white transition-colors">
+                      <p className="font-black text-ink text-sm leading-tight truncate group-hover:text-ink transition-colors">
                         {job.customer_name}
                       </p>
-                      <p className="text-[10px] text-white/40 truncate mt-0.5">
+                      <p className="text-[10px] text-ink/40 truncate mt-0.5">
                         {[job.device_brand, job.device_model].filter(Boolean).join(' ') || '—'}
                       </p>
                     </div>
                     {job.problem_description && (
                       <p
-                        className="text-[10px] text-white/30 truncate italic leading-tight"
+                        className="text-[10px] text-ink/30 truncate italic leading-tight"
                         title={job.problem_description}
                       >
                         {job.problem_description}
                       </p>
                     )}
                     <div className="flex-1" />
-                    <div className="pt-2 border-t border-white/6 flex items-end justify-between gap-1">
+                    <div className="pt-2 border-t border-line flex items-end justify-between gap-1">
                       <div>
-                        <p className="text-base font-black text-white leading-none tabular-nums">
+                        <p className="text-base font-black text-ink leading-none tabular-nums">
                           {formatCurrency(cost)}
                         </p>
                         {job.technician_name && (
-                          <p className="text-[9px] text-white/25 mt-1 truncate max-w-[100px]">
+                          <p className="text-[9px] text-ink/25 mt-1 truncate max-w-[100px]">
                             {job.technician_name}
                           </p>
                         )}
                       </div>
-                      <p className="text-[9px] text-white/20 font-mono shrink-0">
+                      <p className="text-[9px] text-ink/20 font-mono shrink-0">
                         {job.received_at?.slice(5)}
                       </p>
                     </div>
-                    <p className="text-[9px] text-white/15 font-mono leading-none tracking-wider">
+                    <p className="text-[9px] text-ink/15 font-mono leading-none tracking-wider">
                       {job.job_no}
                     </p>
                   </div>
@@ -778,7 +778,7 @@ export default function Repairs() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <Suspense
             fallback={
-              <div className="p-6 text-center text-white/40 text-sm">جاري تحميل التفاصيل...</div>
+              <div className="p-6 text-center text-ink/40 text-sm">جاري تحميل التفاصيل...</div>
             }
           >
             {selectedJob ? (

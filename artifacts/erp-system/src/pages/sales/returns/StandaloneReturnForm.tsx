@@ -54,15 +54,15 @@ export function StandaloneReturnForm({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm modal-overlay">
       <form
         onSubmit={onSubmit}
-        className="glass-panel rounded-3xl p-7 w-full max-w-md border border-white/10 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+        className="glass-panel rounded-3xl p-7 w-full max-w-md border border-line shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
       >
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-xl font-bold text-white">مرتجع مستقل</h3>
-            <p className="text-white/40 text-xs mt-0.5">مقتصر على المسؤول — بدون ربط بفاتورة</p>
+            <h3 className="text-xl font-bold text-ink">مرتجع مستقل</h3>
+            <p className="text-ink/40 text-xs mt-0.5">مقتصر على المسؤول — بدون ربط بفاتورة</p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-xl bg-white/10 hover:bg-white/20">
-            <X className="w-4 h-4 text-white/70" />
+          <button type="button" onClick={onClose} className="p-2 rounded-xl bg-surface hover:bg-raised">
+            <X className="w-4 h-4 text-ink/70" />
           </button>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -71,14 +71,14 @@ export function StandaloneReturnForm({
               key={t}
               type="button"
               onClick={() => setStandalone((f) => ({ ...f, refund_type: t, safe_id: '' }))}
-              className={`py-2.5 px-3 rounded-xl text-sm font-bold border transition-all ${standalone.refund_type === t ? (t === 'cash' ? 'bg-emerald-500/30 border-emerald-500/60 text-emerald-300' : 'bg-blue-500/30 border-blue-500/60 text-blue-300') : 'bg-white/5 border-white/10 text-white/50'}`}
+              className={`py-2.5 px-3 rounded-xl text-sm font-bold border transition-all ${standalone.refund_type === t ? (t === 'cash' ? 'bg-emerald-500/30 border-emerald-500/60 text-emerald-300' : 'bg-blue-500/30 border-blue-500/60 text-blue-300') : 'bg-surface border-line text-ink/50'}`}
             >
               {t === 'cash' ? 'استرداد نقدي' : 'خصم رصيد'}
             </button>
           ))}
         </div>
         <div>
-          <label className="text-white/60 text-xs mb-1 block">العميل</label>
+          <label className="text-ink/60 text-xs mb-1 block">العميل</label>
           <SearchableSelect
             items={standaloneCustomerItems}
             value={standalone.customer_id}
@@ -89,7 +89,7 @@ export function StandaloneReturnForm({
         </div>
         {standalone.refund_type === 'cash' && (
           <div>
-            <label className="text-white/60 text-xs mb-1 block">الخزينة *</label>
+            <label className="text-ink/60 text-xs mb-1 block">الخزينة *</label>
             <select
               required
               className="glass-input w-full appearance-none"
@@ -104,7 +104,7 @@ export function StandaloneReturnForm({
           </div>
         )}
         <div>
-          <label className="text-white/60 text-xs mb-1 block">الصنف *</label>
+          <label className="text-ink/60 text-xs mb-1 block">الصنف *</label>
           <select
             required
             className="glass-input w-full appearance-none"
@@ -119,7 +119,7 @@ export function StandaloneReturnForm({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-white/60 text-xs mb-1 block">الكمية</label>
+            <label className="text-ink/60 text-xs mb-1 block">الكمية</label>
             <input
               type="number"
               min="1"
@@ -129,7 +129,7 @@ export function StandaloneReturnForm({
             />
           </div>
           <div>
-            <label className="text-white/60 text-xs mb-1 block">سعر الوحدة</label>
+            <label className="text-ink/60 text-xs mb-1 block">سعر الوحدة</label>
             <div className="glass-input opacity-70 cursor-not-allowed">
               <span className="text-emerald-400 font-bold">
                 {standaloneProduct ? formatCurrency(standalonePrice) : '—'}
@@ -139,17 +139,17 @@ export function StandaloneReturnForm({
         </div>
         {standaloneTotal > 0 && (
           <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-2 flex justify-between">
-            <span className="text-white/60 text-sm">الإجمالي</span>
+            <span className="text-ink/60 text-sm">الإجمالي</span>
             <span className="text-orange-400 font-bold">{formatCurrency(standaloneTotal)}</span>
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-white/60 text-xs mb-1 block">التاريخ</label>
+            <label className="text-ink/60 text-xs mb-1 block">التاريخ</label>
             <input type="date" className="glass-input" value={standalone.date} onChange={(e) => setStandalone((f) => ({ ...f, date: e.target.value }))} />
           </div>
           <div>
-            <label className="text-white/60 text-xs mb-1 block">السبب</label>
+            <label className="text-ink/60 text-xs mb-1 block">السبب</label>
             <input type="text" className="glass-input" value={standalone.reason} onChange={(e) => setStandalone((f) => ({ ...f, reason: e.target.value }))} placeholder="اختياري..." />
           </div>
         </div>

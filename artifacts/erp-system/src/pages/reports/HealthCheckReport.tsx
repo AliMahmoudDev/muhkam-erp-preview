@@ -98,10 +98,10 @@ function IssueCard({ issue, onClick }: { issue: HealthIssue; onClick: () => void
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <SeverityBadge sev={issue.severity} />
-            <span className="text-white/40 text-xs font-mono">{issue.id}</span>
+            <span className="text-ink/40 text-xs font-mono">{issue.id}</span>
           </div>
           <p className={`font-bold text-sm ${c.text} leading-snug`}>{issue.message}</p>
-          <p className="text-white/50 text-xs mt-1 flex items-center gap-1">
+          <p className="text-ink/50 text-xs mt-1 flex items-center gap-1">
             <ArrowUp className="w-3 h-3 rotate-45 shrink-0" />
             {issue.action}
           </p>
@@ -132,31 +132,31 @@ function IssueDetailModal({ issue, onClose }: { issue: HealthIssue; onClose: () 
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.92, opacity: 0 }}
-        className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-6 max-w-lg w-full shadow-2xl"
+        className="bg-[#1a1a2e] border border-line rounded-2xl p-6 max-w-lg w-full shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         dir="rtl"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <SeverityBadge sev={issue.severity} />
-            <span className="text-white/40 text-xs font-mono">{issue.id}</span>
+            <span className="text-ink/40 text-xs font-mono">{issue.id}</span>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white">
+          <button onClick={onClose} className="text-ink/40 hover:text-ink">
             <X className="w-5 h-5" />
           </button>
         </div>
         <h3 className={`text-lg font-bold mb-1 ${c.text}`}>{issue.message}</h3>
-        <p className="text-white/60 text-sm mb-4 flex items-start gap-2">
+        <p className="text-ink/60 text-sm mb-4 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
           {issue.action}
         </p>
         <div className={`rounded-xl p-4 border ${c.bg} ${c.border} space-y-2`}>
-          <p className="text-white/50 text-xs font-bold mb-2">تفاصيل الفحص</p>
+          <p className="text-ink/50 text-xs font-bold mb-2">تفاصيل الفحص</p>
           {Object.entries(issue.details).map(([k, v]) => (
             <div key={k} className="flex items-center justify-between text-sm">
-              <span className="text-white/40 font-mono text-xs">{k}</span>
+              <span className="text-ink/40 font-mono text-xs">{k}</span>
               <span
-                className={`font-bold tabular-nums ${typeof v === 'number' && k.includes('difference') && (v as number) !== 0 ? c.text : 'text-white'}`}
+                className={`font-bold tabular-nums ${typeof v === 'number' && k.includes('difference') && (v as number) !== 0 ? c.text : 'text-ink'}`}
               >
                 {typeof v === 'number'
                   ? k.includes('qty') || k.includes('count') || k.includes('checked')
@@ -196,7 +196,7 @@ export default function HealthCheckReport() {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Loader2 className="w-10 h-10 animate-spin text-amber-400" />
-        <p className="text-white/50 text-sm">جارٍ فحص صحة النظام…</p>
+        <p className="text-ink/50 text-sm">جارٍ فحص صحة النظام…</p>
       </div>
     );
   if (!data || !data.status || !SEV_CFG[data.status]) return null;
@@ -219,7 +219,7 @@ export default function HealthCheckReport() {
             <span className="text-4xl">{statusEmoji}</span>
             <div>
               <h2 className={`text-2xl font-black ${cfg.text}`}>{statusAR}</h2>
-              <p className="text-white/40 text-xs mt-0.5">
+              <p className="text-ink/40 text-xs mt-0.5">
                 آخر فحص: {new Date(checked_at).toLocaleString('ar-EG-u-nu-latn')}
               </p>
             </div>
@@ -228,7 +228,7 @@ export default function HealthCheckReport() {
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-sm font-bold transition-all disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface hover:bg-raised text-ink/70 hover:text-ink text-sm font-bold transition-all disabled:opacity-50"
         >
           <Loader2 className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} /> إعادة الفحص
         </button>
@@ -239,9 +239,9 @@ export default function HealthCheckReport() {
           {
             label: 'إجمالي الفحوصات',
             value: summary.total_checks,
-            color: 'text-white',
-            bg: 'bg-white/5',
-            border: 'border-white/10',
+            color: 'text-ink',
+            bg: 'bg-surface',
+            border: 'border-line',
           },
           {
             label: 'سليم',
@@ -267,7 +267,7 @@ export default function HealthCheckReport() {
         ].map((c) => (
           <div key={c.label} className={`rounded-xl border p-4 text-center ${c.bg} ${c.border}`}>
             <div className={`text-3xl font-black tabular-nums ${c.color}`}>{c.value}</div>
-            <div className="text-white/50 text-xs mt-1">{c.label}</div>
+            <div className="text-ink/50 text-xs mt-1">{c.label}</div>
           </div>
         ))}
       </div>
@@ -285,21 +285,21 @@ export default function HealthCheckReport() {
           return (
             <div
               key={groupKey}
-              className="rounded-2xl border border-white/10 overflow-hidden bg-white/3"
+              className="rounded-2xl border border-line overflow-hidden bg-surface"
             >
               <button
                 onClick={() => toggleGroup(groupKey)}
-                className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+                className="w-full flex items-center justify-between p-4 hover:bg-surface transition-colors"
               >
-                <div className="flex items-center gap-2 text-white/70">
+                <div className="flex items-center gap-2 text-ink/70">
                   {GROUP_ICONS[groupKey]}
                   <span className="font-bold text-sm">{GROUP_LABELS[groupKey]}</span>
-                  <span className="text-white/30 text-xs">({groupIssues.length})</span>
+                  <span className="text-ink/30 text-xs">({groupIssues.length})</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <SeverityBadge sev={groupStatus} />
                   <ChevronDown
-                    className={`w-4 h-4 text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 text-ink/40 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                   />
                 </div>
               </button>

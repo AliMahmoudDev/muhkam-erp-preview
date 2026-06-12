@@ -195,23 +195,23 @@ export function CustomerReportsModal({
   void setReportData;
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-4 px-4 bg-black/60 backdrop-blur-sm modal-overlay overflow-y-auto">
-      <div className="glass-panel rounded-3xl w-full max-w-5xl border border-white/10 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <div className="glass-panel rounded-3xl w-full max-w-5xl border border-line flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line">
           <div className="flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-violet-400" />
-            <h2 className="text-lg font-bold text-white">تقارير العملاء</h2>
+            <h2 className="text-lg font-bold text-ink">تقارير العملاء</h2>
           </div>
           <button
             onClick={() => setShowReports(false)}
-            className="p-2 rounded-xl hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+            className="p-2 rounded-xl hover:bg-surface text-ink/50 hover:text-ink transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-4 border-b border-white/10">
+        <div className="px-6 py-4 border-b border-line">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-white/50 text-xs mb-1">العميل</label>
+              <label className="block text-ink/50 text-xs mb-1">العميل</label>
               <select
                 className="glass-input w-full text-sm appearance-none"
                 value={reportFilters.customerId}
@@ -230,7 +230,7 @@ export function CustomerReportsModal({
               </select>
             </div>
             <div>
-              <label className="block text-white/50 text-xs mb-1">التصنيف</label>
+              <label className="block text-ink/50 text-xs mb-1">التصنيف</label>
               <select
                 className="glass-input w-full text-sm appearance-none"
                 value={reportFilters.classificationId}
@@ -249,7 +249,7 @@ export function CustomerReportsModal({
               </select>
             </div>
             <div>
-              <label className="block text-white/50 text-xs mb-1">من تاريخ</label>
+              <label className="block text-ink/50 text-xs mb-1">من تاريخ</label>
               <input
                 type="date"
                 className="glass-input w-full text-sm"
@@ -258,7 +258,7 @@ export function CustomerReportsModal({
               />
             </div>
             <div>
-              <label className="block text-white/50 text-xs mb-1">إلى تاريخ</label>
+              <label className="block text-ink/50 text-xs mb-1">إلى تاريخ</label>
               <input
                 type="date"
                 className="glass-input w-full text-sm"
@@ -275,7 +275,7 @@ export function CustomerReportsModal({
             >
               {reportLoading ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-line border-t-white rounded-full animate-spin" />
                   جاري التحميل...
                 </>
               ) : (
@@ -314,17 +314,17 @@ export function CustomerReportsModal({
         </div>
         <div className="overflow-auto max-h-[60vh]">
           {reportData === null ? (
-            <div className="flex items-center justify-center py-16 text-white/30 text-sm">
+            <div className="flex items-center justify-center py-16 text-ink/30 text-sm">
               اضغط "عرض التقرير" لتحميل البيانات
             </div>
           ) : reportData.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-white/30 text-sm">
+            <div className="flex items-center justify-center py-16 text-ink/30 text-sm">
               لا توجد بيانات بهذه الفلاتر
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead className="sticky top-0">
-                <tr className="bg-white/5 text-white/50 text-xs">
+                <tr className="bg-surface text-ink/50 text-xs">
                   <th className="px-4 py-2.5 text-right font-semibold">#</th>
                   <th className="px-4 py-2.5 text-right font-semibold">اسم العميل</th>
                   <th className="px-4 py-2.5 text-right font-semibold">التصنيف</th>
@@ -338,15 +338,15 @@ export function CustomerReportsModal({
                 {reportData.map((row, i) => (
                   <tr
                     key={row.id}
-                    className={`border-t border-white/5 ${i % 2 === 0 ? 'bg-white/2' : ''} hover:bg-white/5 transition-colors`}
+                    className={`border-t border-line ${i % 2 === 0 ? 'bg-surface' : ''} hover:bg-surface transition-colors`}
                   >
-                    <td className="px-4 py-2 text-white/40 text-xs">{row.customer_code}</td>
-                    <td className="px-4 py-2 text-white/90 font-medium">{row.name}</td>
-                    <td className="px-4 py-2 text-white/50 text-xs">
+                    <td className="px-4 py-2 text-ink/40 text-xs">{row.customer_code}</td>
+                    <td className="px-4 py-2 text-ink/90 font-medium">{row.name}</td>
+                    <td className="px-4 py-2 text-ink/50 text-xs">
                       {row.classification_name ?? '—'}
                     </td>
                     <td
-                      className={`px-4 py-2 text-left font-mono text-sm font-bold ${row.opening_balance > 0 ? 'text-red-400' : row.opening_balance < 0 ? 'text-green-400' : 'text-white/40'}`}
+                      className={`px-4 py-2 text-left font-mono text-sm font-bold ${row.opening_balance > 0 ? 'text-red-400' : row.opening_balance < 0 ? 'text-green-400' : 'text-ink/40'}`}
                     >
                       {formatCurrency(Math.abs(row.opening_balance))}
                       {row.opening_balance !== 0 && (
@@ -362,7 +362,7 @@ export function CustomerReportsModal({
                       {formatCurrency(row.period_credits)}
                     </td>
                     <td
-                      className={`px-4 py-2 text-left font-mono text-sm font-bold ${row.closing_balance > 0 ? 'text-red-400' : row.closing_balance < 0 ? 'text-green-400' : 'text-white/40'}`}
+                      className={`px-4 py-2 text-left font-mono text-sm font-bold ${row.closing_balance > 0 ? 'text-red-400' : row.closing_balance < 0 ? 'text-green-400' : 'text-ink/40'}`}
                     >
                       {formatCurrency(Math.abs(row.closing_balance))}
                       {row.closing_balance !== 0 && (
@@ -375,11 +375,11 @@ export function CustomerReportsModal({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-white/20 bg-white/5 font-bold text-sm">
-                  <td colSpan={3} className="px-4 py-2.5 text-white/60">
+                <tr className="border-t-2 border-line bg-surface font-bold text-sm">
+                  <td colSpan={3} className="px-4 py-2.5 text-ink/60">
                     الإجمالي ({reportData.length} عميل)
                   </td>
-                  <td className="px-4 py-2.5 text-left font-mono text-white/70">
+                  <td className="px-4 py-2.5 text-left font-mono text-ink/70">
                     {formatCurrency(
                       Math.abs(reportData.reduce((s, r) => s + r.opening_balance, 0))
                     )}

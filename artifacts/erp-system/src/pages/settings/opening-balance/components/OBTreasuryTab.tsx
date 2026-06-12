@@ -106,10 +106,10 @@ export function OBTreasuryTab() {
         </PrimaryBtn>
       </div>
 
-      <div className="bg-[#111827] rounded-2xl overflow-hidden border border-white/5">
-        <div className="p-4 border-b border-white/8 flex items-center justify-between">
-          <h4 className="font-bold text-white/60 text-sm">القيود المسجلة</h4>
-          <span className="text-white/30 text-xs bg-white/5 px-2 py-0.5 rounded-lg">
+      <div className="bg-[#111827] rounded-2xl overflow-hidden border border-line">
+        <div className="p-4 border-b border-line flex items-center justify-between">
+          <h4 className="font-bold text-ink/60 text-sm">القيود المسجلة</h4>
+          <span className="text-ink/30 text-xs bg-surface px-2 py-0.5 rounded-lg">
             {entries.length}
           </span>
         </div>
@@ -132,11 +132,11 @@ export function OBTreasuryTab() {
             },
             {
               label: 'التاريخ',
-              render: (e) => <span className="text-white/40 text-xs">{e.date}</span>,
+              render: (e) => <span className="text-ink/40 text-xs">{e.date}</span>,
             },
             {
               label: 'البيان',
-              render: (e) => <span className="text-white/30 text-xs">{e.description}</span>,
+              render: (e) => <span className="text-ink/30 text-xs">{e.description}</span>,
             },
           ]}
         />

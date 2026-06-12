@@ -58,10 +58,10 @@ function EntryDetailModal({ entryId, onClose }: { entryId: number; onClose: () =
       />
     )}
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm modal-overlay">
-      <div className="glass-panel rounded-3xl p-0 w-full max-w-3xl border border-white/10 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
+      <div className="glass-panel rounded-3xl p-0 w-full max-w-3xl border border-line shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center p-6 border-b border-line bg-surface">
           <div>
-            <h3 className="text-xl font-bold text-white">تفاصيل القيد</h3>
+            <h3 className="text-xl font-bold text-ink">تفاصيل القيد</h3>
             {entry && <p className="text-amber-400 font-mono text-sm mt-0.5">{entry.entry_no}</p>}
           </div>
           <div className="flex gap-2">
@@ -84,42 +84,42 @@ function EntryDetailModal({ entryId, onClose }: { entryId: number; onClose: () =
                 {reversalMutation.isPending ? "..." : "↩ عكس القيد"}
               </button>
             )}
-            <button onClick={onClose} className="p-2 rounded-xl bg-white/10 hover:bg-white/20"><X className="w-4 h-4 text-white/70" /></button>
+            <button onClick={onClose} className="p-2 rounded-xl bg-surface hover:bg-raised"><X className="w-4 h-4 text-ink/70" /></button>
           </div>
         </div>
         <div className="overflow-y-auto p-6 space-y-5">
-          {isLoading ? <div className="text-center py-12 text-white/40">جاري التحميل...</div> : !entry ? null : (
+          {isLoading ? <div className="text-center py-12 text-ink/40">جاري التحميل...</div> : !entry ? null : (
             <>
-              <div className="grid grid-cols-2 gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
-                <div><p className="text-white/50 text-xs">رقم القيد</p><p className="text-amber-400 font-bold font-mono">{entry.entry_no}</p></div>
-                <div><p className="text-white/50 text-xs">التاريخ</p><p className="text-white">{entry.date}</p></div>
-                <div><p className="text-white/50 text-xs">البيان</p><p className="text-white font-semibold">{entry.description}</p></div>
-                <div><p className="text-white/50 text-xs">الحالة</p><div className="mt-1"><StatusBadge status={entry.status} /></div></div>
-                {entry.reference && <div><p className="text-white/50 text-xs">المرجع</p><p className="text-white/70">{entry.reference}</p></div>}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-surface rounded-2xl border border-line">
+                <div><p className="text-ink/50 text-xs">رقم القيد</p><p className="text-amber-400 font-bold font-mono">{entry.entry_no}</p></div>
+                <div><p className="text-ink/50 text-xs">التاريخ</p><p className="text-ink">{entry.date}</p></div>
+                <div><p className="text-ink/50 text-xs">البيان</p><p className="text-ink font-semibold">{entry.description}</p></div>
+                <div><p className="text-ink/50 text-xs">الحالة</p><div className="mt-1"><StatusBadge status={entry.status} /></div></div>
+                {entry.reference && <div><p className="text-ink/50 text-xs">المرجع</p><p className="text-ink/70">{entry.reference}</p></div>}
               </div>
-              <div className="rounded-2xl overflow-hidden border border-white/10">
+              <div className="rounded-2xl overflow-hidden border border-line">
                 <table className="w-full text-right text-sm">
-                  <thead className="bg-white/5 border-b border-white/10">
+                  <thead className="bg-surface border-b border-line">
                     <tr>
-                      <th className="p-3 text-white/60">كود</th>
-                      <th className="p-3 text-white/60">الحساب</th>
-                      <th className="p-3 text-white/60">مدين</th>
-                      <th className="p-3 text-white/60">دائن</th>
+                      <th className="p-3 text-ink/60">كود</th>
+                      <th className="p-3 text-ink/60">الحساب</th>
+                      <th className="p-3 text-ink/60">مدين</th>
+                      <th className="p-3 text-ink/60">دائن</th>
                     </tr>
                   </thead>
                   <tbody>
                     {entry.lines.map((line, i) => (
-                      <tr key={`${line.account_code ?? ''}-${i}`} className="border-b border-white/5">
-                        <td className="p-3 font-mono text-xs text-white/50">{line.account_code}</td>
-                        <td className="p-3 text-white">{line.account_name}</td>
+                      <tr key={`${line.account_code ?? ''}-${i}`} className="border-b border-line">
+                        <td className="p-3 font-mono text-xs text-ink/50">{line.account_code}</td>
+                        <td className="p-3 text-ink">{line.account_name}</td>
                         <td className="p-3 font-bold text-blue-400">{line.debit > 0 ? formatCurrency(line.debit) : "—"}</td>
                         <td className="p-3 font-bold text-amber-400">{line.credit > 0 ? formatCurrency(line.credit) : "—"}</td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-white/5 border-t border-white/10">
+                  <tfoot className="bg-surface border-t border-line">
                     <tr>
-                      <td colSpan={2} className="p-3 text-white/60 font-bold">الإجمالي</td>
+                      <td colSpan={2} className="p-3 text-ink/60 font-bold">الإجمالي</td>
                       <td className="p-3 font-black text-blue-400">{formatCurrency(entry.total_debit)}</td>
                       <td className="p-3 font-black text-amber-400">{formatCurrency(entry.total_credit)}</td>
                     </tr>
@@ -186,33 +186,33 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm modal-overlay">
-      <div className="glass-panel rounded-3xl p-0 w-full max-w-4xl border border-white/10 shadow-2xl max-h-[95vh] overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
-          <h3 className="text-xl font-bold text-white">قيد يومي جديد</h3>
-          <button onClick={onClose} className="p-2 rounded-xl bg-white/10 hover:bg-white/20"><X className="w-4 h-4 text-white/70" /></button>
+      <div className="glass-panel rounded-3xl p-0 w-full max-w-4xl border border-line shadow-2xl max-h-[95vh] overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center p-6 border-b border-line bg-surface">
+          <h3 className="text-xl font-bold text-ink">قيد يومي جديد</h3>
+          <button onClick={onClose} className="p-2 rounded-xl bg-surface hover:bg-raised"><X className="w-4 h-4 text-ink/70" /></button>
         </div>
         <div className="overflow-y-auto p-6 space-y-5 flex-1">
           <div className="grid grid-cols-3 gap-3">
-            <div><label className="text-white/60 text-xs mb-1 block">التاريخ *</label><input type="date" className="glass-input" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
-            <div><label className="text-white/60 text-xs mb-1 block">البيان *</label><input type="text" className="glass-input" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="وصف القيد" /></div>
-            <div><label className="text-white/60 text-xs mb-1 block">المرجع</label><input type="text" className="glass-input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="رقم مرجعي اختياري" /></div>
+            <div><label className="text-ink/60 text-xs mb-1 block">التاريخ *</label><input type="date" className="glass-input" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+            <div><label className="text-ink/60 text-xs mb-1 block">البيان *</label><input type="text" className="glass-input" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="وصف القيد" /></div>
+            <div><label className="text-ink/60 text-xs mb-1 block">المرجع</label><input type="text" className="glass-input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="رقم مرجعي اختياري" /></div>
           </div>
 
           {/* أسطر القيد */}
-          <div className="rounded-2xl overflow-hidden border border-white/10">
+          <div className="rounded-2xl overflow-hidden border border-line">
             <table className="w-full text-right text-sm">
-              <thead className="bg-white/5 border-b border-white/10">
+              <thead className="bg-surface border-b border-line">
                 <tr>
-                  <th className="p-3 text-white/60">الحساب</th>
-                  <th className="p-3 text-white/60">مدين</th>
-                  <th className="p-3 text-white/60">دائن</th>
-                  <th className="p-3 text-white/60">بيان</th>
+                  <th className="p-3 text-ink/60">الحساب</th>
+                  <th className="p-3 text-ink/60">مدين</th>
+                  <th className="p-3 text-ink/60">دائن</th>
+                  <th className="p-3 text-ink/60">بيان</th>
                   <th className="p-3 w-8"></th>
                 </tr>
               </thead>
               <tbody>
                 {lines.map((line, i) => (
-                  <tr key={`form-line-${i}`} className="border-b border-white/5">
+                  <tr key={`form-line-${i}`} className="border-b border-line">
                     <td className="p-2">
                       <select className="glass-input text-sm appearance-none w-full" value={line.account_id} onChange={e => updateLine(i, "account_id", e.target.value)}>
                         <option value="" className="bg-gray-900">اختر الحساب</option>
@@ -228,9 +228,9 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="bg-white/5 border-t border-white/10">
+              <tfoot className="bg-surface border-t border-line">
                 <tr>
-                  <td className="p-3 text-white/60 font-bold">الإجمالي</td>
+                  <td className="p-3 text-ink/60 font-bold">الإجمالي</td>
                   <td className="p-3 font-black text-blue-400">{formatCurrency(totalDebit)}</td>
                   <td className="p-3 font-black text-amber-400">{formatCurrency(totalCredit)}</td>
                   <td colSpan={2} className="p-3">
@@ -246,7 +246,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
             <Plus className="w-4 h-4" /> إضافة سطر
           </button>
         </div>
-        <div className="p-6 border-t border-white/10 bg-black/30 flex gap-3">
+        <div className="p-6 border-t border-line bg-black/30 flex gap-3">
           <button onClick={() => handleSave("posted")} disabled={!isBalanced || !form.description || createMutation.isPending} className="flex-1 btn-primary py-3 disabled:opacity-50">
             {createMutation.isPending ? "..." : "ترحيل الآن"}
           </button>
@@ -276,10 +276,10 @@ export default function JournalEntries() {
   return (
     <div className="space-y-4">
       <div className="flex gap-3 items-center flex-wrap">
-        <div className="flex bg-white/5 rounded-2xl p-1 border border-white/10">
+        <div className="flex bg-surface rounded-2xl p-1 border border-line">
           {[["all", "الكل"], ["draft", "مسودة"], ["posted", "مرحَّل"]].map(([v, l]) => (
             <button key={v} onClick={() => setFilter(v as "all" | "draft" | "posted")}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === v ? "bg-amber-500 text-black shadow" : "text-white/50 hover:text-white"}`}>
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === v ? "bg-amber-500 text-black shadow" : "text-ink/50 hover:text-ink"}`}>
               {l}
             </button>
           ))}
@@ -292,29 +292,29 @@ export default function JournalEntries() {
       {showNew && <NewEntryModal onClose={() => setShowNew(false)} />}
       {selectedId && <EntryDetailModal entryId={selectedId} onClose={() => setSelectedId(null)} />}
 
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10">
+            <thead className="bg-surface border-b border-line">
               <tr>
-                <th className="p-4 text-white/60 font-semibold">رقم القيد</th>
-                <th className="p-4 text-white/60 font-semibold">التاريخ</th>
-                <th className="p-4 text-white/60 font-semibold">البيان</th>
-                <th className="p-4 text-white/60 font-semibold">إجمالي مدين</th>
-                <th className="p-4 text-white/60 font-semibold">إجمالي دائن</th>
-                <th className="p-4 text-white/60 font-semibold">الحالة</th>
+                <th className="p-4 text-ink/60 font-semibold">رقم القيد</th>
+                <th className="p-4 text-ink/60 font-semibold">التاريخ</th>
+                <th className="p-4 text-ink/60 font-semibold">البيان</th>
+                <th className="p-4 text-ink/60 font-semibold">إجمالي مدين</th>
+                <th className="p-4 text-ink/60 font-semibold">إجمالي دائن</th>
+                <th className="p-4 text-ink/60 font-semibold">الحالة</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <TableSkeleton cols={6} rows={5} />
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="p-12 text-center text-white/40">لا توجد قيود</td></tr>
+                <tr><td colSpan={6} className="p-12 text-center text-ink/40">لا توجد قيود</td></tr>
               ) : filtered.map(entry => (
-                <tr key={entry.id} className="border-b border-white/5 erp-table-row cursor-pointer" onClick={() => setSelectedId(entry.id)}>
+                <tr key={entry.id} className="border-b border-line erp-table-row cursor-pointer" onClick={() => setSelectedId(entry.id)}>
                   <td className="p-4 font-bold text-amber-400 font-mono">{entry.entry_no}</td>
-                  <td className="p-4 text-white/70">{entry.date}</td>
-                  <td className="p-4 text-white font-medium">{entry.description}</td>
+                  <td className="p-4 text-ink/70">{entry.date}</td>
+                  <td className="p-4 text-ink font-medium">{entry.description}</td>
                   <td className="p-4 font-bold text-blue-400">{formatCurrency(entry.total_debit)}</td>
                   <td className="p-4 font-bold text-amber-300">{formatCurrency(entry.total_credit)}</td>
                   <td className="p-4"><StatusBadge status={entry.status} /></td>
