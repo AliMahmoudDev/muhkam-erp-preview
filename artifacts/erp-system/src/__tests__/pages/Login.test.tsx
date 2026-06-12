@@ -65,28 +65,24 @@ beforeEach(() => {
 });
 
 describe('Login', () => {
-  it('يعرض حقلَي اسم المستخدم والرقم السري', () => {
+  it('يعرض حقلَي رقم الهاتف أو اسم المستخدم والرقم السري', () => {
     renderLogin();
-    expect(
-      screen.getByRole('textbox', { name: 'اسم المستخدم أو البريد الإلكتروني' })
-    ).toBeTruthy();
-    expect(
-      screen.getByLabelText('الرقم السري')
-    ).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'رقم الهاتف أو اسم المستخدم' })).toBeTruthy();
+    expect(screen.getByLabelText('الرقم السري')).toBeTruthy();
   });
 
   it('يظهر رسالة خطأ عربية عند الإرسال بدون بيانات', () => {
     renderLogin();
     fireEvent.submit(screen.getByRole('form', { name: 'نموذج تسجيل الدخول' }));
-    expect(screen.getByText('أدخل اسم المستخدم')).toBeTruthy();
+    expect(screen.getByText('أدخل رقم الهاتف أو اسم المستخدم')).toBeTruthy();
   });
 
-  it('حقل اسم المستخدم يحمل الـ aria-label الصحيح بالعربية', () => {
+  it('حقل رقم الهاتف أو اسم المستخدم يحمل الـ aria-label الصحيح بالعربية', () => {
     renderLogin();
-    const usernameInput = screen.getByLabelText('اسم المستخدم أو البريد الإلكتروني');
+    const usernameInput = screen.getByLabelText('رقم الهاتف أو اسم المستخدم');
     expect(usernameInput).toBeTruthy();
     expect((usernameInput as HTMLInputElement).getAttribute('aria-label')).toBe(
-      'اسم المستخدم أو البريد الإلكتروني'
+      'رقم الهاتف أو اسم المستخدم'
     );
   });
 

@@ -41,8 +41,28 @@ vi.mock('../lib/monitor', () => ({
   }),
 }));
 
-beforeAll(() => {
+beforeAll(async () => {
   // env vars already set above at module level
+  try {
+    const { pool } = await import('@workspace/db');
+
+    await pool.query(`
+      ALTER TABLE erp_users
+      ADD COLUMN IF NOT EXISTS phone TEXT
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS erp_users_phone_idx
+      ON erp_users (phone)
+    `);
+
+    await pool.query(`
+      ALTER TABLE audit_logs
+      ADD COLUMN IF NOT EXISTS note TEXT
+    `);
+  } catch {
+    // Some unit tests do not require a live database.
+  }
 });
 
 afterEach(() => {

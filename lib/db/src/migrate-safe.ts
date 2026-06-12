@@ -106,6 +106,16 @@ const migrations: { name: string; sql: string }[] = [
     `,
   },
   {
+    name: "erp_users — إضافة عمود phone",
+    sql: `
+      ALTER TABLE erp_users
+        ADD COLUMN IF NOT EXISTS phone TEXT;
+      CREATE INDEX IF NOT EXISTS erp_users_phone_idx
+        ON erp_users (phone);
+    `,
+  },
+
+  {
     name: "erp_users — إضافة عمود dashboard_shortcuts",
     sql: `
       ALTER TABLE erp_users

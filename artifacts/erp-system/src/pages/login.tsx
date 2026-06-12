@@ -335,12 +335,10 @@ export default function Login() {
     el.style.animation = 'ent-shake .35s ease';
   }, [error]);
 
-  const storedCompanyId: number | null = (() => {
+  const explicitCompanyId: number | null = (() => {
     if (typeof window === 'undefined') return null;
     const fromUrl = Number(new URLSearchParams(window.location.search).get('company_id'));
     if (Number.isFinite(fromUrl) && fromUrl > 0) return fromUrl;
-    const fromStorage = Number(localStorage.getItem('erp_company_id'));
-    if (Number.isFinite(fromStorage) && fromStorage > 0) return fromStorage;
     return null;
   })();
 
@@ -374,7 +372,7 @@ export default function Login() {
       setError('');
       const trimmed = username.trim();
       if (!trimmed) {
-        setError('أدخل اسم المستخدم');
+        setError('أدخل رقم الهاتف أو اسم المستخدم');
         usernameRef.current?.focus();
         return;
       }
@@ -389,7 +387,7 @@ export default function Login() {
         const body = {
           username: trimmed.toLowerCase(),
           pin,
-          ...(storedCompanyId ? { company_id: storedCompanyId } : {}),
+          ...(explicitCompanyId ? { company_id: explicitCompanyId } : {}),
         };
         const res = await fetch(api('/api/auth/login'), {
           method: 'POST',
@@ -449,7 +447,7 @@ export default function Login() {
         setLoading(false);
       }
     },
-    [username, pin, storedCompanyId, login, setLocation]
+    [username, pin, explicitCompanyId, login, setLocation]
   );
 
   const handleTotpSubmit = useCallback(
@@ -1027,7 +1025,7 @@ function LoginFormFields({
       {/* Username */}
       <div style={{ marginBottom: 18 }}>
         <label htmlFor="username" style={labelStyle}>
-          اسم المستخدم أو البريد الإلكتروني
+          رقم الهاتف أو اسم المستخدم
         </label>
         <input
           ref={usernameRef}
@@ -1042,7 +1040,7 @@ function LoginFormFields({
             setUsername(e.target.value);
             setError('');
           }}
-          aria-label="اسم المستخدم أو البريد الإلكتروني"
+          aria-label="رقم الهاتف أو اسم المستخدم"
           aria-describedby="login-error"
         />
       </div>

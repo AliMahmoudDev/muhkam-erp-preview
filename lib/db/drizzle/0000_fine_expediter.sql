@@ -181,6 +181,7 @@ CREATE TABLE "erp_users" (
 	"name" text NOT NULL,
 	"username" text NOT NULL,
 	"email" text,
+	"phone" text,
 	"pin" text NOT NULL,
 	"role" text DEFAULT 'cashier' NOT NULL,
 	"permissions" text DEFAULT '{}',

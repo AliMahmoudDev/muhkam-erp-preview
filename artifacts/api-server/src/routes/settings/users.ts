@@ -52,7 +52,7 @@ router.post(
       return;
     }
 
-    const { name, username, pin, role, permissions, warehouse_id, safe_id, active, employee_id } =
+    const { name, phone, pin, role, permissions, warehouse_id, safe_id, active, employee_id } =
       v.data;
     const companyId = requireUser(req).company_id ?? undefined;
 
@@ -61,9 +61,10 @@ router.post(
       return;
     }
 
-    const normalizedUsername = username.trim().toLowerCase();
-    if (!normalizedUsername) {
-      res.status(400).json({ error: 'اسم المستخدم مطلوب' });
+    const normalizedPhone = phone.trim();
+    const normalizedUsername = normalizedPhone;
+    if (!normalizedPhone) {
+      res.status(400).json({ error: 'رقم الهاتف مطلوب' });
       return;
     }
 
@@ -78,10 +79,12 @@ router.post(
     const [existingByUsername] = await db
       .select({ id: erpUsersTable.id })
       .from(erpUsersTable)
-      .where(sql`LOWER(${erpUsersTable.username}) = ${normalizedUsername}`)
+      .where(
+        sql`LOWER(${erpUsersTable.username}) = ${normalizedUsername} OR ${erpUsersTable.phone} = ${normalizedUsername}`
+      )
       .limit(1);
     if (existingByUsername) {
-      res.status(409).json({ error: 'اسم المستخدم مستخدم بالفعل' });
+      res.status(409).json({ error: 'رقم الهاتف مستخدم بالفعل' });
       return;
     }
 
@@ -91,6 +94,7 @@ router.post(
       .values({
         name,
         username: normalizedUsername,
+        phone: normalizedPhone,
         pin: hashedPin,
         role: role || 'cashier',
         permissions: permissions || '{}',
@@ -132,6 +136,7 @@ router.put(
     const {
       name,
       username,
+      phone,
       pin,
       role,
       permissions,
@@ -166,10 +171,19 @@ router.put(
       return;
     }
 
+    const normalizedPhone = phone !== undefined ? String(phone).trim() : undefined;
     const normalizedUsername =
-      username !== undefined ? String(username).trim().toLowerCase() : undefined;
+      normalizedPhone !== undefined
+        ? normalizedPhone
+        : username !== undefined
+          ? String(username).trim().toLowerCase()
+          : undefined;
+    if (phone !== undefined && !normalizedPhone) {
+      res.status(400).json({ error: 'رقم الهاتف مطلوب' });
+      return;
+    }
     if (username !== undefined && !normalizedUsername) {
-      res.status(400).json({ error: 'اسم المستخدم مطلوب' });
+      res.status(400).json({ error: 'رقم الهاتف مطلوب' });
       return;
     }
     if (normalizedUsername) {
@@ -178,13 +192,13 @@ router.put(
         .from(erpUsersTable)
         .where(
           and(
-            sql`LOWER(${erpUsersTable.username}) = ${normalizedUsername}`,
+            sql`LOWER(${erpUsersTable.username}) = ${normalizedUsername} OR ${erpUsersTable.phone} = ${normalizedUsername}`,
             ne(erpUsersTable.id, id)
           )
         )
         .limit(1);
       if (existingByUsername) {
-        res.status(409).json({ error: 'اسم المستخدم مستخدم بالفعل' });
+        res.status(409).json({ error: 'رقم الهاتف مستخدم بالفعل' });
         return;
       }
     }
@@ -206,6 +220,7 @@ router.put(
       .set({
         name,
         username: normalizedUsername,
+        phone: normalizedPhone,
         ...(hashedPin !== undefined ? { pin: hashedPin } : {}),
         role,
         permissions,

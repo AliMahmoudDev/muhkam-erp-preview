@@ -6,6 +6,7 @@ export const erpUsersTable = pgTable("erp_users", {
   name: text("name").notNull(),
   username: text("username").notNull(),
   email: text("email"),
+  phone: text("phone"),
   pin: text("pin").notNull(),
   role: text("role").notNull().default("cashier"),
   permissions: text("permissions").default("{}"),
