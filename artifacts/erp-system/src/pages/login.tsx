@@ -135,50 +135,136 @@ const LOGIN_CSS = `
 `;
 
 /* SVG icons — inline, no emoji */
-const EyeIcon = ({ open }: { open: boolean }) => (
+const EyeIcon = ({ open }: { open: boolean }) =>
   open ? (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   ) : (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
     </svg>
-  )
-);
+  );
 
 const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points="20 6 9 17 4 12"/>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#60A5FA"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 
 const LockIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
   </svg>
 );
 
 /* Module icons (stroke=currentColor so they inherit) */
 const SalesIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" />
+    <circle cx="9" cy="20" r="1.5" />
+    <circle cx="18" cy="20" r="1.5" />
   </svg>
 );
 const AccountingIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M7 8h10M7 12h10M7 16h6" />
   </svg>
 );
 const HRIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
   </svg>
 );
 const InventoryIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M21 8V21H3V8M1 3h22v5H1zM10 12h4"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M21 8V21H3V8M1 3h22v5H1zM10 12h4" />
   </svg>
 );
 
@@ -190,10 +276,10 @@ const PRODUCT_FACTS = [
 ];
 
 const MODULES = [
-  { label: 'المبيعات',         Icon: SalesIcon },
-  { label: 'المحاسبة',         Icon: AccountingIcon },
-  { label: 'الموارد البشرية',  Icon: HRIcon },
-  { label: 'المخزون',          Icon: InventoryIcon },
+  { label: 'المبيعات', Icon: SalesIcon },
+  { label: 'المحاسبة', Icon: AccountingIcon },
+  { label: 'الموارد البشرية', Icon: HRIcon },
+  { label: 'المخزون', Icon: InventoryIcon },
 ];
 
 /* ══════════════════════════════════════════════
@@ -203,24 +289,26 @@ export default function Login() {
   const { login } = useAuth();
   const [, setLocation] = useLocation();
 
-  const isRegisterFromUrl = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'register';
+  const isRegisterFromUrl =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('tab') === 'register';
   const [showRegister, setShowRegister] = useState(isRegisterFromUrl);
 
   const [username, setUsername] = useState('');
-  const [pin, setPin]           = useState('');
-  const [showPin, setShowPin]   = useState(false);
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   /* 2FA state */
   const [requires2FA, setRequires2FA] = useState(false);
-  const [tempToken, setTempToken]     = useState('');
-  const [totpCode, setTotpCode]       = useState('');
+  const [tempToken, setTempToken] = useState('');
+  const [totpCode, setTotpCode] = useState('');
   const [totpLoading, setTotpLoading] = useState(false);
 
   const usernameRef = useRef<HTMLInputElement>(null);
-  const pinRef      = useRef<HTMLInputElement>(null);
-  const errorRef    = useRef<HTMLDivElement>(null);
+  const pinRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
 
   /* Inject CSS once */
   useEffect(() => {
@@ -229,7 +317,9 @@ export default function Login() {
     s.id = 'muhkam-login-css';
     s.textContent = LOGIN_CSS;
     document.head.appendChild(s);
-    return () => { s.remove(); };
+    return () => {
+      s.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -254,122 +344,259 @@ export default function Login() {
     return null;
   })();
 
-  const handleRegisterSuccess = useCallback((
-    user: { id:number; name:string; username:string; role:string; active?:boolean; warehouse_id?:number|null; safe_id?:number|null; permissions?:Record<string,boolean>; },
-    companyId: number
-  ) => {
-    if (companyId) localStorage.setItem('erp_company_id', String(companyId));
-    login(user);
-    setLocation('/');
-  }, [login, setLocation]);
+  const handleRegisterSuccess = useCallback(
+    (
+      user: {
+        id: number;
+        name: string;
+        username: string;
+        role: string;
+        active?: boolean;
+        warehouse_id?: number | null;
+        safe_id?: number | null;
+        permissions?: Record<string, boolean>;
+        company_id?: number | null;
+      },
+      companyId: number
+    ) => {
+      const registeredUser = { ...user, company_id: companyId || user.company_id || null };
+      if (registeredUser.company_id)
+        localStorage.setItem('erp_company_id', String(registeredUser.company_id));
+      login(registeredUser);
+      setLocation('/');
+    },
+    [login, setLocation]
+  );
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    const trimmed = username.trim();
-    if (!trimmed) { setError('أدخل اسم المستخدم'); usernameRef.current?.focus(); return; }
-    if (!pin)     { setError('أدخل الرقم السري');  pinRef.current?.focus(); return; }
-
-    setLoading(true);
-    try {
-      const body = { username: trimmed.toLowerCase(), pin, ...(storedCompanyId ? { company_id: storedCompanyId } : {}) };
-      const res = await fetch(api('/api/auth/login'), {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(body), credentials:'include',
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || 'الرقم السري غير صحيح');
-        setPin(''); pinRef.current?.focus();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError('');
+      const trimmed = username.trim();
+      if (!trimmed) {
+        setError('أدخل اسم المستخدم');
+        usernameRef.current?.focus();
         return;
       }
-      const responseData = await res.json() as {
-        requires_2fa?:boolean; temp_token?:string; message?:string;
-        user?:{ id:number; name:string; username:string; role:string; active?:boolean; warehouse_id?:number|null; safe_id?:number|null; permissions?:Record<string,boolean>; company_id?:number|null; };
-      };
-      if (responseData.requires_2fa && responseData.temp_token) {
-        setTempToken(responseData.temp_token);
-        setRequires2FA(true);
+      if (!pin) {
+        setError('أدخل الرقم السري');
+        pinRef.current?.focus();
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const body = {
+          username: trimmed.toLowerCase(),
+          pin,
+          ...(storedCompanyId ? { company_id: storedCompanyId } : {}),
+        };
+        const res = await fetch(api('/api/auth/login'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          credentials: 'include',
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(data.error || 'الرقم السري غير صحيح');
+          setPin('');
+          pinRef.current?.focus();
+          return;
+        }
+        const responseData = (await res.json()) as {
+          requires_2fa?: boolean;
+          temp_token?: string;
+          message?: string;
+          user?: {
+            id: number;
+            name: string;
+            username: string;
+            role: string;
+            active?: boolean;
+            warehouse_id?: number | null;
+            safe_id?: number | null;
+            permissions?: Record<string, boolean>;
+            company_id?: number | null;
+          };
+        };
+        if (responseData.requires_2fa && responseData.temp_token) {
+          setTempToken(responseData.temp_token);
+          setRequires2FA(true);
+          setLoading(false);
+          return;
+        }
+        const authedUser = responseData.user!;
+        if (authedUser.role === 'cashier' || authedUser.role === 'salesperson') {
+          if (!authedUser.warehouse_id) {
+            setError('هذا المستخدم غير مرتبط بمخزن — راجع المدير');
+            setLoading(false);
+            return;
+          }
+          if (!authedUser.safe_id) {
+            setError('هذا المستخدم غير مرتبط بخزنة — راجع المدير');
+            setLoading(false);
+            return;
+          }
+        }
+        if (authedUser.company_id)
+          localStorage.setItem('erp_company_id', String(authedUser.company_id));
+        login(authedUser);
+        setLocation('/');
+      } catch {
+        setError('تعذّر الاتصال بالخادم');
+      } finally {
         setLoading(false);
+      }
+    },
+    [username, pin, storedCompanyId, login, setLocation]
+  );
+
+  const handleTotpSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (totpCode.length !== 6) {
+        setError('أدخل 6 أرقام');
         return;
       }
-      const authedUser = responseData.user!;
-      if (authedUser.role === 'cashier' || authedUser.role === 'salesperson') {
-        if (!authedUser.warehouse_id) { setError('هذا المستخدم غير مرتبط بمخزن — راجع المدير'); setLoading(false); return; }
-        if (!authedUser.safe_id)      { setError('هذا المستخدم غير مرتبط بخزنة — راجع المدير'); setLoading(false); return; }
+      setTotpLoading(true);
+      setError('');
+      try {
+        const res = await fetch(api('/api/auth/2fa/login'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ temp_token: tempToken, totp_code: totpCode }),
+          credentials: 'include',
+        });
+        const data = (await res.json()) as {
+          user?: {
+            id: number;
+            name: string;
+            username: string;
+            role: string;
+            company_id?: number | null;
+          };
+          error?: string;
+        };
+        if (!res.ok || !data.user) {
+          setError(data.error ?? 'رمز التحقق غير صحيح');
+          setTotpCode('');
+          return;
+        }
+        login(data.user as Parameters<typeof login>[0]);
+        setLocation('/');
+      } catch {
+        setError('تعذّر الاتصال بالخادم');
+      } finally {
+        setTotpLoading(false);
       }
-      if (authedUser.company_id) localStorage.setItem('erp_company_id', String(authedUser.company_id));
-      login(authedUser);
-      setLocation('/');
-    } catch {
-      setError('تعذّر الاتصال بالخادم');
-    } finally {
-      setLoading(false);
-    }
-  }, [username, pin, storedCompanyId, login, setLocation]);
-
-  const handleTotpSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (totpCode.length !== 6) { setError('أدخل 6 أرقام'); return; }
-    setTotpLoading(true); setError('');
-    try {
-      const res = await fetch(api('/api/auth/2fa/login'), {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ temp_token:tempToken, totp_code:totpCode }), credentials:'include',
-      });
-      const data = await res.json() as { user?:{ id:number; name:string; username:string; role:string; company_id?:number|null; }; error?:string; };
-      if (!res.ok || !data.user) { setError(data.error ?? 'رمز التحقق غير صحيح'); setTotpCode(''); return; }
-      login(data.user as Parameters<typeof login>[0]);
-      setLocation('/');
-    } catch {
-      setError('تعذّر الاتصال بالخادم');
-    } finally {
-      setTotpLoading(false);
-    }
-  }, [totpCode, tempToken, login, setLocation]);
+    },
+    [totpCode, tempToken, login, setLocation]
+  );
 
   /* ══ Brand panel — dark navy with logo, facts, modules ══ */
   const BrandPanel = () => (
-    <div className="ent-brand-panel" style={{
-      width: '46%', minHeight: '100vh',
-      background: '#0F1629',
-      borderLeft: '1px solid #1E293B',
-      position: 'relative',
-      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-      padding: '56px 56px',
-      overflow: 'hidden',
-    }}>
+    <div
+      className="ent-brand-panel"
+      style={{
+        width: '46%',
+        minHeight: '100vh',
+        background: '#0F1629',
+        borderLeft: '1px solid #1E293B',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: '56px 56px',
+        overflow: 'hidden',
+      }}
+    >
       {/* Subtle radial accent */}
-      <div style={{
-        position: 'absolute', top: '-20%', right: '-10%', width: '70%', height: '70%',
-        background: 'radial-gradient(ellipse at center, rgba(59,130,246,0.10) 0%, transparent 60%)',
-        pointerEvents: 'none',
-      }} />
+      <div
+        style={{
+          position: 'absolute',
+          top: '-20%',
+          right: '-10%',
+          width: '70%',
+          height: '70%',
+          background:
+            'radial-gradient(ellipse at center, rgba(59,130,246,0.10) 0%, transparent 60%)',
+          pointerEvents: 'none',
+        }}
+      />
 
       {/* Top — logo + tagline + 3 product facts */}
-      <div style={{ position: 'relative', zIndex: 1, animation: 'ent-fade-up .5s ease both' }} dir="rtl">
+      <div
+        style={{ position: 'relative', zIndex: 1, animation: 'ent-fade-up .5s ease both' }}
+        dir="rtl"
+      >
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-          <div style={{
-            fontSize: 36, fontWeight: 800, color: '#F8FAFC',
-            letterSpacing: '-0.02em', lineHeight: 1,
-          }}>مُحكم</div>
-          <div style={{
-            fontSize: 14, fontWeight: 700, color: '#3B82F6',
-            letterSpacing: '0.10em',
-          }}>ERP</div>
+          <div
+            style={{
+              fontSize: 36,
+              fontWeight: 800,
+              color: '#F8FAFC',
+              letterSpacing: '-0.02em',
+              lineHeight: 1,
+            }}
+          >
+            مُحكم
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: '#3B82F6',
+              letterSpacing: '0.10em',
+            }}
+          >
+            ERP
+          </div>
         </div>
-        <div style={{
-          marginTop: 10, fontSize: 14, color: '#94A3B8', fontWeight: 500,
-        }}>نظام إدارة موارد المؤسسات</div>
+        <div
+          style={{
+            marginTop: 10,
+            fontSize: 14,
+            color: '#94A3B8',
+            fontWeight: 500,
+          }}
+        >
+          نظام إدارة موارد المؤسسات
+        </div>
 
         {/* 3 product facts */}
-        <ul style={{ listStyle: 'none', padding: 0, margin: '32px 0 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <ul
+          style={{
+            listStyle: 'none',
+            padding: 0,
+            margin: '32px 0 0',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
           {PRODUCT_FACTS.map((fact, i) => (
-            <li key={fact} style={{
-              display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#CBD5E1', fontWeight: 500,
-              animation: `ent-fade-up .5s ${0.05 + i * 0.04}s ease both`,
-            }}>
-              <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#3B82F6', flexShrink: 0 }} />
+            <li
+              key={fact}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                fontSize: 13.5,
+                color: '#CBD5E1',
+                fontWeight: 500,
+                animation: `ent-fade-up .5s ${0.05 + i * 0.04}s ease both`,
+              }}
+            >
+              <span
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: '50%',
+                  background: '#3B82F6',
+                  flexShrink: 0,
+                }}
+              />
               <span>{fact}</span>
             </li>
           ))}
@@ -377,34 +604,69 @@ export default function Login() {
       </div>
 
       {/* Middle — modules grid (4 with icons) */}
-      <div style={{ position: 'relative', zIndex: 1, animation: 'ent-fade-up .55s .1s ease both' }} dir="rtl">
-        <div style={{
-          fontSize: 11, fontWeight: 700, color: '#475569',
-          letterSpacing: '0.14em', marginBottom: 18, textTransform: 'uppercase' as const,
-        }}>الوحدات الأساسية</div>
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
-        }}>
+      <div
+        style={{ position: 'relative', zIndex: 1, animation: 'ent-fade-up .55s .1s ease both' }}
+        dir="rtl"
+      >
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#475569',
+            letterSpacing: '0.14em',
+            marginBottom: 18,
+            textTransform: 'uppercase' as const,
+          }}
+        >
+          الوحدات الأساسية
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 10,
+          }}
+        >
           {MODULES.map((m, i) => (
-            <div key={m.label} style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '14px 16px',
-              background: 'rgba(15, 23, 42, 0.6)',
-              border: '1px solid #1E293B',
-              borderRadius: 10,
-              animation: `ent-fade-up .55s ${0.15 + i * 0.04}s ease both`,
-            }}>
-              <span style={{
-                width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-                background: 'rgba(59, 130, 246, 0.12)',
-                color: '#60A5FA',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
+            <div
+              key={m.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '14px 16px',
+                background: 'rgba(15, 23, 42, 0.6)',
+                border: '1px solid #1E293B',
+                borderRadius: 10,
+                animation: `ent-fade-up .55s ${0.15 + i * 0.04}s ease both`,
+              }}
+            >
+              <span
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  flexShrink: 0,
+                  background: 'rgba(59, 130, 246, 0.12)',
+                  color: '#60A5FA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <m.Icon />
               </span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: 14, fontWeight: 600, color: '#E2E8F0' }}>{m.label}</span>
-                <span style={{ fontSize: 11, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: '#64748B',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
                   <CheckIcon /> متاح
                 </span>
               </div>
@@ -414,10 +676,15 @@ export default function Login() {
       </div>
 
       {/* Bottom — copyright */}
-      <div style={{
-        position: 'relative', zIndex: 1,
-        fontSize: 12, color: '#475569', fontWeight: 500,
-      }}>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          fontSize: 12,
+          color: '#475569',
+          fontWeight: 500,
+        }}
+      >
         © 2026 مُحكم ERP · جميع الحقوق محفوظة
       </div>
     </div>
@@ -425,136 +692,261 @@ export default function Login() {
 
   /* ══ RENDER ══ */
   return (
-    <div className="lp-login" dir="rtl" style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'row',
-      background: '#F8FAFC', color: '#0F172A',
-    }}>
-      {/* Form panel — light */}
-      <div className="ent-form-panel" style={{
-        flex: 1, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: '40px 24px', minHeight: '100vh',
+    <div
+      className="lp-login"
+      dir="rtl"
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'row',
         background: '#F8FAFC',
-      }}>
-        <div style={{
-          width: '100%', maxWidth: 440,
-          animation: 'ent-fade-up .4s ease both',
-        }}>
+        color: '#0F172A',
+      }}
+    >
+      {/* Form panel — light */}
+      <div
+        className="ent-form-panel"
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px 24px',
+          minHeight: '100vh',
+          background: '#F8FAFC',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 440,
+            animation: 'ent-fade-up .4s ease both',
+          }}
+        >
           {/* Mobile-only logo (hidden on desktop) */}
-          <div style={{
-            display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 8,
-            marginBottom: 28,
-          }} className="ent-mobile-logo">
-            <div style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>مُحكم</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#2563EB', letterSpacing: '0.10em' }}>ERP</div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'center',
+              gap: 8,
+              marginBottom: 28,
+            }}
+            className="ent-mobile-logo"
+          >
+            <div
+              style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}
+            >
+              مُحكم
+            </div>
+            <div
+              style={{ fontSize: 12, fontWeight: 700, color: '#2563EB', letterSpacing: '0.10em' }}
+            >
+              ERP
+            </div>
           </div>
 
           {/* Card */}
-          <div style={{
-            background: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: 12,
-            padding: '40px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05), 0 8px 32px rgba(15, 23, 42, 0.08)',
-          }}>
-
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: 12,
+              padding: '40px',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05), 0 8px 32px rgba(15, 23, 42, 0.08)',
+            }}
+          >
             {/* ─── 2FA STEP ─── */}
             {requires2FA ? (
               <form onSubmit={handleTotpSubmit} noValidate aria-label="نموذج التحقق الثنائي">
                 <div style={{ marginBottom: 28 }}>
-                  <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', marginBottom: 8, letterSpacing: '-0.01em' }}>
+                  <h2
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 700,
+                      color: '#0F172A',
+                      marginBottom: 8,
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
                     التحقق الثنائي
                   </h2>
                   <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.65 }}>
-                    افتح <span style={{ color: '#0F172A', fontWeight: 600 }}>Google Authenticator</span> أو <span style={{ color: '#0F172A', fontWeight: 600 }}>Authy</span> وأدخل الرمز المكوّن من 6 أرقام.
+                    افتح{' '}
+                    <span style={{ color: '#0F172A', fontWeight: 600 }}>Google Authenticator</span>{' '}
+                    أو <span style={{ color: '#0F172A', fontWeight: 600 }}>Authy</span> وأدخل الرمز
+                    المكوّن من 6 أرقام.
                   </p>
                 </div>
 
                 {error && (
-                  <div ref={errorRef} role="alert" aria-live="polite" style={{
-                    padding: '10px 12px', borderRadius: 8, marginBottom: 16,
-                    background: '#FEF2F2',
-                    border: '1px solid #FECACA',
-                    color: '#B91C1C', fontSize: 13, fontWeight: 500,
-                  }}>{error}</div>
+                  <div
+                    ref={errorRef}
+                    role="alert"
+                    aria-live="polite"
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      marginBottom: 16,
+                      background: '#FEF2F2',
+                      border: '1px solid #FECACA',
+                      color: '#B91C1C',
+                      fontSize: 13,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {error}
+                  </div>
                 )}
 
                 <input
                   value={totpCode}
-                  onChange={e => { setTotpCode(e.target.value.replace(/\D/g,'').slice(0,6)); setError(''); }}
-                  onKeyDown={e => { if (e.key==='Enter' && totpCode.length===6) void handleTotpSubmit(e as unknown as React.FormEvent); }}
+                  onChange={(e) => {
+                    setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                    setError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && totpCode.length === 6)
+                      void handleTotpSubmit(e as unknown as React.FormEvent);
+                  }}
                   placeholder="000000"
                   inputMode="numeric"
                   autoFocus
                   aria-label="رمز التحقق الثنائي"
                   className="ent-input"
                   style={{
-                    height: 56, fontSize: 24, fontFamily: 'Inter, monospace',
-                    letterSpacing: '0.5em', textAlign: 'center', marginBottom: 16,
+                    height: 56,
+                    fontSize: 24,
+                    fontFamily: 'Inter, monospace',
+                    letterSpacing: '0.5em',
+                    textAlign: 'center',
+                    marginBottom: 16,
                     paddingRight: 0,
                   }}
                   maxLength={6}
                 />
-                <button type="submit" disabled={totpLoading || totpCode.length!==6} className="ent-btn-primary" style={{ marginBottom: 12 }}>
+                <button
+                  type="submit"
+                  disabled={totpLoading || totpCode.length !== 6}
+                  className="ent-btn-primary"
+                  style={{ marginBottom: 12 }}
+                >
                   {totpLoading ? (
                     <>
-                      <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'ent-spin .7s linear infinite' }} />
+                      <span
+                        style={{
+                          width: 14,
+                          height: 14,
+                          border: '2px solid rgba(255,255,255,0.3)',
+                          borderTopColor: '#fff',
+                          borderRadius: '50%',
+                          display: 'inline-block',
+                          animation: 'ent-spin .7s linear infinite',
+                        }}
+                      />
                       <span>جاري التحقق…</span>
                     </>
-                  ) : <span>تحقق</span>}
+                  ) : (
+                    <span>تحقق</span>
+                  )}
                 </button>
-                <button type="button" className="ent-btn-secondary" onClick={() => {
-                  setRequires2FA(false); setTempToken(''); setTotpCode(''); setError(''); setPin('');
-                }}>رجوع</button>
+                <button
+                  type="button"
+                  className="ent-btn-secondary"
+                  onClick={() => {
+                    setRequires2FA(false);
+                    setTempToken('');
+                    setTotpCode('');
+                    setError('');
+                    setPin('');
+                  }}
+                >
+                  رجوع
+                </button>
               </form>
             ) : showRegister ? (
               <>
                 <div style={{ marginBottom: 24 }}>
-                  <h1 style={{
-                    fontSize: 24, fontWeight: 700, color: '#0F172A',
-                    marginBottom: 6, letterSpacing: '-0.01em',
-                  }}>إنشاء حساب جديد</h1>
+                  <h1
+                    style={{
+                      fontSize: 24,
+                      fontWeight: 700,
+                      color: '#0F172A',
+                      marginBottom: 6,
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    إنشاء حساب جديد
+                  </h1>
                   <p style={{ fontSize: 14, color: '#64748B' }}>
                     تجربة مجانية لمدة 7 أيام — بدون بطاقة ائتمان
                   </p>
                 </div>
                 <RegisterForm
                   onSuccess={handleRegisterSuccess}
-                  onSwitch={() => { setShowRegister(false); setError(''); }}
+                  onSwitch={() => {
+                    setShowRegister(false);
+                    setError('');
+                  }}
                 />
               </>
             ) : (
               <>
                 {/* Heading */}
                 <div style={{ marginBottom: 28 }}>
-                  <h1 style={{
-                    fontSize: 24, fontWeight: 700, color: '#0F172A',
-                    marginBottom: 6, letterSpacing: '-0.01em',
-                  }}>تسجيل الدخول</h1>
+                  <h1
+                    style={{
+                      fontSize: 24,
+                      fontWeight: 700,
+                      color: '#0F172A',
+                      marginBottom: 6,
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    تسجيل الدخول
+                  </h1>
                   <p style={{ fontSize: 14, color: '#64748B' }}>
                     أدخل بياناتك للوصول إلى لوحة التحكم
                   </p>
                 </div>
 
                 <LoginFormFields
-                  username={username} setUsername={setUsername}
-                  pin={pin} setPin={setPin}
-                  showPin={showPin} setShowPin={setShowPin}
-                  error={error} setError={setError}
+                  username={username}
+                  setUsername={setUsername}
+                  pin={pin}
+                  setPin={setPin}
+                  showPin={showPin}
+                  setShowPin={setShowPin}
+                  error={error}
+                  setError={setError}
                   loading={loading}
-                  usernameRef={usernameRef} pinRef={pinRef} errorRef={errorRef}
+                  usernameRef={usernameRef}
+                  pinRef={pinRef}
+                  errorRef={errorRef}
                   handleSubmit={handleSubmit}
-                  onShowRegister={() => { setShowRegister(true); setError(''); }}
+                  onShowRegister={() => {
+                    setShowRegister(true);
+                    setError('');
+                  }}
                 />
               </>
             )}
           </div>
 
           {/* Footer with TLS lock icon */}
-          <div style={{
-            marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            fontSize: 12.5, color: '#64748B', fontWeight: 500,
-          }}>
+          <div
+            style={{
+              marginTop: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              fontSize: 12.5,
+              color: '#64748B',
+              fontWeight: 500,
+            }}
+          >
             <LockIcon />
             <span>بحماية تشفير TLS · جميع البيانات معزولة لكل شركة</span>
           </div>
@@ -570,16 +962,29 @@ export default function Login() {
    Login form sub-component
 ═══════════════════════════════════════════════ */
 function LoginFormFields({
-  username, setUsername, pin, setPin,
-  showPin, setShowPin,
-  error, setError, loading,
-  usernameRef, pinRef, errorRef,
-  handleSubmit, onShowRegister,
+  username,
+  setUsername,
+  pin,
+  setPin,
+  showPin,
+  setShowPin,
+  error,
+  setError,
+  loading,
+  usernameRef,
+  pinRef,
+  errorRef,
+  handleSubmit,
+  onShowRegister,
 }: {
-  username: string; setUsername: (v: string) => void;
-  pin: string; setPin: (v: string) => void;
-  showPin: boolean; setShowPin: (v: boolean) => void;
-  error: string; setError: (v: string) => void;
+  username: string;
+  setUsername: (v: string) => void;
+  pin: string;
+  setPin: (v: string) => void;
+  showPin: boolean;
+  setShowPin: (v: boolean) => void;
+  error: string;
+  setError: (v: string) => void;
   loading: boolean;
   usernameRef: React.RefObject<HTMLInputElement | null>;
   pinRef: React.RefObject<HTMLInputElement | null>;
@@ -588,8 +993,11 @@ function LoginFormFields({
   onShowRegister: () => void;
 }) {
   const labelStyle: React.CSSProperties = {
-    display: 'block', fontSize: 13, fontWeight: 600,
-    color: '#334155', marginBottom: 8,
+    display: 'block',
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#334155',
+    marginBottom: 8,
   };
 
   return (
@@ -607,9 +1015,13 @@ function LoginFormFields({
             background: '#FEF2F2',
             border: '1px solid #FECACA',
             borderRadius: 8,
-            fontSize: 13, color: '#B91C1C', fontWeight: 500,
+            fontSize: 13,
+            color: '#B91C1C',
+            fontWeight: 500,
           }}
-        >{error}</div>
+        >
+          {error}
+        </div>
       )}
 
       {/* Username */}
@@ -626,7 +1038,10 @@ function LoginFormFields({
           placeholder="admin"
           disabled={loading}
           className={`ent-input${error && !username.trim() ? ' ent-input-error' : ''}`}
-          onChange={e => { setUsername(e.target.value); setError(''); }}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            setError('');
+          }}
           aria-label="اسم المستخدم أو البريد الإلكتروني"
           aria-describedby="login-error"
         />
@@ -634,8 +1049,17 @@ function LoginFormFields({
 
       {/* Password */}
       <div style={{ marginBottom: 8 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-          <label htmlFor="pin" style={{ ...labelStyle, marginBottom: 0 }}>الرقم السري</label>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            marginBottom: 8,
+          }}
+        >
+          <label htmlFor="pin" style={{ ...labelStyle, marginBottom: 0 }}>
+            الرقم السري
+          </label>
           <button
             type="button"
             className="ent-link"
@@ -643,7 +1067,9 @@ function LoginFormFields({
             onClick={() => {
               window.alert('للحصول على كلمة سر جديدة، يرجى التواصل مع مدير النظام في شركتك.');
             }}
-          >هل نسيت كلمة السر؟</button>
+          >
+            هل نسيت كلمة السر؟
+          </button>
         </div>
         <div style={{ position: 'relative' }}>
           <input
@@ -655,7 +1081,10 @@ function LoginFormFields({
             placeholder="••••••"
             disabled={loading}
             className={`ent-input ent-input-pw${error && !pin && username.trim() ? ' ent-input-error' : ''}`}
-            onChange={e => { setPin(e.target.value); setError(''); }}
+            onChange={(e) => {
+              setPin(e.target.value);
+              setError('');
+            }}
             aria-label="الرقم السري"
             aria-describedby="login-error"
           />
@@ -674,23 +1103,38 @@ function LoginFormFields({
       <div style={{ marginBottom: 24 }} />
 
       {/* Submit */}
-      <button type="submit" disabled={loading} className="ent-btn-primary" style={{ marginBottom: 16 }}>
+      <button
+        type="submit"
+        disabled={loading}
+        className="ent-btn-primary"
+        style={{ marginBottom: 16 }}
+      >
         {loading ? (
           <>
-            <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'ent-spin .7s linear infinite' }} />
+            <span
+              style={{
+                width: 14,
+                height: 14,
+                border: '2px solid rgba(255,255,255,0.3)',
+                borderTopColor: '#fff',
+                borderRadius: '50%',
+                display: 'inline-block',
+                animation: 'ent-spin .7s linear infinite',
+              }}
+            />
             <span>جاري التحقق…</span>
           </>
-        ) : <span>تسجيل الدخول</span>}
+        ) : (
+          <span>تسجيل الدخول</span>
+        )}
       </button>
 
       {/* Register link */}
       <div style={{ textAlign: 'center', fontSize: 13, color: '#64748B' }}>
         ليس لديك حساب؟{' '}
-        <button
-          type="button"
-          className="ent-link"
-          onClick={onShowRegister}
-        >إنشاء حساب جديد</button>
+        <button type="button" className="ent-link" onClick={onShowRegister}>
+          إنشاء حساب جديد
+        </button>
       </div>
     </form>
   );
