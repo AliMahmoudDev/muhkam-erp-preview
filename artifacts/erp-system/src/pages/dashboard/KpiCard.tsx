@@ -46,7 +46,7 @@ export function KpiCard({ card, index }: { card: KpiDef; index: number }) {
             border: `1px solid ${card.badge.up ? 'rgba(52,211,153,0.30)' : 'rgba(248,113,113,0.30)'}`,
             fontSize: '11px',
             fontWeight: 700,
-            color: card.badge.up ? '#6ee7b7' : '#fca5a5',
+            color: card.badge.up ? 'var(--status-success)' : 'var(--status-danger)',
             backdropFilter: 'blur(4px)',
           }}
         >

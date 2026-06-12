@@ -61,7 +61,7 @@ export function TabAlerts({
         />
         {(['all', 'danger', 'warning', 'info', 'success'] as const).map(t => {
           const typeLabels: Record<string, string> = { all: 'الكل', danger: '🚨 حرج', warning: '⚠️ تحذير', info: 'ℹ️ معلومات', success: '✅ إيجابي' };
-          const typeColors: Record<string, string> = { all: C.orange, danger: '#EF4444', warning: '#F59E0B', info: '#60A5FA', success: '#34D399' };
+          const typeColors: Record<string, string> = { all: C.orange, danger: 'var(--status-danger)', warning: 'var(--status-warning)', info: 'var(--status-info)', success: 'var(--status-success)' };
           const isActive = alertTypeFilter === t;
           return (
             <button key={t} onClick={() => setAlertTypeFilter(t)} style={{
@@ -69,7 +69,7 @@ export function TabAlerts({
               cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
               border: isActive ? 'none' : `1.5px solid ${C.border}`,
               background: isActive ? typeColors[t] : 'transparent',
-              color: isActive ? '#fff' : C.muted,
+              color: isActive ? 'var(--text-1)' : C.muted,
             }}>
               {typeLabels[t]}
             </button>
@@ -81,10 +81,10 @@ export function TabAlerts({
       {alertsData && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
           {[
-            { label: 'حرجة',    count: alertsData.summary.critical,  color: '#EF4444', icon: '🚨' },
-            { label: 'تحذيرات', count: alertsData.summary.warnings,   color: '#F59E0B', icon: '⚠️' },
-            { label: 'معلومات', count: alertsData.summary.info,       color: '#60A5FA', icon: 'ℹ️' },
-            { label: 'إيجابية', count: alertsData.summary.successes,  color: '#34D399', icon: '✅' },
+            { label: 'حرجة',    count: alertsData.summary.critical,  color: 'var(--status-danger)', icon: '🚨' },
+            { label: 'تحذيرات', count: alertsData.summary.warnings,   color: 'var(--status-warning)', icon: '⚠️' },
+            { label: 'معلومات', count: alertsData.summary.info,       color: 'var(--status-info)', icon: 'ℹ️' },
+            { label: 'إيجابية', count: alertsData.summary.successes,  color: 'var(--status-success)', icon: '✅' },
           ].map(s => (
             <div key={s.label} style={{
               background: C.card, borderRadius: '14px', border: `1px solid ${s.color}33`,
@@ -121,10 +121,10 @@ export function TabAlerts({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {filtered.map((alert, i) => {
               const colors: Record<string, { bg: string; border: string; badge: string }> = {
-                danger:  { bg: 'rgba(239,68,68,0.07)',   border: 'rgba(239,68,68,0.25)',   badge: '#EF4444' },
-                warning: { bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.25)',  badge: '#F59E0B' },
-                success: { bg: 'rgba(52,211,153,0.07)',  border: 'rgba(52,211,153,0.25)',  badge: '#34D399' },
-                info:    { bg: 'rgba(96,165,250,0.07)',  border: 'rgba(96,165,250,0.25)',  badge: '#60A5FA' },
+                danger:  { bg: 'rgba(239,68,68,0.07)',   border: 'rgba(239,68,68,0.25)',   badge: 'var(--status-danger)' },
+                warning: { bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.25)',  badge: 'var(--status-warning)' },
+                success: { bg: 'rgba(52,211,153,0.07)',  border: 'rgba(52,211,153,0.25)',  badge: 'var(--status-success)' },
+                info:    { bg: 'rgba(96,165,250,0.07)',  border: 'rgba(96,165,250,0.25)',  badge: 'var(--status-info)' },
               };
               const col = colors[alert.type] ?? colors.info;
               return (

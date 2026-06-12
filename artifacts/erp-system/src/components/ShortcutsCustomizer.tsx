@@ -26,16 +26,16 @@ export interface ShortcutDef {
 }
 
 export const ALL_SHORTCUTS: ShortcutDef[] = [
-  { id: 'new-sale',        label: 'فاتورة مبيعات جديدة',  icon: ShoppingCart, path: '/sales/new',        color: '#f59e0b' },
-  { id: 'new-receipt',     label: 'سند قبض',               icon: ReceiptText,  path: '/receipts/new',     color: '#34d399' },
-  { id: 'new-repair',      label: 'بطاقة صيانة جديدة',    icon: Wrench,       path: '/repairs/new',      color: '#818cf8' },
-  { id: 'new-purchase',    label: 'فاتورة مشتريات',        icon: ShoppingBag,  path: '/purchases/new',    color: '#60a5fa' },
+  { id: 'new-sale',        label: 'فاتورة مبيعات جديدة',  icon: ShoppingCart, path: '/sales/new',        color: 'var(--status-warning)' },
+  { id: 'new-receipt',     label: 'سند قبض',               icon: ReceiptText,  path: '/receipts/new',     color: 'var(--status-success)' },
+  { id: 'new-repair',      label: 'بطاقة صيانة جديدة',    icon: Wrench,       path: '/repairs/new',      color: 'var(--status-info)' },
+  { id: 'new-purchase',    label: 'فاتورة مشتريات',        icon: ShoppingBag,  path: '/purchases/new',    color: 'var(--status-info)' },
   { id: 'new-customer',    label: 'إضافة عميل',            icon: Users,        path: '/customers/new',    color: '#fb923c' },
-  { id: 'inventory',       label: 'المخزون',               icon: Package,      path: '/inventory',        color: '#a78bfa' },
-  { id: 'payment-voucher', label: 'سند صرف',               icon: CreditCard,   path: '/payments/new',     color: '#f87171' },
+  { id: 'inventory',       label: 'المخزون',               icon: Package,      path: '/inventory',        color: 'var(--status-info)' },
+  { id: 'payment-voucher', label: 'سند صرف',               icon: CreditCard,   path: '/payments/new',     color: 'var(--status-danger)' },
   { id: 'expense',         label: 'تسجيل مصروف',           icon: DollarSign,   path: '/expenses/new',     color: '#f9a8d4' },
   { id: 'journal',         label: 'قيد يومية',             icon: Landmark,     path: '/accounting/new',   color: '#67e8f9' },
-  { id: 'reports',         label: 'التقارير',              icon: FileText,     path: '/reports',          color: '#86efac' },
+  { id: 'reports',         label: 'التقارير',              icon: FileText,     path: '/reports',          color: 'var(--status-success)' },
   { id: 'new-supplier',    label: 'إضافة مورد',            icon: PlusCircle,   path: '/suppliers/new',    color: '#fcd34d' },
 ];
 
@@ -90,7 +90,7 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ color: '#f1f5f9', fontSize: 17, fontWeight: 700, margin: 0 }}>تخصيص الاختصارات</h2>
+            <h2 style={{ color: 'var(--text-1)', fontSize: 17, fontWeight: 700, margin: 0 }}>تخصيص الاختصارات</h2>
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, margin: '4px 0 0' }}>اختر حتى 8 اختصارات وارتّبها</p>
           </div>
           <button
@@ -128,7 +128,7 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
                     <div style={{ width: 34, height: 34, borderRadius: 9, background: s.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Icon style={{ width: 16, height: 16, color: s.color }} />
                     </div>
-                    <span style={{ color: active ? '#f1f5f9' : 'rgba(255,255,255,0.65)', fontSize: 14, flex: 1 }}>{s.label}</span>
+                    <span style={{ color: active ? 'var(--text-1)' : 'rgba(255,255,255,0.65)', fontSize: 14, flex: 1 }}>{s.label}</span>
                     {active && <Check style={{ width: 15, height: 15, color: s.color, flexShrink: 0 }} />}
                   </button>
                 );
@@ -164,17 +164,17 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
                     <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{def.label}</span>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <button onClick={() => move(idx, -1)} disabled={idx === 0} style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', padding: 2, opacity: idx === 0 ? 0.2 : 0.7 }}>
-                        <ArrowUp style={{ width: 12, height: 12, color: '#94a3b8' }} />
+                        <ArrowUp style={{ width: 12, height: 12, color: 'var(--text-2)' }} />
                       </button>
                       <button onClick={() => move(idx, 1)} disabled={idx === selected.length - 1} style={{ background: 'none', border: 'none', cursor: idx === selected.length - 1 ? 'default' : 'pointer', padding: 2, opacity: idx === selected.length - 1 ? 0.2 : 0.7 }}>
-                        <ArrowDown style={{ width: 12, height: 12, color: '#94a3b8' }} />
+                        <ArrowDown style={{ width: 12, height: 12, color: 'var(--text-2)' }} />
                       </button>
                     </div>
                     <button
                       onClick={() => setSelected(prev => prev.filter(x => x !== id))}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, opacity: 0.5 }}
                     >
-                      <X style={{ width: 12, height: 12, color: '#f87171' }} />
+                      <X style={{ width: 12, height: 12, color: 'var(--status-danger)' }} />
                     </button>
                   </div>
                 );
@@ -197,7 +197,7 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
             style={{
               padding: '10px 24px', borderRadius: 10, border: 'none',
               background: saving ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: '#fff', fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+              color: 'var(--text-1)', fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
             }}
           >
             {saving ? 'جاري الحفظ...' : 'حفظ'}

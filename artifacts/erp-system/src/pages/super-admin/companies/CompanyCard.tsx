@@ -85,7 +85,7 @@ export function CompanyCard({
           }}
         />
         <ActionBtn
-          label="لقطة" icon="📊" color="#60A5FA"
+          label="لقطة" icon="📊" color="var(--status-info)"
           onClick={() => setSnapshotCompany(co.id)}
         />
         <ActionBtn

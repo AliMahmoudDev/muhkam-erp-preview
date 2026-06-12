@@ -274,7 +274,7 @@ export function ConfirmDeleteModal({
               borderRadius: '10px',
               border: 'none',
               background: loading ? '#6b2020' : C.danger,
-              color: '#fff',
+              color: 'var(--text-1)',
               fontSize: '14px',
               fontWeight: 800,
               cursor: loading ? 'not-allowed' : 'pointer',

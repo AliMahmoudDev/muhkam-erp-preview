@@ -53,7 +53,7 @@ export default function LogoutCheckoutModal({
       onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <div style={{
-        background: '#0f1729', border: '1px solid rgba(255,255,255,0.10)',
+        background: 'var(--bg-app)', border: '1px solid rgba(255,255,255,0.10)',
         borderRadius: 24, padding: '32px 36px', maxWidth: 400, width: '100%',
         boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
       }}>
@@ -65,9 +65,9 @@ export default function LogoutCheckoutModal({
               background: 'rgba(239,68,68,0.12)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <LogOut style={{ width: 18, height: 18, color: '#ef4444' }} />
+              <LogOut style={{ width: 18, height: 18, color: 'var(--status-danger)' }} />
             </div>
-            <h2 style={{ fontSize: 17, fontWeight: 800, color: '#f1f5f9', margin: 0 }}>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-1)', margin: 0 }}>
               تسجيل الخروج
             </h2>
           </div>
@@ -92,7 +92,7 @@ export default function LogoutCheckoutModal({
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   padding: '12px 20px', borderRadius: 12, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
                   background: 'linear-gradient(135deg, #10b981, #059669)',
-                  color: '#fff', fontSize: 14, fontWeight: 700, opacity: loading ? 0.7 : 1,
+                  color: 'var(--text-1)', fontSize: 14, fontWeight: 700, opacity: loading ? 0.7 : 1,
                 }}
               >
                 {loading ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <LogIn style={{ width: 15, height: 15 }} />}
@@ -104,7 +104,7 @@ export default function LogoutCheckoutModal({
                   padding: '12px 20px', borderRadius: 12,
                   border: '1px solid rgba(99,102,241,0.30)', cursor: 'pointer',
                   background: 'rgba(99,102,241,0.08)',
-                  color: '#818cf8', fontSize: 14, fontWeight: 600,
+                  color: 'var(--status-info)', fontSize: 14, fontWeight: 600,
                 }}
               >
                 لا أزال في العمل — ابقَ متصلاً
@@ -134,7 +134,7 @@ export default function LogoutCheckoutModal({
                   flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   padding: '12px 20px', borderRadius: 12, cursor: 'pointer',
                   background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.25)',
-                  color: '#ef4444', fontSize: 14, fontWeight: 700,
+                  color: 'var(--status-danger)', fontSize: 14, fontWeight: 700,
                 }}
               >
                 <LogOut style={{ width: 15, height: 15 }} />

@@ -70,7 +70,7 @@ export function ManagersTable({
               padding: '8px 20px',
               borderRadius: '10px',
               background: C.orange,
-              color: '#fff',
+              color: 'var(--text-1)',
               border: 'none',
               fontSize: '13px',
               fontWeight: 700,

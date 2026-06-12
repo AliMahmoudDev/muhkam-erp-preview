@@ -93,7 +93,7 @@ export function AlertItem({
       {/* Dot / resolved icon */}
       <div style={{ marginTop: 4, flexShrink: 0 }}>
         {alert.is_resolved ? (
-          <CheckCircle style={{ width: 14, height: 14, color: '#22c55e' }} />
+          <CheckCircle style={{ width: 14, height: 14, color: 'var(--status-success)' }} />
         ) : (
           <div
             style={{
@@ -101,7 +101,7 @@ export function AlertItem({
               height: 8,
               borderRadius: '50%',
               marginTop: 3,
-              background: alert.severity === 'CRITICAL' ? '#ef4444' : '#f59e0b',
+              background: alert.severity === 'CRITICAL' ? 'var(--status-danger)' : 'var(--status-warning)',
             }}
           />
         )}
@@ -143,7 +143,7 @@ export function AlertItem({
                 alert.severity === 'CRITICAL'
                   ? 'rgba(239,68,68,0.14)'
                   : 'rgba(245,158,11,0.14)',
-              color: alert.severity === 'CRITICAL' ? '#ef4444' : '#f59e0b',
+              color: alert.severity === 'CRITICAL' ? 'var(--status-danger)' : 'var(--status-warning)',
             }}
           >
             {alert.severity === 'CRITICAL' ? 'حرجي' : 'تحذير'}
@@ -168,12 +168,12 @@ export function AlertItem({
             })}
           </span>
           {!alert.is_read && !alert.is_resolved && (
-            <span style={{ fontSize: 10, color: '#f59e0b', marginRight: 'auto' }}>
+            <span style={{ fontSize: 10, color: 'var(--status-warning)', marginRight: 'auto' }}>
               ● جديد
             </span>
           )}
           {alert.is_resolved && (
-            <span style={{ fontSize: 10, color: '#22c55e' }}>
+            <span style={{ fontSize: 10, color: 'var(--status-success)' }}>
               ✓ {alert.resolved_by ? 'محلول يدوياً' : 'محلول تلقائياً'}
             </span>
           )}
@@ -206,7 +206,7 @@ export function AlertItem({
                 borderRadius: 5,
                 border: '1px solid rgba(34,197,94,0.35)',
                 background: 'rgba(34,197,94,0.08)',
-                color: '#22c55e',
+                color: 'var(--status-success)',
                 cursor: 'pointer',
                 fontWeight: 600,
               }}

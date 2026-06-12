@@ -163,7 +163,7 @@ export default [
       // Prevents re-introducing hardcoded Tailwind color classes
       // or inline hex values after the token-codemod migration.
       // Set to 'warn' during migration; upgrade to 'error' once clean.
-      'erp/no-hardcoded-colors': 'warn',
+      'erp/no-hardcoded-colors': 'error',
     },
   },
 ];

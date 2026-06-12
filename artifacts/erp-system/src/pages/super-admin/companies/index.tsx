@@ -66,7 +66,7 @@ export function TabCompanies(props: TabCompaniesProps) {
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '8px 16px', borderRadius: '10px',
               background: showCreate ? 'transparent' : C.orange,
-              color: showCreate ? C.muted : '#fff',
+              color: showCreate ? C.muted : 'var(--text-1)',
               border: showCreate ? `1px solid ${C.border}` : 'none',
               fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
               transition: 'all 0.18s', flexShrink: 0,

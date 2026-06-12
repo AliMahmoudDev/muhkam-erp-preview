@@ -20,10 +20,10 @@ interface AlertSettingBannerProps {
 }
 
 const COLOR_MAP = {
-  amber:  { bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.22)',  text: '#f59e0b', toggle: '#f59e0b' },
-  orange: { bg: 'rgba(249,115,22,0.07)',  border: 'rgba(249,115,22,0.22)',  text: '#fb923c', toggle: '#f97316' },
-  blue:   { bg: 'rgba(59,130,246,0.07)',  border: 'rgba(59,130,246,0.22)',  text: '#60a5fa', toggle: '#3b82f6' },
-  red:    { bg: 'rgba(239,68,68,0.07)',   border: 'rgba(239,68,68,0.22)',   text: '#f87171', toggle: '#ef4444' },
+  amber:  { bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.22)',  text: 'var(--status-warning)', toggle: 'var(--status-warning)' },
+  orange: { bg: 'rgba(249,115,22,0.07)',  border: 'rgba(249,115,22,0.22)',  text: '#fb923c', toggle: 'var(--status-warning)' },
+  blue:   { bg: 'rgba(59,130,246,0.07)',  border: 'rgba(59,130,246,0.22)',  text: 'var(--status-info)', toggle: 'var(--status-info)' },
+  red:    { bg: 'rgba(239,68,68,0.07)',   border: 'rgba(239,68,68,0.22)',   text: 'var(--status-danger)', toggle: 'var(--status-danger)' },
 };
 
 export function AlertSettingBanner({
@@ -123,7 +123,7 @@ export function AlertSettingBanner({
           right: enabled ? 2 : undefined,
           left: enabled ? undefined : 2,
           width: 16, height: 16, borderRadius: 8,
-          background: '#fff', transition: 'all 0.2s',
+          background: 'var(--text-1)', transition: 'all 0.2s',
           display: 'block',
         }} />
       </button>
@@ -163,7 +163,7 @@ export function AlertSettingBanner({
           disabled={saving}
           style={{
             marginRight: 'auto', padding: '3px 10px', borderRadius: 7,
-            background: c.toggle, border: 'none', color: '#fff',
+            background: c.toggle, border: 'none', color: 'var(--text-1)',
             fontWeight: 700, fontSize: 11, cursor: saving ? 'not-allowed' : 'pointer',
             display: 'flex', alignItems: 'center', gap: 4,
             opacity: saving ? 0.7 : 1,

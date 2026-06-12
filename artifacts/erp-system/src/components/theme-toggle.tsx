@@ -36,7 +36,7 @@ export function ThemeToggle() {
         <Moon
           size={14}
           className="transition-colors duration-300"
-          style={{ color: isDark ? "var(--erp-brand)" : "#94a3b8" }}
+          style={{ color: isDark ? "var(--erp-brand)" : "var(--text-2)" }}
           strokeWidth={2.2}
         />
       </div>
@@ -49,7 +49,7 @@ export function ThemeToggle() {
         <Sun
           size={14}
           className="transition-colors duration-300"
-          style={{ color: isDark ? "#64748b" : "var(--erp-brand)" }}
+          style={{ color: isDark ? "var(--text-2)" : "var(--erp-brand)" }}
           strokeWidth={2.2}
         />
       </div>

@@ -6,16 +6,16 @@ interface Props {
 }
 
 const NAV_CARDS: { key: ActiveTab; label: string; icon: string; color: string; shadow: string; desc: string }[] = [
-  { key: 'overview',      label: 'نظرة عامة',      icon: '🏠', color: '#F97316', shadow: 'rgba(249,115,22,0.45)',  desc: 'لوحة التحكم الرئيسية' },
-  { key: 'companies',     label: 'الشركات',         icon: '🏢', color: '#3B82F6', shadow: 'rgba(59,130,246,0.45)',  desc: 'إدارة الشركات المشتركة' },
+  { key: 'overview',      label: 'نظرة عامة',      icon: '🏠', color: 'var(--status-warning)', shadow: 'rgba(249,115,22,0.45)',  desc: 'لوحة التحكم الرئيسية' },
+  { key: 'companies',     label: 'الشركات',         icon: '🏢', color: 'var(--status-info)', shadow: 'rgba(59,130,246,0.45)',  desc: 'إدارة الشركات المشتركة' },
   { key: 'managers',      label: 'المديرون',         icon: '👑', color: '#F472B6', shadow: 'rgba(244,114,182,0.45)', desc: 'حسابات مديري النظام' },
-  { key: 'revenue',       label: 'الإيرادات',        icon: '📊', color: '#10B981', shadow: 'rgba(16,185,129,0.45)',  desc: 'تقارير الإيرادات والمالية' },
-  { key: 'alerts',        label: 'التنبيهات',        icon: '🔔', color: '#EF4444', shadow: 'rgba(239,68,68,0.45)',   desc: 'تنبيهات النظام والأحداث' },
-  { key: 'plans',         label: 'الخطط',            icon: '💰', color: '#FBBF24', shadow: 'rgba(251,191,36,0.45)',  desc: 'إعداد خطط الاشتراك والأسعار' },
-  { key: 'announcements', label: 'الإعلانات',        icon: '📢', color: '#8B5CF6', shadow: 'rgba(139,92,246,0.45)', desc: 'إشعارات للمستخدمين' },
-  { key: 'health',        label: 'صحة السيرفر',      icon: '🌡️', color: '#06B6D4', shadow: 'rgba(6,182,212,0.45)',   desc: 'مراقبة أداء الخوادم' },
-  { key: 'monitoring',    label: 'مراقبة التجريبي', icon: '🛡️', color: '#6366F1', shadow: 'rgba(99,102,241,0.45)',  desc: 'البيئة التجريبية' },
-  { key: 'settings',      label: 'الإعدادات',        icon: '⚙️', color: '#64748B', shadow: 'rgba(100,116,139,0.45)', desc: 'إعدادات النظام والأمان' },
+  { key: 'revenue',       label: 'الإيرادات',        icon: '📊', color: 'var(--status-success)', shadow: 'rgba(16,185,129,0.45)',  desc: 'تقارير الإيرادات والمالية' },
+  { key: 'alerts',        label: 'التنبيهات',        icon: '🔔', color: 'var(--status-danger)', shadow: 'rgba(239,68,68,0.45)',   desc: 'تنبيهات النظام والأحداث' },
+  { key: 'plans',         label: 'الخطط',            icon: '💰', color: 'var(--status-warning)', shadow: 'rgba(251,191,36,0.45)',  desc: 'إعداد خطط الاشتراك والأسعار' },
+  { key: 'announcements', label: 'الإعلانات',        icon: '📢', color: 'var(--status-info)', shadow: 'rgba(139,92,246,0.45)', desc: 'إشعارات للمستخدمين' },
+  { key: 'health',        label: 'صحة السيرفر',      icon: '🌡️', color: 'var(--status-info)', shadow: 'rgba(6,182,212,0.45)',   desc: 'مراقبة أداء الخوادم' },
+  { key: 'monitoring',    label: 'مراقبة التجريبي', icon: '🛡️', color: 'var(--status-info)', shadow: 'rgba(99,102,241,0.45)',  desc: 'البيئة التجريبية' },
+  { key: 'settings',      label: 'الإعدادات',        icon: '⚙️', color: 'var(--text-2)', shadow: 'rgba(100,116,139,0.45)', desc: 'إعدادات النظام والأمان' },
 ];
 
 export function SANav({ activeTab, setActiveTab }: Props) {

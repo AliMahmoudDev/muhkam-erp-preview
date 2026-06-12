@@ -15,21 +15,21 @@ interface Props {
 }
 
 const AUD_COLORS: Record<string, { label: string; color: string }> = {
-  create: { label: 'إنشاء', color: '#34D399' }, update: { label: 'تعديل', color: '#60A5FA' },
-  delete: { label: 'حذف', color: '#EF4444' }, view: { label: 'عرض', color: '#60A5FA' },
-  login: { label: 'دخول', color: '#A78BFA' },
-  COMPANY_CREATED: { label: 'إنشاء شركة', color: '#34D399' }, COMPANY_UPDATED: { label: 'تحديث شركة', color: '#60A5FA' },
-  COMPANY_ACTIVATED: { label: 'تفعيل شركة', color: '#34D399' }, COMPANY_SUSPENDED: { label: 'إيقاف شركة', color: '#F59E0B' },
-  COMPANY_EXTENDED: { label: 'تمديد اشتراك', color: '#38BDF8' }, COMPANY_DELETED: { label: 'حذف شركة', color: '#EF4444' },
-  COMPANY_SUBSCRIPTION_UPDATED: { label: 'تحديث اشتراك', color: '#60A5FA' },
-  ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: '#A78BFA' },
-  MANAGER_CREATED: { label: 'إنشاء مدير', color: '#34D399' }, MANAGER_UPDATED: { label: 'تحديث مدير', color: '#60A5FA' },
-  MANAGER_TOGGLED: { label: 'تغيير حالة مدير', color: '#F59E0B' }, MANAGER_DELETED: { label: 'حذف مدير', color: '#EF4444' },
-  PLAN_SETTINGS_UPDATED: { label: 'تحديث إعدادات الخطة', color: '#FBBF24' },
+  create: { label: 'إنشاء', color: 'var(--status-success)' }, update: { label: 'تعديل', color: 'var(--status-info)' },
+  delete: { label: 'حذف', color: 'var(--status-danger)' }, view: { label: 'عرض', color: 'var(--status-info)' },
+  login: { label: 'دخول', color: 'var(--status-info)' },
+  COMPANY_CREATED: { label: 'إنشاء شركة', color: 'var(--status-success)' }, COMPANY_UPDATED: { label: 'تحديث شركة', color: 'var(--status-info)' },
+  COMPANY_ACTIVATED: { label: 'تفعيل شركة', color: 'var(--status-success)' }, COMPANY_SUSPENDED: { label: 'إيقاف شركة', color: 'var(--status-warning)' },
+  COMPANY_EXTENDED: { label: 'تمديد اشتراك', color: '#38BDF8' }, COMPANY_DELETED: { label: 'حذف شركة', color: 'var(--status-danger)' },
+  COMPANY_SUBSCRIPTION_UPDATED: { label: 'تحديث اشتراك', color: 'var(--status-info)' },
+  ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: 'var(--status-info)' },
+  MANAGER_CREATED: { label: 'إنشاء مدير', color: 'var(--status-success)' }, MANAGER_UPDATED: { label: 'تحديث مدير', color: 'var(--status-info)' },
+  MANAGER_TOGGLED: { label: 'تغيير حالة مدير', color: 'var(--status-warning)' }, MANAGER_DELETED: { label: 'حذف مدير', color: 'var(--status-danger)' },
+  PLAN_SETTINGS_UPDATED: { label: 'تحديث إعدادات الخطة', color: 'var(--status-warning)' },
   TELEGRAM_SETTINGS_UPDATED: { label: 'تحديث تليجرام', color: '#38BDF8' },
-  BACKUP_CREATED: { label: 'نسخة احتياطية', color: '#34D399' }, RESTORE_STARTED: { label: 'بدء استعادة', color: '#A78BFA' },
-  RESTORE_COMPLETED: { label: 'اكتمال استعادة', color: '#34D399' },
-  SUPER_ADMIN_ACCESS: { label: 'وصول مدير عام', color: '#818CF8' }, SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: '#818CF8' },
+  BACKUP_CREATED: { label: 'نسخة احتياطية', color: 'var(--status-success)' }, RESTORE_STARTED: { label: 'بدء استعادة', color: 'var(--status-info)' },
+  RESTORE_COMPLETED: { label: 'اكتمال استعادة', color: 'var(--status-success)' },
+  SUPER_ADMIN_ACCESS: { label: 'وصول مدير عام', color: 'var(--status-info)' }, SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: 'var(--status-info)' },
 };
 
 const REC_AR: Record<string, string> = {
@@ -73,7 +73,7 @@ export function AuditLogPanel({ auditData, auditLoading, refetchAudit, auditActi
         <div style={{ textAlign: 'center', padding: '40px', color: C.muted }}>⏳ جارٍ التحميل...</div>
       ) : (
         <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: '12px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px', padding: '10px 20px', background: 'rgba(96,165,250,0.08)', borderBottom: `1px solid ${C.border}`, fontSize: '11px', fontWeight: 800, color: '#60A5FA', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px', padding: '10px 20px', background: 'rgba(96,165,250,0.08)', borderBottom: `1px solid ${C.border}`, fontSize: '11px', fontWeight: 800, color: 'var(--status-info)', gap: '12px' }}>
             <span>الإجراء</span><span>النوع</span><span>رقم</span><span>الملاحظة</span><span>التاريخ</span>
           </div>
           {!auditData?.rows.length ? (
@@ -81,7 +81,7 @@ export function AuditLogPanel({ auditData, auditLoading, refetchAudit, auditActi
           ) : (
             <div style={{ maxHeight: '480px', overflowY: 'auto' }}>
               {auditData.rows.map(row => {
-                const am = AUD_COLORS[row.action] ?? { label: row.action, color: '#94A3B8' };
+                const am = AUD_COLORS[row.action] ?? { label: row.action, color: 'var(--text-2)' };
                 return (
                   <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px', padding: '11px 20px', gap: '12px', borderBottom: 'border-bottom: 1px solid rgba(255,255,255,0.04)', fontSize: '12px', alignItems: 'center' }}>
                     <span style={{ color: am.color, fontWeight: 700 }}>{am.label}</span>

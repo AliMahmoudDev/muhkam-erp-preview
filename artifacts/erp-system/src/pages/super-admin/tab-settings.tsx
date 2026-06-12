@@ -88,8 +88,8 @@ export function TabSettings({
   saveTelegramSettings,
 }: Props) {
   const CARD_COLOR: Record<string, string> = {
-    support: '#F97316', backup: '#34D399', security: '#A78BFA',
-    audit_log: '#60A5FA', telegram: '#38BDF8',
+    support: 'var(--status-warning)', backup: 'var(--status-success)', security: 'var(--status-info)',
+    audit_log: 'var(--status-info)', telegram: '#38BDF8',
   };
   const hc = settingsActiveCard ? (CARD_COLOR[settingsActiveCard] ?? C.border) : C.border;
 
@@ -105,21 +105,21 @@ export function TabSettings({
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: C.card, borderRadius: '20px', border: '1px solid rgba(239,68,68,0.4)', padding: '28px', width: '100%', maxWidth: '440px', direction: 'rtl', fontFamily: FONT }}>
             <div style={{ fontSize: '22px', marginBottom: '8px' }}>⚠️</div>
-            <h3 style={{ color: '#EF4444', fontWeight: 800, marginBottom: '8px' }}>تأكيد الاستعادة</h3>
+            <h3 style={{ color: 'var(--status-danger)', fontWeight: 800, marginBottom: '8px' }}>تأكيد الاستعادة</h3>
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '16px' }}>
               سيتم حذف البيانات الحالية لجميع الشركات واستبدالها بمحتوى الملف.<br />
-              <strong style={{ color: '#F97316' }}>{pendingRestoreFile?.name}</strong>
+              <strong style={{ color: 'var(--status-warning)' }}>{pendingRestoreFile?.name}</strong>
             </p>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '8px' }}>
-              اكتب <strong style={{ color: '#EF4444' }}>RESTORE</strong> للتأكيد:
+              اكتب <strong style={{ color: 'var(--status-danger)' }}>RESTORE</strong> للتأكيد:
             </p>
             <input value={restoreCode} onChange={(e) => setRestoreCode(e.target.value)} placeholder="RESTORE"
-              style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '14px', marginBottom: '16px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-1)', fontSize: '14px', marginBottom: '16px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }} />
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => { setRestoreModal(false); setPendingRestoreFile(null); }}
                 style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: FONT }}>إلغاء</button>
               <button onClick={() => { void confirmRestore(); }} disabled={restoreCode !== 'RESTORE'}
-                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: restoreCode === 'RESTORE' ? '#EF4444' : 'rgba(239,68,68,0.2)', color: restoreCode === 'RESTORE' ? '#fff' : 'rgba(255,255,255,0.3)', cursor: restoreCode === 'RESTORE' ? 'pointer' : 'not-allowed', fontWeight: 800, fontFamily: FONT }}>تأكيد الاستعادة</button>
+                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: restoreCode === 'RESTORE' ? 'var(--status-danger)' : 'rgba(239,68,68,0.2)', color: restoreCode === 'RESTORE' ? 'var(--text-1)' : 'rgba(255,255,255,0.3)', cursor: restoreCode === 'RESTORE' ? 'pointer' : 'not-allowed', fontWeight: 800, fontFamily: FONT }}>تأكيد الاستعادة</button>
             </div>
           </div>
         </div>
@@ -128,10 +128,10 @@ export function TabSettings({
       {/* Settings cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px' }}>
         {([
-          { key: 'support'   as const, icon: '⚙️', label: 'معلومات التواصل', desc: 'واتساب وبريد الدعم الفني',    color: '#F97316' },
-          { key: 'backup'    as const, icon: '💾', label: 'النسخ الاحتياطية', desc: 'إنشاء / استعادة / تشفير',     color: '#34D399' },
-          { key: 'security'  as const, icon: '🔐', label: 'الأمان',            desc: 'المصادقة الثنائية وقيود IP', color: '#A78BFA' },
-          { key: 'audit_log' as const, icon: '📋', label: 'سجل العمليات',      desc: 'مراقبة جميع إجراءات النظام', color: '#60A5FA' },
+          { key: 'support'   as const, icon: '⚙️', label: 'معلومات التواصل', desc: 'واتساب وبريد الدعم الفني',    color: 'var(--status-warning)' },
+          { key: 'backup'    as const, icon: '💾', label: 'النسخ الاحتياطية', desc: 'إنشاء / استعادة / تشفير',     color: 'var(--status-success)' },
+          { key: 'security'  as const, icon: '🔐', label: 'الأمان',            desc: 'المصادقة الثنائية وقيود IP', color: 'var(--status-info)' },
+          { key: 'audit_log' as const, icon: '📋', label: 'سجل العمليات',      desc: 'مراقبة جميع إجراءات النظام', color: 'var(--status-info)' },
           { key: 'telegram'  as const, icon: '📨', label: 'إشعارات تليجرام',   desc: 'تحكم في التنبيهات والـ Cooldown', color: '#38BDF8' },
         ]).map(card => {
           const isActive = settingsActiveCard === card.key;

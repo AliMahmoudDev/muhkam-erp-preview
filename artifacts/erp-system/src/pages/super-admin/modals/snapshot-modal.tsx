@@ -40,10 +40,10 @@ export function SnapshotModal({ snapshotCompany, setSnapshotCompany, snapshotDat
 
           {snapshotData?.company && (() => {
             const c = snapshotData.company;
-            const planColors: Record<string, string> = { trial: '#94A3B8', basic: '#60A5FA', pro: '#A78BFA', paid: '#34D399', professional: '#F59E0B' };
+            const planColors: Record<string, string> = { trial: 'var(--text-2)', basic: 'var(--status-info)', pro: 'var(--status-info)', paid: 'var(--status-success)', professional: 'var(--status-warning)' };
             const planNames: Record<string, string>  = { trial: 'تجريبية', basic: 'أساسية', pro: 'احترافية', paid: 'مدفوعة', professional: 'مميزة' };
-            const planCol    = planColors[c.plan_type] ?? '#94A3B8';
-            const statusColor = c.status === 'active' ? '#34D399' : c.status === 'trial' ? '#60A5FA' : c.status === 'suspended' ? '#94A3B8' : '#EF4444';
+            const planCol    = planColors[c.plan_type] ?? 'var(--text-2)';
+            const statusColor = c.status === 'active' ? 'var(--status-success)' : c.status === 'trial' ? 'var(--status-info)' : c.status === 'suspended' ? 'var(--text-2)' : 'var(--status-danger)';
             const statusBg   = c.status === 'active' ? 'rgba(52,211,153,0.1)' : c.status === 'trial' ? 'rgba(96,165,250,0.1)' : c.status === 'suspended' ? 'rgba(148,163,184,0.1)' : 'rgba(239,68,68,0.1)';
             const statusAr   = c.status === 'active' ? 'نشط' : c.status === 'trial' ? 'تجريبي' : c.status === 'suspended' ? 'موقوف' : 'منتهي';
             return (
@@ -92,8 +92,8 @@ export function SnapshotModal({ snapshotCompany, setSnapshotCompany, snapshotDat
                             <span style={{ fontSize: '11px', color: C.muted, marginRight: '10px' }}>@{a.username}</span>
                           </div>
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            {mkBadge(a.role, '#A78BFA', 'rgba(167,139,250,0.1)')}
-                            {mkBadge(a.active ? 'نشط' : 'موقوف', a.active ? '#34D399' : '#EF4444', a.active ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)')}
+                            {mkBadge(a.role, 'var(--status-info)', 'rgba(167,139,250,0.1)')}
+                            {mkBadge(a.active ? 'نشط' : 'موقوف', a.active ? 'var(--status-success)' : 'var(--status-danger)', a.active ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)')}
                           </div>
                         </div>
                       ))}
@@ -107,7 +107,7 @@ export function SnapshotModal({ snapshotCompany, setSnapshotCompany, snapshotDat
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {snapshotData.recentAudit.slice(0, 8).map(r => (
                         <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', fontSize: '12px' }}>
-                          <span style={{ color: '#A78BFA', fontWeight: 700 }}>{r.action}</span>
+                          <span style={{ color: 'var(--status-info)', fontWeight: 700 }}>{r.action}</span>
                           <span style={{ color: C.muted, flex: 1, padding: '0 12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.note ?? '—'}</span>
                           <span style={{ color: C.muted, direction: 'ltr', flexShrink: 0 }}>{new Date(r.created_at).toLocaleDateString('ar-EG')}</span>
                         </div>
@@ -122,7 +122,7 @@ export function SnapshotModal({ snapshotCompany, setSnapshotCompany, snapshotDat
 
         {/* Footer */}
         <div style={{ padding: '16px 28px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-          <button onClick={() => window.print()} style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.08)', color: '#C4B5FD', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🖨️ طباعة</button>
+          <button onClick={() => window.print()} style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.08)', color: 'var(--status-info)', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🖨️ طباعة</button>
           <button onClick={() => setSnapshotCompany(null)} style={{ padding: '9px 18px', borderRadius: '10px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>إغلاق</button>
         </div>
       </div>

@@ -329,7 +329,7 @@ export default function CurrencyTab() {
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
                         style={{
                           background: 'rgba(245,158,11,0.12)',
-                          color: '#F59E0B',
+                          color: 'var(--status-warning)',
                           border: '1px solid rgba(245,158,11,0.25)',
                         }}
                       >
@@ -344,7 +344,7 @@ export default function CurrencyTab() {
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
                           style={{
                             background: 'rgba(239,68,68,0.10)',
-                            color: '#F87171',
+                            color: 'var(--status-danger)',
                             border: '1px solid rgba(239,68,68,0.20)',
                           }}
                         >
@@ -451,7 +451,7 @@ export default function CurrencyTab() {
                       style={{
                         fontSize: 13,
                         fontWeight: 900,
-                        color: '#F59E0B',
+                        color: 'var(--status-warning)',
                         lineHeight: 1.3,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -528,7 +528,7 @@ export default function CurrencyTab() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
               style={{
                 background: 'rgba(59,130,246,0.12)',
-                color: '#60A5FA',
+                color: 'var(--status-info)',
                 border: '1px solid rgba(59,130,246,0.25)',
               }}
             >
@@ -588,7 +588,7 @@ export default function CurrencyTab() {
                   <div className="flex items-center gap-2">
                     <span
                       className="text-[11px] px-2.5 py-1 rounded-lg font-bold"
-                      style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}
+                      style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--status-warning)' }}
                     >
                       العملة الأساسية للنظام
                     </span>
@@ -651,7 +651,7 @@ export default function CurrencyTab() {
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-40 whitespace-nowrap"
                       style={{
                         background: 'rgba(59,130,246,0.15)',
-                        color: '#60A5FA',
+                        color: 'var(--status-info)',
                         border: '1px solid rgba(59,130,246,0.25)',
                       }}
                     >
@@ -851,7 +851,7 @@ export default function CurrencyTab() {
                   style={{ fontFamily: `'${fontFamily}', sans-serif` }}
                 >
                   {FONT_SIZE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value} style={{ background: '#0D1117' }}>
+                    <option key={o.value} value={o.value} style={{ background: 'var(--bg-app)' }}>
                       {o.label} — {o.px}
                     </option>
                   ))}
@@ -877,7 +877,7 @@ export default function CurrencyTab() {
                     <option
                       key={w.value}
                       value={w.value}
-                      style={{ background: '#0D1117', fontWeight: w.value }}
+                      style={{ background: 'var(--bg-app)', fontWeight: w.value }}
                     >
                       {w.label}
                     </option>
@@ -926,7 +926,7 @@ export default function CurrencyTab() {
           background: saved
             ? 'rgba(52,211,153,0.9)'
             : 'linear-gradient(to right, #F59E0B, #D97706)',
-          color: '#000',
+          color: 'var(--text-1)',
           boxShadow: saved ? '0 4px 20px rgba(52,211,153,0.3)' : '0 4px 20px rgba(245,158,11,0.25)',
         }}
       >

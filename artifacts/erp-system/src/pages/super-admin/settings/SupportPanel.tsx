@@ -39,7 +39,7 @@ export function SupportPanel({
         style={{
           width: '100%', padding: '12px', borderRadius: '10px', border: 'none',
           background: settingSaving ? C.border : C.orange,
-          color: '#fff', fontSize: '14px', fontWeight: 800,
+          color: 'var(--text-1)', fontSize: '14px', fontWeight: 800,
           cursor: settingSaving ? 'not-allowed' : 'pointer',
           fontFamily: FONT, transition: 'filter 0.15s', marginTop: '4px',
         }}

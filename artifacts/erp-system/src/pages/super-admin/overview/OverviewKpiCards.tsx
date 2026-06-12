@@ -13,10 +13,10 @@ export function OverviewKpiCards({ stats, setActiveTab, setStatusFilter, setSett
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
       {[
-        { icon: '🏢', label: 'الشركات النشطة',    value: stats?.active ?? '—',       sub: `من إجمالي ${stats?.total ?? '—'} شركة`,                      color: '#34D399', action: () => { setActiveTab('companies'); setStatusFilter('active'); } },
-        { icon: '⚠️', label: 'تنتهي خلال 7 أيام', value: stats?.expiringSoon ?? '—',  sub: 'تحتاج تجديد عاجل',                                           color: '#F59E0B', action: () => setActiveTab('alerts') },
-        { icon: '👥', label: 'إجمالي المستخدمين',  value: stats?.totalUsers ?? '—',    sub: `${stats?.recentSignups ?? 0} انضموا هذا الشهر`,               color: '#60A5FA', action: () => { setActiveTab('settings'); setSettingsActiveCard('managers'); } },
-        { icon: (stats?.expired ?? 0) > 0 ? '⛔' : '✅', label: 'اشتراكات منتهية', value: stats?.expired ?? '—', sub: `${stats?.suspended ?? 0} موقوفة إضافياً`, color: (stats?.expired ?? 0) > 0 ? '#EF4444' : '#34D399', action: () => { setActiveTab('companies'); setStatusFilter('expired'); } },
+        { icon: '🏢', label: 'الشركات النشطة',    value: stats?.active ?? '—',       sub: `من إجمالي ${stats?.total ?? '—'} شركة`,                      color: 'var(--status-success)', action: () => { setActiveTab('companies'); setStatusFilter('active'); } },
+        { icon: '⚠️', label: 'تنتهي خلال 7 أيام', value: stats?.expiringSoon ?? '—',  sub: 'تحتاج تجديد عاجل',                                           color: 'var(--status-warning)', action: () => setActiveTab('alerts') },
+        { icon: '👥', label: 'إجمالي المستخدمين',  value: stats?.totalUsers ?? '—',    sub: `${stats?.recentSignups ?? 0} انضموا هذا الشهر`,               color: 'var(--status-info)', action: () => { setActiveTab('settings'); setSettingsActiveCard('managers'); } },
+        { icon: (stats?.expired ?? 0) > 0 ? '⛔' : '✅', label: 'اشتراكات منتهية', value: stats?.expired ?? '—', sub: `${stats?.suspended ?? 0} موقوفة إضافياً`, color: (stats?.expired ?? 0) > 0 ? 'var(--status-danger)' : 'var(--status-success)', action: () => { setActiveTab('companies'); setStatusFilter('expired'); } },
       ].map(kpi => (
         <div key={kpi.label} onClick={kpi.action} style={{
           background: C.card, borderRadius: '18px', border: `1px solid ${C.border}`, borderTop: `3px solid ${kpi.color}`,

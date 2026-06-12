@@ -24,10 +24,10 @@ export function OverviewHealthCards({ healthData, healthLoading, setActiveTab }:
         ) : ovHealth ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[
-              { label: 'قاعدة البيانات', value: ovHealth.db ? '✅ متصلة' : '❌ منقطعة', color: ovHealth.db ? '#34D399' : '#EF4444' },
-              { label: 'استهلاك الذاكرة', value: `${ovHealth.memory_mb} MB`, color: ovHealth.memory_mb > 400 ? '#F59E0B' : '#34D399' },
-              { label: 'وقت التشغيل', value: `${ovHealth.uptime_hours} ساعة`, color: '#60A5FA' },
-              { label: 'استجابة DB', value: ovHealth.db_read_latency_ms >= 0 ? `${ovHealth.db_read_latency_ms} ms` : 'غير متاح', color: (ovHealth.db_read_latency_ms ?? 0) > 200 ? '#F59E0B' : '#34D399' },
+              { label: 'قاعدة البيانات', value: ovHealth.db ? '✅ متصلة' : '❌ منقطعة', color: ovHealth.db ? 'var(--status-success)' : 'var(--status-danger)' },
+              { label: 'استهلاك الذاكرة', value: `${ovHealth.memory_mb} MB`, color: ovHealth.memory_mb > 400 ? 'var(--status-warning)' : 'var(--status-success)' },
+              { label: 'وقت التشغيل', value: `${ovHealth.uptime_hours} ساعة`, color: 'var(--status-info)' },
+              { label: 'استجابة DB', value: ovHealth.db_read_latency_ms >= 0 ? `${ovHealth.db_read_latency_ms} ms` : 'غير متاح', color: (ovHealth.db_read_latency_ms ?? 0) > 200 ? 'var(--status-warning)' : 'var(--status-success)' },
             ].map(row => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: C.muted }}>{row.label}</span>
@@ -47,10 +47,10 @@ export function OverviewHealthCards({ healthData, healthLoading, setActiveTab }:
         {ovMetrics ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[
-              { label: 'إجمالي الطلبات',         value: totalR.toLocaleString('ar-EG'),                                           color: '#60A5FA' },
-              { label: 'طلبات ناجحة (2xx)',       value: ok2xx.toLocaleString('ar-EG'),                                             color: '#34D399' },
-              { label: 'أخطاء سيرفر (5xx)',       value: err5xx.toLocaleString('ar-EG'),                                            color: err5xx > 0 ? '#EF4444' : '#34D399' },
-              { label: 'زمن الاستجابة p95',       value: `${ovMetrics.latency_ms?.p95 ?? 0} ms`,                                    color: (ovMetrics.latency_ms?.p95 ?? 0) > 500 ? '#F59E0B' : '#34D399' },
+              { label: 'إجمالي الطلبات',         value: totalR.toLocaleString('ar-EG'),                                           color: 'var(--status-info)' },
+              { label: 'طلبات ناجحة (2xx)',       value: ok2xx.toLocaleString('ar-EG'),                                             color: 'var(--status-success)' },
+              { label: 'أخطاء سيرفر (5xx)',       value: err5xx.toLocaleString('ar-EG'),                                            color: err5xx > 0 ? 'var(--status-danger)' : 'var(--status-success)' },
+              { label: 'زمن الاستجابة p95',       value: `${ovMetrics.latency_ms?.p95 ?? 0} ms`,                                    color: (ovMetrics.latency_ms?.p95 ?? 0) > 500 ? 'var(--status-warning)' : 'var(--status-success)' },
             ].map(row => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: C.muted }}>{row.label}</span>

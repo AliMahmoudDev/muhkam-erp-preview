@@ -49,9 +49,9 @@ function CfKPICard({ label, hint, value, variant, icon: Icon }: {
   const isPos    = value >= 0;
 
   const clr =
-    variant === "green" ? "#059669" :
-    variant === "red"   ? "#dc2626" :
-    isPos ? "#059669" : "#dc2626";
+    variant === "green" ? "var(--status-success)" :
+    variant === "red"   ? "var(--status-danger)" :
+    isPos ? "var(--status-success)" : "var(--status-danger)";
   const bg =
     variant === "green" ? (isLight ? "#f0fdf4" : "rgba(5,150,105,0.08)") :
     variant === "red"   ? (isLight ? "#fef2f2" : "rgba(220,38,38,0.08)") :
@@ -89,13 +89,13 @@ function CashFlowStatement({
 
   const border    = isLight ? "#e5e7eb"              : "rgba(255,255,255,0.08)";
   const txtMain   = isLight ? "var(--bg-card)"              : "rgba(255,255,255,0.90)";
-  const txtSub    = isLight ? "#6b7280"              : "rgba(255,255,255,0.40)";
+  const txtSub    = isLight ? "var(--text-2)"              : "rgba(255,255,255,0.40)";
   const txtHint   = isLight ? "#9ca3af"              : "rgba(255,255,255,0.28)";
-  const secBg     = isLight ? "#f8fafc"              : "rgba(255,255,255,0.03)";
-  const totalBg   = isLight ? "#f1f5f9"              : "rgba(255,255,255,0.05)";
+  const secBg     = isLight ? "var(--text-1)"              : "rgba(255,255,255,0.03)";
+  const totalBg   = isLight ? "var(--text-1)"              : "rgba(255,255,255,0.05)";
   const neutralClr = isLight ? "#4b5563"             : "rgba(255,255,255,0.55)";
 
-  const netColor  = cf.net_cash_flow >= 0 ? "#059669" : "#dc2626";
+  const netColor  = cf.net_cash_flow >= 0 ? "var(--status-success)" : "var(--status-danger)";
   const netBg     = cf.net_cash_flow >= 0
     ? (isLight ? "#ecfdf5" : "rgba(5,150,105,0.12)")
     : (isLight ? "#fef2f2" : "rgba(220,38,38,0.12)");
@@ -183,7 +183,7 @@ function CashFlowStatement({
 
             <tr>
               <td style={cell({ fontWeight: 600 })}>مقبوضات من العملاء</td>
-              <td style={cellNum({ color: "#059669" })}>{formatCurrency(cf.customer_receipts)}</td>
+              <td style={cellNum({ color: "var(--status-success)" })}>{formatCurrency(cf.customer_receipts)}</td>
             </tr>
             {showSubBreak && <>
               <ChildRow label="  · سندات القبض المرحّلة" amount={formatCurrency(cf.receipts_in)}  color={txtSub} />
@@ -193,17 +193,17 @@ function CashFlowStatement({
             <ChildRow
               label="(−) مدفوعات للموردين"
               amount={cf.payments_out > 0 ? `(${formatCurrency(cf.payments_out)})` : "لا يوجد"}
-              color={cf.payments_out > 0 ? "#dc2626" : txtSub} />
+              color={cf.payments_out > 0 ? "var(--status-danger)" : txtSub} />
 
             <ChildRow
               label="(−) مصروفات تشغيلية"
               amount={cf.expenses_out > 0 ? `(${formatCurrency(cf.expenses_out)})` : "لا يوجد"}
-              color={cf.expenses_out > 0 ? "#dc2626" : txtSub} />
+              color={cf.expenses_out > 0 ? "var(--status-danger)" : txtSub} />
 
             <TotalRow
               label="= صافي التدفق التشغيلي"
               amount={fmtAcct(operatingNet)}
-              color={operatingNet >= 0 ? "#059669" : "#dc2626"} />
+              color={operatingNet >= 0 ? "var(--status-success)" : "var(--status-danger)"} />
 
             <Spacer />
 
@@ -230,7 +230,7 @@ function CashFlowStatement({
               })}>
                 <div>= صافي التدفق النقدي</div>
                 {changePct !== null && (
-                  <div style={{ fontSize: 11, fontWeight: 600, color: isImproved ? "#059669" : "#dc2626", marginTop: 4, opacity: 0.85 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: isImproved ? "var(--status-success)" : "var(--status-danger)", marginTop: 4, opacity: 0.85 }}>
                     {isImproved ? "↑" : "↓"} {Math.abs(changePct).toFixed(1)}% {isImproved ? "أعلى" : "أقل"} من الفترة السابقة
                   </div>
                 )}
@@ -248,7 +248,7 @@ function CashFlowStatement({
             {closingBalance !== null && (
               <>
                 <Spacer />
-                <tr style={{ background: isLight ? "#f8fafc" : "rgba(255,255,255,0.03)" }}>
+                <tr style={{ background: isLight ? "var(--text-1)" : "rgba(255,255,255,0.03)" }}>
                   <td style={cell({ fontWeight: 700, color: txtMain, fontSize: 13 })}>= رصيد آخر الفترة (الخزينة)</td>
                   <td style={cellNum({ fontWeight: 700, color: txtMain, fontSize: 13 })}>{formatCurrency(closingBalance)}</td>
                 </tr>
@@ -319,7 +319,7 @@ export default function CashFlowReport() {
         <button
           onClick={handlePdf}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all"
-          style={{ background: "rgba(245,158,11,0.10)", borderColor: "rgba(245,158,11,0.30)", color: "#f59e0b" }}>
+          style={{ background: "rgba(245,158,11,0.10)", borderColor: "rgba(245,158,11,0.30)", color: "var(--status-warning)" }}>
           طباعة PDF
         </button>
       </div>

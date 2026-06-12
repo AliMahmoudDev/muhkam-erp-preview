@@ -62,7 +62,7 @@ export function TabHealth({ healthData, healthLoading, onRefetch, healthUpdated,
             <div>
               <div style={{
                 fontSize: '20px', fontWeight: 900,
-                color: healthData.health.status === 'healthy' ? '#34D399' : healthData.health.status === 'degraded' ? '#F59E0B' : '#EF4444',
+                color: healthData.health.status === 'healthy' ? 'var(--status-success)' : healthData.health.status === 'degraded' ? 'var(--status-warning)' : 'var(--status-danger)',
               }}>
                 {healthData.health.status === 'healthy' ? 'النظام يعمل بشكل مثالي' : healthData.health.status === 'degraded' ? 'أداء منخفض' : 'النظام يواجه مشكلة'}
               </div>
@@ -75,12 +75,12 @@ export function TabHealth({ healthData, healthLoading, onRefetch, healthUpdated,
           {/* KPI Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px' }}>
             {[
-              { label: 'وقت التشغيل', value: `${healthData.process.uptime_hours}h`, icon: '⏱️', color: '#A78BFA' },
-              { label: 'ذاكرة Heap', value: `${healthData.memory.heap_used_mb} MB`, icon: '💾', color: healthData.memory.heap_used_mb > 400 ? '#EF4444' : '#34D399' },
-              { label: 'RSS الكلي', value: `${healthData.memory.rss_mb} MB`, icon: '📊', color: '#60A5FA' },
-              { label: 'قاعدة البيانات', value: healthData.health.db ? '✓ متصل' : '✗ منقطع', icon: '🗄️', color: healthData.health.db ? '#34D399' : '#EF4444' },
-              { label: 'زمن قراءة DB', value: `${healthData.health.db_read_latency_ms}ms`, icon: '📖', color: healthData.health.db_read_latency_ms > 200 ? '#F59E0B' : '#34D399' },
-              { label: 'زمن كتابة DB', value: `${healthData.health.db_write_latency_ms}ms`, icon: '✏️', color: healthData.health.db_write_latency_ms > 500 ? '#F59E0B' : '#34D399' },
+              { label: 'وقت التشغيل', value: `${healthData.process.uptime_hours}h`, icon: '⏱️', color: 'var(--status-info)' },
+              { label: 'ذاكرة Heap', value: `${healthData.memory.heap_used_mb} MB`, icon: '💾', color: healthData.memory.heap_used_mb > 400 ? 'var(--status-danger)' : 'var(--status-success)' },
+              { label: 'RSS الكلي', value: `${healthData.memory.rss_mb} MB`, icon: '📊', color: 'var(--status-info)' },
+              { label: 'قاعدة البيانات', value: healthData.health.db ? '✓ متصل' : '✗ منقطع', icon: '🗄️', color: healthData.health.db ? 'var(--status-success)' : 'var(--status-danger)' },
+              { label: 'زمن قراءة DB', value: `${healthData.health.db_read_latency_ms}ms`, icon: '📖', color: healthData.health.db_read_latency_ms > 200 ? 'var(--status-warning)' : 'var(--status-success)' },
+              { label: 'زمن كتابة DB', value: `${healthData.health.db_write_latency_ms}ms`, icon: '✏️', color: healthData.health.db_write_latency_ms > 500 ? 'var(--status-warning)' : 'var(--status-success)' },
               { label: 'طلبات API', value: healthData.metrics.total_requests.toLocaleString('ar-EG'), icon: '🌐', color: '#FB923C' },
               { label: 'اتصالات DB', value: `${healthData.pool.total}/${healthData.pool.idle} نشط`, icon: '🔌', color: '#F472B6' },
             ].map(k => (
@@ -106,7 +106,7 @@ export function TabHealth({ healthData, healthLoading, onRefetch, healthUpdated,
                 { label: 'P95 (95% من الطلبات)', value: healthData.metrics.latency_ms.p95, good: 500, warn: 1000 },
                 { label: 'P99 (أبطأ الطلبات)', value: healthData.metrics.latency_ms.p99, good: 1000, warn: 2000 },
               ].map(l => {
-                const col = l.value <= l.good ? '#34D399' : l.value <= l.warn ? '#F59E0B' : '#EF4444';
+                const col = l.value <= l.good ? 'var(--status-success)' : l.value <= l.warn ? 'var(--status-warning)' : 'var(--status-danger)';
                 return (
                   <div key={l.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '12px', color: C.muted }}>{l.label}</span>
@@ -124,7 +124,7 @@ export function TabHealth({ healthData, healthLoading, onRefetch, healthUpdated,
               {Object.entries(healthData.metrics.status_codes)
                 .sort(([a], [b]) => Number(a) - Number(b))
                 .map(([code, count]) => {
-                  const col = code.startsWith('2') ? '#34D399' : code.startsWith('4') ? '#F59E0B' : code.startsWith('5') ? '#EF4444' : '#94A3B8';
+                  const col = code.startsWith('2') ? 'var(--status-success)' : code.startsWith('4') ? 'var(--status-warning)' : code.startsWith('5') ? 'var(--status-danger)' : 'var(--text-2)';
                   const total = Object.values(healthData.metrics.status_codes).reduce((s, v) => s + v, 0);
                   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                   return (
@@ -150,9 +150,9 @@ export function TabHealth({ healthData, healthLoading, onRefetch, healthUpdated,
             <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '14px', color: C.text }}>🔌 اتصالات قاعدة البيانات (Connection Pool)</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               {[
-                { label: 'إجمالي الاتصالات', value: healthData.pool.total, color: '#60A5FA', max: 50 },
-                { label: 'اتصالات خاملة', value: healthData.pool.idle, color: '#34D399', max: healthData.pool.total || 1 },
-                { label: 'طلبات في الانتظار', value: healthData.pool.waiting, color: healthData.pool.waiting > 5 ? '#EF4444' : '#94A3B8', max: 20 },
+                { label: 'إجمالي الاتصالات', value: healthData.pool.total, color: 'var(--status-info)', max: 50 },
+                { label: 'اتصالات خاملة', value: healthData.pool.idle, color: 'var(--status-success)', max: healthData.pool.total || 1 },
+                { label: 'طلبات في الانتظار', value: healthData.pool.waiting, color: healthData.pool.waiting > 5 ? 'var(--status-danger)' : 'var(--text-2)', max: 20 },
               ].map(p => (
                 <div key={p.label}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -170,7 +170,7 @@ export function TabHealth({ healthData, healthLoading, onRefetch, healthUpdated,
           {/* Redis Health */}
           {(() => {
             const ok      = redisHealth?.status === 'ok';
-            const color   = redisHealth ? (ok ? '#34D399' : '#EF4444') : '#94A3B8';
+            const color   = redisHealth ? (ok ? 'var(--status-success)' : 'var(--status-danger)') : 'var(--text-2)';
             const bgColor = redisHealth ? (ok ? 'rgba(52,211,153,0.08)' : 'rgba(239,68,68,0.08)') : 'rgba(148,163,184,0.06)';
             const label   = !redisHealth ? '⚠️ غير متاح حالياً' : ok ? '🟢 يعمل' : '🔴 متوقف';
             return (
@@ -193,7 +193,7 @@ export function TabHealth({ healthData, healthLoading, onRefetch, healthUpdated,
                   {redisHealth?.status === 'ok' && redisHealth.latency_ms !== undefined && (
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '13px', color: C.muted, marginBottom: '4px' }}>الاستجابة</div>
-                      <div style={{ fontSize: '18px', fontWeight: 900, fontFamily: 'monospace', color: redisHealth.latency_ms > 50 ? '#F59E0B' : '#34D399' }}>
+                      <div style={{ fontSize: '18px', fontWeight: 900, fontFamily: 'monospace', color: redisHealth.latency_ms > 50 ? 'var(--status-warning)' : 'var(--status-success)' }}>
                         {redisHealth.latency_ms}ms
                       </div>
                     </div>

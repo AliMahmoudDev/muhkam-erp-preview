@@ -39,11 +39,11 @@ const METHOD_ICONS: Record<string, React.FC<{ className?: string }>> = {
 };
 
 const METHOD_COLORS: Record<string, { active: string; border: string; text: string; bg: string }> = {
-  cash:          { active: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.35)',  text: '#34D399', bg: 'rgba(16,185,129,0.07)'  },
-  card:          { active: 'rgba(59,130,246,0.15)',  border: 'rgba(59,130,246,0.35)',  text: '#60A5FA', bg: 'rgba(59,130,246,0.07)'  },
-  bank_transfer: { active: 'rgba(139,92,246,0.15)',  border: 'rgba(139,92,246,0.35)',  text: '#A78BFA', bg: 'rgba(139,92,246,0.07)'  },
+  cash:          { active: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.35)',  text: 'var(--status-success)', bg: 'rgba(16,185,129,0.07)'  },
+  card:          { active: 'rgba(59,130,246,0.15)',  border: 'rgba(59,130,246,0.35)',  text: 'var(--status-info)', bg: 'rgba(59,130,246,0.07)'  },
+  bank_transfer: { active: 'rgba(139,92,246,0.15)',  border: 'rgba(139,92,246,0.35)',  text: 'var(--status-info)', bg: 'rgba(139,92,246,0.07)'  },
   installment:   { active: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.35)',  text: '#FCD34D', bg: 'rgba(245,158,11,0.07)'  },
-  credit:        { active: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.35)',  text: '#818CF8', bg: 'rgba(99,102,241,0.07)'  },
+  credit:        { active: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.35)',  text: 'var(--status-info)', bg: 'rgba(99,102,241,0.07)'  },
 };
 
 interface Props {
@@ -184,7 +184,7 @@ export function SplitPaymentModal({
         {/* Progress bar */}
         <div className="px-5 pb-3">
           <div className="flex justify-between text-xs mb-1.5">
-            <span className="font-bold tabular-nums transition-colors" style={{ color: isDone ? '#10B981' : '#F59E0B' }}>
+            <span className="font-bold tabular-nums transition-colors" style={{ color: isDone ? 'var(--status-success)' : 'var(--status-warning)' }}>
               {isDone ? '✓ مكتمل' : `متبقي: ${formatCurrency(remaining)}`}
             </span>
             <span className="text-ink/30">{Math.round(pct)}%</span>
@@ -281,14 +281,14 @@ export function SplitPaymentModal({
                     style={{
                       background: 'rgba(255,255,255,0.06)',
                       border: '1px solid rgba(255,255,255,0.10)',
-                      color: '#fff',
+                      color: 'var(--text-1)',
                       padding: '10px 12px',
                       direction: 'rtl',
                       cursor: isRestricted ? 'not-allowed' : 'pointer',
                     }}
                   >
                     {safes.map(s => (
-                      <option key={s.id} value={s.id} style={{ background: '#0f0f19', color: '#fff' }}>
+                      <option key={s.id} value={s.id} style={{ background: 'var(--bg-app)', color: 'var(--text-1)' }}>
                         {s.name}
                       </option>
                     ))}
@@ -325,7 +325,7 @@ export function SplitPaymentModal({
                     style={{
                       background: 'rgba(255,255,255,0.07)',
                       border: '1px solid rgba(245,158,11,0.30)',
-                      color: '#fff',
+                      color: 'var(--text-1)',
                       padding: '10px 26px 10px 6px',
                     }}
                     dir="ltr"
@@ -341,14 +341,14 @@ export function SplitPaymentModal({
                 <button
                   onClick={confirmRow}
                   className="px-4 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95"
-                  style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', color: '#0a0500', boxShadow: '0 2px 10px rgba(245,158,11,0.28)' }}
+                  style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', color: 'var(--text-1)', boxShadow: '0 2px 10px rgba(245,158,11,0.28)' }}
                 >
                   Enter ↵ تأكيد
                 </button>
                 <button
                   onClick={fillRemaining}
                   className="flex-1 text-xs px-3 py-1.5 rounded-xl text-left transition-all hover:opacity-80"
-                  style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', color: '#F59E0B' }}
+                  style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', color: 'var(--status-warning)' }}
                 >
                   كل المتبقي ({formatCurrency(remaining)})
                 </button>
@@ -360,7 +360,7 @@ export function SplitPaymentModal({
         {/* تحذير الآجل بدون عميل */}
         {showCreditWarning && (
           <div className="mx-4 mb-3 px-3 py-2 rounded-xl text-xs font-bold"
-            style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)', color: '#F59E0B' }}>
+            style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)', color: 'var(--status-warning)' }}>
             ⚠ يجب اختيار العميل أولاً لإتمام البيع الآجل
           </div>
         )}
@@ -377,7 +377,7 @@ export function SplitPaymentModal({
               val,
               color: (METHOD_COLORS[type] ?? METHOD_COLORS.cash).text,
             })),
-            { label: 'متبقي', val: remaining, color: isDone ? '#10B981' : '#F59E0B' },
+            { label: 'متبقي', val: remaining, color: isDone ? 'var(--status-success)' : 'var(--status-warning)' },
           ].map(item => (
             <div key={item.label} className="flex justify-between items-center">
               <span className="text-sm font-bold tabular-nums" style={{ color: item.color }}>
@@ -403,7 +403,7 @@ export function SplitPaymentModal({
             className="flex-[2] py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 active:scale-95"
             style={
               canConfirm
-                ? { background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', color: '#0a0500', boxShadow: '0 4px 20px rgba(245,158,11,0.35)' }
+                ? { background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', color: 'var(--text-1)', boxShadow: '0 4px 20px rgba(245,158,11,0.35)' }
                 : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.20)', cursor: 'not-allowed' }
             }
           >

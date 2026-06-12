@@ -312,8 +312,8 @@ export default function ReportTable({
                           >
                             <defs>
                               <linearGradient id="gStock" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
+                                <stop offset="5%" stopColor="var(--status-warning)" stopOpacity={0.4} />
+                                <stop offset="95%" stopColor="var(--status-warning)" stopOpacity={0.02} />
                               </linearGradient>
                             </defs>
                             <XAxis
@@ -332,7 +332,7 @@ export default function ReportTable({
                             <Area
                               type="monotone"
                               dataKey="qty"
-                              stroke="#f59e0b"
+                              stroke="var(--status-warning)"
                               strokeWidth={1.5}
                               fill="url(#gStock)"
                               dot={false}

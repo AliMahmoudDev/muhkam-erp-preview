@@ -205,7 +205,7 @@ export function PermToggle({ active, color }: { active: boolean; color: string }
     }}>
       <span style={{
         position: "absolute", top: 2, width: 16, height: 16, borderRadius: "50%",
-        background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+        background: "var(--text-1)", boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
         transition: "left 0.2s ease, right 0.2s ease",
         ...(active ? { right: 2, left: "auto" } : { left: 2, right: "auto" }),
       }} />

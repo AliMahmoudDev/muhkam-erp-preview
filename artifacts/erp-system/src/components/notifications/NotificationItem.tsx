@@ -28,18 +28,18 @@ const TYPE_ICON: Record<string, string> = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  advance_pending:   '#f59e0b',
-  advance_approved:  '#22c55e',
-  advance_rejected:  '#ef4444',
-  bonus_granted:     '#22c55e',
-  deduction_added:   '#ef4444',
-  custody_settled:   '#3b82f6',
-  custody_assigned:  '#a78bfa',
-  transfer_request:  '#a78bfa',
-  transfer_approved: '#3b82f6',
-  transfer_shipped:  '#f59e0b',
-  transfer_received: '#22c55e',
-  generic:           '#94a3b8',
+  advance_pending:   'var(--status-warning)',
+  advance_approved:  'var(--status-success)',
+  advance_rejected:  'var(--status-danger)',
+  bonus_granted:     'var(--status-success)',
+  deduction_added:   'var(--status-danger)',
+  custody_settled:   'var(--status-info)',
+  custody_assigned:  'var(--status-info)',
+  transfer_request:  'var(--status-info)',
+  transfer_approved: 'var(--status-info)',
+  transfer_shipped:  'var(--status-warning)',
+  transfer_received: 'var(--status-success)',
+  generic:           'var(--text-2)',
 };
 
 function timeAgo(iso: string): string {
@@ -89,7 +89,7 @@ export function NotificationItem({
   onOpenAdvanceApproveModal,
   onClick,
 }: NotificationItemProps) {
-  const color = TYPE_COLOR[n.type] ?? '#94a3b8';
+  const color = TYPE_COLOR[n.type] ?? 'var(--text-2)';
   const isRejectOpen = rejectTarget?.id === n.id;
 
   return (
@@ -127,7 +127,7 @@ export function NotificationItem({
         {!n.is_read && !isRejectOpen && (
           <span style={{
             display: 'inline-block', marginTop: 4,
-            fontSize: 9, color: '#f59e0b', fontWeight: 700,
+            fontSize: 9, color: 'var(--status-warning)', fontWeight: 700,
           }}>● جديد</span>
         )}
 
@@ -140,7 +140,7 @@ export function NotificationItem({
               style={{
                 padding: '3px 8px', borderRadius: 5,
                 border: 'none', cursor: 'pointer',
-                background: '#22c55e', color: '#fff',
+                background: 'var(--status-success)', color: 'var(--text-1)',
                 fontSize: 10, fontWeight: 700,
                 display: 'inline-flex', alignItems: 'center', gap: 3,
                 opacity: actingId === n.id ? 0.6 : 1,
@@ -155,7 +155,7 @@ export function NotificationItem({
               style={{
                 padding: '3px 8px', borderRadius: 5,
                 border: 'none', cursor: 'pointer',
-                background: '#ef4444', color: '#fff',
+                background: 'var(--status-danger)', color: 'var(--text-1)',
                 fontSize: 10, fontWeight: 700,
                 display: 'inline-flex', alignItems: 'center', gap: 3,
                 opacity: actingId === n.id ? 0.6 : 1,
@@ -195,7 +195,7 @@ export function NotificationItem({
                 style={{
                   flex: 1, padding: '3px 8px', borderRadius: 4,
                   border: 'none', cursor: 'pointer',
-                  background: '#ef4444', color: '#fff',
+                  background: 'var(--status-danger)', color: 'var(--text-1)',
                   fontSize: 10, fontWeight: 700,
                   opacity: actingId === n.id ? 0.6 : 1,
                 }}

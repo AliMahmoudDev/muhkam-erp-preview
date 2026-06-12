@@ -3,7 +3,7 @@ import { STATUS_MAP } from './repairConstants';
 
 /* ── ScoreRing component ── */
 export function ScoreRing({ score }: { score: number }) {
-  const color = score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+  const color = score >= 80 ? 'var(--status-success)' : score >= 50 ? 'var(--status-warning)' : 'var(--status-danger)';
   const radius = 28;
   const circ = 2 * Math.PI * radius;
   const dash = (score / 100) * circ;

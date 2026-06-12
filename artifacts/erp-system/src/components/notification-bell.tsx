@@ -199,7 +199,7 @@ export function NotificationBell() {
   }
 
   /* ── Styles ── */
-  const bgPanel  = isDark ? '#161f30' : '#ffffff';
+  const bgPanel  = isDark ? '#161f30' : 'var(--text-1)';
   const border   = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)';
   const textMain = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.85)';
   const textSub  = isDark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.45)';
@@ -229,7 +229,7 @@ export function NotificationBell() {
           <span style={{
             position: 'absolute', top: -4, left: -4,
             minWidth: 17, height: 17, borderRadius: 9,
-            background: '#f59e0b', color: '#fff',
+            background: 'var(--status-warning)', color: 'var(--text-1)',
             fontSize: 10, fontWeight: 700,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '0 4px',
@@ -254,7 +254,7 @@ export function NotificationBell() {
               {unreadCount > 0 && (
                 <span style={{
                   fontSize: 10, padding: '1px 6px', borderRadius: 8, fontWeight: 600,
-                  background: 'rgba(245,158,11,0.14)', color: '#f59e0b',
+                  background: 'rgba(245,158,11,0.14)', color: 'var(--status-warning)',
                 }}>{unreadCount} جديد</span>
               )}
             </div>
@@ -326,7 +326,7 @@ export function NotificationBell() {
           onClick={(e) => { if (e.target === e.currentTarget && !advApproving) setAdvApproveNotif(null); }}
         >
           <div style={{
-            background: isDark ? '#1a2540' : '#ffffff',
+            background: isDark ? '#1a2540' : 'var(--text-1)',
             borderRadius: 18, boxShadow: '0 24px 64px rgba(0,0,0,0.45)',
             width: '100%', maxWidth: 440,
             border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
@@ -342,7 +342,7 @@ export function NotificationBell() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ fontSize: 22 }}>💰</div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: isDark ? '#fff' : '#111' }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: isDark ? 'var(--text-1)' : 'var(--bg-app)' }}>
                     اعتماد وصرف السلفة
                   </div>
                   <div style={{ fontSize: 11, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)', marginTop: 2 }}>
@@ -376,7 +376,7 @@ export function NotificationBell() {
                 <div style={{
                   padding: '16px', borderRadius: 10, textAlign: 'center',
                   background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-                  fontSize: 12, color: '#ef4444',
+                  fontSize: 12, color: 'var(--status-danger)',
                 }}>
                   ⚠️ لا توجد خزائن بها رصيد كافٍ للصرف
                 </div>
@@ -395,7 +395,7 @@ export function NotificationBell() {
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '12px 16px', borderRadius: 12, cursor: 'pointer',
-                          border: `2px solid ${isSelected ? '#22c55e' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')}`,
+                          border: `2px solid ${isSelected ? 'var(--status-success)' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')}`,
                           background: isSelected
                             ? (isDark ? 'rgba(34,197,94,0.12)' : 'rgba(34,197,94,0.08)')
                             : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
@@ -409,7 +409,7 @@ export function NotificationBell() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
                           }}>🏦</div>
                           <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#fff' : '#111' }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: isDark ? 'var(--text-1)' : 'var(--bg-app)' }}>
                               {s.name}
                             </div>
                             <div style={{ fontSize: 11, color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', marginTop: 2 }}>
@@ -418,11 +418,11 @@ export function NotificationBell() {
                           </div>
                         </div>
                         <div style={{ textAlign: 'left' }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: isSelected ? '#22c55e' : (isDark ? 'rgba(255,255,255,0.85)' : '#111'), fontVariantNumeric: 'tabular-nums' }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: isSelected ? 'var(--status-success)' : (isDark ? 'rgba(255,255,255,0.85)' : 'var(--bg-app)'), fontVariantNumeric: 'tabular-nums' }}>
                             {bal.toLocaleString('ar-EG-u-nu-latn', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                           {isSelected && (
-                            <div style={{ fontSize: 10, color: '#22c55e', marginTop: 2, textAlign: 'left' }}>✓ محدد</div>
+                            <div style={{ fontSize: 10, color: 'var(--status-success)', marginTop: 2, textAlign: 'left' }}>✓ محدد</div>
                           )}
                         </div>
                       </button>
@@ -433,7 +433,7 @@ export function NotificationBell() {
 
               {/* Warning */}
               {!advSelectedSafeId && !advSafesLoading && advSafes.length > 0 && (
-                <div style={{ fontSize: 11, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ fontSize: 11, color: 'var(--status-warning)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   ⚠️ اختيار الخزينة إلزامي — سيُخصم المبلغ فور الاعتماد
                 </div>
               )}
@@ -451,10 +451,10 @@ export function NotificationBell() {
                   flex: 1, padding: '11px', borderRadius: 10, border: 'none',
                   background: (advApproving || !advSelectedSafeId || advSafesLoading)
                     ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')
-                    : '#22c55e',
+                    : 'var(--status-success)',
                   color: (advApproving || !advSelectedSafeId || advSafesLoading)
                     ? (isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)')
-                    : '#fff',
+                    : 'var(--text-1)',
                   fontSize: 13, fontWeight: 800,
                   cursor: (advApproving || !advSelectedSafeId || advSafesLoading) ? 'not-allowed' : 'pointer',
                   transition: 'all 0.15s',

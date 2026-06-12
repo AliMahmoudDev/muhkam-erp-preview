@@ -169,6 +169,7 @@ export function SuccessModal({ invoice, onClose }: { invoice: SuccessInvoice; on
               style={{
                 background: 'rgba(37,211,102,0.12)',
                 border: '1px solid rgba(37,211,102,0.30)',
+                // eslint-disable-next-line erp/no-hardcoded-colors -- WhatsApp brand green: intentional third-party brand color
                 color: '#25D366',
               }}
             >

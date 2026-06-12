@@ -102,7 +102,7 @@ export function PosPayment({
         <div
           className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs"
           style={{
-            color: '#ef4444',
+            color: 'var(--status-danger)',
             background: 'rgba(239,68,68,0.10)',
             border: '1px solid rgba(239,68,68,0.20)',
           }}

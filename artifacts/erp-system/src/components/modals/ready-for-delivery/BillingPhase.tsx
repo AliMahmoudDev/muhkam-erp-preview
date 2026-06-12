@@ -360,10 +360,10 @@ export default function BillingPhase({
           onClick={onBillingSave}
           disabled={billingLoading}
           className="flex-1 min-w-[200px] py-2.5 rounded-xl text-ink text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
-          style={{ background: "rgba(132,204,22,0.85)", border: "1px solid rgba(163,230,53,0.5)", color: "#0d1f00" }}
+          style={{ background: "rgba(132,204,22,0.85)", border: "1px solid rgba(163,230,53,0.5)", color: "var(--text-1)" }}
         >
           {billingLoading
-            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: "#0d1f00" }} /> جارٍ الحفظ...</>
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: "var(--text-1)" }} /> جارٍ الحفظ...</>
             : <><PackageCheck className="w-3.5 h-3.5" /> حفظ وتأكيد "جاهز للتسليم"</>}
         </button>
         <button

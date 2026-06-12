@@ -105,7 +105,7 @@ export function CompanyPanel({
                   {statusStyle.label}
                 </span>
                 <span style={{ fontSize: '11px', color: C.muted }}>{translatePlan(co.plan_type)}</span>
-                {co.edition && <span style={{ fontSize: '11px', color: '#A78BFA' }}>({co.edition})</span>}
+                {co.edition && <span style={{ fontSize: '11px', color: 'var(--status-info)' }}>({co.edition})</span>}
                 <span style={{ fontSize: '11px', color: C.muted }}>👥 {co.userCount}</span>
               </div>
             </div>
@@ -123,7 +123,7 @@ export function CompanyPanel({
             </button>
             <button
               onClick={() => { setSnapshotCompany(co.id); }}
-              style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', borderRadius: '8px', border: '1.5px solid rgba(167,139,250,0.4)', background: 'rgba(167,139,250,0.1)', color: '#C4B5FD', cursor: 'pointer', fontFamily: FONT }}
+              style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', borderRadius: '8px', border: '1.5px solid rgba(167,139,250,0.4)', background: 'rgba(167,139,250,0.1)', color: 'var(--status-info)', cursor: 'pointer', fontFamily: FONT }}
             >
               📸 لقطة
             </button>
@@ -175,7 +175,7 @@ export function CompanyPanel({
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   {(['ultimate', 'advanced'] as const).map(ed => (
                     <button key={ed} onClick={() => setSubForm(f => ({ ...f, edition: ed, features: ed === 'ultimate' ? DEFAULT_FEATS_ULTIMATE : DEFAULT_FEATS_ADVANCED }))}
-                      style={{ padding: '9px', borderRadius: '8px', border: `1.5px solid ${subForm.edition === ed ? (ed === 'ultimate' ? '#A78BFA' : '#60A5FA') : C.border}`, background: subForm.edition === ed ? (ed === 'ultimate' ? 'rgba(167,139,250,0.15)' : 'rgba(96,165,250,0.15)') : 'transparent', color: subForm.edition === ed ? (ed === 'ultimate' ? '#A78BFA' : '#60A5FA') : C.muted, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                      style={{ padding: '9px', borderRadius: '8px', border: `1.5px solid ${subForm.edition === ed ? (ed === 'ultimate' ? 'var(--status-info)' : 'var(--status-info)') : C.border}`, background: subForm.edition === ed ? (ed === 'ultimate' ? 'rgba(167,139,250,0.15)' : 'rgba(96,165,250,0.15)') : 'transparent', color: subForm.edition === ed ? (ed === 'ultimate' ? 'var(--status-info)' : 'var(--status-info)') : C.muted, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
                       {ed === 'ultimate' ? '✨ Ultimate' : '🚀 Advanced'}
                     </button>
                   ))}
@@ -255,15 +255,15 @@ export function CompanyPanel({
                   })}
                 </div>
                 <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-                  <button onClick={() => setSubForm(f => ({ ...f, features: DEFAULT_FEATS_ULTIMATE }))} style={{ flex: 1, padding: '7px', borderRadius: '8px', border: '1.5px solid rgba(167,139,250,0.4)', background: 'rgba(167,139,250,0.08)', color: '#A78BFA', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Ultimate افتراضي</button>
-                  <button onClick={() => setSubForm(f => ({ ...f, features: DEFAULT_FEATS_ADVANCED }))} style={{ flex: 1, padding: '7px', borderRadius: '8px', border: '1.5px solid rgba(96,165,250,0.4)', background: 'rgba(96,165,250,0.08)', color: '#60A5FA', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Advanced افتراضي</button>
+                  <button onClick={() => setSubForm(f => ({ ...f, features: DEFAULT_FEATS_ULTIMATE }))} style={{ flex: 1, padding: '7px', borderRadius: '8px', border: '1.5px solid rgba(167,139,250,0.4)', background: 'rgba(167,139,250,0.08)', color: 'var(--status-info)', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Ultimate افتراضي</button>
+                  <button onClick={() => setSubForm(f => ({ ...f, features: DEFAULT_FEATS_ADVANCED }))} style={{ flex: 1, padding: '7px', borderRadius: '8px', border: '1.5px solid rgba(96,165,250,0.4)', background: 'rgba(96,165,250,0.08)', color: 'var(--status-info)', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Advanced افتراضي</button>
                 </div>
               </div>
 
               {/* Save */}
               <button
                 onClick={saveSubscription} disabled={subSaving}
-                style={{ width: '100%', padding: '13px', borderRadius: '12px', border: 'none', background: subSaving ? C.orangeDim : C.orange, color: '#fff', fontSize: '14px', fontWeight: 900, cursor: subSaving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: subSaving ? 0.7 : 1 }}
+                style={{ width: '100%', padding: '13px', borderRadius: '12px', border: 'none', background: subSaving ? C.orangeDim : C.orange, color: 'var(--text-1)', fontSize: '14px', fontWeight: 900, cursor: subSaving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: subSaving ? 0.7 : 1 }}
               >
                 {subSaving ? '⏳ جاري الحفظ...' : '💾 حفظ التغييرات'}
               </button>
@@ -276,7 +276,7 @@ export function CompanyPanel({
               {[
                 { icon: co.is_active ? '⏸' : '▶', label: co.is_active ? 'تعليق الاشتراك' : 'تفعيل الاشتراك', desc: co.is_active ? 'سيُوقف وصول الشركة إلى النظام' : 'سيُعيد تفعيل وصول الشركة', color: co.is_active ? C.warning : C.success, action: () => coMutate.mutate({ url: `/api/super/companies/${co.id}/${co.is_active ? 'suspend' : 'activate'}`, method: 'POST' }) },
                 { icon: '🔑', label: 'إعادة تعيين كلمة المرور', desc: 'إنشاء كلمة مرور مؤقتة جديدة للمدير', color: C.orange, action: () => resetPassword.mutate({ id: co.id, company_name: co.name }) },
-                { icon: '📸', label: 'عرض لقطة سريعة', desc: 'إحصاءات وآخر العمليات بنظرة واحدة', color: '#A78BFA', action: () => setSnapshotCompany(co.id) },
+                { icon: '📸', label: 'عرض لقطة سريعة', desc: 'إحصاءات وآخر العمليات بنظرة واحدة', color: 'var(--status-info)', action: () => setSnapshotCompany(co.id) },
                 { icon: '🗑', label: 'حذف الشركة نهائياً', desc: 'تحذير: لا يمكن التراجع عن الحذف', color: C.danger, action: () => { setDeleteCoErr(''); setDeleteTarget(co); setSubModal(null); } },
               ].map(item => (
                 <button key={item.label} onClick={item.action}
@@ -333,7 +333,7 @@ export function CompanyPanel({
                     {(panelAuditResp.rows ?? []).filter(r => !co || r.record_id === co.id || r.note?.includes(co.name)).slice(0, 50).map(r => (
                       <div key={r.id} style={{ padding: '10px 14px', borderRadius: '9px', background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ fontWeight: 700, fontSize: '12px', color: '#A78BFA' }}>{r.action}</span>
+                          <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--status-info)' }}>{r.action}</span>
                           <span style={{ fontSize: '11px', color: C.muted, direction: 'ltr' }}>{new Date(r.created_at).toLocaleDateString('ar-EG')}</span>
                         </div>
                         {r.note && <div style={{ fontSize: '11px', color: C.muted, lineHeight: 1.5 }}>{r.note}</div>}

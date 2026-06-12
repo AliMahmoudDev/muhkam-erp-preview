@@ -51,13 +51,13 @@ export function SAHeader({ today, redisHealth, logout }: Props) {
             background: redisHealth?.status === 'ok' ? 'rgba(52,211,153,0.12)' : 'rgba(239,68,68,0.12)',
             border: `1px solid ${redisHealth?.status === 'ok' ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.3)'}`,
             fontSize: '12px', fontWeight: 700,
-            color: redisHealth?.status === 'ok' ? '#34D399' : '#EF4444',
+            color: redisHealth?.status === 'ok' ? 'var(--status-success)' : 'var(--status-danger)',
             cursor: 'default',
           }}
         >
           <span style={{
             width: 7, height: 7, borderRadius: '50%',
-            background: redisHealth?.status === 'ok' ? '#34D399' : '#EF4444',
+            background: redisHealth?.status === 'ok' ? 'var(--status-success)' : 'var(--status-danger)',
             display: 'inline-block',
             boxShadow: redisHealth?.status === 'ok' ? '0 0 6px #34D399' : '0 0 6px #EF4444',
           }} />

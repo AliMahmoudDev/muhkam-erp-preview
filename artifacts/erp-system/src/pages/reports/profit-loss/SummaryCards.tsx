@@ -33,7 +33,7 @@ function KPICard({ label, value, prevVal, accent, sub, icon, index }: {
   const animated = useCountUp(value);
   const { settings } = useAppSettings();
   const isLight = (settings.theme ?? "dark") === "light";
-  const numColor = accent === "#10b981" && value < 0 ? "#ef4444" : isLight ? "var(--bg-app)" : "#ffffff";
+  const numColor = accent === "var(--status-success)" && value < 0 ? "var(--status-danger)" : isLight ? "var(--bg-app)" : "var(--text-1)";
   return (
     <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:0.3,delay:index*0.06}}
       className="rpt-panel rounded-xl px-4 py-3.5"
@@ -63,13 +63,13 @@ export default function SummaryCards({ pl, prev }: SummaryCardsProps) {
   return (
     <div className="grid grid-cols-3 gap-3">
       <KPICard label="صافي الربح" value={pl.net_profit} prevVal={prev.net_profit}
-        accent={pl.net_profit>=0?"#10b981":"#ef4444"} sub={`هامش ${pl.profit_margin.toFixed(1)}%`}
+        accent={pl.net_profit>=0?"var(--status-success)":"var(--status-danger)"} sub={`هامش ${pl.profit_margin.toFixed(1)}%`}
         icon={<TrendingUp className="w-3.5 h-3.5"/>} index={0}/>
       <KPICard label="إجمالي المبيعات" value={pl.total_revenue} prevVal={prev.total_revenue}
-        accent="#f59e0b" sub={`${pl.invoice_count} فاتورة`}
+        accent="var(--status-warning)" sub={`${pl.invoice_count} فاتورة`}
         icon={<BarChart3 className="w-3.5 h-3.5"/>} index={1}/>
       <KPICard label="إجمالي المصروفات" value={pl.total_expenses} prevVal={prev.total_expenses}
-        accent="#f97316" sub={pl.by_expense_category[0]?.category}
+        accent="var(--status-warning)" sub={pl.by_expense_category[0]?.category}
         icon={<DollarSign className="w-3.5 h-3.5"/>} index={2}/>
     </div>
   );

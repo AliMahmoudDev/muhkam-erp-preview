@@ -169,7 +169,7 @@ export default function SalesTargetsTab() {
             <span className="text-ink/70 text-sm font-bold">إجمالي الفريق</span>
             <span
               className="mr-auto font-bold text-sm"
-              style={{ color: overallPct >= 100 ? '#34d399' : overallPct >= 60 ? '#f59e0b' : '#f87171' }}
+              style={{ color: overallPct >= 100 ? 'var(--status-success)' : overallPct >= 60 ? 'var(--status-warning)' : 'var(--status-danger)' }}
             >
               {overallPct.toFixed(1)}%
             </span>
@@ -179,7 +179,7 @@ export default function SalesTargetsTab() {
               className="h-full rounded-full transition-all duration-700"
               style={{
                 width: `${overallPct}%`,
-                background: overallPct >= 100 ? '#34d399' : overallPct >= 60 ? '#f59e0b' : '#f87171',
+                background: overallPct >= 100 ? 'var(--status-success)' : overallPct >= 60 ? 'var(--status-warning)' : 'var(--status-danger)',
               }}
             />
           </div>
@@ -210,7 +210,7 @@ export default function SalesTargetsTab() {
             const targetVal = parseFloat(drafts[row.user_id] || '0') || 0;
             const pct   = targetVal > 0 ? Math.min(100, (row.achieved_amount / targetVal) * 100) : 0;
             const isDirty = targetVal !== row.target_amount;
-            const color = pct >= 100 ? '#34d399' : pct >= 60 ? '#f59e0b' : '#f87171';
+            const color = pct >= 100 ? 'var(--status-success)' : pct >= 60 ? 'var(--status-warning)' : 'var(--status-danger)';
 
             return (
               <div

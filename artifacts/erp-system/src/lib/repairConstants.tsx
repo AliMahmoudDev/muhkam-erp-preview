@@ -46,7 +46,7 @@ export const DASHBOARD_CARD_ICONS: Record<string, React.FC<{ className?: string;
 };
 
 export const DASHBOARD_CARD_COLORS = [
-  "#f59e0b", "#06b6d4", "#10b981", "#8b5cf6", "#3b82f6",
-  "#ec4899", "#14b8a6", "#a855f7", "#84cc16", "#ef4444",
-  "#f97316", "#6366f1",
+  "var(--status-warning)", "var(--status-info)", "var(--status-success)", "var(--status-info)", "var(--status-info)",
+  "#ec4899", "#14b8a6", "#a855f7", "#84cc16", "var(--status-danger)",
+  "var(--status-warning)", "var(--status-info)",
 ];

@@ -106,7 +106,7 @@ export function TabAnnouncements({
             <button onClick={() => void onSave()} disabled={annSaving} style={{
               padding: '11px 28px', borderRadius: '10px',
               background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
-              border: 'none', color: '#fff', fontSize: '14px',
+              border: 'none', color: 'var(--text-1)', fontSize: '14px',
               fontWeight: 800, cursor: annSaving ? 'not-allowed' : 'pointer',
               fontFamily: FONT, whiteSpace: 'nowrap',
             }}>
@@ -127,10 +127,10 @@ export function TabAnnouncements({
           <div>
             {annData.announcements.map(ann => {
               const typeColors: Record<string, { color: string; icon: string }> = {
-                info:    { color: '#60A5FA', icon: 'ℹ️' },
-                success: { color: '#34D399', icon: '✅' },
-                warning: { color: '#F59E0B', icon: '⚠️' },
-                danger:  { color: '#EF4444', icon: '🚨' },
+                info:    { color: 'var(--status-info)', icon: 'ℹ️' },
+                success: { color: 'var(--status-success)', icon: '✅' },
+                warning: { color: 'var(--status-warning)', icon: '⚠️' },
+                danger:  { color: 'var(--status-danger)', icon: '🚨' },
               };
               const tc = typeColors[ann.type] ?? typeColors.info;
               return (
@@ -144,7 +144,7 @@ export function TabAnnouncements({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 800, fontSize: '14px', color: C.text }}>{ann.title}</span>
                       <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', background: `${tc.color}22`, color: tc.color, fontWeight: 700 }}>{ann.type}</span>
-                      <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', background: ann.is_active ? 'rgba(52,211,153,0.15)' : 'rgba(148,163,184,0.15)', color: ann.is_active ? '#34D399' : '#94A3B8', fontWeight: 700 }}>{ann.is_active ? 'نشط' : 'معطّل'}</span>
+                      <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', background: ann.is_active ? 'rgba(52,211,153,0.15)' : 'rgba(148,163,184,0.15)', color: ann.is_active ? 'var(--status-success)' : 'var(--text-2)', fontWeight: 700 }}>{ann.is_active ? 'نشط' : 'معطّل'}</span>
                       <span style={{ fontSize: '11px', color: C.muted }}>
                         {ann.target === 'all' ? '🌐 للجميع' : `🏢 شركة #${ann.company_id}`}
                       </span>
@@ -158,11 +158,11 @@ export function TabAnnouncements({
                   <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                     <button onClick={() => void onToggle(ann.id, ann.is_active)} style={{
                       padding: '6px 12px', borderRadius: '8px', border: `1px solid ${C.border}`, background: 'transparent',
-                      color: ann.is_active ? '#F59E0B' : '#34D399', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                      color: ann.is_active ? 'var(--status-warning)' : 'var(--status-success)', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
                     }}>{ann.is_active ? '⏸ إيقاف' : '▶️ تفعيل'}</button>
                     <button onClick={() => void onDelete(ann.id)} style={{
                       padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)', background: 'transparent',
-                      color: '#EF4444', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                      color: 'var(--status-danger)', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
                     }}>🗑 حذف</button>
                   </div>
                 </div>

@@ -37,18 +37,18 @@ export function BackupPanel({
         </p>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={() => { void triggerBackup(); }} disabled={creatingBackup}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: 'none', background: creatingBackup ? C.border : C.orange, color: '#fff', fontSize: '13px', fontWeight: 800, cursor: creatingBackup ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: 'none', background: creatingBackup ? C.border : C.orange, color: 'var(--text-1)', fontSize: '13px', fontWeight: 800, cursor: creatingBackup ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
             💾 {creatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة الآن'}
           </button>
           <button onClick={openRestorePicker} disabled={restoring}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: '1px solid rgba(139,92,246,0.4)', background: 'rgba(139,92,246,0.1)', color: '#A78BFA', fontSize: '13px', fontWeight: 800, cursor: restoring ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: '1px solid rgba(139,92,246,0.4)', background: 'rgba(139,92,246,0.1)', color: 'var(--status-info)', fontSize: '13px', fontWeight: 800, cursor: restoring ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
             {restoring ? '⏳ جاري الاستعادة...' : '📥 استعادة من ملف'}
           </button>
         </div>
       </div>
 
-      {restoreOk && <div style={{ padding: '14px 18px', borderRadius: '12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22C55E', fontSize: '13px', fontWeight: 700 }}>✅ {restoreOk}</div>}
-      {restoreErr && <div style={{ padding: '14px 18px', borderRadius: '12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444', fontSize: '13px' }}>❌ {restoreErr}</div>}
+      {restoreOk && <div style={{ padding: '14px 18px', borderRadius: '12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: 'var(--status-success)', fontSize: '13px', fontWeight: 700 }}>✅ {restoreOk}</div>}
+      {restoreErr && <div style={{ padding: '14px 18px', borderRadius: '12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: 'var(--status-danger)', fontSize: '13px' }}>❌ {restoreErr}</div>}
 
       <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: '14px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 160px 110px', gap: '8px', padding: '10px 20px', background: 'rgba(249,115,22,0.08)', borderBottom: `1px solid ${C.border}`, fontSize: '11px', fontWeight: 700, color: C.orange }}>
@@ -71,7 +71,7 @@ export function BackupPanel({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                   <span style={{ fontSize: '14px' }}>{isEnc ? '🔒' : '📄'}</span>
                   <span style={{ fontSize: '12px', color: C.text, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.filename}</span>
-                  {isEnc && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(139,92,246,0.2)', color: '#A78BFA', border: '1px solid rgba(139,92,246,0.3)', whiteSpace: 'nowrap' }}>مشفّر</span>}
+                  {isEnc && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(139,92,246,0.2)', color: 'var(--status-info)', border: '1px solid rgba(139,92,246,0.3)', whiteSpace: 'nowrap' }}>مشفّر</span>}
                 </div>
                 <div style={{ textAlign: 'center', fontSize: '12px', color: C.muted }}>{b.size_mb} MB</div>
                 <div style={{ textAlign: 'center', fontSize: '11px', color: C.muted, direction: 'ltr' }}>
@@ -79,7 +79,7 @@ export function BackupPanel({
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <button onClick={() => { void downloadBackup(b.filename); }} disabled={isDownloading}
-                    style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.1)', color: '#22C55E', fontSize: '12px', fontWeight: 700, cursor: isDownloading ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
+                    style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.1)', color: 'var(--status-success)', fontSize: '12px', fontWeight: 700, cursor: isDownloading ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
                     {isDownloading ? '⏳' : '⬇️ تنزيل'}
                   </button>
                 </div>
@@ -103,13 +103,13 @@ export function BackupPanel({
             </button>
             {encKeyVisible && encKey && (
               <>
-                <button onClick={copyEncKey} style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.1)', color: '#22C55E', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                <button onClick={copyEncKey} style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.1)', color: 'var(--status-success)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
                   {encKeyCopied ? '✅ تم النسخ' : '📋 نسخ'}
                 </button>
-                <button onClick={downloadEncKey} style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.1)', color: '#F59E0B', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                <button onClick={downloadEncKey} style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.1)', color: 'var(--status-warning)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
                   💾 حفظ كملف .key
                 </button>
-                <button onClick={emailEncKey} style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.1)', color: '#60A5FA', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                <button onClick={emailEncKey} style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.1)', color: 'var(--status-info)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
                   📧 إرسال بالبريد
                 </button>
               </>
@@ -117,7 +117,7 @@ export function BackupPanel({
           </div>
         )}
         {encKeyVisible && encKey && (
-          <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(15,23,42,0.6)', border: `1px solid ${C.border}`, fontSize: '12px', color: '#A78BFA', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+          <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(15,23,42,0.6)', border: `1px solid ${C.border}`, fontSize: '12px', color: 'var(--status-info)', fontFamily: 'monospace', wordBreak: 'break-all' }}>
             {encKey}
           </div>
         )}

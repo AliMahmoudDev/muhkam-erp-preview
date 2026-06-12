@@ -77,9 +77,9 @@ function FinancialConsistencyBar() {
   const balanced = bs.balanced;
 
   const items = [
-    { label: "إجمالي الأصول",       value: formatCurrency(bs.assets.total),            color: "#d97706" },
-    { label: "رأس المال + الأرباح",  value: formatCurrency(bs.equity.total),             color: "#059669" },
-    { label: "الأرباح التراكمية",    value: formatCurrency(bs.equity.retained_earnings),  color: "#6366f1" },
+    { label: "إجمالي الأصول",       value: formatCurrency(bs.assets.total),            color: "var(--status-warning)" },
+    { label: "رأس المال + الأرباح",  value: formatCurrency(bs.equity.total),             color: "var(--status-success)" },
+    { label: "الأرباح التراكمية",    value: formatCurrency(bs.equity.retained_earnings),  color: "var(--status-info)" },
     { label: "رصيد الخزينة",         value: formatCurrency(treasury),                    color: "#0ea5e9" },
   ];
 
@@ -93,7 +93,7 @@ function FinancialConsistencyBar() {
       }}
       dir="rtl"
     >
-      <span className="flex items-center gap-1.5 text-xs font-bold shrink-0" style={{ color: balanced ? "#059669" : "#dc2626" }}>
+      <span className="flex items-center gap-1.5 text-xs font-bold shrink-0" style={{ color: balanced ? "var(--status-success)" : "var(--status-danger)" }}>
         {balanced
           ? <><CheckCircle className="w-3.5 h-3.5" /> الميزانية متوازنة</>
           : <><AlertTriangle className="w-3.5 h-3.5" /> فرق {formatCurrency(diff)}</>}

@@ -38,9 +38,9 @@ interface Props {
 }
 
 const MON_ST: Record<string, { label: string; color: string; bg: string; border: string; icon: string; glow: string; grad: string }> = {
-  normal:  { label: 'طبيعي',        color: '#34D399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.3)',  icon: '✅', glow: 'rgba(52,211,153,0.2)',  grad: 'linear-gradient(135deg,rgba(52,211,153,0.12),rgba(16,185,129,0.04))' },
-  warning: { label: 'تحذير',         color: '#F59E0B', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.35)', icon: '⚠️', glow: 'rgba(245,158,11,0.2)',  grad: 'linear-gradient(135deg,rgba(245,158,11,0.12),rgba(234,88,12,0.04))' },
-  paused:  { label: 'متوقف مؤقتاً', color: '#EF4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.35)',  icon: '🚫', glow: 'rgba(239,68,68,0.2)',   grad: 'linear-gradient(135deg,rgba(239,68,68,0.12),rgba(220,38,38,0.04))' },
+  normal:  { label: 'طبيعي',        color: 'var(--status-success)', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.3)',  icon: '✅', glow: 'rgba(52,211,153,0.2)',  grad: 'linear-gradient(135deg,rgba(52,211,153,0.12),rgba(16,185,129,0.04))' },
+  warning: { label: 'تحذير',         color: 'var(--status-warning)', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.35)', icon: '⚠️', glow: 'rgba(245,158,11,0.2)',  grad: 'linear-gradient(135deg,rgba(245,158,11,0.12),rgba(234,88,12,0.04))' },
+  paused:  { label: 'متوقف مؤقتاً', color: 'var(--status-danger)', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.35)',  icon: '🚫', glow: 'rgba(239,68,68,0.2)',   grad: 'linear-gradient(135deg,rgba(239,68,68,0.12),rgba(220,38,38,0.04))' },
 };
 
 const Pill = ({ label, color, bg }: { label: string; color: string; bg: string }) => (
@@ -161,13 +161,13 @@ export function TabMonitoring({
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {monData && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: monData.redis_ok ? 'rgba(52,211,153,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${monData.redis_ok ? 'rgba(52,211,153,0.3)' : 'rgba(245,158,11,0.3)'}`, fontSize: '12px', fontWeight: 700, color: monData.redis_ok ? '#34D399' : '#F59E0B' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: monData.redis_ok ? '#34D399' : '#F59E0B', display: 'inline-block', animation: 'mon-pulse-dot 2s infinite' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: monData.redis_ok ? 'rgba(52,211,153,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${monData.redis_ok ? 'rgba(52,211,153,0.3)' : 'rgba(245,158,11,0.3)'}`, fontSize: '12px', fontWeight: 700, color: monData.redis_ok ? 'var(--status-success)' : 'var(--status-warning)' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: monData.redis_ok ? 'var(--status-success)' : 'var(--status-warning)', display: 'inline-block', animation: 'mon-pulse-dot 2s infinite' }} />
               {monData.redis_ok ? 'Redis متصل' : 'Redis غير متصل'}
             </div>
           )}
           <button onClick={() => void onRefetch()} className="mon-btn"
-            style={{ padding: '8px 18px', borderRadius: '10px', border: `1px solid ${C.border}`, background: 'rgba(34,197,94,0.1)', color: '#86EFAC', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+            style={{ padding: '8px 18px', borderRadius: '10px', border: `1px solid ${C.border}`, background: 'rgba(34,197,94,0.1)', color: 'var(--status-success)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
             🔄 تحديث
           </button>
         </div>
@@ -177,11 +177,11 @@ export function TabMonitoring({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: '10px' }}>
         {[
           { id: 'mon-status',   icon: '🟢', label: 'حالة النظام',   color: st.color },
-          { id: 'mon-stats',    icon: '📊', label: 'الإحصائيات',    color: '#60A5FA' },
-          { id: 'mon-unblock',  icon: '🔓', label: 'رفع الحجب',     color: '#10B981' },
-          { id: 'mon-ips',      icon: '🌐', label: 'أعلى IPs',      color: '#A78BFA' },
-          { id: 'mon-suspects', icon: '🚨', label: 'المشبوهون',     color: '#EF4444' },
-          { id: 'mon-blocks',   icon: '🔒', label: 'آخر الحجوبات', color: '#F59E0B' },
+          { id: 'mon-stats',    icon: '📊', label: 'الإحصائيات',    color: 'var(--status-info)' },
+          { id: 'mon-unblock',  icon: '🔓', label: 'رفع الحجب',     color: 'var(--status-success)' },
+          { id: 'mon-ips',      icon: '🌐', label: 'أعلى IPs',      color: 'var(--status-info)' },
+          { id: 'mon-suspects', icon: '🚨', label: 'المشبوهون',     color: 'var(--status-danger)' },
+          { id: 'mon-blocks',   icon: '🔒', label: 'آخر الحجوبات', color: 'var(--status-warning)' },
         ].map(n => (
           <div key={n.id} className="mon-nav-card" onClick={() => scrollTo(n.id)}
             style={{ padding: '12px 10px', borderRadius: '14px', textAlign: 'center', background: C.card, border: `1px solid ${C.border}`, borderTop: `3px solid ${n.color}` }}>
@@ -194,7 +194,7 @@ export function TabMonitoring({
       {/* Loading */}
       {monLoading && (
         <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(99,102,241,0.2)', borderTopColor: '#6366f1', margin: '0 auto 16px', animation: 'mon-spin 0.8s linear infinite' }} />
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(99,102,241,0.2)', borderTopColor: 'var(--status-info)', margin: '0 auto 16px', animation: 'mon-spin 0.8s linear infinite' }} />
           <div style={{ fontWeight: 700 }}>جارٍ تحميل بيانات المراقبة...</div>
         </div>
       )}
@@ -203,10 +203,10 @@ export function TabMonitoring({
       {monError && !monLoading && (
         <div style={{ background: 'rgba(239,68,68,0.05)', border: `1px solid rgba(239,68,68,0.2)`, borderRadius: '16px', padding: '48px 40px', textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔴</div>
-          <div style={{ fontSize: '18px', fontWeight: 900, color: '#EF4444', marginBottom: '8px' }}>تعذّر تحميل بيانات المراقبة</div>
+          <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--status-danger)', marginBottom: '8px' }}>تعذّر تحميل بيانات المراقبة</div>
           <div style={{ fontSize: '13px', color: C.muted, marginBottom: '20px' }}>تحقق من اتصال السيرفر وأعد المحاولة</div>
           <button onClick={() => void onRefetch()} className="mon-btn"
-            style={{ padding: '10px 24px', borderRadius: '10px', border: `1px solid rgba(239,68,68,0.3)`, background: 'rgba(239,68,68,0.1)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
+            style={{ padding: '10px 24px', borderRadius: '10px', border: `1px solid rgba(239,68,68,0.3)`, background: 'rgba(239,68,68,0.1)', color: 'var(--status-danger)', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
             🔄 إعادة المحاولة
           </button>
         </div>
@@ -220,9 +220,9 @@ export function TabMonitoring({
             <div className="mon-sec" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.1),rgba(234,88,12,0.06))', border: '1.5px solid rgba(245,158,11,0.35)', borderRadius: '18px', padding: '18px 24px', display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
               <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>⚠️</div>
               <div>
-                <div style={{ fontWeight: 900, color: '#F59E0B', fontSize: '14px', marginBottom: '4px' }}>Redis غير متاح — المراقبة المتقدمة معطلة جزئياً</div>
+                <div style={{ fontWeight: 900, color: 'var(--status-warning)', fontSize: '14px', marginBottom: '4px' }}>Redis غير متاح — المراقبة المتقدمة معطلة جزئياً</div>
                 <div style={{ fontSize: '12px', color: C.muted, lineHeight: 1.7 }}>
-                  التسجيل يعمل عادياً. لتفعيل المراقبة الكاملة: <code style={{ background: 'rgba(0,0,0,0.3)', color: '#86EFAC', padding: '2px 8px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '11px' }}>REDIS_URL=redis://127.0.0.1:6379</code>
+                  التسجيل يعمل عادياً. لتفعيل المراقبة الكاملة: <code style={{ background: 'rgba(0,0,0,0.3)', color: 'var(--status-success)', padding: '2px 8px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '11px' }}>REDIS_URL=redis://127.0.0.1:6379</code>
                 </div>
               </div>
             </div>
@@ -241,20 +241,20 @@ export function TabMonitoring({
                   <div style={{ fontSize: '28px', fontWeight: 900, color: st.color, lineHeight: 1 }}>{st.label}</div>
                   {monData.pause_reason && <div style={{ fontSize: '12px', color: C.muted, marginTop: '4px' }}>📝 {monData.pause_reason}</div>}
                   {monData.pause_until && (
-                    <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '4px', fontWeight: 700 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--status-warning)', marginTop: '4px', fontWeight: 700 }}>
                       ⏱️ متوقف حتى: {new Date(monData.pause_until).toLocaleString('ar-EG')}
                       {monData.pause_remaining_seconds > 0 && ` — ${Math.ceil(monData.pause_remaining_seconds / 60)} دقيقة متبقية`}
                     </div>
                   )}
                   {monData.warning_fired_at && monData.status === 'warning' && (
-                    <div style={{ fontSize: '12px', color: '#F59E0B', marginTop: '4px', fontWeight: 700 }}>⚡ تحذير نشط منذ: {new Date(monData.warning_fired_at).toLocaleString('ar-EG')}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--status-warning)', marginTop: '4px', fontWeight: 700 }}>⚡ تحذير نشط منذ: {new Date(monData.warning_fired_at).toLocaleString('ar-EG')}</div>
                   )}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {monData.status === 'warning' && (
                   <button className="mon-btn" onClick={async () => { await authFetch('/api/super/trial-monitoring/clear-warning', { method: 'POST' }); void onRefetch(); }}
-                    style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.1)', color: '#F59E0B', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
+                    style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.1)', color: 'var(--status-warning)', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
                     🧹 مسح التحذير
                   </button>
                 )}
@@ -265,12 +265,12 @@ export function TabMonitoring({
                     const reason = prompt('سبب الإيقاف:') || 'إيقاف يدوي من المشرف';
                     await authFetch('/api/super/trial-monitoring/pause', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ minutes: Number(mins), reason }) });
                     void onRefetch();
-                  }} style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#EF4444', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
+                  }} style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: 'var(--status-danger)', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
                     ⏸️ إيقاف مؤقت
                   </button>
                 ) : (
                   <button className="mon-btn" onClick={async () => { await authFetch('/api/super/trial-monitoring/resume', { method: 'POST' }); void onRefetch(); }}
-                    style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.12)', color: '#34D399', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
+                    style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.12)', color: 'var(--status-success)', cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: '13px' }}>
                     ▶️ استئناف التسجيلات
                   </button>
                 )}
@@ -282,14 +282,14 @@ export function TabMonitoring({
           <div id="mon-stats" className="mon-sec" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '16px' }}>
             {(() => {
               const reg = monData.registrations_in_window;
-              const regColor = reg >= monData.block_threshold ? '#EF4444' : reg >= monData.alert_threshold ? '#F59E0B' : '#34D399';
+              const regColor = reg >= monData.block_threshold ? 'var(--status-danger)' : reg >= monData.alert_threshold ? 'var(--status-warning)' : 'var(--status-success)';
               const regGlow  = reg >= monData.block_threshold ? 'rgba(239,68,68,0.2)' : reg >= monData.alert_threshold ? 'rgba(245,158,11,0.2)' : 'rgba(52,211,153,0.2)';
               const pct = Math.min(100, Math.round((reg / monData.block_threshold) * 100));
               return [
                 { icon: '📈', label: 'تسجيلات في النافذة', value: reg,                         sub: 'آخر 15 دقيقة', color: regColor, glow: regGlow, bar: pct, barMax: 100, barColor: regColor },
-                { icon: '⚠️', label: 'حد التحذير',          value: monData.alert_threshold,     sub: 'تسجيل / نافذة', color: '#F59E0B', glow: 'rgba(245,158,11,0.15)', bar: null, barMax: 0, barColor: '' },
-                { icon: '🚫', label: 'حد الإيقاف',          value: monData.block_threshold,      sub: 'تسجيل / نافذة', color: '#EF4444', glow: 'rgba(239,68,68,0.15)',  bar: null, barMax: 0, barColor: '' },
-                { icon: '⏱️', label: 'وقت الإيقاف',         value: monData.pause_remaining_seconds > 0 ? `${Math.ceil(monData.pause_remaining_seconds / 60)} د` : '—', sub: 'متبقي', color: monData.pause_remaining_seconds > 0 ? '#EF4444' : C.muted, glow: 'rgba(99,102,241,0.15)', bar: null, barMax: 0, barColor: '' },
+                { icon: '⚠️', label: 'حد التحذير',          value: monData.alert_threshold,     sub: 'تسجيل / نافذة', color: 'var(--status-warning)', glow: 'rgba(245,158,11,0.15)', bar: null, barMax: 0, barColor: '' },
+                { icon: '🚫', label: 'حد الإيقاف',          value: monData.block_threshold,      sub: 'تسجيل / نافذة', color: 'var(--status-danger)', glow: 'rgba(239,68,68,0.15)',  bar: null, barMax: 0, barColor: '' },
+                { icon: '⏱️', label: 'وقت الإيقاف',         value: monData.pause_remaining_seconds > 0 ? `${Math.ceil(monData.pause_remaining_seconds / 60)} د` : '—', sub: 'متبقي', color: monData.pause_remaining_seconds > 0 ? 'var(--status-danger)' : C.muted, glow: 'rgba(99,102,241,0.15)', bar: null, barMax: 0, barColor: '' },
               ];
             })().map(m => (
               <div key={m.label} className="mon-stat" style={{ background: C.card, borderRadius: '16px', border: `1px solid ${m.color}22`, borderTop: `3px solid ${m.color}`, padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'default', transition: 'all 0.2s' }}>
@@ -309,14 +309,14 @@ export function TabMonitoring({
           </div>
 
           {/* §3 UNBLOCK TOOL */}
-          <SectionCard id="mon-unblock" accentColor="#10B981">
+          <SectionCard id="mon-unblock" accentColor="var(--status-success)">
             <div className="mon-sec">
-              <SectionHead icon="🔓" title="أداة رفع الحجب الشاملة" sub="رفع فوري من قاعدة البيانات + Redis في خطوة واحدة" extra={<Pill label="DB + Redis" color="#10B981" bg="rgba(16,185,129,0.12)" />} />
+              <SectionHead icon="🔓" title="أداة رفع الحجب الشاملة" sub="رفع فوري من قاعدة البيانات + Redis في خطوة واحدة" extra={<Pill label="DB + Redis" color="var(--status-success)" bg="rgba(16,185,129,0.12)" />} />
               <div style={{ padding: '20px 24px' }}>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   {[{ n: '1', t: 'أدخل IP أو البريد' }, { n: '2', t: 'اضغط فحص' }, { n: '3', t: 'ارفع الحجب' }].map((s, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(16,185,129,0.2)', border: '1.5px solid rgba(16,185,129,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, color: '#10B981' }}>{s.n}</div>
+                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(16,185,129,0.2)', border: '1.5px solid rgba(16,185,129,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, color: 'var(--status-success)' }}>{s.n}</div>
                       <span style={{ fontSize: '12px', color: C.muted, fontWeight: 600 }}>{s.t}</span>
                       {i < 2 && <span style={{ color: C.muted, fontSize: '12px', margin: '0 2px' }}>←</span>}
                     </div>
@@ -332,12 +332,12 @@ export function TabMonitoring({
                     <input value={unblockEmail} onChange={e => setUnblockEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && void doLookup()} placeholder="customer@email.com" dir="ltr" className="mon-input" style={inputSt} />
                   </div>
                   <button className="mon-btn" disabled={unblockLoading || (!unblockIP.trim() && !unblockEmail.trim())} onClick={() => void doLookup()}
-                    style={{ padding: '12px 22px', borderRadius: '14px', border: '1.5px solid rgba(6,182,212,0.45)', background: 'rgba(6,182,212,0.12)', color: '#06B6D4', cursor: 'pointer', fontFamily: FONT, fontWeight: 800, fontSize: '14px', whiteSpace: 'nowrap', opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.4 : 1 }}>
+                    style={{ padding: '12px 22px', borderRadius: '14px', border: '1.5px solid rgba(6,182,212,0.45)', background: 'rgba(6,182,212,0.12)', color: 'var(--status-info)', cursor: 'pointer', fontFamily: FONT, fontWeight: 800, fontSize: '14px', whiteSpace: 'nowrap', opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.4 : 1 }}>
                     🔍 فحص
                   </button>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                  <button className="mon-btn" disabled={unblockLoading || (!unblockIP.trim() && !unblockEmail.trim())} onClick={() => void doUnblockAll()} style={{ flex: 1, minWidth: '220px', padding: '14px 28px', borderRadius: '16px', background: unblockLoading ? 'rgba(16,185,129,0.1)' : 'linear-gradient(135deg,#10B981,#06B6D4)', border: 'none', color: '#fff', cursor: unblockLoading ? 'not-allowed' : 'pointer', fontFamily: FONT, fontWeight: 900, fontSize: '15px', opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.4 : 1, boxShadow: (!unblockIP.trim() && !unblockEmail.trim()) ? 'none' : '0 6px 24px rgba(16,185,129,0.35)' }}>
+                  <button className="mon-btn" disabled={unblockLoading || (!unblockIP.trim() && !unblockEmail.trim())} onClick={() => void doUnblockAll()} style={{ flex: 1, minWidth: '220px', padding: '14px 28px', borderRadius: '16px', background: unblockLoading ? 'rgba(16,185,129,0.1)' : 'linear-gradient(135deg,#10B981,#06B6D4)', border: 'none', color: 'var(--text-1)', cursor: unblockLoading ? 'not-allowed' : 'pointer', fontFamily: FONT, fontWeight: 900, fontSize: '15px', opacity: (!unblockIP.trim() && !unblockEmail.trim()) ? 0.4 : 1, boxShadow: (!unblockIP.trim() && !unblockEmail.trim()) ? 'none' : '0 6px 24px rgba(16,185,129,0.35)' }}>
                     {unblockLoading ? '⏳ جارٍ رفع الحجب...' : '🔓 رفع جميع الحجوبات (DB + Redis)'}
                   </button>
                   <button className="mon-btn" onClick={() => { setUnblockIP(''); setUnblockEmail(''); setUnblockResult(null); setUnblockMsg(null); }}
@@ -346,7 +346,7 @@ export function TabMonitoring({
                   </button>
                 </div>
                 {unblockMsg && (
-                  <div style={{ padding: '16px 20px', borderRadius: '16px', marginBottom: '16px', background: unblockMsg.ok ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.08)', border: `1.5px solid ${unblockMsg.ok ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}`, color: unblockMsg.ok ? '#10B981' : '#EF4444', fontSize: '14px', fontWeight: 800 }}>
+                  <div style={{ padding: '16px 20px', borderRadius: '16px', marginBottom: '16px', background: unblockMsg.ok ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.08)', border: `1.5px solid ${unblockMsg.ok ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}`, color: unblockMsg.ok ? 'var(--status-success)' : 'var(--status-danger)', fontSize: '14px', fontWeight: 800 }}>
                     {unblockMsg.text}
                   </div>
                 )}
@@ -354,8 +354,8 @@ export function TabMonitoring({
                   <div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: '12px', marginBottom: '16px' }}>
                       {[
-                        { label: 'حجوبات نشطة',    value: unblockResult.active_blocks ?? 0,         color: (unblockResult.active_blocks ?? 0) > 0 ? '#EF4444' : '#34D399', bg: (unblockResult.active_blocks ?? 0) > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(52,211,153,0.08)', border: (unblockResult.active_blocks ?? 0) > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(52,211,153,0.3)' },
-                        { label: 'تم رفع حجبها',    value: unblockResult.overridden_blocks ?? 0,     color: '#34D399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.25)' },
+                        { label: 'حجوبات نشطة',    value: unblockResult.active_blocks ?? 0,         color: (unblockResult.active_blocks ?? 0) > 0 ? 'var(--status-danger)' : 'var(--status-success)', bg: (unblockResult.active_blocks ?? 0) > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(52,211,153,0.08)', border: (unblockResult.active_blocks ?? 0) > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(52,211,153,0.3)' },
+                        { label: 'تم رفع حجبها',    value: unblockResult.overridden_blocks ?? 0,     color: 'var(--status-success)', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.25)' },
                         { label: 'إجمالي السجلات',  value: (unblockResult.rows ?? []).length,         color: C.text,    bg: 'rgba(255,255,255,0.04)', border: C.border },
                       ].map(s => (
                         <div key={s.label} style={{ padding: '16px', borderRadius: '16px', background: s.bg, border: `1.5px solid ${s.border}`, textAlign: 'center' }}>
@@ -365,7 +365,7 @@ export function TabMonitoring({
                       ))}
                     </div>
                     {(unblockResult.active_blocks ?? 0) === 0 && (unblockResult.rows ?? []).length === 0 && (
-                      <div style={{ padding: '14px 18px', borderRadius: '14px', background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.3)', color: '#F59E0B', fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>
+                      <div style={{ padding: '14px 18px', borderRadius: '14px', background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.3)', color: 'var(--status-warning)', fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>
                         ⚠️ لا توجد سجلات في قاعدة البيانات — تحقق من Redis أو IP مختلف
                       </div>
                     )}
@@ -385,8 +385,8 @@ export function TabMonitoring({
                                 <td style={{ padding: '10px 14px', color: C.muted, fontFamily: 'monospace', fontSize: '11px' }}>{r.fingerprint ? r.fingerprint.slice(0, 10) + '…' : '—'}</td>
                                 <td style={{ padding: '10px 14px' }}>
                                   {r.override_reason
-                                    ? <Pill label="✓ مرفوع" color="#34D399" bg="rgba(52,211,153,0.1)" />
-                                    : <Pill label="🚫 محجوب" color="#EF4444" bg="rgba(239,68,68,0.1)" />}
+                                    ? <Pill label="✓ مرفوع" color="var(--status-success)" bg="rgba(52,211,153,0.1)" />
+                                    : <Pill label="🚫 محجوب" color="var(--status-danger)" bg="rgba(239,68,68,0.1)" />}
                                 </td>
                                 <td style={{ padding: '10px 14px', color: C.muted, fontSize: '11px' }}>{new Date(r.created_at).toLocaleDateString('ar-EG')}</td>
                               </tr>
@@ -403,7 +403,7 @@ export function TabMonitoring({
 
           {/* §4 TOP IPs + FPs */}
           <div id="mon-ips" className="mon-sec" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <SectionCard id="mon-ips-inner2" accentColor="#6366f1">
+            <SectionCard id="mon-ips-inner2" accentColor="var(--status-info)">
               <SectionHead icon="🌐" title="أعلى عناوين IP" sub={`${(monData.top_ips ?? []).length} عنوان مشبوه`} />
               <div style={{ padding: '20px 24px' }}>
                 {(monData.top_ips ?? []).length === 0 ? (
@@ -419,9 +419,9 @@ export function TabMonitoring({
                           <span style={{ fontFamily: 'monospace', fontSize: '13px', color: C.text }}>{e.ip}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 900, color: danger ? '#EF4444' : '#F59E0B' }}>{e.count}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 900, color: danger ? 'var(--status-danger)' : 'var(--status-warning)' }}>{e.count}</span>
                           <button className="mon-btn" onClick={() => { setUnblockIP(e.ip); setUnblockResult(null); setUnblockMsg(null); scrollTo('mon-unblock'); }}
-                            style={{ padding: '4px 12px', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.1)', color: '#10B981', cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: FONT }}>
+                            style={{ padding: '4px 12px', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.1)', color: 'var(--status-success)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: FONT }}>
                             رفع
                           </button>
                         </div>
@@ -435,7 +435,7 @@ export function TabMonitoring({
               </div>
             </SectionCard>
 
-            <SectionCard id="mon-fps-inner2" accentColor="#8B5CF6">
+            <SectionCard id="mon-fps-inner2" accentColor="var(--status-info)">
               <SectionHead icon="🖥️" title="أعلى بصمات الأجهزة" sub={`${(monData.top_fingerprints ?? []).length} جهاز مشبوه`} />
               <div style={{ padding: '20px 24px' }}>
                 {(monData.top_fingerprints ?? []).length === 0 ? (
@@ -450,7 +450,7 @@ export function TabMonitoring({
                           <span style={{ fontSize: '12px', fontWeight: 700, color: C.muted, minWidth: '16px', textAlign: 'center' }}>#{i + 1}</span>
                           <span style={{ fontFamily: 'monospace', fontSize: '11px', color: C.muted }}>{e.fingerprint.slice(0, 18)}…</span>
                         </div>
-                        <span style={{ fontSize: '13px', fontWeight: 900, color: danger ? '#EF4444' : '#F59E0B' }}>{e.count}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 900, color: danger ? 'var(--status-danger)' : 'var(--status-warning)' }}>{e.count}</span>
                       </div>
                       <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
                         <div className="mon-bar" style={{ height: '100%', borderRadius: '3px', background: danger ? 'linear-gradient(90deg,#8B5CF6,#EF4444)' : 'linear-gradient(90deg,#8B5CF6,#A78BFA)', '--w': `${pct}%`, width: `${pct}%`, animationDelay: `${i * 0.07}s` } as React.CSSProperties} />
@@ -464,11 +464,11 @@ export function TabMonitoring({
 
           {/* §5 SUSPICIOUS COMPANIES */}
           <div id="mon-suspects" className="mon-sec">
-            <SectionCard id="mon-suspects-inner2" accentColor="#EF4444">
+            <SectionCard id="mon-suspects-inner2" accentColor="var(--status-danger)">
               <SectionHead icon="🚨" title="الحسابات المشبوهة" sub={`${(monData.suspicious_companies ?? []).length} حساب يستحق المراجعة`} extra={
                 (monData.suspicious_companies ?? []).length > 0
-                  ? <Pill label={`${(monData.suspicious_companies ?? []).length} مشبوه`} color="#EF4444" bg="rgba(239,68,68,0.1)" />
-                  : <Pill label="✅ لا شيء" color="#34D399" bg="rgba(52,211,153,0.1)" />
+                  ? <Pill label={`${(monData.suspicious_companies ?? []).length} مشبوه`} color="var(--status-danger)" bg="rgba(239,68,68,0.1)" />
+                  : <Pill label="✅ لا شيء" color="var(--status-success)" bg="rgba(52,211,153,0.1)" />
               } />
               <div style={{ padding: '16px 24px 24px' }}>
                 {(monData.suspicious_companies ?? []).length === 0 ? (
@@ -479,7 +479,7 @@ export function TabMonitoring({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {(monData.suspicious_companies ?? []).map(c => {
-                      const sc = c.trial_score < 30 ? '#EF4444' : c.trial_score < 60 ? '#F59E0B' : '#34D399';
+                      const sc = c.trial_score < 30 ? 'var(--status-danger)' : c.trial_score < 60 ? 'var(--status-warning)' : 'var(--status-success)';
                       return (
                         <div key={c.id} className="mon-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '12px', alignItems: 'center', padding: '14px 18px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}`, transition: 'background 0.15s' }}>
                           <div>
@@ -490,8 +490,8 @@ export function TabMonitoring({
                             <div style={{ fontSize: '10px', color: C.muted, fontWeight: 700, marginBottom: '3px' }}>درجة الثقة</div>
                             <div style={{ fontSize: '22px', fontWeight: 900, color: sc }}>{c.trial_score}</div>
                           </div>
-                          <Pill label={c.verification_status === 'verified' ? '✓ موثق' : c.verification_status === 'pending' ? '⏳ معلق' : c.verification_status} color={c.verification_status === 'verified' ? '#34D399' : '#F59E0B'} bg={c.verification_status === 'verified' ? 'rgba(52,211,153,0.1)' : 'rgba(245,158,11,0.1)'} />
-                          <Pill label="🚨 مشبوه" color="#EF4444" bg="rgba(239,68,68,0.1)" />
+                          <Pill label={c.verification_status === 'verified' ? '✓ موثق' : c.verification_status === 'pending' ? '⏳ معلق' : c.verification_status} color={c.verification_status === 'verified' ? 'var(--status-success)' : 'var(--status-warning)'} bg={c.verification_status === 'verified' ? 'rgba(52,211,153,0.1)' : 'rgba(245,158,11,0.1)'} />
+                          <Pill label="🚨 مشبوه" color="var(--status-danger)" bg="rgba(239,68,68,0.1)" />
                         </div>
                       );
                     })}
@@ -503,11 +503,11 @@ export function TabMonitoring({
 
           {/* §6 RECENT BLOCKS */}
           <div id="mon-blocks" className="mon-sec">
-            <SectionCard id="mon-blocks-inner2" accentColor="#F59E0B">
+            <SectionCard id="mon-blocks-inner2" accentColor="var(--status-warning)">
               <SectionHead icon="🔒" title="آخر محاولات محجوبة" sub="الـ 20 محاولة الأخيرة في الوقت الفعلي" extra={
                 (monData.recent_blocks ?? []).length > 0
-                  ? <Pill label={`${(monData.recent_blocks ?? []).length} محاولة`} color="#F59E0B" bg="rgba(245,158,11,0.1)" />
-                  : <Pill label="✅ لا شيء" color="#34D399" bg="rgba(52,211,153,0.1)" />
+                  ? <Pill label={`${(monData.recent_blocks ?? []).length} محاولة`} color="var(--status-warning)" bg="rgba(245,158,11,0.1)" />
+                  : <Pill label="✅ لا شيء" color="var(--status-success)" bg="rgba(52,211,153,0.1)" />
               } />
               <div style={{ padding: '16px 24px 24px' }}>
                 {(monData.recent_blocks ?? []).length === 0 ? (
@@ -524,12 +524,12 @@ export function TabMonitoring({
                           <div style={{ fontFamily: 'monospace', fontSize: '11px', color: C.muted, marginTop: '2px' }}>{b.ip}</div>
                         </div>
                         <div>
-                          <Pill label={b.reason} color="#EF4444" bg="rgba(239,68,68,0.1)" />
+                          <Pill label={b.reason} color="var(--status-danger)" bg="rgba(239,68,68,0.1)" />
                           <div style={{ fontSize: '11px', color: C.muted, marginTop: '4px' }}>{new Date(b.created_at).toLocaleString('ar-EG')}</div>
                         </div>
-                        <Pill label="🚫 محجوب" color="#EF4444" bg="rgba(239,68,68,0.08)" />
+                        <Pill label="🚫 محجوب" color="var(--status-danger)" bg="rgba(239,68,68,0.08)" />
                         <button className="mon-btn" onClick={() => { setUnblockIP(b.ip); setUnblockEmail(b.email ?? ''); setUnblockResult(null); setUnblockMsg(null); scrollTo('mon-unblock'); }}
-                          style={{ padding: '8px 16px', borderRadius: '12px', border: '1.5px solid rgba(16,185,129,0.45)', background: 'linear-gradient(135deg,rgba(16,185,129,0.15),rgba(6,182,212,0.1))', color: '#10B981', cursor: 'pointer', fontFamily: FONT, fontWeight: 800, fontSize: '12px', whiteSpace: 'nowrap' }}>
+                          style={{ padding: '8px 16px', borderRadius: '12px', border: '1.5px solid rgba(16,185,129,0.45)', background: 'linear-gradient(135deg,rgba(16,185,129,0.15),rgba(6,182,212,0.1))', color: 'var(--status-success)', cursor: 'pointer', fontFamily: FONT, fontWeight: 800, fontSize: '12px', whiteSpace: 'nowrap' }}>
                           🔓 رفع الحجب
                         </button>
                       </div>

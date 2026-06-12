@@ -63,11 +63,11 @@ interface LayoutProps {
 }
 
 const ROLE_DOT: Record<string, string> = {
-  super_admin: '#f97316',
-  admin: '#f59e0b',
-  manager: '#60a5fa',
-  cashier: '#34d399',
-  salesperson: '#a78bfa',
+  super_admin: 'var(--status-warning)',
+  admin: 'var(--status-warning)',
+  manager: 'var(--status-info)',
+  cashier: 'var(--status-success)',
+  salesperson: 'var(--status-info)',
 };
 
 function getInitials(name: string) {
@@ -513,14 +513,14 @@ export function AppLayout({ children }: LayoutProps) {
                 appearance: 'none',
               }}
             >
-              <option value="" style={{ background: isDark ? 'var(--bg-card)' : '#fff' }}>
+              <option value="" style={{ background: isDark ? 'var(--bg-card)' : 'var(--text-1)' }}>
                 كل المخازن
               </option>
               {warehouses.map((w) => (
                 <option
                   key={w.id}
                   value={String(w.id)}
-                  style={{ background: isDark ? 'var(--bg-card)' : '#fff' }}
+                  style={{ background: isDark ? 'var(--bg-card)' : 'var(--text-1)' }}
                 >
                   {w.name}
                 </option>
@@ -777,7 +777,7 @@ export function AppLayout({ children }: LayoutProps) {
                     height: 28,
                     borderRadius: 8,
                     background: 'linear-gradient(135deg, var(--erp-brand), var(--erp-brand-hover))',
-                    color: '#000',
+                    color: 'var(--text-1)',
                     fontSize: 10,
                   }}
                 >
@@ -804,7 +804,7 @@ export function AppLayout({ children }: LayoutProps) {
                         width: 5,
                         height: 5,
                         borderRadius: '50%',
-                        background: ROLE_DOT[user.role] ?? '#94a3b8',
+                        background: ROLE_DOT[user.role] ?? 'var(--text-2)',
                         flexShrink: 0,
                       }}
                     />

@@ -25,10 +25,10 @@ interface AgingResponse {
 }
 
 const BUCKET_COLORS: Record<string, { bg: string; text: string; badge: string }> = {
-  "0-30":  { bg: "rgba(5,150,105,0.08)",  text: "#10b981", badge: "rgba(5,150,105,0.15)" },
+  "0-30":  { bg: "rgba(5,150,105,0.08)",  text: "var(--status-success)", badge: "rgba(5,150,105,0.15)" },
   "31-60": { bg: "rgba(234,179,8,0.08)",  text: "#eab308", badge: "rgba(234,179,8,0.15)" },
-  "61-90": { bg: "rgba(249,115,22,0.08)", text: "#f97316", badge: "rgba(249,115,22,0.15)" },
-  "90+":   { bg: "rgba(239,68,68,0.08)",  text: "#ef4444", badge: "rgba(239,68,68,0.15)" },
+  "61-90": { bg: "rgba(249,115,22,0.08)", text: "var(--status-warning)", badge: "rgba(249,115,22,0.15)" },
+  "90+":   { bg: "rgba(239,68,68,0.08)",  text: "var(--status-danger)", badge: "rgba(239,68,68,0.15)" },
 };
 
 const BUCKET_LABELS: Record<string, string> = {
@@ -97,7 +97,7 @@ export default function AgingReport() {
   };
 
   return (
-    <div dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif", color: "#fff" }} className="space-y-4">
+    <div dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif", color: "var(--text-1)" }} className="space-y-4">
 
       {/* ── Header ── */}
       <div style={cardStyle} className="flex flex-wrap items-center gap-3">
@@ -109,8 +109,8 @@ export default function AgingReport() {
             <button key={t} onClick={() => { setType(t); setBucket(null); }}
               style={{
                 padding: "5px 14px", fontSize: 12, fontWeight: 700,
-                background: type === t ? "#d97706" : "transparent",
-                color: type === t ? "#000" : "rgba(255,255,255,0.5)",
+                background: type === t ? "var(--status-warning)" : "transparent",
+                color: type === t ? "var(--text-1)" : "rgba(255,255,255,0.5)",
                 border: "none", cursor: "pointer", transition: "all 0.15s",
               }}>
               {t === "customers" ? "🧑‍💼 العملاء" : "🏭 الموردون"}
@@ -123,7 +123,7 @@ export default function AgingReport() {
         <input type="date" value={asOf} onChange={e => setAsOf(e.target.value)}
           style={{
             background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)",
-            borderRadius: 8, padding: "4px 10px", color: "#fff", fontSize: 12,
+            borderRadius: 8, padding: "4px 10px", color: "var(--text-1)", fontSize: 12,
           }} />
 
         <div className="flex-1" />
@@ -131,7 +131,7 @@ export default function AgingReport() {
         <button onClick={exportCsv}
           style={{
             background: "rgba(5,150,105,0.15)", border: "1px solid rgba(5,150,105,0.30)",
-            borderRadius: 8, padding: "5px 14px", color: "#10b981", fontSize: 12, fontWeight: 700, cursor: "pointer",
+            borderRadius: 8, padding: "5px 14px", color: "var(--status-success)", fontSize: 12, fontWeight: 700, cursor: "pointer",
           }}>
           ⬇ تصدير CSV
         </button>
@@ -151,7 +151,7 @@ export default function AgingReport() {
                   background: active ? col.bg : "rgba(255,255,255,0.03)",
                   border: `1.5px solid ${active ? col.text : "rgba(255,255,255,0.07)"}`,
                   borderRadius: 14, padding: "0.85rem 1rem", textAlign: "right",
-                  cursor: "pointer", transition: "all 0.15s", color: "#fff",
+                  cursor: "pointer", transition: "all 0.15s", color: "var(--text-1)",
                 }}>
                 <div style={{ fontSize: 11, color: col.text, fontWeight: 700, marginBottom: 4 }}>
                   {BUCKET_LABELS[b]}
@@ -178,7 +178,7 @@ export default function AgingReport() {
           <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
             إجمالي الديون المتأخرة {bucket ? `(${BUCKET_LABELS[bucket]})` : ""}
           </span>
-          <span style={{ fontSize: 22, fontWeight: 800, color: "#f59e0b", fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ fontSize: 22, fontWeight: 800, color: "var(--status-warning)", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrency(bucket ? (data.buckets[bucket as keyof typeof data.buckets] ?? 0) : data.total)}
           </span>
         </div>
@@ -187,7 +187,7 @@ export default function AgingReport() {
       {/* ── Items Table ── */}
       <div style={cardStyle}>
         {isLoading && <p style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", padding: "2rem 0" }}>جاري التحميل…</p>}
-        {error && <p style={{ textAlign: "center", color: "#ef4444" }}>{String(error)}</p>}
+        {error && <p style={{ textAlign: "center", color: "var(--status-danger)" }}>{String(error)}</p>}
         {data && !isLoading && (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -216,7 +216,7 @@ export default function AgingReport() {
                     <td style={{ ...td, fontFamily: "monospace" }}>{item.invoice_no}</td>
                     <td style={td}>{item.date}</td>
                     <td style={{ ...td, color: col.text, fontWeight: 700 }}>{item.days}</td>
-                    <td style={{ ...td, textAlign: "left", fontWeight: 700, color: "#f59e0b", fontVariantNumeric: "tabular-nums" }}>
+                    <td style={{ ...td, textAlign: "left", fontWeight: 700, color: "var(--status-warning)", fontVariantNumeric: "tabular-nums" }}>
                       {formatCurrency(item.remaining)}
                     </td>
                     <td style={td}>

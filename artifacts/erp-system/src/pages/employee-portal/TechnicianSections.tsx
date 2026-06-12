@@ -56,20 +56,20 @@ interface EarningsRow {
 
 /* ── Status label maps ─────────────────────────────────── */
 const JOB_STATUS: Record<string, { label: string; color: string }> = {
-  pending:              { label: 'في الانتظار',   color: '#f59e0b' },
-  diagnosing:           { label: 'قيد الفحص',     color: '#3b82f6' },
-  in_progress:          { label: 'قيد الإصلاح',   color: '#8b5cf6' },
-  in_repair:            { label: 'قيد الإصلاح',   color: '#8b5cf6' },
+  pending:              { label: 'في الانتظار',   color: 'var(--status-warning)' },
+  diagnosing:           { label: 'قيد الفحص',     color: 'var(--status-info)' },
+  in_progress:          { label: 'قيد الإصلاح',   color: 'var(--status-info)' },
+  in_repair:            { label: 'قيد الإصلاح',   color: 'var(--status-info)' },
   waiting_parts:        { label: 'بانتظار قطعة',  color: '#ec4899' },
-  qa:                   { label: 'اختبار الجودة', color: '#06b6d4' },
-  final_quality_check:  { label: 'فحص نهائي',     color: '#06b6d4' },
-  done:                 { label: 'تم الإصلاح',     color: '#10b981' },
+  qa:                   { label: 'اختبار الجودة', color: 'var(--status-info)' },
+  final_quality_check:  { label: 'فحص نهائي',     color: 'var(--status-info)' },
+  done:                 { label: 'تم الإصلاح',     color: 'var(--status-success)' },
   shipped:              { label: 'قيد الشحن',      color: '#0ea5e9' },
 };
 const SVC_STATUS: Record<string, { label: string; color: string }> = {
-  pending:     { label: 'في الانتظار', color: '#f59e0b' },
-  in_progress: { label: 'قيد التنفيذ', color: '#8b5cf6' },
-  completed:   { label: 'مكتمل',       color: '#10b981' },
+  pending:     { label: 'في الانتظار', color: 'var(--status-warning)' },
+  in_progress: { label: 'قيد التنفيذ', color: 'var(--status-info)' },
+  completed:   { label: 'مكتمل',       color: 'var(--status-success)' },
 };
 
 /* ── Props ─────────────────────────────────────────────── */
@@ -191,8 +191,8 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
     <>
       {/* ─── Section divider ─── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, marginTop: 4 }}>
-        <div style={{ width: 4, height: 20, borderRadius: 4, background: '#8b5cf6' }} />
-        <span style={{ fontSize: 13, fontWeight: 800, color: '#8b5cf6', letterSpacing: 0.3 }}>لوحة الفني</span>
+        <div style={{ width: 4, height: 20, borderRadius: 4, background: 'var(--status-info)' }} />
+        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--status-info)', letterSpacing: 0.3 }}>لوحة الفني</span>
         <div style={{ flex: 1, height: 1, background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(139,92,246,0.14)' }} />
       </div>
 
@@ -201,23 +201,23 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
         <KpiCard
           label="أرباح اليوم"
           value={sumLoading ? '…' : fmtCurrency(summary?.today ?? 0, currency)}
-          emoji="💰" color="#f59e0b" isDark={isDark}
+          emoji="💰" color="var(--status-warning)" isDark={isDark}
         />
         <KpiCard
           label="أرباح الشهر"
           value={sumLoading ? '…' : fmtCurrency(summary?.this_month ?? 0, currency)}
-          emoji="📅" color="#3b82f6" isDark={isDark}
+          emoji="📅" color="var(--status-info)" isDark={isDark}
         />
         <KpiCard
           label="خدمات نشطة"
           value={sumLoading ? '…' : String(summary?.active_count ?? activeServices.length)}
-          emoji="🔧" color="#10b981" isDark={isDark}
+          emoji="🔧" color="var(--status-success)" isDark={isDark}
           unit="خدمة"
         />
         <KpiCard
           label="أرباح معلقة"
           value={sumLoading ? '…' : fmtCurrency(summary?.outstanding_earnings ?? 0, currency)}
-          emoji="⏳" color="#8b5cf6" isDark={isDark}
+          emoji="⏳" color="var(--status-info)" isDark={isDark}
           note="مجموع مبالغ الخدمات النشطة"
         />
       </div>
@@ -226,12 +226,12 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
       <div style={S.section}>
         <div style={S.head}>
           <button onClick={() => setActiveOpen(o => !o)} style={S.headBtn}>
-            <span style={S.iconBox('#10b981')}><Wrench size={16} /></span>
+            <span style={S.iconBox('var(--status-success)')}><Wrench size={16} /></span>
             <span style={S.title}>خدماتي الحالية</span>
             {activeLoading && <Loader2 size={13} className="animate-spin" style={{ color: textMuted }} />}
             <span style={S.chevron}>{activeOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</span>
           </button>
-          <span style={S.badge('#10b981')}>{activeServices.length} خدمة</span>
+          <span style={S.badge('var(--status-success)')}>{activeServices.length} خدمة</span>
         </div>
 
         {activeOpen && (
@@ -257,7 +257,7 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
                       const jobSt = JOB_STATUS[s.job_status] ?? { label: s.job_status, color: textMuted };
                       return (
                         <tr key={s.id} style={S.rowStripe(i)}>
-                          <td style={{ ...S.td, fontFamily: 'monospace', color: '#8b5cf6', fontWeight: 700 }}>
+                          <td style={{ ...S.td, fontFamily: 'monospace', color: 'var(--status-info)', fontWeight: 700 }}>
                             {s.job_no}
                           </td>
                           <td style={S.td}>{s.customer_name}</td>
@@ -270,7 +270,7 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
                           <td style={S.td}>
                             <StatusPill label={jobSt.label} color={jobSt.color} />
                           </td>
-                          <td style={{ ...S.td, fontWeight: 700, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>
+                          <td style={{ ...S.td, fontWeight: 700, color: 'var(--status-success)', fontVariantNumeric: 'tabular-nums' }}>
                             {fmtCurrency(s.amount, currency)}
                           </td>
                           <td style={{ ...S.td, color: textMuted }}>
@@ -291,12 +291,12 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
       <div style={S.section}>
         <div style={S.head}>
           <button onClick={() => setCompletedOpen(o => !o)} style={S.headBtn}>
-            <span style={S.iconBox('#f59e0b')}><CheckCircle2 size={16} /></span>
+            <span style={S.iconBox('var(--status-warning)')}><CheckCircle2 size={16} /></span>
             <span style={S.title}>الخدمات المكتملة والأرباح المحققة</span>
             {earningsLoading && <Loader2 size={13} className="animate-spin" style={{ color: textMuted }} />}
             <span style={S.chevron}>{completedOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</span>
           </button>
-          <span style={S.badge('#f59e0b')}>{earnings.length} إجمالاً</span>
+          <span style={S.badge('var(--status-warning)')}>{earnings.length} إجمالاً</span>
         </div>
 
         {completedOpen && (
@@ -319,7 +319,7 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
                   <tbody>
                     {recentCompleted.map((e, i) => (
                       <tr key={e.id} style={S.rowStripe(i)}>
-                        <td style={{ ...S.td, fontFamily: 'monospace', color: '#8b5cf6', fontWeight: 700 }}>
+                        <td style={{ ...S.td, fontFamily: 'monospace', color: 'var(--status-info)', fontWeight: 700 }}>
                           {e.job_no}
                         </td>
                         <td style={S.td}>{e.customer_name}</td>
@@ -332,7 +332,7 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
                         <td style={{ ...S.td, fontVariantNumeric: 'tabular-nums' }}>
                           {fmtCurrency(e.amount, currency)}
                         </td>
-                        <td style={{ ...S.td, fontWeight: 800, color: '#10b981', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+                        <td style={{ ...S.td, fontWeight: 800, color: 'var(--status-success)', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
                           {fmtCurrency(e.commission_computed, currency)}
                         </td>
                       </tr>
@@ -349,7 +349,7 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
       <div style={S.section}>
         <div style={S.head}>
           <button onClick={() => setPerfOpen(o => !o)} style={S.headBtn}>
-            <span style={S.iconBox('#8b5cf6')}><TrendingUp size={16} /></span>
+            <span style={S.iconBox('var(--status-info)')}><TrendingUp size={16} /></span>
             <span style={S.title}>أدائي</span>
             <span style={S.chevron}>{perfOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</span>
           </button>
@@ -357,9 +357,9 @@ export function TechnicianSections({ empId, isDark, textMain, textMuted, cardBg,
         {perfOpen && (
           <div style={S.body}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-              <PerfStat label="خدمات مكتملة"  value={String(deliveredCount)}                      color="#10b981" />
-              <PerfStat label="خدمات نشطة"    value={String(activeCount)}                          color="#3b82f6" />
-              <PerfStat label="متوسط الكوميشن" value={fmtCurrency(avgCommission.toFixed(2), currency)} color="#8b5cf6" />
+              <PerfStat label="خدمات مكتملة"  value={String(deliveredCount)}                      color="var(--status-success)" />
+              <PerfStat label="خدمات نشطة"    value={String(activeCount)}                          color="var(--status-info)" />
+              <PerfStat label="متوسط الكوميشن" value={fmtCurrency(avgCommission.toFixed(2), currency)} color="var(--status-info)" />
             </div>
           </div>
         )}

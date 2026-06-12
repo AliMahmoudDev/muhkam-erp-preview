@@ -27,7 +27,7 @@ interface Announcement {
 const TYPE_STYLES: Record<string, { bg: string; border: string; text: string; icon: string }> = {
   info:    { bg: "#EFF6FF", border: "#BFDBFE", text: "#1E40AF", icon: "ℹ️" },
   success: { bg: "#F0FDF4", border: "#BBF7D0", text: "#166534", icon: "✅" },
-  warning: { bg: "#FFFBEB", border: "#FDE68A", text: "#92400E", icon: "⚠️" },
+  warning: { bg: "#FFFBEB", border: "#FDE68A", text: "var(--status-warning)", icon: "⚠️" },
   danger:  { bg: "#FEF2F2", border: "#FECACA", text: "#991B1B", icon: "🚨" },
 };
 

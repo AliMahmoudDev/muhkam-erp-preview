@@ -59,9 +59,9 @@ function fmtTime(val: unknown): string {
 
 function greetingInfo(): { text: string; Icon: typeof Sun; color: string } {
   const h = new Date().getHours();
-  if (h < 12) return { text: 'صباح الخير', Icon: Sun, color: '#f59e0b' };
-  if (h < 17) return { text: 'مساء الخير', Icon: Coffee, color: '#8b5cf6' };
-  return { text: 'مساء النور', Icon: Moon, color: '#6366f1' };
+  if (h < 12) return { text: 'صباح الخير', Icon: Sun, color: 'var(--status-warning)' };
+  if (h < 17) return { text: 'مساء الخير', Icon: Coffee, color: 'var(--status-info)' };
+  return { text: 'مساء النور', Icon: Moon, color: 'var(--status-info)' };
 }
 
 function translateRole(role: string): string {
@@ -210,9 +210,9 @@ export default function EmployeeGateway({ onEnter }: Props) {
 
   /* ── Colors ── */
   const bg = isDark ? '#070d1a' : '#f0f4ff';
-  const card = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
+  const card = isDark ? 'rgba(255,255,255,0.04)' : 'var(--text-1)';
   const bord = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const text = isDark ? '#f1f5f9' : 'var(--bg-app)';
+  const text = isDark ? 'var(--text-1)' : 'var(--bg-app)';
   const muted = isDark ? 'rgba(255,255,255,0.40)' : 'rgba(0,0,0,0.45)';
 
   return (
@@ -421,7 +421,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
               <div
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#f59e0b' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--status-warning)' }}>
                   <AlertCircle style={{ width: 16, height: 16 }} />
                   <span style={{ fontSize: 13, fontWeight: 600 }}>لم تسجّل حضورك بعد</span>
                 </div>
@@ -437,7 +437,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
                     border: 'none',
                     cursor: checkingIn ? 'not-allowed' : 'pointer',
                     background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: '#fff',
+                    color: 'var(--text-1)',
                     fontSize: 14,
                     fontWeight: 700,
                     opacity: checkingIn ? 0.6 : 1,
@@ -460,7 +460,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  color: '#34d399',
+                  color: 'var(--status-success)',
                 }}
               >
                 <CheckCircle2 style={{ width: 16, height: 16 }} />
@@ -475,7 +475,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  color: '#818cf8',
+                  color: 'var(--status-info)',
                 }}
               >
                 <LogOut style={{ width: 16, height: 16 }} />
@@ -501,10 +501,10 @@ export default function EmployeeGateway({ onEnter }: Props) {
             }}
           >
             <Smartphone
-              style={{ width: 18, height: 18, color: '#ef4444', flexShrink: 0, marginTop: 1 }}
+              style={{ width: 18, height: 18, color: 'var(--status-danger)', flexShrink: 0, marginTop: 1 }}
             />
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#ef4444', marginBottom: 2 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--status-danger)', marginBottom: 2 }}>
                 تنبيه: جهاز غير معروف
               </p>
               <p
@@ -542,7 +542,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              color: '#34d399',
+              color: 'var(--status-success)',
               fontSize: 12,
             }}
           >
@@ -564,7 +564,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
             border: 'none',
             cursor: 'pointer',
             background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-            color: '#fff',
+            color: 'var(--text-1)',
             fontSize: 16,
             fontWeight: 800,
             boxShadow: '0 8px 32px rgba(99,102,241,0.35)',

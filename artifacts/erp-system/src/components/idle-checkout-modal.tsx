@@ -72,7 +72,7 @@ export default function IdleCheckoutModal({
       }}
     >
       <div style={{
-        background: '#0f1729', border: '1px solid rgba(255,255,255,0.10)',
+        background: 'var(--bg-app)', border: '1px solid rgba(255,255,255,0.10)',
         borderRadius: 24, padding: '36px 40px', maxWidth: 420, width: '100%',
         textAlign: 'center', boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
       }}>
@@ -83,10 +83,10 @@ export default function IdleCheckoutModal({
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 20px',
         }}>
-          <Clock style={{ width: 32, height: 32, color: '#f59e0b' }} />
+          <Clock style={{ width: 32, height: 32, color: 'var(--status-warning)' }} />
         </div>
 
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: '#f1f5f9', margin: '0 0 8px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-1)', margin: '0 0 8px' }}>
           انتبه! لا يوجد نشاط منذ ساعة
         </h2>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.50)', margin: '0 0 24px', lineHeight: 1.6 }}>
@@ -95,7 +95,7 @@ export default function IdleCheckoutModal({
 
         {/* Countdown */}
         <div style={{
-          fontSize: 48, fontWeight: 900, color: secs <= 60 ? '#ef4444' : '#f59e0b',
+          fontSize: 48, fontWeight: 900, color: secs <= 60 ? 'var(--status-danger)' : 'var(--status-warning)',
           fontVariantNumeric: 'tabular-nums', marginBottom: 28,
           transition: 'color 0.5s',
         }}>
@@ -110,7 +110,7 @@ export default function IdleCheckoutModal({
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '13px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
               background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-              color: '#fff', fontSize: 15, fontWeight: 700,
+              color: 'var(--text-1)', fontSize: 15, fontWeight: 700,
             }}
           >
             <RefreshCw style={{ width: 16, height: 16 }} />
@@ -131,7 +131,7 @@ export default function IdleCheckoutModal({
               padding: '13px 24px', borderRadius: 12,
               border: '1px solid rgba(239,68,68,0.30)', cursor: 'pointer',
               background: 'rgba(239,68,68,0.08)',
-              color: '#ef4444', fontSize: 14, fontWeight: 600,
+              color: 'var(--status-danger)', fontSize: 14, fontWeight: 600,
             }}
           >
             <LogOut style={{ width: 15, height: 15 }} />

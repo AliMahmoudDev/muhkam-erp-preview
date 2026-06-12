@@ -82,7 +82,7 @@ export function ManagerModals({
               onClick={handleAddMgr} disabled={mgCreatePending}
               style={{
                 flex: 1, padding: '12px', borderRadius: '10px', border: 'none',
-                background: C.orange, color: '#fff', fontSize: '14px', fontWeight: 800,
+                background: C.orange, color: 'var(--text-1)', fontSize: '14px', fontWeight: 800,
                 cursor: mgCreatePending ? 'not-allowed' : 'pointer', fontFamily: FONT,
                 opacity: mgCreatePending ? 0.7 : 1,
               }}
@@ -125,7 +125,7 @@ export function ManagerModals({
               onClick={handleEditMgr} disabled={mgUpdatePending}
               style={{
                 flex: 1, padding: '12px', borderRadius: '10px', border: 'none',
-                background: C.orange, color: '#fff', fontSize: '14px', fontWeight: 800,
+                background: C.orange, color: 'var(--text-1)', fontSize: '14px', fontWeight: 800,
                 cursor: mgUpdatePending ? 'not-allowed' : 'pointer', fontFamily: FONT,
                 opacity: mgUpdatePending ? 0.7 : 1,
               }}

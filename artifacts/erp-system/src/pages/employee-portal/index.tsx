@@ -60,10 +60,10 @@ export default function EmployeePortal() {
   const today = todayStr();
   const currentMonth = today.slice(0, 7);
 
-  const textMain = isDark ? '#f1f5f9' : 'var(--bg-app)';
+  const textMain = isDark ? 'var(--text-1)' : 'var(--bg-app)';
   const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const bg = isDark ? 'rgba(255,255,255,0.01)' : '#f8fafc';
-  const cardBg = isDark ? 'rgba(255,255,255,0.035)' : '#ffffff';
+  const bg = isDark ? 'rgba(255,255,255,0.01)' : 'var(--text-1)';
+  const cardBg = isDark ? 'rgba(255,255,255,0.035)' : 'var(--text-1)';
   const border = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)';
 
   const [showAdvanceModal, setShowAdvanceModal] = useState(false);
@@ -359,14 +359,14 @@ export default function EmployeePortal() {
               flexShrink: 0,
             }}
           >
-            <GreetIcon size={26} color="#f59e0b" />
+            <GreetIcon size={26} color="var(--status-warning)" />
           </div>
           <div>
             <p
               style={{
                 fontSize: 20,
                 fontWeight: 900,
-                color: isDark ? '#fcd34d' : '#92400e',
+                color: isDark ? '#fcd34d' : 'var(--status-warning)',
                 lineHeight: 1.2,
               }}
             >
@@ -393,7 +393,7 @@ export default function EmployeePortal() {
                 }}
               >
                 <p style={{ fontSize: 10, color: textMuted }}>كود الموظف</p>
-                <p style={{ fontSize: 16, fontWeight: 900, color: isDark ? '#fcd34d' : '#92400e' }}>
+                <p style={{ fontSize: 16, fontWeight: 900, color: isDark ? '#fcd34d' : 'var(--status-warning)' }}>
                   {empCode}
                 </p>
               </div>
@@ -407,8 +407,8 @@ export default function EmployeePortal() {
                   background: isDark ? 'rgba(52,211,153,0.08)' : 'rgba(52,211,153,0.08)',
                 }}
               >
-                <p style={{ fontSize: 10, color: '#34d399' }}>الراتب</p>
-                <p style={{ fontSize: 14, fontWeight: 900, color: '#34d399' }}>{empSalary}</p>
+                <p style={{ fontSize: 10, color: 'var(--status-success)' }}>الراتب</p>
+                <p style={{ fontSize: 14, fontWeight: 900, color: 'var(--status-success)' }}>{empSalary}</p>
               </div>
             )}
           </div>
@@ -449,7 +449,7 @@ export default function EmployeePortal() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#34d399',
+                color: 'var(--status-success)',
               }}
             >
               <UserCheck size={17} />
@@ -467,7 +467,7 @@ export default function EmployeePortal() {
                 style={{
                   fontSize: 13,
                   fontWeight: 700,
-                  color: alreadyCheckedIn ? '#34d399' : textMuted,
+                  color: alreadyCheckedIn ? 'var(--status-success)' : textMuted,
                 }}
               >
                 {alreadyCheckedIn ? fmtTime(todayRec?.check_in_time) : '—'}
@@ -479,7 +479,7 @@ export default function EmployeePortal() {
                 style={{
                   fontSize: 13,
                   fontWeight: 700,
-                  color: alreadyCheckedOut ? '#f87171' : textMuted,
+                  color: alreadyCheckedOut ? 'var(--status-danger)' : textMuted,
                 }}
               >
                 {alreadyCheckedOut ? fmtTime(todayRec?.check_out_time) : '—'}
@@ -488,7 +488,7 @@ export default function EmployeePortal() {
             {alreadyCheckedIn && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 12, color: textMuted }}>المدة</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#a78bfa' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--status-info)' }}>
                   {calcDuration(todayRec?.check_in_time, todayRec?.check_out_time)}
                   {!alreadyCheckedOut && (
                     <span style={{ fontSize: 10, color: textMuted, marginRight: 4 }}>(جارٍ)</span>
@@ -518,7 +518,7 @@ export default function EmployeePortal() {
                   border: 'none',
                   cursor: 'pointer',
                   background: 'linear-gradient(135deg,#059669,#34d399)',
-                  color: '#fff',
+                  color: 'var(--text-1)',
                   fontWeight: 800,
                   fontSize: 12,
                   display: 'flex',
@@ -543,7 +543,7 @@ export default function EmployeePortal() {
                   border: 'none',
                   cursor: 'pointer',
                   background: 'linear-gradient(135deg,#dc2626,#f87171)',
-                  color: '#fff',
+                  color: 'var(--text-1)',
                   fontWeight: 800,
                   fontSize: 12,
                   display: 'flex',
@@ -569,7 +569,7 @@ export default function EmployeePortal() {
                   borderRadius: 9,
                   textAlign: 'center',
                   background: 'rgba(52,211,153,0.09)',
-                  color: '#34d399',
+                  color: 'var(--status-success)',
                   fontWeight: 700,
                   fontSize: 12,
                   display: 'flex',
@@ -603,7 +603,7 @@ export default function EmployeePortal() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#60a5fa',
+                color: 'var(--status-info)',
               }}
             >
               <Briefcase size={17} />
@@ -675,7 +675,7 @@ export default function EmployeePortal() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#a78bfa',
+              color: 'var(--status-info)',
             }}
           >
             <Calendar size={17} />
@@ -693,35 +693,35 @@ export default function EmployeePortal() {
             label="حاضر"
             value={Number(summary.present_days ?? 0)}
             icon={<CheckCircle2 size={15} />}
-            color="#34d399"
+            color="var(--status-success)"
             bg="rgba(52,211,153,0.10)"
           />
           <StatCard
             label="غائب"
             value={Number(summary.absent_days ?? 0)}
             icon={<XCircle size={15} />}
-            color="#f87171"
+            color="var(--status-danger)"
             bg="rgba(248,113,113,0.10)"
           />
           <StatCard
             label="تأخر"
             value={Number(summary.late_days ?? 0)}
             icon={<AlertCircle size={15} />}
-            color="#fbbf24"
+            color="var(--status-warning)"
             bg="rgba(251,191,36,0.10)"
           />
           <StatCard
             label="إجازة"
             value={Number(summary.leave_days ?? 0)}
             icon={<Calendar size={15} />}
-            color="#60a5fa"
+            color="var(--status-info)"
             bg="rgba(96,165,250,0.10)"
           />
           <StatCard
             label="ساعات"
             value={`${Number(summary.total_hours ?? 0).toFixed(0)}س`}
             icon={<Clock size={15} />}
-            color="#a78bfa"
+            color="var(--status-info)"
             bg="rgba(167,139,250,0.10)"
           />
         </div>
@@ -731,7 +731,7 @@ export default function EmployeePortal() {
       <SectionCard
         icon={<Wallet size={17} />}
         title={`السلف والمصروفات (${advances.length})`}
-        accent="#f59e0b"
+        accent="var(--status-warning)"
         isDark={isDark}
         border={border}
         cardBg={cardBg}
@@ -747,7 +747,7 @@ export default function EmployeePortal() {
               border: 'none',
               cursor: 'pointer',
               background: 'linear-gradient(135deg,#b45309,#f59e0b)',
-              color: '#fff',
+              color: 'var(--text-1)',
               fontWeight: 700,
               fontSize: 12,
             }}
@@ -775,7 +775,7 @@ export default function EmployeePortal() {
                   border: `1px solid ${border}`,
                 }}
               >
-                <Wallet size={13} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                <Wallet size={13} style={{ color: 'var(--status-warning)', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 13, fontWeight: 700 }}>
@@ -791,7 +791,7 @@ export default function EmployeePortal() {
                 {Boolean(a.remaining_balance) && Number(a.remaining_balance) > 0 && (
                   <div style={{ textAlign: 'center' }}>
                     <p style={{ fontSize: 10, color: textMuted }}>المتبقي</p>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: '#fbbf24' }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--status-warning)' }}>
                       {fmtCurrency(a.remaining_balance, fmt(a.currency))}
                     </p>
                   </div>
@@ -806,7 +806,7 @@ export default function EmployeePortal() {
       <SectionCard
         icon={<TrendingDown size={17} />}
         title={`الخصومات (${deductions.length})`}
-        accent="#f87171"
+        accent="var(--status-danger)"
         isDark={isDark}
         border={border}
         cardBg={cardBg}
@@ -830,10 +830,10 @@ export default function EmployeePortal() {
                   border: '1px solid rgba(248,113,113,0.14)',
                 }}
               >
-                <TrendingDown size={13} style={{ color: '#f87171', flexShrink: 0 }} />
+                <TrendingDown size={13} style={{ color: 'var(--status-danger)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#f87171' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--status-danger)' }}>
                       -{fmtCurrency(d.amount, fmt(d.currency))}
                     </span>
                     <span
@@ -842,7 +842,7 @@ export default function EmployeePortal() {
                         padding: '2px 7px',
                         borderRadius: 5,
                         background: 'rgba(248,113,113,0.12)',
-                        color: '#f87171',
+                        color: 'var(--status-danger)',
                         fontWeight: 600,
                       }}
                     >
@@ -864,7 +864,7 @@ export default function EmployeePortal() {
       <SectionCard
         icon={<Gift size={17} />}
         title={`الحوافز والمكافآت (${bonuses.length})`}
-        accent="#34d399"
+        accent="var(--status-success)"
         isDark={isDark}
         border={border}
         cardBg={cardBg}
@@ -888,9 +888,9 @@ export default function EmployeePortal() {
                   border: '1px solid rgba(52,211,153,0.14)',
                 }}
               >
-                <Gift size={13} style={{ color: '#34d399', flexShrink: 0 }} />
+                <Gift size={13} style={{ color: 'var(--status-success)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#34d399' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--status-success)' }}>
                     +{fmtCurrency(b.amount, fmt(b.currency))}
                   </span>
                   <p style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>
@@ -908,7 +908,7 @@ export default function EmployeePortal() {
       <SectionCard
         icon={<FileText size={17} />}
         title={`طلبات الإجازة (${leaves.length})`}
-        accent="#60a5fa"
+        accent="var(--status-info)"
         isDark={isDark}
         border={border}
         cardBg={cardBg}
@@ -934,10 +934,10 @@ export default function EmployeePortal() {
                   border: '1px solid rgba(96,165,250,0.15)',
                 }}
               >
-                <p style={{ fontSize: 10, color: '#60a5fa', fontWeight: 600, marginBottom: 1 }}>
+                <p style={{ fontSize: 10, color: 'var(--status-info)', fontWeight: 600, marginBottom: 1 }}>
                   {fmt(lb.leave_type_name_ar ?? lb.leave_type_code)}
                 </p>
-                <p style={{ fontSize: 16, fontWeight: 900, color: '#60a5fa' }}>
+                <p style={{ fontSize: 16, fontWeight: 900, color: 'var(--status-info)' }}>
                   {Number(lb.balance_days ?? 0).toFixed(0)} يوم
                 </p>
                 <p style={{ fontSize: 10, color: textMuted }}>رصيد متاح</p>
@@ -964,7 +964,7 @@ export default function EmployeePortal() {
                   border: `1px solid ${border}`,
                 }}
               >
-                <FileText size={13} style={{ color: '#60a5fa', flexShrink: 0 }} />
+                <FileText size={13} style={{ color: 'var(--status-info)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 12, fontWeight: 700 }}>
@@ -979,7 +979,7 @@ export default function EmployeePortal() {
                     <p style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>{fmt(l.reason)}</p>
                   )}
                   {Boolean(l.rejection_reason) && (
-                    <p style={{ fontSize: 11, color: '#f87171', marginTop: 2 }}>
+                    <p style={{ fontSize: 11, color: 'var(--status-danger)', marginTop: 2 }}>
                       سبب الرفض: {fmt(l.rejection_reason)}
                     </p>
                   )}
@@ -994,7 +994,7 @@ export default function EmployeePortal() {
       <SectionCard
         icon={<Wallet size={17} />}
         title={`قسائم الرواتب (${payslips.length})`}
-        accent="#34d399"
+        accent="var(--status-success)"
         isDark={isDark}
         border={border}
         cardBg={cardBg}
@@ -1036,7 +1036,7 @@ export default function EmployeePortal() {
                         String(p.status) === 'approved'
                           ? 'rgba(52,211,153,0.2)'
                           : 'rgba(251,191,36,0.2)',
-                      color: String(p.status) === 'approved' ? '#34d399' : '#fbbf24',
+                      color: String(p.status) === 'approved' ? 'var(--status-success)' : 'var(--status-warning)',
                       fontWeight: 700,
                     }}
                   >
@@ -1082,7 +1082,7 @@ export default function EmployeePortal() {
       <SectionCard
         icon={<RotateCcw size={17} />}
         title="سجل الحضور والانصراف (30 يوم)"
-        accent="#a78bfa"
+        accent="var(--status-info)"
         isDark={isDark}
         border={border}
         cardBg={cardBg}
@@ -1133,7 +1133,7 @@ export default function EmployeePortal() {
                     <td
                       style={{
                         padding: '7px 10px',
-                        color: '#34d399',
+                        color: 'var(--status-success)',
                         fontWeight: 600,
                         whiteSpace: 'nowrap',
                       }}
@@ -1143,7 +1143,7 @@ export default function EmployeePortal() {
                     <td
                       style={{
                         padding: '7px 10px',
-                        color: '#f87171',
+                        color: 'var(--status-danger)',
                         fontWeight: 600,
                         whiteSpace: 'nowrap',
                       }}
@@ -1153,7 +1153,7 @@ export default function EmployeePortal() {
                     <td
                       style={{
                         padding: '7px 10px',
-                        color: '#a78bfa',
+                        color: 'var(--status-info)',
                         fontVariantNumeric: 'tabular-nums',
                         whiteSpace: 'nowrap',
                       }}

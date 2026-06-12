@@ -196,10 +196,10 @@ export default function Branches() {
           {/* Stats mini-row */}
           <div className="grid grid-cols-4 gap-1.5">
             {[
-              { label: 'الكل',   value: branches.length,  color: '#F59E0B' },
-              { label: 'نشط',    value: activeBranches,   color: '#10B981' },
-              { label: 'مخازن',  value: totalW,           color: '#60A5FA' },
-              { label: 'خزائن',  value: totalS,           color: '#A78BFA' },
+              { label: 'الكل',   value: branches.length,  color: 'var(--status-warning)' },
+              { label: 'نشط',    value: activeBranches,   color: 'var(--status-success)' },
+              { label: 'مخازن',  value: totalW,           color: 'var(--status-info)' },
+              { label: 'خزائن',  value: totalS,           color: 'var(--status-info)' },
             ].map((s) => (
               <div key={s.label} className="rounded-lg p-2 text-center border border-[var(--erp-border)]" style={{ background: s.color + '10' }}>
                 <p className="text-base font-black" style={{ color: s.color }}>{s.value}</p>
@@ -448,17 +448,17 @@ function OverviewTab({ data }: { data: BranchOverview }) {
     .reduce((sum, e) => sum + Number(e.salary), 0);
 
   const kpis = [
-    { label: 'الموظفون النشطون', value: activeEmp,           sub: `من ${data.employees.length} إجمالي`,   color: '#F59E0B', icon: UserCheck  },
-    { label: 'المخازن',          value: data.warehouses.length, sub: 'مخزن مرتبط',                         color: '#60A5FA', icon: Warehouse  },
-    { label: 'الخزائن',          value: data.safes.length,    sub: 'خزينة مرتبطة',                         color: '#A78BFA', icon: Vault     },
-    { label: 'إجمالي الرواتب',   value: fmt(totalSalaries),  sub: 'للموظفين النشطين',                      color: '#34D399', icon: BadgeDollarSign },
+    { label: 'الموظفون النشطون', value: activeEmp,           sub: `من ${data.employees.length} إجمالي`,   color: 'var(--status-warning)', icon: UserCheck  },
+    { label: 'المخازن',          value: data.warehouses.length, sub: 'مخزن مرتبط',                         color: 'var(--status-info)', icon: Warehouse  },
+    { label: 'الخزائن',          value: data.safes.length,    sub: 'خزينة مرتبطة',                         color: 'var(--status-info)', icon: Vault     },
+    { label: 'إجمالي الرواتب',   value: fmt(totalSalaries),  sub: 'للموظفين النشطين',                      color: 'var(--status-success)', icon: BadgeDollarSign },
   ];
 
   const stats30 = [
-    { label: 'مبيعات (30 يوم)', value: fmt(s.sales_total),   sub: `${s.sales_count} فاتورة`,  color: '#10B981', icon: ShoppingCart, trend: 'up'   },
-    { label: 'صيانة (30 يوم)',   value: s.repairs_count,      sub: 'بطاقة صيانة',              color: '#60A5FA', icon: Wrench,        trend: 'neutral' },
-    { label: 'مصروفات (30 يوم)', value: fmt(s.expenses_total),sub: 'إجمالي المصروفات',         color: '#EF4444', icon: TrendingDown,  trend: 'down' },
-    { label: 'إيرادات أخرى',     value: fmt(s.income_total),  sub: 'غير المبيعات',             color: '#8B5CF6', icon: TrendingUp,    trend: 'up'   },
+    { label: 'مبيعات (30 يوم)', value: fmt(s.sales_total),   sub: `${s.sales_count} فاتورة`,  color: 'var(--status-success)', icon: ShoppingCart, trend: 'up'   },
+    { label: 'صيانة (30 يوم)',   value: s.repairs_count,      sub: 'بطاقة صيانة',              color: 'var(--status-info)', icon: Wrench,        trend: 'neutral' },
+    { label: 'مصروفات (30 يوم)', value: fmt(s.expenses_total),sub: 'إجمالي المصروفات',         color: 'var(--status-danger)', icon: TrendingDown,  trend: 'down' },
+    { label: 'إيرادات أخرى',     value: fmt(s.income_total),  sub: 'غير المبيعات',             color: 'var(--status-info)', icon: TrendingUp,    trend: 'up'   },
   ];
 
   return (
@@ -523,10 +523,10 @@ function OverviewTab({ data }: { data: BranchOverview }) {
 /* ══ Tab: Employees ══════════════════════════════════════════════ */
 function EmployeesTab({ employees }: { employees: EmployeeRow[] }) {
   const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-    active:      { label: 'نشط',      color: '#10B981' },
-    inactive:    { label: 'غير نشط', color: '#EF4444' },
-    on_leave:    { label: 'إجازة',    color: '#F59E0B' },
-    terminated:  { label: 'منتهي',   color: '#6B7280' },
+    active:      { label: 'نشط',      color: 'var(--status-success)' },
+    inactive:    { label: 'غير نشط', color: 'var(--status-danger)' },
+    on_leave:    { label: 'إجازة',    color: 'var(--status-warning)' },
+    terminated:  { label: 'منتهي',   color: 'var(--text-2)' },
   };
 
   if (employees.length === 0) return (
@@ -539,12 +539,16 @@ function EmployeesTab({ employees }: { employees: EmployeeRow[] }) {
   return (
     <div className="space-y-2">
       {employees.map((e) => {
-        const st = STATUS_LABEL[e.employment_status] ?? { label: e.employment_status, color: '#6B7280' };
+        const st = STATUS_LABEL[e.employment_status] ?? { label: e.employment_status, color: 'var(--text-2)' };
         return (
           <div key={e.id} className="rounded-xl border border-[var(--erp-border)] bg-[var(--erp-bg-card)] px-4 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-sm" style={{ background: '#F59E0B1A', color: '#F59E0B' }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-sm" style={{
+                    // eslint-disable-next-line erp/no-hardcoded-colors -- 8-char hex+alpha (amber/10%): rgba() equivalent has no token form
+                    background: '#F59E0B1A',
+                    color: 'var(--status-warning)'
+                  }}>
                   {e.name.charAt(0)}
                 </div>
                 <div className="min-w-0">

@@ -93,7 +93,7 @@ export function MobileNavCustomizer({
   const hdrBdr    = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)';
   const itemBg    = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
   const itemBdr   = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const txtPrim   = isDark ? 'rgba(255,255,255,0.90)' : '#0D1117';
+  const txtPrim   = isDark ? 'rgba(255,255,255,0.90)' : 'var(--bg-app)';
   const txtMuted  = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)';
   const atLimit   = selected.length >= 5;
 
@@ -125,7 +125,7 @@ export function MobileNavCustomizer({
           <span
             style={{
               fontSize: 11, fontWeight: 800,
-              color: atLimit ? '#f87171' : '#f59e0b',
+              color: atLimit ? 'var(--status-danger)' : 'var(--status-warning)',
               background: atLimit ? 'rgba(239,68,68,0.10)' : 'rgba(245,158,11,0.10)',
               border: `1px solid ${atLimit ? 'rgba(239,68,68,0.20)' : 'rgba(245,158,11,0.20)'}`,
               borderRadius: 8, padding: '2px 8px',
@@ -157,7 +157,7 @@ export function MobileNavCustomizer({
                       border: '1px solid rgba(245,158,11,0.20)',
                     }}
                   >
-                    <Icon style={{ width: 15, height: 15, color: '#f59e0b', flexShrink: 0 }} />
+                    <Icon style={{ width: 15, height: 15, color: 'var(--status-warning)', flexShrink: 0 }} />
                     <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: txtPrim }}>
                       {page.label}
                     </span>
@@ -207,7 +207,7 @@ export function MobileNavCustomizer({
           <p style={{ fontSize: 10, fontWeight: 800, color: txtMuted, letterSpacing: '0.05em', marginBottom: 8 }}>
             المتاحة للإضافة
             {atLimit && (
-              <span style={{ color: '#f87171', fontWeight: 700, marginRight: 4 }}>
+              <span style={{ color: 'var(--status-danger)', fontWeight: 700, marginRight: 4 }}>
                 — وصلت الحد الأقصى (5)
               </span>
             )}
@@ -236,7 +236,7 @@ export function MobileNavCustomizer({
                       width: 26, height: 26, borderRadius: 8,
                       background: atLimit ? 'transparent' : 'rgba(245,158,11,0.12)',
                       border: `1px solid ${atLimit ? itemBdr : 'rgba(245,158,11,0.28)'}`,
-                      color: atLimit ? txtMuted : '#f59e0b',
+                      color: atLimit ? txtMuted : 'var(--status-warning)',
                       cursor: atLimit ? 'not-allowed' : 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
@@ -259,7 +259,7 @@ export function MobileNavCustomizer({
               background: selected.length > 0
                 ? 'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)'
                 : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'),
-              color: selected.length > 0 ? '#000' : txtMuted,
+              color: selected.length > 0 ? 'var(--text-1)' : txtMuted,
               border: 'none',
               cursor: selected.length > 0 ? 'pointer' : 'not-allowed',
               boxShadow: selected.length > 0 ? '0 4px 18px rgba(245,158,11,0.32)' : 'none',

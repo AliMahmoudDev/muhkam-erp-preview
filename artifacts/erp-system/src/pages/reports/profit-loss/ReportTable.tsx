@@ -30,8 +30,8 @@ export interface ReportTableProps {
 
 
 /* ── Palette ──────────────────────────────────────────────────────────────── */
-const BRANCH_COLORS = ["#f59e0b","#3b82f6","#10b981","#8b5cf6","#f97316","#06b6d4","#ec4899","#ef4444"];
-const CAT_COLORS    = ["#f59e0b","#ef4444","#3b82f6","#10b981","#8b5cf6","#f97316","#06b6d4","#ec4899","#84cc16","#6b7280"];
+const BRANCH_COLORS = ["var(--status-warning)","var(--status-info)","var(--status-success)","var(--status-info)","var(--status-warning)","var(--status-info)","#ec4899","var(--status-danger)"];
+const CAT_COLORS    = ["var(--status-warning)","var(--status-danger)","var(--status-info)","var(--status-success)","var(--status-info)","var(--status-warning)","var(--status-info)","#ec4899","#84cc16","var(--text-2)"];
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 function pctChange(curr: number, prev: number): number | null {
@@ -85,16 +85,16 @@ function AccountingStatement({ pl }: { pl: ProfitsData }) {
   /* ── Design tokens ── */
   const border   = isLight ? "#e5e7eb"               : "rgba(255,255,255,0.08)";
   const txtMain  = isLight ? "var(--bg-card)"               : "rgba(255,255,255,0.90)";
-  const txtSub   = isLight ? "#6b7280"               : "rgba(255,255,255,0.38)";
+  const txtSub   = isLight ? "var(--text-2)"               : "rgba(255,255,255,0.38)";
   const txtHint  = isLight ? "#9ca3af"               : "rgba(255,255,255,0.28)";
-  const secBg    = isLight ? "#f8fafc"               : "rgba(255,255,255,0.03)";
-  const totalBg  = isLight ? "#f1f5f9"               : "rgba(255,255,255,0.05)";
+  const secBg    = isLight ? "var(--text-1)"               : "rgba(255,255,255,0.03)";
+  const totalBg  = isLight ? "var(--text-1)"               : "rgba(255,255,255,0.05)";
   const grossBg  = isLight ? "#fef9ec"               : "rgba(245,158,11,0.08)";
   const netBg    = pl.net_profit >= 0
     ? (isLight ? "#ecfdf5" : "rgba(5,150,105,0.10)")
     : (isLight ? "#fef2f2" : "rgba(220,38,38,0.10)");
-  const netColor = pl.net_profit >= 0 ? "#059669"    : "#dc2626";
-  const grossClr = pl.gross_profit >= 0 ? "#d97706"  : "#dc2626";
+  const netColor = pl.net_profit >= 0 ? "var(--status-success)"    : "var(--status-danger)";
+  const grossClr = pl.gross_profit >= 0 ? "var(--status-warning)"  : "var(--status-danger)";
 
   const hasReturn   = pl.return_amount > 0;
   const netRevenue  = pl.total_revenue - pl.return_amount;
@@ -183,13 +183,13 @@ function AccountingStatement({ pl }: { pl: ProfitsData }) {
 
             <tr>
               <td style={cell({ fontWeight: 600 })}>إجمالي المبيعات</td>
-              <td style={cellNum({ color: "#059669" })}>{formatCurrency(pl.total_revenue)}</td>
+              <td style={cellNum({ color: "var(--status-success)" })}>{formatCurrency(pl.total_revenue)}</td>
             </tr>
 
             {hasReturn && (
               <ChildRow label="(−) مرتجعات المبيعات"
                 amount={`(${formatCurrency(pl.return_amount)})`}
-                color="#dc2626"/>
+                color="var(--status-danger)"/>
             )}
 
             {hasReturn && (
@@ -206,7 +206,7 @@ function AccountingStatement({ pl }: { pl: ProfitsData }) {
 
             <ChildRow label="(−) تكلفة المنتجات المباعة"
               amount={`(${formatCurrency(pl.total_cost)})`}
-              color="#dc2626"/>
+              color="var(--status-danger)"/>
 
             <Spacer/>
 
@@ -233,12 +233,12 @@ function AccountingStatement({ pl }: { pl: ProfitsData }) {
                 <ChildRow key={e.category}
                   label={`(−) ${e.category}`}
                   amount={`(${formatCurrency(e.total)})`}
-                  color="#dc2626"/>
+                  color="var(--status-danger)"/>
               ))
             ) : pl.total_expenses > 0 ? (
               <ChildRow label="(−) مصروفات تشغيلية"
                 amount={`(${formatCurrency(pl.total_expenses)})`}
-                color="#dc2626"/>
+                color="var(--status-danger)"/>
             ) : (
               <tr>
                 <td colSpan={2} style={{ ...cell(), color: txtHint, textAlign: "center", fontStyle: "italic", fontSize: 12 }}>
@@ -250,13 +250,13 @@ function AccountingStatement({ pl }: { pl: ProfitsData }) {
             {otherExpAmt > 0 && (
               <ChildRow label="(−) مصروفات أخرى"
                 amount={`(${formatCurrency(otherExpAmt)})`}
-                color="#dc2626"/>
+                color="var(--status-danger)"/>
             )}
 
             {expCats.length > 0 && (
               <TotalRow label="إجمالي المصروفات"
                 amount={`(${formatCurrency(pl.total_expenses)})`}
-                color="#dc2626"
+                color="var(--status-danger)"
                 bg={totalBg}/>
             )}
 
@@ -350,10 +350,10 @@ function BranchTable({ warehouses }: { warehouses: ProfitsData["by_warehouse"] }
 /* ── [Accordion] Sales Breakdown ─────────────────────────────────────────── */
 function SalesBreakdown({ pl }: { pl: ProfitsData }) {
   const segments = [
-    { label:"نقدي",  value:pl.cash_sales,    color:"#10b981", icon:<HandCoins className="w-3.5 h-3.5"/> },
-    { label:"آجل",   value:pl.credit_sales,  color:"#3b82f6", icon:<CreditCard className="w-3.5 h-3.5"/> },
-    { label:"جزئي",  value:pl.partial_sales, color:"#f59e0b", icon:<Minus className="w-3.5 h-3.5"/> },
-    { label:"مرتجع", value:pl.return_amount, color:"#ef4444", icon:<RotateCcw className="w-3.5 h-3.5"/> },
+    { label:"نقدي",  value:pl.cash_sales,    color:"var(--status-success)", icon:<HandCoins className="w-3.5 h-3.5"/> },
+    { label:"آجل",   value:pl.credit_sales,  color:"var(--status-info)", icon:<CreditCard className="w-3.5 h-3.5"/> },
+    { label:"جزئي",  value:pl.partial_sales, color:"var(--status-warning)", icon:<Minus className="w-3.5 h-3.5"/> },
+    { label:"مرتجع", value:pl.return_amount, color:"var(--status-danger)", icon:<RotateCcw className="w-3.5 h-3.5"/> },
   ].filter(s=>s.value>0);
   const total = pl.total_revenue + pl.return_amount;
   if (!segments.length) return <p className="rpt-muted text-sm py-4 text-center">لا توجد بيانات</p>;
@@ -425,7 +425,7 @@ function TopProducts({ products }: { products: ProfitsData["by_product"] }) {
     <div className="space-y-2 pt-1">
       {top.map((p,i)=>{
         const margin = p.revenue>0?(p.profit/p.revenue)*100:0;
-        const accent = margin>=50?"#10b981":margin>=30?"#f59e0b":"#ef4444";
+        const accent = margin>=50?"var(--status-success)":margin>=30?"var(--status-warning)":"var(--status-danger)";
         return (
           <div key={p.product_id} className="rpt-panel flex items-center gap-3 px-4 py-3 rounded-xl">
             <span className="text-base shrink-0">{MEDALS[i]??`#${i+1}`}</span>
@@ -507,15 +507,15 @@ function TrendTab({ pl }: { pl: ProfitsData }) {
       <ResponsiveContainer width="100%" height={190}>
         <AreaChart data={data} margin={{top:4,right:0,left:0,bottom:0}}>
           <defs>
-            <linearGradient id="gRev2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f59e0b" stopOpacity={0.25}/><stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/></linearGradient>
-            <linearGradient id="gProf2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+            <linearGradient id="gRev2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--status-warning)" stopOpacity={0.25}/><stop offset="95%" stopColor="var(--status-warning)" stopOpacity={0}/></linearGradient>
+            <linearGradient id="gProf2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--status-success)" stopOpacity={0.25}/><stop offset="95%" stopColor="var(--status-success)" stopOpacity={0}/></linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false}/>
           <XAxis dataKey="name" tick={{fill:"rgba(255,255,255,0.3)",fontSize:10,fontFamily:"Tajawal,Cairo,sans-serif"}} axisLine={false} tickLine={false}/>
           <YAxis tick={{fill:"rgba(255,255,255,0.3)",fontSize:9}} tickFormatter={v=>`${(v/1000).toFixed(0)}k`} width={34} axisLine={false} tickLine={false}/>
           <Tooltip content={<ChartTooltip/>}/>
-          <Area type="monotone" dataKey="إيرادات" stroke="#f59e0b" strokeWidth={2} fill="url(#gRev2)" dot={false}/>
-          <Area type="monotone" dataKey="ربح"     stroke="#10b981" strokeWidth={2} fill="url(#gProf2)" dot={false}/>
+          <Area type="monotone" dataKey="إيرادات" stroke="var(--status-warning)" strokeWidth={2} fill="url(#gRev2)" dot={false}/>
+          <Area type="monotone" dataKey="ربح"     stroke="var(--status-success)" strokeWidth={2} fill="url(#gProf2)" dot={false}/>
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -523,13 +523,13 @@ function TrendTab({ pl }: { pl: ProfitsData }) {
 }
 
 
-const WF_CLR = { revenue:"#10b981", cost:"#ef4444", grossPos:"#f59e0b", expenses:"#f97316", netPos:"#10b981", netNeg:"#ef4444" };
+const WF_CLR = { revenue:"var(--status-success)", cost:"var(--status-danger)", grossPos:"var(--status-warning)", expenses:"var(--status-warning)", netPos:"var(--status-success)", netNeg:"var(--status-danger)" };
 function WaterfallTab({ pl }: { pl: ProfitsData }) {
   const {total_revenue:rev,total_cost:cost,gross_profit:gross,total_expenses:exp,net_profit:net} = pl;
   const data = [
     {name:"المبيعات",    displayVal:rev,            base:0,                fill:WF_CLR.revenue,                    label:`+${formatCurrency(rev)}`},
     {name:"التكلفة",     displayVal:cost,           base:Math.max(gross,0),fill:WF_CLR.cost,                       label:`-${formatCurrency(cost)}`},
-    {name:"مجمل الربح", displayVal:Math.abs(gross), base:gross>=0?0:gross, fill:gross>=0?WF_CLR.grossPos:"#ef4444", label:`=${formatCurrency(gross)}`, r:true},
+    {name:"مجمل الربح", displayVal:Math.abs(gross), base:gross>=0?0:gross, fill:gross>=0?WF_CLR.grossPos:"var(--status-danger)", label:`=${formatCurrency(gross)}`, r:true},
     {name:"المصروفات",  displayVal:exp,             base:Math.max(net,0),  fill:WF_CLR.expenses,                   label:`-${formatCurrency(exp)}`},
     {name:"صافي الربح", displayVal:Math.abs(net),   base:net>=0?0:net,     fill:net>=0?WF_CLR.netPos:WF_CLR.netNeg, label:`=${formatCurrency(net)}`, r:true},
   ];

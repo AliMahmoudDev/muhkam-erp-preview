@@ -56,7 +56,7 @@ function TgToggle({ on, onClick, disabled }: { on: boolean; onClick: () => void;
   return (
     <button onClick={onClick} disabled={disabled}
       style={{ flexShrink: 0, width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', background: on ? TG_BLUE : 'rgba(148,163,184,0.2)', position: 'relative', transition: 'background 0.2s' }}>
-      <span style={{ position: 'absolute', top: '4px', right: on ? '4px' : '20px', width: '16px', height: '16px', borderRadius: '50%', background: '#fff', transition: 'right 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+      <span style={{ position: 'absolute', top: '4px', right: on ? '4px' : '20px', width: '16px', height: '16px', borderRadius: '50%', background: 'var(--text-1)', transition: 'right 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
     </button>
   );
 }
@@ -120,16 +120,16 @@ export function TelegramPanel({
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={() => { void saveTgCredentials(); }} disabled={tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()}
-              style={{ flex: 1, padding: '11px', borderRadius: '10px', border: 'none', background: (tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()) ? 'rgba(148,163,184,0.12)' : TG_BLUE, color: (tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()) ? C.muted : '#0F172A', fontSize: '13px', fontWeight: 800, cursor: (tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()) ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
+              style={{ flex: 1, padding: '11px', borderRadius: '10px', border: 'none', background: (tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()) ? 'rgba(148,163,184,0.12)' : TG_BLUE, color: (tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()) ? C.muted : 'var(--bg-app)', fontSize: '13px', fontWeight: 800, cursor: (tgCredSaving || !tgBotToken.trim() || !tgChatId.trim()) ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
               {tgCredSaving ? '⏳ جاري الحفظ...' : '💾 حفظ بيانات البوت'}
             </button>
             <button onClick={() => { void testTelegramConnection(); }} disabled={tgTesting || !tgBotStatus?.connected}
-              style={{ padding: '11px 18px', borderRadius: '10px', border: `1.5px solid ${tgBotStatus?.connected ? 'rgba(52,211,153,0.45)' : C.border}`, background: tgBotStatus?.connected ? 'rgba(52,211,153,0.1)' : 'transparent', color: tgBotStatus?.connected ? '#34D399' : C.muted, fontSize: '13px', fontWeight: 800, fontFamily: FONT, cursor: (tgTesting || !tgBotStatus?.connected) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+              style={{ padding: '11px 18px', borderRadius: '10px', border: `1.5px solid ${tgBotStatus?.connected ? 'rgba(52,211,153,0.45)' : C.border}`, background: tgBotStatus?.connected ? 'rgba(52,211,153,0.1)' : 'transparent', color: tgBotStatus?.connected ? 'var(--status-success)' : C.muted, fontSize: '13px', fontWeight: 800, fontFamily: FONT, cursor: (tgTesting || !tgBotStatus?.connected) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
               {tgTesting ? '⏳...' : '🧪 اختبار'}
             </button>
           </div>
           {tgTestResult && (
-            <div style={{ padding: '10px 14px', borderRadius: '10px', background: tgTestResult.ok ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${tgTestResult.ok ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.3)'}`, fontSize: '12px', fontWeight: 700, color: tgTestResult.ok ? '#34D399' : '#EF4444' }}>
+            <div style={{ padding: '10px 14px', borderRadius: '10px', background: tgTestResult.ok ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${tgTestResult.ok ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.3)'}`, fontSize: '12px', fontWeight: 700, color: tgTestResult.ok ? 'var(--status-success)' : 'var(--status-danger)' }}>
               {tgTestResult.ok ? '✅' : '❌'} {tgTestResult.msg}
             </div>
           )}
@@ -140,7 +140,7 @@ export function TelegramPanel({
       {tgLoading && !tgConfig && <div style={{ textAlign: 'center', padding: '24px', color: C.muted, fontSize: '13px' }}>⏳ جاري تحميل إعدادات التنبيهات...</div>}
       {tgError && !tgConfig && (
         <div style={{ textAlign: 'center', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-          <div style={{ fontSize: '13px', color: '#EF4444' }}>❌ تعذّر تحميل إعدادات التنبيهات</div>
+          <div style={{ fontSize: '13px', color: 'var(--status-danger)' }}>❌ تعذّر تحميل إعدادات التنبيهات</div>
           <button onClick={() => void tgRefetch()} style={{ padding: '8px 18px', borderRadius: '10px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>إعادة المحاولة</button>
         </div>
       )}
@@ -181,7 +181,7 @@ export function TelegramPanel({
           </div>
           <div style={{ padding: '14px 18px', borderTop: `1px solid ${C.border}` }}>
             <button onClick={() => { void saveTelegramSettings(); }} disabled={tgSaving}
-              style={{ width: '100%', padding: '11px', borderRadius: '10px', border: 'none', background: tgSaving ? C.border : TG_BLUE, color: tgSaving ? C.muted : '#0F172A', fontSize: '13px', fontWeight: 800, cursor: tgSaving ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
+              style={{ width: '100%', padding: '11px', borderRadius: '10px', border: 'none', background: tgSaving ? C.border : TG_BLUE, color: tgSaving ? C.muted : 'var(--bg-app)', fontSize: '13px', fontWeight: 800, cursor: tgSaving ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
               {tgSaving ? '⏳ جاري الحفظ...' : '💾 حفظ إعدادات التنبيهات'}
             </button>
           </div>

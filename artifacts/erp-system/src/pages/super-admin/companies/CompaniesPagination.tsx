@@ -38,7 +38,7 @@ export function CompaniesPagination({
                 fontFamily: FONT, transition: 'all 0.15s',
                 border: p === safePage ? 'none' : `1px solid ${C.border}`,
                 background: p === safePage ? C.orange : 'transparent',
-                color: p === safePage ? '#fff' : C.muted,
+                color: p === safePage ? 'var(--text-1)' : C.muted,
               }}
             >{p}</button>
           ))}

@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
    SECTION CARD
 ══════════════════════════════════════════════════ */
 
-export function SectionCard({ icon, title, accent = '#f59e0b', children, isDark, border, cardBg, actions, defaultOpen = true }: {
+export function SectionCard({ icon, title, accent = 'var(--status-warning)', children, isDark, border, cardBg, actions, defaultOpen = true }: {
   icon: React.ReactNode; title: string; accent?: string; children: React.ReactNode;
   isDark: boolean; border: string; cardBg: string; actions?: React.ReactNode; defaultOpen?: boolean;
 }) {
@@ -17,7 +17,7 @@ export function SectionCard({ icon, title, accent = '#f59e0b', children, isDark,
           <span style={{ width:34, height:34, borderRadius:9, background:`${accent}22`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:accent }}>
             {icon}
           </span>
-          <span style={{ fontSize:14, fontWeight:800, color:isDark?'#f1f5f9':'var(--bg-app)', flex:1 }}>{title}</span>
+          <span style={{ fontSize:14, fontWeight:800, color:isDark?'var(--text-1)':'var(--bg-app)', flex:1 }}>{title}</span>
           <span style={{ color:isDark?'rgba(255,255,255,0.3)':'rgba(0,0,0,0.28)', flexShrink:0 }}>
             {open ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
           </span>

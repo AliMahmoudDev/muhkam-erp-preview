@@ -20,10 +20,10 @@ export function AdvanceRequestModal({ empId, currency, isDark, border, onClose }
     reason: '',
     deduct_from: 'fixed' as 'fixed' | 'commission' | 'both',
   });
-  const bg = isDark ? 'rgba(8,14,26,0.98)' : '#ffffff';
-  const textMain = isDark ? '#f1f5f9' : 'var(--bg-app)';
+  const bg = isDark ? 'rgba(8,14,26,0.98)' : 'var(--text-1)';
+  const textMain = isDark ? 'var(--text-1)' : 'var(--bg-app)';
   const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const inputBg = isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc';
+  const inputBg = isDark ? 'rgba(255,255,255,0.06)' : 'var(--text-1)';
   const inputStyle = {
     width:'100%', padding:'10px 14px', borderRadius:10,
     border:`1px solid ${border}`, background:inputBg, color:textMain,
@@ -66,7 +66,7 @@ export function AdvanceRequestModal({ empId, currency, isDark, border, onClose }
           <X size={18} />
         </button>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:22 }}>
-          <span style={{ width:42, height:42, borderRadius:12, background:'rgba(245,158,11,0.18)', display:'flex', alignItems:'center', justifyContent:'center', color:'#f59e0b', flexShrink:0 }}>
+          <span style={{ width:42, height:42, borderRadius:12, background:'rgba(245,158,11,0.18)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--status-warning)', flexShrink:0 }}>
             <Wallet size={21} />
           </span>
           <div>
@@ -129,7 +129,7 @@ export function AdvanceRequestModal({ empId, currency, isDark, border, onClose }
           </div>
 
           {/* Info note */}
-          <div style={{ fontSize:12, color:'#f59e0b', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.20)', borderRadius:9, padding:'10px 14px', lineHeight:1.6 }}>
+          <div style={{ fontSize:12, color:'var(--status-warning)', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.20)', borderRadius:9, padding:'10px 14px', lineHeight:1.6 }}>
             سيصلك إشعار بالنتيجة فور مراجعة الطلب من قِبل المدير
           </div>
         </div>
@@ -139,7 +139,7 @@ export function AdvanceRequestModal({ empId, currency, isDark, border, onClose }
             onClick={() => mutate()}
             disabled={!form.requested_amount || parseFloat(form.requested_amount) <= 0 || isPending}
             style={{ flex:1, padding:'11px 0', borderRadius:11, border:'none', cursor:'pointer',
-              background:'linear-gradient(135deg, #b45309, #f59e0b)', color:'#fff',
+              background:'linear-gradient(135deg, #b45309, #f59e0b)', color:'var(--text-1)',
               fontWeight:800, fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', gap:7,
               opacity: (!form.requested_amount || parseFloat(form.requested_amount) <= 0 || isPending) ? 0.6 : 1 }}
           >

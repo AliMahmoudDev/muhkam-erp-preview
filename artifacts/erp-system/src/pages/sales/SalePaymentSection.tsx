@@ -315,7 +315,7 @@ export function SalePaymentSection({
             <span
               className="font-bold tabular-nums transition-colors"
               style={{
-                color: payIsDone ? '#10B981' : cart.length === 0 ? '#94A3B8' : '#F59E0B',
+                color: payIsDone ? 'var(--status-success)' : cart.length === 0 ? 'var(--text-2)' : 'var(--status-warning)',
               }}
             >
               {payIsDone
@@ -467,7 +467,7 @@ export function SalePaymentSection({
             style={{
               background: 'rgba(245,158,11,0.10)',
               border: '1px solid rgba(245,158,11,0.25)',
-              color: '#F59E0B',
+              color: 'var(--status-warning)',
             }}
           >
             ⚠ اختر العميل أولاً للبيع الآجل
@@ -490,7 +490,7 @@ export function SalePaymentSection({
           background: canCheckout
             ? 'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)'
             : undefined,
-          color: canCheckout ? '#000' : undefined,
+          color: canCheckout ? 'var(--text-1)' : undefined,
           boxShadow: canCheckout
             ? '0 6px 22px rgba(245,158,11,0.38), 0 1px 3px rgba(0,0,0,0.2)'
             : 'none',

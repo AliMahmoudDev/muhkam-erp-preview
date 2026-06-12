@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- LandingPage is a standalone marketing page with its own intentional color palette; tokens do not apply here. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import {

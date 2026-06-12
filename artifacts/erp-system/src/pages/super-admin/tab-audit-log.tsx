@@ -37,7 +37,7 @@ export function TabAuditLog({ auditData, auditLoading, onRefetch, auditAction, s
               const blob = new Blob([`الإجراء,نوع السجل,رقم السجل,الملاحظة,التاريخ\n${rows}`], { type: 'text/csv' });
               const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'audit-log.csv'; a.click();
             }}
-            style={{ padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#86EFAC', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+            style={{ padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: 'var(--status-success)', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
           >📥 CSV</button>
           <select
             value={auditAction}
@@ -95,7 +95,7 @@ export function TabAuditLog({ auditData, auditLoading, onRefetch, auditAction, s
           ) : (
             <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
               {auditData!.rows.map(row => {
-                const actionMeta = ACTION_AR[row.action] ?? { label: row.action, color: '#94A3B8' };
+                const actionMeta = ACTION_AR[row.action] ?? { label: row.action, color: 'var(--text-2)' };
                 return (
                   <div key={row.id} style={{
                     display: 'grid', gridTemplateColumns: '1fr 1fr 80px 2fr 140px',

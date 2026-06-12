@@ -235,7 +235,7 @@ export default function ChecklistTab() {
   const mfrActiveStyle = isLight ? {
     background: "linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(217,119,6,0.10) 100%)",
     border: "1px solid rgba(245,158,11,0.55)",
-    color: "#92400e",
+    color: "var(--status-warning)",
     boxShadow: "0 4px 12px -4px rgba(245,158,11,0.30), 0 0 0 3px rgba(245,158,11,0.08)",
   } : {
     background: "linear-gradient(135deg, rgba(245,158,11,0.28) 0%, rgba(217,119,6,0.12) 100%)",
@@ -255,7 +255,7 @@ export default function ChecklistTab() {
   const catActiveStyle = isLight ? {
     background: "rgba(245,158,11,0.12)",
     border: "1px solid rgba(245,158,11,0.45)",
-    color: "#92400e",
+    color: "var(--status-warning)",
   } : {
     background: "rgba(245,158,11,0.15)",
     border: "1px solid rgba(245,158,11,0.40)",
@@ -314,7 +314,7 @@ export default function ChecklistTab() {
                   <span
                     className="text-[10px] px-1.5 py-0.5 rounded-full font-black tabular-nums"
                     style={isLight
-                      ? { background: "rgba(245,158,11,0.15)", color: "#92400e", border: "1px solid rgba(245,158,11,0.30)" }
+                      ? { background: "rgba(245,158,11,0.15)", color: "var(--status-warning)", border: "1px solid rgba(245,158,11,0.30)" }
                       : { background: "rgba(0,0,0,0.25)", color: "#fde68a", border: "1px solid rgba(252,211,77,0.25)" }}
                   >
                     {mfr.categories.length}
@@ -354,7 +354,7 @@ export default function ChecklistTab() {
                   <span
                     className="text-[10px] px-1 rounded font-black tabular-nums"
                     style={isLight
-                      ? { background: "rgba(245,158,11,0.15)", color: "#92400e" }
+                      ? { background: "rgba(245,158,11,0.15)", color: "var(--status-warning)" }
                       : { background: "rgba(0,0,0,0.25)", color: "#fde68a" }}
                   >
                     {items.length}

@@ -78,7 +78,7 @@ export function DeleteCompanyModal({
               <button
                 disabled={enteredCode !== generatedCode || coDelete.isPending}
                 onClick={() => coDelete.mutate({ id: deleteTarget.id, force: true, confirm_code: enteredCode, expected_code: generatedCode })}
-                style={{ flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: enteredCode === generatedCode ? C.danger : '#4a1a1a', color: '#fff', fontSize: '14px', fontWeight: 800, cursor: enteredCode === generatedCode ? 'pointer' : 'not-allowed', fontFamily: FONT, opacity: enteredCode === generatedCode ? 1 : 0.5 }}
+                style={{ flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: enteredCode === generatedCode ? C.danger : '#4a1a1a', color: 'var(--text-1)', fontSize: '14px', fontWeight: 800, cursor: enteredCode === generatedCode ? 'pointer' : 'not-allowed', fontFamily: FONT, opacity: enteredCode === generatedCode ? 1 : 0.5 }}
               >
                 {coDelete.isPending ? 'جاري الحذف...' : 'احذف نهائياً'}
               </button>

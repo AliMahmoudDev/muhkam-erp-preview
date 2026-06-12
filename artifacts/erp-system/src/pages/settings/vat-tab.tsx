@@ -179,7 +179,7 @@ export default function VatTab() {
                           parseFloat(vatRate) === r
                             ? 'rgba(245,158,11,0.2)'
                             : 'rgba(255,255,255,0.05)',
-                        color: parseFloat(vatRate) === r ? '#F59E0B' : 'rgba(255,255,255,0.4)',
+                        color: parseFloat(vatRate) === r ? 'var(--status-warning)' : 'rgba(255,255,255,0.4)',
                         border: `1px solid ${parseFloat(vatRate) === r ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`,
                       }}
                     >
@@ -280,7 +280,7 @@ export default function VatTab() {
           background: saved
             ? 'rgba(52,211,153,0.9)'
             : 'linear-gradient(to right, #F59E0B, #D97706)',
-          color: '#000',
+          color: 'var(--text-1)',
           boxShadow: saved ? '0 4px 20px rgba(52,211,153,0.3)' : '0 4px 20px rgba(245,158,11,0.25)',
         }}
       >

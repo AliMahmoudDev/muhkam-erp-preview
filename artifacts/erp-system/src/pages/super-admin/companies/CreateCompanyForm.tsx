@@ -73,7 +73,7 @@ export function CreateCompanyForm({
             onChange={(e) => setNewEdition(e.target.value as 'advanced' | 'ultimate')}
             style={{
               width: '100%',
-              border: `1.5px solid ${newEdition === 'ultimate' ? '#6366f1' : '#f59e0b'}`,
+              border: `1.5px solid ${newEdition === 'ultimate' ? 'var(--status-info)' : 'var(--status-warning)'}`,
               borderRadius: '10px', padding: '10px 12px', fontSize: '14px',
               background: C.bg,
               color: newEdition === 'ultimate' ? '#a5b4fc' : '#fcd34d',
@@ -177,7 +177,7 @@ export function CreateCompanyForm({
           style={{
             padding: '10px 22px', borderRadius: '10px', border: 'none',
             background: (newName.trim() && newAdminName.trim()) ? C.orange : C.border,
-            color: '#fff', fontSize: '14px', fontWeight: 700,
+            color: 'var(--text-1)', fontSize: '14px', fontWeight: 700,
             cursor: (newName.trim() && newAdminName.trim()) ? 'pointer' : 'default',
             fontFamily: FONT, flexShrink: 0, transition: 'filter 0.15s',
             alignSelf: 'flex-end', marginBottom: '20px',

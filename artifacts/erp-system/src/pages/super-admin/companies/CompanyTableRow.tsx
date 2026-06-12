@@ -92,13 +92,13 @@ export function CompanyTableRow({
                 value={co.edition ?? 'ultimate'}
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => { e.stopPropagation(); coMutate.mutate({ url: `/api/super/companies/${co.id}`, method: 'PUT', body: { edition: e.target.value } }); }}
-                style={{ border: `1.5px solid ${co.edition === 'advanced' ? '#f59e0b' : '#6366f1'}`, borderRadius: '8px', padding: '5px 10px', fontSize: '12px', fontWeight: 700, background: C.bg, color: co.edition === 'advanced' ? '#fcd34d' : '#a5b4fc', fontFamily: FONT, cursor: 'pointer' }}
+                style={{ border: `1.5px solid ${co.edition === 'advanced' ? 'var(--status-warning)' : 'var(--status-info)'}`, borderRadius: '8px', padding: '5px 10px', fontSize: '12px', fontWeight: 700, background: C.bg, color: co.edition === 'advanced' ? '#fcd34d' : '#a5b4fc', fontFamily: FONT, cursor: 'pointer' }}
               >
                 <option value="ultimate">⭐ MuhKam Pro</option>
                 <option value="advanced">🚀 MuhKam Advanced</option>
               </select>
             </div>
-            <ActionBtn label="🔑 إعادة تعيين كلمة المرور" icon="" color="#7c3aed" onClick={() => resetPassword.mutate({ id: co.id, company_name: co.name })} />
+            <ActionBtn label="🔑 إعادة تعيين كلمة المرور" icon="" color="var(--status-info)" onClick={() => resetPassword.mutate({ id: co.id, company_name: co.name })} />
             <button
               onClick={(e) => { e.stopPropagation(); setDeleteCoErr(''); setDeleteTarget(co); }}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: '1.5px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: C.danger, fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', fontFamily: FONT }}

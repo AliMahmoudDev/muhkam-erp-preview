@@ -112,8 +112,8 @@ export function SubscriptionBanner() {
             rel="noopener noreferrer"
             style={{
               padding: "5px 14px", borderRadius: "8px",
-              background: isOrange ? "#EA580C" : "#D97706",
-              color: "#fff", fontSize: "12px", fontWeight: 700,
+              background: isOrange ? "#EA580C" : "var(--status-warning)",
+              color: "var(--text-1)", fontSize: "12px", fontWeight: 700,
               textDecoration: "none", whiteSpace: "nowrap",
             }}
           >

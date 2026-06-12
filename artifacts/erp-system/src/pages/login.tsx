@@ -174,7 +174,7 @@ const CheckIcon = () => (
     height="14"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="#60A5FA"
+    stroke="var(--status-info)"
     strokeWidth="2.5"
     strokeLinecap="round"
     strokeLinejoin="round"
@@ -499,7 +499,7 @@ export default function Login() {
       style={{
         width: '46%',
         minHeight: '100vh',
-        background: '#0F1629',
+        background: 'var(--bg-app)',
         borderLeft: '1px solid #1E293B',
         position: 'relative',
         display: 'flex',
@@ -533,7 +533,7 @@ export default function Login() {
             style={{
               fontSize: 36,
               fontWeight: 800,
-              color: '#F8FAFC',
+              color: 'var(--text-1)',
               letterSpacing: '-0.02em',
               lineHeight: 1,
             }}
@@ -544,7 +544,7 @@ export default function Login() {
             style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#3B82F6',
+              color: 'var(--status-info)',
               letterSpacing: '0.10em',
             }}
           >
@@ -555,7 +555,7 @@ export default function Login() {
           style={{
             marginTop: 10,
             fontSize: 14,
-            color: '#94A3B8',
+            color: 'var(--text-2)',
             fontWeight: 500,
           }}
         >
@@ -581,7 +581,7 @@ export default function Login() {
                 alignItems: 'center',
                 gap: 10,
                 fontSize: 13.5,
-                color: '#CBD5E1',
+                color: 'var(--text-2)',
                 fontWeight: 500,
                 animation: `ent-fade-up .5s ${0.05 + i * 0.04}s ease both`,
               }}
@@ -591,7 +591,7 @@ export default function Login() {
                   width: 4,
                   height: 4,
                   borderRadius: '50%',
-                  background: '#3B82F6',
+                  background: 'var(--status-info)',
                   flexShrink: 0,
                 }}
               />
@@ -610,7 +610,7 @@ export default function Login() {
           style={{
             fontSize: 11,
             fontWeight: 700,
-            color: '#475569',
+            color: 'var(--text-2)',
             letterSpacing: '0.14em',
             marginBottom: 18,
             textTransform: 'uppercase' as const,
@@ -646,7 +646,7 @@ export default function Login() {
                   borderRadius: 8,
                   flexShrink: 0,
                   background: 'rgba(59, 130, 246, 0.12)',
-                  color: '#60A5FA',
+                  color: 'var(--status-info)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -655,11 +655,11 @@ export default function Login() {
                 <m.Icon />
               </span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#E2E8F0' }}>{m.label}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)' }}>{m.label}</span>
                 <span
                   style={{
                     fontSize: 11,
-                    color: '#64748B',
+                    color: 'var(--text-2)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
@@ -679,7 +679,7 @@ export default function Login() {
           position: 'relative',
           zIndex: 1,
           fontSize: 12,
-          color: '#475569',
+          color: 'var(--text-2)',
           fontWeight: 500,
         }}
       >
@@ -697,8 +697,8 @@ export default function Login() {
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'row',
-        background: '#F8FAFC',
-        color: '#0F172A',
+        background: 'var(--text-1)',
+        color: 'var(--bg-app)',
       }}
     >
       {/* Form panel — light */}
@@ -712,7 +712,7 @@ export default function Login() {
           justifyContent: 'center',
           padding: '40px 24px',
           minHeight: '100vh',
-          background: '#F8FAFC',
+          background: 'var(--text-1)',
         }}
       >
         <div
@@ -734,12 +734,12 @@ export default function Login() {
             className="ent-mobile-logo"
           >
             <div
-              style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}
+              style={{ fontSize: 26, fontWeight: 800, color: 'var(--bg-app)', letterSpacing: '-0.02em' }}
             >
               مُحكم
             </div>
             <div
-              style={{ fontSize: 12, fontWeight: 700, color: '#2563EB', letterSpacing: '0.10em' }}
+              style={{ fontSize: 12, fontWeight: 700, color: 'var(--status-info)', letterSpacing: '0.10em' }}
             >
               ERP
             </div>
@@ -748,7 +748,7 @@ export default function Login() {
           {/* Card */}
           <div
             style={{
-              background: '#FFFFFF',
+              background: 'var(--text-1)',
               border: '1px solid #E2E8F0',
               borderRadius: 12,
               padding: '40px',
@@ -763,17 +763,17 @@ export default function Login() {
                     style={{
                       fontSize: 22,
                       fontWeight: 700,
-                      color: '#0F172A',
+                      color: 'var(--bg-app)',
                       marginBottom: 8,
                       letterSpacing: '-0.01em',
                     }}
                   >
                     التحقق الثنائي
                   </h2>
-                  <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.65 }}>
+                  <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.65 }}>
                     افتح{' '}
-                    <span style={{ color: '#0F172A', fontWeight: 600 }}>Google Authenticator</span>{' '}
-                    أو <span style={{ color: '#0F172A', fontWeight: 600 }}>Authy</span> وأدخل الرمز
+                    <span style={{ color: 'var(--bg-app)', fontWeight: 600 }}>Google Authenticator</span>{' '}
+                    أو <span style={{ color: 'var(--bg-app)', fontWeight: 600 }}>Authy</span> وأدخل الرمز
                     المكوّن من 6 أرقام.
                   </p>
                 </div>
@@ -787,9 +787,10 @@ export default function Login() {
                       padding: '10px 12px',
                       borderRadius: 8,
                       marginBottom: 16,
+                      // eslint-disable-next-line erp/no-hardcoded-colors -- error banner: red-50 tint has no token equivalent
                       background: '#FEF2F2',
                       border: '1px solid #FECACA',
-                      color: '#B91C1C',
+                      color: 'var(--status-danger)',
                       fontSize: 13,
                       fontWeight: 500,
                     }}
@@ -837,7 +838,7 @@ export default function Login() {
                           width: 14,
                           height: 14,
                           border: '2px solid rgba(255,255,255,0.3)',
-                          borderTopColor: '#fff',
+                          borderTopColor: 'var(--text-1)',
                           borderRadius: '50%',
                           display: 'inline-block',
                           animation: 'ent-spin .7s linear infinite',
@@ -870,14 +871,14 @@ export default function Login() {
                     style={{
                       fontSize: 24,
                       fontWeight: 700,
-                      color: '#0F172A',
+                      color: 'var(--bg-app)',
                       marginBottom: 6,
                       letterSpacing: '-0.01em',
                     }}
                   >
                     إنشاء حساب جديد
                   </h1>
-                  <p style={{ fontSize: 14, color: '#64748B' }}>
+                  <p style={{ fontSize: 14, color: 'var(--text-2)' }}>
                     تجربة مجانية لمدة 7 أيام — بدون بطاقة ائتمان
                   </p>
                 </div>
@@ -897,14 +898,14 @@ export default function Login() {
                     style={{
                       fontSize: 24,
                       fontWeight: 700,
-                      color: '#0F172A',
+                      color: 'var(--bg-app)',
                       marginBottom: 6,
                       letterSpacing: '-0.01em',
                     }}
                   >
                     تسجيل الدخول
                   </h1>
-                  <p style={{ fontSize: 14, color: '#64748B' }}>
+                  <p style={{ fontSize: 14, color: 'var(--text-2)' }}>
                     أدخل بياناتك للوصول إلى لوحة التحكم
                   </p>
                 </div>
@@ -941,7 +942,7 @@ export default function Login() {
               justifyContent: 'center',
               gap: 6,
               fontSize: 12.5,
-              color: '#64748B',
+              color: 'var(--text-2)',
               fontWeight: 500,
             }}
           >
@@ -1010,11 +1011,12 @@ function LoginFormFields({
           style={{
             marginBottom: 18,
             padding: '10px 12px',
+            // eslint-disable-next-line erp/no-hardcoded-colors -- error banner: red-50 tint has no token equivalent
             background: '#FEF2F2',
             border: '1px solid #FECACA',
             borderRadius: 8,
             fontSize: 13,
-            color: '#B91C1C',
+            color: 'var(--status-danger)',
             fontWeight: 500,
           }}
         >
@@ -1114,7 +1116,7 @@ function LoginFormFields({
                 width: 14,
                 height: 14,
                 border: '2px solid rgba(255,255,255,0.3)',
-                borderTopColor: '#fff',
+                borderTopColor: 'var(--text-1)',
                 borderRadius: '50%',
                 display: 'inline-block',
                 animation: 'ent-spin .7s linear infinite',
@@ -1128,7 +1130,7 @@ function LoginFormFields({
       </button>
 
       {/* Register link */}
-      <div style={{ textAlign: 'center', fontSize: 13, color: '#64748B' }}>
+      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-2)' }}>
         ليس لديك حساب؟{' '}
         <button type="button" className="ent-link" onClick={onShowRegister}>
           إنشاء حساب جديد

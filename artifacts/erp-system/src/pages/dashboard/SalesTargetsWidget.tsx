@@ -30,7 +30,7 @@ export function SalesTargetsWidget() {
           <p className="db-card-sub">{monthLabel}</p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-          style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.22)', color: '#f59e0b' }}>
+          style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.22)', color: 'var(--status-warning)' }}>
           <Target style={{ width: 12, height: 12 }} />
           {active.length} مستخدم
         </div>
@@ -46,7 +46,7 @@ export function SalesTargetsWidget() {
         <div className="space-y-3">
           {active.map(row => {
             const pct = Math.min(100, (row.achieved_amount / row.target_amount) * 100);
-            const color = pct >= 100 ? '#34d399' : pct >= 60 ? '#f59e0b' : '#f87171';
+            const color = pct >= 100 ? 'var(--status-success)' : pct >= 60 ? 'var(--status-warning)' : 'var(--status-danger)';
             const bgColor = pct >= 100 ? 'rgba(52,211,153,0.08)' : pct >= 60 ? 'rgba(245,158,11,0.08)' : 'rgba(248,113,113,0.06)';
             return (
               <div key={row.user_id} className="p-3 rounded-xl space-y-2"

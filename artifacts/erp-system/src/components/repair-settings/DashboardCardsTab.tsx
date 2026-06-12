@@ -380,7 +380,7 @@ function DashboardCardEditor({
                       className="w-5 h-5 rounded-md border-2"
                       style={{
                         background: c,
-                        borderColor: newStatusColor === c ? "#fff" : "transparent",
+                        borderColor: newStatusColor === c ? "var(--text-1)" : "transparent",
                       }}
                       title={c} />
                   ))}
@@ -446,7 +446,7 @@ function DashboardCardEditor({
                   className="w-7 h-7 rounded-lg border-2 transition-all"
                   style={{
                     background: c,
-                    borderColor: color === c ? "#fff" : "transparent",
+                    borderColor: color === c ? "var(--text-1)" : "transparent",
                     boxShadow: color === c ? `0 0 0 2px ${c}40` : "none",
                   }}
                   title={c} />

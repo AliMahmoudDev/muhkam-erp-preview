@@ -494,7 +494,7 @@ export default function Repairs() {
                 style={{
                   background: isActive ? `${card.color}26` : 'transparent',
                   borderColor: isActive ? `${card.color}88` : `${card.color}33`,
-                  color: isActive ? '#fff' : `${card.color}cc`,
+                  color: isActive ? 'var(--text-1)' : `${card.color}cc`,
                   boxShadow: isActive ? `0 0 0 1px ${card.color}55` : undefined,
                 }}
               >

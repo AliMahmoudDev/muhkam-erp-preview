@@ -70,7 +70,7 @@ export default function SubscriptionExpired() {
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: '#0F172A',
+        background: 'var(--bg-app)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -108,15 +108,15 @@ export default function SubscriptionExpired() {
 
         {/* Headline */}
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#fff', margin: '0 0 8px' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 900, color: 'var(--text-1)', margin: '0 0 8px' }}>
             انتهت صلاحية الاشتراك
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '14px', lineHeight: 1.7, margin: 0 }}>
-            انتهت صلاحية اشتراك <strong style={{ color: '#F97316' }}>{companyName}</strong>
+          <p style={{ color: 'var(--text-2)', fontSize: '14px', lineHeight: 1.7, margin: 0 }}>
+            انتهت صلاحية اشتراك <strong style={{ color: 'var(--status-warning)' }}>{companyName}</strong>
             {sub?.end_date && (
               <>
                 {' '}
-                في <strong style={{ color: '#CBD5E1' }}>{formatExpiryDate(sub.end_date)}</strong>
+                في <strong style={{ color: 'var(--text-2)' }}>{formatExpiryDate(sub.end_date)}</strong>
               </>
             )}
             {sub?.plan_type && <> (خطة {planLabel(sub.plan_type)})</>}.
@@ -138,7 +138,7 @@ export default function SubscriptionExpired() {
             gap: '12px',
           }}
         >
-          <p style={{ fontSize: '13px', fontWeight: 700, color: '#F97316', margin: 0 }}>
+          <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--status-warning)', margin: 0 }}>
             للتجديد تواصل معنا
           </p>
 
@@ -154,8 +154,9 @@ export default function SubscriptionExpired() {
                 gap: '8px',
                 padding: '12px 20px',
                 borderRadius: '10px',
+                // eslint-disable-next-line erp/no-hardcoded-colors -- WhatsApp brand green: intentional third-party brand color
                 background: '#25D366',
-                color: '#fff',
+                color: 'var(--text-1)',
                 textDecoration: 'none',
                 fontWeight: 700,
                 fontSize: '14px',
@@ -178,7 +179,7 @@ export default function SubscriptionExpired() {
                 borderRadius: '10px',
                 background: 'rgba(148,163,184,0.12)',
                 border: '1px solid rgba(148,163,184,0.2)',
-                color: '#CBD5E1',
+                color: 'var(--text-2)',
                 textDecoration: 'none',
                 fontWeight: 600,
                 fontSize: '14px',
@@ -190,7 +191,7 @@ export default function SubscriptionExpired() {
           )}
 
           {!waLink && !support.support_email && (
-            <p style={{ color: '#64748B', fontSize: '13px', margin: 0 }}>
+            <p style={{ color: 'var(--text-2)', fontSize: '13px', margin: 0 }}>
               بعد تجديد الاشتراك، أعد تسجيل الدخول للمتابعة
             </p>
           )}
@@ -210,7 +211,7 @@ export default function SubscriptionExpired() {
               borderRadius: '10px',
               background: 'transparent',
               border: '1.5px solid #334155',
-              color: '#94A3B8',
+              color: 'var(--text-2)',
               fontSize: '14px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -230,9 +231,9 @@ export default function SubscriptionExpired() {
               gap: '8px',
               padding: '12px',
               borderRadius: '10px',
-              background: '#EF4444',
+              background: 'var(--status-danger)',
               border: 'none',
-              color: '#fff',
+              color: 'var(--text-1)',
               fontSize: '14px',
               fontWeight: 700,
               cursor: 'pointer',

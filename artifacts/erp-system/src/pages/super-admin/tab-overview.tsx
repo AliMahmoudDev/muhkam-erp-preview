@@ -17,7 +17,7 @@ interface Props {
 
 export function TabOverview({ healthData, healthLoading, stats, overviewAudit, setActiveTab, setStatusFilter, setSettingsActiveCard }: Props) {
   const ovHealth  = healthData?.health;
-  const healthColor = ovHealth?.status === 'healthy' ? '#34D399' : ovHealth?.status === 'degraded' ? '#F59E0B' : '#EF4444';
+  const healthColor = ovHealth?.status === 'healthy' ? 'var(--status-success)' : ovHealth?.status === 'degraded' ? 'var(--status-warning)' : 'var(--status-danger)';
   const healthLabel = ovHealth?.status === 'healthy' ? 'يعمل بشكل طبيعي' : ovHealth?.status === 'degraded' ? 'أداء منخفض' : 'مشكلة حرجة';
   const expiringSoon = (stats?.expiringSoonList ?? []).slice(0, 5);
 

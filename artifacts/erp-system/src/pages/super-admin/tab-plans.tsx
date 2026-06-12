@@ -47,7 +47,7 @@ export function TabPlans({ planSettings, planSettingsLoading, editingPlan, setEd
                   <span style={{
                     fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
                     background: ep.is_active ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                    color: ep.is_active ? '#22c55e' : '#ef4444',
+                    color: ep.is_active ? 'var(--status-success)' : 'var(--status-danger)',
                   }}>{ep.is_active ? 'فعّالة' : 'معطّلة'}</span>
                   <span style={{ fontSize: '11px', color: C.muted, fontFamily: 'monospace' }}>{plan.key}</span>
                 </div>
@@ -100,7 +100,7 @@ export function TabPlans({ planSettings, planSettingsLoading, editingPlan, setEd
                       <button
                         onClick={() => onSavePlan(ep)}
                         disabled={planSaving}
-                        style={{ flex: 1, background: C.orange, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px', fontWeight: 800, fontSize: '13px', fontFamily: FONT, cursor: 'pointer' }}
+                        style={{ flex: 1, background: C.orange, color: 'var(--text-1)', border: 'none', borderRadius: '10px', padding: '10px', fontWeight: 800, fontSize: '13px', fontFamily: FONT, cursor: 'pointer' }}
                       >{planSaving ? 'جارٍ الحفظ…' : '💾 حفظ'}</button>
                       <button
                         onClick={() => setEditingPlan(null)}
@@ -122,7 +122,7 @@ export function TabPlans({ planSettings, planSettingsLoading, editingPlan, setEd
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {plan.includes_mobile && (
-                        <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>📱 يشمل الموبايل</span>
+                        <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', background: 'rgba(99,102,241,0.12)', color: 'var(--status-info)' }}>📱 يشمل الموبايل</span>
                       )}
                     </div>
                     <button

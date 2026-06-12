@@ -171,7 +171,7 @@ export default function DeliveryGateForm({
           </div>
           <button type="button" onClick={addPartLine} disabled={!selectedProduct}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-30 shrink-0"
-            style={{ background: "rgba(59,130,246,0.2)", border: "1px solid rgba(96,165,250,0.3)", color: "#93C5FD" }}>
+            style={{ background: "rgba(59,130,246,0.2)", border: "1px solid rgba(96,165,250,0.3)", color: "var(--status-info)" }}>
             <Plus className="w-3.5 h-3.5" /> إضافة
           </button>
         </div>
@@ -179,7 +179,12 @@ export default function DeliveryGateForm({
         <div className="mt-2">
           <button type="button" onClick={() => setShowExtForm(v => !v)}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all"
-            style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(192,132,252,0.3)", color: "#D8B4FE" }}>
+            style={{
+              background: "rgba(168,85,247,0.12)",
+              border: "1px solid rgba(192,132,252,0.3)",
+              // eslint-disable-next-line erp/no-hardcoded-colors -- VIP/external badge: purple-300 has no token equivalent
+              color: "#D8B4FE"
+            }}>
             <Wrench className="w-3 h-3" /> {showExtForm ? "إغلاق" : "+ إصلاح خارجي (ورشة برّا)"}
           </button>
         </div>
@@ -248,7 +253,12 @@ export default function DeliveryGateForm({
                 </>)}
                 <button type="button" onClick={addExternalLine}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0 mr-auto"
-                  style={{ background: "rgba(168,85,247,0.25)", border: "1px solid rgba(192,132,252,0.4)", color: "#E9D5FF" }}>
+                  style={{
+                    background: "rgba(168,85,247,0.25)",
+                    border: "1px solid rgba(192,132,252,0.4)",
+                    // eslint-disable-next-line erp/no-hardcoded-colors -- VIP badge: purple-100 has no token equivalent
+                    color: "#E9D5FF"
+                  }}>
                   <Plus className="w-3.5 h-3.5" /> إضافة البند
                 </button>
               </div>
@@ -274,7 +284,12 @@ export default function DeliveryGateForm({
                     </button>
                     {isExt && (
                       <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold"
-                        style={{ background: "rgba(168,85,247,0.2)", color: "#E9D5FF", border: "1px solid rgba(192,132,252,0.35)" }}>
+                        style={{
+                          background: "rgba(168,85,247,0.2)",
+                          // eslint-disable-next-line erp/no-hardcoded-colors -- external-repair badge: purple-100 has no token equivalent
+                          color: "#E9D5FF",
+                          border: "1px solid rgba(192,132,252,0.35)"
+                        }}>
                         <Wrench className="w-2.5 h-2.5 inline-block ml-0.5" /> خارجي
                       </span>
                     )}
@@ -379,7 +394,7 @@ export default function DeliveryGateForm({
               </div>
               <button type="button" onClick={addPayRow}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0"
-                style={{ background: "rgba(16,185,129,0.18)", border: "1px solid rgba(52,211,153,0.3)", color: "#6EE7B7" }}>
+                style={{ background: "rgba(16,185,129,0.18)", border: "1px solid rgba(52,211,153,0.3)", color: "var(--status-success)" }}>
                 <Plus className="w-3.5 h-3.5" /> إضافة
               </button>
               {remaining > 0 && (

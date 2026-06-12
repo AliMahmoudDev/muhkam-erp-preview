@@ -46,7 +46,7 @@ export function CompaniesToolbar({
                 transition: 'all 0.15s',
                 border: active ? 'none' : `1px solid ${C.border}`,
                 background: active ? C.orange : 'transparent',
-                color: active ? '#fff' : C.muted,
+                color: active ? 'var(--text-1)' : C.muted,
               }}
             >{f.label}</button>
           );
@@ -78,7 +78,7 @@ export function CompaniesToolbar({
             style={{
               padding: '5px 10px', borderRadius: '7px', border: 'none',
               background: viewMode === m ? C.orange : 'transparent',
-              color: viewMode === m ? '#fff' : C.muted,
+              color: viewMode === m ? 'var(--text-1)' : C.muted,
               fontSize: '14px', cursor: 'pointer', transition: 'all 0.15s', lineHeight: 1,
             }}
           >

@@ -84,7 +84,7 @@ export function MobileNav({ visibleNav, isDark }: MobileNavProps) {
 
   const bg          = isDark ? 'hsla(225,28%,7%,0.97)' : 'rgba(255,255,255,0.97)';
   const bdrTop      = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)';
-  const colActive   = '#f59e0b';
+  const colActive   = 'var(--status-warning)';
   const colInactive = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)';
   const colSettings = isDark ? 'rgba(255,255,255,0.26)' : 'rgba(0,0,0,0.26)';
 

@@ -38,7 +38,7 @@ export function OverviewActivity({ expiringSoon, overviewAudit, actionMap, setAc
                     {new Date(co.end_date).toLocaleDateString('ar-EG')}
                   </div>
                 </div>
-                <div style={{ fontSize: '13px', fontWeight: 900, color: co.days_left <= 3 ? '#EF4444' : '#F59E0B' }}>
+                <div style={{ fontSize: '13px', fontWeight: 900, color: co.days_left <= 3 ? 'var(--status-danger)' : 'var(--status-warning)' }}>
                   {co.days_left} يوم
                 </div>
               </div>
@@ -60,7 +60,7 @@ export function OverviewActivity({ expiringSoon, overviewAudit, actionMap, setAc
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {overviewAudit.rows.map(row => {
-              const meta = actionMap[row.action] ?? { label: row.action, color: '#94A3B8' };
+              const meta = actionMap[row.action] ?? { label: row.action, color: 'var(--text-2)' };
               const ts = new Date(row.created_at).toLocaleString('ar-EG', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
               return (
                 <div key={row.id} style={{

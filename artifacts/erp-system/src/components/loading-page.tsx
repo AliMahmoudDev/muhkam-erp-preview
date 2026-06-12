@@ -17,9 +17,9 @@ export function LoadingPage() {
         <div className="relative">
           <div className="w-20 h-20 rounded-2xl border border-amber-500/20 flex items-center justify-center shadow-2xl shadow-amber-500/10 animate-[logo-breathe_2.5s_ease-in-out_infinite]" style={{ background: 'var(--erp-bg-card, linear-gradient(135deg, #0F172A, #1e293b))' }}>
             <svg width="48" height="48" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="20" y="16" width="140" height="4" rx="2" fill="#F59E0B"/>
-              <text x="90" y="115" fontFamily="Arial, sans-serif" fontSize="88" fontWeight="bold" textAnchor="middle" fill="#F59E0B">م</text>
-              <circle cx="90" cy="148" r="6" fill="#F59E0B" opacity="0.7"/>
+              <rect x="20" y="16" width="140" height="4" rx="2" fill="var(--status-warning)"/>
+              <text x="90" y="115" fontFamily="Arial, sans-serif" fontSize="88" fontWeight="bold" textAnchor="middle" fill="var(--status-warning)">م</text>
+              <circle cx="90" cy="148" r="6" fill="var(--status-warning)" opacity="0.7"/>
             </svg>
           </div>
           {/* Ring animation */}

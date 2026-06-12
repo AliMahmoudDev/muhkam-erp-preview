@@ -15,7 +15,7 @@ export function SectionHd({ label, hint, accent }: { label: string; hint?: strin
         colSpan={2}
         style={{
           background: accent ?? hdrBg,
-          color: '#f8fafc',
+          color: 'var(--text-1)',
           fontWeight: 700,
           fontSize: 11,
           letterSpacing: '0.06em',
@@ -42,8 +42,8 @@ export function SubSectionHd({ label }: { label: string }) {
       <td
         colSpan={2}
         style={{
-          background: isLight ? '#f8fafc' : 'rgba(255,255,255,0.04)',
-          color: isLight ? '#374151' : 'rgba(255,255,255,0.60)',
+          background: isLight ? 'var(--text-1)' : 'rgba(255,255,255,0.04)',
+          color: isLight ? 'var(--text-2)' : 'rgba(255,255,255,0.60)',
           fontWeight: 700,
           fontSize: 10.5,
           letterSpacing: '0.05em',
@@ -84,7 +84,7 @@ export function ChildRow({
           {Icon && <Icon className="w-3.5 h-3.5 opacity-50" />}
           {label}
           {clickable && (
-            <span style={{ fontSize: 10, color: '#d97706', fontWeight: 700, marginRight: 4 }}>
+            <span style={{ fontSize: 10, color: 'var(--status-warning)', fontWeight: 700, marginRight: 4 }}>
               {expanded ? '▲ إخفاء' : '▼ تفاصيل'}
             </span>
           )}
@@ -98,7 +98,7 @@ export function ChildRow({
 }
 
 export function TotalRow({ label, value, accent }: { label: string; value: number; accent?: string }) {
-  const clr = accent ?? '#d97706';
+  const clr = accent ?? 'var(--status-warning)';
   return (
     <tr>
       <td style={{ fontWeight: 800, fontSize: 13.5, background: `${clr}18`, color: clr, borderTop: `2px solid ${clr}40`, borderBottom: `2px solid ${clr}40`, padding: '10px 16px' }}>
@@ -112,7 +112,7 @@ export function TotalRow({ label, value, accent }: { label: string; value: numbe
 }
 
 export function NetRow({ label, value, balanced }: { label: string; value: number; balanced: boolean }) {
-  const clr = balanced ? '#059669' : '#dc2626';
+  const clr = balanced ? 'var(--status-success)' : 'var(--status-danger)';
   const bg = balanced ? 'rgba(5,150,105,0.10)' : 'rgba(220,38,38,0.10)';
   return (
     <tr>
