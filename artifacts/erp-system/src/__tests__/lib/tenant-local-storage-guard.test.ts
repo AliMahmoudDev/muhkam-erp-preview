@@ -12,6 +12,8 @@ const DANGEROUS_DIRECT_PATTERNS = [
   /localStorage\.(getItem|setItem|removeItem)\(['"]pos:lastWarehouse['"]/,
   /localStorage\.(getItem|setItem|removeItem)\(['"]pos:lastSafe['"]/,
   /const\s+draftKey\s*=\s*`delivery-gate-draft:\$\{job\.id\}`/,
+  // Regression: daily alert check key must use getTenantScopedStorageKey(), not bare key
+  /localStorage\.(getItem|setItem|removeItem)\(['"]erp_daily_alert_check['"]/,
 ];
 
 const IGNORED_DIRS = new Set(['node_modules', 'dist', 'coverage']);

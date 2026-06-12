@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { getTenantScopedStorageKey } from '@/lib/tenant-storage';
 /**
  * AlertBell — smart, role-filtered notification center.
  *
@@ -39,10 +40,10 @@ type FilterTab = 'active' | 'unread' | 'resolved';
 const DAILY_CHECK_KEY = 'erp_daily_alert_check';
 
 const TYPE_LINKS: Record<string, string> = {
-  low_stock:        '/inventory',
-  customer_debt:    '/customers',
+  low_stock: '/inventory',
+  customer_debt: '/customers',
   supplier_payable: '/purchases',
-  cash_low:         '/finance',
+  cash_low: '/finance',
 };
 
 function todayStr() {
@@ -92,11 +93,11 @@ export function AlertBell() {
 
   /* ── Daily check: once per calendar day ────────────────── */
   const runDailyCheckIfNeeded = useCallback(async () => {
-    if (localStorage.getItem(DAILY_CHECK_KEY) === todayStr()) return;
+    if (localStorage.getItem(getTenantScopedStorageKey(DAILY_CHECK_KEY)) === todayStr()) return;
     try {
       const res = await authFetch(api('/api/alerts/daily-check'), { method: 'POST' });
       if (res.ok) {
-        localStorage.setItem(DAILY_CHECK_KEY, todayStr());
+        localStorage.setItem(getTenantScopedStorageKey(DAILY_CHECK_KEY), todayStr());
         await fetchAlerts();
       }
     } catch {
