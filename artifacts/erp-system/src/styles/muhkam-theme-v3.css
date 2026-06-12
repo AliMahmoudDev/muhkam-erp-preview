@@ -1,0 +1,188 @@
+/*
+ * ═══════════════════════════════════════════════════════════
+ *  MUHKAM Design System V3 — Enterprise Luxury
+ *  Single source of truth for all design tokens.
+ *  Import this file in index.css; never override tokens here
+ *  by setting raw hex values in component files.
+ * ═══════════════════════════════════════════════════════════
+ */
+
+/* ── DARK MODE (default) ────────────────────────────────── */
+:root,
+html,
+html.dark {
+  /* ── Backgrounds ── */
+  --erp-bg-app:          #0B0F14;
+  --erp-bg-sidebar:      hsla(225, 28%, 6.5%, 0.98);
+  --erp-bg-topbar:       hsla(225, 25%, 7%, 0.88);
+  --erp-bg-main:         #0D1117;
+  --erp-bg-surface:      rgba(255, 255, 255, 0.030);
+  --erp-bg-card:         rgba(255, 255, 255, 0.045);
+  --erp-bg-hover:        rgba(255, 255, 255, 0.065);
+  --erp-bg-active:       rgba(255, 255, 255, 0.09);
+  --erp-bg-input:        rgba(255, 255, 255, 0.04);
+
+  /* ── Brand / Accent (warm refined gold — no purple) ── */
+  --erp-brand:           #C48A31;
+  --erp-brand-hover:     #D4993F;
+  --erp-brand-dim:       rgba(196, 138, 49, 0.55);
+  --erp-brand-muted:     rgba(196, 138, 49, 0.12);
+  --erp-brand-border:    rgba(196, 138, 49, 0.28);
+  --erp-brand-glow:      rgba(196, 138, 49, 0.18);
+  /* Legacy alias — keeps existing CSS rules working */
+  --erp-accent:          #C48A31;
+  --erp-accent-hover:    #D4993F;
+
+  /* ── Text ── */
+  --erp-text-1:          rgba(255, 255, 255, 0.93);
+  --erp-text-2:          rgba(255, 255, 255, 0.60);
+  --erp-text-3:          rgba(255, 255, 255, 0.35);
+  --erp-text-4:          rgba(255, 255, 255, 0.22);
+
+  /* ── Borders ── */
+  --erp-border:          rgba(255, 255, 255, 0.07);
+  --erp-border-md:       rgba(255, 255, 255, 0.10);
+  --erp-border-strong:   rgba(255, 255, 255, 0.15);
+  --erp-border-sidebar:  rgba(255, 255, 255, 0.055);
+
+  /* ── Focus ring ── */
+  --erp-focus-border:    rgba(196, 138, 49, 0.55);
+  --erp-focus-shadow:    0 0 0 3px rgba(196, 138, 49, 0.18);
+
+  /* ── Status / Semantic ── */
+  --erp-success:         #34d399;
+  --erp-warning:         #fbbf24;
+  --erp-danger:          #f87171;
+  --erp-info:            #60a5fa;
+
+  /* ── Shadows ── */
+  --erp-shadow-card:     0 1px 3px rgba(0,0,0,0.40), 0 4px 20px rgba(0,0,0,0.25);
+  --erp-shadow-hover:    0 4px 12px rgba(0,0,0,0.45), 0 8px 32px rgba(0,0,0,0.30);
+  --erp-shadow-modal:    0 20px 60px rgba(0,0,0,0.70), 0 4px 20px rgba(0,0,0,0.50);
+
+  /* ── Chip / Tag ── */
+  --erp-chip-bg:         rgba(255, 255, 255, 0.05);
+  --erp-chip-border:     rgba(255, 255, 255, 0.08);
+
+  /* ── Caret & selection ── */
+  --erp-caret:           rgba(196, 138, 49, 0.85);
+  --erp-selection-bg:    rgba(196, 138, 49, 0.22);
+}
+
+/* ── LIGHT MODE override ────────────────────────────────── */
+html.light {
+  /* ── Backgrounds ── */
+  --erp-bg-app:          #F7F8FA;
+  --erp-bg-sidebar:      rgba(255, 255, 255, 0.99);
+  --erp-bg-topbar:       rgba(255, 255, 255, 0.90);
+  --erp-bg-main:         #F0F2F7;
+  --erp-bg-surface:      rgba(0, 0, 0, 0.020);
+  --erp-bg-card:         #ffffff;
+  --erp-bg-hover:        rgba(0, 0, 0, 0.040);
+  --erp-bg-active:       rgba(184, 121, 36, 0.08);
+  --erp-bg-input:        #ffffff;
+
+  /* ── Brand / Accent ── */
+  --erp-brand:           #B87924;
+  --erp-brand-hover:     #A06A1A;
+  --erp-brand-dim:       rgba(184, 121, 36, 0.65);
+  --erp-brand-muted:     rgba(184, 121, 36, 0.08);
+  --erp-brand-border:    rgba(184, 121, 36, 0.20);
+  --erp-brand-glow:      rgba(184, 121, 36, 0.10);
+  --erp-accent:          #B87924;
+  --erp-accent-hover:    #A06A1A;
+
+  /* ── Text ── */
+  --erp-text-1:          #0d1117;
+  --erp-text-2:          #1e293b;
+  --erp-text-3:          #475569;
+  --erp-text-4:          #64748b;
+
+  /* ── Borders ── */
+  --erp-border:          rgba(0, 0, 0, 0.10);
+  --erp-border-md:       rgba(0, 0, 0, 0.15);
+  --erp-border-strong:   rgba(0, 0, 0, 0.22);
+  --erp-border-sidebar:  rgba(0, 0, 0, 0.08);
+
+  /* ── Focus ring ── */
+  --erp-focus-border:    rgba(184, 121, 36, 0.50);
+  --erp-focus-shadow:    0 0 0 3px rgba(184, 121, 36, 0.12);
+
+  /* ── Status / Semantic ── */
+  --erp-success:         #059669;
+  --erp-warning:         #d97706;
+  --erp-danger:          #dc2626;
+  --erp-info:            #2563eb;
+
+  /* ── Shadows ── */
+  --erp-shadow-card:     0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  --erp-shadow-hover:    0 4px 16px rgba(0,0,0,0.12), 0 8px 32px rgba(0,0,0,0.08);
+  --erp-shadow-modal:    0 20px 60px rgba(0,0,0,0.22), 0 4px 20px rgba(0,0,0,0.12);
+
+  /* ── Chip / Tag ── */
+  --erp-chip-bg:         rgba(0, 0, 0, 0.05);
+  --erp-chip-border:     rgba(0, 0, 0, 0.09);
+
+  /* ── Caret & selection ── */
+  --erp-caret:           rgba(184, 121, 36, 0.85);
+  --erp-selection-bg:    rgba(184, 121, 36, 0.18);
+}
+
+/* ════════════════════════════════════════════════════════
+   COMPONENT TOKENS — apply once, auto-switch with theme
+   ════════════════════════════════════════════════════════ */
+
+/* ── Input: focus ring (token-based, overrides Tailwind ring) ── */
+.erp-input:focus-visible {
+  border-color: var(--erp-focus-border) !important;
+  box-shadow: var(--erp-focus-shadow) !important;
+  outline: none !important;
+}
+
+/* ── Glass-input: focus with glow ── */
+.glass-input:focus {
+  border-color: var(--erp-focus-border) !important;
+  box-shadow: var(--erp-focus-shadow), 0 0 16px var(--erp-brand-glow) !important;
+}
+
+/* ── Caret (all inputs) ── */
+.erp-input,
+.glass-input,
+input,
+textarea {
+  caret-color: var(--erp-caret);
+}
+
+/* ── Selection highlight ── */
+.erp-input::selection,
+.glass-input::selection,
+input::selection,
+textarea::selection {
+  background: var(--erp-selection-bg);
+  color: inherit;
+}
+
+/* ── Sidebar layout utility ── */
+.erp-sidebar {
+  background: var(--erp-bg-sidebar);
+  border-left: 1px solid var(--erp-border-sidebar);
+}
+
+/* ── Topbar layout utility ── */
+.erp-topbar {
+  background: var(--erp-bg-topbar);
+  border-bottom: 1px solid var(--erp-border-sidebar);
+}
+
+/* ── Theme-toggle track ── */
+.erp-toggle-track {
+  background-color: var(--erp-chip-bg);
+  border: 1.5px solid var(--erp-border-md);
+}
+
+/* ── Purch-search / exchange focus (uses brand token) ── */
+.purch-search-wrap:focus-within,
+.purch-row:focus-within {
+  border-color: var(--erp-focus-border) !important;
+  box-shadow: var(--erp-focus-shadow) !important;
+}

@@ -1,3 +1,4 @@
 - [Receipt endpoint tx pattern](receipt-tx-pattern.md) — customerLedger insert must use company_id; fetch customer outside tx for clean 404, writes inside tx.
 - [txMock select limitation](txmock-select-limitation.md) — txMock.select().from().where() is NOT thenable; must fetch outside db.transaction() when using customers-full.test.ts mock.
 - [TopReportsTab any retention](toprepor-any-retention.md) — generic table renderer accessing row[c.key] as ReactNode+formatCurrency args; Record<string,unknown> breaks downstream — keep any[] with eslint-disable.
+- [V3 Design Token Architecture](v3-design-tokens.md) — dual token system: Tailwind semantic (--background/--primary/etc.) for shadcn/ui + ERP design (--erp-brand/--erp-text-1/etc.) for ERP components; V3 source at src/styles/muhkam-theme-v3.css.

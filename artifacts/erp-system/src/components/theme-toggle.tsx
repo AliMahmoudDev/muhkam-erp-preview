@@ -11,7 +11,7 @@ export function ThemeToggle() {
       dir="ltr"
       aria-label={isDark ? "تفعيل الوضع النهاري" : "تفعيل الوضع الليلي"}
       title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
-      className="relative flex items-center select-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-full transition-transform duration-150 active:scale-[0.92]"
+      className="relative flex items-center select-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--erp-brand)]/50 rounded-full transition-transform duration-150 active:scale-[0.92]"
       style={{ width: 80, height: 36 }}
     >
       {/* Track */}
@@ -20,7 +20,7 @@ export function ThemeToggle() {
         style={{
           backgroundColor: isDark ? "rgba(15,23,42,0.85)" : "rgba(241,245,249,0.92)",
           border: "1.5px solid",
-          borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)",
+          borderColor: "var(--erp-border-md)",
           transition: "background-color 0.35s, border-color 0.35s",
           boxShadow: isDark
             ? "inset 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)"
@@ -36,7 +36,7 @@ export function ThemeToggle() {
         <Moon
           size={14}
           className="transition-colors duration-300"
-          style={{ color: isDark ? "#fcd34d" : "#94a3b8" }}
+          style={{ color: isDark ? "var(--erp-brand)" : "#94a3b8" }}
           strokeWidth={2.2}
         />
       </div>
@@ -49,7 +49,7 @@ export function ThemeToggle() {
         <Sun
           size={14}
           className="transition-colors duration-300"
-          style={{ color: isDark ? "#64748b" : "#f59e0b" }}
+          style={{ color: isDark ? "#64748b" : "var(--erp-brand)" }}
           strokeWidth={2.2}
         />
       </div>

@@ -155,7 +155,7 @@ function TopbarSearch({ navItems, isDark }: { navItems: typeof NAV_ITEMS; isDark
             fontSize: '12.5px',
             fontFamily: 'inherit',
             color: inputColor,
-            caretColor: '#f59e0b',
+            caretColor: 'var(--erp-caret)',
           }}
         />
         {query && (
@@ -333,15 +333,15 @@ export function AppLayout({ children }: LayoutProps) {
                                   ? 'تحويل المخزون بين الفروع'
                                   : 'مرحباً بك');
 
-  /* ── Colors ── */
-  const sidebarBg = isDark ? 'hsla(225,28%,6.5%,0.98)' : 'rgba(255,255,255,0.99)';
-  const sidebarBdr = isDark ? '1px solid rgba(255,255,255,0.055)' : '1px solid rgba(0,0,0,0.08)';
-  const topbarBg = isDark ? 'hsla(225,25%,7%,0.88)' : 'rgba(255,255,255,0.90)';
-  const topbarBdr = isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)';
-  const textPrimary = isDark ? 'rgba(255,255,255,0.92)' : '#0f172a';
-  const textMuted = isDark ? 'rgba(255,255,255,0.30)' : 'rgba(0,0,0,0.36)';
-  const chipBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-  const chipBdr = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.09)';
+  /* ── Colors — use CSS tokens so they auto-switch with html.light/dark ── */
+  const sidebarBg  = 'var(--erp-bg-sidebar)';
+  const sidebarBdr = '1px solid var(--erp-border-sidebar)';
+  const topbarBg   = 'var(--erp-bg-topbar)';
+  const topbarBdr  = '1px solid var(--erp-border-sidebar)';
+  const textPrimary = 'var(--erp-text-1)';
+  const textMuted   = 'var(--erp-text-4)';
+  const chipBg  = 'var(--erp-chip-bg)';
+  const chipBdr = '1px solid var(--erp-chip-border)';
 
   return (
     <div className="min-h-screen flex" dir="rtl">
@@ -379,9 +379,7 @@ export function AppLayout({ children }: LayoutProps) {
             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
             gap: 11,
             position: 'relative',
-            background: isDark
-              ? 'linear-gradient(135deg,rgba(245,158,11,0.06) 0%,transparent 60%)'
-              : 'linear-gradient(135deg,rgba(245,158,11,0.05) 0%,transparent 60%)',
+            background: 'linear-gradient(135deg, var(--erp-brand-muted) 0%, transparent 60%)',
           }}
         >
           {/* Logo — square, no frame */}
@@ -411,7 +409,7 @@ export function AppLayout({ children }: LayoutProps) {
                 style={{
                   fontSize: 13.5,
                   fontWeight: 900,
-                  color: isDark ? '#f59e0b' : '#b45309',
+                  color: 'var(--erp-brand)',
                   lineHeight: 1.25,
                   letterSpacing: '0.01em',
                 }}
@@ -422,7 +420,7 @@ export function AppLayout({ children }: LayoutProps) {
               <p
                 style={{
                   fontSize: 10,
-                  color: isDark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.35)',
+                  color: 'var(--erp-text-4)',
                   lineHeight: 1.3,
                   marginTop: 2,
                 }}
@@ -445,8 +443,8 @@ export function AppLayout({ children }: LayoutProps) {
               width: 22,
               height: 22,
               borderRadius: 6,
-              border: `1px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)'}`,
-              background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+              border: '1px solid var(--erp-border-md)',
+              background: 'var(--erp-bg-surface)',
               color: textMuted,
               cursor: 'pointer',
               display: 'flex',
@@ -475,8 +473,8 @@ export function AppLayout({ children }: LayoutProps) {
               flexShrink: 0,
               paddingTop: 8,
               paddingBottom: 8,
-              background: isDark ? 'rgba(245,158,11,0.05)' : 'rgba(180,83,9,0.05)',
-              border: isDark ? '1px solid rgba(245,158,11,0.12)' : '1px solid rgba(180,83,9,0.11)',
+              background: 'var(--erp-brand-muted)',
+              border: '1px solid var(--erp-brand-border)',
             }}
           >
             <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
@@ -484,7 +482,7 @@ export function AppLayout({ children }: LayoutProps) {
                 style={{
                   width: 11,
                   height: 11,
-                  color: isDark ? 'rgba(245,158,11,0.50)' : 'rgba(180,83,9,0.50)',
+                  color: 'var(--erp-brand-dim)',
                 }}
               />
               <span
@@ -601,7 +599,7 @@ export function AppLayout({ children }: LayoutProps) {
                   <div
                     style={{
                       height: 1,
-                      background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                      background: 'var(--erp-border)',
                       margin: '8px 0',
                     }}
                   />
@@ -629,7 +627,7 @@ export function AppLayout({ children }: LayoutProps) {
                               height: 16,
                               flexShrink: 0,
                               opacity: active ? 1 : 0.55,
-                              color: active ? '#f59e0b' : 'inherit',
+                              color: active ? 'var(--erp-brand)' : 'inherit',
                             }}
                           />
                           {!sidebarCollapsed && <span style={{ flex: 1 }}>{item.name}</span>}
@@ -659,23 +657,10 @@ export function AppLayout({ children }: LayoutProps) {
                   ...(sidebarCollapsed
                     ? { justifyContent: 'center', paddingRight: 0, paddingLeft: 0 }
                     : {}),
-                  background:
-                    location === '/my-portal'
-                      ? isDark
-                        ? 'rgba(245,158,11,0.15)'
-                        : 'rgba(180,83,9,0.08)'
-                      : isDark
-                        ? 'rgba(245,158,11,0.06)'
-                        : 'rgba(180,83,9,0.05)',
-                  border: `1px solid ${
-                    location === '/my-portal'
-                      ? isDark
-                        ? 'rgba(245,158,11,0.35)'
-                        : 'rgba(180,83,9,0.25)'
-                      : isDark
-                        ? 'rgba(245,158,11,0.12)'
-                        : 'rgba(180,83,9,0.10)'
-                  }`,
+                  background: location === '/my-portal'
+                    ? 'var(--erp-bg-active)'
+                    : 'var(--erp-brand-muted)',
+                  border: `1px solid ${location === '/my-portal' ? 'var(--erp-brand-border)' : 'var(--erp-brand-muted)'}`,
                   borderRadius: 10,
                   marginBottom: 0,
                 }}
@@ -685,7 +670,7 @@ export function AppLayout({ children }: LayoutProps) {
                     width: 16,
                     height: 16,
                     flexShrink: 0,
-                    color: '#f59e0b',
+                    color: 'var(--erp-brand)',
                     opacity: location === '/my-portal' ? 1 : 0.75,
                   }}
                 />
@@ -693,7 +678,7 @@ export function AppLayout({ children }: LayoutProps) {
                   <span
                     style={{
                       flex: 1,
-                      color: '#f59e0b',
+                      color: 'var(--erp-brand)',
                       fontWeight: location === '/my-portal' ? 800 : 600,
                       fontSize: 13,
                     }}
@@ -791,7 +776,7 @@ export function AppLayout({ children }: LayoutProps) {
                     width: 28,
                     height: 28,
                     borderRadius: 8,
-                    background: 'linear-gradient(135deg,#f59e0b,#d97706)',
+                    background: 'linear-gradient(135deg, var(--erp-brand), var(--erp-brand-hover))',
                     color: '#000',
                     fontSize: 10,
                   }}
@@ -832,7 +817,7 @@ export function AppLayout({ children }: LayoutProps) {
                   style={{
                     width: 1,
                     height: 22,
-                    background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
+                    background: 'var(--erp-border-md)',
                     flexShrink: 0,
                     margin: '0 2px',
                   }}

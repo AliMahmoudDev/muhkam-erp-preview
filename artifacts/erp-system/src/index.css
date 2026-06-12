@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
+@import './styles/muhkam-theme-v3.css';
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -1637,71 +1638,7 @@ html.light .interactive-card:hover {
   border-color: rgba(0,0,0,0.12) !important;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   FINAL DESIGN PASS — Complete Theme System v4
-   Priority: Light mode fix + Global consistency
-   ═══════════════════════════════════════════════════════════ */
-
-/* ── 1. CSS Custom Properties — full token system ────────── */
-:root {
-  /* Background layers */
-  --erp-bg-app:       hsl(225,25%,5%);
-  --erp-bg-sidebar:   #0B1120;
-  --erp-bg-main:      #0D1424;
-  --erp-bg-surface:   rgba(255,255,255,0.030);
-  --erp-bg-card:      rgba(255,255,255,0.045);
-  --erp-bg-hover:     rgba(255,255,255,0.065);
-  --erp-bg-active:    rgba(255,255,255,0.09);
-  /* Text */
-  --erp-text-1:       rgba(255,255,255,0.93);
-  --erp-text-2:       rgba(255,255,255,0.60);
-  --erp-text-3:       rgba(255,255,255,0.35);
-  --erp-text-4:       rgba(255,255,255,0.22);
-  /* Borders */
-  --erp-border:       rgba(255,255,255,0.07);
-  --erp-border-md:    rgba(255,255,255,0.10);
-  --erp-border-strong:rgba(255,255,255,0.15);
-  /* Semantic */
-  --erp-accent:       #f59e0b;
-  --erp-accent-hover: #fbbf24;
-  --erp-success:      #34d399;
-  --erp-warning:      #fbbf24;
-  --erp-danger:       #f87171;
-  --erp-info:         #60a5fa;
-  /* Shadows (dark mode) */
-  --erp-shadow-card:  0 1px 3px rgba(0,0,0,0.40), 0 4px 20px rgba(0,0,0,0.25);
-  --erp-shadow-hover: 0 4px 12px rgba(0,0,0,0.45), 0 8px 32px rgba(0,0,0,0.30);
-  --erp-shadow-modal: 0 20px 60px rgba(0,0,0,0.70), 0 4px 20px rgba(0,0,0,0.50);
-}
-
-/* ── 2. Light mode token override ────────────────────────── */
-html.light {
-  --erp-bg-app:       #f0f2f7;
-  --erp-bg-sidebar:   #f8fafc;
-  --erp-bg-main:      #f0f2f7;
-  --erp-bg-surface:   rgba(0,0,0,0.020);
-  --erp-bg-card:      #ffffff;
-  --erp-bg-hover:     rgba(0,0,0,0.040);
-  --erp-bg-active:    rgba(245,158,11,0.08);
-  --erp-text-1:       #0d1117;
-  --erp-text-2:       #1e293b;
-  --erp-text-3:       #475569;
-  --erp-text-4:       #64748b;
-  --erp-border:       rgba(0,0,0,0.10);
-  --erp-border-md:    rgba(0,0,0,0.15);
-  --erp-border-strong:rgba(0,0,0,0.22);
-  --erp-accent:       #d97706;
-  --erp-accent-hover: #b45309;
-  --erp-success:      #059669;
-  --erp-warning:      #d97706;
-  --erp-danger:       #dc2626;
-  --erp-info:         #2563eb;
-  --erp-shadow-card:  0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
-  --erp-shadow-hover: 0 4px 16px rgba(0,0,0,0.12), 0 8px 32px rgba(0,0,0,0.08);
-  --erp-shadow-modal: 0 20px 60px rgba(0,0,0,0.22), 0 4px 20px rgba(0,0,0,0.12);
-}
-
-/* ── 3. App background ───────────────────────────────────── */
+/* ── Token system → see src/styles/muhkam-theme-v3.css ───── */
 
 
 /* ── 5. glass-input rebuild ──────────────────────────────── */
