@@ -29,7 +29,7 @@ export function SectionHd({
           letterSpacing: '0.06em',
           padding: '8px 16px',
           borderBottom: 'none',
-          borderRight: accent ? `3px solid rgba(255,255,255,0.3)` : 'none',
+          borderRight: accent ? `3px solid var(--edge-row)` : 'none',
         }}
       >
         {label}
@@ -39,7 +39,7 @@ export function SectionHd({
               fontSize: 10,
               fontWeight: 400,
               marginRight: 8,
-              color: 'rgba(255,255,255,0.50)',
+              color: 'var(--text-hint)',
             }}
           >
             {hint}
@@ -51,14 +51,14 @@ export function SectionHd({
 }
 
 export function SubSectionHd({ label }: { label: string }) {
-  const { isLight, panelBdr } = useTheme();
+  const { panelBdr } = useTheme();
   return (
     <tr>
       <td
         colSpan={2}
         style={{
-          background: isLight ? 'var(--text-1)' : 'rgba(255,255,255,0.04)',
-          color: isLight ? 'var(--text-2)' : 'rgba(255,255,255,0.60)',
+          background: 'var(--bg-elevated)',
+          color: 'var(--text-2)',
           fontWeight: 700,
           fontSize: 10.5,
           letterSpacing: '0.05em',
@@ -89,9 +89,9 @@ export function ChildRow({
   onToggle?: () => void;
   Icon?: React.ElementType;
 }) {
-  const { txtBody, txtDim, bdColor, isLight } = useTheme();
+  const { txtBody, txtDim, bdColor } = useTheme();
   const txtColor = dim ? txtDim : txtBody;
-  const hoverBg = isLight ? 'rgba(245,158,11,0.04)' : 'rgba(255,255,255,0.03)';
+  const hoverBg = 'var(--erp-bg-hover)';
   return (
     <tr
       onClick={clickable ? onToggle : undefined}

@@ -89,8 +89,8 @@ export default function AgingReport() {
   }
 
   const cardStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--erp-border)',
     borderRadius: 16,
     padding: '1rem 1.25rem',
   };
@@ -99,16 +99,16 @@ export default function AgingReport() {
     padding: '0.5rem 0.75rem',
     textAlign: 'right',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
+    color: 'var(--text-hint)',
     fontWeight: 700,
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    borderBottom: '1px solid var(--erp-border)',
   };
 
   const td: React.CSSProperties = {
     padding: '0.5rem 0.75rem',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.80)',
-    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    color: 'var(--text-1)',
+    borderBottom: '1px solid var(--erp-border)',
   };
 
   return (
@@ -124,7 +124,7 @@ export default function AgingReport() {
         {/* Type toggle */}
         <div
           className="flex gap-1 rounded-xl overflow-hidden"
-          style={{ border: '1px solid rgba(255,255,255,0.10)' }}
+          style={{ border: '1px solid var(--erp-border)' }}
         >
           {(['customers', 'suppliers'] as const).map((t) => (
             <button
@@ -138,7 +138,7 @@ export default function AgingReport() {
                 fontSize: 12,
                 fontWeight: 700,
                 background: type === t ? 'var(--status-warning)' : 'transparent',
-                color: type === t ? 'var(--text-1)' : 'rgba(255,255,255,0.5)',
+                color: type === t ? 'var(--text-1)' : 'var(--text-2)',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
@@ -150,14 +150,14 @@ export default function AgingReport() {
         </div>
 
         {/* As of date */}
-        <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>حتى تاريخ:</label>
+        <label style={{ fontSize: 12, color: 'var(--text-hint)' }}>حتى تاريخ:</label>
         <input
           type="date"
           value={asOf}
           onChange={(e) => setAsOf(e.target.value)}
           style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.10)',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--erp-border)',
             borderRadius: 8,
             padding: '4px 10px',
             color: 'var(--text-1)',
@@ -197,8 +197,8 @@ export default function AgingReport() {
                 key={b}
                 onClick={() => setBucket(active ? null : b)}
                 style={{
-                  background: active ? col.bg : 'rgba(255,255,255,0.03)',
-                  border: `1.5px solid ${active ? col.text : 'rgba(255,255,255,0.07)'}`,
+                  background: active ? col.bg : 'var(--erp-bg-hover)',
+                  border: `1.5px solid ${active ? col.text : 'var(--erp-border)'}`,
                   borderRadius: 14,
                   padding: '0.85rem 1rem',
                   textAlign: 'right',
@@ -213,7 +213,7 @@ export default function AgingReport() {
                 <div style={{ fontSize: 18, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
                   {formatCurrency(val)}
                 </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 2 }}>
                   {pct}% من الإجمالي
                 </div>
                 {/* mini progress */}
@@ -251,7 +251,7 @@ export default function AgingReport() {
             alignItems: 'center',
           }}
         >
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
+          <span style={{ fontSize: 13, color: 'var(--text-2)' }}>
             إجمالي الديون المتأخرة {bucket ? `(${BUCKET_LABELS[bucket]})` : ''}
           </span>
           <span
@@ -272,7 +272,7 @@ export default function AgingReport() {
       {/* ── Items Table ── */}
       <div style={cardStyle}>
         {isLoading && (
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '2rem 0' }}>
+          <p style={{ textAlign: 'center', color: 'var(--text-2)', padding: '2rem 0' }}>
             جاري التحميل…
           </p>
         )}
@@ -299,7 +299,7 @@ export default function AgingReport() {
                     style={{
                       ...td,
                       textAlign: 'center',
-                      color: 'rgba(255,255,255,0.25)',
+                      color: 'var(--text-hint)',
                       padding: '2rem 0',
                     }}
                   >

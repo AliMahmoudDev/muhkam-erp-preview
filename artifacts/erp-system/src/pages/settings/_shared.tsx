@@ -257,7 +257,7 @@ export function PermToggle({ active, color }: { active: boolean; color: string }
         height: 20,
         borderRadius: 99,
         flexShrink: 0,
-        background: active ? c.toggleOn : 'rgba(255,255,255,0.12)',
+        background: active ? c.toggleOn : 'var(--edge-row)',
         transition: 'background 0.2s ease',
       }}
     >
@@ -302,7 +302,7 @@ export function PermissionGroupCard({
     >
       <div
         className="flex items-center justify-between px-4 py-2.5 cursor-pointer select-none"
-        style={{ borderBottom: open ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
+        style={{ borderBottom: open ? '1px solid var(--erp-border)' : 'none' }}
         onClick={() => setOpen((o) => !o)}
       >
         <div className="flex items-center gap-2.5">
@@ -345,10 +345,10 @@ export function PermissionGroupCard({
                 style={{
                   background: p.isPage
                     ? active
-                      ? 'rgba(255,255,255,0.06)'
-                      : 'rgba(255,255,255,0.01)'
+                      ? 'var(--bg-elevated)'
+                      : 'transparent'
                     : active
-                      ? 'rgba(255,255,255,0.04)'
+                      ? 'var(--erp-bg-hover)'
                       : 'transparent',
                 }}
               >
@@ -356,7 +356,7 @@ export function PermissionGroupCard({
                   {p.isPage && (
                     <Globe
                       className="w-3 h-3 shrink-0"
-                      style={{ color: active ? c.toggleOn : 'rgba(255,255,255,0.2)' }}
+                      style={{ color: active ? c.toggleOn : 'var(--text-hint)' }}
                     />
                   )}
                   <span

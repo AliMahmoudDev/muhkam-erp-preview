@@ -101,12 +101,10 @@ export default function DeviceModelsTab() {
     }
   };
 
-  const inputCls = isLight
-    ? 'w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400'
-    : 'w-full px-3 py-2 rounded-lg border border-line bg-surface text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/60';
-  const selectCls = isLight
-    ? 'px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400'
-    : 'px-3 py-2 rounded-lg border border-line bg-surface text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/60';
+  const inputCls =
+    'w-full px-3 py-2 rounded-lg border border-line bg-surface text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/60';
+  const selectCls =
+    'px-3 py-2 rounded-lg border border-line bg-surface text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/60';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

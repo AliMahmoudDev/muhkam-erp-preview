@@ -282,7 +282,7 @@ export default function Repairs() {
       {/* ══ RIGHT PANEL — List ══ */}
       <div
         className={`flex flex-col gap-3 p-4 overflow-y-auto transition-all ${selectedJob ? 'hidden md:flex md:w-[340px] shrink-0' : 'flex flex-1'}`}
-        style={{ borderLeft: selectedJob ? '1px solid rgba(255,255,255,0.06)' : undefined }}
+        style={{ borderLeft: selectedJob ? '1px solid var(--erp-border)' : undefined }}
       >
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -507,14 +507,14 @@ export default function Repairs() {
         {!isLoading && jobs.length > 0 && viewMode === 'list' && !selectedJob && (
           <div
             className="rounded-2xl border border-line overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.025)' }}
+            style={{ background: 'var(--bg-elevated)' }}
           >
             <div className="overflow-x-auto">
               <table dir="rtl" className="w-full text-right">
                 <thead>
                   <tr
                     className="border-b border-line"
-                    style={{ background: 'rgba(255,255,255,0.04)' }}
+                    style={{ background: 'var(--erp-bg-hover)' }}
                   >
                     {[
                       'رقم الطلب',
@@ -619,7 +619,7 @@ export default function Repairs() {
                     setShowNewForm(false);
                   }}
                   className={`relative rounded-2xl border cursor-pointer transition-all duration-200 overflow-hidden flex flex-col group hover:-translate-y-0.5 hover:shadow-xl ${borderColor}`}
-                  style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(10px)' }}
+                  style={{ background: 'var(--bg-elevated)', backdropFilter: 'blur(10px)' }}
                 >
                   <div className={`h-[3px] w-full ${barColor}`} />
                   <div className="p-3 flex flex-col gap-2 flex-1">

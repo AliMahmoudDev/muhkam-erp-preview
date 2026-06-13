@@ -228,7 +228,7 @@ export function JobDetail({
       {/* ── Top bar ── */}
       <div
         className="shrink-0 border-b border-[var(--erp-border)]"
-        style={{ background: 'rgba(255,255,255,0.02)' }}
+        style={{ background: 'var(--bg-elevated)' }}
       >
         <div className="flex items-center justify-between px-3 pt-3 pb-2 gap-2">
           <div className="flex items-center gap-2.5 min-w-0">

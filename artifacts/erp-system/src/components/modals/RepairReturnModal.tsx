@@ -160,7 +160,7 @@ export default function RepairReturnModal({
         {/* Header */}
         <div
           className="flex items-center justify-between px-5 py-4 border-b shrink-0"
-          style={{ borderColor: 'rgba(255,255,255,0.07)' }}
+          style={{ borderColor: 'var(--erp-border)' }}
         >
           <div className="flex items-center gap-2.5">
             <div
@@ -235,7 +235,7 @@ export default function RepairReturnModal({
                     onChange={(e) => setRefundAmount(e.target.value)}
                     className="w-full rounded-xl px-3 py-2.5 text-sm font-bold text-ink placeholder:text-ink/25 outline-none transition-all"
                     style={{
-                      background: 'rgba(255,255,255,0.05)',
+                      background: 'var(--bg-elevated)',
                       border: '1px solid rgba(239,68,68,0.3)',
                     }}
                   />
@@ -257,7 +257,7 @@ export default function RepairReturnModal({
                     onChange={(e) => setSafeId(e.target.value)}
                     className="w-full rounded-xl px-3 py-2.5 text-xs text-ink outline-none transition-all"
                     style={{
-                      background: 'rgba(255,255,255,0.05)',
+                      background: 'var(--bg-elevated)',
                       border: '1px solid rgba(239,68,68,0.3)',
                     }}
                   >
@@ -288,8 +288,8 @@ export default function RepairReturnModal({
                   placeholder="اكتب سبب إرجاع الجهاز..."
                   className="w-full rounded-xl px-3 py-2.5 text-xs text-ink placeholder:text-ink/25 outline-none resize-none transition-all"
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--erp-border)',
                   }}
                 />
               </div>
@@ -308,8 +308,8 @@ export default function RepairReturnModal({
                           key={part.id}
                           className="rounded-xl p-3"
                           style={{
-                            background: 'rgba(255,255,255,0.04)',
-                            border: '1px solid rgba(255,255,255,0.08)',
+                            background: 'var(--bg-elevated)',
+                            border: '1px solid var(--erp-border)',
                           }}
                         >
                           <div className="flex items-start justify-between gap-2 mb-2.5">
@@ -364,8 +364,8 @@ export default function RepairReturnModal({
                 <div
                   className="rounded-xl p-3 text-center text-[11px] text-ink/30"
                   style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--erp-border)',
                   }}
                 >
                   لا توجد قطع مسجّلة على هذه البطاقة
@@ -384,8 +384,8 @@ export default function RepairReturnModal({
                   placeholder="أي ملاحظات إضافية..."
                   className="w-full rounded-xl px-3 py-2 text-xs text-ink placeholder:text-ink/25 outline-none transition-all"
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--erp-border)',
                   }}
                 />
               </div>
@@ -430,7 +430,7 @@ export default function RepairReturnModal({
                 onClick={onClose}
                 disabled={loading}
                 className="px-4 py-2.5 rounded-xl border text-xs text-ink/60 hover:text-ink transition-all disabled:opacity-40"
-                style={{ borderColor: 'rgba(255,255,255,0.12)' }}
+                style={{ borderColor: 'var(--erp-border)' }}
               >
                 إلغاء
               </button>

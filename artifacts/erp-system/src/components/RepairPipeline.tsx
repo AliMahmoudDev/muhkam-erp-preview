@@ -516,8 +516,7 @@ export default function RepairPipeline({
       <div
         className="rounded-2xl border border-[var(--erp-border)] overflow-hidden"
         style={{
-          background:
-            'linear-gradient(135deg, rgba(255,255,255,0.035) 0%, rgba(124,58,237,0.05) 100%)',
+          background: 'var(--bg-elevated)',
         }}
         dir="rtl"
       >
@@ -633,7 +632,7 @@ export default function RepairPipeline({
           {/* Connector track */}
           <div
             className="absolute top-[38px] left-10 right-10 h-[3px] rounded-full"
-            style={{ background: 'rgba(255,255,255,0.06)' }}
+            style={{ background: 'var(--erp-border)' }}
           />
           {/* Progress fill — RTL fills from right to left */}
           {visibleIdx > 0 && (

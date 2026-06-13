@@ -213,7 +213,7 @@ export function SplitPaymentModal({
     >
       <div
         className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-line overflow-hidden shadow-2xl"
-        style={{ background: 'linear-gradient(145deg, rgba(15,15,25,0.99), rgba(8,8,18,0.99))' }}
+        style={{ background: 'var(--erp-bg-card)' }}
       >
         <div
           style={{ height: 2, background: 'linear-gradient(90deg, #F59E0B, #FBBF24, #F59E0B)' }}
@@ -322,7 +322,7 @@ export function SplitPaymentModal({
             <div
               className={`rounded-2xl p-3 transition-all ${shake ? 'erp-shake' : ''}`}
               style={{
-                background: 'rgba(255,255,255,0.03)',
+                background: 'var(--bg-elevated)',
                 border: '1px solid rgba(245,158,11,0.28)',
               }}
             >
@@ -339,9 +339,9 @@ export function SplitPaymentModal({
                         onClick={() => setActiveType(key)}
                         className="flex-1 min-w-[80px] py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
                         style={{
-                          background: active ? c.active : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${active ? c.border : 'rgba(255,255,255,0.08)'}`,
-                          color: active ? c.text : 'rgba(255,255,255,0.35)',
+                          background: active ? c.active : 'var(--erp-bg-hover)',
+                          border: `1px solid ${active ? c.border : 'var(--erp-border)'}`,
+                          color: active ? c.text : 'var(--text-hint)',
                         }}
                       >
                         <Icon className="w-3.5 h-3.5" /> {label}
@@ -362,8 +362,8 @@ export function SplitPaymentModal({
                     disabled={isRestricted}
                     className="flex-1 min-w-0 rounded-xl text-sm outline-none appearance-none transition-colors"
                     style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.10)',
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--erp-border)',
                       color: 'var(--text-1)',
                       padding: '10px 12px',
                       direction: 'rtl',
@@ -412,7 +412,7 @@ export function SplitPaymentModal({
                     placeholder={remaining.toFixed(0)}
                     className="w-full rounded-xl text-center text-sm font-bold outline-none transition-colors"
                     style={{
-                      background: 'rgba(255,255,255,0.07)',
+                      background: 'var(--bg-elevated)',
                       border: '1px solid rgba(245,158,11,0.30)',
                       color: 'var(--text-1)',
                       padding: '10px 26px 10px 6px',
@@ -421,7 +421,7 @@ export function SplitPaymentModal({
                   />
                   <span
                     className="absolute left-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none"
-                    style={{ color: 'rgba(255,255,255,0.25)' }}
+                    style={{ color: 'var(--text-hint)' }}
                   >
                     ج.م
                   </span>
@@ -475,7 +475,7 @@ export function SplitPaymentModal({
         <div style={{ height: 1, background: 'var(--erp-border)' }} />
         <div className="px-5 py-3 space-y-1.5">
           {[
-            { label: 'إجمالي الفاتورة', val: total, color: 'rgba(255,255,255,0.7)' },
+            { label: 'إجمالي الفاتورة', val: total, color: 'var(--text-1)' },
             ...Object.entries(totals).map(([type, val]) => ({
               label:
                 type === 'credit'
@@ -494,7 +494,7 @@ export function SplitPaymentModal({
               <span className="text-sm font-bold tabular-nums" style={{ color: item.color }}>
                 {formatCurrency(item.val)}
               </span>
-              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.30)' }}>
+              <span className="text-xs" style={{ color: 'var(--text-2)' }}>
                 {item.label}
               </span>
             </div>
@@ -504,12 +504,12 @@ export function SplitPaymentModal({
         {/* Footer */}
         <div
           className="flex gap-2 px-5 py-4 border-t"
-          style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.25)' }}
+          style={{ borderColor: 'var(--erp-border)', background: 'var(--bg-elevated)' }}
         >
           <button
             onClick={onClose}
             className="flex-1 py-3 rounded-2xl text-sm font-bold border transition-all"
-            style={{ borderColor: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.40)' }}
+            style={{ borderColor: 'var(--erp-border)', color: 'var(--text-2)' }}
           >
             إلغاء
           </button>
@@ -525,9 +525,9 @@ export function SplitPaymentModal({
                     boxShadow: '0 4px 20px rgba(245,158,11,0.35)',
                   }
                 : {
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    color: 'rgba(255,255,255,0.20)',
+                    background: 'var(--erp-bg-hover)',
+                    border: '1px solid var(--erp-border)',
+                    color: 'var(--text-hint)',
                     cursor: 'not-allowed',
                   }
             }

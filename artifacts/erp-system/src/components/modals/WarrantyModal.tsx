@@ -85,7 +85,7 @@ export default function WarrantyModal({
         {/* Header */}
         <div
           className="flex items-center justify-between px-5 py-4 border-b"
-          style={{ borderColor: 'rgba(255,255,255,0.07)' }}
+          style={{ borderColor: 'var(--erp-border)' }}
         >
           <div className="flex items-center gap-2.5">
             <div
@@ -143,7 +143,7 @@ export default function WarrantyModal({
               <button
                 onClick={onClose}
                 className="px-4 py-2 rounded-xl border text-xs text-ink/60 hover:text-ink transition-all"
-                style={{ borderColor: 'rgba(255,255,255,0.12)' }}
+                style={{ borderColor: 'var(--erp-border)' }}
               >
                 إغلاق
               </button>
@@ -160,8 +160,8 @@ export default function WarrantyModal({
             <div
               className="rounded-xl p-3 text-xs space-y-1"
               style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--erp-border)',
               }}
             >
               <div className="flex items-center gap-1.5 text-ink/50">
@@ -188,8 +188,8 @@ export default function WarrantyModal({
                 placeholder="اكتب وصف مشكلة الضمان..."
                 className="w-full rounded-xl px-3 py-2.5 text-xs text-ink placeholder:text-ink/25 outline-none resize-none transition-all"
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--erp-border)',
                 }}
               />
             </div>
@@ -206,8 +206,8 @@ export default function WarrantyModal({
                 placeholder="هل يوجد تكلفة إضافية؟ تفاصيل أخرى؟"
                 className="w-full rounded-xl px-3 py-2 text-xs text-ink placeholder:text-ink/25 outline-none transition-all"
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--erp-border)',
                 }}
               />
             </div>
@@ -270,7 +270,7 @@ export default function WarrantyModal({
                 onClick={onClose}
                 disabled={loading}
                 className="px-4 py-2.5 rounded-xl border text-xs text-ink/60 hover:text-ink transition-all disabled:opacity-40"
-                style={{ borderColor: 'rgba(255,255,255,0.12)' }}
+                style={{ borderColor: 'var(--erp-border)' }}
               >
                 إلغاء
               </button>

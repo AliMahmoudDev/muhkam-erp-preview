@@ -141,8 +141,8 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
       <div
         dir="rtl"
         style={{
-          background: 'linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'var(--erp-bg-card)',
+          border: '1px solid var(--erp-border)',
           borderRadius: 20,
           width: '90%',
           maxWidth: 620,
@@ -157,7 +157,7 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            borderBottom: '1px solid var(--erp-border)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -167,14 +167,14 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
             <h2 style={{ color: 'var(--text-1)', fontSize: 17, fontWeight: 700, margin: 0 }}>
               تخصيص الاختصارات
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, margin: '4px 0 0' }}>
+            <p style={{ color: 'var(--text-2)', fontSize: 13, margin: '4px 0 0' }}>
               اختر حتى 8 اختصارات وارتّبها
             </p>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255,255,255,0.07)',
+              background: 'var(--bg-elevated)',
               border: 'none',
               borderRadius: 10,
               cursor: 'pointer',
@@ -185,7 +185,7 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
               justifyContent: 'center',
             }}
           >
-            <X style={{ width: 16, height: 16, color: 'rgba(255,255,255,0.6)' }} />
+            <X style={{ width: 16, height: 16, color: 'var(--text-2)' }} />
           </button>
         </div>
 
@@ -196,12 +196,12 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
               flex: 1,
               overflowY: 'auto',
               padding: 20,
-              borderLeft: '1px solid rgba(255,255,255,0.07)',
+              borderLeft: '1px solid var(--erp-border)',
             }}
           >
             <p
               style={{
-                color: 'rgba(255,255,255,0.4)',
+                color: 'var(--text-2)',
                 fontSize: 12,
                 marginBottom: 12,
                 fontWeight: 600,
@@ -225,8 +225,8 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
                       gap: 12,
                       padding: '10px 14px',
                       borderRadius: 12,
-                      border: `1px solid ${active ? s.color + '55' : 'rgba(255,255,255,0.06)'}`,
-                      background: active ? s.color + '18' : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${active ? s.color + '55' : 'var(--erp-border)'}`,
+                      background: active ? s.color + '18' : 'transparent',
                       cursor: 'pointer',
                       textAlign: 'right',
                       transition: 'all 0.15s',
@@ -249,7 +249,7 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
                     </div>
                     <span
                       style={{
-                        color: active ? 'var(--text-1)' : 'rgba(255,255,255,0.65)',
+                        color: active ? 'var(--text-1)' : 'var(--text-2)',
                         fontSize: 14,
                         flex: 1,
                       }}
@@ -269,7 +269,7 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
           <div style={{ width: 220, flexShrink: 0, overflowY: 'auto', padding: 20 }}>
             <p
               style={{
-                color: 'rgba(255,255,255,0.4)',
+                color: 'var(--text-2)',
                 fontSize: 12,
                 marginBottom: 12,
                 fontWeight: 600,
@@ -280,7 +280,7 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
               الترتيب ({selected.length}/8)
             </p>
             {selected.length === 0 && (
-              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 13 }}>
+              <p style={{ color: 'var(--text-hint)', fontSize: 13 }}>
                 لم يتم اختيار أي اختصار بعد
               </p>
             )}
@@ -298,14 +298,14 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
                       gap: 8,
                       padding: '8px 10px',
                       borderRadius: 10,
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.07)',
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--erp-border)',
                     }}
                   >
                     <Icon style={{ width: 14, height: 14, color: def.color, flexShrink: 0 }} />
                     <span
                       style={{
-                        color: 'rgba(255,255,255,0.75)',
+                        color: 'var(--text-1)',
                         fontSize: 13,
                         flex: 1,
                         whiteSpace: 'nowrap',
@@ -366,7 +366,7 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
         <div
           style={{
             padding: '16px 24px',
-            borderTop: '1px solid rgba(255,255,255,0.08)',
+            borderTop: '1px solid var(--erp-border)',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: 10,
@@ -377,9 +377,9 @@ export default function ShortcutsCustomizer({ current, onSave, onClose, saving }
             style={{
               padding: '10px 22px',
               borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid var(--erp-border)',
               background: 'transparent',
-              color: 'rgba(255,255,255,0.6)',
+              color: 'var(--text-2)',
               fontSize: 14,
               cursor: 'pointer',
             }}
