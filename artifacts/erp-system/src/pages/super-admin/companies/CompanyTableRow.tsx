@@ -1,4 +1,4 @@
-/* eslint-disable erp/no-hardcoded-colors */
+/* eslint-disable erp/no-hardcoded-colors -- Legacy super-admin panel palette (C.* constants + inline rgba). Intentional fixed dark-theme colors outside the ERP token system; to be migrated to tokens in a future design pass. */
 import { C, STATUS, translatePlan, FONT } from '../types';
 import type { Company, CompanyFeatures } from '../types';
 import { ActionBtn } from '../ui';

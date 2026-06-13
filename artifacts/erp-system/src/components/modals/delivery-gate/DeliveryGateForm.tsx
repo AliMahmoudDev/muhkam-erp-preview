@@ -297,8 +297,7 @@ export default function DeliveryGateForm({
             style={{
               background: 'rgba(168,85,247,0.12)',
               border: '1px solid rgba(192,132,252,0.3)',
-              // eslint-disable-next-line erp/no-hardcoded-colors -- VIP/external badge: purple-300 has no token equivalent
-              color: '#D8B4FE',
+              color: 'var(--status-external-repair)',
             }}
           >
             <Wrench className="w-3 h-3" /> {showExtForm ? 'إغلاق' : '+ إصلاح خارجي (ورشة برّا)'}
@@ -431,8 +430,7 @@ export default function DeliveryGateForm({
                   style={{
                     background: 'rgba(168,85,247,0.25)',
                     border: '1px solid rgba(192,132,252,0.4)',
-                    // eslint-disable-next-line erp/no-hardcoded-colors -- VIP badge: purple-100 has no token equivalent
-                    color: '#E9D5FF',
+                    color: 'var(--status-external-repair)',
                   }}
                 >
                   <Plus className="w-3.5 h-3.5" /> إضافة البند
@@ -469,8 +467,7 @@ export default function DeliveryGateForm({
                         className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold"
                         style={{
                           background: 'rgba(168,85,247,0.2)',
-                          // eslint-disable-next-line erp/no-hardcoded-colors -- external-repair badge: purple-100 has no token equivalent
-                          color: '#E9D5FF',
+                          color: 'var(--status-external-repair)',
                           border: '1px solid rgba(192,132,252,0.35)',
                         }}
                       >

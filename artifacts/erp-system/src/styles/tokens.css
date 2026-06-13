@@ -56,6 +56,16 @@ html.dark {
   --status-danger: #f87171;
   --status-info: #60a5fa;
 
+  /* ── Status tinted backgrounds/borders (inline banners & alerts) ── */
+  --status-danger-bg: rgba(220, 38, 38, 0.10);
+  --status-danger-border: rgba(220, 38, 38, 0.25);
+
+  /* ── Status: external-repair (outsourced to external workshop — purple) ── */
+  --status-external-repair: #d8b4fe;
+
+  /* ── Status: urgent (subscription expiry CTA — orange) ── */
+  --status-urgent: #f97316;
+
   /* ── Status tinted surfaces (report cards & table rows) ── */
   --bg-success-tint: rgba(5, 150, 105, 0.08);
   --bg-danger-tint: rgba(220, 38, 38, 0.08);
@@ -210,6 +220,16 @@ html.light {
   --edge-success: #bbf7d0;
   --edge-danger: #fecaca;
   --edge-warning: #fde68a;
+
+  /* ── Status tinted backgrounds/borders (inline banners & alerts) ── */
+  --status-danger-bg: #fef2f2;
+  --status-danger-border: #fecaca;
+
+  /* ── Status: external-repair (outsourced to external workshop — purple) ── */
+  --status-external-repair: #6d28d9;
+
+  /* ── Status: urgent (subscription expiry CTA — orange) ── */
+  --status-urgent: #ea580c;
 
   /* ── Table row backgrounds ── */
   --bg-row-alt: #fafafa;

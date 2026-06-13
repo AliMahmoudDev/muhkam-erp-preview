@@ -801,9 +801,8 @@ export default function Login() {
                       padding: '10px 12px',
                       borderRadius: 8,
                       marginBottom: 16,
-                      // eslint-disable-next-line erp/no-hardcoded-colors -- error banner: red-50 tint has no token equivalent
-                      background: '#FEF2F2',
-                      border: '1px solid #FECACA',
+                      background: 'var(--status-danger-bg)',
+                      border: '1px solid var(--status-danger-border)',
                       color: 'var(--status-danger)',
                       fontSize: 13,
                       fontWeight: 500,
@@ -1025,9 +1024,8 @@ function LoginFormFields({
           style={{
             marginBottom: 18,
             padding: '10px 12px',
-            // eslint-disable-next-line erp/no-hardcoded-colors -- error banner: red-50 tint has no token equivalent
-            background: '#FEF2F2',
-            border: '1px solid #FECACA',
+            background: 'var(--status-danger-bg)',
+            border: '1px solid var(--status-danger-border)',
             borderRadius: 8,
             fontSize: 13,
             color: 'var(--status-danger)',
