@@ -196,7 +196,7 @@ jobs:
             pm2 delete muhkam-api || true
 
             # Start with all required env vars passed explicitly (no reliance on --update-env)
-            # Optional vars (REDIS_URL, TELEGRAM_*, SUPER_ADMIN_IPS) are passed if present in .env
+            # Optional vars (REDIS_URL/REDIS_HOST, TELEGRAM_*, SUPER_ADMIN_IPS) are passed if present in .env
             NODE_ENV=production \
               PORT=8080 \
               JWT_SECRET="$JWT_SECRET" \
@@ -214,6 +214,9 @@ jobs:
               R2_BACKUP_PREFIX="${R2_BACKUP_PREFIX:-db}" \
               SUPER_ADMIN_IPS="${SUPER_ADMIN_IPS:-}" \
               REDIS_URL="${REDIS_URL:-}" \
+              REDIS_HOST="${REDIS_HOST:-}" \
+              REDIS_PORT="${REDIS_PORT:-}" \
+              REDIS_PASSWORD="${REDIS_PASSWORD:-}" \
               TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}" \
               TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}" \
               SENTRY_DSN="${SENTRY_DSN:-}" \
@@ -224,11 +227,26 @@ jobs:
                 --name muhkam-api \
                 --cwd "$APP_DIR/artifacts/api-server"
             pm2 save
-            # التحقق من تشغيل Redis
-            if ! redis-cli ping > /dev/null 2>&1; then
-              echo "تحذير: Redis غير متاح — التطبيق سيعمل بدون cache"
+            # التحقق من تشغيل Redis باستخدام نفس إعدادات التطبيق
+            if [ -n "${REDIS_URL:-}" ]; then
+              if redis-cli -u "$REDIS_URL" ping > /dev/null 2>&1; then
+                echo "✓ Redis متاح عبر REDIS_URL"
+              else
+                echo "تحذير: Redis URL غير متاح — بعض الخدمات ستستخدم fallback"
+              fi
+            elif [ -n "${REDIS_HOST:-}" ]; then
+              if [ -n "${REDIS_PASSWORD:-}" ]; then
+                REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h "$REDIS_HOST" -p "${REDIS_PORT:-6379}" ping > /dev/null 2>&1
+              else
+                redis-cli -h "$REDIS_HOST" -p "${REDIS_PORT:-6379}" ping > /dev/null 2>&1
+              fi
+              if [ "$?" -eq 0 ]; then
+                echo "✓ Redis متاح عبر REDIS_HOST/REDIS_PORT"
+              else
+                echo "تحذير: Redis host غير متاح — بعض الخدمات ستستخدم fallback"
+              fi
             else
-              echo "Redis يعمل بشكل صحيح"
+              echo "تحذير: Redis غير مضبوط — التطبيق سيعمل ببعض fallbacks داخلية"
             fi
 
             sudo cp "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/muhkampro
