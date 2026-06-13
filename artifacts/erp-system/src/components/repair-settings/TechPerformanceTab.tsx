@@ -63,15 +63,15 @@ export default function TechPerformanceTab() {
         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
         <div>
-          <h3 className="text-[15px] font-black text-white">أداء الفنيين</h3>
-          <p className="text-[11px] text-white/40 mt-0.5">
+          <h3 className="text-[15px] font-black text-ink">أداء الفنيين</h3>
+          <p className="text-[11px] text-ink/40 mt-0.5">
             ملخص إنجاز كل فني — مباشر من قاعدة البيانات
           </p>
         </div>
         <button
           onClick={() => void refetch()}
           disabled={isFetching}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-white/60 hover:text-white transition-all disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-ink/60 hover:text-ink transition-all disabled:opacity-40"
           style={{
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.08)',
@@ -85,7 +85,7 @@ export default function TechPerformanceTab() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading && (
-          <div className="flex items-center justify-center h-48 gap-2 text-white/30">
+          <div className="flex items-center justify-center h-48 gap-2 text-ink/30">
             <RefreshCw className="w-4 h-4 animate-spin" />
             <span className="text-sm">جارٍ التحميل...</span>
           </div>
@@ -109,10 +109,10 @@ export default function TechPerformanceTab() {
         )}
 
         {!isLoading && !isError && stats.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-48 gap-3 text-white/25">
+          <div className="flex flex-col items-center justify-center h-48 gap-3 text-ink/25">
             <BarChart2 className="w-10 h-10" />
             <p className="text-sm font-semibold">لا توجد بيانات أداء حالياً</p>
-            <p className="text-xs text-white/15">ستظهر البيانات بعد تعيين فنيين لبطاقات الصيانة</p>
+            <p className="text-xs text-ink/15">ستظهر البيانات بعد تعيين فنيين لبطاقات الصيانة</p>
           </div>
         )}
 
@@ -136,16 +136,16 @@ export default function TechPerformanceTab() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[15px] text-white"
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[15px] text-ink"
                         style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}
                       >
                         {t.technician_name.charAt(0)}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[13px] font-bold text-white truncate">
+                        <p className="text-[13px] font-bold text-ink truncate">
                           {t.technician_name}
                         </p>
-                        <p className="text-[10px] text-white/35 font-medium">فني صيانة</p>
+                        <p className="text-[10px] text-ink/35 font-medium">فني صيانة</p>
                       </div>
                     </div>
                     {t.active_jobs > 0 && (
@@ -153,7 +153,7 @@ export default function TechPerformanceTab() {
                         className="shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full tabular-nums"
                         style={{
                           background: 'rgba(251,191,36,0.15)',
-                          color: '#fcd34d',
+                          color: 'var(--status-warning)',
                           border: '1px solid rgba(251,191,36,0.30)',
                         }}
                       >
@@ -176,7 +176,7 @@ export default function TechPerformanceTab() {
                   {/* Delivery rate bar */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] text-white/35 font-semibold flex items-center gap-1">
+                      <span className="text-[10px] text-ink/35 font-semibold flex items-center gap-1">
                         <PackageCheck className="w-3 h-3" /> نسبة التسليم
                       </span>
                       <span
@@ -202,7 +202,7 @@ export default function TechPerformanceTab() {
                   </div>
 
                   {/* Footer hints */}
-                  <div className="flex items-center gap-3 text-[10px] text-white/25">
+                  <div className="flex items-center gap-3 text-[10px] text-ink/25">
                     <span className="flex items-center gap-1">
                       <Wrench className="w-2.5 h-2.5" /> {t.total_jobs} إجمالي
                     </span>
