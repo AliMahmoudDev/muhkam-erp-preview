@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Smartphone,
   Wrench,
+  BarChart2,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -30,6 +31,7 @@ export type SettingsTab =
   | 'checklist'
   | 'dashboard-cards'
   | 'technicians'
+  | 'tech-performance'
   | 'models'
   | 'defaults'
   | 'wa-templates'
@@ -167,6 +169,12 @@ export const TABS: Array<{
     adminOnly: true,
   },
   { id: 'technicians', label: 'الفنيين', sublabel: 'إعدادات الموظفين', icon: Users },
+  {
+    id: 'tech-performance',
+    label: 'أداء الفنيين',
+    sublabel: 'إنجاز وإحصائيات الفنيين',
+    icon: BarChart2,
+  },
   {
     id: 'service-types',
     label: 'أنواع الخدمات',

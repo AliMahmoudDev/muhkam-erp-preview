@@ -415,15 +415,6 @@ router.patch(
       updates.qa_checklist = JSON.stringify(b.qa_checklist);
     }
     if (b.status === 'ready_for_delivery') {
-      const incomingFinal =
-        'final_cost' in updates
-          ? Number(updates.final_cost ?? 0)
-          : Number(existing.final_cost ?? 0);
-      if (!Number.isFinite(incomingFinal) || incomingFinal <= 0) {
-        return res.status(400).json({
-          error: 'يجب إدخال التكلفة النهائية (>0) قبل نقل البطاقة إلى "جاهز للتسليم"',
-        });
-      }
       /* إن لم تكن هناك بنود استلام حقيقية (null / [] / __power_off__ فقط) ولم يُكتمل QC،
        نضبط qa_completed_at تلقائياً — الجهاز المعطوب من البداية لا يحتاج QC. */
       if (!existing.qa_completed_at) {
