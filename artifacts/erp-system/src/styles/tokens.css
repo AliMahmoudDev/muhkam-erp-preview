@@ -1,0 +1,341 @@
+/*
+ * ════════════════════════════════════════════════════════════════
+ *  MUHKAM Design System — Token Layer
+ *  Single source of truth for ALL design tokens.
+ *  ─────────────────────────────────────────────────────────────
+ *  Primary tokens  : --bg-*, --text-*, --edge-*, --brand, etc.
+ *  Legacy aliases  : --erp-* forwarded to primary tokens (compat)
+ *  Component rules : focus rings, caret, selection, layout utils
+ *
+ *  NAMING NOTE: --edge-* is used for border colors to avoid
+ *  conflict with shadcn's --border (HSL channel tuple).
+ *  --surface-* avoids conflict with tailwind defaults.
+ * ════════════════════════════════════════════════════════════════
+ */
+
+/* ── DARK (default) ──────────────────────────────────────────── */
+:root,
+html,
+html.dark {
+  /* ── Solid backgrounds (replaces hardcoded hex in inline styles) ── */
+  --bg-app: #0b0f14;
+  --bg-card: #111827;
+  --bg-elevated: #1e293b;
+
+  /* ── Glass / transparent surfaces (replaces bg-white/* classes) ── */
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-raised: rgba(255, 255, 255, 0.07);
+
+  /* ── Structural backgrounds ── */
+  --bg-sidebar: hsla(225, 28%, 6.5%, 0.98);
+  --bg-topbar: hsla(225, 25%, 7%, 0.88);
+  --bg-input: rgba(255, 255, 255, 0.04);
+
+  /* ── Text ── */
+  --text-1: #f1f5f9;
+  --text-2: #94a3b8;
+  --text-3: #64748b;
+  --text-4: #475569;
+
+  /* ── Borders (--edge-* avoids shadcn --border conflict) ── */
+  --edge: rgba(255, 255, 255, 0.07);
+  --edge-md: rgba(255, 255, 255, 0.1);
+  --edge-strong: rgba(255, 255, 255, 0.16);
+
+  /* ── Brand ── */
+  --brand: #c48a31;
+  --brand-hover: #d4993f;
+  --brand-dim: rgba(196, 138, 49, 0.55);
+  --brand-muted: rgba(196, 138, 49, 0.12);
+  --brand-border: rgba(196, 138, 49, 0.28);
+  --brand-glow: rgba(196, 138, 49, 0.18);
+
+  /* ── Status ── */
+  --status-success: #34d399;
+  --status-warning: #fbbf24;
+  --status-danger: #f87171;
+  --status-info: #60a5fa;
+
+  /* ── Status tinted surfaces (report cards & table rows) ── */
+  --bg-success-tint: rgba(5, 150, 105, 0.08);
+  --bg-danger-tint: rgba(220, 38, 38, 0.08);
+  --bg-warning-tint: rgba(245, 158, 11, 0.08);
+  --bg-success-mid: rgba(5, 150, 105, 0.12);
+  --bg-danger-mid: rgba(220, 38, 38, 0.12);
+
+  /* ── Status tinted borders ── */
+  --edge-success: rgba(5, 150, 105, 0.2);
+  --edge-danger: rgba(220, 38, 38, 0.2);
+  --edge-warning: rgba(245, 158, 11, 0.2);
+
+  /* ── Table row backgrounds ── */
+  --bg-row-alt: rgba(255, 255, 255, 0.02);
+  --bg-row-section: rgba(255, 255, 255, 0.03);
+  --bg-row-subhead: rgba(255, 255, 255, 0.04);
+  --bg-row-header: rgba(255, 255, 255, 0.06);
+
+  /* ── Table divider & subtle row border ── */
+  --edge-row: rgba(255, 255, 255, 0.08);
+
+  /* ── Faint / hint text ── */
+  --text-hint: rgba(255, 255, 255, 0.35);
+  --text-neutral: rgba(255, 255, 255, 0.55);
+
+  /* ── Floating panel (notification/alert dropdowns) ── */
+  --bg-panel: #161f30;
+
+  /* ── Deep background (gateway, full-page surfaces) ── */
+  --bg-deep: #070d1a;
+
+  /* ── Focus ── */
+  --focus-edge: rgba(196, 138, 49, 0.55);
+  --focus-ring: 0 0 0 3px rgba(196, 138, 49, 0.18);
+
+  /* ── Shadows ── */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.45), 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.7), 0 4px 20px rgba(0, 0, 0, 0.5);
+
+  /* ── Caret / selection ── */
+  --caret-color: rgba(196, 138, 49, 0.85);
+  --selection-bg: rgba(196, 138, 49, 0.22);
+
+  /* ════════════════════════════════════════════════════════════
+     LEGACY --erp-* ALIASES — forward to primary tokens above.
+     Keep so existing components that use var(--erp-brand) etc.
+     continue to work without modification.
+     ════════════════════════════════════════════════════════════ */
+
+  --erp-bg-app: var(--bg-app);
+  --erp-bg-sidebar: var(--bg-sidebar);
+  --erp-bg-topbar: var(--bg-topbar);
+  --erp-bg-main: var(--bg-app);
+  --erp-bg-surface: var(--surface);
+  --erp-bg-card: var(--surface);
+  --erp-bg-elevated: var(--bg-elevated);
+  --erp-bg-panel: var(--surface);
+  --erp-bg-soft: var(--surface);
+  --erp-bg-hover: var(--surface-raised);
+  --erp-bg-active: rgba(255, 255, 255, 0.09);
+  --erp-bg-input: var(--bg-input);
+  --erp-input-text: var(--text-1);
+  --erp-text: var(--text-1);
+
+  --erp-brand: var(--brand);
+  --erp-brand-hover: var(--brand-hover);
+  --erp-brand-dim: var(--brand-dim);
+  --erp-brand-muted: var(--brand-muted);
+  --erp-brand-border: var(--brand-border);
+  --erp-brand-glow: var(--brand-glow);
+  --erp-accent: var(--brand);
+  --erp-accent-hover: var(--brand-hover);
+
+  --erp-text-1: var(--text-1);
+  --erp-text-2: var(--text-2);
+  --erp-text-3: var(--text-3);
+  --erp-text-4: var(--text-4);
+
+  --erp-border: var(--edge);
+  --erp-border-md: var(--edge-md);
+  --erp-border-strong: var(--edge-strong);
+  --erp-border-sidebar: var(--edge);
+
+  --erp-focus-border: var(--focus-edge);
+  --erp-focus-shadow: var(--focus-ring);
+
+  --erp-success: var(--status-success);
+  --erp-warning: var(--status-warning);
+  --erp-danger: var(--status-danger);
+  --erp-info: var(--status-info);
+
+  --erp-shadow-card: var(--shadow-card);
+  --erp-shadow-hover: var(--shadow-hover);
+  --erp-shadow-modal: var(--shadow-modal);
+
+  --erp-chip-bg: var(--surface);
+  --erp-chip-border: var(--edge);
+  --erp-caret: var(--caret-color);
+  --erp-selection-bg: var(--selection-bg);
+}
+
+/* ── LIGHT override ──────────────────────────────────────────── */
+html.light {
+  /* ── Solid backgrounds ── */
+  --bg-app: #f7f8fa;
+  --bg-card: #ffffff;
+  --bg-elevated: #f1f5f9;
+
+  /* ── Glass / transparent surfaces ── */
+  --surface: rgba(0, 0, 0, 0.04);
+  --surface-raised: rgba(0, 0, 0, 0.07);
+
+  /* ── Structural ── */
+  --bg-sidebar: rgba(255, 255, 255, 0.99);
+  --bg-topbar: rgba(255, 255, 255, 0.9);
+  --bg-input: #ffffff;
+
+  /* ── Text ── */
+  --text-1: #0d1117;
+  --text-2: #334155;
+  --text-3: #64748b;
+  --text-4: #94a3b8;
+
+  /* ── Borders ── */
+  --edge: rgba(0, 0, 0, 0.1);
+  --edge-md: rgba(0, 0, 0, 0.15);
+  --edge-strong: rgba(0, 0, 0, 0.22);
+
+  /* ── Brand ── */
+  --brand: #b87924;
+  --brand-hover: #a06a1a;
+  --brand-dim: rgba(184, 121, 36, 0.65);
+  --brand-muted: rgba(184, 121, 36, 0.08);
+  --brand-border: rgba(184, 121, 36, 0.2);
+  --brand-glow: rgba(184, 121, 36, 0.1);
+
+  /* ── Status ── */
+  --status-success: #059669;
+  --status-warning: #d97706;
+  --status-danger: #dc2626;
+  --status-info: #2563eb;
+
+  /* ── Status tinted surfaces ── */
+  --bg-success-tint: #f0fdf4;
+  --bg-danger-tint: #fef2f2;
+  --bg-warning-tint: #fffbeb;
+  --bg-success-mid: #ecfdf5;
+  --bg-danger-mid: #fef2f2;
+
+  /* ── Status tinted borders ── */
+  --edge-success: #bbf7d0;
+  --edge-danger: #fecaca;
+  --edge-warning: #fde68a;
+
+  /* ── Table row backgrounds ── */
+  --bg-row-alt: #fafafa;
+  --bg-row-section: #f9fafb;
+  --bg-row-subhead: #f9fafb;
+  --bg-row-header: #f3f4f6;
+
+  /* ── Table divider & subtle row border ── */
+  --edge-row: #e5e7eb;
+
+  /* ── Faint / hint text ── */
+  --text-hint: #9ca3af;
+  --text-neutral: #4b5563;
+
+  /* ── Floating panel ── */
+  --bg-panel: #ffffff;
+
+  /* ── Deep background ── */
+  --bg-deep: #f0f4ff;
+
+  /* ── Focus ── */
+  --focus-edge: rgba(184, 121, 36, 0.5);
+  --focus-ring: 0 0 0 3px rgba(184, 121, 36, 0.12);
+
+  /* ── Shadows ── */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.22), 0 4px 20px rgba(0, 0, 0, 0.12);
+
+  /* ── Caret / selection ── */
+  --caret-color: rgba(184, 121, 36, 0.85);
+  --selection-bg: rgba(184, 121, 36, 0.18);
+
+  /* ── Legacy --erp-* light overrides ── */
+  --erp-bg-app: var(--bg-app);
+  --erp-bg-sidebar: var(--bg-sidebar);
+  --erp-bg-topbar: var(--bg-topbar);
+  --erp-bg-card: var(--bg-card);
+  --erp-bg-surface: var(--surface);
+  --erp-bg-elevated: var(--bg-elevated);
+  --erp-bg-panel: var(--bg-card);
+  --erp-bg-soft: var(--surface);
+  --erp-bg-input: var(--bg-input);
+  --erp-input-text: var(--text-1);
+  --erp-text: var(--text-1);
+  --erp-text-1: var(--text-1);
+  --erp-text-2: var(--text-2);
+  --erp-text-3: var(--text-3);
+  --erp-text-4: var(--text-4);
+  --erp-border: var(--edge);
+  --erp-border-md: var(--edge-md);
+  --erp-border-strong: var(--edge-strong);
+  --erp-brand: var(--brand);
+  --erp-brand-muted: var(--brand-muted);
+  --erp-brand-border: var(--brand-border);
+  --erp-accent: var(--brand);
+  --erp-focus-border: var(--focus-edge);
+  --erp-focus-shadow: var(--focus-ring);
+  --erp-success: var(--status-success);
+  --erp-warning: var(--status-warning);
+  --erp-danger: var(--status-danger);
+  --erp-info: var(--status-info);
+  --erp-shadow-card: var(--shadow-card);
+  --erp-chip-bg: var(--surface);
+  --erp-chip-border: var(--edge);
+  --erp-caret: var(--caret-color);
+  --erp-selection-bg: var(--selection-bg);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   COMPONENT UTILITIES — apply once, auto-switch with theme
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Input focus ring ── */
+.erp-input:focus-visible {
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+  outline: none !important;
+}
+
+/* ── Glass-input focus ── */
+.glass-input:focus {
+  border-color: var(--focus-edge) !important;
+  box-shadow:
+    var(--focus-ring),
+    0 0 16px var(--brand-glow) !important;
+}
+
+/* ── Caret ── */
+.erp-input,
+.glass-input,
+input,
+textarea {
+  caret-color: var(--caret-color);
+}
+
+/* ── Selection highlight ── */
+.erp-input::selection,
+.glass-input::selection,
+input::selection,
+textarea::selection {
+  background: var(--selection-bg);
+  color: inherit;
+}
+
+/* ── Sidebar layout ── */
+.erp-sidebar {
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--edge);
+}
+
+/* ── Topbar layout ── */
+.erp-topbar {
+  background: var(--bg-topbar);
+  border-bottom: 1px solid var(--edge);
+}
+
+/* ── Theme-toggle track ── */
+.erp-toggle-track {
+  background-color: var(--surface);
+  border: 1.5px solid var(--edge-md);
+}
+
+/* ── Purchases search/exchange focus ── */
+.purch-search-wrap:focus-within,
+.purch-row:focus-within {
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+}

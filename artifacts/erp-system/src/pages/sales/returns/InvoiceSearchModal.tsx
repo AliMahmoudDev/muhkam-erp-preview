@@ -28,20 +28,20 @@ export function InvoiceSearchModal({
 }: InvoiceSearchModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm modal-overlay">
-      <div className="glass-panel rounded-3xl w-full max-w-2xl border border-white/10 shadow-2xl flex flex-col max-h-[85vh]">
-        <div className="flex items-center justify-between p-6 border-b border-white/10 shrink-0">
+      <div className="glass-panel rounded-3xl w-full max-w-2xl border border-line shadow-2xl flex flex-col max-h-[85vh]">
+        <div className="flex items-center justify-between p-6 border-b border-line shrink-0">
           <div>
-            <h3 className="text-xl font-bold text-white">اختر الفاتورة المراد إرجاعها</h3>
-            <p className="text-white/40 text-xs mt-0.5">ابحث بالرقم أو اسم العميل</p>
+            <h3 className="text-xl font-bold text-ink">اختر الفاتورة المراد إرجاعها</h3>
+            <p className="text-ink/40 text-xs mt-0.5">ابحث بالرقم أو اسم العميل</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl bg-white/10 hover:bg-white/20">
-            <X className="w-4 h-4 text-white/70" />
+          <button onClick={onClose} className="p-2 rounded-xl bg-surface hover:bg-raised">
+            <X className="w-4 h-4 text-ink/70" />
           </button>
         </div>
-        <div className="p-4 border-b border-white/10 shrink-0">
+        <div className="p-4 border-b border-line shrink-0">
           <div className="relative">
             <Search
-              className={`w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${salesFetching ? 'text-amber-400 animate-pulse' : 'text-white/30'}`}
+              className={`w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${salesFetching ? 'text-amber-400 animate-pulse' : 'text-ink/30'}`}
             />
             <input
               autoFocus
@@ -54,31 +54,31 @@ export function InvoiceSearchModal({
             {invoiceSearch && (
               <button
                 onClick={() => setInvoiceSearch('')}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 hover:text-ink/60"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
           {!invoiceSearch && (
-            <p className="text-white/30 text-xs mt-2 text-center">
+            <p className="text-ink/30 text-xs mt-2 text-center">
               آخر 40 فاتورة — ابحث للعثور على المزيد
             </p>
           )}
         </div>
         <div className="overflow-y-auto flex-1">
           {salesFetching && filteredSales.length === 0 ? (
-            <div className="p-10 text-center text-white/40">جاري البحث…</div>
+            <div className="p-10 text-center text-ink/40">جاري البحث…</div>
           ) : filteredSales.length === 0 ? (
-            <div className="p-10 text-center text-white/40">لا توجد نتائج</div>
+            <div className="p-10 text-center text-ink/40">لا توجد نتائج</div>
           ) : (
             <table className="w-full text-right text-sm">
-              <thead className="bg-white/5 sticky top-0">
+              <thead className="bg-surface sticky top-0">
                 <tr>
-                  <th className="p-3 text-white/50 font-medium">رقم الفاتورة</th>
-                  <th className="p-3 text-white/50 font-medium">العميل</th>
-                  <th className="p-3 text-white/50 font-medium">نوع الدفع</th>
-                  <th className="p-3 text-white/50 font-medium">التاريخ</th>
+                  <th className="p-3 text-ink/50 font-medium">رقم الفاتورة</th>
+                  <th className="p-3 text-ink/50 font-medium">العميل</th>
+                  <th className="p-3 text-ink/50 font-medium">نوع الدفع</th>
+                  <th className="p-3 text-ink/50 font-medium">التاريخ</th>
                   <th className="p-3 w-10"></th>
                 </tr>
               </thead>
@@ -88,19 +88,21 @@ export function InvoiceSearchModal({
                   return (
                     <tr
                       key={sale.id}
-                      className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
+                      className="border-b border-line hover:bg-surface transition-colors cursor-pointer"
                       onClick={() => onSelectInvoice(sale)}
                     >
                       <td className="p-3 font-mono font-bold text-amber-400">{sale.invoice_no}</td>
-                      <td className="p-3 text-white">
-                        {sale.customer_name || <span className="text-white/30">نقدي</span>}
+                      <td className="p-3 text-ink">
+                        {sale.customer_name || <span className="text-ink/30">نقدي</span>}
                       </td>
                       <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${pt.cls}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${pt.cls}`}
+                        >
                           {pt.label}
                         </span>
                       </td>
-                      <td className="p-3 text-white/40 text-xs">{sale.date || '—'}</td>
+                      <td className="p-3 text-ink/40 text-xs">{sale.date || '—'}</td>
                       <td className="p-3">
                         <button className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors">
                           <Receipt className="w-3.5 h-3.5" />

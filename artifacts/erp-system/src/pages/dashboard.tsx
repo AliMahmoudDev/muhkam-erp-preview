@@ -51,7 +51,7 @@ export default function Dashboard() {
   const { data: shortcutsData } = useQuery<{ shortcuts: string[] }>({
     queryKey: ['/api/dashboard/shortcuts'],
     queryFn: () =>
-      authFetch(api('/api/dashboard/shortcuts')).then(r => {
+      authFetch(api('/api/dashboard/shortcuts')).then((r) => {
         if (!r.ok) throw new Error('خطأ في جلب الاختصارات');
         return r.json();
       }),
@@ -78,7 +78,7 @@ export default function Dashboard() {
 
   const handleSaveShortcuts = useCallback(
     (ids: string[]) => saveMutation.mutateAsync(ids),
-    [saveMutation],
+    [saveMutation]
   );
 
   const {
@@ -97,11 +97,11 @@ export default function Dashboard() {
   /* ── Chart colors — theme-aware ─────────────────────────── */
   const chartGridStroke = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)';
   const chartAxisStroke = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)';
-  const chartTickColor = isDark ? 'rgba(255,255,255,0.55)' : '#64748b';
-  const chartTickColorY = isDark ? 'rgba(255,255,255,0.40)' : '#94a3b8';
-  const tooltipBg = isDark ? 'hsla(240,30%,8%,0.96)' : '#ffffff';
+  const chartTickColor = isDark ? 'rgba(255,255,255,0.55)' : 'var(--text-2)';
+  const chartTickColorY = isDark ? 'rgba(255,255,255,0.40)' : 'var(--text-2)';
+  const tooltipBg = isDark ? 'hsla(240,30%,8%,0.96)' : 'var(--text-1)';
   const tooltipBorder = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)';
-  const tooltipLabelClr = isDark ? 'rgba(255,255,255,0.55)' : '#64748b';
+  const tooltipLabelClr = isDark ? 'rgba(255,255,255,0.55)' : 'var(--text-2)';
 
   /* ── Loading skeleton ─────────────────────────────────── */
   if (isLoading) {
@@ -135,7 +135,13 @@ export default function Dashboard() {
     return (
       <div className="db-error-state" dir="rtl">
         <AlertTriangle
-          style={{ width: 44, height: 44, color: '#f59e0b', margin: '0 auto 16px', opacity: 0.7 }}
+          style={{
+            width: 44,
+            height: 44,
+            color: 'var(--status-warning)',
+            margin: '0 auto 16px',
+            opacity: 0.7,
+          }}
         />
         <p className="db-error-msg">حدث خطأ في تحميل البيانات</p>
       </div>
@@ -146,13 +152,13 @@ export default function Dashboard() {
 
   /* ── Chart data ─────────────────────────────────────────── */
   const barData = [
-    { name: 'المبيعات', amount: stats.total_sales_today, fill: '#f59e0b' },
-    { name: 'المصروفات', amount: stats.total_expenses_today, fill: '#f87171' },
-    { name: 'الإيرادات', amount: stats.total_income_today, fill: '#60a5fa' },
+    { name: 'المبيعات', amount: stats.total_sales_today, fill: 'var(--status-warning)' },
+    { name: 'المصروفات', amount: stats.total_expenses_today, fill: 'var(--status-danger)' },
+    { name: 'الإيرادات', amount: stats.total_income_today, fill: 'var(--status-info)' },
     {
       name: 'صافي الربح',
       amount: Math.abs(stats.net_profit),
-      fill: stats.net_profit >= 0 ? '#34d399' : '#f87171',
+      fill: stats.net_profit >= 0 ? 'var(--status-success)' : 'var(--status-danger)',
     },
   ];
 
@@ -177,7 +183,7 @@ export default function Dashboard() {
         : 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 40%, #dc2626 100%)',
       glow: netIsPositive ? 'rgba(52,211,153,0.25)' : 'rgba(248,113,113,0.25)',
       iconBg: netIsPositive ? 'rgba(52,211,153,0.20)' : 'rgba(248,113,113,0.20)',
-      iconClr: netIsPositive ? '#6ee7b7' : '#fca5a5',
+      iconClr: netIsPositive ? 'var(--status-success)' : 'var(--status-danger)',
       badge: { up: netIsPositive, label: netIsPositive ? 'ربح' : 'خسارة' },
     },
     {
@@ -238,8 +244,8 @@ export default function Dashboard() {
           flexWrap: 'wrap',
         }}
       >
-        {shortcuts.map(id => {
-          const def = ALL_SHORTCUTS.find(s => s.id === id);
+        {shortcuts.map((id) => {
+          const def = ALL_SHORTCUTS.find((s) => s.id === id);
           if (!def) return null;
           const Icon = def.icon;
           return (
@@ -255,18 +261,20 @@ export default function Dashboard() {
                 border: `1px solid ${def.color}33`,
                 background: isDark ? `${def.color}14` : `${def.color}11`,
                 cursor: 'pointer',
-                color: isDark ? '#f1f5f9' : '#1e293b',
+                color: isDark ? 'var(--text-1)' : 'var(--bg-elevated)',
                 fontSize: 13,
                 fontWeight: 600,
                 transition: 'all 0.18s',
                 whiteSpace: 'nowrap',
               }}
-              onMouseEnter={e => {
+              onMouseEnter={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.background = `${def.color}28`;
                 (e.currentTarget as HTMLButtonElement).style.borderColor = `${def.color}66`;
               }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = isDark ? `${def.color}14` : `${def.color}11`;
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = isDark
+                  ? `${def.color}14`
+                  : `${def.color}11`;
                 (e.currentTarget as HTMLButtonElement).style.borderColor = `${def.color}33`;
               }}
             >
@@ -292,11 +300,11 @@ export default function Dashboard() {
             transition: 'all 0.18s',
             whiteSpace: 'nowrap',
           }}
-          onMouseEnter={e => {
+          onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.75)';
             (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
           }}
-          onMouseLeave={e => {
+          onMouseLeave={(e) => {
             (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.45)';
             (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)';
           }}
@@ -328,7 +336,7 @@ export default function Dashboard() {
               border: '1px solid rgba(245,158,11,0.22)',
             }}
           >
-            <ShoppingCart style={{ width: 16, height: 16, color: '#f59e0b' }} />
+            <ShoppingCart style={{ width: 16, height: 16, color: 'var(--status-warning)' }} />
           </div>
           <div>
             <p className="hero-label">إجمالي الإيرادات اليوم</p>
@@ -343,7 +351,7 @@ export default function Dashboard() {
               border: '1px solid rgba(248,113,113,0.22)',
             }}
           >
-            <TrendingDown style={{ width: 16, height: 16, color: '#f87171' }} />
+            <TrendingDown style={{ width: 16, height: 16, color: 'var(--status-danger)' }} />
           </div>
           <div>
             <p className="hero-label">إجمالي المصروفات اليوم</p>
@@ -359,14 +367,17 @@ export default function Dashboard() {
             }}
           >
             {netIsPositive ? (
-              <TrendingUp style={{ width: 16, height: 16, color: '#34d399' }} />
+              <TrendingUp style={{ width: 16, height: 16, color: 'var(--status-success)' }} />
             ) : (
-              <TrendingDown style={{ width: 16, height: 16, color: '#f87171' }} />
+              <TrendingDown style={{ width: 16, height: 16, color: 'var(--status-danger)' }} />
             )}
           </div>
           <div>
             <p className="hero-label">صافي الربح</p>
-            <p className="hero-value" style={{ color: netIsPositive ? '#34d399' : '#f87171' }}>
+            <p
+              className="hero-value"
+              style={{ color: netIsPositive ? 'var(--status-success)' : 'var(--status-danger)' }}
+            >
               {formatCurrency(stats.net_profit)}
             </p>
           </div>
@@ -386,7 +397,10 @@ export default function Dashboard() {
               style={{
                 width: 16,
                 height: 16,
-                color: (stats.low_stock_products?.length ?? 0) === 0 ? '#34d399' : '#f59e0b',
+                color:
+                  (stats.low_stock_products?.length ?? 0) === 0
+                    ? 'var(--status-success)'
+                    : 'var(--status-warning)',
               }}
             />
           </div>
@@ -473,7 +487,7 @@ export default function Dashboard() {
                   boxShadow: '0 20px 48px rgba(0,0,0,0.5)',
                 }}
                 labelStyle={{ color: tooltipLabelClr, marginBottom: 6, fontWeight: 700 }}
-                itemStyle={{ color: isDark ? '#fff' : '#0d1117' }}
+                itemStyle={{ color: isDark ? 'var(--text-1)' : 'var(--bg-app)' }}
                 formatter={(v: number) => [formatCurrency(v), '']}
               />
               <Bar dataKey="amount" radius={[10, 10, 0, 0]}>
@@ -526,7 +540,11 @@ export default function Dashboard() {
                         }}
                       >
                         <TxIcon
-                          style={{ width: 16, height: 16, color: isIncome ? '#34d399' : '#f87171' }}
+                          style={{
+                            width: 16,
+                            height: 16,
+                            color: isIncome ? 'var(--status-success)' : 'var(--status-danger)',
+                          }}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -535,13 +553,19 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-1">
                         {isIncome ? (
-                          <ArrowUpRight style={{ width: 14, height: 14, color: '#34d399' }} />
+                          <ArrowUpRight
+                            style={{ width: 14, height: 14, color: 'var(--status-success)' }}
+                          />
                         ) : (
-                          <ArrowDownRight style={{ width: 14, height: 14, color: '#f87171' }} />
+                          <ArrowDownRight
+                            style={{ width: 14, height: 14, color: 'var(--status-danger)' }}
+                          />
                         )}
                         <span
                           className="db-tx-amount"
-                          style={{ color: isIncome ? '#34d399' : '#f87171' }}
+                          style={{
+                            color: isIncome ? 'var(--status-success)' : 'var(--status-danger)',
+                          }}
                         >
                           {formatCurrency(tx.amount)}
                         </span>
@@ -574,7 +598,7 @@ export default function Dashboard() {
                   border: '1px solid rgba(52,211,153,0.20)',
                 }}
               >
-                <PackageX style={{ width: 24, height: 24, color: '#34d399' }} />
+                <PackageX style={{ width: 24, height: 24, color: 'var(--status-success)' }} />
               </div>
               <div className="text-center">
                 <p className="db-tx-label mb-1">المخزون بخير ✓</p>
@@ -595,7 +619,11 @@ export default function Dashboard() {
                       }}
                     >
                       <Package
-                        style={{ width: 16, height: 16, color: outOfStock ? '#f87171' : '#f59e0b' }}
+                        style={{
+                          width: 16,
+                          height: 16,
+                          color: outOfStock ? 'var(--status-danger)' : 'var(--status-warning)',
+                        }}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -608,7 +636,7 @@ export default function Dashboard() {
                       className="db-stock-badge"
                       style={{
                         background: outOfStock ? 'rgba(248,113,113,0.15)' : 'rgba(245,158,11,0.15)',
-                        color: outOfStock ? '#fca5a5' : '#fcd34d',
+                        color: outOfStock ? 'var(--status-danger)' : 'var(--status-warning)',
                         border: `1px solid ${outOfStock ? 'rgba(248,113,113,0.22)' : 'rgba(245,158,11,0.22)'}`,
                       }}
                     >
@@ -629,4 +657,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

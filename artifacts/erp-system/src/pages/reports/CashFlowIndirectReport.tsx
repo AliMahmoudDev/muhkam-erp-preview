@@ -45,12 +45,12 @@ function Row({
   return (
     <div className={`flex items-center justify-between py-2.5 px-4 ${sub ? 'opacity-60' : ''}`}>
       <span
-        className={`text-sm ${bold ? 'font-bold text-white' : 'text-white/75'} ${indent ? 'pr-5' : ''}`}
+        className={`text-sm ${bold ? 'font-bold text-ink' : 'text-ink/75'} ${indent ? 'pr-5' : ''}`}
       >
         {label}
       </span>
       <span
-        className={`font-mono text-sm ${bold ? 'font-bold' : ''} ${isNeg ? 'text-red-400' : value > 0 ? 'text-green-400' : 'text-white/40'}`}
+        className={`font-mono text-sm ${bold ? 'font-bold' : ''} ${isNeg ? 'text-red-400' : value > 0 ? 'text-green-400' : 'text-ink/40'}`}
       >
         {isNeg ? `(${formatCurrency(Math.abs(value))})` : formatCurrency(value)}
       </span>
@@ -60,14 +60,14 @@ function Row({
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <div className="px-4 py-2 bg-white/8 border-b border-t border-white/10">
+    <div className="px-4 py-2 bg-surface border-b border-t border-line">
       <span className="text-sm font-bold text-amber-400">{title}</span>
     </div>
   );
 }
 
 function Divider() {
-  return <div className="border-t border-white/10 mx-4" />;
+  return <div className="border-t border-line mx-4" />;
 }
 
 export default function CashFlowIndirectReport() {
@@ -89,21 +89,21 @@ export default function CashFlowIndirectReport() {
     <div className="space-y-4" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
       {/* Date Filter */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-2 border border-white/10">
-          <span className="text-sm text-white/60">من:</span>
+        <div className="flex items-center gap-2 bg-surface rounded-xl px-4 py-2 border border-line">
+          <span className="text-sm text-ink/60">من:</span>
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="bg-transparent text-white text-sm outline-none"
+            className="bg-transparent text-ink text-sm outline-none"
           />
-          <span className="text-white/30">—</span>
-          <span className="text-sm text-white/60">إلى:</span>
+          <span className="text-ink/30">—</span>
+          <span className="text-sm text-ink/60">إلى:</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="bg-transparent text-white text-sm outline-none"
+            className="bg-transparent text-ink text-sm outline-none"
           />
         </div>
         <div
@@ -123,17 +123,17 @@ export default function CashFlowIndirectReport() {
         </div>
       </div>
 
-      {isLoading && <div className="text-center text-white/50 py-16">جاري الحساب...</div>}
+      {isLoading && <div className="text-center text-ink/50 py-16">جاري الحساب...</div>}
 
       {error && <div className="text-center text-red-400 py-10">حدث خطأ في التحميل</div>}
 
       {data && (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/10 bg-white/5">
-            <h2 className="text-lg font-bold text-white">
+        <div className="rounded-2xl border border-line bg-surface overflow-hidden">
+          <div className="px-6 py-4 border-b border-line bg-surface">
+            <h2 className="text-lg font-bold text-ink">
               قائمة التدفق النقدي — الطريقة غير المباشرة
             </h2>
-            <p className="text-sm text-white/50 mt-0.5">
+            <p className="text-sm text-ink/50 mt-0.5">
               الفترة: {data.period.date_from} — {data.period.date_to}
             </p>
           </div>
@@ -143,7 +143,7 @@ export default function CashFlowIndirectReport() {
           <Row label="صافي الربح للفترة" value={data.operating_activities.net_income} bold />
           <Divider />
           <div className="px-4 pt-2 pb-1">
-            <span className="text-xs text-white/40 font-medium">تسويات البنود غير النقدية:</span>
+            <span className="text-xs text-ink/40 font-medium">تسويات البنود غير النقدية:</span>
           </div>
           <Row
             label="+ مصروف الاستهلاك (بند غير نقدي)"
@@ -152,7 +152,7 @@ export default function CashFlowIndirectReport() {
           />
           <Divider />
           <div className="px-4 pt-2 pb-1">
-            <span className="text-xs text-white/40 font-medium">التغيرات في رأس المال العامل:</span>
+            <span className="text-xs text-ink/40 font-medium">التغيرات في رأس المال العامل:</span>
           </div>
           <Row
             label="التغير في المدينون التجاريون"
@@ -222,8 +222,8 @@ export default function CashFlowIndirectReport() {
           </div>
 
           {/* Note */}
-          <div className="px-4 py-3 border-t border-white/5 bg-black/20">
-            <p className="text-xs text-white/30">
+          <div className="px-4 py-3 border-t border-line bg-black/20">
+            <p className="text-xs text-ink/30">
               * الطريقة غير المباشرة: تبدأ بصافي الربح وتسوّي للبنود غير النقدية والتغيرات في رأس
               المال العامل. المبالغ بين قوسين () تمثل تدفقات خارجة (استخدام للنقدية).
             </p>

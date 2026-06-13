@@ -162,7 +162,7 @@ export function SaleProductPicker({
                     className="mt-2 py-1 rounded-lg text-[11px] font-black text-center opacity-0 group-hover:opacity-100 transition-all duration-150 scale-95 group-hover:scale-100"
                     style={{
                       background: 'rgba(245,158,11,0.11)',
-                      color: '#F59E0B',
+                      color: 'var(--status-warning)',
                       border: '1px solid rgba(245,158,11,0.20)',
                     }}
                   >

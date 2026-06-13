@@ -2,14 +2,19 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
-import { TrendingDown, RefreshCw, CheckCircle, Filter, FileSpreadsheet, FileText, ShoppingCart } from 'lucide-react';
+import {
+  TrendingDown,
+  RefreshCw,
+  CheckCircle,
+  Filter,
+  FileSpreadsheet,
+  FileText,
+  ShoppingCart,
+} from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
 import { api } from './_shared';
-import type {
-  LowStockItem,
-  TransferPrefill,
-} from './_shared';
+import type { LowStockItem, TransferPrefill } from './_shared';
 import type { ReorderSuggestion } from './alerts/types';
 import { POModal } from './alerts/components/POModal';
 import { AlertStatsCards } from './alerts/components/AlertStatsCards';
@@ -41,15 +46,18 @@ function AlertsTab({
     staleTime: 30_000,
   });
 
-  const { data: reorderData, isLoading: loadingReorder, refetch: refetchReorder } = useQuery<{
+  const {
+    data: reorderData,
+    isLoading: loadingReorder,
+    refetch: refetchReorder,
+  } = useQuery<{
     suggestions: ReorderSuggestion[];
     total_cost: number;
     days_analyzed: number;
     cover_days: number;
   }>({
     queryKey: ['inventory-reorder-suggestions'],
-    queryFn: () =>
-      authFetch(api('/api/inventory/reorder-suggestions')).then((r) => r.json()),
+    queryFn: () => authFetch(api('/api/inventory/reorder-suggestions')).then((r) => r.json()),
     enabled: showReorder,
     staleTime: 60_000,
   });
@@ -94,11 +102,31 @@ function AlertsTab({
       columns: [
         { header: 'المنتج', key: 'product_name', width: 30 },
         { header: 'SKU', key: 'sku', width: 14 },
-        { header: 'الكمية الحالية', key: 'current_qty', width: 12, format: (r) => r.current_qty.toFixed(2) },
-        { header: 'مبيعات 30 يوم', key: 'sold_qty_30d', width: 14, format: (r) => r.sold_qty_30d.toFixed(2) },
-        { header: 'تغطية (يوم)', key: 'coverage_days', width: 12, format: (r) => r.coverage_days?.toFixed(1) ?? '∞' },
+        {
+          header: 'الكمية الحالية',
+          key: 'current_qty',
+          width: 12,
+          format: (r) => r.current_qty.toFixed(2),
+        },
+        {
+          header: 'مبيعات 30 يوم',
+          key: 'sold_qty_30d',
+          width: 14,
+          format: (r) => r.sold_qty_30d.toFixed(2),
+        },
+        {
+          header: 'تغطية (يوم)',
+          key: 'coverage_days',
+          width: 12,
+          format: (r) => r.coverage_days?.toFixed(1) ?? '∞',
+        },
         { header: 'مقترح الكمية', key: 'suggested_qty', width: 14 },
-        { header: 'تكلفة مقدّرة', key: 'suggested_cost', width: 14, format: (r) => r.suggested_cost.toFixed(2) },
+        {
+          header: 'تكلفة مقدّرة',
+          key: 'suggested_cost',
+          width: 14,
+          format: (r) => r.suggested_cost.toFixed(2),
+        },
         { header: 'الأولوية', key: 'priority', width: 10 },
         { header: 'السبب', key: 'reason', width: 30 },
       ],
@@ -138,7 +166,7 @@ function AlertsTab({
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-white/5 rounded-2xl animate-pulse" />
+          <div key={i} className="h-20 bg-surface rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -172,11 +200,11 @@ function AlertsTab({
       {allItems.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
           <CheckCircle className="w-14 h-14 text-emerald-500/30 mb-4" />
-          <h3 className="text-white font-bold text-lg mb-1">المخزون في حالة ممتازة</h3>
-          <p className="text-white/40 text-sm">لا توجد منتجات تحت حد الطلب الدنى في أي مخزن</p>
+          <h3 className="text-ink font-bold text-lg mb-1">المخزون في حالة ممتازة</h3>
+          <p className="text-ink/40 text-sm">لا توجد منتجات تحت حد الطلب الدنى في أي مخزن</p>
           <button
             onClick={() => refetch()}
-            className="mt-4 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-xl transition-colors"
+            className="mt-4 flex items-center gap-2 px-4 py-2 bg-surface hover:bg-raised text-ink text-sm rounded-xl transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" /> تحديث
           </button>
@@ -186,17 +214,23 @@ function AlertsTab({
       {allItems.length > 0 && (
         <>
           <div className="flex gap-2 flex-wrap items-center">
-            <div className="flex items-center gap-1 text-white/50 text-xs">
+            <div className="flex items-center gap-1 text-ink/50 text-xs">
               <Filter className="w-3.5 h-3.5" /> تصفية:
             </div>
             <select
               value={filterWH}
-              onChange={(e) => setFilterWH(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-              className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-white text-xs focus:outline-none focus:ring-1 focus:ring-violet-400/40"
+              onChange={(e) =>
+                setFilterWH(e.target.value === 'all' ? 'all' : Number(e.target.value))
+              }
+              className="bg-surface border border-line rounded-xl px-3 py-1.5 text-ink text-xs focus:outline-none focus:ring-1 focus:ring-violet-400/40"
             >
-              <option value="all" className="bg-[#1a1a2e]">جميع المخازن</option>
+              <option value="all" className="bg-[#1a1a2e]">
+                جميع المخازن
+              </option>
               {uniqueWarehouses.map((w) => (
-                <option key={w.id} value={w.id} className="bg-[#1a1a2e]">{w.name}</option>
+                <option key={w.id} value={w.id} className="bg-[#1a1a2e]">
+                  {w.name}
+                </option>
               ))}
             </select>
             <button
@@ -204,18 +238,23 @@ function AlertsTab({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
                 showZeroOnly
                   ? 'bg-red-500/20 border-red-500/30 text-red-300'
-                  : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
+                  : 'bg-surface border-line text-ink/50 hover:text-ink'
               }`}
             >
               <TrendingDown className="w-3 h-3" /> نافد فقط
             </button>
             <div className="flex-1" />
             <button
-              onClick={() => { setShowReorder((p) => !p); if (showReorder) { setSelectedForPO(new Set()); } }}
+              onClick={() => {
+                setShowReorder((p) => !p);
+                if (showReorder) {
+                  setSelectedForPO(new Set());
+                }
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
                 showReorder
                   ? 'bg-violet-500/20 border-violet-500/30 text-violet-300'
-                  : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
+                  : 'bg-surface border-line text-ink/60 hover:text-ink'
               }`}
             >
               <ShoppingCart className="w-3 h-3" /> مقترحات التوريد
@@ -236,7 +275,7 @@ function AlertsTab({
             </button>
             <button
               onClick={() => refetch()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 text-xs rounded-xl transition-colors border border-white/10"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface hover:bg-surface text-ink/60 text-xs rounded-xl transition-colors border border-line"
             >
               <RefreshCw className="w-3 h-3" /> تحديث
             </button>

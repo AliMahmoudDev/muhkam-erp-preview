@@ -26,9 +26,7 @@ export default function WhatsAppSuccessModal({
 
     if (invoice.payments && invoice.payments.length > 1) {
       lines.push(``, `*تفاصيل الدفع:*`);
-      invoice.payments.forEach((p) =>
-        lines.push(`• ${p.label}: ${p.amount.toFixed(2)} ج.م`)
-      );
+      invoice.payments.forEach((p) => lines.push(`• ${p.label}: ${p.amount.toFixed(2)} ج.م`));
     } else {
       lines.push(`طريقة الدفع: ${paymentLabel[invoice.payment_type] || invoice.payment_type}`);
     }
@@ -52,15 +50,15 @@ export default function WhatsAppSuccessModal({
           <Receipt className="w-8 h-8 text-emerald-400" />
         </div>
         <div>
-          <h3 className="text-xl font-black text-white">تم إصدار الفاتورة</h3>
+          <h3 className="text-xl font-black text-ink">تم إصدار الفاتورة</h3>
           <p className="text-amber-400 font-bold text-lg mt-1">{invoice.invoice_no}</p>
-          <p className="text-white/50 text-sm mt-1">
+          <p className="text-ink/50 text-sm mt-1">
             الإجمالي:{' '}
-            <span className="text-white font-bold">{formatCurrency(invoice.total_amount)}</span>
+            <span className="text-ink font-bold">{formatCurrency(invoice.total_amount)}</span>
           </p>
           {invoice.customer_name && (
-            <p className="text-white/50 text-sm">
-              العميل: <span className="text-white">{invoice.customer_name}</span>
+            <p className="text-ink/50 text-sm">
+              العميل: <span className="text-ink">{invoice.customer_name}</span>
             </p>
           )}
         </div>

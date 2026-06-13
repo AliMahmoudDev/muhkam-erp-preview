@@ -18,10 +18,10 @@ export function CountHistory({
 }) {
   if (sessions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center bg-white/3 border border-white/5 rounded-2xl">
-        <ClipboardList className="w-10 h-10 text-white/10 mb-3" />
-        <p className="text-white/40 font-bold mb-1">لا توجد جلسات جرد سابقة</p>
-        <p className="text-white/25 text-xs mb-4">ابدأ جلسة جديدة لتسجيل الكميات الفعلية</p>
+      <div className="flex flex-col items-center justify-center py-16 text-center bg-surface border border-line rounded-2xl">
+        <ClipboardList className="w-10 h-10 text-ink/10 mb-3" />
+        <p className="text-ink/40 font-bold mb-1">لا توجد جلسات جرد سابقة</p>
+        <p className="text-ink/25 text-xs mb-4">ابدأ جلسة جديدة لتسجيل الكميات الفعلية</p>
         <button
           onClick={onSwitchToNew}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
@@ -47,18 +47,18 @@ export function CountHistory({
           minute: '2-digit',
         });
         return (
-          <div key={s.id} className="bg-[#111827] border border-white/8 rounded-2xl p-4">
+          <div key={s.id} className="bg-[#111827] border border-line rounded-2xl p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-white font-bold">جلسة #{s.id}</span>
+                  <span className="text-ink font-bold">جلسة #{s.id}</span>
                   <span
                     className={`px-2 py-0.5 rounded-lg text-xs font-bold ${s.status === 'applied' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}
                   >
                     {s.status === 'applied' ? '✓ مطبّق' : 'مسودة'}
                   </span>
                   {s.items_count > 0 && (
-                    <span className="px-2 py-0.5 rounded-lg text-xs bg-white/5 text-white/50">
+                    <span className="px-2 py-0.5 rounded-lg text-xs bg-surface text-ink/50">
                       {s.items_count} منتج
                     </span>
                   )}
@@ -73,17 +73,15 @@ export function CountHistory({
                     </span>
                   )}
                 </div>
-                <div className="text-white/50 text-xs flex items-center gap-2">
+                <div className="text-ink/50 text-xs flex items-center gap-2">
                   <Warehouse className="w-3 h-3 shrink-0" />
                   <span>{whName}</span>
-                  <span className="text-white/20">·</span>
+                  <span className="text-ink/20">·</span>
                   <span>
                     {dateStr} الساعة {timeStr}
                   </span>
                 </div>
-                {s.notes && (
-                  <div className="text-white/30 text-xs truncate max-w-xs">{s.notes}</div>
-                )}
+                {s.notes && <div className="text-ink/30 text-xs truncate max-w-xs">{s.notes}</div>}
                 {s.applied_at && (
                   <div className="text-emerald-400/50 text-xs">
                     طُبِّق: {new Date(s.applied_at).toLocaleDateString('ar-EG-u-nu-latn')}

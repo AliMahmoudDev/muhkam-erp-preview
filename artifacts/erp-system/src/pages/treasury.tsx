@@ -4,9 +4,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  useGetSettingsSafes,
-} from '@workspace/api-client-react';
+import { useGetSettingsSafes } from '@workspace/api-client-react';
 import { formatCurrency } from '@/lib/format';
 import {
   HandCoins,
@@ -30,7 +28,6 @@ import CloseSafeModal from '@/components/modals/CloseSafeModal';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import SafeModals from '@/pages/treasury/SafeModals';
-
 
 type ModalType = 'receipt' | 'payment' | 'transfer' | 'safe-closing' | null;
 
@@ -81,7 +78,12 @@ export default function Treasury() {
   const canCloseSafe = hasPermission(user, 'can_close_shift');
 
   const { data: safesRaw } = useGetSettingsSafes();
-  const safes = safeArray(safesRaw) as { id: number; name: string; balance: string; branch_id: number | null }[];
+  const safes = safeArray(safesRaw) as {
+    id: number;
+    name: string;
+    balance: string;
+    branch_id: number | null;
+  }[];
 
   /* branches for safe assignment */
   const { data: branchesRaw } = useQuery<{ id: number; name: string }[]>({
@@ -234,11 +236,11 @@ export default function Treasury() {
 
       {/* ── Page title ── */}
       <div>
-        <h1 className="text-2xl font-black text-white flex items-center gap-3">
+        <h1 className="text-2xl font-black text-ink flex items-center gap-3">
           <Wallet className="w-7 h-7 text-amber-400" />
           السندات والخزينة
         </h1>
-        <p className="text-white/40 text-sm mt-1">
+        <p className="text-ink/40 text-sm mt-1">
           {new Date().toLocaleDateString('ar-EG-u-nu-latn', {
             weekday: 'long',
             year: 'numeric',
@@ -260,13 +262,13 @@ export default function Treasury() {
             >
               <div className="flex items-start justify-between mb-3">
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center border ${cls.border} bg-white/5`}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center border ${cls.border} bg-surface`}
                 >
                   <Icon className={`w-5 h-5 ${cls.text}`} />
                 </div>
-                <span className="text-white/30 text-xs">{k.sub}</span>
+                <span className="text-ink/30 text-xs">{k.sub}</span>
               </div>
-              <p className="text-white/50 text-xs mb-1">{k.label}</p>
+              <p className="text-ink/50 text-xs mb-1">{k.label}</p>
               <p className={`text-2xl font-black ${cls.text}`}>{k.value}</p>
             </div>
           );
@@ -277,10 +279,8 @@ export default function Treasury() {
       {safes.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">
-              أرصدة الخزائن
-            </p>
-            <p className="text-white/25 text-xs">
+            <p className="text-ink/40 text-xs font-bold uppercase tracking-widest">أرصدة الخزائن</p>
+            <p className="text-ink/25 text-xs">
               {safes.length} خزينة · إجمالي {formatCurrency(totalSafeBalance)}
             </p>
           </div>
@@ -293,7 +293,7 @@ export default function Treasury() {
               return (
                 <div
                   key={s.id}
-                  className="group bg-[#111827] border border-white/5 hover:border-amber-500/20 rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative"
+                  className="group bg-[#111827] border border-line hover:border-amber-500/20 rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative"
                 >
                   {/* Header row */}
                   <div className="flex items-start justify-between mb-3">
@@ -306,7 +306,11 @@ export default function Treasury() {
                       {/* Edit button */}
                       <button
                         onClick={() => {
-                          setEditTarget({ id: s.id as number, name: s.name, branch_id: s.branch_id });
+                          setEditTarget({
+                            id: s.id as number,
+                            name: s.name,
+                            branch_id: s.branch_id,
+                          });
                           setEditForm({
                             name: s.name,
                             branch_id: s.branch_id != null ? String(s.branch_id) : '',
@@ -332,7 +336,7 @@ export default function Treasury() {
                           ${
                             canDelete
                               ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 cursor-pointer'
-                              : 'bg-white/5 text-white/20 cursor-not-allowed'
+                              : 'bg-surface text-ink/20 cursor-not-allowed'
                           }`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -341,11 +345,11 @@ export default function Treasury() {
                   </div>
 
                   {/* Name & balance */}
-                  <p className="text-white font-bold text-sm mb-1 truncate">{s.name}</p>
+                  <p className="text-ink font-bold text-sm mb-1 truncate">{s.name}</p>
                   {/* الفرع */}
                   {isAdmin && branches.length > 0 ? (
                     <select
-                      className="mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-white/5 border border-white/10 text-white/50 hover:border-amber-500/30 transition-colors outline-none cursor-pointer"
+                      className="mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-surface border border-line text-ink/50 hover:border-amber-500/30 transition-colors outline-none cursor-pointer"
                       value={s.branch_id ?? ''}
                       onChange={async (e) => {
                         const bid = e.target.value;
@@ -359,24 +363,30 @@ export default function Treasury() {
                       }}
                     >
                       <option value="">— بدون فرع —</option>
-                      {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
                     </select>
                   ) : s.branch_id ? (
                     <p className="text-amber-400/60 text-[10px] mb-2">
-                      {branches.find(b => b.id === s.branch_id)?.name ?? ''}
+                      {branches.find((b) => b.id === s.branch_id)?.name ?? ''}
                     </p>
-                  ) : <div className="mb-1" />}
+                  ) : (
+                    <div className="mb-1" />
+                  )}
                   <p className="text-amber-400 font-black text-xl mb-3">
                     {formatCurrency(balance)}
                   </p>
 
                   {/* Progress bar */}
                   <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-white/30">
+                    <div className="flex justify-between text-[10px] text-ink/30">
                       <span>نسبة من الإجمالي</span>
                       <span>{pct.toFixed(1)}%</span>
                     </div>
-                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-surface rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all"
                         style={{ width: `${pct}%` }}
@@ -386,8 +396,8 @@ export default function Treasury() {
 
                   {/* Zero-balance badge */}
                   {canDelete && (
-                    <div className="mt-3 pt-3 border-t border-white/5">
-                      <span className="text-[10px] text-white/25 font-medium">
+                    <div className="mt-3 pt-3 border-t border-line">
+                      <span className="text-[10px] text-ink/25 font-medium">
                         رصيد صفر · قابلة للحذف
                       </span>
                     </div>
@@ -401,7 +411,7 @@ export default function Treasury() {
 
       {/* ── Action buttons ── */}
       <div>
-        <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-3">العمليات</p>
+        <p className="text-ink/40 text-xs font-bold uppercase tracking-widest mb-3">العمليات</p>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           {actions.map((a) => {
             const Icon = a.icon;
@@ -413,7 +423,7 @@ export default function Treasury() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center border ${a.border} bg-white/5`}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center border ${a.border} bg-surface`}
                   >
                     <Icon className={`w-5 h-5 ${a.text}`} />
                   </div>
@@ -422,7 +432,7 @@ export default function Treasury() {
                   />
                 </div>
                 <p className={`font-black text-base leading-tight ${a.text}`}>{a.label}</p>
-                <p className="text-white/40 text-xs mt-1 leading-tight">{a.sub}</p>
+                <p className="text-ink/40 text-xs mt-1 leading-tight">{a.sub}</p>
                 <div className={`mt-4 pt-3 border-t ${a.border}`}>
                   <div className={`inline-flex items-center gap-1.5 text-xs font-bold ${a.text}`}>
                     <span>فتح النموذج</span>
@@ -438,13 +448,13 @@ export default function Treasury() {
             className="rounded-2xl border border-sky-500/30 bg-sky-500/8 hover:bg-sky-500/15 p-5 text-right transition-all hover:-translate-y-1 active:scale-95 group shadow-lg shadow-sky-500/10"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-sky-500/30 bg-white/5">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-sky-500/30 bg-surface">
                 <Landmark className="w-5 h-5 text-sky-400" />
               </div>
               <ChevronLeft className="w-4 h-4 text-sky-400 opacity-40 group-hover:opacity-80 transition-opacity" />
             </div>
             <p className="font-black text-base leading-tight text-sky-400">إضافة خزينة</p>
-            <p className="text-white/40 text-xs mt-1 leading-tight">إنشاء خزينة جديدة</p>
+            <p className="text-ink/40 text-xs mt-1 leading-tight">إنشاء خزينة جديدة</p>
             <div className="mt-4 pt-3 border-t border-sky-500/30">
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-400">
                 <Plus className="w-3.5 h-3.5" />
@@ -459,7 +469,7 @@ export default function Treasury() {
       <div className="flex items-center justify-center">
         <a
           href="/vouchers"
-          className="flex items-center gap-2 text-white/30 hover:text-amber-400 transition-colors text-sm group"
+          className="flex items-center gap-2 text-ink/30 hover:text-amber-400 transition-colors text-sm group"
         >
           <ReceiptText className="w-4 h-4" />
           <span>عرض سجل السندات الكامل</span>

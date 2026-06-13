@@ -35,7 +35,7 @@ export function DeliveryPaymentSection({ value, onChange, safes }: DeliveryPayme
 
   return (
     <div className="space-y-3">
-      <label className="text-xs text-white/50 font-bold">طريقة الدفع عند التسليم</label>
+      <label className="text-xs text-ink/50 font-bold">طريقة الدفع عند التسليم</label>
       <div className="grid grid-cols-3 gap-2">
         {options.map((opt) => {
           const active = value.payment_type === opt.key;
@@ -48,7 +48,7 @@ export function DeliveryPaymentSection({ value, onChange, safes }: DeliveryPayme
               className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-xs font-bold transition-all ${
                 active
                   ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
-                  : 'bg-white/[0.03] border-white/10 text-white/40 hover:text-white/60'
+                  : 'bg-surface border-line text-ink/40 hover:text-ink/60'
               }`}
             >
               <Icon size={16} />
@@ -59,7 +59,7 @@ export function DeliveryPaymentSection({ value, onChange, safes }: DeliveryPayme
       </div>
       {showSafe && (
         <div>
-          <label className="text-[11px] text-white/40 mb-1 block">الخزنة</label>
+          <label className="text-[11px] text-ink/40 mb-1 block">الخزنة</label>
           <select
             value={value.safe_id ?? ''}
             onChange={(e) =>
@@ -100,11 +100,11 @@ export function TechnicianSelector({
 }: TechnicianSelectorProps) {
   return (
     <div className={className}>
-      {label && <label className="text-[11px] text-white/40 mb-1 block">{label}</label>}
+      {label && <label className="text-[11px] text-ink/40 mb-1 block">{label}</label>}
       <div className="relative">
         <User
           size={12}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none"
         />
         <select
           value={value ?? ''}
@@ -142,7 +142,7 @@ export function QAReportFields({
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-[11px] text-white/40 mb-1 block">تقرير مراقبة الجودة</label>
+        <label className="text-[11px] text-ink/40 mb-1 block">تقرير مراقبة الجودة</label>
         <textarea
           value={qaReport}
           onChange={(e) => onChangeReport(e.target.value)}
@@ -152,7 +152,7 @@ export function QAReportFields({
         />
       </div>
       <div>
-        <label className="text-[11px] text-white/40 mb-1 block">اسم فاحص الجودة</label>
+        <label className="text-[11px] text-ink/40 mb-1 block">اسم فاحص الجودة</label>
         <input
           type="text"
           value={inspectorName}
@@ -251,7 +251,7 @@ export function DevicePhotosSection({ jobId, photoType = 'intake' }: DevicePhoto
 
   return (
     <div className="space-y-2">
-      <label className="text-[11px] text-white/40 font-bold flex items-center gap-1">
+      <label className="text-[11px] text-ink/40 font-bold flex items-center gap-1">
         <Camera size={11} />
         صور الجهاز ({photoType === 'intake' ? 'الاستلام' : 'التسليم'})
       </label>
@@ -264,7 +264,7 @@ export function DevicePhotosSection({ jobId, photoType = 'intake' }: DevicePhoto
               key={p.id}
               src={resolvePhotoSrc(p.photo_url)}
               alt=""
-              className="w-full h-16 object-cover rounded-lg border border-white/10"
+              className="w-full h-16 object-cover rounded-lg border border-line"
             />
           ))}
         </div>
@@ -344,10 +344,10 @@ export function RepairLabelSettings({ settings, onSave }: LabelSettingsProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-bold text-white/80">إعدادات طباعة الصيانة</h3>
+      <h3 className="text-sm font-bold text-ink/80">إعدادات طباعة الصيانة</h3>
 
       <div>
-        <label className="text-[11px] text-white/40 mb-1 block">حجم الفاتورة</label>
+        <label className="text-[11px] text-ink/40 mb-1 block">حجم الفاتورة</label>
         <select
           value={invoiceSize}
           onChange={(e) => onSave('repair_invoice_size', e.target.value)}
@@ -361,7 +361,7 @@ export function RepairLabelSettings({ settings, onSave }: LabelSettingsProps) {
       </div>
 
       <div className="space-y-2">
-        <label className="text-[11px] text-white/40">إظهار / إخفاء الحقول</label>
+        <label className="text-[11px] text-ink/40">إظهار / إخفاء الحقول</label>
         {[
           { key: 'repair_show_qa', label: 'تقرير الجودة', checked: showQA },
           { key: 'repair_show_photos', label: 'صور الجهاز', checked: showPhotos },
@@ -374,7 +374,7 @@ export function RepairLabelSettings({ settings, onSave }: LabelSettingsProps) {
               onChange={(e) => onSave(toggle.key, e.target.checked ? 'true' : 'false')}
               className="accent-amber-500 w-3.5 h-3.5"
             />
-            <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">
+            <span className="text-xs text-ink/60 group-hover:text-ink/80 transition-colors">
               {toggle.label}
             </span>
           </label>

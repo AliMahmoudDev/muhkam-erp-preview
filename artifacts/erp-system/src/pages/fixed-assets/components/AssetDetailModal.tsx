@@ -5,7 +5,17 @@ import { formatCurrency } from '@/lib/format';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmModal } from '@/components/confirm-modal';
-import { X, Building2, TrendingDown, ChevronDown, ChevronUp, CheckCircle, ArrowDownCircle, BarChart3, Clock } from 'lucide-react';
+import {
+  X,
+  Building2,
+  TrendingDown,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle,
+  ArrowDownCircle,
+  BarChart3,
+  Clock,
+} from 'lucide-react';
 import type { AssetDetail } from '../types';
 import { CATEGORIES, METHODS } from '../constants';
 import { StatusBadge } from './StatusBadge';
@@ -92,21 +102,21 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
         />
       )}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-        <div className="glass-panel rounded-3xl w-full max-w-4xl border border-white/10 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
-          <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5">
+        <div className="glass-panel rounded-3xl w-full max-w-4xl border border-line shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="flex justify-between items-center px-6 py-4 border-b border-line bg-surface">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-violet-500/20 flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-violet-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">{asset?.name ?? '...'}</h3>
+                <h3 className="text-lg font-bold text-ink">{asset?.name ?? '...'}</h3>
                 {asset && <p className="text-xs text-violet-400 font-mono">{asset.code}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2">
               {asset && <StatusBadge status={asset.status} />}
-              <button onClick={onClose} className="p-2 rounded-xl bg-white/10 hover:bg-white/20">
-                <X className="w-4 h-4 text-white/70" />
+              <button onClick={onClose} className="p-2 rounded-xl bg-surface hover:bg-raised">
+                <X className="w-4 h-4 text-ink/70" />
               </button>
             </div>
           </div>
@@ -115,55 +125,106 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
             {isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-14 rounded-2xl" style={{ background: 'var(--erp-bg-hover)', animation: `pulse ${1.2 + i * 0.1}s infinite` }} />
+                  <div
+                    key={i}
+                    className="h-14 rounded-2xl"
+                    style={{
+                      background: 'var(--erp-bg-hover)',
+                      animation: `pulse ${1.2 + i * 0.1}s infinite`,
+                    }}
+                  />
                 ))}
               </div>
             ) : !asset ? null : (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-xs text-white/40 mb-1">تكلفة الشراء</p>
-                    <p className="text-white font-bold">{formatCurrency(asset.purchase_cost)}</p>
+                  <div className="p-4 rounded-2xl bg-surface border border-line">
+                    <p className="text-xs text-ink/40 mb-1">تكلفة الشراء</p>
+                    <p className="text-ink font-bold">{formatCurrency(asset.purchase_cost)}</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20">
                     <p className="text-xs text-orange-300/60 mb-1">مجمع الإهلاك</p>
-                    <p className="text-orange-300 font-bold">{formatCurrency(asset.accumulated_depreciation)}</p>
+                    <p className="text-orange-300 font-bold">
+                      {formatCurrency(asset.accumulated_depreciation)}
+                    </p>
                   </div>
                   <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
                     <p className="text-xs text-emerald-300/60 mb-1">القيمة الدفترية</p>
                     <p className="text-emerald-300 font-bold">{formatCurrency(asset.book_value)}</p>
                   </div>
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-xs text-white/40 mb-1">القيمة الباقية</p>
-                    <p className="text-white font-bold">{formatCurrency(asset.residual_value)}</p>
+                  <div className="p-4 rounded-2xl bg-surface border border-line">
+                    <p className="text-xs text-ink/40 mb-1">القيمة الباقية</p>
+                    <p className="text-ink font-bold">{formatCurrency(asset.residual_value)}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-white/5 border border-white/5">
-                  <div><p className="text-xs text-white/40">التصنيف</p><p className="text-white/80 text-sm mt-0.5">{CATEGORIES[asset.category] ?? asset.category}</p></div>
-                  <div><p className="text-xs text-white/40">طريقة الإهلاك</p><p className="text-white/80 text-sm mt-0.5">{METHODS[asset.depreciation_method] ?? asset.depreciation_method}</p></div>
-                  <div><p className="text-xs text-white/40">تاريخ الشراء</p><p className="text-white/80 text-sm mt-0.5">{asset.purchase_date}</p></div>
-                  <div><p className="text-xs text-white/40">العمر الإنتاجي</p><p className="text-white/80 text-sm mt-0.5">{asset.useful_life_months} شهر ({(asset.useful_life_months / 12).toFixed(1)} سنة)</p></div>
+                <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-surface border border-line">
+                  <div>
+                    <p className="text-xs text-ink/40">التصنيف</p>
+                    <p className="text-ink/80 text-sm mt-0.5">
+                      {CATEGORIES[asset.category] ?? asset.category}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-ink/40">طريقة الإهلاك</p>
+                    <p className="text-ink/80 text-sm mt-0.5">
+                      {METHODS[asset.depreciation_method] ?? asset.depreciation_method}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-ink/40">تاريخ الشراء</p>
+                    <p className="text-ink/80 text-sm mt-0.5">{asset.purchase_date}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-ink/40">العمر الإنتاجي</p>
+                    <p className="text-ink/80 text-sm mt-0.5">
+                      {asset.useful_life_months} شهر ({(asset.useful_life_months / 12).toFixed(1)}{' '}
+                      سنة)
+                    </p>
+                  </div>
                 </div>
 
                 {asset.status === 'active' && (
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <div className="flex justify-between text-xs text-white/50 mb-2">
+                  <div className="p-4 rounded-2xl bg-surface border border-line">
+                    <div className="flex justify-between text-xs text-ink/50 mb-2">
                       <span>نسبة الإهلاك المتراكم</span>
-                      <span>{((asset.accumulated_depreciation / Math.max(asset.purchase_cost - asset.residual_value, 1)) * 100).toFixed(1)}%</span>
+                      <span>
+                        {(
+                          (asset.accumulated_depreciation /
+                            Math.max(asset.purchase_cost - asset.residual_value, 1)) *
+                          100
+                        ).toFixed(1)}
+                        %
+                      </span>
                     </div>
-                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-orange-500 transition-all" style={{ width: `${Math.min(100, (asset.accumulated_depreciation / Math.max(asset.purchase_cost - asset.residual_value, 1)) * 100)}%` }} />
+                    <div className="h-2 rounded-full bg-surface overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-orange-500 transition-all"
+                        style={{
+                          width: `${Math.min(100, (asset.accumulated_depreciation / Math.max(asset.purchase_cost - asset.residual_value, 1)) * 100)}%`,
+                        }}
+                      />
                     </div>
                   </div>
                 )}
 
                 {asset.status === 'active' && (
                   <div className="p-4 rounded-2xl bg-violet-500/10 border border-violet-500/20">
-                    <p className="text-sm font-bold text-violet-300 mb-3 flex items-center gap-2"><TrendingDown className="w-4 h-4" /> تسجيل إهلاك شهري</p>
+                    <p className="text-sm font-bold text-violet-300 mb-3 flex items-center gap-2">
+                      <TrendingDown className="w-4 h-4" /> تسجيل إهلاك شهري
+                    </p>
                     <div className="flex gap-3">
-                      <input type="month" value={depPeriod} onChange={(e) => setDepPeriod(e.target.value)} className="glass-input px-4 py-2 rounded-xl text-white text-sm flex-1" />
-                      <button onClick={() => depMutation.mutate()} disabled={depMutation.isPending} className="px-5 py-2 rounded-xl bg-violet-500/30 text-violet-300 hover:bg-violet-500/40 text-sm font-bold border border-violet-500/30 transition-colors disabled:opacity-50">
+                      <input
+                        type="month"
+                        value={depPeriod}
+                        onChange={(e) => setDepPeriod(e.target.value)}
+                        className="glass-input px-4 py-2 rounded-xl text-ink text-sm flex-1"
+                      />
+                      <button
+                        onClick={() => depMutation.mutate()}
+                        disabled={depMutation.isPending}
+                        className="px-5 py-2 rounded-xl bg-violet-500/30 text-violet-300 hover:bg-violet-500/40 text-sm font-bold border border-violet-500/30 transition-colors disabled:opacity-50"
+                      >
                         {depMutation.isPending ? '...' : 'تسجيل الإهلاك'}
                       </button>
                     </div>
@@ -172,12 +233,19 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
 
                 {asset.runs.length > 0 && (
                   <div>
-                    <p className="text-sm font-bold text-white/70 mb-3 flex items-center gap-2"><Clock className="w-4 h-4" /> سجل الإهلاك المسجل ({asset.runs.length} فترة)</p>
+                    <p className="text-sm font-bold text-ink/70 mb-3 flex items-center gap-2">
+                      <Clock className="w-4 h-4" /> سجل الإهلاك المسجل ({asset.runs.length} فترة)
+                    </p>
                     <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
                       {asset.runs.map((r) => (
-                        <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
-                          <span className="text-xs text-white/50 font-mono">{r.period}</span>
-                          <span className="text-xs text-orange-300 font-bold">{formatCurrency(r.amount)}</span>
+                        <div
+                          key={r.id}
+                          className="flex items-center justify-between p-3 rounded-xl bg-surface border border-line"
+                        >
+                          <span className="text-xs text-ink/50 font-mono">{r.period}</span>
+                          <span className="text-xs text-orange-300 font-bold">
+                            {formatCurrency(r.amount)}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -185,33 +253,72 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                 )}
 
                 <div>
-                  <button onClick={() => setShowSchedule((p) => !p)} className="w-full flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/8 transition-colors">
-                    <span className="text-sm font-bold text-white/70 flex items-center gap-2"><BarChart3 className="w-4 h-4" /> جدول الإهلاك الكامل ({asset.schedule.length} فترة)</span>
-                    {showSchedule ? <ChevronUp className="w-4 h-4 text-white/40" /> : <ChevronDown className="w-4 h-4 text-white/40" />}
+                  <button
+                    onClick={() => setShowSchedule((p) => !p)}
+                    className="w-full flex items-center justify-between p-4 rounded-2xl bg-surface border border-line hover:bg-surface transition-colors"
+                  >
+                    <span className="text-sm font-bold text-ink/70 flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" /> جدول الإهلاك الكامل ({asset.schedule.length}{' '}
+                      فترة)
+                    </span>
+                    {showSchedule ? (
+                      <ChevronUp className="w-4 h-4 text-ink/40" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-ink/40" />
+                    )}
                   </button>
                   {showSchedule && (
-                    <div className="mt-2 rounded-2xl border border-white/10 overflow-hidden">
+                    <div className="mt-2 rounded-2xl border border-line overflow-hidden">
                       <div className="overflow-x-auto max-h-64 overflow-y-auto">
                         <table className="w-full text-sm">
                           <thead className="sticky top-0 bg-black/60 backdrop-blur-sm">
                             <tr>
-                              <th className="text-right px-4 py-2 text-xs text-white/40 font-medium">الفترة</th>
-                              <th className="text-right px-4 py-2 text-xs text-white/40 font-medium">الإهلاك</th>
-                              <th className="text-right px-4 py-2 text-xs text-white/40 font-medium">مجمع الإهلاك</th>
-                              <th className="text-right px-4 py-2 text-xs text-white/40 font-medium">القيمة الدفترية</th>
-                              <th className="text-right px-4 py-2 text-xs text-white/40 font-medium">الحالة</th>
+                              <th className="text-right px-4 py-2 text-xs text-ink/40 font-medium">
+                                الفترة
+                              </th>
+                              <th className="text-right px-4 py-2 text-xs text-ink/40 font-medium">
+                                الإهلاك
+                              </th>
+                              <th className="text-right px-4 py-2 text-xs text-ink/40 font-medium">
+                                مجمع الإهلاك
+                              </th>
+                              <th className="text-right px-4 py-2 text-xs text-ink/40 font-medium">
+                                القيمة الدفترية
+                              </th>
+                              <th className="text-right px-4 py-2 text-xs text-ink/40 font-medium">
+                                الحالة
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
                             {asset.schedule.map((row) => {
                               const done = completedPeriods.has(row.period);
                               return (
-                                <tr key={row.period} className={`border-t border-white/5 ${done ? 'bg-emerald-500/5' : ''}`}>
-                                  <td className="px-4 py-2 text-white/70 font-mono text-xs">{row.period}</td>
-                                  <td className="px-4 py-2 text-orange-300">{formatCurrency(row.depreciation)}</td>
-                                  <td className="px-4 py-2 text-white/60">{formatCurrency(row.accumulated)}</td>
-                                  <td className="px-4 py-2 text-emerald-300">{formatCurrency(row.book_value)}</td>
-                                  <td className="px-4 py-2">{done ? <span className="text-xs text-emerald-400 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> مسجل</span> : <span className="text-xs text-white/30">—</span>}</td>
+                                <tr
+                                  key={row.period}
+                                  className={`border-t border-line ${done ? 'bg-emerald-500/5' : ''}`}
+                                >
+                                  <td className="px-4 py-2 text-ink/70 font-mono text-xs">
+                                    {row.period}
+                                  </td>
+                                  <td className="px-4 py-2 text-orange-300">
+                                    {formatCurrency(row.depreciation)}
+                                  </td>
+                                  <td className="px-4 py-2 text-ink/60">
+                                    {formatCurrency(row.accumulated)}
+                                  </td>
+                                  <td className="px-4 py-2 text-emerald-300">
+                                    {formatCurrency(row.book_value)}
+                                  </td>
+                                  <td className="px-4 py-2">
+                                    {done ? (
+                                      <span className="text-xs text-emerald-400 flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3" /> مسجل
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-ink/30">—</span>
+                                    )}
+                                  </td>
                                 </tr>
                               );
                             })}
@@ -225,7 +332,10 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                 {asset.status === 'active' && (
                   <div>
                     {!showDispose ? (
-                      <button onClick={() => setShowDispose(true)} className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl border border-red-500/20 text-red-400 hover:bg-red-500/10 text-sm transition-colors">
+                      <button
+                        onClick={() => setShowDispose(true)}
+                        className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl border border-red-500/20 text-red-400 hover:bg-red-500/10 text-sm transition-colors"
+                      >
                         <ArrowDownCircle className="w-4 h-4" /> استبعاد الأصل
                       </button>
                     ) : (
@@ -233,17 +343,47 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                         <p className="text-sm font-bold text-red-400">استبعاد الأصل الثابت</p>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs text-white/50 mb-1">تاريخ الاستبعاد</label>
-                            <input type="date" value={disposeForm.date} onChange={(e) => setDisposeForm((p) => ({ ...p, date: e.target.value }))} className="w-full glass-input px-4 py-2 rounded-xl text-white text-sm" />
+                            <label className="block text-xs text-ink/50 mb-1">
+                              تاريخ الاستبعاد
+                            </label>
+                            <input
+                              type="date"
+                              value={disposeForm.date}
+                              onChange={(e) =>
+                                setDisposeForm((p) => ({ ...p, date: e.target.value }))
+                              }
+                              className="w-full glass-input px-4 py-2 rounded-xl text-ink text-sm"
+                            />
                           </div>
                           <div>
-                            <label className="block text-xs text-white/50 mb-1">عائد البيع (ج.م) — اختياري</label>
-                            <input type="number" min="0" value={disposeForm.proceeds} onChange={(e) => setDisposeForm((p) => ({ ...p, proceeds: e.target.value }))} placeholder="0" className="w-full glass-input px-4 py-2 rounded-xl text-white text-sm" />
+                            <label className="block text-xs text-ink/50 mb-1">
+                              عائد البيع (ج.م) — اختياري
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={disposeForm.proceeds}
+                              onChange={(e) =>
+                                setDisposeForm((p) => ({ ...p, proceeds: e.target.value }))
+                              }
+                              placeholder="0"
+                              className="w-full glass-input px-4 py-2 rounded-xl text-ink text-sm"
+                            />
                           </div>
                         </div>
                         <div className="flex gap-3">
-                          <button onClick={() => setConfirmDispose(true)} className="flex-1 py-2 rounded-xl bg-red-500/30 text-red-300 hover:bg-red-500/40 text-sm font-bold border border-red-500/30 transition-colors">تأكيد الاستبعاد</button>
-                          <button onClick={() => setShowDispose(false)} className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm text-white/70">إلغاء</button>
+                          <button
+                            onClick={() => setConfirmDispose(true)}
+                            className="flex-1 py-2 rounded-xl bg-red-500/30 text-red-300 hover:bg-red-500/40 text-sm font-bold border border-red-500/30 transition-colors"
+                          >
+                            تأكيد الاستبعاد
+                          </button>
+                          <button
+                            onClick={() => setShowDispose(false)}
+                            className="px-5 py-2 rounded-xl bg-surface hover:bg-raised text-sm text-ink/70"
+                          >
+                            إلغاء
+                          </button>
                         </div>
                       </div>
                     )}
@@ -254,8 +394,16 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                   <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20">
                     <p className="text-sm font-bold text-red-400 mb-2">تم استبعاد هذا الأصل</p>
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div><p className="text-xs text-white/40">تاريخ الاستبعاد</p><p className="text-white/80">{asset.disposal_date}</p></div>
-                      <div><p className="text-xs text-white/40">عائد البيع</p><p className="text-white/80">{formatCurrency(asset.disposal_proceeds ?? 0)}</p></div>
+                      <div>
+                        <p className="text-xs text-ink/40">تاريخ الاستبعاد</p>
+                        <p className="text-ink/80">{asset.disposal_date}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-ink/40">عائد البيع</p>
+                        <p className="text-ink/80">
+                          {formatCurrency(asset.disposal_proceeds ?? 0)}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}

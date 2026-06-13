@@ -7,11 +7,10 @@ import { api } from '@/lib/api';
  * • super_admin → never shown
  * Dismissed per login session (resets on next login).
  */
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
-import { useAuth } from "@/contexts/auth";
-import { authFetch } from "@/lib/auth-fetch";
-
+import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
+import { useAuth } from '@/contexts/auth';
+import { authFetch } from '@/lib/auth-fetch';
 
 interface SubStatus {
   unlimited?: boolean;
@@ -32,29 +31,33 @@ const POLL_MS = 5 * 60 * 1000;
 
 export function SubscriptionBanner() {
   const { user } = useAuth();
-  const [status,    setStatus]    = useState<SubStatus | null>(null);
-  const [support,   setSupport]   = useState<SupportSettings>({});
+  const [status, setStatus] = useState<SubStatus | null>(null);
+  const [support, setSupport] = useState<SupportSettings>({});
   const [dismissed, setDismissed] = useState(false);
 
   async function fetchStatus() {
     try {
-      const res = await authFetch(api("/api/auth/subscription"));
+      const res = await authFetch(api('/api/auth/subscription'));
       if (!res.ok) return;
       const data: SubStatus = await res.json();
       setStatus(data);
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   }
 
   async function fetchSupport() {
     try {
-      const res = await authFetch(api("/api/settings/system"));
+      const res = await authFetch(api('/api/settings/system'));
       if (!res.ok) return;
-      const data = await res.json() as Record<string, string>;
+      const data = (await res.json()) as Record<string, string>;
       setSupport({
-        support_whatsapp: data["support_whatsapp"] ?? "",
-        support_email:    data["support_email"] ?? "",
+        support_whatsapp: data['support_whatsapp'] ?? '',
+        support_email: data['support_email'] ?? '',
       });
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   }
 
   useEffect(() => {
@@ -64,21 +67,21 @@ export function SubscriptionBanner() {
     return () => clearInterval(id);
   }, []);
 
-  if (!user || user.role === "super_admin") return null;
-  if (!status || status.unlimited)          return null;
-  if (dismissed)                            return null;
+  if (!user || user.role === 'super_admin') return null;
+  if (!status || status.unlimited) return null;
+  if (dismissed) return null;
 
   const days = status.days_left ?? 0;
 
   if (days <= 0 || !status.is_expiring_soon) return null;
 
   const isOrange = days <= 7;
-  const bg       = isOrange ? "#FED7AA" : "#FEF3C7";
-  const text     = isOrange ? "#7C2D12" : "#78350F";
-  const border   = isOrange ? "#FB923C" : "#FCD34D";
+  const bg = isOrange ? '#FED7AA' : '#FEF3C7';
+  const text = isOrange ? '#7C2D12' : '#78350F';
+  const border = isOrange ? '#FB923C' : '#FCD34D';
 
   const contactHref = support.support_whatsapp
-    ? `https://wa.me/${support.support_whatsapp.replace(/\D/g, "")}`
+    ? `https://wa.me/${support.support_whatsapp.replace(/\D/g, '')}`
     : support.support_email
       ? `mailto:${support.support_email}`
       : null;
@@ -87,34 +90,45 @@ export function SubscriptionBanner() {
     <div
       dir="rtl"
       style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: "12px", padding: "10px 18px",
-        background: bg, borderBottom: `1.5px solid ${border}`,
-        color: text, fontSize: "13px", fontWeight: 600,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
+        padding: '10px 18px',
+        background: bg,
+        borderBottom: `1.5px solid ${border}`,
+        color: text,
+        fontSize: '13px',
+        fontWeight: 600,
         fontFamily: "'Cairo', 'Tajawal', sans-serif",
-        flexWrap: "wrap",
+        flexWrap: 'wrap',
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
-        {isOrange && <span style={{ fontSize: "16px" }}>⚠️</span>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+        {isOrange && <span style={{ fontSize: '16px' }}>⚠️</span>}
         <span>
           {isOrange
-            ? `⚠️ ينتهي اشتراك ${status.company_name ?? ""} خلال ${days} ${days === 1 ? "يوم" : "أيام"} — تواصل معنا للتجديد`
-            : `ينتهي اشتراك ${status.company_name ?? ""} خلال ${days} يوم`}
+            ? `⚠️ ينتهي اشتراك ${status.company_name ?? ''} خلال ${days} ${days === 1 ? 'يوم' : 'أيام'} — تواصل معنا للتجديد`
+            : `ينتهي اشتراك ${status.company_name ?? ''} خلال ${days} يوم`}
         </span>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {contactHref && (
           <a
             href={contactHref}
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              padding: "5px 14px", borderRadius: "8px",
-              background: isOrange ? "#EA580C" : "#D97706",
-              color: "#fff", fontSize: "12px", fontWeight: 700,
-              textDecoration: "none", whiteSpace: "nowrap",
+              padding: '5px 14px',
+              borderRadius: '8px',
+              // eslint-disable-next-line erp/no-hardcoded-colors
+              background: isOrange ? '#EA580C' : 'var(--status-warning)',
+              color: 'var(--text-1)',
+              fontSize: '12px',
+              fontWeight: 700,
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
             }}
           >
             تواصل للتجديد
@@ -123,7 +137,14 @@ export function SubscriptionBanner() {
         <button
           onClick={() => setDismissed(true)}
           aria-label="إغلاق"
-          style={{ background: "none", border: "none", cursor: "pointer", color: text, opacity: 0.7, padding: "2px" }}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: text,
+            opacity: 0.7,
+            padding: '2px',
+          }}
         >
           <X size={16} />
         </button>

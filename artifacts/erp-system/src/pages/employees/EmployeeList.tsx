@@ -63,7 +63,11 @@ export function EmployeeList({
       {/* Table */}
       <div className="erp-card overflow-x-auto">
         {empsLoading ? (
-          <table className="erp-table w-full"><tbody><TableSkeleton /></tbody></table>
+          <table className="erp-table w-full">
+            <tbody>
+              <TableSkeleton />
+            </tbody>
+          </table>
         ) : (
           <table className="erp-table w-full">
             <thead>
@@ -80,7 +84,7 @@ export function EmployeeList({
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-white/40">
+                  <td colSpan={7} className="text-center py-12 text-ink/40">
                     <div className="erp-empty-state">
                       <UserCheck size={36} className="mb-2 opacity-30" />
                       <p>لا توجد بيانات موظفين</p>
@@ -103,12 +107,12 @@ export function EmployeeList({
                       {emp.first_name_ar} {emp.last_name_ar}
                     </div>
                     {emp.national_id && (
-                      <div className="text-xs text-white/30 font-mono">{emp.national_id}</div>
+                      <div className="text-xs text-ink/30 font-mono">{emp.national_id}</div>
                     )}
                   </td>
-                  <td className="p-3 text-sm text-white/70">{emp.department_name ?? '—'}</td>
-                  <td className="p-3 text-sm text-white/70">{emp.job_title_name ?? '—'}</td>
-                  <td className="p-3 text-xs text-white/60 font-mono">{emp.hire_date}</td>
+                  <td className="p-3 text-sm text-ink/70">{emp.department_name ?? '—'}</td>
+                  <td className="p-3 text-sm text-ink/70">{emp.job_title_name ?? '—'}</td>
+                  <td className="p-3 text-xs text-ink/60 font-mono">{emp.hire_date}</td>
                   {canViewSalary && (
                     <td className="p-3 text-sm font-mono">
                       {emp.commission_rate ? (

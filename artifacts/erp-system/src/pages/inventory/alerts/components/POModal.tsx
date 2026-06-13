@@ -18,10 +18,12 @@ export function POModal({ selected, suggestions, onClose }: POModalProps) {
   const { data: suppliersRaw = [] } = useQuery<Supplier[]>({
     queryKey: ['customers-suppliers'],
     queryFn: () =>
-      authFetch(api('/api/customers')).then((r) => r.json()).then((d) => {
-        const arr: Supplier[] = Array.isArray(d) ? d : (d.customers ?? []);
-        return arr.filter((c) => c.is_supplier);
-      }),
+      authFetch(api('/api/customers'))
+        .then((r) => r.json())
+        .then((d) => {
+          const arr: Supplier[] = Array.isArray(d) ? d : (d.customers ?? []);
+          return arr.filter((c) => c.is_supplier);
+        }),
     staleTime: 60_000,
   });
 
@@ -30,7 +32,13 @@ export function POModal({ selected, suggestions, onClose }: POModalProps) {
 
   const [supplierId, setSupplierId] = useState('');
   const [notes, setNotes] = useState('');
-  const [poDate] = useState(() => new Date().toLocaleDateString('ar-EG-u-nu-latn', { year: 'numeric', month: 'long', day: 'numeric' }));
+  const [poDate] = useState(() =>
+    new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  );
   const poNumber = `PO-${Date.now().toString().slice(-6)}`;
 
   const selectedSupplier = suppliersRaw.find((s) => String(s.id) === supplierId);
@@ -140,13 +148,28 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
       sheetName: 'أمر شراء',
       title: `أمر شراء ${poNumber} — ${selectedSupplier?.name ?? ''} — ${poDate}`,
       columns: [
-        { header: '#', key: '_idx', width: 6, format: (_r: ReorderSuggestion, i?: number) => (i ?? 0) + 1 },
+        {
+          header: '#',
+          key: '_idx',
+          width: 6,
+          format: (_r: ReorderSuggestion, i?: number) => (i ?? 0) + 1,
+        },
         { header: 'الصنف', key: 'product_name', width: 30 },
         { header: 'SKU', key: 'sku', width: 14 },
-        { header: 'الكمية الحالية', key: 'current_qty', width: 14, format: (r) => r.current_qty.toFixed(2) },
+        {
+          header: 'الكمية الحالية',
+          key: 'current_qty',
+          width: 14,
+          format: (r) => r.current_qty.toFixed(2),
+        },
         { header: 'الكمية المطلوبة', key: 'suggested_qty', width: 14 },
         { header: 'سعر الوحدة', key: 'cost_price', width: 14 },
-        { header: 'الإجمالي', key: 'suggested_cost', width: 14, format: (r) => r.suggested_cost.toFixed(2) },
+        {
+          header: 'الإجمالي',
+          key: 'suggested_cost',
+          width: 14,
+          format: (r) => r.suggested_cost.toFixed(2),
+        },
         { header: 'السبب', key: 'reason', width: 30 },
       ],
       rows: items,
@@ -168,55 +191,65 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
               <ClipboardList className="w-5 h-5 text-violet-300" />
             </div>
             <div>
-              <h2 className="text-white font-bold text-lg">إنشاء أمر شراء</h2>
-              <p className="text-white/40 text-xs">{items.length} صنف · إجمالي مقدّر: {formatCurrency(totalCost)}</p>
+              <h2 className="text-ink font-bold text-lg">إنشاء أمر شراء</h2>
+              <p className="text-ink/40 text-xs">
+                {items.length} صنف · إجمالي مقدّر: {formatCurrency(totalCost)}
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-ink/40 hover:text-ink transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-white/50 text-xs mb-1.5">المورد</label>
+            <label className="block text-ink/50 text-xs mb-1.5">المورد</label>
             <select
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
             >
-              <option value="" className="bg-[#1a1a2e]">— اختر المورد (اختياري) —</option>
+              <option value="" className="bg-[#1a1a2e]">
+                — اختر المورد (اختياري) —
+              </option>
               {suppliersRaw.map((s) => (
-                <option key={s.id} value={String(s.id)} className="bg-[#1a1a2e]">{s.name}</option>
+                <option key={s.id} value={String(s.id)} className="bg-[#1a1a2e]">
+                  {s.name}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-white/50 text-xs mb-1.5">ملاحظات (اختياري)</label>
+            <label className="block text-ink/50 text-xs mb-1.5">ملاحظات (اختياري)</label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="مثال: توريد عاجل / مواصفات خاصة..."
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
             />
           </div>
 
-          <div className="bg-white/5 border border-white/8 rounded-xl overflow-hidden">
+          <div className="bg-surface border border-line rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 bg-white/5">
-                  <th className="p-2.5 text-right text-white/60 font-medium text-xs">الصنف</th>
-                  <th className="p-2.5 text-center text-white/60 font-medium text-xs">الكمية المطلوبة</th>
-                  <th className="p-2.5 text-center text-white/60 font-medium text-xs">التكلفة المقدّرة</th>
+                <tr className="border-b border-line bg-surface">
+                  <th className="p-2.5 text-right text-ink/60 font-medium text-xs">الصنف</th>
+                  <th className="p-2.5 text-center text-ink/60 font-medium text-xs">
+                    الكمية المطلوبة
+                  </th>
+                  <th className="p-2.5 text-center text-ink/60 font-medium text-xs">
+                    التكلفة المقدّرة
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((s) => (
-                  <tr key={s.product_id} className="border-b border-white/5">
+                  <tr key={s.product_id} className="border-b border-line">
                     <td className="p-2.5">
-                      <div className="text-white text-sm font-medium">{s.product_name}</div>
-                      {s.sku && <div className="text-white/40 text-xs font-mono">{s.sku}</div>}
+                      <div className="text-ink text-sm font-medium">{s.product_name}</div>
+                      {s.sku && <div className="text-ink/40 text-xs font-mono">{s.sku}</div>}
                     </td>
                     <td className="p-2.5 text-center">
                       <span className="px-2 py-1 rounded-lg bg-violet-500/10 text-violet-300 font-bold font-mono text-sm">
@@ -229,8 +262,10 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
                   </tr>
                 ))}
                 <tr className="border-t-2 border-violet-500/30 bg-violet-500/5">
-                  <td className="p-2.5 text-white/60 text-xs font-bold" colSpan={1}>الإجمالي</td>
-                  <td className="p-2.5 text-center font-bold text-white font-mono">
+                  <td className="p-2.5 text-ink/60 text-xs font-bold" colSpan={1}>
+                    الإجمالي
+                  </td>
+                  <td className="p-2.5 text-center font-bold text-ink font-mono">
                     {items.reduce((a, s) => a + s.suggested_qty, 0)} وحدة
                   </td>
                   <td className="p-2.5 text-center font-bold text-emerald-300 font-mono">
@@ -244,7 +279,7 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
           <div className="flex gap-3 pt-1">
             <button
               onClick={printPO}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-violet-500 hover:bg-violet-400 text-white rounded-xl font-bold text-sm transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-violet-500 hover:bg-violet-400 text-ink rounded-xl font-bold text-sm transition-colors"
             >
               <Printer className="w-4 h-4" /> طباعة / PDF
             </button>
@@ -256,7 +291,7 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
             </button>
             <button
               onClick={onClose}
-              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm transition-colors"
+              className="px-5 py-2.5 bg-surface hover:bg-raised text-ink rounded-xl text-sm transition-colors"
             >
               إغلاق
             </button>

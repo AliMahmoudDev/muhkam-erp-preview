@@ -131,7 +131,7 @@ export default function CloseSafeModal({ onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 left-4 text-white/30 hover:text-white transition-colors"
+          className="absolute top-4 left-4 text-ink/30 hover:text-ink transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -143,14 +143,14 @@ export default function CloseSafeModal({ onClose }: Props) {
           </div>
           <div>
             <h3 className="text-lg font-black text-amber-400">إقفال الخزينة</h3>
-            <p className="text-white/30 text-xs">جرد ومطابقة يومية للخزينة</p>
+            <p className="text-ink/30 text-xs">جرد ومطابقة يومية للخزينة</p>
           </div>
         </div>
 
         {/* Controls */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-white/50 text-xs mb-1.5 font-medium">الخزينة</label>
+            <label className="block text-ink/50 text-xs mb-1.5 font-medium">الخزينة</label>
             <select
               className="glass-input w-full text-sm"
               value={safeId}
@@ -165,7 +165,7 @@ export default function CloseSafeModal({ onClose }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-white/50 text-xs mb-1.5 font-medium">تاريخ الإقفال</label>
+            <label className="block text-ink/50 text-xs mb-1.5 font-medium">تاريخ الإقفال</label>
             <input
               type="date"
               className="glass-input w-full text-sm"
@@ -178,13 +178,13 @@ export default function CloseSafeModal({ onClose }: Props) {
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-2">
           {[
-            { label: 'رصيد سابق', val: prevBalance, c: 'text-white/60' },
+            { label: 'رصيد سابق', val: prevBalance, c: 'text-ink/60' },
             { label: 'الرصيد الحالي (نظام)', val: systemBalance, c: 'text-amber-400' },
             { label: 'إجمالي الداخل', val: totalIn, c: 'text-emerald-400' },
             { label: 'إجمالي الخارج', val: totalOut, c: 'text-red-400' },
           ].map(({ label, val, c }) => (
-            <div key={label} className="bg-white/5 border border-white/8 rounded-xl p-3">
-              <p className="text-white/30 text-xs">{label}</p>
+            <div key={label} className="bg-surface border border-line rounded-xl p-3">
+              <p className="text-ink/30 text-xs">{label}</p>
               <p className={`${c} font-bold text-sm mt-1`}>{formatCurrency(val)}</p>
             </div>
           ))}
@@ -198,11 +198,11 @@ export default function CloseSafeModal({ onClose }: Props) {
               <div className="space-y-1">
                 {grouped(inRows, IN_LABELS).map(([k, v]) => (
                   <div key={k} className="flex justify-between text-xs">
-                    <span className="text-white/40">{k}</span>
+                    <span className="text-ink/40">{k}</span>
                     <span className="text-emerald-400 font-medium">{formatCurrency(v)}</span>
                   </div>
                 ))}
-                {inRows.length === 0 && <p className="text-white/20 text-xs">لا يوجد</p>}
+                {inRows.length === 0 && <p className="text-ink/20 text-xs">لا يوجد</p>}
               </div>
             </div>
             <div className="bg-red-500/5 border border-red-500/15 rounded-xl p-3">
@@ -210,23 +210,23 @@ export default function CloseSafeModal({ onClose }: Props) {
               <div className="space-y-1">
                 {grouped(outRows, OUT_LABELS).map(([k, v]) => (
                   <div key={k} className="flex justify-between text-xs">
-                    <span className="text-white/40">{k}</span>
+                    <span className="text-ink/40">{k}</span>
                     <span className="text-red-400 font-medium">{formatCurrency(v)}</span>
                   </div>
                 ))}
-                {outRows.length === 0 && <p className="text-white/20 text-xs">لا يوجد</p>}
+                {outRows.length === 0 && <p className="text-ink/20 text-xs">لا يوجد</p>}
               </div>
             </div>
           </div>
         )}
         {txToday.length === 0 && safeId && (
-          <p className="text-center text-white/25 text-xs py-1">لا توجد حركات في هذا اليوم</p>
+          <p className="text-center text-ink/25 text-xs py-1">لا توجد حركات في هذا اليوم</p>
         )}
 
         {/* Actual balance input */}
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-3">
           <div>
-            <label className="block text-white/50 text-xs mb-1.5 font-medium">
+            <label className="block text-ink/50 text-xs mb-1.5 font-medium">
               الرصيد الفعلي — جرد يدوي (ج.م)
             </label>
             <input
@@ -249,7 +249,7 @@ export default function CloseSafeModal({ onClose }: Props) {
                     : 'bg-red-500/10 border-red-500/20'
               }`}
             >
-              <span className="text-white/60 text-sm font-medium">العجز / الزيادة</span>
+              <span className="text-ink/60 text-sm font-medium">العجز / الزيادة</span>
               <span
                 className={`font-black text-xl ${variance === 0 ? 'text-emerald-400' : variance > 0 ? 'text-teal-400' : 'text-red-400'}`}
               >
@@ -267,7 +267,7 @@ export default function CloseSafeModal({ onClose }: Props) {
         <div className="flex gap-3">
           <button
             onClick={printClosing}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/5 border border-white/10 rounded-xl text-white/60 hover:text-white hover:border-white/20 transition-all text-sm font-medium"
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-surface border border-line rounded-xl text-ink/60 hover:text-ink hover:border-line transition-all text-sm font-medium"
           >
             <Printer className="w-4 h-4" /> طباعة الجرد
           </button>

@@ -13,24 +13,24 @@ import type { Employee, DetailTab } from './types';
 
 /* ── Lazy-loaded sub-page tabs ───────────────────────────────── */
 const AdvanceSettingsTab = lazy(() => import('./advance-settings-tab'));
-const SalesTargetsTab    = lazy(() => import('./sales-targets-tab'));
+const SalesTargetsTab = lazy(() => import('./sales-targets-tab'));
 
 type PageTab = 'list' | 'advance-settings' | 'sales-targets';
 
 const PAGE_TABS: { id: PageTab; label: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: 'list',             label: 'الموظفون',       icon: (p) => <UserCheck {...p} /> },
-  { id: 'advance-settings', label: 'إعدادات السلف',  icon: (p) => <Banknote {...p} /> },
-  { id: 'sales-targets',   label: 'أهداف المبيعات', icon: (p) => <Target {...p} />   },
+  { id: 'list', label: 'الموظفون', icon: (p) => <UserCheck {...p} /> },
+  { id: 'advance-settings', label: 'إعدادات السلف', icon: (p) => <Banknote {...p} /> },
+  { id: 'sales-targets', label: 'أهداف المبيعات', icon: (p) => <Target {...p} /> },
 ];
 
 function SubTabSkeleton() {
   return (
     <div className="space-y-4 animate-pulse max-w-2xl mt-6">
-      <div className="h-8 w-48 bg-white/5 rounded-xl" />
-      <div className="h-4 w-64 bg-white/3 rounded-lg" />
+      <div className="h-8 w-48 bg-surface rounded-xl" />
+      <div className="h-4 w-64 bg-surface rounded-lg" />
       <div className="grid grid-cols-2 gap-4 mt-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 bg-white/3 rounded-2xl" />
+          <div key={i} className="h-24 bg-surface rounded-2xl" />
         ))}
       </div>
     </div>
@@ -41,48 +41,67 @@ function SubTabSkeleton() {
 export default function Employees() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const canManage          = hasPermission(user, 'can_manage_employees');
-  const canViewSalary      = hasPermission(user, 'can_view_employee_salary');
-  const canViewMaintenance = hasPermission(user, 'can_view_reports') || hasPermission(user, 'can_manage_employees');
-  const isSelfService      = user?.role === 'employee';
-  const selfEmpId     = user?.employee_id ?? null;
+  const canManage = hasPermission(user, 'can_manage_employees');
+  const canViewSalary = hasPermission(user, 'can_view_employee_salary');
+  const canViewMaintenance =
+    hasPermission(user, 'can_view_reports') || hasPermission(user, 'can_manage_employees');
+  const isSelfService = user?.role === 'employee';
+  const selfEmpId = user?.employee_id ?? null;
 
   /* ── Page-level tab ─────────────────────────────────────────── */
   const [pageTab, setPageTab] = useState<PageTab>('list');
 
   /* ── List & selection state ─────────────────────────────────── */
-  const [search,     setSearch]     = useState('');
+  const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState<number | ''>('');
-  const [empPage,    setEmpPage]    = useState(1);
+  const [empPage, setEmpPage] = useState(1);
   const EMP_PAGE_SIZE = 50;
-  const [selected,   setSelected]   = useState<Employee | null>(null);
-  const [detailTab,  setDetailTab]  = useState<DetailTab>('info');
+  const [selected, setSelected] = useState<Employee | null>(null);
+  const [detailTab, setDetailTab] = useState<DetailTab>('info');
 
   /* ── Modal controller ref ───────────────────────────────────── */
   const modalRef = useRef<EmployeeSalaryModalRef>(null);
 
   /* ── Data hook (queries only) ───────────────────────────────── */
   const {
-    employees, empsLoading,
-    departments, jobTitles, branches,
-    safes, expenseCategories,
-    documents, bonuses, custody,
-    loans, loansLoading,
-    deductions, ledgerLoading,
+    employees,
+    empsLoading,
+    departments,
+    jobTitles,
+    branches,
+    safes,
+    expenseCategories,
+    documents,
+    bonuses,
+    custody,
+    loans,
+    loansLoading,
+    deductions,
+    ledgerLoading,
   } = useEmployeeData({ search, deptFilter, selected, detailTab });
 
   /* ── Form hook (form state + employee mutations) ────────────── */
   const {
-    showForm, setShowForm,
+    showForm,
+    setShowForm,
     editEmp,
     editId,
-    showInlineDept, setShowInlineDept,
-    inlineDept, setInlineDept,
-    showInlineJt, setShowInlineJt,
-    inlineJt, setInlineJt,
-    set, openCreate, openEdit, saveEmployee,
-    createEmp, updateEmp,
-    createInlineDept, createInlineJt,
+    showInlineDept,
+    setShowInlineDept,
+    inlineDept,
+    setInlineDept,
+    showInlineJt,
+    setShowInlineJt,
+    inlineJt,
+    setInlineJt,
+    set,
+    openCreate,
+    openEdit,
+    saveEmployee,
+    createEmp,
+    updateEmp,
+    createInlineDept,
+    createInlineJt,
   } = useEmployeeForm();
 
   /* ── Self-service: auto-select own profile ──────────────────── */
@@ -109,12 +128,14 @@ export default function Employees() {
           (e.national_id ?? '').includes(search)
         );
       }),
-    [employees, search, deptFilter],
+    [employees, search, deptFilter]
   );
-  useEffect(() => { setEmpPage(1); }, [search, deptFilter]);
+  useEffect(() => {
+    setEmpPage(1);
+  }, [search, deptFilter]);
   const paginatedEmps = useMemo(
     () => filtered.slice((empPage - 1) * EMP_PAGE_SIZE, empPage * EMP_PAGE_SIZE),
-    [filtered, empPage],
+    [filtered, empPage]
   );
 
   /* ── Summary stats ──────────────────────────────────────────── */
@@ -122,17 +143,17 @@ export default function Employees() {
   const remainingLoans = loans
     .filter((l) => ['active', 'approved'].includes(String(l.status)))
     .reduce((s, l) => s + Number(l.remaining_balance ?? 0), 0);
-  const totalDeducted  = deductions.reduce((s, d) => s + Number(d.amount ?? 0), 0);
-  const totalActive    = employees.filter((e) => e.employment_status === 'active').length;
+  const totalDeducted = deductions.reduce((s, d) => s + Number(d.amount ?? 0), 0);
+  const totalActive = employees.filter((e) => e.employment_status === 'active').length;
 
   /* ── Page header (tabs + summary) ──────────────────────────── */
   const PageHeader = (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2">
+        <h1 className="text-xl font-bold text-ink flex items-center gap-2">
           <UserCheck size={22} className="text-amber-400" /> إدارة الموظفين
         </h1>
-        <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/10">
+        <div className="flex items-center gap-1 bg-surface rounded-xl p-1 border border-line">
           {PAGE_TABS.map((tab) => (
             <button
               key={tab.id}
@@ -140,7 +161,7 @@ export default function Employees() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 pageTab === tab.id
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  : 'text-white/50 hover:text-white/80'
+                  : 'text-ink/50 hover:text-ink/80'
               }`}
             >
               <tab.icon className="w-3.5 h-3.5" />
@@ -152,14 +173,26 @@ export default function Employees() {
       {pageTab === 'list' && !isSelfService && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'الموظفون النشطون', value: totalActive,   color: 'text-emerald-300' },
-            { label: 'إجمالي السلف',     value: totalLoans.toLocaleString('ar-EG-u-nu-latn'),    color: 'text-amber-300' },
-            { label: 'رصيد السلف المتبقي', value: remainingLoans.toLocaleString('ar-EG-u-nu-latn'), color: 'text-rose-300' },
-            { label: 'إجمالي الخصومات',  value: totalDeducted.toLocaleString('ar-EG-u-nu-latn'), color: 'text-red-300' },
+            { label: 'الموظفون النشطون', value: totalActive, color: 'text-emerald-300' },
+            {
+              label: 'إجمالي السلف',
+              value: totalLoans.toLocaleString('ar-EG-u-nu-latn'),
+              color: 'text-amber-300',
+            },
+            {
+              label: 'رصيد السلف المتبقي',
+              value: remainingLoans.toLocaleString('ar-EG-u-nu-latn'),
+              color: 'text-rose-300',
+            },
+            {
+              label: 'إجمالي الخصومات',
+              value: totalDeducted.toLocaleString('ar-EG-u-nu-latn'),
+              color: 'text-red-300',
+            },
           ].map((stat) => (
             <div key={stat.label} className="erp-card p-3">
               <div className={`text-lg font-bold font-mono ${stat.color}`}>{stat.value}</div>
-              <div className="text-xs text-white/40 mt-0.5">{stat.label}</div>
+              <div className="text-xs text-ink/40 mt-0.5">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -215,7 +248,9 @@ export default function Employees() {
             canViewSalary={canViewSalary}
             openCreate={openCreate}
             openEdit={openEdit}
-            setDeleteId={(id) => { if (id !== null) modalRef.current?.openDelete(id); }}
+            setDeleteId={(id) => {
+              if (id !== null) modalRef.current?.openDelete(id);
+            }}
           />
         )}
 

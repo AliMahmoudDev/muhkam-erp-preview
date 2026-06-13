@@ -1,16 +1,16 @@
-import { Moon, Sun } from "lucide-react";
-import { useAppSettings } from "@/contexts/app-settings";
+import { Moon, Sun } from 'lucide-react';
+import { useAppSettings } from '@/contexts/app-settings';
 
 export function ThemeToggle() {
   const { settings, update } = useAppSettings();
-  const isDark = (settings.theme ?? "dark") === "dark";
+  const isDark = (settings.theme ?? 'dark') === 'dark';
 
   return (
     <button
-      onClick={() => update({ theme: isDark ? "light" : "dark" })}
+      onClick={() => update({ theme: isDark ? 'light' : 'dark' })}
       dir="ltr"
-      aria-label={isDark ? "تفعيل الوضع النهاري" : "تفعيل الوضع الليلي"}
-      title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
+      aria-label={isDark ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'}
+      title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'}
       className="relative flex items-center select-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--erp-brand)]/50 rounded-full transition-transform duration-150 active:scale-[0.92]"
       style={{ width: 80, height: 36 }}
     >
@@ -18,25 +18,25 @@ export function ThemeToggle() {
       <div
         className="absolute inset-0 rounded-full"
         style={{
-          backgroundColor: isDark ? "rgba(15,23,42,0.85)" : "rgba(241,245,249,0.92)",
-          border: "1.5px solid",
-          borderColor: "var(--erp-border-md)",
-          transition: "background-color 0.35s, border-color 0.35s",
+          backgroundColor: isDark ? 'rgba(15,23,42,0.85)' : 'rgba(241,245,249,0.92)',
+          border: '1.5px solid',
+          borderColor: 'var(--erp-border-md)',
+          transition: 'background-color 0.35s, border-color 0.35s',
           boxShadow: isDark
-            ? "inset 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)"
-            : "inset 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.08)",
+            ? 'inset 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)'
+            : 'inset 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.08)',
         }}
       />
 
       {/* Moon icon — left */}
       <div
         className="relative z-10 flex items-center justify-center"
-        style={{ width: 36, height: 36, opacity: isDark ? 1 : 0.35, transition: "opacity 0.3s" }}
+        style={{ width: 36, height: 36, opacity: isDark ? 1 : 0.35, transition: 'opacity 0.3s' }}
       >
         <Moon
           size={14}
           className="transition-colors duration-300"
-          style={{ color: isDark ? "var(--erp-brand)" : "#94a3b8" }}
+          style={{ color: isDark ? 'var(--erp-brand)' : 'var(--text-2)' }}
           strokeWidth={2.2}
         />
       </div>
@@ -44,12 +44,12 @@ export function ThemeToggle() {
       {/* Sun icon — right */}
       <div
         className="relative z-10 flex items-center justify-center"
-        style={{ width: 36, height: 36, opacity: isDark ? 0.35 : 1, transition: "opacity 0.3s" }}
+        style={{ width: 36, height: 36, opacity: isDark ? 0.35 : 1, transition: 'opacity 0.3s' }}
       >
         <Sun
           size={14}
           className="transition-colors duration-300"
-          style={{ color: isDark ? "#64748b" : "var(--erp-brand)" }}
+          style={{ color: isDark ? 'var(--text-2)' : 'var(--erp-brand)' }}
           strokeWidth={2.2}
         />
       </div>
@@ -62,11 +62,11 @@ export function ThemeToggle() {
           left: isDark ? 3 : 43,
           width: 28,
           height: 28,
-          background: "white",
-          transition: "left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          background: 'white',
+          transition: 'left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
           boxShadow: isDark
-            ? "0 2px 10px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.35)"
-            : "0 2px 8px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.10)",
+            ? '0 2px 10px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.35)'
+            : '0 2px 8px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.10)',
         }}
       />
     </button>

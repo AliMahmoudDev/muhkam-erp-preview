@@ -20,7 +20,7 @@ export default function DashboardCardsSection({
 
   if (!dashboard) {
     return (
-      <div className="rounded-2xl border border-white/8 bg-white/[0.02] h-24 flex items-center justify-center text-white/30 text-xs">
+      <div className="rounded-2xl border border-line bg-surface h-24 flex items-center justify-center text-ink/30 text-xs">
         جارٍ تحميل لوحة الصيانة...
       </div>
     );
@@ -31,7 +31,7 @@ export default function DashboardCardsSection({
 
   if (cards.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 text-center text-white/40 text-xs">
+      <div className="rounded-2xl border border-line bg-surface p-4 text-center text-ink/40 text-xs">
         لم يتم إعداد أي كارت بعد. افتح الإعدادات ← كروت اللوحة لإضافة كارت.
       </div>
     );
@@ -45,14 +45,14 @@ export default function DashboardCardsSection({
 
   return (
     <div className="space-y-2">
-      <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-2.5">
+      <div className="rounded-2xl border border-line bg-surface p-2.5">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] text-white/35 font-bold tracking-widest uppercase">
+          <span className="text-[10px] text-ink/35 font-bold tracking-widest uppercase">
             توزيع المهام
           </span>
-          <span className="text-[10px] text-white/45 font-mono">{totalAll} إجمالي</span>
+          <span className="text-[10px] text-ink/45 font-mono">{totalAll} إجمالي</span>
         </div>
-        <div className="h-2 rounded-full overflow-hidden bg-white/5 flex" dir="ltr">
+        <div className="h-2 rounded-full overflow-hidden bg-surface flex" dir="ltr">
           {barSegments.map((seg, i) => (
             <div
               key={seg.id}
@@ -124,7 +124,7 @@ export default function DashboardCardsSection({
                   style={{ width: `${pct}%`, background: card.color }}
                 />
               </div>
-              <div className="flex items-center gap-1 text-[10px] text-white/45 mt-0.5 min-h-[14px]">
+              <div className="flex items-center gap-1 text-[10px] text-ink/45 mt-0.5 min-h-[14px]">
                 {card.last_update ? (
                   <>
                     <Clock className="w-2.5 h-2.5 shrink-0" />
@@ -133,7 +133,7 @@ export default function DashboardCardsSection({
                     </span>
                   </>
                 ) : (
-                  <span className="text-white/25">لا تحديثات</span>
+                  <span className="text-ink/25">لا تحديثات</span>
                 )}
                 <ChevronDown
                   className={`w-3 h-3 mr-auto shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -166,23 +166,23 @@ export default function DashboardCardsSection({
                 <span className="text-[12px] font-bold" style={{ color: card.color }}>
                   {card.name} — تفصيل
                 </span>
-                <span className="text-[10px] text-white/45 font-mono">({card.count})</span>
+                <span className="text-[10px] text-ink/45 font-mono">({card.count})</span>
                 <button
                   onClick={() => setExpandedId(null)}
-                  className="mr-auto text-white/30 hover:text-white/70 text-[11px] font-bold"
+                  className="mr-auto text-ink/30 hover:text-ink/70 text-[11px] font-bold"
                 >
                   إخفاء
                 </button>
               </div>
               {breakdown.length === 0 ? (
-                <div className="text-white/35 text-[11px] py-2">لا توجد مهام في هذه الحالات</div>
+                <div className="text-ink/35 text-[11px] py-2">لا توجد مهام في هذه الحالات</div>
               ) : (
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {breakdown.map((b) => {
                     const meta = STATUS_MAP[b.key] ?? {
                       label: b.key,
-                      color: 'text-white/60',
-                      bg: 'bg-white/5 border-white/10',
+                      color: 'text-ink/60',
+                      bg: 'bg-surface border-line',
                       icon: AlertCircle,
                     };
                     return (
@@ -201,23 +201,21 @@ export default function DashboardCardsSection({
                 </div>
               )}
               {card.last_update && (
-                <div className="flex items-center gap-2 text-[11px] text-white/55 pt-2 border-t border-white/8">
+                <div className="flex items-center gap-2 text-[11px] text-ink/55 pt-2 border-t border-line">
                   <History className="w-3 h-3 shrink-0" style={{ color: card.color }} />
-                  <span className="font-mono text-white/70">{card.last_update.job_no}</span>
-                  <span className="text-white/30">·</span>
+                  <span className="font-mono text-ink/70">{card.last_update.job_no}</span>
+                  <span className="text-ink/30">·</span>
                   <span className="truncate">{card.last_update.customer_name}</span>
                   {card.last_update.status_to && (
                     <>
-                      <span className="text-white/30">←</span>
-                      <span className="text-white/70">
+                      <span className="text-ink/30">←</span>
+                      <span className="text-ink/70">
                         {STATUS_MAP[card.last_update.status_to]?.label ??
                           card.last_update.status_to}
                       </span>
                     </>
                   )}
-                  <span className="mr-auto text-white/35">
-                    {relativeTimeAr(card.last_update.at)}
-                  </span>
+                  <span className="mr-auto text-ink/35">{relativeTimeAr(card.last_update.at)}</span>
                 </div>
               )}
             </div>

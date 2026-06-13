@@ -47,13 +47,13 @@ export function useTheme() {
   const isLight = (settings.theme ?? 'dark') === 'light';
   return {
     isLight,
-    txtMain: isLight ? '#111827' : '#f8fafc',
-    txtSub: isLight ? '#6b7280' : 'rgba(255,255,255,0.40)',
-    txtBody: isLight ? '#374151' : 'rgba(255,255,255,0.80)',
-    txtDim: isLight ? '#9ca3af' : 'rgba(255,255,255,0.35)',
-    bdColor: isLight ? '#f3f4f6' : 'rgba(255,255,255,0.05)',
-    panelBg: isLight ? '#ffffff' : 'rgba(255,255,255,0.03)',
-    panelBdr: isLight ? '#e5e7eb' : 'rgba(255,255,255,0.08)',
-    hdrBg: '#1e293b',
+    txtMain: 'var(--text-1)',
+    txtSub: 'var(--text-2)',
+    txtBody: 'var(--text-1)',
+    txtDim: 'var(--text-hint)',
+    bdColor: 'var(--edge-row)',
+    panelBg: 'var(--bg-row-section)',
+    panelBdr: 'var(--edge-row)',
+    hdrBg: 'var(--bg-elevated)',
   };
 }

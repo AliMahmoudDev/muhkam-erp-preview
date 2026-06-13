@@ -78,8 +78,8 @@ export default function VatTab() {
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
-        <div className="h-8 w-48 bg-white/5 rounded-xl" />
-        <div className="h-32 bg-white/3 rounded-2xl" />
+        <div className="h-8 w-48 bg-surface rounded-xl" />
+        <div className="h-32 bg-surface rounded-2xl" />
       </div>
     );
   }
@@ -102,7 +102,7 @@ export default function VatTab() {
           boxShadow: vatEnabled ? '0 0 30px rgba(245,158,11,0.08)' : 'none',
         }}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
           <div className="flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all"
@@ -110,13 +110,11 @@ export default function VatTab() {
                 background: vatEnabled ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.05)',
               }}
             >
-              <Percent
-                className={`w-4.5 h-4.5 ${vatEnabled ? 'text-amber-400' : 'text-white/30'}`}
-              />
+              <Percent className={`w-4.5 h-4.5 ${vatEnabled ? 'text-amber-400' : 'text-ink/30'}`} />
             </div>
             <div>
-              <p className="text-white font-bold text-sm">ضريبة القيمة المضافة (VAT)</p>
-              <p className="text-white/40 text-xs mt-0.5">
+              <p className="text-ink font-bold text-sm">ضريبة القيمة المضافة (VAT)</p>
+              <p className="text-ink/40 text-xs mt-0.5">
                 {vatEnabled ? `مفعّلة — ${rateNum}% على الفواتير` : 'معطّلة — لا تُحسب الضريبة'}
               </p>
             </div>
@@ -129,7 +127,7 @@ export default function VatTab() {
             {vatEnabled ? (
               <ToggleRight className="w-10 h-10 text-amber-400" />
             ) : (
-              <ToggleLeft className="w-10 h-10 text-white/25" />
+              <ToggleLeft className="w-10 h-10 text-ink/25" />
             )}
           </button>
         </div>
@@ -145,10 +143,10 @@ export default function VatTab() {
             }}
           >
             <div
-              className="border border-white/8 rounded-2xl p-4"
+              className="border border-line rounded-2xl p-4"
               style={{ background: 'var(--erp-bg-elevated, #0D1424)' }}
             >
-              <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-3">
+              <p className="text-ink/60 text-xs font-bold uppercase tracking-wider mb-3">
                 نسبة الضريبة
               </p>
               <div className="flex items-center gap-3">
@@ -179,7 +177,10 @@ export default function VatTab() {
                           parseFloat(vatRate) === r
                             ? 'rgba(245,158,11,0.2)'
                             : 'rgba(255,255,255,0.05)',
-                        color: parseFloat(vatRate) === r ? '#F59E0B' : 'rgba(255,255,255,0.4)',
+                        color:
+                          parseFloat(vatRate) === r
+                            ? 'var(--status-warning)'
+                            : 'rgba(255,255,255,0.4)',
                         border: `1px solid ${parseFloat(vatRate) === r ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`,
                       }}
                     >
@@ -188,7 +189,7 @@ export default function VatTab() {
                   ))}
                 </div>
               </div>
-              <p className="text-white/30 text-xs mt-2.5">
+              <p className="text-ink/30 text-xs mt-2.5">
                 النسبة المطبّقة في مصر: 14% للسلع والخدمات العامة
               </p>
             </div>
@@ -215,16 +216,16 @@ export default function VatTab() {
                     <span
                       className={
                         row.bold
-                          ? 'text-white font-bold'
+                          ? 'text-ink font-bold'
                           : row.highlight
                             ? 'text-amber-400/80'
-                            : 'text-white/50'
+                            : 'text-ink/50'
                       }
                     >
                       {row.label}
                     </span>
                     <span
-                      className={`font-mono ${row.bold ? 'text-white font-black' : row.highlight ? 'text-amber-400' : 'text-white/50'}`}
+                      className={`font-mono ${row.bold ? 'text-ink font-black' : row.highlight ? 'text-amber-400' : 'text-ink/50'}`}
                     >
                       {row.value.toFixed(2)} ج.م
                     </span>
@@ -243,10 +244,10 @@ export default function VatTab() {
             }}
           >
             <Info
-              className={`w-4 h-4 shrink-0 mt-0.5 ${vatEnabled ? 'text-blue-400/70' : 'text-white/25'}`}
+              className={`w-4 h-4 shrink-0 mt-0.5 ${vatEnabled ? 'text-blue-400/70' : 'text-ink/25'}`}
             />
             <p
-              className={`text-xs leading-relaxed ${vatEnabled ? 'text-blue-300/70' : 'text-white/30'}`}
+              className={`text-xs leading-relaxed ${vatEnabled ? 'text-blue-300/70' : 'text-ink/30'}`}
             >
               {vatEnabled
                 ? 'عند تفعيل الضريبة، ستظهر خانة «نسبة الضريبة» في نماذج المبيعات والمشتريات، وسيُضاف مبلغ الضريبة تلقائياً للإجمالي.'
@@ -258,13 +259,13 @@ export default function VatTab() {
 
       {/* Compliance note */}
       <div
-        className="flex items-start gap-3 p-4 rounded-xl border border-white/5"
+        className="flex items-start gap-3 p-4 rounded-xl border border-line"
         style={{ background: 'var(--erp-bg-card)' }}
       >
         <ShieldCheck className="w-4 h-4 text-emerald-400/60 shrink-0 mt-0.5" />
         <div>
-          <p className="text-white/60 text-xs font-bold mb-1">التزام ضريبي</p>
-          <p className="text-white/30 text-xs leading-relaxed">
+          <p className="text-ink/60 text-xs font-bold mb-1">التزام ضريبي</p>
+          <p className="text-ink/30 text-xs leading-relaxed">
             يجب تسجيل المنشأة في مصلحة الضرائب المصرية (TA) للحصول على رقم تسجيل ضريبي قبل تحصيل
             الضريبة من العملاء. النسبة الموحّدة حالياً 14%.
           </p>
@@ -280,7 +281,7 @@ export default function VatTab() {
           background: saved
             ? 'rgba(52,211,153,0.9)'
             : 'linear-gradient(to right, #F59E0B, #D97706)',
-          color: '#000',
+          color: 'var(--text-1)',
           boxShadow: saved ? '0 4px 20px rgba(52,211,153,0.3)' : '0 4px 20px rgba(245,158,11,0.25)',
         }}
       >

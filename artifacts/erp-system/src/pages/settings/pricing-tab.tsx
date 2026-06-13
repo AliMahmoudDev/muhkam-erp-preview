@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { TrendingUp, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
-import { authFetch } from "../../lib/auth-fetch";
-import { api } from "../../lib/api";
-import { PageHeader, SectionCard, SectionTitle, PrimaryBtn, FieldLabel, SInput } from "./_shared";
+import { useState, useEffect } from 'react';
+import { TrendingUp, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { authFetch } from '../../lib/auth-fetch';
+import { api } from '../../lib/api';
+import { PageHeader, SectionCard, SectionTitle, PrimaryBtn, FieldLabel, SInput } from './_shared';
 
 type Category = { id: number; name: string };
 
@@ -13,8 +13,8 @@ interface BulkUpdateResult {
 }
 
 export function PricingTab() {
-  const [marginPercent, setMarginPercent] = useState<string>("");
-  const [categoryId, setCategoryId] = useState<string>("");
+  const [marginPercent, setMarginPercent] = useState<string>('');
+  const [categoryId, setCategoryId] = useState<string>('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCats, setLoadingCats] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -25,8 +25,8 @@ export function PricingTab() {
   // جلب الفئات عند أول تحميل
   useEffect(() => {
     setLoadingCats(true);
-    authFetch(api("/api/categories"))
-      .then(r => r.json())
+    authFetch(api('/api/categories'))
+      .then((r) => r.json())
       .then((data: Category[]) => setCategories(data))
       .catch(() => {})
       .finally(() => setLoadingCats(false));
@@ -44,18 +44,18 @@ export function PricingTab() {
     try {
       const body: Record<string, unknown> = { margin_percent: margin };
       if (categoryId) body.category_id = parseInt(categoryId, 10);
-      const r = await authFetch(api("/api/products/bulk-margin-update"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const r = await authFetch(api('/api/products/bulk-margin-update'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       const data = await r.json();
-      if (!r.ok) throw new Error(data.error ?? "حدث خطأ");
+      if (!r.ok) throw new Error(data.error ?? 'حدث خطأ');
       setResult(data as BulkUpdateResult);
-      setMarginPercent("");
-      setCategoryId("");
+      setMarginPercent('');
+      setCategoryId('');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "حدث خطأ");
+      setError(e instanceof Error ? e.message : 'حدث خطأ');
     } finally {
       setSaving(false);
     }
@@ -63,10 +63,7 @@ export function PricingTab() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title="تسعير المنتجات"
-        sub="تطبيق هامش ربح عالمي على جميع المنتجات دفعة واحدة"
-      />
+      <PageHeader title="تسعير المنتجات" sub="تطبيق هامش ربح عالمي على جميع المنتجات دفعة واحدة" />
 
       {/* Bulk Margin Update */}
       <SectionCard>
@@ -87,13 +84,19 @@ export function PricingTab() {
                 max="500"
                 step="0.5"
                 value={marginPercent}
-                onChange={e => { setMarginPercent(e.target.value); setResult(null); setError(null); }}
+                onChange={(e) => {
+                  setMarginPercent(e.target.value);
+                  setResult(null);
+                  setError(null);
+                }}
                 placeholder="مثال: 25"
                 className="pr-10"
               />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">%</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40 text-sm font-bold">
+                %
+              </span>
             </div>
-            {isValid && marginPercent !== "" && (
+            {isValid && marginPercent !== '' && (
               <p className="text-xs text-amber-400/70 mt-1.5">
                 مثال: منتج تكلفته 100 ج.م → سعر البيع {(100 * (1 + margin / 100)).toFixed(2)} ج.م
               </p>
@@ -105,13 +108,15 @@ export function PricingTab() {
             <FieldLabel>تطبيق على فئة معينة (اختياري)</FieldLabel>
             <select
               value={categoryId}
-              onChange={e => setCategoryId(e.target.value)}
+              onChange={(e) => setCategoryId(e.target.value)}
               disabled={loadingCats}
               className="glass-input w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all appearance-none cursor-pointer"
             >
               <option value="">كل المنتجات</option>
-              {categories.map(c => (
-                <option key={c.id} value={String(c.id)}>{c.name}</option>
+              {categories.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </div>
@@ -125,7 +130,7 @@ export function PricingTab() {
               onClick={() => setShowConfirm(true)}
             >
               <TrendingUp className="w-4 h-4" />
-              {saving ? "جاري التحديث..." : "تطبيق على المنتجات"}
+              {saving ? 'جاري التحديث...' : 'تطبيق على المنتجات'}
             </PrimaryBtn>
           </div>
         ) : (
@@ -135,7 +140,9 @@ export function PricingTab() {
               <div>
                 <p className="text-red-300 font-bold text-sm">تأكيد التحديث الجماعي</p>
                 <p className="text-red-300/70 text-xs mt-1">
-                  سيتم تحديث أسعار البيع لـ{categoryId ? " الفئة المحددة" : " جميع المنتجات"} بنسبة هامش {margin}%.<br />
+                  سيتم تحديث أسعار البيع لـ{categoryId ? ' الفئة المحددة' : ' جميع المنتجات'} بنسبة
+                  هامش {margin}%.
+                  <br />
                   <span className="font-bold">هذه العملية لا يمكن التراجع عنها تلقائياً.</span>
                 </p>
               </div>
@@ -143,14 +150,14 @@ export function PricingTab() {
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold border border-white/10 text-white/60 hover:text-white/90 transition"
+                className="px-4 py-2 rounded-xl text-sm font-semibold border border-line text-ink/60 hover:text-ink/90 transition"
               >
                 إلغاء
               </button>
               <button
                 onClick={handleApply}
                 disabled={saving}
-                className="px-4 py-2 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 text-ink transition disabled:opacity-50 flex items-center gap-2"
               >
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
                 نعم، طبّق التحديث
@@ -166,7 +173,8 @@ export function PricingTab() {
             <div>
               <p className="text-green-300 font-bold text-sm">تم التحديث بنجاح!</p>
               <p className="text-green-300/60 text-xs mt-0.5">
-                تم تحديث أسعار بيع <span className="font-bold">{result.updated}</span> منتج بهامش {result.margin_percent}%
+                تم تحديث أسعار بيع <span className="font-bold">{result.updated}</span> منتج بهامش{' '}
+                {result.margin_percent}%
               </p>
             </div>
           </div>
@@ -183,7 +191,7 @@ export function PricingTab() {
       {/* شرح الآلية */}
       <SectionCard>
         <SectionTitle icon={TrendingUp} title="كيف يعمل؟" />
-        <div className="space-y-2 text-sm text-white/50">
+        <div className="space-y-2 text-sm text-ink/50">
           <p>• سعر البيع الجديد = سعر التكلفة × (1 + الهامش ÷ 100)</p>
           <p>• المنتجات التي سعر تكلفتها صفر أو غير محدد تُستثنى تلقائياً</p>
           <p>• يمكنك اختيار فئة معينة لتطبيق الهامش عليها فقط</p>

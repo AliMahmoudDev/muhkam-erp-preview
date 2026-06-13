@@ -314,8 +314,8 @@ export function DeviceFormModal({
   const iCls = (k = '') => `erp-input w-full text-sm ${errCls(k)}`;
   const sCls = (k = '') => `erp-input w-full text-sm ${errCls(k)}`;
   const dCls = 'erp-input w-full text-sm opacity-40 cursor-not-allowed';
-  const lCls = 'text-[11px] text-white/40 mb-1.5 block text-right';
-  const lReq = 'text-[11px] mb-1.5 block text-right text-white/40';
+  const lCls = 'text-[11px] text-ink/40 mb-1.5 block text-right';
+  const lReq = 'text-[11px] mb-1.5 block text-right text-ink/40';
 
   const PAYMENT_LABELS = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
 
@@ -325,18 +325,18 @@ export function DeviceFormModal({
       dir="rtl"
     >
       <div
-        className="glass-panel rounded-2xl border border-white/10 w-full max-w-xl mx-4 overflow-hidden flex flex-col"
+        className="glass-panel rounded-2xl border border-line w-full max-w-xl mx-4 overflow-hidden flex flex-col"
         style={{ maxHeight: '94vh' }}
       >
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-line shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Smartphone className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <span className="font-bold text-white text-sm">إضافة جهاز مستعمل</span>
-              <p className="text-[10px] text-white/30 mt-0.5">
+              <span className="font-bold text-ink text-sm">إضافة جهاز مستعمل</span>
+              <p className="text-[10px] text-ink/30 mt-0.5">
                 الخطوة {step} من 2 — {step === 1 ? 'بيانات الجهاز والمورد' : 'التسعير وطريقة الدفع'}
               </p>
             </div>
@@ -346,11 +346,11 @@ export function DeviceFormModal({
               {[1, 2].map((s) => (
                 <div
                   key={s}
-                  className={`h-1.5 rounded-full transition-all ${s <= step ? 'bg-violet-500 w-8' : 'bg-white/10 w-4'}`}
+                  className={`h-1.5 rounded-full transition-all ${s <= step ? 'bg-violet-500 w-8' : 'bg-surface w-4'}`}
                 />
               ))}
             </div>
-            <button onClick={onClose} className="btn-icon text-white/40 hover:text-white">
+            <button onClick={onClose} className="btn-icon text-ink/40 hover:text-ink">
               <XCircle className="w-4 h-4" />
             </button>
           </div>
@@ -544,7 +544,7 @@ export function DeviceFormModal({
                     className={iCls('battery')}
                   />
                   {form.battery_health && (
-                    <div className="mt-1.5 h-1 rounded-full bg-white/8 overflow-hidden">
+                    <div className="mt-1.5 h-1 rounded-full bg-surface overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
                           parseInt(form.battery_health) >= 85
@@ -562,15 +562,15 @@ export function DeviceFormModal({
 
               {/* ─ Divider ─ */}
               <div className="flex items-center gap-3 py-0.5">
-                <div className="flex-1 h-px bg-white/6" />
-                <span className="text-[10px] text-white/20">بيانات المورد</span>
-                <div className="flex-1 h-px bg-white/6" />
+                <div className="flex-1 h-px bg-surface" />
+                <span className="text-[10px] text-ink/20">بيانات المورد</span>
+                <div className="flex-1 h-px bg-surface" />
               </div>
 
               {/* ─ Supplier Phone lookup ─ */}
               <div>
                 <label className={lReq}>
-                  رقم هاتف المورد * <span className="text-white/25">(11 رقم)</span>
+                  رقم هاتف المورد * <span className="text-ink/25">(11 رقم)</span>
                 </label>
                 <div className="relative">
                   <input
@@ -593,7 +593,7 @@ export function DeviceFormModal({
                     ) : supplierPhone.length > 0 ? (
                       <XCircle className="w-3.5 h-3.5 text-amber-400/60" />
                     ) : (
-                      <User className="w-3.5 h-3.5 text-white/20" />
+                      <User className="w-3.5 h-3.5 text-ink/20" />
                     )}
                   </div>
                 </div>
@@ -633,16 +633,16 @@ export function DeviceFormModal({
               {/* ─ ID card upload ─ */}
               <div>
                 <label className={lCls}>
-                  البطاقة الشخصية <span className="text-white/20">(اختياري — حتى 2MB)</span>
+                  البطاقة الشخصية <span className="text-ink/20">(اختياري — حتى 2MB)</span>
                 </label>
                 {!idCardPreview ? (
-                  <label className="flex items-center gap-3 p-3 border border-dashed border-white/8 rounded-xl cursor-pointer hover:border-violet-500/30 hover:bg-violet-500/4 transition-all group">
-                    <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-violet-500/10 flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4 text-white/25 group-hover:text-violet-400 transition-colors" />
+                  <label className="flex items-center gap-3 p-3 border border-dashed border-line rounded-xl cursor-pointer hover:border-violet-500/30 hover:bg-violet-500/4 transition-all group">
+                    <div className="w-8 h-8 rounded-full bg-surface group-hover:bg-violet-500/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-ink/25 group-hover:text-violet-400 transition-colors" />
                     </div>
                     <div>
-                      <p className="text-white/35 text-sm">انقر لرفع صورة البطاقة</p>
-                      <p className="text-white/20 text-[10px]">JPG, PNG, PDF</p>
+                      <p className="text-ink/35 text-sm">انقر لرفع صورة البطاقة</p>
+                      <p className="text-ink/20 text-[10px]">JPG, PNG, PDF</p>
                     </div>
                     <input
                       type="file"
@@ -652,7 +652,7 @@ export function DeviceFormModal({
                     />
                   </label>
                 ) : (
-                  <div className="relative rounded-xl overflow-hidden border border-white/10 bg-white/3">
+                  <div className="relative rounded-xl overflow-hidden border border-line bg-surface">
                     {idCardFile?.type.startsWith('image/') ? (
                       <img
                         src={resolveUploadedFileUrl(idCardPreview)}
@@ -663,8 +663,8 @@ export function DeviceFormModal({
                       <div className="flex items-center gap-3 p-3">
                         <FileText className="w-7 h-7 text-violet-400" />
                         <div>
-                          <p className="text-white/70 text-sm font-medium">{idCardFile?.name}</p>
-                          <p className="text-white/30 text-xs">
+                          <p className="text-ink/70 text-sm font-medium">{idCardFile?.name}</p>
+                          <p className="text-ink/30 text-xs">
                             {((idCardFile?.size ?? 0) / 1024).toFixed(0)} KB
                           </p>
                         </div>
@@ -677,7 +677,7 @@ export function DeviceFormModal({
                       }}
                       className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-red-500/60 transition-colors"
                     >
-                      <X className="w-3 h-3 text-white" />
+                      <X className="w-3 h-3 text-ink" />
                     </button>
                     <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-[10px] text-emerald-300 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> تم الرفع
@@ -690,9 +690,9 @@ export function DeviceFormModal({
               <div>
                 <label className={lCls}>
                   <span className="flex items-center gap-1.5">
-                    <FileText className="w-3 h-3 text-white/30" />
+                    <FileText className="w-3 h-3 text-ink/30" />
                     المستندات وحالة الجهاز
-                    <span className="text-white/20">(اختياري — يُحفظ كمرجع دائم)</span>
+                    <span className="text-ink/20">(اختياري — يُحفظ كمرجع دائم)</span>
                   </span>
                 </label>
                 <textarea
@@ -704,7 +704,7 @@ export function DeviceFormModal({
                   rows={4}
                   className="erp-input w-full text-sm resize-none leading-relaxed"
                 />
-                <p className="text-[10px] text-white/20 mt-1 flex items-center gap-1">
+                <p className="text-[10px] text-ink/20 mt-1 flex items-center gap-1">
                   <Info className="w-3 h-3" />
                   يظهر في تبويب "المصدر" بصفحة الجهاز — مرجع دائم في حالة وجود نزاع لاحقاً
                 </p>
@@ -716,15 +716,15 @@ export function DeviceFormModal({
           {step === 2 && (
             <>
               {/* Device summary pill */}
-              <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/6">
+              <div className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-line">
                 <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
                   <Smartphone className="w-4 h-4 text-violet-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-white text-sm">
+                  <p className="font-bold text-ink text-sm">
                     {effectiveBrand} {effectiveModel}
                   </p>
-                  <p className="text-[11px] text-white/30">
+                  <p className="text-[11px] text-ink/30">
                     {finalStorage && <span>{finalStorage}</span>}
                     {effectiveColor && <span> · {effectiveColor}</span>}
                     {form.imei && <span className="font-mono"> · {maskImei(form.imei)}</span>}
@@ -757,7 +757,7 @@ export function DeviceFormModal({
                       placeholder="0"
                       className={`${iCls('purchase_price')} pl-12`}
                     />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-white/30 font-mono">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-ink/30 font-mono">
                       EGP
                     </span>
                   </div>
@@ -773,7 +773,7 @@ export function DeviceFormModal({
                       placeholder="0"
                       className={`${iCls()} pl-12`}
                     />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-white/30 font-mono">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-ink/30 font-mono">
                       EGP
                     </span>
                   </div>
@@ -828,8 +828,8 @@ export function DeviceFormModal({
                           fin.payment_type === pt
                             ? 'bg-violet-500/20 border-violet-500/50 text-violet-300'
                             : disabled
-                              ? 'border-white/5 text-white/15 cursor-not-allowed'
-                              : 'border-white/10 text-white/40 hover:border-violet-500/30 hover:text-white/70'
+                              ? 'border-line text-ink/15 cursor-not-allowed'
+                              : 'border-line text-ink/40 hover:border-violet-500/30 hover:text-ink/70'
                         }`}
                       >
                         {PAYMENT_LABELS[pt]}
@@ -881,7 +881,7 @@ export function DeviceFormModal({
                       placeholder="0"
                       className={`${iCls('paid_amount')} pl-12`}
                     />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-white/30 font-mono">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-ink/30 font-mono">
                       EGP
                     </span>
                   </div>
@@ -914,18 +914,18 @@ export function DeviceFormModal({
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-5 py-3.5 border-t border-white/10 shrink-0 flex gap-2 justify-between">
+        <div className="px-5 py-3.5 border-t border-line shrink-0 flex gap-2 justify-between">
           {step === 2 ? (
             <button
               onClick={() => setStep(1)}
-              className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80 transition-all flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl border border-line text-ink/50 text-sm hover:text-ink/80 transition-all flex items-center gap-1.5"
             >
               ← السابق
             </button>
           ) : (
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/80 transition-all"
+              className="px-4 py-2 rounded-xl border border-line text-ink/50 text-sm hover:text-ink/80 transition-all"
             >
               إلغاء
             </button>

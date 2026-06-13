@@ -3,28 +3,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { formatDate } from '@/lib/format';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Loader2, Lock, LockOpen, AlertOctagon, Info, ExternalLink, Shield,
-} from 'lucide-react';
+import { Loader2, Lock, LockOpen, AlertOctagon, Info, ExternalLink, Shield } from 'lucide-react';
 import { PageHeader, FieldLabel } from './_shared';
 import { api } from '@/lib/api';
 
-
 interface PeriodStatus {
   closing_date: string | null;
-  locked_by:    string | null;
-  locked_at:    string | null;
-  lock_mode:    string;
-  is_locked:    boolean;
+  locked_by: string | null;
+  locked_at: string | null;
+  lock_mode: string;
+  is_locked: boolean;
 }
 
 export default function FinancialLockTab() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [lockDate,         setLockDate]         = useState('');
+  const [lockDate, setLockDate] = useState('');
   const [showUnlockDialog, setShowUnlockDialog] = useState(false);
-  const [unlockReason,     setUnlockReason]     = useState('');
+  const [unlockReason, setUnlockReason] = useState('');
 
   const { data: status, isLoading: statusLoading } = useQuery<PeriodStatus>({
     queryKey: ['period-status'],
@@ -87,42 +84,57 @@ export default function FinancialLockTab() {
       />
 
       {/* ── Status Card ── */}
-      <div className={`rounded-2xl border p-5 ${locked ? 'bg-red-500/5 border-red-500/20' : 'bg-green-500/5 border-green-500/20'}`}>
+      <div
+        className={`rounded-2xl border p-5 ${locked ? 'bg-red-500/5 border-red-500/20' : 'bg-green-500/5 border-green-500/20'}`}
+      >
         {statusLoading ? (
-          <div className="flex items-center gap-2 text-white/40">
+          <div className="flex items-center gap-2 text-ink/40">
             <Loader2 className="w-4 h-4 animate-spin" /> جاري التحميل...
           </div>
         ) : (
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              {locked
-                ? <Lock     className="w-7 h-7 text-red-400" />
-                : <LockOpen className="w-7 h-7 text-green-400" />
-              }
+              {locked ? (
+                <Lock className="w-7 h-7 text-red-400" />
+              ) : (
+                <LockOpen className="w-7 h-7 text-green-400" />
+              )}
               <div>
                 <p className={`text-lg font-bold ${locked ? 'text-red-400' : 'text-green-400'}`}>
                   {locked ? 'الفترة مغلقة' : 'الفترة مفتوحة'}
                 </p>
                 {locked && status?.closing_date && (
-                  <p className="text-white/50 text-sm mt-0.5">
+                  <p className="text-ink/50 text-sm mt-0.5">
                     مغلق حتى:{' '}
-                    <span className="text-white/80 font-semibold">{formatDate(status.closing_date)}</span>
+                    <span className="text-ink/80 font-semibold">
+                      {formatDate(status.closing_date)}
+                    </span>
                   </p>
                 )}
                 {locked && status?.locked_by && (
-                  <p className="text-white/40 text-xs mt-1">
-                    بواسطة: <span className="text-white/60">{status.locked_by}</span>
+                  <p className="text-ink/40 text-xs mt-1">
+                    بواسطة: <span className="text-ink/60">{status.locked_by}</span>
                     {status.locked_at && (
-                      <> · <span className="text-white/40">{new Date(status.locked_at).toLocaleString('ar-EG-u-nu-latn')}</span></>
+                      <>
+                        {' '}
+                        ·{' '}
+                        <span className="text-ink/40">
+                          {new Date(status.locked_at).toLocaleString('ar-EG-u-nu-latn')}
+                        </span>
+                      </>
                     )}
                   </p>
                 )}
                 {!locked && (
-                  <p className="text-green-400/60 text-xs mt-0.5">لا يوجد إغلاق مالي مفعَّل حالياً</p>
+                  <p className="text-green-400/60 text-xs mt-0.5">
+                    لا يوجد إغلاق مالي مفعَّل حالياً
+                  </p>
                 )}
               </div>
             </div>
-            <span className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border ${locked ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-green-400 bg-green-500/10 border-green-500/30'}`}>
+            <span
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border ${locked ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-green-400 bg-green-500/10 border-green-500/30'}`}
+            >
               {locked ? '🔒 مغلقة' : '🔓 مفتوحة'}
             </span>
           </div>
@@ -143,17 +155,20 @@ export default function FinancialLockTab() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* ── Lock Action ── */}
-        <div className="rounded-2xl border border-white/10 p-5 space-y-4" style={{ background: 'var(--erp-bg-card)' }}>
+        <div
+          className="rounded-2xl border border-line p-5 space-y-4"
+          style={{ background: 'var(--erp-bg-card)' }}
+        >
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-red-400" />
-            <p className="text-white font-bold text-sm">إغلاق فترة مالية</p>
+            <p className="text-ink font-bold text-sm">إغلاق فترة مالية</p>
           </div>
           <div className="space-y-2">
-            <label className="text-white/40 text-xs font-semibold">إغلاق حتى تاريخ</label>
+            <label className="text-ink/40 text-xs font-semibold">إغلاق حتى تاريخ</label>
             <input
               type="date"
               value={lockDate}
-              onChange={e => setLockDate(e.target.value)}
+              onChange={(e) => setLockDate(e.target.value)}
               max={new Date().toISOString().split('T')[0]}
               className="w-full rounded-xl px-3 py-2.5 bg-muted/40 border border-border text-foreground text-sm focus:outline-none focus:border-amber-500/50"
             />
@@ -163,24 +178,32 @@ export default function FinancialLockTab() {
             disabled={lockMutation.isPending || !lockDate}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 font-semibold text-sm hover:bg-red-500/25 transition-all disabled:opacity-40"
           >
-            {lockMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+            {lockMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Lock className="w-4 h-4" />
+            )}
             تنفيذ الإغلاق
           </button>
-          <p className="text-white/25 text-[10px]">
+          <p className="text-ink/25 text-[10px]">
             سيُمنع تعديل أو حذف أي سجل تاريخه قبل أو يساوي هذا التاريخ.
           </p>
         </div>
 
         {/* ── Unlock Action ── */}
-        <div className="rounded-2xl border border-white/10 p-5 space-y-4" style={{ background: 'var(--erp-bg-card)' }}>
+        <div
+          className="rounded-2xl border border-line p-5 space-y-4"
+          style={{ background: 'var(--erp-bg-card)' }}
+        >
           <div className="flex items-center gap-2">
             <LockOpen className="w-4 h-4 text-green-400" />
-            <p className="text-white font-bold text-sm">فتح الفترة المالية</p>
+            <p className="text-ink font-bold text-sm">فتح الفترة المالية</p>
           </div>
           {locked ? (
             <>
-              <p className="text-white/40 text-xs leading-relaxed">
-                فتح الفترة يتطلب تقديم سبب واضح ويُسجَّل فوراً في سجل التدقيق. هذه العملية للمدير فقط.
+              <p className="text-ink/40 text-xs leading-relaxed">
+                فتح الفترة يتطلب تقديم سبب واضح ويُسجَّل فوراً في سجل التدقيق. هذه العملية للمدير
+                فقط.
               </p>
               <button
                 onClick={() => setShowUnlockDialog(true)}
@@ -190,30 +213,49 @@ export default function FinancialLockTab() {
               </button>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-2 py-4 text-white/25">
+            <div className="flex flex-col items-center gap-2 py-4 text-ink/25">
               <LockOpen className="w-8 h-8" />
-              <p className="text-xs text-center">الفترة مفتوحة حالياً<br />لا يلزم أي إجراء</p>
+              <p className="text-xs text-center">
+                الفترة مفتوحة حالياً
+                <br />
+                لا يلزم أي إجراء
+              </p>
             </div>
           )}
         </div>
       </div>
 
       {/* ── How Corrections Work ── */}
-      <div className="rounded-2xl border border-white/8 p-5" style={{ background: 'var(--erp-bg-card)' }}>
+      <div
+        className="rounded-2xl border border-line p-5"
+        style={{ background: 'var(--erp-bg-card)' }}
+      >
         <div className="flex items-center gap-2 mb-3">
           <Info className="w-4 h-4 text-blue-400" />
-          <p className="text-white font-bold text-sm">كيف يتم التصحيح بعد الإغلاق؟</p>
+          <p className="text-ink font-bold text-sm">كيف يتم التصحيح بعد الإغلاق؟</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { icon: '🔄', title: 'سند عكسي',     desc: 'لسند إيصال أو صرف مقفل — أنشئ سنداً معاكساً بنفس المبلغ مرتبطاً بالأصلي' },
-            { icon: '📝', title: 'فاتورة إرجاع', desc: 'لفاتورة مبيعات مقفلة — استخدم فاتورة إرجاع ولا تعدّل الأصل مباشرة' },
-            { icon: '↩️', title: 'مصروف عكسي',  desc: 'لمصروف خاطئ — أنشئ مصروفاً سالباً ثم أنشئ المصروف الصحيح' },
-          ].map(c => (
-            <div key={c.title} className="rounded-xl p-3 bg-white/3 border border-white/6">
+            {
+              icon: '🔄',
+              title: 'سند عكسي',
+              desc: 'لسند إيصال أو صرف مقفل — أنشئ سنداً معاكساً بنفس المبلغ مرتبطاً بالأصلي',
+            },
+            {
+              icon: '📝',
+              title: 'فاتورة إرجاع',
+              desc: 'لفاتورة مبيعات مقفلة — استخدم فاتورة إرجاع ولا تعدّل الأصل مباشرة',
+            },
+            {
+              icon: '↩️',
+              title: 'مصروف عكسي',
+              desc: 'لمصروف خاطئ — أنشئ مصروفاً سالباً ثم أنشئ المصروف الصحيح',
+            },
+          ].map((c) => (
+            <div key={c.title} className="rounded-xl p-3 bg-surface border border-line">
               <p className="text-lg mb-1">{c.icon}</p>
-              <p className="text-white/80 font-semibold text-xs mb-1">{c.title}</p>
-              <p className="text-white/35 text-[11px] leading-relaxed">{c.desc}</p>
+              <p className="text-ink/80 font-semibold text-xs mb-1">{c.title}</p>
+              <p className="text-ink/35 text-[11px] leading-relaxed">{c.desc}</p>
             </div>
           ))}
         </div>
@@ -222,7 +264,7 @@ export default function FinancialLockTab() {
       {/* ── Link to full Audit Log page ── */}
       <a
         href={api('/audit-log')}
-        className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-white/8 hover:border-amber-500/25 hover:bg-amber-500/[0.03] transition-all group"
+        className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-line hover:border-amber-500/25 hover:bg-amber-500/[0.03] transition-all group"
         style={{ background: 'var(--erp-bg-card)' }}
       >
         <div className="flex items-center gap-3">
@@ -230,49 +272,59 @@ export default function FinancialLockTab() {
             <Shield className="w-4.5 h-4.5 text-amber-400" />
           </div>
           <div>
-            <p className="text-white font-bold text-sm">سجل التدقيق الشامل</p>
-            <p className="text-white/35 text-xs mt-0.5">
+            <p className="text-ink font-bold text-sm">سجل التدقيق الشامل</p>
+            <p className="text-ink/35 text-xs mt-0.5">
               عرض جميع العمليات مع فلترة متقدمة حسب المستخدم والنوع والتاريخ
             </p>
           </div>
         </div>
-        <ExternalLink className="w-4 h-4 text-white/25 group-hover:text-amber-400 transition-colors shrink-0" />
+        <ExternalLink className="w-4 h-4 text-ink/25 group-hover:text-amber-400 transition-colors shrink-0" />
       </a>
 
       {/* ── Unlock Dialog ── */}
       {showUnlockDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
-          <div className="w-full max-w-md rounded-2xl border border-white/10 shadow-2xl p-6 space-y-5" style={{ background: 'var(--erp-bg-card)' }}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)' }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-line shadow-2xl p-6 space-y-5"
+            style={{ background: 'var(--erp-bg-card)' }}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
                 <LockOpen className="w-5 h-5 text-amber-400" />
               </div>
               <div>
-                <p className="text-white font-bold">تأكيد فتح الفترة المالية</p>
-                <p className="text-white/40 text-xs">هذه العملية تسجَّل في سجل التدقيق</p>
+                <p className="text-ink font-bold">تأكيد فتح الفترة المالية</p>
+                <p className="text-ink/40 text-xs">هذه العملية تسجَّل في سجل التدقيق</p>
               </div>
             </div>
 
             <div className="p-3 rounded-xl bg-red-500/8 border border-red-500/20 text-red-400/80 text-xs leading-relaxed">
-              ⚠️ بعد فتح الفترة، يمكن تعديل السجلات القديمة مباشرة. تأكد من وجود سبب موثَّق قبل المتابعة.
+              ⚠️ بعد فتح الفترة، يمكن تعديل السجلات القديمة مباشرة. تأكد من وجود سبب موثَّق قبل
+              المتابعة.
             </div>
 
             <div className="space-y-2">
               <FieldLabel>سبب فتح الفترة *</FieldLabel>
               <textarea
                 value={unlockReason}
-                onChange={e => setUnlockReason(e.target.value)}
+                onChange={(e) => setUnlockReason(e.target.value)}
                 placeholder="اكتب سبباً واضحاً لفتح الفترة المالية..."
                 rows={3}
                 className="w-full rounded-xl px-3 py-2.5 bg-muted/40 border border-border text-foreground text-sm focus:outline-none focus:border-amber-500/50 resize-none"
               />
-              <p className="text-white/25 text-[10px]">{unlockReason.length} / 3 أحرف كحد أدنى</p>
+              <p className="text-ink/25 text-[10px]">{unlockReason.length} / 3 أحرف كحد أدنى</p>
             </div>
 
             <div className="flex gap-3">
               <button
-                onClick={() => { setShowUnlockDialog(false); setUnlockReason(''); }}
-                className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm font-semibold hover:bg-white/5 transition-all"
+                onClick={() => {
+                  setShowUnlockDialog(false);
+                  setUnlockReason('');
+                }}
+                className="flex-1 py-2.5 rounded-xl border border-line text-ink/50 text-sm font-semibold hover:bg-surface transition-all"
               >
                 إلغاء
               </button>
@@ -281,10 +333,11 @@ export default function FinancialLockTab() {
                 disabled={unlockMutation.isPending || unlockReason.trim().length < 3}
                 className="flex-1 py-2.5 rounded-xl bg-green-500/15 border border-green-500/30 text-green-400 text-sm font-semibold hover:bg-green-500/25 transition-all disabled:opacity-40 flex items-center justify-center gap-2"
               >
-                {unlockMutation.isPending
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <LockOpen className="w-4 h-4" />
-                }
+                {unlockMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <LockOpen className="w-4 h-4" />
+                )}
                 تأكيد الفتح
               </button>
             </div>

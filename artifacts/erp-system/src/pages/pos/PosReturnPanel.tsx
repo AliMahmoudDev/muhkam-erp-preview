@@ -67,16 +67,15 @@ export function PosReturnPanel({
       </div>
 
       {/* Invoice search */}
-      <div
-        className="px-4 py-3 shrink-0"
-        style={{ borderBottom: '1px solid var(--erp-border)' }}
-      >
+      <div className="px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--erp-border)' }}>
         <p className="erp-label text-xs mb-1.5">رقم الفاتورة / اسم العميل / رمز العميل</p>
         <div className="relative">
           <div className="flex items-center gap-2 erp-input pr-3 pl-2 py-2">
             <Search
               className={`w-4 h-4 shrink-0 transition-colors ${
-                returnSearchFetching || returnFetching ? 'text-amber-500 animate-pulse' : 'text-white/30'
+                returnSearchFetching || returnFetching
+                  ? 'text-amber-500 animate-pulse'
+                  : 'text-ink/30'
               }`}
               style={{
                 color: returnSearchFetching || returnFetching ? undefined : 'var(--erp-text-3)',
@@ -104,7 +103,7 @@ export function PosReturnPanel({
                   setReturnItems([]);
                   setReturnSearchResults([]);
                 }}
-                className="text-white/30 hover:text-white/60 shrink-0"
+                className="text-ink/30 hover:text-ink/60 shrink-0"
                 style={{ color: 'var(--erp-text-3)' }}
               >
                 <X className="w-3.5 h-3.5" />
@@ -275,8 +274,8 @@ export function PosReturnPanel({
                   className={`py-2 rounded-xl text-sm font-bold transition-all ${
                     returnRefundType === v
                       ? v === 'cash'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-blue-500 text-white'
+                        ? 'bg-emerald-500 text-ink'
+                        : 'bg-blue-500 text-ink'
                       : 'erp-btn-ghost'
                   }`}
                 >
@@ -307,7 +306,7 @@ export function PosReturnPanel({
             <button
               onClick={handleReturn}
               disabled={isPending}
-              className="w-full py-3 rounded-xl font-bold text-white transition-all"
+              className="w-full py-3 rounded-xl font-bold text-ink transition-all"
               style={{
                 background: isPending ? 'rgba(239,68,68,0.4)' : 'rgba(239,68,68,0.85)',
               }}

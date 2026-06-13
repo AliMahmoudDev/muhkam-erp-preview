@@ -98,12 +98,12 @@ export default function WarrantyModal({
               <ShieldCheck className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">فتح طلب ضمان</h3>
-              <p className="text-[10px] text-white/40">مرتبط بـ {jobNo}</p>
+              <h3 className="text-sm font-black text-ink">فتح طلب ضمان</h3>
+              <p className="text-[10px] text-ink/40">مرتبط بـ {jobNo}</p>
             </div>
           </div>
           {!created && (
-            <button onClick={onClose} className="text-white/30 hover:text-white transition-colors">
+            <button onClick={onClose} className="text-ink/30 hover:text-ink transition-colors">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -122,8 +122,8 @@ export default function WarrantyModal({
               <ShieldCheck className="w-7 h-7 text-emerald-400" />
             </div>
             <div>
-              <p className="text-white font-black text-base">تم فتح بطاقة الضمان</p>
-              <p className="text-white/50 text-xs mt-1">
+              <p className="text-ink font-black text-base">تم فتح بطاقة الضمان</p>
+              <p className="text-ink/50 text-xs mt-1">
                 رقم البطاقة الجديدة:{' '}
                 <span className="text-violet-300 font-bold">{created.job_no}</span>
               </p>
@@ -131,7 +131,7 @@ export default function WarrantyModal({
             <div className="flex gap-2 mt-4">
               <button
                 onClick={() => onCreated(created.id, created.job_no)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold text-white transition-all"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold text-ink transition-all"
                 style={{
                   background: 'rgba(139,92,246,0.6)',
                   border: '1px solid rgba(139,92,246,0.5)',
@@ -142,7 +142,7 @@ export default function WarrantyModal({
               </button>
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl border text-xs text-white/60 hover:text-white transition-all"
+                className="px-4 py-2 rounded-xl border text-xs text-ink/60 hover:text-ink transition-all"
                 style={{ borderColor: 'rgba(255,255,255,0.12)' }}
               >
                 إغلاق
@@ -164,21 +164,21 @@ export default function WarrantyModal({
                 border: '1px solid rgba(255,255,255,0.07)',
               }}
             >
-              <div className="flex items-center gap-1.5 text-white/50">
-                <span className="font-bold text-white/80">{customerName}</span>
+              <div className="flex items-center gap-1.5 text-ink/50">
+                <span className="font-bold text-ink/80">{customerName}</span>
                 <span>·</span>
                 <span>
                   {deviceBrand} {deviceModel}
                 </span>
               </div>
-              <p className="text-[10px] text-white/30">
+              <p className="text-[10px] text-ink/30">
                 سيتم نسخ بيانات العميل والجهاز تلقائياً للبطاقة الجديدة
               </p>
             </div>
 
             {/* Problem description */}
             <div>
-              <label className="block text-[11px] font-bold text-white/60 mb-1.5">
+              <label className="block text-[11px] font-bold text-ink/60 mb-1.5">
                 وصف المشكلة الجديدة <span className="text-red-400">*</span>
               </label>
               <textarea
@@ -186,7 +186,7 @@ export default function WarrantyModal({
                 onChange={(e) => setProblemDescription(e.target.value)}
                 rows={3}
                 placeholder="اكتب وصف مشكلة الضمان..."
-                className="w-full rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-white/25 outline-none resize-none transition-all"
+                className="w-full rounded-xl px-3 py-2.5 text-xs text-ink placeholder:text-ink/25 outline-none resize-none transition-all"
                 style={{
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.12)',
@@ -196,7 +196,7 @@ export default function WarrantyModal({
 
             {/* Notes */}
             <div>
-              <label className="block text-[11px] font-bold text-white/60 mb-1.5">
+              <label className="block text-[11px] font-bold text-ink/60 mb-1.5">
                 ملاحظات إضافية (اختياري)
               </label>
               <input
@@ -204,7 +204,7 @@ export default function WarrantyModal({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="هل يوجد تكلفة إضافية؟ تفاصيل أخرى؟"
-                className="w-full rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/25 outline-none transition-all"
+                className="w-full rounded-xl px-3 py-2 text-xs text-ink placeholder:text-ink/25 outline-none transition-all"
                 style={{
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.12)',
@@ -249,7 +249,7 @@ export default function WarrantyModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-2.5 rounded-xl text-xs font-black text-white transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 rounded-xl text-xs font-black text-ink transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                 style={{
                   background: 'rgba(139,92,246,0.65)',
                   border: '1px solid rgba(139,92,246,0.45)',
@@ -269,7 +269,7 @@ export default function WarrantyModal({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2.5 rounded-xl border text-xs text-white/60 hover:text-white transition-all disabled:opacity-40"
+                className="px-4 py-2.5 rounded-xl border text-xs text-ink/60 hover:text-ink transition-all disabled:opacity-40"
                 style={{ borderColor: 'rgba(255,255,255,0.12)' }}
               >
                 إلغاء

@@ -7,7 +7,7 @@ import { api, authFetch, formatCurrency } from '../shared';
 import { useTheme, type DrillCustomer, type DrillProduct } from './types';
 
 export function CustomerDrill({ isSupplier }: { isSupplier: boolean }) {
-  const { isLight, txtSub, bdColor } = useTheme();
+  const { txtSub, bdColor } = useTheme();
   const { data, isLoading } = useQuery<DrillCustomer[]>({
     queryKey: ['drill-customers', isSupplier],
     queryFn: () =>
@@ -32,35 +32,74 @@ export function CustomerDrill({ isSupplier }: { isSupplier: boolean }) {
     return <p style={{ fontSize: 11, color: txtSub, padding: '8px 4px' }}>لا توجد أرصدة مفتوحة</p>;
 
   return (
-    <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${bdColor}`, marginTop: 4 }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, fontFamily: "'Tajawal','Cairo',sans-serif" }}>
+    <div
+      style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${bdColor}`, marginTop: 4 }}
+    >
+      <table
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontSize: 11.5,
+          fontFamily: "'Tajawal','Cairo',sans-serif",
+        }}
+      >
         <thead>
-          <tr style={{ background: isLight ? '#f3f4f6' : 'rgba(255,255,255,0.05)' }}>
-            <th style={{ textAlign: 'right', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>الاسم</th>
-            <th style={{ textAlign: 'left', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>الرصيد</th>
+          <tr style={{ background: 'var(--bg-row-header)' }}>
+            <th style={{ textAlign: 'right', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>
+              الاسم
+            </th>
+            <th style={{ textAlign: 'left', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>
+              الرصيد
+            </th>
           </tr>
         </thead>
         <tbody>
           {filtered.map((c) => (
             <tr key={c.id} style={{ borderTop: `1px solid ${bdColor}` }}>
-              <td style={{ padding: '5px 10px', color: isLight ? '#374151' : 'rgba(255,255,255,0.75)' }}>
+              <td style={{ padding: '5px 10px', color: 'var(--text-2)' }}>
                 {c.name}
                 {c.is_supplier && !isSupplier && (
-                  <span style={{ fontSize: 9, marginRight: 4, color: '#6366f1', fontWeight: 700 }}>مورد</span>
+                  <span
+                    style={{
+                      fontSize: 9,
+                      marginRight: 4,
+                      color: 'var(--status-info)',
+                      fontWeight: 700,
+                    }}
+                  >
+                    مورد
+                  </span>
                 )}
               </td>
-              <td style={{ padding: '5px 10px', textAlign: 'left', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: isSupplier ? '#ef4444' : '#d97706' }}>
+              <td
+                style={{
+                  padding: '5px 10px',
+                  textAlign: 'left',
+                  fontVariantNumeric: 'tabular-nums',
+                  fontWeight: 600,
+                  color: isSupplier ? 'var(--status-danger)' : 'var(--status-warning)',
+                }}
+              >
                 {formatCurrency(Math.abs(Number(c.balance)))}
               </td>
             </tr>
           ))}
         </tbody>
         <tfoot>
-          <tr style={{ background: isLight ? '#f9fafb' : 'rgba(255,255,255,0.04)', borderTop: `2px solid ${bdColor}` }}>
+          <tr style={{ background: 'var(--bg-row-subhead)', borderTop: `2px solid ${bdColor}` }}>
             <td style={{ padding: '5px 10px', fontWeight: 700, fontSize: 11, color: txtSub }}>
-              {isSupplier ? 'إجمالي ذمم دائنة' : 'إجمالي ذمم مدينة'} ({filtered.length} {isSupplier ? 'مورد' : 'عميل'})
+              {isSupplier ? 'إجمالي ذمم دائنة' : 'إجمالي ذمم مدينة'} ({filtered.length}{' '}
+              {isSupplier ? 'مورد' : 'عميل'})
             </td>
-            <td style={{ padding: '5px 10px', textAlign: 'left', fontVariantNumeric: 'tabular-nums', fontWeight: 800, color: isSupplier ? '#ef4444' : '#d97706' }}>
+            <td
+              style={{
+                padding: '5px 10px',
+                textAlign: 'left',
+                fontVariantNumeric: 'tabular-nums',
+                fontWeight: 800,
+                color: isSupplier ? 'var(--status-danger)' : 'var(--status-warning)',
+              }}
+            >
               {formatCurrency(filtered.reduce((s, c) => s + Math.abs(Number(c.balance)), 0))}
             </td>
           </tr>
@@ -71,7 +110,7 @@ export function CustomerDrill({ isSupplier }: { isSupplier: boolean }) {
 }
 
 export function InventoryDrill() {
-  const { isLight, txtSub, bdColor } = useTheme();
+  const { txtSub, bdColor } = useTheme();
   const { data, isLoading } = useQuery<DrillProduct[]>({
     queryKey: ['drill-products'],
     queryFn: () =>
@@ -93,32 +132,85 @@ export function InventoryDrill() {
     return <p style={{ fontSize: 11, color: txtSub, padding: '8px 4px' }}>لا يوجد مخزون حالياً</p>;
 
   return (
-    <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${bdColor}`, marginTop: 4 }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, fontFamily: "'Tajawal','Cairo',sans-serif" }}>
+    <div
+      style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${bdColor}`, marginTop: 4 }}
+    >
+      <table
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontSize: 11.5,
+          fontFamily: "'Tajawal','Cairo',sans-serif",
+        }}
+      >
         <thead>
-          <tr style={{ background: isLight ? '#f3f4f6' : 'rgba(255,255,255,0.05)' }}>
-            <th style={{ textAlign: 'right', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>المنتج</th>
-            <th style={{ textAlign: 'center', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>الكمية</th>
-            <th style={{ textAlign: 'center', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>سعر التكلفة</th>
-            <th style={{ textAlign: 'left', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>القيمة</th>
+          <tr style={{ background: 'var(--bg-row-header)' }}>
+            <th style={{ textAlign: 'right', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>
+              المنتج
+            </th>
+            <th
+              style={{ textAlign: 'center', padding: '5px 10px', color: txtSub, fontWeight: 700 }}
+            >
+              الكمية
+            </th>
+            <th
+              style={{ textAlign: 'center', padding: '5px 10px', color: txtSub, fontWeight: 700 }}
+            >
+              سعر التكلفة
+            </th>
+            <th style={{ textAlign: 'left', padding: '5px 10px', color: txtSub, fontWeight: 700 }}>
+              القيمة
+            </th>
           </tr>
         </thead>
         <tbody>
           {filtered.map((p) => (
             <tr key={p.id} style={{ borderTop: `1px solid ${bdColor}` }}>
-              <td style={{ padding: '5px 10px', color: isLight ? '#374151' : 'rgba(255,255,255,0.75)' }}>{p.name}</td>
-              <td style={{ padding: '5px 10px', textAlign: 'center', color: isLight ? '#374151' : 'rgba(255,255,255,0.75)' }}>{Math.round(Number(p.quantity))}</td>
-              <td style={{ padding: '5px 10px', textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: isLight ? '#374151' : 'rgba(255,255,255,0.75)' }}>{formatCurrency(Number(p.cost_price))}</td>
-              <td style={{ padding: '5px 10px', textAlign: 'left', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#059669' }}>{formatCurrency(p.value)}</td>
+              <td style={{ padding: '5px 10px', color: 'var(--text-2)' }}>{p.name}</td>
+              <td style={{ padding: '5px 10px', textAlign: 'center', color: 'var(--text-2)' }}>
+                {Math.round(Number(p.quantity))}
+              </td>
+              <td
+                style={{
+                  padding: '5px 10px',
+                  textAlign: 'center',
+                  fontVariantNumeric: 'tabular-nums',
+                  color: 'var(--text-2)',
+                }}
+              >
+                {formatCurrency(Number(p.cost_price))}
+              </td>
+              <td
+                style={{
+                  padding: '5px 10px',
+                  textAlign: 'left',
+                  fontVariantNumeric: 'tabular-nums',
+                  fontWeight: 600,
+                  color: 'var(--status-success)',
+                }}
+              >
+                {formatCurrency(p.value)}
+              </td>
             </tr>
           ))}
         </tbody>
         <tfoot>
-          <tr style={{ background: isLight ? '#f9fafb' : 'rgba(255,255,255,0.04)', borderTop: `2px solid ${bdColor}` }}>
-            <td colSpan={3} style={{ padding: '5px 10px', fontWeight: 700, fontSize: 11, color: txtSub }}>
+          <tr style={{ background: 'var(--bg-row-subhead)', borderTop: `2px solid ${bdColor}` }}>
+            <td
+              colSpan={3}
+              style={{ padding: '5px 10px', fontWeight: 700, fontSize: 11, color: txtSub }}
+            >
               إجمالي قيمة المخزون ({filtered.length} منتج)
             </td>
-            <td style={{ padding: '5px 10px', textAlign: 'left', fontVariantNumeric: 'tabular-nums', fontWeight: 800, color: '#059669' }}>
+            <td
+              style={{
+                padding: '5px 10px',
+                textAlign: 'left',
+                fontVariantNumeric: 'tabular-nums',
+                fontWeight: 800,
+                color: 'var(--status-success)',
+              }}
+            >
               {formatCurrency(filtered.reduce((s, p) => s + p.value, 0))}
             </td>
           </tr>

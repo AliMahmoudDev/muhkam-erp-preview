@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle } from 'lucide-react';
 
 export default function NotFound() {
   return (
@@ -8,11 +8,9 @@ export default function NotFound() {
         <CardContent className="pt-6">
           <div className="flex mb-4 gap-2">
             <AlertCircle className="h-8 w-8 text-red-500" />
-            <h1 className="text-2xl font-bold text-white/90">404 الصفحة غير موجودة</h1>
+            <h1 className="text-2xl font-bold text-ink/90">404 الصفحة غير موجودة</h1>
           </div>
-          <p className="mt-4 text-sm text-white/60">
-            هل نسيت إضافة الصفحة إلى الـ router؟
-          </p>
+          <p className="mt-4 text-sm text-ink/60">هل نسيت إضافة الصفحة إلى الـ router؟</p>
         </CardContent>
       </Card>
     </div>

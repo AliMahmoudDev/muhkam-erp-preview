@@ -85,7 +85,13 @@ ${invoice.customer_name ? `<div class="row"><span>العميل:</span><span>${es
 /* ─────────────────────────────────────────────────────────────
    SUCCESS MODAL
 ───────────────────────────────────────────────────────────── */
-export function SuccessModal({ invoice, onClose }: { invoice: SuccessInvoice; onClose: () => void }) {
+export function SuccessModal({
+  invoice,
+  onClose,
+}: {
+  invoice: SuccessInvoice;
+  onClose: () => void;
+}) {
   const { settings } = useAppSettings();
   const payLabel: Record<string, string> = { cash: 'نقدي', credit: 'آجل', partial: 'جزئي' };
 
@@ -169,6 +175,7 @@ export function SuccessModal({ invoice, onClose }: { invoice: SuccessInvoice; on
               style={{
                 background: 'rgba(37,211,102,0.12)',
                 border: '1px solid rgba(37,211,102,0.30)',
+                // eslint-disable-next-line erp/no-hardcoded-colors -- WhatsApp brand green: intentional third-party brand color
                 color: '#25D366',
               }}
             >

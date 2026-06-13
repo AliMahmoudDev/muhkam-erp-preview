@@ -2,12 +2,12 @@
  * Inventory — ReportTable (extracted from InventoryReport)
  * Main product table with detail side panel.
  */
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { api, authFetch, formatCurrency, TableSkeleton } from "../shared";
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { api, authFetch, formatCurrency, TableSkeleton } from '../shared';
 
 function HighlightText({ text, search }: { text: string; search: string }) {
   if (!search || !text) return <>{text}</>;
@@ -27,7 +27,6 @@ function HighlightText({ text, search }: { text: string; search: string }) {
     </>
   );
 }
-
 
 interface ProductDetail {
   actual_qty: number;
@@ -60,13 +59,21 @@ const MOVE_META: Record<string, { label: string; textCls: string; dotCls: string
 
 export interface ReportTableProps {
   products: Array<{
-    id: number; name: string; category?: string | null;
-    quantity: number; cost_price: number; sale_price: number;
+    id: number;
+    name: string;
+    category?: string | null;
+    quantity: number;
+    cost_price: number;
+    sale_price: number;
     low_stock_threshold?: number | null;
   }>;
   filtered: Array<{
-    id: number; name: string; category?: string | null;
-    quantity: number; cost_price: number; sale_price: number;
+    id: number;
+    name: string;
+    category?: string | null;
+    quantity: number;
+    cost_price: number;
+    sale_price: number;
     low_stock_threshold?: number | null;
   }>;
   isLoading: boolean;
@@ -75,9 +82,13 @@ export interface ReportTableProps {
   isInventoryDark: boolean;
 }
 
-
 export default function ReportTable({
-  products, filtered, isLoading, search, totalStockValue, isInventoryDark,
+  products,
+  filtered,
+  isLoading,
+  search,
+  totalStockValue,
+  isInventoryDark,
 }: ReportTableProps) {
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const selectedProduct = products.find((p) => p.id === selectedProductId);
@@ -107,19 +118,19 @@ export default function ReportTable({
 
   return (
     <>
-      <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10">
+            <thead className="bg-surface border-b border-line">
               <tr>
-                <th className="p-3 text-white/50">المنتج</th>
-                <th className="p-3 text-white/50">التصنيف</th>
-                <th className="p-3 text-white/50">الكمية</th>
-                <th className="p-3 text-white/50">سعر التكلفة</th>
-                <th className="p-3 text-white/50">سعر البيع</th>
-                <th className="p-3 text-white/50">قيمة المخزون</th>
-                <th className="p-3 text-white/50">هامش%</th>
-                <th className="p-3 text-white/50">تفاصيل</th>
+                <th className="p-3 text-ink/50">المنتج</th>
+                <th className="p-3 text-ink/50">التصنيف</th>
+                <th className="p-3 text-ink/50">الكمية</th>
+                <th className="p-3 text-ink/50">سعر التكلفة</th>
+                <th className="p-3 text-ink/50">سعر البيع</th>
+                <th className="p-3 text-ink/50">قيمة المخزون</th>
+                <th className="p-3 text-ink/50">هامش%</th>
+                <th className="p-3 text-ink/50">تفاصيل</th>
               </tr>
             </thead>
             <tbody>
@@ -127,7 +138,7 @@ export default function ReportTable({
                 <TableSkeleton cols={8} rows={5} />
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-white/40">
+                  <td colSpan={8} className="p-12 text-center text-ink/40">
                     {search ? `لا نتائج لـ "${search}"` : 'لا توجد منتجات'}
                   </td>
                 </tr>
@@ -148,9 +159,9 @@ export default function ReportTable({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: rowIdx * 0.03 }}
-                      className={`border-b border-white/5 transition-colors cursor-pointer ${isSelected ? 'bg-amber-500/8' : isOut ? 'bg-red-500/4 hover:bg-red-500/8' : isLow ? 'bg-yellow-500/4 hover:bg-yellow-500/8' : 'hover:bg-white/3'}`}
+                      className={`border-b border-line transition-colors cursor-pointer ${isSelected ? 'bg-amber-500/8' : isOut ? 'bg-red-500/4 hover:bg-red-500/8' : isLow ? 'bg-yellow-500/4 hover:bg-yellow-500/8' : 'hover:bg-surface'}`}
                     >
-                      <td className="p-3 font-bold text-white">
+                      <td className="p-3 font-bold text-ink">
                         <HighlightText text={product.name} search={search} />
                       </td>
                       <td className="p-3">
@@ -159,7 +170,7 @@ export default function ReportTable({
                             <HighlightText text={product.category} search={search} />
                           </span>
                         ) : (
-                          <span className="text-white/30">—</span>
+                          <span className="text-ink/30">—</span>
                         )}
                       </td>
                       <td className="p-3">
@@ -172,7 +183,7 @@ export default function ReportTable({
                           {isOut ? '⚠ نافذ' : isLow ? `⚠ ${product.quantity}` : product.quantity}
                         </span>
                       </td>
-                      <td className="p-3 text-white/60">{formatCurrency(product.cost_price)}</td>
+                      <td className="p-3 text-ink/60">{formatCurrency(product.cost_price)}</td>
                       <td className="p-3 text-emerald-400">{formatCurrency(product.sale_price)}</td>
                       <td className="p-3 font-bold text-blue-400">{formatCurrency(stockValue)}</td>
                       <td className="p-3">
@@ -185,7 +196,7 @@ export default function ReportTable({
                       <td className="p-3">
                         <button
                           onClick={() => setSelectedProductId(isSelected ? null : product.id)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${isSelected ? 'bg-amber-500/30 border-amber-500/50 text-amber-300' : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${isSelected ? 'bg-amber-500/30 border-amber-500/50 text-amber-300' : 'bg-surface border-line text-ink/50 hover:bg-surface'}`}
                         >
                           {isSelected ? 'إغلاق' : 'تفاصيل ◀'}
                         </button>
@@ -195,9 +206,9 @@ export default function ReportTable({
                 })
               )}
             </tbody>
-            <tfoot className="bg-white/5 border-t border-white/10">
+            <tfoot className="bg-surface border-t border-line">
               <tr>
-                <td colSpan={5} className="p-3 text-white/40 text-xs">
+                <td colSpan={5} className="p-3 text-ink/40 text-xs">
                   الإجمالي ({filtered.length} صنف)
                 </td>
                 <td className="p-3 font-black text-blue-400 text-sm">
@@ -209,7 +220,6 @@ export default function ReportTable({
           </table>
         </div>
       </div>
-
 
       <AnimatePresence>
         {selectedProductId && (
@@ -225,7 +235,7 @@ export default function ReportTable({
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="h-full w-full max-w-md overflow-y-auto shadow-2xl border-r border-white/10"
+              className="h-full w-full max-w-md overflow-y-auto shadow-2xl border-r border-line"
               style={{
                 background: isInventoryDark ? 'rgba(8,14,28,0.97)' : 'rgba(255,255,255,0.97)',
                 backdropFilter: 'blur(24px)',
@@ -234,14 +244,14 @@ export default function ReportTable({
               onClick={(e) => e.stopPropagation()}
             >
               <div
-                className="sticky top-0 z-10 flex items-center justify-between p-5 border-b border-white/10"
+                className="sticky top-0 z-10 flex items-center justify-between p-5 border-b border-line"
                 style={{
                   background: isInventoryDark ? 'rgba(8,14,28,0.95)' : 'rgba(255,255,255,0.95)',
                   backdropFilter: 'blur(12px)',
                 }}
               >
                 <div>
-                  <h3 className="text-white font-bold text-lg">{selectedProduct?.name}</h3>
+                  <h3 className="text-ink font-bold text-lg">{selectedProduct?.name}</h3>
                   {selectedProduct?.category && (
                     <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 mt-1 inline-block">
                       {selectedProduct.category}
@@ -250,14 +260,14 @@ export default function ReportTable({
                 </div>
                 <button
                   onClick={() => setSelectedProductId(null)}
-                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                  className="p-2 rounded-xl bg-surface hover:bg-raised transition-colors"
                 >
-                  <X className="w-4 h-4 text-white/70" />
+                  <X className="w-4 h-4 text-ink/70" />
                 </button>
               </div>
               <div className="p-5 space-y-6">
                 {detailLoading ? (
-                  <div className="text-center py-8 text-white/40 text-sm">جاري التحميل...</div>
+                  <div className="text-center py-8 text-ink/40 text-sm">جاري التحميل...</div>
                 ) : detail ? (
                   <>
                     <div className="grid grid-cols-2 gap-3">
@@ -265,7 +275,7 @@ export default function ReportTable({
                         {
                           label: 'الكمية الحالية',
                           value: String(detail.actual_qty),
-                          color: 'text-white text-2xl font-black',
+                          color: 'text-ink text-2xl font-black',
                         },
                         {
                           label: 'متوسط التكلفة',
@@ -289,20 +299,16 @@ export default function ReportTable({
                           color: 'text-amber-400 text-lg font-black',
                         },
                       ].map((s) => (
-                        <div
-                          key={s.label}
-                          className="bg-white/4 rounded-xl p-3 border border-white/8"
-                        >
-                          <p className="text-white/40 text-xs mb-1">{s.label}</p>
+                        <div key={s.label} className="bg-surface rounded-xl p-3 border border-line">
+                          <p className="text-ink/40 text-xs mb-1">{s.label}</p>
                           <p className={s.color}>{s.value}</p>
                         </div>
                       ))}
                     </div>
 
-
                     {stockChartData.length > 1 && (
                       <div>
-                        <p className="text-white/40 text-xs font-bold mb-3">
+                        <p className="text-ink/40 text-xs font-bold mb-3">
                           مستوى المخزون عبر الزمن
                         </p>
                         <ResponsiveContainer width="100%" height={90}>
@@ -312,8 +318,16 @@ export default function ReportTable({
                           >
                             <defs>
                               <linearGradient id="gStock" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
+                                <stop
+                                  offset="5%"
+                                  stopColor="var(--status-warning)"
+                                  stopOpacity={0.4}
+                                />
+                                <stop
+                                  offset="95%"
+                                  stopColor="var(--status-warning)"
+                                  stopOpacity={0.02}
+                                />
                               </linearGradient>
                             </defs>
                             <XAxis
@@ -332,7 +346,7 @@ export default function ReportTable({
                             <Area
                               type="monotone"
                               dataKey="qty"
-                              stroke="#f59e0b"
+                              stroke="var(--status-warning)"
                               strokeWidth={1.5}
                               fill="url(#gStock)"
                               dot={false}
@@ -342,17 +356,16 @@ export default function ReportTable({
                       </div>
                     )}
 
-
                     {detail.movements.length > 0 && (
                       <div>
-                        <p className="text-white/40 text-xs font-bold mb-4">
+                        <p className="text-ink/40 text-xs font-bold mb-4">
                           سجل الحركات ({detail.movements.length})
                         </p>
                         <div className="space-y-0">
                           {[...detail.movements].reverse().map((m, i) => {
                             const mv = MOVE_META[m.movement_type] ?? {
                               label: m.movement_type,
-                              textCls: 'text-white/50',
+                              textCls: 'text-ink/50',
                               dotCls: 'bg-slate-500',
                             };
                             const isAdd = m.quantity > 0;
@@ -369,7 +382,7 @@ export default function ReportTable({
                                     className={`w-3 h-3 rounded-full mt-1 ring-2 ring-black/60 ${mv.dotCls}`}
                                   />
                                   {i < detail.movements.length - 1 && (
-                                    <div className="w-px flex-1 bg-white/10 mt-1 mb-0 min-h-6" />
+                                    <div className="w-px flex-1 bg-surface mt-1 mb-0 min-h-6" />
                                   )}
                                 </div>
                                 <div
@@ -386,9 +399,9 @@ export default function ReportTable({
                                       {m.quantity} وحدة
                                     </span>
                                   </div>
-                                  <div className="flex items-center gap-3 text-xs text-white/30">
+                                  <div className="flex items-center gap-3 text-xs text-ink/30">
                                     {m.reference_no && (
-                                      <span className="font-mono text-white/40">
+                                      <span className="font-mono text-ink/40">
                                         {m.reference_no}
                                       </span>
                                     )}
@@ -399,7 +412,7 @@ export default function ReportTable({
                                       {m.quantity_before} ← {m.quantity_after}
                                     </span>
                                   </div>
-                                  <p className="text-white/20 text-xs mt-0.5">
+                                  <p className="text-ink/20 text-xs mt-0.5">
                                     {new Date(m.created_at).toLocaleDateString('ar-EG-u-nu-latn', {
                                       year: 'numeric',
                                       month: 'short',
@@ -418,7 +431,7 @@ export default function ReportTable({
                               <span className="text-amber-400 font-bold text-sm">
                                 الرصيد الحالي:{' '}
                               </span>
-                              <span className="text-white font-black text-sm">
+                              <span className="text-ink font-black text-sm">
                                 {detail.actual_qty} وحدة
                               </span>
                             </div>

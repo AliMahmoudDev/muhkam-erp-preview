@@ -7,11 +7,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import { safeArray } from '@/lib/safe-data';
-import {
-  useGetProducts,
-  useGetCustomers,
-  useGetSettingsSafes,
-} from '@workspace/api-client-react';
+import { useGetProducts, useGetCustomers, useGetSettingsSafes } from '@workspace/api-client-react';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { RotateCcw } from 'lucide-react';
 import type { SalesReturn, InvoiceSummary, InvoiceDetail, ReturnLineItem } from './salesTypes';
@@ -19,7 +15,6 @@ import { InvoiceSearchModal } from './returns/InvoiceSearchModal';
 import { InvoiceReturnForm } from './returns/InvoiceReturnForm';
 import { StandaloneReturnForm } from './returns/StandaloneReturnForm';
 import { SalesReturnsList } from './returns/SalesReturnsList';
-
 
 export default function SalesReturnsPanel() {
   const { user: currentUser } = useAuth();
@@ -59,7 +54,6 @@ export default function SalesReturnsPanel() {
     safe_id: '',
     date: new Date().toISOString().split('T')[0],
   });
-
 
   const { data: returns_ = [], isLoading } = useQuery<SalesReturn[]>({
     queryKey: ['/api/sales-returns'],
@@ -112,7 +106,6 @@ export default function SalesReturnsPanel() {
   const { data: safesRaw } = useGetSettingsSafes();
   const safes = safeArray(safesRaw);
 
-
   const saleDetailItemIds = saleDetail?.items?.map((i) => i.id).join(',') ?? '';
   useEffect(() => {
     if (!saleDetail?.items?.length) return;
@@ -160,7 +153,6 @@ export default function SalesReturnsPanel() {
   const standalonePrice = standaloneProduct ? Number(standaloneProduct.sale_price) : 0;
   const standaloneTotal = (parseInt(standalone.quantity) || 1) * standalonePrice;
 
-
   const createMutation = useMutation({
     mutationFn: (data: object) =>
       authFetch(api('/api/sales-returns'), {
@@ -204,14 +196,16 @@ export default function SalesReturnsPanel() {
     },
   });
 
-
   const handleSubmitReturn = () => {
     if (!activeReturnItems.length) {
       toast({ title: 'حدد كمية إرجاع على الأقل لصنف واحد', variant: 'destructive' });
       return;
     }
     if (isOverInvoiceLimit) {
-      toast({ title: 'لا يمكن إرجاع أكثر من قيمة الفاتورة المتاحة للإرجاع', variant: 'destructive' });
+      toast({
+        title: 'لا يمكن إرجاع أكثر من قيمة الفاتورة المتاحة للإرجاع',
+        variant: 'destructive',
+      });
       return;
     }
     if (refundType === 'cash' && !safeId) {
@@ -267,7 +261,6 @@ export default function SalesReturnsPanel() {
     });
   };
 
-
   const updateReturnQty = (idx: number, val: number) => {
     // Sentinel values for bulk actions from child component
     if (idx === -1) {
@@ -321,21 +314,26 @@ export default function SalesReturnsPanel() {
         <div className="flex gap-2 mr-auto items-center">
           {isAdmin && (
             <button
-              onClick={() => { resetStandalone(); setPhase('standalone'); }}
-              className="px-4 py-2 rounded-xl text-xs font-bold border border-white/15 text-white/40 hover:text-white/60 hover:border-white/25 transition-all"
+              onClick={() => {
+                resetStandalone();
+                setPhase('standalone');
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-bold border border-line text-ink/40 hover:text-ink/60 hover:border-line transition-all"
             >
               مرتجع مستقل
             </button>
           )}
           <button
-            onClick={() => { setInvoiceSearch(''); setPhase('select-invoice'); }}
+            onClick={() => {
+              setInvoiceSearch('');
+              setPhase('select-invoice');
+            }}
             className="btn-primary px-5 py-2 text-sm flex items-center gap-2"
           >
             <RotateCcw className="w-4 h-4" /> مرتجع جديد
           </button>
         </div>
       </div>
-
 
       {phase === 'select-invoice' && (
         <InvoiceSearchModal
@@ -369,8 +367,16 @@ export default function SalesReturnsPanel() {
           isPending={createMutation.isPending}
           updateReturnQty={updateReturnQty}
           onSubmit={handleSubmitReturn}
-          onBack={() => { setPhase('select-invoice'); setSelectedSaleId(null); setReturnItems([]); }}
-          onCancel={() => { setPhase('list'); setSelectedSaleId(null); setReturnItems([]); }}
+          onBack={() => {
+            setPhase('select-invoice');
+            setSelectedSaleId(null);
+            setReturnItems([]);
+          }}
+          onCancel={() => {
+            setPhase('list');
+            setSelectedSaleId(null);
+            setReturnItems([]);
+          }}
         />
       )}
 

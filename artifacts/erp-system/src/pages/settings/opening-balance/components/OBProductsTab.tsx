@@ -37,7 +37,9 @@ export function OBProductsTab() {
     setForm((f) => ({ ...f, product_id: String(p.id), cost_price: String(Number(p.cost_price)) }));
     setSearch(p.name);
   };
-  const selectedProduct = safeArray<ProductItem>(products).find((p) => String(p.id) === form.product_id);
+  const selectedProduct = safeArray<ProductItem>(products).find(
+    (p) => String(p.id) === form.product_id
+  );
 
   const handleSubmit = async () => {
     if (!form.product_id || !form.quantity || !form.cost_price) {
@@ -85,15 +87,15 @@ export function OBProductsTab() {
               }}
             />
             {search && !form.product_id && filteredProducts.length > 0 && (
-              <div className="absolute top-full mt-1 right-0 left-0 z-20 bg-[#111827] border border-white/10 rounded-xl max-h-48 overflow-y-auto shadow-2xl">
+              <div className="absolute top-full mt-1 right-0 left-0 z-20 bg-[#111827] border border-line rounded-xl max-h-48 overflow-y-auto shadow-2xl">
                 {filteredProducts.slice(0, 12).map((p) => (
                   <button
                     key={p.id}
                     onClick={() => handleSelectProduct(p)}
-                    className="w-full text-right px-3 py-2.5 text-sm text-white/80 hover:bg-white/8 transition-colors border-b border-white/5 last:border-0 flex items-center justify-between gap-2"
+                    className="w-full text-right px-3 py-2.5 text-sm text-ink/80 hover:bg-surface transition-colors border-b border-line last:border-0 flex items-center justify-between gap-2"
                   >
                     <span className="font-medium">{p.name}</span>
-                    <span className="text-xs text-white/35 font-mono shrink-0">{p.sku}</span>
+                    <span className="text-xs text-ink/35 font-mono shrink-0">{p.sku}</span>
                   </button>
                 ))}
               </div>
@@ -165,10 +167,10 @@ export function OBProductsTab() {
         )}
       </div>
 
-      <div className="bg-[#111827] rounded-2xl overflow-hidden border border-white/5">
-        <div className="p-4 border-b border-white/8 flex items-center justify-between">
-          <h4 className="font-bold text-white/60 text-sm">أرصدة المنتجات المسجلة</h4>
-          <span className="text-white/30 text-xs bg-white/5 px-2 py-0.5 rounded-lg">
+      <div className="bg-[#111827] rounded-2xl overflow-hidden border border-line">
+        <div className="p-4 border-b border-line flex items-center justify-between">
+          <h4 className="font-bold text-ink/60 text-sm">أرصدة المنتجات المسجلة</h4>
+          <span className="text-ink/30 text-xs bg-surface px-2 py-0.5 rounded-lg">
             {entries.length}
           </span>
         </div>
@@ -178,7 +180,7 @@ export function OBProductsTab() {
           columns={[
             {
               label: 'المنتج',
-              render: (e) => <span className="font-bold text-white">{e.product_name}</span>,
+              render: (e) => <span className="font-bold text-ink">{e.product_name}</span>,
             },
             {
               label: 'الكمية',
@@ -201,7 +203,7 @@ export function OBProductsTab() {
             },
             {
               label: 'التاريخ',
-              render: (e) => <span className="text-white/40 text-xs">{e.date}</span>,
+              render: (e) => <span className="text-ink/40 text-xs">{e.date}</span>,
             },
           ]}
         />

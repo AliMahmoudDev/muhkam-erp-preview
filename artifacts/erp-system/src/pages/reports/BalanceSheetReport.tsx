@@ -9,9 +9,18 @@ import { Scale, Printer, AlertTriangle, CheckCircle, Users, Truck, Package } fro
 import { api, authFetch, formatCurrency, useCountUp, todayStr } from './shared';
 import type { BalanceSheetPrintData } from '@/lib/export-pdf';
 import {
-  useTheme, EMPTY_BS, type BalanceSheetData,
-  SectionHd, SubSectionHd, ChildRow, TotalRow, NetRow, Spacer, DrillRow,
-  CustomerDrill, InventoryDrill,
+  useTheme,
+  EMPTY_BS,
+  type BalanceSheetData,
+  SectionHd,
+  SubSectionHd,
+  ChildRow,
+  TotalRow,
+  NetRow,
+  Spacer,
+  DrillRow,
+  CustomerDrill,
+  InventoryDrill,
 } from './balance-sheet';
 
 /* ── KPI Card ──────────────────────────────────────────────────────────── */
@@ -26,26 +35,25 @@ function BsKPICard({
   value: number;
   variant: 'green' | 'red' | 'amber';
 }) {
-  const { isLight } = useTheme();
   const animated = useCountUp(value);
   const colors = {
     green: {
-      clr: '#059669',
-      bg: isLight ? '#f0fdf4' : 'rgba(5,150,105,0.08)',
-      bdr: isLight ? '#bbf7d0' : 'rgba(5,150,105,0.20)',
+      clr: 'var(--status-success)',
+      bg: 'var(--bg-success-tint)',
+      bdr: 'var(--edge-success)',
     },
     red: {
-      clr: '#dc2626',
-      bg: isLight ? '#fef2f2' : 'rgba(220,38,38,0.08)',
-      bdr: isLight ? '#fecaca' : 'rgba(220,38,38,0.20)',
+      clr: 'var(--status-danger)',
+      bg: 'var(--bg-danger-tint)',
+      bdr: 'var(--edge-danger)',
     },
     amber: {
-      clr: '#d97706',
-      bg: isLight ? '#fffbeb' : 'rgba(245,158,11,0.08)',
-      bdr: isLight ? '#fde68a' : 'rgba(245,158,11,0.20)',
+      clr: 'var(--status-warning)',
+      bg: 'var(--bg-warning-tint)',
+      bdr: 'var(--edge-warning)',
     },
   }[variant];
-  const txtHint = isLight ? '#9ca3af' : 'rgba(255,255,255,0.35)';
+  const txtHint = 'var(--text-hint)';
   return (
     <div
       className="rpt-panel rounded-2xl p-4"
@@ -75,8 +83,10 @@ function BalanceBadge({ balanced, diff }: { balanced: boolean; diff: number }) {
         className="flex items-center gap-2 rounded-xl px-3 py-1.5"
         style={{ background: 'rgba(5,150,105,0.10)', border: '1px solid rgba(5,150,105,0.25)' }}
       >
-        <CheckCircle className="w-3.5 h-3.5" style={{ color: '#059669' }} />
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#059669' }}>الميزانية متوازنة ✓</span>
+        <CheckCircle className="w-3.5 h-3.5" style={{ color: 'var(--status-success)' }} />
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--status-success)' }}>
+          الميزانية متوازنة ✓
+        </span>
       </div>
     );
   return (
@@ -84,8 +94,8 @@ function BalanceBadge({ balanced, diff }: { balanced: boolean; diff: number }) {
       className="flex items-center gap-2 rounded-xl px-3 py-1.5"
       style={{ background: 'rgba(220,38,38,0.10)', border: '1px solid rgba(220,38,38,0.25)' }}
     >
-      <AlertTriangle className="w-3.5 h-3.5" style={{ color: '#dc2626' }} />
-      <span style={{ fontSize: 11, fontWeight: 700, color: '#dc2626' }}>
+      <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--status-danger)' }} />
+      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--status-danger)' }}>
         ⚠️ يوجد فرق: {formatCurrency(Math.abs(diff))}
       </span>
     </div>
@@ -179,14 +189,18 @@ function BalanceSheetStatement({ data }: { data: BalanceSheetData }) {
               <InventoryDrill />
             </DrillRow>
           )}
-          <TotalRow label="= إجمالي الأصول المتداولة" value={data.assets.total} accent="#d97706" />
+          <TotalRow
+            label="= إجمالي الأصول المتداولة"
+            value={data.assets.total}
+            accent="var(--status-warning)"
+          />
 
           {/* الأصول غير المتداولة — فارغة في هذا النظام */}
           <SubSectionHd label="الأصول غير المتداولة" />
           <ChildRow label="أصول ثابتة — لا توجد في هذا النظام حالياً" value={0} dim />
-          <TotalRow label="= إجمالي الأصول غير المتداولة" value={0} accent="#6b7280" />
+          <TotalRow label="= إجمالي الأصول غير المتداولة" value={0} accent="var(--text-2)" />
 
-          <TotalRow label="= إجمالي الأصول" value={data.assets.total} accent="#1e293b" />
+          <TotalRow label="= إجمالي الأصول" value={data.assets.total} accent="var(--bg-elevated)" />
 
           <Spacer />
 
@@ -214,13 +228,13 @@ function BalanceSheetStatement({ data }: { data: BalanceSheetData }) {
           <TotalRow
             label="= إجمالي الخصوم المتداولة"
             value={data.liabilities.payables}
-            accent="#6b7280"
+            accent="var(--text-2)"
           />
 
           {/* الخصوم طويلة الأجل */}
           <SubSectionHd label="الخصوم طويلة الأجل" />
           <ChildRow label="التزامات طويلة الأجل — لا توجد حالياً" value={0} dim />
-          <TotalRow label="= إجمالي الخصوم طويلة الأجل" value={0} accent="#6b7280" />
+          <TotalRow label="= إجمالي الخصوم طويلة الأجل" value={0} accent="var(--text-2)" />
 
           <TotalRow label="= إجمالي الخصوم" value={data.liabilities.total} accent="#4b5563" />
 
@@ -239,7 +253,7 @@ function BalanceSheetStatement({ data }: { data: BalanceSheetData }) {
           <TotalRow
             label="= إجمالي حقوق الملكية"
             value={data.equity.total}
-            accent={data.equity.total >= 0 ? '#059669' : '#dc2626'}
+            accent={data.equity.total >= 0 ? 'var(--status-success)' : 'var(--status-danger)'}
           />
 
           <Spacer />
@@ -258,7 +272,7 @@ function BalanceSheetStatement({ data }: { data: BalanceSheetData }) {
 
 /* ── Main Component ─────────────────────────────────────────────────────── */
 export default function BalanceSheetReport() {
-  const { isLight, txtMain, txtSub, panelBdr } = useTheme();
+  const { txtMain, txtSub, panelBdr } = useTheme();
   const [asOfDate, setAsOfDate] = useState(todayStr());
 
   const {
@@ -327,14 +341,12 @@ export default function BalanceSheetReport() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Scale className="w-5 h-5 shrink-0" style={{ color: '#d97706' }} />
+          <Scale className="w-5 h-5 shrink-0" style={{ color: 'var(--status-warning)' }} />
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 900, color: txtMain }}>الميزانية العمومية</h2>
             <p style={{ fontSize: 11, color: txtSub, marginTop: 2 }}>
               كما في تاريخ:&nbsp;
-              <strong style={{ color: isLight ? '#374151' : 'rgba(255,255,255,0.75)' }}>
-                {asOfFormatted}
-              </strong>
+              <strong style={{ color: 'var(--text-2)' }}>{asOfFormatted}</strong>
             </p>
           </div>
         </div>
@@ -344,7 +356,7 @@ export default function BalanceSheetReport() {
           <div
             className="flex items-center gap-2 rounded-xl px-3 py-1.5"
             style={{
-              background: isLight ? '#f3f4f6' : 'rgba(255,255,255,0.06)',
+              background: 'var(--bg-row-header)',
               border: `1px solid ${panelBdr}`,
             }}
           >
@@ -371,7 +383,7 @@ export default function BalanceSheetReport() {
           <button
             onClick={handlePrint}
             className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all hover:opacity-90"
-            style={{ background: '#d97706', color: '#fff' }}
+            style={{ background: 'var(--status-warning)', color: 'var(--text-1)' }}
           >
             <Printer className="w-4 h-4" />
             طباعة PDF
@@ -407,12 +419,15 @@ export default function BalanceSheetReport() {
           className="flex items-start gap-3 rounded-xl p-4"
           style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.25)' }}
         >
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#dc2626' }} />
+          <AlertTriangle
+            className="w-4 h-4 shrink-0 mt-0.5"
+            style={{ color: 'var(--status-danger)' }}
+          />
           <div>
-            <p style={{ fontSize: 12, fontWeight: 800, color: '#dc2626' }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: 'var(--status-danger)' }}>
               الميزانية غير متوازنة — يوجد فرق: {formatCurrency(Math.abs(diff))}
             </p>
-            <p style={{ fontSize: 11, color: '#dc2626', opacity: 0.75, marginTop: 3 }}>
+            <p style={{ fontSize: 11, color: 'var(--status-danger)', opacity: 0.75, marginTop: 3 }}>
               إجمالي الأصول ({formatCurrency(data.assets.total)}) ≠ الخصوم + حقوق الملكية (
               {formatCurrency(data.total_liabilities_equity)})
             </p>
@@ -439,9 +454,21 @@ export default function BalanceSheetReport() {
         <div className="grid grid-cols-3 gap-4 text-center">
           {(
             [
-              { label: 'إجمالي الإيراد', val: data.pl_detail.total_revenue, clr: '#059669' },
-              { label: '(−) تكلفة البضاعة', val: data.pl_detail.total_cogs, clr: '#dc2626' },
-              { label: '(−) المصروفات', val: data.pl_detail.total_expenses, clr: '#dc2626' },
+              {
+                label: 'إجمالي الإيراد',
+                val: data.pl_detail.total_revenue,
+                clr: 'var(--status-success)',
+              },
+              {
+                label: '(−) تكلفة البضاعة',
+                val: data.pl_detail.total_cogs,
+                clr: 'var(--status-danger)',
+              },
+              {
+                label: '(−) المصروفات',
+                val: data.pl_detail.total_expenses,
+                clr: 'var(--status-danger)',
+              },
             ] as const
           ).map(({ label, val, clr }) => (
             <div key={label}>
@@ -467,10 +494,15 @@ export default function BalanceSheetReport() {
           className="flex items-start gap-3 rounded-xl p-4"
           style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)' }}
         >
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#d97706' }} />
+          <AlertTriangle
+            className="w-4 h-4 shrink-0 mt-0.5"
+            style={{ color: 'var(--status-warning)' }}
+          />
           <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#d97706' }}>تنبيه محاسبي</p>
-            <p style={{ fontSize: 11, color: '#d97706', opacity: 0.8, marginTop: 2 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--status-warning)' }}>
+              تنبيه محاسبي
+            </p>
+            <p style={{ fontSize: 11, color: 'var(--status-warning)', opacity: 0.8, marginTop: 2 }}>
               {data.validation.validation_message}
             </p>
           </div>

@@ -82,9 +82,9 @@ export function MobileNav({ visibleNav, isDark }: MobileNavProps) {
 
   if (!navVisible) return null;
 
-  const bg          = isDark ? 'hsla(225,28%,7%,0.97)' : 'rgba(255,255,255,0.97)';
-  const bdrTop      = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)';
-  const colActive   = '#f59e0b';
+  const bg = isDark ? 'hsla(225,28%,7%,0.97)' : 'rgba(255,255,255,0.97)';
+  const bdrTop = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)';
+  const colActive = 'var(--status-warning)';
   const colInactive = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)';
   const colSettings = isDark ? 'rgba(255,255,255,0.26)' : 'rgba(0,0,0,0.26)';
 
@@ -119,7 +119,9 @@ export function MobileNav({ visibleNav, isDark }: MobileNavProps) {
                 }}
               >
                 <Icon style={{ width: 20, height: 20 }} />
-                <span style={{ fontSize: 9.5, fontWeight: 700, lineHeight: 1, whiteSpace: 'nowrap' }}>
+                <span
+                  style={{ fontSize: 9.5, fontWeight: 700, lineHeight: 1, whiteSpace: 'nowrap' }}
+                >
                   {item.label}
                 </span>
               </div>

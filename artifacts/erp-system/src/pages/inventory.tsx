@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-  import { authFetch } from '@/lib/auth-fetch';
-  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-  import { useWarehouse } from '@/contexts/warehouse';
-  import { useAuth } from '@/contexts/auth';
-  import { hasPermission } from '@/lib/permissions';
-  import { formatCurrency } from '@/lib/format';
-  import { exportToExcelMulti } from '@/lib/inventory-export';
-  import {
-    Package,
+import { authFetch } from '@/lib/auth-fetch';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useWarehouse } from '@/contexts/warehouse';
+import { useAuth } from '@/contexts/auth';
+import { hasPermission } from '@/lib/permissions';
+import { formatCurrency } from '@/lib/format';
+import { exportToExcelMulti } from '@/lib/inventory-export';
+import {
+  Package,
   AlertTriangle,
   TrendingDown,
   ShieldX,
@@ -21,31 +21,24 @@ import { useState, useEffect } from 'react';
   ArrowRight,
   Shield,
   Archive,
-  } from 'lucide-react';
-  import { Link, useLocation, useSearch } from 'wouter';
-  import { useToast } from '@/hooks/use-toast';
-  import { safeArray } from '@/lib/safe-data';
-  import {
-    useGetSettingsWarehouses,
-  } from '@workspace/api-client-react';
-  import InventoryReport from './reports/InventoryReport';
+} from 'lucide-react';
+import { Link, useLocation, useSearch } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
+import { safeArray } from '@/lib/safe-data';
+import { useGetSettingsWarehouses } from '@workspace/api-client-react';
+import InventoryReport from './reports/InventoryReport';
 import ConsignmentPage from '@/pages/consignment';
 import ScrapInventory from '@/pages/scrap-inventory';
 
-  import { api } from './inventory/_shared';
-  import type {
-    AuditSummary,
-    LowStockItem,
-    WarehouseSummaryItem,
-    Tab,
-  } from './inventory/_shared';
-  import { TabBtn, TabBtnBadge, StatCard } from './inventory/_components';
-  import ReviewTab from './inventory/ReviewTab';
-  import CountTab from './inventory/count';
-    import AlertsTab from './inventory/AlertsTab';
-  import WarehouseSection from './inventory/WarehouseSection';
+import { api } from './inventory/_shared';
+import type { AuditSummary, LowStockItem, WarehouseSummaryItem, Tab } from './inventory/_shared';
+import { TabBtn, TabBtnBadge, StatCard } from './inventory/_components';
+import ReviewTab from './inventory/ReviewTab';
+import CountTab from './inventory/count';
+import AlertsTab from './inventory/AlertsTab';
+import WarehouseSection from './inventory/WarehouseSection';
 
-  /* ═══════════════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
  * Main Component
  * ═══════════════════════════════════════════════════════════════════════════ */
 export default function Inventory() {
@@ -63,7 +56,15 @@ export default function Inventory() {
   const [, navigate] = useLocation();
   const search = useSearch();
   const tabFromUrl = new URLSearchParams(search).get('tab') as Tab | null;
-  const VALID_TABS: Tab[] = ['overview','movements','count','alerts','reports','consignment','scrap'];
+  const VALID_TABS: Tab[] = [
+    'overview',
+    'movements',
+    'count',
+    'alerts',
+    'reports',
+    'consignment',
+    'scrap',
+  ];
   const [activeTab, setActiveTab] = useState<Tab>(
     tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'overview'
   );
@@ -84,7 +85,11 @@ export default function Inventory() {
   /* ── warehouse CRUD ── */
   const { data: warehousesRaw, isLoading: loadingWH } = useGetSettingsWarehouses();
   const warehouses = safeArray(warehousesRaw) as {
-    id: number; name: string; address: string | null; branch_id: number | null; created_at: string;
+    id: number;
+    name: string;
+    address: string | null;
+    branch_id: number | null;
+    created_at: string;
   }[];
   const createWH = useMutation({
     mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
@@ -111,7 +116,7 @@ export default function Inventory() {
   const { data: branchesRaw } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['/api/branches'],
     queryFn: async () => {
-      const r = await authFetch(api("/api/branches"));
+      const r = await authFetch(api('/api/branches'));
       if (!r.ok) return [];
       const j = await r.json();
       return Array.isArray(j) ? j : (j.branches ?? []);
@@ -162,22 +167,33 @@ export default function Inventory() {
 
   /* ── products list for export (T4) + warehouse detail modal (T2) ── */
   interface AuditProductLite {
-    id: number; name: string; sku: string | null; category: string | null;
-    actual_qty: number; total_value: number; low_stock_threshold: number | null;
-    cost_price: number; sale_price: number;
+    id: number;
+    name: string;
+    sku: string | null;
+    category: string | null;
+    actual_qty: number;
+    total_value: number;
+    low_stock_threshold: number | null;
+    cost_price: number;
+    sale_price: number;
   }
   const { data: overviewAudit } = useQuery<{ products: AuditProductLite[] }>({
     queryKey: ['inventory-audit-products'],
-    queryFn: () => authFetch(api('/api/inventory/audit')).then(r => r.json()),
+    queryFn: () => authFetch(api('/api/inventory/audit')).then((r) => r.json()),
     staleTime: 300_000,
     enabled: canViewInventory,
   });
   const allProducts = overviewAudit?.products ?? [];
 
   /* ── warehouse detail products (T2) ── */
-  const { data: whDetailAudit, isLoading: whDetailLoading } = useQuery<{ products: AuditProductLite[] }>({
+  const { data: whDetailAudit, isLoading: whDetailLoading } = useQuery<{
+    products: AuditProductLite[];
+  }>({
     queryKey: ['inventory-audit-products-wh', warehouseDetailId],
-    queryFn: () => authFetch(api(`/api/inventory/audit?warehouse_id=${warehouseDetailId!}`)).then(r => r.json()),
+    queryFn: () =>
+      authFetch(api(`/api/inventory/audit?warehouse_id=${warehouseDetailId!}`)).then((r) =>
+        r.json()
+      ),
     staleTime: 60_000,
     enabled: warehouseDetailId !== null,
   });
@@ -186,8 +202,8 @@ export default function Inventory() {
   /* ── overview export (T4) ── */
   async function handleOverviewExport() {
     const dateStr = new Date().toISOString().slice(0, 10);
-    const whRows = (whSummaryData?.warehouses ?? []).map(w => ({
-      name: warehouses.find(x => x.id === w.warehouse_id)?.name ?? String(w.warehouse_id),
+    const whRows = (whSummaryData?.warehouses ?? []).map((w) => ({
+      name: warehouses.find((x) => x.id === w.warehouse_id)?.name ?? String(w.warehouse_id),
       item_count: w.item_count,
       total_value: w.total_value,
       pct_of_total: w.pct_of_total,
@@ -202,12 +218,17 @@ export default function Inventory() {
             { header: 'البند', key: 'label', width: 28 },
             { header: 'القيمة', key: 'value', width: 22 },
           ],
-          rows: gs ? [
-            { label: 'إجمالي المنتجات', value: gs.total_products },
-            { label: 'قيمة المخزون الكلية', value: formatCurrency(grandTotal || gs.total_inventory_value) },
-            { label: 'تحت حد الطلب', value: gs.low_stock_count },
-            { label: 'نفد المخزون', value: gs.zero_stock_count },
-          ] : [],
+          rows: gs
+            ? [
+                { label: 'إجمالي المنتجات', value: gs.total_products },
+                {
+                  label: 'قيمة المخزون الكلية',
+                  value: formatCurrency(grandTotal || gs.total_inventory_value),
+                },
+                { label: 'تحت حد الطلب', value: gs.low_stock_count },
+                { label: 'نفد المخزون', value: gs.zero_stock_count },
+              ]
+            : [],
         },
         {
           sheetName: 'المخازن',
@@ -248,8 +269,8 @@ export default function Inventory() {
         dir="rtl"
       >
         <ShieldX className="w-16 h-16 text-red-400/50 mb-4" />
-        <h2 className="text-xl font-bold text-white/80 mb-2">غير مصرح بالوصول</h2>
-        <p className="text-white/40 text-sm">ليس لديك صلاحية لعرض صفحة المخزون</p>
+        <h2 className="text-xl font-bold text-ink/80 mb-2">غير مصرح بالوصول</h2>
+        <p className="text-ink/40 text-sm">ليس لديك صلاحية لعرض صفحة المخزون</p>
       </div>
     );
   }
@@ -258,7 +279,10 @@ export default function Inventory() {
     <div className="p-6 space-y-6 text-right" dir="rtl">
       {/* ══ تبويبات المخزون — في الأعلى دائماً ════════════════════════════════ */}
       <div>
-        <div className="flex border-b border-white/10 mb-6 overflow-x-auto" style={{scrollbarWidth:'none'}}>
+        <div
+          className="flex border-b border-line mb-6 overflow-x-auto"
+          style={{ scrollbarWidth: 'none' }}
+        >
           <TabBtn
             id="overview"
             label="نظرة عامة"
@@ -284,7 +308,7 @@ export default function Inventory() {
           )}
           {canAdjustInventory && (
             <Link to="/transfers">
-              <button className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 border-transparent text-white/50 hover:text-white/80 transition-colors -mb-px whitespace-nowrap">
+              <button className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 border-transparent text-ink/50 hover:text-ink/80 transition-colors -mb-px whitespace-nowrap">
                 <Truck className="w-4 h-4" />
                 التحويلات بين الفروع
               </button>
@@ -323,129 +347,128 @@ export default function Inventory() {
           />
         </div>
 
-      {/* ══ Overview tab: stats + warehouses + quick filters ══════════════════ */}
-      {activeTab === 'overview' && (
-        <>
-          {gs && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard
-                label="إجمالي المنتجات"
-                value={String(gs.total_products)}
-                icon={<Package className="w-5 h-5 text-violet-400" />}
-                color="text-white"
-                bg="bg-violet-500/10 border-violet-500/20"
-                onClick={() => setActiveTab('reports')}
-                hint="عرض تقارير المخزون"
-              />
-              <StatCard
-                label="قيمة المخزون الكلية"
-                value={formatCurrency(grandTotal || gs.total_inventory_value)}
-                icon={<BarChart3 className="w-5 h-5 text-emerald-400" />}
-                color="text-emerald-400"
-                bg="bg-emerald-500/10 border-emerald-500/20"
-                onClick={() => setActiveTab('reports')}
-                hint="عرض تقارير المخزون"
-              />
-              <StatCard
-                label="تحت حد الطلب"
-                value={String(gs.low_stock_count)}
-                icon={<AlertTriangle className="w-5 h-5 text-amber-400" />}
-                color={gs.low_stock_count > 0 ? 'text-amber-400' : 'text-white/40'}
-                bg={
-                  gs.low_stock_count > 0
-                    ? 'bg-amber-500/10 border-amber-500/20'
-                    : 'bg-white/5 border-white/5'
-                }
-                onClick={() => setActiveTab('alerts')}
-                hint="عرض تنبيهات المخزون"
-              />
-              <StatCard
-                label="نفد المخزون"
-                value={String(gs.zero_stock_count)}
-                icon={<TrendingDown className="w-5 h-5 text-red-400" />}
-                color={gs.zero_stock_count > 0 ? 'text-red-400' : 'text-white/40'}
-                bg={
-                  gs.zero_stock_count > 0
-                    ? 'bg-red-500/10 border-red-500/20'
-                    : 'bg-white/5 border-white/5'
-                }
-                onClick={() => setActiveTab('alerts')}
-                hint="عرض تنبيهات المخزون"
-              />
-            </div>
-          )}
-          {isAdmin && (
-            <div className="flex justify-end">
-              <Link
-                href={api("/audit-log")}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
-              >
-                <Shield className="w-3.5 h-3.5" /> سجل المراجعات الكامل
-              </Link>
-            </div>
-          )}
-          {gs && (gs.low_stock_count > 0 || gs.zero_stock_count > 0) && (
-            <div className="flex gap-2 flex-wrap">
-              <span className="text-white/40 text-xs flex items-center gap-1.5 me-1">
-                <Filter className="w-3.5 h-3.5" /> فلاتر سريعة:
-              </span>
-              {gs.zero_stock_count > 0 && (
-                <button
-                  onClick={() => handleQuickFilter('zero')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-all"
+        {/* ══ Overview tab: stats + warehouses + quick filters ══════════════════ */}
+        {activeTab === 'overview' && (
+          <>
+            {gs && (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                  label="إجمالي المنتجات"
+                  value={String(gs.total_products)}
+                  icon={<Package className="w-5 h-5 text-violet-400" />}
+                  color="text-ink"
+                  bg="bg-violet-500/10 border-violet-500/20"
+                  onClick={() => setActiveTab('reports')}
+                  hint="عرض تقارير المخزون"
+                />
+                <StatCard
+                  label="قيمة المخزون الكلية"
+                  value={formatCurrency(grandTotal || gs.total_inventory_value)}
+                  icon={<BarChart3 className="w-5 h-5 text-emerald-400" />}
+                  color="text-emerald-400"
+                  bg="bg-emerald-500/10 border-emerald-500/20"
+                  onClick={() => setActiveTab('reports')}
+                  hint="عرض تقارير المخزون"
+                />
+                <StatCard
+                  label="تحت حد الطلب"
+                  value={String(gs.low_stock_count)}
+                  icon={<AlertTriangle className="w-5 h-5 text-amber-400" />}
+                  color={gs.low_stock_count > 0 ? 'text-amber-400' : 'text-ink/40'}
+                  bg={
+                    gs.low_stock_count > 0
+                      ? 'bg-amber-500/10 border-amber-500/20'
+                      : 'bg-surface border-line'
+                  }
+                  onClick={() => setActiveTab('alerts')}
+                  hint="عرض تنبيهات المخزون"
+                />
+                <StatCard
+                  label="نفد المخزون"
+                  value={String(gs.zero_stock_count)}
+                  icon={<TrendingDown className="w-5 h-5 text-red-400" />}
+                  color={gs.zero_stock_count > 0 ? 'text-red-400' : 'text-ink/40'}
+                  bg={
+                    gs.zero_stock_count > 0
+                      ? 'bg-red-500/10 border-red-500/20'
+                      : 'bg-surface border-line'
+                  }
+                  onClick={() => setActiveTab('alerts')}
+                  hint="عرض تنبيهات المخزون"
+                />
+              </div>
+            )}
+            {isAdmin && (
+              <div className="flex justify-end">
+                <Link
+                  href={api('/audit-log')}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border border-line bg-surface text-ink/60 hover:bg-surface hover:text-ink transition-all"
                 >
-                  <TrendingDown className="w-3.5 h-3.5" /> عرض نافد المخزون ({gs.zero_stock_count})
-                  <ArrowRight className="w-3 h-3 opacity-50" />
-                </button>
-              )}
-              {gs.low_stock_count > 0 && (
-                <button
-                  onClick={() => handleQuickFilter('low')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5" /> عرض تحت حد الطلب ({gs.low_stock_count})
-                  <ArrowRight className="w-3 h-3 opacity-50" />
-                </button>
-              )}
-            </div>
-          )}
+                  <Shield className="w-3.5 h-3.5" /> سجل المراجعات الكامل
+                </Link>
+              </div>
+            )}
+            {gs && (gs.low_stock_count > 0 || gs.zero_stock_count > 0) && (
+              <div className="flex gap-2 flex-wrap">
+                <span className="text-ink/40 text-xs flex items-center gap-1.5 me-1">
+                  <Filter className="w-3.5 h-3.5" /> فلاتر سريعة:
+                </span>
+                {gs.zero_stock_count > 0 && (
+                  <button
+                    onClick={() => handleQuickFilter('zero')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-all"
+                  >
+                    <TrendingDown className="w-3.5 h-3.5" /> عرض نافد المخزون ({gs.zero_stock_count}
+                    )
+                    <ArrowRight className="w-3 h-3 opacity-50" />
+                  </button>
+                )}
+                {gs.low_stock_count > 0 && (
+                  <button
+                    onClick={() => handleQuickFilter('low')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" /> عرض تحت حد الطلب ({gs.low_stock_count}
+                    )
+                    <ArrowRight className="w-3 h-3 opacity-50" />
+                  </button>
+                )}
+              </div>
+            )}
 
-          <WarehouseSection
-            warehouses={warehouses}
-            branches={branches}
-            whSummaryMap={whSummaryMap}
-            grandTotal={grandTotal}
-            currentWarehouseIdNum={currentWarehouseIdNum}
-            isAdmin={isAdmin}
-            canAdjustInventory={canAdjustInventory}
-            loadingWH={loadingWH}
-            allProducts={allProducts}
-            whDetailProducts={whDetailProducts}
-            whDetailLoading={whDetailLoading}
-            setWarehouseId={setWarehouseId}
-            createWH={createWH}
-            deleteWH={deleteWH}
-            invalidateWH={invalidateWH}
-            qc={qc}
-            toast={toast}
-            handleOverviewExport={handleOverviewExport}
-            showAddWH={showAddWH}
-            setShowAddWH={setShowAddWH}
-            deleteWHTarget={deleteWHTarget}
-            setDeleteWHTarget={setDeleteWHTarget}
-            warehouseDetailId={warehouseDetailId}
-            setWarehouseDetailId={setWarehouseDetailId}
-            whForm={whForm}
-            setWhForm={setWhForm}
-          />
-
-        </>
-      )}
+            <WarehouseSection
+              warehouses={warehouses}
+              branches={branches}
+              whSummaryMap={whSummaryMap}
+              grandTotal={grandTotal}
+              currentWarehouseIdNum={currentWarehouseIdNum}
+              isAdmin={isAdmin}
+              canAdjustInventory={canAdjustInventory}
+              loadingWH={loadingWH}
+              allProducts={allProducts}
+              whDetailProducts={whDetailProducts}
+              whDetailLoading={whDetailLoading}
+              setWarehouseId={setWarehouseId}
+              createWH={createWH}
+              deleteWH={deleteWH}
+              invalidateWH={invalidateWH}
+              qc={qc}
+              toast={toast}
+              handleOverviewExport={handleOverviewExport}
+              showAddWH={showAddWH}
+              setShowAddWH={setShowAddWH}
+              deleteWHTarget={deleteWHTarget}
+              setDeleteWHTarget={setDeleteWHTarget}
+              warehouseDetailId={warehouseDetailId}
+              setWarehouseDetailId={setWarehouseDetailId}
+              whForm={whForm}
+              setWhForm={setWhForm}
+            />
+          </>
+        )}
 
         {activeTab === 'overview' && !gs && (
-          <div className="text-center py-20 text-white/30 text-sm">
-            جاري تحميل بيانات المخزون...
-          </div>
+          <div className="text-center py-20 text-ink/30 text-sm">جاري تحميل بيانات المخزون...</div>
         )}
         {activeTab === 'movements' && (
           <ReviewTab
@@ -479,4 +502,3 @@ export default function Inventory() {
     </div>
   );
 }
-  

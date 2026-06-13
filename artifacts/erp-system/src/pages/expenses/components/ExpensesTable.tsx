@@ -25,14 +25,14 @@ export function ExpensesTable({
   return (
     <div className="glass-panel rounded-3xl overflow-hidden">
       {hasFilter && filtered.length > 0 && (
-        <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
-          <span className="text-white/50 text-sm">{filtered.length} نتيجة</span>
+        <div className="px-5 py-3 border-b border-line bg-surface flex justify-between items-center">
+          <span className="text-ink/50 text-sm">{filtered.length} نتيجة</span>
           <span className="text-red-400 font-bold text-sm">{formatCurrency(filteredTotal)}</span>
         </div>
       )}
       <div className="overflow-x-auto">
-        <table className="w-full text-right text-white/80 whitespace-nowrap">
-          <thead className="bg-white/5 border-b border-white/10">
+        <table className="w-full text-right text-ink/80 whitespace-nowrap">
+          <thead className="bg-surface border-b border-line">
             <tr>
               <th className="p-4 font-medium">التصنيف</th>
               <th className="p-4 font-medium">المبلغ</th>
@@ -47,13 +47,13 @@ export function ExpensesTable({
               <TableSkeleton cols={6} rows={5} />
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-white/50">
+                <td colSpan={6} className="p-8 text-center text-ink/50">
                   {hasFilter ? 'لا توجد نتائج بهذه الفلاتر' : 'لا توجد مصروفات'}
                 </td>
               </tr>
             ) : (
               filtered.map((exp) => (
-                <tr key={exp.id} className="border-b border-white/5 erp-table-row">
+                <tr key={exp.id} className="border-b border-line erp-table-row">
                   <td className="p-4">
                     <span className="px-2.5 py-1 rounded-lg bg-orange-500/10 text-orange-300 text-xs font-bold border border-orange-500/20">
                       {exp.category}
@@ -61,19 +61,32 @@ export function ExpensesTable({
                   </td>
                   <td className="p-4 font-bold text-red-400">{formatCurrency(exp.amount)}</td>
                   <td className="p-4">
-                    {exp.safe_name
-                      ? <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 text-xs border border-blue-500/20">{exp.safe_name}</span>
-                      : <span className="text-white/30 text-sm">—</span>}
+                    {exp.safe_name ? (
+                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 text-xs border border-blue-500/20">
+                        {exp.safe_name}
+                      </span>
+                    ) : (
+                      <span className="text-ink/30 text-sm">—</span>
+                    )}
                   </td>
-                  <td className="p-4 text-white/70 text-sm max-w-[200px] truncate">{exp.description || '—'}</td>
-                  <td className="p-4 text-sm text-white/60">{formatDate(exp.created_at)}</td>
+                  <td className="p-4 text-ink/70 text-sm max-w-[200px] truncate">
+                    {exp.description || '—'}
+                  </td>
+                  <td className="p-4 text-sm text-ink/60">{formatDate(exp.created_at)}</td>
                   <td className="p-4">
                     <div className="flex items-center gap-2 justify-end">
-                      <button onClick={() => onViewDetail(exp)} className="btn-icon" title="عرض التفاصيل">
+                      <button
+                        onClick={() => onViewDetail(exp)}
+                        className="btn-icon"
+                        title="عرض التفاصيل"
+                      >
                         <Eye className="w-4 h-4 text-orange-400" />
                       </button>
                       {canDelete && (
-                        <button onClick={() => onDelete(exp.id)} className="btn-icon btn-icon-danger">
+                        <button
+                          onClick={() => onDelete(exp.id)}
+                          className="btn-icon btn-icon-danger"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}

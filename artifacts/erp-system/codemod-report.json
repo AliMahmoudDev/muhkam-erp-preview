@@ -1,0 +1,2153 @@
+{
+  "scanned": 430,
+  "modified": 211,
+  "unchanged": 219,
+  "totalReplacements": 5263,
+  "byPattern": {
+    "text-white→text-ink": 3353,
+    "border-white→border-line": 1023,
+    "bg-white/5→bg-surface": 335,
+    "bg-white/10→hover:bg-surface": 39,
+    "bg-white/[0.04]→bg-surface": 14,
+    "bg-white/[0.03]→bg-surface": 51,
+    "bg-white/[0.015]→bg-surface": 2,
+    "bg-white/5→hover:bg-surface": 23,
+    "bg-white/8→group-hover:bg-surface": 1,
+    "bg-white/10→bg-surface": 105,
+    "bg-white/20→hover:bg-raised": 33,
+    "bg-white/15→hover:bg-raised": 9,
+    "#0f172a→var(--bg-app)": 5,
+    "#111827→var(--bg-card)": 5,
+    "bg-white/[0.02]→bg-surface": 37,
+    "bg-white/[0.04]→hover:bg-surface": 5,
+    "bg-white/[0.08]→hover:bg-surface": 11,
+    "bg-white/[0.06]→hover:bg-surface": 2,
+    "bg-white/3→bg-surface": 62,
+    "bg-white/8→bg-surface": 44,
+    "bg-white/[0.02]→hover:bg-surface": 7,
+    "bg-white/[0.03]→hover:bg-surface": 4,
+    "bg-white/2→bg-surface": 8,
+    "bg-white/8→hover:bg-surface": 20,
+    "#1e293b→var(--bg-elevated)": 7,
+    "bg-white/[0.025]→bg-surface": 3,
+    "bg-white/[0.01]→bg-surface": 1,
+    "bg-white/12→hover:bg-surface": 2,
+    "bg-white/3→hover:bg-surface": 18,
+    "bg-white/1→bg-surface": 2,
+    "bg-white/15→bg-raised": 5,
+    "#0d1117→var(--bg-app)": 1,
+    "bg-white/30→bg-raised": 2,
+    "bg-white/6→bg-surface": 2,
+    "bg-white/4→bg-surface": 7,
+    "bg-white/4→hover:bg-surface": 5,
+    "bg-white/[0.07]→bg-surface": 2,
+    "bg-white/[0.06]→bg-surface": 1,
+    "bg-white/[0.055]→bg-surface": 2,
+    "bg-white/20→bg-raised": 1,
+    "bg-white/2→hover:bg-surface": 4
+  },
+  "modifiedFiles": [
+    {
+      "file": "pages/employees/EmployeeDetail.tsx",
+      "replacements": 175,
+      "breakdown": {
+        "text-white→text-ink": 100,
+        "border-white→border-line": 39,
+        "bg-white/[0.03]→hover:bg-surface": 2,
+        "bg-white/[0.03]→bg-surface": 1,
+        "bg-white/5→bg-surface": 25,
+        "bg-white/3→bg-surface": 2,
+        "bg-white/8→bg-surface": 4,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/15→hover:bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/returns.tsx",
+      "replacements": 99,
+      "breakdown": {
+        "text-white→text-ink": 69,
+        "border-white→border-line": 16,
+        "bg-white/3→bg-surface": 2,
+        "bg-white/8→bg-surface": 1,
+        "bg-white/12→hover:bg-surface": 1,
+        "bg-white/8→hover:bg-surface": 4,
+        "bg-white/4→bg-surface": 1,
+        "bg-white/5→bg-surface": 5
+      }
+    },
+    {
+      "file": "pages/inventory/ReviewTab.tsx",
+      "replacements": 95,
+      "breakdown": {
+        "text-white→text-ink": 57,
+        "border-white→border-line": 15,
+        "bg-white/[0.03]→bg-surface": 1,
+        "bg-white/10→bg-surface": 11,
+        "bg-white/20→hover:bg-raised": 2,
+        "bg-white/5→bg-surface": 9
+      }
+    },
+    {
+      "file": "pages/devices/DeviceDetails.tsx",
+      "replacements": 90,
+      "breakdown": {
+        "text-white→text-ink": 60,
+        "border-white→border-line": 15,
+        "bg-white/3→bg-surface": 10,
+        "bg-white/2→bg-surface": 2,
+        "bg-white/30→bg-raised": 1,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/transfers.tsx",
+      "replacements": 89,
+      "breakdown": {
+        "text-white→text-ink": 59,
+        "border-white→border-line": 19,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/8→bg-surface": 6,
+        "bg-white/4→bg-surface": 1,
+        "bg-white/3→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/delivery-gate/DeliveryGateForm.tsx",
+      "replacements": 78,
+      "breakdown": {
+        "text-white→text-ink": 42,
+        "border-white→border-line": 16,
+        "bg-white/[0.03]→bg-surface": 18,
+        "bg-white/5→hover:bg-surface": 1,
+        "bg-white/10→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/customers/CustomerFormModal.tsx",
+      "replacements": 78,
+      "breakdown": {
+        "text-white→text-ink": 53,
+        "border-white→border-line": 13,
+        "bg-white/10→bg-surface": 4,
+        "bg-white/15→hover:bg-raised": 2,
+        "bg-white/3→bg-surface": 2,
+        "bg-white/20→hover:bg-raised": 2,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/journal-entries.tsx",
+      "replacements": 70,
+      "breakdown": {
+        "text-white→text-ink": 39,
+        "border-white→border-line": 18,
+        "bg-white/5→bg-surface": 9,
+        "bg-white/10→bg-surface": 2,
+        "bg-white/20→hover:bg-raised": 2
+      }
+    },
+    {
+      "file": "pages/repairs.tsx",
+      "replacements": 69,
+      "breakdown": {
+        "text-white→text-ink": 42,
+        "border-white→border-line": 12,
+        "bg-white/[0.025]→bg-surface": 1,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/[0.04]→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/4→bg-surface": 1,
+        "bg-white/3→hover:bg-surface": 2,
+        "bg-white/10→bg-surface": 4,
+        "bg-white/4→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/QualityCheckModal.tsx",
+      "replacements": 68,
+      "breakdown": {
+        "text-white→text-ink": 37,
+        "border-white→border-line": 21,
+        "bg-white/[0.02]→bg-surface": 3,
+        "bg-white/[0.04]→bg-surface": 2,
+        "bg-white/[0.08]→hover:bg-surface": 2,
+        "bg-white/[0.03]→bg-surface": 2,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/ready-for-delivery/QcPhase.tsx",
+      "replacements": 68,
+      "breakdown": {
+        "text-white→text-ink": 35,
+        "border-white→border-line": 19,
+        "bg-white/[0.02]→bg-surface": 4,
+        "bg-white/[0.04]→bg-surface": 4,
+        "bg-white/[0.08]→hover:bg-surface": 4,
+        "bg-white/[0.03]→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/repairs/ChecklistComponents.tsx",
+      "replacements": 68,
+      "breakdown": {
+        "text-white→text-ink": 35,
+        "border-white→border-line": 19,
+        "bg-white/5→bg-surface": 6,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/8→hover:bg-surface": 1,
+        "bg-white/3→hover:bg-surface": 3,
+        "bg-white/4→hover:bg-surface": 1,
+        "bg-white/20→bg-raised": 1,
+        "bg-white/8→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/inventory/WarehouseSection.tsx",
+      "replacements": 65,
+      "breakdown": {
+        "text-white→text-ink": 36,
+        "border-white→border-line": 13,
+        "bg-white/5→bg-surface": 6,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/10→bg-surface": 5,
+        "bg-white/20→hover:bg-raised": 4
+      }
+    },
+    {
+      "file": "pages/settings/currency-tab.tsx",
+      "replacements": 65,
+      "breakdown": {
+        "text-white→text-ink": 44,
+        "border-white→border-line": 19,
+        "bg-white/8→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/payroll.tsx",
+      "replacements": 64,
+      "breakdown": {
+        "text-white→text-ink": 49,
+        "border-white→border-line": 11,
+        "bg-white/4→bg-surface": 1,
+        "bg-white/8→hover:bg-surface": 1,
+        "bg-white/4→hover:bg-surface": 1,
+        "bg-white/3→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/fixed-assets/components/AssetDetailModal.tsx",
+      "replacements": 61,
+      "breakdown": {
+        "text-white→text-ink": 38,
+        "border-white→border-line": 10,
+        "bg-white/5→bg-surface": 7,
+        "bg-white/10→bg-surface": 3,
+        "bg-white/20→hover:bg-raised": 2,
+        "bg-white/8→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "components/repair-settings/DashboardCardsTab.tsx",
+      "replacements": 59,
+      "breakdown": {
+        "text-white→text-ink": 32,
+        "border-white→border-line": 13,
+        "bg-white/[0.025]→bg-surface": 1,
+        "bg-white/[0.02]→bg-surface": 3,
+        "bg-white/8→hover:bg-surface": 3,
+        "bg-white/8→bg-surface": 1,
+        "bg-white/5→bg-surface": 4,
+        "bg-white/10→hover:bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/employees/EmployeeSalaryModal.tsx",
+      "replacements": 59,
+      "breakdown": {
+        "text-white→text-ink": 38,
+        "border-white→border-line": 17,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/PreDeliveryModal.tsx",
+      "replacements": 58,
+      "breakdown": {
+        "text-white→text-ink": 33,
+        "border-white→border-line": 14,
+        "bg-white/[0.02]→bg-surface": 2,
+        "bg-white/[0.04]→hover:bg-surface": 2,
+        "bg-white/[0.04]→bg-surface": 5,
+        "bg-white/[0.08]→hover:bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/branches.tsx",
+      "replacements": 58,
+      "breakdown": {
+        "text-white→text-ink": 51,
+        "border-white→border-line": 2,
+        "bg-white/15→bg-raised": 1,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/3→hover:bg-surface": 1,
+        "bg-white/8→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/ready-for-delivery/BillingPhase.tsx",
+      "replacements": 57,
+      "breakdown": {
+        "text-white→text-ink": 31,
+        "border-white→border-line": 15,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/[0.015]→bg-surface": 1,
+        "bg-white/[0.03]→bg-surface": 6,
+        "bg-white/[0.06]→hover:bg-surface": 2,
+        "bg-white/10→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/customers/LedgerFilters.tsx",
+      "replacements": 56,
+      "breakdown": {
+        "text-white→text-ink": 42,
+        "border-white→border-line": 10,
+        "bg-white/5→bg-surface": 4
+      }
+    },
+    {
+      "file": "pages/reports/VouchersHistoryReport.tsx",
+      "replacements": 56,
+      "breakdown": {
+        "text-white→text-ink": 38,
+        "border-white→border-line": 8,
+        "bg-white/10→bg-surface": 3,
+        "bg-white/10→hover:bg-surface": 4,
+        "bg-white/5→bg-surface": 3
+      }
+    },
+    {
+      "file": "pages/audit-log.tsx",
+      "replacements": 54,
+      "breakdown": {
+        "text-white→text-ink": 28,
+        "border-white→border-line": 11,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/8→bg-surface": 7,
+        "bg-white/12→hover:bg-surface": 1,
+        "bg-white/3→bg-surface": 3,
+        "bg-white/3→hover:bg-surface": 1,
+        "bg-white/1→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/devices/DeviceList.tsx",
+      "replacements": 53,
+      "breakdown": {
+        "text-white→text-ink": 37,
+        "border-white→border-line": 10,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/4→bg-surface": 1,
+        "bg-white/3→hover:bg-surface": 1,
+        "bg-white/1→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/purchases/PurchaseFormModal.tsx",
+      "replacements": 53,
+      "breakdown": {
+        "text-white→text-ink": 32,
+        "border-white→border-line": 8,
+        "bg-white/[0.07]→bg-surface": 2,
+        "bg-white/[0.06]→bg-surface": 1,
+        "bg-white/[0.055]→bg-surface": 2,
+        "bg-white/8→bg-surface": 1,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/10→hover:bg-surface": 3,
+        "bg-white/10→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/treasury/SafeModals.tsx",
+      "replacements": 53,
+      "breakdown": {
+        "text-white→text-ink": 25,
+        "border-white→border-line": 15,
+        "bg-white/5→hover:bg-surface": 2,
+        "bg-white/5→bg-surface": 8,
+        "bg-white/10→hover:bg-surface": 3
+      }
+    },
+    {
+      "file": "components/repair-settings/ChecklistTab.tsx",
+      "replacements": 52,
+      "breakdown": {
+        "text-white→text-ink": 36,
+        "border-white→border-line": 7,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/[0.04]→hover:bg-surface": 1,
+        "bg-white/[0.03]→hover:bg-surface": 1,
+        "bg-white/2→bg-surface": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/8→hover:bg-surface": 1,
+        "bg-white/3→bg-surface": 1,
+        "#1e293b→var(--bg-elevated)": 1
+      }
+    },
+    {
+      "file": "pages/inventory/TransferTab.tsx",
+      "replacements": 50,
+      "breakdown": {
+        "text-white→text-ink": 30,
+        "border-white→border-line": 10,
+        "bg-white/10→bg-surface": 7,
+        "bg-white/3→bg-surface": 2,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/repair-track.tsx",
+      "replacements": 50,
+      "breakdown": {
+        "text-white→text-ink": 28,
+        "border-white→border-line": 12,
+        "bg-white/[0.03]→bg-surface": 5,
+        "bg-white/[0.04]→bg-surface": 1,
+        "bg-white/[0.02]→bg-surface": 3,
+        "bg-white/30→bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/devices/DeviceFormModal.tsx",
+      "replacements": 48,
+      "breakdown": {
+        "text-white→text-ink": 31,
+        "border-white→border-line": 10,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/8→bg-surface": 1,
+        "bg-white/6→bg-surface": 2,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/3→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/repairs/NewJobForm.tsx",
+      "replacements": 47,
+      "breakdown": {
+        "text-white→text-ink": 32,
+        "border-white→border-line": 12,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/FinalInvoiceModal.tsx",
+      "replacements": 46,
+      "breakdown": {
+        "text-white→text-ink": 33,
+        "border-white→border-line": 9,
+        "bg-white/[0.03]→bg-surface": 3,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/sales/returns/InvoiceReturnForm.tsx",
+      "replacements": 46,
+      "breakdown": {
+        "text-white→text-ink": 27,
+        "border-white→border-line": 8,
+        "bg-white/10→bg-surface": 4,
+        "bg-white/20→hover:bg-raised": 3,
+        "bg-white/3→bg-surface": 2,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/income.tsx",
+      "replacements": 45,
+      "breakdown": {
+        "text-white→text-ink": 33,
+        "border-white→border-line": 5,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/10→bg-surface": 2,
+        "bg-white/15→hover:bg-raised": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/settings/backup/BackupServerTab.tsx",
+      "replacements": 45,
+      "breakdown": {
+        "text-white→text-ink": 25,
+        "border-white→border-line": 8,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/8→bg-surface": 1,
+        "bg-white/3→bg-surface": 4,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/2→bg-surface": 1,
+        "bg-white/8→hover:bg-surface": 1,
+        "bg-white/2→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/purchases/PurchaseReturnsPanel.tsx",
+      "replacements": 44,
+      "breakdown": {
+        "text-white→text-ink": 26,
+        "border-white→border-line": 8,
+        "bg-white/10→bg-surface": 4,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 2
+      }
+    },
+    {
+      "file": "pages/reports/inventory/ReportTable.tsx",
+      "replacements": 43,
+      "breakdown": {
+        "text-white→text-ink": 26,
+        "border-white→border-line": 8,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/3→hover:bg-surface": 1,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/10→bg-surface": 2,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/4→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/fiscal-years.tsx",
+      "replacements": 42,
+      "breakdown": {
+        "text-white→text-ink": 23,
+        "border-white→border-line": 7,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/8→bg-surface": 7,
+        "bg-white/15→hover:bg-raised": 2,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/10→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/reports/SalesAnalysisReport.tsx",
+      "replacements": 42,
+      "breakdown": {
+        "text-white→text-ink": 29,
+        "border-white→border-line": 7,
+        "bg-white/5→bg-surface": 6
+      }
+    },
+    {
+      "file": "pages/sales/SaleDetailModal.tsx",
+      "replacements": 42,
+      "breakdown": {
+        "text-white→text-ink": 28,
+        "border-white→border-line": 9,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/5→bg-surface": 3
+      }
+    },
+    {
+      "file": "pages/budgets.tsx",
+      "replacements": 41,
+      "breakdown": {
+        "text-white→text-ink": 23,
+        "border-white→border-line": 8,
+        "bg-white/[0.02]→hover:bg-surface": 1,
+        "bg-white/[0.08]→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 8
+      }
+    },
+    {
+      "file": "pages/cost-centers.tsx",
+      "replacements": 41,
+      "breakdown": {
+        "text-white→text-ink": 22,
+        "border-white→border-line": 8,
+        "bg-white/[0.08]→hover:bg-surface": 1,
+        "bg-white/[0.02]→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 8,
+        "bg-white/10→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/vouchers.tsx",
+      "replacements": 41,
+      "breakdown": {
+        "text-white→text-ink": 29,
+        "border-white→border-line": 6,
+        "bg-white/10→bg-surface": 3,
+        "bg-white/5→bg-surface": 3
+      }
+    },
+    {
+      "file": "pages/settings/data/ImportSection.tsx",
+      "replacements": 40,
+      "breakdown": {
+        "text-white→text-ink": 19,
+        "border-white→border-line": 13,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/3→bg-surface": 3,
+        "bg-white/2→hover:bg-surface": 1,
+        "bg-white/3→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/bank-reconciliation.tsx",
+      "replacements": 39,
+      "breakdown": {
+        "text-white→text-ink": 21,
+        "border-white→border-line": 8,
+        "bg-white/[0.08]→hover:bg-surface": 1,
+        "bg-white/[0.02]→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 8
+      }
+    },
+    {
+      "file": "components/modals/DeliveryGateModal.tsx",
+      "replacements": 38,
+      "breakdown": {
+        "text-white→text-ink": 27,
+        "border-white→border-line": 7,
+        "bg-white/[0.03]→bg-surface": 3,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/attendance/AttendanceDeductionModals.tsx",
+      "replacements": 38,
+      "breakdown": {
+        "text-white→text-ink": 26,
+        "border-white→border-line": 9,
+        "bg-white/5→bg-surface": 3
+      }
+    },
+    {
+      "file": "pages/purchases/PurchaseDetails.tsx",
+      "replacements": 38,
+      "breakdown": {
+        "text-white→text-ink": 25,
+        "border-white→border-line": 7,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/3→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "components/repair-settings/ServiceTypesTab.tsx",
+      "replacements": 35,
+      "breakdown": {
+        "text-white→text-ink": 22,
+        "border-white→border-line": 7,
+        "bg-white/[0.03]→bg-surface": 1,
+        "bg-white/[0.025]→bg-surface": 1,
+        "bg-white/[0.04]→hover:bg-surface": 1,
+        "bg-white/[0.01]→bg-surface": 1,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/inventory/alerts/components/ReorderPanel.tsx",
+      "replacements": 34,
+      "breakdown": {
+        "text-white→text-ink": 23,
+        "border-white→border-line": 5,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/10→hover:bg-surface": 2
+      }
+    },
+    {
+      "file": "components/modals/DeliveryReceiptModal.tsx",
+      "replacements": 33,
+      "breakdown": {
+        "text-white→text-ink": 25,
+        "border-white→border-line": 7,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/accounts.tsx",
+      "replacements": 33,
+      "breakdown": {
+        "text-white→text-ink": 22,
+        "border-white→border-line": 6,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/employees/sales-targets-tab.tsx",
+      "replacements": 33,
+      "breakdown": {
+        "text-white→text-ink": 20,
+        "border-white→border-line": 5,
+        "bg-white/[0.03]→bg-surface": 1,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/10→hover:bg-surface": 2,
+        "bg-white/8→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/fixed-assets.tsx",
+      "replacements": 33,
+      "breakdown": {
+        "text-white→text-ink": 23,
+        "border-white→border-line": 6,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/accruals.tsx",
+      "replacements": 32,
+      "breakdown": {
+        "text-white→text-ink": 11,
+        "border-white→border-line": 9,
+        "bg-white/[0.02]→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 10,
+        "bg-white/10→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/users-tab.tsx",
+      "replacements": 32,
+      "breakdown": {
+        "text-white→text-ink": 20,
+        "border-white→border-line": 6,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/5→bg-surface": 4,
+        "bg-white/15→bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/reports/TrialBalanceReport.tsx",
+      "replacements": 31,
+      "breakdown": {
+        "text-white→text-ink": 14,
+        "border-white→border-line": 7,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/8→bg-surface": 2,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/15→hover:bg-raised": 1,
+        "bg-white/3→bg-surface": 2,
+        "bg-white/3→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/financial-lock-tab.tsx",
+      "replacements": 31,
+      "breakdown": {
+        "text-white→text-ink": 22,
+        "border-white→border-line": 7,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/warranty.tsx",
+      "replacements": 31,
+      "breakdown": {
+        "text-white→text-ink": 25,
+        "border-white→border-line": 6
+      }
+    },
+    {
+      "file": "components/RepairPipeline.tsx",
+      "replacements": 30,
+      "breakdown": {
+        "text-white→text-ink": 17,
+        "border-white→border-line": 7,
+        "bg-white/[0.04]→bg-surface": 1,
+        "bg-white/[0.03]→bg-surface": 1,
+        "bg-white/[0.015]→bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 2,
+        "bg-white/8→group-hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/RepairReturnModal.tsx",
+      "replacements": 30,
+      "breakdown": {
+        "text-white→text-ink": 28,
+        "border-white→border-line": 2
+      }
+    },
+    {
+      "file": "pages/consignment.tsx",
+      "replacements": 29,
+      "breakdown": {
+        "text-white→text-ink": 21,
+        "border-white→border-line": 5,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/inventory/alerts/components/POModal.tsx",
+      "replacements": 29,
+      "breakdown": {
+        "text-white→text-ink": 18,
+        "border-white→border-line": 5,
+        "bg-white/10→bg-surface": 3,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/20→hover:bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/reports/PurchasesInvoicesReport.tsx",
+      "replacements": 29,
+      "breakdown": {
+        "text-white→text-ink": 22,
+        "border-white→border-line": 5,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/reports/SalesInvoicesReport.tsx",
+      "replacements": 29,
+      "breakdown": {
+        "text-white→text-ink": 22,
+        "border-white→border-line": 5,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "components/repair-settings/TechniciansTab.tsx",
+      "replacements": 28,
+      "breakdown": {
+        "text-white→text-ink": 19,
+        "border-white→border-line": 6,
+        "bg-white/[0.02]→hover:bg-surface": 1,
+        "bg-white/8→bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/customers/CustomerClassifications.tsx",
+      "replacements": 28,
+      "breakdown": {
+        "text-white→text-ink": 17,
+        "border-white→border-line": 6,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/2→bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/customers/LedgerTable.tsx",
+      "replacements": 28,
+      "breakdown": {
+        "text-white→text-ink": 18,
+        "border-white→border-line": 6,
+        "bg-white/5→bg-surface": 4
+      }
+    },
+    {
+      "file": "pages/devices/index.tsx",
+      "replacements": 28,
+      "breakdown": {
+        "text-white→text-ink": 21,
+        "border-white→border-line": 5,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/8→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/products/ProductsTab.tsx",
+      "replacements": 28,
+      "breakdown": {
+        "text-white→text-ink": 23,
+        "border-white→border-line": 4,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/backup/BackupLocalTab.tsx",
+      "replacements": 28,
+      "breakdown": {
+        "text-white→text-ink": 18,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 5,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/10→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/devices/SellModal.tsx",
+      "replacements": 27,
+      "breakdown": {
+        "text-white→text-ink": 18,
+        "border-white→border-line": 6,
+        "bg-white/4→bg-surface": 1,
+        "bg-white/3→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/inventory/count/CountItemsTable.tsx",
+      "replacements": 27,
+      "breakdown": {
+        "text-white→text-ink": 18,
+        "border-white→border-line": 5,
+        "bg-white/[0.03]→bg-surface": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/10→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/repairs/DashboardCardsSection.tsx",
+      "replacements": 27,
+      "breakdown": {
+        "text-white→text-ink": 17,
+        "border-white→border-line": 5,
+        "bg-white/[0.02]→bg-surface": 3,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "components/modals/ShippingCostModal.tsx",
+      "replacements": 26,
+      "breakdown": {
+        "text-white→text-ink": 15,
+        "border-white→border-line": 7,
+        "bg-white/[0.03]→bg-surface": 3,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/reports/CustomerStatementReport.tsx",
+      "replacements": 26,
+      "breakdown": {
+        "text-white→text-ink": 18,
+        "border-white→border-line": 7,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/reports/HealthCheckReport.tsx",
+      "replacements": 26,
+      "breakdown": {
+        "text-white→text-ink": 18,
+        "border-white→border-line": 3,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/fixed-assets/components/AddAssetModal.tsx",
+      "replacements": 25,
+      "breakdown": {
+        "text-white→text-ink": 21,
+        "border-white→border-line": 2,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/inventory/count/CountSessionForm.tsx",
+      "replacements": 25,
+      "breakdown": {
+        "text-white→text-ink": 15,
+        "border-white→border-line": 5,
+        "bg-white/10→bg-surface": 5
+      }
+    },
+    {
+      "file": "pages/reports/ProductProfitReport.tsx",
+      "replacements": 25,
+      "breakdown": {
+        "text-white→text-ink": 17,
+        "border-white→border-line": 6,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/settings/index.tsx",
+      "replacements": 25,
+      "breakdown": {
+        "text-white→text-ink": 15,
+        "border-white→border-line": 5,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/3→bg-surface": 2,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/customers/LedgerSummary.tsx",
+      "replacements": 24,
+      "breakdown": {
+        "text-white→text-ink": 20,
+        "border-white→border-line": 2,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/inventory/alerts/components/AlertStatsCards.tsx",
+      "replacements": 24,
+      "breakdown": {
+        "text-white→text-ink": 14,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 6,
+        "bg-white/8→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/price-lists/PriceListFormModal.tsx",
+      "replacements": 24,
+      "breakdown": {
+        "text-white→text-ink": 15,
+        "border-white→border-line": 6,
+        "bg-white/15→bg-raised": 1,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/repairs/JobDetail.tsx",
+      "replacements": 24,
+      "breakdown": {
+        "text-white→text-ink": 16,
+        "border-white→border-line": 3,
+        "bg-white/[0.02]→bg-surface": 2,
+        "bg-white/3→hover:bg-surface": 3
+      }
+    },
+    {
+      "file": "pages/reports/CashFlowIndirectReport.tsx",
+      "replacements": 24,
+      "breakdown": {
+        "text-white→text-ink": 14,
+        "border-white→border-line": 6,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/8→bg-surface": 1,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/sales/returns/InvoiceSearchModal.tsx",
+      "replacements": 24,
+      "breakdown": {
+        "text-white→text-ink": 16,
+        "border-white→border-line": 4,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/treasury.tsx",
+      "replacements": 24,
+      "breakdown": {
+        "text-white→text-ink": 15,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 6
+      }
+    },
+    {
+      "file": "components/product-form-modal.tsx",
+      "replacements": 23,
+      "breakdown": {
+        "text-white→text-ink": 17,
+        "border-white→border-line": 3,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/expenses/components/ExpenseReportsModal.tsx",
+      "replacements": 23,
+      "breakdown": {
+        "text-white→text-ink": 12,
+        "border-white→border-line": 6,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/2→bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/inventory/count/PartialProductSelector.tsx",
+      "replacements": 23,
+      "breakdown": {
+        "text-white→text-ink": 16,
+        "border-white→border-line": 4,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/TransferModal.tsx",
+      "replacements": 22,
+      "breakdown": {
+        "text-white→text-ink": 19,
+        "border-white→border-line": 2,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/inventory/AlertsTab.tsx",
+      "replacements": 22,
+      "breakdown": {
+        "text-white→text-ink": 10,
+        "border-white→border-line": 4,
+        "bg-white/5→bg-surface": 5,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/repairs/JobServicesSection.tsx",
+      "replacements": 22,
+      "breakdown": {
+        "text-white→text-ink": 15,
+        "border-white→border-line": 4,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/3→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/reports/VatReport.tsx",
+      "replacements": 22,
+      "breakdown": {
+        "text-white→text-ink": 13,
+        "border-white→border-line": 5,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/8→bg-surface": 2,
+        "bg-white/3→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/CloseSafeModal.tsx",
+      "replacements": 21,
+      "breakdown": {
+        "text-white→text-ink": 16,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "components/modals/WarrantyModal.tsx",
+      "replacements": 21,
+      "breakdown": {
+        "text-white→text-ink": 21
+      }
+    },
+    {
+      "file": "components/onboarding.tsx",
+      "replacements": 21,
+      "breakdown": {
+        "text-white→text-ink": 10,
+        "border-white→border-line": 4,
+        "bg-white/10→bg-surface": 2,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/8→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/attendance/AttendanceShiftsTab.tsx",
+      "replacements": 21,
+      "breakdown": {
+        "text-white→text-ink": 13,
+        "border-white→border-line": 5,
+        "bg-white/5→bg-surface": 3
+      }
+    },
+    {
+      "file": "pages/inventory/alerts/components/AlertsTable.tsx",
+      "replacements": 21,
+      "breakdown": {
+        "text-white→text-ink": 16,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/reports/DailyProfitReport.tsx",
+      "replacements": 21,
+      "breakdown": {
+        "text-white→text-ink": 14,
+        "border-white→border-line": 5,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "components/repair-settings/AccessoriesTab.tsx",
+      "replacements": 20,
+      "breakdown": {
+        "text-white→text-ink": 11,
+        "border-white→border-line": 5,
+        "bg-white/[0.02]→bg-surface": 2,
+        "bg-white/[0.02]→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/repair-settings/DeviceModelsTab.tsx",
+      "replacements": 20,
+      "breakdown": {
+        "text-white→text-ink": 12,
+        "border-white→border-line": 5,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/bad-debts.tsx",
+      "replacements": 20,
+      "breakdown": {
+        "text-white→text-ink": 14,
+        "border-white→border-line": 5,
+        "bg-white/3→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/customers/CustomerList.tsx",
+      "replacements": 20,
+      "breakdown": {
+        "text-white→text-ink": 13,
+        "border-white→border-line": 4,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/price-lists/PriceListCard.tsx",
+      "replacements": 20,
+      "breakdown": {
+        "text-white→text-ink": 15,
+        "border-white→border-line": 2,
+        "bg-white/3→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/2→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/scrap-inventory.tsx",
+      "replacements": 20,
+      "breakdown": {
+        "text-white→text-ink": 13,
+        "border-white→border-line": 6,
+        "bg-white/3→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/customers/index.tsx",
+      "replacements": 19,
+      "breakdown": {
+        "text-white→text-ink": 15,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/inventory.tsx",
+      "replacements": 19,
+      "breakdown": {
+        "text-white→text-ink": 11,
+        "border-white→border-line": 4,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/reports/profit-loss/FilterPanel.tsx",
+      "replacements": 19,
+      "breakdown": {
+        "text-white→text-ink": 10,
+        "border-white→border-line": 5,
+        "bg-white/4→hover:bg-surface": 2,
+        "bg-white/8→bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/backup/BackupRestoreModal.tsx",
+      "replacements": 19,
+      "breakdown": {
+        "text-white→text-ink": 13,
+        "border-white→border-line": 3,
+        "bg-white/8→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/settings/vat-tab.tsx",
+      "replacements": 19,
+      "breakdown": {
+        "text-white→text-ink": 14,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/3→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/repair-settings/WhatsAppTemplatesTab.tsx",
+      "replacements": 18,
+      "breakdown": {
+        "text-white→text-ink": 7,
+        "border-white→border-line": 7,
+        "bg-white/[0.02]→bg-surface": 3,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/customers/CustomerLedger.tsx",
+      "replacements": 17,
+      "breakdown": {
+        "text-white→text-ink": 10,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/employees/EmployeeForm.tsx",
+      "replacements": 17,
+      "breakdown": {
+        "text-white→text-ink": 11,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 3
+      }
+    },
+    {
+      "file": "pages/employees/advance-settings-tab.tsx",
+      "replacements": 17,
+      "breakdown": {
+        "text-white→text-ink": 10,
+        "border-white→border-line": 4,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/15→bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/repairs/RepairExtensions.tsx",
+      "replacements": 17,
+      "breakdown": {
+        "text-white→text-ink": 14,
+        "border-white→border-line": 2,
+        "bg-white/[0.03]→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/sales/returns/StandaloneReturnForm.tsx",
+      "replacements": 17,
+      "breakdown": {
+        "text-white→text-ink": 12,
+        "border-white→border-line": 2,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/RepairSettingsModal.tsx",
+      "replacements": 16,
+      "breakdown": {
+        "text-white→text-ink": 16
+      }
+    },
+    {
+      "file": "pages/attendance/AttendanceFormModal.tsx",
+      "replacements": 16,
+      "breakdown": {
+        "text-white→text-ink": 10,
+        "border-white→border-line": 6
+      }
+    },
+    {
+      "file": "pages/price-lists/ProductPickerModal.tsx",
+      "replacements": 16,
+      "breakdown": {
+        "text-white→text-ink": 9,
+        "border-white→border-line": 5,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/products/CategoriesTab.tsx",
+      "replacements": 16,
+      "breakdown": {
+        "text-white→text-ink": 8,
+        "border-white→border-line": 4,
+        "bg-white/[0.02]→hover:bg-surface": 1,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/_shared.tsx",
+      "replacements": 16,
+      "breakdown": {
+        "text-white→text-ink": 9,
+        "border-white→border-line": 2,
+        "bg-white/5→bg-surface": 5
+      }
+    },
+    {
+      "file": "pages/settings/invoice-tab.tsx",
+      "replacements": 16,
+      "breakdown": {
+        "text-white→text-ink": 10,
+        "border-white→border-line": 4,
+        "bg-white/[0.03]→bg-surface": 1,
+        "bg-white/15→bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/price-lists/index.tsx",
+      "replacements": 15,
+      "breakdown": {
+        "text-white→text-ink": 10,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/settings/backup/index.tsx",
+      "replacements": 15,
+      "breakdown": {
+        "text-white→text-ink": 8,
+        "border-white→border-line": 4,
+        "bg-white/2→bg-surface": 1,
+        "bg-white/3→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/PaginationBar.tsx",
+      "replacements": 14,
+      "breakdown": {
+        "text-white→text-ink": 4,
+        "border-white→border-line": 4,
+        "bg-white/5→bg-surface": 3,
+        "bg-white/10→hover:bg-surface": 3
+      }
+    },
+    {
+      "file": "pages/expenses/components/ExpenseDetailModal.tsx",
+      "replacements": 14,
+      "breakdown": {
+        "text-white→text-ink": 9,
+        "border-white→border-line": 2,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/15→hover:bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/sales/returns/SalesReturnsList.tsx",
+      "replacements": 14,
+      "breakdown": {
+        "text-white→text-ink": 10,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/backup/BackupModSelectModal.tsx",
+      "replacements": 14,
+      "breakdown": {
+        "text-white→text-ink": 9,
+        "border-white→border-line": 3,
+        "bg-white/8→hover:bg-surface": 1,
+        "bg-white/3→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/ReadyForDeliveryModal.tsx",
+      "replacements": 13,
+      "breakdown": {
+        "text-white→text-ink": 8,
+        "border-white→border-line": 2,
+        "bg-white/10→bg-surface": 2,
+        "bg-white/5→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/devices/ReturnModal.tsx",
+      "replacements": 13,
+      "breakdown": {
+        "text-white→text-ink": 11,
+        "border-white→border-line": 2
+      }
+    },
+    {
+      "file": "pages/purchases/PurchaseList.tsx",
+      "replacements": 13,
+      "breakdown": {
+        "text-white→text-ink": 8,
+        "border-white→border-line": 2,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/expenses/components/AddExpenseModal.tsx",
+      "replacements": 12,
+      "breakdown": {
+        "text-white→text-ink": 9,
+        "bg-white/10→hover:bg-surface": 1,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/20→hover:bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/inventory/count/CountHistory.tsx",
+      "replacements": 12,
+      "breakdown": {
+        "text-white→text-ink": 8,
+        "border-white→border-line": 2,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/reports/TopReportsTab.tsx",
+      "replacements": 12,
+      "breakdown": {
+        "text-white→text-ink": 8,
+        "border-white→border-line": 3,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/data/ActivityLogSection.tsx",
+      "replacements": 12,
+      "breakdown": {
+        "text-white→text-ink": 8,
+        "border-white→border-line": 2,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/2→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/opening-balance/components/OBCustomersTab.tsx",
+      "replacements": 12,
+      "breakdown": {
+        "text-white→text-ink": 6,
+        "border-white→border-line": 4,
+        "bg-white/8→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/opening-balance/components/OBProductsTab.tsx",
+      "replacements": 12,
+      "breakdown": {
+        "text-white→text-ink": 6,
+        "border-white→border-line": 4,
+        "bg-white/8→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/opening-balance/components/OBSuppliersTab.tsx",
+      "replacements": 12,
+      "breakdown": {
+        "text-white→text-ink": 6,
+        "border-white→border-line": 4,
+        "bg-white/8→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/SplitPaymentModal.tsx",
+      "replacements": 11,
+      "breakdown": {
+        "text-white→text-ink": 7,
+        "border-white→border-line": 2,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/expenses/components/ExpensesTable.tsx",
+      "replacements": 11,
+      "breakdown": {
+        "text-white→text-ink": 6,
+        "border-white→border-line": 3,
+        "bg-white/[0.02]→bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/inventory/count/index.tsx",
+      "replacements": 11,
+      "breakdown": {
+        "text-white→text-ink": 7,
+        "border-white→border-line": 1,
+        "bg-white/10→bg-surface": 2,
+        "bg-white/3→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/products.tsx",
+      "replacements": 11,
+      "breakdown": {
+        "text-white→text-ink": 6,
+        "border-white→border-line": 3,
+        "bg-white/10→bg-surface": 2
+      }
+    },
+    {
+      "file": "components/confirm-modal.tsx",
+      "replacements": 10,
+      "breakdown": {
+        "text-white→text-ink": 5,
+        "border-white→border-line": 1,
+        "bg-white/10→bg-surface": 2,
+        "bg-white/20→hover:bg-raised": 1,
+        "bg-white/15→hover:bg-raised": 1
+      }
+    },
+    {
+      "file": "pages/attendance/AttendanceList.tsx",
+      "replacements": 10,
+      "breakdown": {
+        "text-white→text-ink": 8,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/expenses/components/ExpenseCategoryPills.tsx",
+      "replacements": 10,
+      "breakdown": {
+        "text-white→text-ink": 5,
+        "border-white→border-line": 3,
+        "bg-white/[0.04]→bg-surface": 1,
+        "bg-white/[0.08]→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/expenses/components/ExpensesFilterToolbar.tsx",
+      "replacements": 10,
+      "breakdown": {
+        "text-white→text-ink": 8,
+        "border-white→border-line": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/expenses.tsx",
+      "replacements": 10,
+      "breakdown": {
+        "text-white→text-ink": 9,
+        "border-white→border-line": 1
+      }
+    },
+    {
+      "file": "pages/reports/index.tsx",
+      "replacements": 10,
+      "breakdown": {
+        "text-white→text-ink": 5,
+        "border-white→border-line": 2,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/8→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/reports/shared.tsx",
+      "replacements": 10,
+      "breakdown": {
+        "text-white→text-ink": 7,
+        "border-white→border-line": 2,
+        "bg-white/10→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/sales/SalesHistoryPanel.tsx",
+      "replacements": 10,
+      "breakdown": {
+        "text-white→text-ink": 6,
+        "border-white→border-line": 2,
+        "bg-white/10→bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/data/index.tsx",
+      "replacements": 10,
+      "breakdown": {
+        "text-white→text-ink": 7,
+        "border-white→border-line": 1,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/8→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/employees/index.tsx",
+      "replacements": 9,
+      "breakdown": {
+        "text-white→text-ink": 4,
+        "border-white→border-line": 1,
+        "bg-white/5→bg-surface": 2,
+        "bg-white/3→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/sales.tsx",
+      "replacements": 9,
+      "breakdown": {
+        "text-white→text-ink": 7,
+        "border-white→border-line": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/modals/PaymentModal.tsx",
+      "replacements": 8,
+      "breakdown": {
+        "text-white→text-ink": 8
+      }
+    },
+    {
+      "file": "components/modals/ReceiptModal.tsx",
+      "replacements": 8,
+      "breakdown": {
+        "text-white→text-ink": 8
+      }
+    },
+    {
+      "file": "components/ui/toast.tsx",
+      "replacements": 8,
+      "breakdown": {
+        "text-white→text-ink": 5,
+        "border-white→border-line": 1,
+        "bg-white/5→bg-surface": 1,
+        "bg-white/10→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/inventory/_components.tsx",
+      "replacements": 8,
+      "breakdown": {
+        "text-white→text-ink": 7,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/purchases/index.tsx",
+      "replacements": 8,
+      "breakdown": {
+        "text-white→text-ink": 6,
+        "border-white→border-line": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/reports/inventory/FilterPanel.tsx",
+      "replacements": 8,
+      "breakdown": {
+        "text-white→text-ink": 6,
+        "border-white→border-line": 2
+      }
+    },
+    {
+      "file": "pages/settings/opening-balance/components/OBEntryTable.tsx",
+      "replacements": 8,
+      "breakdown": {
+        "text-white→text-ink": 4,
+        "border-white→border-line": 2,
+        "bg-white/3→bg-surface": 1,
+        "bg-white/2→hover:bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/system-tab.tsx",
+      "replacements": 8,
+      "breakdown": {
+        "text-white→text-ink": 4,
+        "border-white→border-line": 2,
+        "bg-white/[0.03]→hover:bg-surface": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/employees/EmployeeDocuments.tsx",
+      "replacements": 7,
+      "breakdown": {
+        "text-white→text-ink": 4,
+        "border-white→border-line": 1,
+        "bg-white/5→bg-surface": 2
+      }
+    },
+    {
+      "file": "pages/settings/company-tab.tsx",
+      "replacements": 7,
+      "breakdown": {
+        "text-white→text-ink": 5,
+        "border-white→border-line": 1,
+        "bg-white/3→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/data/DangerZoneSection.tsx",
+      "replacements": 7,
+      "breakdown": {
+        "text-white→text-ink": 6,
+        "border-white→border-line": 1
+      }
+    },
+    {
+      "file": "pages/settings/opening-balance/components/OBTreasuryTab.tsx",
+      "replacements": 7,
+      "breakdown": {
+        "text-white→text-ink": 4,
+        "border-white→border-line": 2,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "components/repair-settings/DefaultsTab.tsx",
+      "replacements": 6,
+      "breakdown": {
+        "text-white→text-ink": 3,
+        "border-white→border-line": 2,
+        "bg-white/[0.02]→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/pos/PosReturnPanel.tsx",
+      "replacements": 6,
+      "breakdown": {
+        "text-white→text-ink": 6
+      }
+    },
+    {
+      "file": "pages/reports/profit-loss/ReportTable.tsx",
+      "replacements": 6,
+      "breakdown": {
+        "text-white→text-ink": 2,
+        "border-white→border-line": 3,
+        "#111827→var(--bg-card)": 1
+      }
+    },
+    {
+      "file": "pages/settings/pricing-tab.tsx",
+      "replacements": 6,
+      "breakdown": {
+        "text-white→text-ink": 5,
+        "border-white→border-line": 1
+      }
+    },
+    {
+      "file": "pages/employees/EmployeeList.tsx",
+      "replacements": 5,
+      "breakdown": {
+        "text-white→text-ink": 5
+      }
+    },
+    {
+      "file": "pages/sales/WhatsAppSuccessModal.tsx",
+      "replacements": 5,
+      "breakdown": {
+        "text-white→text-ink": 5
+      }
+    },
+    {
+      "file": "components/loading-page.tsx",
+      "replacements": 4,
+      "breakdown": {
+        "text-white→text-ink": 3,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/attendance/index.tsx",
+      "replacements": 4,
+      "breakdown": {
+        "text-white→text-ink": 3,
+        "border-white→border-line": 1
+      }
+    },
+    {
+      "file": "pages/dashboard/SalesTargetsWidget.tsx",
+      "replacements": 4,
+      "breakdown": {
+        "text-white→text-ink": 3,
+        "bg-white/[0.03]→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/expenses/components/ExpensesSummaryCards.tsx",
+      "replacements": 4,
+      "breakdown": {
+        "text-white→text-ink": 4
+      }
+    },
+    {
+      "file": "pages/repairs/repairComponents.tsx",
+      "replacements": 4,
+      "breakdown": {
+        "text-white→text-ink": 2,
+        "border-white→border-line": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/sales/SalesReturnsPanel.tsx",
+      "replacements": 4,
+      "breakdown": {
+        "text-white→text-ink": 2,
+        "border-white→border-line": 2
+      }
+    },
+    {
+      "file": "pages/employees/salary-modal/helpers.ts",
+      "replacements": 3,
+      "breakdown": {
+        "text-white→text-ink": 1,
+        "border-white→border-line": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/reports/InventoryReport.tsx",
+      "replacements": 3,
+      "breakdown": {
+        "text-white→text-ink": 2,
+        "border-white→border-line": 1
+      }
+    },
+    {
+      "file": "pages/super-admin/modals/company/CreateCompanyResultModal.tsx",
+      "replacements": 3,
+      "breakdown": {
+        "#1e293b→var(--bg-elevated)": 3
+      }
+    },
+    {
+      "file": "__tests__/lib/utils.test.ts",
+      "replacements": 2,
+      "breakdown": {
+        "text-white→text-ink": 2
+      }
+    },
+    {
+      "file": "components/BarcodeScanner.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "text-white→text-ink": 2
+      }
+    },
+    {
+      "file": "components/layout.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "#111827→var(--bg-card)": 2
+      }
+    },
+    {
+      "file": "components/offline-banner.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "text-white→text-ink": 2
+      }
+    },
+    {
+      "file": "pages/access-denied.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "text-white→text-ink": 2
+      }
+    },
+    {
+      "file": "pages/attendance/AttendanceSummary.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "text-white→text-ink": 2
+      }
+    },
+    {
+      "file": "pages/dashboard.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "#1e293b→var(--bg-elevated)": 1,
+        "#0d1117→var(--bg-app)": 1
+      }
+    },
+    {
+      "file": "pages/inventory/alerts/constants.ts",
+      "replacements": 2,
+      "breakdown": {
+        "text-white→text-ink": 1,
+        "bg-white/10→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/not-found.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "text-white→text-ink": 2
+      }
+    },
+    {
+      "file": "pages/reports/balance-sheet/types.ts",
+      "replacements": 2,
+      "breakdown": {
+        "#111827→var(--bg-card)": 1,
+        "#1e293b→var(--bg-elevated)": 1
+      }
+    },
+    {
+      "file": "pages/sales/SalePaymentSection.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "border-white→border-line": 1,
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/settings/opening-balance/components/FiscalYearStartCard.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "text-white→text-ink": 2
+      }
+    },
+    {
+      "file": "pages/settings/opening-balance-tab.tsx",
+      "replacements": 2,
+      "breakdown": {
+        "text-white→text-ink": 2
+      }
+    },
+    {
+      "file": "components/employee-gateway.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "#0f172a→var(--bg-app)": 1
+      }
+    },
+    {
+      "file": "components/skeletons.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "border-white→border-line": 1
+      }
+    },
+    {
+      "file": "components/ui/toaster.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "bg-white/5→bg-surface": 1
+      }
+    },
+    {
+      "file": "pages/employee-portal/AdvanceRequestModal.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "#0f172a→var(--bg-app)": 1
+      }
+    },
+    {
+      "file": "pages/employee-portal/SectionCard.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "#0f172a→var(--bg-app)": 1
+      }
+    },
+    {
+      "file": "pages/employee-portal/index.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "#0f172a→var(--bg-app)": 1
+      }
+    },
+    {
+      "file": "pages/employees/EmployeeFilters.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "text-white→text-ink": 1
+      }
+    },
+    {
+      "file": "pages/inventory/count/CountVarianceSummary.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "text-white→text-ink": 1
+      }
+    },
+    {
+      "file": "pages/pos/PosHeader.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "text-white→text-ink": 1
+      }
+    },
+    {
+      "file": "pages/pos/PosProductGrid.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "text-white→text-ink": 1
+      }
+    },
+    {
+      "file": "pages/pos/index.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "border-white→border-line": 1
+      }
+    },
+    {
+      "file": "pages/reports/BalanceSheetReport.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "#1e293b→var(--bg-elevated)": 1
+      }
+    },
+    {
+      "file": "pages/reports/CashFlowReport.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "#111827→var(--bg-card)": 1
+      }
+    },
+    {
+      "file": "pages/reports/ProfitLossReport.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "text-white→text-ink": 1
+      }
+    },
+    {
+      "file": "pages/reports/profit-loss/SummaryCards.tsx",
+      "replacements": 1,
+      "breakdown": {
+        "#0f172a→var(--bg-app)": 1
+      }
+    }
+  ],
+  "errors": []
+}

@@ -22,7 +22,16 @@ export function CountVarianceSummary({
   onExportExcel: () => void;
   onExportPDF: () => void;
 }) {
-  const { enteredProducts, itemsWithDiff, itemsWithPosDiff, itemsWithNegDiff, totalPosDiff, totalNegDiff, missingNotes, canApply } = variance;
+  const {
+    enteredProducts,
+    itemsWithDiff,
+    itemsWithPosDiff,
+    itemsWithNegDiff,
+    totalPosDiff,
+    totalNegDiff,
+    missingNotes,
+    canApply,
+  } = variance;
 
   return (
     <div
@@ -34,9 +43,7 @@ export function CountVarianceSummary({
             className={`font-bold text-sm ${itemsWithDiff.length > 0 ? 'text-amber-300' : 'text-emerald-300'}`}
           >
             {enteredProducts.length} منتج مُسجَّل
-            {itemsWithDiff.length > 0
-              ? ` — ${itemsWithDiff.length} بفرق`
-              : ' — لا توجد فروق ✓'}
+            {itemsWithDiff.length > 0 ? ` — ${itemsWithDiff.length} بفرق` : ' — لا توجد فروق ✓'}
           </p>
           {itemsWithDiff.length > 0 && (
             <div className="flex gap-4 text-xs">
@@ -93,7 +100,7 @@ export function CountVarianceSummary({
           <button
             onClick={onApply}
             disabled={isPending || !canApply}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-colors whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-ink rounded-xl text-sm font-bold transition-colors whitespace-nowrap"
           >
             {isPending ? (
               <>

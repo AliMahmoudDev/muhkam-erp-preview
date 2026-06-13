@@ -1,21 +1,25 @@
-import { PaginationBar } from "@/components/PaginationBar";
-import { Smartphone, Search, X, Battery, LayoutGrid, List } from "lucide-react";
+import { PaginationBar } from '@/components/PaginationBar';
+import { Smartphone, Search, X, Battery, LayoutGrid, List } from 'lucide-react';
 import {
-  type Device, type DeviceStatus,
-  GradeBadge, StatusBadge, maskImei, RowMenu,
+  type Device,
+  type DeviceStatus,
+  GradeBadge,
+  StatusBadge,
+  maskImei,
+  RowMenu,
 } from './index';
 
 type Props = {
   isLoading: boolean;
   allDevices: Device[];
   paginatedDevices: Device[];
-  statusFilter: "all" | DeviceStatus;
-  setStatusFilter: (v: "all" | DeviceStatus) => void;
+  statusFilter: 'all' | DeviceStatus;
+  setStatusFilter: (v: 'all' | DeviceStatus) => void;
   search: string;
   setSearch: (v: string) => void;
-  viewMode: "list" | "grid";
-  setViewMode: (v: "list" | "grid") => void;
-  filters: { v: "all" | DeviceStatus; l: string; count: number }[];
+  viewMode: 'list' | 'grid';
+  setViewMode: (v: 'list' | 'grid') => void;
+  filters: { v: 'all' | DeviceStatus; l: string; count: number }[];
   devicePage: number;
   setDevicePage: (n: number) => void;
   pageSize: number;
@@ -47,43 +51,60 @@ export function DeviceList({
         {/* Status tabs */}
         <div className="flex gap-1">
           {filters.map(({ v, l, count }) => (
-            <button key={v} onClick={() => setStatusFilter(v)}
+            <button
+              key={v}
+              onClick={() => setStatusFilter(v)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                 statusFilter === v
-                  ? "bg-violet-500/25 border-violet-500/50 text-violet-200"
-                  : "border-white/8 text-white/40 hover:text-white/70 hover:border-white/20"
-              }`}>
+                  ? 'bg-violet-500/25 border-violet-500/50 text-violet-200'
+                  : 'border-line text-ink/40 hover:text-ink/70 hover:border-line'
+              }`}
+            >
               {l}
-              <span className={`text-[10px] px-1.5 rounded-full ${
-                statusFilter === v ? "bg-violet-500/30 text-violet-300" : "bg-white/5 text-white/25"
-              }`}>{count}</span>
+              <span
+                className={`text-[10px] px-1.5 rounded-full ${
+                  statusFilter === v ? 'bg-violet-500/30 text-violet-300' : 'bg-surface text-ink/25'
+                }`}
+              >
+                {count}
+              </span>
             </button>
           ))}
         </div>
 
         {/* Search */}
         <div className="relative flex-1 min-w-44">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/30" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="ابحث بالموديل / IMEI / العميل..."
-            className="erp-input w-full icon-pr text-sm" />
+            className="erp-input w-full icon-pr text-sm"
+          />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute left-3 top-1/2 -translate-y-1/2">
-              <X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" />
+            <button
+              onClick={() => setSearch('')}
+              className="absolute left-3 top-1/2 -translate-y-1/2"
+            >
+              <X className="w-3.5 h-3.5 text-ink/30 hover:text-ink/60" />
             </button>
           )}
         </div>
 
         {/* View toggle */}
-        <div className="flex gap-0.5 bg-white/4 rounded-xl border border-white/8 p-0.5">
-          <button onClick={() => setViewMode("list")}
+        <div className="flex gap-0.5 bg-surface rounded-xl border border-line p-0.5">
+          <button
+            onClick={() => setViewMode('list')}
             title="عرض قائمة"
-            className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
+            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-violet-500/25 text-violet-300' : 'text-ink/30 hover:text-ink/60'}`}
+          >
             <List className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => setViewMode("grid")}
+          <button
+            onClick={() => setViewMode('grid')}
             title="عرض شبكة"
-            className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-violet-500/25 text-violet-300" : "text-white/30 hover:text-white/60"}`}>
+            className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-violet-500/25 text-violet-300' : 'text-ink/30 hover:text-ink/60'}`}
+          >
             <LayoutGrid className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -91,84 +112,130 @@ export function DeviceList({
 
       {/* ── Device List / Grid ── */}
       {isLoading ? (
-        <div className="glass-panel rounded-xl border border-white/8 flex items-center justify-center py-16">
+        <div className="glass-panel rounded-xl border border-line flex items-center justify-center py-16">
           <div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
         </div>
       ) : allDevices.length === 0 ? (
-        <div className="glass-panel rounded-xl border border-white/8 text-center py-16 space-y-2">
-          <Smartphone className="w-10 h-10 text-white/10 mx-auto" />
-          <p className="text-white/30 text-sm">لا توجد أجهزة</p>
-          <p className="text-white/15 text-xs">اضغط "إضافة جهاز" لتسجيل أول جهاز</p>
+        <div className="glass-panel rounded-xl border border-line text-center py-16 space-y-2">
+          <Smartphone className="w-10 h-10 text-ink/10 mx-auto" />
+          <p className="text-ink/30 text-sm">لا توجد أجهزة</p>
+          <p className="text-ink/15 text-xs">اضغط "إضافة جهاز" لتسجيل أول جهاز</p>
         </div>
-      ) : viewMode === "list" ? (
+      ) : viewMode === 'list' ? (
         /* ── LIST VIEW ── */
-        <div className="glass-panel rounded-xl border border-white/8 overflow-hidden">
+        <div className="glass-panel rounded-xl border border-line overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5">
-                <th className="text-right text-[11px] font-bold text-white/25 px-4 py-2.5">الجهاز</th>
-                <th className="text-right text-[11px] font-bold text-white/25 px-3 py-2.5 hidden sm:table-cell">المواصفات</th>
-                <th className="text-right text-[11px] font-bold text-white/25 px-3 py-2.5 hidden sm:table-cell">IMEI</th>
-                <th className="text-right text-[11px] font-bold text-white/25 px-3 py-2.5">الأسعار</th>
-                <th className="text-center text-[11px] font-bold text-white/25 px-3 py-2.5">الحالة</th>
-                <th className="text-right text-[11px] font-bold text-white/25 px-3 py-2.5 hidden md:table-cell">المورد / العميل</th>
-                <th className="text-center text-[11px] font-bold text-white/25 px-3 py-2.5 w-16">إجراءات</th>
+              <tr className="border-b border-line">
+                <th className="text-right text-[11px] font-bold text-ink/25 px-4 py-2.5">الجهاز</th>
+                <th className="text-right text-[11px] font-bold text-ink/25 px-3 py-2.5 hidden sm:table-cell">
+                  المواصفات
+                </th>
+                <th className="text-right text-[11px] font-bold text-ink/25 px-3 py-2.5 hidden sm:table-cell">
+                  IMEI
+                </th>
+                <th className="text-right text-[11px] font-bold text-ink/25 px-3 py-2.5">
+                  الأسعار
+                </th>
+                <th className="text-center text-[11px] font-bold text-ink/25 px-3 py-2.5">
+                  الحالة
+                </th>
+                <th className="text-right text-[11px] font-bold text-ink/25 px-3 py-2.5 hidden md:table-cell">
+                  المورد / العميل
+                </th>
+                <th className="text-center text-[11px] font-bold text-ink/25 px-3 py-2.5 w-16">
+                  إجراءات
+                </th>
               </tr>
             </thead>
             <tbody>
               {paginatedDevices.map((d, idx) => (
-                <tr key={d.id}
-                  className={`border-b border-white/4 hover:bg-white/3 transition-colors group ${idx % 2 === 0 ? "" : "bg-white/1"}`}>
+                <tr
+                  key={d.id}
+                  className={`border-b border-line hover:bg-surface transition-colors group ${idx % 2 === 0 ? '' : 'bg-surface'}`}
+                >
                   {/* Device */}
                   <td className="px-4 py-3 cursor-pointer" onClick={() => setSelected(d)}>
-                    <p className="font-semibold text-white/90 text-sm">{d.brand} {d.model}</p>
-                    <p className="text-[11px] text-white/30 font-mono">{d.device_no}</p>
+                    <p className="font-semibold text-ink/90 text-sm">
+                      {d.brand} {d.model}
+                    </p>
+                    <p className="text-[11px] text-ink/30 font-mono">{d.device_no}</p>
                   </td>
                   {/* Specs */}
-                  <td className="px-3 py-3 hidden sm:table-cell cursor-pointer" onClick={() => setSelected(d)}>
+                  <td
+                    className="px-3 py-3 hidden sm:table-cell cursor-pointer"
+                    onClick={() => setSelected(d)}
+                  >
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {d.storage && <span className="text-[11px] text-white/50 bg-white/5 px-1.5 py-0.5 rounded">{d.storage}</span>}
-                      {d.color  && <span className="text-[11px] text-white/40">{d.color}</span>}
+                      {d.storage && (
+                        <span className="text-[11px] text-ink/50 bg-surface px-1.5 py-0.5 rounded">
+                          {d.storage}
+                        </span>
+                      )}
+                      {d.color && <span className="text-[11px] text-ink/40">{d.color}</span>}
                       {d.battery_health && (
-                        <span className={`text-[11px] flex items-center gap-0.5 ${d.battery_health < 80 ? "text-amber-400/70" : "text-white/35"}`}>
-                          <Battery className="w-2.5 h-2.5" />{d.battery_health}%
+                        <span
+                          className={`text-[11px] flex items-center gap-0.5 ${d.battery_health < 80 ? 'text-amber-400/70' : 'text-ink/35'}`}
+                        >
+                          <Battery className="w-2.5 h-2.5" />
+                          {d.battery_health}%
                         </span>
                       )}
                     </div>
                     <GradeBadge grade={d.grade} />
                   </td>
                   {/* IMEI masked */}
-                  <td className="px-3 py-3 hidden sm:table-cell cursor-pointer" onClick={() => setSelected(d)}>
-                    {d.imei
-                      ? <span className="text-[11px] text-white/35 font-mono tracking-wide">{maskImei(d.imei)}</span>
-                      : <span className="text-[11px] text-white/15">—</span>}
+                  <td
+                    className="px-3 py-3 hidden sm:table-cell cursor-pointer"
+                    onClick={() => setSelected(d)}
+                  >
+                    {d.imei ? (
+                      <span className="text-[11px] text-ink/35 font-mono tracking-wide">
+                        {maskImei(d.imei)}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-ink/15">—</span>
+                    )}
                   </td>
                   {/* Prices + Profit */}
                   <td className="px-3 py-3 cursor-pointer" onClick={() => setSelected(d)}>
-                    <p className="text-white/80 font-semibold">
-                      {parseFloat(d.status === "sold" && d.sold_price ? d.sold_price : d.sale_price).toLocaleString()}
-                      <span className="text-[10px] text-white/25 mr-0.5">ج.م</span>
+                    <p className="text-ink/80 font-semibold">
+                      {parseFloat(
+                        d.status === 'sold' && d.sold_price ? d.sold_price : d.sale_price
+                      ).toLocaleString()}
+                      <span className="text-[10px] text-ink/25 mr-0.5">ج.م</span>
                     </p>
                     {(() => {
-                      const sellP = parseFloat(d.status === "sold" && d.sold_price ? d.sold_price : d.sale_price);
-                      const buyP  = parseFloat(d.purchase_price);
-                      const prof  = sellP - buyP;
-                      const pct   = buyP > 0 ? Math.round((prof / buyP) * 100) : 0;
+                      const sellP = parseFloat(
+                        d.status === 'sold' && d.sold_price ? d.sold_price : d.sale_price
+                      );
+                      const buyP = parseFloat(d.purchase_price);
+                      const prof = sellP - buyP;
+                      const pct = buyP > 0 ? Math.round((prof / buyP) * 100) : 0;
                       return (
-                        <span className={`text-[10px] font-bold ${prof >= 0 ? "text-emerald-400/80" : "text-red-400/80"}`}>
-                          {prof >= 0 ? "+" : ""}{prof.toLocaleString()} ({pct}%)
+                        <span
+                          className={`text-[10px] font-bold ${prof >= 0 ? 'text-emerald-400/80' : 'text-red-400/80'}`}
+                        >
+                          {prof >= 0 ? '+' : ''}
+                          {prof.toLocaleString()} ({pct}%)
                         </span>
                       );
                     })()}
                   </td>
                   {/* Status */}
-                  <td className="px-3 py-3 text-center cursor-pointer" onClick={() => setSelected(d)}>
+                  <td
+                    className="px-3 py-3 text-center cursor-pointer"
+                    onClick={() => setSelected(d)}
+                  >
                     <StatusBadge status={d.status} />
                   </td>
                   {/* Source/customer */}
-                  <td className="px-3 py-3 hidden md:table-cell cursor-pointer" onClick={() => setSelected(d)}>
-                    <p className="text-[11px] text-white/40">
-                      {d.status === "sold" ? d.sold_to_customer_name : d.supplier_name ?? "—"}
+                  <td
+                    className="px-3 py-3 hidden md:table-cell cursor-pointer"
+                    onClick={() => setSelected(d)}
+                  >
+                    <p className="text-[11px] text-ink/40">
+                      {d.status === 'sold' ? d.sold_to_customer_name : (d.supplier_name ?? '—')}
                     </p>
                   </td>
                   {/* Actions */}
@@ -185,13 +252,17 @@ export function DeviceList({
       ) : (
         /* ── GRID VIEW ── */
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {paginatedDevices.map(d => {
-            const sellP = parseFloat(d.status === "sold" && d.sold_price ? d.sold_price : d.sale_price);
-            const buyP  = parseFloat(d.purchase_price);
-            const prof  = sellP - buyP;
+          {paginatedDevices.map((d) => {
+            const sellP = parseFloat(
+              d.status === 'sold' && d.sold_price ? d.sold_price : d.sale_price
+            );
+            const buyP = parseFloat(d.purchase_price);
+            const prof = sellP - buyP;
             return (
-              <div key={d.id}
-                className="glass-panel rounded-xl border border-white/8 hover:border-violet-500/25 transition-all group overflow-hidden">
+              <div
+                key={d.id}
+                className="glass-panel rounded-xl border border-line hover:border-violet-500/25 transition-all group overflow-hidden"
+              >
                 {/* Card top */}
                 <div className="p-3 cursor-pointer" onClick={() => setSelected(d)}>
                   <div className="flex items-start justify-between mb-3">
@@ -200,28 +271,44 @@ export function DeviceList({
                     </div>
                     <StatusBadge status={d.status} />
                   </div>
-                  <p className="font-bold text-white text-sm leading-tight">{d.brand} {d.model}</p>
-                  <p className="text-[10px] text-white/25 font-mono mt-0.5">{d.device_no}</p>
+                  <p className="font-bold text-ink text-sm leading-tight">
+                    {d.brand} {d.model}
+                  </p>
+                  <p className="text-[10px] text-ink/25 font-mono mt-0.5">{d.device_no}</p>
 
                   <div className="mt-2.5 flex flex-wrap gap-1">
-                    {d.storage && <span className="text-[10px] text-white/45 bg-white/5 px-1.5 py-0.5 rounded">{d.storage}</span>}
-                    {d.color   && <span className="text-[10px] text-white/35">{d.color}</span>}
+                    {d.storage && (
+                      <span className="text-[10px] text-ink/45 bg-surface px-1.5 py-0.5 rounded">
+                        {d.storage}
+                      </span>
+                    )}
+                    {d.color && <span className="text-[10px] text-ink/35">{d.color}</span>}
                     {d.battery_health && (
-                      <span className={`text-[10px] flex items-center gap-0.5 ${d.battery_health < 80 ? "text-amber-400/70" : "text-white/30"}`}>
-                        <Battery className="w-2.5 h-2.5" />{d.battery_health}%
+                      <span
+                        className={`text-[10px] flex items-center gap-0.5 ${d.battery_health < 80 ? 'text-amber-400/70' : 'text-ink/30'}`}
+                      >
+                        <Battery className="w-2.5 h-2.5" />
+                        {d.battery_health}%
                       </span>
                     )}
                   </div>
 
                   {d.imei && (
-                    <p className="text-[10px] text-white/25 font-mono mt-1.5 tracking-wide">{maskImei(d.imei)}</p>
+                    <p className="text-[10px] text-ink/25 font-mono mt-1.5 tracking-wide">
+                      {maskImei(d.imei)}
+                    </p>
                   )}
 
-                  <div className="mt-3 pt-2.5 border-t border-white/6 flex items-end justify-between">
+                  <div className="mt-3 pt-2.5 border-t border-line flex items-end justify-between">
                     <div>
-                      <p className="text-emerald-300 font-bold text-sm">{sellP.toLocaleString()} ج.م</p>
-                      <p className={`text-[10px] font-semibold ${prof >= 0 ? "text-emerald-400/60" : "text-red-400/60"}`}>
-                        {prof >= 0 ? "+" : ""}{prof.toLocaleString()} ج.م
+                      <p className="text-emerald-300 font-bold text-sm">
+                        {sellP.toLocaleString()} ج.م
+                      </p>
+                      <p
+                        className={`text-[10px] font-semibold ${prof >= 0 ? 'text-emerald-400/60' : 'text-red-400/60'}`}
+                      >
+                        {prof >= 0 ? '+' : ''}
+                        {prof.toLocaleString()} ج.م
                       </p>
                     </div>
                     {d.grade && <GradeBadge grade={d.grade} />}
@@ -230,8 +317,8 @@ export function DeviceList({
 
                 {/* Card bottom — actions */}
                 <div className="px-3 pb-3 flex items-center justify-between">
-                  <p className="text-[10px] text-white/25 truncate flex-1">
-                    {d.status === "sold" ? d.sold_to_customer_name : d.supplier_name ?? ""}
+                  <p className="text-[10px] text-ink/25 truncate flex-1">
+                    {d.status === 'sold' ? d.sold_to_customer_name : (d.supplier_name ?? '')}
                   </p>
                   <RowMenu device={d} onDetail={() => setSelected(d)} onRefresh={refresh} />
                 </div>

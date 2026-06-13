@@ -244,7 +244,7 @@ export function SalePaymentSection({
             setDiscountMode((m) => (m === 'pct' ? 'amt' : 'pct'));
             setDiscountPct('');
           }}
-          className="text-xs font-black sale-muted-text hover:text-amber-400 transition-colors px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 shrink-0"
+          className="text-xs font-black sale-muted-text hover:text-amber-400 transition-colors px-1.5 py-0.5 rounded-md bg-surface border border-line shrink-0"
           title="تبديل بين % ومبلغ"
         >
           {discountMode === 'pct' ? '%' : 'ج'}
@@ -315,7 +315,11 @@ export function SalePaymentSection({
             <span
               className="font-bold tabular-nums transition-colors"
               style={{
-                color: payIsDone ? '#10B981' : cart.length === 0 ? '#94A3B8' : '#F59E0B',
+                color: payIsDone
+                  ? 'var(--status-success)'
+                  : cart.length === 0
+                    ? 'var(--text-2)'
+                    : 'var(--status-warning)',
               }}
             >
               {payIsDone
@@ -467,7 +471,7 @@ export function SalePaymentSection({
             style={{
               background: 'rgba(245,158,11,0.10)',
               border: '1px solid rgba(245,158,11,0.25)',
-              color: '#F59E0B',
+              color: 'var(--status-warning)',
             }}
           >
             ⚠ اختر العميل أولاً للبيع الآجل
@@ -487,10 +491,8 @@ export function SalePaymentSection({
         disabled={!canCheckout}
         className="w-full py-4 rounded-2xl font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
         style={{
-          background: canCheckout
-            ? 'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)'
-            : undefined,
-          color: canCheckout ? '#000' : undefined,
+          background: canCheckout ? 'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)' : undefined,
+          color: canCheckout ? 'var(--text-1)' : undefined,
           boxShadow: canCheckout
             ? '0 6px 22px rgba(245,158,11,0.38), 0 1px 3px rgba(0,0,0,0.2)'
             : 'none',

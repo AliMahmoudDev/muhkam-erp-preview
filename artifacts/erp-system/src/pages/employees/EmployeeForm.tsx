@@ -5,7 +5,7 @@ import { uploadFileToR2, resolveUploadedFileUrl } from '@/lib/file-upload';
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs text-white/50">{label}</label>
+      <label className="text-xs text-ink/50">{label}</label>
       {children}
     </div>
   );
@@ -73,12 +73,12 @@ export function EmployeeForm({
         className="erp-modal rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         dir="rtl"
       >
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h2 className="text-lg font-bold text-ink flex items-center gap-2">
             <UserCheck size={18} className="text-amber-400" />
             {editId ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد'}
           </h2>
-          <button onClick={() => setShowForm(false)} className="text-white/40 hover:text-white">
+          <button onClick={() => setShowForm(false)} className="text-ink/40 hover:text-ink">
             <X size={18} />
           </button>
         </div>
@@ -130,7 +130,7 @@ export function EmployeeForm({
               <div className="relative">
                 <IdCard
                   size={14}
-                  className="absolute top-1/2 -translate-y-1/2 right-3 text-white/30"
+                  className="absolute top-1/2 -translate-y-1/2 right-3 text-ink/30"
                 />
                 <input
                   value={editEmp.national_id ?? ''}
@@ -152,7 +152,7 @@ export function EmployeeForm({
             </Field>
             <Field label="صورة البطاقة">
               <div className="flex items-center gap-2">
-                <label className="erp-btn erp-btn-ghost text-xs cursor-pointer flex-1 text-center border border-white/10">
+                <label className="erp-btn erp-btn-ghost text-xs cursor-pointer flex-1 text-center border border-line">
                   {editEmp.national_id_image ? 'تغيير الصورة' : 'رفع صورة'}
                   <input
                     type="file"
@@ -236,7 +236,7 @@ export function EmployeeForm({
                 </button>
               </div>
               {showInlineDept && (
-                <div className="mt-2 bg-white/5 rounded-lg p-3 space-y-2 border border-amber-500/20">
+                <div className="mt-2 bg-surface rounded-lg p-3 space-y-2 border border-amber-500/20">
                   <div className="text-xs text-amber-300 mb-1">قسم جديد</div>
                   <input
                     value={inlineDept.name_ar}
@@ -290,7 +290,7 @@ export function EmployeeForm({
                 </button>
               </div>
               {showInlineJt && (
-                <div className="mt-2 bg-white/5 rounded-lg p-3 space-y-2 border border-amber-500/20">
+                <div className="mt-2 bg-surface rounded-lg p-3 space-y-2 border border-amber-500/20">
                   <div className="text-xs text-amber-300 mb-1">مسمى وظيفي جديد</div>
                   <input
                     value={inlineJt.name_ar}
@@ -348,9 +348,9 @@ export function EmployeeForm({
           </div>
 
           {/* Salary section — 3 modes */}
-          <div className="bg-white/5 rounded-lg p-3 space-y-3">
+          <div className="bg-surface rounded-lg p-3 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-white/50 ml-1">الراتب:</span>
+              <span className="text-xs text-ink/50 ml-1">الراتب:</span>
               {(
                 [
                   { v: 'fixed', label: 'راتب ثابت', icon: Wallet, color: 'emerald' },
@@ -372,7 +372,7 @@ export function EmployeeForm({
                     className={`px-3 py-1 rounded-lg text-xs transition-all ${
                       active
                         ? `bg-${color}-500/20 text-${color}-300 border border-${color}-500/30`
-                        : 'text-white/40 hover:text-white/60'
+                        : 'text-ink/40 hover:text-ink/60'
                     }`}
                   >
                     <Icon size={11} className="inline ml-1" /> {label}
@@ -384,7 +384,7 @@ export function EmployeeForm({
             {/* Fixed-salary input (shown for fixed & fixed_plus_commission) */}
             {(editEmp.salary_type ?? 'fixed') !== 'commission' && (
               <div>
-                <div className="text-xs text-white/40 mb-1">الراتب الأساسي</div>
+                <div className="text-xs text-ink/40 mb-1">الراتب الأساسي</div>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -414,7 +414,7 @@ export function EmployeeForm({
             {/* Commission inputs (shown for commission & fixed_plus_commission) */}
             {(editEmp.salary_type ?? 'fixed') !== 'fixed' && (
               <div className="space-y-2">
-                <div className="text-xs text-white/40 mb-1">نسبة العمولة</div>
+                <div className="text-xs text-ink/40 mb-1">نسبة العمولة</div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="flex items-center gap-1">
                     <input
@@ -427,7 +427,7 @@ export function EmployeeForm({
                       placeholder="مثال: 5"
                       style={{ minWidth: 0 }}
                     />
-                    <span className="text-white/50 text-xs shrink-0">%</span>
+                    <span className="text-ink/50 text-xs shrink-0">%</span>
                   </div>
                   <select
                     value={editEmp.commission_basis ?? 'gross'}
@@ -488,7 +488,7 @@ export function EmployeeForm({
             />
           </Field>
         </div>
-        <div className="flex gap-2 p-5 border-t border-white/10">
+        <div className="flex gap-2 p-5 border-t border-line">
           <button
             onClick={saveEmployee}
             disabled={createEmp.isPending || updateEmp.isPending}

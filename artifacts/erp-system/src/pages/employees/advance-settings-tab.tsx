@@ -31,10 +31,13 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border border-white/5 rounded-2xl overflow-hidden" style={{ background: 'var(--erp-bg-card)' }}>
-      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-white/5">
+    <div
+      className="border border-line rounded-2xl overflow-hidden"
+      style={{ background: 'var(--erp-bg-card)' }}
+    >
+      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-line">
         <Icon className="w-4 h-4 text-amber-400" />
-        <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{title}</p>
+        <p className="text-ink/70 text-xs font-bold uppercase tracking-wider">{title}</p>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -62,7 +65,7 @@ function NumberField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-xs font-semibold text-white/70">
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-ink/70">
         <Icon className="w-3.5 h-3.5 text-amber-400" />
         {label}
       </label>
@@ -73,15 +76,15 @@ function NumberField({
           step={step}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full px-3 py-2.5 pl-14 bg-white/5 border border-white/10 rounded-xl text-sm text-white font-mono focus:outline-none focus:border-amber-500/50 transition"
+          className="w-full px-3 py-2.5 pl-14 bg-surface border border-line rounded-xl text-sm text-ink font-mono focus:outline-none focus:border-amber-500/50 transition"
         />
         {suffix && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-white/40 pointer-events-none">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ink/40 pointer-events-none">
             {suffix}
           </span>
         )}
       </div>
-      {hint && <p className="text-[11px] text-white/35">{hint}</p>}
+      {hint && <p className="text-[11px] text-ink/35">{hint}</p>}
     </div>
   );
 }
@@ -136,7 +139,7 @@ export default function AdvanceSettingsTab() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20 text-white/40">
+      <div className="flex items-center justify-center py-20 text-ink/40">
         <Loader2 className="w-5 h-5 animate-spin ml-2" /> جاري التحميل…
       </div>
     );
@@ -145,8 +148,8 @@ export default function AdvanceSettingsTab() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="mb-2">
-        <h2 className="text-lg font-black text-white">إعدادات السلف</h2>
-        <p className="text-white/40 text-sm mt-0.5">تحكم في حدود وقواعد منح السلف للموظفين</p>
+        <h2 className="text-lg font-black text-ink">إعدادات السلف</h2>
+        <p className="text-ink/40 text-sm mt-0.5">تحكم في حدود وقواعد منح السلف للموظفين</p>
       </div>
 
       <Section icon={Percent} title="حدود السلفة">
@@ -206,18 +209,18 @@ export default function AdvanceSettingsTab() {
           className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
             settings.requires_approval
               ? 'bg-emerald-500/10 border-emerald-500/30'
-              : 'bg-white/5 border-white/10'
+              : 'bg-surface border-line'
           }`}
         >
           <div className="text-right">
-            <div className="text-sm font-bold text-white">طلب اعتماد قبل صرف السلفة</div>
-            <p className="text-[11px] text-white/40 mt-0.5">
+            <div className="text-sm font-bold text-ink">طلب اعتماد قبل صرف السلفة</div>
+            <p className="text-[11px] text-ink/40 mt-0.5">
               عند التفعيل: السلف تحتاج موافقة من له صلاحية إدارة الرواتب قبل الاعتماد
             </p>
           </div>
           <div
             className={`relative w-12 h-6 rounded-full transition shrink-0 ${
-              settings.requires_approval ? 'bg-emerald-500' : 'bg-white/15'
+              settings.requires_approval ? 'bg-emerald-500' : 'bg-raised'
             }`}
           >
             <div
@@ -238,7 +241,11 @@ export default function AdvanceSettingsTab() {
           disabled={!dirty || saveMut.isPending}
           className="erp-btn erp-btn-primary flex items-center gap-2 px-5 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {saveMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saveMut.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
           {saveMut.isPending ? 'جاري الحفظ…' : 'حفظ الإعدادات'}
         </button>
       </div>

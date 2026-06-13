@@ -27,7 +27,9 @@ export function OBSuppliersTab() {
   });
   const [saving, setSaving] = useState(false);
 
-  const registeredIds = new Set(entries.map((e) => Number(e.customer_id ?? e.reference_id)).filter(Number.isFinite));
+  const registeredIds = new Set(
+    entries.map((e) => Number(e.customer_id ?? e.reference_id)).filter(Number.isFinite)
+  );
   const filteredSuppliers = suppliers.filter(
     (s) => !registeredIds.has(s.id) && s.name.includes(search)
   );
@@ -84,12 +86,12 @@ export function OBSuppliersTab() {
               }}
             />
             {search && !form.supplier_id && filteredSuppliers.length > 0 && (
-              <div className="absolute top-full mt-1 right-0 left-0 z-20 bg-[#111827] border border-white/10 rounded-xl max-h-48 overflow-y-auto shadow-2xl">
+              <div className="absolute top-full mt-1 right-0 left-0 z-20 bg-[#111827] border border-line rounded-xl max-h-48 overflow-y-auto shadow-2xl">
                 {filteredSuppliers.slice(0, 10).map((s) => (
                   <button
                     key={s.id}
                     onClick={() => handleSelect(s)}
-                    className="w-full text-right px-3 py-2.5 text-sm text-white/80 hover:bg-white/8 transition-colors border-b border-white/5 last:border-0"
+                    className="w-full text-right px-3 py-2.5 text-sm text-ink/80 hover:bg-surface transition-colors border-b border-line last:border-0"
                   >
                     {s.name}
                   </button>
@@ -134,10 +136,10 @@ export function OBSuppliersTab() {
         </PrimaryBtn>
       </div>
 
-      <div className="bg-[#111827] rounded-2xl overflow-hidden border border-white/5">
-        <div className="p-4 border-b border-white/8 flex items-center justify-between">
-          <h4 className="font-bold text-white/60 text-sm">أرصدة الموردين المسجلة</h4>
-          <span className="text-white/30 text-xs bg-white/5 px-2 py-0.5 rounded-lg">
+      <div className="bg-[#111827] rounded-2xl overflow-hidden border border-line">
+        <div className="p-4 border-b border-line flex items-center justify-between">
+          <h4 className="font-bold text-ink/60 text-sm">أرصدة الموردين المسجلة</h4>
+          <span className="text-ink/30 text-xs bg-surface px-2 py-0.5 rounded-lg">
             {entries.length}
           </span>
         </div>
@@ -148,8 +150,10 @@ export function OBSuppliersTab() {
             {
               label: 'المورد',
               render: (e) => (
-                <span className="font-bold text-white">
-                  {e.customer_name ?? e.description?.split('—')[1]?.trim() ?? `مورد #${e.customer_id ?? e.reference_id ?? e.id}`}
+                <span className="font-bold text-ink">
+                  {e.customer_name ??
+                    e.description?.split('—')[1]?.trim() ??
+                    `مورد #${e.customer_id ?? e.reference_id ?? e.id}`}
                 </span>
               ),
             },
@@ -164,11 +168,11 @@ export function OBSuppliersTab() {
             },
             {
               label: 'التاريخ',
-              render: (e) => <span className="text-white/40 text-xs">{e.date}</span>,
+              render: (e) => <span className="text-ink/40 text-xs">{e.date}</span>,
             },
             {
               label: 'البيان',
-              render: (e) => <span className="text-white/30 text-xs">{e.description}</span>,
+              render: (e) => <span className="text-ink/30 text-xs">{e.description}</span>,
             },
           ]}
         />

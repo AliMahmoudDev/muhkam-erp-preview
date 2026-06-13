@@ -80,18 +80,13 @@ export function PosPayment({
             </div>
             <div className="flex justify-between items-center">
               <span className="erp-label text-red-500">خصم {discountPct}%</span>
-              <span className="text-red-500 text-sm font-bold">
-                -{formatCurrency(discountAmt)}
-              </span>
+              <span className="text-red-500 text-sm font-bold">-{formatCurrency(discountAmt)}</span>
             </div>
           </>
         )}
         <div className="flex justify-between items-center">
           <span className="erp-subtitle">الإجمالي</span>
-          <span
-            className="erp-number text-amber-500"
-            style={{ fontSize: cm ? '2rem' : '1.5rem' }}
-          >
+          <span className="erp-number text-amber-500" style={{ fontSize: cm ? '2rem' : '1.5rem' }}>
             {formatCurrency(cartTotal)}
           </span>
         </div>
@@ -102,7 +97,7 @@ export function PosPayment({
         <div
           className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs"
           style={{
-            color: '#ef4444',
+            color: 'var(--status-danger)',
             background: 'rgba(239,68,68,0.10)',
             border: '1px solid rgba(239,68,68,0.20)',
           }}
@@ -123,10 +118,7 @@ export function PosPayment({
           paddingTop: cm ? '1.125rem' : '0.875rem',
           paddingBottom: cm ? '1.125rem' : '0.875rem',
           fontSize: cm ? '1.0625rem' : '0.9375rem',
-          boxShadow:
-            cartLength > 0 && !isPending
-              ? '0 4px 18px rgba(245,158,11,0.30)'
-              : undefined,
+          boxShadow: cartLength > 0 && !isPending ? '0 4px 18px rgba(245,158,11,0.30)' : undefined,
         }}
       >
         {isPending ? (

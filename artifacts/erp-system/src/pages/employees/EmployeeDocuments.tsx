@@ -14,8 +14,8 @@ export function EmployeeDocuments({ selected, documents }: EmployeeDocumentsProp
   return (
     <div className="space-y-2">
       {selected.national_id_image && (
-        <div className="bg-white/5 rounded-lg p-2 space-y-2">
-          <div className="flex items-center gap-1 text-xs font-semibold text-white">
+        <div className="bg-surface rounded-lg p-2 space-y-2">
+          <div className="flex items-center gap-1 text-xs font-semibold text-ink">
             <IdCard size={12} className="text-amber-400" /> صورة البطاقة الشخصية
           </div>
           <a
@@ -27,18 +27,18 @@ export function EmployeeDocuments({ selected, documents }: EmployeeDocumentsProp
             <img
               src={resolveUploadedFileUrl(selected.national_id_image)}
               alt="بطاقة شخصية"
-              className="rounded max-h-48 w-auto border border-white/10"
+              className="rounded max-h-48 w-auto border border-line"
             />
           </a>
         </div>
       )}
       {documents.length === 0 && !selected.national_id_image && (
-        <p className="text-white/40 text-xs text-center py-4">لا توجد مستندات</p>
+        <p className="text-ink/40 text-xs text-center py-4">لا توجد مستندات</p>
       )}
       {documents.map((doc) => (
-        <div key={doc.id} className="bg-white/5 rounded-lg p-2">
-          <div className="text-xs font-semibold text-white">{doc.file_name}</div>
-          <div className="text-xs text-white/50">{doc.document_type}</div>
+        <div key={doc.id} className="bg-surface rounded-lg p-2">
+          <div className="text-xs font-semibold text-ink">{doc.file_name}</div>
+          <div className="text-xs text-ink/50">{doc.document_type}</div>
           {doc.expiry_date && (
             <div className="text-xs text-amber-300">ينتهي: {doc.expiry_date}</div>
           )}

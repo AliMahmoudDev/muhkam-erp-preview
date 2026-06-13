@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface TableSkeletonProps {
   cols?: number;
@@ -9,13 +9,14 @@ export function TableSkeleton({ cols = 5, rows = 6 }: TableSkeletonProps) {
   return (
     <>
       {Array.from({ length: rows }).map((_, i) => (
-        <tr key={i} className="border-b border-white/5">
+        <tr key={i} className="border-b border-line">
           {Array.from({ length: cols }).map((_, j) => (
             <td key={j} className="p-4">
               <Skeleton
                 className="h-4 rounded-lg skeleton-layer"
                 style={{
-                  width: j === 0 ? "70%" : j === cols - 1 ? "40%" : `${55 + (i * 7 + j * 13) % 30}%`,
+                  width:
+                    j === 0 ? '70%' : j === cols - 1 ? '40%' : `${55 + ((i * 7 + j * 13) % 30)}%`,
                   animationDuration: `${1.2 + i * 0.1}s`,
                 }}
               />

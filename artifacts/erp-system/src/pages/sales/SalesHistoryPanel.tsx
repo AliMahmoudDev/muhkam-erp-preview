@@ -36,16 +36,16 @@ function SalesPostingBadge({ status }: { status: string }) {
       </span>
     );
   return (
-    <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-medium">
+    <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink/50 font-medium">
       مسودة
     </span>
   );
 }
 
 function buildSaleWhatsAppUrl(s: SaleRecord): string {
-  const paid      = Number(s.paid_amount);
+  const paid = Number(s.paid_amount);
   const remaining = Number(s.remaining_amount);
-  const total     = Number(s.total_amount);
+  const total = Number(s.total_amount);
 
   let payLine: string;
   if (s.payment_type === 'credit') {
@@ -122,8 +122,8 @@ export function SalesHistoryPanel() {
   return (
     <div className="glass-panel rounded-3xl overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-right text-white/80 whitespace-nowrap text-sm">
-          <thead className="bg-white/5 border-b border-white/10">
+        <table className="w-full text-right text-ink/80 whitespace-nowrap text-sm">
+          <thead className="bg-surface border-b border-line">
             <tr>
               <th className="p-3 font-medium">رقم الفاتورة</th>
               <th className="p-3 font-medium">العميل</th>
@@ -139,19 +139,19 @@ export function SalesHistoryPanel() {
               <TableSkeleton cols={7} rows={5} />
             ) : sales.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-white/40">
+                <td colSpan={7} className="p-8 text-center text-ink/40">
                   لا توجد فواتير بعد
                 </td>
               </tr>
             ) : (
               sales.map((s) => (
-                <tr key={s.id} className="border-b border-white/5 erp-table-row">
+                <tr key={s.id} className="border-b border-line erp-table-row">
                   <td className="p-3 font-mono text-amber-400">{s.invoice_no}</td>
-                  <td className="p-3 font-bold text-white">{s.customer_name || 'نقدي'}</td>
+                  <td className="p-3 font-bold text-ink">{s.customer_name || 'نقدي'}</td>
                   <td className="p-3 font-bold text-emerald-400">
                     {formatCurrency(s.total_amount)}
                   </td>
-                  <td className="p-3 text-white/60">
+                  <td className="p-3 text-ink/60">
                     {s.payment_type === 'cash'
                       ? 'نقدي'
                       : s.payment_type === 'credit'
@@ -161,7 +161,7 @@ export function SalesHistoryPanel() {
                   <td className="p-3">
                     <SalesPostingBadge status={s.posting_status} />
                   </td>
-                  <td className="p-3 text-white/50">{s.date || '—'}</td>
+                  <td className="p-3 text-ink/50">{s.date || '—'}</td>
                   <td className="p-3">
                     <div className="flex items-center gap-1">
                       {s.posting_status === 'draft' && canCancelSale && (

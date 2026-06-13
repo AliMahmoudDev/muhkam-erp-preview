@@ -20,12 +20,7 @@ import { CountHistory } from './CountHistory';
 const ROWS_PER_CHUNK = 200;
 const SCAN_DEDUPE_MS = 1200;
 
-function CountTab({
-  warehouses,
-  currentWarehouseId,
-  qc,
-  toast,
-}: CountTabProps) {
+function CountTab({ warehouses, currentWarehouseId, qc, toast }: CountTabProps) {
   const defaultWH =
     warehouses.length > 0
       ? (warehouses.find((w) => w.id === currentWarehouseId)?.id ?? warehouses[0].id)
@@ -85,9 +80,7 @@ function CountTab({
   const ps = debouncedPartialSearch.toLowerCase();
   const filteredForSelector = allProducts.filter((p) => {
     const matchSearch =
-      !ps ||
-      p.name.toLowerCase().includes(ps) ||
-      (p.sku ?? '').toLowerCase().includes(ps);
+      !ps || p.name.toLowerCase().includes(ps) || (p.sku ?? '').toLowerCase().includes(ps);
     const matchCat = partialCategory === 'all' || p.category === partialCategory;
     return matchSearch && matchCat;
   });
@@ -99,7 +92,14 @@ function CountTab({
         ? allProducts.filter((p) => p.calculated_qty > 0)
         : allProducts.filter((p) => selectedProductIds.has(p.id));
 
-  const variance = computeVariance(allProducts, physicalQtys, itemNotes, selectedWarehouse, countDate, countTime);
+  const variance = computeVariance(
+    allProducts,
+    physicalQtys,
+    itemNotes,
+    selectedWarehouse,
+    countDate,
+    countTime
+  );
 
   const createAndApplyMutation = useMutation({
     mutationFn: async () => {
@@ -125,7 +125,7 @@ function CountTab({
         body: JSON.stringify({ warehouse_id: selectedWarehouse, notes: notesWithDateTime, items }),
       });
       if (!createRes.ok) {
-        const err = await createRes.json().catch(() => ({} as { error?: string }));
+        const err = await createRes.json().catch(() => ({}) as { error?: string });
         throw new Error((err as { error?: string }).error ?? 'خطأ في إنشاء الجلسة');
       }
       const { session_id } = await createRes.json();
@@ -134,7 +134,7 @@ function CountTab({
         method: 'POST',
       });
       if (!applyRes.ok) {
-        const err = await applyRes.json().catch(() => ({} as { error?: string }));
+        const err = await applyRes.json().catch(() => ({}) as { error?: string });
         throw new Error((err as { error?: string }).error ?? 'خطأ في تطبيق الجرد');
       }
       return applyRes.json();
@@ -190,16 +190,11 @@ function CountTab({
       const trimmed = code.trim();
       if (!trimmed) return;
       const now = Date.now();
-      if (
-        lastScanRef.current.code === trimmed &&
-        now - lastScanRef.current.at < SCAN_DEDUPE_MS
-      ) {
+      if (lastScanRef.current.code === trimmed && now - lastScanRef.current.at < SCAN_DEDUPE_MS) {
         return;
       }
       lastScanRef.current = { code: trimmed, at: now };
-      const found = allProducts.find(
-        (p) => (p.sku ?? '').toLowerCase() === trimmed.toLowerCase()
-      );
+      const found = allProducts.find((p) => (p.sku ?? '').toLowerCase() === trimmed.toLowerCase());
       if (!found) {
         setLastScanned(trimmed);
         toast({ title: `لم يُعثر على منتج بالباركود ${trimmed}`, variant: 'destructive' });
@@ -212,9 +207,7 @@ function CountTab({
       });
       toast({ title: `${found.name} +1` });
       setTimeout(() => {
-        const el = document.querySelector<HTMLInputElement>(
-          `input[data-qty-input="${found.id}"]`
-        );
+        const el = document.querySelector<HTMLInputElement>(`input[data-qty-input="${found.id}"]`);
         if (el) {
           el.scrollIntoView({ block: 'center', behavior: 'smooth' });
           el.focus();
@@ -233,9 +226,24 @@ function CountTab({
       columns: [
         { header: 'المنتج', key: 'name', width: 30 },
         { header: 'SKU', key: 'sku', width: 14 },
-        { header: 'النظام', key: 'calculated_qty', width: 12, format: (r) => r.calculated_qty.toFixed(2) },
-        { header: 'الفعلي', key: 'physical', width: 12, format: (r) => parseFloat(physicalQtys[r.id] ?? '0') },
-        { header: 'الفرق', key: 'diff', width: 12, format: (r) => (parseFloat(physicalQtys[r.id] ?? '0') - r.calculated_qty).toFixed(2) },
+        {
+          header: 'النظام',
+          key: 'calculated_qty',
+          width: 12,
+          format: (r) => r.calculated_qty.toFixed(2),
+        },
+        {
+          header: 'الفعلي',
+          key: 'physical',
+          width: 12,
+          format: (r) => parseFloat(physicalQtys[r.id] ?? '0'),
+        },
+        {
+          header: 'الفرق',
+          key: 'diff',
+          width: 12,
+          format: (r) => (parseFloat(physicalQtys[r.id] ?? '0') - r.calculated_qty).toFixed(2),
+        },
         { header: 'سبب الفرق', key: 'note', width: 30, format: (r) => itemNotes[r.id] ?? '' },
       ],
       rows: variance.enteredProducts,
@@ -250,8 +258,16 @@ function CountTab({
         { header: 'المنتج', key: 'name' },
         { header: 'SKU', key: 'sku' },
         { header: 'النظام', key: 'calculated_qty', format: (r) => r.calculated_qty.toFixed(2) },
-        { header: 'الفعلي', key: 'physical', format: (r) => parseFloat(physicalQtys[r.id] ?? '0').toFixed(2) },
-        { header: 'الفرق', key: 'diff', format: (r) => (parseFloat(physicalQtys[r.id] ?? '0') - r.calculated_qty).toFixed(2) },
+        {
+          header: 'الفعلي',
+          key: 'physical',
+          format: (r) => parseFloat(physicalQtys[r.id] ?? '0').toFixed(2),
+        },
+        {
+          header: 'الفرق',
+          key: 'diff',
+          format: (r) => (parseFloat(physicalQtys[r.id] ?? '0') - r.calculated_qty).toFixed(2),
+        },
       ],
       rows: variance.enteredProducts,
     });
@@ -262,13 +278,13 @@ function CountTab({
       <div className="flex gap-2">
         <button
           onClick={() => setSessionView('new')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'new' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'new' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
         >
           جرد جديد
         </button>
         <button
           onClick={() => setSessionView('history')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'history' ? 'bg-violet-500 text-white' : 'bg-white/10 text-white/60 hover:text-white'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'history' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
         >
           سجل الجرد ({sessions.length})
         </button>
@@ -326,8 +342,8 @@ function CountTab({
 
           {/* شريط أدوات الجرد — باركود */}
           {selectedWarehouse > 0 && countMode !== 'partial' && (
-            <div className="flex items-center justify-between gap-3 bg-white/3 border border-white/8 rounded-xl px-4 py-2.5">
-              <div className="flex items-center gap-2 text-xs text-white/50">
+            <div className="flex items-center justify-between gap-3 bg-surface border border-line rounded-xl px-4 py-2.5">
+              <div className="flex items-center gap-2 text-xs text-ink/50">
                 <Camera className="w-3.5 h-3.5 text-violet-400" />
                 <span>استخدم الماسح الضوئي لإضافة الكميات بسرعة</span>
                 {lastScanned && (

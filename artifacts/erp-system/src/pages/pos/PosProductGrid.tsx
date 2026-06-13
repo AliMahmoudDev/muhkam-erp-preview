@@ -141,7 +141,7 @@ export function PosProductGrid({
                   style={cardStyle}
                 >
                   {inCart && (
-                    <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-black text-white">
+                    <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-black text-ink">
                       {inCart.quantity}
                     </div>
                   )}

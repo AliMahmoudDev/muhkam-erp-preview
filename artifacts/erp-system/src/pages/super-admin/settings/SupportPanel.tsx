@@ -12,7 +12,12 @@ interface Props {
 }
 
 export function SupportPanel({
-  supportWa, setSupportWa, supportEmail, setSupportEmail, settingSaving, saveSupportSettings,
+  supportWa,
+  setSupportWa,
+  supportEmail,
+  setSupportEmail,
+  settingSaving,
+  saveSupportSettings,
 }: Props) {
   return (
     <div style={{ padding: '24px' }}>
@@ -34,14 +39,23 @@ export function SupportPanel({
         type="email"
       />
       <button
-        onClick={() => { void saveSupportSettings(); }}
+        onClick={() => {
+          void saveSupportSettings();
+        }}
         disabled={settingSaving}
         style={{
-          width: '100%', padding: '12px', borderRadius: '10px', border: 'none',
+          width: '100%',
+          padding: '12px',
+          borderRadius: '10px',
+          border: 'none',
           background: settingSaving ? C.border : C.orange,
-          color: '#fff', fontSize: '14px', fontWeight: 800,
+          color: 'var(--text-1)',
+          fontSize: '14px',
+          fontWeight: 800,
           cursor: settingSaving ? 'not-allowed' : 'pointer',
-          fontFamily: FONT, transition: 'filter 0.15s', marginTop: '4px',
+          fontFamily: FONT,
+          transition: 'filter 0.15s',
+          marginTop: '4px',
         }}
       >
         {settingSaving ? 'جاري الحفظ...' : '💾 حفظ الإعدادات'}

@@ -22,8 +22,10 @@ export function ExpensesSummaryCards({
           <TrendingDown className="w-5 h-5 text-red-400" />
         </div>
         <div>
-          <div className="text-red-400 font-black text-lg leading-tight">{formatCurrency(totalAll)}</div>
-          <div className="text-white/40 text-xs mt-0.5">إجمالي المصروفات</div>
+          <div className="text-red-400 font-black text-lg leading-tight">
+            {formatCurrency(totalAll)}
+          </div>
+          <div className="text-ink/40 text-xs mt-0.5">إجمالي المصروفات</div>
         </div>
       </div>
 
@@ -33,8 +35,10 @@ export function ExpensesSummaryCards({
           <Calendar className="w-5 h-5 text-orange-400" />
         </div>
         <div>
-          <div className="text-orange-400 font-black text-lg leading-tight">{formatCurrency(totalMonth)}</div>
-          <div className="text-white/40 text-xs mt-0.5">مصروفات هذا الشهر</div>
+          <div className="text-orange-400 font-black text-lg leading-tight">
+            {formatCurrency(totalMonth)}
+          </div>
+          <div className="text-ink/40 text-xs mt-0.5">مصروفات هذا الشهر</div>
         </div>
       </div>
 
@@ -47,7 +51,7 @@ export function ExpensesSummaryCards({
           <div className="text-amber-300 font-black text-sm leading-tight truncate">
             {topCategory ? topCategory.cat : '—'}
           </div>
-          <div className="text-white/40 text-xs mt-0.5">
+          <div className="text-ink/40 text-xs mt-0.5">
             {topCategory ? `أعلى تصنيف • ${formatCurrency(topCategory.amt)}` : 'لا توجد بيانات'}
           </div>
         </div>
@@ -60,7 +64,7 @@ export function ExpensesSummaryCards({
         </div>
         <div>
           <div className="text-blue-400 font-black text-lg leading-tight">{totalRecords}</div>
-          <div className="text-white/40 text-xs mt-0.5">إجمالي السجلات</div>
+          <div className="text-ink/40 text-xs mt-0.5">إجمالي السجلات</div>
         </div>
       </div>
     </div>

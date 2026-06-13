@@ -164,7 +164,7 @@ export function AlertBell() {
   }
 
   /* ── Styles ─────────────────────────────────────────────── */
-  const bgPanel = isDark ? '#161f30' : '#ffffff';
+  const bgPanel = 'var(--bg-panel)';
   const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)';
   const textMain = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.85)';
   const textSub = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.42)';
@@ -184,7 +184,7 @@ export function AlertBell() {
           ? 'rgba(245,158,11,0.18)'
           : 'rgba(245,158,11,0.14)'
         : 'transparent',
-      color: isActive ? '#f59e0b' : textSub,
+      color: isActive ? 'var(--status-warning)' : textSub,
       transition: 'all 0.15s',
     } as React.CSSProperties;
   }
@@ -223,8 +223,8 @@ export function AlertBell() {
               minWidth: 17,
               height: 17,
               borderRadius: 9,
-              background: hasCritical ? '#ef4444' : '#f59e0b',
-              color: '#fff',
+              background: hasCritical ? 'var(--status-danger)' : 'var(--status-warning)',
+              color: 'var(--text-1)',
               fontSize: 10,
               fontWeight: 700,
               display: 'flex',
@@ -286,7 +286,7 @@ export function AlertBell() {
                       borderRadius: 8,
                       fontWeight: 600,
                       background: 'rgba(245,158,11,0.14)',
-                      color: '#f59e0b',
+                      color: 'var(--status-warning)',
                     }}
                   >
                     {active.length} نشطة
@@ -300,7 +300,7 @@ export function AlertBell() {
                       borderRadius: 8,
                       fontWeight: 600,
                       background: 'rgba(239,68,68,0.15)',
-                      color: '#ef4444',
+                      color: 'var(--status-danger)',
                     }}
                   >
                     {critical.length} حرجية

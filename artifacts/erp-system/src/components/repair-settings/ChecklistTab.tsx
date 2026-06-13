@@ -13,8 +13,6 @@ import {
   ArrowLeft,
   Copy,
   Search,
-  Sparkles,
-  GitMerge,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { authFetch } from '@/lib/auth-fetch';
@@ -52,11 +50,6 @@ export default function ChecklistTab() {
   const [showCopyMenu, setShowCopyMenu] = useState(false);
   const [localCats, setLocalCats] = useState<string[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
-  const [deduping, setDeduping] = useState(false);
-  const [showMergeModal, setShowMergeModal] = useState(false);
-  const [mergeFrom, setMergeFrom] = useState('');
-  const [mergeTo, setMergeTo] = useState('');
-  const [merging, setMerging] = useState(false);
 
   /* ── derived manufacturer / category helpers ── */
   const activeMfrData = manufacturers.find((m) => m.key === activeMfr) ?? manufacturers[0];
@@ -291,48 +284,6 @@ export default function ChecklistTab() {
     setNewCatInput('');
   };
 
-  const deduplicate = async () => {
-    setDeduping(true);
-    const r = await authFetch(api('/api/repair-checklist-items/deduplicate'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ device_type: deviceType }),
-    });
-    setDeduping(false);
-    if (!r.ok) {
-      toast({ title: 'خطأ أثناء الإزالة', variant: 'destructive' });
-      return;
-    }
-    const { deleted } = await r.json();
-    toast({ title: deleted > 0 ? `✓ تم حذف ${deleted} بند مكرر` : 'لا توجد بنود مكررة' });
-    if (deleted > 0) invalidate();
-  };
-
-  const doMerge = async () => {
-    if (!mergeFrom || !mergeTo || mergeFrom === mergeTo) return;
-    setMerging(true);
-    const r = await authFetch(api('/api/repair-checklist-items/merge-categories'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        device_type: deviceType,
-        from_category: mergeFrom,
-        to_category: mergeTo,
-      }),
-    });
-    setMerging(false);
-    if (!r.ok) {
-      toast({ title: 'خطأ أثناء الدمج', variant: 'destructive' });
-      return;
-    }
-    const { updated } = await r.json();
-    toast({ title: `✓ تم نقل ${updated} بند إلى «${mergeTo}»` });
-    setShowMergeModal(false);
-    setMergeFrom('');
-    setMergeTo('');
-    invalidate();
-  };
-
   const isEmpty = !isLoading && !isError && items.length === 0 && localCats.length === 0;
 
   /* activeMeta — safe for built-in and custom types */
@@ -380,7 +331,7 @@ export default function ChecklistTab() {
     ? {
         background: 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(217,119,6,0.10) 100%)',
         border: '1px solid rgba(245,158,11,0.55)',
-        color: '#92400e',
+        color: 'var(--status-warning)',
         boxShadow: '0 4px 12px -4px rgba(245,158,11,0.30), 0 0 0 3px rgba(245,158,11,0.08)',
       }
     : {
@@ -405,7 +356,7 @@ export default function ChecklistTab() {
     ? {
         background: 'rgba(245,158,11,0.12)',
         border: '1px solid rgba(245,158,11,0.45)',
-        color: '#92400e',
+        color: 'var(--status-warning)',
       }
     : {
         background: 'rgba(245,158,11,0.15)',
@@ -441,13 +392,13 @@ export default function ChecklistTab() {
           <div className="flex items-center gap-2.5">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-amber-300 to-amber-500" />
             <h3
-              className={`text-[11px] font-black tracking-[0.22em] uppercase ${isLight ? 'text-slate-500' : 'text-white/55'}`}
+              className={`text-[11px] font-black tracking-[0.22em] uppercase ${isLight ? 'text-slate-500' : 'text-ink/55'}`}
             >
               الشركة المصنعة
             </h3>
           </div>
           <div
-            className={`flex items-center gap-2 text-[10px] ${isLight ? 'text-slate-400' : 'text-white/35'}`}
+            className={`flex items-center gap-2 text-[10px] ${isLight ? 'text-slate-400' : 'text-ink/35'}`}
           >
             <span className="font-bold text-amber-500 tabular-nums">{items.length}</span>
             <span>بند في «{activeMeta.label}»</span>
@@ -474,7 +425,7 @@ export default function ChecklistTab() {
                       isLight
                         ? {
                             background: 'rgba(245,158,11,0.15)',
-                            color: '#92400e',
+                            color: 'var(--status-warning)',
                             border: '1px solid rgba(245,158,11,0.30)',
                           }
                         : {
@@ -537,7 +488,7 @@ export default function ChecklistTab() {
                     className="text-[10px] px-1 rounded font-black tabular-nums"
                     style={
                       isLight
-                        ? { background: 'rgba(245,158,11,0.15)', color: '#92400e' }
+                        ? { background: 'rgba(245,158,11,0.15)', color: 'var(--status-warning)' }
                         : { background: 'rgba(0,0,0,0.25)', color: '#fde68a' }
                     }
                   >
@@ -572,7 +523,7 @@ export default function ChecklistTab() {
             </button>
           )}
           {activeMfrData?.categories.length === 0 && (
-            <p className={`text-[11px] py-0.5 ${isLight ? 'text-slate-400' : 'text-white/25'}`}>
+            <p className={`text-[11px] py-0.5 ${isLight ? 'text-slate-400' : 'text-ink/25'}`}>
               لا توجد فئات — اضغط «فئة جديدة» لإضافة الأولى
             </p>
           )}
@@ -629,7 +580,7 @@ export default function ChecklistTab() {
               setShowAddMfr(false);
               setAddMfrLabel('');
             }}
-            className="text-white/30 hover:text-white/60"
+            className="text-ink/30 hover:text-ink/60"
           >
             <XCircle className="w-4 h-4" />
           </button>
@@ -686,7 +637,7 @@ export default function ChecklistTab() {
               setShowAddCat(false);
               setAddCatLabel('');
             }}
-            className="text-white/30 hover:text-white/60"
+            className="text-ink/30 hover:text-ink/60"
           >
             <XCircle className="w-4 h-4" />
           </button>
@@ -715,7 +666,7 @@ export default function ChecklistTab() {
           }
         >
           <Search
-            className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-slate-400' : 'text-white/40'}`}
+            className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-slate-400' : 'text-ink/40'}`}
           />
           <input
             ref={searchRef}
@@ -723,12 +674,12 @@ export default function ChecklistTab() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`ابحث في بنود ${activeMeta.label}...`}
-            className={`flex-1 bg-transparent text-[12px] outline-none font-medium ${isLight ? 'text-slate-700 placeholder:text-slate-400' : 'text-white placeholder:text-white/45'}`}
+            className={`flex-1 bg-transparent text-[12px] outline-none font-medium ${isLight ? 'text-slate-700 placeholder:text-slate-400' : 'text-ink placeholder:text-ink/45'}`}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className={`shrink-0 ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/30 hover:text-white/70'}`}
+              className={`shrink-0 ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-ink/30 hover:text-ink/70'}`}
               title="مسح البحث"
             >
               <X className="w-3 h-3" />
@@ -742,7 +693,7 @@ export default function ChecklistTab() {
         {/* الإجراءات */}
         <button
           onClick={() => setShowNewCat((v) => !v)}
-          className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl font-bold ${isLight ? 'text-slate-600 hover:text-slate-800' : 'text-white/70 hover:text-white'}`}
+          className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl font-bold ${isLight ? 'text-slate-600 hover:text-slate-800' : 'text-ink/70 hover:text-ink'}`}
           style={
             isLight
               ? { background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.10)' }
@@ -755,7 +706,7 @@ export default function ChecklistTab() {
           <button
             onClick={() => setShowCopyMenu((v) => !v)}
             disabled={copying}
-            className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl disabled:opacity-40 font-bold ${isLight ? 'text-slate-600 hover:text-slate-800' : 'text-white/70 hover:text-white'}`}
+            className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl disabled:opacity-40 font-bold ${isLight ? 'text-slate-600 hover:text-slate-800' : 'text-ink/70 hover:text-ink'}`}
             style={
               isLight
                 ? { background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.10)' }
@@ -774,7 +725,7 @@ export default function ChecklistTab() {
               style={
                 isLight
                   ? {
-                      background: '#1e293b',
+                      background: 'var(--bg-elevated)',
                       backdropFilter: 'blur(20px)',
                       border: '1px solid rgba(255,255,255,0.15)',
                       boxShadow:
@@ -789,7 +740,7 @@ export default function ChecklistTab() {
                     }
               }
             >
-              <p className="text-[10px] text-white/40 font-black tracking-wider uppercase px-3 pt-1 pb-1.5">
+              <p className="text-[10px] text-ink/40 font-black tracking-wider uppercase px-3 pt-1 pb-1.5">
                 انسخ بنود من:
               </p>
               {allDeviceTypes
@@ -798,7 +749,7 @@ export default function ChecklistTab() {
                   <button
                     key={d.key}
                     onClick={() => copyFrom(d.key)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-white/80 hover:bg-amber-500/10 hover:text-amber-200 text-right rounded-md mx-1 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-ink/80 hover:bg-amber-500/10 hover:text-amber-200 text-right rounded-md mx-1 transition-colors"
                   >
                     <span className="text-base">{d.emoji}</span>
                     <span className="flex-1 font-semibold">{d.label}</span>
@@ -808,45 +759,6 @@ export default function ChecklistTab() {
             </div>
           )}
         </div>
-        {/* زر إزالة التكرار */}
-        {items.length > 0 && (
-          <button
-            onClick={deduplicate}
-            disabled={deduping}
-            title="حذف البنود المكررة في هذا النوع"
-            className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl font-bold disabled:opacity-40 transition-all ${isLight ? 'text-violet-700 hover:text-violet-900' : 'text-violet-300 hover:text-violet-200'}`}
-            style={
-              isLight
-                ? { background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.22)' }
-                : { background: 'rgba(139,92,246,0.10)', border: '1px solid rgba(139,92,246,0.22)' }
-            }
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            {deduping ? 'جاري...' : 'إزالة التكرار'}
-          </button>
-        )}
-
-        {/* زر دمج التصنيفات */}
-        {allCategories.length > 1 && (
-          <button
-            onClick={() => {
-              setShowMergeModal(true);
-              setMergeFrom('');
-              setMergeTo('');
-            }}
-            title="دمج تصنيفين معاً"
-            className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl font-bold transition-all ${isLight ? 'text-teal-700 hover:text-teal-900' : 'text-teal-300 hover:text-teal-200'}`}
-            style={
-              isLight
-                ? { background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.22)' }
-                : { background: 'rgba(20,184,166,0.10)', border: '1px solid rgba(20,184,166,0.22)' }
-            }
-          >
-            <GitMerge className="w-3.5 h-3.5" />
-            دمج تصنيفات
-          </button>
-        )}
-
         <button
           onClick={seedDeviceType}
           disabled={seeding}
@@ -865,7 +777,7 @@ export default function ChecklistTab() {
 
       {/* Add cat input */}
       {showNewCat && (
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/8 bg-white/2 shrink-0">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-line bg-surface shrink-0">
           <input
             autoFocus
             value={newCatInput}
@@ -892,7 +804,7 @@ export default function ChecklistTab() {
               setShowNewCat(false);
               setNewCatInput('');
             }}
-            className="text-white/30 hover:text-white/60"
+            className="text-ink/30 hover:text-ink/60"
           >
             <XCircle className="w-4 h-4" />
           </button>
@@ -903,7 +815,7 @@ export default function ChecklistTab() {
       <div className="overflow-y-auto flex-1">
         {isLoading && (
           <div className="flex items-center justify-center h-32">
-            <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-line border-t-white/60 rounded-full animate-spin" />
           </div>
         )}
         {isError && (
@@ -916,7 +828,7 @@ export default function ChecklistTab() {
             <div className="w-12 h-12 rounded-2xl bg-amber-500/12 border border-amber-500/25 flex items-center justify-center text-2xl">
               {activeMeta.emoji}
             </div>
-            <p className="text-white/40 text-sm text-center">
+            <p className="text-ink/40 text-sm text-center">
               لا توجد بنود فحص لـ {activeMeta.label} بعد — تُستخدم نفس البنود في الفحص الأولي و QC
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -931,7 +843,7 @@ export default function ChecklistTab() {
               <button
                 onClick={() => setShowCopyMenu((v) => !v)}
                 disabled={copying}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold border border-white/10 bg-white/5 text-white/65 hover:bg-white/10 disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold border border-line bg-surface text-ink/65 hover:bg-surface disabled:opacity-50"
               >
                 <Copy className="w-4 h-4" /> نسخ من نوع آخر
               </button>
@@ -940,7 +852,7 @@ export default function ChecklistTab() {
               onClick={() => {
                 setShowNewCat(true);
               }}
-              className="text-xs text-white/25 hover:text-white/50 transition-colors"
+              className="text-xs text-ink/25 hover:text-ink/50 transition-colors"
             >
               أو أضف تصنيفاً يدوياً
             </button>
@@ -957,10 +869,10 @@ export default function ChecklistTab() {
               const isExpanded = searchQuery ? true : expandedCats.has(cat);
               const isLocal = !dbCategories.includes(cat);
               return (
-                <div key={cat} className="border-b border-white/5 last:border-b-0">
+                <div key={cat} className="border-b border-line last:border-b-0">
                   <button
                     onClick={() => toggleCat(cat)}
-                    className="w-full flex items-center gap-3 px-4 py-3 bg-white/[0.02] hover:bg-white/[0.04] transition-colors text-right"
+                    className="w-full flex items-center gap-3 px-4 py-3 bg-surface hover:bg-surface transition-colors text-right"
                     style={isLight ? { background: 'rgba(0,0,0,0.025)' } : undefined}
                   >
                     <ChevronDown
@@ -974,7 +886,7 @@ export default function ChecklistTab() {
                       {cat}
                       {isLocal && (
                         <span
-                          className={`text-[10px] font-normal mr-2 ${isLight ? 'text-slate-400' : 'text-white/25'}`}
+                          className={`text-[10px] font-normal mr-2 ${isLight ? 'text-slate-400' : 'text-ink/25'}`}
                         >
                           جديد
                         </span>
@@ -990,7 +902,7 @@ export default function ChecklistTab() {
                         e.stopPropagation();
                         openAddToCat(cat);
                       }}
-                      className="flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-lg border border-transparent text-white/25 hover:bg-white/8 hover:border-white/12 hover:text-white/60 transition-all shrink-0"
+                      className="flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-lg border border-transparent text-ink/25 hover:bg-surface hover:border-line hover:text-ink/60 transition-all shrink-0"
                     >
                       <Plus className="w-3 h-3" /> بند
                     </span>
@@ -998,16 +910,16 @@ export default function ChecklistTab() {
                   {isExpanded && (
                     <div className="px-2 pt-0.5 pb-2 space-y-0.5">
                       {catItems.length === 0 && addingToCat !== cat && (
-                        <p className="text-center text-white/20 text-xs py-4">
+                        <p className="text-center text-ink/20 text-xs py-4">
                           لا توجد بنود — اضغط «بند» لإضافة الأول
                         </p>
                       )}
                       {catItems.map((item, idx) => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-2 py-2 px-3 rounded-xl border border-transparent hover:border-white/8 hover:bg-white/[0.03] transition-all group"
+                          className="flex items-center gap-2 py-2 px-3 rounded-xl border border-transparent hover:border-line hover:bg-surface transition-all group"
                         >
-                          <span className="text-[10px] text-white/15 w-5 text-left shrink-0 tabular-nums group-hover:text-white/35">
+                          <span className="text-[10px] text-ink/15 w-5 text-left shrink-0 tabular-nums group-hover:text-ink/35">
                             {idx + 1}
                           </span>
                           {editingId === item.id ? (
@@ -1030,27 +942,27 @@ export default function ChecklistTab() {
                               </button>
                               <button
                                 onClick={() => setEditingId(null)}
-                                className="text-white/30 p-1 shrink-0"
+                                className="text-ink/30 p-1 shrink-0"
                               >
                                 <XCircle className="w-3.5 h-3.5" />
                               </button>
                             </>
                           ) : (
                             <>
-                              <span className="flex-1 text-sm text-white/75">{item.label_ar}</span>
+                              <span className="flex-1 text-sm text-ink/75">{item.label_ar}</span>
                               <button
                                 onClick={() => {
                                   setEditingId(item.id);
                                   setEditLabel(item.label_ar);
                                   setAddingToCat(null);
                                 }}
-                                className="opacity-0 group-hover:opacity-100 text-white/25 hover:text-amber-400 p-1 transition-all shrink-0"
+                                className="opacity-0 group-hover:opacity-100 text-ink/25 hover:text-amber-400 p-1 transition-all shrink-0"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => deleteItem(item.id)}
-                                className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 p-1 transition-all shrink-0"
+                                className="opacity-0 group-hover:opacity-100 text-ink/20 hover:text-red-400 p-1 transition-all shrink-0"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1059,7 +971,7 @@ export default function ChecklistTab() {
                         </div>
                       ))}
                       {addingToCat === cat && (
-                        <div className="flex items-center gap-2 py-1.5 px-3 mt-0.5 rounded-xl border border-white/10 bg-white/3">
+                        <div className="flex items-center gap-2 py-1.5 px-3 mt-0.5 rounded-xl border border-line bg-surface">
                           <input
                             autoFocus
                             value={newItemLabel}
@@ -1086,7 +998,7 @@ export default function ChecklistTab() {
                               setAddingToCat(null);
                               setNewItemLabel('');
                             }}
-                            className="text-white/25 hover:text-white/60 p-1 shrink-0"
+                            className="text-ink/25 hover:text-ink/60 p-1 shrink-0"
                           >
                             <XCircle className="w-4 h-4" />
                           </button>
@@ -1100,169 +1012,6 @@ export default function ChecklistTab() {
           </div>
         )}
       </div>
-
-      {/* ═════ Modal: دمج تصنيفات ═════ */}
-      {showMergeModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowMergeModal(false);
-          }}
-        >
-          <div
-            className="w-[400px] rounded-2xl p-6 flex flex-col gap-4"
-            style={
-              isLight
-                ? {
-                    background: '#fff',
-                    border: '1px solid rgba(0,0,0,0.12)',
-                    boxShadow: '0 24px 48px rgba(0,0,0,0.18)',
-                  }
-                : {
-                    background: 'rgba(15,19,32,0.98)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    boxShadow: '0 24px 48px rgba(0,0,0,0.70)',
-                  }
-            }
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <GitMerge className={`w-4 h-4 ${isLight ? 'text-teal-600' : 'text-teal-400'}`} />
-                <h3
-                  className={`text-[14px] font-black ${isLight ? 'text-slate-800' : 'text-white'}`}
-                >
-                  دمج تصنيفات
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowMergeModal(false)}
-                className={`p-1 rounded-lg ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/30 hover:text-white/70'}`}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p
-              className={`text-[12px] leading-relaxed ${isLight ? 'text-slate-500' : 'text-white/45'}`}
-            >
-              اختر التصنيف الذي تريد دمجه{' '}
-              <strong className={isLight ? 'text-slate-700' : 'text-white/70'}>من</strong>، ثم اختر
-              التصنيف الذي سيُضاف إليه. كل بنود التصنيف الأول ستنتقل إلى الثاني ويختفي التصنيف
-              الأول.
-            </p>
-
-            {/* من */}
-            <div className="flex flex-col gap-1.5">
-              <label
-                className={`text-[11px] font-black tracking-widest uppercase ${isLight ? 'text-slate-400' : 'text-white/35'}`}
-              >
-                من (سيُحذف)
-              </label>
-              <select
-                value={mergeFrom}
-                onChange={(e) => {
-                  setMergeFrom(e.target.value);
-                  if (mergeTo === e.target.value) setMergeTo('');
-                }}
-                className={`erp-input text-sm py-2 ${!mergeFrom ? (isLight ? 'text-slate-400' : 'text-white/30') : ''}`}
-              >
-                <option value="">— اختر التصنيف المصدر —</option>
-                {allCategories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* إلى */}
-            <div className="flex flex-col gap-1.5">
-              <label
-                className={`text-[11px] font-black tracking-widest uppercase ${isLight ? 'text-slate-400' : 'text-white/35'}`}
-              >
-                إلى (سيبقى)
-              </label>
-              <select
-                value={mergeTo}
-                onChange={(e) => setMergeTo(e.target.value)}
-                className={`erp-input text-sm py-2 ${!mergeTo ? (isLight ? 'text-slate-400' : 'text-white/30') : ''}`}
-              >
-                <option value="">— اختر التصنيف الهدف —</option>
-                {allCategories
-                  .filter((c) => c !== mergeFrom)
-                  .map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* Preview */}
-            {mergeFrom && mergeTo && (
-              <div
-                className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px]"
-                style={
-                  isLight
-                    ? {
-                        background: 'rgba(20,184,166,0.08)',
-                        border: '1px solid rgba(20,184,166,0.25)',
-                      }
-                    : {
-                        background: 'rgba(20,184,166,0.10)',
-                        border: '1px solid rgba(20,184,166,0.25)',
-                      }
-                }
-              >
-                <span
-                  className={`font-bold line-through ${isLight ? 'text-slate-500' : 'text-white/40'}`}
-                >
-                  {mergeFrom}
-                </span>
-                <span className={isLight ? 'text-teal-600' : 'text-teal-400'}>←</span>
-                <span className={`font-bold ${isLight ? 'text-teal-700' : 'text-teal-300'}`}>
-                  {mergeTo}
-                </span>
-                <span
-                  className={`mr-auto text-[11px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}
-                >
-                  {items.filter((i) => i.category === mergeFrom).length} بند سيُنقل
-                </span>
-              </div>
-            )}
-
-            {/* Buttons */}
-            <div className="flex gap-2 pt-1">
-              <button
-                onClick={doMerge}
-                disabled={!mergeFrom || !mergeTo || merging}
-                className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-[13px] font-black disabled:opacity-40 text-white transition-all"
-                style={{
-                  background:
-                    'linear-gradient(135deg, rgba(20,184,166,0.90), rgba(13,148,136,0.75))',
-                  border: '1px solid rgba(20,184,166,0.50)',
-                }}
-              >
-                <GitMerge className="w-4 h-4" />
-                {merging ? 'جاري الدمج...' : 'تأكيد الدمج'}
-              </button>
-              <button
-                onClick={() => setShowMergeModal(false)}
-                className={`px-4 h-10 rounded-xl text-[13px] font-bold ${isLight ? 'text-slate-600 hover:text-slate-800' : 'text-white/50 hover:text-white/80'}`}
-                style={
-                  isLight
-                    ? { border: '1px solid rgba(0,0,0,0.10)' }
-                    : { border: '1px solid rgba(255,255,255,0.10)' }
-                }
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

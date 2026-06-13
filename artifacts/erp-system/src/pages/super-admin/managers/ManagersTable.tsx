@@ -52,9 +52,7 @@ export function ManagersTable({
       </div>
 
       {mgLoading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: C.muted }}>
-          جاري التحميل...
-        </div>
+        <div style={{ padding: '60px', textAlign: 'center', color: C.muted }}>جاري التحميل...</div>
       ) : mgError ? (
         <div style={{ padding: '60px', textAlign: 'center' }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</div>
@@ -70,7 +68,7 @@ export function ManagersTable({
               padding: '8px 20px',
               borderRadius: '10px',
               background: C.orange,
-              color: '#fff',
+              color: 'var(--text-1)',
               border: 'none',
               fontSize: '13px',
               fontWeight: 700,

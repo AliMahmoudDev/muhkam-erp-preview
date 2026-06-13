@@ -27,11 +27,27 @@ interface DangerZoneSectionProps {
 }
 
 export default function DangerZoneSection({
-  selected, confirmText, clearBusy, canDelete, delCount, readyToDelete,
-  resetText, canReset, resetCount, readyToReset, resetDbPending,
-  allKeys, selectedWarehouseId, warehousesList,
-  onToggle, onToggleAll, onClear, onResetFull,
-  onSetConfirmText, onSetResetText, onSetSelectedWarehouseId,
+  selected,
+  confirmText,
+  clearBusy,
+  canDelete,
+  delCount,
+  readyToDelete,
+  resetText,
+  canReset,
+  resetCount,
+  readyToReset,
+  resetDbPending,
+  allKeys,
+  selectedWarehouseId,
+  warehousesList,
+  onToggle,
+  onToggleAll,
+  onClear,
+  onResetFull,
+  onSetConfirmText,
+  onSetResetText,
+  onSetSelectedWarehouseId,
 }: DangerZoneSectionProps) {
   return (
     <div className="bg-[#111827] border border-red-500/25 rounded-2xl overflow-hidden">
@@ -41,7 +57,9 @@ export default function DangerZoneSection({
         </div>
         <div>
           <p className="font-bold text-red-400 text-sm">منطقة الخطر</p>
-          <p className="text-red-400/50 text-xs">العمليات هنا لا يمكن التراجع عنها — تأكد من نسخة احتياطية أولاً</p>
+          <p className="text-red-400/50 text-xs">
+            العمليات هنا لا يمكن التراجع عنها — تأكد من نسخة احتياطية أولاً
+          </p>
         </div>
       </div>
 
@@ -49,7 +67,7 @@ export default function DangerZoneSection({
         {/* الحذف الانتقائي */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-white/60 text-sm font-semibold flex items-center gap-2">
+            <p className="text-ink/60 text-sm font-semibold flex items-center gap-2">
               <Trash2 className="w-4 h-4 text-red-400/70" /> حذف انتقائي
               {selected.size > 0 && (
                 <span className="px-2 py-0.5 rounded-md bg-red-500/20 text-red-400 text-xs font-bold">
@@ -57,7 +75,10 @@ export default function DangerZoneSection({
                 </span>
               )}
             </p>
-            <button onClick={onToggleAll} className="text-xs text-amber-400 hover:text-amber-300 transition-colors">
+            <button
+              onClick={onToggleAll}
+              className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
+            >
               {selected.size === allKeys.length ? 'إلغاء الكل' : 'تحديد الكل'}
             </button>
           </div>
@@ -73,17 +94,19 @@ export default function DangerZoneSection({
                   className={`p-3 rounded-xl text-right border transition-all ${on ? 'bg-red-500/12 border-red-500/35' : 'bg-[#1A2235] border-[#2D3748] hover:border-red-500/20'}`}
                 >
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className={`text-xs font-bold flex items-center gap-1 ${on ? 'text-red-300' : 'text-white/60'}`}>
+                    <span
+                      className={`text-xs font-bold flex items-center gap-1 ${on ? 'text-red-300' : 'text-ink/60'}`}
+                    >
                       {isWarehouse && <Warehouse className="w-3 h-3" />}
                       {g.label}
                     </span>
                     {on ? (
                       <Check className="w-3 h-3 text-red-400" />
                     ) : (
-                      <div className="w-3 h-3 rounded border border-white/15" />
+                      <div className="w-3 h-3 rounded border border-line" />
                     )}
                   </div>
-                  <p className="text-white/20 text-[10px]">{g.sub}</p>
+                  <p className="text-ink/20 text-[10px]">{g.sub}</p>
                 </button>
               );
             })}
@@ -102,10 +125,12 @@ export default function DangerZoneSection({
               >
                 <option value="">— كل المخازن —</option>
                 {warehousesList.map((w) => (
-                  <option key={w.id} value={w.id}>{w.name}</option>
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
                 ))}
               </SSelect>
-              <p className="text-white/25 text-[10px]">
+              <p className="text-ink/25 text-[10px]">
                 {selectedWarehouseId
                   ? `سيتم تفريغ حركات المخزن "${warehousesList.find((w) => w.id === selectedWarehouseId)?.name ?? ''}" فقط`
                   : 'سيتم تفريغ حركات جميع المخازن وتصفير الكميات'}
@@ -116,7 +141,7 @@ export default function DangerZoneSection({
           {selected.size > 0 && (
             <div className="space-y-3 pt-2 border-t border-red-500/10">
               <div>
-                <label className="text-white/45 text-xs block mb-2">
+                <label className="text-ink/45 text-xs block mb-2">
                   اكتب <span className="text-red-400 font-black">"تأكيد الحذف"</span> لتفعيل الزر:
                 </label>
                 <SInput
@@ -135,7 +160,11 @@ export default function DangerZoneSection({
                 </div>
               )}
               <DangerBtn onClick={onClear} disabled={clearBusy || !canDelete} className="w-full">
-                {clearBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {clearBusy ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
                 {clearBusy ? 'جاري المسح...' : `مسح ${selected.size} جدول`}
               </DangerBtn>
             </div>
@@ -150,11 +179,14 @@ export default function DangerZoneSection({
             <p className="text-red-300 font-semibold text-sm flex items-center gap-2">
               <X className="w-4 h-4" /> إعادة تعيين كاملة لقاعدة البيانات
             </p>
-            <p className="text-red-300/40 text-xs mt-0.5">حذف جميع البيانات والإعادة للوضع الافتراضي</p>
+            <p className="text-red-300/40 text-xs mt-0.5">
+              حذف جميع البيانات والإعادة للوضع الافتراضي
+            </p>
           </div>
           <div>
-            <label className="text-white/40 text-xs block mb-2">
-              اكتب <span className="text-red-400 font-black">"إعادة تعيين كاملة"</span> لتفعيل الأمر:
+            <label className="text-ink/40 text-xs block mb-2">
+              اكتب <span className="text-red-400 font-black">"إعادة تعيين كاملة"</span> لتفعيل
+              الأمر:
             </label>
             <SInput
               placeholder="إعادة تعيين كاملة"
@@ -176,7 +208,11 @@ export default function DangerZoneSection({
             disabled={resetDbPending || !canReset}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-900/25 hover:bg-red-900/40 border border-red-800/35 text-red-300 font-bold text-sm transition-all disabled:opacity-35"
           >
-            {resetDbPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
+            {resetDbPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <AlertTriangle className="w-4 h-4" />
+            )}
             {resetDbPending ? 'جاري إعادة التعيين...' : 'إعادة تعيين كاملة'}
           </button>
         </div>

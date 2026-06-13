@@ -4,10 +4,7 @@ import { useLocation, useSearch } from 'wouter';
 import { authFetch } from '@/lib/auth-fetch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGetSettingsSafes } from '@workspace/api-client-react';
-import {
-  Plus, ShieldOff, BarChart2,
-  TrendingDown, Ban,
-} from 'lucide-react';
+import { Plus, ShieldOff, BarChart2, TrendingDown, Ban } from 'lucide-react';
 import BadDebts from './bad-debts';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmModal } from '@/components/confirm-modal';
@@ -27,19 +24,17 @@ function AccessDenied({ msg }: { msg: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <ShieldOff className="w-14 h-14 text-red-400/40 mb-4" />
-      <p className="text-white/60 font-bold text-lg">غير مصرح</p>
-      <p className="text-white/30 text-sm mt-1">{msg}</p>
+      <p className="text-ink/60 font-bold text-lg">غير مصرح</p>
+      <p className="text-ink/30 text-sm mt-1">{msg}</p>
     </div>
   );
 }
-
-
 
 /* ═══════════════════════════════════════════════════════════════ */
 export default function Expenses() {
   const { user } = useAuth();
   const canView = hasPermission(user, 'can_view_expenses') === true;
-  const canAdd  = hasPermission(user, 'can_add_expense') === true;
+  const canAdd = hasPermission(user, 'can_add_expense') === true;
   const isCashier = user?.role === 'cashier';
   const companyName = (user as { company_name?: string })?.company_name ?? 'مُحكم - MUHKAM ERP';
 
@@ -49,10 +44,11 @@ export default function Expenses() {
   /* ─── Queries ─── */
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
     queryKey: ['/api/expenses'],
-    queryFn: () => authFetch(api('/api/expenses')).then((r) => {
-      if (!r.ok) throw new Error('خطأ في جلب البيانات');
-      return r.json();
-    }),
+    queryFn: () =>
+      authFetch(api('/api/expenses')).then((r) => {
+        if (!r.ok) throw new Error('خطأ في جلب البيانات');
+        return r.json();
+      }),
   });
   const { data: categoriesRaw = [] } = useQuery<ExpenseCategory[]>({
     queryKey: ['/api/expense-categories'],
@@ -87,7 +83,12 @@ export default function Expenses() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [detailItem, setDetailItem] = useState<Expense | null>(null);
-  const [formData, setFormData] = useState({ category: '', amount: '', description: '', safe_id: '' });
+  const [formData, setFormData] = useState({
+    category: '',
+    amount: '',
+    description: '',
+    safe_id: '',
+  });
 
   const [newCatName, setNewCatName] = useState('');
   const [catLoading, setCatLoading] = useState(false);
@@ -103,18 +104,20 @@ export default function Expenses() {
 
   const totalAll = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
 
-  const thisMonthExpenses = useMemo(() =>
-    expenses.filter(e => new Date(e.created_at).toISOString().slice(0, 7) === thisMonthKey),
-    [expenses, thisMonthKey]);
+  const thisMonthExpenses = useMemo(
+    () => expenses.filter((e) => new Date(e.created_at).toISOString().slice(0, 7) === thisMonthKey),
+    [expenses, thisMonthKey]
+  );
 
-  const totalMonth = useMemo(() =>
-    thisMonthExpenses.reduce((s, e) => s + e.amount, 0),
-    [thisMonthExpenses]);
+  const totalMonth = useMemo(
+    () => thisMonthExpenses.reduce((s, e) => s + e.amount, 0),
+    [thisMonthExpenses]
+  );
 
   /* Category breakdown for this month */
   const categoryBreakdown = useMemo(() => {
     const map: Record<string, number> = {};
-    thisMonthExpenses.forEach(e => {
+    thisMonthExpenses.forEach((e) => {
       map[e.category] = (map[e.category] ?? 0) + e.amount;
     });
     return Object.entries(map)
@@ -127,11 +130,12 @@ export default function Expenses() {
   /* ─── Filtered list ─── */
   const filtered = useMemo(() => {
     return safeArray(expenses).filter((e) => {
-      const matchSearch = !search || e.category.includes(search) || (e.description ?? '').includes(search);
+      const matchSearch =
+        !search || e.category.includes(search) || (e.description ?? '').includes(search);
       const matchCat = !catFilter || e.category === catFilter;
       const d = new Date(e.created_at).toISOString().slice(0, 10);
       const matchFrom = !dateFrom || d >= dateFrom;
-      const matchTo   = !dateTo   || d <= dateTo;
+      const matchTo = !dateTo || d <= dateTo;
       return matchSearch && matchCat && matchFrom && matchTo;
     });
   }, [expenses, search, catFilter, dateFrom, dateTo]);
@@ -143,9 +147,14 @@ export default function Expenses() {
   const createMutation = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
       const res = await authFetch(api('/api/expenses'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'خطأ'); }
+      if (!res.ok) {
+        const e = await res.json();
+        throw new Error(e.error || 'خطأ');
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -167,31 +176,45 @@ export default function Expenses() {
     setCatLoading(true);
     try {
       const r = await authFetch(api('/api/expense-categories'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
       });
       const data = await r.json();
-      if (!r.ok) { toast({ title: data.error ?? 'خطأ', variant: 'destructive' }); return; }
+      if (!r.ok) {
+        toast({ title: data.error ?? 'خطأ', variant: 'destructive' });
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/expense-categories'] });
       setNewCatName('');
       setFormData((f) => ({ ...f, category: name }));
       toast({ title: `تم إضافة التصنيف "${name}"` });
-    } finally { setCatLoading(false); }
+    } finally {
+      setCatLoading(false);
+    }
   };
 
   const handleDeleteCategory = async (id: number) => {
     try {
       await authFetch(api(`/api/expense-categories/${id}`), { method: 'DELETE' });
       queryClient.invalidateQueries({ queryKey: ['/api/expense-categories'] });
-      if (formData.category === categories.find((c) => c.id === id)?.name) setFormData((f) => ({ ...f, category: '' }));
+      if (formData.category === categories.find((c) => c.id === id)?.name)
+        setFormData((f) => ({ ...f, category: '' }));
       toast({ title: 'تم حذف التصنيف' });
-    } catch { toast({ title: 'خطأ في الحذف', variant: 'destructive' }); }
-    finally { setConfirmDeleteCatId(null); }
+    } catch {
+      toast({ title: 'خطأ في الحذف', variant: 'destructive' });
+    } finally {
+      setConfirmDeleteCatId(null);
+    }
   };
 
   /* ─── Expense handlers ─── */
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.category) { toast({ title: 'اختر تصنيف المصروف', variant: 'destructive' }); return; }
+    if (!formData.category) {
+      toast({ title: 'اختر تصنيف المصروف', variant: 'destructive' });
+      return;
+    }
     const body: Record<string, unknown> = {
       category: formData.category,
       amount: parseFloat(formData.amount),
@@ -211,139 +234,172 @@ export default function Expenses() {
         queryClient.invalidateQueries({ queryKey: ['/api/settings/safes'] });
         setConfirmDeleteId(null);
       },
-      onError: (e: Error) => { toast({ title: (e as Error).message, variant: 'destructive' }); setConfirmDeleteId(null); },
+      onError: (e: Error) => {
+        toast({ title: (e as Error).message, variant: 'destructive' });
+        setConfirmDeleteId(null);
+      },
     });
   };
 
-  if (!canView) return <AccessDenied msg="غير مصرح لك بالوصول إلى المصروفات — تواصل مع المدير لتفعيل الصلاحية" />;
+  if (!canView)
+    return (
+      <AccessDenied msg="غير مصرح لك بالوصول إلى المصروفات — تواصل مع المدير لتفعيل الصلاحية" />
+    );
 
   return (
     <div className="space-y-5">
       {/* Modals */}
       {confirmDeleteId !== null && (
-        <ConfirmModal title="حذف المصروف" description="هل أنت متأكد من حذف هذا المصروف؟ سيتم عكس الحركة من الخزينة."
-          isPending={deleteMutation.isPending} onConfirm={() => handleDelete(confirmDeleteId)} onCancel={() => setConfirmDeleteId(null)} />
+        <ConfirmModal
+          title="حذف المصروف"
+          description="هل أنت متأكد من حذف هذا المصروف؟ سيتم عكس الحركة من الخزينة."
+          isPending={deleteMutation.isPending}
+          onConfirm={() => handleDelete(confirmDeleteId)}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
       )}
       {confirmDeleteCatId !== null && (
-        <ConfirmModal title="حذف التصنيف" description="هل أنت متأكد من حذف هذا التصنيف؟ إذا كان هناك أي مصروف مسجل عليه فلن يمكن حذفه."
-          isPending={false} onConfirm={() => handleDeleteCategory(confirmDeleteCatId)} onCancel={() => setConfirmDeleteCatId(null)} />
+        <ConfirmModal
+          title="حذف التصنيف"
+          description="هل أنت متأكد من حذف هذا التصنيف؟ إذا كان هناك أي مصروف مسجل عليه فلن يمكن حذفه."
+          isPending={false}
+          onConfirm={() => handleDeleteCategory(confirmDeleteCatId)}
+          onCancel={() => setConfirmDeleteCatId(null)}
+        />
       )}
       {detailItem && <ExpenseDetailModal item={detailItem} onClose={() => setDetailItem(null)} />}
 
       {/* ─── Header ─── */}
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-xl font-bold text-white flex-shrink-0">
+        <h2 className="text-xl font-bold text-ink flex-shrink-0">
           {activeTab === 'expenses' ? 'إدارة المصروفات' : 'الديون المعدومة / المتعثرة'}
         </h2>
         <div className="flex-1" />
         {activeTab === 'expenses' && (
-          <button onClick={() => setShowReports(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-violet-500/15 text-violet-300 border border-violet-500/30 hover:bg-violet-500/25 transition-colors">
+          <button
+            onClick={() => setShowReports(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-violet-500/15 text-violet-300 border border-violet-500/30 hover:bg-violet-500/25 transition-colors"
+          >
             <BarChart2 className="w-4 h-4" /> تقارير المصروفات
           </button>
         )}
         {canAdd && activeTab === 'expenses' && (
-          <button onClick={() => setShowAdd(true)}
-            className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm">
+          <button
+            onClick={() => setShowAdd(true)}
+            className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm"
+          >
             <Plus className="w-4 h-4" /> إضافة مصروف
           </button>
         )}
         {canAdd && activeTab === 'debts' && (
-          <button onClick={() => {
-            const fn = (window as unknown as { __openBadDebtForm?: () => void }).__openBadDebtForm;
-            if (fn) fn();
-          }}
-            className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm">
+          <button
+            onClick={() => {
+              const fn = (window as unknown as { __openBadDebtForm?: () => void })
+                .__openBadDebtForm;
+              if (fn) fn();
+            }}
+            className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm"
+          >
             <Plus className="w-4 h-4" /> إضافة دين
           </button>
         )}
       </div>
 
       {/* ─── Tabs ─── */}
-      <div className="flex items-center gap-1.5 border-b border-white/8 -mt-1">
-        <button onClick={() => changeTab('expenses')}
+      <div className="flex items-center gap-1.5 border-b border-line -mt-1">
+        <button
+          onClick={() => changeTab('expenses')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
             activeTab === 'expenses'
-              ? 'border-violet-400 text-white'
-              : 'border-transparent text-white/40 hover:text-white/70'
-          }`}>
+              ? 'border-violet-400 text-ink'
+              : 'border-transparent text-ink/40 hover:text-ink/70'
+          }`}
+        >
           <TrendingDown className="w-4 h-4" /> المصروفات
         </button>
-        <button onClick={() => changeTab('debts')}
+        <button
+          onClick={() => changeTab('debts')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
             activeTab === 'debts'
-              ? 'border-violet-400 text-white'
-              : 'border-transparent text-white/40 hover:text-white/70'
-          }`}>
+              ? 'border-violet-400 text-ink'
+              : 'border-transparent text-ink/40 hover:text-ink/70'
+          }`}
+        >
           <Ban className="w-4 h-4" /> الديون المعدومة
         </button>
       </div>
 
       {activeTab === 'debts' && <BadDebts embedded />}
-      {activeTab === 'expenses' && (<>
+      {activeTab === 'expenses' && (
+        <>
+          <ExpensesSummaryCards
+            totalAll={totalAll}
+            totalMonth={totalMonth}
+            topCategory={topCategory}
+            totalRecords={expenses.length}
+          />
 
-      <ExpensesSummaryCards
-        totalAll={totalAll}
-        totalMonth={totalMonth}
-        topCategory={topCategory}
-        totalRecords={expenses.length}
-      />
+          <ExpenseCategoryPills
+            categoryBreakdown={categoryBreakdown}
+            catFilter={catFilter}
+            setCatFilter={setCatFilter}
+          />
 
-      <ExpenseCategoryPills
-        categoryBreakdown={categoryBreakdown}
-        catFilter={catFilter}
-        setCatFilter={setCatFilter}
-      />
+          <ExpensesFilterToolbar
+            search={search}
+            setSearch={setSearch}
+            catFilter={catFilter}
+            setCatFilter={setCatFilter}
+            dateFrom={dateFrom}
+            setDateFrom={setDateFrom}
+            dateTo={dateTo}
+            setDateTo={setDateTo}
+            categories={categories}
+            hasFilter={!!hasFilter}
+            onClearAll={() => {
+              setSearch('');
+              setCatFilter('');
+              setDateFrom('');
+              setDateTo('');
+            }}
+          />
 
-      <ExpensesFilterToolbar
-        search={search}
-        setSearch={setSearch}
-        catFilter={catFilter}
-        setCatFilter={setCatFilter}
-        dateFrom={dateFrom}
-        setDateFrom={setDateFrom}
-        dateTo={dateTo}
-        setDateTo={setDateTo}
-        categories={categories}
-        hasFilter={!!hasFilter}
-        onClearAll={() => { setSearch(''); setCatFilter(''); setDateFrom(''); setDateTo(''); }}
-      />
+          <AddExpenseModal
+            show={showAdd}
+            formData={formData}
+            setFormData={setFormData}
+            categories={categories}
+            safes={safes}
+            isCashier={isCashier}
+            userSafeName={safes.find((s) => s.id === user?.safe_id)?.name ?? 'الخزينة الافتراضية'}
+            newCatName={newCatName}
+            setNewCatName={setNewCatName}
+            catLoading={catLoading}
+            createIsPending={createMutation.isPending}
+            handleAdd={handleAdd}
+            handleAddCategory={handleAddCategory}
+            onDeleteCategory={(id) => setConfirmDeleteCatId(id)}
+            onClose={() => setShowAdd(false)}
+          />
 
-      <AddExpenseModal
-        show={showAdd}
-        formData={formData}
-        setFormData={setFormData}
-        categories={categories}
-        safes={safes}
-        isCashier={isCashier}
-        userSafeName={safes.find((s) => s.id === user?.safe_id)?.name ?? 'الخزينة الافتراضية'}
-        newCatName={newCatName}
-        setNewCatName={setNewCatName}
-        catLoading={catLoading}
-        createIsPending={createMutation.isPending}
-        handleAdd={handleAdd}
-        handleAddCategory={handleAddCategory}
-        onDeleteCategory={(id) => setConfirmDeleteCatId(id)}
-        onClose={() => setShowAdd(false)}
-      />
+          <ExpensesTable
+            filtered={filtered}
+            filteredTotal={filteredTotal}
+            hasFilter={!!hasFilter}
+            isLoading={isLoading}
+            canDelete={canAdd}
+            onViewDetail={(exp) => setDetailItem(exp)}
+            onDelete={(id) => setConfirmDeleteId(id)}
+          />
 
-      <ExpensesTable
-        filtered={filtered}
-        filteredTotal={filteredTotal}
-        hasFilter={!!hasFilter}
-        isLoading={isLoading}
-        canDelete={canAdd}
-        onViewDetail={(exp) => setDetailItem(exp)}
-        onDelete={(id) => setConfirmDeleteId(id)}
-      />
-
-      <ExpenseReportsModal
-        show={showReports}
-        onClose={() => setShowReports(false)}
-        categories={categories}
-        companyName={companyName}
-      />
-      </>)}
+          <ExpenseReportsModal
+            show={showReports}
+            onClose={() => setShowReports(false)}
+            categories={categories}
+            companyName={companyName}
+          />
+        </>
+      )}
     </div>
   );
 }

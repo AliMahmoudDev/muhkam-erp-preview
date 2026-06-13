@@ -73,12 +73,12 @@ function Section({
 }) {
   return (
     <div
-      className="border border-white/5 rounded-2xl overflow-hidden"
+      className="border border-line rounded-2xl overflow-hidden"
       style={{ background: 'var(--erp-bg-card)' }}
     >
-      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-white/5">
+      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-line">
         <Icon className="w-4 h-4 text-amber-400" />
-        <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{title}</p>
+        <p className="text-ink/70 text-xs font-bold uppercase tracking-wider">{title}</p>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -250,16 +250,16 @@ export default function CurrencyTab() {
 
       {/* ══ 0. هوية النظام ════════════════════════════════════════════════ */}
       <div
-        className="border border-white/5 rounded-2xl overflow-hidden"
+        className="border border-line rounded-2xl overflow-hidden"
         style={{ background: 'var(--erp-bg-card)' }}
       >
         {/* Header */}
-        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-white/5">
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-line">
           <Building2 className="w-4 h-4 text-amber-400" />
-          <p className="text-white/70 text-xs font-bold uppercase tracking-wider">
+          <p className="text-ink/70 text-xs font-bold uppercase tracking-wider">
             هوية النظام والشركة
           </p>
-          <span className="mr-auto text-[10px] text-white/25 font-mono">
+          <span className="mr-auto text-[10px] text-ink/25 font-mono">
             تظهر في الشريط الجانبي وعلى الشاشات
           </span>
         </div>
@@ -270,7 +270,7 @@ export default function CurrencyTab() {
             <div className="flex-1 space-y-4 min-w-0">
               {/* Logo upload area */}
               <div>
-                <label className="block text-white/40 text-xs font-bold mb-2">
+                <label className="block text-ink/40 text-xs font-bold mb-2">
                   شعار الشركة / Logo
                 </label>
                 <div className="flex items-start gap-4">
@@ -304,8 +304,8 @@ export default function CurrencyTab() {
                       />
                     ) : (
                       <div className="flex flex-col items-center gap-1">
-                        <ImagePlus className="w-5 h-5 text-white/20" />
-                        <span className="text-[9px] text-white/20 font-bold">رفع</span>
+                        <ImagePlus className="w-5 h-5 text-ink/20" />
+                        <span className="text-[9px] text-ink/20 font-bold">رفع</span>
                       </div>
                     )}
                   </div>
@@ -321,7 +321,7 @@ export default function CurrencyTab() {
                         setLogoPreview(e.target.value);
                       }}
                       dir="ltr"
-                      className="w-full bg-[#0D1424] border border-white/10 rounded-lg px-3 py-2 text-white/70 text-xs font-mono focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
+                      className="w-full bg-[#0D1424] border border-line rounded-lg px-3 py-2 text-ink/70 text-xs font-mono focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
                     />
                     <div className="flex gap-2 flex-wrap">
                       <button
@@ -329,7 +329,7 @@ export default function CurrencyTab() {
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
                         style={{
                           background: 'rgba(245,158,11,0.12)',
-                          color: '#F59E0B',
+                          color: 'var(--status-warning)',
                           border: '1px solid rgba(245,158,11,0.25)',
                         }}
                       >
@@ -344,7 +344,7 @@ export default function CurrencyTab() {
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
                           style={{
                             background: 'rgba(239,68,68,0.10)',
-                            color: '#F87171',
+                            color: 'var(--status-danger)',
                             border: '1px solid rgba(239,68,68,0.20)',
                           }}
                         >
@@ -368,7 +368,7 @@ export default function CurrencyTab() {
 
               {/* Company name */}
               <div>
-                <label className="block text-white/40 text-xs font-bold mb-1.5">
+                <label className="block text-ink/40 text-xs font-bold mb-1.5">
                   <Building2 className="inline w-3 h-3 ml-1 -mt-0.5" />
                   اسم الشركة / المتجر
                 </label>
@@ -378,16 +378,16 @@ export default function CurrencyTab() {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   dir="rtl"
-                  className="w-full bg-[#0D1424] border border-white/10 rounded-lg px-3 py-2.5 text-white/85 text-sm font-bold focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
+                  className="w-full bg-[#0D1424] border border-line rounded-lg px-3 py-2.5 text-ink/85 text-sm font-bold focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
                 />
-                <p className="text-white/20 text-[10px] mt-1">
+                <p className="text-ink/20 text-[10px] mt-1">
                   يظهر في الشريط الجانبي وصفحة تسجيل الدخول
                 </p>
               </div>
 
               {/* Slogan */}
               <div>
-                <label className="block text-white/40 text-xs font-bold mb-1.5">
+                <label className="block text-ink/40 text-xs font-bold mb-1.5">
                   <AlignLeft className="inline w-3 h-3 ml-1 -mt-0.5" />
                   الشعار / التوصيف
                 </label>
@@ -397,15 +397,15 @@ export default function CurrencyTab() {
                   value={companySlogan}
                   onChange={(e) => setCompanySlogan(e.target.value)}
                   dir="rtl"
-                  className="w-full bg-[#0D1424] border border-white/10 rounded-lg px-3 py-2.5 text-white/70 text-sm focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
+                  className="w-full bg-[#0D1424] border border-line rounded-lg px-3 py-2.5 text-ink/70 text-sm focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
                 />
-                <p className="text-white/20 text-[10px] mt-1">سطر وصفي أسفل اسم الشركة</p>
+                <p className="text-ink/20 text-[10px] mt-1">سطر وصفي أسفل اسم الشركة</p>
               </div>
             </div>
 
             {/* ── Right: live sidebar preview ───────────────────────────── */}
             <div className="shrink-0 flex flex-col items-center gap-3 lg:w-52">
-              <p className="text-white/25 text-[10px] font-bold uppercase tracking-wider self-start">
+              <p className="text-ink/25 text-[10px] font-bold uppercase tracking-wider self-start">
                 معاينة مباشرة
               </p>
               {/* Sidebar mini mockup */}
@@ -451,7 +451,7 @@ export default function CurrencyTab() {
                       style={{
                         fontSize: 13,
                         fontWeight: 900,
-                        color: '#F59E0B',
+                        color: 'var(--status-warning)',
                         lineHeight: 1.3,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -497,7 +497,7 @@ export default function CurrencyTab() {
                 ))}
                 <div style={{ height: 8 }} />
               </div>
-              <p className="text-white/15 text-[9px] text-center leading-tight">
+              <p className="text-ink/15 text-[9px] text-center leading-tight">
                 هذه معاينة تقريبية
                 <br />
                 للشريط الجانبي
@@ -509,26 +509,26 @@ export default function CurrencyTab() {
 
       {/* ══ 1+2. العملة الرئيسية + أسعار الصرف — بطاقة موحدة ═══════════ */}
       <div
-        className="border border-white/5 rounded-2xl overflow-hidden"
+        className="border border-line rounded-2xl overflow-hidden"
         style={{ background: 'var(--erp-bg-card)' }}
       >
         {/* ─── Header ─────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-line">
           <div className="flex items-center gap-2.5">
             <DollarSign className="w-4 h-4 text-amber-400" />
-            <p className="text-white/70 text-xs font-bold uppercase tracking-wider">
+            <p className="text-ink/70 text-xs font-bold uppercase tracking-wider">
               العملات وأسعار الصرف
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-white/25 font-mono">{today}</span>
+            <span className="text-xs text-ink/25 font-mono">{today}</span>
             <button
               onClick={saveAllRates}
               disabled={Object.values(savingRate).some(Boolean)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
               style={{
                 background: 'rgba(59,130,246,0.12)',
-                color: '#60A5FA',
+                color: 'var(--status-info)',
                 border: '1px solid rgba(59,130,246,0.25)',
               }}
             >
@@ -547,7 +547,7 @@ export default function CurrencyTab() {
 
         {/* ─── Hint ───────────────────────────────────────────────────── */}
         <div className="px-5 pt-4 pb-1">
-          <p className="text-white/30 text-[11px]">
+          <p className="text-ink/30 text-[11px]">
             اختر العملة الرئيسية بالضغط على الصف · أدخل سعر الصرف مقابل الجنيه المصري لكل عملة ثم
             احفظ
           </p>
@@ -556,7 +556,7 @@ export default function CurrencyTab() {
         {/* ─── Table ──────────────────────────────────────────────────── */}
         {ratesLoading ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 text-white/30 animate-spin" />
+            <Loader2 className="w-6 h-6 text-ink/30 animate-spin" />
           </div>
         ) : (
           <div className="p-4 space-y-2">
@@ -571,24 +571,25 @@ export default function CurrencyTab() {
                   className={`w-full flex items-center gap-4 p-4 rounded-xl border text-right transition-all ${
                     active
                       ? 'bg-amber-500/10 border-amber-500/60 shadow-[0_0_14px_rgba(245,158,11,0.12)]'
-                      : 'bg-[#0D1424] border-white/5 hover:border-amber-500/25 hover:bg-amber-500/5'
+                      : 'bg-[#0D1424] border-line hover:border-amber-500/25 hover:bg-amber-500/5'
                   }`}
                 >
                   <span className="text-2xl shrink-0">{o.flag}</span>
                   <div className="flex-1 text-right">
-                    <p
-                      className={`font-bold text-sm ${active ? 'text-amber-400' : 'text-white/80'}`}
-                    >
+                    <p className={`font-bold text-sm ${active ? 'text-amber-400' : 'text-ink/80'}`}>
                       {o.label}
                     </p>
-                    <p className="text-white/30 text-xs">
+                    <p className="text-ink/30 text-xs">
                       {o.code} · {o.symbol}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span
                       className="text-[11px] px-2.5 py-1 rounded-lg font-bold"
-                      style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}
+                      style={{
+                        background: 'rgba(245,158,11,0.12)',
+                        color: 'var(--status-warning)',
+                      }}
                     >
                       العملة الأساسية للنظام
                     </span>
@@ -609,7 +610,7 @@ export default function CurrencyTab() {
                   className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
                     active
                       ? 'bg-amber-500/10 border-amber-500/60 shadow-[0_0_14px_rgba(245,158,11,0.12)]'
-                      : 'bg-[#0D1424] border-white/5'
+                      : 'bg-[#0D1424] border-line'
                   }`}
                 >
                   {/* Currency info — clickable to set as main */}
@@ -620,11 +621,11 @@ export default function CurrencyTab() {
                     <span className="text-2xl shrink-0">{c.flag}</span>
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`font-bold text-sm ${active ? 'text-amber-400' : 'text-white/80'}`}
+                        className={`font-bold text-sm ${active ? 'text-amber-400' : 'text-ink/80'}`}
                       >
                         {c.label}
                       </p>
-                      <p className="text-white/30 text-xs">
+                      <p className="text-ink/30 text-xs">
                         {c.code} · {c.symbol}
                       </p>
                     </div>
@@ -633,7 +634,7 @@ export default function CurrencyTab() {
 
                   {/* Rate input area */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-white/30 text-xs whitespace-nowrap">1 {c.symbol} =</span>
+                    <span className="text-ink/30 text-xs whitespace-nowrap">1 {c.symbol} =</span>
                     <input
                       type="number"
                       step="0.01"
@@ -644,14 +645,14 @@ export default function CurrencyTab() {
                       className="w-28 bg-muted/40 border border-border rounded-lg px-3 py-1.5 text-foreground text-sm text-left focus:outline-none focus:border-blue-500/50 transition-colors"
                       dir="ltr"
                     />
-                    <span className="text-white/40 text-xs whitespace-nowrap">ج.م</span>
+                    <span className="text-ink/40 text-xs whitespace-nowrap">ج.م</span>
                     <button
                       onClick={() => saveRate(c.code)}
                       disabled={isSaving || !hasValue}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-40 whitespace-nowrap"
                       style={{
                         background: 'rgba(59,130,246,0.15)',
-                        color: '#60A5FA',
+                        color: 'var(--status-info)',
                         border: '1px solid rgba(59,130,246,0.25)',
                       }}
                     >
@@ -672,7 +673,7 @@ export default function CurrencyTab() {
 
         {/* ─── Footer note ────────────────────────────────────────────── */}
         <div className="px-5 pb-4 pt-1">
-          <p className="text-white/20 text-[11px]">
+          <p className="text-ink/20 text-[11px]">
             * تُحفظ أسعار الصرف في قاعدة البيانات وتُطبَّق تلقائياً على فواتير المشتريات · العملة
             الرئيسية تُحفظ مع إعدادات المتجر بالضغط على زر «حفظ الإعدادات»
           </p>
@@ -717,7 +718,7 @@ export default function CurrencyTab() {
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
                   active
                     ? 'bg-amber-500/8 border-amber-500/40'
-                    : 'bg-[#0D1424] border-white/5 hover:border-white/10'
+                    : 'bg-[#0D1424] border-line hover:border-line'
                 }`}
               >
                 {/* ── Left: format type selector ── */}
@@ -726,12 +727,12 @@ export default function CurrencyTab() {
                   className="flex items-center gap-2.5 min-w-[160px] shrink-0 text-right"
                 >
                   <span
-                    className={`font-mono text-base font-black tracking-wide ${active ? 'text-amber-400' : 'text-white/40'}`}
+                    className={`font-mono text-base font-black tracking-wide ${active ? 'text-amber-400' : 'text-ink/40'}`}
                   >
                     {livePreview}
                   </span>
                   <span
-                    className={`text-xs font-bold ${active ? 'text-amber-300' : 'text-white/35'}`}
+                    className={`text-xs font-bold ${active ? 'text-amber-300' : 'text-ink/35'}`}
                   >
                     {row.label}
                   </span>
@@ -739,7 +740,7 @@ export default function CurrencyTab() {
                 </button>
 
                 {/* ── Divider ── */}
-                <div className="w-px h-6 bg-white/8 shrink-0" />
+                <div className="w-px h-6 bg-surface shrink-0" />
 
                 {/* ── Right: sub-option chips ── */}
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -756,14 +757,14 @@ export default function CurrencyTab() {
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
                         decimalPlaces === o.dp
                           ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                          : 'bg-[#1A2235] text-white/35 border border-white/8 hover:border-amber-500/25 hover:text-white/60'
+                          : 'bg-[#1A2235] text-ink/35 border border-line hover:border-amber-500/25 hover:text-ink/60'
                       }`}
                     >
                       {o.label}
                     </button>
                   ))}
 
-                  <div className="w-px h-4 bg-white/8 mx-0.5 shrink-0" />
+                  <div className="w-px h-4 bg-surface mx-0.5 shrink-0" />
 
                   {/* Separator group */}
                   {(
@@ -779,7 +780,7 @@ export default function CurrencyTab() {
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
                         thousandsSep === o.sep
                           ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                          : 'bg-[#1A2235] text-white/35 border border-white/8 hover:border-amber-500/25 hover:text-white/60'
+                          : 'bg-[#1A2235] text-ink/35 border border-line hover:border-amber-500/25 hover:text-ink/60'
                       }`}
                     >
                       {o.label}
@@ -797,9 +798,7 @@ export default function CurrencyTab() {
         <div className="divide-y divide-white/5">
           {/* ── نوع الخط ── */}
           <div className="flex items-center gap-4 py-3 first:pt-0">
-            <span className="text-white/40 text-xs font-bold w-20 shrink-0 text-right">
-              نوع الخط
-            </span>
+            <span className="text-ink/40 text-xs font-bold w-20 shrink-0 text-right">نوع الخط</span>
             <div className="flex-1 flex flex-wrap gap-2">
               {FONT_OPTIONS.map((f) => {
                 const active = fontFamily === f.key;
@@ -810,17 +809,17 @@ export default function CurrencyTab() {
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-right transition-all ${
                       active
                         ? 'bg-amber-500/15 border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.12)]'
-                        : 'bg-[#1A2235] border-white/8 hover:border-amber-500/30'
+                        : 'bg-[#1A2235] border-line hover:border-amber-500/30'
                     }`}
                   >
                     <span
-                      className={`text-sm font-bold ${active ? 'text-amber-400' : 'text-white/60'}`}
+                      className={`text-sm font-bold ${active ? 'text-amber-400' : 'text-ink/60'}`}
                       style={{ fontFamily: `'${f.key}', sans-serif` }}
                     >
                       {f.label}
                     </span>
                     <span
-                      className="text-white/20 text-[10px] font-mono hidden sm:inline"
+                      className="text-ink/20 text-[10px] font-mono hidden sm:inline"
                       style={{ fontFamily: `'${f.key}', sans-serif` }}
                     >
                       {f.key === 'Inter' ? 'Abc' : 'أبج'}
@@ -834,62 +833,62 @@ export default function CurrencyTab() {
 
           {/* ── حجم الخط + وزن الخط — سطر واحد ── */}
           <div className="flex items-center gap-4 py-3 last:pb-0">
-            <span className="text-white/40 text-xs font-bold w-20 shrink-0 text-right">
+            <span className="text-ink/40 text-xs font-bold w-20 shrink-0 text-right">
               الحجم والوزن
             </span>
             <div className="flex items-center gap-3 flex-1">
               {/* حجم الخط — select */}
               <div className="relative flex-1 max-w-[180px]">
-                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-white/30 bg-[#0D1424] leading-none z-10">
+                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-ink/30 bg-[#0D1424] leading-none z-10">
                   حجم الخط
                 </label>
                 <select
                   value={fontSize}
                   onChange={(e) => setFontSize(e.target.value as FontSize)}
                   dir="rtl"
-                  className="w-full appearance-none bg-[#0D1424] border border-white/12 rounded-lg px-3 py-2.5 text-sm text-white/80 font-bold focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
+                  className="w-full appearance-none bg-[#0D1424] border border-line rounded-lg px-3 py-2.5 text-sm text-ink/80 font-bold focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
                   style={{ fontFamily: `'${fontFamily}', sans-serif` }}
                 >
                   {FONT_SIZE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value} style={{ background: '#0D1117' }}>
+                    <option key={o.value} value={o.value} style={{ background: 'var(--bg-app)' }}>
                       {o.label} — {o.px}
                     </option>
                   ))}
                 </select>
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 text-xs">
                   ▾
                 </span>
               </div>
 
               {/* وزن الخط — select */}
               <div className="relative flex-1 max-w-[180px]">
-                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-white/30 bg-[#0D1424] leading-none z-10">
+                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-ink/30 bg-[#0D1424] leading-none z-10">
                   وزن الخط
                 </label>
                 <select
                   value={fontWeight}
                   onChange={(e) => setFontWeight(Number(e.target.value))}
                   dir="rtl"
-                  className="w-full appearance-none bg-[#0D1424] border border-white/12 rounded-lg px-3 py-2.5 text-sm text-white/80 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
+                  className="w-full appearance-none bg-[#0D1424] border border-line rounded-lg px-3 py-2.5 text-sm text-ink/80 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
                   style={{ fontFamily: `'${fontFamily}', sans-serif`, fontWeight }}
                 >
                   {FONT_WEIGHT_OPTIONS.map((w) => (
                     <option
                       key={w.value}
                       value={w.value}
-                      style={{ background: '#0D1117', fontWeight: w.value }}
+                      style={{ background: 'var(--bg-app)', fontWeight: w.value }}
                     >
                       {w.label}
                     </option>
                   ))}
                 </select>
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 text-xs">
                   ▾
                 </span>
               </div>
 
               {/* معاينة حية */}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/5 bg-[#0D1424] shrink-0">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-line bg-[#0D1424] shrink-0">
                 <span
                   className="text-amber-400/80"
                   style={{
@@ -902,7 +901,7 @@ export default function CurrencyTab() {
                   أبجد
                 </span>
                 <span
-                  className="text-white/20"
+                  className="text-ink/20"
                   style={{
                     fontFamily: `'${fontFamily}', sans-serif`,
                     fontSize: FONT_SIZE_OPTIONS.find((o) => o.value === fontSize)?.px ?? '15px',
@@ -926,7 +925,7 @@ export default function CurrencyTab() {
           background: saved
             ? 'rgba(52,211,153,0.9)'
             : 'linear-gradient(to right, #F59E0B, #D97706)',
-          color: '#000',
+          color: 'var(--text-1)',
           boxShadow: saved ? '0 4px 20px rgba(52,211,153,0.3)' : '0 4px 20px rgba(245,158,11,0.25)',
         }}
       >
@@ -940,7 +939,7 @@ export default function CurrencyTab() {
           </>
         )}
       </button>
-      <p className="text-white/25 text-xs text-center">
+      <p className="text-ink/25 text-xs text-center">
         سيتم تطبيق جميع التغييرات فوراً على كل الشاشات والتقارير والفواتير
       </p>
     </div>

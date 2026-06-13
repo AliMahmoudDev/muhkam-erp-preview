@@ -1,14 +1,6 @@
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
-import {
-  Landmark,
-  Plus,
-  Loader2,
-  X,
-  Trash2,
-  AlertTriangle,
-  Pencil,
-} from 'lucide-react';
+import { Landmark, Plus, Loader2, X, Trash2, AlertTriangle, Pencil } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 
@@ -16,7 +8,9 @@ interface SafeModalsProps {
   showAddSafe: boolean;
   setShowAddSafe: (v: boolean) => void;
   addForm: { name: string; balance: string; branch_id: string };
-  setAddForm: React.Dispatch<React.SetStateAction<{ name: string; balance: string; branch_id: string }>>;
+  setAddForm: React.Dispatch<
+    React.SetStateAction<{ name: string; balance: string; branch_id: string }>
+  >;
   deleteTarget: { id: number; name: string; balance: number } | null;
   setDeleteTarget: (v: { id: number; name: string; balance: number } | null) => void;
   editTarget: { id: number; name: string; branch_id: number | null } | null;
@@ -30,7 +24,10 @@ interface SafeModalsProps {
   deleteSafe: UseMutationResult<unknown, Error, number>;
   invalidateSafes: () => void;
   queryClient: QueryClient;
-  toast: (opts: { title: string; variant?: 'default' | 'destructive' | 'warning' | 'info' | null }) => void;
+  toast: (opts: {
+    title: string;
+    variant?: 'default' | 'destructive' | 'warning' | 'info' | null;
+  }) => void;
 }
 
 export default function SafeModals({
@@ -61,36 +58,36 @@ export default function SafeModals({
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
         >
-          <div className="bg-[#111827] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+          <div className="bg-[#111827] border border-line rounded-2xl w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-sky-500/15 flex items-center justify-center">
                   <Landmark className="w-4 h-4 text-sky-400" />
                 </div>
-                <p className="font-black text-white text-sm">إضافة خزينة جديدة</p>
+                <p className="font-black text-ink text-sm">إضافة خزينة جديدة</p>
               </div>
               <button
                 onClick={() => {
                   setShowAddSafe(false);
                   setAddForm({ name: '', balance: '', branch_id: '' });
                 }}
-                className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors"
+                className="p-1.5 rounded-lg text-ink/30 hover:text-ink/70 hover:bg-surface transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-white/50 text-xs font-bold mb-1.5">اسم الخزينة</label>
+                <label className="block text-ink/50 text-xs font-bold mb-1.5">اسم الخزينة</label>
                 <input
                   value={addForm.name}
                   onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="مثال: الخزينة الرئيسية"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-white/20 outline-none focus:border-sky-500/50 transition-colors"
+                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-ink text-sm placeholder-white/20 outline-none focus:border-sky-500/50 transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-white/50 text-xs font-bold mb-1.5">
+                <label className="block text-ink/50 text-xs font-bold mb-1.5">
                   الرصيد الابتدائي
                 </label>
                 <input
@@ -98,24 +95,30 @@ export default function SafeModals({
                   value={addForm.balance}
                   onChange={(e) => setAddForm((f) => ({ ...f, balance: e.target.value }))}
                   placeholder="0"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-white/20 outline-none focus:border-sky-500/50 transition-colors"
+                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-ink text-sm placeholder-white/20 outline-none focus:border-sky-500/50 transition-colors"
                 />
               </div>
               {branches.length > 0 && (
                 <div>
-                  <label className="block text-white/50 text-xs font-bold mb-1.5">الفرع (اختياري)</label>
+                  <label className="block text-ink/50 text-xs font-bold mb-1.5">
+                    الفرع (اختياري)
+                  </label>
                   <select
                     value={addForm.branch_id}
                     onChange={(e) => setAddForm((f) => ({ ...f, branch_id: e.target.value }))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-sky-500/50 transition-colors"
+                    className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-ink text-sm outline-none focus:border-sky-500/50 transition-colors"
                   >
                     <option value="">— بدون فرع —</option>
-                    {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
             </div>
-            <div className="flex gap-3 px-6 py-4 border-t border-white/8">
+            <div className="flex gap-3 px-6 py-4 border-t border-line">
               <button
                 disabled={createSafe.isPending}
                 onClick={async () => {
@@ -140,10 +143,13 @@ export default function SafeModals({
                     setAddForm({ name: '', balance: '', branch_id: '' });
                     setShowAddSafe(false);
                   } catch (e: unknown) {
-                    toast({ title: (e as Error)?.message ?? 'فشل إضافة الخزينة', variant: 'destructive' });
+                    toast({
+                      title: (e as Error)?.message ?? 'فشل إضافة الخزينة',
+                      variant: 'destructive',
+                    });
                   }
                 }}
-                className="flex-1 flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white font-bold text-sm rounded-xl py-2.5 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-ink font-bold text-sm rounded-xl py-2.5 transition-colors"
               >
                 {createSafe.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -157,7 +163,7 @@ export default function SafeModals({
                   setShowAddSafe(false);
                   setAddForm({ name: '', balance: '', branch_id: '' });
                 }}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold text-sm rounded-xl py-2.5 transition-colors border border-white/8"
+                className="flex-1 bg-surface hover:bg-surface text-ink/60 font-bold text-sm rounded-xl py-2.5 transition-colors border border-line"
               >
                 إلغاء
               </button>
@@ -178,16 +184,16 @@ export default function SafeModals({
                 <AlertTriangle className="w-7 h-7 text-red-400" />
               </div>
               <div>
-                <p className="text-white font-black text-base">حذف الخزينة</p>
-                <p className="text-white/50 text-sm mt-1.5 leading-relaxed">
-                  سيتم حذف <span className="text-white font-semibold">"{deleteTarget.name}"</span>{' '}
+                <p className="text-ink font-black text-base">حذف الخزينة</p>
+                <p className="text-ink/50 text-sm mt-1.5 leading-relaxed">
+                  سيتم حذف <span className="text-ink font-semibold">"{deleteTarget.name}"</span>{' '}
                   نهائياً.
                   <br />
                   هذا الإجراء لا يمكن التراجع عنه.
                 </p>
               </div>
             </div>
-            <div className="flex gap-3 px-6 py-4 border-t border-white/8">
+            <div className="flex gap-3 px-6 py-4 border-t border-line">
               <button
                 disabled={deleteSafe.isPending}
                 onClick={() => {
@@ -198,13 +204,17 @@ export default function SafeModals({
                       setDeleteTarget(null);
                     },
                     onError: (e: unknown) => {
-                      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error || (e as Error)?.message || 'فشل حذف الخزينة';
+                      const msg =
+                        (e as { response?: { data?: { error?: string } } })?.response?.data
+                          ?.error ||
+                        (e as Error)?.message ||
+                        'فشل حذف الخزينة';
                       toast({ title: msg, variant: 'destructive' });
                       setDeleteTarget(null);
                     },
                   });
                 }}
-                className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold text-sm rounded-xl py-2.5 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-ink font-bold text-sm rounded-xl py-2.5 transition-colors"
               >
                 {deleteSafe.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -215,7 +225,7 @@ export default function SafeModals({
               </button>
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold text-sm rounded-xl py-2.5 transition-colors border border-white/8"
+                className="flex-1 bg-surface hover:bg-surface text-ink/60 font-bold text-sm rounded-xl py-2.5 transition-colors border border-line"
               >
                 إلغاء
               </button>
@@ -230,48 +240,50 @@ export default function SafeModals({
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
         >
-          <div className="bg-[#111827] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+          <div className="bg-[#111827] border border-line rounded-2xl w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">
                   <Pencil className="w-4 h-4 text-amber-400" />
                 </div>
-                <p className="font-black text-white text-sm">تعديل الخزينة</p>
+                <p className="font-black text-ink text-sm">تعديل الخزينة</p>
               </div>
               <button
                 onClick={() => setEditTarget(null)}
-                className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors"
+                className="p-1.5 rounded-lg text-ink/30 hover:text-ink/70 hover:bg-surface transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-white/50 text-xs font-bold mb-1.5">اسم الخزينة</label>
+                <label className="block text-ink/50 text-xs font-bold mb-1.5">اسم الخزينة</label>
                 <input
                   value={editForm.name}
                   onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="اسم الخزينة"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-white/20 outline-none focus:border-amber-500/50 transition-colors"
+                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-ink text-sm placeholder-white/20 outline-none focus:border-amber-500/50 transition-colors"
                 />
               </div>
               {branches.length > 0 && (
                 <div>
-                  <label className="block text-white/50 text-xs font-bold mb-1.5">الفرع</label>
+                  <label className="block text-ink/50 text-xs font-bold mb-1.5">الفرع</label>
                   <select
                     value={editForm.branch_id}
                     onChange={(e) => setEditForm((f) => ({ ...f, branch_id: e.target.value }))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-colors"
+                    className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-ink text-sm outline-none focus:border-amber-500/50 transition-colors"
                   >
                     <option value="">— بدون فرع —</option>
                     {branches.map((b) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
                     ))}
                   </select>
                 </div>
               )}
             </div>
-            <div className="flex gap-3 px-6 py-4 border-t border-white/8">
+            <div className="flex gap-3 px-6 py-4 border-t border-line">
               <button
                 disabled={editSaving}
                 onClick={async () => {
@@ -295,12 +307,15 @@ export default function SafeModals({
                     toast({ title: 'تم تعديل الخزينة بنجاح' });
                     setEditTarget(null);
                   } catch (e: unknown) {
-                    toast({ title: (e as Error)?.message ?? 'فشل تعديل الخزينة', variant: 'destructive' });
+                    toast({
+                      title: (e as Error)?.message ?? 'فشل تعديل الخزينة',
+                      variant: 'destructive',
+                    });
                   } finally {
                     setEditSaving(false);
                   }
                 }}
-                className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white font-bold text-sm rounded-xl py-2.5 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-ink font-bold text-sm rounded-xl py-2.5 transition-colors"
               >
                 {editSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -311,7 +326,7 @@ export default function SafeModals({
               </button>
               <button
                 onClick={() => setEditTarget(null)}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold text-sm rounded-xl py-2.5 transition-colors border border-white/8"
+                className="flex-1 bg-surface hover:bg-surface text-ink/60 font-bold text-sm rounded-xl py-2.5 transition-colors border border-line"
               >
                 إلغاء
               </button>

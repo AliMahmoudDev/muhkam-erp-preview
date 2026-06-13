@@ -30,10 +30,10 @@ function pwStrength(pw: string): { score: number; label: string; color: string }
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   const map = [
     { score: 0, label: '', color: 'transparent' },
-    { score: 1, label: 'ضعيفة', color: '#EF4444' },
-    { score: 2, label: 'متوسطة', color: '#F97316' },
+    { score: 1, label: 'ضعيفة', color: 'var(--status-danger)' },
+    { score: 2, label: 'متوسطة', color: 'var(--status-warning)' },
     { score: 3, label: 'جيدة', color: '#EAB308' },
-    { score: 4, label: 'قوية', color: '#10B981' },
+    { score: 4, label: 'قوية', color: 'var(--status-success)' },
   ];
   return map[score];
 }
@@ -99,7 +99,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
     display: 'block',
     fontSize: 13,
     fontWeight: 600,
-    color: '#CBD5E1',
+    color: 'var(--text-2)',
     marginBottom: 8,
   };
 
@@ -209,7 +209,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
             height="28"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#3B82F6"
+            stroke="var(--status-info)"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -222,7 +222,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
           style={{
             fontSize: 18,
             fontWeight: 700,
-            color: '#F8FAFC',
+            color: 'var(--text-1)',
             marginBottom: 8,
             letterSpacing: '-0.01em',
           }}
@@ -236,18 +236,18 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
               maxWidth: 320,
               padding: '14px 16px',
               borderRadius: 8,
-              background: '#0F172A',
+              background: 'var(--bg-app)',
               border: '1px solid #1E293B',
             }}
           >
-            <p style={{ fontSize: 12, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600, marginBottom: 4 }}>
               رقم الدخول الخاص بك
             </p>
             <p
               style={{
                 fontSize: 16,
                 fontWeight: 700,
-                color: '#60A5FA',
+                color: 'var(--status-info)',
                 letterSpacing: '0.04em',
                 direction: 'ltr',
                 fontFamily: "'Inter', monospace",
@@ -255,12 +255,12 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
             >
               {createdUsername}
             </p>
-            <p style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>
+            <p style={{ fontSize: 11, color: 'var(--text-2)', marginTop: 6 }}>
               استخدم هذا الرقم لتسجيل الدخول
             </p>
           </div>
         )}
-        <p style={{ fontSize: 13, color: '#94A3B8' }}>جاري تسجيل الدخول…</p>
+        <p style={{ fontSize: 13, color: 'var(--text-2)' }}>جاري تسجيل الدخول…</p>
       </div>
     );
   }
@@ -319,7 +319,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
             border: '1px solid rgba(239, 68, 68, 0.25)',
             borderRadius: 8,
             fontSize: 13,
-            color: '#FCA5A5',
+            color: 'var(--status-danger)',
             fontWeight: 500,
           }}
         >
@@ -389,7 +389,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
                       flex: 1,
                       height: 3,
                       borderRadius: 2,
-                      background: i <= strength.score ? strength.color : '#1E293B',
+                      background: i <= strength.score ? strength.color : 'var(--bg-elevated)',
                       transition: 'background .25s ease',
                     }}
                   />
@@ -439,7 +439,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
                 width: 14,
                 height: 14,
                 border: '2px solid rgba(255,255,255,0.3)',
-                borderTopColor: '#fff',
+                borderTopColor: 'var(--text-1)',
                 borderRadius: '50%',
                 display: 'inline-block',
                 animation: 'ent-spin .7s linear infinite',
@@ -453,7 +453,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
       </button>
 
       {/* Switch to login */}
-      <div style={{ textAlign: 'center', fontSize: 13, color: '#64748B' }}>
+      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-2)' }}>
         لديك حساب بالفعل؟{' '}
         <button type="button" onClick={onSwitch} className="ent-link">
           سجّل الدخول
