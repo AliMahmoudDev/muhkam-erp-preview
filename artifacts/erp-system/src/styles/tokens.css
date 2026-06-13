@@ -272,6 +272,7 @@ html.light {
   --erp-bg-elevated: var(--bg-elevated);
   --erp-bg-panel: var(--bg-card);
   --erp-bg-soft: var(--surface);
+  --erp-bg-active: rgba(0, 0, 0, 0.07);
   --erp-bg-input: var(--bg-input);
   --erp-input-text: var(--text-1);
   --erp-text: var(--text-1);
