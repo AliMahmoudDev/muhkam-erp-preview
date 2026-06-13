@@ -9,7 +9,6 @@ import {
   Settings,
   LayoutGrid,
   List,
-  ChevronRight,
   ScanLine,
 } from 'lucide-react';
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'));
@@ -126,23 +125,6 @@ export default function Repairs() {
   const { data: branches = [] } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['/api/branches'],
     queryFn: () => apiFetch<{ id: number; name: string }[]>(api('/api/branches')),
-    select: (d) => (Array.isArray(d) ? d : []),
-  });
-
-  interface TechnicianStat {
-    technician_id: number;
-    technician_name: string;
-    total_jobs: number;
-    delivered: number;
-    active_jobs: number;
-    avg_duration_days: number | null;
-  }
-  const [showTechStats, setShowTechStats] = useState(false);
-  const { data: techStats = [] } = useQuery<TechnicianStat[]>({
-    queryKey: ['/api/repair-jobs/technician-stats'],
-    queryFn: () => apiFetch<TechnicianStat[]>(api('/api/repair-jobs/technician-stats')),
-    enabled: showTechStats,
-    refetchInterval: 60_000,
     select: (d) => (Array.isArray(d) ? d : []),
   });
 
@@ -402,69 +384,6 @@ export default function Repairs() {
             </div>
           )}
         </div>
-
-        {/* Technician performance panel */}
-        {!selectedJob && (
-          <div className="rounded-2xl border border-[var(--erp-border)] bg-surface overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setShowTechStats((v) => !v)}
-              className="w-full flex items-center justify-between px-3 py-2 text-right hover:bg-surface transition-all"
-            >
-              <span className="text-[11px] text-cyan-300/85 font-bold flex items-center gap-1.5">
-                📊 أداء الفنيين
-                {showTechStats && techStats.length > 0 && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/12 border border-cyan-500/25 text-cyan-300/80 font-medium tabular-nums">
-                    {techStats.length}
-                  </span>
-                )}
-              </span>
-              <ChevronRight
-                className={`w-4 h-4 erp-label transition-transform duration-200 ${showTechStats ? '-rotate-90' : 'rotate-90'}`}
-              />
-            </button>
-            {showTechStats && (
-              <div className="border-t border-[var(--erp-border)] px-3 py-2">
-                {techStats.length === 0 ? (
-                  <p className="text-center text-[11px] erp-label py-4">
-                    لا توجد بيانات أداء حالياً
-                  </p>
-                ) : (
-                  <div className="space-y-1">
-                    <div className="grid grid-cols-12 gap-2 text-[9px] erp-label font-bold uppercase tracking-wider px-2 pb-1 border-b border-[var(--erp-border)]">
-                      <div className="col-span-5">الفني</div>
-                      <div className="col-span-2 text-center">المُسنَدة</div>
-                      <div className="col-span-2 text-center">المُسلَّمة</div>
-                      <div className="col-span-3 text-end">متوسط المدة</div>
-                    </div>
-                    {techStats.map((t) => (
-                      <div
-                        key={t.technician_id}
-                        className="grid grid-cols-12 gap-2 items-center px-2 py-1.5 rounded-lg text-xs bg-surface hover:bg-surface transition-all"
-                      >
-                        <div
-                          className="col-span-5 truncate erp-text font-medium"
-                          title={t.technician_name}
-                        >
-                          {t.technician_name}
-                        </div>
-                        <div className="col-span-2 text-center tabular-nums text-ink/85 font-bold">
-                          {t.total_jobs}
-                        </div>
-                        <div className="col-span-2 text-center tabular-nums text-emerald-300/85">
-                          {t.delivered}
-                        </div>
-                        <div className="col-span-3 text-end tabular-nums text-cyan-300/80">
-                          {t.avg_duration_days != null ? `${t.avg_duration_days} يوم` : '—'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Status filter chips */}
         <div className="flex gap-1 flex-wrap">

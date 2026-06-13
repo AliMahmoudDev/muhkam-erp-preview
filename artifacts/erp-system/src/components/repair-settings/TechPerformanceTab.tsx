@@ -60,7 +60,7 @@ export default function TechPerformanceTab() {
       {/* Header */}
       <div
         className="flex items-center justify-between px-6 py-4 shrink-0"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        style={{ borderBottom: '1px solid var(--edge)' }}
       >
         <div>
           <h3 className="text-[15px] font-black text-ink">أداء الفنيين</h3>
@@ -73,8 +73,8 @@ export default function TechPerformanceTab() {
           disabled={isFetching}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-ink/60 hover:text-ink transition-all disabled:opacity-40"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'var(--surface)',
+            border: '1px solid var(--edge)',
           }}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
@@ -99,8 +99,8 @@ export default function TechPerformanceTab() {
               onClick={() => void refetch()}
               className="text-xs px-3 py-1.5 rounded-lg font-bold"
               style={{
-                background: 'rgba(239,68,68,0.12)',
-                border: '1px solid rgba(239,68,68,0.25)',
+                background: 'var(--status-danger-bg)',
+                border: '1px solid var(--status-danger-border)',
               }}
             >
               إعادة المحاولة
@@ -127,8 +127,8 @@ export default function TechPerformanceTab() {
                   key={t.technician_id}
                   className="rounded-2xl p-4 flex flex-col gap-3 transition-all hover:scale-[1.01]"
                   style={{
-                    background: 'rgba(255,255,255,0.025)',
-                    border: '1px solid rgba(255,255,255,0.07)',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--edge)',
                     boxShadow: '0 4px 24px -8px rgba(0,0,0,0.4)',
                   }}
                 >
@@ -152,9 +152,9 @@ export default function TechPerformanceTab() {
                       <span
                         className="shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full tabular-nums"
                         style={{
-                          background: 'rgba(251,191,36,0.15)',
+                          background: 'var(--bg-warning-tint)',
                           color: 'var(--status-warning)',
-                          border: '1px solid rgba(251,191,36,0.30)',
+                          border: '1px solid var(--edge-warning)',
                         }}
                       >
                         {t.active_jobs} نشطة
@@ -188,7 +188,7 @@ export default function TechPerformanceTab() {
                     </div>
                     <div
                       className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: 'rgba(255,255,255,0.07)' }}
+                      style={{ background: 'var(--edge)' }}
                     >
                       <div
                         className="h-full rounded-full transition-all duration-700"
