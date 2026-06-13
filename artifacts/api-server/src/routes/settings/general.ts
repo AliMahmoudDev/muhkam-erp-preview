@@ -487,4 +487,69 @@ router.post(
   })
 );
 
+// ─── APP DISPLAY SETTINGS (JSON blob) ─────────────────────────────────────────
+// مفتاح ثابت يُخزَّن داخل system_settings لكل شركة على حدة.
+// GET  — متاح لأي مستخدم مصادق (employee, manager, admin).
+// PUT  — مقيّد بـ admin / super_admin فقط.
+const APP_SETTINGS_BLOB_KEY = 'app_settings_json';
+
+router.get(
+  '/settings/app-settings',
+  authenticate,
+  wrap(async (req, res) => {
+    const companyId = getTenant(req);
+    const cacheKey = `app_settings:${companyId}`;
+    const cached = await getCache<Record<string, unknown>>(cacheKey);
+    if (cached) {
+      res.json(cached);
+      return;
+    }
+    const [row] = await db
+      .select()
+      .from(systemSettingsTable)
+      .where(
+        and(
+          eq(systemSettingsTable.key, APP_SETTINGS_BLOB_KEY),
+          eq(systemSettingsTable.company_id, companyId)
+        )
+      );
+    if (!row?.value) {
+      res.json({});
+      return;
+    }
+    try {
+      const parsed = JSON.parse(row.value) as Record<string, unknown>;
+      await setCache(cacheKey, parsed, 300);
+      res.json(parsed);
+    } catch {
+      res.json({});
+    }
+  })
+);
+
+router.put(
+  '/settings/app-settings',
+  authenticate,
+  wrap(async (req, res) => {
+    const role = req.user?.role ?? '';
+    if (!['admin', 'super_admin'].includes(role)) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+      res.status(400).json({ error: 'البيانات المرسلة غير صالحة' });
+      return;
+    }
+    const companyId = getTenant(req);
+    const value = JSON.stringify(req.body);
+    await upsertSetting(APP_SETTINGS_BLOB_KEY, value, companyId);
+    // Invalidate both caches so subsequent GETs reflect the new data
+    await Promise.all([
+      deleteCache(`app_settings:${companyId}`),
+      deleteCache(`settings:${companyId}`),
+    ]);
+    res.json({ success: true });
+  })
+);
+
 export default router;

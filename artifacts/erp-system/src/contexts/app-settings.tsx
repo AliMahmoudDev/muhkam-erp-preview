@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { getTenantSettingsStorageKey } from '@/lib/tenant-storage';
+import { authFetch } from '@/lib/auth-fetch';
 
 export type CurrencyCode = 'EGP' | 'USD' | 'CNY';
 export type FontFamily = 'Tajawal' | 'Cairo' | 'Almarai' | 'Changa' | 'Inter';
@@ -247,19 +248,80 @@ function loadSettings(storageKey = getTenantSettingsStorageKey()): AppSettings {
   return { ...DEFAULTS };
 }
 
+/* ─── Server sync helpers (module-level, no React deps) ─── */
+
+async function fetchServerSettings(): Promise<Partial<AppSettings> | null> {
+  try {
+    const res = await authFetch('/api/settings/app-settings');
+    if (!res.ok) return null;
+    const data = (await res.json()) as Record<string, unknown>;
+    if (!data || Object.keys(data).length === 0) return null;
+    return data as Partial<AppSettings>;
+  } catch {
+    return null;
+  }
+}
+
+async function pushServerSettings(s: AppSettings): Promise<void> {
+  try {
+    await authFetch('/api/settings/app-settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(s),
+    });
+  } catch {
+    // Silent — localStorage stays authoritative for the current session.
+  }
+}
+
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [storageKey, setStorageKey] = useState(getTenantSettingsStorageKey);
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings(storageKey));
 
+  /**
+   * Counts PUT requests currently in flight.
+   * The server-fetch handler only applies remote data when this is 0,
+   * so a fresh local update cannot be silently overwritten by a stale
+   * server response that started before the write completed.
+   */
+  const pendingWrites = useRef(0);
+
   useEffect(() => {
     applySettings(settings);
   }, [settings]);
+
+  /**
+   * Initial mount — pull from server once (background, non-blocking).
+   * localStorage is applied immediately above; this fetch refines it.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    const key = getTenantSettingsStorageKey();
+    fetchServerSettings().then((data) => {
+      if (cancelled || data === null || pendingWrites.current > 0) return;
+      const merged = { ...DEFAULTS, ...data };
+      setSettings(merged);
+      localStorage.setItem(key, JSON.stringify(merged));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const reloadTenantSettings = () => {
       const nextKey = getTenantSettingsStorageKey();
       setStorageKey(nextKey);
       setSettings(loadSettings(nextKey));
+
+      // Company/user changed → reset pending count and pull fresh server data.
+      pendingWrites.current = 0;
+      fetchServerSettings().then((data) => {
+        if (data === null) return;
+        const merged = { ...DEFAULTS, ...data };
+        setSettings(merged);
+        localStorage.setItem(nextKey, JSON.stringify(merged));
+      });
     };
 
     window.addEventListener('auth:user-changed', reloadTenantSettings);
@@ -277,6 +339,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => {
       const next = { ...prev, ...patch };
       localStorage.setItem(storageKey, JSON.stringify(next));
+      // Optimistic server sync: increment count before the async call so any
+      // concurrent fetch triggered by focus/storage won't overwrite this change.
+      pendingWrites.current += 1;
+      pushServerSettings(next).finally(() => {
+        pendingWrites.current = Math.max(0, pendingWrites.current - 1);
+      });
       return next;
     });
   };
@@ -284,6 +352,10 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const reset = () => {
     localStorage.removeItem(storageKey);
     setSettings(DEFAULTS);
+    pendingWrites.current += 1;
+    pushServerSettings(DEFAULTS).finally(() => {
+      pendingWrites.current = Math.max(0, pendingWrites.current - 1);
+    });
   };
 
   return <Ctx.Provider value={{ settings, update, reset }}>{children}</Ctx.Provider>;
