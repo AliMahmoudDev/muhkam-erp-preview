@@ -6,7 +6,6 @@ const E2E_PASS = process.env.E2E_TEST_PASS;
 // ── Helper ────────────────────────────────────────────────────────────────────
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
   await page.fill('[aria-label="رقم الهاتف أو اسم المستخدم"]', E2E_USER!);
   await page.fill('[aria-label="الرقم السري"]', E2E_PASS!);
   await page.click('button[type="submit"]');
@@ -17,7 +16,6 @@ async function login(page: import('@playwright/test').Page) {
 
 test('صفحة /login تعرض واجهة عربية RTL', async ({ page }) => {
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
 
   // Wait for the form to be fully rendered before inspecting content.
   // The login page injects its CSS into <head> via useEffect, so checking
@@ -36,7 +34,6 @@ test('صفحة /login تعرض واجهة عربية RTL', async ({ page }) => {
 
 test('كلمة مرور خاطئة تظهر رسالة خطأ بالعربية', async ({ page }) => {
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
   await expect(page.locator('[aria-label="رقم الهاتف أو اسم المستخدم"]')).toBeVisible({ timeout: 10000 });
 
   await page.fill('[aria-label="رقم الهاتف أو اسم المستخدم"]', 'admin');
@@ -53,7 +50,6 @@ test('بيانات صحيحة تحوّل إلى لوحة التحكم', async ({
   if (!E2E_USER || !E2E_PASS) { test.skip(); return; }
 
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
   await page.fill('[aria-label="رقم الهاتف أو اسم المستخدم"]', E2E_USER);
   await page.fill('[aria-label="الرقم السري"]', E2E_PASS);
   await page.click('button[type="submit"]');
@@ -83,14 +79,12 @@ test('تسجيل الخروج يعيد التوجيه إلى /login', async ({ p
 
 test('زيارة / تعرض صفحة الهبوط مع زر البدء', async ({ page }) => {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
   const cta = page.getByRole('button', { name: /ابدأ مجاناً/ }).first();
   await expect(cta).toBeVisible({ timeout: 10000 });
 });
 
 test('الضغط على زر البدء يوجه إلى /login', async ({ page }) => {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
   const cta = page.getByRole('button', { name: /ابدأ مجاناً/ }).first();
   await expect(cta).toBeVisible({ timeout: 10000 });
   await cta.click();

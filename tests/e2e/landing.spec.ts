@@ -2,13 +2,11 @@ import { test, expect } from '@playwright/test';
 
 test('قسم الهيرو مرئي عند زيارة الصفحة الرئيسية', async ({ page }) => {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
   await expect(page.locator('h1').first()).toBeVisible({ timeout: 10000 });
 });
 
 test('شريط الإحصاءات يعرض محتوى صحيحاً', async ({ page }) => {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
 
   // The stats section sits below the full-height hero; scroll into view so the
   // IntersectionObserver (threshold 0.4) fires and starts the counter animation.
@@ -29,7 +27,6 @@ test('شريط الإحصاءات يعرض محتوى صحيحاً', async ({ pa
 
 test('شبكة الميزات تحتوي على 8 بطاقات', async ({ page }) => {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
 
   const featuresSection = page.locator('#features');
   await expect(featuresSection).toBeVisible({ timeout: 10000 });
@@ -42,7 +39,6 @@ test('شبكة الميزات تحتوي على 8 بطاقات', async ({ page }
 
 test('زر CTA يؤدي إلى /login', async ({ page }) => {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
 
   // The hero and navbar both render a <button> with text "ابدأ مجاناً ←".
   // Clicking either navigates to /login?tab=register (matches /login/).

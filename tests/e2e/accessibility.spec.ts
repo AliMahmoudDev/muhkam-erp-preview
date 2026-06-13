@@ -5,7 +5,6 @@ const E2E_PASS = process.env.E2E_TEST_PASS;
 
 test('صفحة تسجيل الدخول تحتوي على aria-label بالعربية على حقول الإدخال', async ({ page }) => {
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
   const usernameInput = page.locator('[aria-label="رقم الهاتف أو اسم المستخدم"]');
   const pinInput = page.locator('[aria-label="الرقم السري"]');
   await expect(usernameInput).toBeVisible({ timeout: 10000 });
@@ -18,7 +17,6 @@ test('الصفحة الرئيسية تحتوي على عنصر nav بـ aria-lab
     return;
   }
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
   await page.fill('[aria-label="رقم الهاتف أو اسم المستخدم"]', E2E_USER);
   await page.fill('[aria-label="الرقم السري"]', E2E_PASS);
   await page.click('button[type="submit"]');
@@ -29,7 +27,6 @@ test('الصفحة الرئيسية تحتوي على عنصر nav بـ aria-lab
 
 test('رابط تخطي المحتوى موجود في الصفحة', async ({ page }) => {
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
   const skipLink = page.locator('a[href="#main-content"], a[href="#content"], a.skip-link, [data-skip-link]').first();
   const skipLinkCount = await skipLink.count();
   if (skipLinkCount === 0) {
