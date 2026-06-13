@@ -51,6 +51,44 @@ jobs:
             redis-cli --version 2>/dev/null || echo "redis-cli missing"
 
             echo
+            echo "=== node/ioredis ping using app env ==="
+            if [ -f "$ENV_FILE" ]; then
+              cd "$APP_DIR/artifacts/api-server"
+              set -a
+              . "$ENV_FILE"
+              set +a
+
+              node --input-type=module <<'NODE'
+            import Redis from "ioredis";
+
+            const url = process.env.REDIS_URL;
+            const host = process.env.REDIS_HOST;
+            const port = Number(process.env.REDIS_PORT || "6379");
+            const password = process.env.REDIS_PASSWORD || undefined;
+
+            if (!url && !host) {
+              console.log("NODE_REDIS_ENV_MISSING");
+              process.exit(0);
+            }
+
+            const redis = url
+              ? new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 0, enableOfflineQueue: false, connectTimeout: 3000 })
+              : new Redis({ host, port, password, lazyConnect: true, maxRetriesPerRequest: 0, enableOfflineQueue: false, connectTimeout: 3000 });
+
+            try {
+              await redis.connect();
+              const pong = await redis.ping();
+              console.log(`NODE_REDIS_PING_OK=${pong}`);
+            } catch (err) {
+              console.log("NODE_REDIS_PING_FAILED");
+              console.log(String(err?.message || err).slice(0, 300));
+            } finally {
+              redis.disconnect();
+            }
+            NODE
+            fi
+
+            echo
             echo "=== redis ping using app env ==="
             if [ -f "$ENV_FILE" ]; then
               set -a
