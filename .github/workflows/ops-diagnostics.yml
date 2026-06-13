@@ -1,0 +1,87 @@
+name: Ops Diagnostics
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-diagnostics:
+    name: Production diagnostics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run safe diagnostics on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+
+            APP_DIR="/var/www/muhkam-erp"
+            ENV_FILE="$APP_DIR/.env"
+
+            echo "=== host ==="
+            hostname
+            date -Is
+
+            echo
+            echo "=== app/env presence ==="
+            test -d "$APP_DIR" && echo "APP_DIR_OK" || echo "APP_DIR_MISSING"
+            test -f "$ENV_FILE" && echo "ENV_FILE_OK" || echo "ENV_FILE_MISSING"
+
+            echo
+            echo "=== env names only ==="
+            if [ -f "$ENV_FILE" ]; then
+              grep -E '^(REDIS_URL|REDIS_HOST|REDIS_PORT|REDIS_PASSWORD)=' "$ENV_FILE" \
+                | sed -E 's/=.*$/=<redacted>/' || true
+            fi
+
+            echo
+            echo "=== redis service status ==="
+            systemctl is-active redis-server 2>/dev/null || true
+            systemctl is-active redis 2>/dev/null || true
+
+            echo
+            echo "=== redis-cli version ==="
+            redis-cli --version 2>/dev/null || echo "redis-cli missing"
+
+            echo
+            echo "=== redis ping using app env ==="
+            if [ -f "$ENV_FILE" ]; then
+              set -a
+              . "$ENV_FILE"
+              set +a
+
+              if [ -n "${REDIS_URL:-}" ]; then
+                echo "CHECK=REDIS_URL"
+                redis-cli -u "$REDIS_URL" ping >/tmp/redis_ping.out 2>/tmp/redis_ping.err \
+                  && echo "PING_OK" \
+                  || { echo "PING_FAILED"; sed -E 's#redis://[^ @]+@#redis://<redacted>@#g' /tmp/redis_ping.err | tail -n 20; }
+              elif [ -n "${REDIS_HOST:-}" ]; then
+                echo "CHECK=REDIS_HOST"
+                if [ -n "${REDIS_PASSWORD:-}" ]; then
+                  REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h "$REDIS_HOST" -p "${REDIS_PORT:-6379}" ping >/tmp/redis_ping.out 2>/tmp/redis_ping.err \
+                    && echo "PING_OK" \
+                    || { echo "PING_FAILED"; cat /tmp/redis_ping.err | tail -n 20; }
+                else
+                  redis-cli -h "$REDIS_HOST" -p "${REDIS_PORT:-6379}" ping >/tmp/redis_ping.out 2>/tmp/redis_ping.err \
+                    && echo "PING_OK" \
+                    || { echo "PING_FAILED"; cat /tmp/redis_ping.err | tail -n 20; }
+                fi
+              else
+                echo "NO_REDIS_ENV"
+              fi
+            fi
+
+            echo
+            echo "=== pm2 env names only ==="
+            pm2 env 0 2>/dev/null | grep -E '^(REDIS_URL|REDIS_HOST|REDIS_PORT|REDIS_PASSWORD|NODE_ENV|PORT)=' | sed -E 's/=.*$/=<redacted>/' || true
+
+            echo
+            echo "=== app health local ==="
+            curl -fsS http://127.0.0.1:8080/api/healthz && echo
