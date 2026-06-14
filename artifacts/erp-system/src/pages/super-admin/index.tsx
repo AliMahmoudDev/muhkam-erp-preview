@@ -61,7 +61,11 @@ export default function SuperAdmin() {
   /* ── Shared stats query (used by TabOverview + TabCompanies) ── */
   const { data: stats } = useQuery<Stats>({
     queryKey: queryKeys.super.stats,
-    queryFn: () => authFetch(api('/api/super/stats')).then(r => r.json()) as Promise<Stats>,
+    queryFn: async () => {
+      const r = await authFetch(api('/api/super/stats'));
+      if (!r.ok) throw new Error(`stats ${r.status}`);
+      return r.json() as Promise<Stats>;
+    },
     staleTime: 30_000,
   });
 

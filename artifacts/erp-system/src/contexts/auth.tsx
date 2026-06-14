@@ -68,6 +68,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('subscription:expired', handler);
   }, [user]);
 
+  /* Listen for session:expired — fired when JWT refresh fails; force logout */
+  useEffect(() => {
+    const handler = () => {
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem('erp_company_id');
+      setUser(null);
+      setSubscriptionExpired(false);
+    };
+    window.addEventListener('session:expired', handler);
+    return () => window.removeEventListener('session:expired', handler);
+  }, []);
+
   const login = (u: AuthUser) => {
     localStorage.setItem(USER_KEY, JSON.stringify(u));
     if (u.company_id) {

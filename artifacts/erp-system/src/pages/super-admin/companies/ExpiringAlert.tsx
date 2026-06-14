@@ -9,7 +9,7 @@ export function ExpiringAlert({
   stats: Stats;
   coMutate: CoMutate;
 }) {
-  if (stats.expiringSoon <= 0) return null;
+  if (!stats.expiringSoon || stats.expiringSoon <= 0) return null;
 
   return (
     <div style={{
