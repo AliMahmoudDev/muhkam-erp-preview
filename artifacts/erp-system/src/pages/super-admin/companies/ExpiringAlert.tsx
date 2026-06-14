@@ -25,7 +25,7 @@ export function ExpiringAlert({
         </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {stats.expiringSoonList.map(c => (
+        {(stats.expiringSoonList ?? []).map(c => (
           <div key={c.id} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             background: C.card, borderRadius: '10px', padding: '10px 16px',

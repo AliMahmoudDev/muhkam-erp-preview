@@ -38,9 +38,9 @@ const LOGIN_CSS = `
   height: 46px;
   padding: 0 14px;
   border-radius: 8px;
-  background: #FFFFFF;
+  background: var(--login-white);
   border: 1px solid #CBD5E1;
-  color: #0F172A;
+  color: var(--login-navy);
   font-size: 14px;
   font-family: inherit;
   outline: none;
@@ -48,8 +48,8 @@ const LOGIN_CSS = `
   direction: rtl;
   text-align: right;
 }
-.ent-input::placeholder { color: #94A3B8; }
-.ent-input:hover:not(:disabled):not(:focus) { border-color: #94A3B8; }
+.ent-input::placeholder { color: var(--login-muted-on-navy); }
+.ent-input:hover:not(:disabled):not(:focus) { border-color: var(--login-muted-on-navy); }
 .ent-input:focus {
   border-color: #2563EB;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
@@ -70,7 +70,7 @@ const LOGIN_CSS = `
   border: none;
   cursor: pointer;
   background: #2563EB;
-  color: #FFFFFF;
+  color: var(--login-white);
   font-size: 14.5px;
   font-weight: 600;
   font-family: inherit;
@@ -90,7 +90,7 @@ const LOGIN_CSS = `
   height: 42px;
   border-radius: 8px;
   cursor: pointer;
-  background: #FFFFFF;
+  background: var(--login-white);
   color: #475569;
   border: 1px solid #CBD5E1;
   font-size: 13px;
@@ -98,7 +98,7 @@ const LOGIN_CSS = `
   font-family: inherit;
   transition: color .15s ease, border-color .15s ease, background .15s ease;
 }
-.ent-btn-secondary:hover { color: #0F172A; border-color: #94A3B8; background: #F1F5F9; }
+.ent-btn-secondary:hover { color: var(--login-navy); border-color: var(--login-muted-on-navy); background: #F1F5F9; }
 
 .ent-link {
   background: none; border: none; padding: 0; cursor: pointer;
@@ -113,7 +113,7 @@ const LOGIN_CSS = `
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; cursor: pointer;
-  color: #94A3B8; border-radius: 6px;
+  color: var(--login-muted-on-navy); border-radius: 6px;
   transition: color .15s ease, background .15s ease;
 }
 .ent-pw-toggle:hover { color: #334155; background: #F1F5F9; }
@@ -122,9 +122,9 @@ const LOGIN_CSS = `
 .ent-input:-webkit-autofill,
 .ent-input:-webkit-autofill:hover,
 .ent-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset;
-  -webkit-text-fill-color: #0F172A;
-  box-shadow: 0 0 0 1000px #FFFFFF inset;
+  -webkit-box-shadow: 0 0 0 1000px var(--login-white) inset;
+  -webkit-text-fill-color: var(--login-navy);
+  box-shadow: 0 0 0 1000px var(--login-white) inset;
   transition: background-color 99999s ease-in-out 0s;
 }
 
@@ -499,7 +499,7 @@ export default function Login() {
       style={{
         width: '46%',
         minHeight: '100vh',
-        background: 'var(--bg-app)',
+        background: 'var(--login-navy)',
         borderLeft: '1px solid #1E293B',
         position: 'relative',
         display: 'flex',
@@ -533,7 +533,7 @@ export default function Login() {
             style={{
               fontSize: 36,
               fontWeight: 800,
-              color: 'var(--text-1)',
+              color: 'var(--login-text-on-navy)',
               letterSpacing: '-0.02em',
               lineHeight: 1,
             }}
@@ -555,7 +555,7 @@ export default function Login() {
           style={{
             marginTop: 10,
             fontSize: 14,
-            color: 'var(--text-2)',
+            color: 'var(--login-muted-on-navy)',
             fontWeight: 500,
           }}
         >
@@ -581,7 +581,7 @@ export default function Login() {
                 alignItems: 'center',
                 gap: 10,
                 fontSize: 13.5,
-                color: 'var(--text-2)',
+                color: 'var(--login-muted-on-navy)',
                 fontWeight: 500,
                 animation: `ent-fade-up .5s ${0.05 + i * 0.04}s ease both`,
               }}
@@ -610,7 +610,7 @@ export default function Login() {
           style={{
             fontSize: 11,
             fontWeight: 700,
-            color: 'var(--text-2)',
+            color: 'var(--login-muted-on-navy)',
             letterSpacing: '0.14em',
             marginBottom: 18,
             textTransform: 'uppercase' as const,
@@ -655,13 +655,13 @@ export default function Login() {
                 <m.Icon />
               </span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)' }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--login-text-on-navy)' }}>
                   {m.label}
                 </span>
                 <span
                   style={{
                     fontSize: 11,
-                    color: 'var(--text-2)',
+                    color: 'var(--login-muted-on-navy)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
@@ -681,7 +681,7 @@ export default function Login() {
           position: 'relative',
           zIndex: 1,
           fontSize: 12,
-          color: 'var(--text-2)',
+          color: 'var(--login-muted-on-navy)',
           fontWeight: 500,
         }}
       >
@@ -699,8 +699,8 @@ export default function Login() {
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'row',
-        background: 'var(--text-1)',
-        color: 'var(--bg-app)',
+        background: 'var(--login-white)',
+        color: 'var(--login-navy)',
       }}
     >
       {/* Form panel — light */}
@@ -714,7 +714,7 @@ export default function Login() {
           justifyContent: 'center',
           padding: '40px 24px',
           minHeight: '100vh',
-          background: 'var(--text-1)',
+          background: 'var(--login-white)',
         }}
       >
         <div
@@ -739,7 +739,7 @@ export default function Login() {
               style={{
                 fontSize: 26,
                 fontWeight: 800,
-                color: 'var(--bg-app)',
+                color: 'var(--login-navy)',
                 letterSpacing: '-0.02em',
               }}
             >
@@ -760,7 +760,7 @@ export default function Login() {
           {/* Card */}
           <div
             style={{
-              background: 'var(--text-1)',
+              background: 'var(--login-white)',
               border: '1px solid #E2E8F0',
               borderRadius: 12,
               padding: '40px',
@@ -775,20 +775,20 @@ export default function Login() {
                     style={{
                       fontSize: 22,
                       fontWeight: 700,
-                      color: 'var(--bg-app)',
+                      color: 'var(--login-navy)',
                       marginBottom: 8,
                       letterSpacing: '-0.01em',
                     }}
                   >
                     التحقق الثنائي
                   </h2>
-                  <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.65 }}>
+                  <p style={{ fontSize: 14, color: 'var(--login-muted)', lineHeight: 1.65 }}>
                     افتح{' '}
-                    <span style={{ color: 'var(--bg-app)', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--login-navy)', fontWeight: 600 }}>
                       Google Authenticator
                     </span>{' '}
-                    أو <span style={{ color: 'var(--bg-app)', fontWeight: 600 }}>Authy</span> وأدخل
-                    الرمز المكوّن من 6 أرقام.
+                    أو <span style={{ color: 'var(--login-navy)', fontWeight: 600 }}>Authy</span>{' '}
+                    وأدخل الرمز المكوّن من 6 أرقام.
                   </p>
                 </div>
 
@@ -850,8 +850,8 @@ export default function Login() {
                         style={{
                           width: 14,
                           height: 14,
-                          border: '2px solid var(--edge-md)',
-                          borderTopColor: 'var(--text-1)',
+                          border: '2px solid rgba(255,255,255,0.25)',
+                          borderTopColor: 'var(--login-white)',
                           borderRadius: '50%',
                           display: 'inline-block',
                           animation: 'ent-spin .7s linear infinite',
@@ -884,14 +884,14 @@ export default function Login() {
                     style={{
                       fontSize: 24,
                       fontWeight: 700,
-                      color: 'var(--bg-app)',
+                      color: 'var(--login-navy)',
                       marginBottom: 6,
                       letterSpacing: '-0.01em',
                     }}
                   >
                     إنشاء حساب جديد
                   </h1>
-                  <p style={{ fontSize: 14, color: 'var(--text-2)' }}>
+                  <p style={{ fontSize: 14, color: 'var(--login-muted)' }}>
                     تجربة مجانية لمدة 7 أيام — بدون بطاقة ائتمان
                   </p>
                 </div>
@@ -911,14 +911,14 @@ export default function Login() {
                     style={{
                       fontSize: 24,
                       fontWeight: 700,
-                      color: 'var(--bg-app)',
+                      color: 'var(--login-navy)',
                       marginBottom: 6,
                       letterSpacing: '-0.01em',
                     }}
                   >
                     تسجيل الدخول
                   </h1>
-                  <p style={{ fontSize: 14, color: 'var(--text-2)' }}>
+                  <p style={{ fontSize: 14, color: 'var(--login-muted)' }}>
                     أدخل بياناتك للوصول إلى لوحة التحكم
                   </p>
                 </div>
@@ -955,7 +955,7 @@ export default function Login() {
               justifyContent: 'center',
               gap: 6,
               fontSize: 12.5,
-              color: 'var(--text-2)',
+              color: 'var(--login-muted)',
               fontWeight: 500,
             }}
           >
@@ -1128,7 +1128,7 @@ function LoginFormFields({
                 width: 14,
                 height: 14,
                 border: '2px solid var(--edge-md)',
-                borderTopColor: 'var(--text-1)',
+                borderTopColor: 'var(--login-white)',
                 borderRadius: '50%',
                 display: 'inline-block',
                 animation: 'ent-spin .7s linear infinite',
@@ -1142,7 +1142,7 @@ function LoginFormFields({
       </button>
 
       {/* Register link */}
-      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-2)' }}>
+      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--login-muted)' }}>
         ليس لديك حساب؟{' '}
         <button type="button" className="ent-link" onClick={onShowRegister}>
           إنشاء حساب جديد
