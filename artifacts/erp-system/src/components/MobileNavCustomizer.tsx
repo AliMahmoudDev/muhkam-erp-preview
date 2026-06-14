@@ -47,7 +47,6 @@ export const DEFAULT_MOBILE_TABS: string[] = ['/', '/sales', '/purchases', '/pos
 interface MobileNavCustomizerProps {
   currentTabs: string[];
   visibleHrefs: Set<string>;
-  isDark: boolean;
   onClose: () => void;
   onSave: (tabs: string[]) => void;
 }
@@ -55,7 +54,6 @@ interface MobileNavCustomizerProps {
 export function MobileNavCustomizer({
   currentTabs,
   visibleHrefs,
-  isDark,
   onClose,
   onSave,
 }: MobileNavCustomizerProps) {
@@ -68,13 +66,12 @@ export function MobileNavCustomizer({
     .map((id) => MOBILE_NAV_PAGES.find((p) => p.id === id))
     .filter((p): p is MobileNavPage => !!p);
   const unselectedPages = available.filter((p) => !selected.includes(p.id));
+  const atLimit = selected.length >= 5;
 
   const add = (id: string) => {
     if (selected.length < 5) setSelected((prev) => [...prev, id]);
   };
-
   const remove = (id: string) => setSelected((prev) => prev.filter((t) => t !== id));
-
   const moveUp = (idx: number) => {
     if (idx === 0) return;
     setSelected((prev) => {
@@ -83,7 +80,6 @@ export function MobileNavCustomizer({
       return next;
     });
   };
-
   const moveDown = (idx: number) => {
     if (idx === selected.length - 1) return;
     setSelected((prev) => {
@@ -93,14 +89,6 @@ export function MobileNavCustomizer({
     });
   };
 
-  const bg = isDark ? 'hsla(225,25%,8%,0.98)' : 'rgba(255,255,255,0.99)';
-  const hdrBdr = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)';
-  const itemBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
-  const itemBdr = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const txtPrim = isDark ? 'rgba(255,255,255,0.90)' : 'var(--bg-app)';
-  const txtMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)';
-  const atLimit = selected.length >= 5;
-
   return (
     <div
       className="fixed inset-0 z-[100] flex items-end lg:items-center justify-center"
@@ -109,18 +97,21 @@ export function MobileNavCustomizer({
     >
       <div
         className="w-full max-w-sm rounded-t-3xl lg:rounded-2xl overflow-hidden"
-        style={{ background: bg, border: hdrBdr }}
+        style={{
+          background: 'var(--bg-panel)',
+          border: '1px solid var(--edge)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ── */}
         <div
           className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: hdrBdr }}
+          style={{ borderBottom: '1px solid var(--edge)' }}
         >
           <button
             onClick={onClose}
             style={{
-              color: txtMuted,
+              color: 'var(--text-hint)',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -129,7 +120,9 @@ export function MobileNavCustomizer({
           >
             <X style={{ width: 18, height: 18 }} />
           </button>
-          <span style={{ fontWeight: 800, fontSize: 15, color: txtPrim }}>تخصيص قائمة الجوال</span>
+          <span style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-1)' }}>
+            تخصيص قائمة الجوال
+          </span>
           <span
             style={{
               fontSize: 11,
@@ -151,7 +144,7 @@ export function MobileNavCustomizer({
             style={{
               fontSize: 10,
               fontWeight: 800,
-              color: txtMuted,
+              color: 'var(--text-hint)',
               letterSpacing: '0.05em',
               marginBottom: 8,
             }}
@@ -160,7 +153,14 @@ export function MobileNavCustomizer({
           </p>
           <div className="space-y-1.5" style={{ marginBottom: 20 }}>
             {selectedPages.length === 0 ? (
-              <p style={{ fontSize: 12, color: txtMuted, textAlign: 'center', padding: '14px 0' }}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-hint)',
+                  textAlign: 'center',
+                  padding: '14px 0',
+                }}
+              >
                 لم تُحدِّد أي تبويبة بعد
               </p>
             ) : (
@@ -183,14 +183,16 @@ export function MobileNavCustomizer({
                         flexShrink: 0,
                       }}
                     />
-                    <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: txtPrim }}>
+                    <span
+                      style={{ flex: 1, fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}
+                    >
                       {page.label}
                     </span>
                     <button
                       onClick={() => moveUp(idx)}
                       disabled={idx === 0}
                       style={{
-                        color: idx === 0 ? txtMuted : 'rgba(245,158,11,0.70)',
+                        color: idx === 0 ? 'var(--text-hint)' : 'rgba(245,158,11,0.70)',
                         opacity: idx === 0 ? 0.35 : 1,
                         background: 'none',
                         border: 'none',
@@ -206,7 +208,9 @@ export function MobileNavCustomizer({
                       disabled={idx === selectedPages.length - 1}
                       style={{
                         color:
-                          idx === selectedPages.length - 1 ? txtMuted : 'rgba(245,158,11,0.70)',
+                          idx === selectedPages.length - 1
+                            ? 'var(--text-hint)'
+                            : 'rgba(245,158,11,0.70)',
                         opacity: idx === selectedPages.length - 1 ? 0.35 : 1,
                         background: 'none',
                         border: 'none',
@@ -241,7 +245,7 @@ export function MobileNavCustomizer({
             style={{
               fontSize: 10,
               fontWeight: 800,
-              color: txtMuted,
+              color: 'var(--text-hint)',
               letterSpacing: '0.05em',
               marginBottom: 8,
             }}
@@ -261,13 +265,17 @@ export function MobileNavCustomizer({
                   key={page.id}
                   className="flex items-center gap-3 rounded-xl px-3 py-2"
                   style={{
-                    background: itemBg,
-                    border: `1px solid ${itemBdr}`,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--edge)',
                     opacity: atLimit ? 0.45 : 1,
                   }}
                 >
-                  <Icon style={{ width: 15, height: 15, color: txtMuted, flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: txtPrim }}>
+                  <Icon
+                    style={{ width: 15, height: 15, color: 'var(--text-hint)', flexShrink: 0 }}
+                  />
+                  <span
+                    style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}
+                  >
                     {page.label}
                   </span>
                   <button
@@ -278,8 +286,8 @@ export function MobileNavCustomizer({
                       height: 26,
                       borderRadius: 8,
                       background: atLimit ? 'transparent' : 'rgba(245,158,11,0.12)',
-                      border: `1px solid ${atLimit ? itemBdr : 'rgba(245,158,11,0.28)'}`,
-                      color: atLimit ? txtMuted : 'var(--status-warning)',
+                      border: `1px solid ${atLimit ? 'var(--edge)' : 'rgba(245,158,11,0.28)'}`,
+                      color: atLimit ? 'var(--text-hint)' : 'var(--status-warning)',
                       cursor: atLimit ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -295,7 +303,7 @@ export function MobileNavCustomizer({
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-5 py-4" style={{ borderTop: hdrBdr }}>
+        <div className="px-5 py-4" style={{ borderTop: '1px solid var(--edge)' }}>
           <button
             onClick={() => onSave(selected)}
             disabled={selected.length === 0}
@@ -304,10 +312,8 @@ export function MobileNavCustomizer({
               background:
                 selected.length > 0
                   ? 'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)'
-                  : isDark
-                    ? 'rgba(255,255,255,0.05)'
-                    : 'rgba(0,0,0,0.05)',
-              color: selected.length > 0 ? 'var(--text-1)' : txtMuted,
+                  : 'var(--surface)',
+              color: selected.length > 0 ? 'var(--text-1)' : 'var(--text-hint)',
               border: 'none',
               cursor: selected.length > 0 ? 'pointer' : 'not-allowed',
               boxShadow: selected.length > 0 ? '0 4px 18px rgba(245,158,11,0.32)' : 'none',

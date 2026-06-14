@@ -270,12 +270,12 @@ export function TabSettings({
             <h3 style={{ color: 'var(--status-danger)', fontWeight: 800, marginBottom: '8px' }}>
               تأكيد الاستعادة
             </h3>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '16px' }}>
+            <p style={{ color: 'var(--text-2)', fontSize: '13px', marginBottom: '16px' }}>
               سيتم حذف البيانات الحالية لجميع الشركات واستبدالها بمحتوى الملف.
               <br />
               <strong style={{ color: 'var(--status-warning)' }}>{pendingRestoreFile?.name}</strong>
             </p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '8px' }}>
+            <p style={{ color: 'var(--text-hint)', fontSize: '12px', marginBottom: '8px' }}>
               اكتب <strong style={{ color: 'var(--status-danger)' }}>RESTORE</strong> للتأكيد:
             </p>
             <input
@@ -286,8 +286,8 @@ export function TabSettings({
                 width: '100%',
                 padding: '10px 14px',
                 borderRadius: '10px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'var(--surface)',
+                border: '1px solid var(--edge-md)',
                 color: 'var(--text-1)',
                 fontSize: '14px',
                 marginBottom: '16px',
@@ -306,9 +306,9 @@ export function TabSettings({
                   flex: 1,
                   padding: '10px',
                   borderRadius: '10px',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  border: '1px solid var(--edge-md)',
                   background: 'transparent',
-                  color: 'rgba(255,255,255,0.6)',
+                  color: 'var(--text-2)',
                   cursor: 'pointer',
                   fontFamily: FONT,
                 }}
@@ -327,7 +327,7 @@ export function TabSettings({
                   border: 'none',
                   background:
                     restoreCode === 'RESTORE' ? 'var(--status-danger)' : 'rgba(239,68,68,0.2)',
-                  color: restoreCode === 'RESTORE' ? 'var(--text-1)' : 'rgba(255,255,255,0.3)',
+                  color: restoreCode === 'RESTORE' ? 'var(--text-1)' : 'var(--text-hint)',
                   cursor: restoreCode === 'RESTORE' ? 'pointer' : 'not-allowed',
                   fontWeight: 800,
                   fontFamily: FONT,

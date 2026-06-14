@@ -7,7 +7,6 @@ import { authFetch } from '@/lib/auth-fetch';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { Printer, Loader2 } from 'lucide-react';
 import { TableSkeleton } from '@/components/skeletons';
-import { useAppSettings } from '@/contexts/app-settings';
 import type { TooltipProps } from 'recharts';
 import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 
@@ -282,30 +281,23 @@ export function DateFilterBar({
 
 /* ── Custom recharts tooltip ─────────────────────────────────────────────── */
 export const ChartTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
-  const { settings } = useAppSettings();
-  const isDark = settings.theme !== 'light';
   if (!active || !payload?.length) return null;
   return (
     <div
       className="rounded-xl p-3 text-xs shadow-2xl"
       style={{
-        background: isDark ? 'rgba(10,18,35,0.95)' : 'rgba(255,255,255,0.97)',
-        border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(0,0,0,0.10)',
+        background: 'var(--bg-panel)',
+        border: '1px solid var(--edge-md)',
         backdropFilter: 'blur(10px)',
       }}
     >
-      <p
-        className="font-bold mb-2"
-        style={{ color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}
-      >
+      <p className="font-bold mb-2" style={{ color: 'var(--text-2)' }}>
         {label}
       </p>
       {payload.map((entry) => (
         <div key={String(entry.dataKey)} className="flex items-center gap-2 mb-1">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: entry.color }} />
-          <span style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
-            {entry.dataKey}:
-          </span>
+          <span style={{ color: 'var(--text-2)' }}>{entry.dataKey}:</span>
           <span className="font-bold" style={{ color: entry.color }}>
             {formatCurrency(Number(entry.value))}
           </span>

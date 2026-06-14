@@ -12,13 +12,11 @@ import { ADVANCE_TYPES } from './constants';
 export function AdvanceRequestModal({
   empId,
   currency,
-  isDark,
   border,
   onClose,
 }: {
   empId: number;
   currency: string;
-  isDark: boolean;
   border: string;
   onClose: () => void;
 }) {
@@ -30,10 +28,10 @@ export function AdvanceRequestModal({
     reason: '',
     deduct_from: 'fixed' as 'fixed' | 'commission' | 'both',
   });
-  const bg = isDark ? 'rgba(8,14,26,0.98)' : 'var(--text-1)';
-  const textMain = isDark ? 'var(--text-1)' : 'var(--bg-app)';
-  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const inputBg = isDark ? 'rgba(255,255,255,0.06)' : 'var(--text-1)';
+  const bg = 'var(--bg-panel)';
+  const textMain = 'var(--text-1)';
+  const textMuted = 'var(--text-hint)';
+  const inputBg = 'var(--surface-raised)';
   const inputStyle = {
     width: '100%',
     padding: '10px 14px',
@@ -120,7 +118,7 @@ export function AdvanceRequestModal({
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
-            color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
+            color: 'var(--text-2)',
           }}
         >
           <X size={18} />
@@ -259,7 +257,7 @@ export function AdvanceRequestModal({
               border: `1px solid ${border}`,
               cursor: 'pointer',
               background: 'transparent',
-              color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',
+              color: 'var(--text-2)',
               fontWeight: 600,
               fontSize: 13,
             }}

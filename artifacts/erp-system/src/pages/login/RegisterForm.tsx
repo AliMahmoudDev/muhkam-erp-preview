@@ -438,7 +438,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
               style={{
                 width: 14,
                 height: 14,
-                border: '2px solid rgba(255,255,255,0.3)',
+                border: '2px solid var(--edge-strong)',
                 borderTopColor: 'var(--text-1)',
                 borderRadius: '50%',
                 display: 'inline-block',

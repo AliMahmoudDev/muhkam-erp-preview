@@ -151,7 +151,7 @@ export function AlertSettingBanner({
           width: 38,
           height: 20,
           borderRadius: 10,
-          background: enabled ? c.toggle : 'rgba(255,255,255,0.12)',
+          background: enabled ? c.toggle : 'var(--edge-strong)',
           border: 'none',
           cursor: 'pointer',
           flexShrink: 0,

@@ -24,10 +24,9 @@ interface NavItem {
 
 interface MobileNavProps {
   visibleNav: NavItem[];
-  isDark: boolean;
 }
 
-export function MobileNav({ visibleNav, isDark }: MobileNavProps) {
+export function MobileNav({ visibleNav }: MobileNavProps) {
   const [location] = useLocation();
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [navVisible, setNavVisible] = useState(true);
@@ -82,12 +81,6 @@ export function MobileNav({ visibleNav, isDark }: MobileNavProps) {
 
   if (!navVisible) return null;
 
-  const bg = isDark ? 'hsla(225,28%,7%,0.97)' : 'rgba(255,255,255,0.97)';
-  const bdrTop = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)';
-  const colActive = 'var(--status-warning)';
-  const colInactive = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)';
-  const colSettings = isDark ? 'rgba(255,255,255,0.26)' : 'rgba(0,0,0,0.26)';
-
   return (
     <>
       <nav
@@ -99,8 +92,8 @@ export function MobileNav({ visibleNav, isDark }: MobileNavProps) {
           paddingBottom: 'env(safe-area-inset-bottom)',
           paddingLeft: 4,
           paddingRight: 4,
-          background: bg,
-          borderTop: bdrTop,
+          background: 'var(--bg-topbar)',
+          borderTop: '1px solid var(--edge)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
         }}
@@ -113,8 +106,8 @@ export function MobileNav({ visibleNav, isDark }: MobileNavProps) {
               <div
                 className="flex flex-col items-center gap-0.5 rounded-xl px-2.5 py-1.5 transition-all"
                 style={{
-                  color: active ? colActive : colInactive,
-                  background: active ? 'rgba(245,158,11,0.09)' : 'transparent',
+                  color: active ? 'var(--brand)' : 'var(--text-hint)',
+                  background: active ? 'var(--brand-muted)' : 'transparent',
                   minWidth: 44,
                 }}
               >
@@ -135,7 +128,7 @@ export function MobileNav({ visibleNav, isDark }: MobileNavProps) {
           aria-label="تخصيص القائمة"
           className="flex flex-col items-center gap-0.5 rounded-xl px-2.5 py-1.5 transition-all"
           style={{
-            color: colSettings,
+            color: 'var(--text-hint)',
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
@@ -153,7 +146,6 @@ export function MobileNav({ visibleNav, isDark }: MobileNavProps) {
         <MobileNavCustomizer
           currentTabs={savedTabs}
           visibleHrefs={visibleHrefs}
-          isDark={isDark}
           onClose={() => setShowCustomizer(false)}
           onSave={(tabs) => {
             saveMutation.mutate(tabs);

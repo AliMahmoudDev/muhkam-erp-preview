@@ -88,7 +88,6 @@ export default function ReportTable({
   isLoading,
   search,
   totalStockValue,
-  isInventoryDark,
 }: ReportTableProps) {
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const selectedProduct = products.find((p) => p.id === selectedProductId);
@@ -237,7 +236,7 @@ export default function ReportTable({
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="h-full w-full max-w-md overflow-y-auto shadow-2xl border-r border-line"
               style={{
-                background: isInventoryDark ? 'rgba(8,14,28,0.97)' : 'rgba(255,255,255,0.97)',
+                background: 'var(--bg-panel)',
                 backdropFilter: 'blur(24px)',
                 fontFamily: "'Tajawal','Cairo',sans-serif",
               }}
@@ -246,7 +245,7 @@ export default function ReportTable({
               <div
                 className="sticky top-0 z-10 flex items-center justify-between p-5 border-b border-line"
                 style={{
-                  background: isInventoryDark ? 'rgba(8,14,28,0.95)' : 'rgba(255,255,255,0.95)',
+                  background: 'var(--bg-card)',
                   backdropFilter: 'blur(12px)',
                 }}
               >
@@ -332,13 +331,13 @@ export default function ReportTable({
                             </defs>
                             <XAxis
                               dataKey="date"
-                              tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+                              tick={{ fill: 'var(--text-hint)', fontSize: 9 }}
                             />
                             <YAxis hide />
                             <Tooltip
                               contentStyle={{
                                 background: 'rgba(10,18,35,0.95)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                border: '1px solid var(--edge-md)',
                                 borderRadius: 8,
                                 fontSize: 11,
                               }}

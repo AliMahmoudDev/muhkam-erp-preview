@@ -214,7 +214,7 @@ export function AuditLogPanel({
                       gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
                       padding: '11px 20px',
                       gap: '12px',
-                      borderBottom: 'border-bottom: 1px solid rgba(255,255,255,0.04)',
+                      borderBottom: 'border-bottom: 1px solid var(--edge)',
                       fontSize: '12px',
                       alignItems: 'center',
                     }}

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
-import { useAppSettings } from '@/contexts/app-settings';
 import { useToast } from '@/hooks/use-toast';
 import {
   Clock,
@@ -50,21 +49,19 @@ import { Role } from '@/lib/roles';
 ══════════════════════════════════════════════════ */
 export default function EmployeePortal() {
   const { user } = useAuth();
-  const { settings } = useAppSettings();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const isDark = settings.theme === 'dark';
   const empId = user?.employee_id;
 
   const { text: greeting, Icon: GreetIcon } = greetingText();
   const today = todayStr();
   const currentMonth = today.slice(0, 7);
 
-  const textMain = isDark ? 'var(--text-1)' : 'var(--bg-app)';
-  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const bg = isDark ? 'rgba(255,255,255,0.01)' : 'var(--text-1)';
-  const cardBg = isDark ? 'rgba(255,255,255,0.035)' : 'var(--text-1)';
-  const border = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)';
+  const textMain = 'var(--text-1)';
+  const textMuted = 'var(--text-hint)';
+  const bg = 'var(--surface)';
+  const cardBg = 'var(--surface)';
+  const border = 'var(--edge)';
 
   const [showAdvanceModal, setShowAdvanceModal] = useState(false);
   const [checkingIn, setCheckingIn] = useState(false);
@@ -329,10 +326,8 @@ export default function EmployeePortal() {
           marginBottom: 22,
           position: 'relative',
           overflow: 'hidden',
-          background: isDark
-            ? 'linear-gradient(135deg, rgba(245,158,11,0.22) 0%, rgba(8,14,26,0.98) 60%)'
-            : 'linear-gradient(135deg, #fef3c7 0%, #fffdf0 60%)',
-          border: `1px solid ${isDark ? 'rgba(245,158,11,0.22)' : 'rgba(245,158,11,0.30)'}`,
+          background: 'linear-gradient(135deg, rgba(245,158,11,0.14) 0%, var(--bg-card) 60%)',
+          border: '1px solid rgba(245,158,11,0.25)',
         }}
       >
         <div
@@ -389,7 +384,7 @@ export default function EmployeePortal() {
                   textAlign: 'center',
                   padding: '7px 14px',
                   borderRadius: 10,
-                  background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+                  background: 'var(--surface-raised)',
                 }}
               >
                 <p style={{ fontSize: 10, color: textMuted }}>كود الموظف</p>
@@ -404,7 +399,7 @@ export default function EmployeePortal() {
                   textAlign: 'center',
                   padding: '7px 14px',
                   borderRadius: 10,
-                  background: isDark ? 'rgba(52,211,153,0.08)' : 'rgba(52,211,153,0.08)',
+                  background: 'rgba(52,211,153,0.08)',
                 }}
               >
                 <p style={{ fontSize: 10, color: 'var(--status-success)' }}>الراتب</p>
@@ -421,7 +416,6 @@ export default function EmployeePortal() {
       {showTechDashboard && (
         <TechnicianSections
           empId={user.id}
-          isDark={isDark}
           textMain={textMain}
           textMuted={textMuted}
           cardBg={cardBg}
@@ -436,7 +430,7 @@ export default function EmployeePortal() {
         <div
           style={{
             borderRadius: 16,
-            border: `1px solid ${border}`,
+            border: '1px solid var(--edge)',
             background: cardBg,
             padding: 18,
           }}
@@ -517,7 +511,7 @@ export default function EmployeePortal() {
                   flex: 1,
                   padding: '9px 0',
                   borderRadius: 9,
-                  border: 'none',
+                  border: '1px solid rgba(245,158,11,0.25)',
                   cursor: 'pointer',
                   background: 'linear-gradient(135deg,#059669,#34d399)',
                   color: 'var(--text-1)',
@@ -542,7 +536,7 @@ export default function EmployeePortal() {
                   flex: 1,
                   padding: '9px 0',
                   borderRadius: 9,
-                  border: 'none',
+                  border: '1px solid rgba(245,158,11,0.25)',
                   cursor: 'pointer',
                   background: 'linear-gradient(135deg,#dc2626,#f87171)',
                   color: 'var(--text-1)',
@@ -590,7 +584,7 @@ export default function EmployeePortal() {
         <div
           style={{
             borderRadius: 16,
-            border: `1px solid ${border}`,
+            border: '1px solid var(--edge)',
             background: cardBg,
             padding: 18,
           }}
@@ -661,7 +655,7 @@ export default function EmployeePortal() {
       <div
         style={{
           borderRadius: 16,
-          border: `1px solid ${border}`,
+          border: '1px solid var(--edge)',
           background: cardBg,
           padding: 18,
           marginBottom: 18,
@@ -734,7 +728,6 @@ export default function EmployeePortal() {
         icon={<Wallet size={17} />}
         title={`السلف والمصروفات (${advances.length})`}
         accent="var(--status-warning)"
-        isDark={isDark}
         border={border}
         cardBg={cardBg}
         actions={
@@ -746,7 +739,7 @@ export default function EmployeePortal() {
               gap: 5,
               padding: '6px 12px',
               borderRadius: 8,
-              border: 'none',
+              border: '1px solid rgba(245,158,11,0.25)',
               cursor: 'pointer',
               background: 'linear-gradient(135deg,#b45309,#f59e0b)',
               color: 'var(--text-1)',
@@ -773,8 +766,8 @@ export default function EmployeePortal() {
                   gap: 11,
                   padding: '10px 13px',
                   borderRadius: 10,
-                  background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)',
-                  border: `1px solid ${border}`,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--edge)',
                 }}
               >
                 <Wallet size={13} style={{ color: 'var(--status-warning)', flexShrink: 0 }} />
@@ -809,7 +802,6 @@ export default function EmployeePortal() {
         icon={<TrendingDown size={17} />}
         title={`الخصومات (${deductions.length})`}
         accent="var(--status-danger)"
-        isDark={isDark}
         border={border}
         cardBg={cardBg}
       >
@@ -867,7 +859,6 @@ export default function EmployeePortal() {
         icon={<Gift size={17} />}
         title={`الحوافز والمكافآت (${bonuses.length})`}
         accent="var(--status-success)"
-        isDark={isDark}
         border={border}
         cardBg={cardBg}
       >
@@ -911,7 +902,6 @@ export default function EmployeePortal() {
         icon={<FileText size={17} />}
         title={`طلبات الإجازة (${leaves.length})`}
         accent="var(--status-info)"
-        isDark={isDark}
         border={border}
         cardBg={cardBg}
       >
@@ -969,8 +959,8 @@ export default function EmployeePortal() {
                   gap: 11,
                   padding: '10px 13px',
                   borderRadius: 10,
-                  background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)',
-                  border: `1px solid ${border}`,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--edge)',
                 }}
               >
                 <FileText size={13} style={{ color: 'var(--status-info)', flexShrink: 0 }} />
@@ -1004,7 +994,6 @@ export default function EmployeePortal() {
         icon={<Wallet size={17} />}
         title={`قسائم الرواتب (${payslips.length})`}
         accent="var(--status-success)"
-        isDark={isDark}
         border={border}
         cardBg={cardBg}
         defaultOpen={false}
@@ -1020,9 +1009,9 @@ export default function EmployeePortal() {
                 key={(p as { id?: number }).id ?? `payslip-${i}`}
                 style={{
                   borderRadius: 10,
-                  border: `1px solid ${border}`,
+                  border: '1px solid var(--edge)',
                   padding: '12px 14px',
-                  background: isDark ? 'rgba(52,211,153,0.05)' : 'rgba(52,211,153,0.04)',
+                  background: 'rgba(52,211,153,0.05)',
                 }}
               >
                 <div
@@ -1095,7 +1084,6 @@ export default function EmployeePortal() {
         icon={<RotateCcw size={17} />}
         title="سجل الحضور والانصراف (30 يوم)"
         accent="var(--status-info)"
-        isDark={isDark}
         border={border}
         cardBg={cardBg}
         defaultOpen={false}
@@ -1108,7 +1096,7 @@ export default function EmployeePortal() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
-                <tr style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
+                <tr style={{ background: 'var(--surface-raised)' }}>
                   {['التاريخ', 'الحضور', 'الانصراف', 'المدة', 'الحالة'].map((h) => (
                     <th
                       key={h}
@@ -1131,12 +1119,7 @@ export default function EmployeePortal() {
                     key={(rec as { id?: number }).id ?? `att-${rec.date ?? i}`}
                     style={{
                       borderTop: `1px solid ${border}`,
-                      background:
-                        i % 2 === 0
-                          ? 'transparent'
-                          : isDark
-                            ? 'rgba(255,255,255,0.012)'
-                            : 'rgba(0,0,0,0.012)',
+                      background: i % 2 === 0 ? 'transparent' : 'var(--surface)',
                     }}
                   >
                     <td style={{ padding: '7px 10px', whiteSpace: 'nowrap', fontWeight: 600 }}>
@@ -1188,7 +1171,6 @@ export default function EmployeePortal() {
         <AdvanceRequestModal
           empId={empId}
           currency={empCurrency}
-          isDark={isDark}
           border={border}
           onClose={() => setShowAdvanceModal(false)}
         />

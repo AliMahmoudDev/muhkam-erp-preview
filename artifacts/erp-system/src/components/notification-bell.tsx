@@ -8,7 +8,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { Inbox, RefreshCw, Check, X } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
-import { useAppSettings } from '@/contexts/app-settings';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
@@ -41,10 +40,8 @@ export function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
-  const { settings } = useAppSettings();
   const { user } = useAuth();
   const { toast } = useToast();
-  const isDark = (settings.theme ?? 'dark') === 'dark';
   const canApproveAdvances = hasPermission(user, 'can_manage_payroll');
   const [actingId, setActingId] = useState<number | null>(null);
   const [rejectTarget, setRejectTarget] = useState<AppNotification | null>(null);
@@ -223,11 +220,6 @@ export function NotificationBell() {
   }
 
   /* ── Styles ── */
-  const bgPanel = 'var(--bg-panel)';
-  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)';
-  const textMain = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.85)';
-  const textSub = isDark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.45)';
-  const rowHover = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)';
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative' }}>
@@ -239,14 +231,10 @@ export function NotificationBell() {
           position: 'relative',
           padding: '7px',
           borderRadius: 10,
-          border: `1px solid ${border}`,
-          background: open
-            ? isDark
-              ? 'rgba(255,255,255,0.08)'
-              : 'rgba(0,0,0,0.06)'
-            : 'transparent',
+          border: '1px solid var(--edge)',
+          background: open ? 'var(--surface-raised)' : 'transparent',
           cursor: 'pointer',
-          color: textMain,
+          color: 'var(--text-1)',
           display: 'flex',
           alignItems: 'center',
           transition: 'all 0.15s',
@@ -287,9 +275,9 @@ export function NotificationBell() {
             width: 360,
             maxHeight: 520,
             borderRadius: 14,
-            background: bgPanel,
-            border: `1px solid ${border}`,
-            boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.65)' : '0 8px 32px rgba(0,0,0,0.13)',
+            background: 'var(--erp-bg-card)',
+            border: '1px solid var(--edge)',
+            boxShadow: 'var(--shadow-modal)',
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
@@ -301,14 +289,16 @@ export function NotificationBell() {
           <div
             style={{
               padding: '10px 14px',
-              borderBottom: `1px solid ${border}`,
+              borderBottom: '1px solid var(--edge)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: textMain }}>رسائلي</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--erp-text-1)' }}>
+                رسائلي
+              </span>
               {unreadCount > 0 && (
                 <span
                   style={{
@@ -332,9 +322,9 @@ export function NotificationBell() {
                 style={{
                   padding: '3px 7px',
                   borderRadius: 6,
-                  border: `1px solid ${border}`,
+                  border: '1px solid var(--edge)',
                   background: 'transparent',
-                  color: textSub,
+                  color: 'var(--text-hint)',
                   cursor: 'pointer',
                   fontSize: 10,
                   display: 'flex',
@@ -351,9 +341,9 @@ export function NotificationBell() {
                   style={{
                     padding: '3px 7px',
                     borderRadius: 6,
-                    border: `1px solid ${border}`,
+                    border: '1px solid var(--edge)',
                     background: 'transparent',
-                    color: textSub,
+                    color: 'var(--text-hint)',
                     cursor: 'pointer',
                     fontSize: 10,
                     display: 'flex',
@@ -371,11 +361,6 @@ export function NotificationBell() {
           <div style={{ overflowY: 'auto', flex: 1 }}>
             <NotificationList
               items={items}
-              isDark={isDark}
-              border={border}
-              textMain={textMain}
-              textSub={textSub}
-              rowHover={rowHover}
               canApproveAdvances={canApproveAdvances}
               actingId={actingId}
               rejectTarget={rejectTarget}
@@ -418,7 +403,7 @@ export function NotificationBell() {
               boxShadow: '0 24px 64px rgba(0,0,0,0.45)',
               width: '100%',
               maxWidth: 440,
-              border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+              border: '1.5px solid var(--edge-md)',
               overflow: 'hidden',
             }}
           >
@@ -430,8 +415,8 @@ export function NotificationBell() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 12,
-                borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-                background: isDark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.05)',
+                borderBottom: '1px solid var(--edge)',
+                background: 'rgba(34,197,94,0.07)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -441,7 +426,7 @@ export function NotificationBell() {
                     style={{
                       fontSize: 14,
                       fontWeight: 800,
-                      color: isDark ? 'var(--text-1)' : 'var(--bg-app)',
+                      color: 'var(--text-1)',
                     }}
                   >
                     اعتماد وصرف السلفة
@@ -449,7 +434,7 @@ export function NotificationBell() {
                   <div
                     style={{
                       fontSize: 11,
-                      color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)',
+                      color: 'var(--text-2)',
                       marginTop: 2,
                     }}
                   >
@@ -465,7 +450,7 @@ export function NotificationBell() {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
+                  color: 'var(--text-hint)',
                   padding: 4,
                   borderRadius: 6,
                 }}
@@ -480,7 +465,7 @@ export function NotificationBell() {
                 style={{
                   fontSize: 13,
                   fontWeight: 700,
-                  color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+                  color: 'var(--text-1)',
                 }}
               >
                 اختر الخزينة التي سيُصرف منها المبلغ:
@@ -492,7 +477,7 @@ export function NotificationBell() {
                   style={{
                     textAlign: 'center',
                     padding: '24px',
-                    color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
+                    color: 'var(--text-hint)',
                     fontSize: 13,
                   }}
                 >
@@ -534,14 +519,8 @@ export function NotificationBell() {
                           padding: '12px 16px',
                           borderRadius: 12,
                           cursor: 'pointer',
-                          border: `2px solid ${isSelected ? 'var(--status-success)' : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                          background: isSelected
-                            ? isDark
-                              ? 'rgba(34,197,94,0.12)'
-                              : 'rgba(34,197,94,0.08)'
-                            : isDark
-                              ? 'rgba(255,255,255,0.03)'
-                              : 'rgba(0,0,0,0.02)',
+                          border: `2px solid ${isSelected ? 'var(--status-success)' : 'var(--edge-md)'}`,
+                          background: isSelected ? 'rgba(34,197,94,0.10)' : 'var(--surface)',
                           transition: 'all 0.15s',
                           textAlign: 'right',
                         }}
@@ -554,9 +533,7 @@ export function NotificationBell() {
                               borderRadius: 8,
                               background: isSelected
                                 ? 'rgba(34,197,94,0.2)'
-                                : isDark
-                                  ? 'rgba(255,255,255,0.06)'
-                                  : 'rgba(0,0,0,0.05)',
+                                : 'var(--surface-raised)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -570,7 +547,7 @@ export function NotificationBell() {
                               style={{
                                 fontSize: 13,
                                 fontWeight: 700,
-                                color: isDark ? 'var(--text-1)' : 'var(--bg-app)',
+                                color: 'var(--text-1)',
                               }}
                             >
                               {s.name}
@@ -578,7 +555,7 @@ export function NotificationBell() {
                             <div
                               style={{
                                 fontSize: 11,
-                                color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)',
+                                color: 'var(--text-hint)',
                                 marginTop: 2,
                               }}
                             >
@@ -591,11 +568,7 @@ export function NotificationBell() {
                             style={{
                               fontSize: 14,
                               fontWeight: 800,
-                              color: isSelected
-                                ? 'var(--status-success)'
-                                : isDark
-                                  ? 'rgba(255,255,255,0.85)'
-                                  : 'var(--bg-app)',
+                              color: isSelected ? 'var(--status-success)' : 'var(--text-1)',
                               fontVariantNumeric: 'tabular-nums',
                             }}
                           >
@@ -645,7 +618,7 @@ export function NotificationBell() {
                 padding: '14px 20px',
                 display: 'flex',
                 gap: 10,
-                borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                borderTop: '1px solid var(--edge)',
               }}
             >
               <button
@@ -660,15 +633,11 @@ export function NotificationBell() {
                   border: 'none',
                   background:
                     advApproving || !advSelectedSafeId || advSafesLoading
-                      ? isDark
-                        ? 'rgba(255,255,255,0.08)'
-                        : 'rgba(0,0,0,0.08)'
+                      ? 'var(--surface-raised)'
                       : 'var(--status-success)',
                   color:
                     advApproving || !advSelectedSafeId || advSafesLoading
-                      ? isDark
-                        ? 'rgba(255,255,255,0.3)'
-                        : 'rgba(0,0,0,0.3)'
+                      ? 'var(--text-hint)'
                       : 'var(--text-1)',
                   fontSize: 13,
                   fontWeight: 800,
@@ -701,9 +670,9 @@ export function NotificationBell() {
                 style={{
                   padding: '11px 18px',
                   borderRadius: 10,
-                  border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                  border: '1.5px solid var(--edge-md)',
                   background: 'transparent',
-                  color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+                  color: 'var(--text-2)',
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: 'pointer',

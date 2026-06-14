@@ -142,10 +142,10 @@ function FinancialConsistencyBar() {
           </>
         )}
       </span>
-      <span style={{ color: 'rgba(255,255,255,0.10)', fontSize: 18 }}>|</span>
+      <span style={{ color: 'var(--edge-md)', fontSize: 18 }}>|</span>
       {items.map((it) => (
         <span key={it.label} className="flex items-center gap-1.5 text-xs shrink-0">
-          <span style={{ color: 'rgba(255,255,255,0.35)' }}>{it.label}:</span>
+          <span style={{ color: 'var(--text-hint)' }}>{it.label}:</span>
           <span style={{ color: it.color, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
             {it.value}
           </span>

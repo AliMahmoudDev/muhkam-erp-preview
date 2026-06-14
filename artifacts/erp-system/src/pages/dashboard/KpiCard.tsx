@@ -20,7 +20,7 @@ export function KpiCard({ card, index }: { card: KpiDef; index: number }) {
       className="db-kpi-card db-kpi-hover"
       style={{
         background: card.gradient,
-        boxShadow: `0 10px 40px rgba(0,0,0,0.34), 0 0 0 1px rgba(255,255,255,0.10), inset 0 1px 0 rgba(255,255,255,0.12)`,
+        boxShadow: `0 10px 40px rgba(0,0,0,0.34), 0 0 0 1px var(--edge-md), inset 0 1px 0 var(--edge-md)`,
         animationDelay: `${index * 0.08}s`,
       }}
     >

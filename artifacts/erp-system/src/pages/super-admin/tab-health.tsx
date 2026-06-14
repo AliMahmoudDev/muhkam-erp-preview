@@ -342,7 +342,7 @@ export function TabHealth({
                         style={{
                           height: '6px',
                           borderRadius: '3px',
-                          background: 'rgba(255,255,255,0.05)',
+                          background: 'var(--surface)',
                         }}
                       >
                         <div
@@ -413,7 +413,7 @@ export function TabHealth({
                     style={{
                       height: '8px',
                       borderRadius: '4px',
-                      background: 'rgba(255,255,255,0.05)',
+                      background: 'var(--surface)',
                     }}
                   >
                     <div

@@ -285,7 +285,7 @@ export default function DeliveryReceiptModal({ jobId, onClose, onSent }: Props) 
               return (
                 <div
                   className="rounded-xl border border-line p-4 text-[11px] space-y-1.5"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}
+                  style={{ background: 'var(--surface)' }}
                 >
                   <div className="flex justify-between">
                     <span className="text-ink/50">رقم البطاقة:</span>

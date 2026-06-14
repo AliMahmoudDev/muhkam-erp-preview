@@ -16,7 +16,7 @@ export default function AccessDenied() {
       <div
         className="text-center px-8 py-12 rounded-3xl max-w-md w-full mx-4"
         style={{
-          background: 'rgba(255,255,255,0.03)',
+          background: 'var(--surface)',
           border: '1px solid rgba(239,68,68,0.18)',
           backdropFilter: 'blur(20px)',
         }}
@@ -54,15 +54,15 @@ export default function AccessDenied() {
           onClick={() => setLocation('/')}
           className="flex items-center gap-2 mx-auto px-5 py-2.5 rounded-2xl font-bold text-sm transition-all"
           style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: 'rgba(255,255,255,0.7)',
+            background: 'var(--surface)',
+            border: '1px solid var(--edge-md)',
+            color: 'var(--text-2)',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)';
+            (e.currentTarget as HTMLElement).style.background = 'var(--surface-raised)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)';
+            (e.currentTarget as HTMLElement).style.background = 'var(--surface)';
           }}
         >
           <ArrowRight className="w-4 h-4" />

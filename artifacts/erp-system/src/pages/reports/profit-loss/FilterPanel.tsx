@@ -174,7 +174,7 @@ export default function FilterPanel({
             style={
               mode === m.id
                 ? { background: 'rgba(245,158,11,0.12)' }
-                : { background: 'rgba(255,255,255,0.02)' }
+                : { background: 'var(--surface)' }
             }
           >
             {m.label}

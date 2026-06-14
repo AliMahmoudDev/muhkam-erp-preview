@@ -17,15 +17,12 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
-import { useAppSettings } from '@/contexts/app-settings';
 import type { ChecklistRow, DeviceType, DeviceCategory, Manufacturer } from './shared';
 import { DEVICE_TYPE_LABEL, loadManufacturers, saveManufacturers } from './shared';
 
 export default function ChecklistTab() {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const { settings: csSettings } = useAppSettings();
-  const isLight = (csSettings.theme ?? 'dark') === 'light';
 
   /* ── manufacturer/category state ── */
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>(loadManufacturers);
@@ -150,6 +147,7 @@ export default function ChecklistTab() {
 
   const invalidate = useCallback(
     () => qc.invalidateQueries({ queryKey: qKey }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [qc, qKey.join(',')]
   );
 
@@ -160,6 +158,7 @@ export default function ChecklistTab() {
       dbCategories.forEach((c) => n.add(c));
       return n;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbCategories.join(',')]);
 
   useEffect(() => {
@@ -293,14 +292,12 @@ export default function ChecklistTab() {
     emoji: activeCatData?.emoji ?? '📱',
   };
 
-  /* أكسنت موحَّد عبر تبويبات هذه الصفحة — يتكيّف مع الوضع الفاتح والداكن */
-  const accent = isLight ? 'text-amber-700' : 'text-amber-200';
-  const accentDim = isLight ? 'text-amber-600' : 'text-amber-300/75';
-  const accentBg = isLight ? 'bg-amber-50' : 'bg-amber-500/10';
-  const accentBdr = isLight ? 'border-amber-300' : 'border-amber-500/30';
-  const badgeCls = isLight
-    ? 'bg-amber-100 text-amber-800 border border-amber-300/70'
-    : 'bg-amber-500/15 text-amber-200/85 border border-amber-500/25';
+  /* unified accent classes — token-based, auto-switch with theme */
+  const accent = 'text-amber-400';
+  const accentDim = 'text-amber-300/75';
+  const accentBg = 'bg-amber-500/10';
+  const accentBdr = 'border-amber-500/30';
+  const badgeCls = 'bg-amber-500/15 text-amber-200/85 border border-amber-500/25';
 
   /* بحث محلّي داخل البنود */
   const [searchQuery, setSearchQuery] = useState('');
@@ -318,6 +315,7 @@ export default function ChecklistTab() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return items;
     const q = searchQuery.toLowerCase();
@@ -326,54 +324,29 @@ export default function ChecklistTab() {
     );
   }, [items, searchQuery]);
 
-  /* ── pill styles (light-aware) ── */
-  const mfrActiveStyle = isLight
-    ? {
-        background: 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(217,119,6,0.10) 100%)',
-        border: '1px solid rgba(245,158,11,0.55)',
-        color: 'var(--status-warning)',
-        boxShadow: '0 4px 12px -4px rgba(245,158,11,0.30), 0 0 0 3px rgba(245,158,11,0.08)',
-      }
-    : {
-        background: 'linear-gradient(135deg, rgba(245,158,11,0.28) 0%, rgba(217,119,6,0.12) 100%)',
-        border: '1px solid rgba(245,158,11,0.55)',
-        color: '#fef3c7',
-        boxShadow:
-          '0 6px 16px -4px rgba(245,158,11,0.40), inset 0 1px 0 rgba(255,255,255,0.10), 0 0 0 3px rgba(245,158,11,0.08)',
-      };
-  const mfrInactiveStyle = isLight
-    ? {
-        background: 'rgba(0,0,0,0.04)',
-        border: '1px solid rgba(0,0,0,0.10)',
-        color: 'rgba(15,23,42,0.65)',
-      }
-    : {
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.09)',
-        color: 'rgba(255,255,255,0.62)',
-      };
-  const catActiveStyle = isLight
-    ? {
-        background: 'rgba(245,158,11,0.12)',
-        border: '1px solid rgba(245,158,11,0.45)',
-        color: 'var(--status-warning)',
-      }
-    : {
-        background: 'rgba(245,158,11,0.15)',
-        border: '1px solid rgba(245,158,11,0.40)',
-        color: '#fde68a',
-      };
-  const catInactiveStyle = isLight
-    ? {
-        background: 'rgba(0,0,0,0.04)',
-        border: '1px solid rgba(0,0,0,0.08)',
-        color: 'rgba(15,23,42,0.55)',
-      }
-    : {
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        color: 'rgba(255,255,255,0.50)',
-      };
+  /* pill styles — token-based, no isLight needed */
+  const mfrActiveStyle: React.CSSProperties = {
+    background: 'linear-gradient(135deg, rgba(245,158,11,0.28) 0%, rgba(217,119,6,0.12) 100%)',
+    border: '1px solid rgba(245,158,11,0.55)',
+    color: '#fef3c7',
+    boxShadow:
+      '0 6px 16px -4px rgba(245,158,11,0.40), inset 0 1px 0 rgba(255,255,255,0.10), 0 0 0 3px rgba(245,158,11,0.08)',
+  };
+  const mfrInactiveStyle: React.CSSProperties = {
+    background: 'var(--surface)',
+    border: '1px solid var(--edge)',
+    color: 'var(--text-2)',
+  };
+  const catActiveStyle: React.CSSProperties = {
+    background: 'rgba(245,158,11,0.15)',
+    border: '1px solid rgba(245,158,11,0.40)',
+    color: 'var(--erp-brand)',
+  };
+  const catInactiveStyle: React.CSSProperties = {
+    background: 'var(--surface)',
+    border: '1px solid var(--edge)',
+    color: 'var(--text-hint)',
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -381,25 +354,20 @@ export default function ChecklistTab() {
       <div
         className="px-5 pt-4 pb-0 shrink-0 relative"
         style={{
-          background: isLight
-            ? 'linear-gradient(180deg, rgba(245,158,11,0.06) 0%, rgba(245,158,11,0.02) 60%, transparent 100%)'
-            : 'linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 60%, transparent 100%)',
-          borderBottom: isLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.06)',
+          background:
+            'linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 60%, transparent 100%)',
+          borderBottom: '1px solid var(--edge)',
         }}
       >
         {/* ── صف 1: عنوان + بيانات ── */}
         <div className="flex items-center justify-between gap-3 mb-2.5">
           <div className="flex items-center gap-2.5">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-amber-300 to-amber-500" />
-            <h3
-              className={`text-[11px] font-black tracking-[0.22em] uppercase ${isLight ? 'text-slate-500' : 'text-ink/55'}`}
-            >
+            <h3 className="text-[11px] font-black tracking-[0.22em] uppercase text-ink/55">
               الشركة المصنعة
             </h3>
           </div>
-          <div
-            className={`flex items-center gap-2 text-[10px] ${isLight ? 'text-slate-400' : 'text-ink/35'}`}
-          >
+          <div className="flex items-center gap-2 text-[10px] text-ink/35">
             <span className="font-bold text-amber-500 tabular-nums">{items.length}</span>
             <span>بند في «{activeMeta.label}»</span>
           </div>
@@ -421,19 +389,11 @@ export default function ChecklistTab() {
                 {isMfrActive && mfr.categories.length > 0 && (
                   <span
                     className="text-[10px] px-1.5 py-0.5 rounded-full font-black tabular-nums"
-                    style={
-                      isLight
-                        ? {
-                            background: 'rgba(245,158,11,0.15)',
-                            color: 'var(--status-warning)',
-                            border: '1px solid rgba(245,158,11,0.30)',
-                          }
-                        : {
-                            background: 'rgba(0,0,0,0.25)',
-                            color: '#fde68a',
-                            border: '1px solid rgba(252,211,77,0.25)',
-                          }
-                    }
+                    style={{
+                      background: 'rgba(0,0,0,0.25)',
+                      color: 'var(--erp-brand)',
+                      border: '1px solid rgba(252,211,77,0.25)',
+                    }}
                   >
                     {mfr.categories.length}
                   </span>
@@ -447,19 +407,7 @@ export default function ChecklistTab() {
               setShowAddCat(false);
             }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11.5px] font-bold whitespace-nowrap transition-all"
-            style={
-              isLight
-                ? {
-                    background: 'rgba(0,0,0,0.04)',
-                    border: '1px solid rgba(0,0,0,0.10)',
-                    color: 'rgba(15,23,42,0.45)',
-                  }
-                : {
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.40)',
-                  }
-            }
+            style={mfrInactiveStyle}
           >
             <Plus className="w-3.5 h-3.5" /> شركة جديدة
           </button>
@@ -468,9 +416,7 @@ export default function ChecklistTab() {
         {/* ── صف 3: فئات الشركة المختارة + زر إضافة فئة ── */}
         <div
           className="flex flex-wrap gap-1 pb-2.5 pt-2"
-          style={{
-            borderTop: isLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.06)',
-          }}
+          style={{ borderTop: '1px solid var(--edge)' }}
         >
           {activeMfrData?.categories.map((cat) => {
             const isCatActive = activeType === cat.key;
@@ -486,11 +432,7 @@ export default function ChecklistTab() {
                 {isCatActive && items.length > 0 && (
                   <span
                     className="text-[10px] px-1 rounded font-black tabular-nums"
-                    style={
-                      isLight
-                        ? { background: 'rgba(245,158,11,0.15)', color: 'var(--status-warning)' }
-                        : { background: 'rgba(0,0,0,0.25)', color: '#fde68a' }
-                    }
+                    style={{ background: 'rgba(0,0,0,0.25)', color: 'var(--erp-brand)' }}
                   >
                     {items.length}
                   </span>
@@ -505,25 +447,13 @@ export default function ChecklistTab() {
                 setShowAddMfr(false);
               }}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all"
-              style={
-                isLight
-                  ? {
-                      background: 'rgba(0,0,0,0.04)',
-                      border: '1px solid rgba(0,0,0,0.08)',
-                      color: 'rgba(15,23,42,0.40)',
-                    }
-                  : {
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.07)',
-                      color: 'rgba(255,255,255,0.35)',
-                    }
-              }
+              style={catInactiveStyle}
             >
               <Plus className="w-3 h-3" /> فئة جديدة
             </button>
           )}
           {activeMfrData?.categories.length === 0 && (
-            <p className={`text-[11px] py-0.5 ${isLight ? 'text-slate-400' : 'text-ink/25'}`}>
+            <p className="text-[11px] py-0.5 text-ink/25">
               لا توجد فئات — اضغط «فئة جديدة» لإضافة الأولى
             </p>
           )}
@@ -534,14 +464,7 @@ export default function ChecklistTab() {
       {showAddMfr && (
         <div
           className="flex items-center gap-2 px-4 py-2.5 shrink-0"
-          style={
-            isLight
-              ? { borderBottom: '1px solid rgba(0,0,0,0.08)', background: 'rgba(0,0,0,0.02)' }
-              : {
-                  borderBottom: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.018)',
-                }
-          }
+          style={{ borderBottom: '1px solid var(--edge)', background: 'var(--surface)' }}
         >
           <select
             value={addMfrEmoji}
@@ -591,14 +514,7 @@ export default function ChecklistTab() {
       {showAddCat && (
         <div
           className="flex items-center gap-2 px-4 py-2.5 shrink-0"
-          style={
-            isLight
-              ? { borderBottom: '1px solid rgba(0,0,0,0.08)', background: 'rgba(0,0,0,0.02)' }
-              : {
-                  borderBottom: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.018)',
-                }
-          }
+          style={{ borderBottom: '1px solid var(--edge)', background: 'var(--surface)' }}
         >
           <select
             value={addCatEmoji}
@@ -647,39 +563,26 @@ export default function ChecklistTab() {
       {/* ═════ شريط البحث + الإجراءات — أسلوب Linear toolbar ═════ */}
       <div
         className="flex items-center flex-wrap gap-2 px-5 py-2.5 shrink-0"
-        style={
-          isLight
-            ? { background: 'rgba(0,0,0,0.02)', borderBottom: '1px solid rgba(0,0,0,0.08)' }
-            : {
-                background: 'rgba(255,255,255,0.012)',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-              }
-        }
+        style={{ background: 'var(--surface)', borderBottom: '1px solid var(--edge)' }}
       >
         {/* مربع البحث */}
         <div
           className="flex items-center gap-2 px-3 h-9 rounded-xl flex-1 min-w-[200px] max-w-[360px]"
-          style={
-            isLight
-              ? { background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.10)' }
-              : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }
-          }
+          style={{ background: 'var(--bg-input)', border: '1px solid var(--edge-md)' }}
         >
-          <Search
-            className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-slate-400' : 'text-ink/40'}`}
-          />
+          <Search className="w-3.5 h-3.5 shrink-0 text-ink/40" />
           <input
             ref={searchRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`ابحث في بنود ${activeMeta.label}...`}
-            className={`flex-1 bg-transparent text-[12px] outline-none font-medium ${isLight ? 'text-slate-700 placeholder:text-slate-400' : 'text-ink placeholder:text-ink/45'}`}
+            className="flex-1 bg-transparent text-[12px] outline-none font-medium text-ink placeholder:text-ink/45"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className={`shrink-0 ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-ink/30 hover:text-ink/70'}`}
+              className="shrink-0 text-ink/30 hover:text-ink/70"
               title="مسح البحث"
             >
               <X className="w-3 h-3" />
@@ -693,12 +596,8 @@ export default function ChecklistTab() {
         {/* الإجراءات */}
         <button
           onClick={() => setShowNewCat((v) => !v)}
-          className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl font-bold ${isLight ? 'text-slate-600 hover:text-slate-800' : 'text-ink/70 hover:text-ink'}`}
-          style={
-            isLight
-              ? { background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.10)' }
-              : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.10)' }
-          }
+          className="flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl font-bold text-ink/70 hover:text-ink"
+          style={{ background: 'var(--surface)', border: '1px solid var(--edge-md)' }}
         >
           <Plus className="w-3.5 h-3.5" /> تصنيف جديد
         </button>
@@ -706,15 +605,8 @@ export default function ChecklistTab() {
           <button
             onClick={() => setShowCopyMenu((v) => !v)}
             disabled={copying}
-            className={`flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl disabled:opacity-40 font-bold ${isLight ? 'text-slate-600 hover:text-slate-800' : 'text-ink/70 hover:text-ink'}`}
-            style={
-              isLight
-                ? { background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.10)' }
-                : {
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.10)',
-                  }
-            }
+            className="flex items-center gap-1.5 text-[11.5px] h-9 px-3 rounded-xl disabled:opacity-40 font-bold text-ink/70 hover:text-ink"
+            style={{ background: 'var(--surface)', border: '1px solid var(--edge-md)' }}
           >
             <Copy className="w-3.5 h-3.5" /> {copying ? 'جاري النسخ...' : 'نسخ من'}
             <ChevronDown className="w-3 h-3 opacity-60" />
@@ -722,23 +614,12 @@ export default function ChecklistTab() {
           {showCopyMenu && (
             <div
               className="rs-popup-dark absolute left-0 top-full mt-1.5 z-20 w-56 rounded-xl py-1.5 max-h-80 overflow-y-auto rs-scroll"
-              style={
-                isLight
-                  ? {
-                      background: 'var(--bg-elevated)',
-                      backdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      boxShadow:
-                        '0 24px 48px -12px rgba(0,0,0,0.50), 0 0 0 1px rgba(255,255,255,0.06) inset',
-                    }
-                  : {
-                      background: 'rgba(15,19,32,0.98)',
-                      backdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      boxShadow:
-                        '0 24px 48px -12px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset',
-                    }
-              }
+              style={{
+                background: 'var(--bg-panel)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid var(--edge-md)',
+                boxShadow: 'var(--shadow-modal)',
+              }}
             >
               <p className="text-[10px] text-ink/40 font-black tracking-wider uppercase px-3 pt-1 pb-1.5">
                 انسخ بنود من:
@@ -849,9 +730,7 @@ export default function ChecklistTab() {
               </button>
             </div>
             <button
-              onClick={() => {
-                setShowNewCat(true);
-              }}
+              onClick={() => setShowNewCat(true)}
               className="text-xs text-ink/25 hover:text-ink/50 transition-colors"
             >
               أو أضف تصنيفاً يدوياً
@@ -865,31 +744,21 @@ export default function ChecklistTab() {
                 .filter((i) => i.category === cat)
                 .sort((a, b) => a.sort_order - b.sort_order);
               if (searchQuery && catItems.length === 0) return null;
-              /* أثناء البحث، يفتح كل التصنيفات تلقائياً لإظهار النتائج */
               const isExpanded = searchQuery ? true : expandedCats.has(cat);
               const isLocal = !dbCategories.includes(cat);
               return (
                 <div key={cat} className="border-b border-line last:border-b-0">
                   <button
                     onClick={() => toggleCat(cat)}
-                    className="w-full flex items-center gap-3 px-4 py-3 bg-surface hover:bg-surface transition-colors text-right"
-                    style={isLight ? { background: 'rgba(0,0,0,0.025)' } : undefined}
+                    className="w-full flex items-center gap-3 px-4 py-3 bg-surface hover:bg-surface-raised transition-colors text-right"
                   >
                     <ChevronDown
-                      style={isLight ? { color: '#b45309' } : undefined}
-                      className={`w-3.5 h-3.5 ${isLight ? '' : accentDim} transition-transform duration-200 shrink-0 ${isExpanded ? '' : '-rotate-90'}`}
+                      className={`w-3.5 h-3.5 ${accentDim} transition-transform duration-200 shrink-0 ${isExpanded ? '' : '-rotate-90'}`}
                     />
-                    <span
-                      style={isLight ? { color: '#b45309' } : undefined}
-                      className={`text-[13px] font-semibold flex-1 text-right ${isLight ? '' : accentDim}`}
-                    >
+                    <span className={`text-[13px] font-semibold flex-1 text-right ${accentDim}`}>
                       {cat}
                       {isLocal && (
-                        <span
-                          className={`text-[10px] font-normal mr-2 ${isLight ? 'text-slate-400' : 'text-ink/25'}`}
-                        >
-                          جديد
-                        </span>
+                        <span className="text-[10px] font-normal mr-2 text-ink/25">جديد</span>
                       )}
                     </span>
                     {!isLocal && (

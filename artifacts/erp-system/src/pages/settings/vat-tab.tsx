@@ -98,7 +98,7 @@ export default function VatTab() {
         className="rounded-2xl border overflow-hidden transition-all"
         style={{
           background: 'var(--erp-bg-card)',
-          borderColor: vatEnabled ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.05)',
+          borderColor: vatEnabled ? 'rgba(245,158,11,0.3)' : 'var(--surface)',
           boxShadow: vatEnabled ? '0 0 30px rgba(245,158,11,0.08)' : 'none',
         }}
       >
@@ -107,7 +107,7 @@ export default function VatTab() {
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all"
               style={{
-                background: vatEnabled ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.05)',
+                background: vatEnabled ? 'rgba(245,158,11,0.15)' : 'var(--surface)',
               }}
             >
               <Percent className={`w-4.5 h-4.5 ${vatEnabled ? 'text-amber-400' : 'text-ink/30'}`} />
@@ -176,12 +176,12 @@ export default function VatTab() {
                         background:
                           parseFloat(vatRate) === r
                             ? 'rgba(245,158,11,0.2)'
-                            : 'rgba(255,255,255,0.05)',
+                            : 'var(--surface)',
                         color:
                           parseFloat(vatRate) === r
                             ? 'var(--status-warning)'
-                            : 'rgba(255,255,255,0.4)',
-                        border: `1px solid ${parseFloat(vatRate) === r ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                            : 'var(--text-hint)',
+                        border: `1px solid ${parseFloat(vatRate) === r ? 'rgba(245,158,11,0.3)' : 'var(--edge)'}`,
                       }}
                     >
                       {r}%
@@ -239,8 +239,8 @@ export default function VatTab() {
           <div
             className="flex items-start gap-3 p-3.5 rounded-xl border"
             style={{
-              background: vatEnabled ? 'rgba(59,130,246,0.06)' : 'rgba(255,255,255,0.03)',
-              borderColor: vatEnabled ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.06)',
+              background: vatEnabled ? 'rgba(59,130,246,0.06)' : 'var(--surface)',
+              borderColor: vatEnabled ? 'rgba(59,130,246,0.15)' : 'var(--edge)',
             }}
           >
             <Info

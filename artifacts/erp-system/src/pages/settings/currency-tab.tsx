@@ -280,8 +280,8 @@ export default function CurrencyTab() {
                     style={{
                       width: 72,
                       height: 72,
-                      background: logoPreview ? 'transparent' : 'rgba(255,255,255,0.04)',
-                      border: logoPreview ? 'none' : '2px dashed rgba(255,255,255,0.12)',
+                      background: logoPreview ? 'transparent' : 'var(--surface)',
+                      border: logoPreview ? 'none' : '2px dashed var(--edge-md)',
                       boxShadow: logoPreview ? '0 2px 16px rgba(0,0,0,0.40)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
@@ -413,14 +413,14 @@ export default function CurrencyTab() {
                 className="w-full rounded-xl overflow-hidden"
                 style={{
                   background: 'linear-gradient(145deg,#0b111f,#111827)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  border: '1px solid var(--edge)',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 }}
               >
                 {/* The sidebar header replica */}
                 <div
                   className="flex items-center gap-3 px-4 py-3"
-                  style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                  style={{ borderBottom: '1px solid var(--edge)' }}
                 >
                   <div
                     style={{
@@ -463,7 +463,7 @@ export default function CurrencyTab() {
                     <p
                       style={{
                         fontSize: 9.5,
-                        color: 'rgba(255,255,255,0.30)',
+                        color: 'var(--text-hint)',
                         lineHeight: 1.3,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -477,8 +477,8 @@ export default function CurrencyTab() {
                 {/* Fake nav items */}
                 {[
                   { w: '60%', c: 'rgba(245,158,11,0.20)' },
-                  { w: '80%', c: 'rgba(255,255,255,0.05)' },
-                  { w: '70%', c: 'rgba(255,255,255,0.05)' },
+                  { w: '80%', c: 'var(--surface)' },
+                  { w: '70%', c: 'var(--surface)' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-2.5 px-4 py-2.5">
                     <div

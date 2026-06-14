@@ -339,8 +339,8 @@ export default function BillingPhase({
                   onClick={addPayRow}
                   className="shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold text-ink/80 hover:text-ink transition-all"
                   style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--edge-md)',
                   }}
                 >
                   ↵ تأكيد

@@ -10,7 +10,6 @@ export function SectionCard({
   title,
   accent = 'var(--status-warning)',
   children,
-  isDark,
   border,
   cardBg,
   actions,
@@ -20,7 +19,6 @@ export function SectionCard({
   title: string;
   accent?: string;
   children: React.ReactNode;
-  isDark: boolean;
   border: string;
   cardBg: string;
   actions?: React.ReactNode;
@@ -71,14 +69,14 @@ export function SectionCard({
             style={{
               fontSize: 14,
               fontWeight: 800,
-              color: isDark ? 'var(--text-1)' : 'var(--bg-app)',
+              color: 'var(--text-1)',
               flex: 1,
             }}
           >
             {title}
           </span>
           <span
-            style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.28)', flexShrink: 0 }}
+            style={{ color: 'var(--text-hint)', flexShrink: 0 }}
           >
             {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
           </span>

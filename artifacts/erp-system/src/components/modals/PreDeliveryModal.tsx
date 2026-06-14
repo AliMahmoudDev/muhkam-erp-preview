@@ -385,7 +385,7 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
                     <div
                       key={p.id}
                       className="rounded-lg border border-line p-2.5 flex flex-col sm:flex-row sm:items-center gap-2"
-                      style={{ background: 'rgba(255,255,255,0.02)' }}
+                      style={{ background: 'var(--surface)' }}
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-bold text-ink truncate">{p.product_name}</p>

@@ -181,7 +181,7 @@ export function SnapshotModal({
                       <div
                         key={s.label}
                         style={{
-                          background: 'rgba(255,255,255,0.04)',
+                          background: 'var(--surface)',
                           borderRadius: '14px',
                           padding: '16px',
                           textAlign: 'center',
@@ -201,7 +201,7 @@ export function SnapshotModal({
 
                   <div
                     style={{
-                      background: 'rgba(255,255,255,0.03)',
+                      background: 'var(--surface)',
                       borderRadius: '14px',
                       border: `1px solid ${C.border}`,
                       padding: '16px 20px',
@@ -265,7 +265,7 @@ export function SnapshotModal({
                               alignItems: 'center',
                               padding: '10px 14px',
                               borderRadius: '10px',
-                              background: 'rgba(255,255,255,0.03)',
+                              background: 'var(--surface)',
                               border: `1px solid ${C.border}`,
                             }}
                           >
@@ -315,7 +315,7 @@ export function SnapshotModal({
                               alignItems: 'center',
                               padding: '8px 14px',
                               borderRadius: '8px',
-                              background: 'rgba(255,255,255,0.02)',
+                              background: 'var(--surface)',
                               fontSize: '12px',
                             }}
                           >

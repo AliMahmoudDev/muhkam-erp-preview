@@ -648,7 +648,7 @@ function ExpenseBreakdown({
           <Tooltip
             contentStyle={{
               background: 'rgba(10,18,35,0.97)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid var(--edge)',
               borderRadius: 8,
               fontSize: 11,
             }}
@@ -873,11 +873,11 @@ function TrendTab({ pl }: { pl: ProfitsData }) {
               <stop offset="95%" stopColor="var(--status-success)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--edge)" vertical={false} />
           <XAxis
             dataKey="name"
             tick={{
-              fill: 'rgba(255,255,255,0.3)',
+              fill: 'var(--text-hint)',
               fontSize: 10,
               fontFamily: 'Tajawal,Cairo,sans-serif',
             }}
@@ -885,7 +885,7 @@ function TrendTab({ pl }: { pl: ProfitsData }) {
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+            tick={{ fill: 'var(--text-hint)', fontSize: 9 }}
             tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
             width={34}
             axisLine={false}
@@ -982,7 +982,7 @@ function WaterfallTab({ pl }: { pl: ProfitsData }) {
         y={cy}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="rgba(255,255,255,0.85)"
+        fill="var(--text-1)"
         fontSize={9}
         fontWeight={700}
         fontFamily="Tajawal,Cairo,sans-serif"
@@ -997,7 +997,7 @@ function WaterfallTab({ pl }: { pl: ProfitsData }) {
         <XAxis
           dataKey="name"
           tick={{
-            fill: 'rgba(255,255,255,0.35)',
+            fill: 'var(--text-hint)',
             fontSize: 9,
             fontFamily: 'Tajawal,Cairo,sans-serif',
           }}
@@ -1005,7 +1005,7 @@ function WaterfallTab({ pl }: { pl: ProfitsData }) {
           tickLine={false}
         />
         <YAxis hide domain={[Math.min(net < 0 ? net : 0, 0) * 1.1, maxD * 1.2]} />
-        <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" />
+        <ReferenceLine y={0} stroke="var(--edge-md)" />
         <Bar dataKey="base" stackId="wf" fill="transparent" isAnimationActive={false} />
         <Bar dataKey="displayVal" stackId="wf" radius={[4, 4, 0, 0]} animationDuration={700}>
           {data.map((e, i) => (

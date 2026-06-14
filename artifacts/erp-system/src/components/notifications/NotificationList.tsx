@@ -14,11 +14,6 @@ interface AppNotification {
 
 interface NotificationListProps {
   items: AppNotification[];
-  isDark: boolean;
-  border: string;
-  textMain: string;
-  textSub: string;
-  rowHover: string;
   canApproveAdvances: boolean;
   actingId: number | null;
   rejectTarget: AppNotification | null;
@@ -32,11 +27,6 @@ interface NotificationListProps {
 
 export function NotificationList({
   items,
-  isDark,
-  border,
-  textMain,
-  textSub,
-  rowHover,
   canApproveAdvances,
   actingId,
   rejectTarget,
@@ -49,7 +39,7 @@ export function NotificationList({
 }: NotificationListProps) {
   if (items.length === 0) {
     return (
-      <div style={{ padding: '36px 16px', textAlign: 'center', color: textSub, fontSize: 13 }}>
+      <div style={{ padding: '36px 16px', textAlign: 'center', color: 'var(--text-hint)', fontSize: 13 }}>
         <div style={{ fontSize: 28, marginBottom: 8 }}>📭</div>
         لا توجد رسائل
       </div>
@@ -62,11 +52,6 @@ export function NotificationList({
         <NotificationItem
           key={n.id}
           n={n}
-          isDark={isDark}
-          border={border}
-          textMain={textMain}
-          textSub={textSub}
-          rowHover={rowHover}
           canApproveAdvances={canApproveAdvances}
           actingId={actingId}
           rejectTarget={rejectTarget}

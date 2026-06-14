@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { type DashboardStats } from '@workspace/api-client-react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useWarehouse } from '@/contexts/warehouse';
-import { useAppSettings } from '@/contexts/app-settings';
 import { formatCurrency } from '@/lib/format';
 import { OnboardingPanel } from '@/components/onboarding';
 import ShortcutsCustomizer, { ALL_SHORTCUTS } from '@/components/ShortcutsCustomizer';
@@ -40,8 +39,6 @@ import { EmptyState } from './dashboard/EmptyState';
 
 export default function Dashboard() {
   const { currentWarehouseId } = useWarehouse();
-  const { settings } = useAppSettings();
-  const isDark = (settings.theme ?? 'dark') === 'dark';
   const warehouseParam = currentWarehouseId ? `?warehouse_id=${currentWarehouseId}` : '';
   const [, navigate] = useLocation();
   const [customizerOpen, setCustomizerOpen] = useState(false);
@@ -95,13 +92,13 @@ export default function Dashboard() {
   });
 
   /* ── Chart colors — theme-aware ─────────────────────────── */
-  const chartGridStroke = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)';
-  const chartAxisStroke = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)';
-  const chartTickColor = isDark ? 'rgba(255,255,255,0.55)' : 'var(--text-2)';
-  const chartTickColorY = isDark ? 'rgba(255,255,255,0.40)' : 'var(--text-2)';
-  const tooltipBg = isDark ? 'hsla(240,30%,8%,0.96)' : 'var(--text-1)';
-  const tooltipBorder = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)';
-  const tooltipLabelClr = isDark ? 'rgba(255,255,255,0.55)' : 'var(--text-2)';
+  const chartGridStroke = 'var(--edge)';
+  const chartAxisStroke = 'var(--text-hint)';
+  const chartTickColor = 'var(--text-2)';
+  const chartTickColorY = 'var(--text-2)';
+  const tooltipBg = 'var(--bg-panel)';
+  const tooltipBorder = 'var(--edge-md)';
+  const tooltipLabelClr = 'var(--text-2)';
 
   /* ── Loading skeleton ─────────────────────────────────── */
   if (isLoading) {
@@ -259,9 +256,9 @@ export default function Dashboard() {
                 padding: '9px 16px',
                 borderRadius: 12,
                 border: `1px solid ${def.color}33`,
-                background: isDark ? `${def.color}14` : `${def.color}11`,
+                background: `${def.color}14`,
                 cursor: 'pointer',
-                color: isDark ? 'var(--text-1)' : 'var(--bg-elevated)',
+                color: 'var(--text-1)',
                 fontSize: 13,
                 fontWeight: 600,
                 transition: 'all 0.18s',
@@ -272,9 +269,7 @@ export default function Dashboard() {
                 (e.currentTarget as HTMLButtonElement).style.borderColor = `${def.color}66`;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = isDark
-                  ? `${def.color}14`
-                  : `${def.color}11`;
+                (e.currentTarget as HTMLButtonElement).style.background = `${def.color}14`;
                 (e.currentTarget as HTMLButtonElement).style.borderColor = `${def.color}33`;
               }}
             >
@@ -292,21 +287,21 @@ export default function Dashboard() {
             gap: 6,
             padding: '9px 14px',
             borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid var(--edge)',
+            background: 'var(--surface)',
             cursor: 'pointer',
-            color: 'rgba(255,255,255,0.45)',
+            color: 'var(--text-hint)',
             fontSize: 12,
             transition: 'all 0.18s',
             whiteSpace: 'nowrap',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.75)';
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-1)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-raised)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.45)';
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-hint)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)';
           }}
         >
           <Settings2 style={{ width: 14, height: 14 }} />
@@ -475,7 +470,7 @@ export default function Dashboard() {
               />
               <Tooltip
                 cursor={{
-                  fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+                  fill: 'var(--surface)',
                   radius: 10,
                 }}
                 contentStyle={{
@@ -487,7 +482,7 @@ export default function Dashboard() {
                   boxShadow: '0 20px 48px rgba(0,0,0,0.5)',
                 }}
                 labelStyle={{ color: tooltipLabelClr, marginBottom: 6, fontWeight: 700 }}
-                itemStyle={{ color: isDark ? 'var(--text-1)' : 'var(--bg-app)' }}
+                itemStyle={{ color: 'var(--text-1)' }}
                 formatter={(v: number) => [formatCurrency(v), '']}
               />
               <Bar dataKey="amount" radius={[10, 10, 0, 0]}>

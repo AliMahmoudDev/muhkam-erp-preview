@@ -82,7 +82,7 @@ export default function IdleCheckoutModal({
       <div
         style={{
           background: 'var(--bg-app)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          border: '1px solid var(--edge-md)',
           borderRadius: 24,
           padding: '36px 40px',
           maxWidth: 420,
@@ -114,7 +114,7 @@ export default function IdleCheckoutModal({
         <p
           style={{
             fontSize: 14,
-            color: 'rgba(255,255,255,0.50)',
+            color: 'var(--text-2)',
             margin: '0 0 24px',
             lineHeight: 1.6,
           }}

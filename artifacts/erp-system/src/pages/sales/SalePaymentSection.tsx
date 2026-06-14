@@ -496,7 +496,7 @@ export function SalePaymentSection({
           boxShadow: canCheckout
             ? '0 6px 22px rgba(245,158,11,0.38), 0 1px 3px rgba(0,0,0,0.2)'
             : 'none',
-          border: canCheckout ? 'none' : '1px solid rgba(255,255,255,0.08)',
+          border: canCheckout ? 'none' : '1px solid var(--edge)',
           opacity: canCheckout ? 1 : 0.42,
         }}
       >

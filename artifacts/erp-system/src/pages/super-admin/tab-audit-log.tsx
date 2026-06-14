@@ -174,7 +174,7 @@ export function TabAuditLog({
               display: 'grid',
               gridTemplateColumns: '1fr 1fr 80px 2fr 140px',
               padding: '12px 20px',
-              background: 'rgba(255,255,255,0.03)',
+              background: 'var(--surface)',
               borderBottom: `1px solid ${C.border}`,
               fontSize: '11px',
               fontWeight: 800,

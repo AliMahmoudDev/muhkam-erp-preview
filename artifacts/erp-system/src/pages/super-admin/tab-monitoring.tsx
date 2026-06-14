@@ -195,7 +195,7 @@ export function TabMonitoring({
     padding: '12px 16px',
     borderRadius: '14px',
     border: `1.5px solid ${C.border}`,
-    background: 'rgba(255,255,255,0.04)',
+    background: 'var(--surface)',
     color: C.text,
     fontFamily: 'monospace',
     fontSize: '13px',
@@ -295,7 +295,7 @@ export function TabMonitoring({
         .mon-btn:hover { filter:brightness(1.12); transform:translateY(-1px); }
         .mon-btn:active { transform:translateY(0); }
         .mon-input:focus { border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99,102,241,0.14) !important; }
-        .mon-row:hover { background:rgba(255,255,255,0.035) !important; }
+        .mon-row:hover { background:var(--surface) !important; }
         .mon-bar { animation:mon-bar-in 0.7s cubic-bezier(.34,1.56,.64,1) both; }
         .mon-stat:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.28) !important; }
       `}</style>
@@ -811,7 +811,7 @@ export function TabMonitoring({
                     style={{
                       height: '4px',
                       borderRadius: '2px',
-                      background: 'rgba(255,255,255,0.08)',
+                      background: 'var(--surface-raised)',
                       overflow: 'hidden',
                       marginTop: '4px',
                     }}
@@ -1068,7 +1068,7 @@ export function TabMonitoring({
                           label: 'إجمالي السجلات',
                           value: (unblockResult.rows ?? []).length,
                           color: C.text,
-                          bg: 'rgba(255,255,255,0.04)',
+                          bg: 'var(--surface)',
                           border: C.border,
                         },
                       ].map((s) => (
@@ -1129,7 +1129,7 @@ export function TabMonitoring({
                           style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}
                         >
                           <thead>
-                            <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                            <tr style={{ background: 'var(--surface)' }}>
                               {['البريد', 'IP', 'البصمة', 'الحالة', 'التاريخ'].map((h) => (
                                 <th
                                   key={h}
@@ -1320,7 +1320,7 @@ export function TabMonitoring({
                           style={{
                             height: '6px',
                             borderRadius: '3px',
-                            background: 'rgba(255,255,255,0.06)',
+                            background: 'var(--surface)',
                             overflow: 'hidden',
                           }}
                         >
@@ -1419,7 +1419,7 @@ export function TabMonitoring({
                           style={{
                             height: '6px',
                             borderRadius: '3px',
-                            background: 'rgba(255,255,255,0.06)',
+                            background: 'var(--surface)',
                             overflow: 'hidden',
                           }}
                         >
@@ -1498,7 +1498,7 @@ export function TabMonitoring({
                             alignItems: 'center',
                             padding: '14px 18px',
                             borderRadius: '14px',
-                            background: 'rgba(255,255,255,0.03)',
+                            background: 'var(--surface)',
                             border: `1px solid ${C.border}`,
                             transition: 'background 0.15s',
                           }}
@@ -1610,7 +1610,7 @@ export function TabMonitoring({
                           alignItems: 'center',
                           padding: '13px 18px',
                           borderRadius: '14px',
-                          background: 'rgba(255,255,255,0.03)',
+                          background: 'var(--surface)',
                           border: `1px solid ${C.border}`,
                           transition: 'background 0.15s',
                         }}

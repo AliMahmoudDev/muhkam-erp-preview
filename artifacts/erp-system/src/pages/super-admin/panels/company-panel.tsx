@@ -538,7 +538,7 @@ export function CompanyPanel({
                   alignItems: 'center',
                   padding: '12px 16px',
                   borderRadius: '10px',
-                  background: 'rgba(255,255,255,0.03)',
+                  background: 'var(--surface)',
                   border: `1px solid ${C.border}`,
                 }}
               >
@@ -786,7 +786,7 @@ export function CompanyPanel({
                           alignItems: 'center',
                           padding: '10px 14px',
                           borderRadius: '10px',
-                          background: 'rgba(255,255,255,0.03)',
+                          background: 'var(--surface)',
                           border: `1px solid ${C.border}`,
                         }}
                       >
@@ -861,7 +861,7 @@ export function CompanyPanel({
                           style={{
                             padding: '10px 14px',
                             borderRadius: '9px',
-                            background: 'rgba(255,255,255,0.02)',
+                            background: 'var(--surface)',
                             border: `1px solid ${C.border}`,
                           }}
                         >

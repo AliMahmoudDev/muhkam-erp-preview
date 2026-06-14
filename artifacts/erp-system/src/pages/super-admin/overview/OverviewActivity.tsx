@@ -151,7 +151,7 @@ export function OverviewActivity({
                     gap: '10px',
                     padding: '8px 10px',
                     borderRadius: '10px',
-                    background: 'rgba(255,255,255,0.02)',
+                    background: 'var(--surface)',
                     border: `1px solid ${C.border}`,
                   }}
                 >

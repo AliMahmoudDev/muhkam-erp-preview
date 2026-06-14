@@ -426,7 +426,7 @@ ${
           {data && (
             <div
               className="rounded-xl border border-line p-4 text-[11px] space-y-1.5"
-              style={{ background: 'rgba(255,255,255,0.02)' }}
+              style={{ background: 'var(--surface)' }}
             >
               {/* بيانات العميل والجهاز */}
               <div className="flex justify-between">
@@ -465,8 +465,8 @@ ${
                         key={sv.id}
                         className="rounded-lg p-2"
                         style={{
-                          background: 'rgba(255,255,255,0.02)',
-                          border: '1px solid rgba(255,255,255,0.06)',
+                          background: 'var(--surface)',
+                          border: '1px solid var(--edge)',
                         }}
                       >
                         <div className="flex justify-between items-start gap-2">

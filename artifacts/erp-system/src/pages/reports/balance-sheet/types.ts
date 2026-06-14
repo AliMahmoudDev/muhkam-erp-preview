@@ -2,7 +2,6 @@
  * Balance Sheet types and constants.
  * Extracted from BalanceSheetReport.tsx for maintainability.
  */
-import { useAppSettings } from '@/contexts/app-settings';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 export interface BalanceSheetData {
@@ -43,10 +42,7 @@ export const EMPTY_BS: BalanceSheetData = {
 
 /* ── Theme helper hook ──────────────────────────────────────────────────── */
 export function useTheme() {
-  const { settings } = useAppSettings();
-  const isLight = (settings.theme ?? 'dark') === 'light';
   return {
-    isLight,
     txtMain: 'var(--text-1)',
     txtSub: 'var(--text-2)',
     txtBody: 'var(--text-1)',

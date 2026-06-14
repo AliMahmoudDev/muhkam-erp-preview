@@ -84,7 +84,6 @@ export default function EmployeeGateway({ onEnter }: Props) {
   const { user } = useAuth();
   const { settings } = useAppSettings();
   const { toast } = useToast();
-  const isDark = (settings.theme ?? 'dark') === 'dark';
   const empId = user?.employee_id;
   const today = todayStr();
 
@@ -248,9 +247,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
             width: 500,
             height: 500,
             borderRadius: '50%',
-            background: isDark
-              ? 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)'
-              : 'radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%)',
           }}
         />
         <div
@@ -261,9 +258,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
             width: 400,
             height: 400,
             borderRadius: '50%',
-            background: isDark
-              ? 'radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%)'
-              : 'radial-gradient(circle, rgba(245,158,11,0.04) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(245,158,11,0.05) 0%, transparent 70%)',
           }}
         />
       </div>
@@ -329,7 +324,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
               marginTop: 10,
               padding: '4px 14px',
               borderRadius: 100,
-              background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+              background: 'var(--surface-raised)',
             }}
           >
             <Shield style={{ width: 12, height: 12, color: muted }} />
@@ -498,7 +493,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
         {deviceWarning && (
           <div
             style={{
-              background: isDark ? 'rgba(239,68,68,0.10)' : 'rgba(239,68,68,0.08)',
+              background: 'rgba(239,68,68,0.09)',
               border: '1px solid rgba(239,68,68,0.30)',
               borderRadius: 14,
               padding: '14px 18px',
@@ -530,7 +525,7 @@ export default function EmployeeGateway({ onEnter }: Props) {
               <p
                 style={{
                   fontSize: 12,
-                  color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
+                  color: 'var(--text-2)',
                 }}
               >
                 هذا الجهاز مختلف عن جهازك المعتاد. تم إرسال إشعار للمدير.

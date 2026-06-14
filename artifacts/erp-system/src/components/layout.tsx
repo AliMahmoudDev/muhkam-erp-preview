@@ -79,7 +79,7 @@ function getInitials(name: string) {
    TOPBAR SEARCH
    Keyboard: ↑↓ navigate, Enter confirm, Esc close
 ───────────────────────────────────────────────── */
-function TopbarSearch({ navItems, isDark }: { navItems: typeof NAV_ITEMS; isDark: boolean }) {
+function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [idx, setIdx] = useState(0);
@@ -130,8 +130,8 @@ function TopbarSearch({ navItems, isDark }: { navItems: typeof NAV_ITEMS; isDark
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  const iconColor = isDark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.28)';
-  const inputColor = isDark ? 'rgba(255,255,255,0.80)' : 'rgba(0,0,0,0.75)';
+  const iconColor = 'var(--text-hint)';
+  const inputColor = 'var(--text-1)';
 
   return (
     <div ref={wrapRef} style={{ position: 'relative', width: '240px', flexShrink: 0 }}>
@@ -205,7 +205,6 @@ export function AppLayout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const { hasFeature } = useSubscription();
   const { settings } = useAppSettings();
-  const isDark = (settings.theme ?? 'dark') === 'dark';
 
   const { currentWarehouseId, setWarehouseId } = useWarehouse();
 
@@ -513,14 +512,14 @@ export function AppLayout({ children }: LayoutProps) {
                 appearance: 'none',
               }}
             >
-              <option value="" style={{ background: isDark ? 'var(--bg-card)' : 'var(--text-1)' }}>
+              <option value="" style={{ background: 'var(--bg-card)' }}>
                 كل المخازن
               </option>
               {warehouses.map((w) => (
                 <option
                   key={w.id}
                   value={String(w.id)}
-                  style={{ background: isDark ? 'var(--bg-card)' : 'var(--text-1)' }}
+                  style={{ background: 'var(--bg-card)' }}
                 >
                   {w.name}
                 </option>
@@ -705,7 +704,7 @@ export function AppLayout({ children }: LayoutProps) {
       {/* ══════════════════════════════════════════
           MOBILE BOTTOM NAV (customisable)
       ══════════════════════════════════════════ */}
-      <MobileNav visibleNav={visibleNav} isDark={isDark} />
+      <MobileNav visibleNav={visibleNav} />
 
       {/* ══════════════════════════════════════════
           MAIN CONTENT COLUMN
@@ -756,7 +755,7 @@ export function AppLayout({ children }: LayoutProps) {
 
           {/* Center: Search */}
           <div className="hidden md:flex justify-center" style={{ flexShrink: 0 }}>
-            <TopbarSearch navItems={visibleNav} isDark={isDark} />
+            <TopbarSearch navItems={visibleNav} />
           </div>
 
           {/* Right: Actions */}

@@ -20,7 +20,7 @@ export function ScoreRing({ score }: { score: number }) {
           cy="36"
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          stroke="var(--edge)"
           strokeWidth="6"
         />
         <circle

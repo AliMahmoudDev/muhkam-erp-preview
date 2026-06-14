@@ -80,7 +80,6 @@ const SVC_STATUS: Record<string, { label: string; color: string }> = {
 /* ── Props ─────────────────────────────────────────────── */
 interface Props {
   empId: number;
-  isDark: boolean;
   textMain: string;
   textMuted: string;
   cardBg: string;
@@ -93,7 +92,6 @@ interface Props {
 ═══════════════════════════════════════════════════════════ */
 export function TechnicianSections({
   empId,
-  isDark,
   textMain,
   textMuted,
   cardBg,
@@ -205,7 +203,7 @@ export function TechnicianSections({
       flex: 1,
     } as React.CSSProperties,
     chevron: {
-      color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.28)',
+      color: 'var(--text-hint)',
       flexShrink: 0,
       marginRight: 'auto',
     } as React.CSSProperties,
@@ -223,10 +221,10 @@ export function TechnicianSections({
       ({
         borderTop: `1px solid ${border}`,
         background:
-          i % 2 === 0 ? 'transparent' : isDark ? 'rgba(255,255,255,0.012)' : 'rgba(0,0,0,0.012)',
+          i % 2 === 0 ? 'transparent' : 'var(--surface)',
       }) as React.CSSProperties,
     theadRow: {
-      background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+      background: 'var(--surface-raised)',
     } as React.CSSProperties,
     empty: {
       display: 'flex',
@@ -257,7 +255,7 @@ export function TechnicianSections({
           style={{
             flex: 1,
             height: 1,
-            background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(139,92,246,0.14)',
+            background: 'rgba(139,92,246,0.16)',
           }}
         />
       </div>
@@ -276,21 +274,18 @@ export function TechnicianSections({
           value={sumLoading ? '…' : fmtCurrency(summary?.today ?? 0, currency)}
           emoji="💰"
           color="var(--status-warning)"
-          isDark={isDark}
         />
         <KpiCard
           label="أرباح الشهر"
           value={sumLoading ? '…' : fmtCurrency(summary?.this_month ?? 0, currency)}
           emoji="📅"
           color="var(--status-info)"
-          isDark={isDark}
         />
         <KpiCard
           label="خدمات نشطة"
           value={sumLoading ? '…' : String(summary?.active_count ?? activeServices.length)}
           emoji="🔧"
           color="var(--status-success)"
-          isDark={isDark}
           unit="خدمة"
         />
         <KpiCard
@@ -298,7 +293,6 @@ export function TechnicianSections({
           value={sumLoading ? '…' : fmtCurrency(summary?.outstanding_earnings ?? 0, currency)}
           emoji="⏳"
           color="var(--status-info)"
-          isDark={isDark}
           note="مجموع مبالغ الخدمات النشطة"
         />
       </div>
@@ -531,7 +525,6 @@ function KpiCard({
   value,
   emoji,
   color,
-  isDark,
   note,
   unit,
 }: {
@@ -539,7 +532,6 @@ function KpiCard({
   value: string;
   emoji: string;
   color: string;
-  isDark: boolean;
   note?: string;
   unit?: string;
 }) {
@@ -548,7 +540,7 @@ function KpiCard({
       style={{
         borderRadius: 14,
         padding: '16px 18px',
-        background: isDark ? `${color}14` : `${color}0d`,
+        background: `${color}12`,
         border: `1px solid ${color}28`,
         display: 'flex',
         flexDirection: 'column',

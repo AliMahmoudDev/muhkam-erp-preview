@@ -66,7 +66,7 @@ export default function LogoutCheckoutModal({
       <div
         style={{
           background: 'var(--bg-app)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          border: '1px solid var(--edge-md)',
           borderRadius: 24,
           padding: '32px 36px',
           maxWidth: 400,
@@ -106,7 +106,7 @@ export default function LogoutCheckoutModal({
             style={{
               background: 'transparent',
               border: 'none',
-              color: 'rgba(255,255,255,0.40)',
+              color: 'var(--text-hint)',
               cursor: 'pointer',
               padding: 4,
             }}
@@ -120,7 +120,7 @@ export default function LogoutCheckoutModal({
             <p
               style={{
                 fontSize: 14,
-                color: 'rgba(255,255,255,0.55)',
+                color: 'var(--text-2)',
                 lineHeight: 1.6,
                 marginBottom: 24,
               }}
@@ -176,10 +176,10 @@ export default function LogoutCheckoutModal({
                 style={{
                   padding: '10px 20px',
                   borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  border: '1px solid var(--edge)',
                   cursor: 'pointer',
                   background: 'transparent',
-                  color: 'rgba(255,255,255,0.35)',
+                  color: 'var(--text-hint)',
                   fontSize: 13,
                 }}
               >
@@ -192,7 +192,7 @@ export default function LogoutCheckoutModal({
             <p
               style={{
                 fontSize: 14,
-                color: 'rgba(255,255,255,0.55)',
+                color: 'var(--text-2)',
                 lineHeight: 1.6,
                 marginBottom: 24,
               }}
@@ -227,10 +227,10 @@ export default function LogoutCheckoutModal({
                   flex: 1,
                   padding: '12px 20px',
                   borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.10)',
+                  border: '1px solid var(--edge-md)',
                   cursor: 'pointer',
-                  background: 'rgba(255,255,255,0.04)',
-                  color: 'rgba(255,255,255,0.60)',
+                  background: 'var(--surface)',
+                  color: 'var(--text-2)',
                   fontSize: 14,
                   fontWeight: 600,
                 }}

@@ -33,61 +33,37 @@ const TYPE_LINKS: Record<string, string> = {
 
 interface AlertItemProps {
   alert: Alert;
-  isDark: boolean;
-  border: string;
-  textMain: string;
-  textSub: string;
-  rowHover: string;
   onAlertClick: (alert: Alert) => void;
   onMarkRead: (id: number) => void;
   onResolve: (id: number) => void;
 }
 
-export function AlertItem({
-  alert,
-  isDark,
-  border,
-  textMain,
-  textSub,
-  rowHover,
-  onAlertClick,
-  onMarkRead,
-  onResolve,
-}: AlertItemProps) {
+export function AlertItem({ alert, onAlertClick, onMarkRead, onResolve }: AlertItemProps) {
+  const resolvedBg = 'var(--surface)';
+  const unreadBg = 'rgba(245,158,11,0.05)';
+
   return (
     <div
       onClick={() => onAlertClick(alert)}
       style={{
         padding: '10px 14px',
-        borderBottom: `1px solid ${border}`,
-        background: alert.is_resolved
-          ? isDark
-            ? 'rgba(255,255,255,0.02)'
-            : 'rgba(0,0,0,0.02)'
-          : alert.is_read
-            ? 'transparent'
-            : isDark
-              ? 'rgba(245,158,11,0.05)'
-              : 'rgba(245,158,11,0.05)',
+        borderBottom: '1px solid var(--edge-row)',
+        background: alert.is_resolved ? resolvedBg : alert.is_read ? 'transparent' : unreadBg,
         display: 'flex',
         gap: 10,
         alignItems: 'flex-start',
         cursor: TYPE_LINKS[alert.type] ? 'pointer' : 'default',
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.background = rowHover;
+        (e.currentTarget as HTMLDivElement).style.background = 'var(--surface-raised)';
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLDivElement;
         el.style.background = alert.is_resolved
-          ? isDark
-            ? 'rgba(255,255,255,0.02)'
-            : 'rgba(0,0,0,0.02)'
+          ? resolvedBg
           : alert.is_read
             ? 'transparent'
-            : isDark
-              ? 'rgba(245,158,11,0.05)'
-              : 'rgba(245,158,11,0.05)';
+            : unreadBg;
       }}
     >
       {/* Dot / resolved icon */}
@@ -115,7 +91,7 @@ export function AlertItem({
             fontSize: 12,
             fontWeight: 600,
             lineHeight: 1.45,
-            color: alert.is_resolved ? textSub : textMain,
+            color: alert.is_resolved ? 'var(--text-2)' : 'var(--text-1)',
             wordBreak: 'break-word',
             textDecoration: alert.is_resolved ? 'line-through' : 'none',
             opacity: alert.is_resolved ? 0.7 : 1,
@@ -153,13 +129,13 @@ export function AlertItem({
               fontSize: 10,
               padding: '1px 5px',
               borderRadius: 5,
-              background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
-              color: textSub,
+              background: 'var(--surface-raised)',
+              color: 'var(--text-2)',
             }}
           >
             {alert.trigger_mode === 'daily' ? 'يومي' : 'فوري'}
           </span>
-          <span style={{ fontSize: 10, color: textSub }}>
+          <span style={{ fontSize: 10, color: 'var(--text-2)' }}>
             {new Date(alert.created_at).toLocaleString('ar-EG-u-nu-latn', {
               month: 'short',
               day: 'numeric',
@@ -192,9 +168,9 @@ export function AlertItem({
                   fontSize: 10,
                   padding: '2px 8px',
                   borderRadius: 5,
-                  border: `1px solid ${border}`,
+                  border: '1px solid var(--edge-row)',
                   background: 'transparent',
-                  color: textSub,
+                  color: 'var(--text-2)',
                   cursor: 'pointer',
                 }}
               >

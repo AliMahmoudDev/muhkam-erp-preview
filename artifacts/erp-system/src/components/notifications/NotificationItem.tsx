@@ -56,11 +56,6 @@ function timeAgo(iso: string): string {
 
 interface NotificationItemProps {
   n: AppNotification;
-  isDark: boolean;
-  border: string;
-  textMain: string;
-  textSub: string;
-  rowHover: string;
   canApproveAdvances: boolean;
   actingId: number | null;
   rejectTarget: AppNotification | null;
@@ -74,11 +69,6 @@ interface NotificationItemProps {
 
 export function NotificationItem({
   n,
-  isDark,
-  border,
-  textMain,
-  textSub,
-  rowHover,
   canApproveAdvances,
   actingId,
   rejectTarget,
@@ -97,27 +87,24 @@ export function NotificationItem({
       onClick={() => !isRejectOpen && onClick(n)}
       style={{
         padding: '10px 14px',
-        borderBottom: `1px solid ${border}`,
+        borderBottom: '1px solid var(--erp-border)',
         background: n.is_read
           ? 'transparent'
-          : isDark
-            ? 'rgba(245,158,11,0.05)'
-            : 'rgba(245,158,11,0.05)',
+          : 'color-mix(in srgb, var(--status-warning) 10%, transparent)',
         display: 'flex',
         gap: 10,
         alignItems: 'flex-start',
         cursor: isRejectOpen ? 'default' : 'pointer',
       }}
       onMouseEnter={(e) => {
-        if (!isRejectOpen) (e.currentTarget as HTMLDivElement).style.background = rowHover;
+        if (!isRejectOpen)
+          (e.currentTarget as HTMLDivElement).style.background = 'var(--erp-bg-card-hover)';
       }}
       onMouseLeave={(e) => {
         if (!isRejectOpen)
           (e.currentTarget as HTMLDivElement).style.background = n.is_read
             ? 'transparent'
-            : isDark
-              ? 'rgba(245,158,11,0.05)'
-              : 'rgba(245,158,11,0.05)';
+            : 'color-mix(in srgb, var(--status-warning) 10%, transparent)';
       }}
     >
       <div
@@ -148,19 +135,19 @@ export function NotificationItem({
             style={{
               fontSize: 12.5,
               fontWeight: 700,
-              color: n.is_read ? textSub : textMain,
+              color: n.is_read ? 'var(--erp-text-2)' : 'var(--erp-text-1)',
             }}
           >
             {n.title}
           </div>
-          <span style={{ fontSize: 10, color: textSub, flexShrink: 0 }}>
+          <span style={{ fontSize: 10, color: 'var(--erp-text-2)', flexShrink: 0 }}>
             {timeAgo(n.created_at)}
           </span>
         </div>
         <div
           style={{
             fontSize: 11.5,
-            color: textSub,
+            color: 'var(--erp-text-2)',
             marginTop: 2,
             lineHeight: 1.4,
             wordBreak: 'break-word',
@@ -252,9 +239,9 @@ export function NotificationItem({
                 padding: '5px 8px',
                 fontSize: 11,
                 resize: 'none',
-                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                border: `1px solid ${border}`,
-                color: textMain,
+                background: 'var(--surface-raised)',
+                border: '1px solid var(--erp-border)',
+                color: 'var(--erp-text-1)',
                 outline: 'none',
                 direction: 'rtl',
                 boxSizing: 'border-box',
@@ -287,10 +274,10 @@ export function NotificationItem({
                 style={{
                   padding: '3px 8px',
                   borderRadius: 4,
-                  border: `1px solid ${border}`,
+                  border: '1px solid var(--erp-border)',
                   cursor: 'pointer',
                   background: 'transparent',
-                  color: textSub,
+                  color: 'var(--erp-text-2)',
                   fontSize: 10,
                 }}
               >

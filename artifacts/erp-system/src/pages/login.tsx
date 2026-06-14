@@ -850,7 +850,7 @@ export default function Login() {
                         style={{
                           width: 14,
                           height: 14,
-                          border: '2px solid rgba(255,255,255,0.3)',
+                          border: '2px solid var(--edge-md)',
                           borderTopColor: 'var(--text-1)',
                           borderRadius: '50%',
                           display: 'inline-block',
@@ -1127,7 +1127,7 @@ function LoginFormFields({
               style={{
                 width: 14,
                 height: 14,
-                border: '2px solid rgba(255,255,255,0.3)',
+                border: '2px solid var(--edge-md)',
                 borderTopColor: 'var(--text-1)',
                 borderRadius: '50%',
                 display: 'inline-block',

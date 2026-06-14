@@ -301,8 +301,8 @@ export default function SalesTargetsTab() {
                       disabled={saving === row.user_id || !isDirty}
                       className="w-9 h-9 rounded-xl flex items-center justify-center transition disabled:opacity-30"
                       style={{
-                        background: isDirty ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${isDirty ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                        background: isDirty ? 'rgba(245,158,11,0.15)' : 'var(--surface)',
+                        border: `1px solid ${isDirty ? 'rgba(245,158,11,0.3)' : 'var(--edge)'}`,
                       }}
                       title="حفظ الهدف"
                     >

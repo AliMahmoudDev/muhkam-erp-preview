@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { X, Settings2, ClipboardList } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
-import { useAppSettings } from '@/contexts/app-settings';
 import type { SettingsTab, ChecklistRow } from './repair-settings/shared';
 import { TABS } from './repair-settings/shared';
 import ChecklistTab from './repair-settings/ChecklistTab';
@@ -30,8 +29,6 @@ export default function RepairSettingsModal({
   initialTab = 'checklist',
 }: RepairSettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
-  const { settings } = useAppSettings();
-  const isLight = (settings.theme ?? 'dark') === 'light';
 
   /* close on Escape */
   useEffect(() => {
@@ -60,7 +57,7 @@ export default function RepairSettingsModal({
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       style={{
-        background: isLight ? 'rgba(0,0,0,0.45)' : 'rgba(2,4,10,0.82)',
+        background: 'rgba(0,0,0,0.65)',
         backdropFilter: 'blur(14px) saturate(140%)',
       }}
       dir="rtl"
@@ -69,14 +66,13 @@ export default function RepairSettingsModal({
       }}
     >
       <div
-        className={`rs-modal-enter rs-mesh-bg${isLight ? ' rs-mesh-bg--light' : ''} relative w-full overflow-hidden flex flex-col rounded-[20px]`}
+        className="rs-modal-enter rs-mesh-bg relative w-full overflow-hidden flex flex-col rounded-[20px]"
         style={{
           maxWidth: 1240,
           maxHeight: '95vh',
-          border: isLight ? '1px solid rgba(0,0,0,0.11)' : '1px solid rgba(255,255,255,0.09)',
-          boxShadow: isLight
-            ? '0 20px 60px -10px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)'
-            : '0 40px 100px -20px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.04) inset,0 1px 0 rgba(255,255,255,0.06) inset',
+          border: '1px solid var(--edge)',
+          boxShadow: 'var(--shadow-modal)',
+          background: 'var(--bg-card)',
         }}
       >
         {/* ── Ambient corner glows (لمسة ضوئية) ── */}
@@ -92,18 +88,10 @@ export default function RepairSettingsModal({
         {/* ═══ TOP BAR — أسلوب Command Bar ═══ */}
         <div
           className="relative flex items-center gap-3 px-5 py-3.5 shrink-0"
-          style={
-            isLight
-              ? {
-                  background: 'linear-gradient(180deg, rgba(0,0,0,0.025), rgba(0,0,0,0.010))',
-                  borderBottom: '1px solid rgba(0,0,0,0.08)',
-                }
-              : {
-                  background:
-                    'linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))',
-                  borderBottom: '1px solid rgba(255,255,255,0.07)',
-                }
-          }
+          style={{
+            background: 'var(--surface)',
+            borderBottom: '1px solid var(--edge)',
+          }}
         >
           {/* علامة التطبيق — مربع أمبر متوهّج */}
           <div className="relative shrink-0">
@@ -121,7 +109,7 @@ export default function RepairSettingsModal({
             </div>
             <span
               className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-emerald-400"
-              style={{ boxShadow: '0 0 10px rgba(52,211,153,0.7), 0 0 0 2px #0e1320' }}
+              style={{ boxShadow: '0 0 10px rgba(52,211,153,0.7), 0 0 0 2px var(--bg-card)' }}
             />
           </div>
 
@@ -143,33 +131,16 @@ export default function RepairSettingsModal({
           {/* إحصائية مدمجة — عدد البنود الكلي */}
           <div
             className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl shrink-0"
-            style={
-              isLight
-                ? { background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.09)' }
-                : {
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                  }
-            }
+            style={{ background: 'var(--surface)', border: '1px solid var(--edge)' }}
             title="إجمالي بنود الفحص عبر كل أنواع الأجهزة"
           >
             <ClipboardList className="w-3.5 h-3.5 text-amber-500" />
-            <span
-              className={`text-[11px] font-semibold ${isLight ? 'text-slate-500' : 'text-ink/55'}`}
-            >
-              إجمالي البنود
-            </span>
-            <span
-              className={`text-[12px] font-black tabular-nums ${isLight ? 'text-slate-800' : 'text-ink'}`}
-            >
-              {totalItemsCount}
-            </span>
+            <span className="text-[11px] font-semibold text-ink/55">إجمالي البنود</span>
+            <span className="text-[12px] font-black tabular-nums text-ink">{totalItemsCount}</span>
           </div>
 
           {/* تلميح Esc */}
-          <div
-            className={`hidden lg:flex items-center gap-1.5 text-[10px] font-semibold shrink-0 ${isLight ? 'text-slate-400' : 'text-ink/35'}`}
-          >
+          <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold shrink-0 text-ink/35">
             <span>للإغلاق</span>
             <kbd className="rs-kbd">Esc</kbd>
           </div>
@@ -178,15 +149,8 @@ export default function RepairSettingsModal({
           <button
             onClick={onClose}
             title="إغلاق (Esc)"
-            className={`w-9 h-9 flex items-center justify-center rounded-xl shrink-0 ${isLight ? 'text-slate-500 hover:text-slate-800' : 'text-ink/45 hover:text-ink'}`}
-            style={
-              isLight
-                ? { background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.09)' }
-                : {
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                  }
-            }
+            className="w-9 h-9 flex items-center justify-center rounded-xl shrink-0 text-ink/45 hover:text-ink transition-colors"
+            style={{ background: 'var(--surface)', border: '1px solid var(--edge)' }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -197,25 +161,14 @@ export default function RepairSettingsModal({
           {/* ── Sidebar — Linear-style nav ── */}
           <aside
             className="w-[244px] shrink-0 overflow-y-auto rs-scroll flex flex-col"
-            style={
-              isLight
-                ? {
-                    background:
-                      'linear-gradient(180deg, rgba(0,0,0,0.025) 0%, rgba(0,0,0,0.010) 100%)',
-                    borderLeft: '1px solid rgba(0,0,0,0.07)',
-                  }
-                : {
-                    background:
-                      'linear-gradient(180deg, rgba(255,255,255,0.018) 0%, rgba(255,255,255,0.004) 100%)',
-                    borderLeft: '1px solid rgba(255,255,255,0.06)',
-                  }
-            }
+            style={{
+              background: 'var(--surface)',
+              borderLeft: '1px solid var(--edge)',
+            }}
           >
             {/* رأس الـ sidebar */}
             <div className="px-4 pt-4 pb-2">
-              <p
-                className={`text-[9px] font-black tracking-[0.22em] uppercase ${isLight ? 'text-slate-400' : 'text-ink/30'}`}
-              >
+              <p className="text-[9px] font-black tracking-[0.22em] uppercase text-ink/30">
                 الأقسام
               </p>
             </div>
@@ -256,30 +209,24 @@ export default function RepairSettingsModal({
                       style={{
                         background: active
                           ? 'linear-gradient(135deg, rgba(245,158,11,0.30), rgba(217,119,6,0.12))'
-                          : isLight
-                            ? 'rgba(0,0,0,0.04)'
-                            : 'rgba(255,255,255,0.035)',
-                        border: active
-                          ? '1px solid rgba(245,158,11,0.40)'
-                          : isLight
-                            ? '1px solid rgba(0,0,0,0.08)'
-                            : '1px solid rgba(255,255,255,0.06)',
+                          : 'var(--surface)',
+                        border: active ? '1px solid rgba(245,158,11,0.40)' : '1px solid var(--edge)',
                         boxShadow: active ? '0 2px 8px rgba(245,158,11,0.25)' : 'none',
                       }}
                     >
                       <Icon
-                        className={`w-4 h-4 ${active ? 'text-amber-300' : isLight ? 'text-slate-500 group-hover:text-amber-600' : 'text-ink/50 group-hover:text-amber-300'} transition-colors`}
+                        className={`w-4 h-4 ${active ? 'text-amber-300' : 'text-ink/50 group-hover:text-amber-300'} transition-colors`}
                         strokeWidth={active ? 2.4 : 2}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`text-[13px] font-bold leading-tight ${active ? (isLight ? 'text-slate-800' : 'text-ink') : isLight ? 'text-slate-600 group-hover:text-slate-800' : 'text-ink/70 group-hover:text-ink/95'} transition-colors`}
+                        className={`text-[13px] font-bold leading-tight ${active ? 'text-ink' : 'text-ink/70 group-hover:text-ink/95'} transition-colors`}
                       >
                         {tab.label}
                       </p>
                       <p
-                        className={`text-[10.5px] leading-tight mt-1 truncate ${active ? 'text-amber-500' : isLight ? 'text-slate-400' : 'text-ink/50'}`}
+                        className={`text-[10.5px] leading-tight mt-1 truncate ${active ? 'text-amber-500' : 'text-ink/50'}`}
                       >
                         {tab.sublabel}
                       </p>
@@ -292,31 +239,18 @@ export default function RepairSettingsModal({
             {/* sidebar footer — حالة + اختصار */}
             <div
               className="px-3 py-3 mx-2 mb-2 rounded-xl"
-              style={
-                isLight
-                  ? { background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)' }
-                  : {
-                      background: 'rgba(255,255,255,0.025)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                    }
-              }
+              style={{ background: 'var(--surface)', border: '1px solid var(--edge)' }}
             >
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <span
-                  className={`text-[10px] font-black tracking-wider uppercase ${isLight ? 'text-slate-400' : 'text-ink/55'}`}
-                >
+                <span className="text-[10px] font-black tracking-wider uppercase text-ink/55">
                   الحالة
                 </span>
-                <span
-                  className={`flex items-center gap-1 text-[10px] font-bold ${isLight ? 'text-emerald-700' : 'text-emerald-300/85'}`}
-                >
+                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-300/85">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   متصل
                 </span>
               </div>
-              <p
-                className={`text-[10px] leading-relaxed ${isLight ? 'text-slate-400' : 'text-ink/35'}`}
-              >
+              <p className="text-[10px] leading-relaxed text-ink/35">
                 مُحكم ERP — وحدة الصيانة المتكاملة
               </p>
             </div>
@@ -327,9 +261,8 @@ export default function RepairSettingsModal({
             key={activeTab}
             className="rs-content-enter flex-1 overflow-hidden flex flex-col relative"
             style={{
-              background: isLight
-                ? 'radial-gradient(1200px 600px at 50% -200px, rgba(245,158,11,0.07), transparent 60%)'
-                : 'radial-gradient(1200px 600px at 50% -200px, rgba(245,158,11,0.025), transparent 60%), rgba(0,0,0,0.20)',
+              background:
+                'radial-gradient(1200px 600px at 50% -200px, rgba(245,158,11,0.025), transparent 60%)',
             }}
           >
             {activeTab === 'checklist' && <ChecklistTab />}

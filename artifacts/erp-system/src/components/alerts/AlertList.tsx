@@ -21,32 +21,16 @@ type FilterTab = 'active' | 'unread' | 'resolved';
 interface AlertListProps {
   displayed: Alert[];
   tab: FilterTab;
-  isDark: boolean;
-  border: string;
-  textMain: string;
-  textSub: string;
-  rowHover: string;
   onAlertClick: (alert: Alert) => void;
   onMarkRead: (id: number) => void;
   onResolve: (id: number) => void;
 }
 
-export function AlertList({
-  displayed,
-  tab,
-  isDark,
-  border,
-  textMain,
-  textSub,
-  rowHover,
-  onAlertClick,
-  onMarkRead,
-  onResolve,
-}: AlertListProps) {
+export function AlertList({ displayed, tab, onAlertClick, onMarkRead, onResolve }: AlertListProps) {
   if (displayed.length === 0) {
     return (
       <div
-        style={{ padding: '36px 16px', textAlign: 'center', color: textSub, fontSize: 13 }}
+        style={{ padding: '36px 16px', textAlign: 'center', color: 'var(--text-hint)', fontSize: 13 }}
       >
         <div style={{ fontSize: 28, marginBottom: 8 }}>
           {tab === 'resolved' ? '📋' : '✅'}
@@ -62,11 +46,6 @@ export function AlertList({
         <AlertItem
           key={alert.id}
           alert={alert}
-          isDark={isDark}
-          border={border}
-          textMain={textMain}
-          textSub={textSub}
-          rowHover={rowHover}
           onAlertClick={onAlertClick}
           onMarkRead={onMarkRead}
           onResolve={onResolve}

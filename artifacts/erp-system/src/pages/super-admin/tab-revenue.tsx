@@ -206,7 +206,7 @@ export function TabRevenue({ revenueData, revenueLoading, onExportCSV }: Props) 
                     <stop offset="95%" stopColor="var(--status-info)" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--edge)" />
                 <XAxis
                   dataKey="month"
                   tick={{ fill: 'var(--text-2)', fontSize: 10, fontFamily: FONT }}

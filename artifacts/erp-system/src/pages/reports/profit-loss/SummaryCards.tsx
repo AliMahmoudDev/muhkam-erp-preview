@@ -5,7 +5,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { useAppSettings } from '@/contexts/app-settings';
 import { formatCurrency, useCountUp, ProfitsData } from '../shared';
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -48,14 +47,8 @@ function KPICard({
   index: number;
 }) {
   const animated = useCountUp(value);
-  const { settings } = useAppSettings();
-  const isLight = (settings.theme ?? 'dark') === 'light';
   const numColor =
-    accent === 'var(--status-success)' && value < 0
-      ? 'var(--status-danger)'
-      : isLight
-        ? 'var(--bg-app)'
-        : 'var(--text-1)';
+    accent === 'var(--status-success)' && value < 0 ? 'var(--status-danger)' : 'var(--text-1)';
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}

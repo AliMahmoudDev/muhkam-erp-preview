@@ -16,7 +16,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { Bell, RefreshCw } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
-import { useAppSettings } from '@/contexts/app-settings';
 import { AlertList } from './alerts/AlertList';
 
 interface Alert {
@@ -56,8 +55,6 @@ export function AlertBell() {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<FilterTab>('active');
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { settings } = useAppSettings();
-  const isDark = (settings.theme ?? 'dark') === 'dark';
   const [, navigate] = useLocation();
 
   function handleAlertClick(alert: Alert) {
@@ -164,11 +161,6 @@ export function AlertBell() {
   }
 
   /* ── Styles ─────────────────────────────────────────────── */
-  const bgPanel = 'var(--bg-panel)';
-  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)';
-  const textMain = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.85)';
-  const textSub = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.42)';
-  const rowHover = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)';
 
   function tabStyle(t: FilterTab) {
     const isActive = tab === t;
@@ -179,12 +171,8 @@ export function AlertBell() {
       borderRadius: 7,
       cursor: 'pointer',
       border: 'none',
-      background: isActive
-        ? isDark
-          ? 'rgba(245,158,11,0.18)'
-          : 'rgba(245,158,11,0.14)'
-        : 'transparent',
-      color: isActive ? 'var(--status-warning)' : textSub,
+      background: isActive ? 'rgba(245,158,11,0.16)' : 'transparent',
+      color: isActive ? 'var(--status-warning)' : 'var(--erp-text-2)',
       transition: 'all 0.15s',
     } as React.CSSProperties;
   }
@@ -198,14 +186,10 @@ export function AlertBell() {
           position: 'relative',
           padding: '7px',
           borderRadius: '10px',
-          border: `1px solid ${border}`,
-          background: open
-            ? isDark
-              ? 'rgba(255,255,255,0.08)'
-              : 'rgba(0,0,0,0.06)'
-            : 'transparent',
+          border: '1px solid var(--edge)',
+          background: open ? 'var(--surface-raised)' : 'transparent',
           cursor: 'pointer',
-          color: textMain,
+          color: 'var(--text-1)',
           transition: 'all 0.15s',
           display: 'flex',
           alignItems: 'center',
@@ -249,9 +233,9 @@ export function AlertBell() {
             width: 360,
             maxHeight: 520,
             borderRadius: 14,
-            background: bgPanel,
-            border: `1px solid ${border}`,
-            boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.65)' : '0 8px 32px rgba(0,0,0,0.13)',
+            background: 'var(--erp-bg-card)',
+            border: '1px solid var(--edge)',
+            boxShadow: 'var(--shadow-modal)',
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
@@ -263,7 +247,7 @@ export function AlertBell() {
           <div
             style={{
               padding: '10px 14px 0',
-              borderBottom: `1px solid ${border}`,
+              borderBottom: '1px solid var(--erp-border)',
             }}
           >
             {/* Title + action buttons */}
@@ -276,7 +260,9 @@ export function AlertBell() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: textMain }}>التنبيهات</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--erp-text-1)' }}>
+                  التنبيهات
+                </span>
                 {/* Badges */}
                 {active.length > 0 && (
                   <span
@@ -315,9 +301,9 @@ export function AlertBell() {
                   style={{
                     padding: '3px 7px',
                     borderRadius: 6,
-                    border: `1px solid ${border}`,
+                    border: '1px solid var(--edge)',
                     background: 'transparent',
-                    color: textSub,
+                    color: 'var(--text-hint)',
                     cursor: 'pointer',
                     fontSize: 10,
                     display: 'flex',
@@ -335,9 +321,9 @@ export function AlertBell() {
                   style={{
                     padding: '3px 7px',
                     borderRadius: 6,
-                    border: `1px solid ${border}`,
+                    border: '1px solid var(--edge)',
                     background: 'transparent',
-                    color: textSub,
+                    color: 'var(--text-hint)',
                     cursor: 'pointer',
                     fontSize: 10,
                     opacity: loading ? 0.5 : 1,
@@ -352,9 +338,9 @@ export function AlertBell() {
                     style={{
                       padding: '3px 7px',
                       borderRadius: 6,
-                      border: `1px solid ${border}`,
+                      border: '1px solid var(--edge)',
                       background: 'transparent',
-                      color: textSub,
+                      color: 'var(--text-hint)',
                       cursor: 'pointer',
                       fontSize: 10,
                       opacity: loading ? 0.5 : 1,
@@ -385,11 +371,6 @@ export function AlertBell() {
             <AlertList
               displayed={displayed}
               tab={tab}
-              isDark={isDark}
-              border={border}
-              textMain={textMain}
-              textSub={textSub}
-              rowHover={rowHover}
               onAlertClick={handleAlertClick}
               onMarkRead={markRead}
               onResolve={resolveAlert}
@@ -400,9 +381,9 @@ export function AlertBell() {
           <div
             style={{
               padding: '7px 14px',
-              borderTop: `1px solid ${border}`,
+              borderTop: '1px solid var(--edge)',
               fontSize: 10,
-              color: textSub,
+              color: 'var(--text-hint)',
               textAlign: 'center',
             }}
           >
