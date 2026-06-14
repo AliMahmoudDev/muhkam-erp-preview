@@ -655,13 +655,27 @@ router.post(
           alerts,
         },
       };
+      if (!isEncryptionEnabled()) {
+        throw new Error(
+          'BACKUP_ENCRYPTION_KEY not configured — cannot create encrypted pre-restore snapshot'
+        );
+      }
+
       // eslint-disable-next-line security/detect-non-literal-fs-filename
-      await fs.mkdir(BACKUP_DIR, { recursive: true });
+      await fs.mkdir(BACKUP_DIR, { recursive: true, mode: 0o700 });
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      await fs.chmod(BACKUP_DIR, 0o700);
+
       const dt = new Date().toISOString().replace('T', '_').replace(/:/g, '-').slice(0, 19);
-      const filename = `pre-restore_company-${companyId}_${dt}.json`;
+      const filename = `pre-restore_company-${companyId}_${dt}.json${encryptedExtension()}`;
       const full = path.join(BACKUP_DIR, filename);
+      const encryptedSnap = encryptBuffer(Buffer.from(JSON.stringify(snap), 'utf8'));
+
       // eslint-disable-next-line security/detect-non-literal-fs-filename
-      await fs.writeFile(full, JSON.stringify(snap), { mode: 0o600 });
+      await fs.writeFile(full, encryptedSnap, { mode: 0o600 });
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      await fs.chmod(full, 0o600);
+
       snapshotPath = filename;
     } catch (err) {
       res.status(500).json({ error: 'فشل إنشاء نسخة وقائية قبل الاستعادة — تم إلغاء العملية' });
