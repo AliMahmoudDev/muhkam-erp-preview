@@ -39,6 +39,16 @@ if (!process.env.JWT_REFRESH_SECRET) {
   process.env.JWT_REFRESH_SECRET = 'integration-test-jwt-refresh-secret-min-32chars!!';
 }
 
+if (!process.env.TOTP_ENCRYPTION_KEY) {
+  if (!isTestEnv) {
+    throw new Error(
+      '[integration setup] TOTP_ENCRYPTION_KEY is not set and NODE_ENV !== "test". ' +
+        'Refusing to fall back to the test default outside of a test environment.'
+    );
+  }
+  process.env.TOTP_ENCRYPTION_KEY = 'integration-test-totp-encryption-key-32chars!!';
+}
+
 process.env.NODE_ENV = 'test';
 
 beforeAll(async () => {

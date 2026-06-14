@@ -4,6 +4,7 @@ import { afterEach, vi } from 'vitest';
 // DATABASE_URL: preserve the value injected by CI (real Postgres service container).
 // Fall back to the local test URL only when no DATABASE_URL is configured at all.
 process.env.JWT_SECRET ??= 'test-secret-key-for-testing-only-32chars';
+process.env.TOTP_ENCRYPTION_KEY ??= 'test-totp-encryption-key-minimum-32-chars!!';
 process.env.NODE_ENV ??= 'test';
 process.env.DATABASE_URL ??= 'postgresql://test:test@localhost:5432/test';
 
