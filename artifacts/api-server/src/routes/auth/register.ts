@@ -25,6 +25,7 @@ import { authenticate, signToken, signRefreshToken } from '../../middleware/auth
 import { storeRefreshToken } from '../../lib/refresh-token-store';
 import { hashPin } from '../../lib/hash';
 import { alertManager, ALERT_TYPES } from '../../lib/telegram-alert-manager';
+import { sendEmail } from '../../lib/email';
 import { setAuthCookies, validatePasswordStrength } from './_shared';
 
 const router = Router();
@@ -232,6 +233,25 @@ router.post(
       const verifyLink = buildVerificationLink(verificationToken);
       logVerificationLink(normalEmail, verifyLink);
 
+      await sendEmail({
+        to: normalEmail,
+        subject: 'تأكيد بريدك الإلكتروني — مُحكم ERP',
+        html: `
+          <div dir="rtl" style="font-family: Arial, sans-serif; line-height: 1.7; padding: 20px;">
+            <h2>مرحباً ${admin_name.trim()}</h2>
+            <p>تم إنشاء حساب شركتك على مُحكم ERP.</p>
+            <p>اضغط على الزر التالي لتأكيد بريدك الإلكتروني:</p>
+            <p>
+              <a href="${verifyLink}" style="display:inline-block;background:#16a34a;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                تأكيد البريد الإلكتروني
+              </a>
+            </p>
+            <p>ينتهي هذا الرابط خلال 48 ساعة.</p>
+            <p style="font-size:12px;color:#666;">إذا لم يعمل الزر، انسخ الرابط التالي:<br>${verifyLink}</p>
+          </div>
+        `,
+      });
+
       const token = signToken(user.id, user.role, user.company_id ?? null);
       const refreshToken = signRefreshToken(user.id);
       await storeRefreshToken(refreshToken, user.id);
@@ -375,6 +395,26 @@ router.post(
 
       const verifyLink = buildVerificationLink(newToken);
       logVerificationLink(company.admin_email ?? 'unknown', verifyLink);
+
+      if (company.admin_email) {
+        await sendEmail({
+          to: company.admin_email,
+          subject: 'إعادة إرسال رابط تأكيد البريد — مُحكم ERP',
+          html: `
+            <div dir="rtl" style="font-family: Arial, sans-serif; line-height: 1.7; padding: 20px;">
+              <h2>رابط تأكيد البريد الإلكتروني</h2>
+              <p>اضغط على الزر التالي لتأكيد بريدك الإلكتروني:</p>
+              <p>
+                <a href="${verifyLink}" style="display:inline-block;background:#16a34a;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                  تأكيد البريد الإلكتروني
+                </a>
+              </p>
+              <p>ينتهي هذا الرابط خلال 48 ساعة.</p>
+              <p style="font-size:12px;color:#666;">إذا لم يعمل الزر، انسخ الرابط التالي:<br>${verifyLink}</p>
+            </div>
+          `,
+        });
+      }
 
       res.json({ success: true, message: 'تم إعادة إرسال رابط التحقق' });
     } catch {
