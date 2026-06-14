@@ -12,14 +12,6 @@ interface Props {
   downloadBackup: (filename: string) => void;
   openRestorePicker: () => void;
   encEnabled: boolean;
-  encKey: string | null;
-  encKeyLoading: boolean;
-  encKeyVisible: boolean;
-  encKeyCopied: boolean;
-  loadEncKey: () => void;
-  copyEncKey: () => void;
-  downloadEncKey: () => void;
-  emailEncKey: () => void;
 }
 
 export function BackupPanel({
@@ -33,14 +25,6 @@ export function BackupPanel({
   downloadBackup,
   openRestorePicker,
   encEnabled,
-  encKey,
-  encKeyLoading,
-  encKeyVisible,
-  encKeyCopied,
-  loadEncKey,
-  copyEncKey,
-  downloadEncKey,
-  emailEncKey,
 }: Props) {
   return (
     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -262,7 +246,7 @@ export function BackupPanel({
         )}
       </div>
 
-      {/* Encryption Key */}
+      {/* Encryption Status */}
       <div
         style={{
           background: 'var(--surface-raised)',
@@ -272,101 +256,27 @@ export function BackupPanel({
         }}
       >
         <div style={{ fontSize: '14px', fontWeight: 800, color: C.text, marginBottom: '8px' }}>
-          🔑 مفتاح تشفير النسخ
+          🔑 تشفير النسخ الاحتياطية
         </div>
         <div style={{ fontSize: '12px', color: C.muted, marginBottom: '14px', lineHeight: 1.6 }}>
           {encEnabled
-            ? 'النسخ الاحتياطية مشفّرة — احتفظ بهذا المفتاح في مكان آمن.'
+            ? 'التشفير مفعّل — المفتاح محفوظ كسِرّ على السيرفر ولا يتم عرضه أو نسخه من الواجهة.'
             : 'التشفير غير مفعّل — عيّن متغير BACKUP_ENCRYPTION_KEY في ملف .env لتفعيله.'}
         </div>
         {encEnabled && (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => void loadEncKey()}
-              disabled={encKeyLoading}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '10px',
-                border: `1px solid ${C.border}`,
-                background: 'transparent',
-                color: C.muted,
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: FONT,
-              }}
-            >
-              {encKeyLoading ? '⏳ ...' : encKeyVisible ? '🙈 إخفاء' : '👁 عرض المفتاح'}
-            </button>
-            {encKeyVisible && encKey && (
-              <>
-                <button
-                  onClick={copyEncKey}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(34,197,94,0.3)',
-                    background: 'rgba(34,197,94,0.1)',
-                    color: 'var(--status-success)',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontFamily: FONT,
-                  }}
-                >
-                  {encKeyCopied ? '✅ تم النسخ' : '📋 نسخ'}
-                </button>
-                <button
-                  onClick={downloadEncKey}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(245,158,11,0.3)',
-                    background: 'rgba(245,158,11,0.1)',
-                    color: 'var(--status-warning)',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontFamily: FONT,
-                  }}
-                >
-                  💾 حفظ كملف .key
-                </button>
-                <button
-                  onClick={emailEncKey}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(59,130,246,0.3)',
-                    background: 'rgba(59,130,246,0.1)',
-                    color: 'var(--status-info)',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontFamily: FONT,
-                  }}
-                >
-                  📧 إرسال بالبريد
-                </button>
-              </>
-            )}
-          </div>
-        )}
-        {encKeyVisible && encKey && (
           <div
             style={{
-              marginTop: '12px',
               padding: '10px 14px',
               borderRadius: '10px',
-              background: 'var(--surface)',
-              border: `1px solid ${C.border}`,
+              background: 'rgba(34,197,94,0.1)',
+              border: '1px solid rgba(34,197,94,0.25)',
+              color: 'var(--status-success)',
               fontSize: '12px',
-              color: 'var(--status-info)',
-              fontFamily: 'monospace',
-              wordBreak: 'break-all',
+              fontWeight: 700,
+              lineHeight: 1.6,
             }}
           >
-            {encKey}
+            ✅ المفتاح لا يظهر في المتصفح. احفظه فقط في مدير الأسرار أو على السيرفر بشكل آمن.
           </div>
         )}
       </div>

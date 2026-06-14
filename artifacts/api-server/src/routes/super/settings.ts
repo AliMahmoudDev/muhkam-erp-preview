@@ -57,32 +57,20 @@ router.get(
   })
 );
 
-/* ── GET /super/encryption-key — return backup encryption key (super admin only) ── */
+/* ── GET /super/encryption-key — intentionally disabled; secrets are not exposed over HTTP ── */
 router.get(
   '/super/encryption-key',
   ...superOnly,
-  wrap(async (req, res) => {
+  wrap(async (_req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
 
-    const key = process.env.BACKUP_ENCRYPTION_KEY ?? null;
-    await writeAuditLog({
-      action: 'BACKUP_ENCRYPTION_KEY_VIEWED',
-      record_type: 'system',
-      record_id: 0,
-      user: { id: req.user?.id, username: req.user?.username },
-      company_id: null,
-      note: key
-        ? 'Super admin requested backup encryption key display/export'
-        : 'Super admin requested backup encryption key, but it is not configured',
+    res.status(410).json({
+      enabled: !!process.env.BACKUP_ENCRYPTION_KEY,
+      key: null,
+      error: 'Backup encryption key export is disabled. Read it only from the server secret store.',
     });
-
-    if (!key) {
-      res.json({ enabled: false, key: null });
-      return;
-    }
-    res.json({ enabled: true, length: key.length, key });
   })
 );
 

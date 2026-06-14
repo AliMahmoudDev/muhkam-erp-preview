@@ -82,14 +82,6 @@ interface Props {
   confirmRestore: () => void;
   /* Encryption key */
   encEnabled: boolean;
-  encKey: string | null;
-  encKeyLoading: boolean;
-  encKeyVisible: boolean;
-  encKeyCopied: boolean;
-  loadEncKey: () => void;
-  copyEncKey: () => void;
-  downloadEncKey: () => void;
-  emailEncKey: () => void;
   /* Security */
   totpStatus: { totp_enabled: boolean } | undefined;
   totpSetupData: { qr_code: string; secret: string } | null;
@@ -166,14 +158,6 @@ export function TabSettings({
   setRestoreCode,
   confirmRestore,
   encEnabled,
-  encKey,
-  encKeyLoading,
-  encKeyVisible,
-  encKeyCopied,
-  loadEncKey,
-  copyEncKey,
-  downloadEncKey,
-  emailEncKey,
   totpStatus,
   totpSetupData,
   totpInput,
@@ -502,14 +486,6 @@ export function TabSettings({
               downloadBackup={downloadBackup}
               openRestorePicker={openRestorePicker}
               encEnabled={encEnabled}
-              encKey={encKey}
-              encKeyLoading={encKeyLoading}
-              encKeyVisible={encKeyVisible}
-              encKeyCopied={encKeyCopied}
-              loadEncKey={loadEncKey}
-              copyEncKey={copyEncKey}
-              downloadEncKey={downloadEncKey}
-              emailEncKey={emailEncKey}
             />
           )}
           {settingsActiveCard === 'security' && (

@@ -68,11 +68,7 @@ export function useSettingsState(
   const restoreInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Encryption key state ── */
-  const [encKey, setEncKey] = useState<string | null>(null);
   const [encEnabled, setEncEnabled] = useState(false);
-  const [encKeyVisible, setEncKeyVisible] = useState(false);
-  const [encKeyCopied, setEncKeyCopied] = useState(false);
-  const [encKeyLoading, setEncKeyLoading] = useState(false);
 
   /* Auto-fetch encryption status (no key exposed) on settings tab */
   const { data: encStatusData } = useQuery<{ enabled: boolean }>({
@@ -293,63 +289,6 @@ export function useSettingsState(
     }
   }
 
-  async function loadEncKey() {
-    if (encKey !== null) {
-      setEncKeyVisible(true);
-      return;
-    }
-    setEncKeyLoading(true);
-    try {
-      const res = await authFetch(api('/api/super/encryption-key'), { headers: authHeaders() });
-      const data = (await res.json()) as { key: string | null; enabled: boolean };
-      setEncEnabled(data.enabled);
-      setEncKey(data.key ?? '');
-      setEncKeyVisible(true);
-    } catch {
-      showToast('فشل جلب مفتاح التشفير', 'error');
-    } finally {
-      setEncKeyLoading(false);
-    }
-  }
-
-  function copyEncKey() {
-    if (!encKey) return;
-    void navigator.clipboard.writeText(encKey).then(() => {
-      setEncKeyCopied(true);
-      setTimeout(() => setEncKeyCopied(false), 2500);
-    });
-  }
-
-  function downloadEncKey() {
-    if (!encKey) return;
-    const now = new Date();
-    const content = [
-      '# مفتاح تشفير النسخ الاحتياطية — MUHKAM ERP',
-      `# تاريخ التصدير: ${now.toLocaleString('ar-EG')}`,
-      '# ⚠️ احتفظ بهذا الملف في مكان آمن — بدونه لا يمكن فك تشفير أي نسخة احتياطية',
-      '',
-      encKey,
-    ].join('\n');
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `muhkam-backup-key-${now.toISOString().slice(0, 10)}.key`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function emailEncKey() {
-    if (!encKey) return;
-    const subject = encodeURIComponent('مفتاح تشفير النسخ الاحتياطية — MUHKAM ERP');
-    const body = encodeURIComponent(
-      `مفتاح تشفير النسخ الاحتياطية لنظام مُحكم:\n\n${encKey}\n\nالتاريخ: ${new Date().toLocaleString('ar-EG')}\n\n⚠️ تحذير: احتفظ بهذا المفتاح في مكان آمن.`
-    );
-    window.open(`mailto:m.elmelegy@me.com?subject=${subject}&body=${body}`, '_blank');
-  }
-
   async function startTotpSetup() {
     setSecLoading(true);
     setSecMsg(null);
@@ -526,14 +465,6 @@ export function useSettingsState(
     confirmRestore,
     /* encryption */
     encEnabled,
-    encKey,
-    encKeyLoading,
-    encKeyVisible,
-    encKeyCopied,
-    loadEncKey,
-    copyEncKey,
-    downloadEncKey,
-    emailEncKey,
     /* totp */
     totpStatus,
     totpSetupData,
