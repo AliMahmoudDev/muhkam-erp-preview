@@ -99,7 +99,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           command_timeout: 15m
-          envs: DEPLOY_TOKEN,SUPER_ADMIN_PIN
+          envs: DEPLOY_TOKEN,SUPER_ADMIN_PIN,RESEND_API_KEY
           script: |
             set -euo pipefail
             APP_DIR=/var/www/muhkam-erp
@@ -222,6 +222,8 @@ jobs:
               SENTRY_DSN="${SENTRY_DSN:-}" \
               SUPPORT_WHATSAPP="${SUPPORT_WHATSAPP:-}" \
               SUPPORT_EMAIL="${SUPPORT_EMAIL:-}" \
+              RESEND_API_KEY="${RESEND_API_KEY:-}" \
+              BASE_URL="${BASE_URL:-https://muhkampro.com}" \
               SUPER_ADMIN_PIN="${SUPER_ADMIN_PIN:-}" \
               pm2 start dist/index.mjs \
                 --name muhkam-api \
@@ -271,6 +273,7 @@ jobs:
         env:
           DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
           SUPER_ADMIN_PIN: ${{ secrets.SUPER_ADMIN_PIN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
