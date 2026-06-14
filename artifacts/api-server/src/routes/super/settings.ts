@@ -61,8 +61,23 @@ router.get(
 router.get(
   '/super/encryption-key',
   ...superOnly,
-  wrap(async (_req, res) => {
+  wrap(async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     const key = process.env.BACKUP_ENCRYPTION_KEY ?? null;
+    await writeAuditLog({
+      action: 'BACKUP_ENCRYPTION_KEY_VIEWED',
+      record_type: 'system',
+      record_id: 0,
+      user: { id: req.user?.id, username: req.user?.username },
+      company_id: null,
+      note: key
+        ? 'Super admin requested backup encryption key display/export'
+        : 'Super admin requested backup encryption key, but it is not configured',
+    });
+
     if (!key) {
       res.json({ enabled: false, key: null });
       return;

@@ -49,6 +49,7 @@ export type AuditAction =
   | 'RESTORE_REJECTED'
   | 'RESTORE_FAILED'
   | 'RESTORE_COMPLETED'
+  | 'BACKUP_ENCRYPTION_KEY_VIEWED'
   // ── Super-admin tenant data access (forensic) ─────────────────────────────
   | 'SUPER_ADMIN_ACCESS' // super admin viewed tenant data/details
   | 'SUPER_ADMIN_LIST_VIEW' // super admin listed all companies
