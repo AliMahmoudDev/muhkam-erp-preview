@@ -47,8 +47,9 @@ export async function createDatabaseBackup(): Promise<string> {
   }
 
   if (!fs.existsSync(BACKUP_DIR)) {
-    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    fs.mkdirSync(BACKUP_DIR, { recursive: true, mode: 0o700 });
   }
+  fs.chmodSync(BACKUP_DIR, 0o700);
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const filename = `backup-${timestamp}.sql.gz`;
@@ -87,9 +88,10 @@ export async function createDatabaseBackup(): Promise<string> {
           `-v ${shellQuote(`${BACKUP_DIR}:/backup`)}`,
           `-v ${shellQuote(`${pgpassFile}:/tmp/.pgpass:ro`)}`,
           shellQuote(dockerImage),
-          `bash -lc ${shellQuote(`pg_dump --schema=public --no-owner --no-acl | gzip > /backup/${outputFilename}`)}`,
+          `bash -lc ${shellQuote(`umask 077 && pg_dump --schema=public --no-owner --no-acl | gzip > /backup/${outputFilename}`)}`,
         ].join(' ')
       : [
+          'umask 077 &&',
           'pg_dump',
           `-h ${shellQuote(host)}`,
           `-p ${shellQuote(port)}`,
@@ -111,6 +113,8 @@ export async function createDatabaseBackup(): Promise<string> {
       /* ignore */
     }
   }
+
+  fs.chmodSync(filepath, 0o600);
 
   /* ── Encrypt the dump (always required — plaintext creation is refused above) ── */
   const encFilepath = `${filepath}${encryptedExtension()}`;

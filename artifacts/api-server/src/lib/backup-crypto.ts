@@ -13,32 +13,32 @@
  * warning is emitted at startup.
  */
 
-import crypto from "node:crypto";
-import fs from "node:fs";
-import { Transform, type TransformCallback } from "node:stream";
-import { pipeline } from "node:stream/promises";
-import { logger } from "./logger";
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import { Transform, type TransformCallback } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { logger } from './logger';
 
-const MAGIC = Buffer.from("MUHKMENC", "utf8");
+const MAGIC = Buffer.from('MUHKMENC', 'utf8');
 const VERSION = 0x01;
 const SALT_LEN = 16;
 const IV_LEN = 12;
 const TAG_LEN = 16;
 const HEADER_LEN = MAGIC.length + 1 + SALT_LEN + IV_LEN + TAG_LEN; // 53
 
-const PASSPHRASE = process.env.BACKUP_ENCRYPTION_KEY ?? "";
+const PASSPHRASE = process.env.BACKUP_ENCRYPTION_KEY ?? '';
 
 export function isEncryptionEnabled(): boolean {
   return PASSPHRASE.length > 0;
 }
 
 export function encryptedExtension(): string {
-  return isEncryptionEnabled() ? ".enc" : "";
+  return isEncryptionEnabled() ? '.enc' : '';
 }
 
 function deriveKey(salt: Buffer): Buffer {
   if (!PASSPHRASE) {
-    throw new Error("BACKUP_ENCRYPTION_KEY is not set");
+    throw new Error('BACKUP_ENCRYPTION_KEY is not set');
   }
   return crypto.scryptSync(PASSPHRASE, salt, 32, { N: 16384, r: 8, p: 1 });
 }
@@ -49,7 +49,7 @@ function deriveKey(salt: Buffer): Buffer {
 export function isEncryptedFile(filepath: string): boolean {
   try {
     // eslint-disable-next-line security/detect-non-literal-fs-filename
-    const fd = fs.openSync(filepath, "r");
+    const fd = fs.openSync(filepath, 'r');
     try {
       const buf = Buffer.alloc(MAGIC.length);
       const bytes = fs.readSync(fd, buf, 0, MAGIC.length, 0);
@@ -80,35 +80,45 @@ export function isEncryptedBuffer(buf: Buffer): boolean {
  */
 export async function encryptFile(srcPath: string, dstPath: string): Promise<void> {
   if (!isEncryptionEnabled()) {
-    throw new Error("BACKUP_ENCRYPTION_KEY not configured — cannot encrypt");
+    throw new Error('BACKUP_ENCRYPTION_KEY not configured — cannot encrypt');
   }
   const salt = crypto.randomBytes(SALT_LEN);
   const iv = crypto.randomBytes(IV_LEN);
   const key = deriveKey(salt);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 
   const tmpCipher = `${dstPath}.cipher.tmp`;
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  await pipeline(fs.createReadStream(srcPath), cipher, fs.createWriteStream(tmpCipher));
-  const authTag = cipher.getAuthTag();
 
-  const header = Buffer.concat([
-    MAGIC,
-    Buffer.from([VERSION]),
-    salt,
-    iv,
-    authTag,
-  ]);
+  try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    const src = fs.createReadStream(srcPath);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    const tmpOut = fs.createWriteStream(tmpCipher, { mode: 0o600 });
+    await pipeline(src, cipher, tmpOut);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    fs.chmodSync(tmpCipher, 0o600);
 
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  const out = fs.createWriteStream(dstPath);
-  await new Promise<void>((resolve, reject) => {
-    out.write(header, (err) => (err ? reject(err) : resolve()));
-  });
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  await pipeline(fs.createReadStream(tmpCipher), out);
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  fs.unlinkSync(tmpCipher);
+    const authTag = cipher.getAuthTag();
+
+    const header = Buffer.concat([MAGIC, Buffer.from([VERSION]), salt, iv, authTag]);
+
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    const out = fs.createWriteStream(dstPath, { mode: 0o600 });
+    await new Promise<void>((resolve, reject) => {
+      out.write(header, (err) => (err ? reject(err) : resolve()));
+    });
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await pipeline(fs.createReadStream(tmpCipher), out);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    fs.chmodSync(dstPath, 0o600);
+  } finally {
+    try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      fs.unlinkSync(tmpCipher);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 /**
@@ -117,7 +127,7 @@ export async function encryptFile(srcPath: string, dstPath: string): Promise<voi
  */
 export function decryptFileToBuffer(filepath: string): Buffer {
   if (!isEncryptionEnabled()) {
-    throw new Error("BACKUP_ENCRYPTION_KEY not configured — cannot decrypt");
+    throw new Error('BACKUP_ENCRYPTION_KEY not configured — cannot decrypt');
   }
   // eslint-disable-next-line security/detect-non-literal-fs-filename
   const data = fs.readFileSync(filepath);
@@ -126,33 +136,37 @@ export function decryptFileToBuffer(filepath: string): Buffer {
 
 export function decryptBuffer(data: Buffer): Buffer {
   if (data.length < HEADER_LEN) {
-    throw new Error("ملف مشفّر تالف — أصغر من حجم الترويسة المتوقع");
+    throw new Error('ملف مشفّر تالف — أصغر من حجم الترويسة المتوقع');
   }
   const magic = data.subarray(0, MAGIC.length);
   if (!magic.equals(MAGIC)) {
-    throw new Error("ملف غير مشفّر بصيغة MUHKAM المتوقعة");
+    throw new Error('ملف غير مشفّر بصيغة MUHKAM المتوقعة');
   }
   let off = MAGIC.length;
   // eslint-disable-next-line security/detect-object-injection
-  const version = data[off]; off += 1;
+  const version = data[off];
+  off += 1;
   if (version !== VERSION) {
     throw new Error(`إصدار التشفير غير مدعوم: ${version}`);
   }
-  const salt = data.subarray(off, off + SALT_LEN); off += SALT_LEN;
-  const iv = data.subarray(off, off + IV_LEN); off += IV_LEN;
-  const authTag = data.subarray(off, off + TAG_LEN); off += TAG_LEN;
+  const salt = data.subarray(off, off + SALT_LEN);
+  off += SALT_LEN;
+  const iv = data.subarray(off, off + IV_LEN);
+  off += IV_LEN;
+  const authTag = data.subarray(off, off + TAG_LEN);
+  off += TAG_LEN;
   const ciphertext = data.subarray(off);
 
   const key = deriveKey(salt);
-  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv, { authTagLength: 16 });
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
   decipher.setAuthTag(authTag);
 
   try {
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
   } catch (err) {
     throw new Error(
-      "فشل فك التشفير — كلمة سر غير صحيحة أو الملف تالف. " +
-      `(${err instanceof Error ? err.message : String(err)})`
+      'فشل فك التشفير — كلمة سر غير صحيحة أو الملف تالف. ' +
+        `(${err instanceof Error ? err.message : String(err)})`
     );
   }
 }
@@ -163,22 +177,15 @@ export function decryptBuffer(data: Buffer): Buffer {
  */
 export function encryptBuffer(plaintext: Buffer): Buffer {
   if (!isEncryptionEnabled()) {
-    throw new Error("BACKUP_ENCRYPTION_KEY not configured — cannot encrypt");
+    throw new Error('BACKUP_ENCRYPTION_KEY not configured — cannot encrypt');
   }
   const salt = crypto.randomBytes(SALT_LEN);
   const iv = crypto.randomBytes(IV_LEN);
   const key = deriveKey(salt);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
   const authTag = cipher.getAuthTag();
-  return Buffer.concat([
-    MAGIC,
-    Buffer.from([VERSION]),
-    salt,
-    iv,
-    authTag,
-    ciphertext,
-  ]);
+  return Buffer.concat([MAGIC, Buffer.from([VERSION]), salt, iv, authTag, ciphertext]);
 }
 
 /**
@@ -220,9 +227,9 @@ export class EncryptStream extends Transform {
 /* Startup announcement */
 if (!isEncryptionEnabled()) {
   logger.warn(
-    "[backup-crypto] BACKUP_ENCRYPTION_KEY not set — backups will be stored as plaintext. " +
-    "Set this env var to enable AES-256-GCM encryption.",
+    '[backup-crypto] BACKUP_ENCRYPTION_KEY not set — backups will be stored as plaintext. ' +
+      'Set this env var to enable AES-256-GCM encryption.'
   );
 } else {
-  logger.info("[backup-crypto] AES-256-GCM backup encryption enabled");
+  logger.info('[backup-crypto] AES-256-GCM backup encryption enabled');
 }
