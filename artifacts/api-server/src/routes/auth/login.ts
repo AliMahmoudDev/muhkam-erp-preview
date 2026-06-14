@@ -174,7 +174,7 @@ router.post(
 
       const token = signToken(user.id, user.role, user.company_id ?? null);
       const refreshToken = signRefreshToken(user.id);
-      void storeRefreshToken(refreshToken, user.id);
+      await storeRefreshToken(refreshToken, user.id);
 
       await db
         .update(erpUsersTable)
@@ -251,7 +251,7 @@ router.post(
 
       const newToken = signToken(user.id, user.role, user.company_id ?? null);
       const newRefreshToken = signRefreshToken(user.id);
-      void storeRefreshToken(newRefreshToken, user.id);
+      await storeRefreshToken(newRefreshToken, user.id);
 
       setAuthCookies(res, newToken, newRefreshToken);
 
