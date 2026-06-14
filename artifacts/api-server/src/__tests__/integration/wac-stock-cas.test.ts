@@ -58,16 +58,16 @@ const createdPurchaseIds: number[] = [];
 beforeAll(async () => {
   // Company A
   const coA = await pool.query<{ id: number }>(
-    `INSERT INTO companies (name, plan_type, start_date, end_date, is_active)
-     VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true) RETURNING id`,
+    `INSERT INTO companies (name, plan_type, start_date, end_date, is_active, email_verified, verification_status)
+     VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true, true, 'verified') RETURNING id`,
     [`${PREFIX}_CoA`]
   );
   companyAId = coA.rows[0].id;
 
   // Company B
   const coB = await pool.query<{ id: number }>(
-    `INSERT INTO companies (name, plan_type, start_date, end_date, is_active)
-     VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true) RETURNING id`,
+    `INSERT INTO companies (name, plan_type, start_date, end_date, is_active, email_verified, verification_status)
+     VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true, true, 'verified') RETURNING id`,
     [`${PREFIX}_CoB`]
   );
   companyBId = coB.rows[0].id;
@@ -155,16 +155,12 @@ beforeAll(async () => {
   prodB1Id = pB1.rows[0].id;
 
   // JWT tokens
-  tokenA = jwt.sign(
-    { userId: userAId, role: 'admin', companyId: companyAId },
-    JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-  tokenB = jwt.sign(
-    { userId: userBId, role: 'admin', companyId: companyBId },
-    JWT_SECRET,
-    { expiresIn: '1h' }
-  );
+  tokenA = jwt.sign({ userId: userAId, role: 'admin', companyId: companyAId }, JWT_SECRET, {
+    expiresIn: '1h',
+  });
+  tokenB = jwt.sign({ userId: userBId, role: 'admin', companyId: companyBId }, JWT_SECRET, {
+    expiresIn: '1h',
+  });
 });
 
 /* ── Cleanup ───────────────────────────────────────────────────── */
@@ -177,33 +173,70 @@ afterAll(async () => {
 
     if (allSaleIds.length > 0) {
       await pool.query(`DELETE FROM sale_items WHERE sale_id = ANY($1::int[])`, [allSaleIds]);
-      await pool.query(`DELETE FROM stock_movements WHERE reference_type = 'sale' AND reference_id = ANY($1::int[])`, [allSaleIds]);
-      await pool.query(`DELETE FROM customer_ledger WHERE reference_id = ANY($1::int[]) AND company_id IN ($2, $3)`, [allSaleIds, companyAId, companyBId]);
-      await pool.query(`DELETE FROM transactions WHERE reference_id = ANY($1::int[]) AND company_id IN ($2, $3)`, [allSaleIds, companyAId, companyBId]);
-      await pool.query(`DELETE FROM journal_entry_lines WHERE entry_id IN (SELECT id FROM journal_entries WHERE reference = ANY($1::text[]))`, [allSaleIds.map(String)]);
-      await pool.query(`DELETE FROM journal_entries WHERE reference = ANY($1::text[])`, [allSaleIds.map(String)]);
+      await pool.query(
+        `DELETE FROM stock_movements WHERE reference_type = 'sale' AND reference_id = ANY($1::int[])`,
+        [allSaleIds]
+      );
+      await pool.query(
+        `DELETE FROM customer_ledger WHERE reference_id = ANY($1::int[]) AND company_id IN ($2, $3)`,
+        [allSaleIds, companyAId, companyBId]
+      );
+      await pool.query(
+        `DELETE FROM transactions WHERE reference_id = ANY($1::int[]) AND company_id IN ($2, $3)`,
+        [allSaleIds, companyAId, companyBId]
+      );
+      await pool.query(
+        `DELETE FROM journal_entry_lines WHERE entry_id IN (SELECT id FROM journal_entries WHERE reference = ANY($1::text[]))`,
+        [allSaleIds.map(String)]
+      );
+      await pool.query(`DELETE FROM journal_entries WHERE reference = ANY($1::text[])`, [
+        allSaleIds.map(String),
+      ]);
       await pool.query(`DELETE FROM sales WHERE id = ANY($1::int[])`, [allSaleIds]);
     }
 
     if (allPurchaseIds.length > 0) {
-      await pool.query(`DELETE FROM purchase_items WHERE purchase_id = ANY($1::int[])`, [allPurchaseIds]);
-      await pool.query(`DELETE FROM stock_movements WHERE reference_type = 'purchase' AND reference_id = ANY($1::int[])`, [allPurchaseIds]);
-      await pool.query(`DELETE FROM transactions WHERE reference_id = ANY($1::int[]) AND company_id IN ($2, $3)`, [allPurchaseIds, companyAId, companyBId]);
-      await pool.query(`DELETE FROM journal_entry_lines WHERE entry_id IN (SELECT id FROM journal_entries WHERE reference = ANY($1::text[]))`, [allPurchaseIds.map(String)]);
-      await pool.query(`DELETE FROM journal_entries WHERE reference = ANY($1::text[])`, [allPurchaseIds.map(String)]);
+      await pool.query(`DELETE FROM purchase_items WHERE purchase_id = ANY($1::int[])`, [
+        allPurchaseIds,
+      ]);
+      await pool.query(
+        `DELETE FROM stock_movements WHERE reference_type = 'purchase' AND reference_id = ANY($1::int[])`,
+        [allPurchaseIds]
+      );
+      await pool.query(
+        `DELETE FROM transactions WHERE reference_id = ANY($1::int[]) AND company_id IN ($2, $3)`,
+        [allPurchaseIds, companyAId, companyBId]
+      );
+      await pool.query(
+        `DELETE FROM journal_entry_lines WHERE entry_id IN (SELECT id FROM journal_entries WHERE reference = ANY($1::text[]))`,
+        [allPurchaseIds.map(String)]
+      );
+      await pool.query(`DELETE FROM journal_entries WHERE reference = ANY($1::text[])`, [
+        allPurchaseIds.map(String),
+      ]);
       await pool.query(`DELETE FROM purchases WHERE id = ANY($1::int[])`, [allPurchaseIds]);
     }
 
     // Delete stock_movements not tied to sales/purchases
-    await pool.query(`DELETE FROM stock_movements WHERE company_id IN ($1, $2)`, [companyAId, companyBId]);
+    await pool.query(`DELETE FROM stock_movements WHERE company_id IN ($1, $2)`, [
+      companyAId,
+      companyBId,
+    ]);
 
     // Delete entities
     const prodIds = [prodA1Id, prodA2Id, prodA3Id, prodA4Id, prodB1Id].filter(Number.isFinite);
-    if (prodIds.length > 0) await pool.query(`DELETE FROM products WHERE id = ANY($1::int[])`, [prodIds]);
+    if (prodIds.length > 0)
+      await pool.query(`DELETE FROM products WHERE id = ANY($1::int[])`, [prodIds]);
 
     await pool.query(`DELETE FROM safes WHERE company_id IN ($1, $2)`, [companyAId, companyBId]);
-    await pool.query(`DELETE FROM warehouses WHERE company_id IN ($1, $2)`, [companyAId, companyBId]);
-    await pool.query(`DELETE FROM erp_users WHERE company_id IN ($1, $2)`, [companyAId, companyBId]);
+    await pool.query(`DELETE FROM warehouses WHERE company_id IN ($1, $2)`, [
+      companyAId,
+      companyBId,
+    ]);
+    await pool.query(`DELETE FROM erp_users WHERE company_id IN ($1, $2)`, [
+      companyAId,
+      companyBId,
+    ]);
     await pool.query(`DELETE FROM accounts WHERE company_id IN ($1, $2)`, [companyAId, companyBId]);
     await pool.query(`DELETE FROM companies WHERE id IN ($1, $2)`, [companyAId, companyBId]);
   } catch (e) {
@@ -214,7 +247,8 @@ afterAll(async () => {
 /* ── Helper: get product from DB ───────────────────────────────── */
 async function getProduct(id: number): Promise<{ quantity: string; cost_price: string }> {
   const res = await pool.query<{ quantity: string; cost_price: string }>(
-    `SELECT quantity, cost_price FROM products WHERE id = $1`, [id]
+    `SELECT quantity, cost_price FROM products WHERE id = $1`,
+    [id]
   );
   return res.rows[0];
 }
@@ -231,7 +265,15 @@ describe('A. Purchase — WAC Database Behavior', () => {
       .post('/api/purchases')
       .set('Authorization', `Bearer ${tokenA}`)
       .send({
-        items: [{ product_id: prodA1Id, product_name: `${PREFIX}_ProdA1_WAC`, quantity: 5, unit_price: 120, total_price: 600 }],
+        items: [
+          {
+            product_id: prodA1Id,
+            product_name: `${PREFIX}_ProdA1_WAC`,
+            quantity: 5,
+            unit_price: 120,
+            total_price: 600,
+          },
+        ],
         payment_type: 'cash',
         total_amount: 600,
         paid_amount: 600,
@@ -275,7 +317,15 @@ describe('B. Sale — Stock CAS Database Behavior', () => {
       .post('/api/sales')
       .set('Authorization', `Bearer ${tokenA}`)
       .send({
-        items: [{ product_id: prodA2Id, product_name: `${PREFIX}_ProdA2_CAS`, quantity: 10, unit_price: 150, total_price: 1500 }],
+        items: [
+          {
+            product_id: prodA2Id,
+            product_name: `${PREFIX}_ProdA2_CAS`,
+            quantity: 10,
+            unit_price: 150,
+            total_price: 1500,
+          },
+        ],
         payment_type: 'cash',
         total_amount: 1500,
         paid_amount: 1500,
@@ -302,7 +352,15 @@ describe('B. Sale — Stock CAS Database Behavior', () => {
       .post('/api/sales')
       .set('Authorization', `Bearer ${tokenA}`)
       .send({
-        items: [{ product_id: prodA3Id, product_name: `${PREFIX}_ProdA3_Limited`, quantity: 10, unit_price: 100, total_price: 1000 }],
+        items: [
+          {
+            product_id: prodA3Id,
+            product_name: `${PREFIX}_ProdA3_Limited`,
+            quantity: 10,
+            unit_price: 100,
+            total_price: 1000,
+          },
+        ],
         payment_type: 'cash',
         total_amount: 1000,
         paid_amount: 1000,
@@ -323,7 +381,15 @@ describe('B. Sale — Stock CAS Database Behavior', () => {
       .post('/api/sales')
       .set('Authorization', `Bearer ${tokenA}`)
       .send({
-        items: [{ product_id: prodA3Id, product_name: `${PREFIX}_ProdA3_Limited`, quantity: 3, unit_price: 100, total_price: 300 }],
+        items: [
+          {
+            product_id: prodA3Id,
+            product_name: `${PREFIX}_ProdA3_Limited`,
+            quantity: 3,
+            unit_price: 100,
+            total_price: 300,
+          },
+        ],
         payment_type: 'cash',
         total_amount: 300,
         paid_amount: 300,
@@ -357,8 +423,20 @@ describe('C. Transaction Rollback on Failure', () => {
       .set('Authorization', `Bearer ${tokenA}`)
       .send({
         items: [
-          { product_id: prodA4Id, product_name: `${PREFIX}_ProdA4_Rollback`, quantity: 2, unit_price: 120, total_price: 240 },
-          { product_id: prodA3Id, product_name: `${PREFIX}_ProdA3_Limited`, quantity: 999, unit_price: 100, total_price: 99900 },
+          {
+            product_id: prodA4Id,
+            product_name: `${PREFIX}_ProdA4_Rollback`,
+            quantity: 2,
+            unit_price: 120,
+            total_price: 240,
+          },
+          {
+            product_id: prodA3Id,
+            product_name: `${PREFIX}_ProdA3_Limited`,
+            quantity: 999,
+            unit_price: 100,
+            total_price: 99900,
+          },
         ],
         payment_type: 'cash',
         total_amount: 100140,
@@ -397,7 +475,15 @@ describe('D. Tenant Isolation — Stock & Cost', () => {
       .post('/api/sales')
       .set('Authorization', `Bearer ${tokenB}`)
       .send({
-        items: [{ product_id: prodA2Id, product_name: `${PREFIX}_ProdA2_CAS`, quantity: 1, unit_price: 150, total_price: 150 }],
+        items: [
+          {
+            product_id: prodA2Id,
+            product_name: `${PREFIX}_ProdA2_CAS`,
+            quantity: 1,
+            unit_price: 150,
+            total_price: 150,
+          },
+        ],
         payment_type: 'cash',
         total_amount: 150,
         paid_amount: 150,
@@ -416,7 +502,15 @@ describe('D. Tenant Isolation — Stock & Cost', () => {
       .post('/api/purchases')
       .set('Authorization', `Bearer ${tokenB}`)
       .send({
-        items: [{ product_id: prodA1Id, product_name: `${PREFIX}_ProdA1_WAC`, quantity: 5, unit_price: 200, total_price: 1000 }],
+        items: [
+          {
+            product_id: prodA1Id,
+            product_name: `${PREFIX}_ProdA1_WAC`,
+            quantity: 5,
+            unit_price: 200,
+            total_price: 1000,
+          },
+        ],
         payment_type: 'cash',
         total_amount: 1000,
         paid_amount: 1000,

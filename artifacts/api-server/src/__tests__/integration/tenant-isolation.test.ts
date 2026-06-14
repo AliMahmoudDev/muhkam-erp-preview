@@ -70,8 +70,8 @@ beforeAll(async () => {
    *    that would destroy data owned by concurrently-running test suites. */
   const coARes = await pool.query<{ id: number }>(
     `
-    INSERT INTO companies (name, plan_type, start_date, end_date, is_active)
-    VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true)
+    INSERT INTO companies (name, plan_type, start_date, end_date, is_active, email_verified, verification_status)
+    VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true, true, 'verified')
     RETURNING id
   `,
     [`${PREFIX}_CompanyA`]
@@ -81,8 +81,8 @@ beforeAll(async () => {
   /* 2. Insert a fresh, isolated test company for tenant B */
   const coRes = await pool.query<{ id: number }>(
     `
-    INSERT INTO companies (name, plan_type, start_date, end_date, is_active)
-    VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true)
+    INSERT INTO companies (name, plan_type, start_date, end_date, is_active, email_verified, verification_status)
+    VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true, true, 'verified')
     RETURNING id
   `,
     [`${PREFIX}_CompanyB`]

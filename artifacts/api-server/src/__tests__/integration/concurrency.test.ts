@@ -37,17 +37,16 @@ let tokenB: string;
 /* ── Helpers ─────────────────────────────────────────────────────── */
 
 async function getSafeBalance(safeId: number): Promise<number> {
-  const r = await pool.query<{ balance: string }>(
-    'SELECT balance FROM safes WHERE id = $1',
-    [safeId],
-  );
+  const r = await pool.query<{ balance: string }>('SELECT balance FROM safes WHERE id = $1', [
+    safeId,
+  ]);
   return Number(r.rows[0]?.balance ?? 0);
 }
 
 async function createSafe(name: string, balance: number, cid: number): Promise<number> {
   const r = await pool.query<{ id: number }>(
     `INSERT INTO safes (name, balance, company_id) VALUES ($1, $2, $3) RETURNING id`,
-    [name, String(balance), cid],
+    [name, String(balance), cid]
   );
   return r.rows[0].id;
 }
@@ -57,29 +56,31 @@ async function createSafe(name: string, balance: number, cid: number): Promise<n
 beforeAll(async () => {
   /* Company A */
   const coA = await pool.query<{ id: number }>(
-    `INSERT INTO companies (name, plan_type, start_date, end_date, is_active)
-     VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true) RETURNING id`,
-    [`${P}_Co`],
+    `INSERT INTO companies (name, plan_type, start_date, end_date, is_active, email_verified, verification_status)
+     VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true, true, 'verified') RETURNING id`,
+    [`${P}_Co`]
   );
   companyId = coA.rows[0].id;
 
   /* Company B (for cross-tenant test) */
   const coB = await pool.query<{ id: number }>(
-    `INSERT INTO companies (name, plan_type, start_date, end_date, is_active)
-     VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true) RETURNING id`,
-    [`${P}_CoB`],
+    `INSERT INTO companies (name, plan_type, start_date, end_date, is_active, email_verified, verification_status)
+     VALUES ($1, 'pro', '2020-01-01', '2099-12-31', true, true, 'verified') RETURNING id`,
+    [`${P}_CoB`]
   );
   companyBId = coB.rows[0].id;
 
   /* Admin user for company A */
   const perms = JSON.stringify({
-    can_view_treasury: true, can_add_expense: true,
-    can_manage_payroll: true, can_view_employees: true,
+    can_view_treasury: true,
+    can_add_expense: true,
+    can_manage_payroll: true,
+    can_view_employees: true,
   });
   const uA = await pool.query<{ id: number }>(
     `INSERT INTO erp_users (name, username, pin, role, permissions, active, company_id)
      VALUES ($1, $2, '0000', 'admin', $3::jsonb, true, $4) RETURNING id`,
-    [`${P}_User`, `${P}_user`, perms, companyId],
+    [`${P}_User`, `${P}_user`, perms, companyId]
   );
   userId = uA.rows[0].id;
 
@@ -87,16 +88,18 @@ beforeAll(async () => {
   const uB = await pool.query<{ id: number }>(
     `INSERT INTO erp_users (name, username, pin, role, permissions, active, company_id)
      VALUES ($1, $2, '0000', 'admin', $3::jsonb, true, $4) RETURNING id`,
-    [`${P}_UserB`, `${P}_userB`, perms, companyBId],
+    [`${P}_UserB`, `${P}_userB`, perms, companyBId]
   );
   userBId = uB.rows[0].id;
 
-  token  = jwt.sign({ userId, role: 'admin', companyId },  JWT_SECRET, { expiresIn: '1h' });
-  tokenB = jwt.sign({ userId: userBId, role: 'admin', companyId: companyBId }, JWT_SECRET, { expiresIn: '1h' });
+  token = jwt.sign({ userId, role: 'admin', companyId }, JWT_SECRET, { expiresIn: '1h' });
+  tokenB = jwt.sign({ userId: userBId, role: 'admin', companyId: companyBId }, JWT_SECRET, {
+    expiresIn: '1h',
+  });
 
   /* Safes for transfer tests — A sends from src to dst */
   safeTransferSrcId = await createSafe(`${P}_TrfSrc`, 1000, companyId);
-  safeTransferDstId = await createSafe(`${P}_TrfDst`, 0,    companyId);
+  safeTransferDstId = await createSafe(`${P}_TrfDst`, 0, companyId);
 
   /* Safe for expense concurrency test */
   expenseSafeId = await createSafe(`${P}_ExpSafe`, 500, companyId);
@@ -111,8 +114,12 @@ beforeAll(async () => {
 
 afterAll(async () => {
   try {
-    const safeIds = [safeTransferSrcId, safeTransferDstId, expenseSafeId, safeTransferSrcIdB]
-      .filter(Number.isFinite);
+    const safeIds = [
+      safeTransferSrcId,
+      safeTransferDstId,
+      expenseSafeId,
+      safeTransferSrcIdB,
+    ].filter(Number.isFinite);
 
     await pool.query(`DELETE FROM safe_transfers WHERE company_id = $1`, [companyId]);
     await pool.query(`DELETE FROM transactions   WHERE company_id = $1`, [companyId]);
@@ -122,7 +129,7 @@ afterAll(async () => {
     await pool.query(
       `DELETE FROM journal_entry_lines WHERE entry_id IN
        (SELECT id FROM journal_entries WHERE company_id = $1)`,
-      [companyId],
+      [companyId]
     );
     await pool.query(`DELETE FROM journal_entries WHERE company_id = $1`, [companyId]);
 
@@ -130,12 +137,15 @@ afterAll(async () => {
       await pool.query(`DELETE FROM safes WHERE id = ANY($1::int[])`, [safeIds]);
     }
 
-    await pool.query(`DELETE FROM erp_users WHERE id = ANY($1::int[])`, [[userId, userBId].filter(Number.isFinite)]);
-    await pool.query(
-      `DELETE FROM accounts WHERE company_id = ANY($1::int[])`,
-      [[companyId, companyBId].filter(Number.isFinite)],
-    );
-    await pool.query(`DELETE FROM companies WHERE id = ANY($1::int[])`, [[companyId, companyBId].filter(Number.isFinite)]);
+    await pool.query(`DELETE FROM erp_users WHERE id = ANY($1::int[])`, [
+      [userId, userBId].filter(Number.isFinite),
+    ]);
+    await pool.query(`DELETE FROM accounts WHERE company_id = ANY($1::int[])`, [
+      [companyId, companyBId].filter(Number.isFinite),
+    ]);
+    await pool.query(`DELETE FROM companies WHERE id = ANY($1::int[])`, [
+      [companyId, companyBId].filter(Number.isFinite),
+    ]);
   } catch (err) {
     console.error('[concurrency cleanup] error:', err);
   }
@@ -156,21 +166,19 @@ describe('Concurrency — Safe Transfers (atomic debit guard)', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           from_safe_id: String(safeTransferSrcId),
-          to_safe_id:   String(safeTransferDstId),
-          amount:       AMOUNT,
-          date:         '2099-01-15',
+          to_safe_id: String(safeTransferDstId),
+          amount: AMOUNT,
+          date: '2099-01-15',
         });
 
-    const results = await Promise.all(
-      Array.from({ length: CONCURRENT }, makeTransfer),
-    );
+    const results = await Promise.all(Array.from({ length: CONCURRENT }, makeTransfer));
 
-    const successes = results.filter(r => r.status === 201).length;
-    const failures  = results.filter(r => r.status === 400).length;
+    const successes = results.filter((r) => r.status === 201).length;
+    const failures = results.filter((r) => r.status === 400).length;
 
     /* Exactly 5 should succeed (1000 / 200 = 5 max), 1 must fail */
     expect(successes, 'expected exactly 5 successful transfers').toBe(5);
-    expect(failures,  'expected exactly 1 rejected transfer').toBe(1);
+    expect(failures, 'expected exactly 1 rejected transfer').toBe(1);
 
     /* Final balances must be consistent */
     const srcBalance = await getSafeBalance(safeTransferSrcId);
@@ -195,22 +203,20 @@ describe('Concurrency — Expenses (atomic debit guard)', () => {
         .post('/api/expenses')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          category:    'مستلزمات مكتبية',
-          amount:      AMOUNT,
+          category: 'مستلزمات مكتبية',
+          amount: AMOUNT,
           description: `اختبار تزامن ${i}`,
-          safe_id:     String(expenseSafeId),
+          safe_id: String(expenseSafeId),
         });
 
-    const results = await Promise.all(
-      Array.from({ length: CONCURRENT }, (_, i) => makeExpense(i)),
-    );
+    const results = await Promise.all(Array.from({ length: CONCURRENT }, (_, i) => makeExpense(i)));
 
-    const successes = results.filter(r => r.status === 201).length;
-    const failures  = results.filter(r => r.status === 400).length;
+    const successes = results.filter((r) => r.status === 201).length;
+    const failures = results.filter((r) => r.status === 400).length;
 
     /* 5 should succeed (500 / 100 = 5), 3 must fail */
     expect(successes, 'expected exactly 5 successful expenses').toBe(5);
-    expect(failures,  'expected exactly 3 rejected expenses').toBe(3);
+    expect(failures, 'expected exactly 3 rejected expenses').toBe(3);
 
     const balance = await getSafeBalance(expenseSafeId);
     expect(balance, 'safe balance must be exactly 0, never negative').toBe(0);
@@ -228,8 +234,8 @@ describe('Cross-Tenant — company B cannot use company A safe', () => {
       .set('Authorization', `Bearer ${tokenB}`)
       .send({
         category: 'اختبار عزل',
-        amount:   100,
-        safe_id:  String(safeTransferSrcIdB),
+        amount: 100,
+        safe_id: String(safeTransferSrcIdB),
       });
 
     expect([400, 403, 404], 'cross-tenant safe usage must be blocked').toContain(res.status);
@@ -245,9 +251,9 @@ describe('Cross-Tenant — company B cannot use company A safe', () => {
       .set('Authorization', `Bearer ${tokenB}`)
       .send({
         from_safe_id: String(safeTransferSrcIdB),
-        to_safe_id:   String(safeTransferDstId),
-        amount:       100,
-        date:         '2099-01-15',
+        to_safe_id: String(safeTransferDstId),
+        amount: 100,
+        date: '2099-01-15',
       });
 
     expect([400, 403, 404], 'cross-tenant transfer must be blocked').toContain(res.status);
