@@ -173,7 +173,7 @@ export function AuditLogPanel({
       ) : (
         <div
           style={{
-            background: 'rgba(15,23,42,0.4)',
+            background: 'var(--surface-raised)',
             borderRadius: '12px',
             border: `1px solid ${C.border}`,
             overflow: 'hidden',

@@ -135,7 +135,7 @@ export function BackupPanel({
 
       <div
         style={{
-          background: 'rgba(15,23,42,0.4)',
+          background: 'var(--surface-raised)',
           borderRadius: '14px',
           border: `1px solid ${C.border}`,
           overflow: 'hidden',
@@ -184,7 +184,7 @@ export function BackupPanel({
                   alignItems: 'center',
                   borderBottom:
                     idx < backupData.backups.length - 1 ? `1px solid ${C.border}` : 'none',
-                  background: idx % 2 === 1 ? 'rgba(15,23,42,0.4)' : 'transparent',
+                  background: idx % 2 === 1 ? 'var(--surface-raised)' : 'transparent',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
@@ -265,7 +265,7 @@ export function BackupPanel({
       {/* Encryption Key */}
       <div
         style={{
-          background: 'rgba(15,23,42,0.4)',
+          background: 'var(--surface-raised)',
           borderRadius: '14px',
           border: `1px solid ${C.border}`,
           padding: '20px 24px',
@@ -358,7 +358,7 @@ export function BackupPanel({
               marginTop: '12px',
               padding: '10px 14px',
               borderRadius: '10px',
-              background: 'rgba(15,23,42,0.6)',
+              background: 'var(--surface)',
               border: `1px solid ${C.border}`,
               fontSize: '12px',
               color: 'var(--status-info)',

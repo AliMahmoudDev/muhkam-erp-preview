@@ -39,7 +39,7 @@ export function SecurityPanel({
       {/* 2FA */}
       <div
         style={{
-          background: 'rgba(15,23,42,0.4)',
+          background: 'var(--surface-raised)',
           borderRadius: '14px',
           border: `1px solid ${C.border}`,
           overflow: 'hidden',
@@ -152,7 +152,7 @@ export function SecurityPanel({
               </div>
               <div
                 style={{
-                  background: 'rgba(15,23,42,0.6)',
+                  background: 'var(--surface)',
                   padding: '10px 14px',
                   borderRadius: '8px',
                   marginBottom: '16px',
@@ -174,7 +174,7 @@ export function SecurityPanel({
                     padding: '10px 14px',
                     borderRadius: '10px',
                     border: `1px solid ${C.border}`,
-                    background: 'rgba(15,23,42,0.5)',
+                    background: 'var(--surface)',
                     color: C.text,
                     fontSize: '18px',
                     letterSpacing: '6px',
@@ -304,7 +304,7 @@ export function SecurityPanel({
       {/* IP Restriction */}
       <div
         style={{
-          background: 'rgba(15,23,42,0.4)',
+          background: 'var(--surface-raised)',
           borderRadius: '14px',
           border: `1px solid ${C.border}`,
           padding: '20px 24px',

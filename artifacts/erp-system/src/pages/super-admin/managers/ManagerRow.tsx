@@ -35,7 +35,7 @@ export function ManagerRow({
     <div
       style={{
         borderBottom: `1px solid ${C.border}`,
-        background: isOdd ? 'rgba(15,23,42,0.4)' : 'transparent',
+        background: isOdd ? 'var(--surface-raised)' : 'transparent',
       }}
     >
       <div

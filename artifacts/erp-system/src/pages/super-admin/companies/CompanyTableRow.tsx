@@ -51,13 +51,13 @@ export function CompanyTableRow({
           alignItems: 'center',
           cursor: 'pointer',
           transition: 'background 0.15s',
-          background: isOdd ? 'rgba(15,23,42,0.4)' : 'transparent',
+          background: isOdd ? 'var(--surface-raised)' : 'transparent',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'rgba(249,115,22,0.05)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = isOdd ? 'rgba(15,23,42,0.4)' : 'transparent';
+          e.currentTarget.style.background = isOdd ? 'var(--surface-raised)' : 'transparent';
         }}
       >
         <div
@@ -156,7 +156,7 @@ export function CompanyTableRow({
         <div
           style={{
             padding: '16px 24px 20px',
-            background: 'rgba(15,23,42,0.6)',
+            background: 'var(--surface)',
             borderTop: `1px solid ${C.border}`,
           }}
         >

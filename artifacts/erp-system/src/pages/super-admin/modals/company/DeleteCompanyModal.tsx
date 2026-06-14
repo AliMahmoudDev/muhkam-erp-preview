@@ -156,7 +156,7 @@ export function DeleteCompanyModal({
                   borderRadius: '10px',
                   textAlign: 'center',
                   border: `2px solid ${enteredCode.length === 6 && enteredCode === generatedCode ? C.success : 'rgba(239,68,68,0.4)'}`,
-                  background: 'rgba(15,23,42,0.6)',
+                  background: 'var(--surface)',
                   color: C.text,
                   fontSize: '24px',
                   fontWeight: 900,
