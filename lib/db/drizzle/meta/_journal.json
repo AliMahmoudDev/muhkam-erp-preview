@@ -8,6 +8,13 @@
       "when": 1780078201190,
       "tag": "0000_fine_expediter",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781441602412,
+      "tag": "0001_add_company_id_indexes",
+      "breakpoints": true
     }
   ]
 }
