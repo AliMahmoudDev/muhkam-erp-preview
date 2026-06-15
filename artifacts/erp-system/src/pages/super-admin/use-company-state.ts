@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
+import { StatusError, saRetry } from './sa-query';
 import {
   type Company,
   type Stats,
@@ -42,9 +43,7 @@ export function useCompanyState(
           } catch {
             /* ignore */
           }
-          throw new Error(
-            detail ? `فشل جلب البيانات: ${detail}` : `فشل جلب البيانات (${r.status})`
-          );
+          throw new StatusError(r.status, detail || `HTTP ${r.status}`);
         }
         return r.json();
       }),
@@ -101,10 +100,12 @@ export function useCompanyState(
       const data = await fetcher('/api/super/companies');
       // Guard: a non-array response (e.g. an error object) must surface as an
       // error state, never as a silent empty list ("0 من 0").
-      if (!Array.isArray(data)) throw new Error('استجابة غير متوقعة من الخادم');
+      if (!Array.isArray(data)) throw new StatusError(200, 'استجابة غير متوقعة من الخادم');
       return data as Company[];
     },
     staleTime: 30_000,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   const { data: panelCompanyDetail, isLoading: panelDetailLoading } = useQuery<PanelCompanyDetail>({

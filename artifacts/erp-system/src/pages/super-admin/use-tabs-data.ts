@@ -4,6 +4,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 import { type AuditRow, type PlanSetting, type ActiveTab, authHeaders } from './types';
 import { queryKeys } from '@/lib/queryKeys';
+import { StatusError, saRetry } from './sa-query';
 
 interface RevenueData {
   mrr: number;
@@ -115,9 +116,7 @@ export function useTabsData(
           } catch {
             /* ignore */
           }
-          throw new Error(
-            detail ? `فشل جلب البيانات: ${detail}` : `فشل جلب البيانات (${r.status})`
-          );
+          throw new StatusError(r.status, detail || `HTTP ${r.status}`);
         }
         return r.json();
       }),
@@ -173,6 +172,8 @@ export function useTabsData(
     queryFn: () => fetcher('/api/super/revenue') as Promise<RevenueData>,
     enabled: activeTab === 'revenue',
     staleTime: 60_000,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   const {
@@ -185,6 +186,8 @@ export function useTabsData(
     enabled: activeTab === 'alerts',
     staleTime: 30_000,
     refetchInterval: activeTab === 'alerts' ? 60_000 : false,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   const {
@@ -196,13 +199,14 @@ export function useTabsData(
     queryKey: queryKeys.super.trialMonitoring,
     queryFn: () =>
       authFetch('/api/super/trial-monitoring').then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) throw new StatusError(r.status, `HTTP ${r.status}`);
         return r.json();
       }) as Promise<TrialMonitoringData>,
     enabled: activeTab === 'monitoring',
     staleTime: 15_000,
     refetchInterval: activeTab === 'monitoring' ? 30_000 : false,
-    retry: 1,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   const {
@@ -216,6 +220,8 @@ export function useTabsData(
     enabled: activeTab === 'health' || activeTab === 'overview',
     staleTime: 10_000,
     refetchInterval: activeTab === 'health' || activeTab === 'overview' ? 30_000 : false,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   const { data: redisHealth } = useQuery<RedisHealthData>({
@@ -227,6 +233,7 @@ export function useTabsData(
     refetchInterval: 30_000,
     retry: false,
     staleTime: 20_000,
+    refetchOnWindowFocus: false,
   });
 
   const {
@@ -242,6 +249,8 @@ export function useTabsData(
     enabled:
       activeTab === 'audit_log' || (activeTab === 'settings' && settingsActiveCard === 'audit_log'),
     staleTime: 30_000,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   const { data: overviewAudit } = useQuery<{ count: number; rows: AuditRow[] }>({
@@ -250,6 +259,8 @@ export function useTabsData(
       fetcher('/api/super/audit-log?limit=5') as Promise<{ count: number; rows: AuditRow[] }>,
     enabled: activeTab === 'overview',
     staleTime: 30_000,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   const {
@@ -261,6 +272,8 @@ export function useTabsData(
     queryFn: () => fetcher('/api/super/plan-settings') as Promise<PlanSetting[]>,
     enabled: activeTab === 'plans',
     staleTime: 30_000,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   const { data: annData, refetch: refetchAnn } = useQuery<{
@@ -275,6 +288,8 @@ export function useTabsData(
       }>,
     enabled: activeTab === 'announcements',
     staleTime: 30_000,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   /* ── Handlers ── */

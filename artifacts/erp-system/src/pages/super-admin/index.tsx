@@ -33,6 +33,7 @@ import { useCompanyState } from './use-company-state';
 import { useManagerState } from './use-manager-state';
 import { useSettingsState } from './use-settings-state';
 import { useTabsData } from './use-tabs-data';
+import { StatusError, saRetry } from './sa-query';
 
 /* ══════════════════════════════════════════════════
    MAIN COMPONENT — thin orchestrator
@@ -66,10 +67,21 @@ export default function SuperAdmin() {
     queryKey: queryKeys.super.stats,
     queryFn: async () => {
       const r = await authFetch(api('/api/super/stats'));
-      if (!r.ok) throw new Error(`stats ${r.status}`);
+      if (!r.ok) {
+        let detail = '';
+        try {
+          const b = await r.json();
+          detail = b?.error || b?.message || '';
+        } catch {
+          /* ignore */
+        }
+        throw new StatusError(r.status, detail || `HTTP ${r.status}`);
+      }
       return r.json() as Promise<Stats>;
     },
     staleTime: 30_000,
+    retry: saRetry,
+    refetchOnWindowFocus: false,
   });
 
   /* ── Custom hooks ── */

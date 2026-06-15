@@ -181,3 +181,41 @@ if (!getCurrentCompanyId()) return null;
 | `super-admin/companies/index.tsx` | هيكل تحميل + حالة خطأ مع إعادة محاولة + زر تحديث + ختم آخر تحديث + تعطيل الترقيم عند الخطأ |
 | `contexts/app-settings.tsx` | حارس `getCurrentCompanyId()` يتخطّى جلب الإعدادات عند غياب سياق الشركة (يعالج 400 للمشرف الأعلى) |
 | `super-admin/use-tabs-data.ts` | استطلاع صحّة Redis 10s→30s و `staleTime` 8s→20s |
+
+---
+
+## المرحلة 9 — إصلاح عاجل: 500 → عاصفة إعادة محاولة → 429
+
+### جذر المشكلة
+
+| # | السبب | التفاصيل |
+|---|---|---|
+| 1 | **`superAdminLimiter` = 30 طلب/دقيقة** | الصفحة تُطلق 6+ استعلامات عند التحميل (companies, stats, managers, health, redis, audit). مع افتراضي React Query 3 محاولات، فشل استعلامَين = 12 طلباً إضافياً يُستنفَد فيها الحدّ خلال ثوانٍ |
+| 2 | **React Query يُعيد المحاولة على 429** | لم يكن ثمة فلتر للحالات 401/403/429، فالاستجابة 429 تُولّد محاولات جديدة تُعيد 429 في حلقة مفرغة |
+| 3 | **`refetchOnWindowFocus: true` (الافتراضي)** | أي تبديل نافذة يُعيد جلب جميع الاستعلامات القديمة دفعةً واحدة |
+| 4 | **`managers` query: `refetchOnMount: 'always'`** | يُجبر إعادة الجلب عند كل تركيب للمكوّن حتى لو البيانات حديثة |
+| 5 | **استعلامات DB تسلسلية** في مسارَي companies و stats | كل طلب يحتجز وصلتَي pool بدلاً من واحدة متوازية |
+| 6 | **`daysRemaining()` بلا حارس** | تاريخ null/فارغ/غير صالح ينتج NaN (خطر فشل التسلسل في حالات انجراف Schema) |
+
+### التغييرات المنجزة
+
+| الملف | التغيير |
+|---|---|
+| `artifacts/api-server/src/app.ts` | `superAdminLimiter` limit: 30 → 200 req/min |
+| `artifacts/api-server/src/routes/super/companies/helpers.ts` | `daysRemaining()`: حارس null/invalid-date → -9999 |
+| `artifacts/api-server/src/routes/super/companies/crud.ts` | استعلامَا DB في `Promise.all()` بدلاً من تسلسلي |
+| `artifacts/api-server/src/routes/super/companies/stats.ts` | استعلامَا DB في `Promise.all()` بدلاً من تسلسلي |
+| `artifacts/erp-system/src/pages/super-admin/sa-query.ts` | **جديد** — `StatusError` (خطأ مع status HTTP) + `saRetry` (يتخطّى إعادة المحاولة على 401/403/429؛ محاولة واحدة فقط لـ 5xx) |
+| `artifacts/erp-system/src/pages/super-admin/use-company-state.ts` | fetcher يرمي `StatusError`؛ companies query: `retry: saRetry, refetchOnWindowFocus: false` |
+| `artifacts/erp-system/src/pages/super-admin/use-manager-state.ts` | fetcher يرمي `StatusError`؛ managers query: `retry: saRetry, refetchOnWindowFocus: false`؛ **حذف** `refetchOnMount: 'always'` |
+| `artifacts/erp-system/src/pages/super-admin/use-tabs-data.ts` | fetcher يرمي `StatusError`؛ **جميع** الاستعلامات (9): `retry: saRetry, refetchOnWindowFocus: false` |
+| `artifacts/erp-system/src/pages/super-admin/index.tsx` | stats query: يرمي `StatusError`، `retry: saRetry, refetchOnWindowFocus: false` |
+| `artifacts/api-server/src/__tests__/lib/days-remaining.test.ts` | **جديد** — 7 حالات اختبار لـ `daysRemaining` |
+
+### نتائج الفحوصات
+
+| الفحص | النتيجة |
+|---|---|
+| `pnpm --filter @workspace/api-server run typecheck` | ✅ 0 أخطاء |
+| `pnpm --filter @workspace/erp-system run typecheck` | ✅ 0 أخطاء |
+| اختبارات `daysRemaining` (7 حالات) | ✅ نجاح |

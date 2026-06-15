@@ -145,10 +145,16 @@ const authLimiter = rateLimit({
   message: { error: 'تجاوزت محاولات تسجيل الدخول، حاول مجدداً بعد دقيقة' },
 });
 
-/* ── Super-admin rate limiter: 30 req/min per IP ───────────── */
+/* ── Super-admin rate limiter ──────────────────────────────── */
+/* Raised from 30 → 200 req/min:  the SA dashboard fires 6+ parallel queries
+   on mount (companies, stats, managers, health, redis, audit).  With React
+   Query's default 3-retry behaviour each failure triggered 3 extra requests,
+   so a single bad load burned the old 30-req budget within seconds and
+   produced a self-perpetuating 429 storm.  200/min (≈3.3 req/sec) still
+   provides meaningful protection while giving the page room to load. */
 const superAdminLimiter = rateLimit({
   windowMs: 60 * 1000,
-  limit: LOAD_TEST_MODE ? 1_000_000 : 30,
+  limit: LOAD_TEST_MODE ? 1_000_000 : 200,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   store: makeRateLimitStore('rl:super:'),
