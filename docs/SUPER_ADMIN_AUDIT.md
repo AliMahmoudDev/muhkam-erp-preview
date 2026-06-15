@@ -219,3 +219,81 @@ if (!getCurrentCompanyId()) return null;
 | `pnpm --filter @workspace/api-server run typecheck` | ✅ 0 أخطاء |
 | `pnpm --filter @workspace/erp-system run typecheck` | ✅ 0 أخطاء |
 | اختبارات `daysRemaining` (7 حالات) | ✅ نجاح |
+
+---
+
+## المرحلة 9 — الصقل الاحترافي النهائي للواجهة
+
+> **التاريخ:** 15 يونيو 2026.
+> **الهدف:** رفع مستوى تصميم وحدة المشرف الأعلى ليكون بمستوى لوحات SaaS الاحترافية (Linear / Stripe / Vercel) — واجهة فقط، لا تغييرات على المصادقة/الأمان/المخطط.
+
+### ما تم إنجازه
+
+#### 1. `sa-primitives.tsx` — ملف جديد بأدوات UI مشتركة
+
+مكوّنات مشتركة أُضيفت لتوحيد حالات التحميل/الخطأ/الفراغ عبر جميع التبويبات:
+
+| المكوّن | الغرض |
+|---|---|
+| `SASkeleton` | صفوف shimmer متحركة بدلاً من نص "جاري التحميل..." |
+| `SAEmptyState` | حالة فارغة مع أيقونة + عنوان |
+| `SAErrorState` | حالة خطأ مع أيقونة `AlertCircle` + زر إعادة المحاولة |
+| `SASection` | غلاف card موحّد |
+| `SATableHeader` | رأس جدول موحّد مع عنوان + إجراءات |
+| `StatusChip` | شارة pill ملوّنة للحالات |
+
+#### 2. `layout/sa-nav.tsx` — إعادة تصميم التنقل
+
+- **إزالة كاملة للإيموجي** → أيقونات Lucide (حجم 18px) بألوان مميزة لكل تبويب
+- **حالة نشطة أهدأ**: خط برتقالي علوي (2px) + خلفية شفافة بلون التبويب، بدلاً من gradient عائم + scale
+- **إزالة نص الوصف** (9px — غير مقروء): بطاقات أكثر إتقاناً وأقل ضجيجاً
+- **تحويم بسيط**: تغيير background فقط، بلا transform
+
+#### 3. `layout/sa-header.tsx`
+
+- استبدال `🛡️` بأيقونة `ShieldCheck` من Lucide
+
+#### 4. `overview/OverviewKpiCards.tsx`
+
+- استبدال أيقونات emoji كبيرة (28px) بدوائر أيقونات Lucide صغيرة (38×38px) بخلفية شفافة ملوّنة
+- ألوان hex صريحة بدلاً من CSS variables في خلفيات الأيقونات (يمنع `var(--x)18` المكسور)
+
+#### 5. `overview/OverviewHealthCards.tsx`
+
+- استبدال `🌡️` و`📡` في عناوين الأقسام بأيقونات Lucide (`Server`, `BarChart3`) داخل badges صغيرة
+- تحسين حالات التحميل (نص نظيف بدلاً من `⏳ جارٍ الفحص...`)
+- استبدال `✅ متصلة` / `❌ منقطعة` بنص ملوّن نظيف
+
+#### 6. `managers/ManagersTable.tsx`
+
+- استبدال نص `"جاري التحميل..."` الثابت بـ `<SASkeleton rows={4} rowHeight={52} />`
+- استبدال block الخطأ المكرر بـ `<SAErrorState />`
+- استبدال block الفراغ بـ `<SAEmptyState icon={<Users />} />`
+
+#### 7. `tab-overview.tsx`
+
+- حذف `🏠` من عنوان "نظرة عامة على النظام"
+- حذف `⚡` من "وصول سريع"
+- تنظيف labels أزرار الوصول السريع من الإيموجي
+
+#### 8. `tab-managers.tsx`
+
+- استبدال `➕` بأيقونة `<Plus size={14} />` من Lucide
+
+#### 9. `companies/CompanyTableRow.tsx`
+
+- استبدال `▶` بأيقونة `<ChevronRight size={14} />` مع دعم الـ rotation animation
+- استبدال `🗑️` بأيقونة `<Trash2 size={13} />`
+- تنظيف emoji في `ActionBtn` (✅ / ⛔ / 📋 → نص فقط)
+- تنظيف `"🏷️ النسخة:"` → `"النسخة:"`
+- تنظيف `"⭐ MuhKam Pro"` / `"🚀 MuhKam Advanced"` في select options والشارة
+
+### نتائج الفحوصات
+
+| الفحص | النتيجة |
+|---|---|
+| `pnpm --filter @workspace/erp-system run typecheck` | ✅ 0 أخطاء |
+| `pnpm --filter @workspace/api-server run typecheck` | ✅ 0 أخطاء |
+| `pnpm --filter @workspace/erp-system run lint` | ✅ 0 أخطاء (2 تحذيرات موجودة سابقاً في ChecklistTab.tsx) |
+| console browser | ✅ لا أخطاء runtime |
+| جميع ميزات SA | ✅ محفوظة كاملاً — لا تغيير على البيانات أو المصادقة |

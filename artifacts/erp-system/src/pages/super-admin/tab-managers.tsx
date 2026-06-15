@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import { type Manager, C, FONT } from './types';
 import { ManagersTable } from './managers/ManagersTable';
 
@@ -77,7 +78,7 @@ export function TabManagers({
             fontFamily: FONT,
           }}
         >
-          <span>➕</span>
+          <Plus size={14} />
           <span>مدير عام جديد</span>
         </button>
       </div>

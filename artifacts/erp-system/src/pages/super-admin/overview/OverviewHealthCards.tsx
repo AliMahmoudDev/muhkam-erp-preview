@@ -1,3 +1,4 @@
+import { Server, BarChart3, type LucideIcon } from 'lucide-react';
 import { C, FONT, type ActiveTab } from '../types';
 import type { HealthData } from './overview-types';
 
@@ -5,6 +6,37 @@ interface Props {
   healthData?: HealthData;
   healthLoading: boolean;
   setActiveTab: (t: ActiveTab) => void;
+}
+
+function SectionHeader({ Icon, title }: { Icon: LucideIcon; title: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+      <div
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '8px',
+          background: 'rgba(249,115,22,0.12)',
+          border: '1px solid rgba(249,115,22,0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon size={14} color="#F97316" strokeWidth={2} />
+      </div>
+      <h3 style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: C.text }}>{title}</h3>
+    </div>
+  );
+}
+
+function StatusRow({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontSize: '13px', color: C.muted }}>{label}</span>
+      <span style={{ fontSize: '13px', fontWeight: 700, color }}>{value}</span>
+    </div>
+  );
 }
 
 /* Row 2 — Server Health + API metrics (presentational) */
@@ -19,6 +51,7 @@ export function OverviewHealthCards({ healthData, healthLoading, setActiveTab }:
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      {/* Server Health */}
       <div
         style={{
           background: C.card,
@@ -27,51 +60,37 @@ export function OverviewHealthCards({ healthData, healthLoading, setActiveTab }:
           padding: '22px',
         }}
       >
-        <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '15px', color: C.text }}>
-          🌡️ صحة السيرفر
-        </h3>
+        <SectionHeader Icon={Server} title="صحة السيرفر" />
         {healthLoading ? (
-          <div style={{ color: C.muted, fontSize: '13px' }}>⏳ جارٍ الفحص...</div>
+          <div style={{ color: C.muted, fontSize: '13px' }}>جارٍ الفحص...</div>
         ) : ovHealth ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              {
-                label: 'قاعدة البيانات',
-                value: ovHealth.db ? '✅ متصلة' : '❌ منقطعة',
-                color: ovHealth.db ? 'var(--status-success)' : 'var(--status-danger)',
-              },
-              {
-                label: 'استهلاك الذاكرة',
-                value: `${ovHealth.memory_mb} MB`,
-                color: ovHealth.memory_mb > 400 ? 'var(--status-warning)' : 'var(--status-success)',
-              },
-              {
-                label: 'وقت التشغيل',
-                value: `${ovHealth.uptime_hours} ساعة`,
-                color: 'var(--status-info)',
-              },
-              {
-                label: 'استجابة DB',
-                value:
-                  ovHealth.db_read_latency_ms >= 0
-                    ? `${ovHealth.db_read_latency_ms} ms`
-                    : 'غير متاح',
-                color:
-                  (ovHealth.db_read_latency_ms ?? 0) > 200
-                    ? 'var(--status-warning)'
-                    : 'var(--status-success)',
-              },
-            ].map((row) => (
-              <div
-                key={row.label}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-              >
-                <span style={{ fontSize: '13px', color: C.muted }}>{row.label}</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: row.color }}>
-                  {row.value}
-                </span>
-              </div>
-            ))}
+            <StatusRow
+              label="قاعدة البيانات"
+              value={ovHealth.db ? 'متصلة' : 'منقطعة'}
+              color={ovHealth.db ? 'var(--status-success)' : 'var(--status-danger)'}
+            />
+            <StatusRow
+              label="استهلاك الذاكرة"
+              value={`${ovHealth.memory_mb} MB`}
+              color={ovHealth.memory_mb > 400 ? 'var(--status-warning)' : 'var(--status-success)'}
+            />
+            <StatusRow
+              label="وقت التشغيل"
+              value={`${ovHealth.uptime_hours} ساعة`}
+              color="var(--status-info)"
+            />
+            <StatusRow
+              label="استجابة DB"
+              value={
+                ovHealth.db_read_latency_ms >= 0 ? `${ovHealth.db_read_latency_ms} ms` : 'غير متاح'
+              }
+              color={
+                (ovHealth.db_read_latency_ms ?? 0) > 200
+                  ? 'var(--status-warning)'
+                  : 'var(--status-success)'
+              }
+            />
             <button
               onClick={() => setActiveTab('health')}
               style={{
@@ -94,6 +113,7 @@ export function OverviewHealthCards({ healthData, healthLoading, setActiveTab }:
         )}
       </div>
 
+      {/* API Metrics */}
       <div
         style={{
           background: C.card,
@@ -102,49 +122,36 @@ export function OverviewHealthCards({ healthData, healthLoading, setActiveTab }:
           padding: '22px',
         }}
       >
-        <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '15px', color: C.text }}>
-          📡 مؤشرات الـ API
-        </h3>
+        <SectionHeader Icon={BarChart3} title="مؤشرات الـ API" />
         {ovMetrics ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              {
-                label: 'إجمالي الطلبات',
-                value: totalR.toLocaleString('ar-EG'),
-                color: 'var(--status-info)',
-              },
-              {
-                label: 'طلبات ناجحة (2xx)',
-                value: ok2xx.toLocaleString('ar-EG'),
-                color: 'var(--status-success)',
-              },
-              {
-                label: 'أخطاء سيرفر (5xx)',
-                value: err5xx.toLocaleString('ar-EG'),
-                color: err5xx > 0 ? 'var(--status-danger)' : 'var(--status-success)',
-              },
-              {
-                label: 'زمن الاستجابة p95',
-                value: `${ovMetrics.latency_ms?.p95 ?? 0} ms`,
-                color:
-                  (ovMetrics.latency_ms?.p95 ?? 0) > 500
-                    ? 'var(--status-warning)'
-                    : 'var(--status-success)',
-              },
-            ].map((row) => (
-              <div
-                key={row.label}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-              >
-                <span style={{ fontSize: '13px', color: C.muted }}>{row.label}</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: row.color }}>
-                  {row.value}
-                </span>
-              </div>
-            ))}
+            <StatusRow
+              label="إجمالي الطلبات"
+              value={totalR.toLocaleString('ar-EG')}
+              color="var(--status-info)"
+            />
+            <StatusRow
+              label="طلبات ناجحة (2xx)"
+              value={ok2xx.toLocaleString('ar-EG')}
+              color="var(--status-success)"
+            />
+            <StatusRow
+              label="أخطاء سيرفر (5xx)"
+              value={err5xx.toLocaleString('ar-EG')}
+              color={err5xx > 0 ? 'var(--status-danger)' : 'var(--status-success)'}
+            />
+            <StatusRow
+              label="زمن الاستجابة p95"
+              value={`${ovMetrics.latency_ms?.p95 ?? 0} ms`}
+              color={
+                (ovMetrics.latency_ms?.p95 ?? 0) > 500
+                  ? 'var(--status-warning)'
+                  : 'var(--status-success)'
+              }
+            />
           </div>
         ) : (
-          <div style={{ color: C.muted, fontSize: '13px' }}>⏳ جارٍ التحميل...</div>
+          <div style={{ color: C.muted, fontSize: '13px' }}>جارٍ التحميل...</div>
         )}
       </div>
     </div>

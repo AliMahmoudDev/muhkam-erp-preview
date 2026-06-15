@@ -1,3 +1,4 @@
+import { ShieldCheck } from 'lucide-react';
 import { C, FONT } from '../types';
 
 interface RedisHealth {
@@ -39,10 +40,9 @@ export function SAHeader({ today, redisHealth, logout }: Props) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '18px',
           }}
         >
-          🛡️
+          <ShieldCheck size={18} color={C.orange} strokeWidth={2} />
         </div>
         <div>
           <div style={{ fontSize: '16px', fontWeight: 800, color: C.text, lineHeight: 1.2 }}>

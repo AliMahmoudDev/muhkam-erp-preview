@@ -1,4 +1,6 @@
-import { type Manager, C, FONT } from '../types';
+import { Users } from 'lucide-react';
+import { type Manager, C } from '../types';
+import { SASkeleton, SAEmptyState, SAErrorState } from '../sa-primitives';
 import { ManagerRow } from './ManagerRow';
 
 interface Props {
@@ -52,37 +54,18 @@ export function ManagersTable({
       </div>
 
       {mgLoading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: C.muted }}>جاري التحميل...</div>
+        <SASkeleton rows={4} rowHeight={52} />
       ) : mgError ? (
-        <div style={{ padding: '60px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</div>
-          <div style={{ color: C.danger, fontWeight: 700, marginBottom: '8px' }}>
-            تعذّر جلب بيانات المديرين
-          </div>
-          <div style={{ color: C.muted, fontSize: '13px', marginBottom: '16px' }}>
-            تحقق من الاتصال بالخادم أو أعد تسجيل الدخول
-          </div>
-          <button
-            onClick={() => void mgRefetch()}
-            style={{
-              padding: '8px 20px',
-              borderRadius: '10px',
-              background: C.orange,
-              color: 'var(--text-1)',
-              border: 'none',
-              fontSize: '13px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontFamily: FONT,
-            }}
-          >
-            إعادة المحاولة
-          </button>
-        </div>
+        <SAErrorState
+          title="تعذّر جلب بيانات المديرين"
+          description="تحقق من الاتصال بالخادم أو أعد تسجيل الدخول"
+          onRetry={() => void mgRefetch()}
+        />
       ) : managers.length === 0 ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: C.muted }}>
-          لا يوجد مديرون عامون مسجّلون
-        </div>
+        <SAEmptyState
+          icon={<Users size={40} strokeWidth={1} />}
+          title="لا يوجد مديرون عامون مسجّلون"
+        />
       ) : (
         managers.map((m, idx) => (
           <ManagerRow

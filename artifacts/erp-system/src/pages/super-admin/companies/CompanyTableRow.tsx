@@ -1,4 +1,5 @@
 /* eslint-disable erp/no-hardcoded-colors -- Legacy super-admin panel palette (C.* constants + inline rgba). Intentional fixed dark-theme colors outside the ERP token system; to be migrated to tokens in a future design pass. */
+import { Trash2, ChevronRight } from 'lucide-react';
 import { C, STATUS, translatePlan, FONT } from '../types';
 import type { Company, CompanyFeatures } from '../types';
 import { ActionBtn } from '../ui';
@@ -136,19 +137,20 @@ export function CompanyTableRow({
               border: `1px solid ${co.edition === 'advanced' ? 'rgba(245,158,11,0.3)' : 'rgba(99,102,241,0.3)'}`,
             }}
           >
-            {co.edition === 'advanced' ? '🚀 MuhKam Advanced' : '⭐ MuhKam Pro'}
+            {co.edition === 'advanced' ? 'MuhKam Advanced' : 'MuhKam Pro'}
           </span>
         </div>
         <div
           style={{
-            fontSize: '11px',
             color: C.muted,
             transition: 'transform 0.2s',
             transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)',
-            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          ▶
+          <ChevronRight size={14} />
         </div>
       </div>
 
@@ -164,7 +166,7 @@ export function CompanyTableRow({
             {!co.is_active && (
               <ActionBtn
                 label="تفعيل الشركة"
-                icon="✅"
+                icon=""
                 color={C.success}
                 onClick={() => coMutate.mutate({ url: `/api/super/companies/${co.id}/activate` })}
               />
@@ -172,14 +174,14 @@ export function CompanyTableRow({
             {co.is_active && (
               <ActionBtn
                 label="إيقاف الشركة"
-                icon="⛔"
+                icon=""
                 color={C.danger}
                 onClick={() => coMutate.mutate({ url: `/api/super/companies/${co.id}/suspend` })}
               />
             )}
             <ActionBtn
               label="إدارة الاشتراك"
-              icon="📋"
+              icon=""
               color={C.orange}
               onClick={() => {
                 const ed = (co.edition ?? 'ultimate') as 'advanced' | 'ultimate';
@@ -212,7 +214,7 @@ export function CompanyTableRow({
                 padding: '6px 12px',
               }}
             >
-              <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>🏷️ النسخة:</span>
+              <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>النسخة:</span>
               <select
                 value={co.edition ?? 'ultimate'}
                 onClick={(e) => e.stopPropagation()}
@@ -236,12 +238,12 @@ export function CompanyTableRow({
                   cursor: 'pointer',
                 }}
               >
-                <option value="ultimate">⭐ MuhKam Pro</option>
-                <option value="advanced">🚀 MuhKam Advanced</option>
+                <option value="ultimate">MuhKam Pro</option>
+                <option value="advanced">MuhKam Advanced</option>
               </select>
             </div>
             <ActionBtn
-              label="🔑 إعادة تعيين كلمة المرور"
+              label="إعادة تعيين كلمة المرور"
               icon=""
               color="var(--status-info)"
               onClick={() => resetPassword.mutate({ id: co.id, company_name: co.name })}
@@ -274,7 +276,8 @@ export function CompanyTableRow({
                 e.currentTarget.style.background = 'rgba(239,68,68,0.1)';
               }}
             >
-              🗑️ <span>حذف الشركة</span>
+              <Trash2 size={13} />
+              <span>حذف الشركة</span>
             </button>
             <div style={{ fontSize: '12px', color: C.muted, marginRight: 'auto' }}>
               تسجيل: {new Date(co.created_at).toLocaleDateString('ar-EG-u-nu-latn')}

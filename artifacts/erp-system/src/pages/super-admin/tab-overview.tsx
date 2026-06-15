@@ -45,7 +45,7 @@ export function TabOverview({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2 style={{ margin: 0, fontWeight: 900, fontSize: '22px', color: C.text }}>
-            🏠 نظرة عامة على النظام
+            نظرة عامة على النظام
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>
             {new Date().toLocaleDateString('ar-EG', {
@@ -119,14 +119,14 @@ export function TabOverview({
         }}
       >
         <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '15px', color: C.text }}>
-          ⚡ وصول سريع
+          وصول سريع
         </h3>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {[
-            { label: '🏢 إدارة الشركات', tab: 'companies' as const },
-            { label: '📊 لوحة الإيرادات', tab: 'revenue' as const },
-            { label: '🔔 مركز التنبيهات', tab: 'alerts' as const },
-            { label: '⚙️ الإعدادات والأمان', tab: 'settings' as const },
+            { label: 'إدارة الشركات', tab: 'companies' as const },
+            { label: 'لوحة الإيرادات', tab: 'revenue' as const },
+            { label: 'مركز التنبيهات', tab: 'alerts' as const },
+            { label: 'الإعدادات والأمان', tab: 'settings' as const },
           ].map((s) => (
             <button
               key={s.tab}

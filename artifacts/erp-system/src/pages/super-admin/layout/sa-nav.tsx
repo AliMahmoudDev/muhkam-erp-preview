@@ -1,3 +1,16 @@
+import {
+  LayoutDashboard,
+  Building2,
+  Users,
+  TrendingUp,
+  Bell,
+  CreditCard,
+  Megaphone,
+  Activity,
+  Shield,
+  Settings2,
+  type LucideIcon,
+} from 'lucide-react';
 import { type ActiveTab, C, FONT } from '../types';
 
 interface Props {
@@ -5,94 +18,17 @@ interface Props {
   setActiveTab: (t: ActiveTab) => void;
 }
 
-const NAV_CARDS: {
-  key: ActiveTab;
-  label: string;
-  icon: string;
-  color: string;
-  shadow: string;
-  desc: string;
-}[] = [
-  {
-    key: 'overview',
-    label: 'نظرة عامة',
-    icon: '🏠',
-    color: 'var(--status-warning)',
-    shadow: 'rgba(249,115,22,0.45)',
-    desc: 'لوحة التحكم الرئيسية',
-  },
-  {
-    key: 'companies',
-    label: 'الشركات',
-    icon: '🏢',
-    color: 'var(--status-info)',
-    shadow: 'rgba(59,130,246,0.45)',
-    desc: 'إدارة الشركات المشتركة',
-  },
-  {
-    key: 'managers',
-    label: 'المديرون',
-    icon: '👑',
-    color: '#F472B6',
-    shadow: 'rgba(244,114,182,0.45)',
-    desc: 'حسابات مديري النظام',
-  },
-  {
-    key: 'revenue',
-    label: 'الإيرادات',
-    icon: '📊',
-    color: 'var(--status-success)',
-    shadow: 'rgba(16,185,129,0.45)',
-    desc: 'تقارير الإيرادات والمالية',
-  },
-  {
-    key: 'alerts',
-    label: 'التنبيهات',
-    icon: '🔔',
-    color: 'var(--status-danger)',
-    shadow: 'rgba(239,68,68,0.45)',
-    desc: 'تنبيهات النظام والأحداث',
-  },
-  {
-    key: 'plans',
-    label: 'الخطط',
-    icon: '💰',
-    color: 'var(--status-warning)',
-    shadow: 'rgba(251,191,36,0.45)',
-    desc: 'إعداد خطط الاشتراك والأسعار',
-  },
-  {
-    key: 'announcements',
-    label: 'الإعلانات',
-    icon: '📢',
-    color: 'var(--status-info)',
-    shadow: 'rgba(139,92,246,0.45)',
-    desc: 'إشعارات للمستخدمين',
-  },
-  {
-    key: 'health',
-    label: 'صحة السيرفر',
-    icon: '🌡️',
-    color: 'var(--status-info)',
-    shadow: 'rgba(6,182,212,0.45)',
-    desc: 'مراقبة أداء الخوادم',
-  },
-  {
-    key: 'monitoring',
-    label: 'مراقبة التجريبي',
-    icon: '🛡️',
-    color: 'var(--status-info)',
-    shadow: 'rgba(99,102,241,0.45)',
-    desc: 'البيئة التجريبية',
-  },
-  {
-    key: 'settings',
-    label: 'الإعدادات',
-    icon: '⚙️',
-    color: 'var(--text-2)',
-    shadow: 'rgba(100,116,139,0.45)',
-    desc: 'إعدادات النظام والأمان',
-  },
+const NAV_ITEMS: { key: ActiveTab; label: string; Icon: LucideIcon; accent: string }[] = [
+  { key: 'overview', label: 'نظرة عامة', Icon: LayoutDashboard, accent: '#F97316' },
+  { key: 'companies', label: 'الشركات', Icon: Building2, accent: '#3B82F6' },
+  { key: 'managers', label: 'المديرون', Icon: Users, accent: '#F472B6' },
+  { key: 'revenue', label: 'الإيرادات', Icon: TrendingUp, accent: '#10B981' },
+  { key: 'alerts', label: 'التنبيهات', Icon: Bell, accent: '#EF4444' },
+  { key: 'plans', label: 'الخطط', Icon: CreditCard, accent: '#F59E0B' },
+  { key: 'announcements', label: 'الإعلانات', Icon: Megaphone, accent: '#8B5CF6' },
+  { key: 'health', label: 'صحة السيرفر', Icon: Activity, accent: '#06B6D4' },
+  { key: 'monitoring', label: 'مراقبة التجريبي', Icon: Shield, accent: '#6366F1' },
+  { key: 'settings', label: 'الإعدادات', Icon: Settings2, accent: '#64748B' },
 ];
 
 export function SANav({ activeTab, setActiveTab }: Props) {
@@ -100,56 +36,48 @@ export function SANav({ activeTab, setActiveTab }: Props) {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
-        gap: '10px',
-        marginBottom: '32px',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
+        gap: '8px',
+        marginBottom: '28px',
       }}
     >
-      {NAV_CARDS.map((card) => {
-        const active = activeTab === card.key;
+      {NAV_ITEMS.map(({ key, label, Icon, accent }) => {
+        const active = activeTab === key;
         return (
           <button
-            key={card.key}
-            onClick={() => setActiveTab(card.key)}
-            onMouseEnter={(e) => {
-              if (!active) {
-                e.currentTarget.style.transform = 'translateY(-4px) scale(1.04)';
-                e.currentTarget.style.boxShadow = `0 10px 28px ${card.shadow}`;
-                e.currentTarget.style.borderColor = card.color;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!active) {
-                e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = `0 2px 8px rgba(0,0,0,0.12)`;
-                e.currentTarget.style.borderColor = C.border;
-              }
-            }}
+            key={key}
+            onClick={() => setActiveTab(key)}
             style={{
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
-              padding: '14px 6px 12px',
-              borderRadius: '14px',
+              gap: '7px',
+              padding: '13px 6px 12px',
+              borderRadius: '12px',
               cursor: 'pointer',
               fontFamily: FONT,
-              transition: 'all 0.22s cubic-bezier(0.34,1.56,0.64,1)',
-              border: active ? `2px solid ${card.color}` : `1.5px solid ${C.border}`,
-              background: active
-                ? `linear-gradient(145deg, ${card.color}22 0%, ${card.color}08 100%)`
-                : C.card,
-              boxShadow: active
-                ? `0 8px 24px ${card.shadow}, inset 0 1px 0 ${card.color}30`
-                : `0 2px 8px rgba(0,0,0,0.12)`,
-              transform: active ? 'translateY(-3px) scale(1.02)' : 'translateY(0) scale(1)',
+              transition: 'background 0.15s, border-color 0.15s',
+              border: active ? `1.5px solid ${accent}55` : `1.5px solid ${C.border}`,
+              background: active ? `${accent}12` : C.card,
               outline: 'none',
               overflow: 'hidden',
-              minWidth: 0,
+            }}
+            onMouseEnter={(e) => {
+              if (!active) {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!active) {
+                e.currentTarget.style.background = C.card;
+                e.currentTarget.style.borderColor = C.border;
+              }
             }}
           >
+            {/* Active indicator — top accent bar */}
             {active && (
               <div
                 style={{
@@ -157,51 +85,24 @@ export function SANav({ activeTab, setActiveTab }: Props) {
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: '3px',
-                  background: `linear-gradient(90deg, ${card.color}, ${card.color}99)`,
-                  borderRadius: '14px 14px 0 0',
+                  height: '2px',
+                  background: accent,
+                  borderRadius: '12px 12px 0 0',
                 }}
               />
             )}
-            <span
-              style={{
-                fontSize: '22px',
-                lineHeight: 1,
-                filter: active ? `drop-shadow(0 2px 6px ${card.shadow})` : 'none',
-                transition: 'filter 0.2s',
-              }}
-            >
-              {card.icon}
-            </span>
+            <Icon size={18} color={active ? accent : C.muted} strokeWidth={active ? 2.2 : 1.8} />
             <span
               style={{
                 fontSize: '11px',
-                fontWeight: 800,
-                color: active ? card.color : C.text,
-                letterSpacing: '0.01em',
-                transition: 'color 0.2s',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: '100%',
-              }}
-            >
-              {card.label}
-            </span>
-            <span
-              style={{
-                fontSize: '9px',
-                color: active ? card.color + 'bb' : C.muted,
-                textAlign: 'center',
+                fontWeight: active ? 800 : 600,
+                color: active ? accent : C.text,
                 lineHeight: 1.3,
-                transition: 'color 0.2s',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: '100%',
+                textAlign: 'center',
+                letterSpacing: '0.01em',
               }}
             >
-              {card.desc}
+              {label}
             </span>
           </button>
         );
