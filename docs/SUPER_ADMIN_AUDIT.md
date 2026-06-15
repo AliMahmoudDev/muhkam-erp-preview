@@ -297,3 +297,72 @@ if (!getCurrentCompanyId()) return null;
 | `pnpm --filter @workspace/erp-system run lint` | ✅ 0 أخطاء (2 تحذيرات موجودة سابقاً في ChecklistTab.tsx) |
 | console browser | ✅ لا أخطاء runtime |
 | جميع ميزات SA | ✅ محفوظة كاملاً — لا تغيير على البيانات أو المصادقة |
+
+---
+
+## المرحلة 10 — جولة QA مركّزة + UX آمن لمفتاح تشفير النسخ (A–E)
+
+> **التاريخ:** 15 يونيو 2026.
+> **الهدف:** خمسة إصلاحات مركّزة (A–E) على وحدة المشرف الأعلى ضمن قيود السلامة الصارمة: لا تغييرات على GitHub Actions/النشر/الأسرار/بيئة الإنتاج/البريد/نموذج المصادقة/العزل بين المستأجرين/RLS/المخطّط/الهجرات، لا تفعيل قائمة IP المسموحة للمشرف الأعلى، والحفاظ على `sa-query.ts`/`saRetry`/`refetchOnWindowFocus:false`.
+
+### (A) تحميل الشركات — عدم استبدال البيانات المُخزّنة بواجهة خطأ أثناء إعادة الجلب الخلفية
+
+المشكلة: عند فشل إعادة جلب خلفية (background refetch) بينما توجد بيانات مُخزّنة سابقاً، كانت واجهة الخطأ/إعادة المحاولة تحلّ محلّ الجدول المعروض — فتختفي بيانات صالحة كان المستخدم يراها.
+
+الإصلاح في `companies/index.tsx`:
+- بوّابة واجهة الخطأ الكاملة على `coError && companies.length === 0` فقط (أي لا توجد بيانات مُخزّنة إطلاقاً).
+- ترويسة العنوان الفرعي والترقيم (pagination) مبوّبة بنفس الشرط (`!coLoading && !(coError && companies.length === 0)`).
+- عند `coError && companies.length > 0`: يبقى الجدول المُخزّن كما هو، مع تلميح خفيف **«· تعذّر التحديث الأخير»** بدل مسح المحتوى.
+- الهيكل (skeleton) يظهر في التحميل الأول فقط (`coLoading`).
+
+### (B) UX آمن لمفتاح تشفير النسخ الاحتياطية (توليد/تدوير، محمي بـ PIN، يُعرض مرة واحدة)
+
+المبدأ: لا يُكشف المفتاح المُفعّل أبداً من التخزين؛ تُعرض الحالة فقط (مُفعّل/غير مُفعّل). يمكن توليد **مفتاح مرشّح** جديد بحماية `SUPER_ADMIN_PIN`، يُعرض **مرة واحدة** مع نسخ + تحذير، ولا يُحفظ أو يُسجَّل إطلاقاً.
+
+**الخادم** — `routes/super/settings.ts`، نقطة جديدة `POST /super/backup/encryption-key/generate` (تحت `superOnly`):
+- تحقّق من `SUPER_ADMIN_PIN` عبر `timingSafeEqual` على مخازن ثابتة الحجم (64 بايت) — يطابق نمط `emergency-unlock` في المصادقة.
+- توليد `randomBytes(32).toString('hex')`، يُعاد **مرة واحدة** `{ key, generated_at, already_configured }`.
+- ترويسات `no-store`/`no-cache`؛ تدقيق **الإجراء فقط** (`BACKUP_ENCRYPTION_KEY_GENERATED`) — لا تُسجّل قيمة المفتاح أبداً.
+- لا يُغيّر المفتاح المُشغَّل فعلياً (يُلتقط من البيئة عند تحميل الوحدة في `backup-crypto.ts`) — لذا يجب على المشغّل حفظه في مدير الأسرار وإعادة تشغيل الخادم لتفعيله. التحذير في الواجهة يوضّح ذلك صراحةً.
+- `audit-log.ts`: أُضيف `BACKUP_ENCRYPTION_KEY_GENERATED` إلى `AuditAction`.
+
+**الواجهة** — `use-settings-state.ts` + `tab-settings.tsx` + `index.tsx` + `BackupPanel.tsx`:
+- زر «توليد مفتاح تشفير» / «توليد مفتاح جديد (تدوير)» → حقل PIN → عرض المفتاح مرة واحدة مع زر نسخ + تحذير صريح (وتنبيه إضافي إذا كان مفتاح مُفعّل موجوداً: استبداله يجعل النسخ القديمة غير قابلة للاستعادة).
+- المفتاح والـ PIN لا يُحفظان في حالة طويلة الأمد ولا في cache الاستعلام؛ `dismissGeneratedKey()` يمسح كل الحالة الحسّاسة، و`generateEncryptionKey()` يُسقط الـ PIN من الذاكرة فور النجاح.
+- بعد التوليد: إعادة جلب حالة التشفير (`refetchEncStatus`).
+
+### (C) تكبير طفيف لبطاقات KPI/الإحصاءات
+
+- `overview/OverviewKpiCards.tsx`: padding 20→24، badge 38→44 (radius 12)، icon 18→20، value 30→34، label 13→14 (mt10)، sub→12، gap→18، mb→14.
+- `companies/StatsCards.tsx`: padding `18px 12px 16px`، icon 22 (mb10)، value `2.15rem`، label 12 (mt8)، sub 11 (mt3) — مع الإبقاء على شبكة 8 أعمدة `minmax(0,1fr)`.
+
+### (D) فكّ حظر مراقبة التجارب — اختفاء العناصر فوراً
+
+المشكلة: بعد فكّ الحظر كانت العناصر تبقى ظاهرة لأن مصادر الحظر في Redis لم تكن تُنظَّف بالكامل، فلا تختفي بعد إعادة الجلب.
+
+**الخادم**:
+- `lib/trial-recent-blocks.ts`: أُضيف `removeMatching({ ip?, email?, fingerprint? })` يحذف السجلات المطابقة عبر `LREM` بالسلسلة الخام مع إزالة التكرار.
+- `lib/trial-anomaly.ts`: أُضيف `forgetIP`/`forgetFingerprint` (`srem` من `ACTIVE_IPS`/`ACTIVE_FPS` + `del` لـ `IP_EVENTS`/`FP_EVENTS`، مع تطبيع `::ffff:`).
+- `routes/trial-monitoring.ts`: `UnblockSchema` أصبح `{ ip?, email?, fingerprint? }.refine(≥1)`؛ نقطة `unblock-ip` تمسح cooldown/rate لـ ip/fp، تنفّذ `forgetIP`/`forgetFingerprint`، وتزيل من `recent_blocks` عبر `removeMatching`، وتُدوّن `recent_removed` في التدقيق.
+
+**الواجهة** — `tab-monitoring.tsx`:
+- `doUnblockAll` يُرسل الآن `{ ip, email }` إلى `unblock-ip` عند توفّر ip أو email، ويعيد الجلب بعد العملية (تختفي العناصر فوراً).
+- ملصقات صادقة: **email = تجاوز في قاعدة البيانات (DB override)**، **ip/fp = تنظيف Redis + المراقبة**.
+
+### (E) تحديث الوثيقة
+
+هذه المرحلة (المرحلة 10) في `docs/SUPER_ADMIN_AUDIT.md`.
+
+### نتائج الفحوصات
+
+| الفحص | النتيجة |
+|---|---|
+| `pnpm --filter @workspace/erp-system run typecheck` | ✅ 0 أخطاء |
+| `pnpm --filter @workspace/api-server run typecheck` | ✅ 0 أخطاء |
+| `pnpm --filter @workspace/erp-system run lint` | ✅ 0 أخطاء (2 تحذيرات سابقة في `ChecklistTab.tsx` غير متعلّقة) |
+| `pnpm --filter @workspace/api-server run lint` | ✅ 0 أخطاء (5 تحذيرات أمان سابقة في `load-env.ts`/`csrf.ts` غير متعلّقة) |
+| اختبارات `erp-system` | ✅ 269 ناجحة (25 ملفاً) |
+| اختبارات `api-server` (المتعلّقة) | ✅ ناجحة — `lib` (106)، مسارات `settings` (18)، حارس عزل الإعدادات (2)؛ ملاحظة: تشغيل الحزمة كاملةً يستنزف الذاكرة في هذه البيئة، والإخفاقات عند التشغيل الدُفعي المتوازي ناتجة عن تداخل قاعدة بيانات الاختبار المشتركة لا عن هذه التغييرات (تأكَّد بنجاح الملفات منفردةً). |
+| HMR | ✅ طُبِّق نظيفاً بلا أخطاء |
+
+> القيود محفوظة: لا تغييرات على المصادقة/الأسرار/بيئة الإنتاج/المخطّط/الهجرات/RLS/العزل، لا قائمة IP للمشرف الأعلى، والإبقاء على `sa-query.ts`/`saRetry`/`refetchOnWindowFocus:false`.

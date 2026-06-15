@@ -1,4 +1,5 @@
 import { C, FONT } from './types';
+import { SAErrorState, SARefreshHint } from './sa-primitives';
 import { ACTION_AR, RECORD_AR } from './audit-actions';
 
 interface AuditRow {
@@ -16,6 +17,7 @@ interface AuditRow {
 interface Props {
   auditData?: { count: number; rows: AuditRow[] };
   auditLoading: boolean;
+  auditError: boolean;
   onRefetch: () => void;
   auditAction: string;
   setAuditAction: (v: string) => void;
@@ -26,6 +28,7 @@ interface Props {
 export function TabAuditLog({
   auditData,
   auditLoading,
+  auditError,
   onRefetch,
   auditAction,
   setAuditAction,
@@ -50,6 +53,9 @@ export function TabAuditLog({
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>
             كل إجراء قام به المدير العام مُسجَّل هنا
+            {auditError && auditData && (
+              <span style={{ color: C.danger, fontWeight: 700 }}> · تعذّر التحديث الأخير</span>
+            )}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -155,11 +161,19 @@ export function TabAuditLog({
         </div>
       </div>
 
+      {auditError && auditData && <SARefreshHint onRetry={onRefetch} />}
+
       {/* Table */}
       {auditLoading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>
           ⏳ جارٍ التحميل...
         </div>
+      ) : auditError && !auditData ? (
+        <SAErrorState
+          title="تعذّر تحميل سجل التدقيق"
+          description="تحقق من الاتصال بالخادم وأعد المحاولة"
+          onRetry={() => void onRefetch()}
+        />
       ) : (
         <div
           style={{

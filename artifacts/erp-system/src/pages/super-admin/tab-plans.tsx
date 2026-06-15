@@ -1,4 +1,5 @@
 import { C, FONT } from './types';
+import { SAErrorState, SARefreshHint } from './sa-primitives';
 
 export interface PlanSetting {
   id: number;
@@ -15,6 +16,8 @@ export interface PlanSetting {
 interface Props {
   planSettings?: PlanSetting[];
   planSettingsLoading: boolean;
+  planSettingsError: boolean;
+  onRefetch: () => void;
   editingPlan: PlanSetting | null;
   setEditingPlan: (p: PlanSetting | null) => void;
   planSaving: boolean;
@@ -24,6 +27,8 @@ interface Props {
 export function TabPlans({
   planSettings,
   planSettingsLoading,
+  planSettingsError,
+  onRefetch,
   editingPlan,
   setEditingPlan,
   planSaving,
@@ -38,12 +43,27 @@ export function TabPlans({
           </h1>
           <p style={{ fontSize: '13px', color: C.muted, margin: '4px 0 0' }}>
             تعديل أسعار اشتراكات خطط النظام — تُحسب الإيرادات بناءً على هذه الأسعار
+            {planSettingsError && planSettings && (
+              <span style={{ color: C.danger, fontWeight: 700 }}> · تعذّر التحديث الأخير</span>
+            )}
           </p>
         </div>
       </div>
 
+      {planSettingsError && planSettings && (
+        <div style={{ marginBottom: '20px' }}>
+          <SARefreshHint onRetry={onRefetch} />
+        </div>
+      )}
+
       {planSettingsLoading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>جارٍ التحميل…</div>
+      ) : planSettingsError && !planSettings ? (
+        <SAErrorState
+          title="تعذّر تحميل إعدادات الخطط"
+          description="تحقق من الاتصال بالخادم وأعد المحاولة"
+          onRetry={() => void onRefetch()}
+        />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
           {(planSettings ?? []).map((plan) => {

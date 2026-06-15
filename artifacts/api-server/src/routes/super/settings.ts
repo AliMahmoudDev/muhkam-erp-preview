@@ -3,6 +3,7 @@
  * Covers backups, Telegram bot credentials/settings, and support contact info.
  */
 import { Router } from 'express';
+import { randomBytes, timingSafeEqual } from 'crypto';
 import { eq, sql } from 'drizzle-orm';
 import { db, superSettingsTable } from '@workspace/db';
 import fs from 'fs';
@@ -70,6 +71,80 @@ router.get(
       enabled: !!process.env.BACKUP_ENCRYPTION_KEY,
       key: null,
       error: 'Backup encryption key export is disabled. Read it only from the server secret store.',
+    });
+  })
+);
+
+/* ── POST /super/backup/encryption-key/generate ──────────────────────────────
+ * Generate a NEW candidate backup-encryption key for the operator to store in
+ * the server's secret manager. PIN-protected via SUPER_ADMIN_PIN.
+ *
+ * SECURITY:
+ *   • Returned ONCE and never persisted, cached, or logged (only the action is
+ *     written to the audit trail — never the key value).
+ *   • Does NOT change the running BACKUP_ENCRYPTION_KEY — backup-crypto reads it
+ *     from env at module load, so the operator must save this into the secret
+ *     store and restart the server for it to take effect.
+ */
+router.post(
+  '/super/backup/encryption-key/generate',
+  ...superOnly,
+  wrap(async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    const configuredPin = process.env.SUPER_ADMIN_PIN;
+    if (!configuredPin) {
+      res.status(404).json({
+        error: 'هذه العملية غير متاحة — SUPER_ADMIN_PIN غير مُعَدّ على الخادم.',
+      });
+      return;
+    }
+    if (Buffer.byteLength(configuredPin) > 64) {
+      logger.error(
+        '[encryption-key/generate] SUPER_ADMIN_PIN exceeds 64 bytes — refusing to compare'
+      );
+      res.status(500).json({ error: 'إعداد الخادم غير صحيح — راجع SUPER_ADMIN_PIN.' });
+      return;
+    }
+
+    const pin = (req.body as { pin?: unknown })?.pin;
+    if (typeof pin !== 'string' || pin.length === 0 || Buffer.byteLength(pin) > 64) {
+      res.status(400).json({ error: 'الرمز السري (PIN) مطلوب للتأكيد.' });
+      return;
+    }
+
+    /* Constant-time compare on fixed-size buffers (mirrors auth emergency-unlock). */
+    const a = Buffer.alloc(64);
+    const b = Buffer.alloc(64);
+    Buffer.from(pin).copy(a);
+    Buffer.from(configuredPin).copy(b);
+    if (!timingSafeEqual(a, b)) {
+      logger.warn(
+        { user: req.user?.username, ip: req.ip },
+        '[encryption-key/generate] Invalid PIN attempt'
+      );
+      res.status(403).json({ error: 'الرمز السري غير صحيح.' });
+      return;
+    }
+
+    const key = randomBytes(32).toString('hex');
+    const generatedAt = new Date().toISOString();
+
+    /* Audit the ACTION only — never the key value. */
+    void writeAuditLog({
+      action: 'BACKUP_ENCRYPTION_KEY_GENERATED',
+      record_type: 'system',
+      record_id: req.user?.id ?? 0,
+      user: { id: req.user?.id, username: req.user?.username },
+      note: 'Super admin generated a new candidate backup-encryption key (value not stored).',
+    });
+
+    res.json({
+      key,
+      generated_at: generatedAt,
+      already_configured: !!process.env.BACKUP_ENCRYPTION_KEY,
     });
   })
 );

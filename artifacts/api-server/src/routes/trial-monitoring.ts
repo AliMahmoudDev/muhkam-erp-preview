@@ -20,41 +20,41 @@
  * All state-changing actions are written to audit_logs.
  */
 
-import { Router } from "express";
-import { z } from "zod";
-import { desc, eq } from "drizzle-orm";
-import { authenticate, requireRole } from "../middleware/auth";
-import { wrap } from "../lib/async-handler";
-import { anomalyDetector } from "../lib/trial-anomaly";
-import { recentBlocksStore } from "../lib/trial-recent-blocks";
-import { writeAuditLog } from "../lib/audit-log";
-import { db, companiesTable } from "@workspace/db";
-import { trialRedis, K } from "../lib/redis";
-import { cooldownStore } from "../lib/trial-cooldown";
+import { Router } from 'express';
+import { z } from 'zod';
+import { desc, eq } from 'drizzle-orm';
+import { authenticate, requireRole } from '../middleware/auth';
+import { wrap } from '../lib/async-handler';
+import { anomalyDetector } from '../lib/trial-anomaly';
+import { recentBlocksStore } from '../lib/trial-recent-blocks';
+import { writeAuditLog } from '../lib/audit-log';
+import { db, companiesTable } from '@workspace/db';
+import { trialRedis, K } from '../lib/redis';
+import { cooldownStore } from '../lib/trial-cooldown';
 
-const router  = Router();
-const superOnly = [authenticate, requireRole("super_admin")] as const;
+const router = Router();
+const superOnly = [authenticate, requireRole('super_admin')] as const;
 
 /* ── Wire anomaly callbacks for audit logging (runs once at import time) ──── */
 anomalyDetector.onWarning = (count: number) => {
   void writeAuditLog({
-    action:      "TRIAL_MONITORING_WARNING",
-    record_type: "trial_monitoring",
-    record_id:   0,
-    old_value:   { status: "normal" },
-    new_value:   { status: "warning", count },
-    note:        `High trial registration rate: ${count} in window`,
+    action: 'TRIAL_MONITORING_WARNING',
+    record_type: 'trial_monitoring',
+    record_id: 0,
+    old_value: { status: 'normal' },
+    new_value: { status: 'warning', count },
+    note: `High trial registration rate: ${count} in window`,
   });
 };
 
 anomalyDetector.onAutoPause = (count: number) => {
   void writeAuditLog({
-    action:      "TRIAL_REGISTRATION_AUTO_PAUSED",
-    record_type: "trial_monitoring",
-    record_id:   0,
-    old_value:   { status: "warning" },
-    new_value:   { status: "paused", count, auto: true },
-    note:        `Auto-paused: ${count} registrations in window exceeded trip threshold`,
+    action: 'TRIAL_REGISTRATION_AUTO_PAUSED',
+    record_type: 'trial_monitoring',
+    record_id: 0,
+    old_value: { status: 'warning' },
+    new_value: { status: 'paused', count, auto: true },
+    note: `Auto-paused: ${count} registrations in window exceeded trip threshold`,
   });
 };
 
@@ -62,12 +62,12 @@ anomalyDetector.onAutoPause = (count: number) => {
    GET /api/super/trial-monitoring
    ══════════════════════════════════════════════════════════════════════════ */
 router.get(
-  "/super/trial-monitoring",
+  '/super/trial-monitoring',
   ...superOnly,
   wrap(async (_req, res) => {
     /* Try Redis-dependent calls; fall back to safe defaults if Redis is down */
     let redisOk = true;
-    let status: string = "normal";
+    let status: string = 'normal';
     let inWindow = 0;
     let pauseUntil: Date | null = null;
     let pauseRemain = 0;
@@ -109,11 +109,11 @@ router.get(
     /* Suspicious companies — always from DB (no Redis needed) */
     const suspiciousCompanies = await db
       .select({
-        id:                  companiesTable.id,
-        name:                companiesTable.name,
-        email:               companiesTable.admin_email,
-        trial_score:         companiesTable.trial_score,
-        is_suspicious:       companiesTable.is_suspicious,
+        id: companiesTable.id,
+        name: companiesTable.name,
+        email: companiesTable.admin_email,
+        trial_score: companiesTable.trial_score,
+        is_suspicious: companiesTable.is_suspicious,
         verification_status: companiesTable.verification_status,
       })
       .from(companiesTable)
@@ -122,32 +122,32 @@ router.get(
       .limit(20);
 
     res.json({
-      redis_ok:                 redisOk,
+      redis_ok: redisOk,
       status,
-      registrations_in_window:  inWindow,
-      alert_threshold:          anomalyDetector.alertThreshold(),
-      block_threshold:          anomalyDetector.blockThreshold(),
-      pause_until:              pauseUntil?.toISOString() ?? null,
-      pause_remaining_seconds:  pauseRemain,
-      warning_fired_at:         warningFiredAt?.toISOString() ?? null,
-      pause_reason:             pauseReason,
-      was_manual_pause:         wasManualPause,
-      top_ips:          topIPs.map(e => ({ ip:          e.key, count: e.count })),
-      top_fingerprints: topFPs.map(e => ({ fingerprint: e.key, count: e.count })),
+      registrations_in_window: inWindow,
+      alert_threshold: anomalyDetector.alertThreshold(),
+      block_threshold: anomalyDetector.blockThreshold(),
+      pause_until: pauseUntil?.toISOString() ?? null,
+      pause_remaining_seconds: pauseRemain,
+      warning_fired_at: warningFiredAt?.toISOString() ?? null,
+      pause_reason: pauseReason,
+      was_manual_pause: wasManualPause,
+      top_ips: topIPs.map((e) => ({ ip: e.key, count: e.count })),
+      top_fingerprints: topFPs.map((e) => ({ fingerprint: e.key, count: e.count })),
       suspicious_companies: suspiciousCompanies,
-      recent_blocks:        recentBlocks,
+      recent_blocks: recentBlocks,
     });
-  }),
+  })
 );
 
 /* ══════════════════════════════════════════════════════════════════════════
    POST /api/super/trial-monitoring/clear-warning
    ══════════════════════════════════════════════════════════════════════════ */
 router.post(
-  "/super/trial-monitoring/clear-warning",
+  '/super/trial-monitoring/clear-warning',
   ...superOnly,
   wrap(async (req, res) => {
-    const actor      = req.user;
+    const actor = req.user;
     const prevStatus = await anomalyDetector.status();
 
     await anomalyDetector.clearWarning();
@@ -155,17 +155,17 @@ router.post(
     const newStatus = await anomalyDetector.status();
 
     void writeAuditLog({
-      action:      "TRIAL_MONITORING_WARNING_CLEARED",
-      record_type: "trial_monitoring",
-      record_id:   actor?.id ?? 0,
-      old_value:   { status: prevStatus },
-      new_value:   { status: newStatus },
-      user:        { id: actor?.id, username: actor?.username },
-      note:        "Super admin cleared trial registration warning",
+      action: 'TRIAL_MONITORING_WARNING_CLEARED',
+      record_type: 'trial_monitoring',
+      record_id: actor?.id ?? 0,
+      old_value: { status: prevStatus },
+      new_value: { status: newStatus },
+      user: { id: actor?.id, username: actor?.username },
+      note: 'Super admin cleared trial registration warning',
     });
 
     res.json({ ok: true, status: newStatus });
-  }),
+  })
 );
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -174,21 +174,21 @@ router.post(
    ══════════════════════════════════════════════════════════════════════════ */
 const PauseSchema = z.object({
   minutes: z.number().int().min(1).max(1440),
-  reason:  z.string().max(255).optional().default("manual security pause"),
+  reason: z.string().max(255).optional().default('manual security pause'),
 });
 
 router.post(
-  "/super/trial-monitoring/pause",
+  '/super/trial-monitoring/pause',
   ...superOnly,
   wrap(async (req, res) => {
     const parsed = PauseSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid body", details: parsed.error.flatten() });
+      res.status(400).json({ error: 'invalid body', details: parsed.error.flatten() });
       return;
     }
 
     const { minutes, reason } = parsed.data;
-    const actor      = req.user;
+    const actor = req.user;
     const prevStatus = await anomalyDetector.status();
 
     await anomalyDetector.manualPause(minutes, reason);
@@ -199,33 +199,33 @@ router.post(
     ]);
 
     void writeAuditLog({
-      action:      "TRIAL_REGISTRATION_MANUAL_PAUSED",
-      record_type: "trial_monitoring",
-      record_id:   actor?.id ?? 0,
-      old_value:   { status: prevStatus },
-      new_value:   { status: "paused", minutes, reason, manual: true },
-      user:        { id: actor?.id, username: actor?.username },
-      note:        `Super admin manually paused trial registrations for ${minutes} min: ${reason}`,
+      action: 'TRIAL_REGISTRATION_MANUAL_PAUSED',
+      record_type: 'trial_monitoring',
+      record_id: actor?.id ?? 0,
+      old_value: { status: prevStatus },
+      new_value: { status: 'paused', minutes, reason, manual: true },
+      user: { id: actor?.id, username: actor?.username },
+      note: `Super admin manually paused trial registrations for ${minutes} min: ${reason}`,
     });
 
     res.json({
-      ok:            true,
-      status:        newStatus,
-      pause_until:   pauseUntil?.toISOString(),
+      ok: true,
+      status: newStatus,
+      pause_until: pauseUntil?.toISOString(),
       pause_minutes: minutes,
       reason,
     });
-  }),
+  })
 );
 
 /* ══════════════════════════════════════════════════════════════════════════
    POST /api/super/trial-monitoring/resume
    ══════════════════════════════════════════════════════════════════════════ */
 router.post(
-  "/super/trial-monitoring/resume",
+  '/super/trial-monitoring/resume',
   ...superOnly,
   wrap(async (req, res) => {
-    const actor      = req.user;
+    const actor = req.user;
     const prevStatus = await anomalyDetector.status();
 
     await anomalyDetector.manualResume();
@@ -234,17 +234,17 @@ router.post(
     const newStatus = await anomalyDetector.status();
 
     void writeAuditLog({
-      action:      "TRIAL_REGISTRATION_RESUMED",
-      record_type: "trial_monitoring",
-      record_id:   actor?.id ?? 0,
-      old_value:   { status: prevStatus },
-      new_value:   { status: newStatus },
-      user:        { id: actor?.id, username: actor?.username },
-      note:        "Super admin manually resumed trial registrations",
+      action: 'TRIAL_REGISTRATION_RESUMED',
+      record_type: 'trial_monitoring',
+      record_id: actor?.id ?? 0,
+      old_value: { status: prevStatus },
+      new_value: { status: newStatus },
+      user: { id: actor?.id, username: actor?.username },
+      note: 'Super admin manually resumed trial registrations',
     });
 
     res.json({ ok: true, status: newStatus });
-  }),
+  })
 );
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -252,41 +252,41 @@ router.post(
    Diagnose why a specific IP is blocked (cooldown, rate limit, etc.)
    ══════════════════════════════════════════════════════════════════════════ */
 router.get(
-  "/super/trial-monitoring/check-ip",
+  '/super/trial-monitoring/check-ip',
   ...superOnly,
   wrap(async (req, res) => {
-    const ip = String(req.query.ip ?? "").trim();
+    const ip = String(req.query.ip ?? '').trim();
     if (!ip) {
-      res.status(400).json({ error: "ip query param required" });
+      res.status(400).json({ error: 'ip query param required' });
       return;
     }
 
-    const normalIP = ip.startsWith("::ffff:") ? ip.slice(7) : ip.toLowerCase();
+    const normalIP = ip.startsWith('::ffff:') ? ip.slice(7) : ip.toLowerCase();
 
     let redisOk = true;
     let cooldown: { blocked: boolean; until?: Date; level?: number } = { blocked: false };
     let rateCount = 0;
-    let rateTtl   = 0;
+    let rateTtl = 0;
 
     try {
-      cooldown  = await cooldownStore.check(normalIP);
+      cooldown = await cooldownStore.check(normalIP);
       const raw = await trialRedis.get(K.RATE_IP(normalIP));
       rateCount = raw ? Number(raw) : 0;
-      rateTtl   = await trialRedis.ttl(K.RATE_IP(normalIP));
+      rateTtl = await trialRedis.ttl(K.RATE_IP(normalIP));
     } catch {
       redisOk = false;
     }
 
     res.json({
-      ip:           normalIP,
-      redis_ok:     redisOk,
+      ip: normalIP,
+      redis_ok: redisOk,
       cooldown_blocked: cooldown.blocked,
-      cooldown_until:   cooldown.until?.toISOString() ?? null,
-      cooldown_level:   cooldown.level ?? null,
-      rate_count:   rateCount,
+      cooldown_until: cooldown.until?.toISOString() ?? null,
+      cooldown_level: cooldown.level ?? null,
+      rate_count: rateCount,
       rate_ttl_sec: rateTtl > 0 ? rateTtl : 0,
     });
-  }),
+  })
 );
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -295,62 +295,96 @@ router.get(
    Clears Redis cooldown + rate limit for an IP (and optionally a fingerprint).
    Does NOT override DB-based blocks — those go through /super/trial-abuse/:id/override.
    ══════════════════════════════════════════════════════════════════════════ */
-const UnblockSchema = z.object({
-  ip:          z.string().min(1).max(64),
-  fingerprint: z.string().max(128).optional(),
-});
+const UnblockSchema = z
+  .object({
+    ip: z.string().min(1).max(64).optional(),
+    email: z.string().min(1).max(254).optional(),
+    fingerprint: z.string().min(1).max(128).optional(),
+  })
+  .refine((d) => !!(d.ip || d.email || d.fingerprint), {
+    message: 'at least one of ip / email / fingerprint is required',
+  });
 
 router.post(
-  "/super/trial-monitoring/unblock-ip",
+  '/super/trial-monitoring/unblock-ip',
   ...superOnly,
   wrap(async (req, res) => {
     const parsed = UnblockSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid body", details: parsed.error.flatten() });
+      res.status(400).json({ error: 'invalid body', details: parsed.error.flatten() });
       return;
     }
 
-    const { ip, fingerprint } = parsed.data;
-    const normalIP = ip.startsWith("::ffff:") ? ip.slice(7) : ip.toLowerCase().trim();
-    const actor    = req.user;
+    const { ip, email, fingerprint } = parsed.data;
+    const normalIP = ip
+      ? ip.startsWith('::ffff:')
+        ? ip.slice(7)
+        : ip.toLowerCase().trim()
+      : undefined;
+    const normalEmail = email ? email.toLowerCase().trim() : undefined;
+    const normalFp = fingerprint ? fingerprint.trim() : undefined;
+    const actor = req.user;
 
     const cleared: string[] = [];
+    let recentRemoved = 0;
 
     try {
-      /* 1. Clear IP cooldown */
-      const delCooldown = await trialRedis.del(K.COOLDOWN(normalIP));
-      if (delCooldown > 0) cleared.push("ip_cooldown");
+      /* 1. Clear IP cooldown / rate limit + drop from monitoring windows */
+      if (normalIP) {
+        const delCooldown = await trialRedis.del(K.COOLDOWN(normalIP));
+        if (delCooldown > 0) cleared.push('ip_cooldown');
 
-      /* 2. Clear IP rate limit */
-      const delRate = await trialRedis.del(K.RATE_IP(normalIP));
-      if (delRate > 0) cleared.push("ip_rate_limit");
+        const delRate = await trialRedis.del(K.RATE_IP(normalIP));
+        if (delRate > 0) cleared.push('ip_rate_limit');
 
-      /* 3. Clear fingerprint blocks if provided */
-      if (fingerprint) {
-        const fpKey = `fp:${fingerprint}`;
-        const delFpCooldown = await trialRedis.del(K.COOLDOWN(fpKey));
-        if (delFpCooldown > 0) cleared.push("fp_cooldown");
-
-        const delFpRate = await trialRedis.del(K.RATE_FP(fingerprint));
-        if (delFpRate > 0) cleared.push("fp_rate_limit");
+        await anomalyDetector.forgetIP(normalIP);
+        cleared.push('ip_monitoring');
       }
+
+      /* 2. Clear fingerprint cooldown / rate limit + drop from monitoring */
+      if (normalFp) {
+        const fpKey = `fp:${normalFp}`;
+        const delFpCooldown = await trialRedis.del(K.COOLDOWN(fpKey));
+        if (delFpCooldown > 0) cleared.push('fp_cooldown');
+
+        const delFpRate = await trialRedis.del(K.RATE_FP(normalFp));
+        if (delFpRate > 0) cleared.push('fp_rate_limit');
+
+        await anomalyDetector.forgetFingerprint(normalFp);
+        cleared.push('fp_monitoring');
+      }
+
+      /* 3. Purge matching entries from the recent-blocks ring buffer so the
+            dashboard reflects the unblock immediately (matches by ip/email/fp). */
+      recentRemoved = await recentBlocksStore.removeMatching({
+        ip: normalIP,
+        email: normalEmail,
+        fingerprint: normalFp,
+      });
+      if (recentRemoved > 0) cleared.push(`recent_blocks(${recentRemoved})`);
     } catch (err) {
-      res.status(503).json({ error: "Redis unavailable — cannot clear blocks", ok: false });
+      res.status(503).json({ error: 'Redis unavailable — cannot clear blocks', ok: false });
       return;
     }
 
     void writeAuditLog({
-      action:      "TRIAL_GUARD_UNBLOCK_IP",
-      record_type: "trial_monitoring",
-      record_id:   actor?.id ?? 0,
-      old_value:   { ip: normalIP, fingerprint },
-      new_value:   { cleared },
-      user:        { id: actor?.id, username: actor?.username },
-      note:        `Super admin cleared Redis blocks for IP ${normalIP}${fingerprint ? ` + fingerprint ${fingerprint.slice(0, 8)}…` : ""}`,
+      action: 'TRIAL_GUARD_UNBLOCK_IP',
+      record_type: 'trial_monitoring',
+      record_id: actor?.id ?? 0,
+      old_value: { ip: normalIP, email: normalEmail, fingerprint: normalFp },
+      new_value: { cleared, recent_removed: recentRemoved },
+      user: { id: actor?.id, username: actor?.username },
+      note: `Super admin cleared Redis/monitoring blocks${normalIP ? ` for IP ${normalIP}` : ''}${normalEmail ? ` email ${normalEmail}` : ''}${normalFp ? ` fingerprint ${normalFp.slice(0, 8)}…` : ''}`,
     });
 
-    res.json({ ok: true, ip: normalIP, cleared });
-  }),
+    res.json({
+      ok: true,
+      ip: normalIP ?? null,
+      email: normalEmail ?? null,
+      cleared,
+      recent_removed: recentRemoved,
+    });
+  })
 );
 
 export default router;

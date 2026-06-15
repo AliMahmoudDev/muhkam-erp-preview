@@ -308,6 +308,18 @@ export default function SuperAdmin() {
             setRestoreCode={st.setRestoreCode}
             confirmRestore={st.confirmRestore}
             encEnabled={st.encEnabled}
+            showKeyGen={st.showKeyGen}
+            setShowKeyGen={st.setShowKeyGen}
+            keyGenPin={st.keyGenPin}
+            setKeyGenPin={st.setKeyGenPin}
+            keyGenLoading={st.keyGenLoading}
+            keyGenError={st.keyGenError}
+            generatedKey={st.generatedKey}
+            keyGenAlreadyConfigured={st.keyGenAlreadyConfigured}
+            keyGenCopied={st.keyGenCopied}
+            setKeyGenCopied={st.setKeyGenCopied}
+            generateEncryptionKey={st.generateEncryptionKey}
+            dismissGeneratedKey={st.dismissGeneratedKey}
             totpStatus={st.totpStatus}
             totpSetupData={st.totpSetupData}
             totpInput={st.totpInput}
@@ -358,6 +370,8 @@ export default function SuperAdmin() {
           <TabRevenue
             revenueData={td.revenueData}
             revenueLoading={td.revenueLoading}
+            revenueError={!!td.revenueError}
+            onRefetch={() => void td.refetchRevenue()}
             onExportCSV={co.exportCompaniesCSV}
           />
         )}
@@ -366,7 +380,8 @@ export default function SuperAdmin() {
           <TabAlerts
             alertsData={td.alertsData}
             alertsLoading={td.alertsLoading}
-            onRefetch={td.refetchAlerts}
+            alertsError={!!td.alertsError}
+            onRefetch={() => void td.refetchAlerts()}
             alertSearch={td.alertSearch}
             setAlertSearch={td.setAlertSearch}
             alertTypeFilter={td.alertTypeFilter}
@@ -380,7 +395,8 @@ export default function SuperAdmin() {
           <TabAuditLog
             auditData={td.auditData}
             auditLoading={td.auditLoading}
-            onRefetch={td.refetchAudit}
+            auditError={!!td.auditError}
+            onRefetch={() => void td.refetchAudit()}
             auditAction={td.auditAction}
             setAuditAction={td.setAuditAction}
             auditLimit={td.auditLimit}
@@ -414,6 +430,7 @@ export default function SuperAdmin() {
           <TabHealth
             healthData={td.healthData}
             healthLoading={td.healthLoading}
+            healthError={!!td.healthError}
             onRefetch={td.refetchHealth}
             healthUpdated={td.healthUpdated}
             redisHealth={td.redisHealth}
@@ -424,6 +441,8 @@ export default function SuperAdmin() {
           <TabPlans
             planSettings={td.planSettings}
             planSettingsLoading={td.planSettingsLoading}
+            planSettingsError={!!td.planSettingsError}
+            onRefetch={() => void td.refetchPlans()}
             editingPlan={td.editingPlan}
             setEditingPlan={td.setEditingPlan}
             planSaving={td.planSaving}

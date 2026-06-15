@@ -12,6 +12,7 @@ import {
   Legend,
 } from 'recharts';
 import { C, FONT } from './types';
+import { SAErrorState, SARefreshHint } from './sa-primitives';
 
 interface RevenueData {
   mrr: number;
@@ -30,10 +31,18 @@ interface RevenueData {
 interface Props {
   revenueData?: RevenueData;
   revenueLoading: boolean;
+  revenueError: boolean;
+  onRefetch: () => void;
   onExportCSV: () => void;
 }
 
-export function TabRevenue({ revenueData, revenueLoading, onExportCSV }: Props) {
+export function TabRevenue({
+  revenueData,
+  revenueLoading,
+  revenueError,
+  onRefetch,
+  onExportCSV,
+}: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
@@ -44,6 +53,9 @@ export function TabRevenue({ revenueData, revenueLoading, onExportCSV }: Props) 
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>
             تتبع الإيرادات الشهرية والنمو ومعدلات التحويل
+            {revenueError && revenueData && (
+              <span style={{ color: C.danger, fontWeight: 700 }}> · تعذّر التحديث الأخير</span>
+            )}
           </p>
         </div>
         <button
@@ -64,10 +76,18 @@ export function TabRevenue({ revenueData, revenueLoading, onExportCSV }: Props) 
         </button>
       </div>
 
+      {revenueError && revenueData && <SARefreshHint onRetry={onRefetch} />}
+
       {revenueLoading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>
           ⏳ جارٍ التحميل...
         </div>
+      ) : revenueError && !revenueData ? (
+        <SAErrorState
+          title="تعذّر تحميل بيانات الإيرادات"
+          description="تحقق من اتصال السيرفر وأعد المحاولة"
+          onRetry={onRefetch}
+        />
       ) : revenueData ? (
         <>
           {/* KPI Cards */}
@@ -366,6 +386,12 @@ export function TabRevenue({ revenueData, revenueLoading, onExportCSV }: Props) 
             })()}
           </div>
         </>
+      ) : revenueError ? (
+        <SAErrorState
+          title="تعذّر تحميل بيانات الإيرادات"
+          description="تحقق من الاتصال بالخادم وأعد المحاولة"
+          onRetry={() => void onRefetch()}
+        />
       ) : null}
     </div>
   );

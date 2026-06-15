@@ -82,6 +82,18 @@ interface Props {
   confirmRestore: () => void;
   /* Encryption key */
   encEnabled: boolean;
+  showKeyGen: boolean;
+  setShowKeyGen: (v: boolean) => void;
+  keyGenPin: string;
+  setKeyGenPin: (v: string) => void;
+  keyGenLoading: boolean;
+  keyGenError: string | null;
+  generatedKey: string | null;
+  keyGenAlreadyConfigured: boolean;
+  keyGenCopied: boolean;
+  setKeyGenCopied: (v: boolean) => void;
+  generateEncryptionKey: () => void;
+  dismissGeneratedKey: () => void;
   /* Security */
   totpStatus: { totp_enabled: boolean } | undefined;
   totpSetupData: { qr_code: string; secret: string } | null;
@@ -158,6 +170,18 @@ export function TabSettings({
   setRestoreCode,
   confirmRestore,
   encEnabled,
+  showKeyGen,
+  setShowKeyGen,
+  keyGenPin,
+  setKeyGenPin,
+  keyGenLoading,
+  keyGenError,
+  generatedKey,
+  keyGenAlreadyConfigured,
+  keyGenCopied,
+  setKeyGenCopied,
+  generateEncryptionKey,
+  dismissGeneratedKey,
   totpStatus,
   totpSetupData,
   totpInput,
@@ -486,6 +510,18 @@ export function TabSettings({
               downloadBackup={downloadBackup}
               openRestorePicker={openRestorePicker}
               encEnabled={encEnabled}
+              showKeyGen={showKeyGen}
+              setShowKeyGen={setShowKeyGen}
+              keyGenPin={keyGenPin}
+              setKeyGenPin={setKeyGenPin}
+              keyGenLoading={keyGenLoading}
+              keyGenError={keyGenError}
+              generatedKey={generatedKey}
+              keyGenAlreadyConfigured={keyGenAlreadyConfigured}
+              keyGenCopied={keyGenCopied}
+              setKeyGenCopied={setKeyGenCopied}
+              generateEncryptionKey={generateEncryptionKey}
+              dismissGeneratedKey={dismissGeneratedKey}
             />
           )}
           {settingsActiveCard === 'security' && (

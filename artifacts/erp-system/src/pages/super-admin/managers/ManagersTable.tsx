@@ -1,6 +1,6 @@
 import { Users } from 'lucide-react';
 import { type Manager, C } from '../types';
-import { SASkeleton, SAEmptyState, SAErrorState } from '../sa-primitives';
+import { SASkeleton, SAEmptyState, SAErrorState, SARefreshHint } from '../sa-primitives';
 import { ManagerRow } from './ManagerRow';
 
 interface Props {
@@ -55,7 +55,7 @@ export function ManagersTable({
 
       {mgLoading ? (
         <SASkeleton rows={4} rowHeight={52} />
-      ) : mgError ? (
+      ) : mgError && managers.length === 0 ? (
         <SAErrorState
           title="تعذّر جلب بيانات المديرين"
           description="تحقق من الاتصال بالخادم أو أعد تسجيل الدخول"
@@ -67,18 +67,25 @@ export function ManagersTable({
           title="لا يوجد مديرون عامون مسجّلون"
         />
       ) : (
-        managers.map((m, idx) => (
-          <ManagerRow
-            key={m.id}
-            m={m}
-            idx={idx}
-            currentUserId={currentUserId}
-            mgToggleMutate={mgToggleMutate}
-            openEdit={openEdit}
-            setDeleteMgrErr={setDeleteMgrErr}
-            setDeleteMgr={setDeleteMgr}
-          />
-        ))
+        <>
+          {mgError && (
+            <div style={{ padding: '16px 24px 0' }}>
+              <SARefreshHint onRetry={() => void mgRefetch()} />
+            </div>
+          )}
+          {managers.map((m, idx) => (
+            <ManagerRow
+              key={m.id}
+              m={m}
+              idx={idx}
+              currentUserId={currentUserId}
+              mgToggleMutate={mgToggleMutate}
+              openEdit={openEdit}
+              setDeleteMgrErr={setDeleteMgrErr}
+              setDeleteMgr={setDeleteMgr}
+            />
+          ))}
+        </>
       )}
     </>
   );

@@ -99,7 +99,7 @@ export function OverviewKpiCards({
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '18px' }}>
       {items.map((kpi) => (
         <div
           key={kpi.label}
@@ -109,7 +109,7 @@ export function OverviewKpiCards({
             borderRadius: '16px',
             border: `1px solid ${C.border}`,
             borderTop: `3px solid ${kpi.borderTopColor}`,
-            padding: '20px',
+            padding: '24px',
             cursor: 'pointer',
             transition: 'transform 0.15s, box-shadow 0.15s',
           }}
@@ -122,12 +122,12 @@ export function OverviewKpiCards({
             (e.currentTarget as HTMLDivElement).style.boxShadow = '';
           }}
         >
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ marginBottom: '14px' }}>
             <div
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
                 background: kpi.iconBg,
                 border: `1px solid ${kpi.iconBorderColor}`,
                 display: 'flex',
@@ -135,18 +135,18 @@ export function OverviewKpiCards({
                 justifyContent: 'center',
               }}
             >
-              <kpi.Icon size={18} color={kpi.iconColor} strokeWidth={1.8} />
+              <kpi.Icon size={20} color={kpi.iconColor} strokeWidth={1.8} />
             </div>
           </div>
           <div
-            style={{ fontSize: '30px', fontWeight: 900, color: kpi.borderTopColor, lineHeight: 1 }}
+            style={{ fontSize: '34px', fontWeight: 900, color: kpi.borderTopColor, lineHeight: 1 }}
           >
             {kpi.value}
           </div>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: C.text, marginTop: '8px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: C.text, marginTop: '10px' }}>
             {kpi.label}
           </div>
-          <div style={{ fontSize: '11px', color: C.muted, marginTop: '4px' }}>{kpi.sub}</div>
+          <div style={{ fontSize: '12px', color: C.muted, marginTop: '4px' }}>{kpi.sub}</div>
         </div>
       ))}
     </div>

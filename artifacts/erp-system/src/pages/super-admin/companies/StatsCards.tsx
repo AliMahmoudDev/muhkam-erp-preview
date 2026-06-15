@@ -27,7 +27,9 @@ export function StatsCards({
             setActiveTab(s.tab);
             if (s.filter !== null && s.tab === 'companies') setStatusFilter(s.filter);
             setTimeout(() => {
-              document.getElementById('companies-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              document
+                .getElementById('companies-table')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
           }}
           style={{
@@ -35,7 +37,7 @@ export function StatsCards({
             borderRadius: '14px',
             border: `1px solid ${C.border}`,
             borderTop: `3px solid ${s.color}`,
-            padding: '16px 10px 14px',
+            padding: '18px 12px 16px',
             textAlign: 'center',
             transition: 'all 0.2s',
             cursor: 'pointer',
@@ -51,23 +53,46 @@ export function StatsCards({
             e.currentTarget.style.boxShadow = 'none';
           }}
         >
-          <div style={{
-            position: 'absolute', top: '-10px', right: '-10px',
-            width: '50px', height: '50px', borderRadius: '50%',
-            background: `${s.color}18`, pointerEvents: 'none',
-          }} />
-          <div style={{ fontSize: '20px', marginBottom: '8px' }}>{s.icon}</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: s.color, lineHeight: 1 }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: '-10px',
+              right: '-10px',
+              width: '50px',
+              height: '50px',
+              borderRadius: '50%',
+              background: `${s.color}18`,
+              pointerEvents: 'none',
+            }}
+          />
+          <div style={{ fontSize: '22px', marginBottom: '10px' }}>{s.icon}</div>
+          <div style={{ fontSize: '2.15rem', fontWeight: 900, color: s.color, lineHeight: 1 }}>
             <AnimatedNumber target={s.value} />
           </div>
-          <div style={{ fontSize: '11px', color: C.text, marginTop: '6px', fontWeight: 700, lineHeight: 1.3 }}>
+          <div
+            style={{
+              fontSize: '12px',
+              color: C.text,
+              marginTop: '8px',
+              fontWeight: 700,
+              lineHeight: 1.3,
+            }}
+          >
             {s.label}
           </div>
-          <div style={{ fontSize: '10px', color: C.muted, marginTop: '2px' }}>{s.sub}</div>
-          <div style={{
-            position: 'absolute', bottom: '6px', left: '8px',
-            fontSize: '10px', color: s.color, opacity: 0.6,
-          }}>↗</div>
+          <div style={{ fontSize: '11px', color: C.muted, marginTop: '3px' }}>{s.sub}</div>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '6px',
+              left: '8px',
+              fontSize: '10px',
+              color: s.color,
+              opacity: 0.6,
+            }}
+          >
+            ↗
+          </div>
         </div>
       ))}
     </div>

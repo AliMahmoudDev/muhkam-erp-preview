@@ -242,16 +242,24 @@ export function TabMonitoring({
           reason: 'رفع يدوي من السوبر أدمن',
         }),
       });
+      if (!dbRes.ok) {
+        setUnblockMsg({ ok: false, text: 'فشل رفع الحجب من قاعدة البيانات — تحقق من اللوجز' });
+        return;
+      }
       const dbData = await dbRes.json();
       let redisPart = '';
-      if (unblockIP.trim()) {
+      if (unblockIP.trim() || unblockEmail.trim()) {
         try {
-          await authFetch('/api/super/trial-monitoring/unblock-ip', {
+          const redisRes = await authFetch('/api/super/trial-monitoring/unblock-ip', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ip: unblockIP.trim() }),
+            body: JSON.stringify({
+              ip: unblockIP.trim() || undefined,
+              email: unblockEmail.trim() || undefined,
+            }),
           });
-          redisPart = ' + Redis ✓';
+          // authFetch does not throw on 4xx/5xx — only claim success on res.ok
+          redisPart = redisRes.ok ? ' + Redis/المراقبة ✓' : ' (تعذّر تنظيف Redis)';
         } catch {
           redisPart = ' (Redis غير متاح)';
         }
@@ -316,6 +324,9 @@ export function TabMonitoring({
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>
             تحكم شامل في حماية التسجيلات — يتجدد كل 30 ثانية تلقائياً
+            {monError && monData && (
+              <span style={{ color: C.danger, fontWeight: 700 }}> · تعذّر التحديث الأخير</span>
+            )}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -414,8 +425,46 @@ export function TabMonitoring({
         </div>
       )}
 
-      {/* Error */}
-      {monError && !monLoading && (
+      {/* Non-blocking refresh-failed hint — cached data still shown below */}
+      {monError && !monLoading && monData && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 16px',
+            borderRadius: '12px',
+            background: 'rgba(239,68,68,0.08)',
+            border: '1px solid rgba(239,68,68,0.25)',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: 'var(--status-danger)',
+          }}
+        >
+          <span>⚠️ تعذّر تحديث بيانات المراقبة — تُعرض آخر نسخة محفوظة</span>
+          <button
+            onClick={() => void onRefetch()}
+            className="mon-btn"
+            style={{
+              marginInlineStart: 'auto',
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: '1px solid rgba(239,68,68,0.35)',
+              background: 'transparent',
+              color: 'var(--status-danger)',
+              cursor: 'pointer',
+              fontFamily: FONT,
+              fontWeight: 700,
+              fontSize: '12px',
+            }}
+          >
+            🔄 إعادة المحاولة
+          </button>
+        </div>
+      )}
+
+      {/* Error — full screen only on a true first-load failure (no cached data) */}
+      {monError && !monLoading && !monData && (
         <div
           style={{
             background: 'rgba(239,68,68,0.05)',
@@ -1013,6 +1062,30 @@ export function TabMonitoring({
                   >
                     🗑️ مسح
                   </button>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    background: 'rgba(148,163,184,0.06)',
+                    border: `1px solid ${C.border}`,
+                    marginBottom: '16px',
+                    fontSize: '11px',
+                    color: C.muted,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <span>
+                    <strong style={{ color: 'var(--status-info)' }}>✉️ البريد:</strong> يرفع الحجب
+                    من قاعدة البيانات (trial_abuse_log) ويختفي من السجلّ الأخير.
+                  </span>
+                  <span>
+                    <strong style={{ color: 'var(--status-success)' }}>🌐 IP / البصمة:</strong> يمسح
+                    حجب Redis (cooldown + rate) ويزيله من نوافذ المراقبة والسجلّ الأخير فوراً.
+                  </span>
                 </div>
                 {unblockMsg && (
                   <div

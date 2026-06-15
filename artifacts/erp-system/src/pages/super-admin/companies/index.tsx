@@ -103,13 +103,16 @@ export function TabCompanies(props: TabCompaniesProps) {
               الشركات المسجّلة
             </h2>
             <p style={{ fontSize: '12px', color: C.muted, margin: '2px 0 0' }}>
-              {coError
+              {coError && companies.length === 0
                 ? 'تعذّر تحميل القائمة'
                 : `عرض ${filtered.length} من ${companies.length} شركة${
                     coUpdatedAt
                       ? ` · آخر تحديث ${new Date(coUpdatedAt).toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}`
                       : ''
                   }`}
+              {coError && companies.length > 0 && (
+                <span style={{ color: C.danger, fontWeight: 700 }}> · تعذّر التحديث الأخير</span>
+              )}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
@@ -217,7 +220,7 @@ export function TabCompanies(props: TabCompaniesProps) {
               />
             ))}
           </div>
-        ) : coError ? (
+        ) : coError && companies.length === 0 ? (
           <div style={{ padding: '56px 24px', textAlign: 'center' }}>
             <div
               style={{ color: C.danger, fontWeight: 800, fontSize: '15px', marginBottom: '6px' }}
@@ -321,7 +324,7 @@ export function TabCompanies(props: TabCompaniesProps) {
           </div>
         )}
 
-        {!coLoading && !coError && (
+        {!coLoading && !(coError && companies.length === 0) && (
           <CompaniesPagination
             filtered={filtered}
             safePage={safePage}

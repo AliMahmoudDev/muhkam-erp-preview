@@ -71,7 +71,7 @@ export function useSettingsState(
   const [encEnabled, setEncEnabled] = useState(false);
 
   /* Auto-fetch encryption status (no key exposed) on settings tab */
-  const { data: encStatusData } = useQuery<{ enabled: boolean }>({
+  const { data: encStatusData, refetch: refetchEncStatus } = useQuery<{ enabled: boolean }>({
     queryKey: queryKeys.super.encryptionStatus,
     queryFn: () => fetcher('/api/super/encryption-status') as Promise<{ enabled: boolean }>,
     enabled: activeTab === 'settings',
@@ -80,6 +80,70 @@ export function useSettingsState(
   useEffect(() => {
     if (encStatusData !== undefined) setEncEnabled(encStatusData.enabled);
   }, [encStatusData]);
+
+  /* Key generation (candidate key, PIN-protected, shown once, never persisted) */
+  const [showKeyGen, setShowKeyGen] = useState(false);
+  const [keyGenPin, setKeyGenPin] = useState('');
+  const [keyGenLoading, setKeyGenLoading] = useState(false);
+  const [keyGenError, setKeyGenError] = useState<string | null>(null);
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [keyGenAlreadyConfigured, setKeyGenAlreadyConfigured] = useState(false);
+  const [keyGenCopied, setKeyGenCopied] = useState(false);
+
+  async function generateEncryptionKey() {
+    if (!keyGenPin.trim() || keyGenLoading) return;
+    setKeyGenLoading(true);
+    setKeyGenError(null);
+    try {
+      const res = await authFetch(api('/api/super/backup/encryption-key/generate'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: keyGenPin }),
+      });
+      const data = (await res.json()) as {
+        key?: string;
+        already_configured?: boolean;
+        error?: string;
+      };
+      if (!res.ok || !data.key) {
+        setKeyGenError(data.error ?? 'تعذّر توليد المفتاح');
+        return;
+      }
+      setGeneratedKey(data.key);
+      setKeyGenAlreadyConfigured(!!data.already_configured);
+      setKeyGenPin(''); // drop the PIN from memory immediately
+      void refetchEncStatus();
+    } catch {
+      setKeyGenError('تعذّر الاتصال بالخادم');
+    } finally {
+      setKeyGenLoading(false);
+    }
+  }
+
+  function dismissGeneratedKey() {
+    /* Wipe all sensitive key state — never persisted to storage or query cache */
+    setGeneratedKey(null);
+    setKeyGenPin('');
+    setKeyGenError(null);
+    setKeyGenCopied(false);
+    setKeyGenAlreadyConfigured(false);
+    setShowKeyGen(false);
+  }
+
+  /* Auto-wipe the generated key + PIN whenever the operator leaves the backup
+   * card or the settings tab (and on unmount) — enforces "shown once" so a
+   * stale key can never reappear from React state on tab/card switch. */
+  useEffect(() => {
+    const onBackupCard = activeTab === 'settings' && settingsActiveCard === 'backup';
+    if (!onBackupCard) {
+      setGeneratedKey(null);
+      setKeyGenPin('');
+      setKeyGenError(null);
+      setKeyGenCopied(false);
+      setKeyGenAlreadyConfigured(false);
+      setShowKeyGen(false);
+    }
+  }, [activeTab, settingsActiveCard]);
 
   /* ── Security / 2FA state ── */
   const [totpSetupData, setTotpSetupData] = useState<{ qr_code: string; secret: string } | null>(
@@ -465,6 +529,18 @@ export function useSettingsState(
     confirmRestore,
     /* encryption */
     encEnabled,
+    showKeyGen,
+    setShowKeyGen,
+    keyGenPin,
+    setKeyGenPin,
+    keyGenLoading,
+    keyGenError,
+    generatedKey,
+    keyGenAlreadyConfigured,
+    keyGenCopied,
+    setKeyGenCopied,
+    generateEncryptionKey,
+    dismissGeneratedKey,
     /* totp */
     totpStatus,
     totpSetupData,

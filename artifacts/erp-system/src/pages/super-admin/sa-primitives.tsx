@@ -111,6 +111,52 @@ export function SAErrorState({
   );
 }
 
+/* ── SARefreshHint — small non-blocking "refresh failed" banner ─────── */
+/* Shown when a background refetch fails but previously loaded data is still
+   on screen, so operators keep their cached view instead of a full error. */
+export function SARefreshHint({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '8px 14px',
+        borderRadius: '10px',
+        background: 'rgba(239,68,68,0.08)',
+        border: '1px solid rgba(239,68,68,0.25)',
+        fontSize: '12px',
+        fontWeight: 700,
+        color: C.danger,
+      }}
+    >
+      <AlertCircle size={14} />
+      <span>تعذّر تحديث البيانات — تُعرض آخر نسخة محفوظة</span>
+      <button
+        onClick={onRetry}
+        style={{
+          marginInlineStart: 'auto',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          padding: '4px 12px',
+          borderRadius: '8px',
+          background: 'transparent',
+          color: C.danger,
+          border: '1px solid rgba(239,68,68,0.35)',
+          fontSize: '12px',
+          fontWeight: 700,
+          cursor: 'pointer',
+          fontFamily: FONT,
+        }}
+      >
+        <RefreshCw size={12} />
+        إعادة المحاولة
+      </button>
+    </div>
+  );
+}
+
 /* ── SASection — standard card wrapper ──────────────────────────────── */
 export function SASection({
   children,

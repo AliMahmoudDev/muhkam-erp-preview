@@ -167,7 +167,12 @@ export function useTabsData(
   const [unblockMsg, setUnblockMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   /* ── Queries ── */
-  const { data: revenueData, isLoading: revenueLoading } = useQuery<RevenueData>({
+  const {
+    data: revenueData,
+    isLoading: revenueLoading,
+    isError: revenueError,
+    refetch: refetchRevenue,
+  } = useQuery<RevenueData>({
     queryKey: queryKeys.super.revenue,
     queryFn: () => fetcher('/api/super/revenue') as Promise<RevenueData>,
     enabled: activeTab === 'revenue',
@@ -179,6 +184,7 @@ export function useTabsData(
   const {
     data: alertsData,
     isLoading: alertsLoading,
+    isError: alertsError,
     refetch: refetchAlerts,
   } = useQuery<AlertsData>({
     queryKey: queryKeys.super.alerts,
@@ -212,6 +218,7 @@ export function useTabsData(
   const {
     data: healthData,
     isLoading: healthLoading,
+    isError: healthError,
     refetch: refetchHealth,
     dataUpdatedAt: healthUpdated,
   } = useQuery<HealthData>({
@@ -239,6 +246,7 @@ export function useTabsData(
   const {
     data: auditData,
     isLoading: auditLoading,
+    isError: auditError,
     refetch: refetchAudit,
   } = useQuery<{ count: number; rows: AuditRow[] }>({
     queryKey: queryKeys.super.auditLog.list(auditLimit, auditAction),
@@ -266,6 +274,7 @@ export function useTabsData(
   const {
     data: planSettings,
     isLoading: planSettingsLoading,
+    isError: planSettingsError,
     refetch: refetchPlans,
   } = useQuery<PlanSetting[]>({
     queryKey: queryKeys.super.planSettings,
@@ -374,9 +383,12 @@ export function useTabsData(
     /* revenue */
     revenueData,
     revenueLoading,
+    revenueError,
+    refetchRevenue,
     /* alerts */
     alertsData,
     alertsLoading,
+    alertsError,
     refetchAlerts,
     alertSearch,
     setAlertSearch,
@@ -390,12 +402,14 @@ export function useTabsData(
     /* health */
     healthData,
     healthLoading,
+    healthError,
     refetchHealth,
     healthUpdated,
     redisHealth,
     /* audit */
     auditData,
     auditLoading,
+    auditError,
     refetchAudit,
     auditLimit,
     setAuditLimit,
@@ -424,6 +438,8 @@ export function useTabsData(
     /* plans */
     planSettings,
     planSettingsLoading,
+    planSettingsError,
+    refetchPlans,
     editingPlan,
     setEditingPlan,
     planSaving,

@@ -1,4 +1,5 @@
 import { C, FONT } from './types';
+import { SAErrorState } from './sa-primitives';
 
 interface HealthData {
   health: {
@@ -32,6 +33,7 @@ interface RedisHealthData {
 interface Props {
   healthData?: HealthData;
   healthLoading: boolean;
+  healthError?: boolean;
   onRefetch: () => void;
   healthUpdated: number;
   redisHealth?: RedisHealthData;
@@ -40,6 +42,7 @@ interface Props {
 export function TabHealth({
   healthData,
   healthLoading,
+  healthError,
   onRefetch,
   healthUpdated,
   redisHealth,
@@ -57,6 +60,9 @@ export function TabHealth({
             {healthUpdated
               ? ` • آخر تحديث: ${new Date(healthUpdated).toLocaleTimeString('ar-EG')}`
               : ''}
+            {healthError && healthData && (
+              <span style={{ color: C.danger, fontWeight: 700 }}> · تعذّر التحديث الأخير</span>
+            )}
           </p>
         </div>
         <button
@@ -515,6 +521,12 @@ export function TabHealth({
             );
           })()}
         </>
+      ) : healthError ? (
+        <SAErrorState
+          title="تعذّر تحميل بيانات السيرفر"
+          description="تحقق من الاتصال بالخادم وأعد المحاولة"
+          onRetry={() => void onRefetch()}
+        />
       ) : null}
     </div>
   );

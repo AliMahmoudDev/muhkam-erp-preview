@@ -1,4 +1,5 @@
 import { C, FONT } from './types';
+import { SAErrorState, SARefreshHint } from './sa-primitives';
 
 interface AlertItem {
   type: 'warning' | 'danger' | 'info' | 'success';
@@ -31,6 +32,7 @@ type ActiveTab =
 interface Props {
   alertsData?: AlertsData;
   alertsLoading: boolean;
+  alertsError: boolean;
   onRefetch: () => void;
   alertSearch: string;
   setAlertSearch: (v: string) => void;
@@ -43,6 +45,7 @@ interface Props {
 export function TabAlerts({
   alertsData,
   alertsLoading,
+  alertsError,
   onRefetch,
   alertSearch,
   setAlertSearch,
@@ -61,6 +64,9 @@ export function TabAlerts({
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: C.muted }}>
             يتجدد تلقائياً كل دقيقة
+            {alertsError && alertsData && (
+              <span style={{ color: C.danger, fontWeight: 700 }}> · تعذّر التحديث الأخير</span>
+            )}
           </p>
         </div>
         <button
@@ -186,11 +192,19 @@ export function TabAlerts({
         </div>
       )}
 
+      {alertsError && alertsData && <SARefreshHint onRetry={onRefetch} />}
+
       {/* Alerts List */}
       {alertsLoading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: C.muted }}>
           ⏳ جارٍ التحميل...
         </div>
+      ) : alertsError && !alertsData ? (
+        <SAErrorState
+          title="تعذّر تحميل التنبيهات"
+          description="تحقق من الاتصال بالخادم وأعد المحاولة"
+          onRetry={() => void onRefetch()}
+        />
       ) : (
         (() => {
           const filtered = (alertsData?.alerts ?? []).filter(

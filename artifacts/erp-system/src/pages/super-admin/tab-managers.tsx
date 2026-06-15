@@ -56,6 +56,9 @@ export function TabManagers({
           </h2>
           <p style={{ fontSize: '12px', color: C.muted, margin: '2px 0 0' }}>
             {managers.length} مدير عام مسجّل
+            {!!mgError && managers.length > 0 && (
+              <span style={{ color: C.danger, fontWeight: 700 }}> · تعذّر التحديث الأخير</span>
+            )}
           </p>
         </div>
         <button
