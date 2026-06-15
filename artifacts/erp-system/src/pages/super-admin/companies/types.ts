@@ -1,8 +1,17 @@
 import type { Company, Stats, CompanyFeatures } from '../types';
 
 export type ActiveTab =
-  | 'overview' | 'companies' | 'managers' | 'settings'
-  | 'revenue' | 'alerts' | 'announcements' | 'health' | 'plans' | 'monitoring' | 'audit_log';
+  | 'overview'
+  | 'companies'
+  | 'managers'
+  | 'settings'
+  | 'revenue'
+  | 'alerts'
+  | 'announcements'
+  | 'health'
+  | 'plans'
+  | 'monitoring'
+  | 'audit_log';
 
 export interface StatCard {
   label: string;
@@ -49,6 +58,10 @@ export interface TabCompaniesProps {
   filtered: Company[];
   paged: Company[];
   coLoading: boolean;
+  coError: boolean;
+  coFetching: boolean;
+  coRefetch: () => void;
+  coUpdatedAt: number;
   statCards: StatCard[];
   STATUS_FILTERS: { key: string; label: string }[];
   search: string;

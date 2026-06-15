@@ -16,6 +16,10 @@ export function TabCompanies(props: TabCompaniesProps) {
     filtered,
     paged,
     coLoading,
+    coError,
+    coFetching,
+    coRefetch,
+    coUpdatedAt,
     statCards,
     STATUS_FILTERS,
     search,
@@ -99,31 +103,69 @@ export function TabCompanies(props: TabCompaniesProps) {
               الشركات المسجّلة
             </h2>
             <p style={{ fontSize: '12px', color: C.muted, margin: '2px 0 0' }}>
-              عرض {filtered.length} من {companies.length} شركة
+              {coError
+                ? 'تعذّر تحميل القائمة'
+                : `عرض ${filtered.length} من ${companies.length} شركة${
+                    coUpdatedAt
+                      ? ` · آخر تحديث ${new Date(coUpdatedAt).toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}`
+                      : ''
+                  }`}
             </p>
           </div>
-          <button
-            onClick={() => setShowCreate((v) => !v)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '10px',
-              background: showCreate ? 'transparent' : C.orange,
-              color: showCreate ? C.muted : 'var(--text-1)',
-              border: showCreate ? `1px solid ${C.border}` : 'none',
-              fontSize: '13px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontFamily: FONT,
-              transition: 'all 0.18s',
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ fontSize: '15px' }}>{showCreate ? '✕' : '+'}</span>
-            <span>{showCreate ? 'إلغاء' : 'شركة جديدة'}</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <button
+              onClick={() => coRefetch()}
+              disabled={coFetching}
+              title="تحديث القائمة"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                borderRadius: '10px',
+                background: 'transparent',
+                color: C.muted,
+                border: `1px solid ${C.border}`,
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: coFetching ? 'default' : 'pointer',
+                opacity: coFetching ? 0.6 : 1,
+                fontFamily: FONT,
+                transition: 'all 0.18s',
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  animation: coFetching ? 'sa-spin 0.8s linear infinite' : 'none',
+                }}
+              >
+                ⟳
+              </span>
+              <span>تحديث</span>
+            </button>
+            <button
+              onClick={() => setShowCreate((v) => !v)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '10px',
+                background: showCreate ? 'transparent' : C.orange,
+                color: showCreate ? C.muted : 'var(--text-1)',
+                border: showCreate ? `1px solid ${C.border}` : 'none',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: FONT,
+                transition: 'all 0.18s',
+              }}
+            >
+              <span style={{ fontSize: '15px' }}>{showCreate ? '✕' : '+'}</span>
+              <span>{showCreate ? 'إلغاء' : 'شركة جديدة'}</span>
+            </button>
+          </div>
         </div>
 
         <CompaniesToolbar
@@ -160,8 +202,47 @@ export function TabCompanies(props: TabCompaniesProps) {
 
         {/* Table / Cards body */}
         {coLoading ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: C.muted }}>
-            جاري التحميل...
+          <div style={{ padding: '24px' }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  height: '44px',
+                  borderRadius: '10px',
+                  marginBottom: '10px',
+                  background: `linear-gradient(90deg, ${C.bg} 25%, rgba(255,255,255,0.05) 37%, ${C.bg} 63%)`,
+                  backgroundSize: '400% 100%',
+                  animation: 'sa-shimmer 1.4s ease infinite',
+                }}
+              />
+            ))}
+          </div>
+        ) : coError ? (
+          <div style={{ padding: '56px 24px', textAlign: 'center' }}>
+            <div
+              style={{ color: C.danger, fontWeight: 800, fontSize: '15px', marginBottom: '6px' }}
+            >
+              تعذّر جلب قائمة الشركات
+            </div>
+            <div style={{ color: C.muted, fontSize: '13px', marginBottom: '18px' }}>
+              قد يكون الخادم غير متاح أو انتهت جلستك — حاول مرة أخرى.
+            </div>
+            <button
+              onClick={() => coRefetch()}
+              style={{
+                padding: '9px 22px',
+                borderRadius: '10px',
+                background: C.orange,
+                color: 'var(--text-1)',
+                border: 'none',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: FONT,
+              }}
+            >
+              إعادة المحاولة
+            </button>
           </div>
         ) : paged.length === 0 ? (
           <div style={{ padding: '60px', textAlign: 'center', color: C.muted }}>
@@ -240,7 +321,7 @@ export function TabCompanies(props: TabCompaniesProps) {
           </div>
         )}
 
-        {!coLoading && (
+        {!coLoading && !coError && (
           <CompaniesPagination
             filtered={filtered}
             safePage={safePage}

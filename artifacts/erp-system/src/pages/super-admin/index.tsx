@@ -200,6 +200,10 @@ export default function SuperAdmin() {
             filtered={co.filtered}
             paged={co.paged}
             coLoading={co.coLoading}
+            coError={co.coError}
+            coFetching={co.coFetching}
+            coRefetch={() => void co.coRefetch()}
+            coUpdatedAt={co.coUpdatedAt}
             statCards={co.statCards}
             STATUS_FILTERS={co.STATUS_FILTERS}
             search={co.search}
@@ -438,6 +442,8 @@ export default function SuperAdmin() {
       <style>{`
         @keyframes sa-fade-in  { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes sa-panel-in { from { opacity:0; transform:translateY(-10px) scaleY(0.97); transform-origin:top; } to { opacity:1; transform:translateY(0) scaleY(1); transform-origin:top; } }
+        @keyframes sa-shimmer  { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+        @keyframes sa-spin     { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );

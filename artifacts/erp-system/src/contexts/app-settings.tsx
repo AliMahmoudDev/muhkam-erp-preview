@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
-import { getTenantSettingsStorageKey } from '@/lib/tenant-storage';
+import { getTenantSettingsStorageKey, getCurrentCompanyId } from '@/lib/tenant-storage';
 import { authFetch } from '@/lib/auth-fetch';
 
 export type CurrencyCode = 'EGP' | 'USD' | 'CNY';
@@ -251,6 +251,10 @@ function loadSettings(storageKey = getTenantSettingsStorageKey()): AppSettings {
 /* ─── Server sync helpers (module-level, no React deps) ─── */
 
 async function fetchServerSettings(): Promise<Partial<AppSettings> | null> {
+  // app-settings is company-scoped. super_admin (and unauthenticated visitors)
+  // have no company context, so the request would 400/401 — skip it cleanly to
+  // avoid console noise and a pointless round-trip; localStorage stays authoritative.
+  if (!getCurrentCompanyId()) return null;
   try {
     const res = await authFetch('/api/settings/app-settings');
     if (!res.ok) return null;
