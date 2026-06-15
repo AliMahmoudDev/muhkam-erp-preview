@@ -61,7 +61,7 @@ export function SecurityPanel({
               المصادقة الثنائية (2FA)
             </div>
             <div style={{ fontSize: '12px', color: C.muted }}>
-              تضيف طبقة أمان إضافية — يتطلب Google Authenticator أو Authy
+              تضيف طبقة أمان إضافية — يتطلب Google Authenticator أو تطبيق المصادقة
             </div>
           </div>
           {totpStatus?.totp_enabled ? (
@@ -136,7 +136,7 @@ export function SecurityPanel({
             <div>
               <p style={{ fontSize: '13px', color: C.muted, marginBottom: '16px' }}>
                 امسح الكود بتطبيق <strong style={{ color: C.text }}>Google Authenticator</strong> أو{' '}
-                <strong style={{ color: C.text }}>Authy</strong>، ثم أدخل الرمز:
+                <strong style={{ color: C.text }}>تطبيق المصادقة</strong>، ثم أدخل الرمز:
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
                 <img

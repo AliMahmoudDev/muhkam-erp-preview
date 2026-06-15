@@ -284,12 +284,12 @@ export function TabSettings({
               <strong style={{ color: 'var(--status-warning)' }}>{pendingRestoreFile?.name}</strong>
             </p>
             <p style={{ color: 'var(--text-hint)', fontSize: '12px', marginBottom: '8px' }}>
-              اكتب <strong style={{ color: 'var(--status-danger)' }}>RESTORE</strong> للتأكيد:
+              اكتب <strong style={{ color: 'var(--status-danger)' }}>استعادة</strong> للتأكيد:
             </p>
             <input
               value={restoreCode}
               onChange={(e) => setRestoreCode(e.target.value)}
-              placeholder="RESTORE"
+              placeholder="استعادة"
               style={{
                 width: '100%',
                 padding: '10px 14px',
@@ -327,16 +327,16 @@ export function TabSettings({
                 onClick={() => {
                   void confirmRestore();
                 }}
-                disabled={restoreCode !== 'RESTORE'}
+                disabled={restoreCode !== 'استعادة'}
                 style={{
                   flex: 1,
                   padding: '10px',
                   borderRadius: '10px',
                   border: 'none',
                   background:
-                    restoreCode === 'RESTORE' ? 'var(--status-danger)' : 'rgba(239,68,68,0.2)',
-                  color: restoreCode === 'RESTORE' ? 'var(--text-1)' : 'var(--text-hint)',
-                  cursor: restoreCode === 'RESTORE' ? 'pointer' : 'not-allowed',
+                    restoreCode === 'استعادة' ? 'var(--status-danger)' : 'rgba(239,68,68,0.2)',
+                  color: restoreCode === 'استعادة' ? 'var(--text-1)' : 'var(--text-hint)',
+                  cursor: restoreCode === 'استعادة' ? 'pointer' : 'not-allowed',
                   fontWeight: 800,
                   fontFamily: FONT,
                 }}

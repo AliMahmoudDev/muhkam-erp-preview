@@ -155,7 +155,7 @@ export function TabHealth({
                 color: 'var(--status-info)',
               },
               {
-                label: 'ذاكرة Heap',
+                label: 'ذاكرة التشغيل',
                 value: `${healthData.memory.heap_used_mb} MB`,
                 icon: '💾',
                 color:
@@ -164,7 +164,7 @@ export function TabHealth({
                     : 'var(--status-success)',
               },
               {
-                label: 'RSS الكلي',
+                label: 'إجمالي الذاكرة المستخدمة',
                 value: `${healthData.memory.rss_mb} MB`,
                 icon: '📊',
                 color: 'var(--status-info)',

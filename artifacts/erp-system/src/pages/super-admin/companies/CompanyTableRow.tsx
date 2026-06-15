@@ -137,7 +137,7 @@ export function CompanyTableRow({
               border: `1px solid ${co.edition === 'advanced' ? 'rgba(245,158,11,0.3)' : 'rgba(99,102,241,0.3)'}`,
             }}
           >
-            {co.edition === 'advanced' ? 'MuhKam Advanced' : 'MuhKam Pro'}
+            {co.edition === 'advanced' ? 'محكم المتقدم' : 'محكم برو'}
           </span>
         </div>
         <div
@@ -238,8 +238,8 @@ export function CompanyTableRow({
                   cursor: 'pointer',
                 }}
               >
-                <option value="ultimate">MuhKam Pro</option>
-                <option value="advanced">MuhKam Advanced</option>
+                <option value="ultimate">محكم برو</option>
+                <option value="advanced">محكم المتقدم</option>
               </select>
             </div>
             <ActionBtn

@@ -100,21 +100,21 @@ export function TabRevenue({
           >
             {[
               {
-                label: 'MRR',
+                label: 'الإيراد الشهري المتكرر',
                 value: `${revenueData.mrr.toLocaleString('ar-EG')} ج.م.`,
                 sub: 'الإيراد الشهري المتكرر',
                 color: 'var(--status-info)',
                 icon: '💰',
               },
               {
-                label: 'ARR',
+                label: 'الإيراد السنوي المتكرر',
                 value: `${revenueData.arr.toLocaleString('ar-EG')} ج.م.`,
                 sub: 'الإيراد السنوي المتوقع',
                 color: 'var(--status-success)',
                 icon: '📈',
               },
               {
-                label: 'ARPU',
+                label: 'متوسط الإيراد لكل شركة',
                 value: `${revenueData.arpu.toLocaleString('ar-EG')} ج.م.`,
                 sub: 'متوسط إيراد العميل',
                 color: 'var(--status-info)',
