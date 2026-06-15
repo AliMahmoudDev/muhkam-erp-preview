@@ -12,6 +12,7 @@ import {
   DEFAULT_FEATS_ADVANCED,
   DEFAULT_FEATS_ULTIMATE,
 } from '../types';
+import { formatAuditNote, getAuditActionMeta } from '../audit-actions';
 
 interface CoMutate {
   mutate: (
@@ -879,7 +880,7 @@ export function CompanyPanel({
                                 color: 'var(--status-info)',
                               }}
                             >
-                              {r.action}
+                              {getAuditActionMeta(r.action).label}
                             </span>
                             <span style={{ fontSize: '11px', color: C.muted, direction: 'ltr' }}>
                               {new Date(r.created_at).toLocaleDateString('ar-EG')}
@@ -887,7 +888,7 @@ export function CompanyPanel({
                           </div>
                           {r.note && (
                             <div style={{ fontSize: '11px', color: C.muted, lineHeight: 1.5 }}>
-                              {r.note}
+                              {formatAuditNote(r.note)}
                             </div>
                           )}
                           {r.username && (

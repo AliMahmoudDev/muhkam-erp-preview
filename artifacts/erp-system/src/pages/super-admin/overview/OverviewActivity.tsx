@@ -1,5 +1,6 @@
 import { C, FONT, type ActiveTab, type Stats } from '../types';
 import type { OverviewAuditRow, SettingsCard, ActionMeta } from './overview-types';
+import { getAuditActionMeta } from '../audit-actions';
 
 interface Props {
   expiringSoon: Stats['expiringSoonList'];
@@ -135,7 +136,7 @@ export function OverviewActivity({
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {overviewAudit.rows.map((row) => {
-              const meta = actionMap[row.action] ?? { label: row.action, color: 'var(--text-2)' };
+              const meta = actionMap[row.action] ?? getAuditActionMeta(row.action);
               const ts = new Date(row.created_at).toLocaleString('ar-EG', {
                 hour: '2-digit',
                 minute: '2-digit',

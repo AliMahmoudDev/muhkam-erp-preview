@@ -1,5 +1,6 @@
 import React from 'react';
 import { C, FONT } from '../types';
+import { formatAuditNote, getAuditActionMeta, getRecordLabel } from '../audit-actions';
 
 interface AuditEntry {
   id: number;
@@ -24,51 +25,6 @@ interface Props {
   auditLimit: number;
   setAuditLimit: (v: number) => void;
 }
-
-const AUD_COLORS: Record<string, { label: string; color: string }> = {
-  create: { label: 'إنشاء', color: 'var(--status-success)' },
-  update: { label: 'تعديل', color: 'var(--status-info)' },
-  delete: { label: 'حذف', color: 'var(--status-danger)' },
-  view: { label: 'عرض', color: 'var(--status-info)' },
-  login: { label: 'دخول', color: 'var(--status-info)' },
-  COMPANY_CREATED: { label: 'إنشاء شركة', color: 'var(--status-success)' },
-  COMPANY_UPDATED: { label: 'تحديث شركة', color: 'var(--status-info)' },
-  COMPANY_ACTIVATED: { label: 'تفعيل شركة', color: 'var(--status-success)' },
-  COMPANY_SUSPENDED: { label: 'إيقاف شركة', color: 'var(--status-warning)' },
-  COMPANY_EXTENDED: { label: 'تمديد اشتراك', color: '#38BDF8' },
-  COMPANY_DELETED: { label: 'حذف شركة', color: 'var(--status-danger)' },
-  COMPANY_SUBSCRIPTION_UPDATED: { label: 'تحديث اشتراك', color: 'var(--status-info)' },
-  ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: 'var(--status-info)' },
-  MANAGER_CREATED: { label: 'إنشاء مدير', color: 'var(--status-success)' },
-  MANAGER_UPDATED: { label: 'تحديث مدير', color: 'var(--status-info)' },
-  MANAGER_TOGGLED: { label: 'تغيير حالة مدير', color: 'var(--status-warning)' },
-  MANAGER_DELETED: { label: 'حذف مدير', color: 'var(--status-danger)' },
-  PLAN_SETTINGS_UPDATED: { label: 'تحديث إعدادات الخطة', color: 'var(--status-warning)' },
-  TELEGRAM_SETTINGS_UPDATED: { label: 'تحديث تليجرام', color: '#38BDF8' },
-  BACKUP_CREATED: { label: 'نسخة احتياطية', color: 'var(--status-success)' },
-  RESTORE_STARTED: { label: 'بدء استعادة', color: 'var(--status-info)' },
-  RESTORE_COMPLETED: { label: 'اكتمال استعادة', color: 'var(--status-success)' },
-  SUPER_ADMIN_ACCESS: { label: 'وصول مدير عام', color: 'var(--status-info)' },
-  SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: 'var(--status-info)' },
-};
-
-const REC_AR: Record<string, string> = {
-  customer: 'عميل',
-  supplier: 'مورد',
-  sale: 'فاتورة بيع',
-  purchase: 'فاتورة شراء',
-  product: 'منتج / صنف',
-  expense: 'مصروف',
-  income: 'إيراد',
-  user: 'مستخدم',
-  erp_user: 'حساب مستخدم',
-  employee: 'موظف',
-  company: 'شركة',
-  subscription: 'اشتراك',
-  fiscal_year: 'سنة مالية',
-  system: 'النظام',
-  announcement: 'إعلان',
-};
 
 export function AuditLogPanel({
   auditData,
@@ -205,7 +161,7 @@ export function AuditLogPanel({
           ) : (
             <div style={{ maxHeight: '480px', overflowY: 'auto' }}>
               {auditData.rows.map((row) => {
-                const am = AUD_COLORS[row.action] ?? { label: row.action, color: 'var(--text-2)' };
+                const am = getAuditActionMeta(row.action);
                 return (
                   <div
                     key={row.id}
@@ -220,12 +176,10 @@ export function AuditLogPanel({
                     }}
                   >
                     <span style={{ color: am.color, fontWeight: 700 }}>{am.label}</span>
-                    <span style={{ color: C.muted }}>
-                      {REC_AR[row.record_type ?? ''] ?? row.record_type}
-                    </span>
+                    <span style={{ color: C.muted }}>{getRecordLabel(row.record_type)}</span>
                     <span style={{ color: C.muted, textAlign: 'center' }}>#{row.record_id}</span>
                     <span style={{ color: C.text, fontSize: '11px', lineHeight: 1.4 }}>
-                      {row.note ?? '—'}
+                      {formatAuditNote(row.note)}
                     </span>
                     <span
                       style={{

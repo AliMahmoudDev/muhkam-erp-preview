@@ -1,5 +1,6 @@
 import React from 'react';
 import { type SnapshotData, C, FONT } from '../types';
+import { formatAuditNote, getAuditActionMeta } from '../audit-actions';
 
 interface Props {
   snapshotCompany: number | null;
@@ -320,7 +321,7 @@ export function SnapshotModal({
                             }}
                           >
                             <span style={{ color: 'var(--status-info)', fontWeight: 700 }}>
-                              {r.action}
+                              {getAuditActionMeta(r.action).label}
                             </span>
                             <span
                               style={{
@@ -332,7 +333,7 @@ export function SnapshotModal({
                                 whiteSpace: 'nowrap',
                               }}
                             >
-                              {r.note ?? '—'}
+                              {formatAuditNote(r.note)}
                             </span>
                             <span style={{ color: C.muted, direction: 'ltr', flexShrink: 0 }}>
                               {new Date(r.created_at).toLocaleDateString('ar-EG')}

@@ -1,6 +1,6 @@
 import { C, FONT } from './types';
 import { SAErrorState, SARefreshHint } from './sa-primitives';
-import { ACTION_AR, RECORD_AR } from './audit-actions';
+import { formatAuditNote, getAuditActionMeta, getRecordLabel } from './audit-actions';
 
 interface AuditRow {
   id: number;
@@ -65,7 +65,7 @@ export function TabAuditLog({
               const rows = auditData.rows
                 .map(
                   (r) =>
-                    `${r.action},${r.record_type},${r.record_id},${r.note ?? ''},${r.created_at}`
+                    `${getAuditActionMeta(r.action).label},${getRecordLabel(r.record_type)},${r.record_id},${formatAuditNote(r.note)},${r.created_at}`
                 )
                 .join('\n');
               const blob = new Blob([`الإجراء,نوع السجل,رقم السجل,الملاحظة,التاريخ\n${rows}`], {
@@ -73,7 +73,7 @@ export function TabAuditLog({
               });
               const a = document.createElement('a');
               a.href = URL.createObjectURL(blob);
-              a.download = 'audit-log.csv';
+              a.download = 'سجل-التدقيق.csv';
               a.click();
             }}
             style={{
@@ -209,10 +209,7 @@ export function TabAuditLog({
           ) : (
             <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
               {auditData!.rows.map((row) => {
-                const actionMeta = ACTION_AR[row.action] ?? {
-                  label: row.action,
-                  color: 'var(--text-2)',
-                };
+                const actionMeta = getAuditActionMeta(row.action);
                 return (
                   <div
                     key={row.id}
@@ -229,12 +226,10 @@ export function TabAuditLog({
                     <span style={{ color: actionMeta.color, fontWeight: 700 }}>
                       {actionMeta.label}
                     </span>
-                    <span style={{ color: C.muted }}>
-                      {RECORD_AR[row.record_type] ?? row.record_type}
-                    </span>
+                    <span style={{ color: C.muted }}>{getRecordLabel(row.record_type)}</span>
                     <span style={{ color: C.muted, textAlign: 'center' }}>#{row.record_id}</span>
                     <span style={{ color: C.text, fontSize: '11px', lineHeight: 1.4 }}>
-                      {row.note ?? '—'}
+                      {formatAuditNote(row.note)}
                     </span>
                     <span
                       style={{
