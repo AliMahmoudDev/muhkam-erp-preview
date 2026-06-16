@@ -28,10 +28,19 @@ export async function uploadFileToR2(file: File, category: UploadCategory): Prom
 
   if (!res.ok) {
     let message = 'فشل رفع الملف';
-    try {
-      const body = await res.json();
-      if (body?.error) message = body.error;
-    } catch {}
+    const text = await res.text().catch(() => '');
+
+    if (text) {
+      try {
+        const body = JSON.parse(text) as { error?: unknown; message?: unknown };
+        if (typeof body.error === 'string') message = body.error;
+        else if (typeof body.message === 'string') message = body.message;
+        else message = text;
+      } catch {
+        message = text;
+      }
+    }
+
     throw new Error(message);
   }
 

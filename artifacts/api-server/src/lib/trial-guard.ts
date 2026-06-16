@@ -26,39 +26,44 @@
  *  and normalises IPv4-mapped IPv6 (::ffff:1.2.3.4 → 1.2.3.4).
  */
 
-import type { Request } from "express";
-import crypto from "crypto";
-import { eq, and, isNull, count } from "drizzle-orm";
-import { db, trialAbuseLogTable } from "@workspace/db";
-import { logger } from "./logger";
-import { cooldownStore } from "./trial-cooldown";
-import { anomalyDetector } from "./trial-anomaly";
-import { recentBlocksStore } from "./trial-recent-blocks";
+import type { Request } from 'express';
+import crypto from 'crypto';
+import { eq, and, isNull, count } from 'drizzle-orm';
+import { db, trialAbuseLogTable } from '@workspace/db';
+import { logger } from './logger';
+import { cooldownStore } from './trial-cooldown';
+import { anomalyDetector } from './trial-anomaly';
+import { recentBlocksStore } from './trial-recent-blocks';
 
 /* ── Configurable limits ───────────────────────────────────────────────────── */
 
-export const MAX_TRIALS_PUBLIC_IP: number =
-  Number(process.env.MAX_TRIALS_PER_IP ?? "2");
+export const MAX_TRIALS_PUBLIC_IP: number = Number(process.env.MAX_TRIALS_PER_IP ?? '2');
 
-export const MAX_TRIALS_PRIVATE_IP: number =
-  Number(process.env.MAX_TRIALS_PRIVATE_PER_IP ?? "5");
+export const MAX_TRIALS_PRIVATE_IP: number = Number(process.env.MAX_TRIALS_PRIVATE_PER_IP ?? '5');
 
-export const MAX_TRIALS_UA_IP: number =
-  Number(process.env.MAX_TRIALS_UA_IP ?? "3");
+export const MAX_TRIALS_UA_IP: number = Number(process.env.MAX_TRIALS_UA_IP ?? '3');
 
 /* ── Result type ───────────────────────────────────────────────────────────── */
 
 export interface TrialCheckResult {
-  allowed:        boolean;
-  blocked_by:     "anomaly_pause" | "cooldown" | "email" | "ip_public" | "ip_private" | "ua_ip" | "fingerprint" | null;
-  reason:         string;
-  ip:             string;
-  is_private_ip:  boolean;
-  ip_count:       number;
-  ua_ip_count:    number;
-  fp_count:       number;
-  email_blocked:  boolean;
-  fingerprint?:   string;
+  allowed: boolean;
+  blocked_by:
+    | 'anomaly_pause'
+    | 'cooldown'
+    | 'email'
+    | 'ip_public'
+    | 'ip_private'
+    | 'ua_ip'
+    | 'fingerprint'
+    | null;
+  reason: string;
+  ip: string;
+  is_private_ip: boolean;
+  ip_count: number;
+  ua_ip_count: number;
+  fp_count: number;
+  email_blocked: boolean;
+  fingerprint?: string;
   cooldown_until?: Date;
   cooldown_level?: number;
 }
@@ -68,7 +73,7 @@ export interface TrialCheckResult {
 /** Strips IPv4-in-IPv6 wrapper and lowercases for consistent DB comparisons. */
 function normalizeIP(ip: string): string {
   const raw = ip.trim().toLowerCase();
-  return raw.startsWith("::ffff:") ? raw.slice(7) : raw;
+  return raw.startsWith('::ffff:') ? raw.slice(7) : raw;
 }
 
 /**
@@ -78,13 +83,13 @@ function normalizeIP(ip: string): string {
  * Always returns a normalised string.
  */
 export function extractClientIP(req: Request): string {
-  const xff = req.headers["x-forwarded-for"];
+  const xff = req.headers['x-forwarded-for'];
   if (xff) {
-    const raw   = typeof xff === "string" ? xff : xff[0];
-    const first = raw.split(",")[0]?.trim();
+    const raw = typeof xff === 'string' ? xff : xff[0];
+    const first = raw.split(',')[0]?.trim();
     if (first) return normalizeIP(first);
   }
-  return normalizeIP(req.ip ?? req.socket.remoteAddress ?? "unknown");
+  return normalizeIP(req.ip ?? req.socket.remoteAddress ?? 'unknown');
 }
 
 /**
@@ -93,12 +98,12 @@ export function extractClientIP(req: Request): string {
  */
 export function isPrivateOrLoopbackIP(ip: string): boolean {
   const v4 = normalizeIP(ip);
-  if (v4 === "::1" || v4 === "localhost") return true;
-  const parts = v4.split(".").map(Number);
+  if (v4 === '::1' || v4 === 'localhost') return true;
+  const parts = v4.split('.').map(Number);
   if (parts.length === 4) {
     const [a, b] = parts;
     if (a === 127) return true;
-    if (a === 10)  return true;
+    if (a === 10) return true;
     if (a === 192 && b === 168) return true;
     if (a === 172 && b !== undefined && b >= 16 && b <= 31) return true;
   }
@@ -114,7 +119,7 @@ async function checkEmailBlock(email: string): Promise<boolean> {
     .where(
       and(
         eq(trialAbuseLogTable.email, email.toLowerCase().trim()),
-        isNull(trialAbuseLogTable.override_reason),
+        isNull(trialAbuseLogTable.override_reason)
       )
     )
     .limit(1);
@@ -122,28 +127,23 @@ async function checkEmailBlock(email: string): Promise<boolean> {
 }
 
 async function checkIPBlock(
-  ip: string,
+  ip: string
 ): Promise<{ blocked: boolean; count: number; is_private: boolean }> {
   const is_private = isPrivateOrLoopbackIP(ip);
-  const limit      = is_private ? MAX_TRIALS_PRIVATE_IP : MAX_TRIALS_PUBLIC_IP;
+  const limit = is_private ? MAX_TRIALS_PRIVATE_IP : MAX_TRIALS_PUBLIC_IP;
 
   const [result] = await db
     .select({ total: count() })
     .from(trialAbuseLogTable)
-    .where(
-      and(
-        eq(trialAbuseLogTable.ip, ip),
-        isNull(trialAbuseLogTable.override_reason),
-      )
-    );
+    .where(and(eq(trialAbuseLogTable.ip, ip), isNull(trialAbuseLogTable.override_reason)));
 
   const total = Number(result?.total ?? 0);
   return { blocked: total >= limit, count: total, is_private };
 }
 
 async function checkUAIPBlock(
-  ip:        string,
-  userAgent: string,
+  ip: string,
+  userAgent: string
 ): Promise<{ blocked: boolean; count: number }> {
   const [result] = await db
     .select({ total: count() })
@@ -152,7 +152,7 @@ async function checkUAIPBlock(
       and(
         eq(trialAbuseLogTable.ip, ip),
         eq(trialAbuseLogTable.user_agent, userAgent),
-        isNull(trialAbuseLogTable.override_reason),
+        isNull(trialAbuseLogTable.override_reason)
       )
     );
   const total = Number(result?.total ?? 0);
@@ -160,7 +160,7 @@ async function checkUAIPBlock(
 }
 
 async function checkFingerprintBlock(
-  fingerprint: string,
+  fingerprint: string
 ): Promise<{ blocked: boolean; count: number }> {
   const [result] = await db
     .select({ total: count() })
@@ -168,7 +168,7 @@ async function checkFingerprintBlock(
     .where(
       and(
         eq(trialAbuseLogTable.fingerprint, fingerprint),
-        isNull(trialAbuseLogTable.override_reason),
+        isNull(trialAbuseLogTable.override_reason)
       )
     );
   const total = Number(result?.total ?? 0);
@@ -187,14 +187,14 @@ async function checkFingerprintBlock(
  * Always records attempt in anomaly detector (before any block).
  */
 export async function checkTrialEligibility(
-  email:       string,
-  ip:          string,
-  userAgent:   string | undefined,
-  fingerprint: string | undefined,
+  email: string,
+  ip: string,
+  userAgent: string | undefined,
+  fingerprint: string | undefined
 ): Promise<TrialCheckResult> {
   const normalEmail = email.toLowerCase().trim();
-  const normalIP    = normalizeIP(ip);
-  const is_private  = isPrivateOrLoopbackIP(normalIP);
+  const normalIP = normalizeIP(ip);
+  const is_private = isPrivateOrLoopbackIP(normalIP);
 
   /* ── 0. Record attempt in anomaly detector (fire-and-forget, fail-open) ── */
   void anomalyDetector.record(normalIP).catch(() => {});
@@ -202,67 +202,117 @@ export async function checkTrialEligibility(
 
   /* ── 0b. Global anomaly pause check (fail-open if Redis unavailable) ──── */
   let paused = false;
-  try { paused = await anomalyDetector.isPaused(); } catch {
-    logger.warn({ ip: normalIP }, "[TrialGuard] Redis unavailable — skipping anomaly pause check (fail-open)");
+  try {
+    paused = await anomalyDetector.isPaused();
+  } catch {
+    logger.warn(
+      { ip: normalIP },
+      '[TrialGuard] Redis unavailable — skipping anomaly pause check (fail-open)'
+    );
   }
   if (paused) {
     const result: TrialCheckResult = {
-      allowed: false, blocked_by: "anomaly_pause",
-      reason:        "global registration spike detected — registrations temporarily paused",
-      ip: normalIP, is_private_ip: is_private,
-      ip_count: 0, ua_ip_count: 0, fp_count: 0, email_blocked: false, fingerprint,
+      allowed: false,
+      blocked_by: 'anomaly_pause',
+      reason: 'global registration spike detected — registrations temporarily paused',
+      ip: normalIP,
+      is_private_ip: is_private,
+      ip_count: 0,
+      ua_ip_count: 0,
+      fp_count: 0,
+      email_blocked: false,
+      fingerprint,
     };
-    logger.warn({ email: normalEmail, ip: normalIP }, "[TrialGuard] BLOCKED — anomaly pause");
-    void recentBlocksStore.record({ email: normalEmail, ip: normalIP, reason: "anomaly_pause", created_at: new Date().toISOString() }).catch(() => {});
+    logger.warn({ email: normalEmail, ip: normalIP }, '[TrialGuard] BLOCKED — anomaly pause');
+    void recentBlocksStore
+      .record({
+        email: normalEmail,
+        ip: normalIP,
+        reason: 'anomaly_pause',
+        created_at: new Date().toISOString(),
+      })
+      .catch(() => {});
     return result;
   }
 
   /* ── 1. Cooldown check (fail-open if Redis unavailable) ──────────────── */
-  let ipCooldown: import("./trial-cooldown").CooldownCheck = { blocked: false };
-  try { ipCooldown = await cooldownStore.check(normalIP); } catch {
-    logger.warn({ ip: normalIP }, "[TrialGuard] Redis unavailable — skipping IP cooldown check (fail-open)");
+  let ipCooldown: import('./trial-cooldown').CooldownCheck = { blocked: false };
+  try {
+    ipCooldown = await cooldownStore.check(normalIP);
+  } catch {
+    logger.warn(
+      { ip: normalIP },
+      '[TrialGuard] Redis unavailable — skipping IP cooldown check (fail-open)'
+    );
   }
   if (ipCooldown.blocked) {
     const result: TrialCheckResult = {
-      allowed: false, blocked_by: "cooldown",
-      reason:        `ip cooldown active (level ${ipCooldown.level}) until ${ipCooldown.until?.toISOString()}`,
-      ip: normalIP, is_private_ip: is_private,
-      ip_count: 0, ua_ip_count: 0, fp_count: 0, email_blocked: false, fingerprint,
-      cooldown_until: ipCooldown.until, cooldown_level: ipCooldown.level,
+      allowed: false,
+      blocked_by: 'cooldown',
+      reason: `ip cooldown active (level ${ipCooldown.level}) until ${ipCooldown.until?.toISOString()}`,
+      ip: normalIP,
+      is_private_ip: is_private,
+      ip_count: 0,
+      ua_ip_count: 0,
+      fp_count: 0,
+      email_blocked: false,
+      fingerprint,
+      cooldown_until: ipCooldown.until,
+      cooldown_level: ipCooldown.level,
     };
-    logger.warn({ email: normalEmail, ip: normalIP, level: ipCooldown.level }, "[TrialGuard] BLOCKED — cooldown");
+    logger.warn(
+      { email: normalEmail, ip: normalIP, level: ipCooldown.level },
+      '[TrialGuard] BLOCKED — cooldown'
+    );
     return result;
   }
   if (fingerprint) {
-    let fpCooldown: import("./trial-cooldown").CooldownCheck = { blocked: false };
-    try { fpCooldown = await cooldownStore.check(`fp:${fingerprint}`); } catch {
-      logger.warn({ fingerprint: fingerprint.slice(0, 8) }, "[TrialGuard] Redis unavailable — skipping FP cooldown check (fail-open)");
+    let fpCooldown: import('./trial-cooldown').CooldownCheck = { blocked: false };
+    try {
+      fpCooldown = await cooldownStore.check(`fp:${fingerprint}`);
+    } catch {
+      logger.warn(
+        { fingerprint: fingerprint.slice(0, 8) },
+        '[TrialGuard] Redis unavailable — skipping FP cooldown check (fail-open)'
+      );
     }
     if (fpCooldown.blocked) {
       const result: TrialCheckResult = {
-        allowed: false, blocked_by: "cooldown",
-        reason:        `fingerprint cooldown active (level ${fpCooldown.level}) until ${fpCooldown.until?.toISOString()}`,
-        ip: normalIP, is_private_ip: is_private,
-        ip_count: 0, ua_ip_count: 0, fp_count: 0, email_blocked: false, fingerprint,
-        cooldown_until: fpCooldown.until, cooldown_level: fpCooldown.level,
+        allowed: false,
+        blocked_by: 'cooldown',
+        reason: `fingerprint cooldown active (level ${fpCooldown.level}) until ${fpCooldown.until?.toISOString()}`,
+        ip: normalIP,
+        is_private_ip: is_private,
+        ip_count: 0,
+        ua_ip_count: 0,
+        fp_count: 0,
+        email_blocked: false,
+        fingerprint,
+        cooldown_until: fpCooldown.until,
+        cooldown_level: fpCooldown.level,
       };
-      logger.warn({ email: normalEmail, fingerprint: fingerprint.slice(0, 8), level: fpCooldown.level }, "[TrialGuard] BLOCKED — fingerprint cooldown");
+      logger.warn(
+        { email: normalEmail, fingerprint: fingerprint.slice(0, 8), level: fpCooldown.level },
+        '[TrialGuard] BLOCKED — fingerprint cooldown'
+      );
       return result;
     }
   }
 
   /** Helper: escalate cooldown + record to recent-blocks on any block (all fire-and-forget). */
   function applyBlock(result: TrialCheckResult): TrialCheckResult {
-    const reason = result.blocked_by ?? "blocked";
+    const reason = result.blocked_by ?? 'blocked';
     void cooldownStore.escalate(normalIP, reason).catch(() => {});
     if (fingerprint) void cooldownStore.escalate(`fp:${fingerprint}`, reason).catch(() => {});
-    void recentBlocksStore.record({
-      email:       normalEmail,
-      ip:          normalIP,
-      fingerprint: fingerprint,
-      reason:      reason,
-      created_at:  new Date().toISOString(),
-    }).catch(() => {});
+    void recentBlocksStore
+      .record({
+        email: normalEmail,
+        ip: normalIP,
+        fingerprint: fingerprint,
+        reason: reason,
+        created_at: new Date().toISOString(),
+      })
+      .catch(() => {});
     return result;
   }
 
@@ -270,10 +320,16 @@ export async function checkTrialEligibility(
   const email_blocked = await checkEmailBlock(normalEmail);
   if (email_blocked) {
     return applyBlock({
-      allowed: false, blocked_by: "email",
-      reason:        "email already consumed a trial — admin override required",
-      ip: normalIP, is_private_ip: is_private,
-      ip_count: 0, ua_ip_count: 0, fp_count: 0, email_blocked: true, fingerprint,
+      allowed: false,
+      blocked_by: 'email',
+      reason: 'email already consumed a trial — admin override required',
+      ip: normalIP,
+      is_private_ip: is_private,
+      ip_count: 0,
+      ua_ip_count: 0,
+      fp_count: 0,
+      email_blocked: true,
+      fingerprint,
     });
   }
 
@@ -283,10 +339,15 @@ export async function checkTrialEligibility(
     const limit = is_private ? MAX_TRIALS_PRIVATE_IP : MAX_TRIALS_PUBLIC_IP;
     return applyBlock({
       allowed: false,
-      blocked_by:    is_private ? "ip_private" : "ip_public",
-      reason:        `ip exceeded limit (${ipResult.count}/${limit})`,
-      ip: normalIP, is_private_ip: is_private,
-      ip_count: ipResult.count, ua_ip_count: 0, fp_count: 0, email_blocked: false, fingerprint,
+      blocked_by: is_private ? 'ip_private' : 'ip_public',
+      reason: `ip exceeded limit (${ipResult.count}/${limit})`,
+      ip: normalIP,
+      is_private_ip: is_private,
+      ip_count: ipResult.count,
+      ua_ip_count: 0,
+      fp_count: 0,
+      email_blocked: false,
+      fingerprint,
     });
   }
 
@@ -297,10 +358,16 @@ export async function checkTrialEligibility(
     ua_ip_count = uaResult.count;
     if (uaResult.blocked) {
       return applyBlock({
-        allowed: false, blocked_by: "ua_ip",
-        reason:        `ua+ip combo exceeded limit (${ua_ip_count}/${MAX_TRIALS_UA_IP})`,
-        ip: normalIP, is_private_ip: is_private,
-        ip_count: ipResult.count, ua_ip_count, fp_count: 0, email_blocked: false, fingerprint,
+        allowed: false,
+        blocked_by: 'ua_ip',
+        reason: `ua+ip combo exceeded limit (${ua_ip_count}/${MAX_TRIALS_UA_IP})`,
+        ip: normalIP,
+        is_private_ip: is_private,
+        ip_count: ipResult.count,
+        ua_ip_count,
+        fp_count: 0,
+        email_blocked: false,
+        fingerprint,
       });
     }
   }
@@ -312,47 +379,59 @@ export async function checkTrialEligibility(
     fp_count = fpResult.count;
     if (fpResult.blocked) {
       return applyBlock({
-        allowed: false, blocked_by: "fingerprint",
-        reason:        `device fingerprint exceeded limit (${fp_count}/${MAX_TRIALS_UA_IP})`,
-        ip: normalIP, is_private_ip: is_private,
-        ip_count: ipResult.count, ua_ip_count, fp_count, email_blocked: false, fingerprint,
+        allowed: false,
+        blocked_by: 'fingerprint',
+        reason: `device fingerprint exceeded limit (${fp_count}/${MAX_TRIALS_UA_IP})`,
+        ip: normalIP,
+        is_private_ip: is_private,
+        ip_count: ipResult.count,
+        ua_ip_count,
+        fp_count,
+        email_blocked: false,
+        fingerprint,
       });
     }
   }
 
   /* ── All checks passed ────────────────────────────────────────────────── */
   const result: TrialCheckResult = {
-    allowed: true, blocked_by: null,
-    reason:        "all checks passed",
-    ip: normalIP, is_private_ip: is_private,
-    ip_count: ipResult.count, ua_ip_count, fp_count, email_blocked: false, fingerprint,
+    allowed: true,
+    blocked_by: null,
+    reason: 'all checks passed',
+    ip: normalIP,
+    is_private_ip: is_private,
+    ip_count: ipResult.count,
+    ua_ip_count,
+    fp_count,
+    email_blocked: false,
+    fingerprint,
   };
-  logger.info({ ...result, email: normalEmail }, "[TrialGuard] ALLOWED");
+  logger.info({ ...result, email: normalEmail }, '[TrialGuard] ALLOWED');
   return result;
 }
 
 /* ── Record signup ─────────────────────────────────────────────────────────── */
 
 export async function recordTrialSignup(opts: {
-  email:       string;
-  ip:          string;
-  user_agent:  string | undefined;
+  email: string;
+  ip: string;
+  user_agent: string | undefined;
   fingerprint: string | undefined;
-  company_id:  number;
+  company_id: number;
 }): Promise<void> {
   try {
     await db.insert(trialAbuseLogTable).values({
-      email:       opts.email.toLowerCase().trim(),
-      ip:          normalizeIP(opts.ip),
-      user_agent:  opts.user_agent  ?? null,
+      email: opts.email.toLowerCase().trim(),
+      ip: normalizeIP(opts.ip),
+      user_agent: opts.user_agent ?? null,
       fingerprint: opts.fingerprint ?? null,
-      company_id:  opts.company_id,
-      flagged:     false,
+      company_id: opts.company_id,
+      flagged: false,
     });
   } catch (err) {
     logger.error(
       { err, email: opts.email, ip: opts.ip, company_id: opts.company_id },
-      "[TrialGuard] CRITICAL: failed to record trial signup — manual audit required",
+      '[TrialGuard] CRITICAL: failed to record trial signup — manual audit required'
     );
   }
 }
@@ -360,18 +439,18 @@ export async function recordTrialSignup(opts: {
 /* ── Email verification helpers ────────────────────────────────────────────── */
 
 export function generateVerificationToken(): string {
-  return crypto.randomBytes(32).toString("hex");
+  return crypto.randomBytes(32).toString('hex');
 }
 
 export function buildVerificationLink(token: string): string {
-  const base = (process.env.BASE_URL ?? "http://localhost:5000").replace(/\/$/, "");
+  const base = (process.env.BASE_URL ?? 'http://localhost:5000').replace(/\/$/, '');
   return `${base}/api/auth/verify-email?token=${token}`;
 }
 
 export function logVerificationLink(email: string, link: string): void {
   logger.info(
     { email, verification_link: link },
-    "[TrialGuard] Email verification link (copy from logs if no email provider configured)",
+    '[TrialGuard] Email verification link (copy from logs if no email provider configured)'
   );
 }
 
@@ -379,8 +458,12 @@ export function logVerificationLink(email: string, link: string): void {
 
 /** @deprecated Use checkTrialEligibility() */
 export async function isEmailTrialAbused(email: string): Promise<boolean> {
-  try   { return await checkEmailBlock(email); }
-  catch { return true; }
+  try {
+    return await checkEmailBlock(email);
+  } catch (err) {
+    logger.warn({ err, email }, '[TrialGuard] Legacy email abuse check failed — fail-closed');
+    return true;
+  }
 }
 
 /** @deprecated Use checkTrialEligibility() */
@@ -388,7 +471,8 @@ export async function isIPTrialAbused(ip: string): Promise<{ abused: boolean; co
   try {
     const r = await checkIPBlock(ip);
     return { abused: r.blocked, count: r.count };
-  } catch {
+  } catch (err) {
+    logger.warn({ err, ip }, '[TrialGuard] Legacy IP abuse check failed — fail-closed');
     return { abused: true, count: -1 };
   }
 }
