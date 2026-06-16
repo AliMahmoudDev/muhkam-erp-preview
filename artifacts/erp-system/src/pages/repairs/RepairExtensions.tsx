@@ -15,6 +15,22 @@ import { Camera, Upload, User, DollarSign, CreditCard, Banknote } from 'lucide-r
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 
+async function readResponseError(res: Response, fallback: string): Promise<string> {
+  const body = (await res
+    .clone()
+    .json()
+    .catch(() => null)) as {
+    error?: unknown;
+    message?: unknown;
+  } | null;
+
+  if (typeof body?.error === 'string') return body.error;
+  if (typeof body?.message === 'string') return body.message;
+
+  const text = await res.text().catch(() => '');
+  return text || fallback;
+}
+
 /* ═══════════════════════════════════════════════════════════
    DeliveryPaymentSection — radio (نقدي | آجل | تحويل فوري) + safe selector
    ═══════════════════════════════════════════════════════════ */
@@ -205,12 +221,7 @@ export function DevicePhotosSection({ jobId, photoType = 'intake' }: DevicePhoto
       });
 
       if (!uploadRes.ok) {
-        let message = 'فشل رفع الصورة';
-        try {
-          const body = await uploadRes.json();
-          if (body?.error) message = body.error;
-        } catch {}
-        throw new Error(message);
+        throw new Error(await readResponseError(uploadRes, 'فشل رفع الصورة'));
       }
 
       const uploaded = (await uploadRes.json()) as { url: string };
@@ -221,12 +232,7 @@ export function DevicePhotosSection({ jobId, photoType = 'intake' }: DevicePhoto
       });
 
       if (!r.ok) {
-        let message = 'فشل حفظ الصورة في بطاقة الصيانة';
-        try {
-          const body = await r.json();
-          if (body?.error) message = body.error;
-        } catch {}
-        throw new Error(message);
+        throw new Error(await readResponseError(r, 'فشل حفظ الصورة في بطاقة الصيانة'));
       }
 
       return r.json();

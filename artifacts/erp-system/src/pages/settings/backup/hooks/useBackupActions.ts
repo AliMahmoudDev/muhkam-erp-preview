@@ -148,19 +148,28 @@ export function useBackupActions() {
         setOnLogin(!!d.on_login);
         setOnLogout(!!d.on_logout);
       }
-    } catch {}
-  }, []);
+    } catch (err) {
+      toast({
+        title: (err as Error)?.message || 'تعذر تحميل إعدادات النسخ الاحتياطي',
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
 
   const loadList = useCallback(async () => {
     setListLoading(true);
     try {
       const r = await authFetch(api('/api/backups'));
       if (r.ok) setBackupList((await r.json()) as BackupRecord[]);
-    } catch {
+    } catch (err) {
+      toast({
+        title: (err as Error)?.message || 'تعذر تحميل قائمة النسخ الاحتياطي',
+        variant: 'destructive',
+      });
     } finally {
       setListLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (isSuperAdmin) {
