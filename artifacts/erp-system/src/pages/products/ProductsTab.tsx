@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
@@ -20,7 +20,6 @@ import {
   QrCode,
   Loader2,
   CheckCircle2,
-  Smartphone,
 } from 'lucide-react';
 import { exportProductsExcel } from '@/lib/export-excel';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +33,6 @@ import {
 import { safeArray } from '@/lib/safe-data';
 import { api } from '@/lib/api';
 import { useProductsImport } from '@/pages/settings/data/hooks/useImportActions';
-import { MobileCatalogModal } from './MobileCatalogModal';
 
 export function ProductsTab() {
   const { data: productsRaw = [], isLoading } = useGetProducts();
@@ -84,7 +82,6 @@ export function ProductsTab() {
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('');
   const [showAdd, setShowAdd] = useState(false);
-  const [showCatalog, setShowCatalog] = useState(false);
   const [editProduct, setEditProduct] = useState<(ProductFormData & { id: number }) | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [qrProduct, setQrProduct] = useState<{
@@ -122,27 +119,6 @@ export function ProductsTab() {
     const matchCat = !catFilter || p.category_name === catFilter || p.category === catFilter;
     return matchSearch && matchCat;
   });
-
-  const existingSkus = useMemo(() => {
-    const map = new Map<
-      string,
-      { id: number; quantity: number; name: string; sku: string; category?: string | null; cost_price: number; sale_price: number; low_stock_threshold?: number | null }
-    >();
-    for (const p of products) {
-      if (p.sku)
-        map.set(p.sku.toUpperCase(), {
-          id: p.id,
-          quantity: Number(p.quantity),
-          name: p.name,
-          sku: p.sku,
-          category: p.category_name || p.category,
-          cost_price: Number(p.cost_price),
-          sale_price: Number(p.sale_price),
-          low_stock_threshold: p.low_stock_threshold ?? null,
-        });
-    }
-    return map;
-  }, [products]);
 
   const handleAdd = (data: ProductFormData) => {
     createMutation.mutate(
@@ -277,14 +253,6 @@ export function ProductsTab() {
                 onChange={handleProductsImport}
               />
 
-              {/* Mobile Catalog */}
-              <button
-                onClick={() => setShowCatalog(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-all whitespace-nowrap"
-              >
-                <Smartphone className="w-4 h-4" /> كاتالوج المحمول
-              </button>
-
               {/* Add product */}
               <button
                 onClick={() => setShowAdd(true)}
@@ -382,18 +350,6 @@ export function ProductsTab() {
         </div>
       )}
 
-      {showCatalog && (
-        <MobileCatalogModal
-          onClose={() => setShowCatalog(false)}
-          onDone={() => {
-            setShowCatalog(false);
-            queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-            queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-          }}
-          existingSkus={existingSkus}
-        />
-      )}
-
       <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-ink/80 whitespace-nowrap">
@@ -420,23 +376,15 @@ export function ProductsTab() {
                     <p className="text-ink/20 text-sm mt-1">
                       {search || catFilter
                         ? 'جرب كلمة بحث أو تصنيف مختلف'
-                        : 'اضغط «إضافة منتج» أو «كاتالوج المحمول» لإضافة منتجات'}
+                        : 'اضغط «إضافة منتج» لإضافة منتجات'}
                     </p>
                     {canManageProducts && !search && !catFilter && (
-                      <div className="mt-4 flex items-center justify-center gap-3 flex-wrap">
-                        <button
-                          onClick={() => setShowAdd(true)}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition-all"
-                        >
-                          <Plus className="w-4 h-4" /> إضافة أول منتج
-                        </button>
-                        <button
-                          onClick={() => setShowCatalog(true)}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-400 hover:bg-violet-500/30 transition-all"
-                        >
-                          <Smartphone className="w-4 h-4" /> كاتالوج المحمول
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setShowAdd(true)}
+                        className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition-all"
+                      >
+                        <Plus className="w-4 h-4" /> إضافة أول منتج
+                      </button>
                     )}
                   </td>
                 </tr>
