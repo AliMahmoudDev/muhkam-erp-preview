@@ -251,9 +251,8 @@ router.post(
       // حساب ضريبة القيمة المضافة من معدل ضريبة كل منتج
       let totalTaxAmount = 0;
 
-      // توزيع تكلفة الشحن بالتناسب (بعد تحويلها للجنيه المصري إن كانت بعملة أجنبية)
-      const rate = Number(exchange_rate ?? 1);
-      const shippingCostEgp = Number(shipping_cost ?? 0) * rate;
+      // توزيع تكلفة الشحن بالتناسب — يُرسَل دائماً بالجنيه المصري من الواجهة
+      const shippingCostEgp = Number(shipping_cost ?? 0);
       const itemsTotalEgp = items.reduce((s, i) => s + Number(i.total_price), 0);
 
       // ── Prefetch all products in ONE query (N+1 fix) ──

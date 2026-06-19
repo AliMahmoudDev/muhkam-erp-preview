@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { safeArray } from '@/lib/safe-data';
 import {
   useGetProducts,
@@ -8,7 +8,7 @@ import {
   useGetCategories,
 } from '@workspace/api-client-react';
 import { formatCurrency } from '@/lib/format';
-import { Search, Plus, Minus, Trash2, ShoppingBag, Package, User, Vault } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingBag, Package, User, Vault, Upload, Loader2, FileSpreadsheet } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ import { ProductFormModal, ProductFormData } from '@/components/product-form-mod
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import { api } from '@/lib/api';
+import { readSheetRows, writeXlsxBlob, downloadBlob } from '@/pages/settings/data/data-utils';
 
 type PurchaseCurrency = 'EGP' | 'USD' | 'CNY';
 
@@ -31,6 +32,21 @@ const CURRENCY_LABELS: Record<PurchaseCurrency, string> = {
   USD: 'دولار أمريكي',
   CNY: 'يوان صيني',
 };
+
+function parseCsvRows(text: string): Record<string, unknown>[] {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+  return lines
+    .slice(1)
+    .map((line) => {
+      const vals = line.split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
+      const obj: Record<string, unknown> = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
+      return obj;
+    })
+    .filter((r) => Object.values(r).some(Boolean));
+}
 
 interface Safe {
   id: number;
@@ -123,6 +139,9 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
   const [shippingCost, setShippingCost] = useState<string>('0');
   const [isConsignment, setIsConsignment] = useState(false);
   const [consignmentWarehouseId, setConsignmentWarehouseId] = useState<number | null>(null);
+  const [shippingCurrency, setShippingCurrency] = useState<PurchaseCurrency>('EGP');
+  const [importLoading, setImportLoading] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (filteredWarehouses.length > 0 && !warehouseId)
@@ -146,6 +165,10 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
       .catch(() => {});
   }, [currency]);
 
+  useEffect(() => {
+    if (currency === 'EGP') setShippingCurrency('EGP');
+  }, [currency]);
+
   const filteredProducts = products.filter((p) => {
     const matchS =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -158,10 +181,11 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
   const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.total_price, 0), [cart]);
   const rate = parseFloat(exchangeRate) || 1;
   const shippingCostNum = parseFloat(shippingCost) || 0;
+  const shippingEgp = shippingCurrency === 'EGP' ? shippingCostNum : shippingCostNum * rate;
   const egpTotal = useMemo(() => {
     const itemsTotal = currency === 'EGP' ? cartTotal : cartTotal * rate;
-    return itemsTotal + shippingCostNum * rate;
-  }, [cartTotal, currency, rate, shippingCostNum]);
+    return itemsTotal + shippingEgp;
+  }, [cartTotal, currency, rate, shippingEgp]);
   const currSym = CURRENCY_SYMBOLS[currency];
 
   const partyItems = useMemo(() => {
@@ -319,7 +343,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
           paid_amount: actualPaid,
           currency,
           exchange_rate: rate,
-          shipping_cost: shippingCostNum || undefined,
+          shipping_cost: shippingEgp || undefined,
           is_consignment: isConsignment,
           consignment_warehouse_id: isConsignment ? finalConsignmentWarehouseId : null,
           items: convertedItems,
@@ -385,6 +409,82 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
     );
   };
 
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImportLoading(true);
+    try {
+      let rows: Record<string, unknown>[];
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        rows = parseCsvRows(await file.text());
+      } else {
+        rows = await readSheetRows(await file.arrayBuffer());
+      }
+      const toAdd: CartItem[] = [];
+      let skipped = 0;
+      for (const row of rows) {
+        const sku = String(row['كود الصنف (SKU)'] ?? row['sku'] ?? row['SKU'] ?? '').trim();
+        const name = String(row['اسم الصنف'] ?? row['name'] ?? row['Name'] ?? '').trim();
+        const qty = Math.max(1, parseInt(String(row['الكمية'] ?? row['quantity'] ?? '1')) || 1);
+        const price = parseFloat(String(row['السعر'] ?? row['price'] ?? '0'));
+        const product = sku
+          ? products.find((p) => p.sku?.toLowerCase() === sku.toLowerCase())
+          : name
+            ? products.find((p) => p.name.toLowerCase() === name.toLowerCase())
+            : undefined;
+        if (!product) { skipped++; continue; }
+        const unitPrice = price > 0 ? price : product.cost_price;
+        const ex = toAdd.find((i) => i.product_id === product.id);
+        if (ex) { ex.quantity += qty; ex.total_price = ex.quantity * ex.unit_price; }
+        else toAdd.push({ product_id: product.id, product_name: product.name, quantity: qty, unit_price: unitPrice, total_price: qty * unitPrice });
+      }
+      if (toAdd.length > 0) {
+        setCart((prev) => {
+          let next = [...prev];
+          for (const item of toAdd) {
+            const idx = next.findIndex((i) => i.product_id === item.product_id);
+            if (idx >= 0) {
+              const ex = next[idx];
+              const newQty = ex.quantity + item.quantity;
+              next[idx] = { ...ex, quantity: newQty, total_price: newQty * ex.unit_price };
+            } else {
+              next = [...next, item];
+            }
+          }
+          return next;
+        });
+      }
+      toast({
+        title: toAdd.length > 0 ? `✅ تم إضافة ${toAdd.length} صنف من الملف` : 'لم يُعثر على أي صنف مطابق',
+        ...(skipped > 0 ? { description: `${skipped} صف لم يُعثر على منتج مطابق له` } : {}),
+        variant: toAdd.length === 0 ? 'destructive' : 'default',
+      });
+    } catch {
+      toast({ title: 'خطأ في قراءة الملف', variant: 'destructive' });
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const handleDownloadImportTemplate = async () => {
+    try {
+      const blob = await writeXlsxBlob(
+        [
+          { header: 'كود الصنف (SKU)', key: 'sku', width: 18 },
+          { header: 'اسم الصنف', key: 'name', width: 28 },
+          { header: 'الكمية', key: 'quantity', width: 10 },
+          { header: 'السعر', key: 'price', width: 14 },
+        ],
+        [],
+        'فاتورة مشتريات'
+      );
+      downloadBlob(blob, 'purchase-invoice-template.xlsx');
+    } catch {
+      toast({ title: 'خطأ في تحميل النموذج', variant: 'destructive' });
+    }
+  };
+
   const selectRow = (label: string, icon: React.ReactNode, children: React.ReactNode) => (
     <div className="purch-row flex items-center gap-2 bg-surface border border-line rounded-xl px-3 py-2 focus-within:border-amber-500/50 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.12)] transition-all">
       <span className="text-ink/50 shrink-0">{icon}</span>
@@ -430,6 +530,33 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                 </option>
               ))}
             </select>
+            <div className="flex gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => importFileRef.current?.click()}
+                disabled={importLoading}
+                title="استيراد بنود الفاتورة من ملف Excel أو CSV"
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/25 rounded-xl text-violet-400 text-[11px] font-bold transition-all disabled:opacity-40"
+              >
+                {importLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                {importLoading ? '...' : 'استيراد'}
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadImportTemplate}
+                title="تحميل نموذج الاستيراد (Excel)"
+                className="flex items-center px-2 py-1.5 border border-line hover:border-line/70 rounded-xl text-ink/35 hover:text-ink/60 transition-all"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <input
+              ref={importFileRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={handleImportFile}
+            />
           </div>
           <div className="flex-1 overflow-y-auto glass-panel rounded-2xl p-3">
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -543,9 +670,18 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                   className="bg-transparent text-amber-200/80 outline-none text-[10px] font-bold w-full text-right"
                   placeholder="شحن 0"
                 />
-                <span className="text-ink/30 text-[10px] shrink-0">
-                  {currency !== 'EGP' ? currency : 'ج'}
-                </span>
+                {currency !== 'EGP' ? (
+                  <button
+                    type="button"
+                    onClick={() => setShippingCurrency((prev) => (prev === 'EGP' ? currency : 'EGP'))}
+                    title="اضغط لتغيير عملة الشحن"
+                    className={`text-[10px] font-bold shrink-0 px-1.5 py-0.5 rounded transition-all ${shippingCurrency === 'EGP' ? 'text-amber-300/90 bg-amber-500/10 border border-amber-500/20' : 'text-blue-300/90 bg-blue-500/10 border border-blue-500/20'}`}
+                  >
+                    {shippingCurrency === 'EGP' ? 'ج.م' : currSym}
+                  </button>
+                ) : (
+                  <span className="text-ink/30 text-[10px] shrink-0">ج.م</span>
+                )}
               </div>
             </div>
 
@@ -740,7 +876,10 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                   <div className="flex justify-between text-[10px]">
                     <span className="text-amber-300/80">🚢 مصاريف الشحن</span>
                     <span className="text-amber-300">
-                      + {formatCurrency(shippingCostNum * rate)}
+                      + {formatCurrency(shippingEgp)}
+                    {shippingCurrency !== 'EGP' && (
+                      <span className="text-ink/30 text-[9px] mr-1">({shippingCostNum.toFixed(2)} {currSym})</span>
+                    )}
                     </span>
                   </div>
                 )}
