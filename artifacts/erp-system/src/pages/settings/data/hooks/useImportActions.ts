@@ -15,7 +15,7 @@ export function useProductsImport(onRefreshLog: () => void) {
   const { toast } = useToast();
   const [prodImporting, setProdImporting] = useState(false);
   const [prodExporting, setProdExporting] = useState(false);
-  const [prodResult, setProdResult] = useState<{ success: number; failed: number } | null>(null);
+  const [prodResult, setProdResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const prodRef = useRef<HTMLInputElement>(null);
 
   const handleProductsExport = async () => {
@@ -62,9 +62,14 @@ export function useProductsImport(onRefreshLog: () => void) {
     try {
       const rows = await readSheetRows(await file.arrayBuffer());
       let ok = 0, fail = 0;
-      for (const row of rows) {
+      const errors: string[] = [];
+      for (const [idx, row] of rows.entries()) {
         const name = row['اسم الصنف'] || row['name'] || row['Name'];
-        if (!name) { fail++; continue; }
+        if (!name) {
+          fail++;
+          errors.push(`صف ${idx + 2}: اسم الصنف مفقود`);
+          continue;
+        }
         try {
           const r = await authFetch(api('/api/products'), {
             method: 'POST',
@@ -78,12 +83,23 @@ export function useProductsImport(onRefreshLog: () => void) {
               low_stock_threshold: row['حد التنبيه'] ? Number(row['حد التنبيه']) : undefined,
             }),
           });
-          if (r.ok) ok++; else fail++;
-        } catch {
+          if (r.ok) {
+            ok++;
+          } else {
+            fail++;
+            try {
+              const j = await r.json();
+              errors.push(`صف ${idx + 2} (${String(name)}): ${j.error || 'خطأ غير معروف'}`);
+            } catch {
+              errors.push(`صف ${idx + 2} (${String(name)}): فشل الحفظ`);
+            }
+          }
+        } catch (err) {
           fail++;
+          errors.push(`صف ${idx + 2} (${String(name)}): ${(err as Error)?.message || 'خطأ في الاتصال'}`);
         }
       }
-      setProdResult({ success: ok, failed: fail });
+      setProdResult({ success: ok, failed: fail, errors });
       pushActivity({
         date: new Date().toISOString(),
         type: 'import-products',

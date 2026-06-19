@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
@@ -13,9 +13,14 @@ import {
   AlertTriangle,
   Pencil,
   FileDown,
+  FileUp,
+  Download,
   Package,
   X,
   QrCode,
+  Loader2,
+  CheckCircle2,
+  Smartphone,
 } from 'lucide-react';
 import { exportProductsExcel } from '@/lib/export-excel';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +33,8 @@ import {
 } from '@/components/product-form-modal';
 import { safeArray } from '@/lib/safe-data';
 import { api } from '@/lib/api';
+import { useProductsImport } from '@/pages/settings/data/hooks/useImportActions';
+import { MobileCatalogModal } from './MobileCatalogModal';
 
 export function ProductsTab() {
   const { data: productsRaw = [], isLoading } = useGetProducts();
@@ -37,6 +44,9 @@ export function ProductsTab() {
   const { user } = useAuth();
   const canViewProducts = hasPermission(user, 'can_view_products') === true;
   const canManageProducts = hasPermission(user, 'can_manage_products') === true;
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
   const createMutation = useMutation({
     mutationFn: async ({ data }: { data: Record<string, unknown> }) => {
       const r = await authFetch(api('/api/products'), {
@@ -57,12 +67,24 @@ export function ProductsTab() {
       return j;
     },
   });
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+
+  const refreshLog = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+  };
+
+  const {
+    prodImporting,
+    prodResult,
+    prodRef,
+    handleProductsImport,
+    downloadProductsTemplate,
+  } = useProductsImport(refreshLog);
 
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
   const [editProduct, setEditProduct] = useState<(ProductFormData & { id: number }) | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [qrProduct, setQrProduct] = useState<{
@@ -100,6 +122,27 @@ export function ProductsTab() {
     const matchCat = !catFilter || p.category_name === catFilter || p.category === catFilter;
     return matchSearch && matchCat;
   });
+
+  const existingSkus = useMemo(() => {
+    const map = new Map<
+      string,
+      { id: number; quantity: number; name: string; sku: string; category?: string | null; cost_price: number; sale_price: number; low_stock_threshold?: number | null }
+    >();
+    for (const p of products) {
+      if (p.sku)
+        map.set(p.sku.toUpperCase(), {
+          id: p.id,
+          quantity: Number(p.quantity),
+          name: p.name,
+          sku: p.sku,
+          category: p.category_name || p.category,
+          cost_price: Number(p.cost_price),
+          sale_price: Number(p.sale_price),
+          low_stock_threshold: p.low_stock_threshold ?? null,
+        });
+    }
+    return map;
+  }, [products]);
 
   const handleAdd = (data: ProductFormData) => {
     createMutation.mutate(
@@ -189,23 +232,98 @@ export function ProductsTab() {
             </select>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {/* Export Excel */}
           <button
             onClick={() => exportProductsExcel(products)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all whitespace-nowrap"
+            title="تصدير Excel"
           >
-            <FileDown className="w-4 h-4" /> Excel
+            <FileDown className="w-4 h-4" /> تصدير
           </button>
+
           {canManageProducts && (
-            <button
-              onClick={() => setShowAdd(true)}
-              className="btn-primary flex items-center gap-2 whitespace-nowrap"
-            >
-              <Plus className="w-5 h-5" /> إضافة منتج
-            </button>
+            <>
+              {/* Import Excel */}
+              <button
+                onClick={() => prodRef.current?.click()}
+                disabled={prodImporting}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/40 text-violet-400 hover:bg-violet-500/30 transition-all whitespace-nowrap disabled:opacity-50"
+                title="استيراد من Excel"
+              >
+                {prodImporting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileUp className="w-4 h-4" />
+                )}
+                {prodImporting ? 'جاري...' : 'استيراد Excel'}
+              </button>
+
+              {/* Download template */}
+              <button
+                onClick={downloadProductsTemplate}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-surface border border-line text-ink/50 hover:text-ink hover:border-line/80 transition-all whitespace-nowrap"
+                title="تحميل نموذج فارغ"
+              >
+                <Download className="w-4 h-4" /> نموذج
+              </button>
+
+              {/* Hidden file input */}
+              <input
+                ref={prodRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={handleProductsImport}
+              />
+
+              {/* Mobile Catalog */}
+              <button
+                onClick={() => setShowCatalog(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-all whitespace-nowrap"
+              >
+                <Smartphone className="w-4 h-4" /> كاتالوج المحمول
+              </button>
+
+              {/* Add product */}
+              <button
+                onClick={() => setShowAdd(true)}
+                className="btn-primary flex items-center gap-2 whitespace-nowrap"
+              >
+                <Plus className="w-5 h-5" /> إضافة منتج
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Import result banner */}
+      {prodResult && (
+        <div
+          className={`px-4 py-3 rounded-xl border text-sm space-y-2 ${
+            prodResult.failed === 0
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>
+              تم استيراد <strong>{prodResult.success}</strong> صنف
+              {prodResult.failed > 0 && (
+                <span className="text-red-400"> — فشل {prodResult.failed} صنف</span>
+              )}
+            </span>
+          </div>
+          {prodResult.errors.length > 0 && (
+            <ul className="text-xs text-red-400 space-y-0.5 pr-6 list-disc">
+              {prodResult.errors.map((err, i) => (
+                <li key={i}>{err}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {showAdd && (
         <ProductFormModal
@@ -264,6 +382,18 @@ export function ProductsTab() {
         </div>
       )}
 
+      {showCatalog && (
+        <MobileCatalogModal
+          onClose={() => setShowCatalog(false)}
+          onDone={() => {
+            setShowCatalog(false);
+            queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+          }}
+          existingSkus={existingSkus}
+        />
+      )}
+
       <div className="glass-panel rounded-3xl overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-ink/80 whitespace-nowrap">
@@ -290,15 +420,23 @@ export function ProductsTab() {
                     <p className="text-ink/20 text-sm mt-1">
                       {search || catFilter
                         ? 'جرب كلمة بحث أو تصنيف مختلف'
-                        : 'اضغط «إضافة منتج» لإضافة أول منتج'}
+                        : 'اضغط «إضافة منتج» أو «كاتالوج المحمول» لإضافة منتجات'}
                     </p>
                     {canManageProducts && !search && !catFilter && (
-                      <button
-                        onClick={() => setShowAdd(true)}
-                        className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition-all"
-                      >
-                        <Plus className="w-4 h-4" /> إضافة أول منتج
-                      </button>
+                      <div className="mt-4 flex items-center justify-center gap-3 flex-wrap">
+                        <button
+                          onClick={() => setShowAdd(true)}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition-all"
+                        >
+                          <Plus className="w-4 h-4" /> إضافة أول منتج
+                        </button>
+                        <button
+                          onClick={() => setShowCatalog(true)}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-400 hover:bg-violet-500/30 transition-all"
+                        >
+                          <Smartphone className="w-4 h-4" /> كاتالوج المحمول
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
