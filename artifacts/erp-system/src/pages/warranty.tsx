@@ -368,7 +368,7 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
       />
 
       {/* ── Filters ── */}
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="erp-toolbar">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
           <input

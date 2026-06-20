@@ -439,16 +439,15 @@ export default function AuditLog() {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-wrap gap-3 bg-surface border border-line rounded-2xl p-4">
+      <div className="erp-toolbar">
         {/* Search */}
-        <div className="relative flex-1 min-w-40">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
+        <div className="erp-search-bar flex-1 min-w-44">
+          <Search className="w-4 h-4 text-ink/30 shrink-0" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="بحث في السجل..."
-            className="w-full bg-surface border border-line rounded-xl icon-pr pl-3 py-2 text-sm text-ink placeholder:text-ink/30 focus:outline-none focus:border-amber-400/50"
           />
         </div>
 
@@ -456,7 +455,7 @@ export default function AuditLog() {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink/70 focus:outline-none"
+          className="erp-filter-select"
         >
           <option value="">كل السجلات</option>
           {ALL_RECORD_TYPES.map((t) => (
@@ -470,7 +469,7 @@ export default function AuditLog() {
         <select
           value={filterAction}
           onChange={(e) => setFilterAction(e.target.value)}
-          className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink/70 focus:outline-none"
+          className="erp-filter-select"
         >
           <option value="">كل الإجراءات</option>
           {uniqueActions.map((a) => (
@@ -484,7 +483,7 @@ export default function AuditLog() {
         <select
           value={filterUser}
           onChange={(e) => setFilterUser(e.target.value)}
-          className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink/70 focus:outline-none"
+          className="erp-filter-select"
         >
           <option value="">كل المستخدمين</option>
           {uniqueUsers.map((u) => (
@@ -498,14 +497,14 @@ export default function AuditLog() {
         <select
           value={limit}
           onChange={(e) => setLimit(Number(e.target.value))}
-          className="bg-surface border border-line rounded-xl px-3 py-2 text-sm text-ink/70 focus:outline-none"
+          className="erp-filter-select"
         >
           <option value={100}>آخر 100</option>
           <option value={200}>آخر 200</option>
           <option value={500}>آخر 500</option>
         </select>
 
-        <div className="flex items-center gap-1 text-xs text-ink/30">
+        <div className="flex items-center gap-1 text-xs text-ink/30 shrink-0">
           <Filter className="w-3 h-3" />
           {filtered.length} نتيجة
         </div>

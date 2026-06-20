@@ -292,7 +292,7 @@ export default function Income() {
       </div>
 
       {/* Search + Month Filter */}
-      <div className="flex gap-3 items-center">
+      <div className="erp-toolbar">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/40" />
           <input
@@ -313,7 +313,7 @@ export default function Income() {
         <select
           value={monthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="glass-input text-sm w-44"
+          className="erp-filter-select w-44"
         >
           <option value="all">كل الأشهر</option>
           {monthOptions.map((m) => (
