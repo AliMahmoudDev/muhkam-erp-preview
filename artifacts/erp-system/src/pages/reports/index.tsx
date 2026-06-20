@@ -1,12 +1,16 @@
 /**
  * Reports — Analytics-only module
- * Financial health, P&L, cash flow, balance sheet, product profitability, sales analysis
+ * Sprint 10: Grouped IA — مالية / مبيعات ومخزون / إدارية
+ *
+ * Old: 10 flat tabs
+ * New: 3 category sections → sub-tabs within each
+ * All existing reports preserved; TopReportsTab added to إدارية.
  */
 import { useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, TrendingUp, ShoppingCart, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import { api, authFetch, formatCurrency } from './shared';
@@ -22,6 +26,7 @@ import TrialBalanceReport from './TrialBalanceReport';
 import VatReport from './VatReport';
 import AgingReport from './AgingReport';
 import CashFlowIndirectReport from './CashFlowIndirectReport';
+import TopReportsTab from './TopReportsTab';
 
 interface Warehouse {
   id: number;
@@ -155,7 +160,7 @@ function FinancialConsistencyBar() {
   );
 }
 
-/* ── Tab config ─────────────────────────────────────────────────────────── */
+/* ── Tab & Group config ─────────────────────────────────────────────────── */
 type Tab =
   | 'health'
   | 'pl'
@@ -166,20 +171,62 @@ type Tab =
   | 'analysis'
   | 'trial-balance'
   | 'vat'
-  | 'aging';
+  | 'aging'
+  | 'top-reports';
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'health', label: '🩺 صحة النظام' },
-  { id: 'pl', label: '📊 الأرباح والخسائر' },
-  { id: 'cashflow', label: '💰 التدفق النقدي' },
-  { id: 'cashflow-indirect', label: '🔄 التدفق النقدي (غير مباشر)' },
-  { id: 'balance', label: '⚖️ الميزانية' },
-  { id: 'trial-balance', label: '📋 ميزان المراجعة' },
-  { id: 'vat', label: '🧾 ضريبة القيمة المضافة' },
-  { id: 'aging', label: '📅 أعمار الديون' },
-  { id: 'products', label: '📦 ربحية المنتجات' },
-  { id: 'analysis', label: '📈 تحليل المبيعات' },
+type CategoryId = 'financial' | 'sales' | 'admin';
+
+interface TabDef {
+  id: Tab;
+  label: string;
+  needsWarehouse?: boolean;
+}
+
+interface GroupDef {
+  id: CategoryId;
+  label: string;
+  Icon: React.ElementType;
+  tabs: TabDef[];
+}
+
+const GROUPS: GroupDef[] = [
+  {
+    id: 'financial',
+    label: 'مالية',
+    Icon: TrendingUp,
+    tabs: [
+      { id: 'pl',               label: 'الأرباح والخسائر' },
+      { id: 'cashflow',         label: 'التدفق النقدي' },
+      { id: 'cashflow-indirect',label: 'التدفق النقدي (غير مباشر)' },
+      { id: 'balance',          label: 'الميزانية' },
+      { id: 'trial-balance',    label: 'ميزان المراجعة' },
+      { id: 'vat',              label: 'ضريبة القيمة المضافة', needsWarehouse: true },
+      { id: 'aging',            label: 'أعمار الديون' },
+    ],
+  },
+  {
+    id: 'sales',
+    label: 'مبيعات ومخزون',
+    Icon: ShoppingCart,
+    tabs: [
+      { id: 'products', label: 'ربحية المنتجات', needsWarehouse: true },
+      { id: 'analysis', label: 'تحليل المبيعات', needsWarehouse: true },
+    ],
+  },
+  {
+    id: 'admin',
+    label: 'إدارية',
+    Icon: LayoutGrid,
+    tabs: [
+      { id: 'health',      label: 'صحة النظام' },
+      { id: 'top-reports', label: 'أعلى التقارير' },
+    ],
+  },
 ];
+
+function groupOf(t: Tab): GroupDef {
+  return GROUPS.find((g) => g.tabs.some((s) => s.id === t)) ?? GROUPS[0];
+}
 
 /* ── Main Page ──────────────────────────────────────────────────────────── */
 export default function Reports() {
@@ -191,9 +238,16 @@ export default function Reports() {
   const [tab, setTab] = useState<Tab>(urlTab ?? 'health');
   const [warehouseId, setWarehouseId] = useState<number | null>(null);
 
+  const activeGroup = groupOf(tab);
+  const activeTabDef = activeGroup.tabs.find((t) => t.id === tab);
+
   const changeTab = (t: Tab) => {
     setTab(t);
     navigate(`?tab=${t}`, { replace: true });
+  };
+
+  const changeGroup = (g: GroupDef) => {
+    changeTab(g.tabs[0].id);
   };
 
   if (!canView)
@@ -223,10 +277,41 @@ export default function Reports() {
     );
 
   return (
-    <div className="space-y-4" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }} dir="rtl">
-      {/* ── Tab bar + warehouse filter ── */}
+    <div className="erp-page" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }} dir="rtl">
+
+      {/* ── Page header ── */}
+      <div className="erp-page-header no-print">
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>
+            التقارير
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-hint)', marginTop: 2 }}>
+            تحليل الأداء المالي والتشغيلي — {activeGroup.label} / {activeTabDef?.label}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Category navigation (Level 1) ── */}
+      <div className="no-print flex gap-2 flex-wrap">
+        {GROUPS.map((g) => {
+          const active = activeGroup.id === g.id;
+          return (
+            <button
+              key={g.id}
+              onClick={() => changeGroup(g)}
+              className={`erp-btn${active ? '' : ' erp-btn-ghost'} flex items-center gap-2`}
+              style={active ? {} : { opacity: 0.65 }}
+            >
+              <g.Icon style={{ width: 15, height: 15 }} />
+              {g.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Sub-tab navigation (Level 2) ── */}
       <div className="no-print flex flex-wrap gap-1.5 bg-surface rounded-2xl p-1.5 border border-line items-center">
-        {TABS.map((t) => (
+        {activeGroup.tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => changeTab(t.id)}
@@ -239,7 +324,7 @@ export default function Reports() {
             {t.label}
           </button>
         ))}
-        {(tab === 'products' || tab === 'analysis' || tab === 'vat') && (
+        {activeTabDef?.needsWarehouse && (
           <div className="mr-auto">
             <WarehouseFilter value={warehouseId} onChange={setWarehouseId} />
           </div>
@@ -249,6 +334,7 @@ export default function Reports() {
       {/* ── Financial Consistency Bar — always visible ── */}
       <FinancialConsistencyBar />
 
+      {/* ── Report content ── */}
       <AnimatePresence mode="wait">
         <motion.div
           key={tab}
@@ -257,16 +343,17 @@ export default function Reports() {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.18 }}
         >
-          {tab === 'health' && <HealthCheckReport />}
-          {tab === 'pl' && <ProfitLossReport />}
-          {tab === 'cashflow' && <CashFlowReport />}
+          {tab === 'health'            && <HealthCheckReport />}
+          {tab === 'pl'               && <ProfitLossReport />}
+          {tab === 'cashflow'          && <CashFlowReport />}
           {tab === 'cashflow-indirect' && <CashFlowIndirectReport />}
-          {tab === 'balance' && <BalanceSheetReport />}
-          {tab === 'trial-balance' && <TrialBalanceReport />}
-          {tab === 'vat' && <VatReport warehouseId={warehouseId} />}
-          {tab === 'aging' && <AgingReport />}
-          {tab === 'products' && <ProductProfitReport warehouseId={warehouseId} />}
-          {tab === 'analysis' && <SalesAnalysisReport warehouseId={warehouseId} />}
+          {tab === 'balance'           && <BalanceSheetReport />}
+          {tab === 'trial-balance'     && <TrialBalanceReport />}
+          {tab === 'vat'              && <VatReport warehouseId={warehouseId} />}
+          {tab === 'aging'            && <AgingReport />}
+          {tab === 'products'         && <ProductProfitReport warehouseId={warehouseId} />}
+          {tab === 'analysis'         && <SalesAnalysisReport warehouseId={warehouseId} />}
+          {tab === 'top-reports'      && <TopReportsTab />}
         </motion.div>
       </AnimatePresence>
     </div>
